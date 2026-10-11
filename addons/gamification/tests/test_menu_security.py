@@ -7,10 +7,7 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 class TestMenuSecurity(common.TransactionCase):
     """The app surface: one root tile, management branches closed to employees.
 
-    Every assertion runs against ``load_menus()``, never ``_get_visible_menu_ids()``.
-    The two disagree on purpose: a leaf whose only gate is its parent's still
-    passes ``_get_visible_menu_ids`` and is dropped later by the orphan sweep
-    (ir_ui_menu.py:342). Asserting on the wrong one produces a false red.
+    Every assertion runs against ``load_menus()``, the tree the web client draws.
     """
 
     # Gated by their parent alone, so they must vanish with it.

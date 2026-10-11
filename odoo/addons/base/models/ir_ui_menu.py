@@ -265,10 +265,13 @@ class IrUiMenu(models.Model):
             referenced=sum(len(ids) for ids in action_ids_by_model.values()),
             existing=len(existing_actions),
         )
-        menu_ids = set(menus._ids)
+        hidden_ids = self._get_hidden_menu_ids() & set(menus._ids)
+        menu_ids = set(menus._ids) - hidden_ids
         visible_ids = set()
         no_action = access_denied = 0  # debuglog
         for menu in menus:
+            if menu.id in hidden_ids:
+                continue
             action = menu.action
             if not action or action not in existing_actions:
                 no_action += 1  # debuglog
@@ -287,24 +290,86 @@ class IrUiMenu(models.Model):
                 menu = menu.parent_id
                 menu_id = menu.id
 
+        reachable_ids = self._reachable_from_roots(
+            visible_ids, {menu.id: menu.parent_id.id for menu in menus}
+        )
         _debug.perf.count(
             "visible_menus_computed",
             uid=self.env.uid,
             debug=debug,
             candidates=len(menus),
-            visible=len(visible_ids),
+            visible=len(reachable_ids),
+            hidden=len(hidden_ids),
+            under_hidden_parent=len(visible_ids) - len(reachable_ids),
             no_action=no_action,
             access_denied=access_denied,
         )
-        return frozenset(visible_ids)
+        return frozenset(reachable_ids)
+
+    def _get_hidden_menu_ids(self) -> set[int]:
+        # runs inside _get_visible_menu_ids' cache, keyed on the group set:
+        # an override may decide on the user's groups and nothing else
+        return set()
+
+    @staticmethod
+    def _reachable_from_roots(
+        menu_ids: set[int], parent_ids: dict[int, int | bool]
+    ) -> set[int]:
+        reachable: set[int] = set()
+        unreachable: set[int] = set()
+        for menu_id in menu_ids:
+            chain = []
+            current = menu_id
+            while (
+                current in menu_ids
+                and current not in reachable
+                and current not in unreachable
+            ):
+                chain.append(current)
+                current = parent_ids[current]
+            if not current or current in reachable:
+                reachable.update(chain)
+            else:
+                unreachable.update(chain)
+        return reachable
 
     def _filter_visible_menus(self, debug: str | bool | None = None) -> Self:
         if debug is None:
             debug = self._get_session_debug()
         visible_ids = self._get_visible_menu_ids(debug)
+        blacklisted_ids = set(self._get_blacklisted_menu_ids()) & visible_ids
+        if blacklisted_ids:
+            visible_ids = self._without_blacklisted_branches(
+                visible_ids, blacklisted_ids
+            )
         visible = self.filtered(lambda menu: menu.id in visible_ids)
-        _debug.logic("menus_filtered", candidates=len(self), visible=len(visible))
+        _debug.logic(
+            "menus_filtered",
+            candidates=len(self),
+            visible=len(visible),
+            blacklisted=len(blacklisted_ids),
+        )
         return visible
+
+    def _without_blacklisted_branches(
+        self, visible_ids: frozenset[int], blacklisted_ids: set[int]
+    ) -> set[int]:
+        # a folder is visible for the actions it leads to: one that led only
+        # into a blacklisted branch goes with it, an app root included
+        kept: set[int] = set()
+        menus = self.browse(visible_ids)
+        menus.fetch(["parent_path", "action"])
+        for menu in menus:
+            path = [int(menu_id) for menu_id in menu.parent_path.split("/")[:-1]]
+            if menu.action and blacklisted_ids.isdisjoint(path):
+                kept.update(path)
+        _debug.logic(
+            "blacklisted_branches_dropped",
+            blacklisted=len(blacklisted_ids),
+            visible=len(visible_ids),
+            kept=len(kept),
+        )
+        return kept
 
     @api.depends("complete_name")
     def _compute_display_name(self) -> None:
@@ -415,15 +480,9 @@ class IrUiMenu(models.Model):
     @tools.ormcache("self.env.access_signature", "bool(debug)", "self.env.lang")
     def load_menus(self, debug: bool) -> dict[str | int, Any]:
         self = self.sudo(False)
-        blacklisted_menu_ids = self._get_blacklisted_menu_ids()
-        with _debug.perf(
-            "load_menus.fetch",
-            cr=self.env.cr,
-            uid=self.env.uid,
-            blacklisted=len(blacklisted_menu_ids),
-        ):
+        with _debug.perf("load_menus.fetch", cr=self.env.cr, uid=self.env.uid):
             visible_menus = self.search_fetch(
-                [("id", "not in", blacklisted_menu_ids)],
+                [],
                 [
                     "name",
                     "parent_id",
@@ -440,13 +499,10 @@ class IrUiMenu(models.Model):
             children_dict[menu.parent_id.id].append(menu.id)
 
         app_info = self._get_app_id_by_menu(children_dict)
-        reachable = len(visible_menus)  # debuglog
-        visible_menus = visible_menus.filtered(lambda menu: menu.id in app_info)
         _debug.pipeline(
             "load_menus",
             uid=self.env.uid,
             debug=debug,
-            reachable=reachable,
             visible=len(visible_menus),
             apps=len(children_dict[False]),
         )

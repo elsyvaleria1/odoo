@@ -234,9 +234,9 @@ class TestPurchaseReadonlyMenus(TransactionCase):
                 )
 
     def test_purchase_user_keeps_the_ungrouped_menus(self) -> None:
-        visible = (
-            self.env["ir.ui.menu"].with_user(self.purchase_user)._get_visible_menu_ids()
-        )
+        menus = self.env["ir.ui.menu"].with_user(self.purchase_user).load_menus(False)
+        reachable = {menu_id for menu_id in menus if menu_id != "root"}
+        self.assertIn(self.env.ref("purchase.menu_purchase_root").id, reachable)
 
         for xmlid in self.UNGROUPED_IN_CORE:
             menu = self.env.ref(xmlid)
@@ -247,11 +247,12 @@ class TestPurchaseReadonlyMenus(TransactionCase):
                     f"{xmlid} is ungrouped in core, so granting a group hides it "
                     f"from every other purchase user",
                 )
-                if menu.active:
+                if menu.active and menu.parent_id.id in reachable:
                     self.assertIn(
                         menu.id,
-                        visible,
-                        f"a purchase user must still reach {xmlid}",
+                        reachable,
+                        f"a purchase user who opens {menu.parent_id.complete_name} "
+                        f"must still reach {xmlid}",
                     )
 
 

@@ -5,7 +5,7 @@ from odoo.libs.json import loads as json_loads
 from odoo.tests.common import HttpCase, tagged
 
 
-@tagged("web_http", "web_menu")
+@tagged("post_install", "-at_install", "web_http", "web_menu")
 class LoadMenusTests(HttpCase):
     maxDiff = None
 

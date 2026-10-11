@@ -159,7 +159,7 @@ class TestMenuVisibility(TransactionCase):
         )
 
         emp_visible = self.Menu.with_user(self.employee)._get_visible_menu_ids()
-        self.assertIn(child.id, emp_visible)
+        self.assertNotIn(child.id, emp_visible)
         self.assertNotIn(parent.id, emp_visible)
 
         self.employee.write({"group_ids": [Command.link(group.id)]})
@@ -277,6 +277,128 @@ class TestMenuVisibility(TransactionCase):
 
         action.group_ids = False
         self.assertIn(menu.id, employee_menus._get_visible_menu_ids())
+
+    def test_a_menu_under_a_parent_the_user_cannot_open_is_not_visible(self):
+        action = self._act_window("res.partner")
+        root = self.Menu.create({"name": "Open root"})
+        closed = self.Menu.create(
+            {
+                "name": "Administrators only",
+                "parent_id": root.id,
+                "group_ids": [Command.set(self.env.ref("base.group_system").ids)],
+            }
+        )
+        leaf = self.Menu.create(
+            {
+                "name": "Open leaf",
+                "parent_id": closed.id,
+                "action": f"{action._name},{action.id}",
+            }
+        )
+        employee_menus = self.Menu.with_user(self.employee)
+        self.assertIn(leaf.id, self.Menu._get_visible_menu_ids())
+        for visible in (
+            employee_menus._get_visible_menu_ids(),
+            employee_menus.load_menus(False),
+            set(employee_menus.browse([root.id, leaf.id])._filter_visible_menus()._ids),
+        ):
+            self.assertNotIn(leaf.id, visible)
+            self.assertNotIn(root.id, visible)
+
+        closed.group_ids = False
+        for visible in (
+            employee_menus._get_visible_menu_ids(),
+            employee_menus.load_menus(False),
+        ):
+            self.assertIn(leaf.id, visible)
+            self.assertIn(root.id, visible)
+
+    def test_a_hidden_folder_takes_its_subtree_with_it(self):
+        action = self._act_window("res.partner")
+        root = self.Menu.create({"name": "Root"})
+        folder = self.Menu.create({"name": "Folder", "parent_id": root.id})
+        leaf = self.Menu.create(
+            {
+                "name": "Leaf",
+                "parent_id": folder.id,
+                "action": f"{action._name},{action.id}",
+            }
+        )
+        employee_menus = self.Menu.with_user(self.employee)
+        self.assertIn(leaf.id, employee_menus.load_menus(False))
+        self.addCleanup(self.env.registry.clear_cache)
+        with patch.object(IrUiMenu, "_get_hidden_menu_ids", lambda menus: {folder.id}):
+            self.env.registry.clear_cache()
+            visible = employee_menus._get_visible_menu_ids()
+            loaded = employee_menus.load_menus(False)
+        for menu in (root, folder, leaf):
+            self.assertNotIn(menu.id, visible)
+            self.assertNotIn(menu.id, loaded)
+
+    def test_menus_are_hidden_through_the_hook_not_by_overriding_the_set(self):
+        self.assertIs(
+            type(self.Menu)._get_visible_menu_ids,
+            IrUiMenu._get_visible_menu_ids,
+            "an override applied after the cached set would run after the pruning "
+            "and leave orphans; extend _get_hidden_menu_ids instead",
+        )
+
+    def test_a_blacklisted_menu_hides_what_lies_under_it(self):
+        action = self._act_window("res.partner")
+        root = self.Menu.create({"name": "Root"})
+        branch = self.Menu.create({"name": "Branch", "parent_id": root.id})
+        leaf = self.Menu.create(
+            {
+                "name": "Leaf",
+                "parent_id": branch.id,
+                "action": f"{action._name},{action.id}",
+            }
+        )
+        sibling = self.Menu.create(
+            {
+                "name": "Sibling",
+                "parent_id": root.id,
+                "action": f"{action._name},{action.id}",
+            }
+        )
+        employee_menus = self.Menu.with_user(self.employee)
+        self.assertIn(leaf.id, employee_menus.load_menus(False))
+        self.addCleanup(self.env.registry.clear_cache)
+        with patch.object(
+            IrUiMenu, "_get_blacklisted_menu_ids", lambda menus: [branch.id]
+        ):
+            self.env.registry.clear_cache()
+            self.assertFalse(employee_menus.browse(leaf.id)._filter_visible_menus())
+            loaded = employee_menus.load_menus(False)
+        self.assertNotIn(branch.id, loaded)
+        self.assertNotIn(leaf.id, loaded)
+        self.assertEqual(loaded[root.id]["children"], [sibling.id])
+
+    def test_an_app_whose_only_entry_is_blacklisted_is_not_drawn(self):
+        action = self._act_window("res.partner")
+        root = self.Menu.create({"name": "App"})
+        entry = self.Menu.create(
+            {
+                "name": "Only entry",
+                "parent_id": root.id,
+                "action": f"{action._name},{action.id}",
+            }
+        )
+        employee_menus = self.Menu.with_user(self.employee)
+        self.assertIn(root.id, employee_menus.load_menus_root()["all_menu_ids"])
+        self.addCleanup(self.env.registry.clear_cache)
+        with patch.object(
+            IrUiMenu, "_get_blacklisted_menu_ids", lambda menus: [entry.id]
+        ):
+            self.env.registry.clear_cache()
+            loaded = employee_menus.load_menus(False)
+            roots = employee_menus.load_menus_root()["all_menu_ids"]
+            filtered = employee_menus.browse(root.id)._filter_visible_menus()
+        self.assertNotIn(entry.id, loaded)
+        self.assertNotIn(root.id, loaded)
+        self.assertNotIn(root.id, loaded["root"]["children"])
+        self.assertNotIn(root.id, roots)
+        self.assertFalse(filtered)
 
     def test_every_debug_spelling_shares_one_entry(self):
         self.assertIs(

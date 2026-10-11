@@ -77,23 +77,19 @@ class TestPerfSessionInfo(common.HttpCase):
         self.env["ir.ui.menu"]._get_visible_menu_ids()
         return self.cr.sql_statement_count - count0
 
-    def _add_menus_over_visible_action_kinds(self, count):
+    def _add_menus_over_visible_action_kinds(self, count, parent=None):
         Menu = self.env["ir.ui.menu"].sudo()
+        parent = parent or Menu.create({"name": "Probe root"})
         visible_ids = self.env["ir.ui.menu"]._get_visible_menu_ids()
         actions = Menu.search(
             [("id", "in", list(visible_ids)), ("action", "!=", False)]
         ).mapped("action")
-        window_model = next(
-            action.res_model
-            for action in actions
-            if action._name == "ir.actions.act_window"
-        )
         new_windows = (
             self.env["ir.actions.act_window"]
             .sudo()
             .create(
                 [
-                    {"name": f"Probe window {i}", "res_model": window_model}
+                    {"name": f"Probe window {i}", "res_model": "res.partner"}
                     for i in range(count)
                 ]
             )
@@ -104,7 +100,6 @@ class TestPerfSessionInfo(common.HttpCase):
         reused = [
             action for same_kind in by_kind.values() for action in same_kind[:count]
         ]
-        parent = Menu.create({"name": "Probe root"})
         Menu.create(
             [
                 {
@@ -115,18 +110,20 @@ class TestPerfSessionInfo(common.HttpCase):
                 for i, action in enumerate([*new_windows, *reused])
             ]
         )
+        return parent
 
     def test_visible_menu_ids(self):
         # the cold cost is one fetch per action kind plus the access decision
         # per target model, so its absolute value is the installed set's; what
         # this method owns is that it does not grow with menus or actions.
-        # The probe reuses only the kinds of the user's visible menus: a kind
-        # none of their menus carries costs its own fetch, a new kind, not growth.
+        # The baseline already holds one probe window under a reachable root,
+        # so the growth step adds no action kind and no target model.
         # The first cold call also settles state clear_all_caches leaves alone.
+        parent = self._add_menus_over_visible_action_kinds(1)
         self._cold_visible_menu_statements()
         baseline = self._cold_visible_menu_statements()
         self.assertGreater(baseline, 0)
-        self._add_menus_over_visible_action_kinds(20)
+        self._add_menus_over_visible_action_kinds(20, parent)
 
         self.assertEqual(self._cold_visible_menu_statements(), baseline)
 

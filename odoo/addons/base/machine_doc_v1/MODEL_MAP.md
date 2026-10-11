@@ -923,8 +923,9 @@ Menu tree — hierarchical navigation.
 - `action` (Reference → ir.actions.*) — Linked action
 
 **Key Methods:**
-- `_get_visible_menu_ids(debug)` — Get visible menu IDs for current user (ormcache)
-- `_filter_visible_menus()` — Filter to visible menus
+- `_get_visible_menu_ids(debug)` — IDs of the menus the user's groups reach: each passes its own gate and every ancestor's (ormcache, keyed on the group set). Not an extension point: a module hides menus by extending `_get_hidden_menu_ids()`, which the computation applies before pruning, so a hidden menu takes its subtree with it
+- `_get_hidden_menu_ids()` — Menu IDs a module withholds from a group set (`account` hides its read-only-tier menus); decided on the user's groups alone, since it runs inside that cache
+- `_filter_visible_menus()` — Filter to the menus the web client draws: visible, and under no `_get_blacklisted_menu_ids()` entry; `load_menus`, `get_user_roots` and `home.tile` all answer through it
 
 ---
 

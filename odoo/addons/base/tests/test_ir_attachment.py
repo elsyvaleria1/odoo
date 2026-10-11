@@ -27,6 +27,7 @@ from odoo.tools.image import image_to_base64
 
 from odoo.addons.base.models import ir_attachment as ir_attachment_module
 from odoo.addons.base.models.ir_attachment import SECURITY_FIELDS, IrAttachment
+from odoo.addons.base.models.ir_attachment_assets import SOURCE_MAP_SUFFIXES
 from odoo.addons.base.tests.common import (
     TransactionCaseWithUserDemo,
     TransactionCaseWithUserPortal,
@@ -2431,9 +2432,13 @@ class TestPermissions(TransactionCaseWithUserDemo):
             ]
         )
         self.assertTrue(attachment.datas)
+        not_a_source_map = " AND ".join(
+            ['("ir_attachment"."url" NOT LIKE %s OR "ir_attachment"."url" IS NULL)']
+            * len(SOURCE_MAP_SUFFIXES)
+        )
         with self.assertQueries(
             [
-                """
+                f"""
             SELECT "ir_attachment"."id"
             FROM "ir_attachment"
             WHERE ("ir_attachment"."res_field" IN (%s) AND "ir_attachment"."res_id" IN (%s) AND "ir_attachment"."res_model" IN (%s) AND (
@@ -2441,7 +2446,7 @@ class TestPermissions(TransactionCaseWithUserDemo):
                     "ir_attachment"."public" IS TRUE
                     AND (
                         ("ir_attachment"."res_model" NOT IN (%s) OR "ir_attachment"."res_model" IS NULL)
-                        OR ("ir_attachment"."url" NOT LIKE %s OR "ir_attachment"."url" IS NULL)
+                        OR ({not_a_source_map})
                     )
                 )
                 OR ((

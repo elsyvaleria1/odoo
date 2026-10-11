@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 from unittest.mock import patch
 
-from odoo import api
+from odoo import Command, api
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import TransactionCase, new_test_user, tagged
 from odoo.tools.misc import file_path
@@ -145,6 +145,50 @@ class TestHomeTile(TransactionCase):
                 [{"id": "recent_records_1", "type": "recent_records"}]
             )
         self.assertEqual(result["recent_records_1"], {"error": "unavailable"})
+
+    def test_a_tile_whose_menu_sits_under_a_closed_parent_is_unavailable(self):
+        Menu = self.env["ir.ui.menu"]
+        action = self.env["ir.actions.act_window"].create(
+            {"name": "Tile screen", "res_model": "res.partner"}
+        )
+        parent = Menu.create(
+            {
+                "name": "Administrators only",
+                "group_ids": [Command.set(self.env.ref("base.group_system").ids)],
+            }
+        )
+        menu = Menu.create(
+            {
+                "name": "Tile screen",
+                "parent_id": parent.id,
+                "action": f"{action._name},{action.id}",
+            }
+        )
+        self.env["ir.model.data"].create(
+            {
+                "module": "web",
+                "name": "test_tile_screen_menu",
+                "model": "ir.ui.menu",
+                "res_id": menu.id,
+            }
+        )
+        original = type(self.tiles)._get_tile_types
+
+        def with_menu(model):
+            types = original(model)
+            types["recent_records"] = {
+                **types["recent_records"],
+                "menu": "web.test_tile_screen_menu",
+            }
+            return types
+
+        with patch.object(type(self.tiles), "_get_tile_types", with_menu):
+            self.assertNotIn(menu.id, Menu.with_user(self.user).load_menus(False))
+            self.assertNotIn("recent_records", self.tiles.get_tile_types())
+
+            parent.group_ids = False
+            self.assertIn(menu.id, Menu.with_user(self.user).load_menus(False))
+            self.assertIn("recent_records", self.tiles.get_tile_types())
 
     def test_the_dashboard_offers_nothing_outside_the_backend(self):
         portal = new_test_user(

@@ -61,11 +61,6 @@ class IrUiMenu(models.Model):
                         action := action_by_id.get(action_id_by_menu_id.get(menu["id"]))
                     )
                     and action.res_model == res_model
-                    and all(
-                        int(menu_id) in visible_menu_ids
-                        for menu_id in menu["parent_path"].split("/")
-                        if menu_id
-                    )
                 ),
                 key=_menu_sort_key,
                 default=(None, None, None),

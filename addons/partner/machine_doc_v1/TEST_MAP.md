@@ -38,10 +38,9 @@ was on no form at all. The tests missed both because they asserted around the us
 rather than along it — `with_user(manager).create(...)` exercises the ORM, which no menu
 gates, and `menu.parent_id == config_menu` is true whether or not anyone can see either.
 
-So the assertions now go through the rendered artefacts: `load_menus` for the menu tree
-(not `_get_visible_menu_ids`, which reports the cohort entry visible while its parent is pruned,
-see TRAPS.md), and `get_view` / `get_combined_arch` for the form and the search view. An
-assertion that cannot fail when the behaviour regresses is not coverage.
+So the assertions now go through the rendered artefacts: `load_menus` for the menu tree,
+and `get_view` / `get_combined_arch` for the form and the search view. An assertion that
+cannot fail when the behaviour regresses is not coverage.
 
 ## The configuration sweep replaced two hardcoded pairs
 

@@ -74,8 +74,8 @@ class HomeTile(models.AbstractModel):
         menu_id = self.env["ir.model.data"]._xmlid_to_res_id(
             xmlid, raise_if_not_found=False
         )
-        return (
-            bool(menu_id) and menu_id in self.env["ir.ui.menu"]._get_visible_menu_ids()
+        return bool(
+            menu_id and self.env["ir.ui.menu"].browse(menu_id)._filter_visible_menus()
         )
 
     @api.readonly

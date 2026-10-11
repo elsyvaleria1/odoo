@@ -89,7 +89,7 @@ class TestWebhookTimeout(WebhookCase):
     def test_the_ceiling_refuses_a_worker_holding_value(self):
         with self.assertRaises(ValidationError) as caught:
             self._action(webhook_timeout=600)
-        self.assertIn("after the transaction commits", str(caught.exception))
+        self.assertIn("occupies a worker", str(caught.exception))
 
     def test_zero_is_refused_rather_than_meaning_no_timeout(self):
         with self.assertRaises(ValidationError):

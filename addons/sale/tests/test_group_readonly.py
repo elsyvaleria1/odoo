@@ -278,8 +278,6 @@ class TestSaleGroupReadonly(TransactionCase):
         self.assertFalse(writable, f"these rows are not read-only: {sorted(writable)}")
 
     def _reachable_menu_ids(self, user) -> set[int]:
-        # a menu that passes its own gate under a parent the user cannot open
-        # is in _get_visible_menu_ids but never on screen: compare what loads
         menus = self.env["ir.ui.menu"].with_user(user).load_menus(False)
         return {menu_id for menu_id in menus if menu_id != "root"}
 

@@ -901,10 +901,14 @@ guards are intentionally NOT identical:**
 
 After a deploy, the first request per bundle, variant and worker builds cold:
 lexing, hashing, esbuild, and the classic bundles' SCSS. Run
-`odoo-bin warm_assets -c <conf> -d <db>` once per database after the restart
-and before traffic returns. It pregenerates every bundle and lazy group without
-a website and then once per website, so the workers of every instance find
-published builds and reuse them instead of each compiling its own.
+`odoo-bin warm_assets -c <conf> -d <db>` once per database once the new tree,
+its virtualenv and any module upgrade are in place, and before traffic returns.
+It pregenerates every bundle and lazy group without a website and then once per
+website, so the workers of every instance find published builds and reuse them
+instead of each compiling its own. A worker finds a build by its sources, not by
+the process that compiled it, and the command needs no HTTP server: where a unit
+takes traffic as soon as it is up, warm before restarting it.
+agromarin-infra's sync playbook and odoo_restore role do.
 
 ### Build lifecycle
 

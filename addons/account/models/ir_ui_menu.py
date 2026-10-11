@@ -10,14 +10,12 @@ class IrUiMenu(models.Model):
             "account.menu_account_group",
         ]
 
-    def _get_visible_menu_ids(self, debug=False):
-        visible_ids = super()._get_visible_menu_ids(debug)
+    def _get_hidden_menu_ids(self):
+        hidden_ids = super()._get_hidden_menu_ids()
         if not self.env.user.has_group("account.group_account_readonly"):
-            accounting_menus = self._get_account_readonly_menu_ids()
-            hidden_menu_ids = {
+            hidden_ids.update(
                 menu_id
-                for ref_menu in accounting_menus
+                for ref_menu in self._get_account_readonly_menu_ids()
                 if (menu_id := self.env["ir.model.data"]._xmlid_to_res_id(ref_menu))
-            }
-            return visible_ids - hidden_menu_ids
-        return visible_ids
+            )
+        return hidden_ids
