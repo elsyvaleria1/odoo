@@ -8,7 +8,7 @@ import { NewReportDialog } from "./new_report_dialog.js";
 class StudioReportKanbanController extends KanbanController {
     setup() {
         super.setup();
-        this.actionService = useService("action");
+        this.studio = useService("studio");
         this.dialogService = useService("dialog");
         this.orm = useService("orm");
     }
@@ -22,11 +22,8 @@ class StudioReportKanbanController extends KanbanController {
     }
 
     openRecord(record) {
-        return this.actionService.doAction("web_studio.action_edit_report", {
-            report: {
-                data: record.data,
-                res_id: record.resId,
-            },
+        return this.studio.setParams({
+            editedReport: { data: record.data, res_id: record.resId },
         });
     }
 }

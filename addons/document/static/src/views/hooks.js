@@ -152,7 +152,6 @@ export function useDocumentView(component, helpers) {
                 default_res_model: props.context.default_res_model || false,
                 ...context,
             },
-            fullscreen: env.isSmall,
             onClose: async () => {
                 await env.model.load();
                 env.model.notify();
@@ -218,7 +217,6 @@ export function useDocumentView(component, helpers) {
                         ? { default_access_internal: "edit" }
                         : {}),
                 },
-                fullscreen: env.isSmall,
                 onClose: async () => {
                     await env.searchModel._reloadSearchModel(true);
                     bus.trigger(DocumentsViewEvent.EXPAND_FOLDER, {

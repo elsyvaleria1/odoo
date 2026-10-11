@@ -60,8 +60,8 @@ const dialogService = {
 };
 
 const actionServiceStudio = {
-    dependencies: ["studio", "dialog"],
-    start(env, { studio }) {
+    dependencies: ["dialog"],
+    start(env) {
         const router = {
             current: { hash: {} },
             pushState() {},
@@ -77,23 +77,7 @@ const actionServiceStudio = {
         // after it closes.
         action.uninstallActionCacheInvalidation =
             installActionCacheInvalidation(action);
-        // ``ActionManager`` is an ES6 class since the native-ESM loader refactor;
-        // ``doAction`` reads ``this.fetchAction``, so the method
-        // reference must stay bound to its instance. ``Object.assign`` below
-        // replaces ``action.doAction`` with the wrapper, hence the original is
-        // captured (bound) here rather than called via ``action.doAction``.
-        const _doAction = action.doAction.bind(action);
-
-        async function doAction(actionRequest, options) {
-            if (actionRequest === "web_studio.action_edit_report") {
-                return studio.setParams({
-                    editedReport: options.report,
-                });
-            }
-            return _doAction(...arguments);
-        }
-
-        return Object.assign(action, { doAction });
+        return action;
     },
 };
 

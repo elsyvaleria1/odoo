@@ -142,8 +142,6 @@ export class Agenda extends Component {
     }
 
     openMyActivities() {
-        this.action.doAction("mail.mail_activity_action_my", {
-            target: this.ui.isSmall ? "new" : "current",
-        });
+        this.action.doAction("mail.mail_activity_action_my");
     }
 }
