@@ -698,22 +698,34 @@ review ([`risks.md`](risks.md) R6).
 
 ### Rehearsing an upgrade on a copy
 
-Every step writes only to the copy:
+Every step writes only to the copy and, where the source reads another
+database through a foreign server, to that database's copy:
 
 1. `odoo-bin db -c <conf> duplicate --neutralize <source> <copy>`: a
    `CREATE DATABASE … TEMPLATE` of the source and a copy of its filestore. It
    needs the source without open sessions (PostgreSQL refuses a busy template
    with `55006`), and neutralizing stops crons, mail and payment providers on
-   the copy.
-2. `odoo-bin schema_diff -c <conf> -d <copy> -u all`: the upgrade in one
+   the copy and drops every user mapping, so no foreign server (the GPS log's
+   `postgres_fdw` server) reaches the source's databases from it.
+2. When the source has a foreign server, copy the database it points at and
+   point the copy at that: `ALTER SERVER <server> OPTIONS (SET host …, SET
+   port …, SET dbname …)` and `CREATE USER MAPPING FOR CURRENT_USER SERVER
+   <server> OPTIONS (user …, password …)`. Until then the upgrade stops at the
+   foreign table's schema sync, naming these two statements.
+3. `odoo-bin schema_diff -c <conf> -d <copy> -u all`: the upgrade in one
    transaction that is rolled back, printing the migrations that would run,
    the DDL by shape and the catalog rows it would change; a database older than
-   the code stops here with the refusal above.
-3. `/usr/bin/time -v odoo-bin -c <conf> -d <copy> -u all --stop-after-init`,
+   the code stops here with the refusal above. Remote DDL a foreign table needs
+   does not all roll back with it: a column a new field adds is created on the
+   remote at once, since the upgrade reads and writes it through the foreign
+   table, and stays there unused for the real run to adopt; the remote indexes
+   are built only once the transaction commits, so the dry run builds none.
+4. `/usr/bin/time -v odoo-bin -c <conf> -d <copy> -u all --stop-after-init`,
    output redirected: the real upgrade, timed.
-4. `odoo-bin db -c <conf> drop <copy>` when done.
+5. `odoo-bin db -c <conf> drop <copy>` when done, and the foreign database's
+   copy with it.
 
-Never run step 2 or 3 against the source itself.
+Never run step 3 or 4 against the source itself.
 
 ## What a deployment must provide
 

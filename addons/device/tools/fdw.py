@@ -12,11 +12,21 @@ that do what the foreign keys used to do.
 import logging
 import re
 
+import psycopg
+
 from odoo.db import schema as sql
 from odoo.exceptions import UserError
-from odoo.tools import SQL
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import SQL, get_index_name
 
 _logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
+
+_REMOTE_DDL_AFTER_COMMIT = "device.fdw.remote_ddl_after_commit"
+# ADD COLUMN holds its ACCESS EXCLUSIVE lock for a catalog write only, but
+# while it waits for one every GPS insert queues behind it; a holder past this
+# is a long report scan the next run outlasts, or this very transaction.
+REMOTE_COLUMN_LOCK_TIMEOUT = "10s"
 
 
 def is_foreign(cr, table: str) -> bool:
@@ -73,25 +83,183 @@ def dblink_available(cr) -> bool:
     return bool(cr.fetchone())
 
 
-def remote_exec(cr, server: str, statement: str) -> None:
+def user_mapping_exists(cr, server: str) -> bool:
+    cr.execute(
+        SQL(
+            "SELECT 1 FROM pg_user_mappings"
+            " WHERE srvname = %s AND usename IN (current_user, 'public')",
+            server,
+        )
+    )
+    return bool(cr.fetchone())
+
+
+def remote_exec(
+    cr, server: str, statement: str, *, lock_timeout: str | None = None
+) -> None:
     """Run one DDL statement on the foreign server through ``dblink``.
 
     The foreign server name doubles as the ``dblink`` connection name, so the
     same user mapping ``postgres_fdw`` uses is reused and no password lives in
-    Python.
+    Python. ``dblink_exec`` commits on a connection of its own: what it runs
+    survives a rollback of ``cr``.
+
+    :param str lock_timeout: how long the statement may wait for a lock on
+                             the remote before it fails, naming itself
     """
-    cr.execute(SQL("SELECT dblink_exec(%s, %s)", server, statement))
+    sent = statement
+    if lock_timeout:
+        sent = f"SET lock_timeout = '{lock_timeout}'; {statement}"
+    try:
+        cr.execute(SQL("SELECT dblink_exec(%s, %s)", server, sent))
+    except psycopg.errors.LockNotAvailable as exc:
+        _debug.logic("device.fdw.remote_lock_timeout", server=server)
+        exc.add_note(
+            f"FDW {server}: waited {lock_timeout} for a lock on the remote and "
+            f"gave up: {statement}"
+        )
+        raise
 
 
-def remote_index_exists(cr, server: str, indexname: str) -> bool:
+def remote_column_names(cr, server: str, target: str) -> set[str]:
+    cr.execute(
+        SQL(
+            "SELECT * FROM dblink(%s, %s) AS t(name text)",
+            server,
+            "SELECT attname FROM pg_attribute"
+            f" WHERE attrelid = to_regclass('{target}')"
+            " AND attnum > 0 AND NOT attisdropped",
+        )
+    )
+    return {name for (name,) in cr.fetchall()}
+
+
+def holds_remote_lock(cr, server: str, target: str) -> bool:
+    """Whether this transaction's ``postgres_fdw`` connection locks `target`.
+
+    That connection keeps its remote transaction, and the locks its reads and
+    writes took, until the local transaction ends; DDL sent over ``dblink``
+    that needs a conflicting lock would wait on it forever. Needs
+    ``postgres_fdw`` 1.2, whose connection list names the remote backend;
+    an older one reports False.
+    """
+    cr.execute(
+        "SELECT to_regprocedure('postgres_fdw_get_connections(boolean)') IS NOT NULL"
+    )
+    if not cr.fetchone()[0]:
+        _debug.logic("device.fdw.connection_list_unavailable", server=server)
+        return False
+    cr.execute(
+        SQL(
+            "SELECT remote_backend_pid FROM postgres_fdw_get_connections()"
+            " WHERE server_name = %s AND used_in_xact AND remote_backend_pid IS NOT NULL",
+            server,
+        )
+    )
+    pids = [pid for (pid,) in cr.fetchall()]
+    if not pids:
+        return False
     cr.execute(
         SQL(
             "SELECT * FROM dblink(%s, %s) AS t(n int)",
             server,
-            f"SELECT 1 FROM pg_indexes WHERE indexname = '{indexname}'",
+            f"SELECT 1 FROM pg_locks WHERE pid IN ({', '.join(map(str, pids))})"
+            f" AND relation = to_regclass('{target}') LIMIT 1",
         )
     )
     return bool(cr.fetchone())
+
+
+def remote_exec_after_commit(env, server: str, statement: str) -> None:
+    """Run one DDL statement on the foreign server once ``env.cr`` commits.
+
+    A rolled-back transaction (a failed upgrade, ``schema_diff``'s dry run)
+    then leaves the remote database untouched, and the statement no longer
+    waits on locks and snapshots this transaction's own ``postgres_fdw``
+    connection holds on the remote table, which it would wait on forever.
+    Queued once per statement, in order.
+    """
+    postcommit = env.cr.postcommit
+    queue = postcommit.data.get(_REMOTE_DDL_AFTER_COMMIT)
+    if queue is None:
+        queue = postcommit.data.setdefault_list(_REMOTE_DDL_AFTER_COMMIT)
+        postcommit.add(_run_remote_ddl(env.registry, queue))
+    if (server, statement) in queue:
+        _debug.logic("device.fdw.remote_ddl_already_queued", server=server)
+        return
+    queue.append((server, statement))
+
+
+def _run_remote_ddl(registry, queue):
+    def run() -> None:
+        with registry.cursor() as cr:
+            for server, statement in queue:
+                _logger.info("FDW %s: %s", server, statement)
+                try:
+                    with cr.savepoint():
+                        remote_exec(cr, server, statement)
+                except Exception:
+                    _logger.exception(
+                        "FDW %s: the local transaction committed but this remote "
+                        "DDL failed; run it on the remote database: %s",
+                        server,
+                        statement,
+                    )
+
+    return run
+
+
+def remote_index_exists(cr, server: str, target: str, indexname: str) -> bool:
+    """Whether a usable index of that name exists in `target`'s schema.
+
+    A ``CREATE INDEX CONCURRENTLY`` that failed leaves an invalid index behind,
+    which ``IF NOT EXISTS`` would take for the real one: it counts as absent.
+    """
+    cr.execute(
+        SQL(
+            "SELECT * FROM dblink(%s, %s) AS t(n int)",
+            server,
+            valid_index_query(target, indexname),
+        )
+    )
+    return bool(cr.fetchone())
+
+
+def valid_index_query(target: str, indexname: str) -> str:
+    schema = target.split(".", 1)[0]
+    return (
+        "SELECT 1 FROM pg_index i"
+        " JOIN pg_class c ON c.oid = i.indexrelid"
+        " JOIN pg_namespace n ON n.oid = c.relnamespace"
+        f" WHERE c.relname = '{indexname}' AND n.nspname = '{schema}'"
+        " AND i.indisvalid"
+    )
+
+
+def build_remote_index_after_commit(
+    env, server: str, target: str, indexname: str, create: str
+) -> None:
+    """Build a remote index once ``env.cr`` commits, unless a valid one exists.
+
+    An invalid one of that name is dropped first, so `create` builds it again.
+
+    :param str create: the ``CREATE INDEX CONCURRENTLY IF NOT EXISTS``
+                       statement, sent alone: ``dblink_exec`` then runs it
+                       outside a transaction block, as CONCURRENTLY needs
+    """
+    if remote_index_exists(env.cr, server, target, indexname):
+        return
+    schema = target.split(".", 1)[0]
+    _logger.info(
+        "FDW %s: index %s on %s, once this transaction commits",
+        server,
+        indexname,
+        target,
+    )
+    remote_exec_after_commit(
+        env, server, f"DROP INDEX CONCURRENTLY IF EXISTS {schema}.{indexname}"
+    )
+    remote_exec_after_commit(env, server, create)
 
 
 def missing_columns(model, existing: dict) -> list[tuple[str, str]]:
@@ -240,16 +408,32 @@ def drop_pointer_foreign_keys(cr, pointers: list[tuple[str, str]]) -> list[str]:
     return dropped
 
 
-def remote_schema_ddl(model, columns: list[tuple[str, str]], target: str) -> list[str]:
-    """DDL that brings the remote table in line with the model.
+def remote_column_ddl(columns: list[tuple[str, str]], target: str) -> list[str]:
+    """DDL that adds the model's missing columns to the remote table.
 
     :param list columns: ``missing_columns`` output
     :param str target: ``remote_table`` output, the table the DDL runs on
     """
-    ddl = [
+    return [
         f"ALTER TABLE {target} ADD COLUMN IF NOT EXISTS {name} {coltype}"
         for name, coltype in columns
     ]
+
+
+def remote_index_ddl(model, target: str) -> list[tuple[str, str]]:
+    """DDL that creates the model's indexes on the remote table.
+
+    Both kinds the ORM builds on a local table: the model's ``models.Index``
+    objects, and the ``index=`` of its stored fields, which
+    ``Registry.check_indexes`` skips on a foreign table. Built concurrently,
+    so GPS ingest keeps writing during the build; a failed build leaves an
+    invalid index, which ``build_remote_index_after_commit`` drops and builds
+    again.
+
+    :param str target: ``remote_table`` output, the table the DDL runs on
+    :return: ``(index name, CREATE INDEX statement)`` pairs
+    """
+    ddl = []
     for obj in model._table_objects.values():
         clause = getattr(obj, "_get_definition_clause", None)
         if clause is None:
@@ -259,9 +443,24 @@ def remote_schema_ddl(model, columns: list[tuple[str, str]], target: str) -> lis
             continue
         indexname = obj.get_full_name(model)
         unique = "UNIQUE " if getattr(obj, "unique", False) else ""
-        ddl.append(
-            f"CREATE {unique}INDEX IF NOT EXISTS {indexname} ON {target} {definition}"
+        create = (
+            f"CREATE {unique}INDEX CONCURRENTLY IF NOT EXISTS {indexname} ON {target}"
         )
+        ddl.append((indexname, f"{create} {definition}"))
+    for field in sorted(model._fields.values(), key=lambda f: f.column_order):
+        index = field.index
+        if not (field.store and field.column_type and index) or field.translate:
+            continue
+        if index == "trigram" and not model.pool.has_trigram:
+            continue
+        expression, method, where = model.pool._get_index_expression(field, index)
+        indexname = get_index_name(model._table, field.name)
+        unique = "UNIQUE " if index == "unique" else ""
+        predicate = f" WHERE {where}" if where else ""
+        create = (
+            f"CREATE {unique}INDEX CONCURRENTLY IF NOT EXISTS {indexname} ON {target}"
+        )
+        ddl.append((indexname, f"{create} USING {method} ({expression}){predicate}"))
     return ddl
 
 
@@ -269,19 +468,46 @@ def sync_foreign_schema(model) -> None:
     """Bring the remote table and the local guards in line with the model.
 
     Called from ``_auto_init`` instead of the ORM's own schema pass when the
-    model's table is foreign. Columns and indexes are created on the remote
-    server; the foreign table then learns the new columns; the triggers are
-    (re)installed locally.
+    model's table is foreign. Columns are created on the remote server at
+    once, since the rest of this transaction reads and writes them through
+    the foreign table, which then learns them; a rollback leaves them unused
+    on the remote, where ``IF NOT EXISTS`` adopts them on the next run.
+    Indexes nothing in this transaction needs are created once it commits.
+    The triggers are (re)installed locally.
 
-    :raises UserError: when ``dblink`` is missing, listing the DDL that would
-                       have run so it can be applied by hand
+    :raises UserError: when the server has no user mapping (a neutralized
+                       copy), naming how to point it at the copy's own
+                       database; when ``dblink`` is missing, or this
+                       transaction already holds a lock on the remote table
+                       its column DDL would wait on forever, listing the DDL
+                       to apply by hand
     """
     cr = model.env.cr
     table = model._table
     server = foreign_server(cr, table)
+    if not user_mapping_exists(cr, server):
+        _debug.logic("device.fdw.server_unmapped", server=server, table=table)
+        raise UserError(
+            model.env._(
+                "%(model)s is backed by foreign table %(table)s on server "
+                "%(server)s, which has no user mapping for this role: a "
+                "neutralized copy does not reach its source's databases. Point "
+                "the server at this copy's own database, then map the role:\n"
+                "ALTER SERVER %(server)s OPTIONS (SET host '<host>', "
+                "SET port '<port>', SET dbname '<database>');\n"
+                "CREATE USER MAPPING FOR CURRENT_USER SERVER %(server)s "
+                "OPTIONS (user '<role>', password '<password>');",
+                model=model._name,
+                table=repr(table),
+                server=server,
+            )
+        )
     existing = sql.get_table_columns(cr, table)
     columns = missing_columns(model, existing)
-    remote_ddl = remote_schema_ddl(model, columns, remote_table(cr, table))
+    target = remote_table(cr, table)
+    column_ddl = remote_column_ddl(columns, target)
+    index_ddl = remote_index_ddl(model, target)
+    remote_ddl = column_ddl + [create for _name, create in index_ddl]
 
     if remote_ddl and not dblink_available(cr):
         raise UserError(
@@ -295,9 +521,34 @@ def sync_foreign_schema(model) -> None:
             )
         )
 
-    for statement in remote_ddl:
-        _logger.info("FDW %s: %s", server, statement)
-        remote_exec(cr, server, statement)
+    # ADD COLUMN IF NOT EXISTS takes its ACCESS EXCLUSIVE lock even when the
+    # column is there, as it is after a rolled-back run or one added by hand
+    if columns:
+        present = remote_column_names(cr, server, target)
+        column_ddl = remote_column_ddl(
+            [(name, coltype) for name, coltype in columns if name not in present],
+            target,
+        )
+    if column_ddl and holds_remote_lock(cr, server, target):
+        _debug.logic("device.fdw.column_ddl_self_wait", server=server, table=table)
+        raise UserError(
+            model.env._(
+                "%(model)s needs new columns on %(target)s, but this "
+                "transaction already read or wrote that table through server "
+                "%(server)s, which keeps its lock until the transaction ends: "
+                "adding them from inside it would wait forever. Run this on "
+                "the remote database, then run again:\n%(ddl)s",
+                model=model._name,
+                target=target,
+                server=server,
+                ddl=";\n".join(column_ddl),
+            )
+        )
+    for ddl in column_ddl:
+        _logger.info("FDW %s: %s", server, ddl)
+        remote_exec(cr, server, ddl, lock_timeout=REMOTE_COLUMN_LOCK_TIMEOUT)
+    for indexname, create in index_ddl:
+        build_remote_index_after_commit(model.env, server, target, indexname, create)
     for name, coltype in columns:
         cr.execute(
             SQL(

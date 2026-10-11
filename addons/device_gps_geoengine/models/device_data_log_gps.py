@@ -1,11 +1,7 @@
-import logging
-
 from odoo import api, fields, models
 
 from odoo.addons.device.tools import fdw
 from odoo.addons.geoengine.models.fields import GeoField, geo_index_name
-
-_logger = logging.getLogger(__name__)
 
 
 class DeviceDataLogGps(models.Model):
@@ -33,7 +29,8 @@ class DeviceDataLogGps(models.Model):
 
     # A foreign table's spatial index lives on its remote table, which neither
     # the FDW schema sync nor geoengine creates; without it every map tile
-    # scans the GPS log. Built concurrently so GPS ingestion is not blocked.
+    # scans the GPS log. Built concurrently so GPS ingestion is not blocked,
+    # and after the commit, which the concurrent build waits for.
     def _create_remote_geo_indexes(self) -> None:
         cr = self.env.cr
         if not fdw.is_foreign(cr, self._table) or not fdw.dblink_available(cr):
@@ -44,14 +41,11 @@ class DeviceDataLogGps(models.Model):
             if not isinstance(field, GeoField) or not field.store:
                 continue
             name = geo_index_name(self._table, field.name)
-            if fdw.remote_index_exists(cr, server, name):
-                continue
-            _logger.info(
-                "FDW %s: creating spatial index %s on %s", server, name, target
-            )
-            fdw.remote_exec(
-                cr,
+            fdw.build_remote_index_after_commit(
+                self.env,
                 server,
+                target,
+                name,
                 f"CREATE INDEX CONCURRENTLY IF NOT EXISTS {name} "
                 f"ON {target} USING gist ({field.name})",
             )
