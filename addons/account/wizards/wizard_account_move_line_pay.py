@@ -1715,7 +1715,7 @@ class WizardAccountMoveLinePay(models.TransientModel):
                     )
 
                     if debit_lines and credit_lines:
-                        payment.move_id.write(
+                        payment.move_id.with_context(entry_owner_sync=True).write(
                             {
                                 "line_ids": [
                                     Command.update(

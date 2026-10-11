@@ -218,3 +218,195 @@ class TestPaymentCounterpartAccount(AccountTestInvoicingCommon):
         payment.partner_id = self.partner_b
 
         self.assertEqual(payment.destination_account_id, self.payable_ff)
+
+
+@tagged("post_install", "-at_install")
+class TestPaymentEntryOwnership(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.bank_journal = cls.company_data["default_journal_bank"]
+        cls.receivable = cls.company_data["default_account_receivable"]
+        cls.other_receivable = cls.copy_account(cls.receivable, {"name": "AR NF"})
+        cls.expense = cls.company_data["default_account_expense"]
+
+    def _payment(self, **vals):
+        payment = self.env["account.payment"].create(
+            {
+                "amount": 100.0,
+                "date": "2026-08-01",
+                "partner_id": self.partner_a.id,
+                "partner_type": "customer",
+                "payment_type": "inbound",
+                "journal_id": self.bank_journal.id,
+                **vals,
+            }
+        )
+        payment.action_post()
+        return payment
+
+    def _invoice(self, account=None):
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-08-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "goods",
+                            "price_unit": 100.0,
+                            "tax_ids": [Command.clear()],
+                        }
+                    )
+                ],
+            }
+        )
+        if account:
+            invoice.line_ids.filtered(
+                lambda line: line.display_type == "payment_term"
+            ).account_id = account
+        invoice.action_post()
+        return invoice
+
+    def test_generated_lines_refuse_account_edits_on_the_entry(self):
+        payment = self._payment()
+        liquidity, counterpart, _other = payment._seek_for_lines()
+
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            counterpart.account_id = self.other_receivable
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            liquidity.partner_id = self.partner_b
+
+        payment.action_draft()
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            payment.move_id.write(
+                {
+                    "line_ids": [
+                        Command.update(counterpart.id, {"account_id": self.expense.id})
+                    ]
+                }
+            )
+        with self.assertRaisesRegex(UserError, "can only be removed"):
+            liquidity.unlink()
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            payment.move_id.date = "2026-08-02"
+        self.assertEqual(counterpart.account_id, self.receivable)
+
+    def test_labels_and_write_off_accounts_stay_editable(self):
+        payment = self.env["account.payment"].create(
+            {
+                "amount": 90.0,
+                "date": "2026-08-01",
+                "partner_id": self.partner_a.id,
+                "partner_type": "customer",
+                "payment_type": "inbound",
+                "journal_id": self.bank_journal.id,
+                "write_off_line_vals": [
+                    {
+                        "name": "discount",
+                        "account_id": self.expense.id,
+                        "partner_id": self.partner_a.id,
+                        "currency_id": self.company_data["currency"].id,
+                        "amount_currency": 10.0,
+                        "balance": 10.0,
+                    }
+                ],
+            }
+        )
+        liquidity, _counterpart, write_off = payment._seek_for_lines()
+        other_expense = self.copy_account(self.expense)
+
+        liquidity.name = "relabelled"
+        write_off.account_id = other_expense
+        payment.date = "2026-08-02"
+        payment.action_post()
+
+        self.assertEqual(write_off.account_id, other_expense)
+        self.assertEqual(payment.state, "in_process")
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            write_off.balance = 20.0
+
+    def test_posting_refuses_an_entry_that_no_longer_matches(self):
+        payment = self._payment()
+        payment.action_draft()
+        counterpart = payment._seek_for_lines()[1]
+        counterpart.with_context(
+            entry_owner_sync=True
+        ).account_id = self.other_receivable
+
+        with self.assertRaisesRegex(UserError, "no longer matches"):
+            payment.move_id.action_post()
+        with self.assertRaisesRegex(UserError, "no longer matches"):
+            payment.action_post()
+
+    def test_correct_accounts_rebuilds_the_entry_through_the_payment(self):
+        invoice = self._invoice()
+        payment = self._register_payment(invoice, payment_date="2026-08-01")
+        new_liquidity = self.copy_account(payment.outstanding_account_id)
+
+        wizard = (
+            self.env["wizard.account.payment.correct.accounts"]
+            .with_context(default_payment_id=payment.id)
+            .create({})
+        )
+        self.assertFalse(wizard.is_locked)
+        wizard.liquidity_account_id = new_liquidity
+        wizard.action_correct()
+
+        self.assertEqual(payment.outstanding_account_id, new_liquidity)
+        self.assertEqual(payment._seek_for_lines()[0].account_id, new_liquidity)
+        self.assertEqual(payment.move_id.state, "posted")
+        self.assertEqual(
+            invoice.payment_state,
+            self.env["account.move"]._get_invoice_in_payment_state(),
+        )
+        self.assertIn("Liquidity account", payment.message_ids[0].body)
+
+        wizard = (
+            self.env["wizard.account.payment.correct.accounts"]
+            .with_context(default_payment_id=payment.id)
+            .create({"counterpart_account_id": self.other_receivable.id})
+        )
+        wizard.action_correct()
+        self.assertEqual(payment.destination_account_id, self.other_receivable)
+        self.assertEqual(payment.counterpart_account_source, "explicit")
+        self.assertEqual(payment._seek_for_lines()[1].account_id, self.other_receivable)
+
+    def test_correct_accounts_in_a_locked_period_reclassifies(self):
+        payment = self._payment(destination_account_id=self.other_receivable.id)
+        self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
+        entry_lines = payment.move_id.line_ids
+        before = sorted(
+            entry_lines.mapped(lambda line: (line.account_id.id, line.balance))
+        )
+
+        wizard = (
+            self.env["wizard.account.payment.correct.accounts"]
+            .with_context(default_payment_id=payment.id)
+            .create({"date": "2026-09-05"})
+        )
+        self.assertTrue(wizard.is_locked)
+        wizard.counterpart_account_id = self.receivable
+        wizard.action_correct()
+
+        reclass = self.env["account.move"].search(
+            [("reclassified_payment_id", "=", payment.id)]
+        )
+        self.assertEqual(reclass.state, "posted")
+        self.assertEqual(
+            sorted(
+                reclass.line_ids.mapped(lambda line: (line.account_id.id, line.balance))
+            ),
+            sorted([(self.other_receivable.id, 100.0), (self.receivable.id, -100.0)]),
+        )
+        self.assertEqual(
+            sorted(
+                payment.move_id.line_ids.mapped(
+                    lambda line: (line.account_id.id, line.balance)
+                )
+            ),
+            before,
+        )
+        self.assertTrue(payment._seek_for_lines()[1].reconciled)
+        self.assertEqual(payment.destination_account_id, self.other_receivable)

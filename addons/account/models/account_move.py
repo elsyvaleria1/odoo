@@ -54,6 +54,7 @@ declare_authority_keys(
     "skip_account_deprecation_check",
     "force_delete",
     "skip_account_move_synchronization",
+    "entry_owner_sync",
 )
 
 _logger = logging.getLogger(__name__)

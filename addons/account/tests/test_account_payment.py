@@ -1372,10 +1372,10 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
             }
         )
         payment.action_post()
+        payment.action_draft()
         move = payment.move_id
-        move.action_draft()
         liquidity_lines = payment._seek_for_lines()[0]
-        move.write(
+        move.with_context(entry_owner_sync=True).write(
             {
                 "line_ids": [
                     Command.update(liquidity_lines.id, {"amount_currency": 100}),
@@ -1385,12 +1385,11 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
                             "balance": 50.0,
                             "amount_currency": 50.0,
                             "currency_id": payment.currency_id.id,
+                            "payment_role": "liquidity",
                         }
                     ),
                 ],
             }
         )
-        move.action_post()
-        payment.action_draft()
         with self.assertRaises(UserError):
             payment.amount = 300.0

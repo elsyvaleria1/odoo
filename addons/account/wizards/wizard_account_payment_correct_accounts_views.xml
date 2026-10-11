@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_wizard_account_payment_correct_accounts_form" model="ir.ui.view">
+        <field name="name">wizard.account.payment.correct.accounts.form</field>
+        <field name="model">wizard.account.payment.correct.accounts</field>
+        <field name="arch" type="xml">
+            <form string="Correct Accounts">
+                <field name="payment_id" invisible="1" />
+                <field name="company_id" invisible="1" />
+                <field name="counterpart_account_types" invisible="1" />
+                <field name="is_locked" invisible="1" />
+                <div class="alert alert-info" role="alert" invisible="is_locked">
+                    The payment goes back to draft, its entry is rebuilt on these
+                    accounts and posted again, and the documents it settled on the
+                    new counterpart account are matched again.
+                </div>
+                <div class="alert alert-warning" role="alert" invisible="not is_locked">
+                    The payment's entry cannot change (locked period, hash or
+                    cancellation request): a reclassification entry moves the
+                    amounts to these accounts instead.
+                </div>
+                <group>
+                    <field
+                        name="counterpart_account_id"
+                        options="{'no_create': True}" />
+                    <field name="liquidity_account_id" options="{'no_create': True}" />
+                    <field name="date" invisible="not is_locked" />
+                    <field
+                        name="journal_id"
+                        options="{'no_create': True}"
+                        invisible="not is_locked"
+                        required="is_locked" />
+                </group>
+                <footer>
+                    <button
+                        name="action_correct"
+                        type="object"
+                        string="Correct"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Discard" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

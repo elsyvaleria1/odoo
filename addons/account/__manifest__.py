@@ -44,6 +44,7 @@
         "wizards/account_unreconcile_view.xml",
         "wizards/wizard_account_bank_statement_line_reconcile_auto_views.xml",
         "wizards/wizard_account_move_line_split_views.xml",
+        "wizards/wizard_account_payment_correct_accounts_views.xml",
         "wizards/wizard_account_move_reverse_views.xml",
         "wizards/wizard_account_move_resequence_views.xml",
         "wizards/wizard_account_move_line_pay_views.xml",

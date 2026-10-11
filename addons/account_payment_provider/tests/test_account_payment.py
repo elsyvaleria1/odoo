@@ -499,7 +499,6 @@ class TestAccountPayment(AccountPaymentCommon):
 
         payment2.action_post()
         payment.move_id.action_draft()
-        payment.move_id.line_ids.unlink()
         payment.amount = 30
         payment.move_id._compute_name()
         payment.move_id._post()

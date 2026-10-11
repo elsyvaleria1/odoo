@@ -148,7 +148,9 @@ class TestPaymentAudit(AccountTestInvoicingCommon):
         self.env.flush_all()
         _liquidity, counterpart, _writeoff = payment._seek_for_lines()
         line = counterpart[0]
-        payment.move_id.with_context(skip_invoice_sync=True).write(
+        payment.move_id.with_context(
+            skip_invoice_sync=True, entry_owner_sync=True
+        ).write(
             {
                 "line_ids": [
                     Command.update(
@@ -186,7 +188,9 @@ class TestPaymentAudit(AccountTestInvoicingCommon):
         self.env.flush_all()
         liquidity, _counterpart, _writeoff = payment._seek_for_lines()
         line = liquidity[0]
-        payment.move_id.with_context(skip_invoice_sync=True).write(
+        payment.move_id.with_context(
+            skip_invoice_sync=True, entry_owner_sync=True
+        ).write(
             {
                 "line_ids": [
                     Command.update(

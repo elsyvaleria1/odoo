@@ -263,6 +263,12 @@
                             class="btn btn-secondary"
                             data-hotkey="w" />
                         <button
+                            name="action_open_correct_accounts"
+                            type="object"
+                            string="Correct Accounts"
+                            groups="account.group_account_user"
+                            invisible="state not in ('in_process', 'paid') or not move_id" />
+                        <button
                             name="button_request_cancel"
                             type="object"
                             string="Request Cancel"

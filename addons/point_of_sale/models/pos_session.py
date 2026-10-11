@@ -2065,10 +2065,10 @@ class PosSession(models.Model):
             balance_after=new_balance,
         )
         account_payment.move_id.action_draft()
-        account_payment.move_id.write(
+        account_payment.move_id.with_context(entry_owner_sync=True).write(
             {
                 "line_ids": [
-                    Command.create(dest_vals),
+                    Command.create({**dest_vals, "payment_role": "write_off"}),
                     Command.update(
                         outstanding_line.id,
                         {

@@ -36,6 +36,11 @@ _debug = DebugLog(__name__)
 
 _ANALYTIC_ACCOUNTS_OF_BATCH = "account.move.line.analytic_accounts_of_batch"
 
+_OWNED_AMOUNT_FIELDS = frozenset(
+    {"balance", "debit", "credit", "amount_currency", "currency_id"}
+)
+_OWNED_LINE_FIELDS = _OWNED_AMOUNT_FIELDS | {"account_id", "partner_id"}
+
 _NON_ACCOUNTABLE_SQL_TUPLE = "({})".format(
     ", ".join(f"'{display_type}'" for display_type in NON_ACCOUNTABLE_DISPLAY_TYPES)
 )
@@ -2516,6 +2521,59 @@ class AccountMoveLine(models.Model):
             )
         )
 
+    def _get_role_protected_fields(self) -> frozenset:
+        self.check_singleton()
+        if self.payment_role == "write_off":
+            return _OWNED_AMOUNT_FIELDS
+        return _OWNED_LINE_FIELDS if self.payment_role else frozenset()
+
+    def _get_entry_owner(self):
+        self.check_singleton()
+        return self.move_id.payment_ids[:1]
+
+    def _check_owned_line_write(self, changed_fields) -> None:
+        self.check_singleton()
+        if self.env.context.get("entry_owner_sync"):
+            return
+        protected = changed_fields & self._get_role_protected_fields()
+        if not protected or not (owner := self._get_entry_owner()):
+            return
+        _debug.logic(
+            "owned_line_write_refused",
+            line=self,
+            role=self.payment_role,
+            fields=sorted(protected),
+        )
+        raise UserError(
+            self.env._(
+                "%(owner)s generated this journal item, so its %(fields)s can only "
+                "change through it: edit %(owner)s (reset it to draft, or use "
+                "Correct Accounts once posted).",
+                owner=owner.display_name,
+                fields=", ".join(
+                    self._fields[fname].get_description(self.env)["string"]
+                    for fname in sorted(protected)
+                ),
+            )
+        )
+
+    def _check_owned_line_unlink(self) -> None:
+        for line in self:
+            if line.payment_role in (False, "write_off"):
+                continue
+            if owner := line._get_entry_owner():
+                _debug.logic(
+                    "owned_line_unlink_refused", line=line, role=line.payment_role
+                )
+                raise UserError(
+                    self.env._(
+                        "%(owner)s generated the journal item %(line)s; it can "
+                        "only be removed by editing %(owner)s.",
+                        owner=owner.display_name,
+                        line=line.display_name,
+                    )
+                )
+
     @_debug.perf.timed
     def _classify_write(self, vals) -> tuple:
         protected_fields = self._get_fields_lock_date_protected()
@@ -2539,6 +2597,8 @@ class AccountMoveLine(models.Model):
             if not changed_fields:
                 line_to_write -= line
                 continue
+
+            line._check_owned_line_write(changed_fields)
 
             posted = line.parent_state == "posted"
             if posted and changed_fields & {"tax_ids", "tax_line_id"}:
@@ -2718,6 +2778,11 @@ class AccountMoveLine(models.Model):
         _debug.lifecycle("unlink", unlink=self)
         if not self:
             return True
+
+        if not self.env.context.get("entry_owner_sync") and not self.env.context.get(
+            "dynamic_unlink"
+        ):
+            self._check_owned_line_unlink()
 
         self.remove_move_reconcile()
 
