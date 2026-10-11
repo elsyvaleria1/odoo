@@ -111,9 +111,9 @@ class OnlineAppointmentPerformance(AppointmentUIPerformanceCase):
         t0 = time.time()
         with freeze_time(self.reference_now):
             with self.assertQueryCount(
-                (35 + self._page_reads_the_type_seo)
+                (34 + self._page_reads_the_type_seo)
                 if self._website_renders_the_page
-                else 31
+                else 30
             ):
                 response = self._test_url_open(
                     "/appointment/%i" % self.apt_type_bxls_2days.id
