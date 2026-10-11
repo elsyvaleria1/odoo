@@ -182,6 +182,9 @@ class One2many(_RelationalMulti):
 
     @override
     def read(self, records: BaseModel) -> None:
+        records = self._records_to_read(records)
+        if not records:
+            return
         comodel = records.env[self.comodel_name].with_context(
             **self._prepare_read_context()
         )

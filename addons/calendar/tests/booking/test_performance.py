@@ -92,9 +92,9 @@ class OnlineAppointmentPerformance(AppointmentUIPerformanceCase):
         t0 = time.time()
         with freeze_time(self.reference_now):
             with self.assertQueryCount(
-                default=(30 + self._layout_reads_the_team_menus)
+                default=(29 + self._layout_reads_the_team_menus)
                 if self._website_renders_the_page
-                else 27
+                else 26
             ):
                 response = self._test_url_open(invitation.redirect_url)
         self.assertEqual(response.status_code, 200)
@@ -111,9 +111,9 @@ class OnlineAppointmentPerformance(AppointmentUIPerformanceCase):
         t0 = time.time()
         with freeze_time(self.reference_now):
             with self.assertQueryCount(
-                (33 + self._page_reads_the_type_seo)
+                (35 + self._page_reads_the_type_seo)
                 if self._website_renders_the_page
-                else 29
+                else 31
             ):
                 response = self._test_url_open(
                     "/appointment/%i" % self.apt_type_bxls_2days.id

@@ -74,6 +74,27 @@ class TestX2manyScopeFollowsWhatTheRulesRead(TransactionCase):
         self.narrow_open.hidden = True
         self.assertEqual(self.user_box.narrow_ids, self.narrow_hidden)
 
+    def test_a_stored_computed_x2many_reads_through_the_users_rules(self):
+        self.assertEqual(self.box.stored_item_ids, self.item_shown | self.item_hidden)
+        self.assertEqual(self.user_box.stored_item_ids, self.item_shown)
+        self.hidden.visible = True
+        self.assertEqual(
+            self.user_box.stored_item_ids, self.item_shown | self.item_hidden
+        )
+
+    def test_a_row_the_superuser_computed_empty_reads_empty_without_a_query(self):
+        empty = self.env["test_orm.scope_box"].create({"name": "empty"})
+        self.assertFalse(empty.stored_item_ids)
+        self.assertEqual(self.user_box.item_ids, self.item_shown)
+        with self.assertQueryCount(0):
+            self.assertFalse(empty.with_user(self.user).stored_item_ids)
+
+    def test_a_relation_the_superuser_holds_links_for_is_read_without_a_probe(self):
+        self.assertTrue(self.box.stored_item_ids)
+        self.assertEqual(self.user_box.item_ids, self.item_shown)
+        with self.assertQueryCount(1):
+            self.assertEqual(self.user_box.stored_item_ids, self.item_shown)
+
     def test_a_write_the_rules_do_not_read_keeps_the_slot(self):
         self.assertEqual(self.user_box.item_ids, self.item_shown)
         self.shown.name = "renamed"
@@ -133,3 +154,10 @@ class TestComputedX2manyUserScope(TransactionCase):
         self.assertEqual(tag.with_user(user).label, "TAG")
         with self.assertQueries([]):
             self.assertEqual(user_box.open_ids, opened)
+
+
+class TestX2manyWriteOfAFieldTheUserCannotRead(TransactionCase):
+    def test_a_create_writes_the_default_of_a_relation_the_user_cannot_read(self):
+        user = new_test_user(self.env, "scope_creator", groups="base.group_user")
+        box = self.env["test_orm.scope_box"].with_user(user).create({"name": "box"})
+        self.assertFalse(box.sudo().system_tag_ids)

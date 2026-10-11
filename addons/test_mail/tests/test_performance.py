@@ -671,7 +671,7 @@ class TestBaseAPIPerformance(BaseMailPerformance):
                 .create({})
             )
 
-        with self.assertQueryCount(admin=30, employee=30):
+        with self.assertQueryCount(admin=31, employee=31):
             composer._action_send_mail()
 
         message = test_record.message_ids[0]
@@ -714,7 +714,7 @@ class TestBaseAPIPerformance(BaseMailPerformance):
                 .create({})
             )
 
-        with self.assertQueryCount(admin=40, employee=40):
+        with self.assertQueryCount(admin=42, employee=42):
             composer._action_send_mail()
 
         message = test_record.message_ids[0]
@@ -1533,7 +1533,7 @@ class TestMailAPIPerformance(BaseMailPerformance):
         record = self.container.with_user(self.env.user)
         template = self.env.ref("test_mail.mail_test_container_tpl")
 
-        with self.assertQueryCount(admin=47, employee=47):
+        with self.assertQueryCount(admin=48, employee=48):
             record.message_post_with_source(
                 template,
                 message_type="comment",

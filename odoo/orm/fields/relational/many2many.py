@@ -203,6 +203,9 @@ class Many2many(_RelationalMulti):
         siblings = self._relation_siblings(records)
         if len(siblings) > 1:
             records.flush_recordset(siblings)
+        records = self._records_to_read(records)
+        if not records:
+            return
         comodel = records.env[self.comodel_name].with_context(
             **self._prepare_read_context()
         )
@@ -223,10 +226,14 @@ class Many2many(_RelationalMulti):
             ) from e
 
         relation, column1, column2 = self._get_relation_triple()
-        probe_links = not filter_access and not (
-            records.env.registry.access_policy.record_domain(
-                comodel.env, comodel._name, "read"
-            ).is_true()
+        probe_links = (
+            not filter_access
+            and not self._superuser_holds_links(records)
+            and not (
+                records.env.registry.access_policy.record_domain(
+                    comodel.env, comodel._name, "read"
+                ).is_true()
+            )
         )
         group = records.env.backend.read_m2m_groups(
             records, relation, column1, column2, query, probe_links=probe_links

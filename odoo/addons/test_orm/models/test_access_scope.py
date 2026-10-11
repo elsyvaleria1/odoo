@@ -45,6 +45,24 @@ class TestOrmScopeBox(models.Model):
         inverse_name="box_id",
         compute="_compute_flagged_open_ids",
     )
+    stored_item_ids = fields.Many2many(
+        comodel_name="test_orm.scope_item",
+        relation="test_orm_scope_box_stored_item_rel",
+        compute="_compute_stored_item_ids",
+        store=True,
+    )
+
+    system_tag_ids = fields.Many2many(
+        comodel_name="test_orm.scope_tag",
+        relation="test_orm_scope_box_system_tag_rel",
+        groups="base.group_system",
+        default=lambda self: self.env["test_orm.scope_tag"],
+    )
+
+    @api.depends("item_ids")
+    def _compute_stored_item_ids(self):
+        for box in self:
+            box.stored_item_ids = box.item_ids
 
     @api.depends("open_ids.flagged")
     def _compute_flagged_open_ids(self):

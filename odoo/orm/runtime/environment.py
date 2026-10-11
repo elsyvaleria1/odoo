@@ -639,7 +639,7 @@ class Environment(Mapping[str, "BaseModel"]):
                     uid_key = (uid_key, acting)
                 return uid_key
             elif key == "access":
-                if field.compute and field.compute_sudo:
+                if field.compute and field.compute_sudo and not field.store:
                     return None
                 return self._access_scope(field.comodel_name)
             elif key == "lang":

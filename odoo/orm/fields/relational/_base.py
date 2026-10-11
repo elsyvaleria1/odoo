@@ -562,6 +562,43 @@ class _RelationalMulti(_Relational):
             return None
         return _ScopedSlot(scoped if scoped is not None else {}, pending or {})
 
+    def _records_to_read(self, records: BaseModel) -> BaseModel:
+        env = records.env
+        if env.su:
+            return records
+        sudo_slot = env.core.get_context_data_or_none(
+            self, self._superuser_scope_key(env)
+        )
+        if not sudo_slot:
+            return records
+        empty = {id_ for id_ in records._ids if sudo_slot.get(id_) == ()}
+        if not empty:
+            return records
+        self._watch_user_scope(env)
+        own = self._get_cache(env)
+        for id_ in empty:
+            own[id_] = ()
+        _debug.logic(
+            "field.x2many.read_empty_from_superuser",
+            model=self.model_name,
+            field=self.name,
+            records=len(records),
+            served=len(empty),
+            uid=env.uid,
+        )
+        return records.browse([id_ for id_ in records._ids if id_ not in empty])
+
+    def _superuser_holds_links(self, records: BaseModel) -> bool:
+        env = records.env
+        if env.su:
+            return False
+        sudo_slot = env.core.get_context_data_or_none(
+            self, self._superuser_scope_key(env)
+        )
+        if not sudo_slot:
+            return False
+        return any(sudo_slot.get(id_) for id_ in records._ids)
+
     @override
     def _value_after_delegated_fetch(
         self, env: Environment, record_id: IdType
@@ -799,7 +836,7 @@ class _RelationalMulti(_Relational):
         return env.transaction.access_memo.observing(self.comodel_name)
 
     def _watch_user_scope(self, env: Environment) -> None:
-        if env.su or (self.compute and self.compute_sudo):
+        if env.su or (self.compute and self.compute_sudo and not self.store):
             return
         comodel_cls = type(env[self.comodel_name])
         everything = (
@@ -1086,7 +1123,9 @@ class _RelationalMulti(_Relational):
         ):
             self._update_cache(record, ())
             return ()
-        record[self.name]
+        if self.is_stored_computed:
+            self.recompute_where_scheduled(record)
+        self._get_uncached(typing.cast("BaseModel", record), env, record_id)
         raw_ids: tuple[IdType, ...] = self._get_cache(env)[record_id]
         return raw_ids
 
