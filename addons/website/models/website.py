@@ -22,7 +22,7 @@ from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import escape_psql
 from odoo.libs.web import contains_dot_segments
-from odoo.tools import SQL
+from odoo.tools import SQL, frozendict
 from odoo.tools.image import image_process
 
 from odoo.addons.portal.controllers.portal import pager
@@ -398,6 +398,18 @@ class Website(models.Model):
     def _get_blocked_third_party_domains_list(self):
         return list(self._get_blocked_third_party_domains_tuple())
 
+    @tools.ormcache("self.id", cache="templates")
+    def _get_blocked_third_party_hosts(self) -> frozenset:
+        return frozenset(
+            domain.removeprefix("www.")
+            for domain in self._get_blocked_third_party_domains_tuple()
+        )
+
+    def _is_blocked_third_party_host(self, host) -> bool:
+        blocked = self._get_blocked_third_party_hosts()
+        labels = host.split(".")
+        return any(".".join(labels[i:]) in blocked for i in range(len(labels)))
+
     _BLOCKED_IFRAME_CONTAINER_CLASSES = frozenset(
         {
             "s_map",
@@ -452,11 +464,10 @@ class Website(models.Model):
     def write(self, vals):
         public_user_to_change_websites = self.env["website"]
         original_company = self.company_id
-        values = vals
+        values = dict(vals)
         self._update_vals(values)
 
         _debug.lifecycle("write", websites=self, count=len(self), fields=sorted(values))
-        self.env.registry.clear_cache()
 
         if "company_id" in values and "user_id" not in values:
             public_user_to_change_websites = self.filtered(
@@ -474,6 +485,7 @@ class Website(models.Model):
                 )
 
         result = super(Website, self - public_user_to_change_websites).write(values)
+        self.env.registry.clear_cache()
 
         if not TEMPLATE_AFFECTING_FIELDS.isdisjoint(values):
             _debug.lifecycle(
@@ -658,8 +670,12 @@ class Website(models.Model):
         return res
 
     @api.model
-    @tools.ormcache("website_id", cache="assets")
     def _get_asset_twin_id(self, website_id: int) -> int:
+        return self._get_asset_twin_ids().get(website_id, website_id)
+
+    @api.model
+    @tools.ormcache(cache="assets")
+    def _get_asset_twin_ids(self) -> frozendict:
         reader = self.with_privilege(
             "website.privilege_read_asset_twin", reason="asset twin of a website"
         )
@@ -685,17 +701,16 @@ class Website(models.Model):
                     )
                 )
 
-        def look(website):
-            return (
+        twin_by_look = {}
+        twins = {}
+        for website in websites:
+            look = (
                 website.theme_id.id,
                 json.dumps(website.theme_scss_values or {}, sort_keys=True),
-                rows[website.id],
+                tuple(rows[website.id]),
             )
-
-        target = websites.filtered(lambda website: website.id == website_id)
-        if not target:
-            return website_id
-        return next(website.id for website in websites if look(website) == look(target))
+            twins[website.id] = twin_by_look.setdefault(look, website.id)
+        return frozendict(twins)
 
     def _remove_attachments_on_website_unlink(self) -> None:
         attachments_to_unlink = self.env["ir.attachment"].search(
@@ -808,7 +823,7 @@ class Website(models.Model):
         page_title=None,
     ):
         template_record = self.env.ref(template, raise_if_not_found=False)
-        if not template_record:
+        if not template_record or template_record._name != "ir.ui.view":
             _debug.logic(
                 "new_page_refused", reason="unknown_template", template=template
             )
@@ -819,8 +834,12 @@ class Website(models.Model):
             template_module = namespace
         else:
             template_module = template.partition(".")[0]
+        website = self.browse(
+            self.env.context.get("website_id") or self.get_current_website().id
+        )
+        scoped = self.with_context(website_id=website.id)
         page_url = "/" + self.env["ir.http"]._slugify(name, max_length=1024, path=True)
-        page_url = self.get_unique_path(page_url)
+        page_url = scoped.get_unique_path(page_url)
         page_key = self.env["ir.http"]._slugify(name)
         result = {"url": page_url}
 
@@ -835,9 +854,8 @@ class Website(models.Model):
             for section in html.fromstring(f"<wrap>{sections_arch}</wrap>"):
                 wrap.append(section)
             arch = etree.tostring(tree, encoding="unicode")
-        website_id = self.env.context.get("website_id")
-        key = self.get_unique_key(page_key, template_module)
-        view = template_record.copy({"website_id": website_id, "key": key})
+        key = scoped.get_unique_key(page_key, template_module)
+        view = template_record.copy({"website_id": website.id, "key": key})
 
         view.with_context(lang=None).write(
             {
@@ -850,7 +868,6 @@ class Website(models.Model):
         if view.arch_fs:
             view.arch_fs = False
 
-        website = self.get_current_website()
         if ispage:
             default_page_values = {
                 "url": page_url,
@@ -1113,9 +1130,9 @@ class Website(models.Model):
                 website_id and str(website_id).isdecimal() and int(website_id)
             )
 
-    @api.model
     def is_public_user(self) -> bool:
-        return request.env.user.id == request.website._get_cached("user_id")
+        website = self or self.get_current_website()
+        return self.env.user.id == website._get_cached("user_id")
 
     @api.model
     def viewref(self, view_id, raise_if_not_found=True):
@@ -1339,10 +1356,10 @@ class Website(models.Model):
         pages = pages.with_context(website_id=website.id)._get_most_specific_pages()
         return pages[:limit] if limit else pages
 
-    def search_pages(self, needle=None, limit=None):
+    def search_pages(self, needle=None, limit=None, force=True):
         name = self.env["ir.http"]._slugify(needle, max_length=50, path=True)
         res = []
-        for page in self._enumerate_pages(query_string=name, force=True):
+        for page in self._enumerate_pages(query_string=name, force=force):
             res.append(page)
             if len(res) == limit:
                 break
@@ -1605,21 +1622,6 @@ class Website(models.Model):
             if match:
                 return [match.group()]
         return []
-
-    def _is_snippet_used(
-        self, snippet_module, snippet_id, asset_version, asset_type, html_fields
-    ):
-        if self._is_snippet_used_in_occurrences(
-            self._get_snippet_template_occurrence(snippet_module, snippet_id),
-            asset_type,
-            asset_version,
-        ):
-            return True
-        return self._is_snippet_used_in_occurrences(
-            self._get_snippet_occurrences([snippet_id], html_fields)[snippet_id],
-            asset_type,
-            asset_version,
-        )
 
     def _is_snippet_used_in_occurrences(
         self, snippet_occurences, asset_type, asset_version

@@ -1,6 +1,6 @@
 {
     "name": "Website",
-    "version": "1.16",
+    "version": "1.17",
     "oldest_upgradable_version": "1.16",
     "category": "Website/Website",
     "sequence": 20,

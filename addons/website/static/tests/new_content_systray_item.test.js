@@ -37,6 +37,5 @@ test("can display a newcontent modal", async () => {
     expect.verifySteps([
         "/web/dataset/call_kw/ir.module.module/search_read",
         "/website/check_new_content_access_rights",
-        "/website/get_new_page_templates",
     ]);
 });

@@ -1,9 +1,11 @@
 import ast
 import functools
 import inspect
+import re
 import textwrap
 import types
 from unittest.mock import patch
+from urllib.parse import urlsplit
 
 from odoo.tests import HttpCase, TransactionCase, tagged
 
@@ -204,3 +206,18 @@ class TestWebsiteSitemapHost(HttpCase):
         self.assertNotIn(b"evil-a.example", r2.content)
         self.assertNotIn(b"evil-b.example", r2.content)
         self.assertIn(b"canonical.example", r2.content)
+
+    def test_every_sitemap_the_index_lists_is_served(self):
+        self.env["ir.attachment"].sudo().search(
+            [("type", "=", "binary"), ("url", "=like", "/sitemap-%")]
+        ).unlink()
+        with patch("odoo.addons.website.controllers.main.LOC_PER_SITEMAP", 1):
+            index = self.url_open("/sitemap.xml")
+        self.assertEqual(index.status_code, 200)
+        locs = re.findall(r"<loc>([^<]+)</loc>", index.text)
+        self.assertGreater(len(locs), 1, "the premise: the sitemap is split")
+        for loc in locs:
+            with self.subTest(loc=loc):
+                part = self.url_open(urlsplit(loc).path)
+                self.assertEqual(part.status_code, 200)
+                self.assertIn("<urlset", part.text)

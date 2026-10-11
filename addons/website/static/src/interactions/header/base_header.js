@@ -180,7 +180,13 @@ export class BaseHeader extends Interaction {
 
         if (this.transitionCount > 0) {
             this.el.classList.add("o_transitioning");
-            this.waitForAnimationFrame(() => this.adaptToHeaderChangeLoop());
+            if (!this.changeLoopFramePending) {
+                this.changeLoopFramePending = true;
+                this.waitForAnimationFrame(() => {
+                    this.changeLoopFramePending = false;
+                    this.adaptToHeaderChangeLoop();
+                });
+            }
 
             if (addCount !== 0) {
                 clearTimeout(this.changeLoopTimer);

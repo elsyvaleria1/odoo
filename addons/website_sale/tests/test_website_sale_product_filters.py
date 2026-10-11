@@ -381,3 +381,11 @@ class TestWebsiteSaleProductFilters(
         computer_case_copy = self.computer_case.copy()
         computer_case_copy.website_published = True
         self.start_tour("/shop", "shop_attribute_filters_remain_when_changing_page")
+
+    def test_hiding_variants_widens_the_fetch_cap_to_cover_the_templates(self):
+        newest = self.env.ref("website_sale.dynamic_filter_newest_products")
+        self.assertEqual(newest._get_max_limit(), 16)
+        self.assertEqual(
+            newest.with_context(hide_variants=True, product_limit=5)._get_max_limit(),
+            25,
+        )

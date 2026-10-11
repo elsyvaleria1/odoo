@@ -40,3 +40,27 @@ class TestWebsiteFormPhoneAlias(TransactionCase):
             data["record"]["phone_ids"],
             [Command.create({"number": "+32 470 00 00 00", "type": "mobile"})],
         )
+
+    def test_posted_phone_ids_are_a_number_not_record_ids(self):
+        other = self.env["res.partner"].create(
+            {
+                "name": "Someone else",
+                "phone_ids": [Command.create({"number": "555-0101", "type": "mobile"})],
+            }
+        )
+        partner_model = self.env["ir.model"]._get("res.partner")
+        partner_model.website_form_access = True
+        self.env["ir.model.fields"].formbuilder_whitelist(
+            "res.partner", ["name", "phone"]
+        )
+
+        with MockRequest(self.env, website=self.env["website"].browse(1)):
+            data = WebsiteForm().extract_data(
+                partner_model.sudo(),
+                {"name": "Caller", "phone_ids": str(other.phone_ids.id)},
+            )
+
+        self.assertEqual(
+            data["record"]["phone_ids"],
+            [Command.create({"number": str(other.phone_ids.id), "type": "mobile"})],
+        )

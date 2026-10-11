@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "@odoo/hoot";
-import { queryOne } from "@odoo/hoot-dom";
-import { enableTransitions } from "@odoo/hoot-mock";
+import { queryOne, scroll } from "@odoo/hoot-dom";
+import { animationFrame, enableTransitions } from "@odoo/hoot-mock";
 import {
     setupInteractionWhiteList,
     startInteractions,
@@ -185,4 +185,25 @@ test("[scroll] Template with o_header_hide_on_scroll (mobile)", async () => {
     checkHeader(header, main, core, behaviorWithMobile[0]);
     await customScroll(wrapwrap, 20, 0);
     checkHeader(header, main, core, behaviorWithMobile[0]);
+});
+
+test("[scroll] scrolling keeps one header adaptation loop per frame", async () => {
+    const { core } = await startInteractions(
+        getTemplateWithoutHideOnScroll("o_header_standard"),
+    );
+    const wrapwrap = queryOne("#wrapwrap");
+    await setupTest(core, wrapwrap);
+    const header = core.interactions[0].interaction;
+    for (let y = 400; y < 700; y += 10) {
+        await scroll(wrapwrap, { y });
+        await animationFrame();
+    }
+    let adaptations = 0;
+    const adaptToHeaderChange = header.adaptToHeaderChange.bind(header);
+    header.adaptToHeaderChange = () => {
+        adaptations++;
+        adaptToHeaderChange();
+    };
+    await animationFrame();
+    expect(adaptations).toBe(1);
 });

@@ -85,6 +85,8 @@ class WebsiteSeoRoutes:
                 )
                 continue
             field_name = "arch_db" if model["field"] == "arch" else model["field"]
+            if not self._is_html_field(record, field_name, "read"):
+                continue
             tree = self._get_html_tree(record, field_name)
             if tree is None:
                 continue
@@ -213,14 +215,7 @@ class WebsiteSeoRoutes:
                     record=record_id,
                 )
                 continue
-            field = record._fields.get(field_name)
-            if not field or field.type not in ("html", "text") or not field.store:
-                _debug.logic(
-                    "html_update_skipped",
-                    reason="not_a_stored_html_field",
-                    model=model_name,
-                    field=field_name,
-                )
+            if not self._is_html_field(record, field_name, "write"):
                 continue
             tree = self._get_html_tree(record, field_name)
             modified = update_tree(tree, field_updates)
@@ -244,6 +239,23 @@ class WebsiteSeoRoutes:
                     updates=len(field_updates),
                 )
                 record.write({field_name: new_html_content})
+
+    def _is_html_field(self, record, field_name, operation) -> bool:
+        field = record._fields.get(field_name)
+        if (
+            not field
+            or field.type not in ("html", "text")
+            or not field.store
+            or not record._has_field_access(field, operation)
+        ):
+            _debug.logic(
+                "html_field_refused",
+                model=record._name,
+                field=field_name,
+                operation=operation,
+            )
+            return False
+        return True
 
     def _get_html_tree(self, record, field_name):
         content = record[field_name]

@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import random
 from contextlib import contextmanager
@@ -43,6 +44,14 @@ class TestVisitorState(common.TransactionCase):
             timezone="UTC",
             **values,
         )
+
+    def test_a_long_tracked_url_is_stored(self):
+        url = "/visitor-first?x=" + "".join(
+            hashlib.md5(str(n).encode()).hexdigest() for n in range(200)
+        )
+        self._track(self.pages[0], url=url)
+        self.env.flush_all()
+        self.assertEqual(self.visitor.website_track_ids.url, url)
 
     def test_statistics_follow_track_page_edits(self):
         track = self._track(self.pages[0])

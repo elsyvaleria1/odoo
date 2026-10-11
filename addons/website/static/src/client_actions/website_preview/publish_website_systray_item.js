@@ -88,7 +88,6 @@ export class PublishSystrayItem extends Component {
                             dialog: this.dialogService,
                         });
                     }
-                    this.state.processing = false;
                     return published;
                 },
                 (err) => {
@@ -96,9 +95,11 @@ export class PublishSystrayItem extends Component {
                         message: err?.message,
                     }));
                     this.state.published = !this.state.published;
-                    this.state.processing = false;
                     throw err;
                 },
-            );
+            )
+            .finally(() => {
+                this.state.processing = false;
+            });
     }
 }

@@ -7,9 +7,9 @@ from odoo.http import request
 
 def uninstall_hook(env):
     website_domain = [("website_id", "!=", False)]
-    env["ir.asset"].search(website_domain).unlink()
-    env["ir.ui.view"].search(website_domain).with_context(
-        active_test=False, _force_unlink=True
+    env["ir.asset"].with_context(active_test=False).search(website_domain).unlink()
+    env["ir.ui.view"].with_context(active_test=False, _force_unlink=True).search(
+        website_domain
     ).unlink()
 
     env["website"].search([])._remove_attachments_on_website_unlink()

@@ -2,6 +2,7 @@ from collections import Counter
 from unittest.mock import patch
 
 import odoo.tests
+from odoo.exceptions import AccessError
 
 from odoo.addons.base.models.ir_ui_view import IrUiView
 from odoo.addons.http_routing.tests.common import MockRequest
@@ -164,6 +165,44 @@ class TestConfiguratorApply(TestConfiguratorCommon):
         self.assertEqual(
             {view: count for view, count in checked.items() if count > 1}, {}
         )
+
+
+@odoo.tests.common.tagged("post_install", "-at_install")
+class TestConfiguratorOffline(TestConfiguratorCommon):
+    def _offline(self):
+        def unreachable(*args, **kwargs):
+            raise AccessError("The url that this service requested returned an error.")
+
+        return patch("odoo.addons.iap.tools.iap_tools.iap_jsonrpc", unreachable)
+
+    def test_an_unreachable_service_recommends_no_theme(self):
+        website = self.env["website"].browse(1)
+        with self._offline(), MockRequest(self.env, website=website):
+            self.assertEqual(
+                website.configurator_recommended_themes(1, "default-1"), []
+            )
+            website.configurator_missing_industry("lighthouse keeping")
+
+    def test_an_unreachable_service_still_applies_the_configuration(self):
+        website = self.env["website"].create({"name": "Offline configurator"})
+        features = self.env["website.configurator.feature"].search(
+            [("page_view_id", "!=", False)], limit=2
+        )
+        with self._offline(), MockRequest(self.env, website=website):
+            website.configurator_apply(
+                selected_features=features.ids,
+                industry_id=1,
+                industry_name="abbey",
+                selected_palette="default-1",
+                theme_name="theme_default",
+                website_purpose="get_leads",
+                website_type="business",
+            )
+        self.assertTrue(website.configurator_done)
+        homepage = website.with_context(website_id=website.id).viewref(
+            "website.homepage"
+        )
+        self.assertEqual(homepage.website_id, website)
 
 
 @odoo.tests.common.tagged("post_install", "-at_install")

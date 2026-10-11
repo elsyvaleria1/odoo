@@ -37,7 +37,7 @@ themed, translated, multi-website page instead of a bare backend response:
 | HTTP | `/robots.txt` | public | `website=True`, `multilang=False`, `sitemap=False` | `robots()` | Render `website.robots` (`text/plain`) with allowed routes + url_root. |
 | HTTP | `/sitemap.xml` | public | `website=True`, `multilang=False`, `sitemap=False` | `sitemap_xml_index()` | Generate/serve cached sitemap (12h cache = `SITEMAP_CACHE_TIME`; split at `LOC_PER_SITEMAP=45000`; emits a sitemap **index** when >1 page). `url_root` is pinned to the server-canonical root, not the `Host` header. |
 | HTTP | `/favicon.ico` | public | `website=True`, `multilang=False`, `sitemap=False`, `readonly=True` | `favicon()` | 301 redirect to the website favicon image URL (long cache). |
-| HTTP | `/website/info` | public | `website=True`, `sitemap=sitemap_website_info`, `readonly=True` | `website_info()` | Render `website.website_info` (installed apps, l10n modules, version). |
+| HTTP | `/website/info` | public | `website=True`, `sitemap=_sitemap_website_info`, `readonly=True` | `website_info()` | Render `website.website_info` (installed apps, l10n modules, version). |
 | HTTP | `/website/configurator`, `/website/configurator/<int:step>` | user | `website=True`, `multilang=False` | `website_configurator()` | Redirect designers into the backend website-configurator action (or `/` if done); 404 for non-designers. |
 | HTTP | `/website/social/<string:social>` | public | `website=True`, `sitemap=False` | `social()` | Redirect to the website's `social_<social>` external URL; 404 if unset. |
 | HTTP | `/pages`, `/pages/page/<int:page>` | public | `website=True`, `sitemap=False`, `readonly=True` | `pages_list()` | Paginated public listing of website pages (fuzzy search); `page` clamped 1–100. |
@@ -68,7 +68,6 @@ Class constant: `pager_step = 20`.
 | JSONRPC | `/website/snippet/options_filters` | user | `website=True`, `readonly=True` | `get_dynamic_snippet_filters()` | Search-read available snippet filters (editor options). Restricted-editor gated. |
 | JSONRPC | `/website/snippet/filter_templates` | public | `website=True`, `readonly=True` | `get_dynamic_snippet_templates()` | Return dynamic-filter QWeb templates + parsed `data-*` layout attributes. |
 | JSONRPC | `/website/get_current_currency` | public | `website=True`, `readonly=True` | `get_current_currency()` | Website company currency `{id, symbol, position}`. |
-| JSONRPC | `/website/country_infos/<model("res.country"):country>` | public | `methods=["POST"]`, `website=True`, `readonly=True` | `country_infos()` | Address fields, states, phone_code for a country. |
 | JSONRPC | `/website/save_session_layout_mode` | public | `website=True`, `readonly=True` | `save_session_layout_mode()` | Store grid/list layout mode for a view in session. |
 | JSONRPC | `/website/google_maps_api_key` | public | `website=True`, `readonly=True` | `google_maps_api_key()` | Website's Google Maps API key. |
 
@@ -180,8 +179,8 @@ URL-less overrides inherit their pattern from the superclass and declare 0.
 | Asset bundle (website_id context) | `WebsiteWebClient` (webclient.py) | 1 / 0 (inherited) |
 | Logout (public auth) | `WebsiteSession` (main.py) | 1 / 0 (inherited) |
 | Back-compat image routes | `WebsiteBinary` (main.py) | 1 / 7 |
-| **Total** | **8 controller classes across 8 files** | **58 handlers / 71 URL variants** |
+| **Total** | **8 controller classes across 8 files** | **57 handlers / 70 URL variants** |
 
-Of the 58 handlers, **3 are URL-less overrides** (`WebsiteWebClient.bundle`,
+Of the 57 handlers, **3 are URL-less overrides** (`WebsiteWebClient.bundle`,
 `Website.web_login`, `WebsiteSession.logout`) inheriting their URL from the
-superclass route. Type split: **25 HTTP / 33 JSONRPC** (`type="jsonrpc"`) = 58.
+superclass route. Type split: **25 HTTP / 32 JSONRPC** (`type="jsonrpc"`) = 57.

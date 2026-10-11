@@ -6,7 +6,7 @@ from random import randint
 from lxml import etree, html
 
 from odoo import api, fields, models
-from odoo.exceptions import MissingError, ValidationError
+from odoo.exceptions import AccessError, MissingError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 
@@ -194,15 +194,23 @@ class WebsiteSnippetFilter(models.Model):
             return None
         return value if value > 0 else None
 
+    def _get_max_limit(self) -> int:
+        return max(self.limit, 16)
+
     def _prepare_values(self, limit=None, search_domain=None, **options):
         self and self.check_singleton()
 
         model_name = self.filter_id.sudo().model_id or options.get("res_model")
         res_id = self._coerce_positive_int(options.get("res_id"))
-        max_limit = max(self.limit, 16)
+        max_limit = self._get_max_limit()
         limit = self._coerce_positive_int(limit)
         limit = (limit and min(limit, max_limit)) or max_limit
         single_record_filter = limit == 1 and model_name and res_id
+        if search_domain:
+            target = self._resolve_model(self.model_name or model_name)
+            if target is None:
+                return []
+            search_domain = self._visitor_search_domain(target, search_domain)
 
         if self.filter_id or single_record_filter:
             model = self._resolve_model(model_name)
@@ -233,18 +241,6 @@ class WebsiteSnippetFilter(models.Model):
             if "is_published" in model:
                 domain &= Domain("is_published", "=", True)
             if search_domain:
-                search_domain = Domain(search_domain)
-                for condition in search_domain.iter_conditions():
-                    field_expr = condition.field_expr
-                    if "." in field_expr or field_expr not in model._fields:
-                        _debug.logic(
-                            "snippet_search_domain_refused",
-                            filter=self.id,
-                            field=field_expr,
-                        )
-                        raise ValueError(
-                            f"Invalid field {field_expr!r} in search domain"
-                        )
                 domain &= search_domain
             try:
                 with _debug.perf(
@@ -279,6 +275,18 @@ class WebsiteSnippetFilter(models.Model):
         elif self.action_server_id:
             return self._prepare_values_from_action(limit, search_domain)
         return None
+
+    def _visitor_search_domain(self, model, search_domain) -> Domain:
+        try:
+            ids = model.sudo(False)._search(Domain(search_domain))
+        except (AccessError, ValueError) as error:
+            _debug.logic(
+                "snippet_search_domain_refused",
+                filter=self.id,
+                error=type(error).__name__,
+            )
+            raise ValueError(f"Invalid search domain {search_domain!r}") from error
+        return Domain("id", "in", ids)
 
     def _prepare_values_from_action(self, limit, search_domain):
         try:

@@ -65,7 +65,8 @@ export const websiteService = {
             () => {
                 if (
                     (!currentWebsiteId && !fullscreen) ||
-                    (pageDocument && isVisible(pageDocument.querySelector(".modal")))
+                    (pageDocument &&
+                        isVisible(pageDocument.querySelector(".modal.show")))
                 ) {
                     log.logic("escape: fullscreen toggle skipped", () => ({
                         currentWebsiteId,

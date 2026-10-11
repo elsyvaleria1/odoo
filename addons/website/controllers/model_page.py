@@ -80,6 +80,8 @@ class ModelPageController(Controller):
 
         rec_domain = ast.literal_eval(page.record_domain or "[]")
         domains = [rec_domain]
+        if "website_id" in Model._fields:
+            domains.append(website.website_domain())
         implements_published_mixin = "website_published" in Model._fields
         if implements_published_mixin and not request.env.user.has_group(
             "website.group_website_designer"

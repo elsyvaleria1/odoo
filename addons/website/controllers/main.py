@@ -94,12 +94,27 @@ def _create_sitemap_attachment(url, content, mimetype):
                 "type": "binary",
                 "name": url,
                 "url": url,
+                "public": True,
             }
         )
     )
 
 
+def _sitemap_website_info(env, rule, qs):
+    website = env["website"].get_current_website()
+    if not (
+        website.is_view_active("website.website_info")
+        and website.is_view_active("website.show_website_info")
+    ):
+        return
+
+    if not qs or qs.lower() in "/website/info":
+        yield {"loc": "/website/info"}
+
+
 class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
+    _SUGGESTED_LINKS_LIMIT = 50
+
     @http.route("/", auth="public", website=True, sitemap=True)
     def index(self, **kw):
         homepage_url = request.website._get_cached("homepage_url")
@@ -249,22 +264,6 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
         return redirect
 
     @http.route(
-        ['/website/country_infos/<model("res.country"):country>'],
-        type="jsonrpc",
-        auth="public",
-        methods=["POST"],
-        website=True,
-        readonly=True,
-    )
-    def country_infos(self, country, **kw):
-        fields = country.get_fields_address()
-        return {
-            "fields": fields,
-            "states": [(st.id, st.name, st.code) for st in country.state_ids],
-            "phone_code": country.phone_code,
-        }
-
-    @http.route(
         ["/robots.txt"],
         type="http",
         auth="public",
@@ -398,23 +397,12 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
         )
         return response
 
-    def sitemap_website_info(env, rule, qs):
-        website = env["website"].get_current_website()
-        if not (
-            website.is_view_active("website.website_info")
-            and website.is_view_active("website.show_website_info")
-        ):
-            return
-
-        if not qs or qs.lower() in "/website/info":
-            yield {"loc": "/website/info"}
-
     @http.route(
         "/website/info",
         type="http",
         auth="public",
         website=True,
-        sitemap=sitemap_website_info,
+        sitemap=_sitemap_website_info,
         readonly=True,
         list_as_website_content=_lt("Website Information"),
     )
@@ -463,7 +451,8 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
         sitemap=False,
     )
     def social(self, social, **kwargs):
-        url = getattr(request.website, "social_%s" % social, False)
+        field = request.website._fields.get(f"social_{social}")
+        url = field and field.type == "char" and request.website[field.name]
         if not url:
             _debug.logic("social_refused", reason="unset", network=social)
             raise werkzeug.exceptions.NotFound
@@ -479,21 +468,23 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
     )
     def get_suggested_link(self, needle, limit=10):
         current_website = request.website
-
-        limit = None if limit == "no_limit" else int(limit)
+        is_editor = request.env["website.page"].has_access("read")
+        limit = max(1, min(int(limit), self._SUGGESTED_LINKS_LIMIT))
         matching_pages = [
             {
                 "value": page["loc"],
                 "label": ("name" in page and "%s (%s)" % (page["loc"], page["name"]))
                 or page["loc"],
             }
-            for page in current_website.search_pages(needle, limit)
+            for page in current_website.search_pages(needle, limit, force=is_editor)
         ]
         matching_urls = {match["value"] for match in matching_pages}
 
         matching_last_modified = []
-        last_modified_pages = current_website._get_website_pages(
-            order="write_date desc", limit=5
+        last_modified_pages = (
+            current_website._get_website_pages(order="write_date desc", limit=5)
+            if is_editor
+            else request.env["website.page"]
         )
         for url, name in last_modified_pages.mapped(lambda p: (p.url, p.name)):
             if url not in matching_urls and (
@@ -943,11 +934,11 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
                 template = default_templ
 
         template = (template and {"template": template}) or {}
-        website_id = kwargs.get("website_id")
-        if website_id:
+        website = request.website
+        if website_id := kwargs.get("website_id"):
             website = request.env["website"].browse(int(website_id))
             website._force()
-        page = request.env["website"].new_page(
+        page = website.with_context(website_id=website.id).new_page(
             path,
             add_menu=add_menu,
             sections_arch=kwargs.get("sections_arch"),
@@ -959,7 +950,7 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
             [
                 ("url", "=", "/" + path),
                 ("page_id", "=", False),
-                ("website_id", "in", (False, request.website.id)),
+                ("website_id", "in", (False, website.id)),
             ],
             limit=1,
         )
@@ -1167,7 +1158,10 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
         "/website/google_font_metadata", type="jsonrpc", auth="user", website=True
     )
     def google_font_metadata(self):
-        Attachment = request.env["ir.attachment"]
+        if not request.env["website"].has_access("write"):
+            _debug.logic("google_fonts_refused", reason="cannot_write_website")
+            raise werkzeug.exceptions.Forbidden
+        Attachment = request.env["ir.attachment"].sudo()
         metadata = Attachment.search(
             [
                 ("name", "=", "googleFontMetadata"),
@@ -1177,25 +1171,30 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
         )
         yesterday = fields.Datetime.add(fields.Datetime.now(), days=-1)
         if not metadata or metadata.write_date < yesterday:
-            with _debug.perf("google_fonts_requested", cached=bool(metadata)) as span:
-                req = request.env["ir.egress"].request(
-                    "GET",
-                    "https://fonts.google.com/metadata/fonts",
-                    purpose="google_fonts",
-                    timeout=5,
-                )
-                span.set(status=getattr(req, "status_code", None))
-            if req.status_code != requests.codes.ok:
+            try:
+                with _debug.perf(
+                    "google_fonts_requested", cached=bool(metadata)
+                ) as span:
+                    req = request.env["ir.egress"].request(
+                        "GET",
+                        "https://fonts.google.com/metadata/fonts",
+                        purpose="google_fonts",
+                        timeout=5,
+                    )
+                    span.set(status=req.status_code)
+            except requests.RequestException:
+                req = None
+            if req is None or req.status_code != requests.codes.ok:
                 _debug.logic(
                     "google_fonts_failed",
                     status=getattr(req, "status_code", None),
+                    stale=bool(metadata),
                 )
-                return {
-                    "familyMetadataList": [],
-                }
-            json_content = req.content
+                return (
+                    json.loads(metadata.raw) if metadata else {"familyMetadataList": []}
+                )
             if metadata:
-                metadata.raw = json_content
+                metadata.raw = req.content
             else:
                 metadata = Attachment.create(
                     {
@@ -1203,7 +1202,7 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
                         "name": "googleFontMetadata",
                         "type": "binary",
                         "mimetype": "application/json",
-                        "raw": json_content,
+                        "raw": req.content,
                     }
                 )
         return json.loads(metadata.raw)
@@ -1288,7 +1287,10 @@ class WebsiteBinary(Binary):
             kw["height"] = max_height
         if id:
             identifier, _, unique = id.partition("_")
-            kw["id"] = int(identifier)
+            try:
+                kw["id"] = int(identifier)
+            except ValueError:
+                raise werkzeug.exceptions.NotFound from None
             if unique:
                 kw["unique"] = unique
         return self.content_image(**kw)

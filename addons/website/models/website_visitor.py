@@ -39,7 +39,7 @@ class WebsiteTrack(models.Model):
         readonly=True,
         ondelete="cascade",
     )
-    url = fields.Text(index=True)
+    url = fields.Text()
     visit_datetime = fields.Datetime(
         string="Visit Date",
         default=fields.Datetime.now,

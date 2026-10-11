@@ -7,7 +7,7 @@ from markupsafe import Markup
 from psycopg import IntegrityError
 from werkzeug.exceptions import BadRequest
 
-from odoo import SUPERUSER_ID, Command, http
+from odoo import SUPERUSER_ID, Command, fields, http
 from odoo.exceptions import AccessDenied, UserError, ValidationError
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
@@ -97,7 +97,12 @@ class WebsiteForm(http.Controller):
                 kwargs.get("email_to"), extra_recipients
             )
             hash_value = hmac(model_record.env, FORM_SIGNATURE_SCOPE, value)
-            if not consteq(signature, hash_value):
+            if not (
+                consteq(signature, hash_value)
+                or self._is_website_company_recipient(
+                    kwargs.get("email_to"), extra_recipients
+                )
+            ):
                 _logger.debug("Rejected website mail form before record creation")
                 _debug.logic(
                     "form_refused",
@@ -142,6 +147,14 @@ class WebsiteForm(http.Controller):
         )
         return request.prepare_json_response({"id": id_record})
 
+    def _is_website_company_recipient(self, email_to, extra_recipients) -> bool:
+        company_email = request.website.company_id.sudo().email
+        return bool(
+            company_email
+            and email_to == company_email
+            and not any(extra_recipients.values())
+        )
+
     _meta_label = _lt("Metadata")
 
     def identity(self, field_label, field_input):
@@ -160,7 +173,15 @@ class WebsiteForm(http.Controller):
         return bool(field_input)
 
     def binary(self, field_label, field_input):
+        if not hasattr(field_input, "read"):
+            raise ValueError(f"{field_label} expects a file")
         return base64.b64encode(field_input.read())
+
+    def date(self, field_label, field_input):
+        return fields.Date.to_string(fields.Date.to_date(field_input))
+
+    def datetime(self, field_label, field_input):
+        return fields.Datetime.to_string(fields.Datetime.to_datetime(field_input))
 
     def one2many(self, field_label, field_input):
         return [int(i) for i in field_input.split(",")]
@@ -180,8 +201,8 @@ class WebsiteForm(http.Controller):
         "char": identity,
         "text": identity,
         "html": html,
-        "date": identity,
-        "datetime": identity,
+        "date": date,
+        "datetime": datetime,
         "many2one": integer,
         "one2many": one2many,
         "many2many": many2many,
@@ -207,7 +228,9 @@ class WebsiteForm(http.Controller):
             )
             properties.append(field_data)
             return
-        input_filter = self._input_filters[authorized_fields[field_name]["type"]]
+        input_filter = self._input_filters.get(authorized_fields[field_name]["type"])
+        if input_filter is None:
+            raise ValueError(f"{field_name} cannot be written from a form")
         data["record"][field_name] = input_filter(self, field_name, value)
 
     def _extract_request_metadata(self):
@@ -269,6 +292,17 @@ class WebsiteForm(http.Controller):
                     field_value.field_name = field_name
                     data["attachments"].append(field_value)
 
+            elif (
+                request.env["ir.model.fields"]._formbuilder_field_name(
+                    dest_model._name, field_name
+                )
+                == "phone_ids"
+                and "phone_ids" in authorized_fields
+            ):
+                if field_value:
+                    data["record"]["phone_ids"] = [
+                        Command.create({"number": field_value, "type": "mobile"})
+                    ]
             elif field_name in authorized_fields:
                 try:
                     self._extract_authorized_field(
@@ -286,17 +320,6 @@ class WebsiteForm(http.Controller):
                 if dest_model._name == "mail.mail" and field_name == "email_from":
                     custom_fields.append((request.env._("email"), field_value))
 
-            elif (
-                request.env["ir.model.fields"]._formbuilder_field_name(
-                    dest_model._name, field_name
-                )
-                == "phone_ids"
-                and "phone_ids" in authorized_fields
-            ):
-                if field_value:
-                    data["record"]["phone_ids"] = [
-                        Command.create({"number": field_value, "type": "mobile"})
-                    ]
             elif field_name not in ("context", "website_form_signature"):
                 custom_fields.append((field_name, field_value))
 
@@ -391,7 +414,12 @@ class WebsiteForm(http.Controller):
             SUPERUSER_ID
         )._get_fields_form_writable()
         for file in files:
-            custom_field = file.field_name not in authorized_fields
+            field = record._fields.get(file.field_name)
+            custom_field = not (
+                file.field_name in authorized_fields
+                and field.type in ("many2one", "many2many", "one2many")
+                and field.comodel_name == "ir.attachment"
+            )
             attachment_value = {
                 "name": file.filename,
                 "datas": base64.encodebytes(file.read()),
@@ -402,7 +430,7 @@ class WebsiteForm(http.Controller):
             if attachment_id and not custom_field:
                 record_sudo = record.sudo()
                 value = [Command.link(attachment_id.id)]
-                if record_sudo._fields[file.field_name].type == "many2one":
+                if field.type == "many2one":
                     value = attachment_id.id
                 record_sudo[file.field_name] = value
             else:

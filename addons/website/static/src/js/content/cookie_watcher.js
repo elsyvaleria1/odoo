@@ -22,8 +22,9 @@ function watch3rdPartyScripts(thirdPartyDomainsBlockList) {
             let optionalConsent = false;
             if (cookiesBarCookie) {
                 try {
-                    optionalConsent = !!JSON.parse(decodeURIComponent(cookiesBarCookie))
-                        .optional;
+                    optionalConsent =
+                        JSON.parse(decodeURIComponent(cookiesBarCookie)).optional ===
+                        true;
                 } catch {
                     optionalConsent = false;
                 }

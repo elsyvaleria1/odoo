@@ -1,5 +1,6 @@
 from . import test_canonical_slug_redirect
 from . import test_controller_args
+from . import test_converter
 from . import test_custom_snippet
 from . import test_error
 from . import test_form

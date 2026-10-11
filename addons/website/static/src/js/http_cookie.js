@@ -32,10 +32,7 @@ patch(cookie, {
                 hasOptional: "optional" in consents,
                 optional: consents["optional"],
             }));
-            if ("optional" in consents) {
-                return consents["optional"];
-            }
-            return false;
+            return consents["optional"] === true;
         }
         return true;
     },

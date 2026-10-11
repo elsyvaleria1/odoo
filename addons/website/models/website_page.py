@@ -18,7 +18,6 @@ _debug = DebugLog(__name__)
 
 
 class PageCannotBeCached(Exception):
-
     def __init__(self, rendered_response) -> None:
         super().__init__(rendered_response)
         self.rendered_response = rendered_response
@@ -184,12 +183,15 @@ class WebsitePage(models.Model):
         return self.filtered(lambda page: page.id in kept_ids)
 
     def copy_data(self, default=None):
+        default = default or {}
         vals_list = super().copy_data(default=default)
-        if not default:
-            return vals_list
-        for page, vals in zip(self, vals_list, strict=False):
+        for page, vals in zip(self, vals_list, strict=True):
             if not default.get("view_id"):
-                new_view = page.view_id.copy({"website_id": default.get("website_id")})
+                new_view = page.view_id.copy(
+                    {"website_id": default["website_id"]}
+                    if "website_id" in default
+                    else {}
+                )
                 vals["view_id"] = new_view.id
                 vals["key"] = new_view.key
                 _debug.lifecycle(
@@ -198,8 +200,10 @@ class WebsitePage(models.Model):
                     view=page.view_id.id,
                     copy=new_view.id,
                 )
-            vals["url"] = default.get(
-                "url", self.env["website"].get_unique_path(page.url)
+            vals["url"] = (
+                default["url"]
+                if "url" in default
+                else self.env["website"].get_unique_path(page.url)
             )
         return vals_list
 
@@ -353,7 +357,7 @@ class WebsitePage(models.Model):
                 Domain.OR(
                     [
                         [("group_ids", "=", False)],
-                        [("group_ids", "in", self.env.user.group_ids.ids)],
+                        [("group_ids", "in", list(self.env.user._get_group_ids()))],
                     ]
                 )
             )
@@ -515,37 +519,31 @@ class WebsitePage(models.Model):
 
     def _get_response(self, request):
         self.check_singleton()
-        if self._is_cache_usable(request):
-            try:
-                response, cache_key = self._get_response_cached(request)
-            except PageCannotBeCached as not_cached:
-                _debug.logic(
-                    "page_response",
-                    by="uncacheable",
-                    page=self.id,
-                    rendered=bool(not_cached.rendered_response),
-                )
-                return not_cached.rendered_response
+        if not self._is_cache_usable(request):
+            _debug.logic("page_response", by="uncached", page=self.id)
+            return self._get_response_raw(request)
 
-            if time.time() < response.time + self._CACHE_DURATION:
-                resp = self._copy_cached_response(response)
-                self._post_process_response_from_cache(request, resp)
-                _debug.logic("page_response", by="cache", page=self.id)
-                return resp
-
-            _debug.logic("page_response", by="cache_expired", page=self.id)
-            response = self._get_response_raw(request)
-            if response:
-                response.flatten()
-                response.script_unsafe_eval = request.csp_unsafe_eval
+        try:
+            response = self._get_response_cached(request)
+            if time.time() >= response.time + self._CACHE_DURATION:
+                _debug.logic("page_response", by="cache_expired", page=self.id)
+                response = self._render_cacheable_response(request)
                 self._get_response_cached.__cache__.add_value(
-                    self, request, cache_value=(response, cache_key)
+                    self, request, cache_value=response
                 )
-                return self._copy_cached_response(response)
-            return response
+        except PageCannotBeCached as not_cached:
+            _debug.logic(
+                "page_response",
+                by="uncacheable",
+                page=self.id,
+                rendered=bool(not_cached.rendered_response),
+            )
+            return not_cached.rendered_response
 
-        _debug.logic("page_response", by="uncached", page=self.id)
-        return self._get_response_raw(request)
+        resp = self._copy_cached_response(response)
+        self._post_process_response_from_cache(request, resp)
+        _debug.logic("page_response", by="cache", page=self.id)
+        return resp
 
     @staticmethod
     def _copy_cached_response(response: http.Response) -> http.Response:
@@ -564,14 +562,15 @@ class WebsitePage(models.Model):
         "xml" not in tools.config["dev_mode"],
         tools.ormcache("self._get_cache_key(request)", cache="templates.cached_values"),
     )
-    def _get_response_cached(self, request) -> tuple[http.Response, int, str]:
-        cache_key = self._get_cache_key(request)
+    def _get_response_cached(self, request) -> http.Response:
+        return self._render_cacheable_response(request)
+
+    def _render_cacheable_response(self, request) -> http.Response:
         with _debug.perf(
             "page_response_cache_miss", cr=self.env.cr, page=self.id
         ) as span:
             response = self._get_response_raw(request)
             span.set(rendered=bool(response))
-        result = response, cache_key
 
         if not response:
             _debug.logic("page_not_cached", reason="no_response", page=self.id)
@@ -582,8 +581,7 @@ class WebsitePage(models.Model):
         if not self._is_cache_insertion_allowed(response.response[-1]):
             _debug.logic("page_not_cached", reason="layout_refused", page=self.id)
             raise PageCannotBeCached(response)
-
-        return result
+        return response
 
     def _get_response_raw(self, request) -> http.Response | None:
         req_page = request.httprequest.path

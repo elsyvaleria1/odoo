@@ -1,6 +1,9 @@
 import werkzeug.exceptions
 
+from odoo.exceptions import ValidationError
 from odoo.tests import common, tagged
+
+from odoo.addons.website import uninstall_hook
 
 
 @tagged("-at_install", "post_install")
@@ -146,6 +149,34 @@ class TestThemeLoadOrder(common.TransactionCase):
         )._get_combined_arch()
         self.assertTrue(arch.xpath("//div[hasclass('o_we_shape')]"))
 
+    def test_a_menu_listed_before_its_parent_keeps_the_parent(self):
+        ThemeMenu = self.env["theme.website.menu"]
+        parent = ThemeMenu.create({"name": "Theme parent", "url": "/theme-parent"})
+        child = ThemeMenu.create(
+            {"name": "Theme child", "url": "/theme-child", "parent_id": parent.id}
+        )
+        self.env["ir.model.data"].create(
+            [
+                {
+                    "module": "test_theme_order",
+                    "name": "a_menu_child",
+                    "model": "theme.website.menu",
+                    "res_id": child.id,
+                },
+                {
+                    "module": "test_theme_order",
+                    "name": "b_menu_parent",
+                    "model": "theme.website.menu",
+                    "res_id": parent.id,
+                },
+            ]
+        )
+        self.theme._theme_load(self.website)
+        child_copy = child.copy_ids.filtered(lambda m: m.website_id == self.website)
+        parent_copy = parent.copy_ids.filtered(lambda m: m.website_id == self.website)
+        self.assertTrue(parent_copy)
+        self.assertEqual(child_copy.parent_id, parent_copy)
+
     def test_theme_copy_is_loaded_with_its_theme(self):
         template = self.env.ref("test_theme_order.b_snippet")
         copy = self.env["ir.ui.view"].create(
@@ -184,3 +215,100 @@ class TestWebsiteUnlink(common.TransactionCase):
         website.unlink()
         self.assertFalse(website.exists())
         self.assertFalse((parent | child).exists())
+
+
+@tagged("post_install", "-at_install")
+class TestThemeEngineBookkeeping(common.TransactionCase):
+    def test_a_missing_theme_image_is_restored_without_duplicating_the_others(self):
+        Attachment = self.env["ir.attachment"]
+        domain = [("res_model", "=", "ir.module.module"), ("type", "=", "url")]
+        self.env["ir.module.module"].update_theme_images()
+        images = Attachment.search(domain)
+        if not images:
+            self.skipTest("no theme module with images on the addons path")
+        missing = images[0].url
+        images[0].unlink()
+
+        self.env["ir.module.module"].update_theme_images()
+
+        urls = Attachment.search(domain).mapped("url")
+        self.assertIn(missing, urls)
+        self.assertEqual(len(urls), len(set(urls)))
+
+    def test_features_created_together_are_checked_one_by_one(self):
+        Feature = self.env["website.configurator.feature"]
+        Feature.create(
+            [
+                {
+                    "name": "Page feature",
+                    "page_view_id": self.env.ref("website.homepage").id,
+                },
+                {
+                    "name": "Module feature",
+                    "module_id": self.env.ref("base.module_website").id,
+                },
+            ]
+        )
+        with self.assertRaises(ValidationError):
+            Feature.create(
+                [
+                    {
+                        "name": "Fine",
+                        "page_view_id": self.env.ref("website.homepage").id,
+                    },
+                    {"name": "Neither"},
+                ]
+            )
+
+    def test_the_uninstall_hook_removes_archived_website_records(self):
+        View = self.env["ir.ui.view"].with_context(active_test=False)
+        Asset = self.env["ir.asset"].with_context(active_test=False)
+        view = View.create(
+            {
+                "name": "Archived specific",
+                "type": "qweb",
+                "key": "website.archived_specific_probe",
+                "arch": "<div/>",
+                "website_id": 1,
+                "active": False,
+            }
+        )
+        asset = Asset.create(
+            {
+                "name": "Archived specific asset",
+                "bundle": "web.assets_frontend",
+                "path": "website/static/src/probe.scss",
+                "website_id": 1,
+                "active": False,
+            }
+        )
+
+        uninstall_hook(self.env)
+
+        self.assertFalse(view.exists())
+        self.assertFalse(asset.exists())
+
+    def test_an_archived_page_template_is_not_created_again(self):
+        View = self.env["ir.ui.view"].with_context(active_test=False)
+        website = self.env.ref("base.module_website")
+        website._create_primary_page_templates()
+        templates = View.search(
+            [
+                ("key", "like", "website.new_page_template_sections_%"),
+                ("website_id", "=", False),
+            ]
+        )
+        self.assertTrue(templates, "the premise: website declares page templates")
+        templates[0].active = False
+
+        website._create_primary_page_templates()
+
+        self.assertEqual(
+            View.search_count(
+                [
+                    ("key", "like", "website.new_page_template_sections_%"),
+                    ("website_id", "=", False),
+                ]
+            ),
+            len(templates),
+        )

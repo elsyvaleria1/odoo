@@ -193,7 +193,7 @@ export class CookiesBar extends Popup {
         const currCookie = cookie.get(this.el.id);
         let optionalAccepted;
         try {
-            optionalAccepted = !!(currCookie && JSON.parse(currCookie).optional);
+            optionalAccepted = !!currCookie && JSON.parse(currCookie).optional === true;
         } catch {
             optionalAccepted = false;
         }

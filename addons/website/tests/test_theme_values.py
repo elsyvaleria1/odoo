@@ -1,5 +1,6 @@
 import colorsys
 import re
+from unittest.mock import patch
 
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.libs.colors import parse_sass_color
@@ -84,6 +85,21 @@ class TestThemeValues(TransactionCase):
         )
         self.assertEqual(self.website.theme_values, {"headings-line-height": "1.5"})
         self.assertIsNone(self._custom_user_values())
+
+    def test_storing_the_same_runtime_values_writes_nothing(self):
+        self.website._set_theme_values({"headings-line-height": "1.5"})
+        Website = type(self.website)
+        with patch.object(
+            Website, "write", autospec=True, side_effect=Website.write
+        ) as write:
+            self.website._set_theme_values({"headings-line-height": "1.5"})
+            self.website._pop_theme_values({"not-stored"})
+        write.assert_not_called()
+
+    def test_a_website_write_leaves_its_values_alone(self):
+        vals = {"domain": "HTTPS://Example.COM/"}
+        self.website.write(vals)
+        self.assertEqual(vals, {"domain": "HTTPS://Example.COM/"})
 
     def test_other_keys_in_the_same_call_still_compile(self):
         result = self.assets.update_scss_customization(

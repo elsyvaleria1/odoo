@@ -1,10 +1,12 @@
+import hashlib
 import logging
 from unittest.mock import patch
 
 import werkzeug.exceptions
 from lxml import html
 
-from odoo.fields import Command
+from odoo.exceptions import UserError
+from odoo.fields import Command, Domain
 from odoo.http import root
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import HttpCase, common, freeze_time, tagged
@@ -1034,6 +1036,30 @@ class TestNewPage(common.TransactionCase):
             pages.key, "website.snippets", "Page's key cannot be website.snippets."
         )
 
+    def test_a_page_added_for_another_website_is_unique_on_it(self):
+        current = self.env.ref("website.default_website")
+        other = self.env["website"].create({"name": "Other new-page website"})
+        taken = (
+            self.env["website"]
+            .with_context(website_id=other.id)
+            .new_page("split-probe")
+        )
+        with MockRequest(self.env, website=current, context={"website_id": current.id}):
+            Website().pagenew(path="split-probe", add_menu=True, website_id=other.id)
+        pages = self.env["website.page"].search(
+            [("url", "=like", "/split-probe%"), ("website_id", "=", other.id)]
+        )
+        self.assertEqual(len(pages), 2)
+        self.assertEqual(len(set(pages.mapped("url"))), 2)
+        self.assertEqual(len(set(pages.mapped("key"))), 2)
+        new = pages.filtered(lambda page: page.id != taken["page_id"])
+        self.assertEqual(new.view_id.website_id, other)
+        self.assertEqual(new.menu_ids.website_id, other)
+
+    def test_a_template_must_be_a_view(self):
+        with self.assertRaises(UserError):
+            self.env["website"].new_page("not-a-view", template="base.main_company")
+
 
 @tagged("-at_install", "post_install")
 class TestErrorPageFallback(HttpCase):
@@ -1143,8 +1169,152 @@ class TestCachedPageFollowsThePublicUsersGroups(HttpCase):
 
 
 @tagged("-at_install", "post_install")
-class TestMostSpecificPagesScan(common.TransactionCase):
+class TestPageSearchFollowsImpliedGroups(common.TransactionCase):
+    def test_a_page_restricted_to_an_implied_group_is_found(self):
+        Groups = self.env["res.groups"]
+        members = Groups.create({"name": "Page members"})
+        managers = Groups.create(
+            {"name": "Page managers", "implied_ids": [Command.link(members.id)]}
+        )
+        user = self.env["res.users"].create(
+            {
+                "name": "Manager",
+                "login": "page_search_manager",
+                "group_ids": [
+                    Command.link(self.env.ref("base.group_user").id),
+                    Command.link(managers.id),
+                ],
+            }
+        )
+        website = self.env["website"].browse(1)
+        page = self.env["website.page"].create(
+            {
+                "name": "Members only",
+                "url": "/members-only-search-probe",
+                "type": "qweb",
+                "arch": "<div>members</div>",
+                "is_published": True,
+                "website_id": website.id,
+                "group_ids": [Command.link(members.id)],
+            }
+        )
+        Page = self.env["website.page"].with_user(user)
+        with MockRequest(Page.env, website=website):
+            detail = Page._search_get_detail(
+                website, "name asc", {"displayDescription": False}
+            )
+        found = Page.sudo().search(Domain.AND(detail["base_domain"]))
+        self.assertIn(page, found)
 
+    def test_is_public_user_answers_without_a_request(self):
+        website = self.env["website"].browse(1)
+        self.assertTrue(website.with_user(website.user_id).is_public_user())
+        self.assertFalse(
+            website.with_user(self.env.ref("base.user_admin")).is_public_user()
+        )
+
+
+@tagged("-at_install", "post_install")
+class TestPageCopy(common.TransactionCase):
+    def test_a_copy_without_defaults_gets_its_own_url_view_and_key(self):
+        website = self.env["website"].browse(1)
+        page = self.env["website.page"].create(
+            {
+                "name": "Copy probe",
+                "url": "/copy-probe",
+                "type": "qweb",
+                "arch": "<div>copy</div>",
+                "key": "website.copy_probe",
+                "website_id": website.id,
+            }
+        )
+        copy = page.copy()
+        self.assertNotEqual(copy.url, page.url)
+        self.assertNotEqual(copy.view_id, page.view_id)
+        self.assertNotEqual(copy.key, page.key)
+        self.assertEqual(copy.website_id, website)
+
+
+@tagged("-at_install", "post_install")
+class TestExpiredCachedPage(HttpCase):
+    def setUp(self):
+        super().setUp()
+        self.page = self.env["website.page"].create(
+            {
+                "name": "Expiry probe",
+                "url": "/test-expiry-probe",
+                "is_published": True,
+                "track": True,
+                "type": "qweb",
+                "key": "website.test_expiry_probe",
+                "arch": '<t t-name="website.test_expiry_probe">'
+                '<t t-call="website.layout">EXPIRYBODY</t></t>',
+            }
+        )
+        self.addCleanup(self.page.unlink)
+        self.env.flush_all()
+        self.env.registry.clear_cache()
+        self.WebsitePage = type(self.env["website.page"])
+
+    def test_a_refill_the_layout_refuses_is_served_but_not_stored(self):
+        render_raw = self.WebsitePage._get_response_raw
+        marker = []
+
+        def render(page, request):
+            response = render_raw(page, request)
+            if marker:
+                response.flatten()
+                response.response = [
+                    response.response[0].replace("EXPIRYBODY", marker[0])
+                ]
+            return response
+
+        with (
+            patch.object(self.WebsitePage, "_get_response_raw", render),
+            patch.object(
+                self.WebsitePage,
+                "_is_cache_insertion_allowed",
+                lambda page, layout: "PRIVATEBODY" not in layout,
+            ),
+        ):
+            self.assertIn("EXPIRYBODY", self.url_open(self.page.url).text)
+            marker.append("PRIVATEBODY")
+            with patch.object(self.WebsitePage, "_CACHE_DURATION", -1):
+                refused = self.url_open(self.page.url).text
+            marker.clear()
+            after = self.url_open(self.page.url).text
+
+        self.assertIn("PRIVATEBODY", refused)
+        self.assertNotIn("PRIVATEBODY", after)
+        self.assertIn("EXPIRYBODY", after)
+
+    def test_a_page_requested_with_a_long_url_is_served_and_tracked(self):
+        # incompressible: postgres compresses a long index entry before sizing it
+        query = "".join(
+            hashlib.sha256(str(index).encode()).hexdigest() for index in range(150)
+        )
+        response = self.url_open(f"{self.page.url}?x={query}")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            self.env["website.track"].search_count(
+                [("page_id", "=", self.page.id), ("url", "like", query)]
+            )
+        )
+
+    def test_a_refilled_page_is_tracked(self):
+        Track = self.env["website.track"]
+        self.url_open(self.page.url)
+        before = Track.search_count([("page_id", "=", self.page.id)])
+        self.opener.cookies.clear()
+        with patch.object(self.WebsitePage, "_CACHE_DURATION", -1):
+            self.assertEqual(self.url_open(self.page.url).status_code, 200)
+        self.assertEqual(
+            Track.search_count([("page_id", "=", self.page.id)]), before + 1
+        )
+
+
+@tagged("-at_install", "post_install")
+class TestMostSpecificPagesScan(common.TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1275,7 +1445,6 @@ class TestMostSpecificPagesScan(common.TransactionCase):
 
 @tagged("-at_install", "post_install")
 class TestShadowedPageIsReachable(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1325,7 +1494,6 @@ class TestShadowedPageIsReachable(common.TransactionCase):
 
 @tagged("-at_install", "post_install")
 class TestSearchFetchScalesWithMatches(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1408,7 +1576,6 @@ class TestSearchFetchScalesWithMatches(common.TransactionCase):
 
 @tagged("-at_install", "post_install")
 class TestPageRenameRedirects(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1538,3 +1705,41 @@ class TestPageUrlWrite(common.TransactionCase):
     def test_writing_a_new_url_slugifies_it(self):
         self.page.write({"url": "/url_write_moved"})
         self.assertEqual(self.page.url, "/url-write-moved")
+
+
+@tagged("-at_install", "post_install")
+class TestModelPageWebsiteScope(HttpCase):
+    def test_a_designer_lists_only_this_websites_records(self):
+        website = self.env["website"].browse(1)
+        other = self.env["website"].create({"name": "Model page other website"})
+        view = self.env["ir.ui.view"].create(
+            {
+                "name": "Model page scope probe",
+                "type": "qweb",
+                "key": "website.model_page_scope_probe",
+                "arch": '<t t-name="website.model_page_scope_probe">'
+                '<t t-call="website.layout">'
+                '<t t-foreach="records" t-as="record"><span t-out="record.name"/></t>'
+                "</t></t>",
+                "website_id": website.id,
+            }
+        )
+        page = self.env["website.controller.page"].create(
+            {
+                "name": "Scope probe partners",
+                "view_id": view.id,
+                "model_id": self.env["ir.model"]._get_id("res.partner"),
+                "record_domain": "[('name', 'like', 'MPSCOPE')]",
+                "website_published": True,
+            }
+        )
+        Partner = self.env["res.partner"]
+        Partner.create({"name": "MPSCOPE_GENERIC"})
+        Partner.create({"name": "MPSCOPE_HERE", "website_id": website.id})
+        Partner.create({"name": "MPSCOPE_ELSEWHERE", "website_id": other.id})
+
+        self.authenticate("admin", "admin")
+        body = self.url_open(f"/model/{page.name_slugified}").text
+        self.assertIn("MPSCOPE_GENERIC", body)
+        self.assertIn("MPSCOPE_HERE", body)
+        self.assertNotIn("MPSCOPE_ELSEWHERE", body)

@@ -313,14 +313,16 @@ async function autoHideMenu(el, options) {
             if (image.complete || !image.getClientRects().length) {
                 return null;
             }
-            return new Promise(function (resolve, reject) {
+            return new Promise((resolve) => {
                 if (!image.width) {
                     image.classList.add("o_menu_image_placeholder");
                 }
-                image.addEventListener("load", () => {
+                const settle = () => {
                     image.classList.remove("o_menu_image_placeholder");
                     resolve();
-                });
+                };
+                image.addEventListener("load", settle, { once: true });
+                image.addEventListener("error", settle, { once: true });
             });
         });
         return Promise.all(defs);
@@ -375,14 +377,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const excludedImagesSelector =
             ".o_mega_menu, .o_offcanvas_logo_container, .o_lang_flag";
         const excludedImages = [...header.querySelectorAll(excludedImagesSelector)];
-        const images = [...header.querySelectorAll("img")].filter((img) => {
-            excludedImages.forEach((node) => {
-                if (node.contains(img)) {
-                    return false;
-                }
-            });
-            return img.matches && !img.matches(excludedImagesSelector);
-        });
+        const images = [...header.querySelectorAll("img")].filter(
+            (img) => !excludedImages.some((node) => node.contains(img)),
+        );
         autoHideMenu(topMenu, {
             unfoldable: unfoldable,
             images: images,

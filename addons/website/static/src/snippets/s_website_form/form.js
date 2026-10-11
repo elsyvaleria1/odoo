@@ -35,6 +35,13 @@ function fromUnixSeconds(seconds) {
 
 const log = makeLogger("website.form");
 
+function insertFilesZone(inputEl) {
+    const filesZoneEl = document.createElement("DIV");
+    filesZoneEl.classList.add("o_files_zone", "row", "gx-1");
+    inputEl.parentNode.insertBefore(filesZoneEl, inputEl);
+    return filesZoneEl;
+}
+
 export class Form extends Interaction {
     static selector = ".s_website_form form, form.s_website_form";
     dynamicSelectors = {
@@ -196,11 +203,7 @@ export class Form extends Interaction {
                 }
             });
         }
-        this.el.querySelectorAll("input[type=file]").forEach((inputEl) => {
-            const filesZoneEl = document.createElement("DIV");
-            filesZoneEl.classList.add("o_files_zone", "row", "gx-1");
-            inputEl.parentNode.insertBefore(filesZoneEl, inputEl);
-        });
+        this.el.querySelectorAll("input[type=file]").forEach(insertFilesZone);
         log.lifecycle("start", () => ({
             datepickers: this.disableDateTimePickers.length,
             fileInputs: this.el.querySelectorAll("input[type=file]").length,
@@ -1012,7 +1015,8 @@ export class Form extends Interaction {
         const uploadedFiles = fileInputEl.files;
         const addFilesButtonEl = fieldEl.querySelector(".o_add_files_button");
 
-        const filesZoneEl = fieldEl.querySelector(".o_files_zone");
+        const filesZoneEl =
+            fieldEl.querySelector(".o_files_zone") || insertFilesZone(fileInputEl);
         if (!addFilesButtonEl) {
             this.createAddFilesButton(fileInputEl);
         }

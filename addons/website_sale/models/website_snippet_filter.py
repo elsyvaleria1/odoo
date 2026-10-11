@@ -1,5 +1,4 @@
 from collections import Counter
-from functools import partial
 
 from odoo import api, fields, models
 from odoo.fields import Domain
@@ -26,24 +25,21 @@ class WebsiteSnippetFilter(models.Model):
         if search_domain and "hide_variants" in search_domain:
             hide_variants = True
             search_domain.remove("hide_variants")
-        update_limit_cache = False
         product_limit = limit or self.limit
         if hide_variants and self.filter_id.model_id == "product.product":
-            update_limit_cache = partial(
-                self.env.cache.set,
-                record=self,
-                field=self._fields["limit"],
-            )
             limit = product_limit**2
-            stored_limit = self.limit
-            update_limit_cache(value=limit)
-        res = super(
+        return super(
             WebsiteSnippetFilter,
             self.with_context(hide_variants=hide_variants, product_limit=product_limit),
         )._prepare_values(limit=limit, search_domain=search_domain, **kwargs)
-        if update_limit_cache:
-            update_limit_cache(value=stored_limit)
-        return res
+
+    def _get_max_limit(self) -> int:
+        if (
+            self.env.context.get("hide_variants")
+            and self.filter_id.model_id == "product.product"
+        ):
+            return self.env.context["product_limit"] ** 2
+        return super()._get_max_limit()
 
     @api.model
     def _get_website_currency(self):

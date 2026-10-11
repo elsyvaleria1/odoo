@@ -169,7 +169,11 @@ class Website(models.Model):
                         key=key,
                     )
                 )
-        self.theme_values = stored
+        self._write_theme_values(stored)
+
+    def _write_theme_values(self, stored) -> None:
+        if stored != (self.theme_values or {}):
+            self.theme_values = stored
 
     def _theme_palette_fits_runtime(self, values):
         self.check_singleton()
@@ -344,7 +348,7 @@ class Website(models.Model):
         self.check_singleton()
         stored = dict(self.theme_values or {})
         popped = {key: stored.pop(key) for key in list(stored) if key in keys}
-        self.theme_values = stored
+        self._write_theme_values(stored)
         return popped
 
     def _get_scss_customization(self, url):

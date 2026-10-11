@@ -327,14 +327,18 @@ class Website(models.Model):
             for t in client_themes
             if get_manifest(t)
         }
-        themes_suggested = self._website_api_rpc(
-            "/api/website/2/configurator/recommended_themes/%s"
-            % (industry_id if industry_id > 0 else ""),
-            {
-                "client_themes": client_themes_img,
-                "result_nbr_max": result_nbr_max,
-            },
-        )
+        try:
+            themes_suggested = self._website_api_rpc(
+                "/api/website/2/configurator/recommended_themes/%s"
+                % (industry_id if industry_id > 0 else ""),
+                {
+                    "client_themes": client_themes_img,
+                    "result_nbr_max": result_nbr_max,
+                },
+            )
+        except AccessError:
+            _debug.logic("recommended_themes_unavailable", industry=industry_id)
+            return []
         process_svg = self.env["website.configurator.feature"]._process_svg
         for theme in themes_suggested:
             theme["svg"] = process_svg(theme["name"], palette, theme.pop("image_urls"))
@@ -356,13 +360,16 @@ class Website(models.Model):
 
     @api.model
     def configurator_missing_industry(self, unknown_industry) -> None:
-        self._website_api_rpc(
-            "/api/website/unknown_industry",
-            {
-                "unknown_industry": unknown_industry,
-                "lang": self.env.context.get("lang"),
-            },
-        )
+        try:
+            self._website_api_rpc(
+                "/api/website/unknown_industry",
+                {
+                    "unknown_industry": unknown_industry,
+                    "lang": self.env.context.get("lang"),
+                },
+            )
+        except AccessError:
+            _debug.logic("missing_industry_unreported")
 
     def _configurator_write_footer_links(self, website) -> None:
         footer_links = website.configurator_get_footer_links()
@@ -679,11 +686,15 @@ class Website(models.Model):
         self._configurator_write_footer_links(website)
 
         industry_id = kwargs["industry_id"]
-        custom_resources = self._website_api_rpc(
-            "/api/website/2/configurator/custom_resources/%s"
-            % (industry_id if industry_id > 0 else ""),
-            {"theme": theme_name},
-        )
+        try:
+            custom_resources = self._website_api_rpc(
+                "/api/website/2/configurator/custom_resources/%s"
+                % (industry_id if industry_id > 0 else ""),
+                {"theme": theme_name},
+            )
+        except AccessError:
+            _debug.logic("custom_resources_unavailable", industry=industry_id)
+            custom_resources = {}
 
         requested_pages = set(pages_views.keys()).union({"homepage"})
         configurator_snippets = website.get_theme_configurator_snippets(theme_name)
@@ -754,8 +765,8 @@ class Website(models.Model):
                         generated_content[key] = name_replace_parser.sub(
                             lambda _m: website.name, response[key]
                         )
-            except AccessError:
-                pass
+            except AccessError, iap_tools.InsufficientCreditError:
+                _debug.logic("configurator_ai_text_unavailable")
         else:
             logger.info(
                 "Skip AI text generation because translation coverage is too low (%s%%)",

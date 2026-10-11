@@ -1,9 +1,14 @@
+import base64
 from unittest.mock import Mock, patch
 from urllib.parse import urlencode
+
+import requests
+from werkzeug.exceptions import Forbidden
 
 from odoo import tests
 from odoo.libs.guarded_http import GuardedSession
 from odoo.libs.json import loads as json_loads
+from odoo.tests import new_test_user
 from odoo.tools.misc import mute_logger, submap
 
 from odoo.addons.http_routing.tests.common import MockRequest
@@ -12,6 +17,53 @@ from odoo.addons.website.controllers.main import Website
 
 @tests.tagged("post_install", "-at_install")
 class TestControllers(tests.HttpCase):
+    def test_link_suggestions_show_unpublished_pages_only_to_their_readers(self):
+        self.env["website.page"].create(
+            {
+                "name": "Hidden suggestion",
+                "url": "/hidden-suggestion",
+                "type": "qweb",
+                "arch": "<div>hidden</div>",
+                "is_published": False,
+                "website_id": 1,
+            }
+        )
+        new_test_user(self.env, login="suggest_portal", groups="base.group_portal")
+
+        def suggested(login):
+            self.authenticate(login, login)
+            response = self.url_open(
+                "/website/get_suggested_links",
+                json={"params": {"needle": "hidden-sugg", "limit": 1000}},
+            )
+            return {
+                page["value"] for page in response.json()["result"]["matching_pages"]
+            }
+
+        self.assertIn("/hidden-suggestion", suggested("admin"))
+        self.assertNotIn("/hidden-suggestion", suggested("suggest_portal"))
+
+    def test_an_image_id_that_is_not_a_number_is_not_found(self):
+        response = self.url_open("/website/image/res.partner/abc/avatar_128")
+        self.assertEqual(response.status_code, 404)
+
+    def test_social_redirects_only_to_a_network_account(self):
+        website = self.env["website"].browse(1)
+        website.write(
+            {
+                "social_github": "https://github.com/odoo",
+                "social_default_image": base64.b64encode(b"GIF89a"),
+            }
+        )
+        response = self.url_open("/website/social/github", allow_redirects=False)
+        self.assertEqual(response.headers["Location"], "https://github.com/odoo")
+        for name in ("default_image", "media_config_id", "nope"):
+            with self.subTest(name=name):
+                response = self.url_open(
+                    f"/website/social/{name}", allow_redirects=False
+                )
+                self.assertEqual(response.status_code, 404)
+
     @mute_logger("odoo.addons.http_routing.models.ir_http", "odoo.http")
     def test_last_created_pages_autocompletion(self):
         self.authenticate("admin", "admin")
@@ -274,10 +326,86 @@ class TestControllers(tests.HttpCase):
                 "XPath should filter out dynamic images, include only static",
             )
 
+    def test_get_alt_images_reads_only_stored_html_fields(self):
+        partner = self.env["res.partner"].create({"name": '<img src="/x.png"/>'})
+        models = [
+            {"model": "res.partner", "id": partner.id, "field": field}
+            for field in ("name", "no_such_field")
+        ]
+        with MockRequest(self.env, website=self.env.ref("website.default_website")):
+            self.assertEqual(json_loads(Website().get_alt_images(models)), [])
+
+
+@tests.tagged("post_install", "-at_install")
+class TestGoogleFontMetadata(tests.TransactionCase):
+    def setUp(self):
+        super().setUp()
+        self.designer = self.env["res.users"].create(
+            {
+                "name": "Font designer",
+                "login": "font_designer",
+                "group_ids": [
+                    (4, self.env.ref("base.group_user").id),
+                    (4, self.env.ref("website.group_website_designer").id),
+                ],
+            }
+        )
+        self.env["ir.attachment"].search([("name", "=", "googleFontMetadata")]).unlink()
+        self.cached = self.env["ir.attachment"].create(
+            {
+                "public": True,
+                "name": "googleFontMetadata",
+                "type": "binary",
+                "mimetype": "application/json",
+                "raw": b'{"familyMetadataList": [{"family": "Stale"}]}',
+            }
+        )
+        self.env.cr.execute(
+            "UPDATE ir_attachment SET write_date = now() - interval '2 days' "
+            "WHERE id = %s",
+            [self.cached.id],
+        )
+        self.cached.invalidate_recordset()
+
+    def _fetch(self, user, response=None, error=None):
+        def egress(*args, **kwargs):
+            if error:
+                raise error
+            return response
+
+        env = self.env(user=user)
+        with (
+            patch.object(type(self.env["ir.egress"]), "request", egress),
+            MockRequest(env, website=env["website"].browse(1)),
+        ):
+            return Website().google_font_metadata()
+
+    def test_another_editor_refreshes_the_shared_cache(self):
+        fresh = Mock(
+            status_code=200, content=b'{"familyMetadataList": [{"family": "Fresh"}]}'
+        )
+        result = self._fetch(self.designer, response=fresh)
+        self.assertEqual(result["familyMetadataList"][0]["family"], "Fresh")
+        self.assertIn(b"Fresh", self.cached.raw)
+
+    def test_an_unreachable_service_serves_the_stale_list(self):
+        result = self._fetch(self.designer, error=requests.ConnectionError())
+        self.assertEqual(result["familyMetadataList"][0]["family"], "Stale")
+
+    def test_a_portal_user_is_refused(self):
+        portal = self.env["res.users"].create(
+            {
+                "name": "Font portal",
+                "login": "font_portal",
+                "group_ids": [(4, self.env.ref("base.group_portal").id)],
+            }
+        )
+        with self.assertRaises(Forbidden):
+            self._fetch(portal)
+
 
 @tests.tagged("post_install", "-at_install")
 class TestAutocompleteInputBounds(tests.HttpCase):
-
     def setUp(self):
         super().setUp()
         self.url = (

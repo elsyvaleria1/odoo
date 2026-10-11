@@ -25,14 +25,6 @@ class ResCompany(models.Model):
                 :1
             ]
 
-    @api.model
-    def action_view_website_theme_selector(self):
-        action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
-            "website.theme_install_kanban_action"
-        )
-        action["target"] = "new"
-        return action
-
     @api.constrains("active")
     def _check_active(self) -> None:
         super()._check_active()
@@ -52,11 +44,3 @@ class ResCompany(models.Model):
                         website_name=company.website_id.name,
                     )
                 )
-
-    def google_map_img(self, zoom=8, width=298, height=298):
-        partner = self.sudo().partner_id
-        return (partner and partner.google_map_img(zoom, width, height)) or None
-
-    def google_map_link(self, zoom=8):
-        partner = self.sudo().partner_id
-        return (partner and partner.google_map_link(zoom)) or None

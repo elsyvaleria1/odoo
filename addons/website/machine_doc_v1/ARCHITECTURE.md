@@ -226,4 +226,4 @@ recolor the whole UI:
 | JavaScript (tests) | 227 (incl. 87 tours) |
 | SCSS | 153 |
 | Snippet template dirs (`s_*`) | 66 |
-| Route handlers / URL variants | 58 / 71 |
+| Route handlers / URL variants | 57 / 70 |

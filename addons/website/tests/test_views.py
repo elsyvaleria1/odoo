@@ -2414,7 +2414,6 @@ class TestFirstPageIdBatchCost(common.TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSpecificViewResolution(common.TransactionCase):
-
     def setUp(self):
         super().setUp()
         View = self.env["ir.ui.view"]
@@ -2608,3 +2607,28 @@ class TestSnippetOverlaysMatchTheXmlCombine(common.TransactionCase):
                         <xpath expr="//div[hasclass('row')]" position="move"/></xpath>""",
                 }
             )
+
+
+@tagged("-at_install", "post_install")
+class TestViewHierarchy(common.TransactionCase):
+    def test_sibling_views_carry_what_the_hierarchy_dialog_shows(self):
+        View = self.env["ir.ui.view"]
+        generic = View.create(
+            {
+                "name": "Hierarchy probe",
+                "type": "qweb",
+                "key": "website.hierarchy_probe",
+                "arch": "<div>generic</div>",
+            }
+        )
+        specific = generic.with_context(website_id=1).copy(
+            {"key": generic.key, "website_id": 1}
+        )
+        hierarchy = generic.get_view_hierarchy()
+        self.assertEqual(
+            [view["id"] for view in hierarchy["sibling_views"]], [specific.id]
+        )
+        self.assertEqual(
+            set(hierarchy["sibling_views"][0]),
+            {"id", "display_name", "key", "website_id"},
+        )

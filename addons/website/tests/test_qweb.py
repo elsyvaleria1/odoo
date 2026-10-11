@@ -657,3 +657,23 @@ class TestQwebHtmlFormSignatureSingleParse(TransactionCase):
             rendered = str(self.env["ir.qweb.field.html"].value_to_html(value, {}))
         self.assertIn("website_form_signature", rendered)
         self.assertEqual(len(parses), 1, "the html field was parsed more than once")
+
+
+@tagged("-at_install", "post_install")
+class TestBlockedThirdPartyHosts(TransactionCase):
+    def test_a_host_is_blocked_by_its_domain_or_a_parent_domain(self):
+        website = self.env["website"].browse(1)
+        website.custom_blocked_third_party_domains = "www.tracker.example"
+        cases = {
+            "youtube.com": True,
+            "www.youtube.com": True,
+            "m.www.youtube.com": True,
+            "tracker.example": True,
+            "cdn.tracker.example": True,
+            "notyoutube.com": False,
+            "youtube.com.evil.example": False,
+            "example": False,
+        }
+        for host, blocked in cases.items():
+            with self.subTest(host=host):
+                self.assertEqual(website._is_blocked_third_party_host(host), blocked)

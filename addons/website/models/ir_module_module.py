@@ -184,8 +184,8 @@ class IrModuleModule(models.Model):
                             record=find.id,
                             website=website.id,
                         )
-                        find.update(rec_data)
-                        self._post_copy(rec, find)
+                        find.write(rec_data)
+                        self._copy_theme_translations(rec, find)
                 else:
                     new_rec = self.env[model_name].create(rec_data)
                     _debug.lifecycle(
@@ -195,7 +195,7 @@ class IrModuleModule(models.Model):
                         record=new_rec.id,
                         website=website.id,
                     )
-                    self._post_copy(rec, new_rec)
+                    self._copy_theme_translations(rec, new_rec)
 
             remaining = queued
 
@@ -212,9 +212,11 @@ class IrModuleModule(models.Model):
 
         self._theme_cleanup(model_name, website)
 
-    def _post_copy(self, old_rec, new_rec):
+    def _copy_theme_translations(self, old_rec, new_rec) -> None:
         self.check_singleton()
         translated_fields = self._theme_translated_fields.get(old_rec._name, [])
+        if not translated_fields:
+            return
         cur_lang = self.env.lang or "en_US"
         valid_langs = {code for code, _ in self.env["res.lang"].get_installed()} | {
             "en_US"
@@ -466,26 +468,31 @@ class IrModuleModule(models.Model):
             )
         )
 
+        vals_list = []
         for theme in themes:
             terp = self.get_module_info(theme.name)
             images = terp["images"] if terp else []
-            image_paths = ["/%s/%s" % (theme.name, image) for image in images]
-            if all(image_path in existing_urls for image_path in image_paths):
+            image_paths = [
+                path
+                for path in ("/%s/%s" % (theme.name, image) for image in images)
+                if path not in existing_urls
+            ]
+            if not image_paths:
                 continue
             _debug.lifecycle(
                 "theme_images_registered", theme=theme.name, images=len(image_paths)
             )
-            for image_path in image_paths:
-                image_name = image_path.split("/")[-1]
-                IrAttachment.create(
-                    {
-                        "type": "url",
-                        "name": image_name,
-                        "url": image_path,
-                        "res_model": self._name,
-                        "res_id": theme.id,
-                    }
-                )
+            vals_list.extend(
+                {
+                    "type": "url",
+                    "name": image_path.split("/")[-1],
+                    "url": image_path,
+                    "res_model": self._name,
+                    "res_id": theme.id,
+                }
+                for image_path in image_paths
+            )
+        IrAttachment.create(vals_list)
 
     def get_domain_themes(self) -> list:
         def get_id(model_id):
@@ -867,26 +874,25 @@ class IrModuleModule(models.Model):
                     }
                 )
         keys = [values["key"] for values in create_values]
-        existing_primary_templates = View.search_read(
-            [("mode", "=", "primary"), ("key", "in", keys)], ["key"]
-        )
-        existing_primary_template_keys = {
-            data["key"]: data["id"] for data in existing_primary_templates
+        existing_by_key = {
+            view.key: view
+            for view in View.with_context(active_test=False).search(
+                [
+                    ("mode", "=", "primary"),
+                    ("key", "in", keys),
+                    ("website_id", "=", False),
+                ]
+            )
         }
         missing_create_values = []
         update_count = 0
         for create_value in create_values:
-            if create_value["key"] in existing_primary_template_keys:
-                View.browse(
-                    existing_primary_template_keys[create_value["key"]]
-                ).with_context(no_cow=True).write(
-                    {
-                        "arch": create_value["arch"],
-                    }
-                )
-                update_count += 1
-            else:
+            existing = existing_by_key.get(create_value["key"])
+            if existing is None:
                 missing_create_values.append(create_value)
+            elif existing.arch_db != create_value["arch"]:
+                existing.with_context(no_cow=True).write({"arch": create_value["arch"]})
+                update_count += 1
         _debug.pipeline(
             "primary_page_templates",
             module=self.name,

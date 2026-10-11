@@ -193,11 +193,11 @@ are the editor RPCs. `save(value, xpath)` diverts writes to the specific view.
 | `ir_actions_server.py` | `ir.actions.server` | Publish code actions at `/website/action/<path>` (`website_path`, `website_published`, `website_url`); action may return a `response`. |
 | `ir_asset.py` | `ir.asset` | Multi-website assets with COW (`key`, `website_id`); `_get_asset_bundle_url` namespaces the URL by website id; cross-website byte-reuse deliberately disabled. |
 | `ir_attachment.py` | `ir.attachment` | `key`, `website_id`; `create` stamps current website unless `not_force_website_id` ctx; website-scoped `_get_serve_attachment`. |
-| `ir_binary.py` | `ir.binary` | `_find_record` resolves theme attachments by `key` + website_id before super. |
+| `ir_binary.py` | `ir.binary` | `_get_record` resolves theme attachments by `key` + website_id before super. |
 | `ir_model.py` | `base` | `get_base_url()` (own website domain → company website domain → ICP), `get_website_meta()`, `_get_base_lang()`. |
 | `models.py` | `base` | `_can_return_content()` allows serving a field's content when the record is `website_published`. |
 | `ir_model_data.py` | `ir.model.data` | `_process_end_unlink_record` cascade-unlinks theme `copy_ids` on theme uninstall. |
-| `ir_qweb_fields.py` | `ir.qweb.field.contact` + `ir.qweb.field.html` | Extra contact render options; injects the form signature into `<form>` in rendered HTML. |
+| `ir_qweb_fields.py` | `ir.qweb.field.html` | Injects the form signature into `<form>` in rendered HTML. |
 | `ir_access.py` | `ir.access` | Injects `website` into eval context (frontend only) + `website_id` into the domain cache key. |
 | `ir_ui_menu.py` | `ir.ui.menu` | `load_menus_root` — with `force_action` ctx, forces backend actions from web_menus. |
 | `ir_module_module.py` | `ir.module.module` | **The theme install/upgrade/remove engine** (see below). |
@@ -316,7 +316,7 @@ Quick lookup — file → model → role.
 | ir_model.py | `base` | EXT | `get_base_url`/`get_website_meta`/`_get_base_lang` |
 | models.py | `base` | EXT | `_can_return_content` for published records |
 | ir_model_data.py | `ir.model.data` | EXT | Cascade-unlink theme copies on uninstall |
-| ir_qweb_fields.py | `ir.qweb.field.contact` + `.html` | EXT×2 | Contact options; form signature in HTML |
+| ir_qweb_fields.py | `ir.qweb.field.html` | EXT | Form signature in HTML |
 | ir_access.py | `ir.access` | EXT | website in eval context + cache key |
 | ir_ui_menu.py | `ir.ui.menu` | EXT | force_action backend menu loading |
 | ir_module_module.py | `ir.module.module` | EXT | Theme install/upgrade/remove engine |

@@ -203,21 +203,17 @@ class IrQweb(models.AbstractModel):
                 )
             )
         ):
-            cookies_watchlist = {
-                "domains": website._get_blocked_third_party_domains_list(),
-                "classes": website._get_blocked_iframe_containers_classes(),
-            }
             remove_src = False
             if tagName in ("iframe", "script"):
                 src_host = urlsplit((atts.get("src") or "").lower()).hostname
-                if src_host:
-                    remove_src = any(
-                        src_host == domain.removeprefix("www.")
-                        or src_host.endswith("." + domain.removeprefix("www."))
-                        for domain in cookies_watchlist["domains"]
-                    )
-            if remove_src or cookies_watchlist["classes"].intersection(
-                (atts.get("class") or "").split(" ")
+                remove_src = bool(src_host) and website._is_blocked_third_party_host(
+                    src_host
+                )
+            if (
+                remove_src
+                or website._get_blocked_iframe_containers_classes().intersection(
+                    (atts.get("class") or "").split(" ")
+                )
             ):
                 _debug.logic(
                     "third_party_blocked",

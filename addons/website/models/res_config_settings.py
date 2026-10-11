@@ -61,11 +61,6 @@ class ResConfigSettings(models.TransientModel):
         related="website_id.auto_redirect_lang",
         readonly=False,
     )
-    website_default_lang_code = fields.Char(
-        related="website_id.default_lang_id.code",
-        string="Default language code",
-        readonly=False,
-    )
     shared_user_account = fields.Boolean(
         string="Shared Customer Accounts",
         compute="_compute_shared_user_account",

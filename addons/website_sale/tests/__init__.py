@@ -51,3 +51,5 @@ from . import test_quick_add_visibility
 from . import test_website_sale_cart_forms
 from . import test_website_sale_cart_bus
 from . import test_quick_reorder_form
+from . import test_website_sale_snippet_filter_domain
+from . import test_website_sale_page_cache

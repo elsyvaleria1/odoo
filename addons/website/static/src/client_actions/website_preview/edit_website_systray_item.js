@@ -58,11 +58,11 @@ export class EditWebsiteSystrayItem extends Component {
         if (this.websiteService.isRestrictedEditor && !this.websiteService.isDesigner) {
             const pageModelAndId =
                 this.websiteService.currentWebsite.metadata.mainObject;
-            const recordsOnPage = {
-                [pageModelAndId.model]: pageModelAndId.id,
-            };
+            const recordsOnPage = pageModelAndId
+                ? { [pageModelAndId.model]: pageModelAndId.id }
+                : {};
             const endScan = log.perf("attemptStartTranslate scan records");
-            const otherRecordEls = this.props.iframeEl.querySelectorAll(
+            const otherRecordEls = this.props.iframeEl.contentDocument.querySelectorAll(
                 "[data-res-model][data-res-id]:not([data-res-model='ir.ui.view']), [data-oe-model][data-oe-id]:not([data-oe-model='ir.ui.view'])",
             );
             for (const el of otherRecordEls) {

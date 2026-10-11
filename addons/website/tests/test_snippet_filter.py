@@ -85,19 +85,51 @@ class TestSnippetFilterSecurity(TransactionCase):
                 res_model="res.partner",
             )
 
-    def test_public_search_domain_rejects_relational_traversal(self):
-        for dotted in ("create_uid.login", "parent_id.vat", "company_id.name"):
-            with self.assertRaises(ValueError, msg=f"{dotted} must be rejected"):
-                self.snippet_filter._prepare_values(
-                    limit=16,
-                    search_domain=[(dotted, "ilike", "x")],
-                    res_model="res.partner",
-                )
-        self.snippet_filter._prepare_values(
-            limit=16,
-            search_domain=[("name", "ilike", "PUBLIC")],
-            res_model="res.partner",
+    def test_a_traversal_is_searched_as_the_visitor(self):
+        public_filter = self._public_filter()
+        with self.assertRaises(ValueError):
+            public_filter._prepare_values(
+                limit=16, search_domain=[("bank_account_ids.acc_number", "ilike", "x")]
+            )
+        public_filter._prepare_values(
+            limit=16, search_domain=[("company_id.name", "ilike", "x")]
         )
+
+    def _public_action_filter(self):
+        action = self.env["ir.actions.server"].create(
+            {
+                "name": "Partners searched as superuser",
+                "model_id": self.env.ref("base.model_res_partner").id,
+                "state": "code",
+                "code": "response = model.search(env.context['search_domain']).mapped('name')",
+            }
+        )
+        snippet_filter = self.env["website.snippet.filter"].create(
+            {
+                "name": "Partners",
+                "action_server_id": action.id,
+                "limit": 16,
+                "field_names": "name",
+                "website_published": True,
+            }
+        )
+        public = self.env.ref("base.public_user")
+        return snippet_filter.with_user(public).sudo()
+
+    def test_an_action_filter_refuses_what_the_visitor_cannot_search(self):
+        public_filter = self._public_action_filter()
+        for leaf in (
+            ("bank_account_ids.acc_number", "ilike", "x"),
+            ("not_a_field", "=", 1),
+        ):
+            with self.assertRaises(ValueError, msg=f"{leaf[0]} must be refused"):
+                public_filter._prepare_values(limit=16, search_domain=[leaf])
+
+    def test_an_action_filter_matches_only_what_the_visitor_may_see(self):
+        names = self._public_action_filter()._prepare_values(
+            limit=16, search_domain=[("id", "=", self.secret.id)]
+        )
+        self.assertNotIn("SECRET_UNPUBLISHED", names)
 
     def test_client_res_model_cannot_override_the_filter_model(self):
         result = self.snippet_filter._prepare_values(

@@ -208,13 +208,6 @@ export class NewContentSystrayItem extends Component {
         await Promise.all(proms);
         endToggle();
         this.dropdown.open();
-        log.pipeline("toggleDropdown prefetch get_new_page_templates");
-
-        rpc(
-            "/website/get_new_page_templates",
-            { context: { website_id: this.website.currentWebsiteId } },
-            { cache: true, silent: true },
-        );
     }
 
     get sortedNewContentElements() {

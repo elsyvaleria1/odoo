@@ -409,7 +409,6 @@ export class WebsiteBuilderClientAction extends Component {
             url: this.websiteContent.el?.contentWindow?.location?.href,
         }));
         const iframe = this.websiteContent.el;
-        iframe.contentDocument.body.setAttribute("is-ready", "false");
         if (isBrowserChrome() && !iframe.src.includes("iframe_reload")) {
             try {
                 iframe.contentWindow.location.href;
@@ -436,6 +435,7 @@ export class WebsiteBuilderClientAction extends Component {
                 }
             }
         }
+        iframe.contentDocument.body.setAttribute("is-ready", "false");
         if (this.lastPageURL !== iframe.contentWindow.location.href) {
             log.logic("onIframeLoad page changed: hide resource editor", () => ({
                 from: this.lastPageURL,
@@ -494,7 +494,13 @@ export class WebsiteBuilderClientAction extends Component {
             }
 
             const { href, target } = linkEl;
-            if (href && target !== "_blank" && !this.state.isEditing) {
+            const staysOnPage =
+                ev.ctrlKey ||
+                ev.metaKey ||
+                ev.shiftKey ||
+                ev.altKey ||
+                linkEl.hasAttribute("download");
+            if (href && target !== "_blank" && !staysOnPage && !this.state.isEditing) {
                 if (isTopWindowURL(linkEl)) {
                     log.logic("click: top window navigation", { href });
                     ev.preventDefault();
@@ -595,24 +601,25 @@ export class WebsiteBuilderClientAction extends Component {
         log.pipeline("reloadIframe", () => ({ isEditing, url }));
         const endReload = log.perf("reloadIframe", () => ({ isEditing, url }));
         this.ui.block();
-        this.preparePublicRootReady();
-        this.setIframeLoaded();
-        this.websiteService.websitePublicEnv = undefined;
-        this.websiteContent.el.contentDocument.body?.setAttribute("is-ready", "false");
-        if (url) {
-            const urlObj = new URL(url, this.websiteContent.el.contentWindow.location);
-            const pathSegments = urlObj.pathname.split("/").map(encodeURIComponent);
-            const encodedPath = pathSegments.join("/");
-            this.websiteContent.el.contentWindow.location.href = new URL(
-                encodedPath,
-                this.websiteContent.el.contentWindow.location,
+        try {
+            this.preparePublicRootReady();
+            this.setIframeLoaded();
+            this.websiteService.websitePublicEnv = undefined;
+            const contentWindow = this.websiteContent.el.contentWindow;
+            this.websiteContent.el.contentDocument?.body?.setAttribute(
+                "is-ready",
+                "false",
             );
-        } else {
-            this.websiteContent.el.contentWindow.location.reload();
+            if (url) {
+                contentWindow.location.href = new URL(url, contentWindow.location).href;
+            } else {
+                contentWindow.location.reload();
+            }
+            await this.loadIframeAndBundles(isEditing);
+            endReload();
+        } finally {
+            this.ui.unblock();
         }
-        await this.loadIframeAndBundles(isEditing);
-        endReload();
-        this.ui.unblock();
     }
 
     reloadWebClient() {

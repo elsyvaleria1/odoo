@@ -753,14 +753,12 @@ class TestSnippetAssetPruning(TransactionCase):
             }
         )
         self.env.registry.clear_cache()
-        used = self.env["website"]._is_snippet_used(
-            "website",
-            "audit_classless_snippet",
-            "000",
-            "js",
-            [("ir.ui.view", "arch_db")],
+        self.assertEqual(
+            self.env["website"]._get_snippet_template_occurrence(
+                "website", "audit_classless_snippet"
+            ),
+            [],
         )
-        self.assertIn(used, (True, False))
 
 
 @tagged("post_install", "-at_install")

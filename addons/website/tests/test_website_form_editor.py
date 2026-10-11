@@ -1,12 +1,23 @@
+import io
+from ast import literal_eval
+from unittest.mock import patch
+
+import lxml.html
+from werkzeug.datastructures import FileStorage
+
 from odoo import SUPERUSER_ID, Command
 from odoo.exceptions import AccessDenied, AccessError, ValidationError
 from odoo.http import request
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import HttpCase, TransactionCase, tagged
 from odoo.tools.misc import hmac
 
 from odoo.addons.base.tests.common import HttpCaseWithUserPortal
 from odoo.addons.http_routing.tests.common import MockRequest
 from odoo.addons.website.controllers.form import WebsiteForm
+from odoo.addons.website.tools import (
+    FORM_SIGNATURE_SCOPE,
+    website_form_signature_payload,
+)
 
 
 @tagged("post_install", "-at_install")
@@ -302,6 +313,51 @@ class TestWebsiteForm(TransactionCase):
             "A validly signed submission should create the mail.",
         )
 
+    def _whitelisted_partner_form(self, *field_names):
+        partner_model = self.env.ref("base.model_res_partner")
+        partner_model.website_form_access = True
+        self.env["ir.model.fields"].formbuilder_whitelist(
+            "res.partner", ["name", *field_names]
+        )
+        return partner_model.sudo()
+
+    def test_a_malformed_value_is_a_field_error_not_a_crash(self):
+        self.env["ir.model.fields"].create(
+            {
+                "name": "x_test_date",
+                "model_id": self.partner_model.id,
+                "ttype": "date",
+                "field_description": "test date",
+            }
+        )
+        partner_model = self._whitelisted_partner_form("image_1920", "x_test_date")
+        with MockRequest(self.env, website=self.env["website"].browse(1)):
+            with self.assertRaises(ValidationError) as caught:
+                WebsiteForm().extract_data(
+                    partner_model,
+                    {
+                        "name": "Caller",
+                        "image_1920": "not a file",
+                        "x_test_date": "next tuesday",
+                    },
+                )
+        self.assertCountEqual(caught.exception.args[0], ["image_1920", "x_test_date"])
+
+    def test_a_file_named_after_a_non_attachment_field_is_an_orphan(self):
+        partner_model = self._whitelisted_partner_form("parent_id")
+        partner = self.env["res.partner"].create({"name": "Caller"})
+        upload = FileStorage(io.BytesIO(b"payload"), filename="note.txt")
+        upload.field_name = "parent_id"
+        with MockRequest(self.env, website=self.env["website"].browse(1)):
+            WebsiteForm().create_attachments(partner_model, partner.id, [upload])
+        self.assertFalse(partner.parent_id)
+        self.assertEqual(
+            self.env["ir.attachment"]
+            .search([("res_model", "=", "res.partner"), ("res_id", "=", partner.id)])
+            .mapped("name"),
+            ["note.txt"],
+        )
+
     def test_get_authorized_fields_requires_editor(self):
         IrModel = self.env["ir.model"]
         public = self.env.ref("base.public_user")
@@ -393,3 +449,73 @@ class TestWebsiteForm(TransactionCase):
                 website_form_signature=sig_copy,
             )
         self.assertEqual(self.env["mail.mail"].search_count([]), before + 1)
+
+
+@tagged("post_install", "-at_install")
+class TestContactFormSignature(TransactionCase):
+    def setUp(self):
+        super().setUp()
+        self.env.ref("mail.model_mail_mail").website_form_access = True
+        self.website = self.env["website"].browse(1)
+        self.company = self.website.company_id
+        self.stale_signature = hmac(
+            self.env,
+            FORM_SIGNATURE_SCOPE,
+            website_form_signature_payload(self.company.email or "", {}),
+        )
+        self.company.email = "changed-contact@example.com"
+
+    def _submit(self, **values):
+        with MockRequest(self.env, website=self.website):
+            return WebsiteForm()._handle_website_form(
+                "mail.mail",
+                email_from="visitor@example.com",
+                subject="hello",
+                website_form_signature=self.stale_signature,
+                **values,
+            )
+
+    def test_the_company_is_reached_after_its_email_changed(self):
+        before = self.env["mail.mail"].search_count([])
+        self._submit(email_to="changed-contact@example.com")
+        self.assertEqual(self.env["mail.mail"].search_count([]), before + 1)
+
+    def test_a_copy_to_anyone_else_still_needs_the_signature(self):
+        with self.assertRaises(AccessDenied):
+            self._submit(
+                email_to="changed-contact@example.com", email_cc="victim@example.com"
+            )
+
+
+@tagged("post_install", "-at_install")
+class TestContactFormAfterEmailChange(HttpCase):
+    def _served_form(self):
+        page = lxml.html.fromstring(self.url_open("/contactus").content)
+        values = literal_eval(
+            page.xpath('//span[@data-for="contactus_form"]/@data-values')[0]
+        )
+        signature = page.xpath('//input[@name="website_form_signature"]/@value')[0]
+        return values["email_to"], signature
+
+    def test_a_visitor_reaches_the_company_after_its_email_changed(self):
+        company = self.env["website"].browse(1).company_id
+        company.email = "before-change@example.com"
+        self.env.flush_all()
+        self._served_form()
+        company.email = "after-change@example.com"
+        self.env.flush_all()
+        WebsitePage = type(self.env["website.page"])
+        with patch.object(WebsitePage, "_CACHE_DURATION", -1):
+            email_to, signature = self._served_form()
+        self.assertEqual(email_to, "after-change@example.com")
+        response = self.url_open(
+            "/website/form/mail.mail",
+            data={
+                "email_from": "visitor@example.com",
+                "subject": "Hello",
+                "description": "Hi",
+                "email_to": email_to,
+                "website_form_signature": signature,
+            },
+        )
+        self.assertIn('"id"', response.text)

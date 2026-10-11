@@ -351,7 +351,8 @@ class IrUiView(models.Model):
             top_level_view = top_level_view.inherit_id
         top_level_view = top_level_view.with_context(active_test=False)
         sibling_views = top_level_view.search_read(
-            [("key", "=", top_level_view.key), ("id", "!=", top_level_view.id)]
+            [("key", "=", top_level_view.key), ("id", "!=", top_level_view.id)],
+            ["display_name", "key", "website_id"],
         )
         return {
             "sibling_views": sibling_views,

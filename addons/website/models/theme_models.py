@@ -254,6 +254,13 @@ class ThemeWebsiteMenu(models.Model):
             parent_id = self.parent_id.copy_ids.filtered(
                 lambda x: x.website_id == website
             )
+            if not parent_id:
+                _debug.logic(
+                    "theme_menu_deferred",
+                    reason="parent_not_copied_yet",
+                    menu=self.id,
+                )
+                return False
         elif self.use_main_menu_as_parent:
             parent_id = website.menu_id
 
