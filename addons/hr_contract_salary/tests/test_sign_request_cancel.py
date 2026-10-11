@@ -6,7 +6,7 @@ from odoo.tools import file_open
 
 @tagged("-at_install", "post_install")
 class TestSignRequestCancel(TransactionCase):
-    def setUp(cls):
+    def setUp(self):
         super().setUp()
 
         with file_open(
@@ -14,7 +14,7 @@ class TestSignRequestCancel(TransactionCase):
         ) as f:
             pdf_content = f.read()
 
-        cls.attachment = cls.env["ir.attachment"].create(
+        self.attachment = self.env["ir.attachment"].create(
             {
                 "type": "binary",
                 "raw": pdf_content,
@@ -22,55 +22,55 @@ class TestSignRequestCancel(TransactionCase):
             }
         )
 
-        cls.template_id = cls.env["sign.template"].create(
+        self.template_id = self.env["sign.template"].create(
             {
                 "name": "Employee Contract Template",
             }
         )
 
-        cls.document_id = cls.env["sign.document"].create(
+        self.document_id = self.env["sign.document"].create(
             {
-                "attachment_id": cls.attachment.id,
-                "template_id": cls.template_id.id,
+                "attachment_id": self.attachment.id,
+                "template_id": self.template_id.id,
             }
         )
 
-        cls.structure_type = cls.env["hr.payroll.structure.type"].create(
+        self.structure_type = self.env["hr.payroll.structure.type"].create(
             {"name": "struct"}
         )
-        cls.job = cls.env["hr.job"].create({"name": "Software Developer"})
-        cls.contract_template = cls.env["hr.version"].create(
+        self.job = self.env["hr.job"].create({"name": "Software Developer"})
+        self.contract_template = self.env["hr.version"].create(
             {
                 "name": "Contract Template",
                 "wage": 6500,
-                "structure_type_id": cls.structure_type.id,
-                "job_id": cls.job.id,
+                "structure_type_id": self.structure_type.id,
+                "job_id": self.job.id,
             }
         )
 
-        cls.sign_item = cls.env["sign.item"].create(
+        self.sign_item = self.env["sign.item"].create(
             [
                 {
-                    "type_id": cls.env.ref("sign.sign_item_type_text").id,
+                    "type_id": self.env.ref("sign.sign_item_type_text").id,
                     "required": True,
-                    "responsible_id": cls.env.ref("hr_sign.sign_item_role_default").id,
+                    "responsible_id": self.env.ref("hr_sign.sign_item_role_default").id,
                     "page": 1,
                     "posX": 0.273,
                     "posY": 0.158,
-                    "document_id": cls.document_id.id,
+                    "document_id": self.document_id.id,
                     "width": 0.150,
                     "height": 0.015,
                 }
             ]
         )
 
-        cls.partner = cls.env["res.partner"].create(
+        self.partner = self.env["res.partner"].create(
             {"name": "Employee", "email": "employee@example.com"}
         )
 
-        cls.salary_offer = cls.env["hr.contract.salary.offer"].create(
+        self.salary_offer = self.env["hr.contract.salary.offer"].create(
             {
-                "contract_template_id": cls.contract_template.id,
+                "contract_template_id": self.contract_template.id,
             }
         )
 

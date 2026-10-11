@@ -68,18 +68,18 @@ class TestHrWorkEntryAttendancePerformance(TransactionCase):
 
         vals = []
         for employee in employees:
-            for day in rrule(
-                DAILY,
-                dtstart=date.today() - relativedelta(months=2),
-                until=date.today(),
-            ):
-                vals.append(
-                    {
-                        "employee_id": employee.id,
-                        "check_in": day.strftime("%Y-%m-%d 08:00:%S"),
-                        "check_out": day.strftime("%Y-%m-%d 16:36:%S"),
-                    }
+            vals.extend(
+                {
+                    "employee_id": employee.id,
+                    "check_in": day.strftime("%Y-%m-%d 08:00:%S"),
+                    "check_out": day.strftime("%Y-%m-%d 16:36:%S"),
+                }
+                for day in rrule(
+                    DAILY,
+                    dtstart=date.today() - relativedelta(months=2),
+                    until=date.today(),
                 )
+            )
         cls.attendances = cls.env["hr.attendance"].create(vals)
 
     def test_regenerate_work_entries(self):

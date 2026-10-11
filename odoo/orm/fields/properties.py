@@ -387,7 +387,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
             for model, res_ids in res_ids_per_model.items():
                 for record in env[model].browse(sorted(res_ids)):
                     with contextlib.suppress(AccessError):
-                        record.display_name
+                        _ = record.display_name
             for value in result:
                 self._add_display_name(value, env)
 

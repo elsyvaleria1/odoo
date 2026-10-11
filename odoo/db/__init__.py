@@ -1,4 +1,8 @@
 import atexit
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    sql_counter: int
 
 from odoo.libs.debug_log import DebugLog
 

@@ -819,7 +819,6 @@ class SaleOrder(models.Model):
         )
         return super(SaleOrder, non_renewal_upsell_orders)._get_duplicate_orders()
 
-
     @api.model_create_multi
     def create(self, vals_list):
         orders = super().create(vals_list)
@@ -908,7 +907,6 @@ class SaleOrder(models.Model):
         return (
             self.next_invoice_date + self.plan_id.billing_period - relativedelta(days=1)
         )
-
 
     def action_update_prices(self):
         self.line_ids.price_unit = False
@@ -1564,7 +1562,6 @@ class SaleOrder(models.Model):
         should_lock = super()._is_lock_required()
         return bool(should_lock and not self.is_subscription)
 
-
     def _upsell_context(self):
         return {"skip_next_invoice_update": True}
 
@@ -1729,9 +1726,7 @@ class SaleOrder(models.Model):
             next_invoice_date = self.next_invoice_date
         else:
             start_date = self.next_invoice_date
-            next_invoice_date = (
-                self.next_invoice_date
-            )
+            next_invoice_date = self.next_invoice_date
         values = {
             "is_subscription": is_subscription,
             "subscription_id": subscription.id,
@@ -1796,7 +1791,6 @@ class SaleOrder(models.Model):
                 }
             )
         return res
-
 
     @api.model
     def _cron_recurring_create_invoice(self):
@@ -2004,18 +1998,18 @@ class SaleOrder(models.Model):
         ) and non_recurring_line:
             is_free = True
             is_exception = True
-        elif total_sign < 0 and not delivery_invoiceable_lines:
-            is_free = True
         elif (
-            total_sign == 0
-            and not non_recurring_line
-            and not delivery_invoiceable_lines
-        ):
-            is_free = True
-        elif (
-            currency.compare_amounts(mrr, 0) < 1
-            and not non_recurring_line
-            and not delivery_invoiceable_lines
+            (total_sign < 0 and not delivery_invoiceable_lines)
+            or (
+                total_sign == 0
+                and not non_recurring_line
+                and not delivery_invoiceable_lines
+            )
+            or (
+                currency.compare_amounts(mrr, 0) < 1
+                and not non_recurring_line
+                and not delivery_invoiceable_lines
+            )
         ):
             is_free = True
         return is_free, is_exception
@@ -2206,9 +2200,7 @@ class SaleOrder(models.Model):
                 _debug.logic("subscription_skipped", reason="not_progress")
                 continue
             try:
-                self._subscription_commit_cursor(
-                    auto_commit
-                )
+                self._subscription_commit_cursor(auto_commit)
                 draft_invoices = subscription.invoice_ids.filtered(
                     lambda am: am.state == "draft"
                 )
@@ -2303,9 +2295,7 @@ class SaleOrder(models.Model):
                     subscription.with_context(
                         mail_notrack=True
                     ).payment_exception = False
-                if (
-                    not subscription.payment_token_id
-                ):
+                if not subscription.payment_token_id:
                     self._process_invoices_to_send(existing_invoices)
 
                 self._subscription_commit_cursor(auto_commit)
@@ -3047,7 +3037,6 @@ class SaleOrder(models.Model):
                 note=note,
                 user_id=so.user_id.id,
             )
-
 
     def _get_product_catalog_order_line_info(
         self, product_ids, child_field=False, **kwargs

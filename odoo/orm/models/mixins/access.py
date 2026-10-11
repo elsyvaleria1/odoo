@@ -307,7 +307,8 @@ class AccessMixin(_ModelStubs):
         if self.env.su:
             return
         if result := self._check_access(operation):
-            raise result[1]()
+            exception = result[1]()
+            raise exception
         if self.env.privileges and operation != "read" and self._ids:
             self.env.registry.access_policy.note_privileged(
                 self.env, self._name, operation, self._ids

@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 
 class MixinResource(models.AbstractModel):
-
     _name = "mixin.resource"
     _description = "Resource Mixin"
     _resource_type = "human"
@@ -31,7 +30,7 @@ class MixinResource(models.AbstractModel):
         readonly=False,
         help="The time zone where this resource works. Its working schedule is read in this zone: an 08:00-17:00 schedule means 08:00-17:00 here, whatever zone the schedule names. For an employee deployed away from the corporate office, set the zone of the place of work.",
     )
-    company_id = fields.Many2one(
+    company_id = fields.Many2one(  # noqa: E8529 -- multi-company key of hr.employee: UNIQUE (user_id, company_id) and two more on hr_employee, and the raw SQL that joins it
         comodel_name="res.company",
         related="resource_id.company_id",
         string="Company",
@@ -196,7 +195,7 @@ class MixinResource(models.AbstractModel):
         namespace = self._get_root_model_name()
         for owner_model in self._resource_owner_models():
             owners = self.env[owner_model].sudo().with_context(active_test=False)
-            if owners.search_count(
+            if owners.search_count(  # noqa: E8507 -- one query per owner model, not per resource
                 [
                     ("resource_id", "in", resource_ids),
                     ("id", "not in", exclude_ids if owner_model == namespace else ()),
@@ -273,16 +272,16 @@ class MixinResource(models.AbstractModel):
                 record.resource_id
             )
 
-        for calendar, calendar_resources in mapped_resources.items():
-            attendances = calendar._attendance_intervals_batch(
+        for resource_calendar, calendar_resources in mapped_resources.items():
+            attendances = resource_calendar._attendance_intervals_batch(
                 from_datetime, to_datetime, calendar_resources
             )
-            leaves = calendar._leave_intervals_batch(
+            leaves = resource_calendar._leave_intervals_batch(
                 from_datetime, to_datetime, calendar_resources, domain
             )
 
             for calendar_resource in calendar_resources:
-                result[calendar_resource.id] = calendar._get_duration_data(
+                result[calendar_resource.id] = resource_calendar._get_duration_data(
                     attendances[calendar_resource.id] & leaves[calendar_resource.id]
                 )
 
@@ -310,18 +309,18 @@ class MixinResource(models.AbstractModel):
             for record in self:
                 mapped_resources[calendar_by_resource[record.id]] |= record.resource_id
 
-        for calendar, calendar_resources in mapped_resources.items():
+        for resource_calendar, calendar_resources in mapped_resources.items():
             if compute_leaves:
-                intervals = calendar._work_intervals_batch(
+                intervals = resource_calendar._work_intervals_batch(
                     from_datetime, to_datetime, calendar_resources, domain
                 )
             else:
-                intervals = calendar._attendance_intervals_batch(
+                intervals = resource_calendar._attendance_intervals_batch(
                     from_datetime, to_datetime, calendar_resources
                 )
 
             for calendar_resource in calendar_resources:
-                result[calendar_resource.id] = calendar._get_duration_data(
+                result[calendar_resource.id] = resource_calendar._get_duration_data(
                     intervals[calendar_resource.id]
                 )
 
@@ -343,9 +342,9 @@ class MixinResource(models.AbstractModel):
         for record in self:
             records_by_calendar[calendar or calendar_by_record[record.id]] += record
 
-        for calendar, records in records_by_calendar.items():
+        for resource_calendar, records in records_by_calendar.items():
             resources = records.resource_id
-            all_intervals = calendar._work_intervals_batch(
+            all_intervals = resource_calendar._work_intervals_batch(
                 from_datetime,
                 to_datetime,
                 resources,
@@ -355,7 +354,7 @@ class MixinResource(models.AbstractModel):
             for record in records:
                 intervals = all_intervals[record.resource_id.id]
                 result[record.id] = sorted(
-                    calendar._get_hours_by_day(intervals).items()
+                    resource_calendar._get_hours_by_day(intervals).items()
                 )
         return result
 

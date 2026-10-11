@@ -4,10 +4,6 @@ import io
 import logging
 
 import docutils.core
-import docutils.nodes
-import docutils.parsers.rst.directives
-import docutils.parsers.rst.directives.admonitions
-import docutils.parsers.rst.roles
 
 from odoo.libs.docstring import RST_INFO_FIELDS
 from odoo.tests.common import tagged

@@ -11,7 +11,7 @@ import threading
 import time
 import typing
 import xmlrpc.client
-from collections.abc import Mapping
+from collections.abc import Buffer, Mapping
 from urllib.parse import unquote
 
 import requests
@@ -81,7 +81,7 @@ _debug = DebugLog(__name__)
 
 
 def configure_egress_proxy(url: str | None) -> None:
-    global _egress_proxy
+    global _egress_proxy  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if url:
         parts = parse_url(url)
         if parts.scheme not in SCHEMES or not parts.host:
@@ -611,7 +611,7 @@ class _WatchedPool:
                 retries, _RetryWithinDeadline
             ):
                 retries = _retry_within(retries, timeout.deadline)
-        return super().urlopen(
+        return super().urlopen(  # type: ignore[misc]
             method, url, body, headers, retries, *args, **kwargs
         )
 
@@ -624,7 +624,7 @@ class _WatchedPool:
         **kwargs: typing.Any,
     ) -> typing.Any:
         timeout = kwargs.get("timeout")
-        make_request = super()._make_request
+        make_request = super()._make_request  # type: ignore[misc]
         if not isinstance(timeout, _Deadline):
             return make_request(conn, method, url, *args, **kwargs)
 
@@ -731,7 +731,7 @@ def _refuse_rendered(prepared: PreparedRequest) -> None:
             )
 
 
-class GuardedSession(requests.Session):
+class GuardedSession(requests.Session):  # noqa: E8518 -- the guard itself: it mounts GuardedAdapter for both schemes
     def __init__(self) -> None:
         super().__init__()
         self.trust_env = False
@@ -886,9 +886,9 @@ class GuardedXmlRpcTransport(xmlrpc.client.Transport):
 
     def request(
         self,
-        host: str,
+        host: str | tuple[str, dict[str, str]],
         handler: str,
-        request_body: bytes,
+        request_body: Buffer,
         verbose: bool = False,
     ) -> typing.Any:
         _, auth_headers, _ = self.get_host_info(host)

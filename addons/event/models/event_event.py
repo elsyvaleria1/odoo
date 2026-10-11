@@ -37,7 +37,6 @@ except ImportError:
 
 
 class EventEvent(models.Model):
-
     _name = "event.event"
     _description = "Event"
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
@@ -496,8 +495,7 @@ class EventEvent(models.Model):
                             )
                         )
                     )
-                    or
-                    (
+                    or (
                         event.is_multi_slots
                         and event.event_slot_count
                         and (
@@ -649,7 +647,6 @@ class EventEvent(models.Model):
         if operator == "in" and (not value or not any(value)):
             return Domain(False)
         return NotImplemented
-
 
     @api.depends("event_type_id")
     def _compute_seats_max(self) -> None:
@@ -948,15 +945,14 @@ class EventEvent(models.Model):
                 sold_out.append((name, count - available))
 
         if sold_out:
-            info = []
-            for item in sold_out:
-                info.append(
-                    self.env._(
-                        "%(slot_name)s: missing %(count)s seat(s)",
-                        slot_name=item[0],
-                        count=item[1],
-                    )
+            info = [
+                self.env._(
+                    "%(slot_name)s: missing %(count)s seat(s)",
+                    slot_name=item[0],
+                    count=item[1],
                 )
+                for item in sold_out
+            ]
             raise ValidationError(
                 self.env._(
                     "There are not enough seats available for %(event_name)s:\n%(sold_out_info)s",
@@ -964,7 +960,6 @@ class EventEvent(models.Model):
                     sold_out_info="\n".join(info),
                 )
             )
-
 
     def action_view_slot_calendar(self) -> dict:
         self.check_singleton()

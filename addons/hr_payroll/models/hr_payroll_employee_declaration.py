@@ -80,9 +80,7 @@ class HrPayrollEmployeeDeclaration(models.Model):
                 _logger.warning("Sheet %s %s does not exist", res_model, res_id)
                 continue
             report_id = sheet._get_pdf_report().id
-            has_global = any(
-                not d.employee_id for d in declarations
-            )
+            has_global = any(not d.employee_id for d in declarations)
             if has_global:
                 employees = self.env[res_model].browse(res_id).line_ids.employee_id
             else:
@@ -110,7 +108,7 @@ class HrPayrollEmployeeDeclaration(models.Model):
                 )
                 counter += 1
                 sheet_filename = sheet._get_pdf_filename(employee)
-                sheet_file, dummy = report_sudo.with_context(
+                sheet_file, _dummy = report_sudo.with_context(
                     lang=employee.lang or self.env.lang
                 )._render_qweb_pdf(
                     report_id,

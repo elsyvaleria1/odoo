@@ -263,9 +263,7 @@ class FedexRequest:
             "/address/v1/addresses/resolve",
             {"addressesToValidate": [{"address": address}]},
         )
-        return (
-            result["resolvedAddresses"][0]["classification"] != "BUSINESS"
-        )
+        return result["resolvedAddresses"][0]["classification"] != "BUSINESS"
 
     def _get_address_from_partner(self, partner, check_residential=False):
         res = self._get_location_from_partner(partner, check_residential)
@@ -278,10 +276,7 @@ class FedexRequest:
         res = {"phoneNumber": partner.phone_ids._primary().number}
         if company_partner and not res["phoneNumber"]:
             res["phoneNumber"] = company_partner.phone_ids._primary().number
-        if company_partner:
-            res["companyName"] = partner.name[:35]
-            res["personName"] = partner.name[:70]
-        elif partner.is_company:
+        if company_partner or partner.is_company:
             res["companyName"] = partner.name[:35]
             res["personName"] = partner.name[:70]
         else:
@@ -683,9 +678,7 @@ class FedexRequest:
                     for p in packages
                 ],
                 "customsClearanceDetail": {
-                    "dutiesPayment": {
-                        "paymentType": "SENDER"
-                    },
+                    "dutiesPayment": {"paymentType": "SENDER"},
                     "commodities": [
                         self._get_commodities_info(c, fedex_currency)
                         for pkg in packages

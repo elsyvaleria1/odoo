@@ -178,7 +178,7 @@ class StockMoveLine(models.Model):
     def _is_auto_waveable(self) -> bool:
         _debug.logic("auto_waveable_check", lines=self)
         self.check_singleton()
-        if (
+        return not (
             not self.picking_id
             or (
                 (
@@ -194,9 +194,7 @@ class StockMoveLine(models.Model):
                 and self.product_id.categ_id
                 not in self.picking_type_id.wave_category_ids
             )
-        ):
-            return False
-        return True
+        )
 
     @_debug.perf.timed
     def _auto_wave(self, excluded_batches=None) -> None:

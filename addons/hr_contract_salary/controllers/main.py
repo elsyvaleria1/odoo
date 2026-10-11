@@ -466,9 +466,7 @@ class HrContractSalary(http.Controller):
         targets = {
             "version_personal": version.with_context(
                 active_test=False
-            ).employee_id.version_ids.sorted("create_date", reverse=True)[
-                0
-            ],
+            ).employee_id.version_ids.sorted("create_date", reverse=True)[0],
             "employee": version.employee_id,
             "bank_account": version.employee_id.primary_bank_account_id,
         }
@@ -1016,11 +1014,11 @@ class HrContractSalary(http.Controller):
 
         if no_write:
             employee_fields = request.env["hr.employee"]._fields
-            for section in personal_infos:
-                for field in personal_infos[section]:
+            for section_values in personal_infos.values():
+                for field in section_values:
                     if field in employee_fields:
                         current_value = employee[field]
-                        new_value = personal_infos[section][field]
+                        new_value = section_values[field]
 
                         if (
                             isinstance(current_value, type(new_value))
@@ -1209,7 +1207,7 @@ class HrContractSalary(http.Controller):
                 value = resume_line.fixed_value
             if resume_line.value_type == "version":
                 value = (
-                    new_version[resume_line.code]
+                    new_version[resume_line.code]  # noqa: SIM401 -- new_version is an ORM record, not a dict supporting get.
                     if resume_line.code in new_version
                     else 0
                 )
@@ -1522,7 +1520,7 @@ class HrContractSalary(http.Controller):
                 kw.get("token").encode("utf-8")
             ).hexdigest()
             existing_version = (
-                request.env["hr.version"]
+                request.env["hr.version"]  # noqa: E8537 -- idempotency: names what an earlier request of the same sender made
                 .sudo()
                 .search(
                     [
@@ -1547,7 +1545,7 @@ class HrContractSalary(http.Controller):
                 kw.get("original_link").encode("utf-8")
             ).hexdigest()
             existing_version = (
-                request.env["hr.version"]
+                request.env["hr.version"]  # noqa: E8537 -- idempotency: names what an earlier request of the same sender made
                 .sudo()
                 .search(
                     [

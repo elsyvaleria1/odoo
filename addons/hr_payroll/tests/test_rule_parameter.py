@@ -22,15 +22,14 @@ class TestRuleParameter(TransactionCase):
             }
         )
 
-        values = []
-        for year in [2016, 2017, 2018, 2020]:
-            values.append(
-                {
-                    "rule_parameter_id": cls.rule_parameter.id,
-                    "parameter_value": str(year),
-                    "date_from": date(year, 1, 1),
-                }
-            )
+        values = [
+            {
+                "rule_parameter_id": cls.rule_parameter.id,
+                "parameter_value": str(year),
+                "date_from": date(year, 1, 1),
+            }
+            for year in [2016, 2017, 2018, 2020]
+        ]
         cls.env["hr.rule.parameter.value"].create(values)
 
     @patch.object(Date, "today", lambda: date(2019, 10, 10))

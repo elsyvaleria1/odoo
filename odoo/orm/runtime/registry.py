@@ -82,7 +82,7 @@ class Registry(
 
     _replica: ReplicaRouter
 
-    def __new__(cls, db_name: str) -> Registry:
+    def __new__(cls, db_name: str) -> Registry:  # noqa: PYI034 -- Factory may return an interned instance or a different concrete subtype.
         if not db_name:
             raise ValueError("Missing database name")
         reg = cls.registries.get(db_name)
@@ -158,7 +158,7 @@ class Registry(
             cls.registries.count = lru_size
         registry: Registry = object.__new__(cls)
         registry.init(db_name)
-        registry.new = registry.init = registry.registries = None
+        registry.new = registry.init = registry.registries = None  # type: ignore[assignment, method-assign]
         first_registry = not cls.registries
         _debug.lifecycle(
             "registry.new",
@@ -372,7 +372,10 @@ class Registry(
                 todo.extend(model_cls._fields.values())
 
         done = set()
-        for field in todo:
+        pending_index = 0
+        while pending_index < len(todo):
+            field = todo[pending_index]
+            pending_index += 1
             if field in done:
                 continue
 
@@ -500,7 +503,7 @@ class Registry(
                 self._setup_field_depends(env, models_field_depends_done)
 
                 reset_cached_properties(self)
-                self.model_anchors
+                _ = self.model_anchors
 
             finally:
                 self.model_graph.end_invalidation()

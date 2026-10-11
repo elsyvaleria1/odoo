@@ -29,7 +29,6 @@ class PaymentTransaction(models.Model):
             return super()._is_inbound_request_authentic(headers, body)
         return True
 
-
     def _prepare_provider_processing_values(self, processing_values):
         if self.provider_code != "adyen":
             return super()._prepare_provider_processing_values(processing_values)
@@ -208,7 +207,6 @@ class PaymentTransaction(models.Model):
             self.provider_reference = psp_reference
         return None
 
-
     @api.model
     def _search_by_reference(self, provider_code, payment_data):
         if provider_code != "adyen":
@@ -220,9 +218,7 @@ class PaymentTransaction(models.Model):
             _logger.warning("Received data with missing or malformed reference.")
             return tx
 
-        event_code = payment_data.get(
-            "eventCode", "AUTHORISATION"
-        )
+        event_code = payment_data.get("eventCode", "AUTHORISATION")
         provider_reference = payment_data.get("pspReference")
         source_reference = payment_data.get("originalReference")
         if event_code == "AUTHORISATION":
@@ -244,9 +240,7 @@ class PaymentTransaction(models.Model):
                         ),
                     )
                 )
-                if (
-                    source_tx.amount == converted_notification_amount
-                ):
+                if source_tx.amount == converted_notification_amount:
                     tx = source_tx
                 else:
                     tx = self._search_by_notified_value(
@@ -264,8 +258,6 @@ class PaymentTransaction(models.Model):
                         tx = self.env["payment.transaction"]
                     if not tx:
                         tx = self._adyen_create_child_tx(source_tx, payment_data)
-            else:
-                pass
         else:
             tx = self._search_by_notified_value(
                 "adyen", "provider_reference", provider_reference
@@ -278,8 +270,6 @@ class PaymentTransaction(models.Model):
                     tx = self._adyen_create_child_tx(
                         source_tx, payment_data, is_refund=True
                     )
-                else:
-                    pass
         if not tx:
             _logger.warning("No transaction found matching reference %s.", reference)
         return tx
@@ -361,9 +351,7 @@ class PaymentTransaction(models.Model):
             self.provider_reference = payment_data.get("pspReference")
 
         payment_method_data = payment_data.get("paymentMethod", "")
-        if isinstance(
-            payment_method_data, dict
-        ):
+        if isinstance(payment_method_data, dict):
             payment_method_type = payment_method_data["type"]
             if payment_method_type == "scheme":
                 payment_method_code = payment_method_data["brand"]
@@ -413,9 +401,7 @@ class PaymentTransaction(models.Model):
                     self.reference,
                     refusal_reason,
                 )
-                if (
-                    self.source_transaction_id
-                ):
+                if self.source_transaction_id:
                     self._set_error(
                         self.env._(
                             "The void of the transaction %s failed.", self.reference
@@ -433,9 +419,7 @@ class PaymentTransaction(models.Model):
                     self.reference,
                     refusal_reason,
                 )
-                if (
-                    self.source_transaction_id
-                ):
+                if self.source_transaction_id:
                     self._set_error(
                         self.env._(
                             "The capture of the transaction %s failed.", self.reference

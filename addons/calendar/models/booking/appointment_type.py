@@ -823,7 +823,6 @@ class AppointmentType(models.Model):
             .book_url
         )
 
-
     @staticmethod
     def _reorder_action_views(action, first_view_names):
         existing_views = [
@@ -867,7 +866,6 @@ class AppointmentType(models.Model):
 
     def _get_placeholder_filename(self, field):
         return "calendar/static/src/booking/img/appointment_cover_0.jpg"
-
 
     @api.model
     def _get_default_slots(self, category) -> list:
@@ -936,9 +934,7 @@ class AppointmentType(models.Model):
                     )
 
                 total_capacity_used = capacity_already_used + capacity_reserved
-                if not total_capacity:
-                    default_state = "request"
-                elif (
+                if not total_capacity or (
                     float_compare(
                         total_capacity_used / total_capacity,
                         self.manual_confirmation_percentage,
@@ -1495,7 +1491,6 @@ class AppointmentType(models.Model):
             else self.create_uid.id,
         }
 
-
     def _slots_add_users_availability(
         self, slots, start_dt, end_dt, filter_users=None, asked_capacity=1
     ) -> None:
@@ -1752,7 +1747,6 @@ class AppointmentType(models.Model):
                 user_resources=user_resources,
             ),
         }
-
 
     def _slots_add_resources_availability(
         self, slots, start_dt_utc, end_dt_utc, filter_resources=None, asked_capacity=1

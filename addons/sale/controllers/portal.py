@@ -449,7 +449,7 @@ class CustomerPortal(payment_portal.PaymentPortal, OrderPortalMixin):
         if order_sudo._has_to_be_signed() and decline_message:
             _debug.lifecycle("portal_order_declined", order=order_sudo)
             order_sudo._action_cancel()
-            order_sudo.line_ids.currency_id
+            _ = order_sudo.line_ids.currency_id
 
             order_sudo.message_post(
                 author_id=(

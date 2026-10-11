@@ -38,7 +38,6 @@ class PaymentTransaction(models.Model):
                 renewal_state = "cancel"
             tx.renewal_state = renewal_state
 
-
     def _prepare_mandate_data(self):
         mandate_values = super()._prepare_mandate_data()
         if len(self.sale_order_ids) != 1 or not self.sale_order_ids.is_subscription:
@@ -70,9 +69,7 @@ class PaymentTransaction(models.Model):
             len(self.sale_order_ids) > 1
             or self.invoice_ids
             or not self.sale_order_ids.is_subscription
-        ):
-            return
-        elif self.renewal_state in ["draft", "pending", "cancel"]:
+        ) or self.renewal_state in ["draft", "pending", "cancel"]:
             return
         self._cancel_draft_invoices()
         self._invoice_sale_orders()

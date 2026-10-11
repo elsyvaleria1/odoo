@@ -682,9 +682,11 @@ class SaleOrderLine(models.Model):
         line_condition = self._get_recurring_invoiceable_condition(
             automatic_invoice, date_from
         )
-        if self.order_id.subscription_state == "7_upsell":
-            line_to_invoice = False
-        elif self.display_type or not self.recurring_invoice:
+        if (
+            self.order_id.subscription_state == "7_upsell"
+            or self.display_type
+            or not self.recurring_invoice
+        ):
             line_to_invoice = False
         elif line_condition:
             if (
@@ -694,11 +696,12 @@ class SaleOrderLine(models.Model):
                     self.product_qty,
                     precision_rounding=self.product_id.uom_id.rounding,
                 )
-            ):
-                line_to_invoice = True
-            elif self._is_postpaid_line() and not float_is_zero(
-                self.qty_transferred,
-                precision_rounding=self.product_id.uom_id.rounding,
+            ) or (
+                self._is_postpaid_line()
+                and not float_is_zero(
+                    self.qty_transferred,
+                    precision_rounding=self.product_id.uom_id.rounding,
+                )
             ):
                 line_to_invoice = True
         _debug.logic(
@@ -709,7 +712,6 @@ class SaleOrderLine(models.Model):
             automatic=bool(automatic_invoice),
         )
         return bool(line_to_invoice)
-
 
     def _get_renew_discount_info(self, upsell_ratio=0, start_date=None) -> tuple:
         order = self.order_id
@@ -891,7 +893,6 @@ class SaleOrderLine(models.Model):
         ]
         return create_values, update_values
 
-
     def _get_pricelist_price(self):
         if self.recurring_invoice:
             return super()._get_pricelist_price() or self.price_unit
@@ -902,7 +903,6 @@ class SaleOrderLine(models.Model):
         if self.recurring_invoice:
             res["plan_id"] = self.order_id.plan_id.id
         return res
-
 
     def _is_postpaid_line(self) -> bool:
         self.check_singleton()

@@ -8,10 +8,12 @@ from odoo.tools import file_open
 from odoo.addons.mail.tools.discuss import (
     Store,
     to_record_id,
-    to_record_ids,
+)
+from odoo.addons.mail.tools.discuss import (
+    to_record_ids as to_record_ids,  # noqa: PLC0414 -- Explicit public re-export for callers of this module.
 )
 from odoo.addons.mail.tools.paging import (
-    clamp_limit,
+    clamp_limit as clamp_limit,  # noqa: PLC0414 -- Explicit public re-export for callers of this module.
 )
 
 _debug = DebugLog(__name__)

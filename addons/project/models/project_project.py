@@ -179,7 +179,7 @@ class ProjectProject(models.Model):
             if not subset:
                 continue
             ProjectTask = self.env["project.task"].with_context(active_test=active_test)
-            for project, state, count in ProjectTask._read_group(
+            for project, state, count in ProjectTask._read_group(  # noqa: E8507 -- two queries: active and archived tasks
                 Domain("project_id", "in", subset.ids)
                 & Domain("is_template", "=", False),
                 ["project_id", "state"],
@@ -2337,10 +2337,9 @@ class ProjectProject(models.Model):
         self.check_singleton()
         portal_privacy = self.privacy_visibility in ["invited_users", "portal"]
         for group_name, _group_method, group_data in groups:
-            if group_name in ["portal", "portal_customer"] and not portal_privacy:
-                group_data["has_button_access"] = False
-            elif group_name == "portal_customer" and not self._admits_link_partner(
-                self._portal_customer()
+            if (group_name in ["portal", "portal_customer"] and not portal_privacy) or (
+                group_name == "portal_customer"
+                and not self._admits_link_partner(self._portal_customer())
             ):
                 group_data["has_button_access"] = False
         return groups

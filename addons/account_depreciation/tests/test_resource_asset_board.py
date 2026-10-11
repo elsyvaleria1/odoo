@@ -1,3 +1,4 @@
+import ast
 import datetime
 
 from dateutil.relativedelta import relativedelta
@@ -62,7 +63,9 @@ class TestResourceAssetBoard(TestAccountAssetCommon):
         van = self._plain_asset()
         board = self.create_asset(1200, "yearly", 4)
         action = self.env.ref("account_depreciation.action_account_asset_form")
-        listed = self.env["account.depreciation.board"].search(eval(action.domain))
+        listed = self.env["account.depreciation.board"].search(
+            ast.literal_eval(action.domain)
+        )
         self.assertIn(board, listed)
         self.assertNotIn(van, listed.asset_id)
 

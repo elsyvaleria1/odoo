@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import sys
+
 EX_USAGE = 64
 EX_NOUSER = 67
 EX_UNAVAILABLE = 69
@@ -8,8 +10,6 @@ EX_TEMPFAIL = 75
 
 DEFAULT_TIMEOUT = 120
 
-
-import sys
 
 try:
     import argparse
@@ -45,7 +45,7 @@ def postfix_exit(
             traceback.print_exc(None, sys.stderr)
         if message:
             sys.stderr.write(message)
-    except Exception:
+    except Exception:  # noqa: S110 -- Broken stderr must not replace the MTA delivery exit status.
         pass
     finally:
         sys.exit(exit_code)
@@ -145,7 +145,7 @@ def main() -> None:
         postfix_exit(EX_USAGE, "no message on stdin\n", options.debug)
     if not options.url.startswith(("https://", "http://")):
         postfix_exit(EX_TEMPFAIL, "--url must be an http(s) URL\n", options.debug)
-    request = urllib.request.Request(
+    request = urllib.request.Request(  # noqa: S310 -- The URL is checked for HTTP(S) before constructing this request.
         options.url,
         data=prepare_envelope(options, message),
         method="POST",

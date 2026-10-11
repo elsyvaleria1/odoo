@@ -34,7 +34,7 @@ def _saved_unvalidated(test):
     return patch.object(IrUiView, "_check_qweb_compiles", lambda self: None)(test)
 
 
-unsafe_eval = eval
+unsafe_eval = eval  # noqa: S307 -- Test fixture exercises the restricted evaluator using trusted source.
 
 
 @tagged("post_install", "-at_install")
@@ -4216,7 +4216,7 @@ class TestQWebStandaloneBodyContent(TransactionCase):
             QwebCallParameters({}, "r", None, None, False, "t-set", None),
         )
         with self.assertRaises(AttributeError):
-            getattr(content, "__deepcopy__")
+            content.__deepcopy__
         self.assertIsNone(content.html, "the snippet was rendered by a dunder probe")
 
     def test_non_template_argument_is_rejected(self):
@@ -4819,9 +4819,7 @@ class TestQWebCompileErrorLocation(TransactionCase):
     def test_a_recoverable_database_error_is_not_wrapped(self):
         from psycopg.errors import LockNotAvailable
 
-        partner = self.env.ref(
-            "base.main_partner"
-        )
+        partner = self.env.ref("base.main_partner")
         arch = etree.fromstring('<t><p t-out="env.cr.execute(q)"/></t>')
         query = f"SELECT id FROM res_partner WHERE id = {partner.id} FOR UPDATE NOWAIT"
         with db_connect(self.env.cr.dbname).cursor() as other:

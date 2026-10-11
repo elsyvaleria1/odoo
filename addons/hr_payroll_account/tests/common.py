@@ -191,11 +191,11 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
                     error.append(
                         f"{'UNNECESSARY LINE':>20} │ {code:<30} │ {value:>15} │ {'/':>15} │"
                     )
-            for line in payslip_lines:
-                if line.code not in results:
-                    error.append(
-                        f"{'MISSING LINE':>20} │ {line.code:<30} │ {'/':>15} │ {line_values[line.code][payslip.id]['total']:>15} │"
-                    )
+            error.extend(
+                f"{'MISSING LINE':>20} │ {line.code:<30} │ {'/':>15} │ {line_values[line.code][payslip.id]['total']:>15} │"
+                for line in payslip_lines
+                if line.code not in results
+            )
         if error:
             error.insert(
                 0,
@@ -243,17 +243,17 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
                     % (code, amount, payslip_line_value)
                 )
         if not skip_lines:
-            for line in payslip.worked_days_line_ids:
-                if line.code not in results:
-                    error.append(
-                        "Missing Line: '%s' - %s Days - %s Hours - %s CHF,"
-                        % (
-                            line.code,
-                            line_values[line.code][payslip.id]["number_of_days"],
-                            line_values[line.code][payslip.id]["number_of_hours"],
-                            line_values[line.code][payslip.id]["amount"],
-                        )
-                    )
+            error.extend(
+                "Missing Line: '%s' - %s Days - %s Hours - %s CHF,"
+                % (
+                    line.code,
+                    line_values[line.code][payslip.id]["number_of_days"],
+                    line_values[line.code][payslip.id]["number_of_hours"],
+                    line_values[line.code][payslip.id]["amount"],
+                )
+                for line in payslip.worked_days_line_ids
+                if line.code not in results
+            )
         if error:
             error.extend(
                 [
@@ -262,16 +262,16 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
                     "        {",
                 ]
             )
-            for line in payslip.worked_days_line_ids:
-                error.append(
-                    "            '%s': (%s, %s, %s),"
-                    % (
-                        line.code,
-                        line_values[line.code][payslip.id]["number_of_days"],
-                        line_values[line.code][payslip.id]["number_of_hours"],
-                        line_values[line.code][payslip.id]["amount"],
-                    )
+            error.extend(
+                "            '%s': (%s, %s, %s),"
+                % (
+                    line.code,
+                    line_values[line.code][payslip.id]["number_of_days"],
+                    line_values[line.code][payslip.id]["number_of_hours"],
+                    line_values[line.code][payslip.id]["amount"],
                 )
+                for line in payslip.worked_days_line_ids
+            )
             error.append("        }")
         self.assertEqual(len(error), 0, "\n" + "\n".join(error))
 
@@ -288,12 +288,11 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
                 )
         if error:
             for line in lines:
-                for move_type in ["credit", "debit"]:
-                    if line[move_type]:
-                        error.append(
-                            "%s - %s - %s"
-                            % (line.account_id.code, move_type, line[move_type])
-                        )
+                error.extend(
+                    "%s - %s - %s" % (line.account_id.code, move_type, line[move_type])
+                    for move_type in ["credit", "debit"]
+                    if line[move_type]
+                )
         self.assertEqual(len(error), 0, "\n" + "\n".join(error))
 
     def _add_other_input(self, payslip_id, other_input_id, amount):

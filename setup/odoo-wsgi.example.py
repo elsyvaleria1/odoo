@@ -1,10 +1,4 @@
-
 from odoo.http import root as application
-from odoo.tools import config as conf
-
-
-
-
 
 application.initialize()
 

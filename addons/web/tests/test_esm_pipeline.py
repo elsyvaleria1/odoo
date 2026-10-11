@@ -4499,7 +4499,6 @@ class TestPageBundleExportSurface(TransactionCase):
 
 @tagged("-at_install", "post_install", "web_assets")
 class TestLogicalParentExportSurface(TransactionCase):
-
     PARENT = "web.assets_frontend"
     PHYSICAL = ("web.assets_frontend_minimal", "web.assets_frontend_lazy")
 
@@ -4688,7 +4687,10 @@ class TestServedLibraries(TransactionCase):
                     posixpath.join(posixpath.dirname(served_url), spec)
                 )
                 self.assertIn(target, by_url, f"{declared} imports {spec}")
-        prefix = lambda spec: served[spec].split("/web/static/", 1)[0]
+
+        def prefix(spec):
+            return served[spec].split("/web/static/", 1)[0]
+
         self.assertEqual(
             prefix("@odoo/hoot-dom-helpers-dom"),
             prefix("@odoo/hoot-dom-helpers-events"),

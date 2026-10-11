@@ -1,3 +1,4 @@
+import contextlib
 import threading
 import typing
 from collections import OrderedDict
@@ -74,10 +75,8 @@ class LRU[K, V](MutableMapping[K, V]):
 
     def __getitem__(self, key: K) -> V:
         value = self._map[key]
-        try:
+        with contextlib.suppress(KeyError):
             self._map.move_to_end(key)
-        except KeyError:
-            pass
         return value
 
     def __setitem__(self, key: K, value: V) -> None:

@@ -2018,7 +2018,7 @@ class ProjectTask(models.Model):
         users_to_keep = []
         user_ids = []
         for user in users:
-            matched_users = self.env["res.users"].name_search(
+            matched_users = self.env["res.users"].name_search(  # noqa: E8507 -- one lookup per @mention in the title
                 user, domain=[("share", "=", False)]
             )
             if len(matched_users) == 1:
@@ -5382,8 +5382,8 @@ class ProjectTask(models.Model):
 
         first_possible_date_per_task = {
             key: max(
-                first_possible_date_per_task.get(key, datetime.min),
-                start_bounds.get(key, datetime.min),
+                first_possible_date_per_task.get(key, datetime.min),  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
+                start_bounds.get(key, datetime.min),  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
             ).astimezone(timezone(tz_info))
             for key in first_possible_date_per_task.keys() | start_bounds.keys()
         }
@@ -5510,7 +5510,7 @@ class ProjectTask(models.Model):
 
                     used_intervals.append((start_date, end_date, task))
 
-                    if hours_to_plan == 0.0:
+                    if hours_to_plan == 0.0:  # noqa: RUF069 -- Subtracting min(interval_duration, hours_to_plan) reaches exact zero when all remaining hours are consumed.
                         compute_date_end = end_date
                         break
 
@@ -5717,10 +5717,12 @@ class ProjectTask(models.Model):
         start_date,
         end_date,
         users,
-        candidates_ids=[],
+        candidates_ids=None,
         remove_intervals_with_planned_tasks=True,
         valid_intervals_per_user=None,
     ) -> tuple:
+        if candidates_ids is None:
+            candidates_ids = []
         if not self:
             return {}, {}, {}
         _debug.pipeline(

@@ -14,11 +14,9 @@ _debug = DebugLog(__name__)
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
-
     @api.depends("order_id.next_invoice_date", "order_id.start_date")
     def _compute_qty_transferred(self):
         return super()._compute_qty_transferred()
-
 
     def _get_stock_moves_outgoing_incoming(self):
         outgoing_moves, incoming_moves = super()._get_stock_moves_outgoing_incoming()
@@ -63,7 +61,6 @@ class SaleOrderLine(models.Model):
                 return aml[:1].deferred_start_date, aml[:1].deferred_end_date, 1, None
         return super()._get_invoice_line_parameters()
 
-
     def _reset_subscription_qty_to_invoice(self) -> None:
         super()._reset_subscription_qty_to_invoice()
         for line in self._filtered_stock_subscription_lines():
@@ -79,24 +76,21 @@ class SaleOrderLine(models.Model):
         )._reset_subscription_quantity_post_invoice()
 
     def _get_lines_to_launch_stock_rule(self):
-        stock_line_ids = []
-        for line in self:
+        stock_line_ids = [
+            line.id
+            for line in self
             if (
                 not line.recurring_invoice
                 or line.order_id.subscription_state == "7_upsell"
-            ):
-                stock_line_ids.append(line.id)
-            elif line.qty_invoiced and line.last_invoiced_date:
-                stock_line_ids.append(line.id)
-            elif (
+            )
+            or (line.qty_invoiced and line.last_invoiced_date)
+            or (
                 line.order_id.subscription_state in SUBSCRIPTION_PROGRESS_STATE
                 and not line.last_invoiced_date
-            ):
-                stock_line_ids.append(line.id)
-            elif line._subscription_is_one_time_sale():
-                stock_line_ids.append(line.id)
-            elif line._is_postpaid_line() and line.last_invoiced_date:
-                stock_line_ids.append(line.id)
+            )
+            or line._subscription_is_one_time_sale()
+            or (line._is_postpaid_line() and line.last_invoiced_date)
+        ]
         return self.env["sale.order.line"].browse(stock_line_ids)
 
     def _action_launch_stock_rule(self, **kwargs):

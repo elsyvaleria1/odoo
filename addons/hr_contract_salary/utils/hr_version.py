@@ -1,13 +1,10 @@
 import functools
 from contextlib import AbstractContextManager, contextmanager
-from typing import TypeVar
 
 from odoo.http import Request
 from odoo.models import BaseModel
 
 HR_VERSION_CTX_KEY = "hr_version_ctx_savepoint"
-
-T = TypeVar("T", bound="BaseModel | Request")
 
 
 def requires_hr_version_context(key=HR_VERSION_CTX_KEY):
@@ -59,7 +56,7 @@ def _hr_version_ctx_request(req: Request, **overrides):
 
 
 @contextmanager
-def hr_version_context(
+def hr_version_context[T: BaseModel | Request](
     container: T,
     key: str = HR_VERSION_CTX_KEY,
     **overrides,
@@ -86,12 +83,12 @@ def hr_version_context(
             )
 
     container.env.flush_all()
-    with container_ctx(container, **ctx_overrides) as container:
-        with container.env.cr.savepoint(flush=False) as sp:
+    with container_ctx(container, **ctx_overrides) as active_container:
+        with active_container.env.cr.savepoint(flush=False) as sp:
             try:
-                yield container
+                yield active_container
             finally:
-                container.env.flush_all()
+                active_container.env.flush_all()
                 sp.rollback()
 
-    container.env.invalidate_all(flush=False, keep_new_records=True)
+    active_container.env.invalidate_all(flush=False, keep_new_records=True)

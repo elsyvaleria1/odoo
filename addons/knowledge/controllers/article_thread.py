@@ -13,8 +13,10 @@ class ArticleThreadController(KnowledgeController):
         self,
         article_id,
         article_anchor_text="",
-        fields=["id", "article_anchor_text"],
+        fields=None,
     ):
+        if fields is None:
+            fields = ["id", "article_anchor_text"]
         article_thread = request.env["knowledge.article.thread"].create(
             {
                 "article_id": article_id,

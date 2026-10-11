@@ -1,7 +1,7 @@
 from odoo import fields, models
 
 from odoo.addons.base.models.mixin_recurrence_interval import (
-    REPEAT_UNIT_SELECTION,
+    REPEAT_UNIT_SELECTION as REPEAT_UNIT_SELECTION,  # noqa: PLC0414 -- Explicit public re-export for callers of this module.
 )
 
 REPEAT_TYPE_SELECTION = [

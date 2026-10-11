@@ -2,6 +2,7 @@
 import pathlib
 import re
 import subprocess
+from collections import Counter
 
 cla_glob = "doc/cla/*/*.md"
 cla = "".join(
@@ -19,14 +20,31 @@ def blamestat(ext: str = "py") -> None:
     okl: list[str] = []
     ko = 0
     kol: list[str] = []
-    p = subprocess.Popen(
-        "git ls-tree -r -z --name-only HEAD | grep -z '.%s$' | xargs -0 -n1 git blame --line-porcelain HEAD |grep  '^author-mail ' |sort |uniq -c|sort -nr"
-        % ext,
-        shell=True,
-        stdout=subprocess.PIPE,
+    listing = subprocess.run(
+        ["git", "ls-tree", "-r", "-z", "--name-only", "HEAD"],
+        capture_output=True,
         text=True,
+        check=True,
     )
-    for i in p.stdout.read().split("\n"):
+    counts: Counter[str] = Counter()
+    for filename in listing.stdout.split("\0"):
+        if not filename.endswith(f".{ext}"):
+            continue
+        blame = subprocess.run(
+            ["git", "blame", "--line-porcelain", "HEAD", "--", filename],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        counts.update(
+            line
+            for line in blame.stdout.splitlines()
+            if line.startswith("author-mail ")
+        )
+    for author, count in sorted(
+        counts.items(), key=lambda item: (item[1], item[0]), reverse=True
+    ):
+        i = f"{count} {author}"
         mo = re.search(r"(\d+) author-mail <([^ @<]+@[^ @<]+)>", i)
         if mo:
             lines = int(mo.group(1))

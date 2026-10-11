@@ -43,7 +43,7 @@ class GelatoController(Controller):
         elif fulfillment_status == "canceled":
             order_sudo.with_user(SUPERUSER_ID)._action_cancel()
 
-            order_sudo.line_ids.currency_id
+            _ = order_sudo.line_ids.currency_id
 
             log_message = request.env._(
                 "Gelato has canceled order %(reference)s.",

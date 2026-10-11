@@ -114,7 +114,7 @@ class ShiftController(http.Controller):
 
     def _planning_get(self, planning_token, employee_token, message=False):
         resource_sudo = (
-            request.env["resource.resource"]
+            request.env["resource.resource"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .sudo()
             .search([("planning_token", "=", employee_token)], limit=1)
         )
@@ -176,11 +176,9 @@ class ShiftController(http.Controller):
         )
         datetime_start = planning_sudo.start_datetime.replace(tzinfo=UTC)
         datetime_end = planning_sudo.end_datetime.replace(tzinfo=UTC)
-        resource_work_intervals, dummy = (
-            resource_sudo._get_valid_work_intervals(
-                datetime_start,
-                datetime_end,
-            )
+        resource_work_intervals, _dummy = resource_sudo._get_valid_work_intervals(
+            datetime_start,
+            datetime_end,
         )
         attendance_intervals = resource_work_intervals[resource_sudo.id]
 
@@ -356,7 +354,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         resource_sudo = (
-            request.env["resource.resource"]
+            request.env["resource.resource"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -385,7 +383,7 @@ class ShiftController(http.Controller):
 
         _debug.lifecycle("portal_self_assigned", slot=slot_sudo, employee=resource_sudo)
         slot_sudo.write({"resource_id": resource_sudo.id})
-        slot_sudo.slot_properties
+        _ = slot_sudo.slot_properties
         if message:
             return request.redirect(
                 "/planning/%s/%s?message=%s"
@@ -418,7 +416,7 @@ class ShiftController(http.Controller):
             )
 
         resource_sudo = (
-            request.env["resource.resource"]
+            request.env["resource.resource"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -430,7 +428,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         slot_sudo.write({"resource_id": False})
-        slot_sudo.slot_properties
+        _ = slot_sudo.slot_properties
         if message:
             return request.redirect(
                 "/planning/%s/%s?message=%s"
@@ -453,7 +451,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         resource_sudo = (
-            request.env["resource.resource"]
+            request.env["resource.resource"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -483,7 +481,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         resource_sudo = (
-            request.env["resource.resource"]
+            request.env["resource.resource"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -513,7 +511,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         resource_sudo = (
-            request.env["resource.resource"]
+            request.env["resource.resource"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -526,7 +524,7 @@ class ShiftController(http.Controller):
 
         if not slot_sudo.resource_id:
             slot_sudo.write({"resource_id": resource_sudo.id})
-            slot_sudo.slot_properties
+            _ = slot_sudo.slot_properties
 
         return request.redirect(
             f"/planning/{token_planning}/{token_employee}?message=assign"
@@ -551,7 +549,7 @@ class ShiftController(http.Controller):
                 slot.action_self_assign()
             except AccessError, UserError:
                 raise request.prepare_not_found_error() from None
-            slot.slot_properties
+            _ = slot.slot_properties
 
         return request.redirect("/odoo/action-planning.planning_action_view_shift")
 
@@ -575,7 +573,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         slot_sudo.write({"resource_id": False})
-        slot_sudo.slot_properties
+        _ = slot_sudo.slot_properties
 
         return request.redirect("/odoo/action-planning.planning_action_view_shift")
 
@@ -633,7 +631,7 @@ class ShiftController(http.Controller):
     )
     def planning_get_ics_file(self, planning_token, employee_token, **kwargs):
         resource_sudo = (
-            request.env["resource.resource"]
+            request.env["resource.resource"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .sudo()
             .search([("planning_token", "=", employee_token)], limit=1)
         )
@@ -641,7 +639,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         planning_sudo = (
-            request.env["planning.planning"]
+            request.env["planning.planning"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .sudo()
             .search([("access_token", "=", planning_token)], limit=1)
         )

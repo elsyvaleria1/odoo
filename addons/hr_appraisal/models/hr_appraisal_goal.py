@@ -38,7 +38,7 @@ class HrAppraisalGoal(models.Model):
         compute="_compute_employee_autocomplete",
         compute_sudo=True,
     )
-    company_id = fields.Many2one(
+    company_id = fields.Many2one(  # noqa: E8529 -- the path employee_ids.company_id crosses an x2many: no single row to join
         comodel_name="res.company",
         related="employee_ids.company_id",
         store=True,
@@ -253,8 +253,11 @@ class HrAppraisalGoal(models.Model):
     def action_confirm(self):
         self.write({"progression": "100"})
 
-
-    def create_goals(self, employee_ids=[], employee_goal_dict={}) -> None:
+    def create_goals(self, employee_ids=None, employee_goal_dict=None) -> None:
+        if employee_goal_dict is None:
+            employee_goal_dict = {}
+        if employee_ids is None:
+            employee_ids = []
         if not employee_ids and "default_employee_id" in self.env.context:
             employee_ids = [self.env.context["default_employee_id"]]
         if not employee_ids:
@@ -383,7 +386,6 @@ class HrAppraisalGoal(models.Model):
             "target": "new",
             "context": {"goals_ids": self.env.context.get("goals_ids")},
         }
-
 
     def action_archive(self):
         super().action_archive()

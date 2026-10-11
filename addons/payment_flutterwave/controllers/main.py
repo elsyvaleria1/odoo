@@ -23,8 +23,6 @@ class FlutterwaveController(http.Controller):
 
         if data.get("status") != "cancelled":
             self._check_and_process(data)
-        else:
-            pass
 
         return request.redirect("/payment/status")
 

@@ -32,7 +32,6 @@ KPI_PREFIXES = ("kpi_", "x_kpi_", "x_studio_kpi_")
 
 
 class Periodicity(NamedTuple):
-
     run: relativedelta
     idle: relativedelta
     slower: str
@@ -58,7 +57,6 @@ PERIODICITY_SELECTION = [(key, p.label) for key, p in PERIODICITIES.items()]
 
 
 class DigestDigest(models.Model):
-
     _name = "digest.digest"
     _description = "Digest"
     _order = "name, id"
@@ -171,7 +169,6 @@ class DigestDigest(models.Model):
                 {**vals, "next_run_date": self._get_next_run_date(periodicity)}
             )
         return super().create(seeded)
-
 
     def action_subscribe(self) -> None:
         if self.env.user._is_internal() and self.env.user not in self.user_ids:
@@ -346,7 +343,6 @@ class DigestDigest(models.Model):
         return tools.is_hmac_valid(
             self.env, UNSUBSCRIBE_SCOPE, (self.id, user_id), token
         )
-
 
     def _get_kpi_data(self, company, user) -> list:
         self.check_singleton()
@@ -562,7 +558,6 @@ class DigestDigest(models.Model):
             ),
         ]
 
-
     def _update_company_based_kpi(
         self,
         model,
@@ -652,22 +647,26 @@ class DigestDigest(models.Model):
         company_sql = Model._field_to_sql(Model._table, "company_id", query)
         if sum_field:
             value_sql = Model._field_to_sql(Model._table, sum_field, query)
-            aggregate = lambda window: SQL(
-                "COALESCE(SUM(%s) FILTER (WHERE %s >= %s AND %s < %s), 0)",
-                value_sql,
-                date_sql,
-                window[0],
-                date_sql,
-                window[1],
-            )
+
+            def aggregate(window):
+                return SQL(
+                    "COALESCE(SUM(%s) FILTER (WHERE %s >= %s AND %s < %s), 0)",
+                    value_sql,
+                    date_sql,
+                    window[0],
+                    date_sql,
+                    window[1],
+                )
         else:
-            aggregate = lambda window: SQL(
-                "COUNT(*) FILTER (WHERE %s >= %s AND %s < %s)",
-                date_sql,
-                window[0],
-                date_sql,
-                window[1],
-            )
+
+            def aggregate(window):
+                return SQL(
+                    "COUNT(*) FILTER (WHERE %s >= %s AND %s < %s)",
+                    date_sql,
+                    window[0],
+                    date_sql,
+                    window[1],
+                )
 
         sql = SQL(
             "%s GROUP BY %s",

@@ -228,7 +228,7 @@ class MixinApproval(models.AbstractModel):
                     missing=missing_fields,
                 )
 
-    def _check_can_request_approval(self, candidates=None) -> "ApprovalCategory":
+    def _check_can_request_approval(self, candidates=None) -> ApprovalCategory:
         self.check_singleton()
         if self.approval_request_id:
             trace.REFUSAL.event(
@@ -728,7 +728,7 @@ class MixinApproval(models.AbstractModel):
             trace.DEGRADED.event("category_xmlid_missing", record=self, xmlid=xmlid)
         return []
 
-    def _get_candidate_approval_categories(self) -> "ApprovalCategory":
+    def _get_candidate_approval_categories(self) -> ApprovalCategory:
         self.check_singleton()
         domain = self._get_domain_approval_category()
         if not domain:
@@ -742,7 +742,7 @@ class MixinApproval(models.AbstractModel):
             domain + [("company_id", "in", (company_id, False))],
         )
 
-    def _find_approval_category(self, categories=None) -> "ApprovalCategory":
+    def _find_approval_category(self, categories=None) -> ApprovalCategory:
         self.check_singleton()
         if categories is None:
             categories = self._get_candidate_approval_categories()
@@ -762,7 +762,7 @@ class MixinApproval(models.AbstractModel):
         )
         return self._get_approval_category_fallback(categories)
 
-    def _get_approval_category(self, candidates=None) -> "ApprovalCategory | bool":
+    def _get_approval_category(self, candidates=None) -> ApprovalCategory | bool:
         self.check_singleton()
         domain = self._get_domain_approval_category()
         if not domain:

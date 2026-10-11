@@ -8,7 +8,6 @@ from pathlib import Path
 from psycopg.errors import InsufficientPrivilege
 
 import odoo
-import odoo.release
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.memory_watch import start_from_environ as start_memory_watch
 from odoo.service import db, server

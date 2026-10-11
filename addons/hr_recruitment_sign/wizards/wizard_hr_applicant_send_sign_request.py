@@ -159,19 +159,19 @@ class WizardHrApplicantSendSignRequest(models.TransientModel):
         )
 
         for applicant in self.applicant_ids:
-            for sign_template_id in sign_templates_applicant_ids:
-                sign_values.append(
-                    (
-                        sign_template_id,
-                        applicant,
-                        [
-                            {
-                                "role_id": self.applicant_role_id.id,
-                                "partner_id": applicant.partner_id.id,
-                            }
-                        ],
-                    )
+            sign_values.extend(
+                (
+                    sign_template_id,
+                    applicant,
+                    [
+                        {
+                            "role_id": self.applicant_role_id.id,
+                            "partner_id": applicant.partner_id.id,
+                        }
+                    ],
                 )
+                for sign_template_id in sign_templates_applicant_ids
+            )
             for sign_template_id in sign_templates_both_ids:
                 second_role = (
                     sign_template_id.sign_item_ids.responsible_id

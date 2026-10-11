@@ -13,14 +13,14 @@ from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 
 class PasskeyTest(HttpCaseWithUserDemo):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         super().setUpClass()
 
-        self.admin_user = self.env.ref("base.user_admin")
+        cls.admin_user = cls.env.ref("base.user_admin")
 
-        self.passkeys = {
+        cls.passkeys = {
             "test-yubikey": {
-                "user": self.admin_user,
+                "user": cls.admin_user,
                 "credential_identifier": "L2p6jvcWuCMTRmkZHKqqvQbz0Dhk3JbJOx1F8ci99nSNjlfx3Z7nkigMdUACLggB",
                 "public_key": "pQECAyYgASFYIC9qeo73FrgjE0ZpGRwxLIG50L4kNlhj2DIyqSc_YiRSIlgg2q6bL2-IoJ6j_GkVTdfPKyx8RF5e8wzX9-Zk37AykM8=",
                 "host": "http://localhost:8069",
@@ -63,7 +63,7 @@ class PasskeyTest(HttpCaseWithUserDemo):
                 },
             },
             "test-yubikey-nano": {
-                "user": self.admin_user,
+                "user": cls.admin_user,
                 "credential_identifier": "wtw0u7D8rp7nq7WBWFCt_FRhEHpU6EHvEgTn3BBid5N-UE5a9XCzS8NaVuh7ydFz",
                 "public_key": "pQECAyYgASFYIMLcNLuw_K6e56u1gVioLcAJF8v8eUw7kfqTOqDdl7nFIlggFSs_nZWewd_JqzeWzXmJ6Wmn_nKuo82rCdoOZ-oewOU=",
                 "host": "http://localhost:8069",
@@ -85,7 +85,7 @@ class PasskeyTest(HttpCaseWithUserDemo):
                 },
             },
             "test-keepassxc": {
-                "user": self.user_demo,
+                "user": cls.user_demo,
                 "credential_identifier": "y6aJVJsvvSSkbwTeGZ1FbQP_jCDho7EBPwZq-3lAjQ0",
                 "public_key": "pQECAyYgASFYICjw-NoCHMkYYbRo8Q4SgJ4tZc8BSEmuEI0XmA6hUqR_IlggjtuBgyhwnr7PqABF2o8vCniMVa7_mTG6_l9Pc4eI4mo=",
                 "host": "https://localhost:8888",
@@ -108,7 +108,7 @@ class PasskeyTest(HttpCaseWithUserDemo):
                 },
             },
             "test-user-verification": {
-                "user": self.user_demo,
+                "user": cls.user_demo,
                 "credential_identifier": "723TCjL_RdQHFk3Ysp-HUymcWoazFi3ZdfZ1bIn6MYC5bAXvI6B-j8G-UA1taMO0",
                 "public_key": "pQECAyYgASFYIO9t0woy_0XUBxZN2LKpzFmzmauPpdgt7B1EnoVXHL56IlggUJWIu-UCOAFOCAMUXDXb36pJ49aWNI9Z7njiLQt7amw=",
                 "host": "http://localhost:8069",
@@ -131,8 +131,8 @@ class PasskeyTest(HttpCaseWithUserDemo):
             },
         }
 
-        for key, values in self.passkeys.items():
-            self.cr.execute(
+        for key, values in cls.passkeys.items():
+            cls.cr.execute(
                 SQL(
                     """
                 INSERT INTO auth_passkey_key (name, credential_identifier, public_key, create_uid, write_date, create_date)
@@ -145,8 +145,8 @@ class PasskeyTest(HttpCaseWithUserDemo):
                     values["user"].id,
                 )
             )
-            passkey_id = self.cr.fetchone()
-            values["passkey"] = self.env["auth.passkey.key"].browse(passkey_id)
+            passkey_id = cls.cr.fetchone()
+            values["passkey"] = cls.env["auth.passkey.key"].browse(passkey_id)
 
     def rpc(self, model, method, *args, **kwargs):
         return self.url_open(
@@ -247,7 +247,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
             sign_count = passkey["passkey"].sign_count
 
             with self.patch_start_auth(webauthn_challenge):
-
                 csrf_token = (
                     html.fromstring(self.url_open("/web/login").content)
                     .xpath('//input[@name="csrf_token"]')[0]
@@ -315,7 +314,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
                     "res.users", "action_open_api_key_wizard", user.id
                 )["result"]["res_id"]
 
-
                 self.url_open(
                     "/auth/passkey/start-auth",
                     "{}",
@@ -355,7 +353,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
                     "Incorrect Passkey. Please provide a valid passkey or use a different authentication method.",
                 )
                 self.assertEqual(passkey["passkey"].sign_count, sign_count)
-
 
                 self.url_open(
                     "/auth/passkey/start-auth",

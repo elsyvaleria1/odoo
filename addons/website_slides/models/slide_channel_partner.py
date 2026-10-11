@@ -54,8 +54,8 @@ class SlideChannelPartner(models.Model):
     )
     date_completed = fields.Datetime(
         string="Completed On",
-        readonly=True,
         copy=False,
+        readonly=True,
     )
     partner_id = fields.Many2one(
         comodel_name="res.partner",

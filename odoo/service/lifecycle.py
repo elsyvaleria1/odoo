@@ -62,10 +62,9 @@ def _load_server_wide_modules() -> None:
 
 def _reexec_server() -> None:
     if osutil.is_running_as_nt_service(nt_service_name):
-        rc = subprocess.call(
-            f"net stop {nt_service_name} && net start {nt_service_name}",
-            shell=True,
-        )
+        rc = subprocess.call(["net", "stop", nt_service_name])
+        if rc == 0:
+            rc = subprocess.call(["net", "start", nt_service_name])
         if rc == 0:
             _debug.lifecycle("service.nt_service_restarted", service=nt_service_name)
             return
@@ -80,7 +79,7 @@ def _reexec_server() -> None:
     if not args or args[0] not in (sys.executable, exe):
         args.insert(0, sys.executable)
     _debug.lifecycle("service.reexec", pid=os.getpid(), argv=len(args))
-    os.execve(sys.executable, args, os.environ)
+    os.execve(sys.executable, args, os.environ)  # noqa: S606 -- Replaces this server with the current Python executable on restart.
 
 
 def _find_assertion_report(dbname: str) -> OdooTestResult | None:
@@ -141,7 +140,7 @@ def _run_post_install_tests(registry: Registry, update_module: bool) -> int:
         with _debug.perf("service.post_install_tests.assets_pregenerated"):
             with registry.cursor() as cr:
                 env = api.Environment(cr, api.SUPERUSER_ID, {})
-                env["ir.qweb"]._pregenerate_assets_bundles()
+                env["ir.qweb"]._pregenerate_assets_bundles()  # type: ignore[attr-defined]
 
     result = loader.run_suite(
         post_install_suite,
@@ -309,7 +308,7 @@ def _warm_web_pages(registry: Registry) -> None:
     try:
         with registry.cursor() as cr:
             env = api.Environment(cr, api.SUPERUSER_ID, {})
-            env["ir.qweb"]._warm_page_assets()
+            env["ir.qweb"]._warm_page_assets()  # type: ignore[attr-defined]
     except Exception:
         _logger.warning(
             "Page assets of %s were not preloaded; each worker will compute them "

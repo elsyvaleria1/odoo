@@ -122,7 +122,9 @@ class TestIrActionsLoadAudit(TransactionCase):
         )
 
     def test_the_rule_is_the_one_bindings_apply(self):
-        as_user = lambda action: action.with_user(self.user)
+        def as_user(action):
+            return action.with_user(self.user)
+
         self.assertEqual(as_user(self.open)._get_load_refusal_of_record(), "")
         self.assertEqual(
             as_user(self.restricted)._get_load_refusal_of_record(), "groups"

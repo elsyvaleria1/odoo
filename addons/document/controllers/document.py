@@ -79,7 +79,7 @@ def _read_stream_blocks(stream: Any, reader: Any = None) -> Any:
         yield from reader(_ZIP_READ_BLOCK)
         return
     if stream.type == "path":
-        with open(stream.path, "rb") as source:
+        with pathlib.Path(stream.path).open("rb") as source:
             while block := source.read(_ZIP_READ_BLOCK):
                 yield block
     else:
@@ -752,7 +752,7 @@ class ShareRoute(http.Controller):
     @http.route(
         "/documents/redirect/<access_token>", type="http", auth="public", readonly=True
     )
-    def document_redirect(self, access_token: str) -> Any:
+    def document_redirect(self, access_token: str) -> Any:  # noqa: E8539 -- redirect: passes the token on to the page or record check that opens it
         return request.redirect(
             f"/odoo/documents/{quote(access_token, safe='')}",
             HTTPStatus.MOVED_PERMANENTLY,

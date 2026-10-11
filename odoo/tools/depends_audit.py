@@ -68,6 +68,71 @@ class _Function:
         return False
 
 
+def _scan_load(
+    opname: str,
+    argval: typing.Any,
+    arg: int,
+    stack: list[typing.Any],
+    pop: Callable[..., list[typing.Any]],
+    foreign_locals: set[str],
+    names: set[str],
+) -> bool:
+    if opname in _LOAD_LOCAL:
+        stack.append(argval in foreign_locals or argval in _FOREIGN_ROOTS)
+    elif opname == "LOAD_FAST_AND_CLEAR":
+        stack.append(_SAVED_LOCAL)
+    elif opname == "LOAD_CONST" and hasattr(argval, "co_code"):
+        stack.append(_Function(argval))
+    elif opname == "SET_FUNCTION_ATTRIBUTE":
+        function, _attribute = pop(2)[::-1]
+        stack.append(function)
+    elif opname in _LOAD_LOCAL_PAIR:
+        stack.extend(name in foreign_locals for name in argval)
+    elif opname == "LOAD_GLOBAL":
+        stack.extend([_GLOBAL] * (1 + arg % 2))
+    elif opname in ("LOAD_DEREF", "LOAD_NAME"):
+        stack.append(argval in _FOREIGN_ROOTS)
+    elif opname == "LOAD_ATTR":
+        (receiver,) = pop()
+        foreign = bool(receiver) or argval in _FOREIGN_ROOTS
+        if not foreign and isinstance(argval, str):
+            names.add(argval)
+        stack.extend([foreign] * (1 + arg % 2))
+    elif opname == "STORE_ATTR":
+        owner, _value = pop(2)[::-1]
+        if not owner and isinstance(argval, str):
+            names.add(argval)
+    elif opname == "BINARY_OP" and arg == _SUBSCRIPT:
+        container, _key = pop(2)
+        stack.append(container)
+    elif opname == "END_FOR":
+        pass
+    else:
+        return False
+    return True
+
+
+def _scan_call(
+    opname: str,
+    arg: int,
+    keywords: tuple[str, ...],
+    stack: list[typing.Any],
+    pop: Callable[..., list[typing.Any]],
+    foreign_functions: set[typing.Any],
+) -> None:
+    extra = 1 if opname == "CALL_KW" else 0
+    popped = pop(arg + 2 + extra)
+    functions = [item for item in popped if isinstance(item, _Function)]
+    walked = popped[: 2 + arg - (len(keywords) if extra else 0)]
+    if any(item is True for item in walked):
+        foreign_functions.update(function.code for function in functions)
+    if popped[0] == _GLOBAL:
+        arguments = popped[2 : 2 + arg]
+        stack.append(all(arguments))
+    else:
+        stack.append(bool(popped[0] or popped[1]))
+
+
 def _scan_code(
     bytecode: dis.Bytecode,
     foreign_locals: set[str],
@@ -86,7 +151,7 @@ def _scan_code(
         if value != _SAVED_LOCAL:
             stores.setdefault(name, []).append(value)
 
-    entries = bytecode.exception_entries
+    entries = bytecode.exception_entries  # type: ignore[attr-defined]
     protected = {entry.start: entry for entry in entries}
     handlers = {entry.target: entry for entry in entries}
     entry_stacks: dict[int, list[typing.Any]] = {}
@@ -101,52 +166,14 @@ def _scan_code(
         opname = instruction.opname
         argval = instruction.argval
         arg = instruction.arg or 0
-        if opname in _LOAD_LOCAL:
-            stack.append(argval in foreign_locals or argval in _FOREIGN_ROOTS)
-        elif opname == "LOAD_FAST_AND_CLEAR":
-            stack.append(_SAVED_LOCAL)
-        elif opname == "LOAD_CONST" and hasattr(argval, "co_code"):
-            stack.append(_Function(argval))
-        elif opname == "SET_FUNCTION_ATTRIBUTE":
-            function, _attribute = pop(2)[::-1]
-            stack.append(function)
-        elif opname in _LOAD_LOCAL_PAIR:
-            stack.extend(name in foreign_locals for name in argval)
-        elif opname == "LOAD_GLOBAL":
-            stack.extend([_GLOBAL] * (1 + arg % 2))
-        elif opname in ("LOAD_DEREF", "LOAD_NAME"):
-            stack.append(argval in _FOREIGN_ROOTS)
-        elif opname == "LOAD_ATTR":
-            (receiver,) = pop()
-            foreign = bool(receiver) or argval in _FOREIGN_ROOTS
-            if not foreign and isinstance(argval, str):
-                names.add(argval)
-            stack.extend([foreign] * (1 + arg % 2))
-        elif opname == "STORE_ATTR":
-            owner, _value = pop(2)[::-1]
-            if not owner and isinstance(argval, str):
-                names.add(argval)
-        elif opname == "BINARY_OP" and arg == _SUBSCRIPT:
-            container, _key = pop(2)
-            stack.append(container)
+        if _scan_load(opname, argval, arg, stack, pop, foreign_locals, names):
+            pass
         elif opname in _CALLS:
-            extra = 1 if opname == "CALL_KW" else 0
-            popped = pop(arg + 2 + extra)
-            functions = [item for item in popped if isinstance(item, _Function)]
-            walked = popped[: 2 + arg - (len(keywords) if extra else 0)]
-            if any(item is True for item in walked):
-                foreign_functions.update(function.code for function in functions)
-            if popped[0] == _GLOBAL:
-                arguments = popped[2 : 2 + arg]
-                stack.append(all(arguments))
-            else:
-                stack.append(bool(popped[0] or popped[1]))
+            _scan_call(opname, arg, keywords, stack, pop, foreign_functions)
         elif opname in _PASS_THROUGH:
             stack.extend(pop())
         elif opname == "FOR_ITER":
             stack.append(stack[-1] if stack else False)
-        elif opname == "END_FOR":
-            pass
         elif opname == "UNPACK_SEQUENCE":
             (value,) = pop()
             stack.extend([value] * arg)

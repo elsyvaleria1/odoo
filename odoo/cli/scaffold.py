@@ -133,7 +133,7 @@ def _get_jinja_env() -> Environment:
             "odoo-bin scaffold needs Jinja2, which is not installed.\n"
             "    pip install Jinja2      (or: pip install 'odoo[scaffold]')"
         )
-    env = jinja2.Environment()
+    env = jinja2.Environment(autoescape=False)  # noqa: S701 -- Generates source files, including Python and CSV.
     env.filters["snake"] = _str_to_snake_case
     env.filters["pascal"] = _str_to_pascal_case
     _debug.lifecycle("cli.scaffold.jinja_env_built", filters=2)

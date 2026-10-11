@@ -57,12 +57,10 @@ class PaymentToken(models.Model):
     )
     active = fields.Boolean(default=True)
 
-
     @api.depends("payment_details", "create_date")
     def _compute_display_name(self):
         for token in self:
             token.display_name = token._prepare_display_name()
-
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -71,8 +69,6 @@ class PaymentToken(models.Model):
                 provider = self.env["payment.provider"].browse(values["provider_id"])
 
                 values.update(self._prepare_provider_create_vals(provider.code, values))
-            else:
-                pass
 
         return super().create(vals_list)
 
@@ -111,7 +107,6 @@ class PaymentToken(models.Model):
 
     def _handle_archiving(self) -> None:
         return
-
 
     def _get_available_tokens(
         self, providers_ids, partner_id, is_validation=False, **kwargs

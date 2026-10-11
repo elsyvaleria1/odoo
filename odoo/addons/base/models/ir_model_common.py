@@ -7,15 +7,21 @@ from typing import Any
 from psycopg.types.json import Jsonb
 
 from odoo import api, models
-from odoo.api import MODULE_UNINSTALL_FLAG
+from odoo.api import MODULE_UNINSTALL_FLAG as MODULE_UNINSTALL_FLAG  # noqa: PLC0414 -- Explicit public re-export for callers of this module.
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
 from odoo.tools.module_data import (
-    field_xmlid,
-    inherit_xmlid,
-    model_xmlid,
-    selection_xmlid,
+    field_xmlid as field_xmlid,  # noqa: PLC0414 -- Explicit public re-export for callers of this module.
+)
+from odoo.tools.module_data import (
+    inherit_xmlid as inherit_xmlid,  # noqa: PLC0414 -- Explicit public re-export for callers of this module.
+)
+from odoo.tools.module_data import (
+    model_xmlid as model_xmlid,  # noqa: PLC0414 -- Explicit public re-export for callers of this module.
+)
+from odoo.tools.module_data import (
+    selection_xmlid as selection_xmlid,  # noqa: PLC0414 -- Explicit public re-export for callers of this module.
 )
 from odoo.tools.safe_eval import datetime, dateutil, safe_eval, time
 from odoo.tools.translate import LazyTranslate

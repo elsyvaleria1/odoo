@@ -18,7 +18,7 @@ from ..parsing import parse_field_expr
 from ..primitives import COLLECTION_TYPES, NewId
 from ._ast_primitives import (
     _MERGE_OPTIMIZATIONS,
-    _OPTIMIZATION_KEY_KIND,
+    _OPTIMIZATION_KEY_KIND,  # noqa: F401 -- Re-exported to domain.optimizations during its circular import.
     _OPTIMIZATIONS_FOR,
     MAX_DOMAIN_NESTING,
     DomainOptimizationError,
@@ -173,7 +173,7 @@ class Domain:
     def _opt_model_name(self) -> str | None:
         return self._opt[1]
 
-    def __new__(cls, *args: object, internal: bool = False) -> Domain:
+    def __new__(cls, *args: object, internal: bool = False) -> Domain:  # noqa: PYI034 -- Factory may return an interned instance or a different concrete subtype.
         if len(args) > 1:
             if isinstance(field_expr := args[0], str):
                 _first, operator, value = args
@@ -862,7 +862,7 @@ class DomainCondition(Domain):
     operator: str
     value: typing.Any
 
-    def __new__(cls, field_expr: str, operator: str, value: object) -> DomainCondition:
+    def __new__(cls, field_expr: str, operator: str, value: object) -> Self:
         self = object.__new__(cls)
         object.__setattr__(self, "field_expr", field_expr)
         object.__setattr__(self, "operator", operator)

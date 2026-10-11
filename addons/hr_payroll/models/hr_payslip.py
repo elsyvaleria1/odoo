@@ -871,7 +871,7 @@ class HrPayslip(models.Model):
         generic_name = self.env._("Payslip")
         for report, payslips in mapped_reports.items():
             for payslip in payslips:
-                pdf_content, dummy = (
+                pdf_content, _dummy = (
                     self.env["ir.actions.report"]
                     .sudo()
                     .with_context(lang=payslip.employee_id.lang or self.env.lang)
@@ -2508,7 +2508,6 @@ class HrPayslip(models.Model):
         class ProxyHrPayslipInput(self.env["hr.payslip.input"].__class__):
             _name = self.env["hr.payslip.input"]._name
             _register = False
-
 
             def __getitem__(self, key_or_slice):
                 if not self or len(self) == 1:

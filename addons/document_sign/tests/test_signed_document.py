@@ -9,43 +9,43 @@ from odoo.addons.document_sign.tests.test_document import TestCaseDocumentsBridg
 
 
 class TestSignedDocument(TestCaseDocumentsBridgeSign):
-    def setUp(cls):
+    def setUp(self):
         super().setUp()
-        partner = cls.env["res.partner"]
-        user = cls.env["res.users"].create(
+        partner = self.env["res.partner"]
+        user = self.env["res.users"].create(
             {
                 "name": "test_sign_owner_",
                 "login": "test_sign_owner@ex.com",
                 "email": "test_sign_owner@ex.com",
             }
         )
-        sign_request = cls.create_sign_request_1_role(user.partner_id, partner)
-        sign_document = cls.document_3
-        sign_request.completed_document_attachment_ids = [(4, cls.attachment.id)]
+        sign_request = self.create_sign_request_1_role(user.partner_id, partner)
+        sign_document = self.document_3
+        sign_request.completed_document_attachment_ids = [(4, self.attachment.id)]
 
-        cls.trash_doc, cls.signed_document_pdf, cls.sign_doc = cls.env[
+        self.trash_doc, self.signed_document_pdf, self.sign_doc = self.env[
             "document.document"
         ].create(
             [
                 {
                     "name": "trash_doc",
-                    "attachment_id": cls.attachment.copy().id,
-                    "folder_id": cls.folder_a_a.id,
+                    "attachment_id": self.attachment.copy().id,
+                    "folder_id": self.folder_a_a.id,
                     "active": False,
                     "res_model": False,
                 },
                 {
                     "name": "signed document",
-                    "folder_id": cls.folder_a_a.id,
+                    "folder_id": self.folder_a_a.id,
                     "res_model": sign_request._name,
                     "res_id": sign_request.id,
                     "active": False,
-                    "attachment_id": cls.attachment.id,
+                    "attachment_id": self.attachment.id,
                 },
                 {
                     "name": "sign document",
                     "attachment_id": sign_document.attachment_id.id,
-                    "folder_id": cls.folder_a_a.id,
+                    "folder_id": self.folder_a_a.id,
                     "res_model": sign_document._name,
                     "res_id": sign_document.id,
                     "active": False,

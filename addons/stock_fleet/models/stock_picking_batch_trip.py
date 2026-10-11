@@ -100,9 +100,9 @@ class StockPickingBatch(models.Model):
     )
     def _compute_trip_state(self) -> None:
         for batch in self:
-            if not (batch.has_dispatch_management or batch.date_departure):
-                batch.trip_state = False
-            elif batch.state == "done" and not batch.date_departure:
+            if not (batch.has_dispatch_management or batch.date_departure) or (
+                batch.state == "done" and not batch.date_departure
+            ):
                 batch.trip_state = False
             elif batch.state == "cancel":
                 batch.trip_state = "cancelled"

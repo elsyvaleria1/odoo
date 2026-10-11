@@ -1,6 +1,3 @@
-from odoo.exceptions import (
-    AccessError,
-)
 from odoo.tests import tagged
 
 from .common import SpreadsheetTestCommon

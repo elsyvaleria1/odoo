@@ -358,18 +358,15 @@ class KnowledgeArticle(models.Model):
         """)
 
         if not self.env.cr.rowcount:
-
             self.env.cr.execute("""
                 CREATE TEXT SEARCH CONFIGURATION knowledge_config
                     (PARSER = pg_catalog.default);
             """)
 
-
             self.env.cr.execute("""
                 CREATE TEXT SEARCH DICTIONARY knowledge_dictionary
                     (TEMPLATE = pg_catalog.simple);
             """)
-
 
             self.env.cr.execute("""
                 ALTER TEXT SEARCH CONFIGURATION knowledge_config
@@ -380,7 +377,6 @@ class KnowledgeArticle(models.Model):
                     WITH knowledge_dictionary;
             """)
 
-
             create_index(
                 self.env.cr,
                 get_index_name(self._table, "body"),
@@ -388,7 +384,6 @@ class KnowledgeArticle(models.Model):
                 ["to_tsvector('knowledge_config', body)"],
                 method="GIN",
             )
-
 
     @api.constrains("internal_permission", "article_member_ids")
     def _check_is_writable(self) -> None:
@@ -435,7 +430,6 @@ class KnowledgeArticle(models.Model):
                         parent_article_name=article.parent_id.name,
                     )
                 )
-
 
     def _compute_article_url(self) -> None:
         for article in self:
@@ -869,9 +863,7 @@ class KnowledgeArticle(models.Model):
             article.is_article_visible_by_everyone = (
                 article.root_article_id.is_article_visible_by_everyone
             )
-        root_articles.is_article_visible_by_everyone = (
-            False
-        )
+        root_articles.is_article_visible_by_everyone = False
 
     @api.depends("to_delete", "write_date")
     def _compute_deletion_date(self) -> None:
@@ -887,7 +879,6 @@ class KnowledgeArticle(models.Model):
                 limit_days = self.DEFAULT_ARTICLE_TRASH_LIMIT_DAYS
             for article in trashed_articles:
                 article.deletion_date = article.write_date + timedelta(days=limit_days)
-
 
     def _order_by_sql_is_user_favorite(
         self, field, alias, direction, nulls, query
@@ -982,8 +973,6 @@ class KnowledgeArticle(models.Model):
                         }
                     ),
                 ]
-
-
 
             check_for_sudo = (
                 not self.env.su
@@ -1265,7 +1254,6 @@ class KnowledgeArticle(models.Model):
             "stage_id",
         }
 
-
     _GC_TRASH_BATCH_SIZE = 100
 
     @api.autovacuum
@@ -1364,7 +1352,6 @@ class KnowledgeArticle(models.Model):
                 element.set("data-embedded-props", json_dumps(embedded_props))
 
         return html.tostring(fragment, encoding="unicode")
-
 
     def action_make_private_copy(self, preserve_name=False):
         self.check_singleton()
@@ -1553,7 +1540,6 @@ class KnowledgeArticle(models.Model):
             self.sudo()._add_members(current_user.partner_id, self.internal_permission)
             return False
 
-
     def move_to(self, parent_id=False, before_article_id=False, category=False):
         self.check_singleton()
         before_article = (
@@ -1655,7 +1641,6 @@ class KnowledgeArticle(models.Model):
             ._read_group(domain, ["parent_id"], ["sequence:max"])
         )
         return {parent.id: sequence_max for parent, sequence_max in rg_results}
-
 
     @api.model
     def article_create(
@@ -1916,7 +1901,6 @@ class KnowledgeArticle(models.Model):
         templates_to_load = []
         template_to_article_pairs = []
 
-
         all_articles_created_from_template = self.search(
             [
                 ("is_template", "=", False),
@@ -1935,7 +1919,6 @@ class KnowledgeArticle(models.Model):
                 break
             templates_to_load.append(template)
             template = template.parent_id
-
 
         for template in reversed(templates_to_load):
             sibling_articles = self.search(
@@ -1974,7 +1957,6 @@ class KnowledgeArticle(models.Model):
             all_articles_created_from_template |= article
             parent_article = article
 
-
         template_xml_id_to_article_id_mapping = {}
         all_ir_model_data = (
             self.env["ir.model.data"]
@@ -2009,7 +1991,6 @@ class KnowledgeArticle(models.Model):
                 else self.env.ref(xml_id).id
             )
 
-
         for template, article in template_to_article_pairs:
             article.write(
                 {
@@ -2024,7 +2005,6 @@ class KnowledgeArticle(models.Model):
             )
 
         return parent_article
-
 
     def get_permission_panel_members(self):
         self.check_singleton()
@@ -2476,13 +2456,13 @@ class KnowledgeArticle(models.Model):
                         article_name=self.display_name,
                         parent_name=parent.display_name,
                     )
-                )
+                ) from None
             raise AccessError(
                 self.env._(
                     "You are not allowed to make '%(article_name)s' private.",
                     article_name=self.display_name,
                 )
-            )
+            ) from None
 
         writable_descendants_sudo = self._detach_unwritable_descendants()
 
@@ -2742,7 +2722,6 @@ class KnowledgeArticle(models.Model):
 
         return article_members
 
-
     def _mail_track(self, tracked_fields, initial_values):
         changes, tracking_value_ids = super()._mail_track(
             tracked_fields, initial_values
@@ -2900,7 +2879,6 @@ class KnowledgeArticle(models.Model):
 
         return sent_messages
 
-
     def create_article_from_template(self, parent_id=False):
         self.check_singleton()
         values = {"parent_id": parent_id}
@@ -2926,8 +2904,6 @@ class KnowledgeArticle(models.Model):
         self.check_singleton()
         template = self.env["knowledge.article"].browse(template_id)
         template.check_singleton()
-
-
 
         template_to_article_pairs = []
         stack = [(template, self)]
@@ -2988,7 +2964,6 @@ class KnowledgeArticle(models.Model):
             child_articles = self.env["knowledge.article"].create(child_articles_values)
             stack.extend(zip(child_templates, child_articles, strict=False))
 
-
         template_xml_id_to_article_id_mapping = {}
         all_ir_model_data = (
             self.env["ir.model.data"]
@@ -3015,14 +2990,12 @@ class KnowledgeArticle(models.Model):
                 template_xml_id = ir_model_data.complete_name
                 template_xml_id_to_article_id_mapping[template_xml_id] = article.id
 
-
         def ref(xml_id):
             return (
                 template_xml_id_to_article_id_mapping[xml_id]
                 if xml_id in template_xml_id_to_article_id_mapping
                 else self.env.ref(xml_id).id
             )
-
 
         (root_template, root_article) = template_to_article_pairs.pop(0)
         for template, article in reversed(template_to_article_pairs):
@@ -3261,7 +3234,6 @@ class KnowledgeArticle(models.Model):
     def _is_load_all_annexes_required(self) -> bool:
         self.check_singleton()
         return True
-
 
     @api.model
     def _extract_icon_from_name(self, name) -> tuple:
