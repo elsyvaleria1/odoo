@@ -1,6 +1,5 @@
 import io
 from ast import literal_eval
-from unittest.mock import patch
 
 import lxml.html
 from werkzeug.datastructures import FileStorage
@@ -504,9 +503,7 @@ class TestContactFormAfterEmailChange(HttpCase):
         self._served_form()
         company.email = "after-change@example.com"
         self.env.flush_all()
-        WebsitePage = type(self.env["website.page"])
-        with patch.object(WebsitePage, "_CACHE_DURATION", -1):
-            email_to, signature = self._served_form()
+        email_to, signature = self._served_form()
         self.assertEqual(email_to, "after-change@example.com")
         response = self.url_open(
             "/website/form/mail.mail",

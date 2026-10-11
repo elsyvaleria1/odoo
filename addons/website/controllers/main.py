@@ -718,7 +718,14 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
             if highlight_terms
             else None
         )
-        search_results = request.website._search_render_results(search_results, window)
+        merged = search_type == "all" or len(search_results) > 1
+        if not merged:
+            search_results[0]["results"] = search_results[0]["results"][
+                offset : offset + limit
+            ]
+        search_results = request.website._search_render_results(
+            search_results, window if merged else limit
+        )
 
         mappings = []
         results_data = []
@@ -730,7 +737,8 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
                 key=lambda r: r.get("name", ""),
                 reverse=bool(order) and "name desc" in order,
             )
-        results_data = results_data[offset : offset + limit]
+        if merged:
+            results_data = results_data[offset : offset + limit]
         result = [
             self._render_autocomplete_record(
                 record, max_nb_chars, highlight_pattern, options

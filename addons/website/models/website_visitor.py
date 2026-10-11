@@ -180,6 +180,9 @@ class WebsiteVisitor(models.Model):
         "unique(access_token)",
         "Access token should be unique.",
     )
+    _anonymous_last_connection_idx = models.Index(
+        "(last_connection_datetime) WHERE partner_id IS NULL"
+    )
 
     @api.depends("partner_id")
     def _compute_display_name(self):

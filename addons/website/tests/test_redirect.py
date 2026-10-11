@@ -2,6 +2,8 @@ import logging
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import lxml.html
+
 from odoo.exceptions import ValidationError
 from odoo.tests import HttpCase, TransactionCase, tagged
 
@@ -154,6 +156,12 @@ class TestWebsiteRedirect(TransactionCase):
             rewrites.create(
                 {"name": "second", "url_from": "/challenge/b", "url_to": "a"}
             )
+
+    def test_a_search_matching_no_route_refreshes_the_routes_once(self):
+        Route = type(self.env["website.route"])
+        with patch.object(Route, "_refresh", autospec=True) as refresh:
+            self.env["website.route"].name_search("/no-such-route-probe")
+        self.assertEqual(refresh.call_count, 1)
 
     def test_route_refresh_is_idempotent_with_overlapping_routes(self):
         routes = self.env["website.route"]
@@ -408,6 +416,34 @@ class TestWebsiteRedirectServe(HttpCase):
             self.url_open("/challenge-info-alias", allow_redirects=False).status_code,
             200,
         )
+
+    def test_a_new_308_rewrites_links_of_an_already_rendered_page(self):
+        self.env["website.page"].create(
+            {
+                "name": "Rewrite probe",
+                "type": "qweb",
+                "url": "/rewrite-link-probe",
+                "is_published": True,
+                "website_id": self.env.ref("website.default_website").id,
+                "arch": '<t t-call="website.layout"><div id="wrap">'
+                '<a id="probe" href="/website/info">info</a></div></t>',
+            }
+        )
+
+        def probe_href():
+            page = lxml.html.fromstring(self.url_open("/rewrite-link-probe").content)
+            return page.get_element_by_id("probe").get("href")
+
+        self.assertEqual(probe_href(), "/website/info")
+        self.env["website.rewrite"].create(
+            {
+                "name": "renamed info",
+                "url_from": "/website/info",
+                "url_to": "/renamed-info",
+                "redirect_type": "308",
+            }
+        )
+        self.assertEqual(probe_href(), "/renamed-info")
 
     def test_specific_308_survives_a_later_generic_404(self):
         website = self.env.ref("website.default_website")

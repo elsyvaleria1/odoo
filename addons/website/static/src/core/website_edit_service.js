@@ -296,11 +296,19 @@ export const websiteEditService = {
         };
 
         const handleEditPage = (ev) => {
+            if (!window.frameElement) {
+                detachFromParent();
+                return;
+            }
             log.lifecycle("edit_page received");
             stop(ev.detail.iframeDocument);
         };
 
         const handlePluginLoaded = (ev) => {
+            if (!window.frameElement) {
+                detachFromParent();
+                return;
+            }
             Object.assign(shared, ev.shared);
             log.lifecycle("edit interaction plugin loaded", () => ({
                 sharedPlugins: Object.keys(shared).length,
@@ -319,24 +327,24 @@ export const websiteEditService = {
             );
         };
 
-        window.parent.document.addEventListener("edit_page", handleEditPage);
-        window.parent.document.addEventListener(
+        const parentDocument = window.parent.document;
+        parentDocument.addEventListener("edit_page", handleEditPage);
+        parentDocument.addEventListener(
             "edit_interaction_plugin_loaded",
             handlePluginLoaded,
         );
-        window.parent.document.dispatchEvent(
-            new CustomEvent("website_edit_service_ready"),
-        );
+        parentDocument.dispatchEvent(new CustomEvent("website_edit_service_ready"));
         log.lifecycle("parent listeners attached, service ready dispatched");
 
-        window.addEventListener("beforeunload", () => {
-            log.lifecycle("beforeunload: parent listeners removed");
-            window.parent.document.removeEventListener("edit_page", handleEditPage);
-            window.parent.document.removeEventListener(
+        function detachFromParent() {
+            log.lifecycle("parent listeners removed");
+            parentDocument.removeEventListener("edit_page", handleEditPage);
+            parentDocument.removeEventListener(
                 "edit_interaction_plugin_loaded",
                 handlePluginLoaded,
             );
-        });
+        }
+        window.addEventListener("pagehide", detachFromParent, { once: true });
 
         return websiteEditService;
     },

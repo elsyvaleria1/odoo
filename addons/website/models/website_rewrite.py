@@ -22,6 +22,8 @@ class WebsiteRoute(models.Model):
 
     path = fields.Char(string="Route")
 
+    _path_unique = models.Constraint("unique(path)", "A route is listed once.")
+
     @api.model
     def _search_display_name(self, operator, value):
         domain = super()._search_display_name(operator, value)
@@ -29,20 +31,6 @@ class WebsiteRoute(models.Model):
             _debug.logic("routes_refresh", by="search_display_name")
             self._refresh()
         return domain
-
-    @api.model
-    @api.readonly
-    def name_search(self, name="", domain=None, operator="ilike", limit=100):
-        result = super().name_search(
-            name, domain=domain, operator=operator, limit=limit
-        )
-        if not result:
-            _debug.logic("routes_refresh", by="name_search")
-            self._refresh()
-            result = super().name_search(
-                name, domain=domain, operator=operator, limit=limit
-            )
-        return result
 
     def _refresh(self):
         ir_http = self.env["ir.http"]
@@ -425,7 +413,7 @@ class WebsiteRewrite(models.Model):
 
     def _invalidate_routing(self) -> None:
         _debug.lifecycle("routing_cache_cleared")
-        self.env.registry.clear_cache("routing")
+        self.env.registry.clear_cache("routing", "templates")
 
     def refresh_routes(self) -> None:
         self.env["website.route"]._refresh()

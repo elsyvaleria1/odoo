@@ -378,3 +378,45 @@ class TestWebsiteSaleGMC(WebsiteSaleGMCCommon, HttpCase):
         self.update_items()
 
         self.assertNotIn("unit_pricing_measure", self.items[six_pack])
+
+
+@tagged("post_install", "-at_install")
+class TestWebsiteSaleGMCChannel(WebsiteSaleGMCCommon):
+    def _channel(self, feed):
+        with MockRequest(self.env, website=self.website):
+            gmc_xml = etree.XML(feed._render_gmc_feed().encode())
+        return gmc_xml.find("channel")
+
+    def test_a_feed_reads_its_own_website_homepage(self):
+        other = self.env["website"].create({"name": "Second shop"})
+        self.env["website.page"].create(
+            {
+                "name": "Second home",
+                "url": "/second-home",
+                "type": "qweb",
+                "arch": "<div/>",
+                "website_id": other.id,
+                "website_meta_title": "Second home title",
+                "website_meta_description": "Second home description",
+            }
+        )
+        other.homepage_url = "/second-home"
+        feed = self.env["product.feed"].create(
+            {"name": "GMC 2", "website_id": other.id}
+        )
+
+        channel = self._channel(feed)
+
+        self.assertEqual(channel.findtext("title"), "Second home title")
+        self.assertEqual(channel.findtext("description"), "Second home description")
+
+    def test_a_homepage_without_description_falls_back_to_the_website_name(self):
+        other = self.env["website"].create({"name": "Undescribed shop"})
+        self.env["website.page"].search(
+            [("website_id", "=", other.id), ("url", "=", other.homepage_url or "/")]
+        ).website_meta_description = False
+        feed = self.env["product.feed"].create(
+            {"name": "GMC 3", "website_id": other.id}
+        )
+        channel = self._channel(feed)
+        self.assertEqual(channel.findtext("description"), "Undescribed shop")

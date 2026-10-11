@@ -454,6 +454,34 @@ class TestAutocompleteInputBounds(tests.HttpCase):
         self.assertTrue(payload["results"])
         self.assertNotIn("...", payload["results"][0]["name"])
 
+    def test_paging_a_single_type_serves_the_window_slice(self):
+        self.env["website.page"].create(
+            [
+                {
+                    "name": f"Autocomplete Pager {index}",
+                    "type": "qweb",
+                    "url": f"/autocomplete-pager-{index}",
+                    "is_published": True,
+                    "arch": "<div>autocompletepagerbody</div>",
+                }
+                for index in range(7)
+            ]
+        )
+        self.env.flush_all()
+        params = {"term": "autocompletepagerbody"}
+        everything = [
+            row["name"] for row in self._call(limit=10, **params)["result"]["results"]
+        ]
+        self.assertEqual(len(everything), 7)
+        for offset in (0, 3, 6):
+            with self.subTest(offset=offset):
+                page = self._call(limit=3, offset=offset, **params)["result"]
+                self.assertEqual(
+                    [row["name"] for row in page["results"]],
+                    everything[offset : offset + 3],
+                )
+                self.assertEqual(page["results_count"], 7)
+
 
 @tests.tagged("post_install", "-at_install")
 class TestNewPageTemplates(tests.TransactionCase):

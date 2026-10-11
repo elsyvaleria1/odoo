@@ -477,8 +477,8 @@ export class Form extends Interaction {
             this.el.getAttribute("action") +
                 (this.el.dataset.force_action || this.el.dataset.model_name),
             formData,
-        )
-            .then(async (resultData) => {
+        ).then(
+            async (resultData) => {
                 endPost(() => ({ id: resultData.id, error: !!resultData.error }));
                 if (!resultData.id) {
                     log.logic("send: server rejected submission", () => ({
@@ -573,8 +573,8 @@ export class Form extends Interaction {
 
                     this.resetForm();
                 }
-            })
-            .catch((error) => {
+            },
+            (error) => {
                 endPost(() => ({ failed: true }));
                 log.logic("send: post failed", () => ({
                     message: error.message,
@@ -586,7 +586,8 @@ export class Form extends Interaction {
                         ? _t("Uploaded file is too large.")
                         : "",
                 );
-            });
+            },
+        );
     }
 
     resetForm() {

@@ -147,7 +147,7 @@ removes per-website copies matched by url with guards
 
 ### models/website_rewrite.py — WebsiteRoute + WebsiteRewrite — NEW
 
-- **`website.route`** (`_rec_name = "path"`) — mirror of the live GET routing map; `_refresh()` syncs the table, `name_search` self-refreshes on empty result.
+- **`website.route`** (`_rec_name = "path"`) — mirror of the live GET routing map; `_refresh()` syncs the table, a display-name search that matches nothing refreshes it once; `path` is unique.
 - **`website.rewrite`** — URL redirect/rewrite rules. `redirect_type` = 404/301/302/308; `route_id` (→ website.route), `url_from`/`url_to`, `website_id` (cascade). `_check_url_to` validates 308 param parity + existing-page collisions. CRUD calls `_invalidate_routing()` for 308/404.
 
 ## Framework Extensions — Frontend Dispatch & Rendering

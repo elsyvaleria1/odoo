@@ -151,6 +151,24 @@ class TestDisableSnippetsAssets(TransactionCase):
         )
         self.assertTrue(self._get_snippet_asset("s_alert", "001", "scss").active)
 
+    def test_an_old_quotes_carousel_keeps_the_blockquote_style_it_relied_on(self):
+        self.IrAsset = self.IrAsset.with_context(active_test=False)
+        blockquote = self._get_snippet_asset("s_blockquote", "000", "scss")
+        carousel = self._get_snippet_asset("s_quotes_carousel", "000", "scss")
+        self.assertTrue(blockquote and carousel)
+        (blockquote | carousel).active = False
+        self.homepage.arch_db = (
+            '<t t-name="website.homepage1"><div id="wrap">'
+            '<section class="s_quotes_carousel" data-snippet="s_quotes_carousel"/>'
+            "</div></t>"
+        )
+        self.homepage.flush_recordset()
+
+        self.Website._disable_unused_snippets_assets()
+
+        self.assertTrue(carousel.active)
+        self.assertTrue(blockquote.active)
+
     def _get_snippet_asset(self, snippet_id, asset_version, asset_type):
         return self.IrAsset.search(
             [

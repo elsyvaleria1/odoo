@@ -34,10 +34,13 @@ export class EditWebsiteSystrayItem extends Component {
             this.checkPendingTranslations(),
         );
         this.isEnteringTranslateMode = false;
+        this.pendingTranslationsByPath = new Map();
+        this.translationCheckSeq = 0;
     }
 
     onClickEditPage() {
         log.logic("onClickEditPage");
+        this.pendingTranslationsByPath.clear();
         this.websiteContext.edition = true;
         this.props.onEditPage();
     }
@@ -93,6 +96,7 @@ export class EditWebsiteSystrayItem extends Component {
     }
 
     editFromTranslate() {
+        this.pendingTranslationsByPath.clear();
         const { pathname, search, hash } = this.getLocation();
         const languagePrefix = `${pathname}/`.indexOf("/", 1);
         const defaultLanguagePathname = pathname.substring(languagePrefix);
@@ -106,6 +110,7 @@ export class EditWebsiteSystrayItem extends Component {
 
     startTranslate() {
         log.logic("startTranslate");
+        this.pendingTranslationsByPath.clear();
         this.isEnteringTranslateMode = true;
         const { pathname, search, hash } = this.getLocation();
         const searchParams = new URLSearchParams(search);
@@ -117,33 +122,57 @@ export class EditWebsiteSystrayItem extends Component {
     }
 
     async checkPendingTranslations() {
+        const entering = this.isEnteringTranslateMode;
+        this.isEnteringTranslateMode = false;
         log.logic("checkPendingTranslations", () => ({
             translatable: Boolean(this.translatable),
-            entering: this.isEnteringTranslateMode,
+            entering,
         }));
-        if (this.translatable && !this.isEnteringTranslateMode) {
-            const { pathname, search, hash } = this.getLocation();
-            const searchParams = new URLSearchParams(search);
-            searchParams.set("edit_translations", "1");
-            const path = pathname + `?${searchParams.toString() + hash}`;
-            const endFetch = log.perf("checkPendingTranslations fetch+parse", {
-                path,
-            });
-            const response = await fetch(path);
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, "text/html");
-            endFetch(() => ({ bytes: html.length }));
-            if (doc.querySelector("#wrap .o_delay_translation")) {
-                log.logic("checkPendingTranslations: delayed translations found");
-                this.closeNotification = this.notification.add(
-                    _t(
-                        'Click on "Edit/Translate" to apply changes made on default language.',
-                    ),
-                    { type: "info" },
-                );
-            }
+        if (!this.translatable || entering) {
+            return;
         }
-        this.isEnteringTranslateMode = false;
+        const { pathname, search } = this.getLocation();
+        const searchParams = new URLSearchParams(search);
+        searchParams.set("edit_translations", "1");
+        const path = `${pathname}?${searchParams}`;
+        const seq = ++this.translationCheckSeq;
+        let pending = this.pendingTranslationsByPath.get(path);
+        if (pending === undefined) {
+            try {
+                pending = await this.fetchPendingTranslations(path);
+            } catch (error) {
+                log.logic("checkPendingTranslations failed", () => ({
+                    path,
+                    error: String(error),
+                }));
+                return;
+            }
+            this.pendingTranslationsByPath.set(path, pending);
+        }
+        if (seq !== this.translationCheckSeq) {
+            log.logic("checkPendingTranslations: stale answer dropped", { path });
+            return;
+        }
+        this.closeNotification?.();
+        this.closeNotification = pending
+            ? this.notification.add(
+                  _t(
+                      'Click on "Edit/Translate" to apply changes made on default language.',
+                  ),
+                  { type: "info" },
+              )
+            : undefined;
+    }
+
+    async fetchPendingTranslations(path) {
+        const endFetch = log.perf("checkPendingTranslations fetch+parse", { path });
+        const response = await fetch(path);
+        if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText}`);
+        }
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        endFetch(() => ({ bytes: html.length }));
+        return Boolean(doc.querySelector("#wrap .o_delay_translation"));
     }
 }

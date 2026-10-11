@@ -41,3 +41,31 @@ test("Clicking on 'Edit' hides the notification", async () => {
     await animationFrame();
     expect(".o_notification_bar").toHaveCount(0);
 });
+
+test("A page already checked for pending translations is not fetched again", async () => {
+    let fetches = 0;
+    onRpc("/test-path", () => {
+        fetches++;
+        return "<html><body><div id='wrap'><div class='o_delay_translation'>Some text</div></html>";
+    });
+    patchWithCleanup(EditWebsiteSystrayItem.prototype, {
+        get translatable() {
+            return true;
+        },
+        getLocation() {
+            return { pathname: "/test-path", search: "", hash: "" };
+        },
+    });
+    await setupWebsiteBuilder(`<div>Test Element</div>`, {
+        openEditor: false,
+        translateMode: true,
+    });
+    const systray = registry.category("website_systray");
+    systray.dispatchEvent(new CustomEvent("CONTENT-UPDATED"));
+    await waitFor(".o_notification_bar");
+    systray.dispatchEvent(new CustomEvent("CONTENT-UPDATED"));
+    await animationFrame();
+    await animationFrame();
+    expect(fetches).toBe(1);
+    expect(".o_notification_bar").toHaveCount(1);
+});

@@ -1348,7 +1348,8 @@ class Website(models.Model):
         return pages_by_website
 
     def _get_website_pages(self, domain=None, order="name", limit=None):
-        website = self.get_current_website()
+        website = self or self.get_current_website()
+        website.check_singleton()
         domain = Domain(domain or Domain.TRUE) & website.website_domain()
         with _debug.perf("website_pages", cr=self.env.cr, website=website.id) as span:
             pages = self.env["website.page"].sudo().search(domain, order=order)
@@ -1676,6 +1677,7 @@ class Website(models.Model):
         )
         template_occurrences = {}
         snippet_used = {}
+        desired = {}
         for (
             snippet_asset,
             snippet_module,
@@ -1709,7 +1711,7 @@ class Website(models.Model):
                     path=snippet_asset.path,
                     active=is_snippet_used,
                 )
-                snippet_asset.active = is_snippet_used
+                desired[snippet_asset] = is_snippet_used
                 if (
                     snippet_id == "s_quotes_carousel"
                     and asset_type == "css"
@@ -1724,8 +1726,17 @@ class Website(models.Model):
                                 == "website/static/src/snippets/s_blockquote/000.scss"
                             )
                         )
-                        if old_blockquote_asset and not old_blockquote_asset.active:
-                            old_blockquote_asset.active = True
+                        if old_blockquote_asset:
+                            desired[old_blockquote_asset] = True
+        Asset = self.env["ir.asset"].with_context(active_test=False)
+        for active in (False, True):
+            Asset.concat(
+                *(
+                    asset
+                    for asset, wanted in desired.items()
+                    if wanted is active and asset.active is not active
+                )
+            ).write({"active": active})
         self.env["ir.asset"].flush_model()
 
     def _is_every_consent_granted(self) -> bool:

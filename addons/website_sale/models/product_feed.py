@@ -165,7 +165,8 @@ class ProductFeed(models.Model):
                 self.website_id.get_base_url(),
                 self.env["ir.http"]._url_for(homepage_url, lang_code=self.lang_id.code),
             ),
-            "description": website_homepage.website_meta_description or self.website_id,
+            "description": website_homepage.website_meta_description
+            or self.website_id.name,
             "items": self._prepare_gmc_items(),
         }
 

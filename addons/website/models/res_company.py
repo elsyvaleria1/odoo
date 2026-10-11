@@ -25,6 +25,9 @@ class ResCompany(models.Model):
                 :1
             ]
 
+    def _get_cache_invalidation_fields(self) -> set[str]:
+        return super()._get_cache_invalidation_fields() | {"email"}
+
     @api.constrains("active")
     def _check_active(self) -> None:
         super()._check_active()
