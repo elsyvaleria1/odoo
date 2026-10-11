@@ -14,7 +14,7 @@ class AccountMoveLine(models.Model):
 
     approval_request_line_id = fields.Many2one(
         comodel_name="approval.request.line",
-        index=True,
+        index="btree_not_null",
         copy=False,
         readonly=True,
         help="Link to the approval request line that created this account move line",

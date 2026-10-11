@@ -670,7 +670,7 @@ class AccountMove(models.Model):
     )
     secure_sequence_number = fields.Integer(
         string="Inalterability No Gap Sequence #",
-        index=True,
+        index="btree_not_null",
         copy=False,
         readonly=True,
     )

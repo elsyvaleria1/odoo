@@ -28,7 +28,7 @@ class MixinApproval(models.AbstractModel):
 
     approval_request_id = fields.Many2one(
         comodel_name="approval.request",
-        index=True,
+        index="btree_not_null",
         copy=False,
         readonly=True,
         tracking=True,

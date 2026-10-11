@@ -17,7 +17,7 @@ class AccountMove(models.Model):
 
     depreciation_board_id = fields.Many2one(
         comodel_name="account.depreciation.board",
-        index=True,
+        index="btree_not_null",
         copy=False,
         domain="[('company_id', '=', company_id)]",
         ondelete="cascade",

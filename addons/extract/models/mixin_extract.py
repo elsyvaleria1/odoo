@@ -41,7 +41,6 @@ class MixinExtract(models.AbstractModel):
     extract_state = fields.Selection(
         selection=STATES,
         default="none",
-        index=True,
         copy=False,
         readonly=True,
     )

@@ -6,7 +6,7 @@ class AccountMove(models.Model):
 
     generating_loan_line_id = fields.Many2one(
         comodel_name="account.loan.line",
-        index=True,
+        index="btree_not_null",
         copy=False,
         readonly=True,
         ondelete="set null",
