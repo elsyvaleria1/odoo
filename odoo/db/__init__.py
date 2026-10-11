@@ -7,7 +7,12 @@ from . import settings as pool_settings
 from .budget import ConnectionBudget
 from .cursor import BaseCursor, Connection, Cursor, Savepoint
 from .endpoints import EndpointRegistry, get_endpoint_key
-from .metrics import classify_query, observing_statements
+from .metrics import (
+    StatementCount,
+    classify_query,
+    counting_statements,
+    observing_statements,
+)
 from .pool import ConnectionPool, PoolError
 from .replica import get_replica_health
 from .savepoint import claim_row, get_or_create_row
@@ -27,11 +32,13 @@ __all__ = [
     "PoolError",
     "PoolSettings",
     "Savepoint",
+    "StatementCount",
     "cancel_queries_of",
     "claim_row",
     "classify_query",
     "close_all",
     "close_db",
+    "counting_statements",
     "db_connect",
     "drain_all",
     "drain_db",

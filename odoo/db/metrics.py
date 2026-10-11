@@ -39,6 +39,33 @@ def observing_statements() -> Iterator[None]:
         thread.statement_observers -= 1
 
 
+class StatementCount:
+    __slots__ = ("_cr", "_end", "_start")
+
+    def __init__(self, cr: Any) -> None:
+        self._cr = cr
+        self._start: int = cr.sql_statement_count
+        self._end: int | None = None
+
+    @property
+    def count(self) -> int:
+        end = self._cr.sql_statement_count if self._end is None else self._end
+        return end - self._start
+
+    def _stop(self) -> None:
+        self._end = self._cr.sql_statement_count
+
+
+@contextmanager
+def counting_statements(cr: Any) -> Iterator[StatementCount]:
+    with observing_statements():
+        counted = StatementCount(cr)
+        try:
+            yield counted
+        finally:
+            counted._stop()
+
+
 class _MetricsMixin:
     sql_from_log: dict[str, tuple[int, float]]
     sql_into_log: dict[str, tuple[int, float]]
@@ -93,6 +120,13 @@ class _MetricsMixin:
             t.query_time += delay
         for hook in tuple(hooks) if hooks else ():
             hook(self, query, params, start, delay)
+
+    def record_foreign_statements(self, count: int, delay: float) -> None:
+        if count <= 0:
+            return
+        _debug.perf.count("cursor.foreign_statements", count=count)
+        self._record_metrics(delay, count, statement=False)
+        self.sql_statement_count += count
 
     def _record_sql_log(self, query_type: str, table: str | None, delay: float) -> None:
         if query_type == "into":

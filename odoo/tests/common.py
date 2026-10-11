@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 
 import odoo.cli
 from odoo import api
+from odoo.db.metrics import counting_statements
 from odoo.fields import Command
 from odoo.libs.collections import DotDict
 from odoo.libs.debug_log import DebugLog
@@ -63,6 +64,7 @@ __all__ = [
     "Transport",
     "WhitespaceInsensitive",
     "can_import",
+    "counting_statements",
     "freeze_time",
     "gc_test_filestore",
     "get_cache_key_counter",

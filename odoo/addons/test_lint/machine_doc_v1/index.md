@@ -131,7 +131,11 @@ its `:root` block -- (`colour_literals_odoo`, `colour_literals_l10n`,
 outside web's `o-material()` (`backdrop_filters_odoo`, `backdrop_filters_agromarin`), and the hand-written
 transition/animation durations a motion token could carry
 (`raw_durations_odoo`, `raw_durations_l10n`, `raw_durations_agromarin`).
-`design-themes` is upstream's repository and is not graded. All of them only
+`tests/test_statement_counts.py` counts, per repository, the raw reads of
+`cr.sql_statement_count` in module tests (`raw_statement_count_odoo`): rust_engine
+serves a read on its own connection, so a test measures with
+`counting_statements`, under which every read is Python's; the cursor's own tests
+are exempt. `design-themes` is upstream's repository and is not graded. All of them only
 shrink; the
 sibling repositories' floors are read on the full addons path, and the narrow
 scope grades the odoo ones alone. `lint_receiver_fail_open` carried one

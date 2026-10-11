@@ -69,6 +69,7 @@
   "raw_durations_agromarin": 108,
   "raw_durations_l10n": 2,
   "raw_durations_odoo": 280,
+  "raw_statement_count_odoo": 30,
   "return_action_bool_result_agromarin": 2,
   "return_action_bool_result_l10n": 6,
   "return_action_bool_result_odoo": 76,
