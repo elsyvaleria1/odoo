@@ -44,6 +44,14 @@ class TestFlowBatching(AccountTestInvoicingCommon):
             run()
         return sum(1 for query in queries if re.search(pattern, query))
 
+    def test_the_tax_report_check_reads_taxes_once_per_batch(self):
+        def check(size):
+            moves = self.env["account.move"].browse(self.invoices[:size].ids)
+            for move in moves:
+                move._affect_tax_report()
+
+        self.assertQueriesConstant(check, small=2, large=6)
+
     def test_analytic_lines_check_their_accounts_once_per_batch(self):
         def create_analytic_lines(size):
             lines = self.env["account.move"].browse(self.invoices[:size].ids)

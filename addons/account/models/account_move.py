@@ -5751,9 +5751,12 @@ class AccountMove(models.Model):
         }
 
     def _affect_tax_report(self):
+        lines = self.line_ids
         return any(
             line._affect_tax_report()
-            for line in (self.line_ids | self.invoice_line_ids)
+            for line in (lines | self.invoice_line_ids).with_prefetch(
+                lines._prefetch_ids
+            )
         )
 
     @_debug.perf.timed

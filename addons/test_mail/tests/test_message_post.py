@@ -1122,6 +1122,48 @@ class TestMessageLog(TestMessagePostCommon):
         self.assertTrue(all(messages.mapped("is_internal")))
         self.assertFalse(messages.notification_ids)
 
+    @users("employee")
+    def test_message_post_entries_post_each_entry_as_message_post_would(self):
+        records = self.test_records[:2].with_env(self.env)
+        records[0].message_subscribe(
+            self.partner_employee_2.ids,
+            subtype_ids=self.env.ref("mail.mt_note").ids,
+        )
+        single = records[0].message_post(body="single")
+
+        with self.capturedQueries() as queries:
+            messages = records._message_post_entries(
+                [
+                    {"res_id": records[0].id, "body": "first"},
+                    {"res_id": records[1].id, "body": "second"},
+                    {"res_id": records[0].id, "body": "third"},
+                ]
+            )
+
+        self.assertEqual(
+            sum(1 for query in queries if 'INSERT INTO "mail_message"' in query), 2
+        )
+        self.assertEqual(
+            [(message.res_id, str(message.body)) for message in messages],
+            [
+                (records[0].id, "<p>first</p>"),
+                (records[1].id, "<p>second</p>"),
+                (records[0].id, "<p>third</p>"),
+            ],
+        )
+        self.assertEqual(messages.subtype_id, single.subtype_id)
+        self.assertEqual(set(messages.mapped("message_type")), {single.message_type})
+        self.assertEqual(
+            [message.notification_ids.res_partner_id for message in messages],
+            [
+                single.notification_ids.res_partner_id,
+                self.env["res.partner"],
+                single.notification_ids.res_partner_id,
+            ],
+        )
+        with self.assertRaisesRegex(ValueError, "outside the posted set"):
+            records[0]._message_post_entries([{"res_id": records[1].id, "body": "x"}])
+
     def test_message_log_entries_rejects_malformed_batches(self):
         record, other = self.test_records[:2]
         attachment = self.env["ir.attachment"].create(

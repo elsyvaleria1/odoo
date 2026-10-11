@@ -191,6 +191,9 @@ The canonical messaging surface. Grouped by concern.
   internal notes over the records of `self`, several per record allowed, each entry a dict of `res_id`,
   `body`, `author_id`, `subtype_xmlid`, `tracking_value_ids`; one `mail.message` and one
   `mail.tracking.value` batch create whatever the entry count (account logs one note per edited journal item through it)
+- `_message_post_entries(entries, **kwargs)` — `message_post` once per entry (`res_id`, `body`), several per
+  record allowed: one `_message_post_batch` per round of distinct records, so followers are notified as a
+  `message_post` loop would (account_depreciation and sale note posted entries and paid invoices through it)
 - `_message_create(values_list)` — low-level create bypassing the post pipeline
 
 **Subscription (followers)**:

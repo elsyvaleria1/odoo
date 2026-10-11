@@ -10,3 +10,4 @@ from . import test_resource_asset_board
 from . import test_resource_asset_lifecycle
 from . import test_resource_asset_components
 from . import test_demo_data
+from . import test_depreciation_posting_log

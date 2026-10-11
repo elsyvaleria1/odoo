@@ -38,7 +38,8 @@ directly**: you would bypass follower notification, tracking subtypes, the
 `message_post_with_source` (render a view/template), `message_mail_with_source` (email only,
 no thread message), `message_notify` (notification not stored as a thread message),
 `_message_log` (internal note, no notification), and `_message_log_entries` when one change
-logs many notes (one per sub-record, say): one batch create, never a `_message_log` loop.
+logs many notes (one per sub-record, say): one batch create, never a `_message_log` loop;
+`_message_post_entries` is its notifying twin, never a `message_post` loop.
 
 ### 3. Suggested-recipients / partner-resolution helpers live on `base`, not `mixin.mail.thread`
 

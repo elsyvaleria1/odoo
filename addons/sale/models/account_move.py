@@ -217,8 +217,15 @@ class AccountMove(models.Model):
                     for sale_line in line.sale_line_ids
                 )
         _debug.pipeline("invoice_paid_hook", moves=self, orders_notified=len(todo))
-        for order, name in todo:
-            order.message_post(body=self.env._("Invoice %s paid", name))
+        if todo:
+            invoices.env["sale.order"].browse(
+                {order.id for order, _name in todo}
+            )._message_post_entries(
+                [
+                    {"res_id": order.id, "body": self.env._("Invoice %s paid", name)}
+                    for order, name in todo
+                ]
+            )
         return res
 
     def _get_sale_order_invoiced_amount(self, order):

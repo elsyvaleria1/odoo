@@ -297,18 +297,24 @@ class AccountMove(models.Model):
         return super().action_draft()
 
     def _log_depreciation_asset(self) -> None:
-        for move in self.filtered(lambda m: m.depreciation_board_id):
-            asset = move.depreciation_board_id
-            msg = self.env._(
-                "Depreciation entry %(name)s posted (%(value)s)",
-                name=move.name,
-                value=formatLang(
-                    self.env,
-                    move.depreciation_value,
-                    currency_obj=move.company_id.currency_id,
-                ),
-            )
-            asset.message_post(body=msg)
+        moves = self.filtered(lambda m: m.depreciation_board_id)
+        moves.depreciation_board_id._message_post_entries(
+            [
+                {
+                    "res_id": move.depreciation_board_id.id,
+                    "body": self.env._(
+                        "Depreciation entry %(name)s posted (%(value)s)",
+                        name=move.name,
+                        value=formatLang(
+                            self.env,
+                            move.depreciation_value,
+                            currency_obj=move.company_id.currency_id,
+                        ),
+                    ),
+                }
+                for move in moves
+            ]
+        )
 
     def _auto_create_asset(self):
         plans = []

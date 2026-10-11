@@ -2860,6 +2860,27 @@ class MixinMailThread(models.AbstractModel):
             attachment_ids=attachment_ids,
         )
 
+    def _message_post_entries(self, entries: list[dict], **kwargs) -> MailMessage:
+        if foreign := {entry["res_id"] for entry in entries} - set(self.ids):
+            raise ValueError(
+                f"Post entries target {self._name} records outside the posted set: {sorted(foreign)}"
+            )
+        rounds: list[dict[int, str]] = []
+        for entry in entries:
+            bodies = next(
+                (bodies for bodies in rounds if entry["res_id"] not in bodies), None
+            )
+            if bodies is None:
+                bodies = {}
+                rounds.append(bodies)
+            bodies[entry["res_id"]] = entry["body"]
+        return self.env["mail.message"].concat(
+            *(
+                self.browse(bodies)._message_post_batch(bodies, **kwargs)
+                for bodies in rounds
+            )
+        )
+
     _MESSAGE_LOG_ENTRY_KEYS = frozenset(
         {"res_id", "body", "author_id", "subtype_xmlid", "tracking_value_ids"}
     )
