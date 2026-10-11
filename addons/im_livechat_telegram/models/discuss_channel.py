@@ -66,7 +66,7 @@ class DiscussChannel(models.Model):
                 chat, body, reply_markup=keyboard, mail_message_id=message.id
             )
         for attachment in message.attachment_ids:
-            if attachment.type == "binary":
+            if attachment.type != "url":
                 bot._queue_file(chat, attachment, mail_message_id=message.id)
 
     def _telegram_keyboard(self, message, is_bot):

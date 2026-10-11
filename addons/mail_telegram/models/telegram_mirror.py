@@ -148,7 +148,7 @@ class TelegramMirror(models.Model):
             else tg.bold(message.author_id.name or "")
         )
         for attachment in message.attachment_ids:
-            if attachment.type == "binary":
+            if attachment.type != "url":
                 bot._queue_file(chat, attachment, caption=caption or None, **common)
                 caption = None
 

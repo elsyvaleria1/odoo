@@ -5,6 +5,8 @@ from odoo import fields, models
 from odoo.exceptions import MissingError, UserError, ValidationError
 from odoo.http import Stream, prepare_content_disposition_header
 
+from odoo.addons.base.models.ir_binary import STREAM_INLINE_CONTEXT_KEY
+
 _logger = logging.getLogger(__name__)
 
 
@@ -35,6 +37,10 @@ class CloudStorageStream(Stream):
             )["url"]
         return super().prepare_response(as_attachment, *args, **kwargs)
 
+    def read(self) -> bytes:
+        # a reader that wants the bytes gets the blob, not "Cannot read an URL"
+        return self._attachment._get_content()
+
 
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
@@ -61,9 +67,25 @@ class IrAttachment(models.Model):
             return super()._to_http_stream()
         self.check_singleton()
         self._check_cloud_storage_configured()
+        if self.env.context.get(STREAM_INLINE_CONTEXT_KEY):
+            content = self._get_content()
+            return Stream(
+                type="data",
+                data=content,
+                size=len(content),
+                mimetype=self.mimetype,
+                download_name=self.name,
+                etag=self.checksum or True,
+                last_modified=self.write_date,
+                public=self.public,
+            )
         info = self._generate_cloud_storage_download_info()
         stream = CloudStorageStream(
-            self, type="url", url=info["url"], download_name=self.name
+            self,
+            type="url",
+            url=info["url"],
+            mimetype=self.mimetype,
+            download_name=self.name,
         )
         if "time_to_expiry" in info:
             # cache the redirection until 10 seconds before the expiry

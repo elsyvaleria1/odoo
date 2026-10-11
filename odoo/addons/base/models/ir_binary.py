@@ -20,6 +20,10 @@ from odoo.tools.image import image_guess_size_from_field_name, image_process
 from odoo.tools.misc import is_valid_limited_field_access_token
 
 DEFAULT_PLACEHOLDER_PATH = "web/static/img/placeholder.png"
+# A caller that needs the bytes themselves (resize, zip, re-encode) asks for
+# an inline stream through this context key: a storage that would answer
+# with a redirect to its own URL hands the content over instead.
+STREAM_INLINE_CONTEXT_KEY = "binary_stream_inline"
 FIELD_TOKEN_SCOPE = register_signed_scope(
     "binary",
     purpose="read one binary field of one record (an avatar, an attachment's "
@@ -191,13 +195,17 @@ class IrBinary(models.AbstractModel):
                     mimetype=stream.mimetype,
                 )
 
-            if filename:
-                stream.download_name = filename
-            elif self._can_name_from_field(record, filename_field):
-                stream.download_name = record[filename_field]
+        # a redirect names the file too: its storage signs the name into the
+        # URL, or a field's blob downloads under the field's technical name
+        if filename:
+            stream.download_name = filename
+        elif self._can_name_from_field(record, filename_field):
+            name = record[filename_field]
+            if name or stream.type in ("data", "path"):
+                stream.download_name = name
+        if stream.type in ("data", "path") or stream.download_name:
             if not stream.download_name:
                 stream.download_name = f"{record._table}-{record.id}-{field_name}"
-
             stream.download_name = stream.download_name.replace("\n", "_").replace(
                 "\r", "_"
             )
@@ -241,6 +249,9 @@ class IrBinary(models.AbstractModel):
         crop: bool = False,
         quality: int = 0,
     ) -> Stream:
+        # resizing and the mimetype check need the bytes, not a redirect
+        inline = {STREAM_INLINE_CONTEXT_KEY: True}
+        self, record = self.with_context(**inline), record.with_context(**inline)
         stream = None
         try:
             stream = self._get_stream_from_record(

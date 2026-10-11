@@ -1,5 +1,9 @@
+import base64
+import io
 import uuid
 from unittest.mock import patch
+
+from PIL import Image
 
 from odoo.exceptions import MissingError, UserError
 from odoo.tests import TransactionCase, tagged
@@ -177,6 +181,69 @@ class TestCloudStorage(TransactionCase):
             stream = remote._to_http_stream()
         self.assertEqual(stream.type, "url")
         self.assertEqual(stream.url, "https://bucket/blob?signed")
+
+    def test_a_reader_of_a_cloud_stream_gets_the_blob(self):
+        """Code that reads a stream (a zip, an export) is handed the bytes."""
+        remote = self._cloud_attachment("statement.pdf", "application/pdf")
+        configured, signed, egress = self._configured(b"%PDF-1.7 blob")
+        with configured, signed, egress:
+            stream = remote._to_http_stream()
+            self.assertEqual(stream.type, "url")
+            self.assertEqual(stream.mimetype, "application/pdf")
+            self.assertEqual(stream.read(), b"%PDF-1.7 blob")
+
+    def test_an_inline_stream_carries_the_blob(self):
+        """A caller that asks for the bytes gets a data stream, not a redirect."""
+        remote = self._cloud_attachment("statement.pdf", "application/pdf")
+        configured, signed, egress = self._configured(b"%PDF-1.7 blob")
+        with configured, signed, egress:
+            stream = remote.with_context(binary_stream_inline=True)._to_http_stream()
+        self.assertEqual(stream.type, "data")
+        self.assertEqual(stream.data, b"%PDF-1.7 blob")
+        self.assertEqual(stream.size, len(b"%PDF-1.7 blob"))
+        self.assertEqual(stream.mimetype, "application/pdf")
+
+    def _cloud_image_field(self, size=256):
+        image = io.BytesIO()
+        Image.new("RGB", (size, size), "green").save(image, "PNG")
+        partner = self.env["res.partner"].create(
+            {"name": "Cloud image", "image_1920": base64.b64encode(image.getvalue())}
+        )
+        field = (
+            self.env["ir.attachment"]
+            ._with_field_rows()
+            .search(
+                [
+                    ("res_model", "=", "res.partner"),
+                    ("res_id", "=", partner.id),
+                    ("res_field", "=", "image_1920"),
+                ]
+            )
+        )
+        field.write({"type": "cloud_storage", "url": "https://bucket/blob"})
+        return partner, image.getvalue()
+
+    def test_a_cloud_image_field_is_resized_like_a_local_one(self):
+        """/web/image sizes come from the blob instead of a full-size redirect."""
+        partner, png = self._cloud_image_field()
+        configured, signed, egress = self._configured(png)
+        with configured, signed, egress:
+            stream = self.env["ir.binary"]._get_stream_image_from_record(
+                partner, "image_1920", width=64, height=64
+            )
+        self.assertEqual(stream.type, "data")
+        self.assertEqual(Image.open(io.BytesIO(stream.data)).size, (64, 64))
+
+    def test_a_cloud_field_download_is_named_after_the_record(self):
+        """The signed URL carries the requested name, not the field's."""
+        partner, png = self._cloud_image_field()
+        configured, signed, egress = self._configured(png)
+        with configured, signed, egress:
+            stream = self.env["ir.binary"]._get_stream_from_record(
+                partner, "image_1920", filename="logo.png"
+            )
+        self.assertEqual(stream.type, "url")
+        self.assertEqual(stream.download_name, "logo.png")
 
     def test_a_cloud_pdf_reaches_the_pdf_tools(self):
         """A PDF the provider holds is read like a local one, page extraction included."""

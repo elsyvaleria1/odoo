@@ -22,6 +22,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools.misc import file_open
 from odoo.tools.pdf import DependencyError, PdfReadError, extract_page
 
+from odoo.addons.base.models.ir_binary import STREAM_INLINE_CONTEXT_KEY
 from odoo.addons.mail.controllers.thread import ThreadController
 from odoo.addons.mail.controllers.utils import to_record_id, to_record_ids
 from odoo.addons.mail.tools.discuss import Store, add_guest_to_context
@@ -99,7 +100,13 @@ class AttachmentController(ThreadController):
     def _get_zip_response(self, name: str, attachments: IrAttachment) -> Response:
         streams = []
         for record in attachments:
-            stream = request.env["ir.binary"]._get_stream_from_record(record, "raw")
+            stream = (
+                request.env["ir.binary"]
+                .with_context(**{STREAM_INLINE_CONTEXT_KEY: True})
+                ._get_stream_from_record(
+                    record.with_context(**{STREAM_INLINE_CONTEXT_KEY: True}), "raw"
+                )
+            )
             if not stream:
                 continue
             if stream.type == "url":

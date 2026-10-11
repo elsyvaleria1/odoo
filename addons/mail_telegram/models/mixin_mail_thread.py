@@ -124,10 +124,7 @@ class MixinMailThread(models.AbstractModel):
         }
         chat.bot_id._queue_text(chat, text, reply_markup=keyboard, eta=eta, **vals)
         for attachment in message.attachment_ids:
-            if (
-                attachment.type == "binary"
-                and attachment.file_size <= _ATTACHMENT_LIMIT
-            ):
+            if attachment.type != "url" and attachment.file_size <= _ATTACHMENT_LIMIT:
                 chat.bot_id._queue_file(chat, attachment, eta=eta, silent=True, **vals)
 
     def _telegram_title(self):
