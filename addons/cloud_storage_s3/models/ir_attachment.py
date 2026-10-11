@@ -3,6 +3,7 @@ import hashlib
 import logging
 import uuid
 from collections import defaultdict
+from datetime import timedelta
 from itertools import batched
 from pathlib import Path
 from typing import Self
@@ -294,9 +295,10 @@ class IrAttachment(models.Model):
         self.check_singleton()
         if self.type != "binary":
             return "not_binary"
-        if self.res_field:
-            # a field's bytes are read through the field, never through a URL
-            return "field_attachment"
+        if self.url:
+            # served at its own URL (a generated asset, a shape, a sitemap):
+            # the bucket's URL would replace the path it is answered at
+            return "served_by_url"
         if not self.store_fname or "://" in self.store_fname:
             return "not_in_filestore"
         if not self.file_size:
@@ -433,6 +435,53 @@ class IrAttachment(models.Model):
             released.invalidate_recordset(["store_fname", "raw", "datas"])
             self._remove_stored_file_multi(fnames)
         return dict(outcome)
+
+    @api.model
+    def _cron_s3_move_local_to_cloud(self, batch_size=200, min_age_minutes=30):
+        """Move what Odoo stored locally since the last run to the bucket.
+
+        In cloud-only mode a server-side write (a report PDF, a thumbnail, an
+        image field, a rewritten blob) still lands in the filestore; left
+        there, the filestore and every backup grow back. A row waits until it
+        is ``min_age_minutes`` old, so the content a transaction is still
+        rewriting is not uploaded twice.
+        """
+        if not self._is_s3_provider() or not self._s3_is_enabled():
+            return
+        if self._is_s3_hybrid():
+            return
+        cutoff = fields.Datetime.now() - timedelta(minutes=min_age_minutes)
+        attachments = self.sudo()._with_field_rows()
+        domain = [
+            ("type", "=", "binary"),
+            ("store_fname", "!=", False),
+            ("url", "=", False),
+            ("file_size", ">", 0),
+            ("write_date", "<", cutoff),
+        ]
+        skipped = []
+        totals = defaultdict(int)
+        while True:
+            batch = attachments.search(
+                domain + [("id", "not in", skipped)], limit=batch_size, order="id"
+            )
+            if not batch:
+                break
+            moved_outcome = batch._s3_move_to_cloud()
+            moved = attachments.browse(moved_outcome.pop("moved", []))
+            released_outcome = moved._s3_release_local_files() if moved else {}
+            for outcome in (moved_outcome, released_outcome):
+                for reason, ids in outcome.items():
+                    totals[reason] += len(ids)
+                    if reason != "released":
+                        skipped.extend(ids)
+            remaining = attachments.search_count(domain + [("id", "not in", skipped)])
+            if not self.env["ir.cron"]._commit_progress(
+                len(batch), remaining=remaining
+            ):
+                break
+        if totals:
+            _logger.info("S3 move of local attachments: %s", dict(totals))
 
     def _s3_still_referenced(self, column: str, values) -> set[str]:
         # whoever deletes, an object another attachment still points at stays:

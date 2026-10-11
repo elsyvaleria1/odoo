@@ -464,12 +464,56 @@ class TestCloudStorageS3Move(TestCloudStorageS3Common):
 
     def test_move_refuses_what_it_cannot_serve(self):
         empty = self._local(name="empty.txt", raw=b"")
-        field = self._local(name="image_128", res_field="image_128")
-        outcome = (empty | field)._s3_move_to_cloud()
+        served = self._local(name="sitemap.xml", url="/sitemap-1.xml")
+        outcome = (empty | served)._s3_move_to_cloud()
         # Odoo keeps an empty file inline, never in the filestore
         self.assertEqual(
-            outcome, {"not_in_filestore": empty.ids, "field_attachment": field.ids}
+            outcome, {"not_in_filestore": empty.ids, "served_by_url": served.ids}
         )
+        self.assertEqual(served.url, "/sitemap-1.xml")
+        self.mock_s3_client.put_object.assert_not_called()
+
+    def test_move_takes_a_field_attachment(self):
+        field = self._local(name="image_128", res_field="image_128")
+        self.assertEqual(field._s3_move_to_cloud(), {"moved": field.ids})
+        self.assertEqual(field.type, "cloud_storage")
+        self.assertEqual(field.res_field, "image_128")
+
+    def _age(self, attachments, minutes):
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE ir_attachment SET write_date = now() at time zone 'utc'"
+            " - make_interval(mins => %s) WHERE id = ANY(%s)",
+            [minutes, attachments.ids],
+        )
+        attachments.invalidate_recordset()
+
+    def test_cron_moves_and_releases_what_was_stored_here(self):
+        old = self._local()
+        field = self._local(name="image_128", res_field="image_128")
+        fresh = self._local(name="fresh.pdf")
+        asset = self._local(name="web.assets.css", url="/web/assets/1/web.css")
+        self._age(old | field | asset, 60)
+        with (
+            patch.object(type(self.env["ir.attachment"]), "_mark_for_gc_multi"),
+            # a cron commits each batch; a test transaction cannot
+            patch.object(type(self.env["ir.cron"]), "_commit_progress", return_value=1),
+        ):
+            self.env["ir.attachment"]._cron_s3_move_local_to_cloud()
+        for moved in (old, field):
+            self.assertEqual(moved.type, "cloud_storage")
+            self.assertFalse(moved.store_fname)
+        self.assertEqual(fresh.type, "binary", "a row still being written waits")
+        self.assertEqual(asset.type, "binary", "a served URL stays local")
+
+    def test_cron_leaves_hybrid_storage_alone(self):
+        self.env["ir.config_parameter"].set_param(
+            "cloud_storage_s3_storage_mode", "hybrid"
+        )
+        old = self._local()
+        self._age(old, 60)
+        self.env["ir.attachment"]._cron_s3_move_local_to_cloud()
+        self.assertEqual(old.type, "binary")
         self.mock_s3_client.put_object.assert_not_called()
 
     def test_move_keeps_local_when_the_store_disagrees(self):
