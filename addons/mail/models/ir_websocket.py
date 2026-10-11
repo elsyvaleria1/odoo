@@ -65,8 +65,9 @@ class IrWebsocket(models.AbstractModel):
             for model, by_name in requested.items()
         }
         for model, by_name in requested.items():
+            allowed_by_id = {record.id: record for record in allowed[model]}
             for name, (record_id, _token) in by_name.items():
-                record = allowed[model].filtered(lambda r, rid=record_id: r.id == rid)
+                record = allowed_by_id.get(record_id)
                 result[name] = [(record, "presence")] if record else []
         _debug.logic(
             "presence_subscriptions",

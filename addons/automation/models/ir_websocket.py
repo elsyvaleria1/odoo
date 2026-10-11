@@ -22,7 +22,8 @@ class IrWebsocket(models.AbstractModel):
                 .exists()
                 ._filtered_access("read")
             )
+            readable_by_id = {rule.id: rule for rule in readable}
             for name, rule_id in rule_ids.items():
-                rule = readable.filtered(lambda r, rid=rule_id: r.id == rid)
+                rule = readable_by_id.get(rule_id)
                 result[name] = [(rule, SUBCHANNEL)] if rule else []
         return result

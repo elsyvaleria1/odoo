@@ -30,8 +30,9 @@ class IrWebsocket(models.AbstractModel):
             readable = self.env["discuss.channel"].search(
                 [("id", "in", list(requested.values()))]
             )
+            readable_by_id = {channel.id: channel for channel in readable}
             for name, channel_id in requested.items():
-                channel = readable.filtered(lambda c, cid=channel_id: c.id == cid)
+                channel = readable_by_id.get(channel_id, readable.browse())
                 result[name] = self._discuss_bus_channels(channel)
         return result
 
