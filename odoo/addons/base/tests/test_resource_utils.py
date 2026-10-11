@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo.fields import Datetime, Domain
 from odoo.libs.datetime import timezone
-from odoo.tests import Form
+from odoo.tests import Form, tagged
 from odoo.tests.common import TransactionCase
 
 from odoo.addons.base.models import resource_utils
@@ -15,7 +15,8 @@ def _is_kept(removed_fields, field):
     return field not in removed_fields
 
 
-class TestExpression(TransactionCase):
+@tagged("post_install", "-at_install")
+class TestResourceUtils(TransactionCase):
     def test_filter_domain_leaf(self):
         domains = [
             ["|", ("skills", "=", 1), ("admin", "=", True)],

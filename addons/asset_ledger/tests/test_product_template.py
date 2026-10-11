@@ -226,6 +226,6 @@ class TestProductTemplate(TransactionCase):
     def test_every_kind_this_module_names_is_seeded(self):
         for code in ("equipment", "it", "machinery", "property", "tool", "vehicle"):
             self.assertTrue(
-                self.env.ref(f"resource.kind_{code}", raise_if_not_found=False),
+                self.env.ref(f"base.kind_{code}", raise_if_not_found=False),
                 code,
             )

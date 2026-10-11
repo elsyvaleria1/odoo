@@ -13,7 +13,7 @@ class TestResourceAssetTag(TransactionCase):
 
     def _asset(self, kind, name):
         return self.env["resource.resource"].create(
-            {"name": name, "kind_id": self.env.ref(f"resource.kind_{kind}").id}
+            {"name": name, "kind_id": self.env.ref(f"base.kind_{kind}").id}
         )
 
     def test_tags_through_the_root_reach_every_kind(self):

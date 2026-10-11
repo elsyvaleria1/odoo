@@ -282,12 +282,14 @@ Upgrade and temporal limits
 ---------------------------
 
 ``uom`` and ``resource`` folded into ``base`` in ``base`` 1.151, which refuses a
-database whose ``uom`` is below 1.2 or whose ``resource`` is below 1.40.
-``resource_asset`` folded into ``resource`` in ``base`` 1.150, which refuses a
-database whose ``resource_asset`` is below 2.0. Such a database upgrades on a
-commit before the fold first, so a database still below ``base`` 1.150 crosses
-the two folds in two upgrades. The paragraphs below describe the upgrades that
-preceded them.
+database whose ``uom`` is below 1.2 or whose ``resource`` is below 1.39, the
+last version with a migration of its own. ``resource_asset`` folded into
+``resource`` in ``base`` 1.150, which refuses a database whose
+``resource_asset`` is below 2.0. A refused database upgrades on a commit before
+the fold first; one past both thresholds crosses the two folds in one upgrade.
+A database that never had ``resource`` gets the calendars an install would
+give its companies. The paragraphs below describe the upgrades that preceded
+them.
 
 Upgrade ``resource``, ``resource_asset``, ``device_gps`` and ``asset_gps``,
 together with installed GPS report bridges. Asset GPS 1.14.0 transfers stored attachments from every

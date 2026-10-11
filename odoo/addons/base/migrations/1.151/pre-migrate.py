@@ -4,8 +4,9 @@ from odoo.tools import SQL
 from odoo.tools.module_data import fold_module
 
 # the migrations of a module folded into base leave with it, so no database
-# may cross the fold below the version they bring it to
-FOLDABLE = {"uom": "1.2", "resource": "1.40"}
+# may cross the fold below the last version they bring it to: uom has none,
+# resource's last is 1.39
+FOLDABLE = {"uom": "1.2", "resource": "1.39"}
 
 
 def _installed_version(cr, module: str) -> str | None:

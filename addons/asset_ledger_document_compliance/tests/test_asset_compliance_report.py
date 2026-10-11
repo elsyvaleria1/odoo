@@ -151,7 +151,7 @@ class TestAssetComplianceReportAccess(TransactionCase):
             [
                 {
                     "name": f"Access {kind}",
-                    "kind_id": cls.env.ref(f"resource.kind_{kind}").id,
+                    "kind_id": cls.env.ref(f"base.kind_{kind}").id,
                     "product_id": cls.env["product.product"]
                     .create(
                         {
@@ -160,7 +160,7 @@ class TestAssetComplianceReportAccess(TransactionCase):
                             "is_storable": True,
                             "tracking": "serial",
                             "asset_kind_id": cls.env.ref(
-                                f"resource.kind_{kind}"
+                                f"base.kind_{kind}"
                             ).id,
                         }
                     )

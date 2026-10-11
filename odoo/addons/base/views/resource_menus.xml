@@ -72,7 +72,7 @@
         name="Assets"
         sequence="215"
         groups="group_asset_user"
-        web_icon="resource,static/description/icon.png" />
+        web_icon="base,static/description/resource_icon.png" />
 
     <menuitem
         id="menu_asset_assets"
