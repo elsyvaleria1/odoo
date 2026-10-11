@@ -1,4 +1,5 @@
 import logging
+from unittest.mock import patch
 
 from odoo.tests import HttpCase, TransactionCase, tagged
 from odoo.tools import mute_logger
@@ -35,8 +36,38 @@ class TestTokenLogFilter(TransactionCase):
     def test_a_token_in_the_args_is_masked(self):
         record = self._record("%s", (f"/telegram/webhook/{_TOKEN}",))
         TelegramTokenFilter().filter(record)
-        self.assertNotIn(_TOKEN, record.args[0])
-        self.assertIn("123456789:***...5678", record.args[0])
+        self.assertNotIn(_TOKEN, record.getMessage())
+        self.assertIn("123456789:***...5678", record.getMessage())
+
+    def test_mapping_arguments_are_formatted_and_masked(self):
+        record = self._record("%(path)s %(status)d", ({"path": _TOKEN, "status": 200},))
+        TelegramTokenFilter().filter(record)
+        self.assertEqual(record.getMessage(), "123456789:***...5678 200")
+
+    def test_tokens_in_object_arguments_and_messages_are_masked(self):
+        class Secret:
+            def __str__(self):
+                return _TOKEN
+
+        for record in (self._record("%s", (Secret(),)), self._record(Secret())):
+            TelegramTokenFilter().filter(record)
+            self.assertEqual(record.getMessage(), "123456789:***...5678")
+
+    def test_formatting_failure_drops_the_sensitive_message(self):
+        record = self._record(f"{_TOKEN} %d", (_TOKEN,))
+        TelegramTokenFilter().filter(record)
+        self.assertNotIn(_TOKEN, record.getMessage())
+        self.assertFalse(record.args)
+
+    def test_redaction_failure_drops_the_sensitive_message(self):
+        record = self._record("%s", (_TOKEN,))
+        with patch(
+            "odoo.addons.telegram.tools.logging_filter._mask_token",
+            side_effect=ValueError("redaction failed"),
+        ):
+            TelegramTokenFilter().filter(record)
+        self.assertNotIn(_TOKEN, record.getMessage())
+        self.assertFalse(record.args)
 
     def test_the_filter_keeps_the_record(self):
         self.assertTrue(TelegramTokenFilter().filter(self._record("nothing secret")))

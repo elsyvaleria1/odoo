@@ -14,25 +14,12 @@ def _mask_token(match: re.Match) -> str:
 
 class TelegramTokenFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        if record.args:
-            try:
-                args = (
-                    list(record.args)
-                    if isinstance(record.args, tuple)
-                    else [record.args]
-                )
-                masked_args = []
-                for arg in args:
-                    if isinstance(arg, str):
-                        masked_args.append(_TOKEN_PATTERN.sub(_mask_token, arg))
-                    else:
-                        masked_args.append(arg)
-                record.args = tuple(masked_args)
-            except Exception:
-                pass
-
-        if isinstance(record.msg, str):
-            record.msg = _TOKEN_PATTERN.sub(_mask_token, record.msg)
+        try:
+            message = _TOKEN_PATTERN.sub(_mask_token, record.getMessage())
+        except Exception:
+            message = "Telegram log message could not be safely redacted"
+        record.msg = message
+        record.args = ()
 
         return True
 
