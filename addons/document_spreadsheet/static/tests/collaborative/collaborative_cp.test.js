@@ -129,3 +129,30 @@ test("a missed revision is caught up from the server, not by a reload", async fu
     expect(getCellContent(model, "B1")).toBe("received");
     expect(model.session.getRevisionId()).toBe("received");
 });
+
+test("a catch-up the server fails reloads, as before catching up", async function () {
+    mockService("action", {
+        doAction(actionRequest) {
+            if (actionRequest === "reload_context") {
+                expect.step("reload");
+            } else {
+                return super.doAction(...arguments);
+            }
+        },
+    });
+    onRpc("get_spreadsheet_revisions_after", () => {
+        throw new Error("the server failed");
+    });
+    const { model, transportService } = await createSpreadsheet();
+    transportService.broadcast({
+        type: "REMOTE_REVISION",
+        version: 1,
+        clientId: "raoul",
+        serverRevisionId: "not this session's head",
+        nextRevisionId: "next",
+        commands: [],
+    });
+    await animationFrame();
+    expect.verifySteps(["reload"]);
+    expect(model.session.getRevisionId()).not.toBe("next");
+});

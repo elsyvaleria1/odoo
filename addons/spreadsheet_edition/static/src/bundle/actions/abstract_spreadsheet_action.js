@@ -491,11 +491,21 @@ export class AbstractSpreadsheetAction extends Component {
     async _catchUp() {
         const { session } = this.model;
         const head = session.getRevisionId();
-        const missed = await this.orm.call(
-            this.resModel,
-            "get_spreadsheet_revisions_after",
-            [this.resId, head, this.accessToken],
-        );
+        let missed;
+        try {
+            missed = await this.orm.silent.call(
+                this.resModel,
+                "get_spreadsheet_revisions_after",
+                [this.resId, head, this.accessToken],
+            );
+        } catch (error) {
+            // what cannot be caught up on is reloaded, as before catching up
+            log.logic("unexpectedRevisionId:catchUpFailed", () => ({
+                resId: this.resId,
+                error: error?.name,
+            }));
+            return false;
+        }
         log.logic("unexpectedRevisionId:catchUp", () => ({
             resId: this.resId,
             missed: missed?.length,
