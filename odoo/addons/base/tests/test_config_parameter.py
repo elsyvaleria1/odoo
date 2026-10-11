@@ -166,6 +166,21 @@ class TestSealedDatabaseSecret(TransactionCase):
                         self.ICP.get_param("database.secret"), "clear-secret"
                     )
 
+    def test_a_copy_replaces_a_secret_sealed_under_a_key_it_does_not_hold(self):
+        with patch.dict(os.environ, self.real_key):
+            self.ICP.set_param("database.secret", "the-source-secret")
+            source_sealed = self._stored()
+        self.assertTrue(sealing.is_sealed(source_sealed))
+
+        other_key = {sealing.ENV_KEY: Fernet.generate_key().decode()}
+        with patch.dict(os.environ, other_key):
+            self.ICP.init(force=True)
+
+            self.assertNotEqual(self._stored(), source_sealed)
+            self.assertNotIn(
+                self.ICP.get_param("database.secret"), (None, "the-source-secret")
+            )
+
     def test_sealing_changes_no_signature_and_no_session_token(self):
         self._store_in_clear("signing-secret")
         user = self.env.ref("base.user_admin")

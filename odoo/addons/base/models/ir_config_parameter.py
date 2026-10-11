@@ -44,9 +44,10 @@ class IrConfig_Parameter(models.Model):
     @mute_logger("odoo.addons.base.models.ir_config_parameter")
     def init(self, force: bool = False) -> None:
         self = self.with_context(prefetch_fields=False).sudo()
-        present = set(
-            self.search([("key", "in", list(_default_parameters))]).mapped("key")
-        )
+        present = {
+            param.key: param
+            for param in self.search([("key", "in", list(_default_parameters))])
+        }
         _debug.pipeline(
             "init_defaults",
             declared=len(_default_parameters),
@@ -54,9 +55,14 @@ class IrConfig_Parameter(models.Model):
             force=force,
         )
         for key, func in _default_parameters.items():
-            if force or key not in present:
+            if key not in present:
                 _debug.lifecycle("default_param_set", key=key, force=force)
                 self.set_param(key, func())
+            elif force:
+                # a fresh value replaces the stored one unread: a restored copy
+                # cannot open a secret sealed under its source's key
+                _debug.lifecycle("default_param_replaced", key=key)
+                present[key].write({"value": func()})
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
