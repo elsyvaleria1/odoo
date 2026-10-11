@@ -55,6 +55,13 @@ test("initialize retries on its own when no bus reconnect comes", async () => {
     await start();
     const store = getService("mail.store");
     await store.isReady;
+    patchWithCleanup(getService("bus_service"), {
+        addEventListener(name, ...args) {
+            if (name !== "BUS:CONNECT" && name !== "BUS:RECONNECT") {
+                super.addEventListener(name, ...args);
+            }
+        },
+    });
     store._initializePromise = undefined;
     store.isReady = new Deferred();
     let attempts = 0;
