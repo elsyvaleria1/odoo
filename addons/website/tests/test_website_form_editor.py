@@ -496,6 +496,15 @@ class TestContactFormAfterEmailChange(HttpCase):
         signature = page.xpath('//input[@name="website_form_signature"]/@value')[0]
         return values["email_to"], signature
 
+    def test_editing_the_company_contact_updates_the_contact_page(self):
+        company = self.env["website"].browse(1).company_id
+        company.email = "partner-before@example.com"
+        self.env.flush_all()
+        self._served_form()
+        company.partner_id.email = "partner-after@example.com"
+        self.env.flush_all()
+        self.assertEqual(self._served_form()[0], "partner-after@example.com")
+
     def test_a_visitor_reaches_the_company_after_its_email_changed(self):
         company = self.env["website"].browse(1).company_id
         company.email = "before-change@example.com"

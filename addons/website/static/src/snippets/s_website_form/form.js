@@ -493,85 +493,12 @@ export class Form extends Interaction {
                         this.checkErrorFields(resultData.error_fields);
                     }
                 } else {
-                    let successMode = this.el.dataset.successMode;
-                    let successPage = this.el.dataset.successPage;
-                    if (!successMode) {
-                        successPage = this.el.dataset.success_page;
-                        successMode = successPage ? "redirect" : "nothing";
+                    try {
+                        await this.onSendSuccess();
+                    } catch (error) {
+                        this.updateStatus("success");
+                        throw error;
                     }
-                    log.logic("send: success", () => ({
-                        successMode,
-                        successPage,
-                        legacy: !this.el.dataset.successMode,
-                    }));
-                    switch (successMode) {
-                        case "redirect": {
-                            let hashIndex = successPage.indexOf("#");
-                            if (hashIndex > 0) {
-                                let currentUrlPath = window.location.pathname;
-                                if (!currentUrlPath.endsWith("/")) {
-                                    currentUrlPath = currentUrlPath + "/";
-                                }
-                                if (!successPage.includes("/#")) {
-                                    successPage = successPage.replace("#", "/#");
-                                    hashIndex++;
-                                }
-                                if (
-                                    [
-                                        successPage,
-                                        "/" + session.lang_url_code + successPage,
-                                    ].some((link) =>
-                                        link.startsWith(currentUrlPath + "#"),
-                                    )
-                                ) {
-                                    successPage = successPage.substring(hashIndex);
-                                }
-                            }
-                            if (successPage.charAt(0) === "#") {
-                                const successAnchorEl = document.getElementById(
-                                    successPage.substring(1),
-                                );
-                                if (successAnchorEl) {
-                                    log.logic("send: success anchor on page", () => ({
-                                        anchor: successPage,
-                                        modal: successAnchorEl.classList.contains(
-                                            "modal",
-                                        ),
-                                    }));
-                                    if (successAnchorEl.classList.contains("modal")) {
-                                        window.location.href = successPage;
-                                    } else {
-                                        await this.waitFor(
-                                            scrollTo(successAnchorEl, {
-                                                duration: 500,
-                                                extraOffset: 0,
-                                            }),
-                                        );
-                                    }
-                                }
-                                break;
-                            }
-                            log.logic("send: redirecting to success page", () => ({
-                                successPage,
-                            }));
-                            window.location.href = successPage;
-                            return;
-                        }
-                        case "message": {
-                            await this.waitFor(delay(400));
-
-                            this.isHidden = true;
-                            break;
-                        }
-                        default: {
-                            await this.waitFor(delay(400));
-
-                            this.updateStatus("success");
-                            break;
-                        }
-                    }
-
-                    this.resetForm();
                 }
             },
             (error) => {
@@ -588,6 +515,83 @@ export class Form extends Interaction {
                 );
             },
         );
+    }
+
+    async onSendSuccess() {
+        let successMode = this.el.dataset.successMode;
+        let successPage = this.el.dataset.successPage;
+        if (!successMode) {
+            successPage = this.el.dataset.success_page;
+            successMode = successPage ? "redirect" : "nothing";
+        }
+        log.logic("send: success", () => ({
+            successMode,
+            successPage,
+            legacy: !this.el.dataset.successMode,
+        }));
+        switch (successMode) {
+            case "redirect": {
+                let hashIndex = successPage.indexOf("#");
+                if (hashIndex > 0) {
+                    let currentUrlPath = window.location.pathname;
+                    if (!currentUrlPath.endsWith("/")) {
+                        currentUrlPath = currentUrlPath + "/";
+                    }
+                    if (!successPage.includes("/#")) {
+                        successPage = successPage.replace("#", "/#");
+                        hashIndex++;
+                    }
+                    if (
+                        [successPage, "/" + session.lang_url_code + successPage].some(
+                            (link) => link.startsWith(currentUrlPath + "#"),
+                        )
+                    ) {
+                        successPage = successPage.substring(hashIndex);
+                    }
+                }
+                if (successPage.charAt(0) === "#") {
+                    const successAnchorEl = document.getElementById(
+                        successPage.substring(1),
+                    );
+                    if (successAnchorEl) {
+                        log.logic("send: success anchor on page", () => ({
+                            anchor: successPage,
+                            modal: successAnchorEl.classList.contains("modal"),
+                        }));
+                        if (successAnchorEl.classList.contains("modal")) {
+                            window.location.href = successPage;
+                        } else {
+                            await this.waitFor(
+                                scrollTo(successAnchorEl, {
+                                    duration: 500,
+                                    extraOffset: 0,
+                                }),
+                            );
+                        }
+                    }
+                    break;
+                }
+                log.logic("send: redirecting to success page", () => ({
+                    successPage,
+                }));
+                window.location.href = successPage;
+                return;
+            }
+            case "message": {
+                await this.waitFor(delay(400));
+
+                this.isHidden = true;
+                break;
+            }
+            default: {
+                await this.waitFor(delay(400));
+
+                this.updateStatus("success");
+                break;
+            }
+        }
+
+        this.resetForm();
     }
 
     resetForm() {

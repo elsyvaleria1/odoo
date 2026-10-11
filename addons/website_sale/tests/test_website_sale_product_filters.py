@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo import Command
 from odoo.tests import HttpCase, tagged
 from odoo.tools import SQL
@@ -381,6 +383,24 @@ class TestWebsiteSaleProductFilters(
         computer_case_copy = self.computer_case.copy()
         computer_case_copy.website_published = True
         self.start_tour("/shop", "shop_attribute_filters_remain_when_changing_page")
+
+    def test_a_client_limit_cannot_widen_the_hidden_variants_cap(self):
+        newest = self.env.ref("website_sale.dynamic_filter_newest_products")
+        original = type(newest)._get_max_limit
+        caps = []
+
+        def spy(record):
+            caps.append(original(record))
+            return caps[-1]
+
+        with (
+            MockRequest(self.env, website=self.website),
+            patch.object(type(newest), "_get_max_limit", spy),
+        ):
+            for limit in (10000, "5"):
+                with self.subTest(limit=limit):
+                    newest._prepare_values(limit=limit, search_domain=["hide_variants"])
+        self.assertEqual(caps, [max(newest.limit, 16) ** 2, 25])
 
     def test_hiding_variants_widens_the_fetch_cap_to_cover_the_templates(self):
         newest = self.env.ref("website_sale.dynamic_filter_newest_products")

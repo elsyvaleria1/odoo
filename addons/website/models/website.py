@@ -1194,11 +1194,12 @@ class Website(models.Model):
             if p.kind in supported_kinds and p.default is inspect.Parameter.empty
         )
 
-    def _enumerate_pages(self, query_string=None, force=False):
+    def _enumerate_pages(self, query_string=None, force=False, indexed_only=True):
         domain = [("view_id", "!=", False), ("url", "!=", "/")]
         if not force:
+            if indexed_only:
+                domain.append(("website_indexed", "=", True))
             domain += [
-                ("website_indexed", "=", True),
                 ("website_published", "=", True),
                 ("visibility", "=", False),
                 "|",
@@ -1360,7 +1361,9 @@ class Website(models.Model):
     def search_pages(self, needle=None, limit=None, force=True):
         name = self.env["ir.http"]._slugify(needle, max_length=50, path=True)
         res = []
-        for page in self._enumerate_pages(query_string=name, force=force):
+        for page in self._enumerate_pages(
+            query_string=name, force=force, indexed_only=False
+        ):
             res.append(page)
             if len(res) == limit:
                 break

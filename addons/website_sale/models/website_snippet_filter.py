@@ -25,7 +25,9 @@ class WebsiteSnippetFilter(models.Model):
         if search_domain and "hide_variants" in search_domain:
             hide_variants = True
             search_domain.remove("hide_variants")
-        product_limit = limit or self.limit
+        product_limit = min(
+            self._coerce_positive_int(limit) or self.limit, super()._get_max_limit()
+        )
         if hide_variants and self.filter_id.model_id == "product.product":
             limit = product_limit**2
         return super(

@@ -43,6 +43,33 @@ class TestControllers(tests.HttpCase):
         self.assertIn("/hidden-suggestion", suggested("admin"))
         self.assertNotIn("/hidden-suggestion", suggested("suggest_portal"))
 
+    def test_link_suggestions_offer_published_unindexed_pages_to_everyone(self):
+        self.env["website.page"].create(
+            {
+                "name": "Thanks suggestion",
+                "url": "/thanks-suggestion",
+                "type": "qweb",
+                "arch": "<div>thanks</div>",
+                "is_published": True,
+                "website_indexed": False,
+                "website_id": 1,
+            }
+        )
+        new_test_user(
+            self.env,
+            login="suggest_editor",
+            groups="base.group_user,website.group_website_restricted_editor",
+        )
+        self.authenticate("suggest_editor", "suggest_editor")
+        response = self.url_open(
+            "/website/get_suggested_links",
+            json={"params": {"needle": "thanks-sugg", "limit": 1000}},
+        )
+        suggested = {
+            page["value"] for page in response.json()["result"]["matching_pages"]
+        }
+        self.assertIn("/thanks-suggestion", suggested)
+
     def test_an_image_id_that_is_not_a_number_is_not_found(self):
         response = self.url_open("/website/image/res.partner/abc/avatar_128")
         self.assertEqual(response.status_code, 404)

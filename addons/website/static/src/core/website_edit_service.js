@@ -296,19 +296,11 @@ export const websiteEditService = {
         };
 
         const handleEditPage = (ev) => {
-            if (!window.frameElement) {
-                detachFromParent();
-                return;
-            }
             log.lifecycle("edit_page received");
             stop(ev.detail.iframeDocument);
         };
 
         const handlePluginLoaded = (ev) => {
-            if (!window.frameElement) {
-                detachFromParent();
-                return;
-            }
             Object.assign(shared, ev.shared);
             log.lifecycle("edit interaction plugin loaded", () => ({
                 sharedPlugins: Object.keys(shared).length,
@@ -344,7 +336,11 @@ export const websiteEditService = {
                 handlePluginLoaded,
             );
         }
-        window.addEventListener("pagehide", detachFromParent, { once: true });
+        window.addEventListener("pagehide", (ev) => {
+            if (!ev.persisted) {
+                detachFromParent();
+            }
+        });
 
         return websiteEditService;
     },
