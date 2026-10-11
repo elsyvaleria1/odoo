@@ -410,3 +410,105 @@ class TestPaymentEntryOwnership(AccountTestInvoicingCommon):
         )
         self.assertTrue(payment._seek_for_lines()[1].reconciled)
         self.assertEqual(payment.destination_account_id, self.other_receivable)
+
+
+@tagged("post_install", "-at_install")
+class TestStatementLineEntryOwnership(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.bank_journal = cls.company_data["default_journal_bank"]
+
+    def _st_line(self, amount=100.0):
+        return self.env["account.bank.statement.line"].create(
+            {
+                "journal_id": self.bank_journal.id,
+                "date": "2026-08-01",
+                "payment_ref": "transfer 42",
+                "partner_id": self.partner_a.id,
+                "amount": amount,
+            }
+        )
+
+    def _invoice(self):
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-08-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "goods",
+                            "price_unit": 100.0,
+                            "tax_ids": [Command.clear()],
+                        }
+                    )
+                ],
+            }
+        )
+        invoice.action_post()
+        return invoice
+
+    def test_the_transaction_owns_its_entry_one_way(self):
+        st_line = self._st_line()
+        liquidity, suspense, other = st_line._seek_for_lines()
+        self.assertEqual(liquidity.payment_role, "liquidity")
+        self.assertEqual(suspense.payment_role, "suspense")
+        self.assertFalse(other)
+        expense = self.company_data["default_account_expense"]
+
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            liquidity.account_id = expense
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            suspense.balance = -50.0
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            st_line.move_id.partner_id = self.partner_b
+
+        liquidity.name = "relabelled on the entry"
+        self.assertEqual(st_line.payment_ref, "transfer 42")
+
+        st_line.write({"amount": 80.0, "partner_id": self.partner_b.id})
+        self.assertEqual(
+            sorted(
+                (line.payment_role, line.balance, line.partner_id.id)
+                for line in st_line.line_ids
+            ),
+            [
+                ("liquidity", 80.0, self.partner_b.id),
+                ("suspense", -80.0, self.partner_b.id),
+            ],
+        )
+        self.assertEqual(st_line.move_id.partner_id, self.partner_b)
+
+    def test_a_matched_transaction_is_corrected_by_undoing_its_matching(self):
+        invoice = self._invoice()
+        st_line = self._st_line()
+        st_line.set_line_bank_statement_line(
+            invoice.line_ids.filtered(
+                lambda line: line.display_type == "payment_term"
+            ).ids
+        )
+        self.assertTrue(st_line.is_reconciled)
+
+        with self.assertRaisesRegex(UserError, "Undo the reconciliation first"):
+            st_line.amount = 80.0
+
+        st_line.action_undo_reconciliation()
+        st_line.amount = 80.0
+
+        liquidity, suspense, other = st_line._seek_for_lines()
+        self.assertEqual((liquidity.balance, suspense.balance), (80.0, -80.0))
+        self.assertFalse(other)
+        self.assertEqual(invoice.payment_state, "not_paid")
+
+    def test_assigning_an_account_to_the_open_balance_ends_its_suspense_role(self):
+        st_line = self._st_line(amount=-30.0)
+        suspense = st_line._seek_for_lines()[1]
+        expense = self.company_data["default_account_expense"]
+
+        st_line.set_account_bank_statement_line(suspense.ids, expense.id)
+
+        self.assertEqual(suspense.account_id, expense)
+        self.assertFalse(suspense.payment_role)
+        self.assertTrue(st_line.is_reconciled)

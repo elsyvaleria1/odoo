@@ -35,10 +35,12 @@ class AccountBankStatementLine(models.Model):
         )
         return {
             "name": self.payment_ref,
+            "partner_id": self.partner_id.id,
             "account_id": self.journal_id.suspense_account_id.id,
             "balance": -open_balance,
             "currency_id": transaction_currency.id,
             "amount_currency": amount_currency,
+            "payment_role": "suspense",
         }
 
     @_debug.perf.timed
@@ -92,7 +94,9 @@ class AccountBankStatementLine(models.Model):
                     )
                 )
             )
-        move = self.move_id.with_context(force_delete=True, skip_readonly_check=True)
+        move = self.move_id.with_context(
+            force_delete=True, skip_readonly_check=True, entry_owner_sync=True
+        )
         with _debug.perf("rewrite_move_lines", cr=self.env.cr, stline=self):
             move.line_ids = lines_commands
 
@@ -106,6 +110,12 @@ class AccountBankStatementLine(models.Model):
                 if len(lines_to_set.company_id) == 1:
                     allowed_companies |= lines_to_set.company_id
                 if not partner.company_id or partner.company_id in allowed_companies:
+                    if not self.partner_id:
+                        self.with_privilege(
+                            "account.privilege_set_matched_partner",
+                            reason="a matched bank transaction takes the partner of "
+                            "the items it was matched with",
+                        ).partner_id = partner
                     move.line_ids.filtered(
                         lambda line: not line.partner_id
                     ).partner_id = partner

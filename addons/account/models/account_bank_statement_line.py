@@ -319,6 +319,7 @@ class AccountBankStatementLine(models.Model):
         "amount_currency",
         "move_id.checked",
         "move_id.line_ids.account_id",
+        "move_id.line_ids.payment_role",
         "move_id.line_ids.amount_currency",
         "move_id.line_ids.amount_residual_currency",
         "move_id.line_ids.currency_id",
@@ -493,13 +494,14 @@ class AccountBankStatementLine(models.Model):
                 "statement_line_id": st_line.id,
                 "narration": st_line.narration,
                 "name": False,
+                "partner_id": st_line.partner_id.id,
             }
             with self.env.protecting(
                 self.env["account.move"]._get_field_protections(line_vals, st_line)
             ):
-                st_line.move_id.with_context(clear_sequence_mixin_cache=False).write(
-                    to_write
-                )
+                st_line.move_id.with_context(
+                    clear_sequence_mixin_cache=False, entry_owner_sync=True
+                ).write(to_write)
         _debug.pipeline(
             "created_moves_line",
             stline=st_lines,
@@ -524,7 +526,8 @@ class AccountBankStatementLine(models.Model):
         _debug.lifecycle("write", records=self, fields=sorted(vals))
         vals = self._normalize_debit_credit_vals(vals)
         res = super(
-            AccountBankStatementLine, self.with_context(skip_readonly_check=True)
+            AccountBankStatementLine,
+            self.with_context(skip_readonly_check=True, entry_owner_sync=True),
         ).write(vals)
         self._sync_to_moves(set(vals.keys()))
         if not _RUNNING_BALANCE_TRIGGERS.isdisjoint(vals):
@@ -618,7 +621,9 @@ class AccountBankStatementLine(models.Model):
         self.payment_ids.unlink()
 
         for st_line in self:
-            st_line.with_context(force_delete=True, skip_readonly_check=True).write(
+            st_line.with_context(
+                force_delete=True, skip_readonly_check=True, entry_owner_sync=True
+            ).write(
                 {
                     "checked": True,
                     "auto_reconcile_rule": False,
@@ -860,6 +865,7 @@ class AccountBankStatementLine(models.Model):
             "amount_currency": journal_amount,
             "debit": max(0.0, company_amount),
             "credit": max(0.0, -company_amount),
+            "payment_role": "liquidity",
         }
 
         counterpart_line_vals = {
@@ -869,6 +875,11 @@ class AccountBankStatementLine(models.Model):
             "amount_currency": -transaction_amount,
             "debit": max(0.0, -company_amount),
             "credit": max(0.0, company_amount),
+            "payment_role": (
+                "suspense"
+                if counterpart_account_id == self.journal_id.suspense_account_id.id
+                else False
+            ),
         }
         return [liquidity_line_vals, counterpart_line_vals]
 
@@ -883,113 +894,21 @@ class AccountBankStatementLine(models.Model):
 
     def _seek_for_lines(self) -> list | tuple:
         self.check_singleton()
-        liquidity_lines = self.env["account.move.line"]
-        suspense_lines = self.env["account.move.line"]
-        other_lines = self.env["account.move.line"]
-
-        for line in self.move_id.line_ids:
-            if line.account_id == self.journal_id.default_account_id:
-                liquidity_lines += line
-            elif line.account_id == self.journal_id.suspense_account_id:
-                suspense_lines += line
-            else:
-                other_lines += line
-        if not liquidity_lines:
-            liquidity_lines = self.move_id.line_ids.filtered(
-                lambda l: (
-                    l.account_id.account_type in ("asset_cash", "liability_credit_card")
-                )
-            )
-            other_lines -= liquidity_lines
-        return liquidity_lines, suspense_lines, other_lines
-
-    @_debug.perf.timed
-    def _sync_from_moves(self, changed_fields) -> None:
-        if self.env.context.get("skip_account_move_synchronization"):
-            return
-        if "line_ids" not in changed_fields:
-            return
-
-        for st_line in self.with_context(skip_account_move_synchronization=True):
-            move = st_line.move_id
-            move_vals, st_line_vals = st_line._prepare_synchronized_vals_from_move()
-            _debug.pipeline(
-                "_sync_from_moves_move_st_line",
-                stline=st_line,
-                fields=sorted(move_vals),
-                fields_to=sorted(st_line_vals),
-            )
-            move.with_context(skip_readonly_check=True).write(
-                move._cleanup_write_orm_values(move, move_vals)
-            )
-            st_line.write(move._cleanup_write_orm_values(st_line, st_line_vals))
-
-    @_debug.perf.timed
-    def _prepare_synchronized_vals_from_move(self) -> tuple:
-        self.check_singleton()
-        liquidity_lines, suspense_lines, other_lines = self._seek_for_lines()
-        company_currency = self.journal_id.company_id.currency_id
-        journal_currency = (
-            self.journal_id.currency_id
-            if self.journal_id.currency_id != company_currency
-            else False
+        lines_by_role = self.move_id.line_ids.grouped("payment_role")
+        empty = self.env["account.move.line"]
+        liquidity_lines = lines_by_role.get("liquidity", empty)
+        suspense_lines = lines_by_role.get("suspense", empty)
+        return (
+            liquidity_lines,
+            suspense_lines,
+            self.move_id.line_ids - liquidity_lines - suspense_lines,
         )
 
-        if len(liquidity_lines) != 1:
-            raise UserError(
-                self.env._(
-                    "The journal entry %s reached an invalid state regarding its related statement line.\n"
-                    "To be consistent, the journal entry must always have exactly one journal item involving the "
-                    "bank/cash account.",
-                    self.move_id.display_name,
-                )
-            )
-        if len(suspense_lines) > 1:
-            raise UserError(
-                self.env._(
-                    "%(move)s reached an invalid state regarding its related statement line.\n"
-                    "To be consistent, the journal entry must always have exactly one suspense line.",
-                    move=self.move_id.display_name,
-                )
-            )
-
-        _debug.pipeline(
-            "move_lines_classified",
-            stline=self,
-            liquidity=len(liquidity_lines),
-            suspense=len(suspense_lines),
-            other=len(other_lines),
+    def _get_entry_correction_hint(self) -> str:
+        return self.env._(
+            "edit the transaction itself (undo its reconciliation first if it is "
+            "matched), or change its matching in the bank reconciliation."
         )
-        st_line_vals = {
-            "payment_ref": liquidity_lines.name,
-            "partner_id": liquidity_lines.partner_id.id,
-            "amount": (
-                liquidity_lines.amount_currency
-                if journal_currency
-                else liquidity_lines.balance
-            ),
-        }
-        if suspense_lines:
-            if suspense_lines.currency_id == (journal_currency or company_currency):
-                st_line_vals["amount_currency"] = 0.0
-                st_line_vals["foreign_currency_id"] = False
-            elif not other_lines:
-                st_line_vals["amount_currency"] = -suspense_lines.amount_currency
-                st_line_vals["foreign_currency_id"] = suspense_lines.currency_id.id
-
-        _debug.logic(
-            "foreign_currency_synced",
-            stline=self,
-            amount_currency=st_line_vals.get("amount_currency"),
-            foreign_currency_id=st_line_vals.get("foreign_currency_id"),
-        )
-        move_vals = {
-            "partner_id": liquidity_lines.partner_id.id,
-            "currency_id": (
-                self.foreign_currency_id or journal_currency or company_currency
-            ).id,
-        }
-        return move_vals, st_line_vals
 
     @_debug.perf.timed
     def _sync_to_moves(self, changed_fields):
@@ -1009,7 +928,7 @@ class AccountBankStatementLine(models.Model):
 
         for st_line in self.with_context(skip_account_move_synchronization=True):
             st_line.move_id.with_context(
-                skip_readonly_check=True, force_delete=rebuild
+                skip_readonly_check=True, force_delete=rebuild, entry_owner_sync=True
             ).write(st_line._prepare_synchronized_move_vals(rebuild=rebuild))
 
     @_debug.perf.timed
@@ -1101,3 +1020,41 @@ class AccountMove(models.Model):
         inverse_name="move_id",
         string="Statements",
     )
+
+    def _get_entry_owner(self):
+        self.check_singleton()
+        return super()._get_entry_owner() or self.statement_line_id
+
+    def _check_entry_shape(self) -> None:
+        super()._check_entry_shape()
+        for move in self.filtered("statement_line_id"):
+            journal = move.statement_line_id.journal_id
+            liquidity = move.line_ids.filtered(
+                lambda line: line.payment_role == "liquidity"
+            )
+            if len(liquidity) != 1 or (move.line_ids - liquidity).filtered(
+                lambda line, account=liquidity.account_id: line.account_id == account
+            ):
+                _debug.logic("statement_entry_liquidity_refused", move=move)
+                raise UserError(
+                    self.env._(
+                        "The journal entry %s reached an invalid state regarding its related statement line.\n"
+                        "To be consistent, the journal entry must always have exactly one journal item involving the "
+                        "bank/cash account.",
+                        move.display_name,
+                    )
+                )
+            suspense = move.line_ids.filtered(
+                lambda line, account=journal.suspense_account_id: (
+                    line.account_id == account
+                )
+            )
+            if len(suspense) > 1:
+                _debug.logic("statement_entry_suspense_refused", move=move)
+                raise UserError(
+                    self.env._(
+                        "%(move)s reached an invalid state regarding its related statement line.\n"
+                        "To be consistent, the journal entry must always have exactly one suspense line.",
+                        move=move.display_name,
+                    )
+                )

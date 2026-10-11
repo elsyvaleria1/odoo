@@ -219,40 +219,43 @@ class TestAccountBankStatementLine(AccountTestInvoicingCommon):
             ],
         )
 
-        statement_line.move_id.with_context(skip_readonly_check=True).write(
-            {
-                "line_ids": [
-                    (
-                        1,
-                        liquidity_lines.id,
-                        {
-                            "debit": expected_liquidity_values.get("debit", 0.0),
-                            "credit": expected_liquidity_values.get("credit", 0.0),
-                            "amount_currency": expected_liquidity_values.get(
-                                "amount_currency", 0.0
-                            ),
-                        },
-                    ),
-                    (
-                        1,
-                        suspense_lines.id,
-                        {
-                            "debit": expected_counterpart_values.get("debit", 0.0),
-                            "credit": expected_counterpart_values.get("credit", 0.0),
-                            "amount_currency": expected_counterpart_values.get(
-                                "amount_currency", 0.0
-                            ),
-                        },
-                    ),
-                ]
-            }
-        )
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            statement_line.move_id.with_context(skip_readonly_check=True).write(
+                {
+                    "line_ids": [
+                        (
+                            1,
+                            liquidity_lines.id,
+                            {
+                                "debit": expected_liquidity_values.get("debit", 0.0),
+                                "credit": expected_liquidity_values.get("credit", 0.0),
+                                "amount_currency": expected_liquidity_values.get(
+                                    "amount_currency", 0.0
+                                ),
+                            },
+                        ),
+                        (
+                            1,
+                            suspense_lines.id,
+                            {
+                                "debit": expected_counterpart_values.get("debit", 0.0),
+                                "credit": expected_counterpart_values.get(
+                                    "credit", 0.0
+                                ),
+                                "amount_currency": expected_counterpart_values.get(
+                                    "amount_currency", 0.0
+                                ),
+                            },
+                        ),
+                    ]
+                }
+            )
         self.assertRecordValues(
             statement_line,
             [
                 {
-                    "amount": amount,
-                    "amount_currency": amount_currency,
+                    "amount": amount * 2,
+                    "amount_currency": amount_currency * 2,
                 }
             ],
         )

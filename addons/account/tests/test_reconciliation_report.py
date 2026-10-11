@@ -270,7 +270,7 @@ class TestReconciliationReport(TestAccountReportsCommon):
             lambda l: l.account_id == suspense_account
         )
         bank_move_1.action_draft()
-        bank_move_1.write(
+        bank_move_1.with_context(entry_owner_sync=True).write(
             {
                 "line_ids": [
                     Command.create({"account_id": other_account.id, "credit": 10.00}),
@@ -285,7 +285,7 @@ class TestReconciliationReport(TestAccountReportsCommon):
             lambda l: l.account_id == suspense_account
         )
         bank_move_2.action_draft()
-        bank_move_2.write(
+        bank_move_2.with_context(entry_owner_sync=True).write(
             {
                 "line_ids": [
                     Command.create(

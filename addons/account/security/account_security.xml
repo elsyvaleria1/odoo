@@ -84,6 +84,11 @@
                 name="name">Privilege: queue an invoice for batch sending as the user who asked, or take it off the queue</field>
             <field name="is_privilege" eval="True" />
         </record>
+        <record id="privilege_set_matched_partner" model="res.groups">
+            <field
+                name="name">Privilege: give a bank transaction the partner of the items it was matched with</field>
+            <field name="is_privilege" eval="True" />
+        </record>
         <record id="privilege_move_return_workflow" model="res.groups">
             <field
                 name="name">Privilege: move a return along its workflow, lock, submit, pay, complete or reset it</field>

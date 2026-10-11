@@ -1174,6 +1174,12 @@ class AccountPayment(models.Model):
         self.write(vals)
         self.action_post()
 
+    def _get_entry_correction_hint(self) -> str:
+        return self.env._(
+            "reset the payment to draft and edit it, or use Correct Accounts on a "
+            "posted one."
+        )
+
     def action_open_correct_accounts(self):
         self.check_singleton()
         return {
@@ -1983,9 +1989,13 @@ class AccountMove(models.Model):
             self._check_owned_move_write(vals)
         return super().write(vals)
 
+    def _get_entry_owner(self):
+        self.check_singleton()
+        return self.payment_ids[:1] or super()._get_entry_owner()
+
     def _check_owned_move_write(self, vals) -> None:
         for move in self:
-            if not (owner := move.payment_ids[:1]):
+            if not (owner := move._get_entry_owner()):
                 continue
             changed = [
                 fname
@@ -1998,8 +2008,9 @@ class AccountMove(models.Model):
             raise UserError(
                 self.env._(
                     "%(owner)s generated %(move)s, so its %(fields)s can only change "
-                    "through it: edit %(owner)s instead.",
+                    "through it: %(hint)s",
                     owner=owner.display_name,
+                    hint=owner._get_entry_correction_hint(),
                     move=move.display_name,
                     fields=", ".join(
                         self._fields[fname].get_description(self.env)["string"]

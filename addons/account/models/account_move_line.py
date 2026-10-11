@@ -249,10 +249,12 @@ class AccountMoveLine(models.Model):
             ("counterpart", "Counterpart"),
             ("write_off", "Write-off"),
             ("withholding", "Withholding"),
+            ("suspense", "Suspense"),
         ],
         copy=False,
         readonly=True,
-        help="The part this line plays in the entry its payment generated.",
+        help="The part this line plays in the entry its payment or bank "
+        "transaction generated.",
     )
     statement_line_id = fields.Many2one(
         comodel_name="account.bank.statement.line",
@@ -2481,7 +2483,8 @@ class AccountMoveLine(models.Model):
             lambda line, fnames: (line, dict.fromkeys(fnames)),
         )
 
-        lines.move_id._sync_business_models(["line_ids"])
+        lines._assign_statement_suspense_role()
+        lines.move_id._check_entry_shape()
         lines.filtered(
             lambda l: l.parent_state == "draft"
         ).analytic_line_ids.with_context(skip_analytic_sync=True).unlink()
@@ -2523,13 +2526,29 @@ class AccountMoveLine(models.Model):
 
     def _get_role_protected_fields(self) -> frozenset:
         self.check_singleton()
-        if self.payment_role == "write_off":
+        if self.payment_role in ("write_off", "suspense"):
             return _OWNED_AMOUNT_FIELDS
         return _OWNED_LINE_FIELDS if self.payment_role else frozenset()
 
     def _get_entry_owner(self):
         self.check_singleton()
-        return self.move_id.payment_ids[:1]
+        return self.move_id._get_entry_owner()
+
+    def _assign_statement_suspense_role(self) -> None:
+        for line in self.filtered(
+            lambda line: (
+                line.payment_role in (False, "suspense")
+                and line.move_id.statement_line_id
+            )
+        ):
+            on_suspense = (
+                line.account_id
+                == line.move_id.statement_line_id.journal_id.suspense_account_id
+            )
+            role = "suspense" if on_suspense else False
+            if line.payment_role != role:
+                _debug.logic("statement_suspense_role", line=line, role=role)
+                line.payment_role = role
 
     def _check_owned_line_write(self, changed_fields) -> None:
         self.check_singleton()
@@ -2547,9 +2566,9 @@ class AccountMoveLine(models.Model):
         raise UserError(
             self.env._(
                 "%(owner)s generated this journal item, so its %(fields)s can only "
-                "change through it: edit %(owner)s (reset it to draft, or use "
-                "Correct Accounts once posted).",
+                "change through it: %(hint)s",
                 owner=owner.display_name,
+                hint=owner._get_entry_correction_hint(),
                 fields=", ".join(
                     self._fields[fname].get_description(self.env)["string"]
                     for fname in sorted(protected)
@@ -2568,9 +2587,10 @@ class AccountMoveLine(models.Model):
                 raise UserError(
                     self.env._(
                         "%(owner)s generated the journal item %(line)s; it can "
-                        "only be removed by editing %(owner)s.",
+                        "only be removed through it: %(hint)s",
                         owner=owner.display_name,
                         line=line.display_name,
+                        hint=owner._get_entry_correction_hint(),
                     )
                 )
 
@@ -2700,7 +2720,9 @@ class AccountMoveLine(models.Model):
             tracking_snapshot = self._snapshot_tracked_values(vals)
 
             result = super().write(vals)
-            self.move_id._sync_business_models(["line_ids"])
+            if "account_id" in vals:
+                self._assign_statement_suspense_role()
+            self.move_id._check_entry_shape()
             if any(field in vals for field in ["account_id", "currency_id"]):
                 self._check_account_is_usable()
 

@@ -200,6 +200,7 @@ account_tax_unit_company_rule,Tax Unit multi-company,model_account_tax_unit,base
 privilege_grant_partial_deductibility_grants,res.users.grant: the partial deductibility feature for whoever posts such a bill,base.model_res_users_grant,privilege_grant_partial_deductibility,permission,cru,,,"[('group_id', '=', ref('account.group_partial_purchase_deductibility'))]"
 privilege_settle_tax_return_returns,account.return: the state of a return its reconciliation settles,model_account_return,privilege_settle_tax_return,permission,ru,,,
 privilege_settle_tax_return_types,account.return.type: the settlement account of a return's type,model_account_return_type,privilege_settle_tax_return,permission,r,,,
+privilege_set_matched_partner_st_lines,account.bank.statement.line: the partner its matching found,model_account_bank_statement_line,privilege_set_matched_partner,permission,ru,,,
 account_partial_reconcile_comp_rule,Partial reconciliation multi-company,model_account_partial_reconcile,base.group_everyone,guard,crud,company,,
 account_fiscal_year_comp_rule,Fiscal year multi-company,model_account_fiscal_year,base.group_everyone,guard,crud,company,,
 account_fiscal_position_account_comp_rule,Fiscal position account mapping multi-company,model_account_fiscal_position_account,base.group_everyone,guard,crud,company,,

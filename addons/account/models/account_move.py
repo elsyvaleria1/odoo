@@ -4514,20 +4514,12 @@ class AccountMove(models.Model):
             "date": format_date(self.env, line.discount_date),
         }
 
-    @_debug.perf.timed
-    def _sync_business_models(self, changed_fields) -> None:
-        if self.env.context.get("skip_account_move_synchronization"):
-            return
+    def _get_entry_owner(self):
+        self.check_singleton()
+        return False
 
-        self_sudo = self.sudo()
-        if _debug.pipeline.enabled and self_sudo.statement_line_id:
-            _debug.pipeline(
-                "syncing_statement_lines",
-                move=self,
-                statement_lines=self_sudo.statement_line_id,
-                fields=sorted(changed_fields),
-            )
-        self_sudo.statement_line_id._sync_from_moves(changed_fields)
+    def _check_entry_shape(self) -> None:
+        return
 
     @_debug.perf.timed
     def copy_data(self, default=None):
@@ -4938,8 +4930,6 @@ class AccountMove(models.Model):
                     self.flush_recordset()
                     with _debug.perf("write_hash_moves", cr=self.env.cr, records=self):
                         self._hash_moves()
-
-            self._sync_business_models(set(vals.keys()))
 
             if "tax_totals" in vals:
                 super().write({"tax_totals": vals["tax_totals"]})
