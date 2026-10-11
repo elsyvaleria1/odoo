@@ -120,8 +120,8 @@ msgstr "# peržiūrų"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__embed_count
-msgid "# of Embeds"
-msgstr "# įterpimų"
+msgid "# of Embed Views"
+msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__public_views
@@ -175,8 +175,7 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_archive.js:0
-#: code:addons/website_slides/static/src/js/slides_course_slides_list.js:0
+#: code:addons/website_slides/static/src/js/public/slides_course_utils.js:0
 msgid "(empty)"
 msgstr "(tuščia)"
 
@@ -210,22 +209,14 @@ msgid ""
 msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.profile_access_denied
-msgid ""
-"<a t-attf-href=\"/slides/course-#{request.params.get('channel_id')}\" "
-"class=\"o_translate_inline\">Return to the course.</a>"
-msgstr ""
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_channel.py:0
-msgid "<b>%s</b> is requesting access to this course."
-msgstr "<b>%s</b> prašo prieigos prie šio kurso."
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
 msgid "<b>(empty)</b>"
 msgstr "<b>(tuščia)</b>"
+
+#. module: website_slides
+#: model_terms:web_tour.tour,rainbow_man_message:website_slides.slides_tour
+msgid "<b>Good job!</b> You went through all steps of this tour."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
@@ -254,12 +245,12 @@ msgstr "<b>Neįtraukta į kategorijas</b>"
 #: model:mail.template,body_html:website_slides.mail_template_slide_channel_enroll
 msgid ""
 "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
-"    <p style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
-"        Hello<br/><br/>\n"
-"        You have been enrolled to a new course: <t t-"
-"out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
-"    </p>\n"
-"</div>\n"
+"                    <p style=\"margin: 0px; padding: 0px; font-size: 13px;"
+"\">\n"
+"                        Hello<br/><br/>\n"
+"                        You have been enrolled to a new course: <t t-out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
+"                    </p>\n"
+"                </div>\n"
 "            "
 msgstr ""
 
@@ -267,12 +258,12 @@ msgstr ""
 #: model:mail.template,body_html:website_slides.mail_template_slide_channel_invite
 msgid ""
 "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
-"    <p style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
-"        Hello<br/><br/>\n"
-"        You have been invited to check out this course: <t t-"
-"out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
-"    </p>\n"
-"</div>\n"
+"                    <p style=\"margin: 0px; padding: 0px; font-size: 13px;"
+"\">\n"
+"                        Hello<br/><br/>\n"
+"                        You have been invited to check out this course: <t t-out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
+"                    </p>\n"
+"                </div>\n"
 "            "
 msgstr ""
 
@@ -436,297 +427,255 @@ msgid ""
 msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.user_profile_content
-msgid "<i class=\"fa fa-arrow-right\"/> Start Learning"
-msgstr "<i class=\"fa fa-arrow-right\"/> Pradėti mokytis"
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-clock me-2\" aria-label=\"Duration\" role=\"img\" "
+"title=\"Duration\"/>"
+msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
-msgid "<i class=\"fa fa-bar-chart\"/> Statistics"
-msgstr "<i class=\"fa fa-bar-chart\"/> Statistika"
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-eye me-2\" aria-label=\"Views\" role=\"img\" "
+"title=\"Views\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-file-code me-2\" aria-label=\"article\" "
+"role=\"img\" title=\"Article\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-file-image me-2\" aria-label=\"Infographic\" "
+"role=\"img\" title=\"Infographic\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-file-pdf me-2\" aria-label=\"Document\" "
+"role=\"img\" title=\"Document\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-file-video me-2\" aria-label=\"Video\" role=\"img\""
+" title=\"Video\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
+msgid "<i class=\"fa-regular fa-folder me-1\"/><span>Add Section</span>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
+msgid "<i class=\"fa-regular fa-folder me-1\"/>Add a section"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.user_profile_content
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Start Learning"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
 msgid ""
-"<i class=\"fa fa-bars\"/><span class=\"d-none d-md-inline-block "
+"<i class=\"fa-solid fa-bars\"/><span class=\"d-none d-md-inline-block "
 "ms-1\">Lessons</span>"
 msgstr ""
-"<i class=\"fa fa-bars\"/><span class=\"d-none d-md-inline-block "
-"ms-1\">Pamokos</span>"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+msgid "<i class=\"fa-solid fa-chart-column\"/> Statistics"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-msgid "<i class=\"fa fa-check me-1\"/>Completed"
-msgstr "<i class=\"fa fa-check me-1\"/>Atlikta"
+msgid "<i class=\"fa-solid fa-check me-1\"/>Completed"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_card
-msgid "<i class=\"fa fa-check\" aria-hidden=\"true\"/> Completed"
+msgid "<i class=\"fa-solid fa-check\" aria-hidden=\"true\"/> Completed"
 msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
 #: model_terms:ir.ui.view,arch_db:website_slides.courses_my
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
-msgid "<i class=\"fa fa-check\"/> Completed"
-msgstr "<i class=\"fa fa-check\"/> Atlikta"
+msgid "<i class=\"fa-solid fa-check\"/> Completed"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
-msgid "<i class=\"fa fa-circle-o-notch fa-spin me-2\"/><b>Loading...</b>"
-msgstr "<i class=\"fa fa-circle-o-notch fa-spin me-2\"/><b>Įkeliama...</b>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_embed
-msgid "<i class=\"fa fa-clipboard\"/> Copy Embed Code"
-msgstr "<i class=\"fa fa-clipboard\"/> Kopijuoti įterpimo kodą"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_share_link
-msgid "<i class=\"fa fa-clipboard\"/> Copy Link"
-msgstr "<i class=\"fa fa-clipboard\"/> Kopijuoti nuorodą"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-msgid ""
-"<i class=\"fa fa-clock-o me-2\" aria-label=\"Duration\" role=\"img\" "
-"title=\"Duration\"/>"
+msgid "<i class=\"fa-solid fa-circle-notch fa-spin me-2\"/><b>Loading...</b>"
 msgstr ""
-"<i class=\"fa fa-clock-o me-2\" aria-label=\"Duration\" role=\"img\" "
-"title=\"Duration\"/>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
-msgid "<i class=\"fa fa-cloud-upload me-1\"/>Add Content"
-msgstr "<i class=\"fa fa-cloud-upload me-1\"/>Pridėti turinį"
+msgid "<i class=\"fa-solid fa-cloud-arrow-up me-1\"/>Add Content"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
-msgid "<i class=\"fa fa-comments\"/> Comments"
+msgid "<i class=\"fa-solid fa-comments\"/> Comments"
 msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
 msgid ""
-"<i class=\"fa fa-desktop me-xl-2 my-1\"/>\n"
-"                <span class=\"d-none d-xl-inline-block\">Fullscreen</span>"
+"<i class=\"fa-solid fa-desktop me-xl-2 my-1\"/>\n"
+"                        <span class=\"d-none d-xl-inline-block\">Fullscreen</span>"
 msgstr ""
-"<i class=\"fa fa-desktop me-xl-2 my-1\"/>\n"
-"                <span class=\"d-none d-xl-inline-block\">Visas ekranas</span>"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_channel_pages_kanban_view
+msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-msgid "<i class=\"fa fa-envelope\"/> Send Email"
-msgstr "<i class=\"fa fa-envelope\"/> siųsti el. laišką"
+msgid "<i class=\"fa-solid fa-envelope\"/> Send Email"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
-msgid "<i class=\"fa fa-eraser me-1\"/>Clear filters"
-msgstr "<i class=\"fa fa-eraser me-1\"/>Išvalyti filtrus"
+msgid "<i class=\"fa-solid fa-eraser me-1\"/>Clear filters"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.embed_slide_forbidden
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-"
+"<i class=\"fa-solid fa-exclamation-triangle\" role=\"img\" aria-"
 "label=\"Attention\" title=\"Attention\"/> This document is private."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-"
-"label=\"Attention\" title=\"Attention\"/> Šis dokumentas yra privatus."
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-msgid ""
-"<i class=\"fa fa-eye me-2\" aria-label=\"Views\" role=\"img\" "
-"title=\"Views\"/>"
+msgid "<i class=\"fa-solid fa-flag me-2\" aria-label=\"Quiz\" role=\"img\" title=\"Quiz\"/>"
 msgstr ""
-"<i class=\"fa fa-eye me-2\" aria-label=\"Views\" role=\"img\" "
-"title=\"Views\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-msgid ""
-"<i class=\"fa fa-file-code-o me-2\" aria-label=\"article\" role=\"img\" "
-"title=\"Article\"/>"
-msgstr ""
-"<i class=\"fa fa-file-code-o me-2\" aria-label=\"article\" role=\"img\" "
-"title=\"Article\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-msgid ""
-"<i class=\"fa fa-file-image-o me-2\" aria-label=\"Infographic\" role=\"img\" "
-"title=\"Infographic\"/>"
-msgstr ""
-"<i class=\"fa fa-file-image-o me-2\" aria-label=\"Infographic\" role=\"img\" "
-"title=\"Infographic\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-msgid ""
-"<i class=\"fa fa-file-pdf-o me-2\" aria-label=\"Document\" role=\"img\" "
-"title=\"Document\"/>"
-msgstr ""
-"<i class=\"fa fa-file-pdf-o me-2\" aria-label=\"Document\" role=\"img\" "
-"title=\"Document\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-msgid ""
-"<i class=\"fa fa-file-video-o me-2\" aria-label=\"Video\" role=\"img\" "
-"title=\"Video\"/>"
-msgstr ""
-"<i class=\"fa fa-file-video-o me-2\" aria-label=\"Video\" role=\"img\" "
-"title=\"Video\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-msgid ""
-"<i class=\"fa fa-flag me-2\" aria-label=\"Quiz\" role=\"img\" title=\"Quiz\"/"
-">"
-msgstr ""
-"<i class=\"fa fa-flag me-2\" aria-label=\"Quiz\" role=\"img\" title=\"Quiz\"/"
-">"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_aside_training_category
-msgid "<i class=\"fa fa-flag text-warning\"/> Quiz"
-msgstr "<i class=\"fa fa-flag text-warning\"/> Apklausa"
+msgid "<i class=\"fa-solid fa-flag text-warning\"/> Quiz"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen_sidebar_category
-msgid "<i class=\"fa fa-flag-checkered text-warning\"/>Quiz"
-msgstr "<i class=\"fa fa-flag-checkered text-warning\"/>Apklausa"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
-msgid "<i class=\"fa fa-folder-o me-1\"/><span>Add Section</span>"
-msgstr "<i class=\"fa fa-folder-o me-1\"/><span>Pridėti skyrių</span>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
-msgid "<i class=\"fa fa-folder-o me-1\"/>Add a section"
-msgstr "<i class=\"fa fa-folder-o me-1\"/>Pridėti sekciją"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_channel_pages_kanban_view
-msgid "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
-msgstr "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
+msgid "<i class=\"fa-solid fa-flag-checkered text-warning\"/>Quiz"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
-msgid "<i class=\"fa fa-home\"/> About"
-msgstr "<i class=\"fa fa-home\"/> Apie"
+msgid "<i class=\"fa-solid fa-house\"/> About"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_main
-msgid "<i class=\"fa fa-home\"/> Course"
-msgstr "<i class=\"fa fa-home\"/>Kursas"
+msgid "<i class=\"fa-solid fa-house\"/> Course"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
 msgid ""
-"<i class=\"fa fa-home\"/><span class=\"d-none d-md-inline-block ms-1\">Back "
-"to course</span>"
+"<i class=\"fa-solid fa-house\"/><span class=\"d-none d-md-inline-block "
+"ms-1\">Back to course</span>"
 msgstr ""
-"<i class=\"fa fa-home\"/><span class=\"d-none d-md-inline-block "
-"ms-1\">Grįžti į kursą</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
 msgid ""
-"<i class=\"fa fa-lock\"/>\n"
-"                        <span>Course Locked</span>"
+"<i class=\"fa-solid fa-lock\"/>\n"
+"            <span>Course Locked</span>"
 msgstr ""
-"<i class=\"fa fa-lock\"/>\n"
-"                        <span>Kursas užrakintas</span>"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_embed
+msgid "<i class=\"fa-solid fa-paste\"/> Copy Embed Code"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_share_link
+msgid "<i class=\"fa-solid fa-paste\"/> Copy Link"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
 msgid ""
-"<i class=\"fa fa-plus me-1\"/> <span class=\"d-none d-md-inline-block\">Add "
-"Content</span>"
+"<i class=\"fa-solid fa-plus me-1\"/> <span class=\"d-none d-md-inline-"
+"block\">Add Content</span>"
 msgstr ""
-"<i class=\"fa fa-plus me-1\"/> <span class=\"d-none d-md-inline-"
-"block\">Pridėti turinį</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
-msgid "<i class=\"fa fa-plus me-1\"/><span>Add Content</span>"
-msgstr "<i class=\"fa fa-plus me-1\"/><span>Pridėti turinį</span>"
+msgid "<i class=\"fa-solid fa-plus me-1\"/><span>Add Content</span>"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.lesson_content_quiz_add_buttons
 msgid ""
-"<i class=\"fa fa-plus me-2\"/>\n"
-"            <span>Add Question</span>"
+"<i class=\"fa-solid fa-plus me-2\"/>\n"
+"                    <span>Add Question</span>"
 msgstr ""
-"<i class=\"fa fa-plus me-2\"/>\n"
-"            <span>Pridėti klausimą</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.lesson_content_quiz_add_buttons
 msgid ""
-"<i class=\"fa fa-plus me-2\"/>\n"
-"            <span>Add Quiz</span>"
+"<i class=\"fa-solid fa-plus me-2\"/>\n"
+"                    <span>Add Quiz</span>"
 msgstr ""
-"<i class=\"fa fa-plus me-2\"/>\n"
-"            <span>Pridėti apklausą</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
 msgid ""
-"<i class=\"fa fa-question me-2\" aria-label=\"Number of Questions\" "
+"<i class=\"fa-solid fa-question me-2\" aria-label=\"Number of Questions\" "
 "role=\"img\" title=\"Number of Questions\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
+msgid ""
+"<i class=\"fa-solid fa-right-from-bracket\"/><span class=\"d-none d-md-"
+"inline-block ms-1\">Exit Fullscreen</span>"
 msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
 msgid ""
-"<i class=\"fa fa-share-alt me-xl-2 my-1\"/>\n"
-"                <span class=\"d-none d-xl-inline-block\">Share</span>"
+"<i class=\"fa-solid fa-share-alt me-xl-2 my-1\"/>\n"
+"                        <span class=\"d-none d-xl-inline-block\">Share</span>"
 msgstr ""
-"<i class=\"fa fa-share-alt me-xl-2 my-1\"/>\n"
-"                <span class=\"d-none d-xl-inline-block\">Dalintis</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
 msgid ""
-"<i class=\"fa fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>\n"
+"<i class=\"fa-solid fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>\n"
 "                                            Share"
 msgstr ""
-"<i class=\"fa fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>\n"
-"                                            Dalintis"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
 msgid ""
-"<i class=\"fa fa-share-alt\"/>\n"
-"                        <span class=\"d-none d-md-inline-block ms-2\">Share</"
-"span>"
+"<i class=\"fa-solid fa-share-alt\"/>\n"
+"                                <span class=\"d-none d-md-inline-block ms-2\">Share</span>"
 msgstr ""
-"<i class=\"fa fa-share-alt\"/>\n"
-"                        <span class=\"d-none d-md-inline-block "
-"ms-2\">Dalintis</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_sidebar
-msgid "<i class=\"fa fa-share-alt\"/> Share"
-msgstr "<i class=\"fa fa-share-alt\"/> Dalintis"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
-msgid ""
-"<i class=\"fa fa-sign-out\"/><span class=\"d-none d-md-inline-block "
-"ms-1\">Exit Fullscreen</span>"
+msgid "<i class=\"fa-solid fa-share-alt\"/> Share"
 msgstr ""
-"<i class=\"fa fa-sign-out\"/><span class=\"d-none d-md-inline-block "
-"ms-1\">Išeiti iš viso ekrano</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.courses_search_tags
 msgid ""
-"<i class=\"fa fa-tag me-2 text-muted\"/>\n"
-"          My Courses"
+"<i class=\"fa-solid fa-tag me-2 text-muted\"/>\n"
+"                My Courses"
 msgstr ""
 
 #. module: website_slides
@@ -746,34 +695,34 @@ msgstr ""
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.courses_my
 msgid ""
-"<small class=\"text-muted d-none d-md-inline\"><i class=\"fa fa-check me-1\" "
-"role=\"img\"/>You are enrolled</small>"
+"<small class=\"text-muted d-none d-md-inline\"><i class=\"fa-solid fa-check "
+"me-1\" role=\"img\"/>You are enrolled</small>"
 msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
 msgid ""
 "<small class=\"text-success\">\n"
-"                        Request already sent\n"
-"                    </small>"
+"            Request already sent\n"
+"            </small>"
 msgstr ""
 "<small class=\"text-success\">\n"
-"                        Prašymas jau nusiustas\n"
-"                    </small>"
+"            Prašymas jau nusiustas\n"
+"            </small>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_main
 msgid ""
-"<small><span class=\"badge text-bg-success fw-normal\"><i class=\"fa fa-"
-"check\"/> Completed</span></small>"
+"<small><span class=\"badge text-bg-success fw-normal\"><i class=\"fa-solid "
+"fa-check\"/> Completed</span></small>"
 msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list_sample
 msgid ""
 "<span class=\"badge fw-bold m-1 text-bg-warning\">\n"
-"                            <i class=\"fa fa-fw fa-flag\"/> 10 xp\n"
-"                        </span>"
+"            <i class=\"fa-solid fa-flag\"/> 10 xp\n"
+"            </span>"
 msgstr ""
 
 #. module: website_slides
@@ -838,10 +787,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
 msgid ""
 "<span class=\"ms-1\">Lessons</span>\n"
-"                                <span class=\"ms-1\">·</span>"
+"            <span class=\"ms-1\">·</span>"
 msgstr ""
 "<span class=\"ms-1\">Pamokos</span>\n"
-"                                <span class=\"ms-1\">·</span>"
+"            <span class=\"ms-1\">·</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_channel_form
@@ -881,8 +830,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
 msgid ""
 "<span class=\"text-muted fw-bold col-4 col-md-3\">\n"
-"                        Additional Resources\n"
-"                    </span>"
+"                                Additional Resources\n"
+"                            </span>"
 msgstr ""
 
 #. module: website_slides
@@ -929,18 +878,10 @@ msgstr ""
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
 msgid ""
-"<span id=\"first\" class=\"me-1 me-sm-2\" title=\"First slide\" aria-"
-"label=\"First slide\" role=\"button\"><i class=\"fa fa-step-backward\"/></"
-"span>\n"
-"                                        <span id=\"previous\" class=\"mx-1 "
-"mx-sm-2\" title=\"Previous slide\" aria-label=\"Previous slide\" "
-"role=\"button\"><i class=\"fa fa-arrow-circle-left\"/></span>\n"
-"                                        <span id=\"next\" class=\"mx-1 mx-"
-"sm-2\" title=\"Next slide\" aria-label=\"Next slide\" role=\"button\"><i "
-"class=\"fa fa-arrow-circle-right\"/></span>\n"
-"                                        <span id=\"last\" class=\"mx-1 mx-"
-"sm-2\" title=\"Last slide\" aria-label=\"Last slide\" role=\"button\"><i "
-"class=\"fa fa-step-forward\"/></span>"
+"<span id=\"first\" class=\"me-1 me-sm-2\" title=\"First slide\" aria-label=\"First slide\" role=\"button\"><i class=\"fa-solid fa-step-backward\"/></span>\n"
+"                                        <span id=\"previous\" class=\"mx-1 mx-sm-2\" title=\"Previous slide\" aria-label=\"Previous slide\" role=\"button\"><i class=\"fa-solid fa-arrow-circle-left\"/></span>\n"
+"                                        <span id=\"next\" class=\"mx-1 mx-sm-2\" title=\"Next slide\" aria-label=\"Next slide\" role=\"button\"><i class=\"fa-solid fa-arrow-circle-right\"/></span>\n"
+"                                        <span id=\"last\" class=\"mx-1 mx-sm-2\" title=\"Last slide\" aria-label=\"Last slide\" role=\"button\"><i class=\"fa-solid fa-step-forward\"/></span>"
 msgstr ""
 
 #. module: website_slides
@@ -948,7 +889,7 @@ msgstr ""
 msgid ""
 "<span id=\"fullscreen\" class=\"ms-1 ms-sm-2\" title=\"View fullscreen\" "
 "aria-label=\"Fullscreen\" role=\"button\">\n"
-"                                            <i class=\"fa fa-arrows-alt\"/>\n"
+"                                            <i class=\"fa-solid fa-maximize\"/>\n"
 "                                        </span>"
 msgstr ""
 
@@ -957,13 +898,11 @@ msgstr ""
 msgid ""
 "<span id=\"zoomout\" class=\"d-inline ms-2 me-2\" title=\"Zoom out\" aria-"
 "label=\"Zoom out\" role=\"button\">\n"
-"                                            <i class=\"fa fa-search-minus\"/"
-">\n"
+"                                            <i class=\"fa-solid fa-search-minus\"/>\n"
 "                                        </span>\n"
 "                                        <span id=\"zoomin\" class=\"d-"
 "inline\" title=\"Zoom in\" aria-label=\"Zoom in\" role=\"button\">\n"
-"                                            <i class=\"fa fa-search-plus\"/"
-">\n"
+"                                            <i class=\"fa-solid fa-search-plus\"/>\n"
 "                                        </span>"
 msgstr ""
 
@@ -985,11 +924,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 msgid "<span> hours</span>"
 msgstr "<span> valandos</span>"
-
-#. module: website_slides
-#: model_terms:web_tour.tour,rainbow_man_message:website_slides.slides_tour
-msgid "<span><b>Good job!</b> You went through all steps of this tour.</span>"
-msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_main
@@ -1070,7 +1004,13 @@ msgid "A Mighty Forest from Ages"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_0_0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "A certification cannot be set as a preview."
+msgstr ""
+
+#. module: website_slides
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_0_0
 msgid "A fruit"
 msgstr "Vaisius"
 
@@ -1084,6 +1024,11 @@ msgstr ""
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_slide_demo_1_4
 msgid "A little chat with Harry Potted"
+msgstr ""
+
+#. module: website_slides
+#: model:survey.survey,title:website_slides.slide_slide_demo_1_4_quiz_survey
+msgid "A little chat with Harry Potted Quiz"
 msgstr ""
 
 #. module: website_slides
@@ -1115,8 +1060,13 @@ msgid "A resource of type url must contain a link."
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_1_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_1_0
 msgid "A shovel"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model.constraint,message:website_slides.constraint_slide_embed_slide_id_url_uniq
+msgid "A slide can only have one view counter per third-party website URL."
 msgstr ""
 
 #. module: website_slides
@@ -1125,7 +1075,17 @@ msgid "A slide is either filled with a url or HTML content. Not both."
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_1_1
+#: model:ir.model.constraint,message:website_slides.constraint_slide_slide_check_survey_id
+msgid "A slide of type 'certification' requires a certification."
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model.constraint,message:website_slides.constraint_slide_slide_check_certification_preview
+msgid "A slide of type certification cannot be previewed."
+msgstr ""
+
+#. module: website_slides
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_1_1
 msgid "A spoon"
 msgstr "šaukštas"
 
@@ -1149,17 +1109,17 @@ msgid ""
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_0_2
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_0_2
 msgid "A table"
 msgstr "Stalas"
 
 #. module: website_slides
-#: model:ir.model.constraint,message:website_slides.constraint_slide_tag_slide_tag_unique
+#: model:ir.model.constraint,message:website_slides.constraint_slide_tag_name_src_uniq
 msgid "A tag must be unique!"
 msgstr "Žyma turi būti unikali!"
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_0_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_0_1
 msgid "A vegetable"
 msgstr "Daržovė"
 
@@ -1169,27 +1129,9 @@ msgid "API Key"
 msgstr "API raktas"
 
 #. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_channel.py:0
-msgid "Access Granted"
-msgstr "Prieiga suteikta"
-
-#. module: website_slides
 #: model:ir.model,name:website_slides.model_res_groups
 msgid "Access Groups"
 msgstr "Prieigos grupės"
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_channel.py:0
-msgid "Access Refused"
-msgstr "Prieiga atmesta"
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_channel.py:0
-msgid "Access Request"
-msgstr "Prieigos prašymas"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__has_requested_access
@@ -1200,6 +1142,12 @@ msgstr "Prieigos jau prašyta"
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_channel_form
 msgid "Access Rights"
 msgstr "Prieigos teisės"
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/models/slide_channel.py:0
+msgid "Access to %(course)s for %(partner)s"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_partner_view_tree
@@ -1383,27 +1331,17 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 msgid "All questions must be answered!"
-msgstr ""
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_question.py:0
-msgid ""
-"All questions must have at least one correct answer and one incorrect "
-"answer: \n"
-"%s\n"
 msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.user_profile_content
 msgid ""
 "All the courses you attend will appear here. <br/>\n"
-"                        <a href=\"/slides/\" class=\"btn-link "
-"o_translate_inline\">\n"
-"                            <i class=\"fa fa-arrow-right\"/> Start Learning\n"
-"                        </a>"
+"                                <a href=\"/slides/\" class=\"btn-link o_translate_inline\">\n"
+"                                    <i class=\"fa-solid fa-arrow-right\"/> Start Learning\n"
+"                                </a>"
 msgstr ""
 
 #. module: website_slides
@@ -1474,20 +1412,9 @@ msgid "Amazing!"
 msgstr "Nuostabu!"
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_1_2
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_1_2
 msgid "And also bananas"
 msgstr ""
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__text_value
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__answer_ids
-msgid "Answer"
-msgstr "Atsakymas"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
-msgid "Answers"
-msgstr "Atsakymai"
 
 #. module: website_slides
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_channel__visibility__link
@@ -1504,6 +1431,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:website_slides.field_gamification_challenge__challenge_category
 msgid "Appears in"
 msgstr "Rodoma"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_channel__approval_request_ids
+msgid "Approval Requests"
+msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
@@ -1544,7 +1476,7 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 msgid "Are you sure you want to delete this question \"%(title)s\"?"
 msgstr ""
 
@@ -1571,16 +1503,6 @@ msgstr "Prisegtukų skaičius"
 #: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__attachment_ids
 msgid "Attachments"
 msgstr "Prisegtukai"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__attempts_avg
-msgid "Attempts Avg"
-msgstr ""
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__attempts_count
-msgid "Attempts Count"
-msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_partner_view_form
@@ -1773,6 +1695,12 @@ msgid "Category"
 msgstr "Kategorija"
 
 #. module: website_slides
+#: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_category__certification
+#: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_type__certification
+msgid "Certification"
+msgstr "Sertifikavimas"
+
+#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_res_config_settings__module_website_slides_survey
 msgid "Certifications"
 msgstr "Sertifikatas"
@@ -1959,16 +1887,6 @@ msgid "Come back later to check the feedbacks given by your Attendees."
 msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.actions.act_window,help:website_slides.slide_question_action_report
-msgid "Come back later to oversee how well your Attendees are doing."
-msgstr ""
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__comment
-msgid "Comment"
-msgstr "Komentaras"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
 msgid "Commenting is not enabled on this course."
 msgstr ""
@@ -2005,6 +1923,8 @@ msgid "Community hero"
 msgstr ""
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_company_count
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_company_count
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_company_count
 #: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_company_count
 msgid "Company Course Count"
@@ -2042,11 +1962,18 @@ msgid "Completed Course"
 msgstr "Pabaigtas kursas"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_completed_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_completed_ids
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_completed_ids
 #: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_completed_ids
 #: model_terms:ir.ui.view,arch_db:website_slides.user_profile_content
 msgid "Completed Courses"
 msgstr "Pabaigti kursai"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__date_completed
+msgid "Completed On"
+msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__completion
@@ -2139,7 +2066,6 @@ msgstr "Susisiekti su atsakingu asmeniu dėl dalyvavimo."
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__slide_content_ids
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__slide_id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__slide_ids
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__slide_id
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_embed_view_search
@@ -2154,11 +2080,6 @@ msgstr "Turinys"
 #: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_category.xml:0
 msgid "Content Preview"
 msgstr "Turinio peržiūra"
-
-#. module: website_slides
-#: model:ir.model,name:website_slides.model_slide_question
-msgid "Content Quiz Question"
-msgstr ""
 
 #. module: website_slides
 #: model:ir.actions.act_window,name:website_slides.action_slide_tag
@@ -2229,29 +2150,29 @@ msgid "Copy the shareable link"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_0_0
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_0_1
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_1_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_0_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_0_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_1_1
 msgid "Correct!"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_1_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_1_0
 msgid "Correct! A shovel is the perfect tool to dig a hole."
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_0_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_0_0
 msgid "Correct! A strawberry is a fruit because it's the product of a tree."
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_1_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_1_0
 msgid "Correct! Congratulations you have time to loose"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_5_3_question_0_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_5_3_question_0_0
 msgid "Correct! You did it!"
 msgstr ""
 
@@ -2265,9 +2186,9 @@ msgstr ""
 
 #. module: website_slides
 #: model:ir.model,name:website_slides.model_slide_channel
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__channel_id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__channel_id
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_id
 #: model_terms:ir.ui.view,arch_db:website_slides.gamification_karma_tracking_view_search
 #: model_terms:ir.ui.view,arch_db:website_slides.rating_rating_view_form_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.rating_rating_view_search_slide_channel
@@ -2280,11 +2201,18 @@ msgid "Course"
 msgstr "Kursas"
 
 #. module: website_slides
+#: model:approval.category,name:website_slides.approval_category_course_access
+msgid "Course Access"
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_channel__visibility__members
 msgid "Course Attendees"
 msgstr ""
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_count
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_count
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_count
 #: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_count
 msgid "Course Count"
@@ -2337,6 +2265,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/website_slides/models/slide_channel.py:0
 msgid "Course Ranked"
+msgstr ""
+
+#. module: website_slides
+#: model:approval.category.step,name:website_slides.approval_category_course_access_step_responsible
+msgid "Course Responsible"
 msgstr ""
 
 #. module: website_slides
@@ -2467,11 +2400,6 @@ msgid "Create a Course Group"
 msgstr "Sukurti kursų grupę"
 
 #. module: website_slides
-#: model:ir.model,website_form_label:website_slides.model_res_partner
-msgid "Create a Customer"
-msgstr ""
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.res_config_settings_view_form
 msgid "Create a community and let Attendees answer each others' questions."
 msgstr ""
@@ -2494,34 +2422,30 @@ msgid "Create this tag group\""
 msgstr ""
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__create_uid
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__create_uid
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__create_uid
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__create_uid
 msgid "Created by"
 msgstr "Sukūrė"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__create_date
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__create_date
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__create_date
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__create_date
 msgid "Created on"
 msgstr "Sukurta"
 
@@ -2593,8 +2517,8 @@ msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,help:website_slides.field_slide_channel__visibility
-#: model:ir.model.fields,help:website_slides.field_wizard_slide_channel_add_attendee__channel_visibility
 #: model:ir.model.fields,help:website_slides.field_slide_channel_partner__channel_visibility
+#: model:ir.model.fields,help:website_slides.field_wizard_slide_channel_add_attendee__channel_visibility
 msgid "Defines who can access your courses and their content."
 msgstr "Nustatykite, kas turi prieigą prie kursų ir jų turinio."
 
@@ -2615,7 +2539,7 @@ msgstr "Ištrinti kategoriją"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 msgid "Delete Question"
 msgstr ""
 
@@ -2635,7 +2559,7 @@ msgid "Detailed Description"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_1_4_question_1
+#: model:survey.question,title:website_slides.slide_slide_demo_1_4_question_1
 msgid "Did you read the whole article?"
 msgstr ""
 
@@ -2646,15 +2570,13 @@ msgid "Discard"
 msgstr "Atmesti"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_like
 msgid "Dislike"
 msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__dislikes
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_like
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 msgid "Dislikes"
 msgstr "Neigiami įvertinimai"
@@ -2672,29 +2594,30 @@ msgstr "Vaizdavimas"
 #: model:ir.model.fields,field_description:website_slides.field_res_groups__display_name
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__display_name
 #: model:ir.model.fields,field_description:website_slides.field_res_users__display_name
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__display_name
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__display_name
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__display_name
+#: model:ir.model.fields,field_description:website_slides.field_survey_question__display_name
+#: model:ir.model.fields,field_description:website_slides.field_survey_question_answer__display_name
+#: model:ir.model.fields,field_description:website_slides.field_survey_survey__display_name
 #: model:ir.model.fields,field_description:website_slides.field_website__display_name
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__display_name
 msgid "Display Name"
 msgstr "Rodomas pavadinimas"
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_2_0_question_0
+#: model:survey.question,title:website_slides.slide_slide_demo_2_0_question_0
 msgid "Do you make beams out of lemon trees?"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_2_0_question_1
+#: model:survey.question,title:website_slides.slide_slide_demo_2_0_question_1
 msgid "Do you make lemons out of beams?"
 msgstr ""
 
@@ -2705,18 +2628,12 @@ msgid "Do you really want to leave the course?"
 msgstr "Tikrai norite išeiti iš kurso?"
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_1_4_question_0
+#: model:survey.question,title:website_slides.slide_slide_demo_1_4_question_0
 msgid "Do you think Harry Potted has a good name?"
 msgstr ""
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.js:0
-msgid "Do you want to install \"%s\"?"
-msgstr ""
-
-#. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_5_3_question_0
+#: model:survey.question,title:website_slides.slide_slide_demo_5_3_question_0
 msgid "Do you want to reply correctly?"
 msgstr ""
 
@@ -2777,11 +2694,6 @@ msgstr "Neturite paskyros?"
 #: model_terms:ir.ui.view,arch_db:website_slides.slides_home_user_achievements_small
 msgid "Done"
 msgstr "Atlikta"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__done_count
-msgid "Done Count"
-msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
@@ -2969,11 +2881,6 @@ msgid "Enter your <b>Question</b>. Be clear and concise."
 msgstr ""
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__answers_validation_error
-msgid "Error on Answers"
-msgstr ""
-
-#. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_category.xml:0
 msgid "Estimated Completion Time"
@@ -3018,12 +2925,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_embed_view_tree
 msgid "External Website"
 msgstr ""
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.js:0
-msgid "Failed to install \"%s\""
-msgstr "Nepavyko įdiegti \"%s\""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__promote_strategy
@@ -3114,11 +3015,6 @@ msgstr "Sekėjai"
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__message_partner_ids
 msgid "Followers (Partners)"
 msgstr "Sekėjai (partneriai)"
-
-#. module: website_slides
-#: model:ir.model.fields,help:website_slides.field_slide_channel__activity_type_icon
-msgid "Font awesome icon e.g. fa-tasks"
-msgstr "Font awesome piktograma, pvz., fa-tasks"
 
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_slide_demo_4_0
@@ -3277,13 +3173,16 @@ msgid "Group Name"
 msgstr "Grupės pavadinimas"
 
 #. module: website_slides
-#: model:ir.model.fields,help:website_slides.field_slide_channel__upload_group_ids
-msgid "Group of users allowed to publish contents on a documentation course."
+#: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__group_sequence
+msgid "Group sequence"
 msgstr ""
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__group_sequence
-msgid "Group sequence"
+#: model:ir.model.fields,help:website_slides.field_slide_channel__upload_group_ids
+msgid ""
+"Groups whose members may add contents to this course. It grants uploading, "
+"not publishing: only the responsible and eLearning managers can publish. "
+"Leave empty to restrict uploading to those two."
 msgstr ""
 
 #. module: website_slides
@@ -3311,6 +3210,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__has_message
 msgid "Has Message"
 msgstr "Turi žinutę"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__has_questions
+msgid "Has Questions"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:slide.slide,description:website_slides.slide_slide_demo_0_3
@@ -3396,19 +3300,20 @@ msgstr ""
 #: model:ir.model.fields,field_description:website_slides.field_res_groups__id
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__id
 #: model:ir.model.fields,field_description:website_slides.field_res_users__id
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__id
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__id
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__id
+#: model:ir.model.fields,field_description:website_slides.field_survey_question__id
+#: model:ir.model.fields,field_description:website_slides.field_survey_question_answer__id
+#: model:ir.model.fields,field_description:website_slides.field_survey_survey__id
 #: model:ir.model.fields,field_description:website_slides.field_website__id
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__id
 msgid "ID"
 msgstr "ID"
 
@@ -3521,44 +3426,44 @@ msgid ""
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_0_1
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_0_0
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_1_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_0_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_0_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_1_0
 msgid "Incorrect!"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_0_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_0_1
 msgid "Incorrect! A strawberry is not a vegetable."
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_0_2
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_0_2
 msgid "Incorrect! A table is a piece of furniture."
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_1_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_1_1
 msgid "Incorrect! Good luck digging a hole with a spoon..."
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_1_2
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_1_2
 msgid "Incorrect! Seriously?"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_5_3_question_0_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_5_3_question_0_1
 msgid "Incorrect! You better think twice..."
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_1_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_1_1
 msgid "Incorrect! You really should read it."
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_1_2
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_1_2
 msgid "Incorrect! of course not ..."
 msgstr ""
 
@@ -3566,24 +3471,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__nbr_infographic
 msgid "Infographics"
 msgstr "Inforgrafikai"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.xml:0
-msgid "Install"
-msgstr "Diegti"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_dialog_select.xml:0
-msgid "Install the"
-msgstr ""
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.js:0
-msgid "Installing \"%s\"..."
-msgstr ""
 
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_category_demo_1_0
@@ -3677,15 +3564,20 @@ msgid "Is Member"
 msgstr "yra narys"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__is_name_default
+msgid "Is Name Default"
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__is_new_slide
 msgid "Is New Slide"
 msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__is_published
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_published
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__is_published
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__is_published
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_published
 msgid "Is Published"
 msgstr "Paskelbta"
 
@@ -3698,11 +3590,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__is_category
 msgid "Is a category"
 msgstr ""
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__is_correct
-msgid "Is correct answer"
-msgstr "teisingas atsakymas"
 
 #. module: website_slides
 #: model:ir.model.fields,help:website_slides.field_slide_channel__is_member
@@ -3729,7 +3616,7 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 msgid "Join & Submit"
 msgstr "Prisijunkite ir pateikite"
 
@@ -3741,13 +3628,14 @@ msgstr "Prisijungti prie kurso"
 
 #. module: website_slides
 #. odoo-javascript
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #: code:addons/website_slides/static/src/xml/slide_quiz.xml:0
 msgid "Join the course to take the quiz and verify your answers!"
 msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_join.js:0
+#: code:addons/website_slides/static/src/interactions/course_join.js:0
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
 #: model_terms:ir.ui.view,arch_db:website_slides.join_course_link
 msgid "Join this Course"
@@ -3843,34 +3731,30 @@ msgid "Last Update"
 msgstr "Paskutinis atnaujinimas"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__write_uid
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__write_uid
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__write_uid
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__write_uid
 msgid "Last Updated by"
 msgstr "Paskutinį kartą atnaujino"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__write_date
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__write_date
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__write_date
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__write_date
 msgid "Last Updated on"
 msgstr "Paskutinį kartą atnaujinta"
 
@@ -3944,15 +3828,13 @@ msgid "Level up!"
 msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_like
 msgid "Like"
 msgstr "Patinka"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__likes
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_like
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 msgid "Likes"
 msgstr "Teigiami vertinimai"
@@ -3978,6 +3860,11 @@ msgstr ""
 #: model:ir.model.fields,help:website_slides.field_slide_slide__video_url
 msgid ""
 "Link of the video (we support YouTube, Google Drive and Vimeo as sources)"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__survey_id
+msgid "Linked Survey"
 msgstr ""
 
 #. module: website_slides
@@ -4017,6 +3904,11 @@ msgid "Main Trees Categories"
 msgstr "Pagrindinės medžių grupės"
 
 #. module: website_slides
+#: model:survey.survey,title:website_slides.slide_slide_demo_2_0_quiz_survey
+msgid "Main Trees Categories Quiz"
+msgstr ""
+
+#. module: website_slides
 #: model:res.groups,name:website_slides.group_website_slides_manager
 msgid "Manager"
 msgstr "Vadovas"
@@ -4028,7 +3920,7 @@ msgstr "Pažymėti kaip atliktą"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
 msgid "Mark To Do"
 msgstr ""
@@ -4227,11 +4119,6 @@ msgid "Next"
 msgstr "Kitas"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_channel__activity_calendar_event_id
-msgid "Next Activity Calendar Event"
-msgstr "Kitas veiklos kalendoriaus įvykis"
-
-#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__activity_date_deadline
 msgid "Next Activity Deadline"
 msgstr "Kito veiksmo terminas"
@@ -4253,12 +4140,12 @@ msgstr "Kita paskaita"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_0_1
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_1_1
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_0_1
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_1_1
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_5_3_question_0_1
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_0_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_1_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_0_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_1_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_5_3_question_0_1
 msgid "No"
 msgstr "Ne"
 
@@ -4286,11 +4173,6 @@ msgid "No Notification"
 msgstr "Jokių pranešimų"
 
 #. module: website_slides
-#: model_terms:ir.actions.act_window,help:website_slides.slide_question_action_report
-msgid "No Quiz data yet!"
-msgstr "Apklausos atsakymų dar nėra!"
-
-#. module: website_slides
 #: model_terms:ir.actions.act_window,help:website_slides.rating_rating_action_slide_channel
 msgid "No Reviews yet!"
 msgstr "Dar nėra  atsiliepimų!"
@@ -4304,6 +4186,12 @@ msgstr "Dar nėra pabaigtų kursų!"
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
 msgid "No content was found using your search"
 msgstr "Naudojant Jūsų užklausą nerasta jokių įrašų"
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "No course given, please contact the administrator."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.courses_search_results
@@ -4346,6 +4234,12 @@ msgid "No results found for '"
 msgstr "Rezultatų nerasta pagal '"
 
 #. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "No tag to add."
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_channel__promote_strategy__none
 msgid "None"
 msgstr "Nieko"
@@ -4385,6 +4279,12 @@ msgid "Number of Articles"
 msgstr "Straipsnių skaičius"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_channel__nbr_certification
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__nbr_certification
+msgid "Number of Certifications"
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__total_slides
 msgid "Number of Contents"
 msgstr "Turinio skaičius"
@@ -4398,6 +4298,11 @@ msgstr "Dokumentų skaičius"
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__nbr_infographic
 msgid "Number of Images"
 msgstr "Nuotraukų skaičius"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__questions_count
+msgid "Number of Questions"
+msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__nbr_quiz
@@ -4432,11 +4337,6 @@ msgstr "Pranešimų skaičius, kuriems reikia imtis veiksmų"
 #: model:ir.model.fields,help:website_slides.field_slide_slide__message_has_error_counter
 msgid "Number of messages with delivery error"
 msgstr "Žinučių su pristatymo klaida skaičius"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_slide__questions_count
-msgid "Numbers of Questions"
-msgstr "Klausimų skaičius"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.mail_notification_channel_invite
@@ -4550,15 +4450,9 @@ msgstr "Suvestinis"
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
 #: code:addons/website_slides/static/src/xml/slide_quiz.xml:0
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "Please"
 msgstr "Prašome"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-msgid ""
-"Please <a t-attf-href=\"/odoo?redirect=#{request.httprequest.url}\" "
-"class=\"fw-bold o_translate_inline\"> login </a> to share this"
-msgstr ""
 
 #. module: website_slides
 #. odoo-python
@@ -4581,19 +4475,31 @@ msgstr "Prašau įvesti galiojantį (-čius) el. paštą (-us)"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz_question_form.js:0
+#: code:addons/website_slides/static/src/interactions/quiz_question_form.js:0
 msgid "Please fill in the question"
 msgstr "Prašome atsakyti į klausimą"
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/wizard/slide_channel_invite.py:0
+#: code:addons/website_slides/wizards/wizard_slide_channel_add_attendee.py:0
 msgid "Please select at least one recipient."
 msgstr "Prašau pasirinkite bent vieną atsakovą."
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 msgid "Points Rewards"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_channel__website_message_ids
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model.fields,help:website_slides.field_slide_channel__website_message_ids
+#: model:ir.model.fields,help:website_slides.field_slide_slide__website_message_ids
+msgid "Portal communication history for this record."
 msgstr ""
 
 #. module: website_slides
@@ -4646,6 +4552,12 @@ msgstr "Prezentacija publikuota"
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_channel_form
 msgid "Preview"
 msgstr "Peržiūra"
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "Previews are only available for videos, documents and images."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
@@ -4723,38 +4635,24 @@ msgstr "Paskelbimo data"
 #. module: website_slides
 #. odoo-python
 #: code:addons/website_slides/models/slide_channel.py:0
-#: code:addons/website_slides/models/slide_slide.py:0
 msgid ""
-"Publishing is restricted to the responsible of training courses or members "
-"of the publisher group for documentation courses"
+"Publishing is restricted to the course responsible and to eLearning managers"
 msgstr ""
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__question_id
-#: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
-msgid "Question"
-msgstr "Klausimas"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__question
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_form
-msgid "Question Name"
-msgstr "Klausimo pavadinimas"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_slide__question_ids
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 msgid "Questions"
 msgstr "Klausimai"
 
 #. module: website_slides
 #. odoo-javascript
+#. odoo-python
+#: code:addons/website_slides/models/slide_slide.py:0
 #: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_dialog.js:0
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_category__quiz
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_type__quiz
 #: model:slide.channel.tag,name:website_slides.slide_channel_tag_quiz
 #: model_terms:ir.ui.view,arch_db:website_slides.gamification_karma_tracking_view_search
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_form
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 msgid "Quiz"
 msgstr "Apklausa"
@@ -4772,6 +4670,11 @@ msgid "Quiz Demo Data"
 msgstr ""
 
 #. module: website_slides
+#: model:ir.actions.act_window,name:website_slides.slide_quiz_question_action_report
+msgid "Quiz Questions"
+msgstr ""
+
+#. module: website_slides
 #. odoo-python
 #: code:addons/website_slides/models/slide_slide.py:0
 msgid "Quiz Set Uncompleted"
@@ -4783,11 +4686,7 @@ msgid "Quiz attempts count"
 msgstr ""
 
 #. module: website_slides
-#: model:ir.actions.act_window,name:website_slides.slide_question_action_report
 #: model:ir.ui.menu,name:website_slides.website_slides_menu_report_quizzes
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_search
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_tree
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_tree_report
 msgid "Quizzes"
 msgstr "Apklausos"
 
@@ -4970,10 +4869,9 @@ msgid "Retrieve from Google Drive"
 msgstr ""
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.xml:0
-msgid "Retry"
-msgstr "Pakartoti"
+#: model_terms:ir.ui.view,arch_db:website_slides.profile_access_denied
+msgid "Return to the course."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_channel_form
@@ -5236,11 +5134,9 @@ msgid "Seo name"
 msgstr "SEO pavadinimas"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__sequence
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__sequence
 msgid "Sequence"
@@ -5378,8 +5274,8 @@ msgstr "Trumpas aprašymas"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__visibility
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_visibility
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__channel_visibility
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_visibility
 msgid "Show Course To"
 msgstr ""
 
@@ -5427,11 +5323,6 @@ msgid "Slide Icon fa-class"
 msgstr ""
 
 #. module: website_slides
-#: model:ir.model,name:website_slides.model_slide_answer
-msgid "Slide Question's Answer"
-msgstr ""
-
-#. module: website_slides
 #: model:ir.model,name:website_slides.model_slide_tag
 msgid "Slide Tag"
 msgstr "Skaidrės žyma"
@@ -5464,6 +5355,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/website_slides/static/src/xml/website_slides_fullscreen.xml:0
 #: model:ir.model,name:website_slides.model_slide_slide
+#: model:ir.model.fields,field_description:website_slides.field_survey_survey__slide_ids
 #: model_terms:ir.ui.view,arch_db:website_slides.res_config_settings_view_form
 msgid "Slides"
 msgstr "Skaidrės"
@@ -5597,6 +5489,21 @@ msgid "Supported Files:"
 msgstr ""
 
 #. module: website_slides
+#: model:ir.model,name:website_slides.model_survey_survey
+msgid "Survey"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model,name:website_slides.model_survey_question_answer
+msgid "Survey Label"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model,name:website_slides.model_survey_question
+msgid "Survey Question"
+msgstr ""
+
+#. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/course_tag_add_dialog/course_tag_add_dialog.xml:0
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_tag_form
@@ -5673,9 +5580,19 @@ msgid "Test your knowledge"
 msgstr "Patikrinkite savo žinias"
 
 #. module: website_slides
+#: model:survey.survey,title:website_slides.slide_slide_demo_0_4_quiz_survey
+msgid "Test your knowledge Quiz"
+msgstr ""
+
+#. module: website_slides
 #: model:slide.slide,name:website_slides.slide_slide_demo_5_3
 #: model_terms:slide.slide,description:website_slides.slide_slide_demo_5_3
 msgid "Test your knowledge!"
+msgstr ""
+
+#. module: website_slides
+#: model:survey.survey,title:website_slides.slide_slide_demo_5_3_quiz_survey
+msgid "Test your knowledge! Quiz"
 msgstr ""
 
 #. module: website_slides
@@ -5773,6 +5690,11 @@ msgid "The slide can be marked as not completed and the progression"
 msgstr ""
 
 #. module: website_slides
+#: model:ir.model.fields,help:website_slides.field_survey_survey__slide_ids
+msgid "The slides this survey is linked to through the eLearning application"
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.constraint,message:website_slides.constraint_slide_slide_partner_check_vote
 msgid "The vote must be 1, 0 or -1."
 msgstr ""
@@ -5796,7 +5718,7 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 msgid "There was an error validating this quiz."
 msgstr "Patvirtinant šią anketą įvyko klaida."
 
@@ -5809,11 +5731,6 @@ msgstr "Trečiųjų šalių svetainės nuoroda"
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 msgid "Third Try"
 msgstr "Trečias bandymas"
-
-#. module: website_slides
-#: model:ir.model.fields,help:website_slides.field_slide_answer__comment
-msgid "This comment will be displayed to the user if they select this answer"
-msgstr ""
 
 #. module: website_slides
 #. odoo-python
@@ -5833,6 +5750,12 @@ msgstr ""
 #: code:addons/website_slides/static/src/xml/slide_quiz.xml:0
 msgid "This course is private."
 msgstr "Šis kursas yra privatus."
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "This course no longer exists."
+msgstr ""
 
 #. module: website_slides
 #. odoo-python
@@ -5871,17 +5794,16 @@ msgid "This is the correct answer, congratulations"
 msgstr "Tai teisingas atsakymas, sveikiname"
 
 #. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_question.py:0
-msgid ""
-"This question must have at least one correct answer and one incorrect answer."
-msgstr ""
-
-#. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 msgid "This quiz is already done. Retaking it is not possible."
 msgstr "Ši apklausa jau pabaigta. Pakartoti nėra numatyta."
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "This section does not belong to the course."
+msgstr ""
 
 #. module: website_slides
 #. odoo-python
@@ -6009,7 +5931,7 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/wizard/slide_channel_invite.py:0
+#: code:addons/website_slides/wizards/wizard_slide_channel_add_attendee.py:0
 msgid "Unable to post message, please configure the sender's email address."
 msgstr "Nepavyko paskelbti žinutės, nustatykite siuntėjo pašto adresą."
 
@@ -6038,7 +5960,7 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_join.js:0
+#: code:addons/website_slides/static/src/interactions/course_join.js:0
 msgid "Unknown error"
 msgstr "Nežinoma klaida"
 
@@ -6173,11 +6095,6 @@ msgid "Using Google Drive:"
 msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_form
-msgid "Validation error"
-msgstr ""
-
-#. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_dialog.js:0
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_category__video
@@ -6284,7 +6201,7 @@ msgstr "Balsai"
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/controllers/main.py:0
+#: code:addons/website_slides/models/slide_slide.py:0
 msgid "Votes and comments are disabled for this course"
 msgstr "Šio kurso komentuoti ar už jį balsuoti neleidžiama"
 
@@ -6292,12 +6209,6 @@ msgstr "Šio kurso komentuoti ar už jį balsuoti neleidžiama"
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_search
 msgid "Waiting for validation"
 msgstr "Laukia patvirtinimo"
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/controllers/main.py:0
-msgid "Want to test and certify your students?"
-msgstr "Norite patikrinti ir įvertinti savo studentus?"
 
 #. module: website_slides
 #: model_terms:slide.slide,description:website_slides.slide_slide_demo_3_1
@@ -6333,23 +6244,11 @@ msgid "Website Absolute URL"
 msgstr ""
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_channel__website_message_ids
-#: model:ir.model.fields,field_description:website_slides.field_slide_slide__website_message_ids
-msgid "Website Messages"
-msgstr "Interneto svetainės žinutės"
-
-#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__website_url
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__website_url
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__website_url
 msgid "Website URL"
 msgstr "Svetainės nuoroda"
-
-#. module: website_slides
-#: model:ir.model.fields,help:website_slides.field_slide_channel__website_message_ids
-#: model:ir.model.fields,help:website_slides.field_slide_slide__website_message_ids
-msgid "Website communication history"
-msgstr "Svetainės komunikacijos istorija"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__website_meta_description
@@ -6384,17 +6283,17 @@ msgid ""
 msgstr ""
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_0_4_question_0
+#: model:survey.question,title:website_slides.slide_slide_demo_0_4_question_0
 msgid "What is a strawberry?"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_0_4_question_1
+#: model:survey.question,title:website_slides.slide_slide_demo_0_4_question_1
 msgid "What is the best tool to dig a hole for your plants?"
 msgstr ""
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_1_2
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_1_2
 msgid "What was the question again?"
 msgstr ""
 
@@ -6403,6 +6302,12 @@ msgstr ""
 msgid ""
 "Whether invited partners will be added as enrolled. Otherwise, they will be "
 "added as invited."
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model.fields,help:website_slides.field_slide_slide__has_questions
+msgid ""
+"Whether this slide has quiz/certification questions (via its linked survey)."
 msgstr ""
 
 #. module: website_slides
@@ -6475,12 +6380,12 @@ msgstr ""
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/interactions/enroll_email.js:0
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_0_0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_1_0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_0_0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_1_0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_5_3_question_0_0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_0_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_1_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_0_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_1_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_5_3_question_0_0
 msgid "Yes"
 msgstr "Taip"
 
@@ -6493,6 +6398,14 @@ msgid ""
 msgstr ""
 "Jums neleidžiama pridėti narių prie šio kurso. Prašome kreiptis į kurso "
 "atsakingą asmenį arba administratorius."
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid ""
+"You are not allowed to create new course tags. Pick an existing one, or ask "
+"an eLearning officer."
+msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
@@ -6586,7 +6499,7 @@ msgstr "Neturite teisės pasiekti šio kurso."
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/controllers/main.py:0
+#: code:addons/website_slides/models/slide_slide.py:0
 msgid "You don't have enough karma to vote"
 msgstr "Neturite pakankamai karmos, kad galėtumėte balsuoti"
 
@@ -6598,7 +6511,7 @@ msgstr "Jūs gavote"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_join.js:0
+#: code:addons/website_slides/static/src/interactions/course_join.js:0
 msgid "You have already joined this channel"
 msgstr "Jūs jau prisijungėte prie šio kanalo"
 
@@ -6631,13 +6544,13 @@ msgstr "Dabar galite dalyvauti mūsų e. mokymuose."
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 msgid "You must be logged to submit the quiz."
 msgstr "Norėdami pateikti testą, turite būti prisijungę."
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/controllers/main.py:0
+#: code:addons/website_slides/models/slide_slide.py:0
 msgid "You must be member of this course to vote"
 msgstr "Norėdami balsuoti, turite būti šio kurso narys"
 
@@ -6755,12 +6668,6 @@ msgid "anyway"
 msgstr "vis tiek"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_dialog_select.xml:0
-msgid "app."
-msgstr "programėlė"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_nav
 msgid "breadcrumb"
 msgstr "kelias"
@@ -6872,11 +6779,6 @@ msgid "e.g. Setting up your computer"
 msgstr "pvz.: Kompiuterio paruošimas darbui"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_form
-msgid "e.g. What powers a computer?"
-msgstr "pvz.: Kas yra kompiuterio energijos šaltinis?"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_channel_tag_group_view_form
 msgid "e.g. Your Level"
 msgstr "pvz. Jūsų lygis"
@@ -6891,10 +6793,20 @@ msgid "eLearning"
 msgstr "eMokymas"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_ids
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_ids
 #: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_ids
 msgid "eLearning Courses"
 msgstr "El.mokymai Kursai"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_partner_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_partner_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_partner_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_partner_ids
+msgid "eLearning Memberships"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_channel_view_kanban
@@ -6927,6 +6839,7 @@ msgstr "prisijungti"
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "login"
 msgstr "prisijungimas"
 
@@ -6954,12 +6867,6 @@ msgstr "užklausa"
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
 msgid "sign in"
 msgstr "prisijungti"
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/gamification_karma_tracking.py:0
-msgid "slide.channel"
-msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
@@ -7011,6 +6918,7 @@ msgstr "prašyti prieigos"
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "to share this"
 msgstr "dalintis"
 
@@ -7046,6 +6954,283 @@ msgstr "{{ user.name }} pasidalijo su Jumis: {{ object.slide_category }}!"
 msgid "└<span class=\"ms-1\">Uncategorized</span>"
 msgstr "└<span class=\"ms-1\">be kategorijos</span>"
 
+#~ msgid "# of Embeds"
+#~ msgstr "# įterpimų"
+
+#~ msgid "<b>%s</b> is requesting access to this course."
+#~ msgstr "<b>%s</b> prašo prieigos prie šio kurso."
+
+#~ msgid "<i class=\"fa fa-arrow-right\"/> Start Learning"
+#~ msgstr "<i class=\"fa fa-arrow-right\"/> Pradėti mokytis"
+
+#~ msgid "<i class=\"fa fa-bar-chart\"/> Statistics"
+#~ msgstr "<i class=\"fa fa-bar-chart\"/> Statistika"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-bars\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">Lessons</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-bars\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">Pamokos</span>"
+
+#~ msgid "<i class=\"fa fa-check me-1\"/>Completed"
+#~ msgstr "<i class=\"fa fa-check me-1\"/>Atlikta"
+
+#~ msgid "<i class=\"fa fa-check\"/> Completed"
+#~ msgstr "<i class=\"fa fa-check\"/> Atlikta"
+
+#~ msgid "<i class=\"fa fa-circle-o-notch fa-spin me-2\"/><b>Loading...</b>"
+#~ msgstr "<i class=\"fa fa-circle-o-notch fa-spin me-2\"/><b>Įkeliama...</b>"
+
+#~ msgid "<i class=\"fa fa-clipboard\"/> Copy Embed Code"
+#~ msgstr "<i class=\"fa fa-clipboard\"/> Kopijuoti įterpimo kodą"
+
+#~ msgid "<i class=\"fa fa-clipboard\"/> Copy Link"
+#~ msgstr "<i class=\"fa fa-clipboard\"/> Kopijuoti nuorodą"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-clock-o me-2\" aria-label=\"Duration\" role=\"img\" "
+#~ "title=\"Duration\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-clock-o me-2\" aria-label=\"Duration\" role=\"img\" "
+#~ "title=\"Duration\"/>"
+
+#~ msgid "<i class=\"fa fa-cloud-upload me-1\"/>Add Content"
+#~ msgstr "<i class=\"fa fa-cloud-upload me-1\"/>Pridėti turinį"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-desktop me-xl-2 my-1\"/>\n"
+#~ "                <span class=\"d-none d-xl-inline-block\">Fullscreen</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-desktop me-xl-2 my-1\"/>\n"
+#~ "                <span class=\"d-none d-xl-inline-block\">Visas ekranas</span>"
+
+#~ msgid "<i class=\"fa fa-envelope\"/> Send Email"
+#~ msgstr "<i class=\"fa fa-envelope\"/> siųsti el. laišką"
+
+#~ msgid "<i class=\"fa fa-eraser me-1\"/>Clear filters"
+#~ msgstr "<i class=\"fa fa-eraser me-1\"/>Išvalyti filtrus"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-"
+#~ "label=\"Attention\" title=\"Attention\"/> This document is private."
+#~ msgstr ""
+#~ "<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-"
+#~ "label=\"Attention\" title=\"Attention\"/> Šis dokumentas yra privatus."
+
+#~ msgid ""
+#~ "<i class=\"fa fa-eye me-2\" aria-label=\"Views\" role=\"img\" "
+#~ "title=\"Views\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-eye me-2\" aria-label=\"Views\" role=\"img\" "
+#~ "title=\"Views\"/>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-file-code-o me-2\" aria-label=\"article\" role=\"img\" "
+#~ "title=\"Article\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-file-code-o me-2\" aria-label=\"article\" role=\"img\" "
+#~ "title=\"Article\"/>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-file-image-o me-2\" aria-label=\"Infographic\" role=\"img\" "
+#~ "title=\"Infographic\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-file-image-o me-2\" aria-label=\"Infographic\" role=\"img\" "
+#~ "title=\"Infographic\"/>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-file-pdf-o me-2\" aria-label=\"Document\" role=\"img\" "
+#~ "title=\"Document\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-file-pdf-o me-2\" aria-label=\"Document\" role=\"img\" "
+#~ "title=\"Document\"/>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-file-video-o me-2\" aria-label=\"Video\" role=\"img\" "
+#~ "title=\"Video\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-file-video-o me-2\" aria-label=\"Video\" role=\"img\" "
+#~ "title=\"Video\"/>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-flag me-2\" aria-label=\"Quiz\" role=\"img\" title=\"Quiz\"/"
+#~ ">"
+#~ msgstr ""
+#~ "<i class=\"fa fa-flag me-2\" aria-label=\"Quiz\" role=\"img\" title=\"Quiz\"/"
+#~ ">"
+
+#~ msgid "<i class=\"fa fa-flag text-warning\"/> Quiz"
+#~ msgstr "<i class=\"fa fa-flag text-warning\"/> Apklausa"
+
+#~ msgid "<i class=\"fa fa-flag-checkered text-warning\"/>Quiz"
+#~ msgstr "<i class=\"fa fa-flag-checkered text-warning\"/>Apklausa"
+
+#~ msgid "<i class=\"fa fa-folder-o me-1\"/><span>Add Section</span>"
+#~ msgstr "<i class=\"fa fa-folder-o me-1\"/><span>Pridėti skyrių</span>"
+
+#~ msgid "<i class=\"fa fa-folder-o me-1\"/>Add a section"
+#~ msgstr "<i class=\"fa fa-folder-o me-1\"/>Pridėti sekciją"
+
+#~ msgid "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
+#~ msgstr "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
+
+#~ msgid "<i class=\"fa fa-home\"/> About"
+#~ msgstr "<i class=\"fa fa-home\"/> Apie"
+
+#~ msgid "<i class=\"fa fa-home\"/> Course"
+#~ msgstr "<i class=\"fa fa-home\"/>Kursas"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-home\"/><span class=\"d-none d-md-inline-block ms-1\">Back "
+#~ "to course</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-home\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">Grįžti į kursą</span>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-lock\"/>\n"
+#~ "                        <span>Course Locked</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-lock\"/>\n"
+#~ "                        <span>Kursas užrakintas</span>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-plus me-1\"/> <span class=\"d-none d-md-inline-block\">Add "
+#~ "Content</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-plus me-1\"/> <span class=\"d-none d-md-inline-"
+#~ "block\">Pridėti turinį</span>"
+
+#~ msgid "<i class=\"fa fa-plus me-1\"/><span>Add Content</span>"
+#~ msgstr "<i class=\"fa fa-plus me-1\"/><span>Pridėti turinį</span>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-plus me-2\"/>\n"
+#~ "            <span>Add Question</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-plus me-2\"/>\n"
+#~ "            <span>Pridėti klausimą</span>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-plus me-2\"/>\n"
+#~ "            <span>Add Quiz</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-plus me-2\"/>\n"
+#~ "            <span>Pridėti apklausą</span>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-share-alt me-xl-2 my-1\"/>\n"
+#~ "                <span class=\"d-none d-xl-inline-block\">Share</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-share-alt me-xl-2 my-1\"/>\n"
+#~ "                <span class=\"d-none d-xl-inline-block\">Dalintis</span>"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>\n"
+#~ "                                            Share"
+#~ msgstr ""
+#~ "<i class=\"fa fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>\n"
+#~ "                                            Dalintis"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-share-alt\"/>\n"
+#~ "                        <span class=\"d-none d-md-inline-block ms-2\">Share</"
+#~ "span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-share-alt\"/>\n"
+#~ "                        <span class=\"d-none d-md-inline-block "
+#~ "ms-2\">Dalintis</span>"
+
+#~ msgid "<i class=\"fa fa-share-alt\"/> Share"
+#~ msgstr "<i class=\"fa fa-share-alt\"/> Dalintis"
+
+#~ msgid ""
+#~ "<i class=\"fa fa-sign-out\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">Exit Fullscreen</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-sign-out\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">Išeiti iš viso ekrano</span>"
+
+#~ msgid ""
+#~ "<small class=\"text-success\">\n"
+#~ "                        Request already sent\n"
+#~ "                    </small>"
+#~ msgstr ""
+#~ "<small class=\"text-success\">\n"
+#~ "                        Prašymas jau nusiustas\n"
+#~ "                    </small>"
+
+#~ msgid ""
+#~ "<span class=\"ms-1\">Lessons</span>\n"
+#~ "                                <span class=\"ms-1\">·</span>"
+#~ msgstr ""
+#~ "<span class=\"ms-1\">Pamokos</span>\n"
+#~ "                                <span class=\"ms-1\">·</span>"
+
+#~ msgid "Access Granted"
+#~ msgstr "Prieiga suteikta"
+
+#~ msgid "Access Refused"
+#~ msgstr "Prieiga atmesta"
+
+#~ msgid "Access Request"
+#~ msgstr "Prieigos prašymas"
+
+#~ msgid "Answer"
+#~ msgstr "Atsakymas"
+
+#~ msgid "Answers"
+#~ msgstr "Atsakymai"
+
+#~ msgid "Comment"
+#~ msgstr "Komentaras"
+
+#~ msgid "Failed to install \"%s\""
+#~ msgstr "Nepavyko įdiegti \"%s\""
+
+#~ msgid "Font awesome icon e.g. fa-tasks"
+#~ msgstr "Font awesome piktograma, pvz., fa-tasks"
+
+#~ msgid "Install"
+#~ msgstr "Diegti"
+
+#~ msgid "Is correct answer"
+#~ msgstr "teisingas atsakymas"
+
+#~ msgid "Next Activity Calendar Event"
+#~ msgstr "Kitas veiklos kalendoriaus įvykis"
+
+#~ msgid "No Quiz data yet!"
+#~ msgstr "Apklausos atsakymų dar nėra!"
+
+#~ msgid "Numbers of Questions"
+#~ msgstr "Klausimų skaičius"
+
+#~ msgid "Question"
+#~ msgstr "Klausimas"
+
+#~ msgid "Question Name"
+#~ msgstr "Klausimo pavadinimas"
+
+#~ msgid "Retry"
+#~ msgstr "Pakartoti"
+
+#~ msgid "Want to test and certify your students?"
+#~ msgstr "Norite patikrinti ir įvertinti savo studentus?"
+
+#~ msgid "Website Messages"
+#~ msgstr "Interneto svetainės žinutės"
+
+#~ msgid "Website communication history"
+#~ msgstr "Svetainės komunikacijos istorija"
+
+#~ msgid "app."
+#~ msgstr "programėlė"
+
+#~ msgid "e.g. What powers a computer?"
+#~ msgstr "pvz.: Kas yra kompiuterio energijos šaltinis?"
+
 #~ msgid "<i class=\"fa fa-comments\"/> Comments ("
 #~ msgstr "<i class=\"fa fa-comments\"/> Komentarai ("
 
@@ -7076,9 +7261,6 @@ msgstr "└<span class=\"ms-1\">be kategorijos</span>"
 
 #~ msgid "Already installing \"%s\"."
 #~ msgstr "Jau įdiegiama \"%s\"."
-
-#~ msgid "Certification"
-#~ msgstr "Sertifikavimas"
 
 #~ msgid "Clear filters"
 #~ msgstr "Valyti filtrus"

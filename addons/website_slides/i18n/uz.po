@@ -112,9 +112,8 @@ msgstr "# ta ko‘rish"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__embed_count
-#, fuzzy
-msgid "# of Embeds"
-msgstr "# ta joylashtirilgan"
+msgid "# of Embed Views"
+msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__public_views
@@ -177,8 +176,7 @@ msgstr "(masalan, https://youtube/ABC)."
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_archive.js:0
-#: code:addons/website_slides/static/src/js/slides_course_slides_list.js:0
+#: code:addons/website_slides/static/src/js/public/slides_course_utils.js:0
 #, fuzzy
 msgid "(empty)"
 msgstr "(bo‘sh)"
@@ -223,27 +221,15 @@ msgstr ""
 "o_translate_inline\">Biz bilan bog‘laning</a>"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.profile_access_denied
-#, fuzzy
-msgid ""
-"<a t-attf-href=\"/slides/course-#{request.params.get('channel_id')}\" "
-"class=\"o_translate_inline\">Return to the course.</a>"
-msgstr ""
-"<a t-attf-href=\"/slides/course-#{request.params.get('channel_id')}\" "
-"class=\"o_translate_inline\">Kursga qaytish</a>"
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_channel.py:0
-#, fuzzy
-msgid "<b>%s</b> is requesting access to this course."
-msgstr "<b>%s</b> ushbu kursga kirish uchun ruxsat so‘ramoqda."
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
 #, fuzzy
 msgid "<b>(empty)</b>"
 msgstr "<b>(bo‘sh)</b>"
+
+#. module: website_slides
+#: model_terms:web_tour.tour,rainbow_man_message:website_slides.slides_tour
+msgid "<b>Good job!</b> You went through all steps of this tour."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
@@ -276,15 +262,14 @@ msgstr "<b>Turkumlanmagan</b>"
 
 #. module: website_slides
 #: model:mail.template,body_html:website_slides.mail_template_slide_channel_enroll
-#, fuzzy
 msgid ""
 "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
-"    <p style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
-"        Hello<br/><br/>\n"
-"        You have been enrolled to a new course: <t t-"
-"out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
-"    </p>\n"
-"</div>\n"
+"                    <p style=\"margin: 0px; padding: 0px; font-size: 13px;"
+"\">\n"
+"                        Hello<br/><br/>\n"
+"                        You have been enrolled to a new course: <t t-out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
+"                    </p>\n"
+"                </div>\n"
 "            "
 msgstr ""
 "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\"> <p "
@@ -294,15 +279,14 @@ msgstr ""
 
 #. module: website_slides
 #: model:mail.template,body_html:website_slides.mail_template_slide_channel_invite
-#, fuzzy
 msgid ""
 "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
-"    <p style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
-"        Hello<br/><br/>\n"
-"        You have been invited to check out this course: <t t-"
-"out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
-"    </p>\n"
-"</div>\n"
+"                    <p style=\"margin: 0px; padding: 0px; font-size: 13px;"
+"\">\n"
+"                        Hello<br/><br/>\n"
+"                        You have been invited to check out this course: <t t-out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
+"                    </p>\n"
+"                </div>\n"
 "            "
 msgstr ""
 "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\"> <p "
@@ -524,334 +508,256 @@ msgstr ""
 "</div>"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.user_profile_content
-#, fuzzy
-msgid "<i class=\"fa fa-arrow-right\"/> Start Learning"
-msgstr "<i class=\"fa fa-arrow-right\"/> O‘rganishni boshlang"
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-clock me-2\" aria-label=\"Duration\" role=\"img\" "
+"title=\"Duration\"/>"
+msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
-#, fuzzy
-msgid "<i class=\"fa fa-bar-chart\"/> Statistics"
-msgstr "<i class=\"fa fa-bar-chart\"/> Statistika"
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-eye me-2\" aria-label=\"Views\" role=\"img\" "
+"title=\"Views\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-file-code me-2\" aria-label=\"article\" "
+"role=\"img\" title=\"Article\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-file-image me-2\" aria-label=\"Infographic\" "
+"role=\"img\" title=\"Infographic\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-file-pdf me-2\" aria-label=\"Document\" "
+"role=\"img\" title=\"Document\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-regular fa-file-video me-2\" aria-label=\"Video\" role=\"img\""
+" title=\"Video\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
+msgid "<i class=\"fa-regular fa-folder me-1\"/><span>Add Section</span>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
+msgid "<i class=\"fa-regular fa-folder me-1\"/>Add a section"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.user_profile_content
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Start Learning"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
-#, fuzzy
 msgid ""
-"<i class=\"fa fa-bars\"/><span class=\"d-none d-md-inline-block "
+"<i class=\"fa-solid fa-bars\"/><span class=\"d-none d-md-inline-block "
 "ms-1\">Lessons</span>"
 msgstr ""
-"<i class=\"fa fa-bars\"/><span class=\"d-none d-md-inline-block "
-"ms-1\">Darslar</span>"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+msgid "<i class=\"fa-solid fa-chart-column\"/> Statistics"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-#, fuzzy
-msgid "<i class=\"fa fa-check me-1\"/>Completed"
-msgstr "<i class=\"fa fa-check me-1\"/>Bajarildi"
+msgid "<i class=\"fa-solid fa-check me-1\"/>Completed"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_card
-#, fuzzy
-msgid "<i class=\"fa fa-check\" aria-hidden=\"true\"/> Completed"
-msgstr "<i class=\"fa fa-check\" aria-hidden=\"true\"/> Bajarildi"
+msgid "<i class=\"fa-solid fa-check\" aria-hidden=\"true\"/> Completed"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
 #: model_terms:ir.ui.view,arch_db:website_slides.courses_my
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
-#, fuzzy
-msgid "<i class=\"fa fa-check\"/> Completed"
-msgstr "<i class=\"fa fa-check\"/> Bajarildi"
+msgid "<i class=\"fa-solid fa-check\"/> Completed"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
-#, fuzzy
-msgid "<i class=\"fa fa-circle-o-notch fa-spin me-2\"/><b>Loading...</b>"
-msgstr "<i class=\"fa fa-circle-o-notch fa-spin me-2\"/><b>Yuklanmoqda...</b>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_embed
-#, fuzzy
-msgid "<i class=\"fa fa-clipboard\"/> Copy Embed Code"
-msgstr "<i class=\"fa fa-clipboard\"/> Joylashtirish kodini nusxalash"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_share_link
-#, fuzzy
-msgid "<i class=\"fa fa-clipboard\"/> Copy Link"
-msgstr "<i class=\"fa fa-clipboard\"/> Havolani nusxalash"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-clock-o me-2\" aria-label=\"Duration\" role=\"img\" "
-"title=\"Duration\"/>"
+msgid "<i class=\"fa-solid fa-circle-notch fa-spin me-2\"/><b>Loading...</b>"
 msgstr ""
-"<i class=\"fa fa-clock-o me-2\" aria-label=\"Davomiyligi\" role=\"img\" "
-"title=\"Davomiyligi\"/>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
-#, fuzzy
-msgid "<i class=\"fa fa-cloud-upload me-1\"/>Add Content"
-msgstr "<i class=\"fa fa-cloud-upload me-1\"/>Kontent qo‘shish"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
-msgid "<i class=\"fa fa-comments\"/> Comments"
+msgid "<i class=\"fa-solid fa-cloud-arrow-up me-1\"/>Add Content"
 msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-desktop me-xl-2 my-1\"/>\n"
-"                <span class=\"d-none d-xl-inline-block\">Fullscreen</span>"
+msgid "<i class=\"fa-solid fa-comments\"/> Comments"
 msgstr ""
-"<i class=\"fa fa-desktop me-xl-2 my-1\"/> <span class=\"d-none d-xl-inline-"
-"block\">To‘liq ekran</span>"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-#, fuzzy
-msgid "<i class=\"fa fa-envelope\"/> Send Email"
-msgstr "<i class=\"fa fa-envelope\"/> Xat yuborish"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
-#, fuzzy
-msgid "<i class=\"fa fa-eraser me-1\"/>Clear filters"
-msgstr "<i class=\"fa fa-eraser me-1\"/>Filtrlarni tozalash"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.embed_slide_forbidden
-#, fuzzy
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-"
-"label=\"Attention\" title=\"Attention\"/> This document is private."
+"<i class=\"fa-solid fa-desktop me-xl-2 my-1\"/>\n"
+"                        <span class=\"d-none d-xl-inline-block\">Fullscreen</span>"
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-label=\"Diqqat\" "
-"title=\"Diqqat\"/> Bu hujjat shaxsiy."
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-eye me-2\" aria-label=\"Views\" role=\"img\" "
-"title=\"Views\"/>"
-msgstr ""
-"<i class=\"fa fa-eye me-2\" aria-label=\"Ko‘rishlar\" role=\"img\" "
-"title=\"Ko‘rishlar\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-file-code-o me-2\" aria-label=\"article\" role=\"img\" "
-"title=\"Article\"/>"
-msgstr ""
-"<i class=\"fa fa-file-code-o me-2\" aria-label=\"maqola\" role=\"img\" "
-"title=\"Maqola\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-file-image-o me-2\" aria-label=\"Infographic\" role=\"img\" "
-"title=\"Infographic\"/>"
-msgstr ""
-"<i class=\"fa fa-file-image-o me-2\" aria-label=\"Infografika\" role=\"img\" "
-"title=\"Infografika\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-file-pdf-o me-2\" aria-label=\"Document\" role=\"img\" "
-"title=\"Document\"/>"
-msgstr ""
-"<i class=\"fa fa-file-pdf-o me-2\" aria-label=\"Hujjat\" role=\"img\" "
-"title=\"Hujjat\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-file-video-o me-2\" aria-label=\"Video\" role=\"img\" "
-"title=\"Video\"/>"
-msgstr ""
-"<i class=\"fa fa-file-video-o me-2\" aria-label=\"Video\" role=\"img\" "
-"title=\"Video\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-flag me-2\" aria-label=\"Quiz\" role=\"img\" title=\"Quiz\"/"
-">"
-msgstr ""
-"<i class=\"fa fa-flag me-2\" aria-label=\"Test\" role=\"img\" title=\"Test\"/"
-">"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_aside_training_category
-#, fuzzy
-msgid "<i class=\"fa fa-flag text-warning\"/> Quiz"
-msgstr "<i class=\"fa fa-flag text-warning\"/> Test"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen_sidebar_category
-#, fuzzy
-msgid "<i class=\"fa fa-flag-checkered text-warning\"/>Quiz"
-msgstr "<i class=\"fa fa-flag-checkered text-warning\"/>Test"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
-#, fuzzy
-msgid "<i class=\"fa fa-folder-o me-1\"/><span>Add Section</span>"
-msgstr "<i class=\"fa fa-folder-o me-1\"/><span>Bo‘lim qo‘shish</span>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
-#, fuzzy
-msgid "<i class=\"fa fa-folder-o me-1\"/>Add a section"
-msgstr "<i class=\"fa fa-folder-o me-1\"/>Bo‘lim qo‘shish"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_channel_pages_kanban_view
-#, fuzzy
-msgid "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
-msgstr "<i class=\"fa fa-globe me-1\" title=\"Veb-sayt\"/>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
-#, fuzzy
-msgid "<i class=\"fa fa-home\"/> About"
-msgstr "<i class=\"fa fa-home\"/> Haqida"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.course_main
-#, fuzzy
-msgid "<i class=\"fa fa-home\"/> Course"
-msgstr "<i class=\"fa fa-home\"/> Kurs"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-home\"/><span class=\"d-none d-md-inline-block ms-1\">Back "
-"to course</span>"
+msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
 msgstr ""
-"<i class=\"fa fa-home\"/><span class=\"d-none d-md-inline-block "
-"ms-1\">Kursga qaytish</span>"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.course_join
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-lock\"/>\n"
-"                        <span>Course Locked</span>"
-msgstr "<i class=\"fa fa-lock\"/> <span>Kurs qulflangan</span>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-plus me-1\"/> <span class=\"d-none d-md-inline-block\">Add "
-"Content</span>"
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
+msgid "<i class=\"fa-solid fa-envelope\"/> Send Email"
 msgstr ""
-"<i class=\"fa fa-plus me-1\"/> <span class=\"d-none d-md-inline-"
-"block\">Kontent qo‘shish</span>"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
-#, fuzzy
-msgid "<i class=\"fa fa-plus me-1\"/><span>Add Content</span>"
-msgstr "<i class=\"fa fa-plus me-1\"/><span>Kontent qo‘shish</span>"
+#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
+msgid "<i class=\"fa-solid fa-eraser me-1\"/>Clear filters"
+msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_content_quiz_add_buttons
-#, fuzzy
+#: model_terms:ir.ui.view,arch_db:website_slides.embed_slide_forbidden
 msgid ""
-"<i class=\"fa fa-plus me-2\"/>\n"
-"            <span>Add Question</span>"
-msgstr "<i class=\"fa fa-plus me-2\"/> <span>Savol qo‘shish</span>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_content_quiz_add_buttons
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-plus me-2\"/>\n"
-"            <span>Add Quiz</span>"
-msgstr "<i class=\"fa fa-plus me-2\"/> <span>Test qo‘shish</span>"
+"<i class=\"fa-solid fa-exclamation-triangle\" role=\"img\" aria-"
+"label=\"Attention\" title=\"Attention\"/> This document is private."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-question me-2\" aria-label=\"Number of Questions\" "
-"role=\"img\" title=\"Number of Questions\"/>"
+msgid "<i class=\"fa-solid fa-flag me-2\" aria-label=\"Quiz\" role=\"img\" title=\"Quiz\"/>"
 msgstr ""
-"<i class=\"fa fa-question me-2\" aria-label=\"Savollar soni\" role=\"img\" "
-"title=\"Savollar soni\"/>"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_aside_training_category
+msgid "<i class=\"fa-solid fa-flag text-warning\"/> Quiz"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen_sidebar_category
+msgid "<i class=\"fa-solid fa-flag-checkered text-warning\"/>Quiz"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-share-alt me-xl-2 my-1\"/>\n"
-"                <span class=\"d-none d-xl-inline-block\">Share</span>"
+msgid "<i class=\"fa-solid fa-house\"/> About"
 msgstr ""
-"<i class=\"fa fa-share-alt me-xl-2 my-1\"/> <span class=\"d-none d-xl-inline-"
-"block\">Ulashish</span>"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.course_main
+msgid "<i class=\"fa-solid fa-house\"/> Course"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
+msgid ""
+"<i class=\"fa-solid fa-house\"/><span class=\"d-none d-md-inline-block "
+"ms-1\">Back to course</span>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.course_join
+msgid ""
+"<i class=\"fa-solid fa-lock\"/>\n"
+"            <span>Course Locked</span>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_embed
+msgid "<i class=\"fa-solid fa-paste\"/> Copy Embed Code"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_share_link
+msgid "<i class=\"fa-solid fa-paste\"/> Copy Link"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
+msgid ""
+"<i class=\"fa-solid fa-plus me-1\"/> <span class=\"d-none d-md-inline-"
+"block\">Add Content</span>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
+msgid "<i class=\"fa-solid fa-plus me-1\"/><span>Add Content</span>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.lesson_content_quiz_add_buttons
+msgid ""
+"<i class=\"fa-solid fa-plus me-2\"/>\n"
+"                    <span>Add Question</span>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.lesson_content_quiz_add_buttons
+msgid ""
+"<i class=\"fa-solid fa-plus me-2\"/>\n"
+"                    <span>Add Quiz</span>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_view_kanban
+msgid ""
+"<i class=\"fa-solid fa-question me-2\" aria-label=\"Number of Questions\" "
+"role=\"img\" title=\"Number of Questions\"/>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
+msgid ""
+"<i class=\"fa-solid fa-right-from-bracket\"/><span class=\"d-none d-md-"
+"inline-block ms-1\">Exit Fullscreen</span>"
+msgstr ""
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+msgid ""
+"<i class=\"fa-solid fa-share-alt me-xl-2 my-1\"/>\n"
+"                        <span class=\"d-none d-xl-inline-block\">Share</span>"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
-#, fuzzy
 msgid ""
-"<i class=\"fa fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>\n"
+"<i class=\"fa-solid fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>\n"
 "                                            Share"
 msgstr ""
-"<i class=\"fa fa-share-alt\" aria-label=\"Ulashish\" title=\"Ulashish\"/> "
-"Ulashish"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
-#, fuzzy
 msgid ""
-"<i class=\"fa fa-share-alt\"/>\n"
-"                        <span class=\"d-none d-md-inline-block ms-2\">Share</"
-"span>"
+"<i class=\"fa-solid fa-share-alt\"/>\n"
+"                                <span class=\"d-none d-md-inline-block ms-2\">Share</span>"
 msgstr ""
-"<i class=\"fa fa-share-alt\"/> <span class=\"d-none d-md-inline-block "
-"ms-2\">Ulashish</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_sidebar
-#, fuzzy
-msgid "<i class=\"fa fa-share-alt\"/> Share"
-msgstr "<i class=\"fa fa-share-alt\"/> Ulashish"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_fullscreen
-#, fuzzy
-msgid ""
-"<i class=\"fa fa-sign-out\"/><span class=\"d-none d-md-inline-block "
-"ms-1\">Exit Fullscreen</span>"
+msgid "<i class=\"fa-solid fa-share-alt\"/> Share"
 msgstr ""
-"<i class=\"fa fa-sign-out\"/><span class=\"d-none d-md-inline-block "
-"ms-1\">To‘liq ekrandan chiqish</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.courses_search_tags
-#, fuzzy
 msgid ""
-"<i class=\"fa fa-tag me-2 text-muted\"/>\n"
-"          My Courses"
-msgstr "<i class=\"fa fa-tag me-2 text-muted\"/> Kurslarim"
+"<i class=\"fa-solid fa-tag me-2 text-muted\"/>\n"
+"                My Courses"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.user_profile_content
@@ -871,43 +777,33 @@ msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.courses_my
-#, fuzzy
 msgid ""
-"<small class=\"text-muted d-none d-md-inline\"><i class=\"fa fa-check me-1\" "
-"role=\"img\"/>You are enrolled</small>"
+"<small class=\"text-muted d-none d-md-inline\"><i class=\"fa-solid fa-check "
+"me-1\" role=\"img\"/>You are enrolled</small>"
 msgstr ""
-"<small class=\"text-muted d-none d-md-inline\"><i class=\"fa fa-check me-1\" "
-"role=\"img\"/>Siz ro‘yxatdan o‘tgansiz</small>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
-#, fuzzy
 msgid ""
 "<small class=\"text-success\">\n"
-"                        Request already sent\n"
-"                    </small>"
+"            Request already sent\n"
+"            </small>"
 msgstr "<small class=\"text-success\"> So‘rov allaqachon yuborilgan </small>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_main
-#, fuzzy
 msgid ""
-"<small><span class=\"badge text-bg-success fw-normal\"><i class=\"fa fa-"
-"check\"/> Completed</span></small>"
+"<small><span class=\"badge text-bg-success fw-normal\"><i class=\"fa-solid "
+"fa-check\"/> Completed</span></small>"
 msgstr ""
-"<small><span class=\"badge text-bg-success fw-normal\"><i class=\"fa fa-"
-"check\"/> Tugatildi</span></small>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list_sample
-#, fuzzy
 msgid ""
 "<span class=\"badge fw-bold m-1 text-bg-warning\">\n"
-"                            <i class=\"fa fa-fw fa-flag\"/> 10 xp\n"
-"                        </span>"
+"            <i class=\"fa-solid fa-flag\"/> 10 xp\n"
+"            </span>"
 msgstr ""
-"<span class=\"badge fw-bold m-1 text-bg-warning\"> <i class=\"fa fa-fw fa-"
-"flag\"/> 10 ball </span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list_sample
@@ -989,10 +885,9 @@ msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_list
-#, fuzzy
 msgid ""
 "<span class=\"ms-1\">Lessons</span>\n"
-"                                <span class=\"ms-1\">·</span>"
+"            <span class=\"ms-1\">·</span>"
 msgstr "<span class=\"ms-1\">Darslar</span> <span class=\"ms-1\">·</span>"
 
 #. module: website_slides
@@ -1041,11 +936,10 @@ msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
-#, fuzzy
 msgid ""
 "<span class=\"text-muted fw-bold col-4 col-md-3\">\n"
-"                        Additional Resources\n"
-"                    </span>"
+"                                Additional Resources\n"
+"                            </span>"
 msgstr ""
 "<span class=\"text-muted fw-bold col-4 col-md-3\">Qo‘shimcha manbalar</span>"
 
@@ -1106,64 +1000,34 @@ msgstr "<span class=\"text-muted\">Kompyuter fanining qismlari</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
-#, fuzzy
 msgid ""
-"<span id=\"first\" class=\"me-1 me-sm-2\" title=\"First slide\" aria-"
-"label=\"First slide\" role=\"button\"><i class=\"fa fa-step-backward\"/></"
-"span>\n"
-"                                        <span id=\"previous\" class=\"mx-1 "
-"mx-sm-2\" title=\"Previous slide\" aria-label=\"Previous slide\" "
-"role=\"button\"><i class=\"fa fa-arrow-circle-left\"/></span>\n"
-"                                        <span id=\"next\" class=\"mx-1 mx-"
-"sm-2\" title=\"Next slide\" aria-label=\"Next slide\" role=\"button\"><i "
-"class=\"fa fa-arrow-circle-right\"/></span>\n"
-"                                        <span id=\"last\" class=\"mx-1 mx-"
-"sm-2\" title=\"Last slide\" aria-label=\"Last slide\" role=\"button\"><i "
-"class=\"fa fa-step-forward\"/></span>"
+"<span id=\"first\" class=\"me-1 me-sm-2\" title=\"First slide\" aria-label=\"First slide\" role=\"button\"><i class=\"fa-solid fa-step-backward\"/></span>\n"
+"                                        <span id=\"previous\" class=\"mx-1 mx-sm-2\" title=\"Previous slide\" aria-label=\"Previous slide\" role=\"button\"><i class=\"fa-solid fa-arrow-circle-left\"/></span>\n"
+"                                        <span id=\"next\" class=\"mx-1 mx-sm-2\" title=\"Next slide\" aria-label=\"Next slide\" role=\"button\"><i class=\"fa-solid fa-arrow-circle-right\"/></span>\n"
+"                                        <span id=\"last\" class=\"mx-1 mx-sm-2\" title=\"Last slide\" aria-label=\"Last slide\" role=\"button\"><i class=\"fa-solid fa-step-forward\"/></span>"
 msgstr ""
-"<span id=\"first\" class=\"me-1 me-sm-2\" title=\"Birinchi slayd\" aria-"
-"label=\"Birinchi slayd\" role=\"button\"><i class=\"fa fa-step-backward\"/></"
-"span> <span id=\"previous\" class=\"mx-1 mx-sm-2\" title=\"Oldingi slayd\" "
-"aria-label=\"Oldingi slayd\" role=\"button\"><i class=\"fa fa-arrow-circle-"
-"left\"/></span> <span id=\"next\" class=\"mx-1 mx-sm-2\" title=\"Keyingi "
-"slayd\" aria-label=\"Keyingi slayd\" role=\"button\"><i class=\"fa fa-arrow-"
-"circle-right\"/></span> <span id=\"last\" class=\"mx-1 mx-sm-2\" "
-"title=\"So‘nggi slayd\" aria-label=\"So‘nggi slayd\" role=\"button\"><i "
-"class=\"fa fa-step-forward\"/></span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
-#, fuzzy
 msgid ""
 "<span id=\"fullscreen\" class=\"ms-1 ms-sm-2\" title=\"View fullscreen\" "
 "aria-label=\"Fullscreen\" role=\"button\">\n"
-"                                            <i class=\"fa fa-arrows-alt\"/>\n"
+"                                            <i class=\"fa-solid fa-maximize\"/>\n"
 "                                        </span>"
 msgstr ""
-"<span id=\"fullscreen\" class=\"ms-1 ms-sm-2\" title=\"To‘liq ekranga "
-"o‘tish\" aria-label=\"To‘liq ekran\" role=\"button\"> <i class=\"fa fa-"
-"arrows-alt\"/> </span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
-#, fuzzy
 msgid ""
 "<span id=\"zoomout\" class=\"d-inline ms-2 me-2\" title=\"Zoom out\" aria-"
 "label=\"Zoom out\" role=\"button\">\n"
-"                                            <i class=\"fa fa-search-minus\"/"
-">\n"
+"                                            <i class=\"fa-solid fa-search-minus\"/>\n"
 "                                        </span>\n"
 "                                        <span id=\"zoomin\" class=\"d-"
 "inline\" title=\"Zoom in\" aria-label=\"Zoom in\" role=\"button\">\n"
-"                                            <i class=\"fa fa-search-plus\"/"
-">\n"
+"                                            <i class=\"fa-solid fa-search-plus\"/>\n"
 "                                        </span>"
 msgstr ""
-"<span id=\"zoomout\" class=\"d-inline ms-2 me-2\" title=\"Kichiklashtirish\" "
-"aria-label=\"Kichiklashtirish\" role=\"button\"> <i class=\"fa fa-search-"
-"minus\"/> </span> <span id=\"zoomin\" class=\"d-inline\" "
-"title=\"Kattalashtirish\" aria-label=\"Kattalashtirish\" role=\"button\"> <i "
-"class=\"fa fa-search-plus\"/> </span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_channel_view_kanban
@@ -1190,14 +1054,6 @@ msgstr ""
 #, fuzzy
 msgid "<span> hours</span>"
 msgstr "<span> soat</span>"
-
-#. module: website_slides
-#: model_terms:web_tour.tour,rainbow_man_message:website_slides.slides_tour
-#, fuzzy
-msgid "<span><b>Good job!</b> You went through all steps of this tour.</span>"
-msgstr ""
-"<span><b>Ajoyib!</b> Siz bu sayohatning barcha bosqichlarini muvaffaqiyatli "
-"yakunladingiz.</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_main
@@ -1295,7 +1151,13 @@ msgid "A Mighty Forest from Ages"
 msgstr "Qadimiy ulkan o‘rmon"
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_0_0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "A certification cannot be set as a preview."
+msgstr ""
+
+#. module: website_slides
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_0_0
 #, fuzzy
 msgid "A fruit"
 msgstr "Meva"
@@ -1314,6 +1176,11 @@ msgstr ""
 #, fuzzy
 msgid "A little chat with Harry Potted"
 msgstr "Garri Potter bilan qisqacha suhbat"
+
+#. module: website_slides
+#: model:survey.survey,title:website_slides.slide_slide_demo_1_4_quiz_survey
+msgid "A little chat with Harry Potted Quiz"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:slide.channel,description:website_slides.slide_channel_demo_2_gard2
@@ -1351,10 +1218,15 @@ msgid "A resource of type url must contain a link."
 msgstr "URL turidagi manba havolani o‘z ichiga olishi shart."
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_1_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_1_0
 #, fuzzy
 msgid "A shovel"
 msgstr "Belkurak"
+
+#. module: website_slides
+#: model:ir.model.constraint,message:website_slides.constraint_slide_embed_slide_id_url_uniq
+msgid "A slide can only have one view counter per third-party website URL."
+msgstr ""
 
 #. module: website_slides
 #: model:ir.model.constraint,message:website_slides.constraint_slide_slide_exclusion_html_content_and_url
@@ -1364,7 +1236,17 @@ msgstr ""
 "Slayd yo URL, yo HTML-kontent bilan to‘ldirilishi kerak. Ikkalasi bilan emas."
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_1_1
+#: model:ir.model.constraint,message:website_slides.constraint_slide_slide_check_survey_id
+msgid "A slide of type 'certification' requires a certification."
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model.constraint,message:website_slides.constraint_slide_slide_check_certification_preview
+msgid "A slide of type certification cannot be previewed."
+msgstr ""
+
+#. module: website_slides
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_1_1
 #, fuzzy
 msgid "A spoon"
 msgstr "Qoshiq"
@@ -1396,19 +1278,19 @@ msgstr ""
 "qanday va ularni qanday farqlash mumkin."
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_0_2
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_0_2
 #, fuzzy
 msgid "A table"
 msgstr "Stol"
 
 #. module: website_slides
-#: model:ir.model.constraint,message:website_slides.constraint_slide_tag_slide_tag_unique
+#: model:ir.model.constraint,message:website_slides.constraint_slide_tag_name_src_uniq
 #, fuzzy
 msgid "A tag must be unique!"
 msgstr "Teg noyob bo‘lishi shart!"
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_0_4_question_0_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_0_4_question_0_1
 #, fuzzy
 msgid "A vegetable"
 msgstr "Sabzavot"
@@ -1420,31 +1302,10 @@ msgid "API Key"
 msgstr "API kaliti"
 
 #. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_channel.py:0
-#, fuzzy
-msgid "Access Granted"
-msgstr "Ruxsat berildi"
-
-#. module: website_slides
 #: model:ir.model,name:website_slides.model_res_groups
 #, fuzzy
 msgid "Access Groups"
 msgstr "Kirish guruhlari"
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_channel.py:0
-#, fuzzy
-msgid "Access Refused"
-msgstr "Kirish rad etildi"
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_channel.py:0
-#, fuzzy
-msgid "Access Request"
-msgstr "Kirish so‘rovi"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__has_requested_access
@@ -1457,6 +1318,12 @@ msgstr "Kirish so‘raldi"
 #, fuzzy
 msgid "Access Rights"
 msgstr "Kirish huquqlari"
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/models/slide_channel.py:0
+msgid "Access to %(course)s for %(partner)s"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_partner_view_tree
@@ -1674,36 +1541,19 @@ msgstr "Ushbu kursga qayta qo‘shilmaguningizcha, barcha natijalar yo‘qoladi.
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #, fuzzy
 msgid "All questions must be answered!"
 msgstr "Barcha savollarga javob berish shart!"
 
 #. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_question.py:0
-#, fuzzy
-msgid ""
-"All questions must have at least one correct answer and one incorrect "
-"answer: \n"
-"%s\n"
-msgstr ""
-"Barcha savollarda kamida bitta to‘g‘ri va bitta noto‘g‘ri javob bo‘lishi "
-"kerak: %s"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.user_profile_content
-#, fuzzy
 msgid ""
 "All the courses you attend will appear here. <br/>\n"
-"                        <a href=\"/slides/\" class=\"btn-link "
-"o_translate_inline\">\n"
-"                            <i class=\"fa fa-arrow-right\"/> Start Learning\n"
-"                        </a>"
+"                                <a href=\"/slides/\" class=\"btn-link o_translate_inline\">\n"
+"                                    <i class=\"fa-solid fa-arrow-right\"/> Start Learning\n"
+"                                </a>"
 msgstr ""
-"Siz qatnashgan barcha kurslar shu yerda ko‘rinadi. <br/> <a href=\"/slides/"
-"\" class=\"btn-link o_translate_inline\"> <i class=\"fa fa-arrow-right\"/> "
-"O‘rganishni boshlang </a>"
 
 #. module: website_slides
 #: model_terms:slide.channel,description:website_slides.slide_channel_demo_5_furn2
@@ -1787,23 +1637,10 @@ msgid "Amazing!"
 msgstr "Ajoyib!"
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_1_2
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_1_2
 #, fuzzy
 msgid "And also bananas"
 msgstr "Va bananlar ham"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__text_value
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__answer_ids
-#, fuzzy
-msgid "Answer"
-msgstr "Javob"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
-#, fuzzy
-msgid "Answers"
-msgstr "Javoblar"
 
 #. module: website_slides
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_channel__visibility__link
@@ -1823,6 +1660,11 @@ msgstr "Havola bilan kiruvchilar."
 #, fuzzy
 msgid "Appears in"
 msgstr "Quyidagida ko‘rinadi"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_channel__approval_request_ids
+msgid "Approval Requests"
+msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
@@ -1868,7 +1710,7 @@ msgstr "Ushbu turkumni o‘chirishni xohlaysizmi?"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #, fuzzy
 msgid "Are you sure you want to delete this question \"%(title)s\"?"
 msgstr "\"%(title)s\" savolini o‘chirishni xohlaysizmi?"
@@ -1900,18 +1742,6 @@ msgstr "Ilova soni"
 #, fuzzy
 msgid "Attachments"
 msgstr "Ilovalar"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__attempts_avg
-#, fuzzy
-msgid "Attempts Avg"
-msgstr "Urinishlar o‘rtachasi"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__attempts_count
-#, fuzzy
-msgid "Attempts Count"
-msgstr "Urinishlar soni"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_slide_partner_view_form
@@ -2134,6 +1964,12 @@ msgstr "Turkumlar"
 #, fuzzy
 msgid "Category"
 msgstr "Toifa"
+
+#. module: website_slides
+#: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_category__certification
+#: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_type__certification
+msgid "Certification"
+msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_res_config_settings__module_website_slides_survey
@@ -2361,20 +2197,6 @@ msgstr ""
 "qayting."
 
 #. module: website_slides
-#: model_terms:ir.actions.act_window,help:website_slides.slide_question_action_report
-#, fuzzy
-msgid "Come back later to oversee how well your Attendees are doing."
-msgstr ""
-"Ishtirokchilaringiz qanchalik yaxshi ishlayotganini kuzatish uchun keyinroq "
-"qayting."
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__comment
-#, fuzzy
-msgid "Comment"
-msgstr "Izoh"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
 #, fuzzy
 msgid "Commenting is not enabled on this course."
@@ -2422,6 +2244,8 @@ msgid "Community hero"
 msgstr "Jamiyat qahramoni"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_company_count
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_company_count
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_company_count
 #: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_company_count
 #, fuzzy
@@ -2465,12 +2289,19 @@ msgid "Completed Course"
 msgstr "Yakunlangan kurs"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_completed_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_completed_ids
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_completed_ids
 #: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_completed_ids
 #: model_terms:ir.ui.view,arch_db:website_slides.user_profile_content
 #, fuzzy
 msgid "Completed Courses"
 msgstr "Yakunlangan kurslar"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__date_completed
+msgid "Completed On"
+msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__completion
@@ -2584,7 +2415,6 @@ msgstr "Ro‘yxatdan o‘tish uchun mas'ul shaxs bilan bog‘laning."
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__slide_content_ids
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__slide_id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__slide_ids
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__slide_id
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_embed_view_search
@@ -2601,12 +2431,6 @@ msgstr "Mazmun"
 #, fuzzy
 msgid "Content Preview"
 msgstr "Kontent ko‘rinishi"
-
-#. module: website_slides
-#: model:ir.model,name:website_slides.model_slide_question
-#, fuzzy
-msgid "Content Quiz Question"
-msgstr "Kontent testi savoli"
 
 #. module: website_slides
 #: model:ir.actions.act_window,name:website_slides.action_slide_tag
@@ -2689,33 +2513,33 @@ msgid "Copy the shareable link"
 msgstr "Ulashish havolasidan nusxa olish"
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_0_0
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_0_1
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_1_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_0_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_0_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_1_1
 #, fuzzy
 msgid "Correct!"
 msgstr "To‘g‘ri!"
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_1_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_1_0
 #, fuzzy
 msgid "Correct! A shovel is the perfect tool to dig a hole."
 msgstr "To‘g‘ri! Belkurak chuqur qazish uchun eng qulay asbob."
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_0_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_0_0
 #, fuzzy
 msgid "Correct! A strawberry is a fruit because it's the product of a tree."
 msgstr "To‘g‘ri! Qulupnay - bu meva, chunki u o‘simlikning mahsulotidir."
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_1_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_1_0
 #, fuzzy
 msgid "Correct! Congratulations you have time to loose"
 msgstr "To‘g‘ri! Tabriklaymiz, sizda vaqtni bekor o‘tkazishga imkoniyat bor"
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_5_3_question_0_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_5_3_question_0_0
 #, fuzzy
 msgid "Correct! You did it!"
 msgstr "To‘g‘ri! Siz buni uddaladingiz!"
@@ -2733,9 +2557,9 @@ msgstr ""
 
 #. module: website_slides
 #: model:ir.model,name:website_slides.model_slide_channel
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__channel_id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__channel_id
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_id
 #: model_terms:ir.ui.view,arch_db:website_slides.gamification_karma_tracking_view_search
 #: model_terms:ir.ui.view,arch_db:website_slides.rating_rating_view_form_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.rating_rating_view_search_slide_channel
@@ -2749,12 +2573,19 @@ msgid "Course"
 msgstr "Kurs"
 
 #. module: website_slides
+#: model:approval.category,name:website_slides.approval_category_course_access
+msgid "Course Access"
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_channel__visibility__members
 #, fuzzy
 msgid "Course Attendees"
 msgstr "Kurs ishtirokchilari"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_count
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_count
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_count
 #: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_count
 #, fuzzy
@@ -2818,6 +2649,11 @@ msgstr "Kurs testi"
 #, fuzzy
 msgid "Course Ranked"
 msgstr "Kurs reytingi"
+
+#. module: website_slides
+#: model:approval.category.step,name:website_slides.approval_category_course_access_step_responsible
+msgid "Course Responsible"
+msgstr ""
 
 #. module: website_slides
 #. odoo-python
@@ -2967,12 +2803,6 @@ msgid "Create a Course Group"
 msgstr "Kurs guruhi yaratish"
 
 #. module: website_slides
-#: model:ir.model,website_form_label:website_slides.model_res_partner
-#, fuzzy
-msgid "Create a Customer"
-msgstr "Mijoz yaratish"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.res_config_settings_view_form
 #, fuzzy
 msgid "Create a community and let Attendees answer each others' questions."
@@ -3001,35 +2831,31 @@ msgid "Create this tag group\""
 msgstr "Bu teg guruhini yaratish\""
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__create_uid
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__create_uid
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__create_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__create_uid
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__create_uid
 #, fuzzy
 msgid "Created by"
 msgstr "Muallif"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__create_date
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__create_date
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__create_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__create_date
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__create_date
 #, fuzzy
 msgid "Created on"
 msgstr "Yaratilgan sana"
@@ -3114,8 +2940,8 @@ msgstr "Tinglovchilar kursingiz yakunida oladigan xatni belgilaydi"
 
 #. module: website_slides
 #: model:ir.model.fields,help:website_slides.field_slide_channel__visibility
-#: model:ir.model.fields,help:website_slides.field_wizard_slide_channel_add_attendee__channel_visibility
 #: model:ir.model.fields,help:website_slides.field_slide_channel_partner__channel_visibility
+#: model:ir.model.fields,help:website_slides.field_wizard_slide_channel_add_attendee__channel_visibility
 #, fuzzy
 msgid "Defines who can access your courses and their content."
 msgstr "Kurslaringiz va ularning mazmuniga kimlar kira olishini belgilaydi"
@@ -3139,7 +2965,7 @@ msgstr "Turkumni o‘chirish"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #, fuzzy
 msgid "Delete Question"
 msgstr "Savolni o‘chirish"
@@ -3162,7 +2988,7 @@ msgid "Detailed Description"
 msgstr "Batafsil tavsif"
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_1_4_question_1
+#: model:survey.question,title:website_slides.slide_slide_demo_1_4_question_1
 #, fuzzy
 msgid "Did you read the whole article?"
 msgstr "Maqolani to‘liq o‘qib chiqdingizmi?"
@@ -3175,16 +3001,14 @@ msgid "Discard"
 msgstr "Bekor qilish"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_like
 #, fuzzy
 msgid "Dislike"
 msgstr "Yoqtirmaslik"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__dislikes
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_like
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 #, fuzzy
 msgid "Dislikes"
@@ -3204,31 +3028,32 @@ msgstr "Ko‘rsatish"
 #: model:ir.model.fields,field_description:website_slides.field_res_groups__display_name
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__display_name
 #: model:ir.model.fields,field_description:website_slides.field_res_users__display_name
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__display_name
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__display_name
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__display_name
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__display_name
+#: model:ir.model.fields,field_description:website_slides.field_survey_question__display_name
+#: model:ir.model.fields,field_description:website_slides.field_survey_question_answer__display_name
+#: model:ir.model.fields,field_description:website_slides.field_survey_survey__display_name
 #: model:ir.model.fields,field_description:website_slides.field_website__display_name
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__display_name
 #, fuzzy
 msgid "Display Name"
 msgstr "Ko‘rsatiladigan nom"
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_2_0_question_0
+#: model:survey.question,title:website_slides.slide_slide_demo_2_0_question_0
 #, fuzzy
 msgid "Do you make beams out of lemon trees?"
 msgstr "Limon daraxtlaridan to‘sin yasaysizmi?"
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_2_0_question_1
+#: model:survey.question,title:website_slides.slide_slide_demo_2_0_question_1
 #, fuzzy
 msgid "Do you make lemons out of beams?"
 msgstr "To‘sinlardan limon yasaysizmi?"
@@ -3241,20 +3066,13 @@ msgid "Do you really want to leave the course?"
 msgstr "Haqiqatan ham kursni tark etmoqchimisiz?"
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_1_4_question_0
+#: model:survey.question,title:website_slides.slide_slide_demo_1_4_question_0
 #, fuzzy
 msgid "Do you think Harry Potted has a good name?"
 msgstr "Sizningcha, Garri Potted yaxshi ismmi?"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.js:0
-#, fuzzy
-msgid "Do you want to install \"%s\"?"
-msgstr "\"%s\"ni o‘rnatmoqchimisiz?"
-
-#. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_5_3_question_0
+#: model:survey.question,title:website_slides.slide_slide_demo_5_3_question_0
 #, fuzzy
 msgid "Do you want to reply correctly?"
 msgstr "To‘g‘ri javob bermoqchimisiz?"
@@ -3326,12 +3144,6 @@ msgstr "Hisobingiz yo‘qmi?"
 #, fuzzy
 msgid "Done"
 msgstr "Bajarildi"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__done_count
-#, fuzzy
-msgid "Done Count"
-msgstr "Bajarilganlar soni"
 
 #. module: website_slides
 #. odoo-javascript
@@ -3553,12 +3365,6 @@ msgid "Enter your <b>Question</b>. Be clear and concise."
 msgstr "<b>Savol</b>ingizni kiriting. Aniq va qisqa bo‘ling."
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__answers_validation_error
-#, fuzzy
-msgid "Error on Answers"
-msgstr "Javoblarda xatolik"
-
-#. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_category.xml:0
 #, fuzzy
@@ -3613,13 +3419,6 @@ msgstr "Tashqi URL"
 #, fuzzy
 msgid "External Website"
 msgstr "Tashqi veb-sayt"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.js:0
-#, fuzzy
-msgid "Failed to install \"%s\""
-msgstr "\"%s\" o‘rnatib bo‘lmadi"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__promote_strategy
@@ -3726,12 +3525,6 @@ msgstr "Obunachilar"
 #, fuzzy
 msgid "Followers (Partners)"
 msgstr "Obunachilar (Hamkorlar)"
-
-#. module: website_slides
-#: model:ir.model.fields,help:website_slides.field_slide_channel__activity_type_icon
-#, fuzzy
-msgid "Font awesome icon e.g. fa-tasks"
-msgstr "Font Awesome belgisi, masalan, fa-tasks"
 
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_slide_demo_4_0
@@ -3923,18 +3716,18 @@ msgid "Group Name"
 msgstr "Guruh nomi"
 
 #. module: website_slides
-#: model:ir.model.fields,help:website_slides.field_slide_channel__upload_group_ids
-#, fuzzy
-msgid "Group of users allowed to publish contents on a documentation course."
-msgstr ""
-"Hujjatlashtirish kursida kontent chop etishga ruxsat berilgan "
-"foydalanuvchilar guruhi."
-
-#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__group_sequence
 #, fuzzy
 msgid "Group sequence"
 msgstr "Guruh ketma-ketligi"
+
+#. module: website_slides
+#: model:ir.model.fields,help:website_slides.field_slide_channel__upload_group_ids
+msgid ""
+"Groups whose members may add contents to this course. It grants uploading, "
+"not publishing: only the responsible and eLearning managers can publish. "
+"Leave empty to restrict uploading to those two."
+msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__html_content
@@ -3966,6 +3759,11 @@ msgstr "Menyu elementi mavjud"
 #, fuzzy
 msgid "Has Message"
 msgstr "Xabar mavjud"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__has_questions
+msgid "Has Questions"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:slide.slide,description:website_slides.slide_slide_demo_0_3
@@ -4073,19 +3871,20 @@ msgstr "Qo‘llanma"
 #: model:ir.model.fields,field_description:website_slides.field_res_groups__id
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__id
 #: model:ir.model.fields,field_description:website_slides.field_res_users__id
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__id
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__id
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__id
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__id
+#: model:ir.model.fields,field_description:website_slides.field_survey_question__id
+#: model:ir.model.fields,field_description:website_slides.field_survey_question_answer__id
+#: model:ir.model.fields,field_description:website_slides.field_survey_survey__id
 #: model:ir.model.fields,field_description:website_slides.field_website__id
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__id
 #, fuzzy
 msgid "ID"
 msgstr "ID"
@@ -4224,51 +4023,51 @@ msgstr ""
 "\"Ulashish andozasi\"ni tanlang"
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_0_1
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_0_0
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_1_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_0_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_0_0
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_1_0
 #, fuzzy
 msgid "Incorrect!"
 msgstr "Noto‘g‘ri!"
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_0_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_0_1
 #, fuzzy
 msgid "Incorrect! A strawberry is not a vegetable."
 msgstr "Xato! Qulupnay sabzavot emas."
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_0_2
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_0_2
 #, fuzzy
 msgid "Incorrect! A table is a piece of furniture."
 msgstr "Noto‘g‘ri! Stol - mebelning bir turi."
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_0_4_question_1_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_0_4_question_1_1
 #, fuzzy
 msgid "Incorrect! Good luck digging a hole with a spoon..."
 msgstr "Xato! Qoshiq bilan chuqur qazishda omad tilaymiz..."
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_1_2
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_1_2
 #, fuzzy
 msgid "Incorrect! Seriously?"
 msgstr "Noto‘g‘ri! Rostdanmi?"
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_5_3_question_0_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_5_3_question_0_1
 #, fuzzy
 msgid "Incorrect! You better think twice..."
 msgstr "Xato! Yaxshilab o‘ylab ko‘ring..."
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_1_4_question_1_1
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_1_4_question_1_1
 #, fuzzy
 msgid "Incorrect! You really should read it."
 msgstr "Noto‘g‘ri! Buni albatta o‘qishingiz kerak."
 
 #. module: website_slides
-#: model:slide.answer,comment:website_slides.slide_slide_demo_2_0_question_1_2
+#: model:survey.question.answer,comment:website_slides.slide_slide_demo_2_0_question_1_2
 #, fuzzy
 msgid "Incorrect! of course not ..."
 msgstr "Xato! Albatta unday emas..."
@@ -4278,27 +4077,6 @@ msgstr "Xato! Albatta unday emas..."
 #, fuzzy
 msgid "Infographics"
 msgstr "Infografika"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.xml:0
-#, fuzzy
-msgid "Install"
-msgstr "O‘rnatish"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_dialog_select.xml:0
-#, fuzzy
-msgid "Install the"
-msgstr "O‘rnating"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.js:0
-#, fuzzy
-msgid "Installing \"%s\"..."
-msgstr "\"%s\" o‘rnatilmoqda..."
 
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_category_demo_1_0
@@ -4408,6 +4186,11 @@ msgid "Is Member"
 msgstr "A'zo"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__is_name_default
+msgid "Is Name Default"
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__is_new_slide
 #, fuzzy
 msgid "Is New Slide"
@@ -4415,9 +4198,9 @@ msgstr "Yangi slayd"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__is_published
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_published
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__is_published
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__is_published
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_published
 #, fuzzy
 msgid "Is Published"
 msgstr "Nashr qilingan"
@@ -4433,12 +4216,6 @@ msgstr "Veb-saytda ko‘rinadi"
 #, fuzzy
 msgid "Is a category"
 msgstr "Turkum hisoblanadi"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__is_correct
-#, fuzzy
-msgid "Is correct answer"
-msgstr "To‘g‘ri javob"
 
 #. module: website_slides
 #: model:ir.model.fields,help:website_slides.field_slide_channel__is_member
@@ -4471,7 +4248,7 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #, fuzzy
 msgid "Join & Submit"
 msgstr "Qo‘shilish va yuborish"
@@ -4485,6 +4262,7 @@ msgstr "Kursga qo‘shilish"
 
 #. module: website_slides
 #. odoo-javascript
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #: code:addons/website_slides/static/src/xml/slide_quiz.xml:0
 #, fuzzy
 msgid "Join the course to take the quiz and verify your answers!"
@@ -4493,7 +4271,7 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_join.js:0
+#: code:addons/website_slides/static/src/interactions/course_join.js:0
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
 #: model_terms:ir.ui.view,arch_db:website_slides.join_course_link
 #, fuzzy
@@ -4610,35 +4388,31 @@ msgid "Last Update"
 msgstr "Oxirgi yangilanish"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__write_uid
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__write_uid
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__write_uid
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__write_uid
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__write_uid
 #, fuzzy
 msgid "Last Updated by"
 msgstr "Oxirgi yangilagan"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__write_date
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_embed__write_date
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_partner__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__write_date
 #: model:ir.model.fields,field_description:website_slides.field_slide_tag__write_date
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__write_date
 #, fuzzy
 msgid "Last Updated on"
 msgstr "Oxirgi yangilangan sana"
@@ -4728,16 +4502,14 @@ msgid "Level up!"
 msgstr "Darajangiz oshdi!"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_like
 #, fuzzy
 msgid "Like"
 msgstr "Yoqtirish"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__likes
-#: model_terms:ir.ui.view,arch_db:website_slides.lesson_card
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_like
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 #, fuzzy
 msgid "Likes"
@@ -4773,6 +4545,11 @@ msgid ""
 msgstr ""
 "Video havolasi (YouTube, Google Drive va Vimeo manbalari qo‘llab-"
 "quvvatlanadi)"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__survey_id
+msgid "Linked Survey"
+msgstr ""
 
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_slide_demo_1_0
@@ -4818,6 +4595,11 @@ msgid "Main Trees Categories"
 msgstr "Asosiy daraxt turlari"
 
 #. module: website_slides
+#: model:survey.survey,title:website_slides.slide_slide_demo_2_0_quiz_survey
+msgid "Main Trees Categories Quiz"
+msgstr ""
+
+#. module: website_slides
 #: model:res.groups,name:website_slides.group_website_slides_manager
 #, fuzzy
 msgid "Manager"
@@ -4831,7 +4613,7 @@ msgstr "Bajarildi deb belgilash"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
 #, fuzzy
 msgid "Mark To Do"
@@ -5071,12 +4853,6 @@ msgid "Next"
 msgstr "Keyingi"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_channel__activity_calendar_event_id
-#, fuzzy
-msgid "Next Activity Calendar Event"
-msgstr "Keyingi taqvim tadbiri"
-
-#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__activity_date_deadline
 #, fuzzy
 msgid "Next Activity Deadline"
@@ -5102,12 +4878,12 @@ msgstr "Keyingi dars"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_0_1
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_1_1
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_0_1
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_1_1
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_5_3_question_0_1
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_0_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_1_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_0_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_1_1
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_5_3_question_0_1
 #, fuzzy
 msgid "No"
 msgstr "Yo‘q"
@@ -5140,12 +4916,6 @@ msgid "No Notification"
 msgstr "Xabarnoma yo‘q"
 
 #. module: website_slides
-#: model_terms:ir.actions.act_window,help:website_slides.slide_question_action_report
-#, fuzzy
-msgid "No Quiz data yet!"
-msgstr "Hozircha test ma'lumotlari yo‘q!"
-
-#. module: website_slides
 #: model_terms:ir.actions.act_window,help:website_slides.rating_rating_action_slide_channel
 #, fuzzy
 msgid "No Reviews yet!"
@@ -5162,6 +4932,12 @@ msgstr "Hali tugatilgan kurslar yo‘q!"
 #, fuzzy
 msgid "No content was found using your search"
 msgstr "Qidiruvingiz bo‘yicha hech qanday kontent topilmadi"
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "No course given, please contact the administrator."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.courses_search_results
@@ -5212,6 +4988,12 @@ msgid "No results found for '"
 msgstr "uchun hech qanday natija topilmadi"
 
 #. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "No tag to add."
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_channel__promote_strategy__none
 #, fuzzy
 msgid "None"
@@ -5258,6 +5040,12 @@ msgid "Number of Articles"
 msgstr "Maqolalar soni"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_channel__nbr_certification
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__nbr_certification
+msgid "Number of Certifications"
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__total_slides
 #, fuzzy
 msgid "Number of Contents"
@@ -5274,6 +5062,11 @@ msgstr "Hujjatlar soni"
 #, fuzzy
 msgid "Number of Images"
 msgstr "Rasmlar soni"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__questions_count
+msgid "Number of Questions"
+msgstr ""
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__nbr_quiz
@@ -5314,12 +5107,6 @@ msgstr "Harakat talab qiladigan xabarlar soni"
 #, fuzzy
 msgid "Number of messages with delivery error"
 msgstr "Yetkazib berishda xato yuz bergan xabarlar soni"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_slide__questions_count
-#, fuzzy
-msgid "Numbers of Questions"
-msgstr "Savollar soni"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.mail_notification_channel_invite
@@ -5456,20 +5243,10 @@ msgstr "Tayanch nuqta"
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
 #: code:addons/website_slides/static/src/xml/slide_quiz.xml:0
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 #, fuzzy
 msgid "Please"
 msgstr "Iltimos"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-#, fuzzy
-msgid ""
-"Please <a t-attf-href=\"/odoo?redirect=#{request.httprequest.url}\" "
-"class=\"fw-bold o_translate_inline\"> login </a> to share this"
-msgstr ""
-"Buni ulashish uchun iltimos <a t-attf-href=\"/odoo?"
-"redirect=#{request.httprequest.url}\" class=\"fw-bold "
-"o_translate_inline\">tizimga kiring</a>"
 
 #. module: website_slides
 #. odoo-python
@@ -5495,14 +5272,14 @@ msgstr "Iltimos, to‘g‘ri elektron pochta manzil(lar)ini kiriting"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz_question_form.js:0
+#: code:addons/website_slides/static/src/interactions/quiz_question_form.js:0
 #, fuzzy
 msgid "Please fill in the question"
 msgstr "Iltimos, savolni to‘ldiring"
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/wizard/slide_channel_invite.py:0
+#: code:addons/website_slides/wizards/wizard_slide_channel_add_attendee.py:0
 #, fuzzy
 msgid "Please select at least one recipient."
 msgstr "Iltimos, kamida bitta qabul qiluvchini tanlang."
@@ -5512,6 +5289,18 @@ msgstr "Iltimos, kamida bitta qabul qiluvchini tanlang."
 #, fuzzy
 msgid "Points Rewards"
 msgstr "Ball mukofotlari"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_slide_channel__website_message_ids
+#: model:ir.model.fields,field_description:website_slides.field_slide_slide__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model.fields,help:website_slides.field_slide_channel__website_message_ids
+#: model:ir.model.fields,help:website_slides.field_slide_slide__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
 
 #. module: website_slides
 #: model:gamification.badge,name:website_slides.badge_data_course
@@ -5572,6 +5361,12 @@ msgstr "Taqdimot e'lon qilindi"
 #, fuzzy
 msgid "Preview"
 msgstr "Oldindan ko‘rish"
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "Previews are only available for videos, documents and images."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_content_detailed
@@ -5661,31 +5456,11 @@ msgstr "E'lon qilingan sana"
 #. module: website_slides
 #. odoo-python
 #: code:addons/website_slides/models/slide_channel.py:0
-#: code:addons/website_slides/models/slide_slide.py:0
-#, fuzzy
 msgid ""
-"Publishing is restricted to the responsible of training courses or members "
-"of the publisher group for documentation courses"
+"Publishing is restricted to the course responsible and to eLearning managers"
 msgstr ""
-"Nashr etish huquqi faqat o‘quv kurslari uchun mas'ul shaxslar yoki "
-"hujjatlashtirish kurslari uchun nashriyot guruhi a'zolariga berilgan"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__question_id
-#: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
-#, fuzzy
-msgid "Question"
-msgstr "Savol"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__question
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_form
-#, fuzzy
-msgid "Question Name"
-msgstr "Savol nomi"
-
-#. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_slide__question_ids
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 #, fuzzy
 msgid "Questions"
@@ -5693,12 +5468,13 @@ msgstr "Savollar"
 
 #. module: website_slides
 #. odoo-javascript
+#. odoo-python
+#: code:addons/website_slides/models/slide_slide.py:0
 #: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_dialog.js:0
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_category__quiz
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_type__quiz
 #: model:slide.channel.tag,name:website_slides.slide_channel_tag_quiz
 #: model_terms:ir.ui.view,arch_db:website_slides.gamification_karma_tracking_view_search
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_form
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 #, fuzzy
 msgid "Quiz"
@@ -5719,6 +5495,11 @@ msgid "Quiz Demo Data"
 msgstr "Viktorina namunasi ma'lumotlari"
 
 #. module: website_slides
+#: model:ir.actions.act_window,name:website_slides.slide_quiz_question_action_report
+msgid "Quiz Questions"
+msgstr ""
+
+#. module: website_slides
 #. odoo-python
 #: code:addons/website_slides/models/slide_slide.py:0
 #, fuzzy
@@ -5732,11 +5513,7 @@ msgid "Quiz attempts count"
 msgstr "Viktorina urinishlari soni"
 
 #. module: website_slides
-#: model:ir.actions.act_window,name:website_slides.slide_question_action_report
 #: model:ir.ui.menu,name:website_slides.website_slides_menu_report_quizzes
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_search
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_tree
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_tree_report
 #, fuzzy
 msgid "Quizzes"
 msgstr "Viktorinalar"
@@ -5953,11 +5730,9 @@ msgid "Retrieve from Google Drive"
 msgstr "Google Drive'dan olish"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_install_module.xml:0
-#, fuzzy
-msgid "Retry"
-msgstr "Qayta urinish"
+#: model_terms:ir.ui.view,arch_db:website_slides.profile_access_denied
+msgid "Return to the course."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_channel_form
@@ -6267,11 +6042,9 @@ msgid "Seo name"
 msgstr "SEO nomi"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_answer__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__sequence
-#: model:ir.model.fields,field_description:website_slides.field_slide_question__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__sequence
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide_resource__sequence
 #, fuzzy
@@ -6431,8 +6204,8 @@ msgstr "Qisqacha tavsif"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__visibility
-#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_visibility
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_partner__channel_visibility
+#: model:ir.model.fields,field_description:website_slides.field_wizard_slide_channel_add_attendee__channel_visibility
 #, fuzzy
 msgid "Show Course To"
 msgstr "Kursni ko‘rsatish"
@@ -6488,12 +6261,6 @@ msgid "Slide Icon fa-class"
 msgstr "Slayd ikonkasi fa-sinfi"
 
 #. module: website_slides
-#: model:ir.model,name:website_slides.model_slide_answer
-#, fuzzy
-msgid "Slide Question's Answer"
-msgstr "Slayd savoliga javob"
-
-#. module: website_slides
 #: model:ir.model,name:website_slides.model_slide_tag
 #, fuzzy
 msgid "Slide Tag"
@@ -6533,6 +6300,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/website_slides/static/src/xml/website_slides_fullscreen.xml:0
 #: model:ir.model,name:website_slides.model_slide_slide
+#: model:ir.model.fields,field_description:website_slides.field_survey_survey__slide_ids
 #: model_terms:ir.ui.view,arch_db:website_slides.res_config_settings_view_form
 #, fuzzy
 msgid "Slides"
@@ -6691,6 +6459,21 @@ msgid "Supported Files:"
 msgstr "Qo‘llab-quvvatlanadigan fayllar:"
 
 #. module: website_slides
+#: model:ir.model,name:website_slides.model_survey_survey
+msgid "Survey"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model,name:website_slides.model_survey_question_answer
+msgid "Survey Label"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model,name:website_slides.model_survey_question
+msgid "Survey Question"
+msgstr ""
+
+#. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/course_tag_add_dialog/course_tag_add_dialog.xml:0
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_tag_form
@@ -6782,11 +6565,21 @@ msgid "Test your knowledge"
 msgstr "Bilimingizni tekshiring"
 
 #. module: website_slides
+#: model:survey.survey,title:website_slides.slide_slide_demo_0_4_quiz_survey
+msgid "Test your knowledge Quiz"
+msgstr ""
+
+#. module: website_slides
 #: model:slide.slide,name:website_slides.slide_slide_demo_5_3
 #: model_terms:slide.slide,description:website_slides.slide_slide_demo_5_3
 #, fuzzy
 msgid "Test your knowledge!"
 msgstr "Bilimingizni sinab ko‘ring!"
+
+#. module: website_slides
+#: model:survey.survey,title:website_slides.slide_slide_demo_5_3_quiz_survey
+msgid "Test your knowledge! Quiz"
+msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
@@ -6911,6 +6704,11 @@ msgid "The slide can be marked as not completed and the progression"
 msgstr "Slaydni tugallanmagan deb belgilash va jarayonni davom ettirish mumkin"
 
 #. module: website_slides
+#: model:ir.model.fields,help:website_slides.field_survey_survey__slide_ids
+msgid "The slides this survey is linked to through the eLearning application"
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.constraint,message:website_slides.constraint_slide_slide_partner_check_vote
 #, fuzzy
 msgid "The vote must be 1, 0 or -1."
@@ -6940,7 +6738,7 @@ msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #, fuzzy
 msgid "There was an error validating this quiz."
 msgstr "Bu viktorinani tasdiqlashda xatolik yuz berdi."
@@ -6956,12 +6754,6 @@ msgstr "Uchinchi tomon veb-sayti URL manzili"
 #, fuzzy
 msgid "Third Try"
 msgstr "Uchinchi urinish"
-
-#. module: website_slides
-#: model:ir.model.fields,help:website_slides.field_slide_answer__comment
-#, fuzzy
-msgid "This comment will be displayed to the user if they select this answer"
-msgstr "Agar foydalanuvchi ushbu javobni tanlasa, bu izoh unga ko‘rsatiladi"
 
 #. module: website_slides
 #. odoo-python
@@ -6986,6 +6778,12 @@ msgstr ""
 #, fuzzy
 msgid "This course is private."
 msgstr "Bu kurs shaxsiy."
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "This course no longer exists."
+msgstr ""
 
 #. module: website_slides
 #. odoo-python
@@ -7030,20 +6828,17 @@ msgid "This is the correct answer, congratulations"
 msgstr "Bu to‘g‘ri javob, tabriklaymiz"
 
 #. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/slide_question.py:0
-#, fuzzy
-msgid ""
-"This question must have at least one correct answer and one incorrect answer."
-msgstr ""
-"Bu savolda kamida bitta to‘g‘ri va bitta noto‘g‘ri javob bo‘lishi shart"
-
-#. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #, fuzzy
 msgid "This quiz is already done. Retaking it is not possible."
 msgstr "Bu viktorina allaqachon yakunlangan. Uni qayta topshirish imkonsiz"
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid "This section does not belong to the course."
+msgstr ""
 
 #. module: website_slides
 #. odoo-python
@@ -7194,7 +6989,7 @@ msgstr "Google Drive fayli yoki YouTube video havolasi"
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/wizard/slide_channel_invite.py:0
+#: code:addons/website_slides/wizards/wizard_slide_channel_add_attendee.py:0
 #, fuzzy
 msgid "Unable to post message, please configure the sender's email address."
 msgstr ""
@@ -7229,7 +7024,7 @@ msgstr "Noma'lum veb-sayt"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_join.js:0
+#: code:addons/website_slides/static/src/interactions/course_join.js:0
 #, fuzzy
 msgid "Unknown error"
 msgstr "Noma'lum xatolik"
@@ -7392,12 +7187,6 @@ msgid "Using Google Drive:"
 msgstr "Google Drive'dan foydalanish:"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_form
-#, fuzzy
-msgid "Validation error"
-msgstr "Tasdiqlash xatosi"
-
-#. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_dialog.js:0
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_category__video
@@ -7522,7 +7311,7 @@ msgstr "Ovozlar"
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/controllers/main.py:0
+#: code:addons/website_slides/models/slide_slide.py:0
 #, fuzzy
 msgid "Votes and comments are disabled for this course"
 msgstr "Ushbu kurs uchun ovoz berish va fikr bildirish imkoniyati o‘chirilgan"
@@ -7532,13 +7321,6 @@ msgstr "Ushbu kurs uchun ovoz berish va fikr bildirish imkoniyati o‘chirilgan"
 #, fuzzy
 msgid "Waiting for validation"
 msgstr "Tasdiqlash kutilmoqda"
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/controllers/main.py:0
-#, fuzzy
-msgid "Want to test and certify your students?"
-msgstr "Talabalaringizni sinab, sertifikatlashni xohlaysizmi?"
 
 #. module: website_slides
 #: model_terms:slide.slide,description:website_slides.slide_slide_demo_3_1
@@ -7580,26 +7362,12 @@ msgid "Website Absolute URL"
 msgstr "Veb-saytning to‘liq URL manzili"
 
 #. module: website_slides
-#: model:ir.model.fields,field_description:website_slides.field_slide_channel__website_message_ids
-#: model:ir.model.fields,field_description:website_slides.field_slide_slide__website_message_ids
-#, fuzzy
-msgid "Website Messages"
-msgstr "Veb-sayt xabarlari"
-
-#. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__website_url
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel_tag_group__website_url
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__website_url
 #, fuzzy
 msgid "Website URL"
 msgstr "Veb-sayt URL manzili"
-
-#. module: website_slides
-#: model:ir.model.fields,help:website_slides.field_slide_channel__website_message_ids
-#: model:ir.model.fields,help:website_slides.field_slide_slide__website_message_ids
-#, fuzzy
-msgid "Website communication history"
-msgstr "Veb-sayt muloqot tarixi"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_channel__website_meta_description
@@ -7641,19 +7409,19 @@ msgstr ""
 "Birinchi darsni yozish uchun \"<b>Yangi</b>\" tugmasini bosing."
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_0_4_question_0
+#: model:survey.question,title:website_slides.slide_slide_demo_0_4_question_0
 #, fuzzy
 msgid "What is a strawberry?"
 msgstr "Qulupnay nima?"
 
 #. module: website_slides
-#: model:slide.question,question:website_slides.slide_slide_demo_0_4_question_1
+#: model:survey.question,title:website_slides.slide_slide_demo_0_4_question_1
 #, fuzzy
 msgid "What is the best tool to dig a hole for your plants?"
 msgstr "O‘simliklaringiz uchun chuqur qazishda eng yaxshi asbob qaysi?"
 
 #. module: website_slides
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_1_2
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_1_2
 #, fuzzy
 msgid "What was the question again?"
 msgstr "Savol nima edi?"
@@ -7667,6 +7435,12 @@ msgid ""
 msgstr ""
 "Taklif qilingan hamkorlar ro‘yxatdan o‘tgan sifatida qo‘shiladimi. Aks "
 "holda, ular taklif qilingan sifatida qo‘shiladi."
+
+#. module: website_slides
+#: model:ir.model.fields,help:website_slides.field_slide_slide__has_questions
+msgid ""
+"Whether this slide has quiz/certification questions (via its linked survey)."
+msgstr ""
 
 #. module: website_slides
 #: model_terms:slide.slide,description:website_slides.slide_slide_demo_4_1
@@ -7759,12 +7533,12 @@ msgstr "XP"
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/interactions/enroll_email.js:0
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_0_0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_1_4_question_1_0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_0_0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_2_0_question_1_0
-#: model:slide.answer,text_value:website_slides.slide_slide_demo_5_3_question_0_0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_0_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_1_4_question_1_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_0_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_2_0_question_1_0
+#: model:survey.question.answer,value:website_slides.slide_slide_demo_5_3_question_0_0
 #, fuzzy
 msgid "Yes"
 msgstr "Ha"
@@ -7779,6 +7553,14 @@ msgid ""
 msgstr ""
 "Bu kursga a'zo qo‘shishingizga ruxsat yo‘q. Iltimos, kurs mas'uli yoki "
 "administratorga murojaat qiling."
+
+#. module: website_slides
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
+msgid ""
+"You are not allowed to create new course tags. Pick an existing one, or ask "
+"an eLearning officer."
+msgstr ""
 
 #. module: website_slides
 #. odoo-javascript
@@ -7893,7 +7675,7 @@ msgstr "Bu kursga kirishga ruxsatingiz yo‘q."
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/controllers/main.py:0
+#: code:addons/website_slides/models/slide_slide.py:0
 #, fuzzy
 msgid "You don't have enough karma to vote"
 msgstr "Ovoz berish uchun yetarli karmangiz yo‘q"
@@ -7907,7 +7689,7 @@ msgstr "Siz qo‘lga kiritdingiz"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_join.js:0
+#: code:addons/website_slides/static/src/interactions/course_join.js:0
 #, fuzzy
 msgid "You have already joined this channel"
 msgstr "Siz bu kanalga allaqachon qo‘shilgansiz"
@@ -7945,14 +7727,14 @@ msgstr "Endi bizning elektron ta'limimizda qatnashishingiz mumkin."
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/slides_course_quiz.js:0
+#: code:addons/website_slides/static/src/interactions/quiz.js:0
 #, fuzzy
 msgid "You must be logged to submit the quiz."
 msgstr "Testni topshirish uchun tizimga kirgan bo‘lishingiz kerak."
 
 #. module: website_slides
 #. odoo-python
-#: code:addons/website_slides/controllers/main.py:0
+#: code:addons/website_slides/models/slide_slide.py:0
 #, fuzzy
 msgid "You must be member of this course to vote"
 msgstr "Ovoz berish uchun bu kursga a'zo bo‘lishingiz kerak"
@@ -8086,13 +7868,6 @@ msgid "anyway"
 msgstr "baribir"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_upload_dialog/slide_upload_dialog_select.xml:0
-#, fuzzy
-msgid "app."
-msgstr "ilova."
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_nav
 #, fuzzy
 msgid "breadcrumb"
@@ -8224,12 +7999,6 @@ msgid "e.g. Setting up your computer"
 msgstr "masalan, Kompyuterni sozlash"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_question_view_form
-#, fuzzy
-msgid "e.g. What powers a computer?"
-msgstr "masalan, Kompyuter nimadan quvvat oladi?"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_channel_tag_group_view_form
 #, fuzzy
 msgid "e.g. Your Level"
@@ -8246,11 +8015,21 @@ msgid "eLearning"
 msgstr "Elektron ta'lim"
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_ids
 #: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_ids
 #: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_ids
 #, fuzzy
 msgid "eLearning Courses"
 msgstr "Elektron ta'lim kurslari"
+
+#. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_res_bank__slide_channel_partner_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_company__slide_channel_partner_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_partner__slide_channel_partner_ids
+#: model:ir.model.fields,field_description:website_slides.field_res_users__slide_channel_partner_ids
+msgid "eLearning Memberships"
+msgstr ""
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_channel_view_kanban
@@ -8288,6 +8067,7 @@ msgstr "qo‘shilish"
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 #, fuzzy
 msgid "login"
 msgstr "tizimga kirish"
@@ -8320,13 +8100,6 @@ msgstr "so‘rov"
 #, fuzzy
 msgid "sign in"
 msgstr "tizimga kirish"
-
-#. module: website_slides
-#. odoo-python
-#: code:addons/website_slides/models/gamification_karma_tracking.py:0
-#, fuzzy
-msgid "slide.channel"
-msgstr "slayd.kanal"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
@@ -8387,6 +8160,7 @@ msgstr "kirish huquqini so‘rash"
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 #, fuzzy
 msgid "to share this"
 msgstr "buni ulashish"
@@ -8428,3 +8202,592 @@ msgstr "{{ user.name }} siz bilan {{ object.slide_category }} ulashdi!"
 #, fuzzy
 msgid "└<span class=\"ms-1\">Uncategorized</span>"
 msgstr "└<span class=\"ms-1\">Toifasiz</span>"
+
+#, fuzzy
+#~ msgid "# of Embeds"
+#~ msgstr "# ta joylashtirilgan"
+
+#, fuzzy
+#~ msgid ""
+#~ "<a t-attf-href=\"/slides/course-#{request.params.get('channel_id')}\" "
+#~ "class=\"o_translate_inline\">Return to the course.</a>"
+#~ msgstr ""
+#~ "<a t-attf-href=\"/slides/course-#{request.params.get('channel_id')}\" "
+#~ "class=\"o_translate_inline\">Kursga qaytish</a>"
+
+#, fuzzy
+#~ msgid "<b>%s</b> is requesting access to this course."
+#~ msgstr "<b>%s</b> ushbu kursga kirish uchun ruxsat so‘ramoqda."
+
+#, fuzzy
+#~ msgid ""
+#~ "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
+#~ "    <p style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
+#~ "        Hello<br/><br/>\n"
+#~ "        You have been enrolled to a new course: <t t-"
+#~ "out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
+#~ "    </p>\n"
+#~ "</div>\n"
+#~ "            "
+#~ msgstr ""
+#~ "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\"> <p "
+#~ "style=\"margin: 0px; padding: 0px; font-size: 13px;\"> Salom<br/><br/> Siz "
+#~ "yangi kursga yozildingiz: <t t-out=\"object.channel_id.name or "
+#~ "''\">Bog‘dorchilik asoslari</t>.     </p> </div>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
+#~ "    <p style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
+#~ "        Hello<br/><br/>\n"
+#~ "        You have been invited to check out this course: <t t-"
+#~ "out=\"object.channel_id.name or ''\">Basics of Gardening</t>.\n"
+#~ "    </p>\n"
+#~ "</div>\n"
+#~ "            "
+#~ msgstr ""
+#~ "<div style=\"margin: 0px; padding: 0px; font-size: 13px;\"> <p "
+#~ "style=\"margin: 0px; padding: 0px; font-size: 13px;\"> Assalomu alaykum<br/"
+#~ "><br/> Sizni ushbu kursni ko‘rib chiqishga taklif qilamiz: <t t-"
+#~ "out=\"object.channel_id.name or ''\">Bog‘dorchilik asoslari</t>.     </p> </"
+#~ "div>"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-arrow-right\"/> Start Learning"
+#~ msgstr "<i class=\"fa fa-arrow-right\"/> O‘rganishni boshlang"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-bar-chart\"/> Statistics"
+#~ msgstr "<i class=\"fa fa-bar-chart\"/> Statistika"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-bars\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">Lessons</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-bars\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">Darslar</span>"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-check me-1\"/>Completed"
+#~ msgstr "<i class=\"fa fa-check me-1\"/>Bajarildi"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-check\" aria-hidden=\"true\"/> Completed"
+#~ msgstr "<i class=\"fa fa-check\" aria-hidden=\"true\"/> Bajarildi"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-check\"/> Completed"
+#~ msgstr "<i class=\"fa fa-check\"/> Bajarildi"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-circle-o-notch fa-spin me-2\"/><b>Loading...</b>"
+#~ msgstr "<i class=\"fa fa-circle-o-notch fa-spin me-2\"/><b>Yuklanmoqda...</b>"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-clipboard\"/> Copy Embed Code"
+#~ msgstr "<i class=\"fa fa-clipboard\"/> Joylashtirish kodini nusxalash"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-clipboard\"/> Copy Link"
+#~ msgstr "<i class=\"fa fa-clipboard\"/> Havolani nusxalash"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-clock-o me-2\" aria-label=\"Duration\" role=\"img\" "
+#~ "title=\"Duration\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-clock-o me-2\" aria-label=\"Davomiyligi\" role=\"img\" "
+#~ "title=\"Davomiyligi\"/>"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-cloud-upload me-1\"/>Add Content"
+#~ msgstr "<i class=\"fa fa-cloud-upload me-1\"/>Kontent qo‘shish"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-desktop me-xl-2 my-1\"/>\n"
+#~ "                <span class=\"d-none d-xl-inline-block\">Fullscreen</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-desktop me-xl-2 my-1\"/> <span class=\"d-none d-xl-inline-"
+#~ "block\">To‘liq ekran</span>"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-envelope\"/> Send Email"
+#~ msgstr "<i class=\"fa fa-envelope\"/> Xat yuborish"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-eraser me-1\"/>Clear filters"
+#~ msgstr "<i class=\"fa fa-eraser me-1\"/>Filtrlarni tozalash"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-"
+#~ "label=\"Attention\" title=\"Attention\"/> This document is private."
+#~ msgstr ""
+#~ "<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-label=\"Diqqat\" "
+#~ "title=\"Diqqat\"/> Bu hujjat shaxsiy."
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-eye me-2\" aria-label=\"Views\" role=\"img\" "
+#~ "title=\"Views\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-eye me-2\" aria-label=\"Ko‘rishlar\" role=\"img\" "
+#~ "title=\"Ko‘rishlar\"/>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-file-code-o me-2\" aria-label=\"article\" role=\"img\" "
+#~ "title=\"Article\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-file-code-o me-2\" aria-label=\"maqola\" role=\"img\" "
+#~ "title=\"Maqola\"/>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-file-image-o me-2\" aria-label=\"Infographic\" role=\"img\" "
+#~ "title=\"Infographic\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-file-image-o me-2\" aria-label=\"Infografika\" role=\"img\" "
+#~ "title=\"Infografika\"/>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-file-pdf-o me-2\" aria-label=\"Document\" role=\"img\" "
+#~ "title=\"Document\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-file-pdf-o me-2\" aria-label=\"Hujjat\" role=\"img\" "
+#~ "title=\"Hujjat\"/>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-file-video-o me-2\" aria-label=\"Video\" role=\"img\" "
+#~ "title=\"Video\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-file-video-o me-2\" aria-label=\"Video\" role=\"img\" "
+#~ "title=\"Video\"/>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-flag me-2\" aria-label=\"Quiz\" role=\"img\" title=\"Quiz\"/"
+#~ ">"
+#~ msgstr ""
+#~ "<i class=\"fa fa-flag me-2\" aria-label=\"Test\" role=\"img\" title=\"Test\"/"
+#~ ">"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-flag text-warning\"/> Quiz"
+#~ msgstr "<i class=\"fa fa-flag text-warning\"/> Test"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-flag-checkered text-warning\"/>Quiz"
+#~ msgstr "<i class=\"fa fa-flag-checkered text-warning\"/>Test"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-folder-o me-1\"/><span>Add Section</span>"
+#~ msgstr "<i class=\"fa fa-folder-o me-1\"/><span>Bo‘lim qo‘shish</span>"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-folder-o me-1\"/>Add a section"
+#~ msgstr "<i class=\"fa fa-folder-o me-1\"/>Bo‘lim qo‘shish"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
+#~ msgstr "<i class=\"fa fa-globe me-1\" title=\"Veb-sayt\"/>"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-home\"/> About"
+#~ msgstr "<i class=\"fa fa-home\"/> Haqida"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-home\"/> Course"
+#~ msgstr "<i class=\"fa fa-home\"/> Kurs"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-home\"/><span class=\"d-none d-md-inline-block ms-1\">Back "
+#~ "to course</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-home\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">Kursga qaytish</span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-lock\"/>\n"
+#~ "                        <span>Course Locked</span>"
+#~ msgstr "<i class=\"fa fa-lock\"/> <span>Kurs qulflangan</span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-plus me-1\"/> <span class=\"d-none d-md-inline-block\">Add "
+#~ "Content</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-plus me-1\"/> <span class=\"d-none d-md-inline-"
+#~ "block\">Kontent qo‘shish</span>"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-plus me-1\"/><span>Add Content</span>"
+#~ msgstr "<i class=\"fa fa-plus me-1\"/><span>Kontent qo‘shish</span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-plus me-2\"/>\n"
+#~ "            <span>Add Question</span>"
+#~ msgstr "<i class=\"fa fa-plus me-2\"/> <span>Savol qo‘shish</span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-plus me-2\"/>\n"
+#~ "            <span>Add Quiz</span>"
+#~ msgstr "<i class=\"fa fa-plus me-2\"/> <span>Test qo‘shish</span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-question me-2\" aria-label=\"Number of Questions\" "
+#~ "role=\"img\" title=\"Number of Questions\"/>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-question me-2\" aria-label=\"Savollar soni\" role=\"img\" "
+#~ "title=\"Savollar soni\"/>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-share-alt me-xl-2 my-1\"/>\n"
+#~ "                <span class=\"d-none d-xl-inline-block\">Share</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-share-alt me-xl-2 my-1\"/> <span class=\"d-none d-xl-inline-"
+#~ "block\">Ulashish</span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>\n"
+#~ "                                            Share"
+#~ msgstr ""
+#~ "<i class=\"fa fa-share-alt\" aria-label=\"Ulashish\" title=\"Ulashish\"/> "
+#~ "Ulashish"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-share-alt\"/>\n"
+#~ "                        <span class=\"d-none d-md-inline-block ms-2\">Share</"
+#~ "span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-share-alt\"/> <span class=\"d-none d-md-inline-block "
+#~ "ms-2\">Ulashish</span>"
+
+#, fuzzy
+#~ msgid "<i class=\"fa fa-share-alt\"/> Share"
+#~ msgstr "<i class=\"fa fa-share-alt\"/> Ulashish"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-sign-out\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">Exit Fullscreen</span>"
+#~ msgstr ""
+#~ "<i class=\"fa fa-sign-out\"/><span class=\"d-none d-md-inline-block "
+#~ "ms-1\">To‘liq ekrandan chiqish</span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<i class=\"fa fa-tag me-2 text-muted\"/>\n"
+#~ "          My Courses"
+#~ msgstr "<i class=\"fa fa-tag me-2 text-muted\"/> Kurslarim"
+
+#, fuzzy
+#~ msgid ""
+#~ "<small class=\"text-muted d-none d-md-inline\"><i class=\"fa fa-check me-1\" "
+#~ "role=\"img\"/>You are enrolled</small>"
+#~ msgstr ""
+#~ "<small class=\"text-muted d-none d-md-inline\"><i class=\"fa fa-check me-1\" "
+#~ "role=\"img\"/>Siz ro‘yxatdan o‘tgansiz</small>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<small class=\"text-success\">\n"
+#~ "                        Request already sent\n"
+#~ "                    </small>"
+#~ msgstr "<small class=\"text-success\"> So‘rov allaqachon yuborilgan </small>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<small><span class=\"badge text-bg-success fw-normal\"><i class=\"fa fa-"
+#~ "check\"/> Completed</span></small>"
+#~ msgstr ""
+#~ "<small><span class=\"badge text-bg-success fw-normal\"><i class=\"fa fa-"
+#~ "check\"/> Tugatildi</span></small>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<span class=\"badge fw-bold m-1 text-bg-warning\">\n"
+#~ "                            <i class=\"fa fa-fw fa-flag\"/> 10 xp\n"
+#~ "                        </span>"
+#~ msgstr ""
+#~ "<span class=\"badge fw-bold m-1 text-bg-warning\"> <i class=\"fa fa-fw fa-"
+#~ "flag\"/> 10 ball </span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<span class=\"ms-1\">Lessons</span>\n"
+#~ "                                <span class=\"ms-1\">·</span>"
+#~ msgstr "<span class=\"ms-1\">Darslar</span> <span class=\"ms-1\">·</span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<span class=\"text-muted fw-bold col-4 col-md-3\">\n"
+#~ "                        Additional Resources\n"
+#~ "                    </span>"
+#~ msgstr ""
+#~ "<span class=\"text-muted fw-bold col-4 col-md-3\">Qo‘shimcha manbalar</span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<span id=\"first\" class=\"me-1 me-sm-2\" title=\"First slide\" aria-"
+#~ "label=\"First slide\" role=\"button\"><i class=\"fa fa-step-backward\"/></"
+#~ "span>\n"
+#~ "                                        <span id=\"previous\" class=\"mx-1 "
+#~ "mx-sm-2\" title=\"Previous slide\" aria-label=\"Previous slide\" "
+#~ "role=\"button\"><i class=\"fa fa-arrow-circle-left\"/></span>\n"
+#~ "                                        <span id=\"next\" class=\"mx-1 mx-"
+#~ "sm-2\" title=\"Next slide\" aria-label=\"Next slide\" role=\"button\"><i "
+#~ "class=\"fa fa-arrow-circle-right\"/></span>\n"
+#~ "                                        <span id=\"last\" class=\"mx-1 mx-"
+#~ "sm-2\" title=\"Last slide\" aria-label=\"Last slide\" role=\"button\"><i "
+#~ "class=\"fa fa-step-forward\"/></span>"
+#~ msgstr ""
+#~ "<span id=\"first\" class=\"me-1 me-sm-2\" title=\"Birinchi slayd\" aria-"
+#~ "label=\"Birinchi slayd\" role=\"button\"><i class=\"fa fa-step-backward\"/></"
+#~ "span> <span id=\"previous\" class=\"mx-1 mx-sm-2\" title=\"Oldingi slayd\" "
+#~ "aria-label=\"Oldingi slayd\" role=\"button\"><i class=\"fa fa-arrow-circle-"
+#~ "left\"/></span> <span id=\"next\" class=\"mx-1 mx-sm-2\" title=\"Keyingi "
+#~ "slayd\" aria-label=\"Keyingi slayd\" role=\"button\"><i class=\"fa fa-arrow-"
+#~ "circle-right\"/></span> <span id=\"last\" class=\"mx-1 mx-sm-2\" "
+#~ "title=\"So‘nggi slayd\" aria-label=\"So‘nggi slayd\" role=\"button\"><i "
+#~ "class=\"fa fa-step-forward\"/></span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<span id=\"fullscreen\" class=\"ms-1 ms-sm-2\" title=\"View fullscreen\" "
+#~ "aria-label=\"Fullscreen\" role=\"button\">\n"
+#~ "                                            <i class=\"fa fa-arrows-alt\"/>\n"
+#~ "                                        </span>"
+#~ msgstr ""
+#~ "<span id=\"fullscreen\" class=\"ms-1 ms-sm-2\" title=\"To‘liq ekranga "
+#~ "o‘tish\" aria-label=\"To‘liq ekran\" role=\"button\"> <i class=\"fa fa-"
+#~ "arrows-alt\"/> </span>"
+
+#, fuzzy
+#~ msgid ""
+#~ "<span id=\"zoomout\" class=\"d-inline ms-2 me-2\" title=\"Zoom out\" aria-"
+#~ "label=\"Zoom out\" role=\"button\">\n"
+#~ "                                            <i class=\"fa fa-search-minus\"/"
+#~ ">\n"
+#~ "                                        </span>\n"
+#~ "                                        <span id=\"zoomin\" class=\"d-"
+#~ "inline\" title=\"Zoom in\" aria-label=\"Zoom in\" role=\"button\">\n"
+#~ "                                            <i class=\"fa fa-search-plus\"/"
+#~ ">\n"
+#~ "                                        </span>"
+#~ msgstr ""
+#~ "<span id=\"zoomout\" class=\"d-inline ms-2 me-2\" title=\"Kichiklashtirish\" "
+#~ "aria-label=\"Kichiklashtirish\" role=\"button\"> <i class=\"fa fa-search-"
+#~ "minus\"/> </span> <span id=\"zoomin\" class=\"d-inline\" "
+#~ "title=\"Kattalashtirish\" aria-label=\"Kattalashtirish\" role=\"button\"> <i "
+#~ "class=\"fa fa-search-plus\"/> </span>"
+
+#, fuzzy
+#~ msgid "<span><b>Good job!</b> You went through all steps of this tour.</span>"
+#~ msgstr ""
+#~ "<span><b>Ajoyib!</b> Siz bu sayohatning barcha bosqichlarini muvaffaqiyatli "
+#~ "yakunladingiz.</span>"
+
+#, fuzzy
+#~ msgid "Access Granted"
+#~ msgstr "Ruxsat berildi"
+
+#, fuzzy
+#~ msgid "Access Refused"
+#~ msgstr "Kirish rad etildi"
+
+#, fuzzy
+#~ msgid "Access Request"
+#~ msgstr "Kirish so‘rovi"
+
+#, fuzzy
+#~ msgid ""
+#~ "All questions must have at least one correct answer and one incorrect "
+#~ "answer: \n"
+#~ "%s\n"
+#~ msgstr ""
+#~ "Barcha savollarda kamida bitta to‘g‘ri va bitta noto‘g‘ri javob bo‘lishi "
+#~ "kerak: %s"
+
+#, fuzzy
+#~ msgid ""
+#~ "All the courses you attend will appear here. <br/>\n"
+#~ "                        <a href=\"/slides/\" class=\"btn-link "
+#~ "o_translate_inline\">\n"
+#~ "                            <i class=\"fa fa-arrow-right\"/> Start Learning\n"
+#~ "                        </a>"
+#~ msgstr ""
+#~ "Siz qatnashgan barcha kurslar shu yerda ko‘rinadi. <br/> <a href=\"/slides/"
+#~ "\" class=\"btn-link o_translate_inline\"> <i class=\"fa fa-arrow-right\"/> "
+#~ "O‘rganishni boshlang </a>"
+
+#, fuzzy
+#~ msgid "Answer"
+#~ msgstr "Javob"
+
+#, fuzzy
+#~ msgid "Answers"
+#~ msgstr "Javoblar"
+
+#, fuzzy
+#~ msgid "Attempts Avg"
+#~ msgstr "Urinishlar o‘rtachasi"
+
+#, fuzzy
+#~ msgid "Attempts Count"
+#~ msgstr "Urinishlar soni"
+
+#, fuzzy
+#~ msgid "Come back later to oversee how well your Attendees are doing."
+#~ msgstr ""
+#~ "Ishtirokchilaringiz qanchalik yaxshi ishlayotganini kuzatish uchun keyinroq "
+#~ "qayting."
+
+#, fuzzy
+#~ msgid "Comment"
+#~ msgstr "Izoh"
+
+#, fuzzy
+#~ msgid "Content Quiz Question"
+#~ msgstr "Kontent testi savoli"
+
+#, fuzzy
+#~ msgid "Create a Customer"
+#~ msgstr "Mijoz yaratish"
+
+#, fuzzy
+#~ msgid "Do you want to install \"%s\"?"
+#~ msgstr "\"%s\"ni o‘rnatmoqchimisiz?"
+
+#, fuzzy
+#~ msgid "Done Count"
+#~ msgstr "Bajarilganlar soni"
+
+#, fuzzy
+#~ msgid "Error on Answers"
+#~ msgstr "Javoblarda xatolik"
+
+#, fuzzy
+#~ msgid "Failed to install \"%s\""
+#~ msgstr "\"%s\" o‘rnatib bo‘lmadi"
+
+#, fuzzy
+#~ msgid "Font awesome icon e.g. fa-tasks"
+#~ msgstr "Font Awesome belgisi, masalan, fa-tasks"
+
+#, fuzzy
+#~ msgid "Group of users allowed to publish contents on a documentation course."
+#~ msgstr ""
+#~ "Hujjatlashtirish kursida kontent chop etishga ruxsat berilgan "
+#~ "foydalanuvchilar guruhi."
+
+#, fuzzy
+#~ msgid "Install"
+#~ msgstr "O‘rnatish"
+
+#, fuzzy
+#~ msgid "Install the"
+#~ msgstr "O‘rnating"
+
+#, fuzzy
+#~ msgid "Installing \"%s\"..."
+#~ msgstr "\"%s\" o‘rnatilmoqda..."
+
+#, fuzzy
+#~ msgid "Is correct answer"
+#~ msgstr "To‘g‘ri javob"
+
+#, fuzzy
+#~ msgid "Next Activity Calendar Event"
+#~ msgstr "Keyingi taqvim tadbiri"
+
+#, fuzzy
+#~ msgid "No Quiz data yet!"
+#~ msgstr "Hozircha test ma'lumotlari yo‘q!"
+
+#, fuzzy
+#~ msgid "Numbers of Questions"
+#~ msgstr "Savollar soni"
+
+#, fuzzy
+#~ msgid ""
+#~ "Please <a t-attf-href=\"/odoo?redirect=#{request.httprequest.url}\" "
+#~ "class=\"fw-bold o_translate_inline\"> login </a> to share this"
+#~ msgstr ""
+#~ "Buni ulashish uchun iltimos <a t-attf-href=\"/odoo?"
+#~ "redirect=#{request.httprequest.url}\" class=\"fw-bold "
+#~ "o_translate_inline\">tizimga kiring</a>"
+
+#, fuzzy
+#~ msgid ""
+#~ "Publishing is restricted to the responsible of training courses or members "
+#~ "of the publisher group for documentation courses"
+#~ msgstr ""
+#~ "Nashr etish huquqi faqat o‘quv kurslari uchun mas'ul shaxslar yoki "
+#~ "hujjatlashtirish kurslari uchun nashriyot guruhi a'zolariga berilgan"
+
+#, fuzzy
+#~ msgid "Question"
+#~ msgstr "Savol"
+
+#, fuzzy
+#~ msgid "Question Name"
+#~ msgstr "Savol nomi"
+
+#, fuzzy
+#~ msgid "Retry"
+#~ msgstr "Qayta urinish"
+
+#, fuzzy
+#~ msgid "Slide Question's Answer"
+#~ msgstr "Slayd savoliga javob"
+
+#, fuzzy
+#~ msgid "This comment will be displayed to the user if they select this answer"
+#~ msgstr "Agar foydalanuvchi ushbu javobni tanlasa, bu izoh unga ko‘rsatiladi"
+
+#, fuzzy
+#~ msgid ""
+#~ "This question must have at least one correct answer and one incorrect answer."
+#~ msgstr ""
+#~ "Bu savolda kamida bitta to‘g‘ri va bitta noto‘g‘ri javob bo‘lishi shart"
+
+#, fuzzy
+#~ msgid "Validation error"
+#~ msgstr "Tasdiqlash xatosi"
+
+#, fuzzy
+#~ msgid "Want to test and certify your students?"
+#~ msgstr "Talabalaringizni sinab, sertifikatlashni xohlaysizmi?"
+
+#, fuzzy
+#~ msgid "Website Messages"
+#~ msgstr "Veb-sayt xabarlari"
+
+#, fuzzy
+#~ msgid "Website communication history"
+#~ msgstr "Veb-sayt muloqot tarixi"
+
+#, fuzzy
+#~ msgid "app."
+#~ msgstr "ilova."
+
+#, fuzzy
+#~ msgid "e.g. What powers a computer?"
+#~ msgstr "masalan, Kompyuter nimadan quvvat oladi?"
+
+#, fuzzy
+#~ msgid "slide.channel"
+#~ msgstr "slayd.kanal"
