@@ -1,4 +1,7 @@
+from datetime import date
+
 from odoo.tests import tagged
+from odoo.tools import frozendict
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
@@ -17,6 +20,52 @@ class TestTaxTagImport(AccountTestInvoicingCommon):
             tags = self.wizard._get_or_create_tax_tags(codes, {})
             self.assertEqual(tags._name, "account.account.tag")
             self.assertFalse(tags)
+
+    def test_balanced_decimal_amounts_do_not_generate_a_counterpart(self):
+        class ExportRecord(frozendict):
+            # Keep the three lines in export order when the importer deduplicates them.
+            def __hash__(self):
+                return int(self["DOCORDER"])
+
+        account = self.company_data["default_account_expense"]
+        journal = self.company_data["default_journal_misc"]
+        journal.default_account_id = account
+        records = [
+            ExportRecord(
+                DOCNUMBER="1",
+                DBKCODE="MISC",
+                DBKTYPE="4",
+                BOOKYEAR="1",
+                PERIOD="1",
+                DATEDOC=date(2026, 1, 15),
+                DATE=date(2026, 1, 15),
+                ACCOUNTGL="WB",
+                DOCORDER=str(order),
+                AMOUNTEUR=amount,
+                CURRAMOUNT=0.0,
+                VATIMPUT="",
+                COMMENT="Balanced Winbooks fixture",
+            )
+            for order, amount in enumerate((0.1, 0.2, -0.3), start=1)
+        ]
+        _, moves = self.wizard._import_move(
+            records,
+            pdffiles={},
+            account_data={"WB": account.id},
+            account_central={},
+            journal_data={"MISC": journal.id},
+            partner_data={},
+            vatcode_data={},
+            param_data={
+                "openyears": [1],
+                "period_date": {
+                    1: [date(2025, 1, 1), date(2026, 1, 1), date(2027, 1, 1)]
+                },
+            },
+        )
+        self.assertEqual(len(moves), 1)
+        self.assertEqual(len(moves.line_ids), 3)
+        self.assertEqual(moves.line_ids.mapped("winbooks_line_id"), ["1", "2", "3"])
 
     def test_create_cache_and_reuse_tags(self):
         cache = {}

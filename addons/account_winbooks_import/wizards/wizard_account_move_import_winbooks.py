@@ -447,17 +447,13 @@ class WizardAccountMoveImportWinbooks(models.TransientModel):
             ):
                 continue
             perdiod_number = len(param_data["period_date"][bookyear]) - 2
-            period = min(
-                int(key[4]), perdiod_number + 1
-            )
+            period = min(int(key[4]), perdiod_number + 1)
             start_period_date = param_data["period_date"][bookyear][period]
             if 1 <= period < perdiod_number:
                 end_period_date = param_data["period_date"][bookyear][
                     period + 1
                 ] + timedelta(days=-1)
-            elif (
-                period == perdiod_number
-            ):
+            elif period == perdiod_number:
                 end_period_date = param_data["period_date"][bookyear][period + 1]
             else:
                 end_period_date = start_period_date
@@ -477,7 +473,7 @@ class WizardAccountMoveImportWinbooks(models.TransientModel):
             if not move_data_dict.get("journal_id") and key[1] == "MATCHG":
                 continue
             move_line_data_list = []
-            move_amount_total = 0
+            move_amount_total: float = 0
             move_total_receivable_payable = 0
 
             tmp_val = []
@@ -658,9 +654,7 @@ class WizardAccountMoveImportWinbooks(models.TransientModel):
                     if rec.get("DOCTYPE") in ["0", "1"]
                     else partner_id.property_account_receivable_id
                 )
-                account_id = (
-                    account_id or suspense_account
-                )
+                account_id = account_id or suspense_account
                 line_data = {
                     "account_id": account_id.id,
                     "date_maturity": rec.get("DUEDATE", False),
@@ -1048,16 +1042,12 @@ class WizardAccountMoveImportWinbooks(models.TransientModel):
                 csv_values = parse_csv_value(value + rec.get("VALUEEXT"))
             except ValueError:
                 csv_values = {}
-            if csv_values.get("NAME", "").startswith(
-                "ZONANA"
-            ):
+            if csv_values.get("NAME", "").startswith("ZONANA"):
                 param_data[csv_values["NAME"]] = csv_values["TIT1"]
         return param_data
 
     def _post_import(self, account_deprecated_ids) -> None:
-        account_deprecated_ids.write(
-            {"active": False}
-        )
+        account_deprecated_ids.write({"active": False})
 
     def action_import(self):
         if not self.env.company.country_id:
