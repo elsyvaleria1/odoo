@@ -100,7 +100,11 @@ class AccountMove(models.Model):
                     )
                 }
             )
-        if not self.invoice_payment_term_id and self.invoice_date_due:
+        if (
+            not self.invoice_payment_term_id
+            and self.is_invoice_date_due_chosen
+            and self.invoice_date_due
+        ):
             values.update(
                 {
                     "invoice_date_due": values["date"]

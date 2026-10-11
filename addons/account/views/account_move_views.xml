@@ -1309,6 +1309,10 @@
                                     placeholder="Date"
                                     force_save="1"
                                     invisible="invoice_payment_term_id" />
+                                <field
+                                    name="is_invoice_date_due_chosen"
+                                    force_save="1"
+                                    invisible="1" />
                                 <span class="o_form_label mx-3 oe_edit_only text-center" style="width: 6ch;" invisible="state != 'draft' or invoice_payment_term_id">or</span>
                                 <field
                                     name="invoice_payment_term_id"

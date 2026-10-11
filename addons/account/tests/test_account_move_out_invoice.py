@@ -4371,6 +4371,103 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
             ],
         )
 
+    def _invoice_without_payment_term(self, invoice_date, **vals):
+        partner = self.env["res.partner"].create({"name": "No payment term"})
+        return self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": partner.id,
+                "invoice_date": invoice_date,
+                "invoice_line_ids": [
+                    Command.create(
+                        {"product_id": self.product_a.id, "price_unit": 100.0}
+                    )
+                ],
+                **vals,
+            }
+        )
+
+    def assertDueOn(self, invoice, due):
+        due = fields.Date.from_string(due)
+        self.assertEqual(invoice.invoice_date_due, due)
+        self.assertEqual(
+            invoice.line_ids.filtered("date_maturity").mapped("date_maturity"), [due]
+        )
+
+    def test_out_invoice_redated_follows_with_a_due_date_it_was_not_given(self):
+        invoice = self._invoice_without_payment_term("2021-01-01")
+        self.assertDueOn(invoice, "2021-01-01")
+        self.assertFalse(invoice.is_invoice_date_due_chosen)
+
+        invoice.invoice_date = fields.Date.from_string("2025-02-05")
+        self.assertDueOn(invoice, "2025-02-05")
+
+        invoice.invoice_date = fields.Date.from_string("2024-06-01")
+        self.assertDueOn(invoice, "2024-06-01")
+
+    def test_out_invoice_redated_keeps_a_due_date_it_was_given(self):
+        later = self._invoice_without_payment_term(
+            "2021-01-01", invoice_date_due="2021-03-01"
+        )
+        earlier = self._invoice_without_payment_term(
+            "2025-01-01", invoice_date_due="2024-12-03"
+        )
+        self.assertTrue(later.is_invoice_date_due_chosen)
+
+        later.invoice_date = fields.Date.from_string("2021-02-01")
+        earlier.invoice_date = fields.Date.from_string("2025-01-15")
+
+        self.assertDueOn(later, "2021-03-01")
+        self.assertDueOn(earlier, "2024-12-03")
+
+    def test_out_invoice_due_date_written_is_chosen(self):
+        invoice = self._invoice_without_payment_term("2021-01-01")
+
+        invoice.write({"invoice_date_due": "2021-02-15"})
+        invoice.invoice_date = fields.Date.from_string("2021-01-10")
+
+        self.assertTrue(invoice.is_invoice_date_due_chosen)
+        self.assertDueOn(invoice, "2021-02-15")
+
+    def test_out_invoice_form_redated_before_saving_follows(self):
+        partner = self.env["res.partner"].create({"name": "No payment term"})
+        with Form(
+            self.env["account.move"].with_context(default_move_type="out_invoice")
+        ) as move_form:
+            move_form.partner_id = partner
+            move_form.invoice_date = fields.Date.from_string("2021-01-01")
+            with move_form.invoice_line_ids.new() as line_form:
+                line_form.product_id = self.product_a
+            move_form.invoice_date = fields.Date.from_string("2021-01-20")
+        invoice = move_form.record
+
+        self.assertFalse(invoice.is_invoice_date_due_chosen)
+        self.assertDueOn(invoice, "2021-01-20")
+
+        with Form(invoice) as move_form:
+            move_form.invoice_date = fields.Date.from_string("2021-02-01")
+        self.assertDueOn(invoice, "2021-02-01")
+
+    def test_out_invoice_form_due_date_set_by_hand_stays(self):
+        partner = self.env["res.partner"].create({"name": "No payment term"})
+        with Form(
+            self.env["account.move"].with_context(default_move_type="out_invoice")
+        ) as move_form:
+            move_form.partner_id = partner
+            move_form.invoice_date = fields.Date.from_string("2021-01-01")
+            with move_form.invoice_line_ids.new() as line_form:
+                line_form.product_id = self.product_a
+            move_form.invoice_date_due = fields.Date.from_string("2021-03-01")
+            move_form.invoice_date = fields.Date.from_string("2021-01-20")
+        invoice = move_form.record
+
+        self.assertTrue(invoice.is_invoice_date_due_chosen)
+        self.assertDueOn(invoice, "2021-03-01")
+
+        with Form(invoice) as move_form:
+            move_form.invoice_date = fields.Date.from_string("2021-02-01")
+        self.assertDueOn(invoice, "2021-03-01")
+
     def test_out_invoice_note_and_tax_partner_is_set(self):
         invoice_vals_list = [
             {

@@ -714,6 +714,12 @@ class AccountMove(models.Model):
         copy=False,
         readonly=False,
     )
+    is_invoice_date_due_chosen = fields.Boolean(
+        string="Due Date Chosen",
+        copy=False,
+        help="The due date was set by hand. Without a payment term, a due date "
+        "not chosen follows the invoice date.",
+    )
     delivery_date = fields.Date(
         compute="_compute_delivery_date",
         inverse="_inverse_delivery_date",
@@ -1710,10 +1716,21 @@ class AccountMove(models.Model):
                         default=False,
                     )
                 )
-                or move.invoice_date_due
-                or move.invoice_date
+                or move._get_due_date_without_terms()
                 or today
             )
+
+    def _get_due_date_without_terms(self):
+        self.check_singleton()
+        if self.is_invoice_date_due_chosen:
+            return self.invoice_date_due or self.invoice_date
+        return self.invoice_date or self.invoice_date_due
+
+    @api.model
+    def _with_due_date_choice(self, vals):
+        if "invoice_date_due" not in vals or "is_invoice_date_due_chosen" in vals:
+            return vals
+        return {**vals, "is_invoice_date_due_chosen": bool(vals["invoice_date_due"])}
 
     def _compute_delivery_date(self):
         pass
@@ -2203,7 +2220,9 @@ class AccountMove(models.Model):
             frozendict(
                 {
                     "move_id": invoice.id,
-                    "date_maturity": fields.Date.to_date(invoice.invoice_date_due),
+                    "date_maturity": fields.Date.to_date(
+                        invoice._get_due_date_without_terms()
+                    ),
                     "discount_date": False,
                 }
             )
@@ -2221,6 +2240,7 @@ class AccountMove(models.Model):
         "currency_id",
         "amount_total_in_currency_signed",
         "invoice_date_due",
+        "is_invoice_date_due_chosen",
     )
     def _compute_payment_terms(self) -> None:
         for invoice in self.with_context(bin_size=False):
@@ -4658,7 +4678,10 @@ class AccountMove(models.Model):
         container = {"records": self}
         with self._check_balanced(container):
             with ExitStack() as exit_stack, self._sync_dynamic_lines(container):
-                vals_list = [self._normalize_vals(vals) for vals in vals_list]
+                vals_list = [
+                    self._with_due_date_choice(self._normalize_vals(vals))
+                    for vals in vals_list
+                ]
                 stolen_moves = self.browse(
                     {move for vals in vals_list for move in self._stolen_move(vals)}
                 )
@@ -4843,7 +4866,7 @@ class AccountMove(models.Model):
         _debug.lifecycle("write", records=self, fields=sorted(vals))
         if not vals:
             return True
-        vals = self._normalize_vals(vals)
+        vals = self._with_due_date_choice(self._normalize_vals(vals))
 
         self._check_write_allowed(vals)
 
@@ -5081,7 +5104,18 @@ class AccountMove(models.Model):
                     )
         if "tax_totals" in field_names:
             self = self.with_context(tax_totals_edited=True)
-        return super().onchange(values, field_names, fields_spec)
+        chosen = None
+        if (
+            "invoice_date_due" in field_names
+            and "is_invoice_date_due_chosen" in fields_spec
+        ):
+            chosen = bool(values.get("invoice_date_due"))
+            values = {**values, "is_invoice_date_due_chosen": chosen}
+            field_names = [*field_names, "is_invoice_date_due_chosen"]
+        result = super().onchange(values, field_names, fields_spec)
+        if chosen is not None:
+            result.setdefault("value", {})["is_invoice_date_due_chosen"] = chosen
+        return result
 
     @_debug.perf.timed
     def _collect_tax_cash_basis_values(self):
