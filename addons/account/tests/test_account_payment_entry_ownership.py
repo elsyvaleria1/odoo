@@ -649,3 +649,87 @@ class TestAdvanceApplication(AccountTestInvoicingCommon):
             ),
             sorted([(self.payable.id, 100.0), (self.third_party.id, -100.0)]),
         )
+
+
+@tagged("post_install", "-at_install")
+class TestPaymentEntryReview(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.receivable = cls.company_data["default_account_receivable"]
+        cls.other_receivable = cls.copy_account(cls.receivable, {"name": "AR NF"})
+
+    def _payment(self, **vals):
+        payment = self.env["account.payment"].create(
+            {
+                "amount": 100.0,
+                "date": "2026-08-01",
+                "partner_id": self.partner_a.id,
+                "partner_type": "customer",
+                "payment_type": "inbound",
+                "journal_id": self.company_data["default_journal_bank"].id,
+                **vals,
+            }
+        )
+        payment.action_post()
+        return payment
+
+    def test_a_payment_awaiting_review_leaves_its_entry_open_until_aligned(self):
+        payment = self._payment()
+        counterpart = payment._seek_for_lines()[1]
+        payment.counterpart_review_required = True
+
+        counterpart.account_id = self.other_receivable
+        payment.action_draft()
+        with self.assertRaisesRegex(UserError, "awaits review"):
+            payment.date = "2026-08-02"
+        payment.action_post()
+        payment.action_align_counterpart_to_entry()
+
+        self.assertFalse(payment.counterpart_review_required)
+        self.assertEqual(payment.destination_account_id, self.other_receivable)
+        self.assertEqual(payment.counterpart_account_source, "explicit")
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            counterpart.account_id = self.receivable
+
+    def test_a_payment_that_moved_no_money_becomes_its_entry(self):
+        advances = self.env["account.account"].create(
+            {
+                "name": "Supplier advances",
+                "code": "ADV002",
+                "account_type": "asset_prepayments",
+                "reconcile": True,
+            }
+        )
+        payment = self._payment()
+        move = payment.move_id
+        liquidity = payment._seek_for_lines()[0]
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE account_move_line SET account_id = %s WHERE id = %s",
+            [advances.id, liquidity.id],
+        )
+        self.env.invalidate_all()
+        payment.message_post(body="history worth keeping")
+        lines_before = move.line_ids.mapped(
+            lambda line: (line.account_id, line.balance)
+        )
+
+        with self.assertRaisesRegex(UserError, "moves no money"):
+            self._payment().action_convert_to_entry()
+        payment.action_convert_to_entry()
+
+        self.assertFalse(payment.exists())
+        self.assertFalse(move.payment_ids)
+        self.assertEqual(
+            move.line_ids.mapped(lambda line: (line.account_id, line.balance)),
+            lines_before,
+        )
+        self.assertFalse(any(move.line_ids.mapped("payment_role")))
+        self.assertTrue(
+            any(
+                "history worth keeping" in body
+                for body in move.message_ids.mapped("body")
+            )
+        )
+        liquidity.account_id = self.receivable

@@ -305,6 +305,14 @@ class AccountPayment(models.Model):
         copy=False,
         readonly=False,
     )
+    counterpart_review_required = fields.Boolean(
+        copy=False,
+        readonly=True,
+        help="The counterpart account of the payment and its journal entry's "
+        "disagreed when account 1.42 was installed. Until someone reviews it and "
+        "aligns the payment to its entry, the entry stays editable and unchecked "
+        "and the payment cannot rebuild it.",
+    )
     is_counterpart_account_ambiguous = fields.Boolean(
         compute="_compute_is_counterpart_account_ambiguous",
     )
@@ -1181,6 +1189,83 @@ class AccountPayment(models.Model):
             "posted one."
         )
 
+    def action_align_counterpart_to_entry(self) -> None:
+        for pay in self.filtered("counterpart_review_required"):
+            counterpart = pay._seek_for_lines()[1]
+            if len(counterpart.account_id) != 1:
+                raise UserError(
+                    self.env._(
+                        "%(payment)s has no single counterpart line to align to.",
+                        payment=pay.display_name,
+                    )
+                )
+            old_account = pay.destination_account_id
+            pay.write(
+                {
+                    "destination_account_id": counterpart.account_id.id,
+                    "counterpart_account_source": "settled"
+                    if counterpart.matched_debit_ids or counterpart.matched_credit_ids
+                    else "explicit",
+                    "counterpart_review_required": False,
+                }
+            )
+            _debug.lifecycle(
+                "counterpart_aligned_to_entry",
+                payment=pay,
+                old=old_account,
+                new=counterpart.account_id,
+            )
+            pay.message_post(
+                body=self.env._(
+                    "Counterpart account aligned to the journal entry after review: "
+                    "%(old)s → %(new)s.",
+                    old=old_account.display_name or self.env._("none"),
+                    new=counterpart.account_id.display_name,
+                )
+            )
+
+    def _is_money_moving(self) -> bool:
+        self.check_singleton()
+        return any(
+            line.account_id.account_type in self._get_liquidity_account_types()
+            for line in self.move_id.line_ids
+        )
+
+    def action_convert_to_entry(self):
+        if moving := self.filtered(
+            lambda pay: not pay.move_id or pay._is_money_moving()
+        ):
+            raise UserError(
+                self.env._(
+                    "Only a payment whose journal entry moves no money can become a "
+                    "plain journal entry: %(payments)s.",
+                    payments=", ".join(moving.mapped("display_name")),
+                )
+            )
+        moves = self.move_id
+        self._convert_to_entry()
+        return moves._get_records_action(name=self.env._("Journal Entries"))
+
+    def _convert_to_entry(self) -> None:
+        if not self:
+            return
+        notes = {
+            pay.move_id: self.env._(
+                "Converted from the payment %(payment)s: it moved no money, so it "
+                "is a journal entry settling documents from an advance or another "
+                "account. The payment's history is kept here.",
+                payment=pay.display_name,
+            )
+            for pay in self
+        }
+        pairs = [(pay.id, pay.move_id.id) for pay in self]
+        _debug.lifecycle("payments_converted_to_entries", payments=self)
+        self.env.flush_all()
+        self.env["account.move"]._move_payment_records_to_entries(pairs)
+        self.env.invalidate_all()
+        for move, note in notes.items():
+            move.message_post(body=note)
+
     def action_open_correct_accounts(self):
         self.check_singleton()
         return {
@@ -1737,6 +1822,15 @@ class AccountPayment(models.Model):
             if pay.move_id.state == "posted":
                 _debug.logic("_sync_to_moves_move_posted_not_synced", payment=pay)
                 continue
+            if pay.counterpart_review_required:
+                raise UserError(
+                    self.env._(
+                        "The counterpart account of %(payment)s differs from its "
+                        "journal entry's and awaits review: align the payment to "
+                        "its entry before editing it.",
+                        payment=pay.display_name,
+                    )
+                )
             lines_by_role = pay.move_id.line_ids.grouped("payment_role")
             empty = self.env["account.move.line"]
             liquidity_lines = lines_by_role.get("liquidity", empty)
@@ -2014,7 +2108,12 @@ class AccountMove(models.Model):
 
     def _get_entry_owner(self):
         self.check_singleton()
-        return self.payment_ids[:1] or super()._get_entry_owner()
+        return (
+            self.payment_ids.filtered(
+                lambda payment: not payment.counterpart_review_required
+            )[:1]
+            or super()._get_entry_owner()
+        )
 
     def _check_owned_move_write(self, vals) -> None:
         for move in self:
@@ -2042,8 +2141,126 @@ class AccountMove(models.Model):
                 )
             )
 
+    @api.model
+    def _move_payment_records_to_entries(self, pairs) -> None:
+        if not pairs:
+            return
+        cr = self.env.cr
+        mapping = SQL(
+            "(VALUES %s) AS pm(payment_id, move_id)",
+            SQL(", ").join(
+                SQL("(%s, %s)", payment_id, move_id) for payment_id, move_id in pairs
+            ),
+        )
+        payment_model_id = self.env["ir.model"]._get_id("account.payment")
+        move_model_id = self.env["ir.model"]._get_id("account.move")
+        cr.execute(
+            SQL(
+                """
+                DELETE FROM mail_followers fol
+                 USING %(mapping)s
+                 WHERE fol.res_model = 'account.payment'
+                   AND fol.res_id = pm.payment_id
+                   AND EXISTS (
+                        SELECT 1 FROM mail_followers other
+                         WHERE other.res_model = 'account.move'
+                           AND other.res_id = pm.move_id
+                           AND other.partner_id = fol.partner_id
+                   )
+                """,
+                mapping=mapping,
+            )
+        )
+        for ir_field in self.env["ir.model.fields"].search(
+            [("ttype", "=", "many2one_reference"), ("store", "=", True)]
+        ):
+            if ir_field.model not in self.env:
+                continue
+            model = self.env[ir_field.model]
+            field = model._fields.get(ir_field.name)
+            if model._abstract or not model._auto or not field or not field.store:
+                continue
+            model_field = model._fields.get(field.model_field)
+            if not model_field or not model_field.store:
+                continue
+            assignments = [SQL("%s = pm.move_id", SQL.identifier(field.name))]
+            if model_field.type == "many2one":
+                match = SQL(
+                    "rec.%s = %s", SQL.identifier(model_field.name), payment_model_id
+                )
+                assignments.append(
+                    SQL("%s = %s", SQL.identifier(model_field.name), move_model_id)
+                )
+            else:
+                match = SQL(
+                    "rec.%s = 'account.payment'", SQL.identifier(model_field.name)
+                )
+                assignments.append(
+                    SQL("%s = 'account.move'", SQL.identifier(model_field.name))
+                )
+                if (
+                    "res_model_id" in model._fields
+                    and model._fields["res_model_id"].store
+                ):
+                    assignments.append(SQL("res_model_id = %s", move_model_id))
+            cr.execute(
+                SQL(
+                    """
+                    UPDATE %(table)s rec
+                       SET %(assignments)s
+                      FROM %(mapping)s
+                     WHERE %(match)s AND rec.%(column)s = pm.payment_id
+                    """,
+                    table=SQL.identifier(model._table),
+                    assignments=SQL(", ").join(assignments),
+                    mapping=mapping,
+                    match=match,
+                    column=SQL.identifier(field.name),
+                )
+            )
+        for ir_field in self.env["ir.model.fields"].search(
+            [("ttype", "=", "reference"), ("store", "=", True)]
+        ):
+            if ir_field.model not in self.env:
+                continue
+            model = self.env[ir_field.model]
+            if model._abstract or not model._auto or ir_field.name not in model._fields:
+                continue
+            cr.execute(
+                SQL(
+                    """
+                    UPDATE %(table)s rec
+                       SET %(column)s = 'account.move,' || pm.move_id
+                      FROM %(mapping)s
+                     WHERE rec.%(column)s = 'account.payment,' || pm.payment_id
+                    """,
+                    table=SQL.identifier(model._table),
+                    column=SQL.identifier(ir_field.name),
+                    mapping=mapping,
+                )
+            )
+        cr.execute(
+            SQL(
+                """
+                UPDATE account_move_line line
+                   SET payment_role = NULL
+                  FROM %(mapping)s
+                 WHERE line.move_id = pm.move_id
+                """,
+                mapping=mapping,
+            )
+        )
+        cr.execute(
+            SQL(
+                "DELETE FROM account_payment WHERE id = ANY(%s)",
+                [payment_id for payment_id, _move_id in pairs],
+            )
+        )
+
     def _post(self, soft=True):
         self.payment_ids.filtered(
-            lambda payment: payment.move_id in self
+            lambda payment: (
+                payment.move_id in self and not payment.counterpart_review_required
+            )
         )._check_entry_matches_payment()
         return super()._post(soft)

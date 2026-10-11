@@ -168,6 +168,10 @@
                         name="reconciled"
                         string="Reconciled"
                         domain="[('is_invoice_reconciled', '=', True)]" />
+                    <filter
+                        name="counterpart_review"
+                        string="Counterpart to Review"
+                        domain="[('counterpart_review_required', '=', True)]" />
                     <separator />
                     <filter name="date" string="Payment Date" date="date" />
                     <separator />
@@ -298,6 +302,18 @@
                             widget="statusbar"
                             statusbar_visible="draft,in_process,paid" />
                     </header>
+                    <div
+                        class="alert alert-warning mb-2"
+                        role="alert"
+                        invisible="not counterpart_review_required">
+                        <field name="counterpart_review_required" invisible="1" />
+                        <span>
+                            The counterpart account of this payment differs from its
+                            journal entry's. Check which one is right, then align the
+                            payment to its entry (Actions, Align Counterpart to Entry)
+                            or correct the entry first.
+                        </span>
+                    </div>
                     <div
                         class="alert alert-warning mb-2"
                         role="alert"
@@ -600,6 +616,28 @@
                 eval="[Command.link(ref('account.group_account_invoice'))]" />
             <field name="state">code</field>
             <field name="code">records.action_post()</field>
+        </record>
+        <record id="action_account_payment_align_counterpart" model="ir.actions.server">
+            <field name="name">Align Counterpart to Entry</field>
+            <field name="model_id" ref="account.model_account_payment" />
+            <field name="binding_model_id" ref="account.model_account_payment" />
+            <field name="binding_view_types">list,form</field>
+            <field
+                name="group_ids"
+                eval="[Command.link(ref('account.group_account_manager'))]" />
+            <field name="state">code</field>
+            <field name="code">records.action_align_counterpart_to_entry()</field>
+        </record>
+        <record id="action_account_payment_convert_to_entry" model="ir.actions.server">
+            <field name="name">Convert to Journal Entry</field>
+            <field name="model_id" ref="account.model_account_payment" />
+            <field name="binding_model_id" ref="account.model_account_payment" />
+            <field name="binding_view_types">list,form</field>
+            <field
+                name="group_ids"
+                eval="[Command.link(ref('account.group_account_manager'))]" />
+            <field name="state">code</field>
+            <field name="code">action = records.action_convert_to_entry()</field>
         </record>
     </data>
 
