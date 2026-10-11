@@ -41,7 +41,8 @@
                             </td>
                             <td t-if="!line.is_exchange">
                                 <i class="o_field_widget text-start o_payment_label">
-                                    <t t-if="line.is_refund">Reversed on </t>
+                                    <t t-if="line.is_pending">Matched, pending posting, on </t>
+                                    <t t-elif="line.is_refund">Reversed on </t>
                                     <t t-else="">Paid on </t>
                                     <t t-out="line.formattedDate"></t>
                                 </i>
@@ -109,7 +110,7 @@
                         </tr>
                     </table>
                 </div>
-                <button class="btn btn-sm btn-primary js_unreconcile_payment float-start" t-if="!this.props.is_exchange" style="margin-top:5px; margin-bottom:5px;" groups="account.group_account_invoice" t-on-click="() => this.props._onRemoveMoveReconcile(this.props.move_id, this.props.partial_id)">Unreconcile</button>
+                <button class="btn btn-sm btn-primary js_unreconcile_payment float-start" t-if="!this.props.is_exchange" style="margin-top:5px; margin-bottom:5px;" groups="account.group_account_invoice" t-on-click="() => this.props._onRemoveMoveReconcile(this.props.move_id, this.props.partial_id, this.props.pending_match_id)">Unreconcile</button>
                 <button class="btn btn-sm btn-secondary js_open_payment float-end" style="margin-top:5px; margin-bottom:5px;" t-on-click="() => this.props._onOpenMove(this.props.move_id)">View</button>
             </div>
         </div>

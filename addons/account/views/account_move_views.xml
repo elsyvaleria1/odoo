@@ -156,6 +156,10 @@
                 <separator />
                 <filter name="draft" string="Draft" domain="[('state','=','draft')]" />
                 <filter
+                    name="pending_match"
+                    string="Paid, Pending Posting"
+                    domain="[('state', '=', 'draft'), ('pending_match_ids', '!=', False)]" />
+                <filter
                     name="posted"
                     string="Posted"
                     domain="[('state', '=', 'posted')]" />
@@ -889,6 +893,14 @@
                             duplicate</span>
                     </button>
                 </div>
+                <div
+                    groups="account.group_account_invoice,account.group_account_readonly"
+                    class="alert alert-info"
+                    role="alert"
+                    name="pending_match_alert"
+                    invisible="state != 'draft' or not pending_payment_amount">
+                    A payment of <field name="pending_payment_amount" class="oe_inline fw-bold" /> is matched to this entry, pending its
+                    posting: posting it completes the reconciliation. </div>
                 <div
                     groups="account.group_account_invoice,account.group_account_readonly"
                     class="alert alert-info"

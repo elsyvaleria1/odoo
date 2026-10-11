@@ -1038,6 +1038,41 @@ class TestPointOfSaleFlow(CommonPosTest):
         picking_ids = order.session_id.picking_ids
         self.assertEqual(sum(picking_ids.move_line_ids.mapped("quantity")), 1)
 
+    def test_invoicing_against_a_scheduled_payment_entry_pends_the_match(self):
+        order, _ = self.create_backend_pos_order(
+            {
+                "line_data": [
+                    {
+                        "product_id": self.twenty_dollars_with_15_incl.product_variant_id.id
+                    },
+                ],
+                "payment_data": [
+                    {"payment_method_id": self.bank_payment_method.id, "amount": 20.0},
+                ],
+            }
+        )
+        self.pos_config_usd.current_session_id.action_pos_session_closing_control()
+        with freeze_time("2020-01-03"):
+            order.partner_id = self.partner_stva.id
+            order.action_pos_order_invoice()
+
+        invoice = order.account_move
+        payment_move = order.payment_ids.account_move_id
+        self.assertEqual(payment_move.state, "draft")
+        self.assertEqual(payment_move.auto_post, "at_date")
+        matches = payment_move.pending_match_ids
+        self.assertEqual(set(matches.mapped("origin")), {"point_of_sale"})
+        self.assertRecordValues(
+            matches.filtered(lambda match: match.posted_move_id == invoice),
+            [{"amount": 20.0}],
+        )
+        self.assertEqual(invoice.payment_state, "not_paid")
+
+        payment_move.action_post()
+
+        self.assertFalse(payment_move.pending_match_ids)
+        self.assertIn(invoice.payment_state, ("paid", "in_payment"))
+
     def test_order_pos_tax_same_as_company(self):
         self.pos_config_usd.open_ui()
         current_session = self.pos_config_usd.current_session_id

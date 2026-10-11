@@ -174,7 +174,8 @@ class AccountBankStatementLine(models.Model):
                       JOIN res_company company ON company.id = aml.company_id
                      WHERE aml.account_id = ANY(%(payable_ids)s)
                        AND aml.balance = ANY(%(amounts)s::numeric[])
-                       AND aml.parent_state = 'posted'
+                       AND aml.parent_state = %(parent_state)s
+                       AND COALESCE(aml.pending_match_amount, 0) = 0
                        AND aml.currency_id = company.currency_id
                        AND move.statement_line_id IS NULL
                 ),
@@ -234,6 +235,7 @@ class AccountBankStatementLine(models.Model):
                 payable_ids=payable_ids,
                 rare_days=AMOUNT_ALONE_RARE_DAYS,
                 near_days=AMOUNT_ALONE_NEAR_DAYS,
+                parent_state=self._get_matching_parent_state(),
             )
         )
         _debug.perf.count("amount_alone_rows_fetched", rows=self.env.cr.rowcount)
@@ -511,7 +513,8 @@ class AccountBankStatementLine(models.Model):
                     AND aml.account_id = ANY(%(account_ids)s)
                     AND %(aml_and_st_line_related)s
                     AND ((st_line.amount > 0 AND aml.balance > 0) OR (st_line.amount < 0 AND aml.balance < 0))
-                    AND aml.parent_state = 'posted'
+                    AND aml.parent_state = %(parent_state)s
+                    AND COALESCE(aml.pending_match_amount, 0) = 0
                     AND st_line.id = ANY(%(st_line_ids)s)
                     AND (
                         length(word) > 5 AND strpos(lower(st_line.payment_ref), lower(word)) > 0
@@ -529,6 +532,7 @@ class AccountBankStatementLine(models.Model):
                 "aml_company", "st_line_company"
             ),
             extra_condition=extra_condition,
+            parent_state=self._get_matching_parent_state(),
         )
         _debug.pipeline(
             "reference_match_query_built",

@@ -6,7 +6,6 @@ from psycopg.errors import CheckViolation
 
 from odoo import Command, fields
 from odoo.exceptions import UserError, ValidationError
-from odoo.libs.json import dumps as json_dumps
 from odoo.tests import Form, tagged, users
 from odoo.tools import SQL
 
@@ -4925,18 +4924,14 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
         inv_rec_line = inv.line_ids.filtered(
             lambda x: x.account_id.account_type == "asset_receivable"
         )
-        self.assertTrue(inv_rec_line.full_reconcile_id)
+        self.assertFalse(inv_rec_line.full_reconcile_id)
+        self.assertEqual(inv.pending_match_ids.posted_move_id, payment.move_id)
         tax_cash_basis_moves = self._get_caba_moves(inv)
         self.assertEqual(len(tax_cash_basis_moves), 0)
 
         inv.invoice_line_ids[0].tax_ids = [Command.set(caba_tax.ids)]
         inv.action_post()
 
-        self.assertFalse(inv_rec_line.full_reconcile_id)
-        receivable_lines = (inv + payment.move_id).line_ids.filtered(
-            lambda line: line.account_id.account_type == "asset_receivable"
-        )
-        receivable_lines.reconcile()
         self.assertTrue(inv_rec_line.full_reconcile_id)
         tax_cash_basis_moves = self._get_caba_moves(inv)
         self.assertEqual(len(tax_cash_basis_moves), 1)
@@ -5025,7 +5020,8 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
         receivable_lines = (origin_posted + origin_draft + payment).line_ids.filtered(
             lambda line: line.account_id == self.extra_receivable_account_1
         )
-        receivable_lines.reconcile()
+        receivable_lines._reconcile_or_pend("manual")
+        origin_draft.action_post()
 
         for origin in origin_posted + origin_draft:
             origin_tax_line = origin.line_ids.filtered(
@@ -5118,86 +5114,31 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
         ).line_ids.filtered(
             lambda line: line.account_id == self.extra_receivable_account_1
         )
-        receivable_lines_1.reconcile()
-        tax_cash_basis_moves = self._get_caba_moves(receivable_lines_1.move_id)
+        receivable_lines_1._reconcile_or_pend("manual")
 
+        self.assertFalse(self._get_caba_moves(receivable_lines_1.move_id))
+        self.assertRecordValues(
+            cash_basis_move.pending_match_ids,
+            [{"posted_move_id": payment_move_1.id, "amount": 33.34}],
+        )
+
+        cash_basis_move.action_post()
+        tax_cash_basis_moves = self._get_caba_moves(cash_basis_move)
+        self.assertEqual(tax_cash_basis_moves.mapped("state"), ["posted"])
+
+        payment_move_2.action_post()
+        receivable_lines_1.filtered(lambda line: not line.reconciled).reconcile()
+        tax_cash_basis_moves = self._get_caba_moves(cash_basis_move)
+        self.assertEqual(tax_cash_basis_moves.mapped("state"), ["posted", "posted"])
         self.assertFullReconcile(
             receivable_lines_1.full_reconcile_id, receivable_lines_1
         )
-        self.assertEqual(len(tax_cash_basis_moves), 2)
-        self.assertEqual(
-            len(tax_cash_basis_moves.filtered(lambda m: m.state == "posted")), 0
-        )
-        self.assertRecordValues(
-            tax_cash_basis_moves[0].line_ids,
-            [
-                {
-                    "debit": 8.33,
-                    "credit": 0.0,
-                    "account_id": self.cash_basis_base_account.id,
-                },
-                {
-                    "debit": 0.0,
-                    "credit": 8.33,
-                    "account_id": self.cash_basis_base_account.id,
-                },
-                {
-                    "debit": 2.78,
-                    "credit": 0.0,
-                    "account_id": self.cash_basis_transfer_account.id,
-                },
-                {"debit": 0.0, "credit": 2.78, "account_id": self.tax_account_1.id},
-                {
-                    "debit": 0.0,
-                    "credit": 0.0,
-                    "account_id": self.cash_basis_transfer_account.id,
-                },
-                {"debit": 0.0, "credit": 0.0, "account_id": self.tax_account_2.id},
-            ],
-        )
-        self.assertRecordValues(
-            tax_cash_basis_moves[1].line_ids,
-            [
-                {
-                    "debit": 25.0,
-                    "credit": 0.0,
-                    "account_id": self.cash_basis_base_account.id,
-                },
-                {
-                    "debit": 0.0,
-                    "credit": 25.0,
-                    "account_id": self.cash_basis_base_account.id,
-                },
-                {
-                    "debit": 8.33,
-                    "credit": 0.0,
-                    "account_id": self.cash_basis_transfer_account.id,
-                },
-                {"debit": 0.0, "credit": 8.33, "account_id": self.tax_account_1.id},
-                {
-                    "debit": 0.0,
-                    "credit": 0.0,
-                    "account_id": self.cash_basis_transfer_account.id,
-                },
-                {"debit": 0.0, "credit": 0.0, "account_id": self.tax_account_2.id},
-            ],
-        )
-
         self.assertAmountsGroupByAccount(
             [
                 (self.cash_basis_transfer_account, -22.23, -22.23),
                 (self.tax_account_1, -11.11, -11.11),
                 (self.tax_account_2, 0.0, 0.0),
             ]
-        )
-
-        cash_basis_move.action_post()
-        self.assertEqual(
-            len(tax_cash_basis_moves.filtered(lambda m: m.state == "posted")), 1
-        )
-        payment_move_2.action_post()
-        self.assertEqual(
-            len(tax_cash_basis_moves.filtered(lambda m: m.state == "posted")), 2
         )
 
     def test_reconcile_draft_exchange_diff_use_case(self):
@@ -5214,91 +5155,28 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
         )
         (invoice.move_id + payment_2.move_id).action_draft()
         amls = invoice + payment_1 + payment_2
-        amls.reconcile()
-        partials = self._get_partials(amls)
-        self.assertEqual(len(partials), 4)
+
+        amls._reconcile_or_pend("manual")
+
+        self.assertFalse(self._get_partials(amls))
         self.assertRecordValues(
-            partials,
-            [
-                {
-                    "amount": 20.0,
-                    "debit_amount_currency": 20.0,
-                    "credit_amount_currency": 60.0,
-                    "debit_move_id": invoice.id,
-                    "credit_move_id": payment_1.id,
-                },
-                {
-                    "amount": 20.0,
-                    "debit_amount_currency": 20.0,
-                    "credit_amount_currency": 60.0,
-                    "debit_move_id": invoice.id,
-                    "credit_move_id": payment_2.id,
-                },
-                {
-                    "amount": 10.0,
-                    "debit_amount_currency": 0.0,
-                    "credit_amount_currency": 0.0,
-                    "debit_move_id": partials[0].exchange_move_id.line_ids[0].id,
-                    "credit_move_id": payment_1.id,
-                },
-                {
-                    "amount": 10.0,
-                    "debit_amount_currency": 0.0,
-                    "credit_amount_currency": 0.0,
-                    "debit_move_id": partials[1].exchange_move_id.line_ids[0].id,
-                    "credit_move_id": payment_2.id,
-                },
-            ],
+            invoice.move_id.pending_match_ids,
+            [{"posted_line_id": payment_1.id, "amount": 30.0}],
         )
-        self.assertRecordValues(
-            partials[0].exchange_move_id,
-            [{"date": fields.Date.from_string("2017-01-31"), "state": "draft"}],
-        )
-        self.assertRecordValues(
-            partials[0].exchange_move_id.line_ids,
-            [
-                {
-                    "debit": 10.0,
-                    "credit": 0.0,
-                    "amount_currency": 0.0,
-                    "currency_id": foreign_curr.id,
-                    "account_id": payment_1.account_id.id,
-                },
-                {
-                    "debit": 0.0,
-                    "credit": 10.0,
-                    "amount_currency": 0.0,
-                    "currency_id": foreign_curr.id,
-                    "account_id": self.exch_income_account.id,
-                },
-            ],
-        )
-        self.assertRecordValues(
-            amls,
-            [
-                {
-                    "amount_residual": 0.0,
-                    "amount_residual_currency": 0.0,
-                    "reconciled": True,
-                },
-                {
-                    "amount_residual": 0.0,
-                    "amount_residual_currency": 0.0,
-                    "reconciled": True,
-                },
-                {
-                    "amount_residual": 0.0,
-                    "amount_residual_currency": 0.0,
-                    "reconciled": True,
-                },
-            ],
-        )
-        exchange_moves = partials.exchange_move_id
-        self.assertEqual(exchange_moves.mapped("state"), ["draft", "draft"])
+
         invoice.move_id.action_post()
-        self.assertEqual(exchange_moves.mapped("state"), ["posted", "draft"])
+        partials = self._get_partials(amls)
+        self.assertTrue(partials)
+        self.assertEqual(partials.exchange_move_id.mapped("state"), ["posted"])
+        self.assertFalse(payment_1.amount_residual)
+
         payment_2.move_id.action_post()
-        self.assertEqual(exchange_moves.mapped("state"), ["posted", "posted"])
+        amls.filtered(lambda line: not line.reconciled).reconcile()
+        partials = self._get_partials(amls)
+        self.assertEqual(
+            partials.exchange_move_id.mapped("state"), ["posted", "posted"]
+        )
+        self.assertEqual(amls.mapped("reconciled"), [True, True, True])
 
     def test_reconcile_cash_basis_workflow_multi_currency(self):
         self.env.company.account_config_id.tax_exigibility = True
@@ -7418,49 +7296,6 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
             partial.company_id = other_company
         partial.unlink()
 
-    def test_draft_caba_move_vals_round_trips_as_a_json_object(self):
-        cash_basis_move, payment_move = self._prepare_cash_basis_move_and_payment()
-        (cash_basis_move + payment_move).action_post()
-        receivable_lines = (cash_basis_move + payment_move).line_ids.filtered(
-            lambda line: line.account_id == self.extra_receivable_account_1
-        )
-        receivable_lines.reconcile()
-        partial = (
-            receivable_lines.matched_debit_ids | receivable_lines.matched_credit_ids
-        )[0]
-        self.env.flush_all()
-
-        self.env.cr.execute(
-            "SELECT jsonb_typeof(draft_caba_move_vals) "
-            "FROM account_partial_reconcile WHERE id = %s",
-            (partial.id,),
-        )
-        self.assertEqual(self.env.cr.fetchone()[0], "object")
-        self.assertIsInstance(partial.draft_caba_move_vals, dict)
-        self.assertFalse(partial._has_outdated_draft_caba_move_vals())
-
-    def test_draft_caba_move_vals_reads_legacy_serialized_rows(self):
-        cash_basis_move, payment_move = self._prepare_cash_basis_move_and_payment()
-        (cash_basis_move + payment_move).action_post()
-        receivable_lines = (cash_basis_move + payment_move).line_ids.filtered(
-            lambda line: line.account_id == self.extra_receivable_account_1
-        )
-        receivable_lines.reconcile()
-        partial = (
-            receivable_lines.matched_debit_ids | receivable_lines.matched_credit_ids
-        )[0]
-        self.env.flush_all()
-        partial.draft_caba_move_vals = json_dumps(partial.draft_caba_move_vals)
-        self.env.flush_all()
-        partial.invalidate_recordset(["draft_caba_move_vals"])
-        self.env.cr.execute(
-            "SELECT jsonb_typeof(draft_caba_move_vals) "
-            "FROM account_partial_reconcile WHERE id = %s",
-            (partial.id,),
-        )
-        self.assertEqual(self.env.cr.fetchone()[0], "string")
-        self.assertFalse(partial._has_outdated_draft_caba_move_vals())
-
     def test_get_to_update_payments_reads_the_payment_side_amount(self):
         company_currency = self.env.company.currency_id
         invoice = self.env["account.move"].create(
@@ -8105,17 +7940,21 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
             ._create_payments()
         )
 
-        init_reconciliation = (payment.move_id + bill).line_ids._reconciled_by_number()
-        self.assertEqual(len(init_reconciliation), 2)
-
-        bill.action_draft()
         self.assertEqual(
-            (payment.move_id + bill).line_ids._reconciled_by_number(),
-            init_reconciliation,
+            len((payment.move_id + bill).line_ids._reconciled_by_number()), 2
         )
 
-        bill.line_ids.remove_move_reconcile()
+        bill.action_draft()
         self.assertFalse((payment.move_id + bill).line_ids._reconciled_by_number())
+        self.assertRecordValues(
+            bill.pending_match_ids,
+            [{"posted_move_id": payment.move_id.id, "origin": "reset_to_draft"}],
+        )
+
+        bill.action_post()
+        self.assertEqual(
+            len((payment.move_id + bill).line_ids._reconciled_by_number()), 2
+        )
 
     def test_caba_foreign_vat(self):
         self.env.company.account_config_id.tax_exigibility = True

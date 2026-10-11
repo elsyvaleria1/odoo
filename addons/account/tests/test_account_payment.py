@@ -1343,9 +1343,9 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
 
         for post, payment_state, expected in [
             (False, "not_paid", "draft"),
-            (False, "partial", "partial"),
-            (False, "in_payment", "in_payment"),
-            (False, "paid", "paid"),
+            (False, "partial", "draft"),
+            (False, "in_payment", "draft"),
+            (False, "paid", "draft"),
             (True, "partial", "partial"),
             (True, "in_payment", "in_payment"),
             (True, "paid", "paid"),

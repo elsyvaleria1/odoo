@@ -42,10 +42,6 @@ class AccountPartialReconcile(models.Model):
         index="btree_not_null",
     )
 
-    draft_caba_move_vals = fields.Json(
-        string="Values that created the draft cash-basis entry"
-    )
-
     company_currency_id = fields.Many2one(
         comodel_name="res.currency",
         related="company_id.currency_id",
@@ -244,9 +240,7 @@ class AccountPartialReconcile(models.Model):
             to_update_payments = self._get_to_update_payments(from_state="paid")
             automatic_moves = self._get_unreconcile_moves()
             moves_to_delete = automatic_moves.filtered(
-                lambda move: (
-                    move.state == "draft" or move._can_delete_on_unreconcile(self)
-                )
+                lambda move: move._can_delete_on_unreconcile(self)
             )
             moves_to_reverse = automatic_moves - moves_to_delete
             full_to_unlink = self.full_reconcile_id

@@ -1991,94 +1991,29 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     "amount_currency": -120.0,
                     "currency_id": self.other_currency.id,
                     "balance": -60.0,
-                    "reconciled": True,
-                },
-            ],
-        )
-
-        partials = st_line_1.line_ids.matched_debit_ids
-        exchange_move = partials.exchange_move_id
-        _liquidity_line, _suspense_line, other_line = st_line_1._seek_for_lines()
-        self.assertRecordValues(
-            partials.sorted(),
-            [
-                {
-                    "amount": 40.0,
-                    "debit_amount_currency": 120.0,
-                    "credit_amount_currency": 120.0,
-                    "debit_move_id": inv_line.id,
-                    "credit_move_id": other_line.id,
-                    "exchange_move_id": exchange_move.id,
-                },
-                {
-                    "amount": 20.0,
-                    "debit_amount_currency": 0.0,
-                    "credit_amount_currency": 0.0,
-                    "debit_move_id": exchange_move.line_ids.sorted()[0].id,
-                    "credit_move_id": other_line.id,
-                    "exchange_move_id": False,
-                },
-            ],
-        )
-
-        self.assertEqual(exchange_move.state, "draft")
-        self.assertRecordValues(
-            exchange_move.line_ids.sorted(),
-            [
-                {
-                    "account_id": inv_line.account_id.id,
-                    "amount_currency": 0.0,
-                    "currency_id": self.other_currency.id,
-                    "balance": 20.0,
-                    "reconciled": True,
-                },
-                {
-                    "account_id": self.env.company.account_config_id.income_currency_exchange_account_id.id,
-                    "amount_currency": 0.0,
-                    "currency_id": self.other_currency.id,
-                    "balance": -20.0,
                     "reconciled": False,
                 },
             ],
         )
-        self.assertEqual(inv_line.move_id.payment_state, "partial")
-        self.assertAlmostEqual(inv_line.amount_residual, 40.0)
+        self.assertTrue(st_line_1.is_reconciled)
+        self.assertFalse(st_line_1.line_ids.matched_debit_ids)
+        self.assertRecordValues(
+            inv_line.move_id.pending_match_ids,
+            [{"amount": 60.0, "amount_currency": 120.0}],
+        )
+        self.assertEqual(inv_line.move_id.payment_state, "not_paid")
 
         inv_line.move_id.line_ids.filtered(
             lambda x: x.display_type == "product"
         ).price_unit = 290
         inv_line.move_id.action_post()
-        self.assertEqual(inv_line.move_id.payment_state, "not_paid")
+
         partials = st_line_1.line_ids.matched_debit_ids
         exchange_move = partials.exchange_move_id
-        self.assertEqual(exchange_move, self.env["account.move"])
-
-        inv_line.move_id.action_draft()
-        inv_line.move_id.line_ids.filtered(
-            lambda x: x.display_type == "product"
-        ).price_unit = 240
-        self.assertAlmostEqual(inv_line.amount_residual, 80.0)
-
-        st_line_2 = self._create_st_line(
-            60.0,
-            date="2017-01-01",
-            foreign_currency_id=self.other_currency.id,
-            amount_currency=120.0,
-            update_create_date=False,
-        )
-        st_line_2.set_line_bank_statement_line(inv_line.id)
-
-        partials = st_line_2.line_ids.matched_debit_ids
-        exchange_move = partials.exchange_move_id
-        self.assertEqual(exchange_move.state, "draft")
-        self.assertEqual(inv_line.move_id.payment_state, "partial")
-        self.assertAlmostEqual(inv_line.amount_residual, 40.0)
-
-        inv_line.ref = "new reference"
-        inv_line.move_id.action_post()
-        self.assertEqual(inv_line.move_id.payment_state, "partial")
-        self.assertAlmostEqual(inv_line.amount_residual, 40.0)
         self.assertEqual(exchange_move.state, "posted")
+        self.assertEqual(inv_line.move_id.payment_state, "partial")
+        self.assertAlmostEqual(inv_line.amount_residual_currency, 170.0)
+        self.assertFalse(inv_line.move_id.pending_match_ids)
 
     def test_validation_expense_exchange_difference(self):
         expense_exchange_account = (
@@ -5511,11 +5446,13 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     ].default_account_id.id,
                     "balance": -100.0,
                     "reconciled": False,
+                    "pending_match_amount": 0.0,
                 },
                 {
                     "account_id": self.company_data["default_account_payable"].id,
                     "balance": 100.0,
-                    "reconciled": True,
+                    "reconciled": False,
+                    "pending_match_amount": 100.0,
                 },
             ],
         )
@@ -6885,6 +6822,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
         )
         invoice.js_add_outstanding_line(bank_cash_line.id)
         invoice.action_draft()
+        self.env.invalidate_all()
         self.assertFalse(invoice.partner_credit_warning)
 
     def test_common_substring(self):

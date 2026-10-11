@@ -302,6 +302,7 @@
                     <field name="partner_id" />
                     <field name="suggested_partner_id" />
                     <field name="partner_suggestion_source" />
+                    <field name="draft_match_proposal_label" />
                     <field name="amount" />
                     <field name="amount_currency" />
                     <field name="date" />

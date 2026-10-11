@@ -74,15 +74,24 @@ export class AccountPaymentField extends Component {
         await this.props.record.model.root.load();
     }
 
-    async removeMoveReconcile(moveId, partialId) {
-        log.logic("removeMoveReconcile", () => ({ moveId, partialId }));
+    async removeMoveReconcile(moveId, partialId, pendingMatchId) {
+        log.logic("removeMoveReconcile", () => ({ moveId, partialId, pendingMatchId }));
         this.popover.close();
-        await this.orm.call(
-            this.props.record.resModel,
-            "js_remove_outstanding_partial",
-            [moveId, partialId],
-            {},
-        );
+        if (pendingMatchId) {
+            await this.orm.call(
+                this.props.record.resModel,
+                "js_remove_pending_match",
+                [this.props.record.resId, pendingMatchId],
+                {},
+            );
+        } else {
+            await this.orm.call(
+                this.props.record.resModel,
+                "js_remove_outstanding_partial",
+                [moveId, partialId],
+                {},
+            );
+        }
         await this.props.record.model.root.load();
     }
 

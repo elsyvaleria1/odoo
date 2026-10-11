@@ -31,11 +31,7 @@ class TestAccountBillPayment(AccountTestInvoicingCommon):
 
         payment.action_draft()
         self.assertEqual(payment.state, "draft")
-        accountant_module = self.env["ir.module.module"].search(
-            [("name", "=", "accountant"), ("state", "=", "installed")]
-        )
-        expected_state = "not_paid" if accountant_module else "paid"
-        self.assertEqual(payment.invoice_ids.payment_state, expected_state)
+        self.assertEqual(payment.invoice_ids.payment_state, "not_paid")
 
         payment.unlink()
         self.assertEqual(bill.payment_state, "not_paid")

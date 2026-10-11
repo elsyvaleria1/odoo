@@ -110,6 +110,26 @@ export class BankRecStatementLine extends KanbanRecord {
         );
     }
 
+    async confirmDraftMatchProposal() {
+        log.logic("confirmDraftMatchProposal", () => ({ resId: this.recordData.id }));
+        await this.orm.call(
+            "account.bank.statement.line",
+            "action_confirm_draft_match_proposal",
+            [this.recordData.id],
+        );
+        this.record.load();
+        this.bankReconciliation.reloadChatter();
+    }
+
+    async dismissDraftMatchProposal() {
+        await this.orm.call(
+            "account.bank.statement.line",
+            "action_dismiss_draft_match_proposal",
+            [this.recordData.id],
+        );
+        this.record.load();
+    }
+
     async undoReconciliation() {
         log.logic("undoReconciliation", () => ({ resId: this.props.record.resId }));
         await this.orm.call(
@@ -150,6 +170,8 @@ export class BankRecStatementLine extends KanbanRecord {
                     move: line.reconciled_lines_excluding_exchange_diff_ids.records[0]
                         .data.move_name,
                 };
+            } else if (line.pending_match_label) {
+                reconciledLine[line.id] = { move: line.pending_match_label };
             } else if (line.tax_ids.count) {
                 reconciledLine[line.id] = { tax: line.tax_ids.records };
             } else {

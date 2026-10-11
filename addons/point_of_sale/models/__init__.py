@@ -4,6 +4,7 @@ from . import mixin_pos_load
 from . import account_account
 from . import account_cash_rounding
 from . import account_payment
+from . import account_pending_match
 from . import account_journal
 from . import account_tax
 from . import account_tax_group

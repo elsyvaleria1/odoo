@@ -30,11 +30,13 @@ from . import account_move_sequence
 from . import account_move_sync
 from . import account_move_tax_override
 from . import account_move_line
+from . import account_move_pending
 from . import account_move_line_tax_details
 from . import mixin_account_move_send
 from . import account_partial_reconcile
 from . import account_partial_reconcile_cash_basis
 from . import account_full_reconcile
+from . import account_pending_match
 from . import account_payment
 from . import account_payment_method
 from . import account_payment_channel
@@ -80,6 +82,7 @@ from . import account_bank_statement_line_reco_rule
 from . import account_bank_statement_line_reconcile
 from . import account_bank_statement_line_tax
 from . import account_bank_statement_line_widget
+from . import account_bank_statement_line_pending
 from . import account_bank_statement_reconcile
 from . import account_fiscal_year
 from . import account_journal_dashboard_reconcile

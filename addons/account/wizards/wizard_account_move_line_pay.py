@@ -1786,11 +1786,11 @@ class WizardAccountMoveLinePay(models.TransientModel):
             if "rate" in vals:
                 aml_model.with_context(
                     forced_rate_from_register_payment=vals["rate"]
-                )._reconcile_plan(payment_plan_list)
+                )._reconcile_plan_or_pend(payment_plan_list, "register_payment")
             else:
                 plan_list += payment_plan_list
         if plan_list:
-            aml_model._reconcile_plan(plan_list)
+            aml_model._reconcile_plan_or_pend(plan_list, "register_payment")
         payments._link_matched_invoices(
             [vals["to_reconcile"].move_id for vals in to_process]
         )

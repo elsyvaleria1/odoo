@@ -154,6 +154,7 @@ export class BankRecKanbanController extends KanbanController {
                 matched_debit_ids: "one2many",
                 matched_credit_ids: "one2many",
                 reconcile_model_id: "many2one",
+                pending_match_label: "char",
                 has_invalid_analytics: "boolean",
                 analytic_distribution: "jsonb",
                 tax_line_id: "many2one",

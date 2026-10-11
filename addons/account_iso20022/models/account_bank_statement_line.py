@@ -55,7 +55,7 @@ class AccountBankStatementLine(models.Model):
                     AND aml.reconciled IS NOT TRUE
                     AND aml.account_id = ANY(%(account_ids)s)
                     AND ((st_line.amount > 0 AND aml.balance > 0) OR (st_line.amount < 0 AND aml.balance < 0))
-                    AND aml.parent_state in ('draft', 'posted')
+                    AND aml.parent_state = 'posted'
                     AND st_line.id = ANY(%(st_line_ids)s)
                 GROUP BY st_line.id
                 ORDER BY st_line.id

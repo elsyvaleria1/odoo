@@ -2265,7 +2265,7 @@ class PosOrder(models.Model):
                 groups={a.code: len(l) for a, l in lines_by_account.items()},
             )
         for lines in lines_by_account.values():
-            lines.reconcile()
+            lines._reconcile_or_pend("point_of_sale")
 
     def action_pos_order_invoice(self) -> dict:
         self.check_singleton()
@@ -2402,7 +2402,7 @@ class PosOrder(models.Model):
         )
         (payment_receivable_lines | invoice_receivable_lines).sudo().with_company(
             invoice.company_id
-        ).reconcile()
+        )._reconcile_or_pend("point_of_sale")
 
     def action_pos_order_cancel(self):
         if self.env.context.get("active_ids"):

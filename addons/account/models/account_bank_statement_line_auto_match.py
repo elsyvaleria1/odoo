@@ -368,13 +368,15 @@ class AccountBankStatementLine(models.Model):
                    AND aml.move_id != ALL(%s)
                    AND aml.reconciled IS NOT TRUE
                    AND aml.account_id = ANY(%s)
-                   AND aml.parent_state = 'posted'
+                   AND aml.parent_state = %s
+                   AND COALESCE(aml.pending_match_amount, 0) = 0
                    AND st_line.id = ANY(%s)
               GROUP BY st_line.id
         """,
             journal_clause,
             list(st_move_ids),
             list(account_ids),
+            self._get_matching_parent_state(),
             list(remaining_st_line_ids),
         )
         self.env.cr.execute(query)
@@ -441,6 +443,7 @@ class AccountBankStatementLine(models.Model):
                 "company_id",
                 "balance",
                 "parent_state",
+                "pending_match_amount",
                 "reconciled",
                 "company_currency_id",
                 "amount_residual",

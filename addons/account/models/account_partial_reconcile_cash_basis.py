@@ -1,10 +1,8 @@
 from datetime import timedelta
-from typing import Literal
 
 from odoo import Command, api, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.json import loads as json_loads
 from odoo.tools import frozendict
 
 _debug = DebugLog(__name__)
@@ -139,8 +137,6 @@ class AccountPartialReconcile(models.Model):
             "payment_rate": self._get_cash_basis_payment_rate(
                 source_line, counterpart_line, amounts, payment_date
             ),
-            "both_move_posted": self.debit_move_id.move_id.state == "posted"
-            and self.credit_move_id.move_id.state == "posted",
             "payment_date": payment_date,
             "payment_currency": source_line.currency_id,
             "counterpart_move": counterpart_move,
@@ -484,15 +480,12 @@ class AccountPartialReconcile(models.Model):
             candidates=len(to_reconcile_after),
             plan=len(reconciliation_plan),
         )
-        self.env["account.move.line"].with_context(add_caba_vals=True)._reconcile_plan(
-            reconciliation_plan
-        )
+        self.env["account.move.line"]._reconcile_plan(reconciliation_plan)
 
     @_debug.perf.timed
     def _create_tax_cash_basis_moves(self):
         values_per_move = self._collect_tax_cash_basis_values()
         moves_to_create = []
-        post_after_create = []
         to_reconcile_after = []
 
         for move_values in values_per_move.values():
@@ -512,7 +505,6 @@ class AccountPartialReconcile(models.Model):
                     to_reconcile_after,
                 )
                 moves_to_create.append(move_vals)
-                post_after_create.append(partial_values["both_move_posted"])
 
         moves = (
             self.env["account.move"]
@@ -527,66 +519,9 @@ class AccountPartialReconcile(models.Model):
             "cash_basis",
             partial=self,
             moves=moves,
-            posting=sum(post_after_create),
             moves_to_create_count=len(moves_to_create),
         )
-        moves.browse(
-            move.id for move, post in zip(moves, post_after_create, strict=True) if post
-        )._post(soft=False)
+        moves._post(soft=False)
 
         self._reconcile_cash_basis_transition_lines(moves, to_reconcile_after)
         return moves
-
-    def _get_draft_caba_move_vals(
-        self, collected_per_move=None
-    ) -> dict | Literal[False]:
-        self.check_singleton()
-        if collected_per_move is None:
-            collected_per_move = {}
-
-        def collect(move):
-            if move.id not in collected_per_move:
-                collected_per_move[move.id] = (
-                    move._collect_tax_cash_basis_values() or {}
-                )
-            return collected_per_move[move.id]
-
-        debit_vals = collect(self.debit_move_id.move_id)
-        credit_vals = collect(self.credit_move_id.move_id)
-        if not debit_vals and not credit_vals:
-            _debug.logic("draft_caba_vals_empty", partial=self)
-            return False
-        _debug.logic(
-            "draft_caba_vals_collected",
-            partial=self,
-            debit_lines=len(debit_vals.get("to_process_lines", [])),
-            credit_lines=len(credit_vals.get("to_process_lines", [])),
-        )
-        return {
-            "debit_caba_lines": [
-                [aml_type, aml.id]
-                for aml_type, aml in debit_vals.get("to_process_lines", [])
-            ],
-            "debit_total_balance": debit_vals.get("total_balance"),
-            "debit_total_amount_currency": debit_vals.get("total_amount_currency"),
-            "credit_caba_lines": [
-                [aml_type, aml.id]
-                for aml_type, aml in credit_vals.get("to_process_lines", [])
-            ],
-            "credit_total_balance": credit_vals.get("total_balance"),
-            "credit_total_amount_currency": credit_vals.get("total_amount_currency"),
-        }
-
-    def _has_outdated_draft_caba_move_vals(self, collected_per_move=None) -> bool:
-        self.check_singleton()
-        stored = self.draft_caba_move_vals
-        if isinstance(stored, str):
-            stored = json_loads(stored)
-        return self._get_draft_caba_move_vals(collected_per_move) != stored
-
-    def _set_draft_caba_move_vals(self) -> None:
-        collected_per_move = {}
-        for partial in self:
-            partial.draft_caba_move_vals = partial._get_draft_caba_move_vals(
-                collected_per_move
-            )

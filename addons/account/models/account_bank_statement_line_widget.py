@@ -452,7 +452,9 @@ class AccountBankStatementLine(models.Model):
             )
 
         edited_move_reconciled_line_ids = (
-            move_line_to_edit.reconciled_lines_ids - exchange_line
+            move_line_to_edit.reconciled_lines_ids
+            - exchange_line
+            + move_line_to_edit._get_pending_matches().draft_line_id
         ).ids
         if _debug.logic.enabled:
             _debug.logic(

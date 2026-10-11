@@ -79,15 +79,18 @@ class TestUnreconcileEntryPolicy(AccountTestInvoicingCommon):
         self.assertEqual(caba.reversal_move_ids.state, "posted")
         self.assertEqual(invoice.amount_residual, invoice.amount_total)
 
-    def test_draft_automatic_entry_is_deleted_under_default_policy(self):
-        invoice, payment_line, caba = self._paid_document(post=False)
-        self.assertFalse(caba.posted_before)
-        invoice.company_id.account_config_id.fiscalyear_lock_date = fields.Date.to_date(
-            "2019-01-02"
+    def test_a_draft_document_takes_no_cash_basis_entry(self):
+        invoice = self.init_invoice(
+            "out_invoice", amounts=[1000.0], taxes=self.cash_tax, post=False
         )
-        payment_line.remove_move_reconcile()
-        self.assertFalse(caba.exists())
-        self.assertEqual(invoice.amount_residual, invoice.amount_total)
+        with self.assertRaisesRegex(UserError, "only reconcile posted entries"):
+            self.pay_with_statement_line(
+                invoice,
+                self.company_data["default_journal_bank"].id,
+                "2019-01-02",
+                invoice.amount_total,
+            )
+        self.assertFalse(invoice.tax_cash_basis_created_move_ids)
 
     def test_delete_policy_updates_tax_matching_numbers(self):
         self._use_deletion_policy()
@@ -422,27 +425,6 @@ class TestUnreconcileEntryPolicy(AccountTestInvoicingCommon):
 
     def test_line_delete_denial_falls_back_to_reversal(self):
         self._assert_delete_denial_uses_reversal("account.move.line")
-
-    def test_draft_delete_denial_does_not_post_a_reversal(self):
-        invoice, payment_line, caba = self._paid_document(post=False)
-        partials = payment_line.matched_debit_ids | payment_line.matched_credit_ids
-        self.env["ir.access"].create(
-            {
-                "name": "Protect draft cash basis entry",
-                "model_id": self.env["ir.model"]._get_id("account.move"),
-                "group_id": self.env.ref("account.group_account_user").id,
-                "kind": "guard",
-                "guard_scope": "members",
-                "operation": "d",
-                "domain": repr([("id", "!=", caba.id)]),
-            }
-        )
-        with self.assertRaises(AccessError):
-            payment_line.remove_move_reconcile()
-        self.assertEqual(caba.state, "draft")
-        self.assertFalse(caba.reversal_move_ids)
-        self.assertEqual(partials.exists(), partials)
-        self.assertEqual(invoice.amount_residual, 0.0)
 
     def _assert_hidden_lines_block_unreconciliation(self, deletion_policy):
         if deletion_policy:

@@ -2014,11 +2014,7 @@ class AccountMove(models.Model):
     @_debug.perf.timed
     def _compute_payment_state(self) -> None:
         def _invoice_qualifies(move):
-            currency = move._get_payment_state_currency()
-            return move.is_invoice(True) and (
-                move.state == "posted"
-                or (move.state == "draft" and not currency.is_zero(move.amount_total))
-            )
+            return move.is_invoice(True) and move.state == "posted"
 
         groups = self.grouped(
             lambda move: (
@@ -2068,9 +2064,6 @@ class AccountMove(models.Model):
                     move.display_state = move.payment_state
                 elif move.is_move_sent:
                     move.display_state = "sent"
-            elif move.state == "draft":
-                if move.payment_state in ("partial", "in_payment", "paid"):
-                    move.display_state = move.payment_state
 
             if not move.display_state:
                 move.display_state = move.state
@@ -2085,9 +2078,6 @@ class AccountMove(models.Model):
         payment_state = self._field_to_sql(alias, "payment_state", query)
         return SQL(
             "CASE "
-            "WHEN %(state)s = 'draft' "
-            "     AND %(payment_state)s IN ('partial', 'in_payment', 'paid') "
-            "    THEN %(payment_state)s "
             "WHEN %(state)s = 'draft' THEN 'draft' "
             "WHEN %(state)s = 'posted' "
             "     AND %(payment_state)s IN ('partial', 'in_payment', 'paid', 'reversed') "
@@ -2293,11 +2283,12 @@ class AccountMove(models.Model):
         for line in lines:
             if line.account_id.id not in account_id_set:
                 continue
+            residual, residual_currency = line._get_reconciliation_residuals()
             if line.currency_id == move.currency_id:
-                amount = abs(line.amount_residual_currency)
+                amount = abs(residual_currency)
             else:
                 amount = line.company_currency_id._convert(
-                    abs(line.amount_residual),
+                    abs(residual),
                     move.currency_id,
                     move.company_id,
                     line.date,
@@ -2396,7 +2387,7 @@ class AccountMove(models.Model):
                     partner.property_outbound_payment_channel_id
                 )
 
-    @api.depends("move_type", "line_ids.amount_residual")
+    @api.depends("move_type", "line_ids.amount_residual", "pending_match_ids")
     @_debug.perf.timed
     def _compute_invoice_payments_widget(self) -> None:
         for move in self:
@@ -2462,6 +2453,7 @@ class AccountMove(models.Model):
                             ),
                         }
                     )
+                reconciled_vals += move._get_pending_payments_widget_vals()
                 payments_widget_vals["content"] = reconciled_vals
                 _debug.logic(
                     "payments_widget_partials",
@@ -6474,58 +6466,6 @@ class AccountMove(models.Model):
         )
 
     @_debug.perf.timed
-    def _post_prepare_reconciliation(self):
-        _debug.lifecycle("_post_prepare_reconciliation", records=self)
-        side_move_ids = set()
-        partial_ids_to_unlink = set()
-        reachable_ids = set(self.ids)
-        collected_per_move = {}
-
-        for aml in self.line_ids:
-            for partials, counterpart_field in [
-                (aml.matched_debit_ids, "debit_move_id"),
-                (aml.matched_credit_ids, "credit_move_id"),
-            ]:
-                for partial in partials:
-                    counterpart_move = partial[counterpart_field].move_id
-                    if (
-                        counterpart_move.state == "posted"
-                        or counterpart_move.id in reachable_ids
-                    ):
-                        side_move_ids.update(partial.exchange_move_id.ids)
-                        reachable_ids.update(partial.exchange_move_id.ids)
-
-                        if partial._has_outdated_draft_caba_move_vals(
-                            collected_per_move
-                        ):
-                            partial_ids_to_unlink.add(partial.id)
-                            continue
-
-                        caba_source = (
-                            aml.move_id
-                            if aml.move_id.tax_cash_basis_created_move_ids
-                            else counterpart_move
-                        )
-                        caba_moves = (
-                            caba_source.tax_cash_basis_created_move_ids.filtered_domain(
-                                [("tax_cash_basis_rec_id", "=", partial.id)]
-                            )
-                        )
-                        side_move_ids.update(caba_moves.ids)
-                        reachable_ids.update(caba_moves.ids)
-
-        _debug.pipeline(
-            "post_side_moves_collected",
-            moves=self,
-            side_moves=len(side_move_ids),
-            outdated_caba_partials=len(partial_ids_to_unlink),
-        )
-        if partial_ids_to_unlink:
-            self.env["account.partial.reconcile"].browse(partial_ids_to_unlink).unlink()
-
-        return self.browse(side_move_ids) - self
-
-    @_debug.perf.timed
     def _post_update_partner_ranks(self) -> None:
         _debug.lifecycle("_post_update_partner_ranks", records=self)
         customer_count, supplier_count = defaultdict(int), defaultdict(int)
@@ -6688,22 +6628,17 @@ class AccountMove(models.Model):
         self._post_update_line_partners()
 
         draft_reverse_moves = self._post_get_draft_reverse_moves()
-        side_moves = self._post_prepare_reconciliation()
-        _debug.pipeline(
-            "_post_entries",
-            move=self,
-            draft_reverse=draft_reverse_moves,
-            side=side_moves,
-        )
+        _debug.pipeline("_post_entries", move=self, draft_reverse=draft_reverse_moves)
 
-        (self | side_moves).write({"state": "posted", "posted_before": True})
+        self.write({"state": "posted", "posted_before": True})
         self._reveal_partial_deductibility_group()
         self._post_update_non_deductible_names()
 
         draft_reverse_moves.reversed_entry_id._reconcile_reversed_moves(
             draft_reverse_moves, self.env.context.get("move_reverse_cancel", False)
         )
-        (self | side_moves).line_ids._reconcile_marked()
+        self.line_ids._reconcile_marked()
+        self._materialize_pending_matches()
         self._post_update_partner_ranks()
 
         zero_invoices = self.filtered(
@@ -7364,7 +7299,7 @@ class AccountMove(models.Model):
             counterpart_line=counterpart_line,
             lines=lines - counterpart_line,
         )
-        return lines.reconcile()
+        return lines._reconcile_or_pend("outstanding")
 
     @_debug.perf.timed
     def js_remove_outstanding_partial(self, partial_id):
@@ -7408,6 +7343,8 @@ class AccountMove(models.Model):
 
         self._check_draftable()
         self._unlink_next_draft_auto_post_moves()
+        to_pend = self._collect_partials_to_pend()
+        self.line_ids.remove_move_reconcile()
         if _debug.pipeline.enabled:
             _debug.pipeline(
                 "action_draft_dropping_analytic_lines",
@@ -7417,6 +7354,7 @@ class AccountMove(models.Model):
             )
         self.line_ids.analytic_line_ids.with_context(skip_analytic_sync=True).unlink()
         self.state = "draft"
+        self._pend_collected_partials(to_pend)
         self._capture_tax_overrides_from_tax_lines()
         self._as_sending_queue().sending_data = False
 

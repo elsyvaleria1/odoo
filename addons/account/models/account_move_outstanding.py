@@ -201,10 +201,7 @@ class AccountMove(models.Model):
                 self.company_id.currency_id, self.company_id
             )
 
-        matched_credits = self.line_ids.filtered(
-            lambda line: line.account_id.account_type == "asset_receivable"
-        ).matched_credit_ids
-        return exclude_amount + sum(matched_credits.mapped("amount"))
+        return exclude_amount
 
     @_debug.perf.timed
     def js_add_outstanding_line(self, line_id):

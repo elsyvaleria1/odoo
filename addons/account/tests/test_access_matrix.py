@@ -104,6 +104,16 @@ class TestAccountAccessMatrix(AccessMatrixCase):
             manager_ab="rwcd",
         ),
         Cell(
+            "account.pending.match",
+            "pending_match",
+            billing_a="rwcd",
+            basic_a="rwcd",
+            accountant_a="rwcd",
+            manager_a="rwcd",
+            reader_a="r",
+            manager_ab="rwcd",
+        ),
+        Cell(
             "account.full.reconcile",
             "full",
             billing_a="rwcd",
@@ -769,6 +779,14 @@ class TestAccountAccessMatrix(AccessMatrixCase):
             paid, paid.amount_total
         )
 
+        pending_draft = move(a, "out_invoice", customer_d, post=False)
+        pending_credit = move(a, "out_refund", customer_d)
+        pending_match = (
+            (pending_draft.line_ids | pending_credit.line_ids)
+            .filtered(lambda line: line.display_type == "payment_term")
+            ._reconcile_or_pend("manual")
+        )
+
         def one(model, domain=()):
             found = (
                 env[model].with_context(active_test=False).search(list(domain), limit=1)
@@ -858,6 +876,7 @@ class TestAccountAccessMatrix(AccessMatrixCase):
             "payment": payment,
             "partial": partial,
             "full": paid.line_ids.full_reconcile_id,
+            "pending_match": pending_match,
             "invoice_report": env["account.invoice.report"]
             .sudo()
             .search([("move_id", "=", invoice_c.id)], limit=1),

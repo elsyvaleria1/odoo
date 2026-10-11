@@ -56,6 +56,7 @@
                                     />
                                 </span>
                                 <t t-call="account.BankRecStatementLine.PartnerSuggestion"/>
+                                <t t-call="account.BankRecStatementLine.DraftMatchProposal"/>
                             </div>
                             <div class="o_button_line d-none d-md-flex align-items-start">
                                 <BankRecButtonList t-props="this.buttonListProps" suspenseAccountLine="this.suspenseAccountLine" t-if="!this.recordData.is_reconciled or (this.userCanReview and !this.recordData.checked)"/>
@@ -120,6 +121,20 @@
                 </div>
             </article>
         </xpath>
+    </t>
+
+    <t t-name="account.BankRecStatementLine.DraftMatchProposal">
+        <div t-if="this.recordData.draft_match_proposal_label" class="o_draft_match_proposal text-wrap text-muted" name="draft_match_proposal">
+            <i class="fa-regular fa-lightbulb me-1" role="img" aria-label="Suggestion"/>
+            <span>Matches the draft</span>
+            <span class="fw-bold ms-1" t-out="this.recordData.draft_match_proposal_label" name="draft_match_proposal_label"/>
+            <button type="button" class="btn btn-link p-0 ms-2 align-baseline o_confirm_draft_match" t-on-click.stop="this.confirmDraftMatchProposal">
+                Match, pending its posting
+            </button>
+            <button type="button" class="btn btn-link p-0 ms-2 align-baseline o_dismiss_draft_match" t-on-click.stop="this.dismissDraftMatchProposal">
+                Dismiss
+            </button>
+        </div>
     </t>
 
     <t t-name="account.BankRecStatementLine.PartnerSuggestion">

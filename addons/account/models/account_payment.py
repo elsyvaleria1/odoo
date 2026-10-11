@@ -10,6 +10,7 @@ from odoo.tools.authority_keys import declare_authority_keys
 _debug = DebugLog(__name__)
 
 _ENTRIES_JUST_CREATED = "account_payment_entries_just_created"
+_PAYMENTS_UNSETTLED = "account.payment.unsettled_by_dropped_match"
 declare_authority_keys("account", _ENTRIES_JUST_CREATED)
 
 _SQL_RECONCILED_INVOICES_PER_PAYMENT = """
@@ -1763,6 +1764,14 @@ class AccountPayment(models.Model):
             self._classify_counterpart_account_source()
         if with_move := self.filtered("move_id"):
             with_move._sync_to_moves(set(vals.keys()))
+            unsettled = self.env.cr.cache.pop(_PAYMENTS_UNSETTLED, set())
+            with_move.filtered(
+                lambda pay: (
+                    pay.id in unsettled
+                    and pay.move_id.state == "draft"
+                    and pay.counterpart_account_id
+                )
+            )._sync_to_moves({"counterpart_account_id"})
         return res
 
     @_debug.perf.timed

@@ -795,12 +795,14 @@ class TestMarinStatementPartialRemoval(TestBankRecWidgetCommon):
             ).id
         )
         invoice.action_draft()
-        partials = invoice.line_ids.matched_credit_ids
-        self.assertEqual(partials.credit_currency_id, foreign)
-        self.assertAlmostEqual(sum(partials.mapped("amount")), 300.0)
+        self.assertFalse(invoice.line_ids.matched_credit_ids)
+        self.assertAlmostEqual(invoice.pending_payment_amount, 300.0)
 
+        self.env.invalidate_all()
+        credit, _credit_to_invoice = invoice._get_partner_credit_exposure()
+        self.assertAlmostEqual(credit, -300.0, msg="the open payment counts once")
         self.assertAlmostEqual(
-            invoice._get_partner_credit_warning_exclude_amount(), 300.0
+            invoice._get_partner_credit_warning_exclude_amount(), 0.0
         )
 
 

@@ -169,6 +169,30 @@ class TestPaymentCounterpartAccount(AccountTestInvoicingCommon):
             bill.payment_state, self.env["account.move"]._get_invoice_in_payment_state()
         )
 
+    def test_another_commercial_partner_drops_the_match_and_the_settled_account(self):
+        bill = self._bill_on(self.payable_ff)
+        payment = self._register_payment(bill, payment_date="2026-07-17")
+
+        payment.action_draft()
+        self.assertTrue(payment.move_id.pending_match_ids)
+        payment.partner_id = self.partner_b
+
+        self.assertFalse(payment.move_id.pending_match_ids)
+        self.assertFalse(payment.invoice_ids)
+        self.assertRecordValues(
+            payment,
+            [
+                {
+                    "counterpart_account_id": self.payable_nf.id,
+                    "counterpart_account_source": "default",
+                }
+            ],
+        )
+        self.assertIn(bill.display_name, payment.message_ids[0].body)
+        payment.action_post()
+        self.assertEqual(payment._seek_for_lines()[1].account_id, self.payable_nf)
+        self.assertEqual(bill.payment_state, "not_paid")
+
     def test_a_settled_account_lapses_with_its_settled_documents(self):
         bill = self._bill_on(self.payable_ff)
         payment = self._register_payment(bill, payment_date="2026-07-17")

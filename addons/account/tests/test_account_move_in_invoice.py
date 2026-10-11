@@ -3132,143 +3132,72 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
                 )
 
     def test_payment_move_state_draft(self):
-        for move_type, amount, counterpart_values_list, payment_state, *_extra in (
-            ("out_invoice", 1000.0, [("out_refund", 1000.0)], "reversed"),
-            (
-                "out_invoice",
-                1000.0,
-                [("out_refund", 500.0), ("out_refund", 500.0)],
-                "reversed",
-            ),
-            (
-                "out_invoice",
-                1000.0,
-                [("out_refund", 500.0), ("entry", -500.0)],
-                "reversed",
-            ),
-            ("out_receipt", 1000.0, [("out_refund", 1000.0)], "reversed"),
-            (
-                "out_receipt",
-                1000.0,
-                [("out_refund", 500.0), ("out_refund", 500.0)],
-                "reversed",
-            ),
-            ("out_refund", 1000.0, [("entry", 1000.0)], "reversed"),
-            ("in_invoice", 1000.0, [("in_refund", 1000.0)], "reversed"),
-            (
-                "in_invoice",
-                1000.0,
-                [("in_refund", 500.0), ("in_refund", 500.0)],
-                "reversed",
-            ),
-            (
-                "in_invoice",
-                1000.0,
-                [("in_refund", 500.0), ("entry", 500.0)],
-                "reversed",
-            ),
-            ("in_receipt", 1000.0, [("in_refund", 1000.0)], "reversed"),
-            (
-                "in_receipt",
-                1000.0,
-                [("in_refund", 500.0), ("in_refund", 500.0)],
-                "reversed",
-            ),
-            ("in_refund", 1000.0, [("entry", -1000.0)], "reversed"),
-            ("entry", 1000.0, [("entry", -1000.0)], "not_paid"),
-            ("out_invoice", 1000.0, [("payment", 500.0)], "partial"),
-            ("out_invoice", 1000.0, [("payment", 1000.0)], "in_payment"),
-            ("out_invoice", 1000.0, [("statement_line", 500.0)], "partial"),
-            ("out_invoice", 1000.0, [("statement_line", 1000.0)], "paid"),
-            ("out_receipt", 1000.0, [("payment", 500.0)], "partial"),
-            ("out_receipt", 1000.0, [("payment", 1000.0)], "in_payment"),
-            ("out_receipt", 1000.0, [("statement_line", 500.0)], "partial"),
-            ("out_receipt", 1000.0, [("statement_line", 1000.0)], "paid"),
-            ("out_refund", 1000.0, [("payment", 500.0)], "partial"),
-            ("out_refund", 1000.0, [("payment", 1000.0)], "in_payment"),
-            ("out_refund", 1000.0, [("statement_line", -500.0)], "partial"),
-            ("out_refund", 1000.0, [("statement_line", -1000.0)], "paid"),
-            ("in_invoice", 1000.0, [("payment", 500.0)], "partial"),
-            ("in_invoice", 1000.0, [("payment", 1000.0)], "in_payment"),
-            ("in_invoice", 1000.0, [("statement_line", -500.0)], "partial"),
-            ("in_invoice", 1000.0, [("statement_line", -1000.0)], "paid"),
-            ("in_receipt", 1000.0, [("payment", 500.0)], "partial"),
-            ("in_receipt", 1000.0, [("payment", 1000.0)], "in_payment"),
-            ("in_receipt", 1000.0, [("statement_line", -500.0)], "partial"),
-            ("in_receipt", 1000.0, [("statement_line", -1000.0)], "paid"),
-            ("in_refund", 1000.0, [("payment", 500.0)], "partial"),
-            ("in_refund", 1000.0, [("payment", 1000.0)], "in_payment"),
-            ("in_refund", 1000.0, [("statement_line", 500.0)], "partial"),
-            ("in_refund", 1000.0, [("statement_line", 1000.0)], "paid"),
-            ("entry", 1000.0, [("payment", 500.0)], "not_paid"),
-            ("entry", 1000.0, [("payment", 1000.0)], "not_paid"),
-            ("entry", 1000.0, [("statement_line", 500.0)], "not_paid"),
-            ("entry", 1000.0, [("statement_line", 1000.0)], "not_paid"),
-            (
-                "out_invoice",
-                1000.0,
-                [("out_refund", 500.0), ("payment", 500.0)],
-                "in_payment",
-            ),
-            (
-                "out_invoice",
-                1000.0,
-                [("out_refund", 500.0), ("payment", 400.0)],
-                "partial",
-            ),
-            (
-                "out_invoice",
-                1000.0,
-                [("out_refund", 500.0), ("statement_line", 500.0)],
-                "paid",
-            ),
-            (
-                "out_invoice",
-                1000.0,
-                [("out_refund", 500.0), ("statement_line", 400.0)],
-                "partial",
-            ),
-            ("out_invoice", 1000.0, [("entry", -1000.0)], "paid"),
-            (
-                "in_invoice",
-                1000.0,
-                [("in_refund", 500.0), ("payment", 500.0)],
-                "in_payment",
-            ),
-            (
-                "in_invoice",
-                1000.0,
-                [("in_refund", 500.0), ("payment", 400.0)],
-                "partial",
-            ),
-            (
-                "in_invoice",
-                1000.0,
-                [("in_refund", 500.0), ("statement_line", -500.0)],
-                "paid",
-            ),
-            (
-                "in_invoice",
-                1000.0,
-                [("in_refund", 500.0), ("statement_line", -400.0)],
-                "partial",
-            ),
-            ("in_invoice", 1000.0, [("entry", 1000.0)], "paid"),
-            ("out_invoice", 0.0, [], "not_paid"),
+        bank_journal = self.company_data["default_journal_bank"]
+        for move_type, amount, counterpart_type, counterpart_amount, payment_state in (
+            ("out_invoice", 1000.0, "payment", 500.0, "partial"),
+            ("out_invoice", 1000.0, "payment", 1000.0, "in_payment"),
+            ("out_invoice", 1000.0, "statement_line", 500.0, "partial"),
+            ("out_invoice", 1000.0, "statement_line", 1000.0, "paid"),
+            ("in_invoice", 1000.0, "payment", 1000.0, "in_payment"),
+            ("in_invoice", 1000.0, "statement_line", -1000.0, "paid"),
+            ("in_refund", 1000.0, "statement_line", 500.0, "partial"),
+            ("out_refund", 1000.0, "payment", 1000.0, "in_payment"),
         ):
             with self.subTest(
                 move_type=move_type,
-                amount=amount,
-                counterpart_values_list=counterpart_values_list,
-                payment_state=payment_state,
+                counterpart=(counterpart_type, counterpart_amount),
             ):
-                self._assert_payment_move_state(
-                    move_type,
-                    amount,
-                    counterpart_values_list,
-                    payment_state,
-                    post_move=False,
+                move = self.env["account.move"].create(
+                    {
+                        "move_type": move_type,
+                        "date": "2020-01-10",
+                        "invoice_date": "2020-01-10",
+                        "partner_id": self.partner_a.id,
+                        "invoice_line_ids": [
+                            Command.create(
+                                {
+                                    "product_id": self.product_a.id,
+                                    "price_unit": amount,
+                                    "tax_ids": [],
+                                }
+                            )
+                        ],
+                    }
                 )
+                term_line = move.line_ids.filtered(
+                    lambda line: line.display_type == "payment_term"
+                )
+                if counterpart_type == "payment":
+                    self.env["wizard.account.move.line.pay"].with_context(
+                        active_ids=move.ids, active_model="account.move"
+                    ).create({"amount": counterpart_amount})._create_payments()
+                else:
+                    st_line = self.env["account.bank.statement.line"].create(
+                        {
+                            "payment_ref": "ref",
+                            "journal_id": bank_journal.id,
+                            "partner_id": self.partner_a.id,
+                            "amount": counterpart_amount,
+                            "date": "2020-01-10",
+                        }
+                    )
+                    st_line.set_line_bank_statement_line(term_line.ids)
+
+                self.assertEqual(move.payment_state, "not_paid")
+                self.assertFalse(
+                    term_line.matched_debit_ids | term_line.matched_credit_ids
+                )
+                self.assertTrue(move.pending_match_ids)
+
+                move.action_post()
+                expected = payment_state
+                if (
+                    expected == "in_payment"
+                    and move._get_invoice_in_payment_state() == "paid"
+                ):
+                    expected = "paid"
+                self.assertEqual(move.payment_state, expected)
+                self.assertFalse(move.pending_match_ids)
 
     def test_onchange_journal_currency(self):
         chf = self.env.ref("base.CHF")

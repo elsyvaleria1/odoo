@@ -1862,7 +1862,11 @@ class AccountMoveLine(models.Model):
         )
 
     def _inverse_reconciled_lines_ids(self) -> None:
-        self._reconcile_plan([line + line.reconciled_lines_ids for line in self])
+        self._reconcile_plan_or_pend(
+            [line + line.reconciled_lines_ids for line in self],
+            self.env.context.get("pending_match_origin")
+            or ("bank_manual" if self.move_id.statement_line_id else "manual"),
+        )
 
     @_debug.perf.timed
     def _check_account_is_usable(self) -> None:
@@ -3260,17 +3264,13 @@ class AccountMoveLine(models.Model):
         )
 
         shadowed = context["shadowed_aml_values"]
-        exchange_values = exchange_lines_to_fix._prepare_exchange_difference_move_vals(
+        return exchange_lines_to_fix._prepare_exchange_difference_move_vals(
             amounts_list,
             exchange_date=max(
                 debit_aml._get_reconciliation_aml_field_value("date", shadowed),
                 credit_aml._get_reconciliation_aml_field_value("date", shadowed),
             ),
         )
-        exchange_values["to_post"] = (
-            debit_aml.parent_state == "posted" and credit_aml.parent_state == "posted"
-        )
-        return exchange_values
 
     @api.model
     @_debug.perf.timed
@@ -3481,6 +3481,15 @@ class AccountMoveLine(models.Model):
             )
         if any(aml.parent_state == "cancel" for aml in amls):
             raise UserError(self.env._("You can not reconcile cancelled entries."))
+        if any(aml.parent_state != "posted" for aml in amls):
+            _debug.logic("draft_reconciliation_refused", reconcile=amls)
+            raise UserError(
+                self.env._(
+                    "You can only reconcile posted entries. A match with a draft "
+                    "entry is kept as a pending match and completed when the entry "
+                    "is posted."
+                )
+            )
         accounts = amls.mapped(
             lambda x: x._get_reconciliation_aml_field_value(
                 "account_id", shadowed_aml_values
@@ -3632,7 +3641,7 @@ class AccountMoveLine(models.Model):
 
     @api.model
     @_debug.perf.timed
-    def _reconcile_plan(self, reconciliation_plan) -> None:
+    def _reconcile_plan(self, reconciliation_plan, residual_caps=None) -> None:
         plan_list, all_amls = self._optimize_reconciliation_plan(reconciliation_plan)
         _debug.pipeline(
             "plan_over",
@@ -3645,21 +3654,64 @@ class AccountMoveLine(models.Model):
             all_amls.move_id._check_balanced(move_container),
             all_amls.move_id._sync_dynamic_lines(move_container),
         ):
-            self._reconcile_plan_with_sync(plan_list, all_amls)
+            self._reconcile_plan_with_sync(plan_list, all_amls, residual_caps)
+
+    def _get_reconciliation_residuals(self, cap=None) -> tuple:
+        self.check_singleton()
+        residual = self.amount_residual
+        residual_currency = self.amount_residual_currency
+        if self.company_currency_id.is_zero(residual) or not (
+            self.pending_match_amount or cap
+        ):
+            return residual, residual_currency
+        ratios = [1.0]
+        if self.pending_match_amount:
+            ratios.append(
+                max(abs(residual) - self.pending_match_amount, 0.0) / abs(residual)
+            )
+        if cap:
+            cap_amount, cap_amount_currency = cap
+            if (
+                cap_amount_currency is not None
+                and self.currency_id != self.company_currency_id
+                and not self.currency_id.is_zero(residual_currency)
+            ):
+                ratios.append(cap_amount_currency / abs(residual_currency))
+            else:
+                ratios.append(cap_amount / abs(residual))
+        ratio = min(ratios)
+        if ratio >= 1.0:
+            return residual, residual_currency
+        return (
+            self.company_currency_id.round(residual * ratio),
+            self.currency_id.round(residual_currency * ratio),
+        )
 
     @_debug.perf.timed
-    def _reconcile_plan_with_sync(self, plan_list, all_amls) -> None:
-        all_amls.fetch(["move_id", "matched_debit_ids", "matched_credit_ids"])
+    def _reconcile_plan_with_sync(
+        self, plan_list, all_amls, residual_caps=None
+    ) -> None:
+        all_amls.fetch(
+            [
+                "move_id",
+                "matched_debit_ids",
+                "matched_credit_ids",
+                "pending_match_amount",
+            ]
+        )
         pre_hook_data = all_amls._reconcile_pre_hook()
-        aml_values_map = {
-            aml: {
+        residual_caps = residual_caps or {}
+        aml_values_map = {}
+        for aml in all_amls:
+            residual, residual_currency = aml._get_reconciliation_residuals(
+                residual_caps.get(aml)
+            )
+            aml_values_map[aml] = {
                 "aml": aml,
-                "amount_residual": aml.amount_residual,
-                "amount_residual_currency": aml.amount_residual_currency,
+                "amount_residual": residual,
+                "amount_residual_currency": residual_currency,
                 "parent_state": aml.parent_state,
             }
-            for aml in all_amls
-        }
         self._create_reconciliation_partials(plan_list, aml_values_map)
         self._create_reconciliation_cash_basis_moves(plan_list)
         involved_amls = self._create_full_reconciles(
@@ -3697,8 +3749,6 @@ class AccountMoveLine(models.Model):
             partials=partials,
             exchange_diff_values_list_count=len(exchange_diff_values_list),
         )
-        if self.env.context.get("add_caba_vals"):
-            partials._set_draft_caba_move_vals()
         start_range = 0
         for plan_results, plan in zip(all_plan_results, plan_list, strict=True):
             size = len(plan_results)
@@ -3734,7 +3784,6 @@ class AccountMoveLine(models.Model):
             partials.with_context(
                 no_exchange_difference_no_recursive=False
             )._create_tax_cash_basis_moves()
-            partials._set_draft_caba_move_vals()
 
     @_debug.perf.timed
     def _create_full_reconciles(self, plan_list, all_amls, aml_values_map):
@@ -3959,6 +4008,17 @@ class AccountMoveLine(models.Model):
                     )
                 )
 
+        counterparts_per_move = []
+        for move_vals in exchange_move_values_list:
+            counterparts = []
+            for _command, _id, line_vals in move_vals["line_ids"]:
+                commands = line_vals.pop("reconciled_lines_ids", None) or []
+                counterparts.append(
+                    self.browse(
+                        [line_id for command in commands for line_id in command[2]]
+                    )
+                )
+            counterparts_per_move.append(counterparts)
         exchange_moves = (
             self.env["account.move"]
             .with_context(no_exchange_difference=True)
@@ -3970,18 +4030,19 @@ class AccountMoveLine(models.Model):
             journals=sorted(journal_ids),
         )
 
-        exchange_moves_to_post = self.env["account.move"]
-        for exchange_move, vals in zip(
-            exchange_moves, exchange_diff_values_list, strict=True
-        ):
-            if vals["to_post"]:
-                exchange_moves_to_post |= exchange_move
-
-        if exchange_moves_to_post:
-            exchange_moves_to_post.with_context(validate_analytic=False)._post(
-                soft=False
+        exchange_moves.with_context(validate_analytic=False)._post(soft=False)
+        plan = [
+            line + counterpart
+            for move, counterparts in zip(
+                exchange_moves, counterparts_per_move, strict=True
             )
-
+            for line, counterpart in zip(
+                move.line_ids.sorted("id"), counterparts, strict=True
+            )
+            if counterpart
+        ]
+        if plan:
+            self.with_context(no_exchange_difference=True)._reconcile_plan(plan)
         return exchange_moves
 
     def reconcile(self):
