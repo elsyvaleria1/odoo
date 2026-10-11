@@ -22,6 +22,7 @@ import {
 import { appContextOf } from "@web/core/app_context";
 import { registry } from "@web/core/registry";
 import { _resetCascadeWarningCache } from "@web/core/service_container";
+import { templates } from "@web/core/templates";
 import { runInBundleTransaction } from "@web/core/utils/bundle_transaction";
 import {
     makeEnv,
@@ -421,6 +422,26 @@ test(`a dependency registered later in the same bundle is not reported, and its 
         bundle_consumer: "consumer",
         bundle_provider: "provider",
     });
+});
+
+test(`a service its bundle brings starts once that bundle's compiled templates are in`, async () => {
+    const env = makeEnv();
+    after(() => serviceContainerOf(env).stopListening());
+    await startServices(env);
+    const templatesArrived = new Deferred();
+    templates.compiledLoads.add(templatesArrived);
+    templatesArrived.then(() => templates.compiledLoads.delete(templatesArrived));
+    after(() => templates.compiledLoads.delete(templatesArrived));
+
+    const bundleSettled = runInBundleTransaction(async () => {
+        registerService("mounts_at_start", [], () => "mounted");
+    });
+    await tick();
+    expect("mounts_at_start" in env.services).toBe(false);
+
+    templatesArrived.resolve();
+    await bundleSettled;
+    expect(/** @type {any} */ (env.services).mounts_at_start).toBe("mounted");
 });
 
 test(`a dependency still unregistered when its bundle settles is reported then, not before`, async () => {

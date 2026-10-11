@@ -5,6 +5,7 @@ import { makeLogger } from "@web/core/debug/debug_logger";
 import { reportJsError } from "@web/core/errors/error_beacon";
 import { AppEvent } from "@web/core/events";
 import { registry } from "@web/core/registry";
+import { templates } from "@web/core/templates";
 import { makeAssetLog, serviceLog } from "@web/core/utils/asset_log";
 import {
     deferUntilBundlesSettled,
@@ -121,6 +122,16 @@ export class ServiceContainer {
         await Promise.resolve();
 
         const runStartupPass = async () => {
+            if (templates.compiledLoads.size) {
+                debugLog.lifecycle("late services wait for compiled templates", {
+                    loads: templates.compiledLoads.size,
+                });
+                await templates.compiledTemplatesLoaded().catch((error) =>
+                    debugLog.logic("compiled templates failed, services start anyway", {
+                        error: String(error),
+                    }),
+                );
+            }
             try {
                 await this._start(new Map());
             } catch (error) {
