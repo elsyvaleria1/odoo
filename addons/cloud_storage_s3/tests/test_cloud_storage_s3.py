@@ -930,7 +930,6 @@ class TestS3CredentialSlots(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCloudStorageS3DownloadName(HttpCase):
-
     def setUp(self):
         super().setUp()
         icp = self.env["ir.config_parameter"]
@@ -1010,3 +1009,72 @@ class TestCloudStorageS3DownloadName(HttpCase):
             self._redirect_disposition(f"/documents/content/{document.access_token}"),
             "attachment; filename=Claveprivada_FIEL.key",
         )
+
+
+class TestCloudStorageS3ReadOnlyCopy(TransactionCase):
+    """A neutralized copy reads the source's blobs with a key from its environment."""
+
+    ENVIRON = {
+        "ODOO_CLOUD_READONLY_ENDPOINT": "s3.bhs.io.cloud.ovh.net",
+        "ODOO_CLOUD_READONLY_REGION": "bhs",
+        "ODOO_CLOUD_READONLY_KEY_ID": "READONLYKEY",
+        "ODOO_CLOUD_READONLY_SECRET": "readonly-secret",
+    }
+    URL = "https://source-bucket.s3.bhs.io.cloud.ovh.net/ir_attachment/1/blob"
+
+    def setUp(self):
+        super().setUp()
+        icp = self.env["ir.config_parameter"]
+        for key in ("cloud_storage_provider", "cloud_storage_s3_enabled"):
+            icp.search([("key", "=", key)]).unlink()
+        self.mock_s3_client = MagicMock()
+        self.mock_s3_client.generate_presigned_url.return_value = "https://signed"
+        patcher = patch(CLIENT_FACTORY, return_value=self.mock_s3_client)
+        self.boto_client = patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(s3.clear_cache)
+        environ = patch.dict("os.environ", self.ENVIRON)
+        environ.start()
+        self.addCleanup(environ.stop)
+        self.attachment = self.env["ir.attachment"].create({"name": "doc.pdf"})
+        self.attachment.write({"type": "cloud_storage", "url": self.URL})
+
+    def _neutralized(self, value):
+        self.env["ir.config_parameter"].set_param("database.is_neutralized", value)
+
+    def test_only_a_neutralized_copy_uses_the_environment_key(self):
+        self._neutralized(False)
+        self.assertFalse(s3.get_readonly_source(self.env))
+        self.assertFalse(self.attachment._is_s3_provider())
+        self._neutralized("true")
+        self.assertEqual(s3.get_readonly_source(self.env)["region"], "bhs")
+        self.assertTrue(self.attachment._is_s3_provider())
+
+    def test_the_copy_signs_reads_with_the_readonly_key(self):
+        self._neutralized("true")
+        info = self.attachment._generate_cloud_storage_download_info()
+        self.assertEqual(info["url"], "https://signed")
+        kwargs = self.boto_client.call_args.kwargs
+        self.assertEqual(kwargs["aws_access_key_id"], "READONLYKEY")
+        self.assertEqual(kwargs["endpoint_url"], "https://s3.bhs.io.cloud.ovh.net")
+        params = self.mock_s3_client.generate_presigned_url.call_args.kwargs["Params"]
+        self.assertEqual(params["Bucket"], "source-bucket")
+        self.assertTrue(
+            self.env["res.config.settings"]._get_cloud_storage_configuration()
+        )
+
+    def test_the_copy_never_writes_to_the_bucket(self):
+        self._neutralized("true")
+        self.assertFalse(self.attachment._s3_is_enabled())
+        local = self.env["ir.attachment"].create({"name": "new.txt", "raw": b"x"})
+        self.env["ir.attachment"]._cron_s3_move_local_to_cloud()
+        self.assertEqual(local.type, "binary")
+        self.attachment.unlink()
+        self.mock_s3_client.put_object.assert_not_called()
+        self.mock_s3_client.delete_objects.assert_not_called()
+        self.mock_s3_client.delete_object.assert_not_called()
+
+    def test_an_incomplete_environment_is_ignored(self):
+        self._neutralized("true")
+        with patch.dict("os.environ", {"ODOO_CLOUD_READONLY_SECRET": ""}):
+            self.assertFalse(s3.get_readonly_source(self.env))

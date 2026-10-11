@@ -40,10 +40,11 @@ class IrAttachment(models.Model):
         )
 
     def _is_s3_provider(self) -> bool:
-        return (
-            self.env.registry.settings.get(self.env, "cloud_storage_provider", False)
-            in s3.PROVIDERS
-        )
+        # a neutralized copy holding a read-only key serves the source's blobs;
+        # _s3_is_enabled stays false there, so nothing writes to the bucket
+        return self.env.registry.settings.get(
+            self.env, "cloud_storage_provider", False
+        ) in s3.PROVIDERS or bool(s3.get_readonly_source(self.env))
 
     def _is_s3_hybrid(self) -> bool:
         if not self._s3_is_enabled():

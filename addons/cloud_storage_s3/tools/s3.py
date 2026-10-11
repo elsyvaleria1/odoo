@@ -1,3 +1,4 @@
+import os
 import re
 from urllib.parse import quote, unquote, urlsplit
 
@@ -18,7 +19,34 @@ AWS_URL_PATTERN = re.compile(
     r"^https://(?P<bucket_name>[\w\-.]+)\.s3\.(?P<region>[\w\-.]+)\.amazonaws\.com/(?P<blob_name>[^?]+)$"
 )
 
+# A neutralized copy has no storage settings (neutralize.sql drops them), so it
+# cannot reach the source's bucket. On a developer machine these variables
+# give it a key that can only read that bucket: its documents show, and
+# nothing it does can write or delete there. The key lives in the machine's
+# environment, never in a database or in the neutralization.
+READONLY_ENVIRON = {
+    "endpoint": "ODOO_CLOUD_READONLY_ENDPOINT",
+    "region": "ODOO_CLOUD_READONLY_REGION",
+    "access_key_id": "ODOO_CLOUD_READONLY_KEY_ID",
+    "secret_access_key": "ODOO_CLOUD_READONLY_SECRET",
+}
+
 _ClientCache = {}
+
+
+def get_readonly_source(env) -> dict:
+    """The read-only key of a neutralized copy, or ``{}`` anywhere else."""
+    neutralized = env.registry.settings.get(env, "database.is_neutralized", False)
+    if str(neutralized).lower() != "true":
+        return {}
+    values = {
+        name: os.environ.get(variable, "").strip()
+        for name, variable in READONLY_ENVIRON.items()
+    }
+    if not all(values.values()):
+        return {}
+    values["endpoint"] = normalize_endpoint(values["endpoint"])
+    return values
 
 
 def get_credential(env, credentials=None):
@@ -81,7 +109,10 @@ def normalize_endpoint(endpoint) -> str:
 
 
 def get_endpoint(env) -> str:
-    return normalize_endpoint(env.registry.settings.get(env, PARAM_ENDPOINT, False))
+    endpoint = env.registry.settings.get(env, PARAM_ENDPOINT, False)
+    if not endpoint:
+        endpoint = get_readonly_source(env).get("endpoint")
+    return normalize_endpoint(endpoint)
 
 
 def get_config(env):
@@ -95,7 +126,16 @@ def get_config(env):
         else False,
     }
     if not all(config.values()):
-        return {}
+        readonly = get_readonly_source(env)
+        if not readonly:
+            return {}
+        return {
+            "bucket_name": False,
+            "region": readonly["region"],
+            "credential": f"readonly:{readonly['access_key_id']}",
+            "endpoint_url": readonly["endpoint"],
+            "readonly": True,
+        }
     config["endpoint_url"] = get_endpoint(env)
     if (
         not config["endpoint_url"]
@@ -119,7 +159,7 @@ def get_client(env):
     cached_signature, cached_client = _ClientCache.get(db_name, (None, None))
     if cached_signature == signature and cached_client:
         return cached_client
-    keys = get_keys(env)
+    keys = get_readonly_source(env) if config.get("readonly") else get_keys(env)
     if not keys:
         raise UserError(env._("The S3 access keys are missing or unreadable."))
     client = boto3.client(  # noqa: E8518 -- botocore opens its own connections and takes no requests session

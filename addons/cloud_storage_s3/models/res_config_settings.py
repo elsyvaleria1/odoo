@@ -166,7 +166,7 @@ class ResConfigSettings(models.TransientModel):
             ) from e
 
     def _get_cloud_storage_configuration(self):
-        if not self._is_s3_provider():
+        if not self._is_s3_provider() and not s3.get_readonly_source(self.env):
             return super()._get_cloud_storage_configuration()
         return s3.get_config(self.env)
 
