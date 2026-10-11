@@ -166,7 +166,33 @@ class MixinMerge(models.AbstractModel):
                 self._repoint_table(table, column, src_records, dst_record)
 
         for records, fnames in to_recompute:
-            records.modified(fnames)
+            if records._name == model:
+                records.modified(fnames)
+            else:
+                self._recompute_derived_dependents(records, fnames)
+
+    def _recompute_derived_dependents(
+        self, records: models.BaseModel, fnames: list[str]
+    ) -> None:
+        # A merge swaps a link to an equivalent record: values derived from the
+        # link follow it, values a user chose through an editable compute stay.
+        scheduler = self.env.core.new_scheduler()
+        records._modified_trigger_loop(fnames, False, scheduler)
+        kept = []
+        for field, ids in scheduler.to_recompute.items():
+            if field.readonly:
+                self.env.add_to_compute(field, self.env[field.model_name].browse(ids))
+            else:
+                kept.append(str(field))
+        _debug.logic(
+            "merge_dependents_recomputed",
+            model=records._name,
+            links=fnames,
+            recomputed=sorted(
+                str(field) for field in scheduler.to_recompute if field.readonly
+            ),
+            kept_editable=sorted(kept),
+        )
 
     def _get_repointed_records_with_dependents(
         self,
@@ -174,29 +200,55 @@ class MixinMerge(models.AbstractModel):
         relations: list[tuple[str, str]],
         src_records: models.BaseModel,
     ) -> list[tuple[models.BaseModel, list[str]]]:
-        Model = self.env[model].sudo().with_context(active_test=False)
-        columns = [
-            column
-            for table, column in relations
-            if table == Model._table
-            and (field := Model._fields.get(column)) is not None
-            and field.store
-            and self.env.registry.get_trigger_tree([field])
-        ]
-        records = (
-            Model.search(
+        has_dependents = self.env.registry.get_trigger_tree
+        repointed = set(relations)
+        columns_by_model: dict[str, list[str]] = defaultdict(list)
+        joins: list[Field] = []
+        for other in self.env.values():
+            if other._abstract or not other._is_an_ordinary_table():
+                continue
+            for field in other._fields.values():
+                if not field.store or not has_dependents([field]):
+                    continue
+                if (other._table, field.name) in repointed and field.column_type:
+                    columns_by_model[other._name].append(field.name)
+                elif (
+                    field.type == "many2many"
+                    and field.comodel_name == model
+                    and (field.relation, field.column2) in repointed
+                ):
+                    joins.append(field)
+
+        to_recompute = []
+        for model_name, columns in columns_by_model.items():
+            Other = self.env[model_name].sudo().with_context(active_test=False)
+            records = Other.search(  # noqa: E8507 -- loop variable is the model -- a different table each time
                 Domain.OR(Domain(column, "in", src_records.ids) for column in columns)
             )
-            if columns
-            else Model.browse()
-        )
+            if records:
+                to_recompute.append((records, columns))
+        for field in joins:
+            self.env.cr.execute(
+                SQL(
+                    "SELECT DISTINCT %s FROM %s WHERE %s = ANY(%s)",
+                    SQL.identifier(field.column1),
+                    SQL.identifier(field.relation),
+                    SQL.identifier(field.column2),
+                    src_records.ids,
+                )
+            )
+            if owner_ids := [row[0] for row in self.env.cr.fetchall()]:
+                to_recompute.append(
+                    (self.env[field.model_name].sudo().browse(owner_ids), [field.name])
+                )
         _debug.logic(
             "repointed_with_dependents",
             model=model,
-            columns=columns,
-            records=len(records),
+            models=sorted(columns_by_model),
+            joins=[str(field) for field in joins],
+            records=sum(len(records) for records, _fnames in to_recompute),
         )
-        return [(records, columns)] if records else []
+        return to_recompute
 
     def _repoint_table(
         self,

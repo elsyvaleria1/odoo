@@ -360,6 +360,24 @@ class IrModel(models.Model):
                     )
                 )
 
+    def _unlink_presentation(self) -> None:
+        names = self.mapped("model")
+        views = (
+            self.env["ir.ui.view"]
+            .with_context(active_test=False)
+            .search([("model", "in", names)])
+        )
+        actions = (
+            self.env["ir.actions.act_window"]
+            .with_context(active_test=False)
+            .search([("res_model", "in", names)])
+        )
+        _debug.pipeline(
+            "unlink.presentation", models=names, views=len(views), actions=len(actions)
+        )
+        views.unlink()
+        actions.unlink()
+
     @override
     def unlink(self) -> bool:
         if not self.env.context.get(MODULE_UNINSTALL_FLAG):
@@ -371,6 +389,8 @@ class IrModel(models.Model):
             manual=len(manual_models),
             uninstall=bool(self.env.context.get(MODULE_UNINSTALL_FLAG)),
         )
+        if manual_models and not self.env.context.get(MODULE_UNINSTALL_FLAG):
+            manual_models._unlink_presentation()
         manual_models.field_id.filtered(lambda f: f.state == "manual")._prepare_update()
         (self - manual_models).field_id._prepare_update()
 

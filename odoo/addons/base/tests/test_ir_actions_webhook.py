@@ -86,6 +86,24 @@ class TestWebhookTimeout(WebhookCase):
         self.assertIn("notify", message)
         self.assertIn("NOT be retried", message)
 
+    def test_immediate_delivery_is_bounded_by_the_timeout_overall(self):
+        action = self._action(webhook_timeout=12)
+        Egress = type(self.env["ir.egress"])
+        with (
+            patch.object(
+                Egress, "session", autospec=True, wraps=Egress.session
+            ) as session,
+            patch.object(requests.Session, "post"),
+        ):
+            self._run(action)
+        self.assertEqual(session.call_args.kwargs["max_seconds"], 12)
+
+    def test_the_sample_payload_of_a_webhook_without_model_is_empty(self):
+        action = self.env["ir.actions.server"].new(
+            {"name": "draft", "state": "webhook"}
+        )
+        self.assertFalse(action.webhook_sample_payload)
+
     def test_the_ceiling_refuses_a_worker_holding_value(self):
         with self.assertRaises(ValidationError) as caught:
             self._action(webhook_timeout=600)

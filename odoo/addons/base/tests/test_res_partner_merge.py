@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from odoo import Command
 from odoo.exceptions import AccessError, UserError
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 from odoo.addons.base.tests.common import make_access_row
 
@@ -285,7 +285,6 @@ class TestMergePartner(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestMergePartnerForeignKeyClash(TransactionCase):
-
     def test_a_repeated_account_is_dropped_and_the_others_are_carried_over(self):
         Partner = self.env["res.partner"]
         Bank = self.env["res.partner.bank.account"]
@@ -778,6 +777,24 @@ class TestMergePartnerSimilarNames(TransactionCase):
         with self.assertRaises(UserError):
             self.Wizard.create({}).action_start_manual_process()
 
+    def test_a_match_the_user_cannot_read_neither_fails_nor_groups(self):
+        other = self.env["res.company"].create({"name": "Elsewhere"})
+        manager = new_test_user(
+            self.env,
+            login="merger",
+            groups="base.group_user,base.group_partner_manager",
+        )
+        seen = self.Partner.create([{"name": "Cyberdyne Systems"}])
+        hidden = self.Partner.create(
+            {"name": "Cyberdyne Systemz", "company_id": other.id}
+        )
+        groups = (
+            self._wizard().with_user(manager)._get_similar_name_groups(maximum_group=0)
+        )
+        grouped = {pid for _min_id, ids in groups for pid in ids}
+        self.assertNotIn(hidden.id, grouped)
+        self.assertNotIn(seen.id, grouped)
+
 
 @tagged("post_install", "-at_install")
 class TestMergePartnerAbsorbsEditableComputes(TransactionCase):
@@ -829,6 +846,32 @@ class TestMergePartnerIdentifiers(TransactionCase):
 
     def _merge(self, src, dst):
         self.env["wizard.res.partner.merge"].create({})._merge([src.id, dst.id], dst)
+
+    def test_sources_sharing_a_value_under_one_company_merge_into_a_standalone(self):
+        unique = self.env["res.partner.identifier.type"].create(
+            {
+                "name": "Merge Unique",
+                "code": "MERGE_UNIQUE",
+                "unique_across_contacts": True,
+                "multiple_per_contact": False,
+            }
+        )
+        Partner = self.env["res.partner"]
+        company = Partner.create({"name": "Id Corp", "is_company": True})
+        first, second = Partner.create(
+            [{"name": "Id Same", "parent_id": company.id} for _ in range(2)]
+        )
+        dst = Partner.create({"name": "Id Same"})
+        self.env["res.partner.identifier"].create(
+            [
+                {"partner_id": src.id, "type_id": unique.id, "value": "V-1"}
+                for src in (first, second)
+            ]
+        )
+        self.env["wizard.res.partner.merge"].create({})._merge(
+            (dst + first + second).ids, dst
+        )
+        self.assertEqual(dst.identifier_ids.mapped("value"), ["V-1"])
 
     def test_a_single_per_contact_type_is_not_duplicated_on_the_destination(self):
         Partner = self.env["res.partner"]
@@ -1143,3 +1186,80 @@ class TestMergePartnerIntegrity(TransactionCase):
         self.assertEqual(
             self.env.cr.fetchone()[0], {"note": "from source", "code": "DST"}
         )
+
+
+@tagged("post_install", "-at_install")
+class TestMergePartnerRecomputesDependentsElsewhere(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        model = cls.env["ir.model"].create(
+            {"name": "Merge Probe", "model": "x_merge_probe"}
+        )
+        Fields = cls.env["ir.model.fields"]
+        for name, ttype in (
+            ("x_partner_id", "many2one"),
+            ("x_partner_ids", "many2many"),
+        ):
+            Fields.create(
+                {
+                    "model_id": model.id,
+                    "name": name,
+                    "ttype": ttype,
+                    "relation": "res.partner",
+                }
+            )
+            Fields.create(
+                {
+                    "model_id": model.id,
+                    "name": f"{name}_seen",
+                    "ttype": "char",
+                    "store": True,
+                    "readonly": True,
+                    "depends": name,
+                    "compute": "for record in self:\n"
+                    f"    record['{name}_seen'] = ','.join("
+                    f"str(i) for i in record.{name}.ids)",
+                }
+            )
+        Fields.create(
+            {
+                "model_id": model.id,
+                "name": "x_partner_choice",
+                "ttype": "char",
+                "store": True,
+                "readonly": False,
+                "depends": "x_partner_id",
+                "compute": "for record in self:\n"
+                "    record['x_partner_choice'] = record.x_partner_id.name",
+            }
+        )
+        cls.src = cls.env["res.partner"].create({"name": "Merged Away"})
+        cls.dst = cls.env["res.partner"].create({"name": "Kept"})
+
+    def _merge(self):
+        self.env["wizard.res.partner.merge"].create({})._merge(
+            (self.dst + self.src).ids, self.dst
+        )
+        self.env.invalidate_all()
+
+    def test_a_stored_compute_over_a_many2one_follows_the_merge(self):
+        probe = self.env["x_merge_probe"].create({"x_partner_id": self.src.id})
+        self._merge()
+        self.assertEqual(probe.x_partner_id, self.dst)
+        self.assertEqual(probe.x_partner_id_seen, str(self.dst.id))
+
+    def test_a_stored_compute_over_a_many2many_follows_the_merge(self):
+        probe = self.env["x_merge_probe"].create(
+            {"x_partner_ids": [Command.set(self.src.ids)]}
+        )
+        self._merge()
+        self.assertEqual(probe.x_partner_ids, self.dst)
+        self.assertEqual(probe.x_partner_ids_seen, str(self.dst.id))
+
+    def test_a_value_chosen_through_an_editable_compute_survives_the_merge(self):
+        probe = self.env["x_merge_probe"].create({"x_partner_id": self.src.id})
+        probe.x_partner_choice = "chosen by hand"
+        self._merge()
+        self.assertEqual(probe.x_partner_id, self.dst)
+        self.assertEqual(probe.x_partner_choice, "chosen by hand")

@@ -1716,7 +1716,12 @@ class ResPartner(models.Model):
             self.with_context(active_test=False)
             .sudo()
             .search_fetch(
-                [(fname, "in", list(values))],
+                [
+                    (fname, "in", list(values)),
+                    "|",
+                    ("parent_id", "=", False),
+                    ("is_company", "=", True),
+                ],
                 [fname, "parent_id", "company_id", "country_id"],
             )
         )

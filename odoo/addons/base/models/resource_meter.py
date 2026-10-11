@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.tools import SQL
 
 
 class ResourceMeter(models.Model):
@@ -61,10 +62,26 @@ class ResourceMeter(models.Model):
 
     @api.depends("reading_ids.date", "reading_ids.value")
     def _compute_last_reading_id(self) -> None:
+        Reading = self.env["resource.meter.reading"]
+        latest = {}
+        if stored := self.filtered("id"):
+            Reading.flush_model(["meter_id", "date"])
+            self.env.cr.execute(
+                SQL(
+                    "SELECT DISTINCT ON (meter_id) meter_id, id"
+                    " FROM resource_meter_reading WHERE meter_id = ANY(%s)"
+                    " ORDER BY meter_id, date DESC, id DESC",
+                    stored.ids,
+                )
+            )
+            latest = dict(self.env.cr.fetchall())
         for meter in self:
-            meter.last_reading_id = meter.reading_ids.sorted(
-                key=lambda r: (r.date, r.id), reverse=True
-            )[:1]
+            if meter.id:
+                meter.last_reading_id = Reading.browse(latest.get(meter.id))
+            else:
+                meter.last_reading_id = meter.reading_ids.sorted(
+                    key=lambda r: (r.date, r.id), reverse=True
+                )[:1]
 
     def record(self, value, date=None, source=None):
         self.check_singleton()

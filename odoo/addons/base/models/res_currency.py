@@ -359,10 +359,21 @@ class ResCurrency(models.Model):
             exponent = Decimal(repr(currency.rounding)).normalize().as_tuple().exponent
             currency.decimal_places = max(0, -exponent)
 
-    @api.depends("rate_ids.name")
+    @api.depends("rate_ids.name", "rate_ids.company_id")
+    @api.depends_context("company")
     def _compute_date(self) -> None:
+        latest = dict(
+            self.env["res.currency.rate"]._read_group(
+                [
+                    ("currency_id", "in", self._origin.ids),
+                    ("company_id", "in", (False, self.env.company.root_id.id)),
+                ],
+                ["currency_id"],
+                ["name:max"],
+            )
+        )
         for currency in self:
-            currency.date = currency.rate_ids[:1].name
+            currency.date = latest.get(currency._origin, False)
 
     def amount_to_text(self, amount: float) -> str:
         self.check_singleton()

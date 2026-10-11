@@ -34,7 +34,8 @@ class ScorecardDimensionBand(models.Model):
     @api.depends("min_value", "max_value", "points")
     def _compute_display_name(self):
         for band in self:
-            upper = "" if not band.max_value else f"{band.max_value:g}"
+            upper = band._get_upper_bound()
+            upper = "" if upper == float("inf") else f"{upper:g}"
             band.display_name = f"[{band.min_value:g}, {upper}) → {band.points:g}"
 
     @api.constrains("points")

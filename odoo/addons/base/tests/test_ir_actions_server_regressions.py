@@ -997,3 +997,23 @@ class TestADelegatingCreatorsNameIsCustom(ServerActionCase):
         cron.write({"state": "object_write", "update_path": "name"})
         self.env.flush_all()
         self.assertEqual(cron.name, "Nightly")
+
+
+@tagged("post_install", "-at_install")
+class TestServerActionWarningFollowsLinkField(ServerActionCase):
+    def test_clearing_the_link_field_clears_the_cron_warning(self):
+        action = self.Action.new(
+            {
+                "name": "spawn",
+                "model_id": self.partner_model.id,
+                "crud_model_id": self.partner_model.id,
+                "state": "object_create",
+                "usage": "ir_cron",
+                "link_field_id": self.env["ir.model.fields"]
+                ._get("res.partner", "parent_id")
+                .id,
+            }
+        )
+        self.assertIn("runs on no record", action.warning or "")
+        action.link_field_id = False
+        self.assertNotIn("runs on no record", action.warning or "")

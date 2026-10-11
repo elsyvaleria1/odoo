@@ -1457,4 +1457,4 @@ class HrLeaveAllocation(models.Model):
         self.carried_over_days_expiration_date = False
         self.expiring_carryover_days = 0
         date_to = min(self.date_to, date.today()) if self.date_to else False
-        self._process_accrual_plans(date_to)
+        self._process_accrual_plans(date_to, log=False)

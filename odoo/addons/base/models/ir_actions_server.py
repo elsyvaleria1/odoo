@@ -623,7 +623,9 @@ class IrActionsServer(models.Model):
     @api.depends("state", "model_id.model", "webhook_field_ids", "name")
     def _compute_webhook_sample_payload(self) -> None:
         self.webhook_sample_payload = False
-        webhooks = self.filtered(lambda action: action.state == "webhook")
+        webhooks = self.filtered(
+            lambda action: action.state == "webhook" and action.model_id
+        )
         samples = {}
         for model_name in set(webhooks.model_id.mapped("model")):
             samples[model_name] = (
@@ -1026,9 +1028,7 @@ class IrActionsServer(models.Model):
     def _send_webhook_request(
         self, url, timeout, payload, idempotency_key, options
     ) -> int:
-        with self.env["ir.egress"].session(
-            purpose="webhook", max_bytes=webhook.RESPONSE_MAX_BYTES, max_seconds=timeout
-        ) as session:
+        with self._get_webhook_session(timeout) as session:
             response = session.post(
                 url,
                 data=payload,
@@ -1421,12 +1421,15 @@ class IrActionsServer(models.Model):
         option = OPT_SORT_KEYS | (OPT_INDENT_2 if indent else 0)
         return json_dumps(payload, default=_webhook_json_default, option=option)
 
+    def _get_webhook_session(self, timeout: float) -> guarded_http.GuardedSession:
+        return self.env["ir.egress"].session(
+            purpose="webhook", max_bytes=webhook.RESPONSE_MAX_BYTES, max_seconds=timeout
+        )
+
     def _prepare_webhook_delivery(self, url, timeout, action_label, target):
         return partial(
             webhook.deliver,
-            self.env["ir.egress"].session(
-                purpose="webhook", max_bytes=webhook.RESPONSE_MAX_BYTES
-            ),
+            self._get_webhook_session(timeout),
             url,
             timeout,
             action_label,
@@ -1481,6 +1484,7 @@ class IrActionsServer(models.Model):
             "sequence_id",
             "webhook_field_ids",
             "usage",
+            "link_field_id",
         ]
 
     def _get_child_warnings(self) -> list[str]:

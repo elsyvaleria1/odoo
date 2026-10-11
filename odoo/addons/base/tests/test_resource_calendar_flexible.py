@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+from unittest.mock import patch
 
 from odoo.libs.datetime import timezone
 from odoo.tests import TransactionCase, tagged
@@ -771,3 +772,26 @@ class TestFlexibleHoursFollowTheWindow(TransactionCase):
             ),
             8.0,
         )
+
+
+@tagged("post_install", "-at_install")
+class TestPlanningDoesNotDependOnTheSearchWindow(TransactionCase):
+    def test_flexible_planning_matches_one_unsplit_window(self):
+        calendar = self.env["resource.calendar"].create(
+            {
+                "name": "Flexible plan",
+                "tz": "Europe/Brussels",
+                "schedule_type": "flexible",
+                "full_time_required_hours": 40,
+                "hours_per_day": 8,
+            }
+        )
+        start = datetime(2026, 11, 2, 10, 0, tzinfo=timezone("Europe/Brussels"))
+        hours = (8, 40, 88, 90, 150, -30, -90)
+        planned = [calendar.plan_hours(h, start) for h in hours]
+        with patch(
+            "odoo.addons.base.models.resource_calendar._PLAN_WINDOW",
+            timedelta(days=400),
+        ):
+            unsplit = [calendar.plan_hours(h, start) for h in hours]
+        self.assertEqual(planned, unsplit)

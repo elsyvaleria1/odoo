@@ -959,6 +959,28 @@ class TestPartnerDuplicateIdentifiers(TransactionCase):
             "attaching a parent must retrigger the duplicate compute",
         )
 
+    def test_duplicate_candidates_are_commercial_entities_not_their_contacts(self):
+        Partner = self.env["res.partner"]
+        acme = Partner.create(
+            {
+                "name": "Dup Acme",
+                "is_company": True,
+                "vat": "BE0477472701",
+                "child_ids": [Command.create({"name": f"C{i}"}) for i in range(3)],
+            }
+        )
+        branch = Partner.create(
+            {
+                "name": "Dup Branch",
+                "is_company": True,
+                "parent_id": acme.id,
+                "vat": "BE0477472701",
+            }
+        )
+        self.assertEqual(acme.child_ids.mapped("vat"), ["BE0477472701"] * 4)
+        candidates = Partner._search_identifier_candidates("vat", {"BE0477472701"})
+        self.assertEqual(set(candidates["BE0477472701"]), {acme, branch})
+
     def test_only_a_slash_marks_a_partner_as_not_subject_to_tax(self):
         Partner = self.env["res.partner"]
         exempt_a = Partner.create({"name": "Exempt A", "is_company": True, "vat": "/"})

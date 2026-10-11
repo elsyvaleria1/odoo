@@ -439,3 +439,27 @@ class TestExceptionCompanies(ResourceCase):
         )
         leave.flush_recordset()
         self.assertEqual(leave.company_id, self.company)
+
+
+@tagged("post_install", "-at_install")
+class TestCompanyHolidayStaysInItsCompany(TransactionCase):
+    def test_a_company_holiday_spares_another_company_s_calendar(self):
+        other = self.env["res.company"].create({"name": "Other holiday co"})
+        own_calendar, other_calendar = self.env["resource.calendar"].create(
+            [
+                {"name": "Own", "company_id": self.env.company.id, "tz": "UTC"},
+                {"name": "Other", "company_id": other.id, "tz": "UTC"},
+            ]
+        )
+        self.env["resource.schedule.exception"].create(
+            {
+                "name": "Own holiday",
+                "company_id": self.env.company.id,
+                "date_from": "2026-11-02 00:00:00",
+                "date_to": "2026-11-02 23:59:59",
+            }
+        )
+        start = datetime(2026, 11, 2, tzinfo=UTC)
+        end = datetime(2026, 11, 3, tzinfo=UTC)
+        self.assertEqual(own_calendar.get_work_hours_count(start, end), 0)
+        self.assertEqual(other_calendar.get_work_hours_count(start, end), 8)

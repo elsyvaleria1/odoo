@@ -634,7 +634,7 @@ class ResGroups(models.Model):
         _debug.logic("administrator_checked", groups=self.ids, by="unlink")
         self.env["res.users"]._check_at_least_one_administrator()
         self.env["ir.access"]._clear_access_caches()
-        self.env.registry.clear_cache("groups")
+        self.env.registry.clear_cache("groups", "actions")
         return res
 
     def _user_membership(self) -> set[tuple[int, int]]:

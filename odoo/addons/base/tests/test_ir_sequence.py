@@ -9,7 +9,7 @@ from freezegun import freeze_time
 import odoo
 from odoo.exceptions import ConcurrencyError, UserError
 from odoo.modules.registry import Registry
-from odoo.tests import common, counting_statements
+from odoo.tests import Form, common, counting_statements
 from odoo.tests.common import BaseCase
 from odoo.tools.misc import mute_logger
 
@@ -346,6 +346,47 @@ class TestIrSequenceSwitchImplementation(common.TransactionCase):
         self.assertEqual(sub_seq.number_next, 4, "the range carries on from pg")
         self.assertEqual(seq.next_by_id(), "4")
         self.assertEqual(seq.next_by_id(), "5")
+
+
+@common.tagged("post_install", "-at_install")
+class TestIrSequenceFormSwitch(common.TransactionCase):
+    def test_switching_in_the_form_continues_numbering(self):
+        for implementation, other in (("standard", "no_gap"), ("no_gap", "standard")):
+            with self.subTest(implementation=implementation):
+                seq = self.env["ir.sequence"].create(
+                    {
+                        "name": f"form-switch-{implementation}",
+                        "implementation": implementation,
+                        "number_next": 57,
+                    }
+                )
+                self.assertEqual(seq.next_by_id(), "57")
+                with Form(seq) as form:
+                    form.implementation = other
+                    self.assertEqual(form.number_next_actual, 58)
+                self.assertEqual(seq.next_by_id(), "58")
+
+    def test_switching_in_the_form_continues_the_date_ranges(self):
+        seq = self.env["ir.sequence"].create(
+            {
+                "name": "form-switch-ranges",
+                "implementation": "standard",
+                "use_date_range": True,
+            }
+        )
+        for i in range(1, 4):
+            self.assertEqual(seq.next_by_id(), str(i))
+        with Form(seq) as form:
+            form.implementation = "no_gap"
+        self.assertEqual(seq.next_by_id(), "4")
+
+    def test_a_sequence_created_in_the_form_starts_at_one(self):
+        for implementation in ("standard", "no_gap"):
+            with self.subTest(implementation=implementation):
+                with Form(self.env["ir.sequence"]) as form:
+                    form.name = f"form-new-{implementation}"
+                    form.implementation = implementation
+                self.assertEqual(form.record.next_by_id(), "1")
 
 
 class TestIrSequenceInterpolationLazy(common.TransactionCase):
@@ -750,6 +791,21 @@ class TestIrSequenceNextBatch(common.TransactionCase):
 
     def _drawn_in_one_batch(self, values, count):
         return self._sequence(**values)._next_batch(count)
+
+    def test_one_batch_is_stamped_with_one_date(self):
+        IrSequence = type(self.env["ir.sequence"])
+        for values in ({}, {"use_date_range": True}):
+            with self.subTest(**values):
+                sequence = self._sequence(prefix="%(year)s/", **values)
+                with patch.object(
+                    IrSequence,
+                    "_get_prefix_suffix",
+                    autospec=True,
+                    wraps=IrSequence._get_prefix_suffix,
+                ) as stamp:
+                    drawn = sequence._next_batch(5)
+                self.assertEqual(len(drawn), 5)
+                self.assertEqual(stamp.call_count, 1)
 
     def test_standard_matches_a_loop_of_next(self):
         values = {"implementation": "standard", "number_increment": 1}

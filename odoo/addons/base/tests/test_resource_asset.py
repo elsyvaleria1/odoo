@@ -414,6 +414,21 @@ class TestResourceAsset(TransactionCase):
                 }
             )
 
+    def test_uniqueness_holds_within_one_batch(self):
+        one = self._truck("One")
+        two = self._truck("Two")
+        with self.assertRaises(ValidationError):
+            self.env["resource.identifier"].create(
+                [
+                    {
+                        "resource_id": truck.id,
+                        "type_id": self.vin.id,
+                        "value": "1HGCM82633A004352",
+                    }
+                    for truck in (one, two)
+                ]
+            )
+
     def test_company_uniqueness_stops_at_the_company(self):
         one = self._truck("One")
         two = self._truck("Two", company_id=self.company_b.id)
@@ -506,6 +521,34 @@ class TestResourceAsset(TransactionCase):
         meter.record(900, date=t0 + timedelta(days=3))
         meter.invalidate_recordset()
         self.assertEqual(meter.value, 900)
+
+    def test_meter_monotony_holds_on_edit_delete_and_within_a_batch(self):
+        meter = self.env["resource.meter"].create(
+            {"resource_id": self._truck().id, "name": "Odometer", "kind": "odometer"}
+        )
+        t0 = datetime(2026, 1, 1, 8, 0)
+        first = meter.record(1000, date=t0)
+        latest = meter.record(1500, date=t0 + timedelta(days=1))
+        with self.assertRaises(ValidationError):
+            first.value = 2000
+        latest.unlink()
+        self.assertEqual(meter.last_reading_id, first)
+        self.assertEqual(meter.value, 1000)
+        with self.assertRaises(ValidationError):
+            self.env["resource.meter.reading"].create(
+                [
+                    {
+                        "meter_id": meter.id,
+                        "value": 3000,
+                        "date": t0 + timedelta(days=2),
+                    },
+                    {
+                        "meter_id": meter.id,
+                        "value": 2500,
+                        "date": t0 + timedelta(days=3),
+                    },
+                ]
+            )
 
     def test_identifier_columns_read_and_write_the_identifier_rows(self):
         truck = self._truck(license_plate="ABC-123", vin_sn="1HGCM82633A004352")
@@ -848,9 +891,7 @@ class TestResourceAsset(TransactionCase):
                 "guard_scope": "members",
                 "operation": "r",
                 "reach": "predicate",
-                "predicate_id": self.env.ref(
-                    "base.access_predicate_enabled_kind"
-                ).id,
+                "predicate_id": self.env.ref("base.access_predicate_enabled_kind").id,
                 "predicate_args": {"field": "kind_id"},
             }
         )

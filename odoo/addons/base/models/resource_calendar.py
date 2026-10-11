@@ -906,8 +906,9 @@ class ResourceCalendar(models.Model):
         windows_of_no_company = []
         for window in window_per_resource:
             resource = window[0]
-            if resource and resource.company_id:
-                windows_by_company[resource.company_id.id].append(window)
+            company = resource.company_id if resource else self.company_id
+            if len(company) == 1:
+                windows_by_company[company.id].append(window)
             else:
                 windows_of_no_company.append(window)
 
@@ -1438,17 +1439,21 @@ class ResourceCalendar(models.Model):
                 self._attendance_intervals_batch, resources=resource
             )
         resource_id = resource.id
+        tz = timezone(self._get_tz(resource))
+
+        def midnight(dt: datetime) -> datetime:
+            return datetime.combine(dt.astimezone(tz).date(), time.min, tzinfo=tz)
+
         horizon = _PLAN_WINDOW * _PLAN_MAX_ITERATIONS
-        offset, width = timedelta(0), _PLAN_WINDOW
-        while offset < horizon:
-            width = min(width, horizon - offset)
+        cursor, width = day_dt, _PLAN_WINDOW
+        while abs(cursor - day_dt) < horizon:
             if forward:
-                dt = day_dt + offset
-                yield from get_intervals(dt, dt + width)[resource_id]
+                stop = max(midnight(cursor + width), cursor + timedelta(days=1))
+                yield from get_intervals(cursor, stop)[resource_id]
             else:
-                dt = day_dt - offset
-                yield from reversed(get_intervals(dt - width, dt)[resource_id])
-            offset += width
+                stop = min(midnight(cursor - width), cursor - timedelta(days=1))
+                yield from reversed(get_intervals(stop, cursor)[resource_id])
+            cursor = stop
             width *= 2
 
     def plan_hours(

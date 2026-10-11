@@ -1,5 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.tools import SQL
 from odoo.tools.authority_keys import declare_authority_keys
 
 declare_authority_keys("base", "skip_meter_monotonic")
@@ -48,20 +49,35 @@ class ResourceMeterReading(models.Model):
     def _check_monotonic(self) -> None:
         if self.env.context.get("skip_meter_monotonic"):
             return
-        for reading in self.filtered("meter_id.monotonic"):
-            neighbours = reading.meter_id.reading_ids - reading
-            before = neighbours.filtered_domain(
-                [("date", "<=", reading.date), ("value", ">", reading.value)]
+        monotonic = self.filtered("meter_id.monotonic")
+        if not monotonic:
+            return
+        self.flush_model(["meter_id", "date", "value"])
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT reading.id
+                  FROM resource_meter_reading AS reading
+                  JOIN resource_meter_reading AS other
+                    ON other.meter_id = reading.meter_id
+                   AND other.id != reading.id
+                   AND (
+                        (other.date <= reading.date AND other.value > reading.value)
+                     OR (other.date > reading.date AND other.value < reading.value)
+                   )
+                 WHERE reading.id = ANY(%s)
+                 LIMIT 1
+                """,
+                monotonic.ids,
             )
-            after = neighbours.filtered_domain(
-                [("date", ">", reading.date), ("value", "<", reading.value)]
-            )
-            if before or after:
-                raise ValidationError(
-                    self.env._(
-                        "%(meter)s: a reading of %(value)s on %(date)s would make the meter run backwards.",
-                        meter=reading.meter_id.display_name,
-                        value=reading.value,
-                        date=reading.date,
-                    )
+        )
+        if row := self.env.cr.fetchone():
+            reading = self.browse(row[0])
+            raise ValidationError(
+                self.env._(
+                    "%(meter)s: a reading of %(value)s on %(date)s would make the meter run backwards.",
+                    meter=reading.meter_id.display_name,
+                    value=reading.value,
+                    date=reading.date,
                 )
+            )

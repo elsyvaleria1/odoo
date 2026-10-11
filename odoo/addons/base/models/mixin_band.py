@@ -21,7 +21,8 @@ class MixinBand(models.AbstractModel):
         default=0.0,
         help="Upper bound of the band, exclusive -- it is the lower bound of "
         "the next band. 0 means no upper limit, which the highest band of a "
-        "scale should use so nothing falls off the top.",
+        "scale should use so nothing falls off the top; on a band starting "
+        "below zero, 0 is the bound itself.",
     )
     active = fields.Boolean(default=True)
 
@@ -36,16 +37,22 @@ class MixinBand(models.AbstractModel):
     def _get_band_scope_fields(self) -> tuple[str, ...]:
         return ()
 
+    def _get_upper_bound(self) -> float:
+        self.check_singleton()
+        if self.max_value or self.min_value < 0:
+            return self.max_value
+        return float("inf")
+
     @staticmethod
     def _is_range_overlapping(band_a, band_b) -> bool:
-        max_a = band_a.max_value or float("inf")
-        max_b = band_b.max_value or float("inf")
-        return band_a.min_value < max_b and band_b.min_value < max_a
+        return (
+            band_a.min_value < band_b._get_upper_bound()
+            and band_b.min_value < band_a._get_upper_bound()
+        )
 
     def _is_covering(self, value) -> bool:
         self.check_singleton()
-        upper = self.max_value or float("inf")
-        return self.min_value <= value < upper
+        return self.min_value <= value < self._get_upper_bound()
 
     @api.constrains(
         lambda self: (
@@ -86,7 +93,7 @@ class MixinBand(models.AbstractModel):
                         name=record.display_name,
                     )
                 )
-            if record.max_value and record.max_value <= record.min_value:
+            if record._get_upper_bound() <= record.min_value:
                 _debug.logic(
                     "band_rejected",
                     model=self._name,

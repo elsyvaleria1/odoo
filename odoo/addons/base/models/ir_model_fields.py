@@ -1087,7 +1087,9 @@ class IrModelFields(models.Model):
             failed_dependencies.extend(
                 (field, inverse)
                 for inverse in self.pool.field_inverses[field]
-                if inverse.manual and inverse.type == "one2many"
+                if inverse.manual
+                and inverse.type == "one2many"
+                and inverse not in fields_
             )
 
         _debug.logic(

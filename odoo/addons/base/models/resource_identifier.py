@@ -68,8 +68,7 @@ class ResourceIdentifier(models.Model):
         if not candidates:
             return
         others = self.sudo().search(
-            Domain("id", "not in", candidates.ids)
-            & Domain("type_id", "in", candidates.type_id.ids)
+            Domain("type_id", "in", candidates.type_id.ids)
             & Domain("normalized_value", "in", candidates.mapped("normalized_value"))
         )
         taken = defaultdict(self.env["resource.identifier"].sudo)

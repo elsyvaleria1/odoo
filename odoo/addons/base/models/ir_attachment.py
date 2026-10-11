@@ -961,7 +961,7 @@ class IrAttachment(models.Model):
     def _get_mimetype_from_values(self, values: dict[str, Any]) -> str:
         mimetype = None
         if values.get("mimetype"):
-            mimetype = values["mimetype"]
+            mimetype = values["mimetype"].partition(";")[0].strip()
         if not mimetype and values.get("name"):
             mimetype = mimetypes.guess_type(values["name"])[0]
         if not mimetype and values.get("url"):
@@ -1441,13 +1441,24 @@ class IrAttachment(models.Model):
 
         for attach in self._with_bin_size_disabled():
             bin_data = asbytes(attach)
+            index = self._is_content_index_required(
+                {
+                    "url": attach.url,
+                    "res_model": attach.res_model,
+                    "res_id": attach.res_id,
+                    "public": attach.public,
+                }
+            )
             vals = self._store_content_cached(
                 memo,
                 bin_data,
                 attach.mimetype,
                 backend,
                 verify_collision=verify_collision,
+                index=index,
             )
+            if not index:
+                vals = {**vals, "index_content": False}
 
             if attach.store_fname:
                 old_fnames.append(attach.store_fname)
@@ -1939,7 +1950,7 @@ class IrAttachment(models.Model):
         seen = {
             int(token)
             for token in ICP.get_param(param, "").split(",")
-            if token.strip().isdigit()
+            if token.strip().isdecimal()
         }
         new = suspicious.filtered(lambda a: a.id not in seen)
         if new:
@@ -2051,7 +2062,11 @@ class IrAttachment(models.Model):
             old_fname = attach.store_fname
             checksum = self._get_content_checksum(raw)
             super(IrAttachment, attach.sudo()).write(
-                {**backend.write(raw, checksum), "checksum": checksum}
+                {
+                    **backend.write(raw, checksum),
+                    "checksum": checksum,
+                    "file_size": len(raw),
+                }
             )
             released_fnames.append(old_fname)
             attach.invalidate_recordset()

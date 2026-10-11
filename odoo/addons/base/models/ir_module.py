@@ -1292,7 +1292,8 @@ class IrModuleModule(models.Model):
                 _debug.logic("upgrade_checksum.refs_moved", module=module.name)
                 marked_ids.append(module.id)
                 unchanged.remove(module)
-        marked_names = {m.name for m in cascade if m.id in set(marked_ids)}
+        marked = set(marked_ids)
+        marked_names = {m.name for m in cascade if m.id in marked}
         unchanged_by_name = {m.name: m for m in unchanged}
         for name, written in _get_modules_writing_records_of(
             {m.name: overridden_modules.get(m.id) for m in unchanged}, marked_names

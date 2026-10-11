@@ -261,6 +261,31 @@ class TestResCurrency(TransactionCase):
             for day in range(1, 29):
                 cur_a._convert(100, cur_b, company, f"2020-02-{day:02d}")
 
+    def test_the_currency_date_is_the_latest_rate_its_company_sees(self):
+        company_b = self.env["res.company"].create({"name": "date scope co"})
+        currency = self.env["res.currency"].create({"name": "MD1", "symbol": "D"})
+        self.env["res.currency.rate"].create(
+            [
+                {"name": "2020-01-01", "rate": 2, "currency_id": currency.id},
+                {
+                    "name": "2021-06-01",
+                    "rate": 3,
+                    "currency_id": currency.id,
+                    "company_id": self.env.company.id,
+                },
+                {
+                    "name": "2022-06-01",
+                    "rate": 5,
+                    "currency_id": currency.id,
+                    "company_id": company_b.id,
+                },
+            ]
+        )
+        self.assertEqual(str(currency.date), "2021-06-01")
+        self.assertEqual(str(currency.with_company(company_b).date), "2022-06-01")
+        bare = self.env["res.currency"].create({"name": "MD2", "symbol": "E"})
+        self.assertFalse(bare.date)
+
     def test_rate_memo_company_scoping_matches_sql(self):
         company_a = self.env.company
         company_b = self.env["res.company"].create({"name": "memo scope co"})

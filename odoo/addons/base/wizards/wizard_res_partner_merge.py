@@ -216,6 +216,7 @@ class WizardResPartnerMerge(models.TransientModel):
         held_values = {
             (i.type_id.id, i.normalized_value) for i in dst_partner.identifier_ids
         }
+        kept = dropped = src_partners.identifier_ids.browse()
         for src_identifier in src_partners.identifier_ids:
             identifier_type = src_identifier.type_id
             if identifier_type.multiple_per_contact:
@@ -226,16 +227,18 @@ class WizardResPartnerMerge(models.TransientModel):
             else:
                 clash = identifier_type.id in held_types
             if clash:
-                src_identifier.unlink()
+                dropped |= src_identifier
                 _debug.logic(
                     "merge_identifier_dropped",
                     dst=dst_partner.id,
                     type=identifier_type.code,
                 )
             else:
-                src_identifier.write({"partner_id": dst_partner.id})
+                kept |= src_identifier
                 held_types.add(identifier_type.id)
                 held_values.add((identifier_type.id, src_identifier.normalized_value))
+        dropped.unlink()
+        kept.write({"partner_id": dst_partner.id})
 
     def _get_unalterable_sources(
         self, src_partners: models.BaseModel
@@ -522,7 +525,10 @@ class WizardResPartnerMerge(models.TransientModel):
             pair_count += len(pairs)
             unnamed = {pid for pair in pairs for pid in pair} - names.keys()
             if unnamed:
-                partners = self.env["res.partner"].browse(unnamed)
+                names.update(dict.fromkeys(unnamed, ""))
+                partners = (
+                    self.env["res.partner"].browse(unnamed)._filtered_access("read")
+                )
                 partners.fetch(["complete_name"])
                 names.update((p.id, (p.complete_name or "").lower()) for p in partners)
             for left_id, right_id in pairs:

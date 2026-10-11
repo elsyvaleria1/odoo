@@ -147,22 +147,21 @@ class IrSequence(models.Model):
 
     @api.depends("implementation", "number_next")
     def _compute_number_next_actual(self) -> None:
-        standard = self.filtered(
-            lambda seq: seq.id and seq.implementation == "standard"
-        )
         predicted = _predict_nextvals(
-            self.env, [seq._get_pg_sequence_name() for seq in standard]
+            self.env,
+            [
+                seq._get_pg_sequence_name()
+                for seq in self._origin
+                if seq.implementation == "standard"
+            ],
         )
-        standard_ids = set(standard._ids)
         for seq in self:
-            if not seq.id:
-                seq.number_next_actual = 0
-            elif seq.id not in standard_ids:
-                seq.number_next_actual = seq.number_next
-            else:
-                seq.number_next_actual = predicted.get(
-                    seq._get_pg_sequence_name(), seq.number_next
-                )
+            origin = seq._origin
+            seq.number_next_actual = (
+                predicted.get(origin._get_pg_sequence_name(), seq.number_next)
+                if origin
+                else seq.number_next
+            )
 
     def _inverse_number_next_actual(self) -> None:
         for seq in self:
@@ -414,7 +413,7 @@ class IrSequence(models.Model):
             count=count,
             first=numbers[0] if numbers else None,
         )
-        return [self.get_next_char(number) for number in numbers]
+        return self._format_numbers(numbers)
 
     def _get_prefix_suffix(
         self, date: Any = None, date_range: Any = None
@@ -456,12 +455,12 @@ class IrSequence(models.Model):
         return interpolated_prefix, interpolated_suffix
 
     def get_next_char(self, number_next: int) -> str:
-        interpolated_prefix, interpolated_suffix = self._get_prefix_suffix()
-        return (
-            interpolated_prefix
-            + f"{number_next:0{max(0, self.padding)}d}"
-            + interpolated_suffix
-        )
+        return self._format_numbers([number_next])[0]
+
+    def _format_numbers(self, numbers: list[int]) -> list[str]:
+        prefix, suffix = self._get_prefix_suffix()
+        padding = max(0, self.padding)
+        return [f"{prefix}{number:0{padding}d}{suffix}" for number in numbers]
 
     @api.model
     def _get_interpolation_mapping(self, date=None, range_date=None) -> dict[str, str]:
@@ -772,20 +771,21 @@ class IrSequenceDate_Range(models.Model):
 
     @api.depends("number_next", "sequence_id.implementation")
     def _compute_number_next_actual(self) -> None:
-        standard = self.filtered(
-            lambda seq: seq.id and seq.sequence_id.implementation == "standard"
-        )
         predicted = _predict_nextvals(
-            self.env, [seq._get_pg_sequence_name() for seq in standard]
+            self.env,
+            [
+                seq._get_pg_sequence_name()
+                for seq in self._origin
+                if seq.sequence_id.implementation == "standard"
+            ],
         )
-        standard_ids = set(standard._ids)
         for seq in self:
-            if seq.id not in standard_ids:
-                seq.number_next_actual = seq.number_next
-            else:
-                seq.number_next_actual = predicted.get(
-                    seq._get_pg_sequence_name(), seq.number_next
-                )
+            origin = seq._origin
+            seq.number_next_actual = (
+                predicted.get(origin._get_pg_sequence_name(), seq.number_next)
+                if origin
+                else seq.number_next
+            )
 
     def _inverse_number_next_actual(self) -> None:
         for seq in self:
@@ -905,7 +905,7 @@ class IrSequenceDate_Range(models.Model):
             count=count,
             first=numbers[0] if numbers else None,
         )
-        return [self.sequence_id.get_next_char(number) for number in numbers]
+        return self.sequence_id._format_numbers(numbers)
 
     def _alter_sequence(
         self,

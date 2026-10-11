@@ -1739,6 +1739,36 @@ class TestActionsBindings(common.TransactionCase):
         for data in ours:
             self.assertEqual(data["group_ids"], (gid,))
 
+    def test_deleting_a_group_releases_the_actions_it_gated(self):
+        group = self.env["res.groups"].create({"name": "Gate"})
+        self.env["ir.actions.act_window"].create(
+            {
+                "name": "Gated",
+                "res_model": "res.partner",
+                "binding_model_id": self._partner_model_id(),
+                "group_ids": [Command.set([group.id])],
+            }
+        )
+        self.env.registry.clear_cache()
+        Actions = self.env["ir.actions.actions"]
+        self.assertEqual(
+            [
+                data["group_ids"]
+                for data in Actions._get_bindings("res.partner")["action"]
+                if data["name"] == "Gated"
+            ],
+            [(group.id,)],
+        )
+        group.unlink()
+        self.assertEqual(
+            [
+                data["group_ids"]
+                for data in Actions._get_bindings("res.partner")["action"]
+                if data["name"] == "Gated"
+            ],
+            [()],
+        )
+
 
 class TestCommonCustomFields(common.TransactionCase):
     MODEL = "res.partner"

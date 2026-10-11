@@ -2027,6 +2027,22 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
             f"expected audit warning, got: {logs.output!r}",
         )
 
+    def test_audit_url_attachments_survives_a_non_ascii_digit_in_its_memory(self):
+        self.Attachment.sudo().create(
+            {
+                "name": "probe-digit.bin",
+                "type": "binary",
+                "url": "/suspicious/probe-digit",
+                "raw": b"x",
+                "public": False,
+            }
+        )
+        self.env["ir.config_parameter"].sudo().set_param(
+            "ir_attachment.url_audit_seen", "\u00b2,7"
+        )
+        with self.assertLogs("odoo.addons.base.models.ir_attachment", level="WARNING"):
+            self.env["ir.attachment"]._audit_url_attachments()
+
     def test_audit_url_attachments_warns_once_per_row(self):
         self.Attachment.sudo().create(
             {
@@ -2424,6 +2440,22 @@ class TestContentDigestKeys(TransactionCaseWithUserDemo):
             self.assertTrue(readable.store_fname.startswith("b3/"))
 
     @mute_logger("odoo.addons.base.models.ir_attachment")
+    def test_rehash_sizes_an_unsized_row_it_can_read(self):
+        with self._tagged_digest_build():
+            self._drain_legacy_rows()
+            payload = b"sized-" + os.urandom(16)
+            att, _fname = self._legacy_row(payload)
+            self.env.cr.execute(
+                "UPDATE ir_attachment SET file_size = 0 WHERE id = %s", [att.id]
+            )
+            att.invalidate_recordset()
+            self.assertEqual(self.Attachment._gc_rehash_legacy_keys(limit=10)[0], 1)
+            att.invalidate_recordset()
+            self.addCleanup(
+                Path(self.filestore, att.store_fname).unlink, missing_ok=True
+            )
+            self.assertEqual(att.file_size, len(payload))
+
     def test_rehash_keeps_the_key_of_an_unsized_row_it_cannot_read(self):
         with self._tagged_digest_build():
             self._drain_legacy_rows()
@@ -3153,6 +3185,11 @@ class TestPermissions(TransactionCaseWithUserDemo):
             "text/plain",
             "TRUST-ed text/html must be neutered for a non-view writer",
         )
+        trusted_csv = self.Attachments._create_from_request_file(
+            _FakeFile(b"a,b\n", "Text/CSV; charset=utf-8", "rows.csv"),
+            mimetype="TRUST",
+        )
+        self.assertEqual(trusted_csv.mimetype, "text/csv")
         trusted_svg = self.Attachments._create_from_request_file(
             _FakeFile(b"<svg/>", "image/svg+xml", "evil.svg"),
             mimetype="TRUST",
@@ -4278,6 +4315,27 @@ class TestContentLifecycle(TransactionCase):
         self.assertFalse(later.content_released_at)
         self.assertEqual(later.raw, b"other bytes")
         self.assertEqual(forever.raw, b"kept bytes")
+
+    def test_rewriting_a_generated_asset_does_not_index_it(self):
+        asset = self.env["ir.attachment"].create(
+            {
+                "name": "bundle.txt",
+                "mimetype": "text/plain",
+                "raw": b"first words",
+                "url": "/web/assets/1/bundle.txt",
+                "res_model": "ir.ui.view",
+                "res_id": 0,
+                "public": True,
+            }
+        )
+        self.assertFalse(asset.sudo().index_content)
+        asset.raw = b"second words"
+        self.assertFalse(asset.sudo().index_content)
+
+    def test_rewriting_an_indexed_attachment_reindexes_it(self):
+        attachment = self._stored(raw=b"first words", name="note.txt")
+        attachment.raw = b"second words"
+        self.assertIn("second", attachment.sudo().index_content)
 
 
 class TestAttachmentCopyTimes(TransactionCase):

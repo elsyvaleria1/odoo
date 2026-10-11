@@ -59,20 +59,30 @@ class TestScorecard(TransactionCase):
             {
                 "dimension_id": dimension.id,
                 "min_value": -100000.0,
-                "max_value": 0.1,
+                "max_value": 0.0,
                 "points": 100.0,
             }
         )
         self.assertTrue(early._is_covering(-3.0))
-        self.assertTrue(early._is_covering(0.0))
-        self.assertFalse(early._is_covering(0.1))
+        self.assertFalse(early._is_covering(0.0))
+        self.assertEqual(early.display_name, "[-100000, 0) → 100")
+        top = self.env["scorecard.dimension.band"].create(
+            {
+                "dimension_id": dimension.id,
+                "min_value": 0.0,
+                "max_value": 0.0,
+                "points": 80.0,
+            }
+        )
+        self.assertTrue(top._is_covering(0.0))
+        self.assertTrue(top._is_covering(1e9))
         with self.assertRaises(ValidationError):
             self.env["scorecard.dimension.band"].create(
                 {
                     "dimension_id": dimension.id,
-                    "min_value": 0.0,
-                    "max_value": 15.1,
-                    "points": 80.0,
+                    "min_value": -5.0,
+                    "max_value": 5.0,
+                    "points": 50.0,
                 }
             )
 

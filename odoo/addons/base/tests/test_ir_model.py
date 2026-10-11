@@ -377,6 +377,60 @@ class TestIrModelEdition(TransactionCase):
         self.assertFalse(model.exists())
         self.assertFalse(model2.exists())
 
+    def _tree_model(self, name):
+        return self.env["ir.model"].create(
+            {
+                "model": name,
+                "name": name,
+                "field_id": [
+                    Command.create(
+                        {"name": "x_parent_id", "ttype": "many2one", "relation": name}
+                    ),
+                    Command.create(
+                        {
+                            "name": "x_child_ids",
+                            "ttype": "one2many",
+                            "relation": name,
+                            "relation_field": "x_parent_id",
+                        }
+                    ),
+                ],
+            }
+        )
+
+    def test_a_manual_model_with_a_one2many_inverse_can_be_deleted(self):
+        model = self._tree_model("x_test_tree_delete")
+        model.unlink()
+        self.assertFalse(model.exists())
+
+    def test_a_many2one_is_deleted_together_with_its_one2many_inverse(self):
+        model = self._tree_model("x_test_tree_fields")
+        parent = model.field_id.filtered(lambda f: f.name == "x_parent_id")
+        with self.assertRaises(UserError):
+            parent.unlink()
+        (parent | model.field_id.filtered(lambda f: f.name == "x_child_ids")).unlink()
+        self.assertNotIn("x_parent_id", self.env["x_test_tree_fields"]._fields)
+
+    def test_a_manual_model_takes_its_views_and_actions_with_it(self):
+        model = self.env["ir.model"].create(
+            {"model": "x_test_viewed_delete", "name": "viewed delete"}
+        )
+        view = self.env["ir.ui.view"].create(
+            {
+                "name": "viewed form",
+                "model": "x_test_viewed_delete",
+                "type": "form",
+                "arch": "<form><field name='x_name'/></form>",
+            }
+        )
+        action = self.env["ir.actions.act_window"].create(
+            {"name": "viewed", "res_model": "x_test_viewed_delete"}
+        )
+        model.unlink()
+        self.assertFalse(model.exists())
+        self.assertFalse(view.exists())
+        self.assertFalse(action.exists())
+
     def test_base_model_unlink_raises_the_model_level_message(self):
         model = self.env["ir.model"]._get("res.country")
         field_names = set(self.env.registry["res.country"]._fields)
