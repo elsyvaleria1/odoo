@@ -12,6 +12,8 @@ from . import test_dark_sibling_scope
 from . import test_orphan_assets
 from . import test_orphan_test_registrations
 from . import test_owl3_api
+from . import test_bus_claims
+from . import test_action_options
 from . import test_setup_bundle_has_no_tests
 from . import test_setup_hooks
 from . import test_grey_ramp_token
