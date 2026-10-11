@@ -111,13 +111,13 @@ class TelegramHandlerInsight(models.AbstractModel):
                 "insight_action": STATEMENT_DETAIL
                 if data.startswith(DETAIL)
                 else STATEMENT_PDF,
-                "partner_id": int(parts[0]) if parts and parts[0].isdigit() else 0,
+                "partner_id": int(parts[0]) if parts and parts[0].isdecimal() else 0,
             }
         elif data.startswith(COMPANY):
             parts = callback_parts(data, COMPANY)
             message = {
                 "insight_action": PICK_COMPANY,
-                "company_id": int(parts[0]) if parts and parts[0].isdigit() else 0,
+                "company_id": int(parts[0]) if parts and parts[0].isdecimal() else 0,
                 "nonce": parts[1] if len(parts) > 1 else "",
             }
         else:

@@ -1635,7 +1635,7 @@ class WebsiteSlides(WebsiteProfile):
             # it), and leaves the placeholder for the next one
             prefix = f"website_slides.quiz_question_new.{slide.id}."
             number = (placeholder or "").removeprefix(prefix)
-            if not (placeholder or "").startswith(prefix) or not number.isdigit():
+            if not (placeholder or "").startswith(prefix) or not number.isdecimal():
                 raise werkzeug.exceptions.BadRequest
 
         self._get_own_slide_progress_sudo(slide).write({"completed": False})
