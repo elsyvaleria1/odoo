@@ -18,6 +18,19 @@ class TestNeutralize(TransactionCase):
         for query in queries:
             self.cr.execute(query)
 
+    def test_a_copy_gets_a_secret_it_can_open(self):
+        """The source's sealed secret is replaced, not left for every request to fail on."""
+        self.cr.execute(
+            "UPDATE ir_config_parameter SET value = 'fernet:sealed-elsewhere'"
+            " WHERE key = 'database.secret'"
+        )
+        for query in neutralize.get_neutralization_queries(["base"]):
+            self.cr.execute(query)
+        self.env.registry.clear_cache("stable")
+        secret = self.env["ir.config_parameter"].sudo().get_param("database.secret")
+        self.assertTrue(secret)
+        self.assertFalse(secret.startswith("fernet:"))
+
 
 class TestNeutralizeQueries(BaseCase):
     def setUp(self):

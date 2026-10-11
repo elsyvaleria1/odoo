@@ -15,6 +15,13 @@ VALUES ('database.is_neutralized', true)
     ON CONFLICT (key) DO
        UPDATE SET value = true;
 
+-- the source seals its secret with an ODOO_API_ENCRYPTION_KEY the copy does
+-- not hold, and every request (CSRF, sessions, signed links) needs it: the
+-- copy gets a secret of its own, in clear, which signs nothing of the source's
+UPDATE ir_config_parameter
+   SET value = gen_random_uuid()::text
+ WHERE key = 'database.secret';
+
 -- deactivate webhooks
 UPDATE ir_act_server
    SET webhook_url = 'neutralization - disable webhook'
