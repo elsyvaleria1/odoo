@@ -39,6 +39,23 @@ class TestResConfig(TransactionCase):
 
         self.assertFalse(self.env["res.config.test"].create({}).param3)
 
+    def test_03_boolean_parameter_reads_the_parameter_grammar(self):
+        ICP = self.env["ir.config_parameter"].sudo()
+        for stored, checked in (
+            ("1", True),
+            ("yes", True),
+            ("0", False),
+            ("off", False),
+        ):
+            with self.subTest(stored=stored):
+                ICP.set_param("resConfigTest.parameter3", stored)
+                settings = self.env["res.config.test"].create({})
+                self.assertEqual(settings.param3, checked)
+                settings.execute()
+                self.assertEqual(
+                    ICP.get_param_bool("resConfigTest.parameter3"), checked
+                )
+
     def test_02_mixed_group_field_types_save(self):
         settings = self.env["res.config.test"].create(
             {"group_test_checkbox": True, "group_test_selection": "0"}

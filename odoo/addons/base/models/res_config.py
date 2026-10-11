@@ -227,7 +227,10 @@ class ResConfigSettings(models.TransientModel):
                             _logger.warning(WARNING_MESSAGE, value, field, icp)
                             value = 0.0
                     case "boolean":
-                        value = str(value) == "True"
+                        value = (
+                            str(value).strip().lower()
+                            not in IrConfigParameter._FALSY_PARAM_VALUES
+                        )
                     case "selection":
                         if value not in dict(field._description_selection(self.env)):
                             _logger.warning(WARNING_MESSAGE, value, field, icp)
