@@ -2,8 +2,11 @@ from typing import Self
 
 from odoo import api, models
 from odoo.exceptions import UserError
+from odoo.tools.authority_keys import declare_authority_keys
 
 from . import approval_trace as trace
+
+declare_authority_keys("approval", "attachment_storage_relocation")
 
 _APPROVAL_LOCKED_FIELDS = frozenset(
     {

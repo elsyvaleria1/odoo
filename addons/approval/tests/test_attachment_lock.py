@@ -147,13 +147,13 @@ class TestAttachmentUnlinkProtection(common.TransactionCase):
 
     def test_attachment_storage_relocation_allowed_in_terminal(self):
         attachment = self._terminal_attachment("Relocation OK")
-        moved = {"type": "cloud_storage", "url": "https://bucket.example/blob"}
+        moved = {"type": "url", "url": "https://bucket.example/blob"}
         attachment.with_context(attachment_storage_relocation=True).write(moved)
-        self.assertEqual(attachment.type, "cloud_storage")
+        self.assertEqual(attachment.type, "url")
 
     def test_attachment_storage_relocation_refused_without_the_system(self):
         attachment = self._terminal_attachment("Relocation Refused")
-        moved = {"type": "cloud_storage", "url": "https://bucket.example/blob"}
+        moved = {"type": "url", "url": "https://bucket.example/blob"}
         with self.assertRaises(UserError):
             attachment.write(moved)
         with self.assertRaises(UserError):
