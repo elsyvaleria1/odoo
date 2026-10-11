@@ -4,7 +4,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import fields
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import new_test_user, tagged
 
 from .common import TestAccountAssetCommon
 
@@ -16,6 +16,11 @@ class TestResourceAssetLifecycle(TestAccountAssetCommon):
         super().setUpClass()
         cls.today = fields.Date.today()
         cls.loss_account = cls.company_data["default_account_expense"].copy()
+        cls.keeper = new_test_user(
+            cls.env,
+            login="asset_keeper",
+            groups="base.group_user,resource.group_asset_manager",
+        )
 
     def _running_board(self, **vals):
         asset = self.create_asset(
@@ -181,6 +186,11 @@ class TestResourceAssetLifecycle(TestAccountAssetCommon):
         with self.assertRaises(UserError):
             asset.write({"state": "disposed", "date_disposal": self.today})
 
+    def test_archiving_an_asset_with_a_running_board_is_refused(self):
+        asset = self._running_board().asset_id
+        with self.assertRaisesRegex(UserError, "not closed"):
+            asset.active = False
+
     def test_cancelling_a_board_leaves_the_asset_state_alone(self):
         asset = self._running_board()
         asset.action_cancel()
@@ -208,3 +218,21 @@ class TestResourceAssetLifecycle(TestAccountAssetCommon):
                 }
             ],
         )
+
+    def test_disposing_an_asset_without_a_board_needs_no_accounting_access(self):
+        forklift = self.env["resource.resource"].create(
+            {"name": "Forklift", "kind_id": self.env.ref("resource.kind_vehicle").id}
+        )
+        forklift.with_user(self.keeper)._transition("disposed", self.today)
+        self.assertRecordValues(forklift, [{"state": "disposed", "active": False}])
+
+    def test_a_running_board_refuses_a_disposal_outside_accounting(self):
+        asset = self._running_board().asset_id
+        with self.assertRaisesRegex(UserError, "running depreciation board"):
+            asset.with_user(self.keeper)._transition("disposed", self.today)
+
+    def test_a_closed_board_refuses_a_restore_outside_accounting(self):
+        board = self._running_board()
+        self._dispose(board)
+        with self.assertRaisesRegex(UserError, "board is closed"):
+            board.asset_id.with_user(self.keeper).active = True

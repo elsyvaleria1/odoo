@@ -15,6 +15,7 @@ class ResourceResource(models.Model):
         comodel_name="account.depreciation.board",
         inverse_name="asset_id",
         string="Depreciation Board",
+        context={"active_test": False},
     )
     depreciation_state = fields.Selection(
         related="board_id.depreciation_state",
@@ -29,10 +30,10 @@ class ResourceResource(models.Model):
     def _check_active(self) -> None:
         for asset in self:
             state = asset.board_id.depreciation_state
-            if not asset.active and state and state != "close":
+            if not asset.active and state in RUNNING_BOARD:
                 _debug.logic(
                     "archive.refused",
-                    reason="board_not_closed",
+                    reason="board_running",
                     asset=asset,
                     state=state,
                 )
@@ -65,9 +66,7 @@ class ResourceResource(models.Model):
         return self.board_id.open_board(["form"])
 
     def action_dispose(self):
-        running = self.filtered(
-            lambda asset: asset.board_id.depreciation_state in RUNNING_BOARD
-        )
+        running = self.filtered(lambda asset: asset.depreciation_state in RUNNING_BOARD)
         if not running:
             return super().action_dispose()
         if len(self) == 1:
@@ -81,9 +80,7 @@ class ResourceResource(models.Model):
         )
 
     def _dispose(self, date=None):
-        running = self.filtered(
-            lambda asset: asset.board_id.depreciation_state in RUNNING_BOARD
-        )
+        running = self.filtered(lambda asset: asset.depreciation_state in RUNNING_BOARD)
         _debug.pipeline("dispose", assets=self, through_board=len(running), date=date)
         for asset in running:
             asset.board_id._check_disposal_accounts()
@@ -94,7 +91,7 @@ class ResourceResource(models.Model):
         super()._check_transition(state)
         if state == "disposed" and not self.env.context.get("board_lifecycle"):
             running = self.filtered(
-                lambda asset: asset.board_id.depreciation_state in RUNNING_BOARD
+                lambda asset: asset.depreciation_state in RUNNING_BOARD
             )
             if running:
                 _debug.logic(
@@ -112,8 +109,7 @@ class ResourceResource(models.Model):
         if not self.env.context.get("board_lifecycle"):
             closed = self.filtered(
                 lambda asset: (
-                    asset.state == "disposed"
-                    and asset.board_id.depreciation_state == "close"
+                    asset.state == "disposed" and asset.depreciation_state == "close"
                 )
             )
             if closed:
