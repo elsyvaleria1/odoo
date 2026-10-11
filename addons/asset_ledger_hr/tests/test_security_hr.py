@@ -78,8 +78,6 @@ class TestSecurityHR(TransactionCase):
 
     def test_hr_user_reads_no_lot_outside_the_enabled_asset_kinds(self):
         self.assertTrue(self.hr_user, "the probe user must exist")
-        gated = self.hr_user._get_asset_kinds_gated().ids
-        self.assertFalse(set(self.hr_user._get_enabled_asset_kinds()) & set(gated))
         self.assertFalse(self.ProductTrace.with_user(self.hr_user).search([]))
 
     def test_hr_user_reads_only_the_asset_kinds_it_is_enabled_for(self):

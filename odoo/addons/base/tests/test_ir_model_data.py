@@ -182,6 +182,34 @@ class TestUninstallModuleDataForeignKeys(TransactionCase):
         )
         self.assertTrue(self.env.cr.fetchone())
 
+    def test_records_are_removed_in_reverse_creation_order(self):
+        Country = self.env["res.country"]
+        older = Country.create({"name": "Uninstall Older", "code": "Q1"})
+        state = self.env["res.country.state"].create(
+            {"name": "Uninstall State", "code": "QS", "country_id": older.id}
+        )
+        newer = Country.create({"name": "Uninstall Newer", "code": "Q2"})
+        self.env["ir.model.data"].create(
+            [
+                {
+                    "module": "test_uninstall_order",
+                    "name": name,
+                    "model": record._name,
+                    "res_id": record.id,
+                }
+                for name, record in (
+                    ("older", older),
+                    ("state", state),
+                    ("newer", newer),
+                )
+            ]
+        )
+
+        self.env["ir.model.data"]._uninstall_module_data(["test_uninstall_order"])
+
+        self.assertFalse((older | newer).exists())
+        self.assertFalse(state.exists())
+
 
 class TestCompleteNameSearch(TransactionCase):
     @classmethod

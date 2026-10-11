@@ -1043,16 +1043,22 @@ class CustomerPortal(Controller):
             values["errors"] = {"deactivate": "validation"}
         else:
             try:
-                request.env.user._check_credentials(credential, {"interactive": True})
+                user = request.env.user
+                with user._assert_can_auth(user=user.id):
+                    user._check_credentials(credential, {"interactive": True})
                 _debug.lifecycle("portal_user_deactivated", user=request.env.uid)
                 request.env.user.sudo()._deactivate_portal_user(**post)
                 request.session.logout()
                 return request.redirect(
                     f"/web/login?message={quote(request.env._('Account deleted!'), safe='/:')}"
                 )
-            except AccessDenied:
+            except AccessDenied as refused:
                 _debug.logic("deactivate_refused", reason="bad_password")
-                values["errors"] = {"deactivate": "password"}
+                values["errors"] = {
+                    "deactivate": "password"
+                    if refused.args == AccessDenied().args
+                    else {"other": refused.args[0]}
+                }
             except UserError as e:
                 _debug.logic("deactivate_refused", reason="user_error")
                 values["errors"] = {"deactivate": {"other": str(e)}}

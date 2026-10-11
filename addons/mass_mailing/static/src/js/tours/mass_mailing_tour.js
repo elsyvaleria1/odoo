@@ -79,7 +79,7 @@ registry.category("web_tour.tours").add("mass_mailing_tour", {
             run: "click",
         },
         {
-            trigger: 'button[name="action_set_favorite"]',
+            trigger: 'button[name="action_add_to_templates"]',
             content: _t("Click on this button to add this mailing to your templates."),
             tooltipPosition: "bottom",
             run: "click",

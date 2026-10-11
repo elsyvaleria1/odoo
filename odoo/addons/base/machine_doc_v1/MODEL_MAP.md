@@ -11,13 +11,25 @@ file per type, each inheriting `ir.actions.actions`.
 
 ### models/ir_actions_actions.py
 
-#### IrActions — `ir.actions.actions` (`_name`, `_table = ir_actions`, inherits `mixin.table.inheritance.root`)
+#### IrActions — `ir.actions.actions` (`_name`, `_table = ir_actions`, `_table_inheritance_root = ir_actions`)
 
 Base action model. All action types inherit from this, each with its own
 PostgreSQL table `INHERITS (ir_actions)`, created by the ORM from
 `_table_inheritance_root`. The root table itself is sealed by a
 `CHECK (false) NO INHERIT` constraint at init, after any row still sitting in
 it is moved to the table its `type` names.
+
+The model also carries the machinery the tree needs: the concrete model of a row
+from its `tableoid`, root-level `write`/`unlink` dispatched to the concrete
+models, `ondelete` enforced in Python because no foreign key can target an
+inherited row, and a check at `init` that every subtype table really inherits
+the root.
+
+The leaves' own many2ones *are* real foreign keys, and a cascading one deletes a
+leaf row inside PostgreSQL, behind that Python `ondelete`. The registry indexes
+those cascades (`cascades_into_inheritance_trees`, direct or through plain
+models, as dotted paths) and `BaseModel.unlink` unlinks the rows they would
+reach through the ORM first; `ir.model.unlink` does so before it drops tables.
 
 **Fields:**
 - `name` (Char, required, translatable)
@@ -36,6 +48,11 @@ it is moved to the table its `type` names.
 - `_get_fields_readable()` — Fields safe for web access
 - `_get_field_target_model()` / `_get_field_groups()` — Per kind of action: the field naming the model it opens, the field holding the groups it is restricted to; empty on the root. The root asks these instead of probing its leaves' field names
 - `_get_fields_binding_extra()` — Per kind: what a binding ships beyond `_BINDING_READ_FIELDS`; an addon extends it through `super()` on the leaf it adds a column to
+- `_get_concrete()` — The record re-browsed on its concrete model
+- `_get_model_names_concrete()` — Concrete model per id, from `tableoid` cross-checked with the type column
+- `_check_table_inheritance()` — Raise at init when the table does not inherit the declared root
+- `_constrain_type_to_table()` — `CHECK (type = '<model>')` on each leaf table one model owns; skipped, with an error, while rows naming another model remain
+- `_apply_ondelete_unenforced()` — Cascade / set null / restrict for every relation the database cannot enforce
 
 ### models/ir_actions_path.py
 
@@ -441,26 +458,38 @@ expired and migrated, and every create, write or delete made under a
 privilege on an audited model (`_access_audit`) or under a privilege with
 `audit_privilege`. The access administrators read it; a user reads the rows
 about them. The database keeps it append-only (`ir_access_log_append_only`,
-created by `init()`): an UPDATE may only seal a row once or empty a reference
-whose record was deleted, a DELETE only runs inside `_remove_rows`, TRUNCATE never.
-The rows are sealed every hour into a hash chain (`ir_cron_access_log_seal`),
-the head kept in `base.access_log_seal_head` and in the server log, and the
-chain verified every day (`ir_cron_access_log_verify`): a row changed or
-deleted with the trigger off breaks it, logged as `log_chain_broken`. An event
-a module adds outlives its uninstall (`kept_on_uninstall`).
+created by `init()`): an UPDATE may only seal a row once, empty a reference
+whose record was deleted, or run inside `_erase_rows` / `_reseal`; a DELETE only
+runs inside `_remove_rows`, TRUNCATE never.
+The rows are sealed every hour into an HMAC chain (`ir_cron_access_log_seal`)
+under `access_log_seal_key`, a server-config secret (or
+`ODOO_ACCESS_LOG_SEAL_KEY`) the database never holds: each link seals the row's
+`content_hash`, itself keyed. Without the key nothing is sealed (a warning per
+run, the rows wait); a chain whose last link does not verify under the key is
+never extended. The head is kept in `base.access_log_seal_head` and in the
+server log, and the chain verified every day (`ir_cron_access_log_verify`): a
+row changed or deleted with the trigger off, or a chain rebuilt without the
+key, breaks it, logged as `log_chain_broken`. A retention purge removes only
+the oldest sealed rows (`base.access_log_seal_base` moves past them); an erasure
+empties a row's content but keeps its `content_hash` and seal, and points it to
+the sealed `log_erased` row naming it. An event a module adds outlives its
+uninstall (`kept_on_uninstall`).
 
 **Fields:**
 - `event` (Selection, required), `actor_id`, `subject_user_id` (Many2one → res.users)
 - `group_id` (Many2one → res.groups), `grant_id` (Many2one → res.users.grant)
 - `model_name`, `operation`, `res_ids`, `cause`, `cause_model`, `reason`, `actor_login` (Char), `cause_res_id` (Many2oneReference), `count` (Integer)
 - `link_id` (Many2one → access.link): a link issued, extended or revoked
-- `seal` (Char), `seal_seq` (Integer): the row's place and hash in the chain
+- `seal` (Char), `seal_seq` (Integer), `content_hash` (Char): the row's link, place and keyed content hash in the chain
+- `erasure_id` (Many2one → ir.access.log): the `log_erased` row that emptied this one
 
 **Key Methods:**
 - `_record(vals_list)` — the one writer, as the superuser with the real actor
 - `_record_privileged(model_name, operation, ids)` — what the access policy calls for a privileged operation
-- `_seal()`, `_verify()` — chain the rows not sealed yet; where the chain breaks, or None
-- `_remove_rows(domain, reason)` — the one delete: the superuser's, with a reason, logged as `log_purged`
+- `_seal()`, `_get_seal_chain_error()` — chain the rows not sealed yet; where the chain breaks, or None
+- `_remove_rows(domain, reason)` — the one delete, of the oldest sealed rows only: the superuser's, with a reason, logged as `log_purged`
+- `_erase_rows(domain, reason)` — empty rows' content, keeping their place in the chain: the superuser's, with a reason, logged as `log_erased`
+- `_reseal(previous_key)` — the key's rotation: seal the chain again under the configured key once it verifies under the previous one
 
 ### models/access_link.py
 
@@ -470,22 +499,30 @@ A bearer link to one record: the token is shown to its holder, only its
 sha256 is stored (`token_hash`, unique), and a new token is derived from the
 database secret and a stored nonce so the server can show the same link
 again. A link has a role (view, comment, edit), an audience (anyone,
-signed-in users, named people), the person it was issued to, an expiry the
-sharer sets (a link anyone can use always has one, by purpose: a manual share
-30 days, a notification 12 months; only an administrator waives it), and is
-revoked, never deleted. Created only by `_issue`; its token, record, cause and
+signed-in users, named people alone, or named people and everyone of their
+commercial entity), the person it was issued to, and an expiry: every link
+has one, no later than its cause's lifetime allows (`_get_cause_lifetimes`,
+extended by modules: a manual share 30 days, a notification 12 months,
+website_slides' course invitation three months), or, for a link issued to
+follow its record's date (`dated_by_record`), no later than the date the
+record gives (`_get_link_expiry` on the record's model: a meeting's end and a
+grace, a request's validity), held by the `_check_lifetime` constraint on every
+create and write whatever the env; only an administrator waives it
+(`expiry_waived`). A link is revoked, never deleted. Created only by `_issue`; its token, record, cause and
 counters are the server's.
 
 **Fields:**
 - `res_model` (Char), `res_id` (Many2oneReference), `record_name` (Char, computed)
 - `role`, `audience`, `cause` (Selection), `partner_id` (Many2one → res.partner), `audience_partner_ids` (Many2many → res.partner)
 - `token_hash`, `token_nonce` (Char, the manage privilege only), `token_hint` (Char), `legacy_source` (Char)
-- `date_to`, `revoked_at`, `last_used_at` (Datetime), `expiry_waived` (Boolean), `revoked_by_id` (Many2one → res.users), `revoke_reason` (Char)
+- `date_to`, `revoked_at`, `last_used_at` (Datetime), `expiry_waived`, `dated_by_record` (Boolean), `revoked_by_id` (Many2one → res.users), `revoke_reason` (Char)
 - `cause_model` (Char), `cause_res_id` (Many2oneReference), `company_id` (Many2one → res.company), `use_count` (Integer)
 - `state` (Selection, computed and searchable: live, expired, revoked), `use_ids` (One2many → access.link.use)
 
 **Key Methods:**
-- `_issue(record, partner=, role=, audience=, date_to=, cause=, ...)` — a live link and its token, the same one again for the same person, role, audience and cause
+- `_issue(record, partner=, role=, audience=, date_to=, cause=, dated_by_record=, ...)` — a live link and its token, the same one again for the same person, role, audience and cause; `dated_by_record` takes the expiry from the record (`_get_link_expiry`), never from the caller
+- `_get_latest_date_to(cause)` — the expiry of a link issued now for `cause` that follows no date of its record
+- `_sync_record_expiries(*recordsets)` — the live links that follow those records' date move to it, earlier or later: called where a module writes the date (calendar, sign, survey, planning, hr_contract_salary)
 - `_resolve(token, model=, res_id=, role=, action=)` — the one door: hash, indexed lookup, record, revocation, expiry, role, the record's own refusal (`_record_refusal`, a model whose setting closes a record to links, read on every presentation) and audience; every refusal is `LinkRefused`, a link for signed-in people met by a visitor `LinkLoginRequired`; records the use
 - `_open_record(model, res_id, access_token=, role=)` — the record as the server when the session may read it or the token is a live link to it at `role`; `MissingError` for a record that is gone, `AccessError` for every refusal: the door of RPC routes and helpers, where an `auth="link"` route (`link=`, `link_role=`, `link_param=`, `link_refused=`) is the door of a page
 - `action_revoke(reason)`, `action_extend(date_to)` — the sharer or an administrator
@@ -616,6 +653,7 @@ reviewers' reminder seven days before `date_to`.
 - `state` (Selection, computed and searchable: scheduled, active, lapsed, revoked), `use_count` (Integer), `last_used` (Datetime)
 
 **Key Methods:**
+- `_check_length` — the constraint holding every exception, whoever writes it, to a year at most
 - `_find(user, kind, scope)` — the live exception letting `user` past `kind` on `scope`, or none
 - `_record_use(reason)`, `action_revoke(reason)`
 
@@ -856,6 +894,7 @@ View definitions — the core UI building block.
 - `arch_base` (Text, computed/inverse) — Arch without translations
 - `arch_db` (Text, translatable) — Stored arch
 - `arch_fs` (Char) — File path if from XML
+- `shipped_digests` (Json, from `mixin.template.trust`) — `{"arch_db": digest}` of a qweb arch its module file ships; see `mixin.template.trust`
 - `arch_prev` (Text) — Previous arch for rollback
 - `inherit_id` (Many2one → self, indexed) — Parent view
 - `inherit_children_ids` (One2many → self)
@@ -1160,11 +1199,12 @@ cascade-cancelled (transitively) when a dependency fails or is cancelled.
 **Key Methods:**
 - `_enqueue(records, method_name, ..., after=)` — transactional INSERT (ON CONFLICT dedup) + postcommit NOTIFY; with `after`, starts in wait_deps
 - `_process_jobs(db_name)` — Static: worker entry point (guards, reap, dependency repair sweep, claim loop)
-- `_claim_next(cr, worker_ident)` — claim under advisory xact-lock + SKIP LOCKED, per-channel capacity
+- `_claim_next(cr, worker_ident)` — claim under advisory xact-lock + SKIP LOCKED, per-channel capacity; the candidate window widens past rows other transactions hold
+- `hold_off_jobs(cr, wait_s)` / `let_jobs_in(cr)` — module-level, called only by `odoo.modules.loading.lock_module_operations`, the one gate of every module operation (CLI `-i`/`-u`/`--reinit`, `odoo-bin module`, the Apps buttons): takes the job admission lock (`JOB_ADMISSION_LOCK`, which every running job — worker or `action_run_now` — holds shared) exclusively, so no job starts once it waits; waits `--module-operation-job-wait` seconds (default 30) for running jobs, then refuses with `JobsStillRunning` naming them and wakes the job workers; `let_jobs_in` releases and wakes them. A job run by the thread holding the gate (an at_install test, an install hook) is admitted without the lock
 - `_run_claimed(cr, job)` — execute, mark done and release ready dependents in the same transaction (atomic completion)
 - `_record_failure(cr, job, exc)` — retry with backoff (`RetryableJobError.seconds` honored) or fail + cascade-cancel dependents
 - `_release_dependents(cr, job_id)` / `_cancel_dependents(cr, job_ids)` / `_release_ready_dependents(cr)` — graph resolution (inline fast path + repair sweep for unlocked enqueue races)
-- `_reap_dead_jobs(cr)` — requeue started jobs whose session advisory lock is gone
+- `_reap_dead_jobs(cr)` — requeue started jobs whose session advisory lock is gone; a retryable error from the `_notify_failed` hook rolls the sweep back and `_run_maintenance` replays it
 - `_notify_after_commit(cr)` / `_notify_workers(db_name)` — wake job workers via pg_notify; `_job_ping(message)` — smoke-test job
 - `_notify_failed(cr, job, exc)` — hook on permanent failure (no-op in base; override per DB, cf. `IrCron._notify_admin`)
 - `action_run_now()` — execute a pending job inline in the current transaction (ignores eta/capacity, like cron's direct trigger)
@@ -1223,7 +1263,7 @@ no filestore rewrite. `_gc_rehash_legacy_keys` converges old keys only if
 - `_storage_delete(fname)` — Key-dispatched content deletion
 - `_get_filestore()` — Filestore directory path
 - `_file_read(fname, size)`, `_file_write(bin_value, checksum)`, `_file_delete(fname)`
-- `_gc_file_store()` — Autovacuum: runs every backend's `autovacuum()`
+- `_gc_file_store()` — Autovacuum: runs every backend's `autovacuum()`; the filestore's first puts back (`_restore_set_aside_files`) what an interrupted sweep left set aside under `gc/<store key>`
 - `_gc_rehash_legacy_keys(limit)` — Autovacuum: opt-in re-keying of rows
   still on a legacy digest; no-op unless `rehash_legacy_keys_limit` is set
 - `_content_checksum(bin_data)` / `_file_store_path(checksum)` — content
@@ -1430,29 +1470,6 @@ HTTP routing, authentication, and request dispatch.
 
 ## Module System
 
-### models/mixin_table_inheritance_root.py
-
-#### MixinTableInheritanceRoot — `mixin.table.inheritance.root` (AbstractModel)
-
-The machinery a PostgreSQL table-inheritance tree needs (`ir.actions.actions`,
-`resource.asset`): the concrete model of a row from its `tableoid`, root-level
-`write`/`unlink` dispatched to the concrete models, `ondelete` enforced in Python
-because no foreign key can target an inherited row, and a check at `init` that
-every subtype table really inherits the root.
-
-The leaves' own many2ones *are* real foreign keys, and a cascading one deletes a
-leaf row inside PostgreSQL, behind that Python `ondelete`. The registry indexes
-those cascades (`cascades_into_inheritance_trees`, direct or through plain
-models, as dotted paths) and `BaseModel.unlink` unlinks the rows they would
-reach through the ORM first; `ir.model.unlink` does so before it drops tables.
-
-**Key Methods:**
-- `_get_concrete()` — The record re-browsed on its concrete model
-- `_get_model_names_concrete()` — Concrete model per id, from `tableoid` cross-checked with the type column
-- `_check_table_inheritance()` — Raise at init when the table does not inherit the declared root
-- `_constrain_type_to_table()` — `CHECK (type = '<model>')` on each leaf table one model owns; skipped, with an error, while rows naming another model remain
-- `_apply_ondelete_unenforced()` — Cascade / set null / restrict for every relation the database cannot enforce
-
 ### models/mixin_owner_access.py
 
 #### MixinOwnerAccess — `mixin.owner.access` (`_name`, AbstractModel)
@@ -1507,14 +1524,23 @@ counts no other class.
 The reach table (`models/mixin_access_graph_reach.py`), `<table>_access_reach`,
 holds one row per way a principal reaches a node:
 - the resource;
-- the principal as one indexed `key` (`pid * 4 + kind`: a partner's grant, a
-  group's grant, or a user owning a node);
 - the `via` (0 the node's own graph; an adopter numbers its own above);
-- the role's `rank`;
-- the grant's and the node's companies, and a company and a user that a via's
-  own test names;
-- `date_to`;
-- the grant the row comes from (`grant_id`).
+- the node's company, and a company and a user that a via's own test names;
+- either the principal, as one indexed `key` (`pid * 4 + kind`: a group's or a
+  user's way that no grant is the source of, as an owner's), with its `rank`;
+- or the grant the row comes from (`grant_id`, with the grant's node in
+  `grant_resource_id`), with a `rank` only where the via fixes one (a link's
+  role); otherwise the grant's role is the rank.
+
+A grant's row copies nothing the grant says. Its principal, role, company and
+expiry are read off the grant when the reach is asked, so writing them
+rewrites no row. `(grant_id, grant_resource_id)` is a foreign key onto the
+grant's `(id, node)` (a unique index the table adds) with `ON DELETE CASCADE ON
+UPDATE CASCADE`: a revoked grant takes its rows with it, and a row that another
+transaction derives from a grant being revoked or moved fails to serialize (the
+request is retried) or makes the revoke wait for it. No row outlives its grant,
+in either order. The rows are checked against a re-derivation by the
+adopters' tests ("rows kept that derive from nothing"), a detector only.
 
 Rows are derived from the tree and the grants; the scope a node inherits is
 read off its `parent_path` and the boundaries on it. Statement triggers on both
@@ -1525,17 +1551,31 @@ returns, whoever wrote it:
 - its owner, its container flag and its boundary (`_access_reach_deep_columns`)
   re-derive its subtree too;
 - a move re-derives the subtree once, as its `parent_path` statement runs;
-- a grant added inserts the rows it is the source of and a grant removed
-  deletes them, leaving every other row where it was.
+- a grant added inserts the rows it is the source of, a grant moved to another
+  node re-derives them, and a grant removed deletes them through its foreign
+  key, leaving every other row where it was.
+
+Every write that changes what reaches a node -- a grant added or moved; a node
+inserted, moved, deleted, or its boundary, owner, container or company set --
+first writes the node lock, `<table>_access_reach_lock` (a row per node, deleted
+with it), of each node whose rows it derives and of each node a node it touched
+reads (its parent, `_access_reach_graph_needs`), in id order. A row written, not
+a row locked: under REPEATABLE READ the later of two such writers fails to
+serialize and is retried, whichever committed first, so a boundary set under a
+grant being added, or a node inserted, moved or deleted under one, ends as
+running the two one after the other ends. One set in one order per statement
+(per grant, for grants moved), so two never wait in a cycle. A grant removed
+takes no lock: its foreign key serializes it.
 
 The user stays a query-time input: the groups they hold and the companies those
 count in, the companies in use, the clock. So a membership change, a company
-switch or an expiry writes nothing.
+switch, an expiry or a grant's new role writes nothing.
 
-A reach is `id IN (SELECT resource_id FROM … WHERE key = ANY(:principals) AND …)`
-(`_access_reach_subquery`). It is stated once per statement through
-`Query.once_set` where several queries share one statement (`SharedOnce`, the
-opened groups).
+A reach is `id IN (SELECT resource_id FROM (<rows WHERE key = ANY(:principals)>
+UNION ALL <grants of the principals JOIN rows ON grant_id>) WHERE …)`
+(`_access_reach_subquery`), each side through its own covering index. It is
+stated once per statement through `Query.once_set` where several queries share
+one statement (`SharedOnce`, the opened groups).
 
 An adopter adds:
 - its own ways of reaching (`_access_reach_derived`, over `_access_reach_ctes`
@@ -1543,8 +1583,12 @@ An adopter adds:
 - what reads a node from outside its subtree;
 - the vias its graph reach counts.
 
-The table, its functions and triggers are created at the adopter's install, and
-rebuilt whenever what derives them changes (a signature in the table's comment).
+The tables, their functions and triggers are created at the adopter's install,
+and rebuilt whenever what derives them changes (a signature in the reach table's
+comment): an upgrade that changes them drops both tables and derives every row
+anew, so a table written by an older version keeps none of its rows. Both tables
+are the adopter module's relations (`ir.model.relation`), dropped when it is
+uninstalled.
 
 #### MixinAccessGrant — `mixin.access.grant` (`_name`, AbstractModel)
 
@@ -1631,6 +1675,7 @@ Module lifecycle management.
 
 **Key Methods:**
 - `button_install()`, `button_uninstall()`, `button_upgrade()`, `button_immediate_upgrade()`
+- `_lock_against_concurrent_module_operations()` — context manager around an immediate operation through its registry reload: enters `odoo.modules.loading.lock_module_operations` (refuses at once while another operation runs, waits for running jobs while locking nothing else), then locks the module table and the crons, refusing while a pending operation or a cron job runs
 - `get_module_info(name)` — Read manifest metadata
 - `update_list()` — Scan filesystem for new/updated modules
 
@@ -1769,7 +1814,7 @@ Garbage collection framework.
 #### ResPartner — `res.partner` (`_name`, `_parent_store = True`)
 
 Core business entity — contacts, companies, addresses.
-Inherits: `mixin.format.address`, `mixin.format.vat.label`, `mixin.avatar`, `mixin.properties.base.definition`
+Inherits: `mixin.format.address`, `mixin.avatar`, `mixin.properties.base.definition`
 
 **Fields (key selection):**
 - `name` (Char, indexed), `complete_name` (Char, computed, indexed)
@@ -1798,6 +1843,7 @@ Inherits: `mixin.format.address`, `mixin.format.vat.label`, `mixin.avatar`, `mix
 **Key Methods:**
 - `_compute_display_name()` — Format with company, type, address
 - `name_search(name, domain, operator, limit)` — Search by name, ref, email, VAT
+- `_get_view()` / `_get_view_cache_key()` — relabel `vat` with the company country's `vat_label` (`relabel_vat`, shared with res.company)
 - `_get_complete_name()` — Build display name with company/type
 - `_compute_avatar_*()` — Avatar computation (SVG or image)
 - `_fields_sync(values)` — Sync fields between parent/child
@@ -1837,8 +1883,6 @@ an identifier's value is free text unique to its holder.
   anchored both ends, checked before any code-specific rule
 - `unique_across_contacts` (Boolean, default=True)
 - `multiple_per_contact` (Boolean, default=False)
-- `synced_with_commercial` (Boolean, default=False) — copy down from the
-  commercial entity; on for what identifies a *company*, off for a person
 
 **Constraints:** `_code_uniq` UNIQUE(code); `_name_src_uniq` via
 `mixin_catalog.name_uniq_index`; `_check_pattern_compiles`.
@@ -1854,7 +1898,6 @@ an identifier's value is free text unique to its holder.
   localization adds a method rather than editing `validate`
 - `_check_hook(normalized)` — extension point for a rule needing more than a
   boolean
-- `_get_type_by_code(code)` — resolve a type by its stable code, or an empty recordset
 
 ### models/res_partner_identifier.py
 
@@ -1905,12 +1948,6 @@ Customizes address form layout based on country `address_view_id` or `address_fo
 - `_view_get_address(arch)` — Customize address form view
 - `_get_view()` — Override to apply address customization
 
-### models/mixin_format_vat_label.py
-
-#### FormatVatLabelMixin — `mixin.format.vat.label` (AbstractModel)
-
-Relabels VAT field based on company country's `vat_label`.
-
 ---
 
 ## Users
@@ -1942,6 +1979,7 @@ User accounts — inherits all partner fields.
 
 **Key Methods:**
 - `_login(db, credential, user_agent_env)` — Authenticate user
+- `_login_unknown(credential, user_agent_env)` — hook: sign in a login no active account carries (LDAP), run inside the cooldown and never at a keys-only door
 - `_check_credentials(credential, env)` — Verify credentials
 - `authenticate(db, credential, user_agent_env)` — Full auth flow
 - `check_identity(fn)` — Decorator requiring password re-verification
@@ -1957,14 +1995,22 @@ User accounts — inherits all partner fields.
 
 What a door lets an API key do. A route names one (`auth="bearer", scope=`),
 a key may be bound to one, and `odoo.service.model.call_kw` enforces it on
-every door through `odoo.service.api_scope`.
+every door through `odoo.service.api_scope`. The set is closed: a scope is
+declared by a module's data record (an xml id outside `__*__`), and a key
+string no module declares names no door. A door takes the keys bound to its
+scope; the RPC doors (XML-RPC, `/json/2`, every bearer route naming no scope)
+are the `rpc` scope's (`api_scope.RPC_SCOPE`) and also take the keys bound to
+no scope, made before every key named its door, under `rpc`; an archived scope
+closes its door to every key. System users configure scopes (`u`), they do not create or delete
+them, and a scope's `key` never changes.
 
 **Fields:** `name`, `key` (unique; the string routes declare), `active`,
 `line_ids` (One2many → .scope.line; empty reaches every model), `max_depth`,
 `budget_requests`, `budget_window_seconds`
 
 **Key Methods:**
-- `_get(key)` / `_get_or_create(key)` — the scope a key string names, made on first sight
+- `_get(key)` — the row carrying a key string, declared or not
+- `_get_declared(key)` / `_get_declared_state(key)` — the declared scope, or `(id, active)` (ormcache); `UserError` for a key no module declares
 - `_rules()` — the frozen `api_scope.ScopeRules` the guard reads (ormcache)
 
 #### ResUsersApikeysScopeLine — `res.users.apikeys.scope.line`
@@ -1987,11 +2033,12 @@ API key management with custom SQL table (encrypted key storage).
 
 **Fields:**
 - `name` (Char), `user_id` (Many2one → res.users, cascade)
-- `scope_id` (Many2one → res.users.apikeys.scope, cascade; empty opens every door), `expiration_date` (Datetime)
+- `scope_id` (Many2one → res.users.apikeys.scope, cascade; empty only on a key made before scopes, which opens the RPC doors alone), `expiration_date` (Datetime)
 
 **Key Methods:**
-- `_check_credentials(*, scope, key)` — Verify API key
-- `_generate(scope, name, expiration_date)` — Generate and store key
+- `_match_key(scope, key)` — `(user_id, expiration)` of a live key at the door of `scope`
+- `_check_credentials(*, scope, key)` — the key's user at that door, or None
+- `_generate(scope, name, expiration_date)` — Generate and store key; the scope is required, declared and active (the key wizard defaults it to `rpc`)
 - `_gc_user_apikeys()` — Autovacuum expired keys
 
 #### ResUsersApikeysShow — `res.users.apikeys.show` (AbstractModel)
@@ -2062,7 +2109,35 @@ creation, change, revocation or expiry is logged to `ir.access.log`; a group's a
 #### ResUsersLoginCooldown — `res.users.login.cooldown` (`_name`)
 
 Durable, cross-process counter behind the login-failure cooldown: one row per
-source, carrying the failure tally and the moment of the last one.
+source, carrying the failure tally and the moment of the last one. A source is
+a client address (`base.login_cooldown_after`), an account `account:<uid>` or
+a login no account carries `login:<sha256 of it>` (`base.login_cooldown_account_after`,
+counting failures from every address); both share `base.login_cooldown_duration`.
+`res.users._assert_can_auth` reads both in one query; the RPC doors reach it
+through `odoo.http.rpc_client()`, set by `dispatch_rpc`, since they run with
+the request borrowed. A cooled address or account refuses interactive attempts
+and leaves the RPC doors API keys (160 random bits: no oracle); a refused key
+counts toward both, and a key's success clears neither. A browser that signed
+in to an account carries a `login_device` cookie (`LoginDevice`, signed scope
+`login_device`): `<uid>.<auth.user.client id>.<HMAC over uid, device, the
+device's session and marker generations and the password hash>`. With a valid
+one the account's lockout spares that browser for a budget of its own,
+`LOGIN_DEVICE_BUDGET` (5, or the account threshold if lower) failures counted
+under `device:<id>.<marker generation>`, forgiven by no success; the failure
+that spends it raises the device's `marker_generation`, and from then on the
+browser counts toward the account like any other until its next login, which
+issues a new marker. A stolen marker so adds at most 5 guesses to the
+account's threshold in a lockout window (35 at the default 30). A password
+change retires every marker of the account, revoking a device its own, "Log
+out from all devices" every one, the current browser's included, which gets a
+fresh one; a logout none. A marker whose device has been idle past
+`base.device_retention_days` (`last_activity`) is refused, as the cleanup
+would delete the row. The address of the last success exempts nothing: behind
+a NAT it is the attacker's too. A login no active account carries reaches an
+auth method only through `res.users._login_unknown`, inside the cooldown, and
+never at a door taking API keys alone (LDAP creates the account there).
+`base.rpc_api_key_only` (on for a new database, off for one upgraded from
+before it) refuses passwords at the RPC doors.
 **Key Fields:** `source` (indexed), `failures`, `last_failure` (indexed)
 
 ### models/res_users_settings.py
@@ -2105,6 +2180,7 @@ read and written under the company's own access (`_inherits_rules = False`,
   created, written and searched through its applications' configurations
 - `create(vals_list)` — the party is created by the delegation, delegated fields synced, l10n installed
 - `write(vals)` — Enforce hierarchy, copy delegated fields to branches
+- `_get_view()` / `_get_view_cache_key()` — delegated fields readonly on branches; `vat` relabeled as on res.partner
 
 ---
 
@@ -2287,7 +2363,7 @@ unclassified until a fresh login. `session_generation` revokes prior bindings.
 
 **Fields:**
 - `user_id`, `recognition_key_hash`, `recognition_method`
-- `session_generation`, `active`
+- `session_generation`, `marker_generation` (retires the device's login marker), `active`
 - `name`, `platform`, `browser`, `platform_type` (computer/mobile/unknown)
 - `ip_address`, `country`, `city`, `first_activity`, `last_activity`
 - `session_ids` → auth.user.client.session; `address_ids` → auth.user.client.address
@@ -2406,9 +2482,16 @@ Adds properties support to any model.
 A phone number as a record several contacts can share, which is what replaced
 the `phone` and `mobile` columns on partners, users and companies.
 `_rec_name` is `number`; `_rec_names_search` also covers `sanitized` and `label`.
-**Key Fields:** `number`, `sanitized` (computed), `type`, `country_id`,
-`primary`, `label`, `partner_ids`
-**Key Methods:** `_normalize_number(number, country)`, `_get_phone_country()`
+**Key Fields:** `number`, `sanitized` (computed from `number` and `country_id`
+only), `type`, `country_id`, `country_inferred`, `primary`, `label`, `partner_ids`
+**Country:** set at creation from the first contact when none is given
+(`country_inferred`); choosing one on the number clears the flag. A contact's
+create/write touching `country_id` or `phone_ids` calls
+`_update_country_from_contact()`: an inferred number held by that contact alone
+takes its country; a re-read landing on a number another row holds is merged into
+it (`mixin.merge` repoint, then unlink) when the acting user can read the holder,
+otherwise left as it is. A shared number is never re-read.
+**Key Methods:** `_normalize_number(number, country)`, `_update_country_from_contact()`, `_merge_into(holder)`
 
 ### models/report_paperformat.py
 
@@ -2482,8 +2565,8 @@ integrations can point at a tag without depending on its display name.
 
 #### MixinHierarchy — `mixin.hierarchy` (AbstractModel)
 
-Owns `_parent_store` and the `parent_path` column for every tree model in the
-module. A cycle is refused by the ORM's parent-path update on write
+Owns `_parent_store` and the `parent_path` column for every tree model, in base
+and in the addons. A cycle is refused by the ORM's parent-path update on write
 (`odoo/orm/models/mixins/write.py`), before any constraint could run; a
 model sets `_hierarchy_cycle_message` when a domain-specific sentence reads
 better than "Recursion Detected.".
@@ -2526,16 +2609,38 @@ of zero means open-ended.
 - `_is_range_overlapping(a, b)`, `_is_covering(value)` — Interval arithmetic
 - `_check_band()` — Constraint: non-negative lower bound, ordered bounds, no overlap
 
-### models/mixin_favorite.py
-
-#### MixinFavorite — `mixin.favorite` (AbstractModel)
-
-A single per-record favourite flag, not per user. See `mixin.user.favorite` for
-the per-user form.
-
-**Fields:** `is_favorite` (Boolean)
-
 ### models/mixin_user_favorite.py
+
+#### MixinTemplateAuthoring — `mixin.template.authoring` (AbstractModel)
+
+What an author below Settings (`_is_restricted_template_author`) may save in a
+stored template: the authoring grammar (`ir_qweb.restricted_template_errors`,
+`rendering_tools.restricted_expression_errors`) holds every template field
+(`_get_template_unit_fields`) on create, on write of that field or of what it is
+rendered against (`_get_template_unit_context`), and on each translation. A
+field whose evaluated part a module ships for that field (`_get_shipped_units`)
+is the module's and passes whole. Used by `ir.ui.view`, `mixin.mail.render` and
+`l10n_mx_edi.addenda`.
+
+**Key Methods:**
+- `_get_template_unit(fname, source)` — `TemplateUnit(digest, errors)` of one field's text, the hook each model implements
+- `_check_template_authoring(fnames=None)`, `_get_template_authoring_errors(fnames=None)`
+- `_audit_template_authoring()` — Every stored template such an author could not save as it is
+
+#### MixinTemplateTrust — `mixin.template.trust` (AbstractModel, inherits `mixin.template.authoring`)
+
+**Fields:** `shipped_digests` (Json, not copied, GIN-indexed, class `base.template_trust`: only the loader writes it) — Per template field, the digest of what the text the module file ships evaluates
+
+The module loader (superuser, inside `odoo.tools.convert`'s write of a record
+a data file names: `is_loading_data_file()`, a ContextVar, never a context key)
+records the digest of each template field it creates or writes; a text with the
+same digest in the same field, in any record of the model, is trusted.
+
+**Key Methods:**
+- `_get_shipped_units(units)` — Which `(field, digest)` pairs a record of the model ships, one query
+- `_get_shipped_sources()` — Each template field's value as the loader reads it from the defining module's data files
+- `_backfill_shipped_digests()` — Digests of records the update did not reload, read from their files, never from what is stored
+- `migrate_shipped_digests(env, model)` (module function) — The backfill and audit a migration runs
 
 #### MixinUserFavorite — `mixin.user.favorite` (AbstractModel)
 
@@ -2585,29 +2690,11 @@ Contract for anything that publishes a KPI summary.
 
 Every N units. `repeat_interval` (Integer, default 1, positive), `repeat_unit` (Selection day/week/month/year; consumers widen it with `selection_add`). `_get_recurrence_delta()`, `_get_next_recurrence_after(start, after, tz)` over `odoo.tools.date_utils.next_after`. Taken by `ir.cron`, `account.move`, `account.transfer.model`, `fleet.vehicle.log.contract`, `sale.subscription.plan` and the rule mixin.
 
-### models/mixin_recurrence_anchored.py
-
-#### MixinRecurrenceAnchored — `mixin.recurrence.anchored` (AbstractModel)
-
-Fixed points inside a period rather than every N units: `repeat_unit` (day/week/month/year), `repeat_weekday` (MON..SUN), `repeat_day` and `repeat_month` (string Selections, the day clamped to the month), and with `repeat_twice` a second `repeat_second_day`/`repeat_second_month`. `_get_next_anchor(after)` is strictly after, `_get_previous_anchor(on)` on or before, over `odoo.tools.date_utils.next_anchor`/`previous_anchor`, which clamp a day past a short month's end instead of skipping the month. An occurrence is a boundary: the period it closes ends as that day starts. A day of `last` is the one exception to how a day is named. Its boundary is the first of the next month, so its period is the calendar month, and `_get_anchor_day(boundary)` returns the last day it names. Taken by `hr.leave.accrual.level`, which credits an end-of-period accrual on that named day. Owns `WEEKDAY_SELECTION`, which the rrule mixin imports.
-
 ### models/mixin_recurrence_rule.py
 
 #### MixinRecurrenceRule — `mixin.recurrence.rule` (AbstractModel, `_inherit = ['mixin.recurrence.interval']`)
 
-Adds the end policy `repeat_type` (forever/until); `REPEAT_TYPE_COUNT` is `selection_add`-ed only by consumers that can stop on a count.
-
-### models/mixin_recurrence_rrule.py
-
-#### MixinRecurrenceRrule — `mixin.recurrence.rrule` (AbstractModel, `_inherit = ['mixin.recurrence.rule']`)
-
-The iCalendar half: weekday set, `month_by`, `day`, `weekday`, `byday`, timezone, `repeat_number`, `repeat_until` and the serialised `rrule`, with parse/serialise and occurrence enumeration capped at `MAX_RECURRENT_OCCURRENCES`.
-
-### models/mixin_recurrence_occurrence.py
-
-#### MixinRecurrenceOccurrence — `mixin.recurrence.occurrence` (AbstractModel)
-
-`recurrence_update` (this/subsequent/all, not stored): which occurrences an edit or deletion applies to.
+Adds the end policy `repeat_type` (forever/until) and its `repeat_until` date, which `_check_repeat_until` requires whenever `_is_repeat_until_required()` holds (by default, `repeat_type == 'until'`); `REPEAT_TYPE_COUNT` is `selection_add`-ed only by consumers that can stop on a count. Owns `WEEKDAY_SELECTION` (MON..SUN), which `calendar.recurrence` (the iCalendar engine) and `hr.leave.accrual.level` (anchored accrual dates) share.
 
 ## Config
 
@@ -2805,7 +2892,8 @@ Quick lookup — file → model → primary role:
 | `mixin_catalog.py` | mixin.catalog | Unique translated name, archivable |
 | `mixin_lifecycle.py` | mixin.lifecycle | Declared state transitions, locking, confirm/cancel checks |
 | `mixin_color.py` | mixin.color | Shared color defaults, validation, and palette conversion |
-| `mixin_favorite.py` | mixin.favorite | Per-record favourite flag |
+| `mixin_template_authoring.py` | mixin.template.authoring | What an author below Settings may save in a stored template |
+| `mixin_template_trust.py` | mixin.template.trust | Loader-recorded digests that trust a module's template text |
 | `mixin_user_favorite.py` | mixin.user.favorite | Per-user favourite flag |
 | `mixin_merge.py` | mixin.merge | Record merge engine |
 | `mixin_tag.py` | mixin.tag | Coloured label with a stable code |
@@ -2858,7 +2946,6 @@ Quick lookup — file → model → primary role:
 | `res_partner_identifier_type.py` | res.partner.identifier.type | Identifier kinds (RFC, CURP, SIREN…) |
 | `res_partner_identifier.py` | res.partner.identifier | One contact's identifier value |
 | `mixin_format_address.py` | mixin.format.address | Address formatting |
-| `mixin_format_vat_label.py` | mixin.format.vat.label | VAT label formatting |
 | `res_partner_industry.py` | res.partner.industry | Industries |
 | `res_users.py` | res.users | User accounts |
 | `res_users_apikeys.py` | res.users.apikeys, .show | API keys |

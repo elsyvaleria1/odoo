@@ -70,7 +70,7 @@ access control, and ORM extensions that those controllers depend on.
 odoo/addons/base/
 ├── __manifest__.py              # Module metadata + asset/data file declarations
 ├── __init__.py                  # Imports models, report, wizard + post_init hook
-├── models/                      # 160 Python model files (core ORM infrastructure)
+├── models/                      # 157 Python model files (core ORM infrastructure)
 │   ├── assetsbundle/            #   Asset compilation package (bundle, JS/CSS/XML pipelines, store)
 │   ├── decimal_precision.py         #   Configurable decimal precision
 │   ├── uom_uom.py                   #   Units of measure and conversion
@@ -90,7 +90,7 @@ odoo/addons/base/
 │   ├── ir_access_explain.py         #   explain one record for one principal, row by row; who can
 │   ├── ir_access_changeset.py       #   ir.access.changeset: a person's security edit waits, with its impact, for activation
 │   ├── ir_access_matrix.py          #   ir.access.matrix: what each group may do on each model, the console's matrix
-│   ├── ir_access_convert.py         #   access lines + rules to ir.access rows, module-aware, with the audit report (pure)
+│   ├── ir_access_convert.py         #   access lines + rules to ir.access rows (pure)
 │   ├── ir_actions_act_url.py        #   URL action
 │   ├── ir_actions_act_window.py     #   Window actions (open views on a model)
 │   ├── ir_actions_act_window_close.py #   Close-window action
@@ -144,8 +144,9 @@ odoo/addons/base/
 │   ├── ir_ui_menu.py                #   Menu tree (hierarchy, visibility, icons)
 │   ├── ir_ui_view.py                #   View definitions (arch, inheritance, validation)
 │   ├── ir_ui_view_arch.py           #   Arch element handlers (validation, postprocessing, editability)
-│   ├── ir_ui_view_authoring.py      #   What a template author below Settings may add (restricted grammar)
+│   ├── ir_ui_view_authoring.py      #   ir.ui.view as a mixin.template.trust model: a qweb arch is one template field
 │   ├── ir_ui_view_base.py           #   Default view generators (form/list/kanban/etc.)
+│   ├── ir_ui_view_context.py        #   What an authored extension may not change: how a trusted arch of the combined template evaluates
 │   ├── ir_ui_view_custom.py         #   User-specific view customizations (COW)
 │   ├── ir_ui_view_name_manager.py   #   View XML structure validator
 │   ├── kpi_provider.py              #   KPI aggregation hook (abstract)
@@ -157,24 +158,20 @@ odoo/addons/base/
 │   ├── mixin_catalog.py             #   Unique translated name, archivable
 │   ├── mixin_lifecycle.py           #   Declared state transitions, locking, confirm/cancel checks
 │   ├── mixin_color.py               #   Shared defaults, hex validation and palette conversion
-│   ├── mixin_favorite.py            #   Per-record favourite flag
 │   ├── mixin_format_address.py      #   Address form customization
-│   ├── mixin_format_vat_label.py    #   VAT label customization
 │   ├── mixin_hierarchy.py           #   Parent/child tree on a materialized path (`parent_path`)
 │   ├── mixin_image.py               #   Multi-resolution image fields
 │   ├── mixin_merge.py               #   Record merge engine (reference repointing)
 │   ├── mixin_module_link.py         #   Manifest-named module link (abstract)
 │   ├── mixin_owner_access.py        #   Access following an owner record (abstract)
 │   ├── mixin_properties_base_definition.py #   Properties support mixin
-│   ├── mixin_recurrence_anchored.py #   Fixed points inside a period: weekday, day, month, twice
 │   ├── mixin_recurrence_interval.py #   Every N units: repeat_interval, repeat_unit, next occurrence
-│   ├── mixin_recurrence_occurrence.py #   Which occurrences an edit applies to
-│   ├── mixin_recurrence_rrule.py    #   iCalendar RRULE engine over the rule
 │   ├── mixin_company_config.py      #   One configuration record per company per application
 │   ├── mixin_recurrence_rule.py     #   Interval plus end policy (forever/until)
-│   ├── mixin_table_inheritance_root.py #   PostgreSQL table-inheritance tree: concrete type by tableoid, ondelete, root dispatch
 │   ├── mixin_tag.py                 #   Coloured label with a stable code
 │   ├── mixin_tag_nested.py          #   Tag with a parent/child hierarchy
+│   ├── mixin_template_authoring.py  #   What an author below Settings may save in a stored template
+│   ├── mixin_template_trust.py      #   Loader-recorded digests that trust a module's template text
 │   ├── mixin_user_favorite.py       #   Per-user favourite flag
 │   ├── phone_number.py              #   Shared phone number records
 │   ├── properties_base_definition.py #   Properties field definitions
@@ -257,7 +254,7 @@ odoo/addons/base/
 │   ├── wizard_res_users_update_password.py #   Password change, admin form (one line per user)
 │   ├── wizard_res_users_update_password_line.py #   One user and their new password
 │   └── wizard_res_users_update_password_own.py #   Password change, self-service
-├── tests/                       # 205 Python test files + test assets
+├── tests/                       # 207 Python test files + test assets
 ├── views/                       # 57 XML view definition files
 ├── data/                        # 28 data files (XML, CSV, SQL, JSON)
 ├── security/                    # ir.access.csv + groups and access-row XML
@@ -321,7 +318,6 @@ every Odoo module depends on.
 | mixin.image | Multi-resolution image fields (1920/1024/512/256/128) |
 | mixin.avatar | SVG avatar generation from name initials |
 | mixin.format.address | Country-specific address form layout |
-| mixin.format.vat.label | Country-specific VAT field labeling |
 | properties.base.definition | Properties field definition storage |
 | mixin.properties.base.definition | Properties support for models |
 | decimal.precision | Configurable decimal precision per usage |
@@ -342,9 +338,9 @@ Derived by `factcheck.sh`, which re-measures every row against the tree.
 
 | Category | Count |
 |----------|-------|
-| Python (models) | 160 |
+| Python (models) | 157 |
 | Python (wizards) | 22 |
-| Python (tests) | 205 |
+| Python (tests) | 207 |
 | XML (views) | 57 |
 | Data files | 28 |
 | XML (reports) | 0 |

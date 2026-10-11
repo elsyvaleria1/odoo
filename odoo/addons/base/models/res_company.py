@@ -10,6 +10,8 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import file_open, ormcache
 from odoo.tools.image import image_process
 
+from .res_partner import relabel_vat
+
 _debug = DebugLog(__name__)
 
 
@@ -24,7 +26,6 @@ class ResCompany(models.Model):
     _description = "Companies"
     _inherit = [
         "mixin.format.address",
-        "mixin.format.vat.label",
         "mixin.hierarchy",
     ]
     _inherits = {"res.partner": "partner_id"}
@@ -355,8 +356,10 @@ class ResCompany(models.Model):
         delegated_changed = set(vals) & set(self._get_field_names_delegated_to_root())
         if delegated_changed:
             roots = self.filtered(lambda company: not company.parent_id)
-            all_branches = self.sudo().search(
-                [("id", "child_of", roots.ids), ("id", "not in", roots.ids)]
+            all_branches = (
+                self.sudo()
+                .with_context(active_test=False)
+                .search([("id", "child_of", roots.ids), ("id", "not in", roots.ids)])
             )
             _debug.logic(
                 "delegated_fields_propagated",
@@ -730,7 +733,15 @@ class ResCompany(models.Model):
                 f.set("readonly", "parent_id != False")
                 marked += 1
         _debug.logic("delegated_fields_readonly", view_type=view_type, fields=marked)
+        relabel_vat(self, arch, view_type)
         return arch, view
+
+    @api.model
+    def _get_view_cache_key(
+        self, view_id: int | None = None, view_type: str = "form", **options
+    ) -> tuple:
+        key = super()._get_view_cache_key(view_id, view_type, **options)
+        return key + (self.env.company.country_id.vat_label,)
 
     def install_l10n_modules(self) -> Any:
         uninstalled_modules = self.uninstalled_l10n_module_ids

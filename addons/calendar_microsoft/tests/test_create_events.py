@@ -437,6 +437,96 @@ class TestCreateEvents(TestCommon):
         self.assertEqual(recurrence._get_microsoft_pattern(), pattern)
 
     @patch.object(MicrosoftCalendarService, "get_events")
+    def test_outlook_last_weekday_of_the_month_round_trips(self, mock_get_events):
+        pattern = {
+            "type": "relativeMonthly",
+            "interval": 1,
+            "daysOfWeek": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+            "index": "last",
+        }
+        recurrence = self._sync_outlook_series(
+            mock_get_events,
+            pattern,
+            [
+                datetime(2024, 1, 31, 10, 0),
+                datetime(2024, 2, 29, 10, 0),
+                datetime(2024, 3, 29, 10, 0),
+            ],
+        )
+        self.assertEqual(
+            recurrence.custom_rrule, "FREQ=MONTHLY;BYSETPOS=-1;BYDAY=MO,TU,WE,TH,FR"
+        )
+        self.assertEqual(
+            recurrence.rrule, "FREQ=MONTHLY;COUNT=3;BYSETPOS=-1;BYDAY=MO,TU,WE,TH,FR"
+        )
+        self.assertEqual(recurrence._get_microsoft_pattern(), pattern)
+        self.assertIsNone(recurrence._microsoft_refusal())
+
+    def _sync_outlook_biweekly_sunday_and_monday(
+        self, mock_get_events, first_day, starts
+    ):
+        pattern = {
+            "type": "weekly",
+            "interval": 2,
+            "daysOfWeek": ["monday", "sunday"],
+            "firstDayOfWeek": first_day,
+        }
+        recurrence = self._sync_outlook_series(mock_get_events, pattern, starts)
+        self.assertEqual(recurrence._get_microsoft_pattern(), pattern)
+        return recurrence
+
+    @patch.object(MicrosoftCalendarService, "get_events")
+    def test_outlook_weeks_starting_on_sunday_round_trip(self, mock_get_events):
+        recurrence = self._sync_outlook_biweekly_sunday_and_monday(
+            mock_get_events,
+            "sunday",
+            [
+                datetime(2024, 1, 7, 10, 0),
+                datetime(2024, 1, 8, 10, 0),
+                datetime(2024, 1, 21, 10, 0),
+                datetime(2024, 1, 22, 10, 0),
+            ],
+        )
+        self.assertEqual(recurrence.week_start, "SUN")
+
+    @patch.object(MicrosoftCalendarService, "get_events")
+    def test_outlook_weeks_starting_on_monday_round_trip(self, mock_get_events):
+        recurrence = self._sync_outlook_biweekly_sunday_and_monday(
+            mock_get_events,
+            "monday",
+            [
+                datetime(2024, 1, 7, 10, 0),
+                datetime(2024, 1, 15, 10, 0),
+                datetime(2024, 1, 21, 10, 0),
+                datetime(2024, 1, 29, 10, 0),
+            ],
+        )
+        self.assertEqual(recurrence.week_start, "MON")
+
+    def test_a_rule_outlook_cannot_hold_is_refused(self):
+        self.organizer_user._calendar_sync_account("microsoft").stopped = True
+        event = (
+            self.env["calendar.event"]
+            .with_user(self.organizer_user)
+            .create(
+                {
+                    "name": "First and third Monday",
+                    "start": datetime(2024, 1, 1, 10, 0),
+                    "stop": datetime(2024, 1, 1, 11, 0),
+                    "recurrency": True,
+                    "rrule": "FREQ=MONTHLY;BYDAY=1MO,3MO;COUNT=4",
+                    "event_tz": "UTC",
+                }
+            )
+        )
+        self.assertEqual(
+            event.recurrence_id.custom_rrule, "FREQ=MONTHLY;BYDAY=+1MO,+3MO"
+        )
+        self.assertIn(
+            "FREQ=MONTHLY;BYDAY=+1MO,+3MO", event.recurrence_id._microsoft_refusal()
+        )
+
+    @patch.object(MicrosoftCalendarService, "get_events")
     def test_create_recurrent_event_from_outlook_attendee_calendar(
         self, mock_get_events
     ):

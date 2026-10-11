@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Literal, Self
 
-from odoo import api, fields, models
+from odoo import _lt, api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.numbers import RoundingMethod, float_repr
 from odoo.tools import float_compare, float_is_zero, float_round
@@ -11,9 +11,9 @@ _RELATIVE_FACTOR_DIGITS = 7
 
 class UomUom(models.Model):
     _name = "uom.uom"
+    _inherit = ["mixin.hierarchy"]
     _description = "Product Unit of Measure"
     _parent_name = "relative_uom_id"
-    _parent_store = True
     _order = "sequence, parent_path, id"
 
     name = fields.Char(
@@ -65,7 +65,8 @@ class UomUom(models.Model):
         help="The root unit this one is ultimately defined against."
         " Two units are convertible if and only if they share it.",
     )
-    parent_path = fields.Char(index=True)
+
+    _hierarchy_cycle_message = _lt("You cannot create recursive units of measure.")
 
     _factor_gt_zero = models.Constraint(
         "CHECK (relative_factor > 0)",

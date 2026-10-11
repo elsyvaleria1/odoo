@@ -2041,7 +2041,7 @@ class TestHttp(common.HttpCase):
         obj.another_field = False
         with mute_logger("odoo.addons.automation.models.automation_rule"):
             response = self.url_open(automation.url, data=json_dumps({}))
-        self.assertEqual(response.json(), {"status": "error"})
+        self.assertEqual(response.json()["error"], "webhook_failed")
         self.assertEqual(response.status_code, 500)
         self.assertEqual(obj.another_field, False)
 

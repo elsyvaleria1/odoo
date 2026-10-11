@@ -8,6 +8,7 @@ from . import test_scoped_grant_fields
 from . import test_access_link
 from . import test_access_graph
 from . import test_access_graph_labels
+from . import test_access_graph_races
 from . import test_access_matrix_runner
 from . import test_access_property
 from . import test_access_memo_property

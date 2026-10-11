@@ -24,4 +24,8 @@ class IrAccess(models.Model):
     def _get_access_context(self):
         yield from super()._get_access_context()
         is_frontend = ir_http.get_request_website()
-        yield (is_frontend and self.env["website"].get_current_website().id) or False
+        Website = self.env["website"]
+        if is_frontend:
+            yield Website.get_current_website().id
+        else:
+            yield Website.get_current_website(fallback=False).id

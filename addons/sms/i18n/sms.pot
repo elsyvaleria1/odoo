@@ -719,6 +719,14 @@ msgid "Outgoing SMS"
 msgstr ""
 
 #. module: sms
+#: model:ir.model.fields,help:sms.field_sms_template__shipped_digests
+msgid ""
+"Per template field, the digest of what the text its module file ships "
+"evaluates: a text with the same digest in the same field is trusted as the "
+"module's own, wherever it is stored."
+msgstr ""
+
+#. module: sms
 #: model:ir.model.fields,field_description:sms.field_wizard_iap_account_send_sms_code__phone_number
 msgid "Phone Number"
 msgstr ""
@@ -1150,6 +1158,11 @@ msgstr ""
 #. module: sms
 #: model_terms:ir.ui.view,arch_db:sms.sms_account_sender_view_form
 msgid "Set sender name"
+msgstr ""
+
+#. module: sms
+#: model:ir.model.fields,field_description:sms.field_sms_template__shipped_digests
+msgid "Shipped Digests"
 msgstr ""
 
 #. module: sms

@@ -12,6 +12,7 @@ class TestChangePasswordWizardAudit(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
         cls.internal = new_test_user(
             cls.env, login="cpw_internal", password="cpw_internal_pw"
         )

@@ -4,7 +4,7 @@ from unittest.mock import patch
 from freezegun import freeze_time
 
 from odoo.fields import Command
-from odoo.tests import tagged
+from odoo.tests import new_test_user, tagged
 from odoo.tools import SQL
 
 from odoo.addons.base.tests.common import (
@@ -978,6 +978,34 @@ class TestWebsitePricelistOfferedWithoutRequest(WebsiteSaleCommon):
         )
 
         self.assertEqual(self._readable_by_the_visitor(pricelists), pricelists)
+
+    def test_the_context_website_is_not_served_another_website_s_pricelists(self):
+        pricelists = self.offered + self.website_only
+        self.assertEqual(self._readable_by_the_visitor(pricelists), self.offered)
+        self.assertEqual(
+            self._readable_by_the_visitor(
+                pricelists.with_context(website_id=self.website.id)
+            ),
+            pricelists,
+        )
+        self.assertEqual(self._readable_by_the_visitor(pricelists), self.offered)
+
+    def test_a_customer_reads_the_pricelist_now_set_on_them(self):
+        negotiated, renegotiated = self.env["product.pricelist"].create(
+            [
+                {"name": name, "website_id": False, "selectable": False}
+                for name in ("Negotiated", "Renegotiated")
+            ]
+        )
+        customer = new_test_user(
+            self.env, login="pl_customer", groups="base.group_portal"
+        )
+        customer.partner_id.specific_property_product_pricelist = negotiated
+        pricelists = (negotiated + renegotiated).with_user(customer)
+        self.assertEqual(pricelists._filtered_access("read"), negotiated)
+        customer.partner_id.specific_property_product_pricelist = renegotiated
+        self.env.invalidate_all()
+        self.assertEqual(pricelists._filtered_access("read"), renegotiated)
 
 
 @tagged("post_install", "-at_install")

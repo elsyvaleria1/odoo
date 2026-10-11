@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from odoo import Command
 from odoo.http import Request
 from odoo.tests.common import HttpCase, tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.mail.tests.common import mail_new_test_user
 
@@ -63,7 +64,7 @@ class TestUsersHttp(HttpCase):
             "portal.allow_api_keys", "True"
         )
         self.env["res.users.apikeys"].with_user(portal_user)._generate(
-            None, "Portal API Key", datetime.now() + timedelta(hours=1)
+            "rpc", "Portal API Key", datetime.now() + timedelta(hours=1)
         )
         self.assertTrue(portal_user.api_key_ids)
 
@@ -90,6 +91,37 @@ class TestUsersHttp(HttpCase):
         )
         self.env.ref("base.ir_cron_res_users_deletion").method_direct_trigger()
         self.assertFalse(portal_user.exists())
+
+    @mute_logger("odoo.addons.base.models.res_users")
+    def test_deactivation_passwords_are_held_to_the_cooldown(self):
+        icp = self.env["ir.config_parameter"].sudo()
+        icp.set_param("base.login_cooldown_after", "3")
+        icp.set_param("base.login_cooldown_duration", "60")
+        login = "portal_cooled"
+        portal_user = self.env["res.users"].create(
+            {
+                "name": login,
+                "login": login,
+                "password": "portal-cooled-pw",
+                "group_ids": [Command.set([self.env.ref("base.group_portal").id])],
+            }
+        )
+        self.authenticate(login, "portal-cooled-pw")
+
+        def deactivate(password):
+            return self.url_open(
+                "/my/deactivate_account",
+                data={
+                    "validation": login,
+                    "password": password,
+                    "csrf_token": Request.csrf_token(self),
+                },
+            )
+
+        for _ in range(3):
+            self.assertNotIn("Too many login failures", deactivate("guess").text)
+        self.assertIn("Too many login failures", deactivate("portal-cooled-pw").text)
+        self.assertTrue(portal_user.active)
 
     def test_submit_address_from_anonymous_partner(self):
         login = "test_portal_user"

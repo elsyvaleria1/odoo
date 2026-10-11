@@ -956,6 +956,12 @@ msgstr ""
 
 #. module: analytic
 #. odoo-python
+#: code:addons/analytic/models/analytic_plan.py:0
+msgid "You cannot create recursive analytic plans."
+msgstr ""
+
+#. module: analytic
+#. odoo-python
 #: code:addons/analytic/models/analytic_distribution_model.py:0
 msgid ""
 "You defined a distribution with analytic account(s) belonging to a specific "

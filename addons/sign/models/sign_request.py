@@ -54,8 +54,12 @@ class SignRequest(models.Model):
         for sign_request in self:
             sign_request.access_token = tokens.get(sign_request.id, False)
 
-    def _request_link_end(self):
-        return self.validity and datetime.combine(self.validity, day_time(23, 59, 59))
+    def _get_link_expiry(self) -> datetime | None:
+        return (
+            datetime.combine(self.validity, day_time(23, 59, 59))
+            if self.validity
+            else None
+        )
 
     def _issue_request_links(self) -> None:
         Link = self.env["access.link"]
@@ -65,7 +69,7 @@ class SignRequest(models.Model):
                 partner=sign_request.create_uid.partner_id,
                 role="view",
                 cause="notification",
-                date_to=sign_request._request_link_end() or None,
+                dated_by_record=True,
             )
             sign_request._update_cache({"access_token": token}, validate=False)
 
@@ -77,7 +81,7 @@ class SignRequest(models.Model):
             role="comment",
             audience="partners",
             cause="notification",
-            date_to=self._request_link_end() or None,
+            dated_by_record=True,
         )
         return token
 
@@ -457,28 +461,8 @@ class SignRequest(models.Model):
         ):
             self.filtered(lambda sr: sr.state in ("sent", "shared")).state = "expired"
         if "validity" in vals:
-            self._move_signer_links()
+            self.env["access.link"]._sync_record_expiries(self.request_item_ids, self)
         return res
-
-    def _move_signer_links(self) -> None:
-        items = self.request_item_ids
-        Link = self.env["access.link"]
-        notification = Domain("cause", "=", "notification")
-        links = (
-            Link._record_links(items, notification)
-            | Link._record_links(self, notification)
-        ).with_privilege(
-            "base.privilege_manage_links", reason="the request's validity moved"
-        )
-        ends = {
-            ("sign.request.item", item.id): item._signer_link_end() for item in items
-        }
-        ends |= {
-            (self._name, sign_request.id): sign_request._request_link_end()
-            for sign_request in self
-        }
-        for link in links:
-            link.date_to = ends.get((link.res_model, link.res_id)) or link.date_to
 
     def _is_state_write_allowed(self) -> bool:
         return bool(

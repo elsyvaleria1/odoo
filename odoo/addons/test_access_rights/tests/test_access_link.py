@@ -2,7 +2,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from odoo import fields
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import HttpCase, TransactionCase, new_test_user, tagged
 
 from odoo.addons.base.models.access_link import (
@@ -296,7 +296,10 @@ class TestAccessLink(AccessLinkCase):
             sharer.action_extend(far)
         with self.assertRaises(UserError):
             sharer.write({"date_to": False})
-        link.with_user(self.env.ref("base.user_admin")).action_extend(far)
+        administrator = link.with_user(self.env.ref("base.user_admin"))
+        with self.assertRaises(ValidationError):
+            administrator.action_extend(far)
+        administrator.write({"date_to": far, "expiry_waived": True})
         self.assertAlmostEqual(link.date_to, far, delta=timedelta(seconds=1))
 
     def test_a_link_is_reused_only_when_it_is_the_one_asked_for(self):
@@ -351,7 +354,7 @@ class TestAccessLink(AccessLinkCase):
     def test_a_record_writer_changes_role_and_expiry_and_the_url_stays(self):
         link, token = self._issue(partner=self.customer)
         self.doc.sudo().reader_ids = self.stranger
-        later = fields.Datetime.now() + timedelta(days=90)
+        later = fields.Datetime.now() + timedelta(days=20)
         with self.assertRaises(AccessError):
             self.Link.with_user(self.stranger)._update_record_links(
                 self.doc.with_user(self.stranger), {"role": "edit"}
@@ -392,6 +395,212 @@ class TestAccessLink(AccessLinkCase):
         with self.assertRaises(LinkLoginRequired):
             self.Link.with_user(self.env.ref("base.public_user"))._resolve(signed_token)
         self.Link.with_user(self.stranger)._resolve(signed_token)
+
+    def _organization(self):
+        acme = self.env["res.partner"].create({"name": "ACME", "is_company": True})
+        ann, bob = (
+            new_test_user(
+                self.env,
+                login,
+                groups="base.group_portal",
+                partner_id=self.env["res.partner"]
+                .create({"name": login, "parent_id": acme.id})
+                .id,
+            )
+            for login in ("link_ann", "link_bob")
+        )
+        return acme, ann, bob
+
+    def test_a_link_for_named_people_admits_those_people_only(self):
+        acme, ann, bob = self._organization()
+        _link, for_ann = self._issue(partner=ann.partner_id, audience="partners")
+        _link, for_acme = self._issue(partner=acme, audience="partners")
+        self.assertTrue(self.Link.with_user(ann)._resolve(for_ann))
+        for token in (for_ann, for_acme):
+            with self.subTest(token=token), self.assertRaises(LinkRefused):
+                self.Link.with_user(bob)._resolve(token)
+
+    def test_a_link_for_their_organizations_admits_their_colleagues(self):
+        _acme, ann, bob = self._organization()
+        link, token = self._issue(partner=ann.partner_id, audience="organizations")
+        self.assertEqual(link.audience_partner_ids, ann.partner_id)
+        for colleague in (ann, bob):
+            self.assertEqual(self.Link.with_user(colleague)._resolve(token).link, link)
+        with self.assertRaises(LinkRefused):
+            self.Link.with_user(self.portal)._resolve(token)
+        with self.assertRaises(LinkLoginRequired):
+            self.Link.with_user(self.env.ref("base.public_user"))._resolve(token)
+        again, _token = self._issue(partner=ann.partner_id, audience="partners")
+        self.assertNotEqual(again, link, "a narrower audience is another link")
+
+    def test_every_link_expires_by_its_purpose_whatever_its_audience(self):
+        now = fields.Datetime.now()
+        for audience in ("partners", "organizations", "signed_in"):
+            with self.subTest(audience=audience):
+                link, _token = self._issue(
+                    partner=self.portal.partner_id,
+                    audience=audience,
+                    cause="notification",
+                )
+                self.assertAlmostEqual(
+                    link.date_to,
+                    now + timedelta(days=365),
+                    delta=timedelta(minutes=5),
+                )
+
+    def test_every_cause_declares_its_lifetime(self):
+        causes = {value for value, _label in self.Link._fields["cause"].selection}
+        self.assertEqual(set(self.Link._get_cause_lifetimes()), causes)
+
+    def test_no_path_issues_or_moves_a_link_past_its_lifetime(self):
+        far = fields.Datetime.now() + timedelta(days=90)
+        link, _token = self._issue()
+        doc = self.doc.with_user(self.owner)
+        manager = self.Link.with_user(self.owner).with_privilege(
+            "base.privilege_manage_links", reason="the test tries every path"
+        )
+        paths = {
+            "_issue": lambda: self._issue(date_to=far),
+            "_issue_many": lambda: self.Link.with_user(self.owner)._issue_many(
+                doc, self.customer, date_to=far
+            ),
+            "_update_record_links": lambda: self.Link.with_user(
+                self.owner
+            )._update_record_links(doc, {"date_to": far}),
+            "manage privilege": lambda: (
+                link.with_user(self.owner)
+                .with_privilege("base.privilege_manage_links", reason="test")
+                .write({"date_to": far})
+            ),
+            "manage privilege, no expiry": lambda: manager.browse(link.id).write(
+                {"date_to": False}
+            ),
+            "superuser": lambda: link.sudo().write({"date_to": far}),
+        }
+        for label, path in paths.items():
+            with (
+                self.subTest(label),
+                self.assertRaises(ValidationError),
+                self.env.cr.savepoint(),
+            ):
+                path()
+        self.assertAlmostEqual(
+            link.date_to,
+            fields.Datetime.now() + timedelta(days=30),
+            delta=timedelta(minutes=5),
+        )
+
+    def _issue_dated(self, due, **kwargs):
+        self.doc.sudo().date_due = due
+        link, _token = self._issue(
+            partner=self.customer,
+            cause="notification",
+            dated_by_record=True,
+            **kwargs,
+        )
+        return link
+
+    def test_a_link_following_its_record_s_date_expires_with_it(self):
+        due = fields.Datetime.now() + timedelta(days=730)
+        link = self._issue_dated(due)
+        self.assertTrue(link.dated_by_record)
+        self.assertEqual(link.date_to, due + timedelta(days=7))
+        each = self.Link.with_user(self.owner)._issue_each(
+            self.doc.with_user(self.owner),
+            partner_field="partner_id",
+            dated_by_record=True,
+        )
+        each_link = self.Link.sudo()._resolve(each[self.doc.id], action=None).link
+        self.assertEqual(each_link.date_to, due + timedelta(days=7))
+
+    def test_a_record_without_a_date_keeps_the_cause_s_lifetime(self):
+        now = fields.Datetime.now()
+        for cause, days in (("notification", 365), ("share", 30)):
+            with self.subTest(cause=cause):
+                link, _token = self._issue(cause=cause, dated_by_record=True)
+                self.assertTrue(link.dated_by_record)
+                self.assertAlmostEqual(
+                    link.date_to,
+                    now + timedelta(days=days),
+                    delta=timedelta(minutes=5),
+                )
+                link.sudo().date_to -= timedelta(minutes=1)
+                again, _token = self._issue(cause=cause, dated_by_record=True)
+                self.assertEqual(again, link, "handed out again, issued earlier")
+
+    def test_a_dated_link_moves_with_its_record_both_ways(self):
+        now = fields.Datetime.now()
+        link = self._issue_dated(now + timedelta(days=10))
+        undated, _token = self._issue(partner=self.customer, cause="notification")
+        Link = self.Link.with_user(self.owner)
+        for due in (now + timedelta(days=730), now + timedelta(days=3)):
+            with self.subTest(due=due):
+                self.doc.sudo().date_due = due
+                Link._sync_record_expiries(self.doc.with_user(self.owner))
+                self.assertEqual(link.date_to, due + timedelta(days=7))
+        self.doc.sudo().date_due = False
+        Link._sync_record_expiries(self.doc.with_user(self.owner))
+        self.assertAlmostEqual(
+            link.date_to, now + timedelta(days=365), delta=timedelta(minutes=5)
+        )
+        self.assertAlmostEqual(
+            undated.date_to, now + timedelta(days=365), delta=timedelta(minutes=5)
+        )
+
+    def test_a_dated_link_is_handed_out_again_at_its_record_s_date(self):
+        now = fields.Datetime.now()
+        link = self._issue_dated(now + timedelta(days=10))
+        self.assertEqual(self._issue_dated(now + timedelta(days=10)), link)
+        due = now + timedelta(days=400)
+        self.doc.sudo().date_due = due
+        self.Link.with_user(self.owner)._sync_record_expiries(
+            self.doc.with_user(self.owner)
+        )
+        self.assertEqual(self._issue_dated(due), link)
+        self.assertEqual(link.date_to, due + timedelta(days=7))
+        undated, _token = self._issue(partner=self.customer, cause="notification")
+        self.assertNotEqual(undated, link, "an undated link is another link")
+
+    def test_no_path_moves_a_dated_link_past_its_record_s_date(self):
+        due = fields.Datetime.now() + timedelta(days=730)
+        link = self._issue_dated(due)
+        beyond = due + timedelta(days=8)
+        doc = self.doc.with_user(self.owner)
+        paths = {
+            "sharer": lambda: link.with_user(self.owner).write({"date_to": beyond}),
+            "sharer extends": lambda: link.with_user(self.owner).action_extend(beyond),
+            "_update_record_links": lambda: self.Link.with_user(
+                self.owner
+            )._update_record_links(doc, {"date_to": beyond}),
+            "manage privilege": lambda: (
+                link.with_user(self.owner)
+                .with_privilege("base.privilege_manage_links", reason="test")
+                .write({"date_to": beyond})
+            ),
+            "superuser": lambda: link.sudo().write({"date_to": beyond}),
+            "administrator": lambda: link.with_user(
+                self.env.ref("base.user_admin")
+            ).action_extend(beyond),
+        }
+        for label, path in paths.items():
+            with (
+                self.subTest(label),
+                self.assertRaises(ValidationError),
+                self.env.cr.savepoint(),
+            ):
+                path()
+        with self.assertRaises(ValueError):
+            self._issue(date_to=beyond, cause="notification", dated_by_record=True)
+        undated, _token = self._issue(cause="notification")
+        for user in (self.owner, self.env.ref("base.user_admin")):
+            with self.subTest(user=user.login), self.assertRaises(AccessError):
+                undated.with_user(user).write({"dated_by_record": True})
+        link.with_user(self.owner).write({"date_to": due})
+        self.assertEqual(link.date_to, due)
+        link.with_user(self.env.ref("base.user_admin")).write(
+            {"date_to": beyond, "expiry_waived": True}
+        )
+        self.assertEqual(link.date_to, beyond)
 
     def test_uses_are_counted_by_hour_address_user_and_action(self):
         link, token = self._issue(partner=self.customer)
@@ -446,6 +655,18 @@ class TestAccessLink(AccessLinkCase):
         fresh, fresh_token = self._issue(partner=self.customer)
         self.assertNotEqual(fresh, link)
         self.assertNotEqual(fresh_token, token)
+
+    def test_a_session_opens_a_record_at_the_role_it_holds_on_it(self):
+        self.doc.sudo().reader_ids = self.stranger
+        Link = self.Link.with_user(self.stranger)
+        self.assertEqual(Link._open_record(self.doc._name, self.doc.id), self.doc)
+        with self.assertRaises(AccessError):
+            Link._open_record(self.doc._name, self.doc.id, role="edit")
+        _link, token = self._issue(role="edit")
+        opened = Link._open_record(
+            self.doc._name, self.doc.id, access_token=token, role="edit"
+        )
+        self.assertEqual(opened, self.doc)
 
 
 @tagged("post_install", "-at_install", "access_link")
@@ -502,6 +723,15 @@ class TestLinkDoor(HttpCase):
         self.doc.sudo().reader_ids = self.stranger
         res = self.url_open(f"/test_access_rights/shared/{self.doc.id}")
         self.assertEqual(res.json(), {"id": self.doc.id, "link": False})
+
+    def test_a_signed_in_reader_does_not_pass_an_edit_door(self):
+        self.doc.sudo().reader_ids = self.stranger
+        self.authenticate("door_stranger", "door_stranger")
+        url = f"/test_access_rights/shared_edit/{self.doc.id}"
+        self.assertEqual(self.url_open(url).status_code, 404)
+        _link, token = self._issue(role="edit")
+        res = self.url_open(f"{url}?access_token={token}")
+        self.assertEqual(res.json(), {"id": self.doc.id})
 
     def test_a_route_may_send_a_refused_visitor_elsewhere(self):
         _link, token = self._issue()

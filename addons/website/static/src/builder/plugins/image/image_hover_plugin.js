@@ -3,7 +3,7 @@ import { BuilderAction } from "@html_builder/core/builder_action";
 import { Plugin } from "@html_editor/plugin";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { registry } from "@web/core/registry";
-import { convertCSSColorToRgba } from "@web/core/utils/format/colors";
+import { normalizeCSSColor, parseCSSColor } from "@web/core/utils/format/colors";
 
 /**
  * @typedef { Object } ImageHoverShared
@@ -12,6 +12,18 @@ import { convertCSSColorToRgba } from "@web/core/utils/format/colors";
  */
 
 const log = makeLogger("website.builder.plugin.image_hover");
+
+/**
+ * The color the server renders the hover effect with: what the browser
+ * computes (a `color()` from a `color-mix()`) in a spelling the server reads,
+ * so the preview shows what the save stores.
+ *
+ * @param {string} [color]
+ * @returns {string | undefined}
+ */
+function serverHoverEffectColor(color) {
+    return color && normalizeCSSColor(color);
+}
 
 export class ImageHoverPlugin extends Plugin {
     static id = "imageHover";
@@ -29,8 +41,16 @@ export class ImageHoverPlugin extends Plugin {
         system_attributes: ["data-original-src-before-hover"],
         default_shape_handlers: (dataset) =>
             dataset.hoverEffect && "html_builder/geometric/geo_square",
+        image_shape_save_params_providers: (dataset) =>
+            dataset.hoverEffect && {
+                hover_effect: dataset.hoverEffect,
+                hover_effect_color: serverHoverEffectColor(dataset.hoverEffectColor),
+                hover_effect_stroke_width:
+                    parseInt(dataset.hoverEffectStrokeWidth) || undefined,
+                hover_effect_intensity:
+                    parseInt(dataset.hoverEffectIntensity) || undefined,
+            },
         post_compute_shape_listeners: async (svg, params) => {
-            let rgba;
             let rbg = null;
             let opacity = null;
             const hoverEffectName = params.hoverEffect;
@@ -55,8 +75,8 @@ export class ImageHoverPlugin extends Plugin {
             const animateElValues = animateEl?.getAttribute("values");
             let animateTransformElValues =
                 animateTransformEls[0]?.getAttribute("values");
-            if (params.hoverEffectColor) {
-                rgba = convertCSSColorToRgba(params.hoverEffectColor);
+            const rgba = parseCSSColor(serverHoverEffectColor(params.hoverEffectColor));
+            if (rgba) {
                 rbg = `rgb(${rgba.red},${rgba.green},${rgba.blue})`;
                 opacity = rgba.opacity / 100;
                 if (!["outline", "image_mirror_blur"].includes(hoverEffectName)) {

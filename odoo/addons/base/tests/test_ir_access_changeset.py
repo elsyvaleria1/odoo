@@ -179,6 +179,44 @@ class TestChangeset(TransactionCase):
         self.assertEqual(eligibility.state, "active")
         eligibility.with_user(self.reader).action_activate(1, "now")
 
+    def test_making_someone_eligible_is_another_persons_to_activate(self):
+        with calling("res.users"):
+            self.env["res.users.eligibility"].with_user(self.admin).create(
+                {
+                    "user_id": self.reader.id,
+                    "group_id": self.env.ref("base.group_system").id,
+                    "justification_required": False,
+                }
+            )
+        changeset = self.changeset()
+        with self.assertRaisesRegex(UserError, "another access administrator"):
+            changeset.with_user(self.admin).action_activate()
+        other = new_test_user(
+            self.env, login="access_admin_2", groups="base.group_erp_manager"
+        )
+        changeset.with_user(other).action_activate()
+        self.assertEqual(changeset.state, "active")
+
+    def test_narrowing_an_eligibility_is_its_authors_to_activate(self):
+        eligibility = self.env["res.users.eligibility"].create(
+            {
+                "user_id": self.reader.id,
+                "group_id": self.env.ref("base.group_system").id,
+                "max_hours": 8,
+            }
+        )
+        company = self.env.company
+        with calling("res.users"):
+            eligibility.with_user(self.admin).write(
+                {"max_hours": 2, "company_ids": [Command.set(company.ids)]}
+            )
+        self.changeset().with_user(self.admin).action_activate()
+        self.assertEqual((eligibility.max_hours, eligibility.company_ids), (2, company))
+        with calling("res.users"):
+            eligibility.with_user(self.admin).write({"company_ids": [Command.clear()]})
+        with self.assertRaisesRegex(UserError, "another access administrator"):
+            self.changeset().with_user(self.admin).action_activate()
+
     def test_activation_bumps_the_policy_version(self):
         parameters = self.env["ir.config_parameter"]
         before = int(parameters.get_param("base.access_policy_version", "0"))
@@ -234,3 +272,117 @@ class TestChangeset(TransactionCase):
         changeset.with_user(self.admin).action_propose()
         changeset.with_user(other).action_activate()
         self.assertEqual(changeset.state, "active")
+
+    def test_an_implication_written_from_the_implied_side_stages(self):
+        implied = self.env.ref("base.group_partner_manager")
+        with calling("res.groups"):
+            implied.with_user(self.admin).implied_by_ids = [
+                Command.link(self.readers.id)
+            ]
+        self.assertNotIn(implied, self.readers.implied_ids)
+        self.assertEqual(self.changeset().line_ids.mapped("res_id"), [self.readers.id])
+        self.changeset().action_activate()
+        self.assertIn(implied, self.readers.implied_ids)
+
+    def test_who_staged_a_change_set_is_not_rewritten_by_hand(self):
+        changeset = self.stage("[('name', '!=', False)]")
+        other = new_test_user(
+            self.env, login="access_admin_2", groups="base.group_erp_manager"
+        )
+        for values in (
+            {"author_id": other.id},
+            {"state": "active"},
+            {"impact": {"": {}}},
+        ):
+            with self.subTest(values=values), self.assertRaises(UserError):
+                changeset.with_user(self.admin).write(values)
+        self.assertEqual(changeset.author_id, self.admin)
+
+    def test_a_change_set_is_created_a_draft_of_its_author(self):
+        other = new_test_user(
+            self.env, login="access_admin_2", groups="base.group_erp_manager"
+        )
+        Changesets = self.env["ir.access.changeset"].with_user(self.admin)
+        for values in (
+            {"author_id": other.id},
+            {"state": "active", "activated_by_id": other.id},
+            {"cause": "module_update", "module": "base"},
+        ):
+            with self.subTest(values=values), self.assertRaises(UserError):
+                Changesets.create({"name": "Probe: forged", **values})
+        draft = Changesets.create(
+            {"name": "Probe: by hand", "author_id": self.admin.id, "state": "draft"}
+        )
+        self.assertEqual((draft.author_id, draft.state), (self.admin, "draft"))
+
+    def assertAuthorCannotActivate(self, changeset):
+        changeset.with_user(self.admin).action_propose()
+        with self.assertRaisesRegex(UserError, "another access administrator"):
+            changeset.with_user(self.admin).action_activate()
+
+    def test_a_widening_for_portal_users_is_another_persons_to_activate(self):
+        new_test_user(self.env, login="industry_portal", groups="base.group_portal")
+        row = self.env["ir.access"].create(
+            {
+                "name": "Probe: portal users read the a-industries",
+                "model_id": self.model_id,
+                "group_id": self.env.ref("base.group_portal").id,
+                "kind": "permission",
+                "operation": "r",
+                "domain": "[('name', '=like', 'a%')]",
+            }
+        )
+        with calling("ir.access"):
+            row.with_user(self.admin).write({"domain": "[('name', '!=', False)]"})
+        self.assertAuthorCannotActivate(self.changeset())
+
+    def test_a_widening_through_a_predicate_is_another_persons_to_activate(self):
+        predicate = self.env["ir.access.predicate"].create(
+            {
+                "name": "base.probe_industry_prefix",
+                "template": "[('name', '=like', args.prefix)]",
+            }
+        )
+        self.guard.write(
+            {
+                "domain": False,
+                "reach": "predicate",
+                "predicate_id": predicate.id,
+                "predicate_args": {"prefix": "a%"},
+            }
+        )
+        self.assertFalse(self.reads(self.banking))
+        with calling("ir.access.predicate"):
+            predicate.with_user(self.admin).write(
+                {"template": "[('name', '!=', args.prefix)]"}
+            )
+        self.assertAuthorCannotActivate(self.changeset())
+
+    def test_a_widening_through_an_implied_groups_implications_is_counted(self):
+        settings_readers = self.env["res.groups"].create(
+            {"name": "Probe: settings readers"}
+        )
+        self.env["ir.access"].create(
+            {
+                "name": "Probe: settings readers read the parameters",
+                "model_id": self.env["ir.model"]._get_id("ir.config_parameter"),
+                "group_id": settings_readers.id,
+                "kind": "permission",
+                "operation": "r",
+            }
+        )
+        relay = self.env["res.groups"].create(
+            {
+                "name": "Probe: a group that only implies",
+                "implied_ids": [Command.link(settings_readers.id)],
+            }
+        )
+        with calling("res.groups"):
+            self.readers.with_user(self.admin).implied_ids = [Command.link(relay.id)]
+        self.assertAuthorCannotActivate(self.changeset())
+
+    def test_a_guard_on_everyone_counts_who_is_outside_its_group(self):
+        self.guard.guard_scope = "everyone"
+        self.reader.group_ids = [Command.unlink(self.readers.id)]
+        self.assertFalse(self.reads(self.banking))
+        self.assertAuthorCannotActivate(self.stage("[('name', '!=', False)]"))

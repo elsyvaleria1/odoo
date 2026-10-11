@@ -178,6 +178,24 @@ class IrQweb(models.AbstractModel):
     def _get_template_cache_keys(self):
         return super()._get_template_cache_keys() + ["snippet_lang"]
 
+    def _get_authoring_directives(self):
+        return {
+            **super()._get_authoring_directives(),
+            "t-placeholder": "expression",
+            "t-snippet": "format",
+            "t-snippet-call": "format",
+            **dict.fromkeys(
+                (
+                    "t-forbid-sanitize",
+                    "t-grid-column-span",
+                    "t-image-preview",
+                    "t-install",
+                    "t-thumbnail",
+                ),
+                "constant",
+            ),
+        }
+
 
 class IrQwebField(models.AbstractModel):
     _name = "ir.qweb.field"

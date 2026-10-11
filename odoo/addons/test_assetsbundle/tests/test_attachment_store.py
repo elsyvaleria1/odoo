@@ -10,6 +10,7 @@ from odoo.exceptions import MissingError
 from odoo.modules.registry import Registry
 from odoo.tests.common import BaseCase, TransactionCase, get_db_name, tagged
 from odoo.tools import escape_psql
+from odoo.tools.assets.fingerprint import pipeline_fingerprint
 from odoo.tools.misc import file_path
 
 from .common import asset_file, make_cursor_readonly
@@ -20,7 +21,6 @@ from odoo.addons.base.models.assetsbundle import (
     JavascriptAsset,
 )
 from odoo.addons.base.models.assetsbundle import bundle as bundle_module
-from odoo.addons.base.models.assetsbundle.common import _pipeline_fingerprint
 from odoo.addons.base.models.ir_attachment import IrAttachment
 from odoo.addons.base.models.ir_attachment_assets import (
     IrAttachment as AssetIrAttachment,
@@ -501,7 +501,7 @@ class TestChecksumSeparator(TransactionCase):
         spec = [asset_file("/a.css", "a{}", 1.0)]
         before = AssetsBundle("test.fp", spec, env=self.env).get_version("css")
         with patch.object(
-            bundle_module, "_pipeline_fingerprint", return_value="pretend-new-code"
+            bundle_module, "pipeline_fingerprint", return_value="pretend-new-code"
         ):
             after = AssetsBundle("test.fp", spec, env=self.env).get_version("css")
         self.assertNotEqual(before, after)
@@ -519,7 +519,7 @@ class TestChecksumSeparator(TransactionCase):
             )
 
         with patch.object(
-            bundle_module, "_pipeline_fingerprint", return_value="previous-code"
+            bundle_module, "pipeline_fingerprint", return_value="previous-code"
         ):
             AssetsBundle(name, spec, env=self.env).css()
         before = urls()
@@ -533,10 +533,10 @@ class TestChecksumSeparator(TransactionCase):
         self.assertEqual(after - {served.url}, before)
 
     def test_fingerprint_is_stable_within_a_release(self):
-        _pipeline_fingerprint.cache_clear()
-        first = _pipeline_fingerprint()
-        _pipeline_fingerprint.cache_clear()
-        self.assertEqual(first, _pipeline_fingerprint())
+        pipeline_fingerprint.cache_clear()
+        first = pipeline_fingerprint()
+        pipeline_fingerprint.cache_clear()
+        self.assertEqual(first, pipeline_fingerprint())
         self.assertRegex(first, r"^[0-9a-f]{64}$")
 
     def test_ambiguous_split_is_not_a_collision(self):

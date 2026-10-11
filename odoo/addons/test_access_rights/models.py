@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.tools import frozendict
@@ -158,6 +160,11 @@ class Test_Access_RightSharedDoc(models.Model):
     name = fields.Char()
     company_id = fields.Many2one(comodel_name="res.company")
     reader_ids = fields.Many2many(comodel_name="res.users")
+    partner_id = fields.Many2one(comodel_name="res.partner")
+    date_due = fields.Datetime()
+
+    def _get_link_expiry(self) -> datetime | None:
+        return self.date_due + timedelta(days=7) if self.date_due else None
 
 
 class Test_Access_RightPropertyDoc(models.Model):

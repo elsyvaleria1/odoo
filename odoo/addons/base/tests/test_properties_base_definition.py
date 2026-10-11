@@ -81,6 +81,20 @@ class TestPropertiesBaseDefinition(TransactionCase):
         self.assertTrue(self.Definition.sudo().browse(second_id).exists())
         self.assertEqual(self._count_rows(), 1)
 
+    def test_a_rolled_back_definition_found_after_a_nested_rollback_is_forgotten(self):
+        with self.assertRaises(DeliberateRollback), self.env.cr.savepoint():
+            first_id = self._get_definition_id()
+            with self.assertRaises(DeliberateRollback), self.env.cr.savepoint():
+                raise DeliberateRollback
+            self.assertEqual(self._get_definition_id(), first_id)
+            raise DeliberateRollback
+
+        cache, key = self._stable_cache_and_key()
+        self.assertNotIn(key, cache)
+        second_id = self._get_definition_id()
+        self.assertNotEqual(second_id, first_id)
+        self.assertTrue(self.Definition.sudo().browse(second_id).exists())
+
     def test_select_hit_populates_stable_cache(self):
         definition_id = self._get_definition_id()
         self.env.cr.cache.pop(DEFINITION_MEMO_CACHE_KEY, None)

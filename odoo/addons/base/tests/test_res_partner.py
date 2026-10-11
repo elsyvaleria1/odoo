@@ -1,3 +1,4 @@
+import re
 from contextlib import contextmanager
 from unittest.mock import patch
 
@@ -11,7 +12,7 @@ from odoo.exceptions import (
     ValidationError,
 )
 from odoo.libs.email import extract_rfc2822_addresses
-from odoo.tests import Form
+from odoo.tests import Form, counting_statements
 from odoo.tests.common import TransactionCase, new_test_user, tagged, users
 
 from odoo.addons.base.models import res_partner as res_partner_module
@@ -887,10 +888,10 @@ class TestPartnerCompanyDependentSync(TransactionCase):
             for extra in (3, 12):
                 contact = self._tree_with_barcode_as_a_commercial_field(extra)
                 self.env.invalidate_all()
-                before = self.cr.sql_statement_count
-                contact.sudo()._sync_company_dependent_commercial_fields()
-                self.env.flush_all()
-                costs.append(self.cr.sql_statement_count - before)
+                with counting_statements(self.cr) as statements:
+                    contact.sudo()._sync_company_dependent_commercial_fields()
+                    self.env.flush_all()
+                costs.append(statements.count)
             self.assertEqual(
                 costs[0],
                 costs[1],
@@ -1255,9 +1256,9 @@ class TestPartnerSimilarNameDuplicates(TransactionCase):
             )
             batch.invalidate_recordset(["duplicate_ids", "duplicate_count"])
             self.env.flush_all()
-            before = self.cr.sql_statement_count
-            batch.mapped("duplicate_ids")
-            return self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as statements:
+                batch.mapped("duplicate_ids")
+            return statements.count
 
         queries_for(2)
         self.assertEqual(
@@ -2487,10 +2488,10 @@ class TestPartnerAddressCompany(TransactionCase):
             )
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.cr.sql_statement_count
-            companies.write({"vat": f"BEBATCH{size}"})
-            self.env.flush_all()
-            return self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as statements:
+                companies.write({"vat": f"BEBATCH{size}"})
+                self.env.flush_all()
+            return statements.count
 
         queries_for(2)
         self.assertEqual(
@@ -2764,6 +2765,25 @@ class TestPartnerCategory(TransactionCase):
         self.assertNotIn(child, not_result)
 
 
+class TestPartnerNameSearchIndexes(TransactionCase):
+    def test_every_name_search_column_has_a_trigram_index(self):
+        if not self.registry.has_trigram:
+            self.skipTest("pg_trgm is not installed")
+        self.env.cr.execute(
+            "SELECT indexdef FROM pg_indexes WHERE tablename = 'res_partner'"
+        )
+        definitions = [row[0] for row in self.env.cr.fetchall()]
+        for fname in ResPartner._rec_names_search:
+            with self.subTest(field=fname):
+                self.assertTrue(
+                    any(
+                        re.search(rf"\b{fname}\b.*gin_trgm_ops", definition)
+                        for definition in definitions
+                    ),
+                    f"no trigram index on res_partner.{fname}",
+                )
+
+
 class TestPartnerGeolocationInvalidation(TransactionCase):
 
     def test_moving_the_address_clears_the_coordinates(self):
@@ -2942,18 +2962,18 @@ class TestPartnerImportBatch(TransactionCase):
         )
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        result = Partner.load(
-            ["name", "parent_id"],
-            [
-                [f"IMPB child {count}-{i}", parent.name]
-                for i, parent in enumerate(parents)
-            ],
-        )
-        self.env.flush_all()
-        self.assertFalse(result["messages"])
-        self.assertEqual(len(result["ids"]), count)
-        return self.cr.sql_statement_count - before
+        with counting_statements(self.cr) as statements:
+            result = Partner.load(
+                ["name", "parent_id"],
+                [
+                    [f"IMPB child {count}-{i}", parent.name]
+                    for i, parent in enumerate(parents)
+                ],
+            )
+            self.env.flush_all()
+            self.assertFalse(result["messages"])
+            self.assertEqual(len(result["ids"]), count)
+        return statements.count
 
     def test_import_query_count_does_not_grow_with_the_number_of_parents(self):
         small = self._queries_for_import_of(10)

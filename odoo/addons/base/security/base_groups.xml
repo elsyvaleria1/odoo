@@ -140,6 +140,13 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_compare_template_contexts" model="res.groups">
+        <field name="name">Compare Template Contexts</field>
+        <field
+            name="comment">A template author's save is compared, view by view, with every view of the templates it takes part in, those the author does not read included.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
     <record id="group_break_glass" model="res.groups">
         <field name="name">Break-Glass</field>
         <field

@@ -16,7 +16,10 @@ class TestError(common.HttpCase):
 
         uid = self.ref("base.user_admin")
         self.rpc = partial(
-            self.xmlrpc_object.execute, common.get_db_name(), uid, "admin"
+            self.xmlrpc_object.execute,
+            common.get_db_name(),
+            uid,
+            common.new_test_api_key(self.env.ref("base.user_admin")),
         )
 
         self.rpc("res.users", "write", [uid], {"lang": False})

@@ -6,4 +6,9 @@
         <field name="value">10</field>
     </record>
 
+    <record id="rpc_api_key_only" model="ir.config_parameter">
+        <field name="key">base.rpc_api_key_only</field>
+        <field name="value">True</field>
+    </record>
+
 </odoo>

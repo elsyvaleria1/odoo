@@ -626,15 +626,28 @@ class WithContext(HttpCase):
     def test_search(self):
         dbname = common.get_db_name()
         admin_uid = self.env.ref("base.user_admin").id
+        admin_key = common.new_test_api_key(self.env.ref("base.user_admin"))
         website = self.env["website"].get_current_website()
 
         robot = self.xmlrpc_object.execute(
-            dbname, admin_uid, "admin", "website", "search_pages", [website.id], "info"
+            dbname,
+            admin_uid,
+            admin_key,
+            "website",
+            "search_pages",
+            [website.id],
+            "info",
         )
         self.assertIn({"loc": "/website/info"}, robot)
 
         pages = self.xmlrpc_object.execute(
-            dbname, admin_uid, "admin", "website", "search_pages", [website.id], "page"
+            dbname,
+            admin_uid,
+            admin_key,
+            "website",
+            "search_pages",
+            [website.id],
+            "page",
         )
         self.assertIn(
             "/page_1",

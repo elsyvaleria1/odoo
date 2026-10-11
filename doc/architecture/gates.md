@@ -410,13 +410,18 @@ on `<filter name="inactive">`, and base's
 
 ## Known boundary exceptions
 
-**None that are debt.** Two, both `core-does-not-depend-on-addons`, both
+**None that are debt.** Three, all `core-does-not-depend-on-addons`. Two are
 scoped to `odoo.service`: `service/_threaded.py` and `service/_worker.py` call
 `IrCron._process_jobs` / `IrJob._process_jobs`, `@staticmethod` entry points
 that open their own cursor because they run *before* a registry exists for the
 database, so there is no `env` to route through. Both imports are deferred to
 call time (four call sites), and no override of either exists anywhere in
 `odoo`/`enterprise`/`agromarin`.
+The third is `modules/loading.py`'s `lock_module_operations`, the one gate
+of every module operation, which holds the job queue off through
+`odoo.addons.base.models.ir_job.hold_off_jobs` / `let_jobs_in` for the same
+reason — the loader takes it before any registry of the database exists —
+imported at call time as well.
 
 Performance runs retain wall time, thread CPU time, driver time and residual wall
 time separately in the `--perf-output <file>` JSON. Statement counts are judged on every

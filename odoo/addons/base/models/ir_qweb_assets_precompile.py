@@ -4,9 +4,10 @@ import os
 import time
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
-from odoo import api, models, tools
+from odoo import api, fields, models, tools
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import config, escape_psql
@@ -345,13 +346,21 @@ class IrQweb(models.AbstractModel):
             )
         )
         others = self._get_translations_hashes(lang) - {translations_hash}
-        stale = (
+        builds = (
             IrAttachment._search_generated_assets(
                 url_pattern=self._get_precompiled_templates_url(
                     escape_psql(bundle), "%", escape_psql(lang), "%", dev=dev
-                )
+                ),
+                order="create_date desc, id desc",
             ).filtered(lambda old: old.url.split("/")[6] not in others)
             - attachment
+        )
+        cutoff = fields.Datetime.now() - timedelta(
+            days=IrAttachment._get_esm_gc_grace_days()
+        )
+        twins = builds.filtered(lambda old: old.url == url)
+        stale = twins | (builds - twins)[1:].filtered(
+            lambda old: old.create_date < cutoff
         )
         if stale:
             _debug.lifecycle(

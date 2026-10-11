@@ -8,7 +8,6 @@ from lxml import etree
 from markupsafe import Markup
 
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.field_class_names import field_view_groups
 from odoo.tools import frozendict
 
 _logger = logging.getLogger(__name__)
@@ -131,13 +130,8 @@ class NameManager:
             )
             access_groups = self.group_definitions.empty
         elif field and field.access_classes is not None:
-            access = self.model.env["ir.access"]
-            access_groups &= field_view_groups(
-                self.group_definitions,
-                field,
-                lambda key: access._class_view_expression(
-                    self.group_definitions, key, "read"
-                ),
+            access_groups &= self.model.env["ir.access"]._field_view_groups(
+                self.group_definitions, field
             )
 
         self.field_groups[name] = access_groups

@@ -13,6 +13,8 @@ _logger = logging.getLogger(__name__)
 @tagged("post_install", "-at_install")
 class TestTOTPMail(TestTOTPMixin, HttpCase):
     def test_totp_rpc_api_keys_only(self):
+        self.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
+        self.env.flush_all()
         db = get_db_name()
         login, password = self.user_test.login, self.user_test.login
         uid = self.xmlrpc_common.authenticate(db, password, login, {})
@@ -41,7 +43,7 @@ class TestTOTPMail(TestTOTPMixin, HttpCase):
         api_key = (
             self.env["res.users.apikeys"]
             .with_user(self.user_test)
-            ._generate(None, "Foo", datetime.now() + timedelta(days=1))
+            ._generate("rpc", "Foo", datetime.now() + timedelta(days=1))
         )
 
         [result] = self.xmlrpc_object.execute_kw(

@@ -10,3 +10,4 @@ from . import test_mailing_retry
 from . import test_mailing_gc
 from . import test_mailing_dynamic_fields
 from . import test_mailing_recipient_token
+from . import test_mailing_template

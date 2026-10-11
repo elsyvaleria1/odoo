@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from odoo import api, fields, models
@@ -117,10 +117,12 @@ class PlanningPlanning(models.Model):
             role="comment",
             cause="notification",
             cause_record=resource,
-            date_to=max(self.end_datetime, fields.Datetime.now())
-            + PAGE_OUTLIVES_SCHEDULE,
+            dated_by_record=True,
         )
         return token
+
+    def _get_link_expiry(self) -> datetime:
+        return max(self.end_datetime, fields.Datetime.now()) + PAGE_OUTLIVES_SCHEDULE
 
     def _send_planning(self, slots, message=None, resources=False) -> bool:
         _debug.pipeline(

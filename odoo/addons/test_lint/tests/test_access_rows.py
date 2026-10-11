@@ -674,7 +674,7 @@ class TestAccessRows(lint_case.LintCase):
             "Those models are gone: the loader converts a stock module's lines "
             "and rules (ir_access_legacy), but this repository's modules ship "
             "security/ir.access.csv (id,name,model_id/id,group_id/id,kind,"
-            "operation,domain); base's ir_access_convert converts the old rows.",
+            "operation,domain).",
         )
 
 

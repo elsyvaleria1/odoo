@@ -510,7 +510,12 @@ class IrCron(models.Model):
             raise BadModuleStateError
 
         oldest = min(max(job.nextcall, job.write_date or job.nextcall) for job in jobs)
-        if cr.now() - oldest < MAX_FAIL_TIME:
+        cr.execute(
+            "SELECT max(write_date) FROM ir_module_module WHERE state LIKE %s",
+            ["to %"],
+        )
+        changing_since = cr.fetchone()[0] or oldest
+        if cr.now() - max(oldest, changing_since) < MAX_FAIL_TIME:
             _debug.logic("modules_changing", db=cr.dbname, decision="skip_recent")
             raise BadModuleStateError
 
@@ -1092,7 +1097,8 @@ class IrCron(models.Model):
     def _run_server_action(self, cron_name: str, server_action_id: int) -> None:
         self.check_singleton()
         try:
-            if self.pool is not self.pool.check_signaling(self.env.cr):
+            registry = self.env.registry
+            if registry is not registry.check_signaling(self.env.cr):
                 _debug.lifecycle("registry_reloaded", cron=cron_name)
                 self.env.transaction.reset()
 
@@ -1104,8 +1110,6 @@ class IrCron(models.Model):
                 server_action_id,
             )
             self.env["ir.actions.server"].browse(server_action_id).run()
-            self.env.flush_all()
-            self.pool.signal_changes()
             self.env.cr.commit()
         except Exception as exc:
             _debug.logic(
@@ -1114,7 +1118,7 @@ class IrCron(models.Model):
                 action=server_action_id,
                 error=type(exc).__name__,
             )
-            self.pool.reset_changes()
+            self.env.registry.reset_changes()
             self.env.cr.rollback()
             raise
 
@@ -1133,17 +1137,22 @@ class IrCron(models.Model):
         except LockError:
             _debug.logic("lock_refused", records=self, reason="row_locked")
             self._raise_currently_executing()
-        for record in self:
-            self.env.cr.execute(
-                SQL(
-                    "SELECT pg_try_advisory_xact_lock(%s, %s)",
-                    CRON_ADVISORY_LOCK_NAMESPACE,
-                    record.id,
-                )
+        if running := self._try_lock_jobs():
+            _debug.logic("lock_refused", job=running[0].id, reason="advisory_held")
+            running[0]._raise_currently_executing()
+
+    def _try_lock_jobs(self) -> Self:
+        if not self:
+            return self
+        self.env.cr.execute(
+            SQL(
+                "SELECT id FROM unnest(%s::int[]) AS id"
+                " WHERE NOT pg_try_advisory_xact_lock(%s, id)",
+                list(self.ids),
+                CRON_ADVISORY_LOCK_NAMESPACE,
             )
-            if not self.env.cr.fetchone()[0]:
-                _debug.logic("lock_refused", job=record.id, reason="advisory_held")
-                record._raise_currently_executing()
+        )
+        return self.browse(row[0] for row in self.env.cr.fetchall())
 
     def write(self, vals: dict[str, Any]) -> bool:
         self._lock_for_update_or_raise(allow_referencing=True)
@@ -1173,6 +1182,18 @@ class IrCron(models.Model):
     def _unlink_except_running(self) -> None:
         self._lock_for_update_or_raise()
         _debug.lifecycle("unlink", count=len(self))
+
+    def unlink(self) -> bool:
+        actions = self.ir_actions_server_id
+        super().unlink()
+        shared = (
+            self.sudo()
+            .with_context(active_test=False)
+            .search([("ir_actions_server_id", "in", actions.ids)])
+            .ir_actions_server_id
+        )
+        (actions - shared).exists().unlink()
+        return True
 
     @api.model
     def toggle(self, model: str, domain: list[Any]) -> bool:

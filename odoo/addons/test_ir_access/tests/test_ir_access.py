@@ -164,6 +164,17 @@ class TestIrAccess(TestIrAccessCase):
                 }
             )
 
+    def test_a_row_naming_neither_kind_nor_group_is_refused(self):
+        with self.assertRaisesRegex(ValidationError, "names no group"):
+            self.env["ir.access"].create(
+                {
+                    "name": "neither kind nor group",
+                    "model_id": self.env["ir.model"]._get_id(self.MODEL),
+                    "operation": "r",
+                    "domain": str([("id", "in", self.mario.ids)]),
+                }
+            )
+
     def test_everyone_is_implied_by_every_user_type(self):
         everyone = self.env.ref("base.group_everyone")
         for xmlid in ("base.group_user", "base.group_portal", "base.group_public"):
@@ -296,6 +307,8 @@ class TestIrAccess(TestIrAccessCase):
             "[('val', 'not in', user.group_ids.ids)]",
             "['!', ('id', 'in', user.all_group_ids.ids)]",
             "[('id', '=', 0)] if user.has_group('base.group_system') else []",
+            "[('val', 'not in', user._get_effective_group_ids())]",
+            "[('id', '!=', user.has_any_group_id([1]) and 0 or 1)]",
         ):
             with (
                 self.subTest(domain=domain),
@@ -308,6 +321,7 @@ class TestIrAccess(TestIrAccessCase):
             "[('id', 'in', user.all_group_ids.ids)]",
             "[('val', 'in', user.group_ids.ids)]",
             "[] if user.has_group('base.group_system') else [('id', '=', 0)]",
+            "['|', ('val', '=', False), ('val', 'in', group_ids)]",
             (
                 "(['|', ('id', '=', 1)] if user.has_group('base.group_system') else [])"
                 " + [('id', '=', 2)]"
@@ -746,6 +760,32 @@ class TestGroupsWithAccess(TestIrAccessCase):
         self.make_access(group=self.group1, model="test_ir_access.category")
         self.assertEqual(self.groups("test_ir_access.guarded"), self.group1)
 
+    def test_a_path_through_the_access_operator_needs_the_pointed_access(self):
+        self.make_access(
+            group=self.group1,
+            model="test_ir_access.guarded",
+            domain=str([("category_id.featured_item_id", "access", "read")]),
+        )
+        self.make_access(group=self.group1, model="test_ir_access.category")
+        self.make_access(group=self.group2)
+        self.assertFalse(self.groups("test_ir_access.guarded"))
+        self.make_access(group=self.group1)
+        self.assertEqual(self.groups("test_ir_access.guarded"), self.group1)
+
+    def test_a_nested_access_condition_needs_the_pointed_access(self):
+        self.make_access(
+            group=self.group1,
+            model="test_ir_access.guarded",
+            domain=str(
+                [("category_id", "any", [("featured_item_id", "access", "read")])]
+            ),
+        )
+        self.make_access(group=self.group1, model="test_ir_access.category")
+        self.make_access(group=self.group2)
+        self.assertFalse(self.groups("test_ir_access.guarded"))
+        self.make_access(group=self.group1)
+        self.assertEqual(self.groups("test_ir_access.guarded"), self.group1)
+
     def test_a_delegated_parent_needs_its_access_too(self):
         self.make_access(group=self.group1, model="test_ir_access.delegated")
         self.make_access(group=self.group2)
@@ -813,3 +853,12 @@ class TestOwnerThroughTheAccessOperator(TestIrAccessCase):
         of_mario.with_user(self.user).check_access("read")
         with self.assertAccessError():
             of_bowser.with_user(self.user).check_access("read")
+
+    def test_owned_records_check_their_owners_in_one_query_per_model(self):
+        Owned = self.env["test_ir_access.owned"]
+        Owned.create({"name": "warm", "item_id": self.mario.id})
+        self.env.flush_all()
+        with self.assertQueryCount(2):
+            Owned.create(
+                [{"name": "owned", "item_id": item_id} for item_id in self.records.ids]
+            )

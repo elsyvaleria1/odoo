@@ -12,6 +12,7 @@ from . import test_mail_activity_mixin
 from . import test_privacy_delegation
 from . import test_res_partner
 from . import test_recurrence_rule
+from . import test_recurrence_rrule
 from . import test_res_users
 from . import test_regressions
 from . import test_calendar_stop_create

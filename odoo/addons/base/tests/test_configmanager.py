@@ -71,6 +71,7 @@ class TestConfigManager(TransactionCase):
         self.assertConfigEqual(
             {
                 "admin_passwd": "admin",
+                "access_log_seal_key": "",
                 "bin_path": "",
                 "default_productivity_apps": False,
                 "proxy_access_token": "",
@@ -84,6 +85,7 @@ class TestConfigManager(TransactionCase):
                 "reinit": [],
                 "skip_unchanged_data_files": True,
                 "skip_unchanged_modules": True,
+                "module_operation_job_wait": 30,
                 "with_demo": False,
                 "registry_lru_size": 42,
                 "registry_idle_timeout": 0,
@@ -196,6 +198,7 @@ class TestConfigManager(TransactionCase):
         self.assertConfigEqual(
             {
                 "admin_passwd": "Tigrou007",
+                "access_log_seal_key": "",
                 "bin_path": "",
                 "default_productivity_apps": False,
                 "proxy_access_token": "",
@@ -209,6 +212,7 @@ class TestConfigManager(TransactionCase):
                 "reinit": [],
                 "skip_unchanged_data_files": True,
                 "skip_unchanged_modules": True,
+                "module_operation_job_wait": 30,
                 "with_demo": True,
                 "registry_lru_size": 42,
                 "registry_idle_timeout": 0,
@@ -385,6 +389,7 @@ class TestConfigManager(TransactionCase):
         self.assertConfigEqual(
             {
                 "admin_passwd": "admin",
+                "access_log_seal_key": "",
                 "config": config_path,
                 "db_host": "",
                 "db_minconn": 0,
@@ -450,6 +455,7 @@ class TestConfigManager(TransactionCase):
                 "reinit": [],
                 "skip_unchanged_data_files": True,
                 "skip_unchanged_modules": True,
+                "module_operation_job_wait": 30,
                 "upgrade_path": [],
                 "pre_upgrade_scripts": [],
                 "with_demo": True,
@@ -591,6 +597,7 @@ class TestConfigManager(TransactionCase):
         self.assertConfigEqual(
             {
                 "admin_passwd": "admin",
+                "access_log_seal_key": "",
                 "bin_path": "",
                 "default_productivity_apps": False,
                 "proxy_access_token": "",
@@ -604,6 +611,7 @@ class TestConfigManager(TransactionCase):
                 "reinit": ["account"],
                 "skip_unchanged_data_files": True,
                 "skip_unchanged_modules": True,
+                "module_operation_job_wait": 30,
                 "with_demo": True,
                 "registry_lru_size": 42,
                 "registry_idle_timeout": 0,
@@ -730,6 +738,7 @@ class TestConfigManager(TransactionCase):
         self.assertConfigEqual(
             {
                 "admin_passwd": "admin",
+                "access_log_seal_key": "",
                 "bin_path": "",
                 "default_productivity_apps": False,
                 "proxy_access_token": "",
@@ -743,6 +752,7 @@ class TestConfigManager(TransactionCase):
                 "reinit": [],
                 "skip_unchanged_data_files": True,
                 "skip_unchanged_modules": True,
+                "module_operation_job_wait": 30,
                 "with_demo": True,
                 "registry_lru_size": 42,
                 "registry_idle_timeout": 0,

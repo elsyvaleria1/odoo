@@ -33,7 +33,7 @@ registry.category("web_tour.tours").add("ProductScreenTour", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
             OfflineUtil.setOfflineMode(),
-            ProductScreen.firstProductIsFavorite("Whiteboard Pen"),
+            ProductScreen.firstProductIsFeatured("Whiteboard Pen"),
             {
                 trigger: ".product-list",
                 run: function () {

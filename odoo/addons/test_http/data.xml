@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <record id="apikeys_scope_greeting" model="res.users.apikeys.scope">
+        <field name="key">test_http.greeting</field>
+        <field name="name">Greeting</field>
+    </record>
+
     <data>
         <record id="gizeh_png" model="ir.attachment">
             <field name="name">gizeh.png</field>

@@ -219,8 +219,11 @@ class TestUom(UomCommon):
 
     def test_recursive_reference_rejected(self):
         pack_6 = self.quick_ref("base.product_uom_pack_6")
-        with self.assertRaises(UserError), self.cr.savepoint():
+        with self.assertRaises(UserError) as caught, self.cr.savepoint():
             self.uom_unit.relative_uom_id = pack_6
+        self.assertEqual(
+            str(caught.exception), "You cannot create recursive units of measure."
+        )
 
     def test_protected_uom_unlink(self):
         with self.assertRaises(UserError):

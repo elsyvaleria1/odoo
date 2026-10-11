@@ -5,6 +5,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 from odoo import http
+from odoo.exceptions import AccessError
 from odoo.http import (
     BadRequest,
     InternalServerError,
@@ -89,10 +90,8 @@ class ReportController(http.Controller):
             )
             raise BadRequest(description=f"Converter {converter!r} not supported.")
         render_method, content_type = _RENDERERS[converter]
+        self._check_report_loadable(reportname)
         report = request.env["ir.actions.report"]
-        if not report._get_report_from_name(reportname):
-            _debug.logic("report_not_found", report=reportname)
-            raise request.prepare_not_found_error()
         context = dict(request.env.context)
 
         doc_ids = _parse_docids(docids)
@@ -294,6 +293,17 @@ class ReportController(http.Controller):
             name = f"{report.name} - {record.display_name}"
         return str(name).replace("/", "_").replace("\\", "_")
 
+    def _check_report_loadable(self, reportname: str) -> None:
+        report = request.env["ir.actions.report"]._get_report_from_name(reportname)
+        if not report:
+            _debug.logic("report_not_found", report=reportname)
+            raise request.prepare_not_found_error()
+        try:
+            report.with_env(request.env)._check_access_to_load()
+        except AccessError:
+            _debug.logic("report_load_refused", report=reportname, uid=request.env.uid)
+            raise request.prepare_not_found_error() from None
+
     def _report_download_per_record(
         self, reportname: str, docids: str, context: str | None
     ) -> Response | None:
@@ -301,6 +311,7 @@ class ReportController(http.Controller):
         res_ids = list(dict.fromkeys(_parse_docids(docids) or ()))
         if len(res_ids) < 2 or not report._download_splits_per_record():
             return None
+        self._check_report_loadable(reportname)
         render_context = dict(request.env.context)
         if context:
             render_context.update(
@@ -315,7 +326,12 @@ class ReportController(http.Controller):
         records = request.env[report.model].browse(
             [res_id for res_id in res_ids if res_id in rendered]
         )
-        _debug.pipeline("report_download_per_record", report=reportname, rendered=len(records), requested=len(res_ids))
+        _debug.pipeline(
+            "report_download_per_record",
+            report=reportname,
+            rendered=len(records),
+            requested=len(res_ids),
+        )
         if not records:
             return None
         files = []

@@ -293,6 +293,11 @@ class TestMetricsAndScore(CreditProfileCase):
         with self.assertRaises(ValidationError):
             Grade.create({"name": "Overlapping", "min_value": 60, "max_value": 70})
 
+    def test_a_ranged_grade_turned_entry_is_checked_as_a_band(self):
+        reliable = self.env["credit.grade"].search([("code", "=", "reliable")])
+        with self.assertRaises(ValidationError):
+            reliable.kind = "entry"
+
     def test_an_old_overdue_puts_the_profile_in_default(self):
         partner = self._partner("Defaulting", credit_grade_id=self.unconditional.id)
         self._invoice(partner, 5000.0, days_ago=200, due_days_ago=120)

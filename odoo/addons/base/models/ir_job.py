@@ -4,7 +4,7 @@ import socket
 import threading
 import time
 import traceback
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from enum import StrEnum
@@ -29,8 +29,10 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.worker_thread import working_on_database
 from odoo.models import GC_UNLINK_LIMIT
+from odoo.modules.loading import ModuleOperationInProgress, holds_module_operations
 from odoo.modules.registry import Registry
 from odoo.service import get_job_real_time_budget
+from odoo.service.transaction import is_retryable
 from odoo.tools import SQL
 from odoo.tools.constants import JOB_QUEUE_CHANNEL
 
@@ -64,6 +66,8 @@ RETRY_BACKOFF_BASE_S = 10
 RETRY_BACKOFF_MAX_S = 3600
 
 CLAIM_MAX_ATTEMPTS = 10
+CLAIM_CANDIDATES_PER_CHANNEL = 8
+CLAIM_WINDOW_GROWTH = 8
 CLAIM_BACKOFF_BASE_S = 0.05
 CLAIM_BACKOFF_MAX_S = 1.0
 
@@ -123,6 +127,11 @@ _DUE_STATE_SQL = SQL(
 
 DEAD_DEPENDENCY_STATES = (JobState.FAILED, JobState.CANCELLED)
 
+_CHANNEL_DUE_SQL = SQL(
+    "h.state = 'pending' AND h.channel = runnable.channel"
+    " AND (h.eta IS NULL OR h.eta <= (now() AT TIME ZONE 'UTC'))"
+)
+
 CLAIMED_COLUMNS = SQL(
     "id, uuid, channel, priority, model_name, method_name, record_ids, args,"
     " kwargs, user_id, company_id, context, elevated, privileges, retry,"
@@ -131,6 +140,10 @@ CLAIMED_COLUMNS = SQL(
 
 
 class ClaimContended(Exception):
+    pass
+
+
+class WorkerDied(Exception):
     pass
 
 
@@ -168,6 +181,9 @@ def _get_job_config(model_cls: type, method_name: str) -> dict | None:
     return None
 
 
+JOB_ADMISSION_LOCK = SQL("hashtextextended('ir_job_admission', 0)")
+
+
 def _advisory_key_sql(job_id: int | SQL) -> SQL:
     return SQL("hashtextextended('ir_job:' || %s::text, 0)", job_id)
 
@@ -188,28 +204,124 @@ def _job_session_lock(cr, job_id: int, *, blocking: bool = True) -> Iterator[boo
         try:
             yield True
         finally:
-            _release_job_session_lock(cr, job_id)
+            _release_session_lock(cr, _advisory_key_sql(job_id), f"Job {job_id}")
 
 
-def _release_job_session_lock(cr, job_id: int) -> None:
-    unlock = SQL("SELECT pg_advisory_unlock(%s)", _advisory_key_sql(job_id))
+class JobsStillRunning(ModuleOperationInProgress):
+    def __init__(self, jobs: list[str], wait_s: int) -> None:
+        self.jobs = jobs
+        self.wait_s = wait_s
+        super().__init__(
+            f"background jobs did not finish within {wait_s} seconds "
+            f"(--module-operation-job-wait): "
+            f"{'; '.join(jobs) or 'they finished meanwhile'}; "
+            f"run this again once they are done"
+        )
+
+
+def hold_off_jobs(cr, wait_s: int) -> None:
+    _debug.pipeline("hold_off.waiting", wait_s=wait_s)
+    try:
+        with cr.savepoint(flush=False) as savepoint:
+            cr.execute(
+                SQL(
+                    "SELECT set_config('lock_timeout', %s, true),"
+                    " set_config('client_connection_check_interval', '1s', true)",
+                    f"{max(wait_s * 1000, 1)}ms",
+                )
+            )
+            cr.execute(SQL("SELECT pg_advisory_lock(%s)", JOB_ADMISSION_LOCK))
+            savepoint.close(rollback=True)
+    except psycopg.errors.LockNotAvailable, psycopg.errors.DeadlockDetected:
+        running = _get_running_jobs(cr)
+        _debug.logic("hold_off.refused", running=len(running))
+        IrJob._notify_workers(cr.dbname)
+        raise JobsStillRunning(running, wait_s) from None
+    _debug.lifecycle("hold_off.acquired")
+
+
+def let_jobs_in(cr) -> None:
+    _release_session_lock(
+        cr,
+        JOB_ADMISSION_LOCK,
+        "Module operation",
+        then=partial(IrJob._notify_workers, cr.dbname),
+    )
+
+
+def _get_running_jobs(cr) -> list[str]:
+    cr.execute(
+        SQL(
+            """
+            SELECT id, model_name, method_name, worker_ident
+            FROM ir_job
+            WHERE state = 'started'
+              AND CASE WHEN pg_try_advisory_lock(%(key)s)
+                       THEN NOT pg_advisory_unlock(%(key)s)
+                       ELSE TRUE END
+            ORDER BY id
+            """,
+            key=_advisory_key_sql(SQL.identifier("id")),
+        )
+    )
+    return [
+        f"Job {job_id}: {model_name}.{method_name} ({worker or '?'})"
+        for job_id, model_name, method_name, worker in cr.fetchall()
+    ]
+
+
+@contextmanager
+def _job_admission(cr) -> Iterator[bool]:
+    if holds_module_operations(cr.dbname):
+        yield True
+        return
+    cr.execute(SQL("SELECT pg_try_advisory_lock_shared(%s)", JOB_ADMISSION_LOCK))
+    if not cr.fetchone()[0]:
+        _debug.logic("admission.refused", reason="module_operation")
+        yield False
+        return
+    with cr.holding_session_state():
+        try:
+            yield True
+        finally:
+            _release_session_lock(cr, JOB_ADMISSION_LOCK, "Job admission", shared=True)
+
+
+def _release_session_lock(
+    cr,
+    key: SQL,
+    holder: str,
+    *,
+    shared: bool = False,
+    then: Callable[[], None] | None = None,
+) -> None:
+    unlock = SQL(
+        "SELECT pg_advisory_unlock_shared(%s)"
+        if shared
+        else "SELECT pg_advisory_unlock(%s)",
+        key,
+    )
     try:
         cr.execute(unlock)
     except psycopg.errors.InFailedSqlTransaction:
         _logger.info(
-            "Job %s: its transaction is aborted, releasing the liveness lock "
+            "%s: its transaction is aborted, releasing its session lock "
             "after the rollback",
-            job_id,
+            holder,
         )
-        _debug.logic("session_lock.release_deferred", job=job_id, reason="aborted")
+        _debug.logic("session_lock.release_deferred", holder=holder, reason="aborted")
         cr.postrollback.add(partial(cr.execute, unlock))
+        if then is not None:
+            cr.postrollback.add(then)
+        return
     except psycopg.Error:
         _logger.warning(
-            "Job %s: could not release its liveness lock, "
-            "leaving it to the connection pool",
-            job_id,
+            "%s: could not release its session lock, leaving it to the connection pool",
+            holder,
         )
-        _debug.logic("session_lock.release_failed", job=job_id, reason="pg_error")
+        _debug.logic("session_lock.release_failed", holder=holder, reason="pg_error")
+    if then is not None:
+        then()
 
 
 class DelayedProxy:
@@ -854,8 +966,9 @@ class IrJob(models.Model):
         cr.execute(
             "UPDATE ir_job SET state = 'pending',"
             " write_date = (now() AT TIME ZONE 'UTC')"
-            " WHERE state = 'scheduled'"
+            " WHERE id IN (SELECT id FROM ir_job WHERE state = 'scheduled'"
             " AND (eta IS NULL OR eta <= (now() AT TIME ZONE 'UTC'))"
+            " FOR UPDATE SKIP LOCKED)"
         )
         if cr.rowcount:
             _logger.debug("Promoted %s scheduled job(s) now due", cr.rowcount)
@@ -872,8 +985,20 @@ class IrJob(models.Model):
             if not cr.fetchone()[0]:
                 _debug.logic("promotion.skipped", db=db_conn.dbname, reason="lock_held")
                 return 0
-            promoted = IrJob._promote_due_jobs(cr)
-            cr.commit()
+            try:
+                promoted = IrJob._promote_due_jobs(cr)
+                cr.commit()
+            except PG_RETRY_EXCEPTIONS as exc:
+                cr.rollback()
+                _logger.info(
+                    "Job promotion on %s lost a race (%s); the next pass repeats it",
+                    db_conn.dbname,
+                    type(exc).__name__,
+                )
+                _debug.logic(
+                    "promotion.lost_race", db=db_conn.dbname, error=type(exc).__name__
+                )
+                return 0
         return promoted
 
     @staticmethod
@@ -886,33 +1011,48 @@ class IrJob(models.Model):
             _debug.logic("maintenance.skipped", db=db_conn.dbname, reason="interval")
             return
         _last_maintenance[db_conn.dbname] = now
-        with db_conn.cursor() as cr:
-            cr.execute(
-                "SELECT pg_try_advisory_xact_lock(hashtextextended('ir_job_gc', 0))"
+        for attempt in range(1, CONCURRENCY_MAX_ATTEMPTS + 1):
+            with db_conn.cursor() as cr:
+                cr.execute(
+                    "SELECT pg_try_advisory_xact_lock(hashtextextended('ir_job_gc', 0))"
+                )
+                if not cr.fetchone()[0]:
+                    _debug.logic(
+                        "maintenance.skipped", db=db_conn.dbname, reason="lock_held"
+                    )
+                    return
+                try:
+                    with _debug.perf("maintenance", cr=cr, db=db_conn.dbname):
+                        IrJob._reap_dead_jobs(cr)
+                        IrJob._release_ready_dependents(cr)
+                    cr.commit()
+                    return
+                except Exception as exc:
+                    if not is_retryable(exc):
+                        raise
+                    cr.rollback()
+                    _debug.logic(
+                        "maintenance.lost_race",
+                        db=db_conn.dbname,
+                        error=type(exc).__name__,
+                        attempt=attempt,
+                    )
+                    if attempt == CONCURRENCY_MAX_ATTEMPTS:
+                        _logger.info(
+                            "Job maintenance sweep of %s lost %s races in a row"
+                            " (%s); the next sweep repeats it",
+                            db_conn.dbname,
+                            attempt,
+                            type(exc).__name__,
+                        )
+                        return
+            time.sleep(
+                backoff.get_delay(
+                    attempt,
+                    base=CONCURRENCY_BACKOFF_BASE_S,
+                    cap=CONCURRENCY_BACKOFF_MAX_S,
+                )
             )
-            if not cr.fetchone()[0]:
-                _debug.logic(
-                    "maintenance.skipped", db=db_conn.dbname, reason="lock_held"
-                )
-                return
-            try:
-                with _debug.perf("maintenance", cr=cr, db=db_conn.dbname):
-                    IrJob._reap_dead_jobs(cr)
-                    IrJob._release_ready_dependents(cr)
-                cr.commit()
-            except PG_RETRY_EXCEPTIONS as exc:
-                cr.rollback()
-                _logger.info(
-                    "Job maintenance sweep of %s lost a race with a worker (%s);"
-                    " the next sweep repeats it",
-                    db_conn.dbname,
-                    type(exc).__name__,
-                )
-                _debug.logic(
-                    "maintenance.lost_race",
-                    db=db_conn.dbname,
-                    error=type(exc).__name__,
-                )
 
     @staticmethod
     def _claim_and_run_loop(
@@ -942,48 +1082,57 @@ class IrJob(models.Model):
                     _debug.logic("drain.yielded", db=db_name, reason="deadline")
                     IrJob._notify_workers(db_name)
                     return True
-                cr.rollback()
-                try:
-                    job = IrJob._claim_next(
-                        cr, worker_ident, channels, serialise=serialise
-                    )
-                except ClaimContended as exc:
+                with _job_admission(cr) as admitted:
                     cr.rollback()
-                    _logger.warning(
-                        "Job drain of %s: %s; notifying so the backlog is retried",
-                        db_name,
-                        exc,
+                    if not admitted:
+                        _logger.info(
+                            "Job drain of %s yielded to a module operation", db_name
+                        )
+                        _debug.logic(
+                            "drain.yielded", db=db_name, reason="module_operation"
+                        )
+                        return True
+                    try:
+                        job = IrJob._claim_next(
+                            cr, worker_ident, channels, serialise=serialise
+                        )
+                    except ClaimContended as exc:
+                        cr.rollback()
+                        _logger.warning(
+                            "Job drain of %s: %s; notifying so the backlog is retried",
+                            db_name,
+                            exc,
+                        )
+                        _debug.logic("drain.yielded", db=db_name, reason="contended")
+                        IrJob._notify_workers(db_name)
+                        return True
+                    if job is None:
+                        _debug.pipeline("drain.done", db=db_name)
+                        cr.rollback()
+                        return False
+                    _debug.lifecycle(
+                        "job_claimed",
+                        job=job["id"],
+                        channel=job["channel"],
+                        model=job["model_name"],
+                        method=job["method_name"],
+                        retry=job["retry"],
                     )
-                    _debug.logic("drain.yielded", db=db_name, reason="contended")
-                    IrJob._notify_workers(db_name)
-                    return True
-                if job is None:
-                    _debug.pipeline("drain.done", db=db_name)
-                    cr.rollback()
-                    return False
-                _debug.lifecycle(
-                    "job_claimed",
-                    job=job["id"],
-                    channel=job["channel"],
-                    model=job["model_name"],
-                    method=job["method_name"],
-                    retry=job["retry"],
-                )
-                if (reloaded := registry.check_signaling()) is not registry:
-                    _debug.lifecycle("drain.registry_reloaded", db=db_name)
-                    registry = reloaded
-                    cr.transaction.reset()
-                cr.commit()
-                with _job_session_lock(cr, job["id"]):
-                    with _debug.perf("job_run", cr=cr, job=job["id"]) as span:
-                        exc = IrJob._run_with_concurrency_replay(registry, cr, job)
-                        span.set(failed=exc is not None)
-                    if exc is None:
-                        registry.signal_changes()
-                        continue
-                    IrJob._log_job_failure(job, exc)
-                    registry[IrJob._name]._record_failure(cr, job, exc)
+                    if (reloaded := registry.check_signaling()) is not registry:
+                        _debug.lifecycle("drain.registry_reloaded", db=db_name)
+                        registry = reloaded
+                        cr.transaction.reset()
                     cr.commit()
+                    with _job_session_lock(cr, job["id"]):
+                        with _debug.perf("job_run", cr=cr, job=job["id"]) as span:
+                            exc = IrJob._run_with_concurrency_replay(registry, cr, job)
+                            span.set(failed=exc is not None)
+                        if exc is None:
+                            registry.signal_changes()
+                            continue
+                        IrJob._log_job_failure(job, exc)
+                        registry[IrJob._name]._record_failure(cr, job, exc)
+                        cr.commit()
 
     @staticmethod
     def _run_with_concurrency_replay(
@@ -1116,28 +1265,12 @@ class IrJob(models.Model):
                 if not runnable:
                     _debug.logic("claim.none", reason="no_runnable_channel")
                     return None
-                cr.execute(
-                    SQL(
-                        """
-                        SELECT best.id
-                        FROM unnest(%s::varchar[]) AS runnable(channel)
-                        CROSS JOIN LATERAL (
-                            SELECT j.id, j.priority, j.create_date
-                            FROM ir_job j
-                            WHERE j.state = 'pending'
-                              AND j.channel = runnable.channel
-                              AND (j.eta IS NULL
-                                   OR j.eta <= (now() AT TIME ZONE 'UTC'))
-                            ORDER BY j.priority, j.create_date, j.id
-                            LIMIT 1
-                        ) best
-                        ORDER BY best.priority, best.create_date, best.id
-                        LIMIT 1
-                        """,
-                        runnable,
-                    )
-                )
-                picked = cr.fetchone()
+                window = CLAIM_CANDIDATES_PER_CHANNEL
+                while (
+                    picked := IrJob._get_claimable_job(cr, runnable, window)
+                ) is None and IrJob._has_jobs_past(cr, runnable, window):
+                    window *= CLAIM_WINDOW_GROWTH
+                    _debug.logic("claim.window_widened", window=window)
                 if picked is None:
                     _debug.logic(
                         "claim.none", reason="nothing_due", channels=len(runnable)
@@ -1155,7 +1288,7 @@ class IrJob(models.Model):
                         RETURNING %s
                         """,
                         worker_ident,
-                        picked[0],
+                        picked,
                         CLAIMED_COLUMNS,
                     )
                 )
@@ -1182,6 +1315,59 @@ class IrJob(models.Model):
         raise ClaimContended(
             f"job claim lost {CLAIM_MAX_ATTEMPTS} serialization races in a row"
         )
+
+    @staticmethod
+    def _get_claimable_job(cr, runnable: list[str], window: int) -> int | None:
+        cr.execute(
+            SQL(
+                """
+                SELECT j.id
+                FROM ir_job j
+                WHERE j.id = ANY(ARRAY(
+                    SELECT head.id
+                    FROM unnest(%s::varchar[]) AS runnable(channel)
+                    CROSS JOIN LATERAL (
+                        SELECT h.id FROM ir_job h
+                        WHERE %s
+                        ORDER BY h.priority, h.create_date, h.id
+                        LIMIT %s
+                    ) head
+                ))
+                  AND j.state = 'pending'
+                ORDER BY j.priority, j.create_date, j.id
+                LIMIT 1
+                FOR UPDATE OF j SKIP LOCKED
+                """,
+                runnable,
+                _CHANNEL_DUE_SQL,
+                window,
+            )
+        )
+        row = cr.fetchone()
+        return row[0] if row else None
+
+    @staticmethod
+    def _has_jobs_past(cr, runnable: list[str], window: int) -> bool:
+        cr.execute(
+            SQL(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM unnest(%s::varchar[]) AS runnable(channel)
+                    CROSS JOIN LATERAL (
+                        SELECT 1 FROM ir_job h
+                        WHERE %s
+                        ORDER BY h.priority, h.create_date, h.id
+                        OFFSET %s LIMIT 1
+                    ) beyond
+                )
+                """,
+                runnable,
+                _CHANNEL_DUE_SQL,
+                window,
+            )
+        )
+        return cr.fetchone()[0]
 
     @staticmethod
     def _get_claimed_target(
@@ -1544,11 +1730,18 @@ class IrJob(models.Model):
                     " exc_name = 'WorkerDied',"
                     " exc_message = 'job worker died during execution',"
                     " write_date = (now() AT TIME ZONE 'UTC')"
-                    " WHERE id = ANY(%s) AND state = 'started'",
+                    " WHERE id = ANY(%s) AND state = 'started'"
+                    " RETURNING %s",
                     fail_ids,
+                    CLAIMED_COLUMNS,
                 )
             )
-            reaped += cr.rowcount
+            failed = [
+                dict(zip([d.name for d in cr.description], row, strict=True))
+                for row in cr.fetchall()
+            ]
+            reaped += len(failed)
+            IrJob._report_dead_jobs(cr, failed)
         if reaped:
             _logger.warning(
                 "Reaped %s job(s) from dead workers: %s requeued, %s out of retries",
@@ -1560,6 +1753,30 @@ class IrJob(models.Model):
                 "jobs_reaped", requeued=len(requeue_ids), failed=len(fail_ids)
             )
         return reaped
+
+    @staticmethod
+    def _report_dead_jobs(cr, jobs: list[dict[str, Any]]) -> None:
+        if not jobs:
+            return
+        IrJob._cancel_dependents(cr, [job["id"] for job in jobs])
+        model = Registry(cr.dbname)[IrJob._name]
+        for job in jobs:
+            try:
+                with cr.savepoint():
+                    model._notify_failed(
+                        cr, job, WorkerDied("job worker died during execution")
+                    )
+            except Exception as exc:
+                if is_retryable(exc):
+                    _debug.logic(
+                        "reap.notify_lost_race", job=job["id"], error=type(exc).__name__
+                    )
+                    raise
+                _logger.exception(
+                    "Job %s: could not report its failure after its worker died",
+                    job["id"],
+                )
+                _debug.logic("reap.notify_failed", job=job["id"])
 
     @staticmethod
     def _release_dependents(cr, job_id: int) -> int:
@@ -1728,14 +1945,25 @@ class IrJob(models.Model):
         self.browse().check_access("write")
         self.env.flush_all()
         cr = self.env.cr
-        with _job_session_lock(cr, self.id, blocking=False) as acquired:
-            if not acquired:
-                _debug.logic("run_now.refused", job=self.id, reason="already_running")
-                raise UserError(self.env._("This job is already running."))
-            try:
-                self._run_now_claimed(cr)
-            finally:
-                self.invalidate_recordset()
+        with _job_admission(cr) as admitted:
+            if not admitted:
+                _debug.logic("run_now.refused", job=self.id, reason="module_operation")
+                raise UserError(
+                    self.env._(
+                        "A module operation is in progress; run the job once it "
+                        "is done."
+                    )
+                )
+            with _job_session_lock(cr, self.id, blocking=False) as acquired:
+                if not acquired:
+                    _debug.logic(
+                        "run_now.refused", job=self.id, reason="already_running"
+                    )
+                    raise UserError(self.env._("This job is already running."))
+                try:
+                    self._run_now_claimed(cr)
+                finally:
+                    self.invalidate_recordset()
 
     def _run_now_claimed(self, cr) -> None:
         cr.execute(

@@ -276,27 +276,48 @@ class TestPartnerFormatAddress(FormatAddressCase):
 
 class TestFormatVatLabel(ViewCase):
     def test_vat_label_cache_key_is_vat_label_keyed(self):
-        mixin = self.env["mixin.format.vat.label"]
-        base_key = self.env["ir.ui.view"]._get_view_cache_key("form")
-        vat_key = mixin._get_view_cache_key("form")
-
-        self.assertEqual(vat_key, base_key + (self.env.company.country_id.vat_label,))
-
-        country_b = self.env["res.country"].create(
-            {"name": "VAT Key Land", "code": "X7", "vat_label": "KEYVAT"}
+        country_b, country_d = self.env["res.country"].create(
+            [
+                {"name": "VAT Key Land", "code": "X7", "vat_label": "KEYVAT"},
+                {"name": "VAT Other Land", "code": "X6", "vat_label": "OTHERVAT"},
+            ]
         )
-        company_b = self.env["res.company"].create(
-            {"name": "VAT Co B", "country_id": country_b.id}
+        company_b, company_c, company_d = self.env["res.company"].create(
+            [
+                {"name": "VAT Co B", "country_id": country_b.id},
+                {"name": "VAT Co C", "country_id": country_b.id},
+                {"name": "VAT Co D", "country_id": country_d.id},
+            ]
         )
-        key_a = mixin._get_view_cache_key("form")
-        key_b = mixin.with_company(company_b)._get_view_cache_key("form")
-        self.assertNotEqual(key_a, key_b)
+        for model_name in ("res.partner", "res.company"):
+            with self.subTest(model=model_name):
+                model = self.env[model_name]
+                key_b = model.with_company(company_b)._get_view_cache_key("form")
+                key_c = model.with_company(company_c)._get_view_cache_key("form")
+                key_d = model.with_company(company_d)._get_view_cache_key("form")
 
-        company_c = self.env["res.company"].create(
-            {"name": "VAT Co C", "country_id": country_b.id}
+                self.assertIn("KEYVAT", key_b)
+                self.assertEqual(key_b, key_c)
+                self.assertNotEqual(key_b, key_d)
+
+    def test_vat_label_relabels_the_partner_form_too(self):
+        country = self.env["res.country"].create(
+            {"name": "VAT NIT Land", "code": "X5", "vat_label": "NIT"}
         )
-        key_c = mixin.with_company(company_c)._get_view_cache_key("form")
-        self.assertEqual(key_b, key_c)
+        company = self.env["res.company"].create(
+            {"name": "Co NIT", "country_id": country.id}
+        )
+        view = self.View.create(
+            {
+                "name": "partner vat view",
+                "model": "res.partner",
+                "arch": '<form><label for="vat"/><field name="vat"/></form>',
+            }
+        )
+
+        arch = self.env["res.partner"].with_company(company).get_view(view.id)["arch"]
+
+        self.assertEqual(arch.count('string="NIT"'), 2)
 
     def test_vat_label_relabels_field_per_company_country(self):
         country_rfc = self.env["res.country"].create(

@@ -13,56 +13,56 @@ export class ThemeSelector extends Component {
         this.themeService = useService("mass_mailing.themes");
         this.config = this.props.config;
         this.themes = this.themeService.getThemes();
-        this.favoriteTemplates = proxy([]);
+        this.savedTemplates = proxy([]);
         onWillStart(async () => {
             const themeServicePromise = this.themeService.load();
-            const favoritePromise = this.orm.call(
+            const savedPromise = this.orm.call(
                 "mailing.mailing",
-                "action_fetch_favorites",
-                [this.favoriteDomain],
+                "action_fetch_templates",
+                [this.savedTemplateDomain],
             );
-            const [favoriteTemplates] = await Promise.all([
-                favoritePromise,
+            const [savedTemplates] = await Promise.all([
+                savedPromise,
                 themeServicePromise,
             ]);
             Object.assign(
-                this.favoriteTemplates,
-                favoriteTemplates.map((favorite) => ({
-                    html: favorite.body_arch,
-                    id: favorite.id,
-                    modelId: favorite.mailing_model_id[0],
-                    modelName: favorite.mailing_model_id[1],
-                    name: `template_${favorite.id}`,
+                this.savedTemplates,
+                savedTemplates.map((saved) => ({
+                    html: saved.body_arch,
+                    id: saved.id,
+                    modelId: saved.mailing_model_id[0],
+                    modelName: saved.mailing_model_id[1],
+                    name: `template_${saved.id}`,
                     nowrap: true,
-                    subject: favorite.subject,
-                    userId: favorite.user_id[0],
-                    userName: favorite.user_id[1],
+                    subject: saved.subject,
+                    userId: saved.user_id[0],
+                    userName: saved.user_id[1],
                 })),
             );
         });
     }
 
-    get favoriteDomain() {
+    get savedTemplateDomain() {
         return this.props.config.filterTemplates
             ? [["mailing_model_id", "=", this.props.config.mailingModelId]]
             : [];
     }
 
-    async onRemoveFavorite(index) {
-        const favorite = this.favoriteTemplates[index];
-        if (!favorite) {
+    async onRemoveSavedTemplate(index) {
+        const saved = this.savedTemplates[index];
+        if (!saved) {
             return;
         }
         const notificationAction = await this.orm.call(
             "mailing.mailing",
-            "action_remove_favorite",
-            [favorite.id],
+            "action_remove_from_templates",
+            [saved.id],
         );
-        this.favoriteTemplates.splice(index, 1);
+        this.savedTemplates.splice(index, 1);
         this.action.doAction(notificationAction);
     }
 
-    onSelectFavorite(html) {
+    onSelectSavedTemplate(html) {
         this.props.config.setThemeHTML(html);
     }
 

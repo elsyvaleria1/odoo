@@ -14,6 +14,7 @@ import { rpc } from "@web/core/network";
 
 /**
  * @typedef {((el: HTMLElement) => HTMLElement)[]} closest_savable_providers
+ * @typedef {((el: HTMLElement) => object | undefined)[]} modified_image_save_params_providers
  */
 
 export class ImageSavePlugin extends Plugin {
@@ -166,18 +167,24 @@ export class ImageSavePlugin extends Plugin {
                 }
             }
         }
+        const params = {
+            res_model: resModel,
+            res_id: parseInt(resId),
+            data: getImageSrc(el).split(",")[1],
+            alt_data: altData,
+            mimetype: isBackground
+                ? el.dataset.mimetype
+                : el.getAttribute("src").split(":")[1].split(";")[0],
+            name: el.dataset.fileName ? el.dataset.fileName : null,
+        };
+        for (const provider of this.getResource(
+            "modified_image_save_params_providers",
+        )) {
+            Object.assign(params, provider(el));
+        }
         const newAttachmentSrc = await rpc(
             `/html_editor/modify_image/${encodeURIComponent(el.dataset.originalId)}`,
-            {
-                res_model: resModel,
-                res_id: parseInt(resId),
-                data: getImageSrc(el).split(",")[1],
-                alt_data: altData,
-                mimetype: isBackground
-                    ? el.dataset.mimetype
-                    : el.getAttribute("src").split(":")[1].split(";")[0],
-                name: el.dataset.fileName ? el.dataset.fileName : null,
-            },
+            params,
         );
         el.classList.remove("o_modified_image_to_save");
         if (isBackground) {

@@ -125,7 +125,7 @@ access_res_users_identitycheck_portal,id check portal,model_wizard_res_users_che
 api_key_user_group_user,Users can read and delete their own keys,model_res_users_apikeys,group_user,permission,r,own,,
 api_key_admin,Administrators can view user keys to revoke them,model_res_users_apikeys,group_system,permission,r,,,
 access_res_users_apikeys_scope_user,API key scopes users,model_res_users_apikeys_scope,group_user,permission,r,,,
-access_res_users_apikeys_scope_system,API key scopes system,model_res_users_apikeys_scope,group_system,permission,cud,,,
+access_res_users_apikeys_scope_system,API key scopes system,model_res_users_apikeys_scope,group_system,permission,u,,,
 access_res_users_apikeys_scope_line_user,API key scope models users,model_res_users_apikeys_scope_line,group_user,permission,r,,,
 access_res_users_apikeys_scope_line_system,API key scope models system,model_res_users_apikeys_scope_line,group_system,permission,cud,,,
 api_key_user_group_portal,Users can read and delete their own keys,model_res_users_apikeys,group_portal,permission,r,own,,
@@ -283,8 +283,8 @@ access_resource_nationality_system,resource.nationality.system,model_resource_na
 resource_nationality_rule_multi_company,resource.nationality: multi-company rule,model_resource_nationality,base.group_everyone,guard,crud,company,,
 access_resource_asset_kind_user,resource.asset.kind.user,model_resource_kind,base.group_user,permission,r,,,
 access_resource_asset_kind_manager,resource.asset.kind.manager,model_resource_kind,group_asset_manager,permission,cud,,,
-resource_asset_kind_visibility_rule,Assets: only the kinds the user is enabled for,model_resource_resource,group_asset_user,permission,cu,,,"[('kind_id', '!=', False), ('kind_id', 'not in', user._get_hidden_asset_kinds())]"
-resource_asset_kind_visibility_rule_group_asset_manager,Assets: only the kinds the user is enabled for,model_resource_resource,group_asset_manager,permission,cud,,,"[('kind_id', '!=', False), ('kind_id', 'not in', user._get_hidden_asset_kinds())]"
+resource_asset_kind_visibility_rule,Assets: only the kinds the user is enabled for,model_resource_resource,group_asset_user,permission,cu,,,"[('kind_id', '!=', False), '|', ('kind_id.group_id', '=', False), ('kind_id.group_id', 'in', group_ids)]"
+resource_asset_kind_visibility_rule_group_asset_manager,Assets: only the kinds the user is enabled for,model_resource_resource,group_asset_manager,permission,cud,,,"[('kind_id', '!=', False)]"
 resource_assignment_rule_asset_user,resource.assignment: asset users manage the custody of material resources,model_resource_assignment,group_asset_user,permission,cud,all,,"[('resource_id.type', '=', 'material')]"
 access_resource_identifier_type_asset_manager,resource.identifier.type.asset.manager,model_resource_identifier_type,group_asset_manager,permission,cud,,,
 access_resource_identifier_asset_user,resource.identifier.asset.user,model_resource_identifier,group_asset_user,permission,cud,,,

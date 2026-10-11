@@ -302,7 +302,7 @@ describe("one rgb() reader", () => {
         expect(rgbaToHex("rgb(0 0 0 / 50%)")).toBe("#00000080");
         expect(rgbToHex("rgb(1.5, 2, 3)")).toBe("#020203");
         expect(rgbToHex("linear")).toBe("#");
-        expect(rgbToHex("rgb(255, 0, 0")).toBe("#ff0000");
+        expect(rgbToHex("rgb(255, 0, 0")).toBe("#");
     });
 
     test("map opacity multiplies the alpha of an 8-digit hex too", () => {

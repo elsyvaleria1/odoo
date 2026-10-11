@@ -28,12 +28,11 @@ from odoo.exceptions import (
 )
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.field_class_names import field_view_groups
 from odoo.libs.text import split_refs
 from odoo.libs.xml import hasclass
 from odoo.modules.module import get_resource_from_path
 from odoo.tools import SQL, config, frozendict, partition, unique
-from odoo.tools.convert import _fix_multiple_roots
+from odoo.tools.convert import _fix_multiple_roots, template_arch
 from odoo.tools.misc import ConstantMapping, file_path
 from odoo.tools.template_inheritance import apply_inheritance_specs, locate_node
 from odoo.tools.translate import TRANSLATED_ATTRS, xml_translate
@@ -95,7 +94,7 @@ _CUSTOMIZATION_RESET_FIELDS = frozenset(
     }
 )
 
-_NON_RENDERING_FIELDS = frozenset({"arch_prev"})
+_NON_RENDERING_FIELDS = frozenset({"arch_prev", "shipped_digests"})
 
 _REVALIDATE_ALWAYS = frozenset({"active", "arch_db", "inherit_id"})
 _REVALIDATE_ON_CHANGE = frozenset({"mode", "model", "priority", "type"})
@@ -163,6 +162,22 @@ _IR_UI_VIEW_XMLID_SUFFIX = "_ir_ui_view"
 
 def get_view_arch_from_file(filepath: str, xmlid: str) -> str | None:
     return _extract_view_arch(_parse_view_file(filepath), xmlid, filepath)
+
+
+def is_view_declared_optional(filepath: str, xmlid: str) -> bool:
+    module, _, view_id = xmlid.rpartition(".")
+    candidate_ids = [xmlid, view_id] if module else [xmlid]
+    for node in _iter_declarations(_parse_view_file(filepath), candidate_ids):
+        if node.tag == "template":
+            return node.get("active") == "False" or node.get("customize_show") == "True"
+        fields = {
+            field.get("name"): field.get("eval", field.text or "")
+            for field in node.iterchildren("field")
+        }
+        return fields.get("active", "").strip() in ("False", "0") or fields.get(
+            "customize_show", ""
+        ).strip() in ("True", "1")
+    return False
 
 
 @functools.lru_cache(maxsize=256)
@@ -234,12 +249,7 @@ def _extract_view_arch(
             return None
 
         elif node.tag == "template":
-            if not node.get("inherit_id"):
-                node.set("t-name", xmlid)
-                node.tag = "t"
-            else:
-                node.tag = "data"
-            node.attrib.pop("id", None)
+            template_arch(node, xmlid)
             return etree.tostring(node, encoding="unicode")
 
     _logger.warning(
@@ -1520,6 +1530,8 @@ class IrUiView(models.Model):
     def _get_domain_inheriting_views(self) -> Domain:
         tree_cut_off_view = self.env.context.get("ir_ui_view_tree_cut_off_view")
         domain = Domain("active", "=", True)
+        if hidden_ids := self.env.context.get("ir_ui_view_hidden_ids"):
+            domain &= Domain("id", "not in", hidden_ids)
         if tree_cut_off_view:
             _debug.logic("inheriting_domain.cut_off", view=tree_cut_off_view.id)
             return domain | Domain("id", "=", tree_cut_off_view.id)
@@ -1808,7 +1820,9 @@ class IrUiView(models.Model):
         return self._combine_tree(hierarchy)[0]
 
     def _combine_tree(
-        self, hierarchy: dict[Self, list[Self]]
+        self,
+        hierarchy: dict[Self, list[Self]],
+        arch_of: Callable[[Self], _Element] | None = None,
     ) -> tuple[_Element, Node | None]:
         self.check_singleton()
         if self.mode != "primary":
@@ -1817,7 +1831,7 @@ class IrUiView(models.Model):
                 f"_combine() requires a primary view, got mode={self.mode!r}"
             )
 
-        combined_arch = etree.fromstring(self.arch)
+        combined_arch = arch_of(self) if arch_of else etree.fromstring(self.arch)
         if self.env.context.get("inherit_branding"):
             combined_arch.attrib.update(
                 {
@@ -1841,7 +1855,9 @@ class IrUiView(models.Model):
                 _debug.logic("combine.cut_off", root=self.id, view=view.id)
                 break
             applied += 1
-            arch = etree.fromstring(view.arch or "<data/>")
+            arch = (
+                arch_of(view) if arch_of else etree.fromstring(view.arch or "<data/>")
+            )
             if branding:
                 view.inherit_branding(arch)
             validates_whole |= view._flag_validated_specs(arch)
@@ -2403,15 +2419,8 @@ class IrUiView(models.Model):
                         name=self._view_display_name() if self else tree.tag,
                     )
                 )
-            tail = node.tail
-            previous = node.getprevious()
-            parent.remove(node)
+            self._remove_node(node)
             removed += 1
-            if tail:
-                if previous is not None:
-                    previous.tail = (previous.tail or "") + tail
-                else:
-                    parent.text = (parent.text or "") + tail
         return removed, unwrapped
 
     def _apply_model_access(self, tree: _Element) -> int:
@@ -2538,14 +2547,8 @@ class IrUiView(models.Model):
 
     def _narrow_model_groups(self, node_info: dict[str, Any], field: Any) -> None:
         if field.access_classes is not None:
-            group_definitions = node_info["group_definitions"]
-            access = self.env["ir.access"]
-            node_info["model_groups"] &= field_view_groups(
-                group_definitions,
-                field,
-                lambda key: access._class_view_expression(
-                    group_definitions, key, "read"
-                ),
+            node_info["model_groups"] &= self.env["ir.access"]._field_view_groups(
+                node_info["group_definitions"], field
             )
 
     def _iter_arch_nodes(

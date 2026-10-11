@@ -5,7 +5,7 @@ from pyproj import Transformer
 from odoo import Command
 from odoo.libs.json import loads as json_loads
 from odoo.tests import HttpCase, tagged
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, new_unbound_test_api_key
 
 from odoo.addons.geoengine.models import ogc_features as ogc
 from odoo.addons.test_geoengine.models.ogc_features import OgcSite, OgcUnread
@@ -271,3 +271,7 @@ class TestOgcFeaturesHttp(HttpCase, OgcFixture):
         self.assertEqual(
             self._get("/ogcapi/collections", self.rpc_key).status_code, 401
         )
+
+    def test_a_key_bound_to_no_door_is_refused(self):
+        unbound = new_unbound_test_api_key(self.plain)
+        self.assertEqual(self._get("/ogcapi/collections", unbound).status_code, 401)

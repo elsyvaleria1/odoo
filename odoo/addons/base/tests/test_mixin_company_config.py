@@ -24,3 +24,31 @@ class TestCompanyConfigDelegation(TransactionCase):
 
             self.assertEqual(configs.paperformat_id, second)
             configs._check_delegated_fields_match_root()
+
+    def test_a_create_naming_no_company_writes_the_current_company_config(self):
+        Config = self.env["report.config"]
+        existing = Config._for(self.env.company)
+
+        created = Config.create({"report_footer": "<p>written, not created</p>"})
+
+        self.assertEqual(created, existing)
+        self.assertIn("written, not created", str(existing.report_footer))
+
+    def test_a_branch_config_created_without_a_company_inherits_from_its_root(self):
+        Config = self.env["report.config"]
+        _first, second = self.env["report.paperformat"].search([], limit=2)
+        with patch.object(
+            type(Config),
+            "_get_field_names_delegated_to_root",
+            lambda self: ["paperformat_id"],
+        ):
+            Company = self.env["res.company"]
+            root = Company.create({"name": "Default Root"})
+            Config._for(root).paperformat_id = second
+            branch = Company.create({"name": "Default Branch", "parent_id": root.id})
+            Config._for(branch).unlink()
+
+            created = Config.with_company(branch).create({})
+
+            self.assertEqual(created.company_id, branch)
+            self.assertEqual(created.paperformat_id, second)

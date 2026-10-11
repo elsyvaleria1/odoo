@@ -2,7 +2,6 @@ from datetime import timedelta
 
 from odoo import fields
 from odoo.tests.common import HttpCase, new_test_user, tagged
-from odoo.tools import mute_logger
 
 from odoo.addons.base.models.access_link import hash_token
 
@@ -59,7 +58,37 @@ class TestInvitationLinks(HttpCase):
         self.event.write({"start": later - timedelta(hours=1), "stop": later})
         self.assertEqual(self._links(attendee).date_to, later + timedelta(days=30))
 
-    @mute_logger("odoo.http")
+    def test_shortening_the_meeting_moves_its_links(self):
+        attendee = self._attendee()
+        self.event.write({"duration": 2000.0})
+        self.assertEqual(
+            self._links(attendee).date_to, self.event.stop + timedelta(days=30)
+        )
+        self.event.write({"duration": 1.0})
+        self.assertEqual(
+            self._links(attendee).date_to, self.event.stop + timedelta(days=30)
+        )
+
+    def test_a_meeting_far_ahead_keeps_its_link_until_a_month_after_it(self):
+        far = fields.Datetime.now().replace(microsecond=0) + timedelta(days=730)
+        event = self.env["calendar.event"].create(
+            {
+                "name": "Anniversary",
+                "start": far,
+                "stop": far + timedelta(hours=1),
+                "partner_ids": [(4, self.guest.id)],
+            }
+        )
+        month_after = far + timedelta(hours=1, days=30)
+        self.assertEqual(self._links(self._attendee(event)).date_to, month_after)
+        self.event.write({"start": far, "stop": far + timedelta(hours=1)})
+        self.assertEqual(self._links(self._attendee()).date_to, month_after)
+        soon = fields.Datetime.now().replace(microsecond=0) + timedelta(days=5)
+        self.event.write({"start": soon, "stop": soon + timedelta(hours=1)})
+        self.assertEqual(
+            self._links(self._attendee()).date_to, soon + timedelta(hours=1, days=30)
+        )
+
     def test_a_token_answers_its_own_invitation_only(self):
         token = self._attendee().sudo().access_token
         self.authenticate(None, None)

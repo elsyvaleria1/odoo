@@ -1,5 +1,5 @@
 import secrets
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from hashlib import sha256
 from urllib.parse import urlencode as url_encode
 
@@ -68,9 +68,8 @@ class SignRequestItem(models.Model):
         items._issue_signer_links()
         return items
 
-    def _signer_link_end(self):
-        validity = self.sign_request_id.validity
-        return validity and datetime.combine(validity, time(23, 59, 59))
+    def _get_link_expiry(self) -> datetime | None:
+        return self.sign_request_id._get_link_expiry()
 
     def _issue_signer_links(self) -> None:
         signers = self
@@ -79,7 +78,7 @@ class SignRequestItem(models.Model):
             partner_field="partner_id",
             role="comment",
             cause="notification",
-            date_to=lambda item: item._signer_link_end(),
+            dated_by_record=True,
         )
         for item in signers:
             item._update_cache({"access_token": tokens[item.id]}, validate=False)

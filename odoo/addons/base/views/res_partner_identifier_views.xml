@@ -30,7 +30,6 @@
                 <field name="pattern" optional="hide" />
                 <field name="unique_across_contacts" optional="hide" />
                 <field name="multiple_per_contact" optional="hide" />
-                <field name="synced_with_commercial" optional="show" />
             </list>
         </field>
     </record>
@@ -58,7 +57,6 @@
                     <group string="Rules">
                         <field name="unique_across_contacts" />
                         <field name="multiple_per_contact" />
-                        <field name="synced_with_commercial" />
                     </group>
                 </sheet>
             </form>
@@ -76,8 +74,7 @@
             </p>
             <p>
                 A tax ID, a national number, a trade register entry. Each type
-                carries its own format and decides whether it identifies the
-                company or the person.
+                carries its own format.
             </p>
         </field>
     </record>

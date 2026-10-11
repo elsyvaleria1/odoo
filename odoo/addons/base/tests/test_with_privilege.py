@@ -107,6 +107,20 @@ class TestWithPrivilege(TransactionCase):
             self.env.ref("base.group_user").implied_ids = [
                 Command.link(self.privilege.id)
             ]
+        with self.assertRaises(ValidationError):
+            self.privilege.implied_by_ids = [
+                Command.link(self.env.ref("base.group_user").id)
+            ]
+        with self.assertRaises(ValidationError):
+            self.env["res.groups"].create(
+                {
+                    "name": "Probe: implied privilege",
+                    "is_privilege": True,
+                    "implied_by_ids": [
+                        Command.link(self.env.ref("base.group_user").id)
+                    ],
+                }
+            )
 
     def test_a_privileged_write_on_an_audited_model_is_logged(self):
         self.privilege.audit_privilege = True

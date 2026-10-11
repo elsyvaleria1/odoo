@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="apikeys_scope_ogcapi" model="res.users.apikeys.scope">
+        <field name="key">ogcapi</field>
+        <field name="name">OGC API Features</field>
+    </record>
+
+</odoo>

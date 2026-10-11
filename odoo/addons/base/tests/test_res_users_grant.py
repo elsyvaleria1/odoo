@@ -311,6 +311,21 @@ class TestGroupStateCache(GrantCase):
 
 @tagged("post_install", "-at_install")
 class TestGrantWindow(GrantCase):
+    def test_a_state_past_its_boundary_is_recomputed_once(self):
+        now = self.env.cr.now()
+        self.Grant.create(
+            {
+                "user_id": self.user.id,
+                "group_id": self.group_partner_manager.id,
+                "date_to": now + timedelta(hours=1),
+            }
+        )
+        self.assertIn(self.group_partner_manager.id, self.user._get_group_ids())
+        with self.at(now + timedelta(hours=2)):
+            self.assertNotIn(self.group_partner_manager.id, self.user._get_group_ids())
+            with self.assertQueryCount(0):
+                self.user._get_group_ids()
+
     def test_an_ended_grant_stops_counting_at_the_second(self):
         now = self.env.cr.now()
         grant = self.Grant.create(
@@ -773,6 +788,41 @@ class TestGrantScope(GrantCase):
         self.assertTrue(
             any(self.company_a.name in line for line in explained), explained
         )
+
+    def test_a_group_gated_server_action_runs_where_the_grant_is_scoped(self):
+        action = self.env["ir.actions.server"].create(
+            {
+                "name": "Grant scope: gated action",
+                "model_id": self.env["ir.model"]._get_id("res.partner"),
+                "state": "code",
+                "code": "action = {'ran': True}",
+                "group_ids": [Command.set(self.group_partner_manager.ids)],
+            }
+        )
+        self.assertEqual(
+            action.with_env(self.as_user(self.company_a)).run(), {"ran": True}
+        )
+        with self.assertRaises(AccessError):
+            action.with_env(self.as_user(self.company_b)).run()
+
+    def test_a_group_gated_embedded_action_shows_where_the_grant_is_scoped(self):
+        window = self.env["ir.actions.act_window"].create(
+            {"name": "Grant scope: parent", "res_model": "res.partner"}
+        )
+        embedded = self.env["ir.embedded.actions"].create(
+            {
+                "name": "Grant scope: embedded",
+                "parent_action_id": window.id,
+                "parent_res_model": "res.partner",
+                "action_id": window.id,
+                "group_ids": [Command.set(self.group_partner_manager.ids)],
+            }
+        )
+        context = {"active_id": self.partner_shared.id, "active_model": "res.partner"}
+        in_a = embedded.with_env(self.as_user(self.company_a)).with_context(context)
+        in_b = embedded.with_env(self.as_user(self.company_b)).with_context(context)
+        self.assertTrue(in_a.sudo().is_visible)
+        self.assertFalse(in_b.sudo().is_visible)
 
 
 @tagged("post_install", "-at_install")

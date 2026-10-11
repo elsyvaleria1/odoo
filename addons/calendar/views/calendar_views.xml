@@ -421,9 +421,30 @@
                                         <field
                                             name="repeat_unit_ui"
                                             invisible="not recurrency"
-                                            readonly="not user_can_edit"
+                                            readonly="not user_can_edit or custom_rrule"
                                             required="recurrency"
                                             class="w-auto o_input" />
+                                    </div>
+                                    <field name="custom_rrule" invisible="1" />
+                                    <label
+                                        for="rrule"
+                                        string="Custom Rule"
+                                        invisible="not recurrency or not custom_rrule"
+                                        class="fw-bold text-900" />
+                                    <div
+                                        class="d-flex align-items-baseline gap-2"
+                                        invisible="not recurrency or not custom_rrule">
+                                        <field
+                                            name="rrule"
+                                            readonly="1"
+                                            class="oe_inline" />
+                                        <button
+                                            name="action_simplify_recurrence"
+                                            type="object"
+                                            string="Use the options instead"
+                                            confirm="This series follows a rule its options cannot express. Its occurrences will follow the options shown instead, which can move or remove some of them."
+                                            invisible="not user_can_edit"
+                                            class="btn btn-link p-0" />
                                     </div>
                                     <label
                                         for="repeat_interval"
@@ -435,14 +456,16 @@
                                         <field
                                             name="repeat_interval"
                                             string="Repeat every"
+                                            readonly="custom_rrule"
                                             class="oe_inline w-auto o_input_5ch" />
                                         <field
                                             name="repeat_unit"
+                                            readonly="custom_rrule"
                                             required="repeat_unit_ui == 'custom'"
                                             class="oe_inline" />
                                     </div>
                                     <span class="fw-bold text-nowrap" invisible="repeat_unit_ui not in ['week', 'custom'] or (repeat_unit_ui == 'custom' and repeat_unit != 'week')">Repeat on</span>
-                                    <div invisible="repeat_unit_ui not in ['week', 'custom'] or (repeat_unit_ui == 'custom' and repeat_unit != 'week')"><widget name="calendar_week_days" readonly="not user_can_edit" /></div>
+                                    <div invisible="repeat_unit_ui not in ['week', 'custom'] or (repeat_unit_ui == 'custom' and repeat_unit != 'week')"><widget name="calendar_week_days" readonly="not user_can_edit or custom_rrule" /></div>
                                     <field name="recurrence_id" invisible="1" />
 
                                     <label
@@ -456,23 +479,27 @@
                                         invisible="repeat_unit_ui not in ['month', 'year', 'custom'] or (repeat_unit_ui == 'custom' and repeat_unit not in ['month', 'year'])">
                                         <field
                                             name="month_by"
+                                            readonly="custom_rrule"
                                             required="repeat_unit_ui in ['month', 'year'] or repeat_unit in ['month', 'year']"
                                             class="oe_inline w-auto" />
                                         <field
                                             name="day"
                                             widget="calendar_month_day"
                                             invisible="month_by != 'date' or repeat_unit_ui == 'year' or (repeat_unit_ui == 'custom' and repeat_unit != 'month')"
+                                            readonly="custom_rrule"
                                             required="(repeat_unit_ui == 'month' or repeat_unit == 'month') and month_by == 'date'"
                                             class="oe_inline w-auto" />
                                         <field
                                             name="byday"
                                             string="The"
                                             invisible="month_by != 'day'"
+                                            readonly="custom_rrule"
                                             required="(repeat_unit_ui in ['month', 'year'] or repeat_unit in ['month', 'year']) and month_by == 'day'"
                                             class="oe_inline w-auto" />
                                         <field
                                             name="weekday"
                                             invisible="month_by != 'day'"
+                                            readonly="custom_rrule"
                                             required="(repeat_unit_ui in ['month', 'year'] or repeat_unit in ['month', 'year']) and month_by == 'day'"
                                             class="oe_inline w-auto" />
                                     </div>

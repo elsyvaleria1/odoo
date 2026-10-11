@@ -82,6 +82,8 @@ class TestTOTP(TestTOTPMixin, HttpCase):
         self.install_totphook()
 
     def test_totp(self):
+        self.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
+        self.env.flush_all()
         self.start_tour("/odoo", "totp_tour_setup", login="test_user")
 
         self.assertFalse(

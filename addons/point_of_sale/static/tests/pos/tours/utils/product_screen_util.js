@@ -12,7 +12,7 @@ import * as PaymentScreen from "@point_of_sale/../tests/pos/tours/utils/payment_
 import { LONG_PRESS_DURATION } from "@point_of_sale/utils";
 import { dateSettings } from "@web/core/l10n/dates";
 
-export function firstProductIsFavorite(name) {
+export function firstProductIsFeatured(name) {
     return [
         {
             content: `first product is '${name}'`,

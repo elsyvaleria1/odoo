@@ -10,7 +10,6 @@ from lxml import etree, html
 from markupsafe import Markup
 
 from odoo import api, fields, models, tools
-from odoo.api import ValuesType
 from odoo.db.errors import PG_RECOVERABLE_EXCEPTIONS
 from odoo.exceptions import AccessError, ConcurrencyError, MissingError, UserError
 from odoo.libs.debug_log import DebugLog
@@ -34,12 +33,12 @@ from odoo.tools.rendering_tools import (
 )
 
 from odoo.addons.base.models.ir_qweb import (
-    BINDING_PREFIX,
     RenderScopedDict,
-    iter_template_bindings,
-    iter_template_expressions,
     restricted_template_errors,
+    template_trust_digest,
+    trust_digest,
 )
+from odoo.addons.base.models.mixin_template_authoring import TemplateUnit
 from odoo.addons.mail.models.ir_qweb import format_display_names
 
 if typing.TYPE_CHECKING:
@@ -129,14 +128,9 @@ def format_amount(
         return amount
 
 
-def _field_source(field: etree._Element) -> str:
-    return (field.text or "") + "".join(
-        etree.tostring(child, encoding="unicode") for child in field
-    )
-
-
 class MixinMailRender(models.AbstractModel):
     _name = "mixin.mail.render"
+    _inherit = ["mixin.template.authoring"]
     _description = "Mail Render Mixin"
 
     _unrestricted_rendering = False
@@ -164,57 +158,6 @@ class MixinMailRender(models.AbstractModel):
             "render_options",
         ] or super()._is_valid_field_parameter(field, name)
 
-    @api.model_create_multi
-    def create(self, vals_list: list[ValuesType]) -> Self:
-        records = super().create(vals_list)
-        if self._unrestricted_rendering:
-            records._check_access_right_dynamic_template()
-            records._check_template_authoring({})
-        return records
-
-    def write(self, vals: ValuesType) -> Literal[True]:
-        if not self._unrestricted_rendering:
-            return super().write(vals)
-
-        dynamic_fnames = self._get_dynamic_field_names()
-        written = vals.keys() & dynamic_fnames
-        may_move_model = not vals.keys() <= dynamic_fnames
-        models_before = (
-            {record.id: record.render_model for record in self}
-            if may_move_model
-            else {}
-        )
-
-        previous = (
-            self._get_authored_expressions(written)
-            if written and self._is_restricted_template_author()
-            else {}
-        )
-        result = super().write(vals)
-
-        moved = (
-            self.filtered(
-                lambda record: record.render_model != models_before[record.id]
-            )
-            if may_move_model
-            else self.browse()
-        )
-        _debug.logic(
-            "write_dynamic_checked",
-            model=self._name,
-            records=self.ids,
-            written=sorted(written),
-            moved=len(moved),
-        )
-        if rest := self - moved:
-            if written:
-                rest._check_access_right_dynamic_template(fnames=written)
-                rest._check_template_authoring(previous, fnames=written)
-        if moved:
-            moved._check_access_right_dynamic_template()
-            moved._check_template_authoring(previous)
-        return result
-
     def _update_field_translations(
         self,
         field_name: str,
@@ -222,23 +165,12 @@ class MixinMailRender(models.AbstractModel):
         digest: Callable[[str], str] | None = None,
         source_lang: str = "",
     ) -> bool:
-        checked = self._unrestricted_rendering and field_name in (
-            self._get_dynamic_field_names()
-        )
-        previous = (
-            self._get_authored_expressions({field_name})
-            if checked and self._is_restricted_template_author()
-            else {}
-        )
         res = super()._update_field_translations(
             field_name, translations, digest=digest, source_lang=source_lang
         )
-        if checked:
+        if field_name in self._get_template_unit_fields():
             for lang in translations:
-                localized = self.with_context(lang=lang)
-                localized._check_access_right_dynamic_template(fnames={field_name})
-                localized._check_template_authoring(previous, fnames={field_name})
-                localized._check_rendering(fnames={field_name})
+                self.with_context(lang=lang)._check_rendering(fnames={field_name})
         return res
 
     def _check_rendering(
@@ -486,203 +418,74 @@ class MixinMailRender(models.AbstractModel):
         )
 
     def _is_restricted_template_author(self) -> bool:
-        return (
-            not self.env.su
-            and self.env.context.get("bypass_restricted_rendering")
+        return super()._is_restricted_template_author() and (
+            self.env.context.get("bypass_restricted_rendering")
             is not BYPASS_RESTRICTED_RENDERING
-            and not self.env.user._is_system()
         )
 
     def _get_template_field_engine(self, fname: str) -> str:
         return getattr(self._fields[fname], "render_engine", "inline_template")
 
-    @api.model
-    def _get_source_expressions(self, source: Any, engine: str) -> set[str]:
-        if not source:
+    def _get_template_unit_fields(self) -> set[str]:
+        if not self._unrestricted_rendering:
             return set()
+        return self._get_dynamic_field_names()
+
+    def _get_template_unit(self, fname: str, source: Any) -> TemplateUnit | None:
+        return self._get_source_unit(
+            source, self._get_template_field_engine(fname), self.render_model
+        )
+
+    def _get_template_unit_context(self) -> Any:
+        return self.render_model
+
+    @api.model
+    def _get_source_unit(
+        self, source: Any, engine: str, model: str | Literal[False]
+    ) -> TemplateUnit | None:
+        if not source:
+            return None
         if engine == "inline_template":
-            return {
+            expressions = {
                 expression
                 for _string, expression, _default in parse_inline_template(str(source))
                 if expression
             }
-        if engine != "qweb":
-            return set()
-        try:
-            node = self._get_qweb_template_node(str(source))[0]
-        except PG_RECOVERABLE_EXCEPTIONS:
-            raise
-        except Exception:
-            return set()
-        return {
-            *iter_template_expressions(node),
-            *(f"{BINDING_PREFIX}{name}" for name in iter_template_bindings(node)),
-        }
-
-    @api.model
-    def _get_source_authoring_errors(
-        self, source: Any, engine: str, trusted: Callable[[str], bool]
-    ) -> list[str]:
-        if not source:
-            return []
-        if engine == "inline_template":
-            return [
-                f"{expression}: {'; '.join(refused)}"
-                for _string, expression, _default in parse_inline_template(str(source))
-                if expression
-                and (refused := restricted_expression_errors(expression))
-                and not trusted(expression)
-            ]
-        if engine != "qweb":
-            return []
-        try:
-            node = self._get_qweb_template_node(str(source))[0]
-        except PG_RECOVERABLE_EXCEPTIONS:
-            raise
-        except Exception:
-            return []
-        return restricted_template_errors(node, trusted)
-
-    def _get_authored_expressions(self, fnames: Collection[str]) -> dict:
-        scanned = self._get_dynamic_field_names() & set(fnames)
-        return {
-            (record.id, fname): record._get_source_expressions(
-                record[fname], record._get_template_field_engine(fname)
+            return TemplateUnit(
+                trust_digest(model, engine, tuple(sorted(expressions))),
+                [
+                    f"{expression}: {'; '.join(refused)}"
+                    for expression in sorted(expressions)
+                    if (refused := restricted_expression_errors(expression))
+                ],
             )
-            for record in self
-            for fname in scanned
-        }
-
-    def _get_shipped_template_expressions(self) -> dict[str, frozenset[str]]:
-        if "template_fs" not in self._fields:
-            return {}
-        return self._get_module_template_expressions()
-
-    @tools.ormcache()
-    def _get_module_template_expressions(self) -> dict[str, frozenset[str]]:
-        templates = self.with_context(active_test=False).search(
-            [("template_fs", "!=", False)]
-        )
-        external_ids = templates._get_external_ids()
-        dynamic_fields = self._get_dynamic_field_names()
-        documents: dict[str, etree._ElementTree | None] = {}
-        expressions: dict[str, set[str]] = {}
-        for template in templates:
-            path = template.template_fs
-            if path not in documents:
-                try:
-                    documents[path] = etree.parse(tools.misc.file_path(path))
-                except FileNotFoundError, ValueError, etree.XMLSyntaxError:
-                    documents[path] = None
-            document = documents[path]
-            if document is None:
-                continue
-            for xmlid in external_ids[template.id]:
-                if xmlid.startswith(("__export__.", "__custom__.")):
-                    continue
-                name = xmlid.partition(".")[2]
-                for record in document.xpath(
-                    "//record[@id = $name or @id = $xmlid]", name=name, xmlid=xmlid
-                ):
-                    for field in record.iterfind("field"):
-                        fname = field.get("name")
-                        if fname in dynamic_fields:
-                            expressions.setdefault(template.render_model, set()).update(
-                                self._get_source_expressions(
-                                    _field_source(field),
-                                    self._get_template_field_engine(fname),
-                                )
-                            )
-        _debug.logic(
-            "module_template_expressions",
-            model=self._name,
-            templates=len(templates),
-            models=len(expressions),
-            expressions=sum(len(spelled) for spelled in expressions.values()),
-        )
-        return tools.frozendict(
-            {model: frozenset(spelled) for model, spelled in expressions.items()}
+        if engine != "qweb":
+            return None
+        try:
+            node = self._get_qweb_template_node(str(source))[0]
+        except PG_RECOVERABLE_EXCEPTIONS:
+            raise
+        except Exception:
+            return None
+        return TemplateUnit(
+            template_trust_digest(node, model, engine),
+            restricted_template_errors(
+                node, self.env["ir.qweb"]._get_authoring_directives()
+            ),
         )
 
-    def _check_template_authoring(
-        self, previous: dict, fnames: Collection[str] | None = None
-    ) -> None:
-        if not self._is_restricted_template_author():
+    def _check_template_authoring(self, fnames: Collection[str] | None = None) -> None:
+        if not self._unrestricted_rendering:
             return
-        scanned = self._get_dynamic_field_names()
-        if fnames is not None:
-            scanned &= set(fnames)
-        shipped: dict[str, frozenset[str]] | None = None
-        errors = []
-        for record in self:
-            for fname in sorted(scanned):
-                before = previous.get((record.id, fname), set())
-
-                def trusted(
-                    expression: str,
-                    before: set[str] = before,
-                    model: str = record.render_model,
-                ) -> bool:
-                    nonlocal shipped
-                    if expression in before:
-                        return True
-                    if shipped is None:
-                        shipped = self._get_shipped_template_expressions()
-                    return expression in shipped.get(model, ())
-
-                errors += [
-                    f"{record._fields[fname].string}: {error}"
-                    for error in record._get_source_authoring_errors(
-                        record[fname], record._get_template_field_engine(fname), trusted
-                    )
-                ]
-        if errors:
-            _debug.logic(
-                "template_authoring_refused",
-                model=self._name,
-                records=self.ids,
-                uid=self.env.uid,
-                errors=len(errors),
-            )
-            raise AccessError(self._prepare_template_authoring_error(errors))
-
-    @api.model
-    def _audit_template_authoring(self) -> dict[str, list[str]]:
-        templates = self.with_context(active_test=False).search([])
-        external_ids = templates._get_external_ids()
-        shipped = self._get_shipped_template_expressions()
-        findings = {}
-        for template in templates:
-            if any(
-                not xmlid.startswith(("__export__.", "__custom__."))
-                for xmlid in external_ids[template.id]
-            ):
-                continue
-            errors = [
-                f"{template._fields[fname].string}: {error}"
-                for fname in sorted(template._get_dynamic_field_names())
-                for error in template._get_source_authoring_errors(
-                    template[fname],
-                    template._get_template_field_engine(fname),
-                    shipped.get(template.render_model, frozenset()).__contains__,
-                )
-            ]
-            if errors:
-                findings[f"{template.display_name} ({template.id})"] = errors
-        return findings
-
-    def _prepare_template_authoring_error(self, errors: list[str]) -> str:
-        return self.env._(
-            "Only administrators may add expressions that reach the environment "
-            "or call methods to a template:\n%(errors)s",
-            errors="\n".join(errors[:20]),
-        )
+        self._check_access_right_dynamic_template(fnames=fnames)
+        super()._check_template_authoring(fnames)
 
     @api.model
     def _check_render_authoring(
         self,
         template_src: Any,
         engine: str,
+        model: str,
         trusted_templates: models.BaseModel | None = None,
     ) -> None:
         if (
@@ -691,29 +494,23 @@ class MixinMailRender(models.AbstractModel):
             or not self._is_restricted_template_author()
         ):
             return
-        trusted_expressions: set[str] | None = None
-
-        def trusted(expression: str) -> bool:
-            nonlocal trusted_expressions
-            if trusted_expressions is None:
-                trusted_expressions = set()
-                if trusted_templates:
-                    for template in trusted_templates:
-                        for fname in template._get_dynamic_field_names():
-                            trusted_expressions |= template._get_source_expressions(
-                                template[fname],
-                                template._get_template_field_engine(fname),
-                            )
-            return expression in trusted_expressions
-
-        if errors := self._get_source_authoring_errors(template_src, engine, trusted):
-            _debug.logic(
-                "render_authoring_refused",
-                model=self._name,
-                uid=self.env.uid,
-                errors=len(errors),
-            )
-            raise AccessError(self._prepare_template_authoring_error(errors))
+        unit = self._get_source_unit(template_src, engine, model)
+        if not unit or not unit.errors:
+            return
+        if any(
+            (loaded := template._get_template_unit(fname, template[fname]))
+            and loaded.digest == unit.digest
+            for template in trusted_templates or ()
+            for fname in template._get_dynamic_field_names()
+        ):
+            return
+        _debug.logic(
+            "render_authoring_refused",
+            model=self._name,
+            uid=self.env.uid,
+            errors=len(unit.errors),
+        )
+        raise AccessError(self._prepare_template_authoring_error(unit.errors))
 
     @api.model
     def _render_eval_context(self) -> dict:

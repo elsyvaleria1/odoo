@@ -1,7 +1,9 @@
+import json
 from unittest.mock import patch
 
 import odoo.tests
 from odoo.exceptions import AccessError, UserError
+from odoo.fields import Command
 from odoo.http import root
 from odoo.tools import mute_logger
 
@@ -169,3 +171,77 @@ class TestReports(odoo.tests.HttpCase):
             self.assertNotEqual(
                 mock_delete.call_args.args[0].sid, mock_request.session.sid
             )
+
+    def test_a_group_restricted_report_is_not_served_to_other_users(self):
+        self.env["ir.ui.view"].create(
+            {
+                "type": "qweb",
+                "name": "base.test_group_report",
+                "key": "base.test_group_report",
+                "arch": '<main><div class="article"><p>restricted body</p></div></main>',
+            }
+        )
+        self.env["ir.actions.report"].create(
+            {
+                "name": "group restricted report",
+                "report_name": "base.test_group_report",
+                "report_type": "qweb-html",
+                "model": "res.partner",
+                "group_ids": [Command.set(self.env.ref("base.group_system").ids)],
+            }
+        )
+        employee = odoo.tests.new_test_user(
+            self.env, login="report_employee", groups="base.group_user"
+        )
+        url = f"/report/html/base.test_group_report/{employee.partner_id.id}"
+
+        self.authenticate("admin", "admin")
+        response = self.url_open(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("restricted body", response.text)
+
+        self.authenticate(employee.login, employee.login)
+        response = self.url_open(url)
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn("restricted body", response.text)
+
+    def test_a_group_restricted_report_is_not_downloaded_by_other_users(self):
+        self.env["ir.ui.view"].create(
+            {
+                "type": "qweb",
+                "name": "base.test_group_text_report",
+                "key": "base.test_group_text_report",
+                "arch": "<t>restricted text body</t>",
+            }
+        )
+        self.env["ir.actions.report"].create(
+            {
+                "name": "group restricted text report",
+                "report_name": "base.test_group_text_report",
+                "report_type": "qweb-text",
+                "model": "res.partner",
+                "group_ids": [Command.set(self.env.ref("base.group_system").ids)],
+            }
+        )
+        employee = odoo.tests.new_test_user(
+            self.env, login="report_downloader", groups="base.group_user"
+        )
+        url = f"/report/text/base.test_group_text_report/{employee.partner_id.id}"
+        data = json.dumps([url, "qweb-text"])
+
+        self.authenticate("admin", "admin")
+        response = self.url_open(
+            "/report/download",
+            data={"data": data, "csrf_token": odoo.http.Request.csrf_token(self)},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("restricted text body", response.text)
+
+        self.authenticate(employee.login, employee.login)
+        with mute_logger("odoo.addons.web.controllers.report"):
+            response = self.url_open(
+                "/report/download",
+                data={"data": data, "csrf_token": odoo.http.Request.csrf_token(self)},
+            )
+        self.assertNotEqual(response.status_code, 200)
+        self.assertNotIn("restricted text body", response.text)

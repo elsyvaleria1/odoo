@@ -293,3 +293,46 @@ def handle_history_divergence(record, html_field_name, vals) -> None:
         + last_step_id
         + incoming_html[incoming_history_matches.end(1) :]
     )
+
+
+CSS_ANIMATION_RULE_REGEX = (
+    r"(?P<declaration>animation(-duration)?:\s*.*?)"
+    r"(?P<value>(\d+(\.\d+)?)|(\.\d+))"
+    r"(?P<unit>ms|s)"
+    r"(?P<separator>\s|;|\"|$)"
+)
+SVG_DUR_TIMECOUNT_VAL_REGEX = (
+    r"(?P<attribute_name>\sdur=\"\s*)"
+    r"(?P<value>(\d+(\.\d+)?)|(\.\d+))"
+    r"(?P<unit>h|min|ms|s)?\s*\""
+)
+CSS_ANIMATION_RATIO_REGEX = r"--animation_ratio: \d*(\.\d+)?;"
+
+
+def format_js_number(value: float) -> str:
+    return str(int(value)) if float(value).is_integer() else repr(float(value))
+
+
+def replace_animation_duration(svg: str, speed: float) -> str:
+    ratio = round(1 + speed if speed >= 0 else 1 / (1 - speed), 3)
+
+    def callback_css_animation_rule(match):
+        value = format_js_number(float(match["value"]) / ratio)
+        return f"{match['declaration']}{value}{match['unit']}{match['separator']}"
+
+    def callback_svg_dur_timecount_val(match):
+        value = format_js_number(float(match["value"]) / ratio)
+        return f'{match["attribute_name"]}{value}{match["unit"] or "s"}"'
+
+    declaration = f"--animation_ratio: {ratio:.3f};"
+    svg = re.sub(CSS_ANIMATION_RULE_REGEX, callback_css_animation_rule, svg)
+    svg = re.sub(SVG_DUR_TIMECOUNT_VAL_REGEX, callback_svg_dur_timecount_val, svg)
+    if re.search(CSS_ANIMATION_RATIO_REGEX, svg):
+        return re.sub(CSS_ANIMATION_RATIO_REGEX, declaration, svg)
+    return re.sub(
+        r"<svg .*?>",
+        f"\\g<0>\n\t<style>\n\t\t:root {{ \n\t\t\t{declaration}\n\t\t}}\n\t</style>",
+        svg,
+        count=1,
+        flags=re.DOTALL,
+    )

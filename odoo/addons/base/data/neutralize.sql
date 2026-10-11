@@ -31,3 +31,13 @@ BEGIN
              || ' SERVER ' || quote_ident(mapping.srvname);
     END LOOP;
 END $$;
+
+-- cancel every unfinished job: its arguments carry production endpoints (webhook
+-- URLs), and a job left 'started' by the dump is requeued by the reaper
+UPDATE ir_job
+   SET state = 'cancelled',
+       done_at = (now() AT TIME ZONE 'UTC'),
+       exc_name = 'Neutralized',
+       exc_message = 'the database was neutralized before this job ran',
+       write_date = (now() AT TIME ZONE 'UTC')
+ WHERE state IN ('wait_deps', 'scheduled', 'pending', 'started');

@@ -1,6 +1,6 @@
 {
     "name": "Knowledge",
-    "version": "1.6",
+    "version": "1.7",
     "oldest_upgradable_version": "1.6",
     "category": "Productivity/Knowledge",
     "summary": "Write, organize and share internal articles",

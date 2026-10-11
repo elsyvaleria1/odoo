@@ -5,7 +5,7 @@ from datetime import UTC, time
 
 from shapely.geometry import Point
 
-from odoo import Command, api, fields, models
+from odoo import Command, _lt, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.libs.datetime import timezone
 from odoo.libs.json import dumps as json_dumps
@@ -23,9 +23,9 @@ _METERS_PER_DEGREE_LAT = 111320
 
 class DeviceGeofence(models.Model):
     _name = "device.geo.fence"
+    _inherit = ["mixin.hierarchy"]
     _description = "IoT GPS Geofence"
     _order = "name"
-    _parent_store = True
 
     name = fields.Char(
         required=True,
@@ -54,7 +54,6 @@ class DeviceGeofence(models.Model):
         inverse_name="parent_id",
         help="Child geofences (e.g., parcels within a property)",
     )
-    parent_path = fields.Char(index=True)
 
     area_type = fields.Selection(
         selection=[
@@ -218,6 +217,8 @@ class DeviceGeofence(models.Model):
         help="Devices that were inside this geofence on the previous cron run. "
         "Used to detect enter/exit transitions.",
     )
+
+    _hierarchy_cycle_message = _lt("You cannot create recursive geofences.")
 
     @api.constrains(
         "geofence_type",

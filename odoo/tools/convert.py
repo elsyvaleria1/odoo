@@ -12,7 +12,9 @@ import logging
 import pprint
 import re
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, Literal
@@ -52,6 +54,22 @@ type IdRef = dict[str, int | Literal[False]]
 class ParseError(Exception): ...
 
 
+_LOADING_DATA_FILE: ContextVar[bool] = ContextVar("loading_data_file", default=False)
+
+
+def is_loading_data_file() -> bool:
+    return _LOADING_DATA_FILE.get()
+
+
+@contextmanager
+def _loading_data_file(loading: bool = True) -> Iterator[None]:
+    token = _LOADING_DATA_FILE.set(loading)
+    try:
+        yield
+    finally:
+        _LOADING_DATA_FILE.reset(token)
+
+
 RETIRED_ACCESS_MODELS = frozenset({"ir.model.access", "ir.rule"})
 LEGACY_ACCESS_MODULE = "legacy_access_module"
 
@@ -79,9 +97,10 @@ def _refuse_retired_access_model(model: str | None, module: str, fname: str) -> 
         f"Module {module}: {fname} ships {model} data, a model that no longer "
         f"exists. Access is ir.access rows: ship security/ir.access.csv "
         f"(id,name,model_id/id,group_id/id,kind,operation,domain) instead, "
-        f"and list it in the manifest; "
-        f"odoo/addons/base/models/ir_access_convert.py converts the old lines "
-        f"and rules."
+        f"and list it in the manifest. A module's own data files may still ship "
+        f"the old lines and rules: ir.access._load_legacy_access "
+        f"(odoo/addons/base/models/ir_access_legacy.py) loads what they amount "
+        f"to when that module loads."
     )
 
 
@@ -119,6 +138,24 @@ def _fix_multiple_roots(node: etree._Element) -> None:
         for child in node:
             data_node.append(child)
         node.append(data_node)
+
+
+def template_arch(el: etree._Element, xml_id: str) -> None:
+    if el.get("inherit_id"):
+        el.tag = "data"
+    else:
+        el.set("t-name", xml_id)
+        el.tag = "t"
+    for attribute in ("id", "forcecreate", "context", "groups"):
+        el.attrib.pop(attribute, None)
+    if el.get("primary") == "True":
+        el.append(
+            builder.E.xpath(
+                builder.E.attribute(xml_id, name="t-name"),
+                expr=".",
+                position="attributes",
+            )
+        )
 
 
 def _substitute_xml_ids(self: Any, s: str) -> str:
@@ -652,7 +689,8 @@ class xml_import:
 
         model = env[rec_model]
 
-        if self.xml_filename and rec_id:
+        from_file = bool(self.xml_filename and rec_id)
+        if from_file:
             model = model.with_context(
                 install_mode=True,
                 install_module=self.module,
@@ -726,7 +764,8 @@ class xml_import:
             model = model.with_context(
                 foreign_record_to_create=foreign_record_to_create
             )
-        record = model._load_records([data], self.mode == "update")
+        with _loading_data_file(from_file):
+            record = model._load_records([data], self.mode == "update")
         if xid:
             self.idref[xid] = record.id
         _debug.pipeline(
@@ -753,12 +792,6 @@ class xml_import:
         full_tpl_id = tpl_id
         if "." not in full_tpl_id:
             full_tpl_id = "%s.%s" % (self.module, tpl_id)
-        if not el.get("inherit_id"):
-            el.set("t-name", full_tpl_id)
-            el.tag = "t"
-        else:
-            el.tag = "data"
-        el.attrib.pop("id", None)
 
         if self.module.startswith("theme_"):
             model = "theme.ir.ui.view"
@@ -771,7 +804,7 @@ class xml_import:
         }
         for att in ["forcecreate", "context"]:
             if att in el.attrib:
-                record_attrs[att] = el.attrib.pop(att)
+                record_attrs[att] = el.attrib[att]
 
         Field = builder.E.field
         name = el.get("name", tpl_id)
@@ -795,7 +828,7 @@ class xml_import:
 
         if el.get("customize_show") in ("True", "False"):
             record.append(Field(name="customize_show", eval=el.get("customize_show")))
-        groups = el.attrib.pop("groups", None)
+        groups = el.get("groups")
         if groups:
             grp_lst = [("ref('%s')" % x) for x in split_refs(groups)]
             record.append(
@@ -805,14 +838,8 @@ class xml_import:
                 )
             )
         if el.get("primary") == "True":
-            el.append(
-                builder.E.xpath(
-                    builder.E.attribute(full_tpl_id, name="t-name"),
-                    expr=".",
-                    position="attributes",
-                )
-            )
             record.append(Field("primary", name="mode"))
+        template_arch(el, full_tpl_id)
         record.append(Field(el, name="arch", type="xml"))
 
         _debug.pipeline(
@@ -1128,7 +1155,8 @@ def convert_csv_import(
         rows=len(datas),
         columns=len(fields),
     ) as span:
-        result = env[model].with_context(**context).load(fields, datas)
+        with _loading_data_file():
+            result = env[model].with_context(**context).load(fields, datas)
         span.set(ids=len(result["ids"] or ()), messages=len(result["messages"]))
     if any(msg["type"] == "error" for msg in result["messages"]):
         warning_msg = "\n".join(msg["message"] for msg in result["messages"])

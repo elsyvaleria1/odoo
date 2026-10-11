@@ -27,6 +27,10 @@ class ScorecardDimensionBand(models.Model):
         self.check_singleton()
         return [("dimension_id", "=", self.dimension_id.id)]
 
+    @api.model
+    def _get_band_scope_fields(self) -> tuple[str, ...]:
+        return ("dimension_id",)
+
     @api.depends("min_value", "max_value", "points")
     def _compute_display_name(self):
         for band in self:

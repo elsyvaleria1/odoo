@@ -150,7 +150,7 @@
                         class="text-break" />
                 </xpath>
                 <xpath
-                    expr="//button[@name='action_set_favorite']"
+                    expr="//button[@name='action_add_to_templates']"
                     position="attributes">
                     <attribute
                         name="invisible"
@@ -158,7 +158,7 @@
                         separator=" or " />
                 </xpath>
                 <xpath
-                    expr="//button[@name='action_remove_favorite']"
+                    expr="//button[@name='action_remove_from_templates']"
                     position="attributes">
                     <attribute
                         name="invisible"

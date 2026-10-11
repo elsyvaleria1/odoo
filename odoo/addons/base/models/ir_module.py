@@ -22,9 +22,11 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.parse_version import parse_version
 from odoo.libs.rst import render_html as render_rst_html
 from odoo.modules.loading import (
+    ModuleOperationInProgress,
     _get_files_with_moved_refs,
     _get_modules_writing_records_of,
     get_stored_data_files,
+    lock_module_operations,
 )
 from odoo.modules.module import (
     Manifest,
@@ -40,6 +42,7 @@ from odoo.tools.translate import (
     get_po_paths,
 )
 
+from odoo.addons.base.models.ir_job import JobsStillRunning
 from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG
 
 if TYPE_CHECKING:
@@ -976,11 +979,40 @@ class IrModuleModule(models.Model):
             _debug.logic("pending_operation.checked", pending=pending)
             return pending
 
-    def _lock_against_concurrent_module_operations(self) -> None:
-        busy = self.env._(
+    @contextlib.contextmanager
+    def _lock_against_concurrent_module_operations(self) -> Iterator[None]:
+        cr = self.env.cr
+        with contextlib.ExitStack() as held:
+            try:
+                held.enter_context(lock_module_operations(cr, cr.dbname))
+            except JobsStillRunning as exc:
+                raise UserError(
+                    self.env._(
+                        "Modules cannot be installed, upgraded or removed while "
+                        "background jobs run, and these did not finish within "
+                        "%(seconds)s seconds:\n%(jobs)s\nTry again once they are done.",
+                        seconds=exc.wait_s,
+                        jobs="\n".join(exc.jobs)
+                        or self.env._("(they finished meanwhile)"),
+                    )
+                ) from None
+            except ModuleOperationInProgress:
+                _debug.logic("module_lock_busy", reason="operation_running")
+                raise UserError(self._get_module_operation_busy_message()) from None
+            self._lock_module_table()
+            self._lock_crons()
+            if _debug.lifecycle.enabled:
+                _debug.lifecycle("module_lock.acquired", modules=self.mapped("name"))
+            yield
+
+    def _get_module_operation_busy_message(self) -> str:
+        return self.env._(
             "Odoo is currently processing another module operation.\n"
             "Please try again later or contact your system administrator."
         )
+
+    def _lock_module_table(self) -> None:
+        busy = self._get_module_operation_busy_message()
         cr = self.env.cr
         cr.execute("SET LOCAL lock_timeout = '3s'")
         try:
@@ -994,22 +1026,23 @@ class IrModuleModule(models.Model):
             _debug.logic("module_lock_busy", reason="pending_operation")
             raise UserError(busy)
 
+    def _lock_crons(self) -> None:
+        cr = self.env.cr
+        cron_busy = self.env._(
+            "Odoo is currently processing a scheduled action.\n"
+            "Module operations are not possible at this time, "
+            "please try again later or contact your system administrator."
+        )
+        crons = self.env["ir.cron"].sudo().with_context(active_test=False).search([])
         try:
-            self.env["ir.cron"].sudo().with_context(active_test=False).search(
-                []
-            ).lock_for_update(wait=True)
+            crons.lock_for_update(wait=True)
         except psycopg.OperationalError:
             cr.rollback()
             _debug.logic("module_lock_busy", reason="cron_lock_timeout")
-            raise UserError(
-                self.env._(
-                    "Odoo is currently processing a scheduled action.\n"
-                    "Module operations are not possible at this time, "
-                    "please try again later or contact your system administrator."
-                )
-            ) from None
-        if _debug.lifecycle.enabled:
-            _debug.lifecycle("module_lock.acquired", modules=self.mapped("name"))
+            raise UserError(cron_busy) from None
+        if running := crons._try_lock_jobs():
+            _debug.logic("module_lock_busy", reason="cron_running", cron=running.ids)
+            raise UserError(cron_busy)
 
     def _button_immediate_function(
         self, function: Callable[..., Any]
@@ -1032,21 +1065,21 @@ class IrModuleModule(models.Model):
             )
             raise RuntimeError(msg)
 
-        self._lock_against_concurrent_module_operations()
-        _debug.pipeline(
-            "immediate_function",
-            function=function.__name__,
-            modules=self.mapped("name"),
-        )
-        function(self)
-
-        self.env["ir.ui.view"]._check_deferred_now()
-        self.env.cr.commit()
-        with _debug.perf("registry_reload", db=self.env.cr.dbname):
-            registry = modules.registry.Registry.new(
-                self.env.cr.dbname, update_module=True
+        with self._lock_against_concurrent_module_operations():
+            _debug.pipeline(
+                "immediate_function",
+                function=function.__name__,
+                modules=self.mapped("name"),
             )
-        self.env.cr.commit()
+            function(self)
+
+            self.env["ir.ui.view"]._check_deferred_now()
+            self.env.cr.commit()
+            with _debug.perf("registry_reload", db=self.env.cr.dbname):
+                registry = modules.registry.Registry.new(
+                    self.env.cr.dbname, update_module=True
+                )
+            self.env.cr.commit()
         if request and request.registry is self.env.registry:
             request.env.cr.reset()
             request.registry = request.env.registry

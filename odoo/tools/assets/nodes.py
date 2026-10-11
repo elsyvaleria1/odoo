@@ -31,6 +31,7 @@ __all__ = [
     "narrow_import_map_node",
     "owl_compiler_module_node",
     "prepare_register_native_modules_js",
+    "url_extension",
 ]
 
 AssetNode = tuple[str, dict[str, Any]]
@@ -40,6 +41,10 @@ LOADER_SHIM_MARKER = "data-loader-shim"
 SOURCE_MAP_DIRECTIVE = "//# sourceMappingURL="
 
 _debug = DebugLog(__name__)
+
+
+def url_extension(url: str) -> str:
+    return url.partition("#")[0].partition("?")[0].rpartition(".")[2].lower()
 
 
 def is_debug_assets(debug: Any) -> bool:
@@ -145,7 +150,7 @@ def link_to_node(
 ) -> AssetNode | None:
     if not path:
         return None
-    ext = path.rsplit(".", maxsplit=1)[-1]
+    ext = url_extension(path)
 
     if ext in SCRIPT_EXTENSIONS:
         attributes = {"type": "text/javascript"}

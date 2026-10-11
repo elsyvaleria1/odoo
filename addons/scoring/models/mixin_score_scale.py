@@ -38,6 +38,10 @@ class MixinScoreScale(models.AbstractModel):
         return []
 
     @api.model
+    def _get_band_scope_fields(self) -> tuple[str, ...]:
+        return ("company_id",)
+
+    @api.model
     def _scale(self, company) -> Self:
         return self.search(
             [("active", "=", True)] + self._scale_domain(company),

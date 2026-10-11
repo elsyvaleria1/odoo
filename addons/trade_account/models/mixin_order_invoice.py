@@ -569,9 +569,7 @@ class MixinOrderInvoice(models.AbstractModel):
             .with_context(no_log_for_new_lines=True)
             .create(vals_list)
         )
-        self.with_context(bypass_locked_check=True).line_ids = [
-            Command.link(line_id) for line_id in lines.ids
-        ]
+        self.line_ids = [Command.link(line_id) for line_id in lines.ids]
         _debug.lifecycle("order_lines_created", order=self, lines=lines)
         return lines
 

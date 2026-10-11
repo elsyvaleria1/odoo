@@ -1303,6 +1303,130 @@ class TestIrCronAcquireLock(BaseCase):
             cr_a.rollback()
             cr_b.rollback()
 
+    def test_write_probes_every_job_lock_in_one_statement(self):
+        with self.registry.cursor() as cr:
+            env = odoo.api.Environment(cr, common.ADMIN_USER_ID, {})
+            crons = env["ir.cron"].browse(self.cron_id) | env["ir.cron"].create(
+                [
+                    CronMixinCase._get_cron_data(env, priority=priority)
+                    for priority in (1, 2)
+                ]
+            )
+            env.flush_all()
+            probes = []
+            real_execute = cr.execute
+
+            def spying_execute(query, *args, **kwargs):
+                if "pg_try_advisory_xact_lock" in str(getattr(query, "code", query)):
+                    probes.append(query)
+                return real_execute(query, *args, **kwargs)
+
+            with patch.object(cr, "execute", spying_execute):
+                crons.write({"priority": 7})
+            self.assertEqual(len(probes), 1, "one probe for the whole batch")
+            cr.rollback()
+
+    def test_write_on_a_batch_names_the_running_cron(self):
+        IrCronModel = self.registry["ir.cron"]
+        with self.registry.cursor() as cr_a, self.registry.cursor() as cr_b:
+            env_b = odoo.api.Environment(cr_b, common.ADMIN_USER_ID, {})
+            idle = env_b["ir.cron"].create(CronMixinCase._get_cron_data(env_b))
+            cr_b.commit()
+            self.addCleanup(self._drop_extra_cron, idle.id)
+            self.assertIsNotNone(IrCronModel._acquire_job(cr_a, self.cron_id))
+            with self.assertRaises(UserError) as cm:
+                (idle | env_b["ir.cron"].browse(self.cron_id)).write({"priority": 3})
+            self.assertIn("currently being executed", str(cm.exception))
+            cr_b.rollback()
+            self.assertIsNotNone(
+                IrCronModel._acquire_job(cr_b, idle.id, include_not_ready=True),
+                "the refused write released the idle cron's lock with its rollback",
+            )
+            cr_a.rollback()
+            cr_b.rollback()
+
+    def test_a_superseded_registry_class_does_not_reset_every_attempt(self):
+        current = self.registry
+
+        class Superseded:
+            def check_signaling(self, cr=None):
+                return current
+
+            def signal_changes(self):
+                pass
+
+            def reset_changes(self):
+                pass
+
+        with self.registry.cursor() as cr:
+            env = odoo.api.Environment(cr, common.ADMIN_USER_ID, {})
+            cron = env["ir.cron"].browse(self.cron_id)
+            stale_class = type(
+                type(cron).__name__,
+                (type(cron),),
+                {"__module__": __name__, "_register": False, "pool": Superseded()},
+            )
+            stale_cron = stale_class(env, cron._ids, cron._prefetch_ids)
+            server_action_id = cron.ir_actions_server_id.id
+            with patch.object(type(env.transaction), "reset", autospec=True) as reset:
+                for _attempt in range(2):
+                    stale_cron._run_server_action(cron.cron_name, server_action_id)
+            self.assertEqual(
+                reset.call_count,
+                0,
+                "the transaction already runs on the current registry; the "
+                "class a loop iteration holds may still be the superseded one",
+            )
+            cr.rollback()
+
+    @mute_logger("odoo.addons.base.models.ir_cron")
+    def test_a_run_refused_at_commit_leaves_nothing_behind(self):
+        with self.registry.cursor() as cr:
+            env = odoo.api.Environment(cr, common.ADMIN_USER_ID, {})
+            partner_id = env["res.partner"].create({"name": "before the run"}).id
+            cr.commit()
+        self.addCleanup(self._drop_partner, partner_id)
+
+        def refuse():
+            raise UserError("refused when the run commits")
+
+        def run(action):
+            action.env["res.partner"].browse(partner_id).name = "written by the run"
+            action.env.cr.precommit.add(refuse)
+
+        IrCronModel = self.registry["ir.cron"]
+        with (
+            patch.object(self.registry["ir.actions.server"], "run", run),
+            self.registry.cursor() as cron_cr,
+        ):
+            job = IrCronModel._acquire_job(
+                cron_cr, self.cron_id, include_not_ready=True
+            )
+            IrCronModel._run_job(cron_cr, job)
+            cron_cr.commit()
+        with self.registry.cursor() as cr:
+            cr.execute("SELECT name FROM res_partner WHERE id = %s", [partner_id])
+            self.assertEqual(
+                cr.fetchone()[0],
+                "before the run",
+                "the run loop commits after a failed attempt: what the attempt "
+                "wrote must be rolled back before it",
+            )
+            cr.execute(
+                "SELECT failure_count FROM ir_cron WHERE id = %s", [self.cron_id]
+            )
+            self.assertEqual(cr.fetchone()[0], 1)
+
+    def _drop_partner(self, partner_id):
+        with self.registry.cursor() as cr:
+            cr.execute("DELETE FROM res_partner WHERE id = %s", [partner_id])
+            cr.commit()
+
+    def _drop_extra_cron(self, cron_id):
+        with self.registry.cursor() as cr:
+            env = odoo.api.Environment(cr, common.ADMIN_USER_ID, {})
+            env["ir.cron"].browse(cron_id).unlink()
+
     def test_unlink_on_running_cron_raises_usererror(self):
         IrCronModel = self.registry["ir.cron"]
         with self.registry.cursor() as cr_a, self.registry.cursor() as cr_b:
@@ -1738,6 +1862,28 @@ class TestIrCronUpdateFailureCount(TransactionCase, CronMixinCase):
                 self.assertTrue(self.cron.active)
 
 
+class TestIrCronUnlink(TransactionCase, CronMixinCase):
+    def test_a_deleted_cron_takes_its_server_action_with_it(self):
+        cron = self.env["ir.cron"].create(self._get_cron_data(self.env))
+        action = cron.ir_actions_server_id
+
+        cron.unlink()
+
+        self.assertFalse(action.exists())
+
+    def test_a_server_action_another_cron_runs_outlives_the_deleted_cron(self):
+        cron = self.env["ir.cron"].create(self._get_cron_data(self.env))
+        action = cron.ir_actions_server_id
+        other = self.env["ir.cron"].create(
+            {**self._get_cron_data(self.env), "ir_actions_server_id": action.id}
+        )
+
+        cron.unlink()
+
+        self.assertTrue(action.exists())
+        self.assertEqual(other.ir_actions_server_id, action)
+
+
 class TestIrCronDbChecks(TransactionCase):
     def test_check_version_mismatch_raises_bad_version(self):
         with closing(self.cr.savepoint()):
@@ -1797,11 +1943,29 @@ class TestIrCronDbChecks(TransactionCase):
             self.cr.execute(
                 "UPDATE ir_module_module SET state = 'to upgrade' WHERE name = 'base'"
             )
+            self.cr.execute(
+                "UPDATE ir_module_module SET write_date = %s WHERE state LIKE 'to %%'",
+                [stale],
+            )
             with patch(
                 "odoo.addons.base.models.ir_cron.reset_modules_state"
             ) as reset_mock:
                 IrCron._check_modules_state(self.cr, jobs=[ReadyJob(1, stale, stale)])
             reset_mock.assert_called_once()
+
+    def test_check_modules_state_spares_an_operation_younger_than_the_job(self):
+        stale = fields.Datetime.now() - MAX_FAIL_TIME - timedelta(hours=1)
+        with closing(self.cr.savepoint()):
+            self.cr.execute(
+                "UPDATE ir_module_module SET state = 'to install',"
+                " write_date = now() AT TIME ZONE 'UTC' WHERE name = 'base'"
+            )
+            with (
+                patch("odoo.addons.base.models.ir_cron.reset_modules_state") as reset,
+                self.assertRaises(BadModuleStateError),
+            ):
+                IrCron._check_modules_state(self.cr, jobs=[ReadyJob(1, stale, stale)])
+            reset.assert_not_called()
 
 
 class TestIrCronRunLoopContract(TransactionCase, CronMixinCase):

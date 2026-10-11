@@ -21,12 +21,13 @@ from odoo.exceptions import (
     ValidationError,
 )
 from odoo.fields import Command, Domain
-from odoo.http import DEFAULT_LANG, STORED_SESSION_BYTES, request
+from odoo.http import DEFAULT_LANG, STORED_SESSION_BYTES, request, rpc_client
 from odoo.libs import netguard
 from odoo.libs.datetime import all_timezones
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.password import HASH_PREFIX, CryptContext
+from odoo.service import api_scope
 from odoo.tools import (
     SQL,
     Query,
@@ -38,9 +39,17 @@ from odoo.tools import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
-from .res_users_auth import _DUMMY_PASSWORD_HASH, PasswordStore, session_token
+from .res_users_auth import PasswordStore, session_token
 from .res_users_grant import GROUP_STATE_COMPUTED, projecting
-from .res_users_login_cooldown import LoginCooldown
+from .res_users_login_cooldown import (
+    LOGIN_DEVICE_BUDGET,
+    LOGIN_DEVICE_COOKIE,
+    LOGIN_DEVICE_MAX_AGE,
+    AuthAttempt,
+    LoginCooldown,
+    LoginDevice,
+    MarkedDevice,
+)
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -256,28 +265,26 @@ class ResUsers(models.Model):
     @api.model
     @tools.ormcache("uid", "passwd_hash")  # noqa: E8540 -- a credential check, which no group changes
     def _check_uid_passwd_cached(
-        self, uid: int, passwd: str, passwd_hash: str
-    ) -> datetime.datetime | None:
+        self, uid: int, passwd: str, passwd_hash: str, keys_only: bool = False
+    ) -> tuple[datetime.datetime | None, int | None]:
         user = self.with_user(uid).env.user
-        if not user.active:
-            _debug.logic("uid_passwd_refused", uid=uid, reason="inactive")
+        if not (user.exists() and user.active):
+            _debug.logic("uid_passwd_refused", uid=uid, reason="inactive_or_unknown")
+            self._password_store().spend(self, passwd)
             raise AccessDenied
         credential = {
             "login": user.login,
             "password": passwd,
             "type": "password",
         }
-        result = user._check_credentials(credential, {"interactive": False})
+        result = user._check_credentials(
+            credential, {"interactive": False, "api_key_only": keys_only}
+        )
         _debug.perf.count(
             "uid_passwd_cached", uid=uid, method=result.get("auth_method")
         )
         if result.get("auth_method") == "apikey":
-            return (
-                self.env["res.users.apikeys"]._get_key_expiration(
-                    scope=None, key=passwd
-                ),
-                result["api_scope_id"],
-            )
+            return result["api_key_expiration"], result["api_scope_id"]
         return None, None
 
     @tools.ormcache("self.id", "sid")
@@ -302,7 +309,10 @@ class ResUsers(models.Model):
         key = self._grant_scope_key()
         state = self._get_cached_group_state(key)
         if state.valid_until is not None and self.env.cr.now() >= state.valid_until:
+            cache = type(self)._get_cached_group_state.__cache__
+            generation = cache.get_cache_generation(self)
             state = self._compute_group_state(key)
+            cache.add_value(self, key, cache_value=state, generation=generation)
         return state
 
     def _grant_scope_key(self) -> tuple:
@@ -457,6 +467,10 @@ class ResUsers(models.Model):
     @tools.ormcache(cache="stable")
     def _get_crypt_context(self) -> CryptContext:
         return self._password_store().crypt_context()
+
+    @tools.ormcache(cache="stable")
+    def _get_dummy_password_hash(self) -> str:
+        return self._get_crypt_context().hash(uuid.uuid4().hex)
 
     def _check_company_domain(self, companies: Self | str | None) -> Domain:
         if not companies:
@@ -871,7 +885,16 @@ class ResUsers(models.Model):
         self.env.registry.clear_cache()
 
     def _is_rpc_api_key_only(self) -> bool:
-        return self.principal_type == "service"
+        return self.principal_type == "service" or self._rpc_passwords_refused()
+
+    @api.model
+    def _rpc_passwords_refused(self) -> bool:
+        return self.env.registry.settings.get_bool(self.env, "base.rpc_api_key_only")
+
+    def _password_allowed(self, env: dict[str, Any]) -> bool:
+        return env.get("interactive", True) or not (
+            env.get("api_key_only") or self._is_rpc_api_key_only()
+        )
 
     def _check_credentials(
         self, credential: dict[str, Any], env: dict[str, Any]
@@ -888,7 +911,23 @@ class ResUsers(models.Model):
 
         interactive = env.get("interactive", True)
 
-        if interactive or not self._is_rpc_api_key_only():
+        if not interactive:
+            match = self.env["res.users.apikeys"]._match_key(
+                api_scope.RPC_SCOPE, credential["password"]
+            )
+            if match and match[0] == self.id:
+                _debug.logic("apikey_checked", uid=self.id, valid=True)
+                return {
+                    "uid": self.id,
+                    "auth_method": "apikey",
+                    "api_scope_id": self.env[
+                        "res.users.apikeys.scope"
+                    ]._get_declared_state(api_scope.RPC_SCOPE)[0],
+                    "api_key_expiration": match[1],
+                    "mfa": "default",
+                }
+
+        if self._password_allowed(env):
             if "interactive" not in env:
                 _logger.warning(
                     "_check_credentials without 'interactive' env key, assuming interactive login. \
@@ -921,26 +960,11 @@ class ResUsers(models.Model):
                     "auth_method": "password",
                     "mfa": "default",
                 }
-
-        if not interactive:
-            match = self.env["res.users.apikeys"]._check_credentials_any_scope(
-                credential["password"]
+        else:
+            _logger.info(
+                "Invalid API key or password-based authentication attempted for a non-interactive (API) "
+                "context that requires API key authentication only."
             )
-            if match and match[0] == self.id:
-                _debug.logic("apikey_checked", uid=self.id, valid=True)
-                return {
-                    "uid": self.id,
-                    "auth_method": "apikey",
-                    "api_scope_id": match[1]
-                    or self.env["res.users.apikeys.scope"]._get_or_create("rpc").id,
-                    "mfa": "default",
-                }
-
-            if self._is_rpc_api_key_only():
-                _logger.info(
-                    "Invalid API key or password-based authentication attempted for a non-interactive (API) "
-                    "context that requires API key authentication only."
-                )
 
         _debug.logic(
             "credentials_refused",
@@ -1343,7 +1367,7 @@ class ResUsers(models.Model):
         if "group_ids" in vals and self.ids:
             _debug.logic("write_cache_cleared", reason="group_ids")
             self.env["res.users.grant"]._clear_membership_caches()
-        elif self._get_fields_invalidation() & vals.keys():
+        if self._get_fields_invalidation() & vals.keys():
             _debug.logic("write_cache_cleared", reason="invalidating_fields")
             self.env.registry.clear_cache()
 
@@ -1383,34 +1407,6 @@ class ResUsers(models.Model):
             )[:1]
             or resources[:1]
         )
-
-    def _get_asset_kinds_gated(self):
-        return self.env["resource.kind"].sudo().search([("group_id", "!=", False)])
-
-    def _get_enabled_asset_kinds(self):
-        self.check_singleton()
-        kinds = self.env["resource.kind"].sudo().search([])
-        if self.has_group("base.group_asset_manager"):
-            return kinds.ids
-        enabled = [
-            kind.id
-            for kind in kinds
-            if not kind.group_id or self.has_any_group_id([kind.group_id.id])
-        ]
-        _debug.logic("kinds_enabled", user=self, kinds=len(kinds), enabled=len(enabled))
-        return enabled
-
-    def _get_hidden_asset_kinds(self):
-        self.check_singleton()
-        if self.has_group("base.group_asset_manager"):
-            return []
-        hidden = [
-            kind.id
-            for kind in self._get_asset_kinds_gated()
-            if not self.has_any_group_id([kind.group_id.id])
-        ]
-        _debug.logic("kinds_hidden", user=self, hidden=len(hidden))
-        return hidden
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_last_administrator(self) -> None:
@@ -1500,11 +1496,15 @@ class ResUsers(models.Model):
         return Domain("principal_type", "=", "person")
 
     @api.model
-    def _get_service_partner_ids(self) -> list[int]:
-        self.env.cr.execute(
-            SQL("SELECT partner_id FROM res_users WHERE principal_type = 'service'")
-        )
-        return [partner_id for (partner_id,) in self.env.cr.fetchall()]
+    def _get_domain_partner_not_service(self) -> Domain:
+        def to_sql(model: models.BaseModel, alias: str, query: Query) -> SQL:
+            return SQL(
+                "NOT EXISTS (SELECT 1 FROM res_users"
+                " WHERE principal_type = 'service' AND partner_id = %s)",
+                SQL.identifier(alias, "id"),
+            )
+
+        return Domain.custom(to_sql=to_sql)
 
     @api.model
     def _search_display_name(self, operator: str, value: Any) -> list:
@@ -1535,7 +1535,6 @@ class ResUsers(models.Model):
     @api.model
     def _get_fields_invalidation(self) -> set[str]:
         return {
-            "group_ids",
             "active",
             "lang",
             "tz",
@@ -1565,32 +1564,41 @@ class ResUsers(models.Model):
     ) -> dict[str, Any]:
         login = credential["login"]
         ip = request.httprequest.remote_addr if request else "n/a"
+        interactive = (user_agent_env or {}).get("interactive", True)
+        user = self.sudo().search(
+            self._get_domain_login(login),
+            order=self._get_login_order(),
+            limit=1,
+        )
         try:
-            with self._assert_can_auth(user=login):
-                user = self.sudo().search(
-                    self._get_domain_login(login),
-                    order=self._get_login_order(),
-                    limit=1,
-                )
+            with self._assert_can_auth(
+                user=user.id or login, interactive=interactive
+            ) as attempt:
                 if not user:
                     _debug.logic("login_unknown", ip=ip)
-                    self._get_crypt_context().match_and_update(
-                        credential.get("password") or "", _DUMMY_PASSWORD_HASH
+                    if not interactive and (
+                        attempt.keys_only or self._rpc_passwords_refused()
+                    ):
+                        self._deny_login(credential)
+                    auth_info = self._login_unknown(credential, user_agent_env)
+                else:
+                    user = user.with_user(user).sudo()
+                    if user.principal_type == "service" and interactive:
+                        _debug.logic("login_refused", uid=user.id, reason="service")
+                        self._deny_login(credential)
+                    _debug.pipeline("login_credentials_check", uid=user.id, ip=ip)
+                    auth_info = user._check_credentials(
+                        credential,
+                        {**(user_agent_env or {}), "api_key_only": True}
+                        if attempt.keys_only
+                        else user_agent_env,
                     )
-                    raise AccessDenied
-                user = user.with_user(user).sudo()
-                if user.principal_type == "service" and (user_agent_env or {}).get(
-                    "interactive", True
-                ):
-                    _debug.logic("login_refused", uid=user.id, reason="service")
-                    raise AccessDenied
-                _debug.pipeline("login_credentials_check", uid=user.id, ip=ip)
-                auth_info = user._check_credentials(credential, user_agent_env)
-                tz = request.cookies.get("tz") if request else None
-                if tz in all_timezones() and (not user.tz or not user.login_date):
-                    _debug.logic("login_tz_adopted", uid=user.id, tz=tz)
-                    user.tz = tz
-                user._update_last_login()
+                    attempt.by_key = auth_info.get("auth_method") == "apikey"
+                    tz = request.cookies.get("tz") if request else None
+                    if tz in all_timezones() and (not user.tz or not user.login_date):
+                        _debug.logic("login_tz_adopted", uid=user.id, tz=tz)
+                        user.tz = tz
+                    user._update_last_login()
         except AccessDenied:
             _logger.info("Login failed for login:%s from %s", login, ip)
             _debug.lifecycle("login_failed", login=login, ip=ip)
@@ -1602,6 +1610,17 @@ class ResUsers(models.Model):
         )
 
         return auth_info
+
+    @api.model
+    def _login_unknown(
+        self, credential: dict[str, Any], user_agent_env: dict[str, Any]
+    ) -> dict[str, Any]:
+        self._deny_login(credential)
+
+    @api.model
+    def _deny_login(self, credential: dict[str, Any]) -> typing.NoReturn:
+        self._password_store().spend(self, credential.get("password") or "")
+        raise AccessDenied
 
     def authenticate(
         self, credential: dict[str, Any], user_agent_env: dict[str, Any]
@@ -1630,11 +1649,23 @@ class ResUsers(models.Model):
         if not passwd:
             _debug.logic("uid_passwd_refused", uid=uid, reason="empty")
             raise AccessDenied
-        with self._assert_can_auth(user=uid):
-            passwd_hash = sha256(passwd.encode()).hexdigest()
+        passwd_hash = sha256(passwd.encode()).hexdigest()
+        cache = type(self)._check_uid_passwd_cached.__cache__
+        cached = (
+            cache.key(self, uid, passwd, passwd_hash)
+            in self.pool.ormcache_lrus[cache.cache_name]
+        )
+        with self._assert_can_auth(
+            user=uid, interactive=False, claim=not cached
+        ) as attempt:
+            keys_only = attempt.keys_only or self._rpc_passwords_refused()
             key_expiration, scope_id = self._check_uid_passwd_cached(
-                uid, passwd, passwd_hash
+                uid, passwd, passwd_hash, keys_only=keys_only
             )
+            attempt.by_key = scope_id is not None
+            if keys_only and not attempt.by_key:
+                _debug.logic("uid_passwd_refused", uid=uid, reason="keys_only")
+                raise AccessDenied
             if key_expiration is not None and key_expiration <= fields.Datetime.now():
                 _debug.logic("uid_passwd_refused", uid=uid, reason="apikey_expired")
                 raise AccessDenied
@@ -1644,17 +1675,13 @@ class ResUsers(models.Model):
         return {"id", "login", "password", "active", "session_epoch"}
 
     def _prepare_session_token_query_params(self) -> dict[str, SQL]:
-        database_secret = SQL(
-            "%s::text",
-            self.env.registry.settings.get(self.env, "database.secret", False),
-        )
         fields = SQL(", ").join(
             SQL.identifier(self._table, fname)
             for fname in sorted(self._get_fields_session_token())
             if not self._fields[fname].relational
         )
         return {
-            "select": SQL("(%s) as database_secret, %s", database_secret, fields),
+            "select": fields,
             "from": SQL("res_users"),
             "joins": SQL(""),
             "where": SQL("res_users.id = %s", self.id),
@@ -1675,9 +1702,13 @@ class ResUsers(models.Model):
             return False
         data_fields = self.env.cr.fetchone()
         cr_description = self.env.cr.description
-        return tuple(
-            (column.name, data_fields[index])
-            for index, column in enumerate(cr_description)
+        secret = self.env.registry.settings.get(self.env, "database.secret", None)
+        return (
+            ("database_secret", secret),
+            *(
+                (column.name, data_fields[index])
+                for index, column in enumerate(cr_description)
+            ),
         )
 
     def _hash_session_token(
@@ -1824,6 +1855,9 @@ class ResUsers(models.Model):
         )
         _debug.lifecycle("all_devices_revoked", user=self.id, devices=len(others))
         others._revoke()
+        LoginDevice(self.env).retire_all(self.id)
+        if request and request.session.uid == self.id:
+            self._issue_login_device()
         return {"type": "ir.actions.client", "tag": "reload"}
 
     def _end_other_sessions(self) -> None:
@@ -2073,34 +2107,108 @@ class ResUsers(models.Model):
     def _login_cooldown(self) -> LoginCooldown:
         return LoginCooldown(self.pool)
 
-    def _get_login_failure_state(self, source: str) -> tuple[int, datetime.datetime]:
-        failures, last_failure = self._login_cooldown().state(self.env.cr, source)
-        _debug.logic("login_failure_state", source=source, failures=failures)
-        return failures, last_failure
+    def _auth_origin(self) -> tuple[str, Callable[[Callable[[], object]], None]] | None:
+        if request:
+            return request.httprequest.remote_addr or "n/a", request.call_after_release
+        if client := rpc_client():
+            return client.address, client.call_after_release
+        return None
 
-    def _record_login_failure(self, source: str) -> None:
+    @staticmethod
+    def _login_account_source(user: int | str | None) -> str | None:
+        if isinstance(user, int):
+            return f"account:{user}"
+        return f"login:{sha256(user.encode()).hexdigest()}" if user else None
+
+    def _record_login_failure(
+        self,
+        defer: Callable[[Callable[[], object]], None],
+        sources: list[str],
+        device: MarkedDevice | None = None,
+    ) -> None:
         delay = self._get_login_cooldown_duration()
-        _debug.lifecycle("login_failure_recorded", source=source, delay_s=delay)
+        _debug.lifecycle("login_failure_recorded", sources=sources, delay_s=delay)
         record = self._login_cooldown().record_failure
-        request.call_after_release(
-            partial(record, source, datetime.timedelta(seconds=delay))
+        defer(partial(record, sources, datetime.timedelta(seconds=delay), device))
+
+    def _clear_login_failures(
+        self, defer: Callable[[Callable[[], object]], None], sources: list[str]
+    ) -> None:
+        _debug.lifecycle("login_failures_cleared", sources=sources)
+        defer(partial(self._login_cooldown().clear, sources))
+
+    def _login_device(self, user: int | str | None, budget: int) -> MarkedDevice | None:
+        if not (request and isinstance(user, int)):
+            return None
+        cookie = request.cookies.get(LOGIN_DEVICE_COOKIE)
+        return LoginDevice(self.env).device(user, cookie, budget) if cookie else None
+
+    def _issue_login_device(self) -> None:
+        self.check_singleton()
+        device_id = request.session.get("auth_client_id")
+        cookie = (
+            LoginDevice(self.env).cookie(
+                self.id, device_id, request.cookies.get(LOGIN_DEVICE_COOKIE)
+            )
+            if device_id is not None and request.future_response is not None
+            else None
+        )
+        if cookie is None:
+            _debug.logic("login_device_not_issued", uid=self.id)
+            return
+        request.future_response.set_cookie(
+            LOGIN_DEVICE_COOKIE,
+            cookie,
+            max_age=LOGIN_DEVICE_MAX_AGE,
+            httponly=True,
         )
 
-    def _clear_login_failures(self, source: str) -> None:
-        _debug.lifecycle("login_failures_cleared", source=source)
-        request.call_after_release(partial(self._login_cooldown().clear, source))
+    def _log_login_cooldown(
+        self,
+        source: str,
+        user: int | str | None,
+        cooled: str,
+        failures: int,
+        previous: datetime.datetime,
+        *,
+        interactive: bool,
+    ) -> None:
+        _debug.logic("login_cooldown", source=cooled, failures=failures)
+        _logger.warning(
+            "Login attempt %s for %s (user %r) on %s: %d failures on %s since "
+            "its last success, last at %s. The thresholds and the duration are "
+            'the System Parameters "base.login_cooldown_after" (an address), '
+            '"base.login_cooldown_account_after" (an account) and '
+            '"base.login_cooldown_duration"; 0 disables a threshold.',
+            "ignored" if interactive else "limited to API keys",
+            source,
+            user or "?",
+            self.env.cr.dbname,
+            failures,
+            cooled,
+            previous,
+        )
 
     @contextlib.contextmanager
-    def _assert_can_auth(self, user: int | str | None = None) -> Generator[None]:
-        if not request:
-            _debug.logic("auth_cooldown_skipped", reason="no_request")
-            yield
+    def _assert_can_auth(
+        self,
+        user: int | str | None = None,
+        *,
+        interactive: bool = True,
+        claim: bool = True,
+    ) -> Generator[AuthAttempt]:
+        origin = self._auth_origin()
+        if origin is None:
+            _debug.logic("auth_cooldown_skipped", reason="no_origin")
+            yield AuthAttempt(keys_only=False)
             return
 
-        source = request.httprequest.remote_addr or "n/a"
+        source, defer = origin
+        cooldown = self._login_cooldown()
         if (
-            self._get_login_cooldown_threshold() > 0
-            and not self._login_cooldown().claim(self.env.cr, source)
+            claim
+            and self._get_login_cooldown_threshold() > 0
+            and not cooldown.claim(self.env.cr, source)
         ):
             _logger.warning(
                 "Login attempt ignored for %s (user %r) on %s: another attempt "
@@ -2115,21 +2223,31 @@ class ResUsers(models.Model):
                     "try again."
                 )
             )
-        failures, previous = self._get_login_failure_state(source)
-        if self._is_login_on_cooldown(failures, previous):
-            _debug.logic("login_cooldown", source=source, failures=failures)
-            _logger.warning(
-                "Login attempt ignored for %s (user %r) on %s: "
-                "%d failures since last success, last failure at %s. "
-                "You can configure the number of login failures before a "
-                "user is put on cooldown as well as the duration in the "
-                "System Parameters. Disable this feature by setting "
-                '"base.login_cooldown_after" to 0.',
-                source,
-                user or "?",
-                self.env.cr.dbname,
-                failures,
-                previous,
+        too_many = self.env._(
+            "Too many login failures, please wait a bit before trying again."
+        )
+        account_threshold = self._get_login_cooldown_account_threshold()
+        account = self._login_account_source(user)
+        device = (
+            self._login_device(user, min(LOGIN_DEVICE_BUDGET, account_threshold))
+            if interactive and account_threshold > 0
+            else None
+        )
+        states = cooldown.states(
+            self.env.cr,
+            [name for name in (source, account, device and device.source) if name],
+        )
+        if device is not None and states[device.source][0] >= device.budget:
+            _debug.logic("login_device_spent", device=device.id)
+            device = None
+        guarded = device.source if device is not None else account
+        failures, previous = states[source]
+        address_cooled = self._is_login_on_cooldown(
+            failures, previous, self._get_login_cooldown_threshold()
+        )
+        if address_cooled:
+            self._log_login_cooldown(
+                source, user, source, failures, previous, interactive=interactive
             )
             if _is_private_address(source):
                 _logger.warning(
@@ -2140,20 +2258,44 @@ class ResUsers(models.Model):
                     "https://www.odoo.com/documentation/latest/administration/install/deploy.html#https for details.",
                     source,
                 )
-            raise AccessDenied(
-                self.env._(
-                    "Too many login failures, please wait a bit before trying again."
-                )
+            if interactive:
+                raise AccessDenied(too_many)
+        guarded_failures, guarded_previous = (
+            states[guarded] if guarded else (0, previous)
+        )
+        guarded_cooled = device is None and self._is_login_on_cooldown(
+            guarded_failures, guarded_previous, account_threshold
+        )
+        if guarded_cooled:
+            self._log_login_cooldown(
+                source,
+                user,
+                guarded,
+                guarded_failures,
+                guarded_previous,
+                interactive=interactive,
             )
+            if interactive:
+                raise AccessDenied(too_many)
 
+        attempt = AuthAttempt(keys_only=address_cooled or guarded_cooled)
         try:
-            yield
-        except AccessDenied:
-            self._record_login_failure(source)
+            yield attempt
+        except AccessDenied as refused:
+            counted = [source]
+            if guarded and not guarded_cooled and not attempt.by_key:
+                counted.append(guarded)
+            self._record_login_failure(defer, counted, device)
+            if attempt.keys_only and not attempt.by_key:
+                raise AccessDenied(too_many) from refused
             raise
         else:
-            if failures:
-                self._clear_login_failures(source)
+            if not attempt.by_key:
+                counts = {source: failures}
+                if device is None and guarded:
+                    counts[guarded] = guarded_failures
+                if cleared := [name for name, count in counts.items() if count]:
+                    self._clear_login_failures(defer, cleared)
 
     def _get_login_cooldown_duration(self) -> int:
         return self.env.registry.settings.get_int(
@@ -2165,20 +2307,26 @@ class ResUsers(models.Model):
             self.env, "base.login_cooldown_after", 10
         )
 
-    def _is_login_on_cooldown(self, failures: int, previous: datetime.datetime) -> bool:
-        min_failures = self._get_login_cooldown_threshold()
-        if min_failures <= 0:
+    def _get_login_cooldown_account_threshold(self) -> int:
+        return self.env.registry.settings.get_int(
+            self.env, "base.login_cooldown_account_after", 30
+        )
+
+    def _is_login_on_cooldown(
+        self, failures: int, previous: datetime.datetime, threshold: int
+    ) -> bool:
+        if threshold <= 0:
             _debug.logic("login_cooldown_disabled")
             return False
 
         delay = self._get_login_cooldown_duration()
-        on_cooldown = failures >= min_failures and (
+        on_cooldown = failures >= threshold and (
             datetime.datetime.now(datetime.UTC) - previous
         ) < datetime.timedelta(seconds=delay)
         _debug.logic(
             "login_cooldown_evaluated",
             failures=failures,
-            min_failures=min_failures,
+            min_failures=threshold,
             delay_s=delay,
             on_cooldown=on_cooldown,
         )

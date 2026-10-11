@@ -150,6 +150,23 @@ class TestStockLocationTree(TestStockCommon):
         self.assertFalse(parent.exists())
         self.assertFalse(child.exists())
 
+    def test_a_location_cannot_become_its_own_ancestor(self):
+        zone, _shelf, bin_ = self._create_branch(self.stock_location)
+        with self.assertRaises(UserError) as caught:
+            zone.location_id = bin_
+        self.assertEqual(
+            str(caught.exception), "You cannot create recursive locations."
+        )
+
+    def test_a_package_cannot_become_its_own_ancestor(self):
+        outer, inner = self.env["stock.package"].create(
+            [{"name": "Outer"}, {"name": "Inner"}]
+        )
+        inner.parent_package_id = outer
+        with self.assertRaises(UserError) as caught:
+            outer.parent_package_id = inner
+        self.assertEqual(str(caught.exception), "You cannot create recursive packages.")
+
 
 @tagged("post_install", "-at_install")
 class TestStockLocationConstraintScope(TestStockCommon):

@@ -64,6 +64,18 @@ def make_guard_row(env, model_name, domain, group=None, *, operation="crud", **k
     )
 
 
+def declare_api_scope(env, xml_id, key, **values):
+    return env["res.users.apikeys.scope"]._load_records(
+        [
+            {
+                "xml_id": xml_id,
+                "values": {"name": key, "key": key, **values},
+                "noupdate": True,
+            }
+        ]
+    )
+
+
 def row_domains(env, accesses):
     domain_of = env["ir.access"]._row_domains()
     return {

@@ -2060,6 +2060,12 @@ msgid "Whether this geofence is active"
 msgstr ""
 
 #. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "You cannot create recursive geofences."
+msgstr ""
+
+#. module: device_gps_geoengine
 #: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_kanban
 #: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_map
 msgid "devices"

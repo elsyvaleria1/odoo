@@ -3,7 +3,7 @@ import logging
 import ldap
 from ldap.filter import filter_format
 
-from odoo import fields, models, tools
+from odoo import SUPERUSER_ID, fields, models, tools
 from odoo.exceptions import AccessDenied
 from odoo.tools.misc import str2bool
 
@@ -230,12 +230,19 @@ class ResCompanyLdap(models.Model):
         elif conf["create_user"]:
             _logger.debug('Creating new Odoo user "%s" from LDAP', login)
             values = self._map_ldap_attributes(conf, login, ldap_entry)
-            SudoUser = self.env["res.users"].sudo().with_context(no_reset_password=True)
+            SudoUser = (
+                self.env["res.users"]
+                .with_user(SUPERUSER_ID)
+                .with_context(no_reset_password=True)
+                .with_company(conf["company"][0])
+            )
             if conf["user"]:
                 values["active"] = True
-                return SudoUser.browse(conf["user"][0]).copy(default=values).id
+                user = SudoUser.browse(conf["user"][0]).copy(default=values)
             else:
-                return SudoUser.create(values).id
+                user = SudoUser.create(values)
+            user.env.flush_all()
+            return user.id
 
         raise AccessDenied(
             self.env._(

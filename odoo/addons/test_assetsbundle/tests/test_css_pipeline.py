@@ -1,6 +1,8 @@
 import logging
+import os
 import pathlib
 import re
+import tempfile
 import threading
 from pathlib import Path
 from types import SimpleNamespace
@@ -8,8 +10,11 @@ from unittest.mock import Mock, patch
 
 from odoo.tests.common import BaseCase, TransactionCase
 from odoo.tools import mute_logger
+from odoo.tools.assets.nodes import url_extension
 from odoo.tools.config import config
+from odoo.tools.sass_embedded import SassCompileError
 
+import odoo.addons
 from .common import asset_file, make_bundle
 from odoo.addons.base.models import assetsbundle as _ab
 from odoo.addons.base.models.assetsbundle import (
@@ -711,6 +716,96 @@ class TestImportSanitizerSpans(BaseCase):
         self.assertEqual(out, '@import "foo" screen;')
         out, _ = _sanitized('@import "foo" screen;\n@import "foo" print;')
         self.assertEqual(out, '@import "foo" screen;\n@import "foo" print;')
+
+    def test_use_and_forward_are_held_to_the_import_rule(self):
+        for rule in ("use", "forward"):
+            with (
+                self.subTest(rule=rule),
+                mute_logger("odoo.addons.base.models.assetsbundle"),
+            ):
+                out, errors = _sanitized(f'@{rule} "{FORBIDDEN}";\n.a{{}}')
+                self.assertTrue(errors, f"a local @{rule} must be rejected")
+                self.assertNotIn(FORBIDDEN, out)
+
+    def test_a_url_with_a_scheme_is_rejected(self):
+        with mute_logger("odoo.addons.base.models.assetsbundle"):
+            out, errors = _sanitized('@import "file:///srv/secret/data";')
+        self.assertTrue(errors, "a file: url reads outside the load paths")
+        self.assertNotIn("secret", out)
+
+    def test_an_escaped_or_encoded_dot_is_rejected(self):
+        for ref in (r"\2e\2e/\2e\2e/srv/secret", "%2e%2e/%2e%2e/srv/secret"):
+            with (
+                self.subTest(ref=ref),
+                mute_logger("odoo.addons.base.models.assetsbundle"),
+            ):
+                out, errors = _sanitized(f'@import "{ref}";')
+                self.assertTrue(errors, "an escape spells the dot the rule refuses")
+                self.assertNotIn("secret", out)
+
+    def test_a_sass_builtin_module_is_kept(self):
+        source = '@use "sass:color" as c;\n.a{color:c.adjust(red, $alpha: -0.5)}'
+        out, errors = _sanitized(source)
+        self.assertFalse(errors)
+        self.assertEqual(out, source)
+
+    def test_load_css_is_rejected(self):
+        with mute_logger("odoo.addons.base.models.assetsbundle"):
+            _out, errors = _sanitized(
+                f'@use "sass:meta";\n.x{{@include meta.load-css("{FORBIDDEN}");}}'
+            )
+        self.assertTrue(errors, "meta.load-css loads a stylesheet like @use")
+
+    def test_load_css_inside_a_string_is_untouched(self):
+        source = '.a::before{content:"meta.load-css(x)"}'
+        out, errors = _sanitized(source)
+        self.assertFalse(errors)
+        self.assertEqual(out, source)
+
+
+class TestSassLoadsStayInsideTheAddons(BaseCase):
+    def setUp(self):
+        super().setUp()
+        outside = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (outside / "data.css").write_text('.leak{content:"outside"}')
+        self.outside = outside / "data"
+        self.asset = ScssStylesheetAsset.for_inline_compile()
+
+    def assertNotLoaded(self, source):
+        try:
+            css = self.asset.compile(source)
+        except CompileError, SassCompileError:
+            return
+        self.assertNotIn("outside", css)
+
+    def test_a_relative_path_out_of_the_addons_is_not_loaded(self):
+        for root in odoo.addons.__path__:
+            rel = os.path.relpath(self.outside, root)
+            with self.subTest(root=root):
+                self.assertNotLoaded(f'@use "{rel}";')
+
+    def test_a_relative_path_out_of_bootstrap_is_not_loaded(self):
+        rel = os.path.relpath(self.outside, self.asset.bootstrap_path)
+        self.assertNotLoaded(f'@use "{rel}";')
+
+    def test_an_absolute_path_is_not_loaded(self):
+        self.assertNotLoaded(f'@use "{self.outside}.css";')
+
+    def test_a_file_url_is_not_loaded(self):
+        self.assertNotLoaded(f'@use "{self.outside.as_uri()}.css";')
+
+    def test_a_symlink_inside_a_root_pointing_out_is_not_loaded(self):
+        root = Path(odoo.addons.__path__[0])
+        link = root / "base" / "_leak_probe.scss"
+        link.symlink_to(f"{self.outside}.css")
+        self.addCleanup(link.unlink)
+        self.assertNotLoaded('@use "base/_leak_probe";')
+
+    def test_bootstrap_still_resolves(self):
+        css = self.asset.compile(
+            '@import "functions";\n@import "variables";\n.a{color:$primary}'
+        )
+        self.assertIn(".a{color:", css)
 
 
 class TestEmptyUrlIsLeftAlone(BaseCase):
@@ -1524,7 +1619,7 @@ class TestUrlExtensionCaseFolding(TransactionCase):
         self.assertEqual(len(bundle.templates), 1)
 
     def test_query_string_and_case_combined(self):
-        self.assertEqual(AssetsBundle._url_extension("/a/b.SCSS?v=2#x"), "scss")
+        self.assertEqual(url_extension("/a/b.SCSS?v=2#x"), "scss")
 
 
 class TestSourceDialectTokenizers(BaseCase):

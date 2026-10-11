@@ -57,7 +57,7 @@ def days_span(start_datetime, end_datetime):
 class PlanningSlot(models.Model):
     _name = "planning.slot"
     _description = "Planning Shift"
-    _inherit = ["mixin.recurrence.occurrence", "mixin.resource.scheduling"]
+    _inherit = ["mixin.resource.scheduling"]
     _reservation_sync_manual = True
     _order = "start_datetime desc, id desc"
     _rec_name = "name"
@@ -308,7 +308,10 @@ class PlanningSlot(models.Model):
             ("this", "This shift"),
             ("subsequent", "This and following shifts"),
             ("all", "All shifts"),
-        ]
+        ],
+        default="this",
+        store=False,
+        copy=False,
     )
     confirm_delete = fields.Boolean(
         export_string_translation=False,
@@ -1517,6 +1520,8 @@ class PlanningSlot(models.Model):
 
         previous_recurrences = shifts_to_update.recurrency_id
         result = super(PlanningSlot, shifts_to_update).write(values)
+        if {"end_datetime", "template_id"} & values.keys():
+            self.env["access.link"]._sync_record_expiries(shifts_to_update)
         recurrences_to_generate = self.env["planning.recurrency"]
         if values.get("repeat"):
             recurrences_to_generate = (
@@ -3380,9 +3385,12 @@ class PlanningSlot(models.Model):
             partner=partner,
             role="view",
             cause="notification",
-            date_to=max(self.end_datetime, fields.Datetime.now()) + timedelta(days=30),
+            dated_by_record=True,
         )
         return f"/slot/{token}.ics"
+
+    def _get_link_expiry(self) -> datetime:
+        return max(self.end_datetime, fields.Datetime.now()) + timedelta(days=30)
 
     def _get_duration_over_period(
         self, start_utc, stop_utc, schedule, has_allocated_hours=True

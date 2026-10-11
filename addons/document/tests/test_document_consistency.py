@@ -106,7 +106,7 @@ class TestDocumentsWizards(TransactionCaseDocuments):
         documents.action_update_access_rights(access_via_link="view")
         Sharing = self.env["wizard.document.document.share"].with_user(self.doc_user)
         wizard = Sharing.browse(Sharing.action_open(documents.ids)["res_id"])
-        expiry = fields.Datetime.now().replace(microsecond=0) + timedelta(days=90)
+        expiry = fields.Datetime.now().replace(microsecond=0) + timedelta(days=20)
         wizard.link_date_to = expiry
         self.assertTrue(wizard.is_access_modified, "a Save button is offered")
         wizard.action_update_rights()
@@ -342,7 +342,7 @@ class TestDocumentsRequestLinkTracking(TransactionCaseDocuments):
         self.assertEqual(set(children.mapped("access_via_link")), {"view"})
         Sharing = self.env["wizard.document.document.share"].with_user(self.doc_user)
         wizard = Sharing.browse(Sharing.action_open(folder.ids)["res_id"])
-        expiry = fields.Datetime.now().replace(microsecond=0) + timedelta(days=400)
+        expiry = fields.Datetime.now().replace(microsecond=0) + timedelta(days=20)
         wizard.link_date_to = expiry
         wizard.action_update_rights()
         (folder | children).invalidate_recordset(["link_date_to"])

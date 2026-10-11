@@ -143,8 +143,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/point_of_sale/models/product_template.py:0
 msgid ""
-"%s is not available in the Point of Sale, so it cannot be marked as a "
-"favorite there."
+"%s is not available in the Point of Sale, so it cannot be featured there."
 msgstr ""
 
 #. module: point_of_sale
@@ -3608,12 +3607,6 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-javascript
-#: code:addons/point_of_sale/static/src/app/components/popups/product_info_popup/product_info_popup.js:0
-msgid "Favorite not saved"
-msgstr ""
-
-#. module: point_of_sale
-#. odoo-javascript
 #: code:addons/point_of_sale/static/src/app/components/popups/product_info_popup/product_info_popup.xml:0
 msgid "Financials"
 msgstr ""
@@ -5438,6 +5431,12 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-javascript
+#: code:addons/point_of_sale/static/src/app/components/popups/product_info_popup/product_info_popup.js:0
+msgid "Not saved"
+msgstr ""
+
+#. module: point_of_sale
+#. odoo-javascript
 #: code:addons/point_of_sale/static/src/app/screens/product_screen/control_buttons/control_buttons.xml:0
 msgid "Note"
 msgstr ""
@@ -5585,7 +5584,7 @@ msgstr ""
 #. module: point_of_sale
 #. odoo-python
 #: code:addons/point_of_sale/models/product_template.py:0
-msgid "Only Point of Sale users can change a POS favorite."
+msgid "Only Point of Sale users can feature a product in the Point of Sale."
 msgstr ""
 
 #. module: point_of_sale
@@ -9886,12 +9885,6 @@ msgid ""
 msgstr ""
 
 #. module: point_of_sale
-#. odoo-javascript
-#: code:addons/point_of_sale/static/src/app/components/popups/product_info_popup/product_info_popup.js:0
-msgid "This product could not be marked as a favorite."
-msgstr ""
-
-#. module: point_of_sale
 #: model:ir.model.fields,help:point_of_sale.field_pos_config__tip_product_id
 #: model_terms:ir.ui.view,arch_db:point_of_sale.res_config_settings_view_form
 msgid "This product is used as reference on customer receipts."
@@ -10575,6 +10568,12 @@ msgid ""
 "Whenever you close a session, one entry is generated in the following "
 "accounting journal for all the orders not invoiced. Invoices are recorded in"
 " accounting separately."
+msgstr ""
+
+#. module: point_of_sale
+#. odoo-javascript
+#: code:addons/point_of_sale/static/src/app/components/popups/product_info_popup/product_info_popup.js:0
+msgid "Whether this product is featured could not be saved."
 msgstr ""
 
 #. module: point_of_sale

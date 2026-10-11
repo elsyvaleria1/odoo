@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import _lt, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.barcode import is_barcode_encoding_valid
@@ -11,10 +11,10 @@ _debug = DebugLog(__name__)
 
 class StockPackage(models.Model):
     _name = "stock.package"
+    _inherit = ["mixin.hierarchy"]
     _description = "Package"
     _order = "name, id"
     _parent_name = "parent_package_id"
-    _parent_store = True
     _rec_name = "complete_name"
     _rec_names_search = ["complete_name", "dest_complete_name", "name"]
 
@@ -145,11 +145,12 @@ class StockPackage(models.Model):
         compute="_compute_valid_sscc",
     )
     pack_date = fields.Date(default=fields.Date.context_today)
-    parent_path = fields.Char(index=True)
     json_popover = fields.Char(
         string="JSON data for popover widget",
         compute="_compute_json_popover",
     )
+
+    _hierarchy_cycle_message = _lt("You cannot create recursive packages.")
 
     @_debug.perf.timed
     @api.model_create_multi

@@ -1,7 +1,7 @@
 import datetime
 
 from odoo.tests import tagged
-from odoo.tests.common import new_test_user
+from odoo.tests.common import new_test_user, new_unbound_test_api_key
 from odoo.tools import mute_logger
 
 from .test_common import TestHttpBase
@@ -154,11 +154,15 @@ class TestHttpGreeting(TestHttpBase):
             "test_http.greeting", "scoped", expiration
         )
 
+        unbound_key = new_unbound_test_api_key(joe)
+
         for path, key, expected_code in [
             ("/test_http/greeting-bearer-scoped", rpc_key, 401),
+            ("/test_http/greeting-bearer-scoped", unbound_key, 401),
             ("/test_http/greeting-bearer-scoped", scoped_key, 200),
             ("/test_http/greeting-bearer", scoped_key, 401),
             ("/test_http/greeting-bearer", rpc_key, 200),
+            ("/test_http/greeting-bearer", unbound_key, 200),
         ]:
             with self.subTest(path=path, key=key[:6]):
                 res = self.db_url_open(path, headers={"Authorization": f"Bearer {key}"})

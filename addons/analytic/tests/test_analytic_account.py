@@ -1,5 +1,5 @@
 from odoo import Command
-from odoo.exceptions import RedirectWarning
+from odoo.exceptions import RedirectWarning, UserError
 from odoo.tests import Form, tagged
 
 from odoo.addons.analytic.tests.common import AnalyticCommon
@@ -421,6 +421,16 @@ class TestAnalyticAccount(AnalyticCommon):
                     plan_2_col: False,
                 }
             ],
+        )
+
+    def test_a_plan_cannot_become_its_own_ancestor(self):
+        child = self.env["account.analytic.plan"].create(
+            {"name": "Child", "parent_id": self.analytic_plan_1.id}
+        )
+        with self.assertRaises(UserError) as caught:
+            self.analytic_plan_1.parent_id = child
+        self.assertEqual(
+            str(caught.exception), "You cannot create recursive analytic plans."
         )
 
     def test_change_parent_plan_conflict(self):

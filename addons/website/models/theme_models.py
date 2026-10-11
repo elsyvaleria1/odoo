@@ -1,6 +1,8 @@
 import logging
 from typing import Self
 
+from lxml import etree
+
 from odoo import api, fields, models, modules
 from odoo.libs.debug_log import DebugLog
 from odoo.modules.module import get_resource_from_path
@@ -16,6 +18,7 @@ from odoo.addons.base.models.ir_asset import (
     REMOVE_DIRECTIVE,
     REPLACE_DIRECTIVE,
 )
+from odoo.addons.base.models.ir_qweb import template_trust_digest
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -161,6 +164,10 @@ class ThemeIrUiView(models.Model):
 
         if self.mode:
             new_view["mode"] = self.mode
+        if self.arch_fs and new_view["type"] == "qweb":
+            new_view["shipped_digests"] = {
+                "arch_db": template_trust_digest(etree.fromstring(self.arch))
+            }
 
         return new_view
 

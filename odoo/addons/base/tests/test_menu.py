@@ -278,6 +278,41 @@ class TestMenuVisibility(TransactionCase):
         action.group_ids = False
         self.assertIn(menu.id, employee_menus._get_visible_menu_ids())
 
+    def test_load_menus_follows_the_blacklist_without_a_cache_clear(self):
+        action = self._act_window("res.partner")
+        menu = self.Menu.create(
+            {"name": "Blacklistable", "action": f"{action._name},{action.id}"}
+        )
+        blacklisted = []
+        with patch.object(
+            IrUiMenu, "_get_blacklisted_menu_ids", lambda self: list(blacklisted)
+        ):
+            self.assertIn(menu.id, set(self.Menu.load_menus(False)))
+            blacklisted.append(menu.id)
+            self.assertNotIn(menu.id, set(self.Menu.load_menus(False)))
+            blacklisted.clear()
+            self.assertIn(menu.id, set(self.Menu.load_menus(False)))
+
+    def test_an_action_for_debug_groups_answers_the_debug_flag_it_is_keyed_on(self):
+        action = self._act_window("res.partner")
+        action.group_ids = self.env.ref("base.group_no_one")
+        menu = self.Menu.create(
+            {"name": "Debug only action", "action": f"{action._name},{action.id}"}
+        )
+        self.assertFalse(self.Menu._get_session_debug())
+        self.assertIn(
+            menu.id,
+            self.Menu._get_visible_menu_ids(True),
+            "the debug entry is the debug answer outside a debug session too",
+        )
+        with self.debug_mode():
+            self.assertNotIn(
+                menu.id,
+                self.Menu._get_visible_menu_ids(False),
+                "a debug session must not leak the debug-only action into the "
+                "non-debug entry",
+            )
+
     def test_a_menu_under_a_parent_the_user_cannot_open_is_not_visible(self):
         action = self._act_window("res.partner")
         root = self.Menu.create({"name": "Open root"})

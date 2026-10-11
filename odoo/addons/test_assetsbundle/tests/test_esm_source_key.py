@@ -116,3 +116,24 @@ class TestTheSourceKeyCoversWhatEsbuildReads(TransactionCase):
             "@web/core/registry",
             self._inlined(source, provided={"@web/core/registry"}),
         )
+
+
+class TestTheSourceKeysFollowThePipelineCode(TransactionCase):
+    def _keys(self, fingerprint):
+        qweb = self.env["ir.qweb"]
+        asset_bundle = qweb._get_asset_bundle(
+            INLINED, js=True, css=False, assets_params={}
+        )
+        with patch.object(esm_index, "pipeline_fingerprint", lambda: fingerprint):
+            return (
+                qweb._esm_source_key(INLINED, asset_bundle, None, {}, None),
+                qweb._get_runtime_group_source_key(
+                    "runtime:test", {INLINED: asset_bundle.native_modules}, {}, (), {}
+                ),
+            )
+
+    def test_a_pipeline_code_change_moves_both_source_keys(self):
+        before = self._keys("previous-code")
+        after = self._keys("pretend-new-code")
+        self.assertNotEqual(before[0], after[0], "a bundle build would be reused")
+        self.assertNotEqual(before[1], after[1], "a group build would be reused")

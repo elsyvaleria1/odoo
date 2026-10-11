@@ -192,12 +192,17 @@ class MixinOwnerAccess(models.AbstractModel):
 
     @api.constrains(lambda self: self._access_owner_columns())
     def _check_owner_exists(self) -> None:
+        by_model: defaultdict[str, set[int]] = defaultdict(set)
         for _id, res_model, res_id in self._access_owners():
             if res_model not in self.env:
                 raise ValidationError(
                     self.env._("%(model)s is not a model.", model=res_model)
                 )
-            if res_id and not self.env[res_model].browse(res_id).exists():
+            if res_id:
+                by_model[res_model].add(res_id)
+        for res_model, res_ids in by_model.items():
+            found = self.env[res_model].browse(sorted(res_ids)).exists()
+            if len(found) != len(res_ids):
                 raise ValidationError(
                     self.env._(
                         "%(description)s must belong to an existing record.",

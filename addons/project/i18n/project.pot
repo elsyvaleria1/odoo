@@ -7269,12 +7269,6 @@ msgstr ""
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task_recurrence.py:0
-msgid "The end date is required for 'Until' recurrence."
-msgstr ""
-
-#. module: project
-#. odoo-python
-#: code:addons/project/models/project_task_recurrence.py:0
 msgid "The end date should be in the future"
 msgstr ""
 

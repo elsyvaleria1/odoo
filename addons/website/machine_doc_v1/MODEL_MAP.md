@@ -132,7 +132,7 @@ their route decorator. `_table_query` builds a VALUES-based SQL view from
 
 ### models/website_menu.py — WebsiteMenu (`_name = "website.menu"`) — NEW
 
-`_parent_store = True`, `_order = "sequence, id"`. Fields: `name` (translate),
+Inherits `mixin.hierarchy`, `_order = "sequence, id"`. Fields: `name` (translate),
 `url` (compute/store, default `"#"`), `page_id` (cascade),
 `controller_page_id`, `sequence` (per-website max default), `website_id`
 (cascade), parent tree fields, `is_visible` (compute — page/controller

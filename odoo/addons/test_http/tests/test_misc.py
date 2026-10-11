@@ -20,7 +20,13 @@ from odoo.http.constants import DEFAULT_ALLOWED_METHODS
 from odoo.libs.json import dumps as json_dumps
 from odoo.service.server import get_server
 from odoo.tests import tagged
-from odoo.tests.common import HOST, BaseCase, get_db_name, new_test_user
+from odoo.tests.common import (
+    HOST,
+    BaseCase,
+    get_db_name,
+    new_test_api_key,
+    new_test_user,
+)
 from odoo.tools import config, file_path, mute_logger
 
 from .test_common import TestHttpBase
@@ -158,13 +164,14 @@ class TestHttpMisc(TestHttpBase):
 
     def test_misc4_rpc_qweb(self):
         jack = new_test_user(self.env, "jackoneill", context={"lang": "en_US"})
+        jack_key = new_test_api_key(jack)
         milky_way = self.env.ref("test_http.milky_way")
 
         def render():
             return self.xmlrpc_object.execute(
                 get_db_name(),
                 jack.id,
-                "jackoneill",
+                jack_key,
                 "test_http.galaxy",
                 "render",
                 milky_way.id,

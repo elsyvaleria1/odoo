@@ -72,8 +72,7 @@ class ResPartner(models.Model):
             condition.field_expr == "is_bank" for condition in domain.iter_conditions()
         ):
             domain &= self._get_picker_domain()
-        if service := self.env["res.users"]._get_service_partner_ids():
-            domain &= Domain("id", "not in", service)
+        domain &= self.env["res.users"]._get_domain_partner_not_service()
         return super().web_name_search(name, specification, domain, operator, limit)
 
     def _prepare_vcard(self) -> Any:

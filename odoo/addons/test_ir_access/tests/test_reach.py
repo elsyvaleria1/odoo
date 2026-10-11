@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from odoo import Command
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import TransactionCase
 
 from odoo.addons.base.models.ir_access import filter_reads_user
@@ -236,6 +236,13 @@ class TestReach(TransactionCase):
         with self.assertRaisesRegex(ValidationError, "fixed filter"):
             self.row("own", domain="[('user_id', '=', user.id)]")
 
+    def test_beside_a_reach_a_filter_naming_fixed_records_is_a_fixed_filter(self):
+        admins = self.env[MODEL].create(
+            {"name": "admin's", "partner_id": self.env.ref("base.partner_admin").id}
+        )
+        self.row("all", domain="[('partner_id', '=', ref('base.partner_admin'))]")
+        self.assertEqual(self.env[MODEL].with_user(self.user).search([]), admins)
+
     def test_a_predicate_is_its_own_reach(self):
         predicate = self.env["ir.access.predicate"].create(
             {"name": "test.any", "template": "[]"}
@@ -262,6 +269,11 @@ class TestReach(TransactionCase):
         registry = self.env.registry
         self.assertTrue(filter_reads_user(registry, MODEL, "[('is_mine', '=', True)]"))
         self.assertFalse(filter_reads_user(registry, MODEL, "[('name', '=', 'x')]"))
+        self.assertTrue(
+            filter_reads_user(
+                registry, MODEL, "[('is_mine', '=', ref('base.user_root'))]"
+            )
+        )
         with self.assertRaises(ValidationError):
             self.row("all", domain="[('is_mine', '=', True)]")
         row = self.row("all", domain="[('name', '!=', False)]")
@@ -272,3 +284,24 @@ class TestReach(TransactionCase):
         row.invalidate_recordset()
         self.env["ir.access"]._clear_access_caches()
         self.assertEqual(self.reached(), self.mine)
+
+    def test_a_company_reach_refusal_suggests_the_record_s_company(self):
+        self.user.company_ids += self.other
+        self.row("all")
+        self.row("company", kind="guard", guard_scope="members")
+        record = self.in_other.with_user(self.user).with_context(
+            allowed_company_ids=self.child.ids
+        )
+        with self.assertRaises(AccessError) as caught:
+            record.check_access("read")
+        self.assertIn("switching to the company: Other", caught.exception.args[0])
+        self.assertEqual(
+            caught.exception.context["suggested_company"]["id"], self.other.id
+        )
+
+    def test_a_refusal_is_explained_for_the_contact_acted_for(self):
+        self.row("all")
+        self.row("own", "partner", kind="guard", guard_scope="members", name="own")
+        record = self.my_partner.with_user(self.user).with_acting_partner(self.contact)
+        with self.assertRaisesRegex(AccessError, "Refused by: own"):
+            record.check_access("read")

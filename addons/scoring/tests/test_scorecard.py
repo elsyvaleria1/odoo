@@ -76,6 +76,51 @@ class TestScorecard(TransactionCase):
                 }
             )
 
+    def test_a_band_moved_to_another_dimension_cannot_overlap_its_bands(self):
+        host = next(iter(dict(self.env["scorecard"]._selection_res_model())), None)
+        if host is None:
+            self.skipTest("no scored model installed")
+        code = [
+            value
+            for value, _label in self.env["scorecard.dimension"]
+            ._fields["code"]
+            ._description_selection(self.env)
+        ]
+        if not code:
+            self.skipTest("no dimension code registered")
+        first, second = (
+            self.env["scorecard.dimension"].create(
+                {
+                    "scorecard_id": self.env["scorecard"]
+                    .create({"name": name, "res_model": host, "active": False})
+                    .id,
+                    "code": code[0],
+                    "kind": "measure",
+                    "weight": 40.0,
+                }
+            )
+            for name in ("Probe 1", "Probe 2")
+        )
+        Band = self.env["scorecard.dimension.band"]
+        Band.create(
+            {
+                "dimension_id": second.id,
+                "min_value": 0.0,
+                "max_value": 10.0,
+                "points": 50.0,
+            }
+        )
+        moved = Band.create(
+            {
+                "dimension_id": first.id,
+                "min_value": 5.0,
+                "max_value": 15.0,
+                "points": 80.0,
+            }
+        )
+        with self.assertRaises(ValidationError):
+            moved.dimension_id = second
+
     def test_one_active_scorecard_per_model_and_company(self):
         host = next(iter(dict(self.env["scorecard"]._selection_res_model())), None)
         if host is None:

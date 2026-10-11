@@ -1,7 +1,13 @@
+from dateutil import rrule
+
 from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
 
-from odoo.addons.base.models.mixin_recurrence_rrule import LAST_DAY_OF_MONTH
+from odoo.addons.calendar.models.calendar_recurrence import (
+    LAST_DAY_OF_MONTH,
+    RRULE_WEEKDAYS,
+    weekday_to_field,
+)
 
 _debug = DebugLog(__name__)
 
@@ -23,6 +29,10 @@ MICROSOFT_INDEX = {
     "4": "fourth",
     "-1": "last",
 }
+MICROSOFT_RELATIVE_FREQ = {
+    "relativeMonthly": rrule.MONTHLY,
+    "relativeYearly": rrule.YEARLY,
+}
 
 
 class CalendarRecurrence(models.Model):
@@ -37,7 +47,10 @@ class CalendarRecurrence(models.Model):
     def _inverse_rrule(self) -> None:
         for recurrence in self.filtered("rrule"):
             values = self._rrule_parse(
-                recurrence.rrule, recurrence.dtstart, tz=recurrence._get_timezone()
+                recurrence.rrule,
+                recurrence.dtstart,
+                tz=recurrence._get_timezone(),
+                allday=recurrence._is_allday(),
             )
             recurrence.with_context(
                 dont_notify=True, microsoft_calendar_syncing=True
@@ -107,10 +120,66 @@ class CalendarRecurrence(models.Model):
 
     @api.model
     def _microsoft_to_odoo_values(self, microsoft_recurrence, event=None):
-        return microsoft_recurrence.get_recurrence()
+        values = microsoft_recurrence.get_recurrence()
+        if values:
+            values["custom_rrule"] = self._get_custom_rrule_from_microsoft(
+                microsoft_recurrence.recurrence["pattern"]
+            )
+        return values
+
+    @api.model
+    def _get_custom_rrule_from_microsoft(self, pattern) -> str | None:
+        days = {day[:3] for day in pattern.get("daysOfWeek") or ()}
+        freq = MICROSOFT_RELATIVE_FREQ.get(pattern["type"])
+        if not freq or not 1 < len(days) < len(MICROSOFT_WEEKDAYS):
+            return None
+        position = {name: index for index, name in MICROSOFT_INDEX.items()}
+        rule = rrule.rrule(
+            freq,
+            interval=pattern["interval"],
+            bysetpos=int(position[pattern["index"]]),
+            byweekday=[getattr(rrule, RRULE_WEEKDAYS[day.upper()]) for day in days],
+            bymonth=pattern["month"] if freq == rrule.YEARLY else None,
+        )
+        return self._rrule_value(str(rule))
+
+    def _get_microsoft_custom_pattern(self) -> dict | None:
+        self.check_singleton()
+        rule = rrule.rrulestr(
+            self.custom_rrule, dtstart=self._get_local_start() or fields.Datetime.now()
+        )
+        period = {rrule.MONTHLY: "Monthly", rrule.YEARLY: "Yearly"}.get(rule._freq)
+        given = set(rule._original_rule)
+        positions = rule._bysetpos or ()
+        weekdays = rule._byweekday or ()
+        yearly = rule._freq == rrule.YEARLY
+        if (
+            not period
+            or given - {"byweekday", "bysetpos", "bymonth"}
+            or ("bymonth" in given) != yearly
+            or (yearly and len(rule._bymonth) != 1)
+            or rule._bynweekday
+            or len(weekdays) < 2
+            or len(positions) != 1
+            or str(positions[0]) not in MICROSOFT_INDEX
+        ):
+            return None
+        pattern = {
+            "type": "relative" + period,
+            "interval": rule._interval,
+            "daysOfWeek": [
+                MICROSOFT_WEEKDAYS[weekday_to_field(day)] for day in sorted(weekdays)
+            ],
+            "index": MICROSOFT_INDEX[str(positions[0])],
+        }
+        if yearly:
+            pattern["month"] = rule._bymonth[0]
+        return pattern
 
     def _get_microsoft_pattern(self):
         self.check_singleton()
+        if self.custom_rrule:
+            return self._get_microsoft_custom_pattern()
         pattern = {"interval": self.repeat_interval}
         if self.repeat_unit in MICROSOFT_SIMPLE_PATTERN:
             pattern["type"] = MICROSOFT_SIMPLE_PATTERN[self.repeat_unit]
@@ -149,7 +218,7 @@ class CalendarRecurrence(models.Model):
             pattern["daysOfWeek"] = [
                 name for field, name in MICROSOFT_WEEKDAYS.items() if self[field]
             ]
-            pattern["firstDayOfWeek"] = "sunday"
+            pattern["firstDayOfWeek"] = MICROSOFT_WEEKDAYS[self.week_start.lower()]
         return pattern
 
     def _microsoft_values(
@@ -162,6 +231,11 @@ class CalendarRecurrence(models.Model):
 
     def _microsoft_refusal(self):
         self.check_singleton()
+        if self.custom_rrule and not self._get_microsoft_custom_pattern():
+            return self.env._(
+                "Outlook cannot hold the rule of this series, %(rule)s.",
+                rule=self.custom_rrule,
+            )
         for event in self.calendar_event_ids.filtered("active"):
             if refusal := event._microsoft_refusal():
                 return refusal

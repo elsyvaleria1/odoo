@@ -194,6 +194,12 @@ msgstr ""
 
 #. module: calendar_microsoft
 #. odoo-python
+#: code:addons/calendar_microsoft/models/calendar_recurrence_rule.py:0
+msgid "Outlook cannot hold the rule of this series, %(rule)s."
+msgstr ""
+
+#. module: calendar_microsoft
+#. odoo-python
 #: code:addons/calendar_microsoft/models/calendar.py:0
 msgid ""
 "Outlook limitation: in a recurrence, an event cannot be moved to or before "

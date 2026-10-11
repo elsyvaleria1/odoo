@@ -16,3 +16,4 @@ from . import res_partner
 from . import mail_activity
 from . import survey_survey
 from . import access_anchors
+from . import access_link

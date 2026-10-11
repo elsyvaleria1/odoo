@@ -1,6 +1,6 @@
 {
     "name": "Calendar and Appointments",
-    "version": "2.11",
+    "version": "2.12",
     "oldest_upgradable_version": "2.11",
     "category": "Productivity/Calendar",
     "sequence": 165,

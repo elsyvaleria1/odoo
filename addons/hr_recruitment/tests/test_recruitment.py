@@ -1299,3 +1299,37 @@ class TestRecruitment(TransactionCase):
                 ],
             }
         )
+
+
+@tagged("recruitment", "post_install", "-at_install")
+class TestJobFavoriteFromEmployee(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env = cls.env(user=cls.env.ref("base.user_admin"))
+
+    def test_a_job_created_from_an_employee_view_is_nobodys_favorite(self):
+        for xmlid, view_type in (
+            ("hr.view_employee_form", "form"),
+            ("hr.view_employee_tree", "list"),
+        ):
+            with self.subTest(view=xmlid):
+                arch = self.env["hr.employee"].get_views(
+                    [(self.env.ref(xmlid).id, view_type)]
+                )["views"][view_type]["arch"]
+                [context] = etree.fromstring(arch).xpath(
+                    "//field[@name='job_id']/@context"
+                )
+                job = (
+                    self.env["hr.job"]
+                    .with_context(**ast.literal_eval(context))
+                    .create({"name": f"Inline job {view_type}"})
+                )
+
+                self.assertFalse(job.favorite_user_ids)
+                self.assertFalse(job.is_user_favorite)
+
+    def test_a_job_created_on_its_own_is_its_creators_favorite(self):
+        job = self.env["hr.job"].create({"name": "Own job"})
+
+        self.assertTrue(job.is_user_favorite)

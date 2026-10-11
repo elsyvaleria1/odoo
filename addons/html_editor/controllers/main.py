@@ -25,8 +25,16 @@ from odoo.tools.image import (
 )
 from odoo.tools.misc import file_open
 
-from ..models.ir_attachment import SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_IMAGE_MIMETYPES
-from odoo.addons.html_editor.tools import collaboration_channel, get_video_url_data
+from ..models.ir_attachment import (
+    BUILT_IMAGE_SHAPE,
+    SUPPORTED_IMAGE_EXTENSIONS,
+    SUPPORTED_IMAGE_MIMETYPES,
+)
+from odoo.addons.html_editor.tools import (
+    collaboration_channel,
+    get_video_url_data,
+    replace_animation_duration,
+)
 from odoo.addons.iap.tools import iap_tools
 from odoo.addons.mail.tools import link_preview
 
@@ -35,20 +43,6 @@ _debug = DebugLog(__name__)
 DEFAULT_LIBRARY_ENDPOINT = "https://media-api.odoo.com"
 LIBRARY_MEDIA_MAX_BYTES = 32 * 1024 * 1024
 DEFAULT_OLG_ENDPOINT = "https://olg.api.odoo.com"
-
-
-CSS_ANIMATION_RULE_REGEX = (
-    r"(?P<declaration>animation(-duration)?:\s*.*?)"
-    r"(?P<value>(\d+(\.\d+)?)|(\.\d+))"
-    r"(?P<unit>ms|s)"
-    r"(?P<separator>\s|;|\"|$)"
-)
-SVG_DUR_TIMECOUNT_VAL_REGEX = (
-    r"(?P<attribute_name>\sdur=\"\s*)"
-    r"(?P<value>(\d+(\.\d+)?)|(\.\d+))"
-    r"(?P<unit>h|min|ms|s)?\s*\""
-)
-CSS_ANIMATION_RATIO_REGEX = r"(--animation_ratio: (?P<ratio>\d*(\.\d+)?));"
 
 
 def get_existing_attachment(IrAttachment, vals):
@@ -147,51 +141,6 @@ class HTML_Editor(http.Controller):
             return color_mapping.get(key, key)
 
         return re.sub(regex, subber, svg), svg_options
-
-    def replace_animation_duration(self, shape_animation_speed: float, svg: str):
-        ratio = (
-            1 + shape_animation_speed
-            if shape_animation_speed >= 0
-            else 1 / (1 - shape_animation_speed)
-        )
-
-        def callback_css_animation_rule(match):
-            declaration, value, unit, separator = (
-                match.group("declaration"),
-                match.group("value"),
-                match.group("unit"),
-                match.group("separator"),
-            )
-            value = str(float(value) / (ratio or 1))
-            return f"{declaration}{value}{unit}{separator}"
-
-        def callback_svg_dur_timecount_val(match):
-            attribute_name, value, unit = (
-                match.group("attribute_name"),
-                match.group("value"),
-                match.group("unit"),
-            )
-            value = str(float(value) / (ratio or 1))
-            return f'{attribute_name}{value}{unit or "s"}"'
-
-        def callback_css_animation_ratio(match):
-            ratio = match.group("ratio")
-            return f"--animation_ratio: {ratio};"
-
-        svg = re.sub(CSS_ANIMATION_RULE_REGEX, callback_css_animation_rule, svg)
-        svg = re.sub(SVG_DUR_TIMECOUNT_VAL_REGEX, callback_svg_dur_timecount_val, svg)
-        if re.search(CSS_ANIMATION_RATIO_REGEX, svg):
-            svg = re.sub(CSS_ANIMATION_RATIO_REGEX, callback_css_animation_ratio, svg)
-        else:
-            regex = r"<svg .*?>"
-            declaration = f"--animation_ratio: {ratio}"
-            subst = (
-                "\\g<0>\n\t<style>\n\t\t:root { \n\t\t\t"
-                + declaration
-                + ";\n\t\t}\n\t</style>"
-            )
-            svg = re.sub(regex, subst, svg, count=1, flags=re.DOTALL)
-        return svg
 
     @http.route(
         "/html_editor/attachment/remove", type="jsonrpc", auth="user", website=True
@@ -453,10 +402,26 @@ class HTML_Editor(http.Controller):
         original_id=None,
         mimetype=None,
         alt_data=None,
+        shape=None,
     ):
         self._clean_context()
-        attachment = request.env["ir.attachment"].browse(attachment.id)
-        if not data and attachment.datas:
+        IrAttachment = request.env["ir.attachment"]
+        attachment = IrAttachment.browse(attachment.id)
+        if shape is not None:
+            image, image_mimetype = attachment._get_image_shape_source(data)
+            svg = IrAttachment._render_image_shape(shape, image, image_mimetype)
+            data, mimetype = b64encode(svg).decode(), "image/svg+xml"
+        elif IrAttachment._is_xml_like_mimetype(mimetype or "") or (
+            data
+            and IrAttachment._is_xml_like_mimetype(
+                guess_mimetype(IrAttachment._decode_datas(data))
+            )
+        ):
+            _debug.logic(
+                "modify_image_refused", reason="markup", attachment=attachment.id
+            )
+            raise UserError(request.env._("Only images can be modified."))
+        elif not data and attachment.datas:
             data = attachment.datas
 
         fields = {
@@ -477,9 +442,7 @@ class HTML_Editor(http.Controller):
                 r"\.(jpe?g|png)$", ".webp", fields["name"], flags=re.IGNORECASE
             )
 
-        existing_attachment = get_existing_attachment(
-            request.env["ir.attachment"], fields
-        )
+        existing_attachment = get_existing_attachment(IrAttachment, fields)
         if existing_attachment and not existing_attachment.url:
             attachment = existing_attachment
         else:
@@ -492,9 +455,12 @@ class HTML_Editor(http.Controller):
                 "write"
             )
 
-            attachment = attachment.sudo().copy(fields).sudo(False)
-            if attachment.mimetype == "text/plain" != fields["mimetype"]:
-                attachment.with_user(SUPERUSER_ID).mimetype = fields["mimetype"]
+            copier = attachment.sudo()
+            if shape is not None:
+                copier = copier.with_context(
+                    html_editor_built_image_shape=BUILT_IMAGE_SHAPE
+                )
+            attachment = IrAttachment.browse(copier.copy(fields).id)
 
         if alt_data:
             for size, per_type in alt_data.items():
@@ -665,9 +631,7 @@ class HTML_Editor(http.Controller):
         if not math.isfinite(shape_animation_speed):
             raise werkzeug.exceptions.BadRequest("Invalid shapeAnimationSpeed")
         if shape_animation_speed:
-            svg = self.replace_animation_duration(
-                shape_animation_speed=shape_animation_speed, svg=svg
-            )
+            svg = replace_animation_duration(svg, shape_animation_speed)
         return request.prepare_response(
             svg,
             [

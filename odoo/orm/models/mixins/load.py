@@ -9,6 +9,7 @@ from typing import Self
 import psycopg
 
 from odoo.db import schema as sql
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.lru import LRU
@@ -115,6 +116,8 @@ class LoadMixin(_ModelStubs):
             global_error_message = dict(
                 data_list[0]["info"], type="error", message=str(e)
             )
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception:
             _logger.debug("Batch load failed, retrying record by record", exc_info=True)
 
@@ -143,6 +146,8 @@ class LoadMixin(_ModelStubs):
                     rec = self._load_records([rec_data], update)
                     cr.flush()
                 ids.append(rec.id)
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception as exc:
                 message = self._load_record_failure(rec_data, exc)
                 messages.append(message)

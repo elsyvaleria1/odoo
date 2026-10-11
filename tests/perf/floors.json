@@ -63,12 +63,12 @@
   "document_list_50_folder_grants": {
     "statements": 3,
     "non_sql_ms": 3.53,
-    "sql_chars": 2185
+    "sql_chars": 3311
   },
   "document_count_50_folder_grants": {
     "statements": 1,
     "non_sql_ms": 3.0,
-    "sql_chars": 920
+    "sql_chars": 2046
   },
   "document_folder_grant_write": {
     "statements": 6,

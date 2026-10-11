@@ -387,6 +387,26 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
 
     @patch_api
+    def test_a_rule_the_options_cannot_hold_is_sent_whole(self):
+        event = self.env["calendar.event"].create(
+            {
+                "name": "Event",
+                "start": datetime(2024, 1, 31, 16, 0),
+                "stop": datetime(2024, 1, 31, 17, 0),
+                "recurrency": True,
+                "rrule": "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1;COUNT=3",
+                "event_tz": "UTC",
+            }
+        )
+        recurrence = event.recurrence_id
+        recurrence.repeat_number = 4
+
+        self.assertEqual(
+            recurrence._google_values()["recurrence"],
+            ["RRULE:FREQ=MONTHLY;COUNT=4;BYSETPOS=-1;BYDAY=MO,TU,WE,TH,FR"],
+        )
+
+    @patch_api
     def test_event_added_to_recurrence(self):
         google_id = "aaaaaaaaa"
         event = self.link_google(
@@ -500,7 +520,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                     }
                 },
                 "reminders": {"overrides": [], "useDefault": False},
-                "recurrence": ["RRULE:FREQ=WEEKLY;WKST=SU;COUNT=1;BYDAY=WE"],
+                "recurrence": ["RRULE:FREQ=WEEKLY;COUNT=1;BYDAY=WE"],
                 "transparency": "opaque",
             },
             timeout=3,
@@ -625,7 +645,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "attendees": [
                     {"email": "odoobot@example.com", "responseStatus": "accepted"}
                 ],
-                "recurrence": ["RRULE:FREQ=WEEKLY;WKST=SU;COUNT=2;BYDAY=WE"],
+                "recurrence": ["RRULE:FREQ=WEEKLY;COUNT=2;BYDAY=WE"],
                 "extendedProperties": {
                     "shared": {"%s_odoo_id" % self.env.cr.dbname: new_recurrence.id}
                 },
@@ -849,7 +869,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "attendees": [
                     {"email": "odoobot@example.com", "responseStatus": "accepted"}
                 ],
-                "recurrence": ["RRULE:FREQ=WEEKLY;WKST=SU;COUNT=2;BYDAY=WE"],
+                "recurrence": ["RRULE:FREQ=WEEKLY;COUNT=2;BYDAY=WE"],
                 "extendedProperties": {
                     "shared": {"%s_odoo_id" % self.env.cr.dbname: new_recurrence.id}
                 },

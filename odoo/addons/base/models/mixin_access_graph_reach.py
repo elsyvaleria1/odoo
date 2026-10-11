@@ -21,16 +21,13 @@ OWN = 0
 REACH_COLUMNS = (
     "resource_id",
     "key",
-    "kind",
-    "pid",
     "via",
     "rank",
-    "grant_company_id",
     "node_company_id",
     "resource_company_id",
     "resource_user_id",
-    "date_to",
     "grant_id",
+    "grant_resource_id",
 )
 
 
@@ -44,6 +41,11 @@ class MixinAccessGraph(models.AbstractModel):
     def init(self) -> None:
         super().init()
         if self._access_graph is not None and not self._abstract:
+            reach = self._access_reach_table()
+            for table in (reach, f"{reach}_lock"):
+                self.pool.register_relation_table(
+                    self._name, table, self._original_module
+                )
             self.pool.post_init(self._access_reach_install)
 
 
@@ -199,11 +201,37 @@ class MixinAccessGraph(models.AbstractModel):
             principals=len(keys),
             alternatives=len(reached) - 1,
         )
+        keys = sorted(set(keys))
+        grant_model = self.env[self._fields[graph.grants].comodel_name]
+        names = type(grant_model)._access_grant_names
         return SQL(
-            "SELECT resource_id FROM %s WHERE key = ANY(%s) AND (%s)",
-            SQL.identifier(self._access_reach_table()),
-            sorted(set(keys)),
-            SQL(" OR ").join(reached),
+            """SELECT resource_id FROM (
+                   SELECT resource_id, (key %% 4)::int2 AS kind, (key / 4)::int4 AS pid,
+                          via, rank, NULL::int4 AS grant_company_id, node_company_id,
+                          resource_company_id, resource_user_id, NULL::timestamp AS date_to
+                     FROM %(reach)s WHERE key = ANY(%(keys)s)
+                   UNION ALL
+                   SELECT reach.resource_id,
+                          (CASE WHEN grant_row.partner_id IS NULL THEN %(group)s ELSE %(partner)s END)::int2,
+                          coalesce(grant_row.partner_id, grant_row.group_id), reach.via,
+                          coalesce(reach.rank, array_position(%(roles)s::varchar[], grant_row.%(role)s::varchar)::int2),
+                          grant_row.company_id, reach.node_company_id, reach.resource_company_id,
+                          reach.resource_user_id, grant_row.date_to
+                     FROM %(grant_table)s AS grant_row
+                     JOIN %(reach)s AS reach ON reach.grant_id = grant_row.id
+                    WHERE grant_row.partner_id = ANY(%(partners)s)
+                       OR grant_row.group_id = ANY(%(groups)s)
+               ) AS reach WHERE %(reached)s""",
+            reach=SQL.identifier(self._access_reach_table()),
+            keys=keys,
+            group=GROUP,
+            partner=PARTNER,
+            roles=list(graph.roles),
+            role=SQL.identifier(names.role),
+            grant_table=SQL.identifier(grant_model._table),
+            partners=[key // 4 for key in keys if key % 4 == PARTNER],
+            groups=[key // 4 for key in keys if key % 4 == GROUP],
+            reached=SQL(" OR ").join(reached),
         )
 
 
@@ -286,22 +314,13 @@ class MixinAccessGraph(models.AbstractModel):
         )
         graph_rows = [
             SQL(
-                """SELECT node.node_id AS resource_id,
-                          (CASE WHEN grant_row.partner_id IS NULL THEN %(group)s ELSE %(partner)s END)::int2 AS kind,
-                          coalesce(grant_row.partner_id, grant_row.group_id) AS pid,
-                          array_position(%(roles)s::varchar[], grant_row.%(role)s::varchar)::int2 AS rank,
-                          grant_row.company_id AS grant_company_id,
-                          node.company_id AS node_company_id,
-                          grant_row.date_to,
-                          grant_row.id AS grant_id
+                """SELECT node.node_id AS resource_id, NULL::int8 AS key, NULL::int2 AS rank,
+                          node.company_id AS node_company_id, grant_row.id AS grant_id,
+                          grant_row.%(resource)s AS grant_resource_id
                      FROM node_scope AS node %(scope_join)s
                      JOIN %(grant_table)s AS grant_row
                        ON grant_row.%(resource)s = held_by.id
                       AND %(grants)s""",
-                group=GROUP,
-                partner=PARTNER,
-                roles=list(graph.roles),
-                role=SQL.identifier(names.role),
                 scope_join=scope_join,
                 grant_table=SQL.identifier(grant_model._table),
                 resource=SQL.identifier(names.resource),
@@ -313,8 +332,8 @@ class MixinAccessGraph(models.AbstractModel):
         if graph.owner and grants is None:
             graph_rows.append(
                 SQL(
-                    """SELECT node.node_id, %(user)s::int2, held_by.%(owner)s, %(top)s::int2,
-                              NULL::int4, node.company_id, NULL::timestamp, NULL::int4
+                    """SELECT node.node_id, held_by.%(owner)s::int8 * 4 + %(user)s, %(top)s::int2,
+                              node.company_id, NULL::int4, NULL::int4
                          FROM node_scope AS node %(scope_join)s
                         WHERE held_by.%(owner)s IS NOT NULL""",
                     user=USER,
@@ -339,10 +358,9 @@ class MixinAccessGraph(models.AbstractModel):
             *self._access_reach_ctes(),
         ]
         own = SQL(
-            """SELECT graph.resource_id, graph.pid::int8 * 4 + graph.kind, graph.kind,
-                      graph.pid, (%s)::int2, graph.rank, graph.grant_company_id,
-                      graph.node_company_id, NULL::int4, NULL::int4, graph.date_to,
-                      graph.grant_id
+            """SELECT graph.resource_id, graph.key, (%s)::int2, graph.rank,
+                      graph.node_company_id, NULL::int4, NULL::int4, graph.grant_id,
+                      graph.grant_resource_id
                  FROM graph JOIN scope ON scope.id = graph.resource_id""",
             self._access_reach_own_via(),
         )
@@ -403,6 +421,23 @@ class MixinAccessGraph(models.AbstractModel):
             read=read,
         )
 
+    def _access_reach_reads(self) -> SQL:
+        graph: AccessGraph = self._access_graph
+        return SQL(
+            """WITH scope AS (
+                   SELECT node_row.* FROM %(table)s AS node_row
+                    WHERE node_row.id = ANY(touched)
+               )
+               %(reads)s""",
+            table=SQL.identifier(self._table),
+            reads=SQL(" UNION ").join(
+                [
+                    SQL("SELECT %s FROM scope", SQL.identifier(graph.parent)),
+                    *self._access_reach_graph_needs(),
+                ]
+            ),
+        )
+
     def _access_reach_ddl(self) -> SQL:
         graph: AccessGraph = self._access_graph
         grant_model = self.env[self._fields[graph.grants].comodel_name]
@@ -437,47 +472,70 @@ class MixinAccessGraph(models.AbstractModel):
         )
         return SQL(
             """
+            -- a row names its principal, or the grant that does: the grant
+            -- is read through its node too, so that moving it is a change of
+            -- the key a concurrent row's check locks
+            CREATE UNIQUE INDEX IF NOT EXISTS %(grant_key)s ON %(grant_table)s (id, %(resource)s);
             CREATE TABLE IF NOT EXISTS %(reach)s (
                 resource_id int4 NOT NULL,
-                key int8 NOT NULL,
-                kind int2 NOT NULL,
-                pid int4 NOT NULL,
+                key int8,
                 via int2 NOT NULL,
-                rank int2 NOT NULL,
-                grant_company_id int4,
+                rank int2,
                 node_company_id int4,
                 resource_company_id int4,
                 resource_user_id int4,
-                date_to timestamp,
-                grant_id int4
+                grant_id int4,
+                grant_resource_id int4,
+                CONSTRAINT %(principal_check)s CHECK ((key IS NULL) = (grant_id IS NOT NULL)),
+                CONSTRAINT %(rank_check)s CHECK (rank IS NOT NULL OR grant_id IS NOT NULL),
+                CONSTRAINT %(grant_fkey)s FOREIGN KEY (grant_id, grant_resource_id)
+                    REFERENCES %(grant_table)s (id, %(resource)s) MATCH FULL
+                    ON DELETE CASCADE ON UPDATE CASCADE
             );
             CREATE INDEX IF NOT EXISTS %(key_index)s ON %(reach)s (key) INCLUDE (
-                resource_id, kind, pid, via, rank, grant_company_id, node_company_id,
-                resource_company_id, resource_user_id, date_to);
+                resource_id, via, rank, node_company_id, resource_company_id,
+                resource_user_id) WHERE key IS NOT NULL;
             CREATE INDEX IF NOT EXISTS %(resource_index)s ON %(reach)s (resource_id);
-            CREATE INDEX IF NOT EXISTS %(grant_index)s ON %(reach)s (grant_id)
-                WHERE grant_id IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS %(grant_index)s ON %(reach)s (grant_id) INCLUDE (
+                resource_id, via, rank, node_company_id, resource_company_id,
+                resource_user_id) WHERE grant_id IS NOT NULL;
+
+            -- the node lock (the class's comment): a row per node, written
+            CREATE TABLE IF NOT EXISTS %(lock)s (
+                node_id int4 PRIMARY KEY REFERENCES %(table)s (id) ON DELETE CASCADE
+            );
+
+            CREATE OR REPLACE FUNCTION %(lock_fn)s(ids int4[]) RETURNS void
+            LANGUAGE sql AS $body$
+                INSERT INTO %(lock)s (node_id)
+                SELECT id FROM %(table)s WHERE id = ANY(ids) ORDER BY id
+                ON CONFLICT (node_id) DO UPDATE SET node_id = excluded.node_id
+            $body$;
 
             CREATE OR REPLACE FUNCTION %(closure_fn)s(ids int4[], deep boolean) RETURNS int4[]
             LANGUAGE plpgsql STABLE AS $body$ %(closure)s $body$;
 
-            -- re-derive the rows of the nodes a change touched, and of what
-            -- reads them. The nodes are locked first, in order: a concurrent
-            -- refresh of any of them waits, and under repeatable read fails
-            -- to serialize and is retried, so no transaction commits rows
-            -- derived from a state that misses another's change
-            -- reach: 'node' the nodes alone, 'shallow' or 'deep' their closure
-            CREATE OR REPLACE FUNCTION %(refresh_fn)s(touched int4[], reach text)
+            -- re-derive the rows of the nodes a statement changed and of what
+            -- reads them: `deep` with their subtrees, `shallow` without,
+            -- `created` alone, nothing reading a node the statement created
+            CREATE OR REPLACE FUNCTION %(refresh_fn)s(
+                deep int4[], shallow int4[], created int4[])
             RETURNS void LANGUAGE plpgsql AS $body$
             DECLARE
-                ids int4[];
+                touched int4[] := deep || shallow || created;
+                ids int4[] := '{}';
             BEGIN
-                IF touched IS NULL OR cardinality(touched) = 0 THEN
+                IF cardinality(touched) = 0 THEN
                     RETURN;
                 END IF;
-                ids := CASE reach WHEN 'node' THEN touched
-                       ELSE %(closure_fn)s(touched, reach = 'deep') END;
-                PERFORM 1 FROM %(table)s WHERE id = ANY(ids) ORDER BY id FOR NO KEY UPDATE;
+                IF cardinality(deep) > 0 THEN
+                    ids := %(closure_fn)s(deep, true);
+                END IF;
+                IF cardinality(shallow) > 0 THEN
+                    ids := ids || %(closure_fn)s(shallow, false);
+                END IF;
+                PERFORM %(lock_fn)s(ids || ARRAY(%(reads)s));
+                ids := ids || created;
                 DELETE FROM %(reach)s WHERE resource_id = ANY(ids);
                 %(refresh_rows)s;
             END
@@ -486,8 +544,7 @@ class MixinAccessGraph(models.AbstractModel):
             CREATE OR REPLACE FUNCTION %(node_inserted_fn)s() RETURNS trigger
             LANGUAGE plpgsql AS $body$
             BEGIN
-                -- nothing reads a node the statement created
-                PERFORM %(refresh_fn)s(ARRAY(SELECT id FROM new_rows), 'node');
+                PERFORM %(refresh_fn)s('{}', '{}', ARRAY(SELECT id FROM new_rows));
                 RETURN NULL;
             END
             $body$;
@@ -500,14 +557,13 @@ class MixinAccessGraph(models.AbstractModel):
                 deep_ids int4[];
                 shallow_ids int4[];
             BEGIN
-                SELECT array_agg(new_row.id) FILTER (WHERE %(deep_changed)s),
-                       array_agg(new_row.id) FILTER (WHERE NOT (%(deep_changed)s))
+                SELECT coalesce(array_agg(new_row.id) FILTER (WHERE %(deep_changed)s), '{}'),
+                       coalesce(array_agg(new_row.id) FILTER (WHERE NOT (%(deep_changed)s)), '{}')
                   INTO deep_ids, shallow_ids
                   FROM new_rows AS new_row
                   JOIN old_rows AS old_row ON old_row.id = new_row.id
                  WHERE %(changed)s;
-                PERFORM %(refresh_fn)s(deep_ids, 'deep');
-                PERFORM %(refresh_fn)s(shallow_ids, 'shallow');
+                PERFORM %(refresh_fn)s(deep_ids, shallow_ids, '{}');
                 RETURN NULL;
             END
             $body$;
@@ -516,42 +572,43 @@ class MixinAccessGraph(models.AbstractModel):
             CREATE OR REPLACE FUNCTION %(node_deleted_fn)s() RETURNS trigger
             LANGUAGE plpgsql AS $body$
             BEGIN
-                PERFORM %(refresh_fn)s(ARRAY(SELECT id FROM old_rows), 'shallow');
+                PERFORM %(refresh_fn)s('{}', ARRAY(SELECT id FROM old_rows), '{}');
                 RETURN NULL;
             END
             $body$;
 
             -- a grant is the source of its rows, each carrying its id: what
-            -- one grant reaches is added and removed alone, the subtree's
-            -- other rows untouched
-            CREATE OR REPLACE FUNCTION %(add_grants_fn)s(touched int4[], grants int4[])
+            -- the grants reach is derived alone, the subtree's other rows
+            -- untouched, and a grant's foreign key removes them with it
+            CREATE OR REPLACE FUNCTION %(derive_grants_fn)s(touched int4[], grants int4[])
             RETURNS void LANGUAGE plpgsql AS $body$
             DECLARE
                 ids int4[];
             BEGIN
-                IF grants IS NULL OR cardinality(grants) = 0 THEN
+                IF cardinality(grants) = 0 THEN
                     RETURN;
                 END IF;
                 ids := %(closure_fn)s(touched, true);
-                PERFORM 1 FROM %(table)s WHERE id = ANY(ids) ORDER BY id FOR NO KEY UPDATE;
+                PERFORM %(lock_fn)s(ids);
+                DELETE FROM %(reach)s WHERE grant_id = ANY(grants);
                 %(grant_rows)s;
             END
             $body$;
 
-            CREATE OR REPLACE FUNCTION %(grant_changed_fn)s() RETURNS trigger
+            CREATE OR REPLACE FUNCTION %(grant_inserted_fn)s() RETURNS trigger
             LANGUAGE plpgsql AS $body$
             BEGIN
-                IF TG_OP IN ('UPDATE', 'DELETE') THEN
-                    PERFORM 1 FROM %(table)s
-                     WHERE id IN (SELECT %(resource)s FROM old_rows)
-                     ORDER BY id FOR NO KEY UPDATE;
-                    DELETE FROM %(reach)s WHERE grant_id IN (SELECT id FROM old_rows);
-                END IF;
-                IF TG_OP IN ('INSERT', 'UPDATE') THEN
-                    PERFORM %(add_grants_fn)s(
-                        ARRAY(SELECT %(resource)s FROM new_rows),
-                        ARRAY(SELECT id FROM new_rows));
-                END IF;
+                PERFORM %(derive_grants_fn)s(
+                    ARRAY(SELECT %(resource)s FROM new_rows),
+                    ARRAY(SELECT id FROM new_rows));
+                RETURN NULL;
+            END
+            $body$;
+
+            CREATE OR REPLACE FUNCTION %(grant_moved_fn)s() RETURNS trigger
+            LANGUAGE plpgsql AS $body$
+            BEGIN
+                PERFORM %(derive_grants_fn)s(ARRAY[NEW.%(resource)s], ARRAY[NEW.id]);
                 RETURN NULL;
             END
             $body$;
@@ -571,15 +628,11 @@ class MixinAccessGraph(models.AbstractModel):
             DROP TRIGGER IF EXISTS %(grant_inserted)s ON %(grant_table)s;
             CREATE TRIGGER %(grant_inserted)s AFTER INSERT ON %(grant_table)s
                 REFERENCING NEW TABLE AS new_rows
-                FOR EACH STATEMENT EXECUTE FUNCTION %(grant_changed_fn)s();
-            DROP TRIGGER IF EXISTS %(grant_updated)s ON %(grant_table)s;
-            CREATE TRIGGER %(grant_updated)s AFTER UPDATE ON %(grant_table)s
-                REFERENCING NEW TABLE AS new_rows OLD TABLE AS old_rows
-                FOR EACH STATEMENT EXECUTE FUNCTION %(grant_changed_fn)s();
-            DROP TRIGGER IF EXISTS %(grant_deleted)s ON %(grant_table)s;
-            CREATE TRIGGER %(grant_deleted)s AFTER DELETE ON %(grant_table)s
-                REFERENCING OLD TABLE AS old_rows
-                FOR EACH STATEMENT EXECUTE FUNCTION %(grant_changed_fn)s();
+                FOR EACH STATEMENT EXECUTE FUNCTION %(grant_inserted_fn)s();
+            DROP TRIGGER IF EXISTS %(grant_moved)s ON %(grant_table)s;
+            CREATE TRIGGER %(grant_moved)s AFTER UPDATE OF %(resource)s ON %(grant_table)s
+                FOR EACH ROW WHEN (OLD.%(resource)s IS DISTINCT FROM NEW.%(resource)s)
+                EXECUTE FUNCTION %(grant_moved_fn)s();
             """,
             reach=SQL.identifier(reach),
             table=table,
@@ -588,7 +641,10 @@ class MixinAccessGraph(models.AbstractModel):
             key_index=name("key_index"),
             resource_index=name("resource_index"),
             grant_index=name("grant_index"),
-            add_grants_fn=name("add_grants"),
+            lock=name("lock"),
+            lock_fn=name("lock_nodes"),
+            reads=self._access_reach_reads(),
+            derive_grants_fn=name("derive_grants"),
             grant_rows=self._access_reach_rows(
                 SQL("node_row.id = ANY(ids)"), grants=SQL("grants")
             ),
@@ -599,13 +655,17 @@ class MixinAccessGraph(models.AbstractModel):
             node_inserted_fn=name("node_inserted"),
             node_updated_fn=name("node_updated"),
             node_deleted_fn=name("node_deleted"),
-            grant_changed_fn=name("grant_changed"),
+            grant_inserted_fn=name("grant_inserted"),
+            grant_moved_fn=name("grant_moved"),
             node_inserted=name("node_inserted"),
             node_updated=name("node_updated"),
             node_deleted=name("node_deleted"),
             grant_inserted=name("grant_inserted"),
-            grant_updated=name("grant_updated"),
-            grant_deleted=name("grant_deleted"),
+            grant_moved=name("grant_moved"),
+            grant_key=SQL.identifier(f"{grant_model._table}_reach_key"),
+            principal_check=name("principal_check"),
+            rank_check=name("rank_check"),
+            grant_fkey=name("grant_fkey"),
             changed=changed,
             deep_changed=deep_changed,
         )
@@ -614,7 +674,6 @@ class MixinAccessGraph(models.AbstractModel):
     def _access_reach_install(self) -> None:
         cr = self.env.cr
         reach = self._access_reach_table()
-        self.pool.register_relation_table(self._name, reach, self._original_module)
         ddl = self._access_reach_ddl()
         rows = self._access_reach_rows(SQL("TRUE"))
         signature = hashlib.sha256(
@@ -644,7 +703,8 @@ class MixinAccessGraph(models.AbstractModel):
                     SQL.identifier(f"{self._table}_access_scope_chain_idx"),
                 )
             )
-            cr.execute(SQL("DROP TABLE IF EXISTS %s", SQL.identifier(reach)))
+            for table in (reach, f"{reach}_lock"):
+                cr.execute(SQL("DROP TABLE IF EXISTS %s", SQL.identifier(table)))
             cr.execute(ddl.inlined(cr))
             cr.execute(rows)
             cr.execute(SQL("ANALYZE %s", SQL.identifier(reach)))

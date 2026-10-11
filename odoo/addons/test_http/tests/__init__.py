@@ -6,6 +6,7 @@ from . import test_error
 from . import test_greeting
 from . import test_ir_http_contract
 from . import test_lifecycle_order
+from . import test_login_device
 from . import test_misc
 from . import test_models
 from . import test_openapi

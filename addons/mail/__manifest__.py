@@ -1,6 +1,6 @@
 {
     "name": "Discuss and Messaging",
-    "version": "1.48",
+    "version": "1.49",
     "oldest_upgradable_version": "1.45",
     "category": "Productivity/Discuss",
     "sequence": 145,

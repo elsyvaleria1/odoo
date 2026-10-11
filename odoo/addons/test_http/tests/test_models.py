@@ -4,7 +4,7 @@ from http import HTTPStatus
 
 import odoo.http
 from odoo.tests import get_db_name, tagged
-from odoo.tests.common import Like, new_test_user
+from odoo.tests.common import Like, new_test_api_key, new_test_user
 from odoo.tools import mute_logger
 from odoo.tools.misc import submap
 
@@ -130,7 +130,7 @@ class TestHttpModels(TestHttpBase):
                 self.xmlrpc_object.execute_kw(
                     get_db_name(),
                     self.jackoneill.id,
-                    "jackoneill",
+                    new_test_api_key(self.jackoneill),
                     "res.users",
                     "read",
                     [self.jackoneill.id, ["login"]],

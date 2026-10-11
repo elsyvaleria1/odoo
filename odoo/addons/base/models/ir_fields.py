@@ -631,6 +631,10 @@ class IrFieldsConverter(models.AbstractModel):
                     ),
                 )
             )
+            if ambiguous := trues & falses:
+                _debug.logic("boolean_tokens_ambiguous", tokens=sorted(ambiguous))
+                trues -= ambiguous
+                falses -= ambiguous
             tnx_cache[cache_key] = (trues, falses)
             _debug.perf.count(
                 "boolean_tokens_built", trues=len(trues), falses=len(falses)
@@ -810,21 +814,25 @@ class IrFieldsConverter(models.AbstractModel):
             if token is not None and token != "":
                 index.setdefault(str(token).lower(), item)
 
+        def put_declared_labels() -> None:
+            for item, label in selection:
+                put(label, item)
+
         for item, _label in selection:
             put(item, item)
-        for item, label in selection:
-            put(label, item)
         if current_lang_labels is not None:
             for item, label in selection:
                 translated = current_lang_labels.get(item, label)
                 put(translated, item)
                 labels[item] = translated
+            put_declared_labels()
             _debug.logic("selection_index_dynamic", field=field.name, tokens=len(index))
             return index, labels
 
         lang = self.env.lang or "en_US"
         if "ir.model.fields.selection" not in self.env.registry:
             _debug.logic("selection_index_untranslated", field=field.name, lang=lang)
+            put_declared_labels()
             return index, labels
         selections = (
             self.env["ir.model.fields.selection"]
@@ -839,17 +847,20 @@ class IrFieldsConverter(models.AbstractModel):
             )
         )
         names = selections._fields["name"]._get_stored_translations_multi(selections)
-        for selection in selections:
-            value = selection.value
-            if value not in labels:
-                continue
-            for term_lang, txt in (names.get(selection.id) or {}).items():
-                if txt is None:
-                    continue
-                if term_lang != "en_US":
+        terms_by_value = [
+            (selection.value, names.get(selection.id) or {})
+            for selection in selections
+            if selection.value in labels
+        ]
+        for value, terms in terms_by_value:
+            if (txt := terms.get(lang)) is not None:
+                put(txt, value)
+                labels[value] = txt
+        put_declared_labels()
+        for value, terms in terms_by_value:
+            for term_lang, txt in terms.items():
+                if txt is not None and term_lang not in (lang, "en_US"):
                     put(txt, value)
-                if term_lang == lang:
-                    labels[value] = txt
         _debug.perf.count(
             "selection_index_built",
             model=field.model_name,

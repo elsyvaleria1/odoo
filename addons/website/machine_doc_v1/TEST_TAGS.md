@@ -1,7 +1,7 @@
 # Website Module Test Tags
 
 Quick reference for running targeted subsets of `website`'s tests. Two surfaces:
-**Python** (`tests/`, 57 `.py` files = 56 test modules incl. `common.py`, + `__init__.py`)
+**Python** (`tests/`, 58 `.py` files = 57 test modules incl. `common.py`, + `__init__.py`)
 run through `odoo-bin`; **JS/HOOT + tours** (`static/tests/`, 226 `.js`) run in
 the browser test runner.
 
@@ -56,6 +56,7 @@ used nowhere** — all browser interaction goes through `start_tour`.
 | `test_grid_layout.py` | HttpCase | Grid layout snippet (tour `grid_layout`) |
 | `test_http_endpoint.py` | HttpCase | HTTP endpoint registration/serving |
 | `test_iap.py` | HttpCase | IAP integration endpoints |
+| `test_image_shape_hover.py` | TransactionCase | Server-built image shapes carry the shipped hover effects (`hover_effects.svg`), with their parameters validated |
 | `test_import_files.py` | TransactionCase | Import of website files/assets |
 | `test_ir_asset.py` | HttpCase | ir.asset records for website bundles |
 | `test_lang_url.py` | HttpCase | Language-prefixed URLs + controller redirects |

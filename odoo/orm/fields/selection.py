@@ -238,7 +238,7 @@ class Selection[T = str | typing.Literal[False]](Field[T]):
             selection = call_hook(selection, env[self.model_name])
             return [(str(key), str(label)) for key, label in selection]
 
-        if not env.lang:
+        if not (env.lang or self.manual):
             return selection
 
         translations = dict(

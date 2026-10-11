@@ -7,6 +7,8 @@ from collections import defaultdict
 from typing import Any, Literal, Self
 from urllib.parse import urlsplit, urlunsplit
 
+from lxml import etree
+
 from odoo import Command, api, fields, models, tools
 from odoo.api import ValuesType
 from odoo.db import FunctionStatus
@@ -94,6 +96,25 @@ def _is_descendant_of(candidate: Any, ancestor_id: int) -> bool:
     return False
 
 
+def relabel_vat(model: models.BaseModel, arch: etree._Element, view_type: str) -> None:
+    vat_label = model.env.company.country_id.vat_label
+    if not vat_label:
+        _debug.logic(
+            "vat_label_kept",
+            model=model._name,
+            country=model.env.company.country_id.id,
+            reason="no_country_label",
+        )
+        return
+    for node in arch.iterfind(".//field[@name='vat']"):
+        node.set("string", vat_label)
+    for node in arch.iterfind(".//label[@for='vat']"):
+        node.set("string", vat_label)
+    _debug.logic(
+        "vat_label_applied", model=model._name, view_type=view_type, label=vat_label
+    )
+
+
 def _selection_installed_langs(self) -> list[tuple[str, str]]:
     return self.env["res.lang"].get_installed()
 
@@ -111,14 +132,20 @@ def _selection_timezones(self) -> list[tuple[str, str]]:
 _RE_WHITESPACE_BEFORE_NEWLINE = re.compile(r"\s+\n")
 
 
-def _complete_name_trgm_index_definition(registry) -> str:
-    if not registry.has_trigram:
-        return ""
+def _trgm_index_definition(*columns: str) -> typing.Callable[[typing.Any], str]:
+    def definition(registry) -> str:
+        if not registry.has_trigram:
+            return ""
 
-    expression = '"complete_name"'
-    if registry.unaccent_status == FunctionStatus.INDEXABLE:
-        expression = registry.unaccent(expression)
-    return f"USING gin ({expression} gin_trgm_ops)"
+        expressions = []
+        for column in columns:
+            expression = f'"{column}"'
+            if registry.unaccent_status == FunctionStatus.INDEXABLE:
+                expression = registry.unaccent(expression)
+            expressions.append(f"{expression} gin_trgm_ops")
+        return f"USING gin ({', '.join(expressions)})"
+
+    return definition
 
 
 class ResPartner(models.Model):
@@ -126,7 +153,6 @@ class ResPartner(models.Model):
     _description = "Contact"
     _inherit = [
         "mixin.format.address",
-        "mixin.format.vat.label",
         "mixin.avatar",
         "mixin.properties.base.definition",
     ]
@@ -475,7 +501,10 @@ class ResPartner(models.Model):
         string="Nationalities",
     )
 
-    _complete_name_trgm_index = models.Index(_complete_name_trgm_index_definition)
+    _complete_name_trgm_index = models.Index(_trgm_index_definition("complete_name"))
+    _name_search_trgm_index = models.Index(
+        _trgm_index_definition("email", "ref", "vat", "company_registry")
+    )
     _barcode_gin_index = models.Index("USING gin (barcode jsonb_path_ops)")
     _check_name = models.Constraint(
         "CHECK( COALESCE(type, 'contact') != 'contact' OR name IS NOT NULL )",
@@ -629,6 +658,11 @@ class ResPartner(models.Model):
                 vals["website"] = self._clean_website(vals["website"])
         self._add_lang_to_vals(vals_list)
         partners = super().create(vals_list)
+        partners.browse(
+            partner.id
+            for partner, vals in zip(partners, vals_list, strict=True)
+            if vals.get("phone_ids")
+        )._update_phone_countries()
         _debug.lifecycle(
             "create",
             count=len(partners),
@@ -705,6 +739,8 @@ class ResPartner(models.Model):
         _debug.lifecycle("write", count=len(self), fields=list(vals))
         result = result and super().write(vals)
         privileged = self.sudo().with_context(active_test=False)
+        if {"country_id", "phone_ids"} & vals.keys():
+            self._update_phone_countries()
         if {"lang", "tz"} & vals.keys() and privileged.user_ids:
             _debug.lifecycle("write_cache_cleared", reason="user_lang_or_tz")
             self.env.registry.clear_cache()
@@ -1470,28 +1506,6 @@ class ResPartner(models.Model):
     def _get_similar_name_recall_threshold(self) -> float:
         return max(0.3, self._get_similar_name_threshold() - 0.2)
 
-    def _get_identifier(self, code: str) -> str | None:
-        self.check_singleton()
-        identifier = self.identifier_ids.filtered(
-            lambda i, code=code: i.type_id.code == code
-        )[:1]
-        if identifier:
-            return identifier.value or None
-        identifier_type = self.env["res.partner.identifier.type"]._get_type_by_code(
-            code
-        )
-        if identifier_type.synced_with_commercial:
-            commercial = self.commercial_partner_id
-            if commercial != self:
-                _debug.logic(
-                    "identifier_from_commercial",
-                    partner=self.id,
-                    commercial=commercial.id,
-                    type=code,
-                )
-                return commercial._get_identifier(code)
-        return None
-
     def _get_stored_company_ids(self, field_names: list[str]) -> set[int]:
         record_ids = list({*self.ids, *self.commercial_partner_id.ids})
         if not record_ids:
@@ -1553,8 +1567,26 @@ class ResPartner(models.Model):
             }
         ]
 
+    @api.model
+    def _get_view_cache_key(
+        self, view_id: int | None = None, view_type: str = "form", **options
+    ) -> tuple:
+        key = super()._get_view_cache_key(view_id, view_type, **options)
+        return key + (self.env.company.country_id.vat_label,)
+
+    @api.model
+    def _get_view(
+        self, view_id: int | None = None, view_type: str = "form", **options
+    ) -> tuple[etree._Element, Any]:
+        arch, view = super()._get_view(view_id, view_type, **options)
+        relabel_vat(self, arch, view_type)
+        return arch, view
+
     def _get_address_format(self) -> str:
         return self.country_id.address_format or DEFAULT_ADDRESS_FORMAT
+
+    def _update_phone_countries(self) -> None:
+        self.with_context(active_test=False).phone_ids._update_country_from_contact()
 
     def _phone_get_numbers(self, fname=False):
         if not self:
@@ -1961,41 +1993,6 @@ class ResPartner(models.Model):
             internal=len(partners_with_internal_user),
             placeholder=len(partners_without_image),
         )
-
-    def _update_identifier(self, code: str, value) -> None:
-        self.check_singleton()
-        identifier_type = self.env["res.partner.identifier.type"]._get_type_by_code(
-            code
-        )
-        if not identifier_type:
-            _debug.logic("identifier_type_unknown", partner=self.id, type=code)
-            raise UserError(
-                self.env._("There is no identifier type with code %(code)s.", code=code)
-            )
-        existing = self.identifier_ids.filtered(
-            lambda i, identifier_type=identifier_type: i.type_id == identifier_type
-        )
-        _debug.lifecycle(
-            "identifier_updated",
-            partner=self.id,
-            type=code,
-            existing=len(existing),
-            by="unlink" if not value else "write" if existing else "create",
-        )
-        if not value:
-            existing.unlink()
-            return
-        if existing:
-            existing[:1].value = value
-            existing[1:].unlink()
-        else:
-            self.env["res.partner.identifier"].create(
-                {
-                    "partner_id": self.id,
-                    "type_id": identifier_type.id,
-                    "value": value,
-                }
-            )
 
     def _update_lang_from_parent(self) -> None:
         if not self:

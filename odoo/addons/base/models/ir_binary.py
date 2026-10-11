@@ -175,6 +175,15 @@ class IrBinary(models.AbstractModel):
             size=stream.size,
         )
 
+        if mimetype and self._is_markup_upgrade(stream.mimetype, mimetype):
+            _debug.logic(
+                "stream_mimetype_refused",
+                model=record._name,
+                field=field_name,
+                stored=stream.mimetype,
+                requested=mimetype,
+            )
+            mimetype = None
         if stream.type in ("data", "path"):
             if mimetype:
                 stream.mimetype = mimetype
@@ -221,13 +230,20 @@ class IrBinary(models.AbstractModel):
 
         return stream
 
+    def _is_markup_upgrade(self, stored: str | None, requested: str) -> bool:
+        is_markup = self.env["ir.attachment"]._is_xml_like_mimetype
+        return is_markup(requested) and not (stored and is_markup(stored))
+
     @staticmethod
     def _can_name_from_field(record: Any, filename_field: str) -> bool:
         name_field = record._fields.get(filename_field)
         if name_field is None or name_field.type != "char":
             return False
-        return filename_field == "name" or record.sudo(False)._has_field_access(
-            name_field, "read"
+        if filename_field == "name":
+            return True
+        caller = record.sudo(False)
+        return caller._has_field_access(name_field, "read") and caller.has_access(
+            "read"
         )
 
     def _get_stream_image_from_record(
@@ -281,7 +297,8 @@ class IrBinary(models.AbstractModel):
         if stream.type == "url":
             _debug.logic("image_stream_url", model=record._name, field=field_name)
             return stream
-        if not stream.mimetype.startswith("image/"):
+        is_image = stream.mimetype.startswith("image/")
+        if not is_image:
             _debug.logic(
                 "image_mimetype_rejected",
                 model=record._name,
@@ -317,6 +334,20 @@ class IrBinary(models.AbstractModel):
         )
 
         if modified and (width or height or crop):
+            if is_image and stream.type == "path":
+                with pathlib.Path(stream.path).open("rb") as file:
+                    head = file.read(MIMETYPE_HEAD_SIZE)
+                is_image = guess_mimetype(head).startswith("image/")
+            if not is_image:
+                _debug.logic(
+                    "image_resize_refused",
+                    model=record._name,
+                    field=field_name,
+                    reason="not_an_image",
+                )
+                raise UserError(
+                    self.env._("This file could not be decoded as an image file.")
+                )
             if stream.type == "path":
                 data = pathlib.Path(stream.path).read_bytes()
                 stream.type = "data"

@@ -125,11 +125,11 @@ class AuthEvent(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
-        if not vals_list:
-            return self.browse()
-        raise AccessError(
-            self.env._("Authentication events are written by security actions.")
-        )
+        if vals_list:
+            raise AccessError(
+                self.env._("Authentication events are written by security actions.")
+            )
+        return super().create(vals_list)
 
     def write(self, vals: dict[str, Any]) -> bool:
         if not self:

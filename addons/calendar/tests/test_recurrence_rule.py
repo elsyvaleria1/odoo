@@ -18,6 +18,28 @@ class TestRecurrenceRule(TransactionCase):
         )
         self.assertEqual(recurrence.name, "Every 2 Days for 3 events")
 
+    def test_an_allday_rule_naming_no_weekday_keeps_the_event_weekday(self):
+        event = self.env["calendar.event"].create(
+            {
+                "name": "Honolulu all day",
+                "allday": True,
+                "start_date": "2024-01-15",
+                "stop_date": "2024-01-15",
+                "recurrency": True,
+                "repeat_unit": "week",
+                "mon": True,
+                "repeat_type": "count",
+                "repeat_number": 3,
+                "event_tz": "Pacific/Honolulu",
+            }
+        )
+        recurrence = event.recurrence_id
+
+        recurrence.rrule = "FREQ=WEEKLY;COUNT=3"
+
+        self.assertTrue(recurrence.mon)
+        self.assertFalse(recurrence.sun)
+
     def test_daily_until(self):
         recurrence = self.env["calendar.recurrence"].create(
             {

@@ -14,6 +14,7 @@ from odoo.exceptions import (
     ValidationError,
 )
 from odoo.libs import backoff
+from odoo.modules import neutralize
 from odoo.modules.registry import Registry
 from odoo.service import get_job_real_time_budget
 from odoo.tests import common
@@ -185,6 +186,28 @@ class TestIrJob(TransactionCase):
         other = self.partner.delayed(eta=3600)._ir_job_test_append()
         other.action_cancel()
         self.assertEqual(other.state, "cancelled")
+
+    def test_neutralizing_cancels_every_unfinished_job(self):
+        done = self.partner.delayed()._ir_job_test_append()
+        done.action_run_now()
+        pending = self.partner.delayed()._ir_job_test_append()
+        scheduled = self.partner.delayed(eta=3600)._ir_job_test_append()
+        waiting = self.partner.delayed(after=pending)._ir_job_test_append()
+        self.assertEqual(waiting.state, "wait_deps")
+        orphan = self.partner.delayed(channel="orphan")._ir_job_test_append()
+        orphan.write({"state": "started", "started_at": fields.Datetime.now()})
+
+        [(_module, query)] = neutralize.iter_neutralization_queries(["base"])
+        self.env.flush_all()
+        self.cr.execute(query)
+        self.env.invalidate_all()
+
+        self.assertEqual(
+            (pending + scheduled + waiting + orphan).mapped("state"),
+            ["cancelled"] * 4,
+        )
+        self.assertEqual(done.state, "done")
+        self.assertIsNone(self._claim())
 
     def test_scheduled_job_still_holds_its_identity_key(self):
         first = self.partner.delayed(
@@ -1309,6 +1332,27 @@ class TestIrJob(TransactionCase):
         self.assertEqual(spent.state, "failed")
         self.assertEqual(spent.exc_name, "WorkerDied")
 
+    def test_reaper_reports_the_jobs_it_fails_and_cancels_their_dependents(self):
+        alive = self.partner.delayed(max_retries=5)._ir_job_test_append()
+        spent = self.partner.delayed(max_retries=0)._ir_job_test_append()
+        waiting = self.partner.delayed(after=spent)._ir_job_test_append()
+        self.env.cr.execute(
+            "UPDATE ir_job SET state = 'started', worker_ident = 'dead:1',"
+            " started_at = (now() AT TIME ZONE 'UTC') - interval '5 minutes'"
+            " WHERE id = ANY(%s)",
+            ([alive.id, spent.id],),
+        )
+        with patch.object(IrJob, "_notify_failed") as hook:
+            self.assertEqual(IrJob._reap_dead_jobs(self.env.cr), 2)
+        self.assertEqual(
+            [call.args[1]["id"] for call in hook.call_args_list],
+            [spent.id],
+            "a job failed for its dead worker is reported as any other failure",
+        )
+        self.assertEqual(type(hook.call_args.args[2]).__name__, "WorkerDied")
+        self.env.invalidate_all()
+        self.assertEqual(waiting.state, "cancelled")
+
     def test_reaper_releases_the_locks_it_took(self):
         job = self.partner.delayed()._ir_job_test_append()
         self.env.cr.execute(
@@ -1753,6 +1797,70 @@ class TestIrJobExecutorLiveness(BaseCase):
         env.flush_all()
         cr.commit()
         return env["ir.job"].browse(job.id)
+
+    def _while_running_manually(self, job, probe):
+        seen = {}
+
+        def _probe_from_another_worker(cr, claimed):
+            with self.registry.cursor() as cr_worker:
+                cr_worker.execute("SET lock_timeout = '1s'")
+                try:
+                    seen["result"] = probe(cr_worker)
+                except Exception as exc:
+                    seen["error"] = exc
+                finally:
+                    cr_worker.rollback()
+                    cr_worker.execute("RESET lock_timeout")
+
+        with patch.object(
+            IrJob, "_run_claimed", staticmethod(_probe_from_another_worker)
+        ):
+            job.action_run_now()
+        return seen
+
+    @mute_logger("odoo.addons.base.models.ir_job")
+    def test_a_job_running_manually_does_not_hold_up_the_claim(self):
+        with self.registry.cursor() as cr_run:
+            job = self._enqueue(cr_run)
+            with patch.object(ir_job, "CLAIM_MAX_ATTEMPTS", 1):
+                seen = self._while_running_manually(
+                    job,
+                    lambda cr: IrJob._claim_next(
+                        cr, "test:1", [self.CHANNEL], serialise=True
+                    ),
+                )
+            cr_run.rollback()
+        self.assertEqual(
+            seen,
+            {"result": None},
+            "a worker waited on the row the manual run holds, and every other "
+            "claim queued behind it on the claim lock",
+        )
+
+    @mute_logger("odoo.addons.base.models.ir_job")
+    def test_a_job_running_manually_does_not_hold_up_the_promotion(self):
+        with self.registry.cursor() as cr_run:
+            job = self._enqueue(cr_run)
+            cr_run.execute(
+                "UPDATE ir_job SET state = 'scheduled',"
+                " eta = (now() AT TIME ZONE 'UTC') - interval '1 minute'"
+                " WHERE id = %s",
+                (job.id,),
+            )
+            cr_run.commit()
+            seen = self._while_running_manually(job, IrJob._promote_due_jobs)
+            cr_run.rollback()
+        self.assertEqual(seen, {"result": 0})
+
+    @mute_logger("odoo.addons.base.models.ir_job")
+    def test_a_lost_promotion_race_does_not_end_the_pass(self):
+        def _lose_the_race(cr):
+            raise psycopg.errors.SerializationFailure("lost")
+
+        with patch.object(IrJob, "_promote_due_jobs", staticmethod(_lose_the_race)):
+            self.assertEqual(
+                IrJob._run_promotion(odoo.db.db_connect(common.get_db_name())), 0
+            )
 
     @mute_logger("odoo.addons.base.models.ir_job")
     def test_reaper_spares_a_job_running_manually(self):
@@ -2327,3 +2435,259 @@ class TestIrJobClaimCapacity(TransactionCase):
         job = IrJob._claim_next(self.env.cr, "cap:1", channels=["full", "free"])
         self.assertIsNotNone(job)
         self.assertEqual(job["id"], runnable)
+
+
+class TestIrJobClaimPastHeldRows(BaseCase):
+    CHANNEL = "heldheads"
+
+    def setUp(self):
+        super().setUp()
+        self.registry = Registry(common.get_db_name())
+        self.addCleanup(self._clear_jobs)
+        self._clear_jobs()
+        with self.registry.cursor() as cr:
+            cr.execute(
+                "INSERT INTO ir_job (channel, state, priority, model_name,"
+                " method_name, user_id, max_retries, retry, create_uid,"
+                " create_date, write_uid, write_date)"
+                " SELECT %s, 'pending', n, 'ir.job', '_job_ping', 1, 5, 0, 1,"
+                " now(), 1, now() FROM generate_series(1, %s) AS n"
+                " RETURNING id",
+                (self.CHANNEL, ir_job.CLAIM_CANDIDATES_PER_CHANNEL + 2),
+            )
+            self.job_ids = sorted(row[0] for row in cr.fetchall())
+
+    def _clear_jobs(self):
+        with self.registry.cursor() as cr:
+            cr.execute("DELETE FROM ir_job WHERE channel = %s", (self.CHANNEL,))
+            cr.execute("DELETE FROM ir_job_channel WHERE name = %s", (self.CHANNEL,))
+
+    def _claim_while_the_head_is_held(self, serialise):
+        head = self.job_ids[: ir_job.CLAIM_CANDIDATES_PER_CHANNEL]
+        with self.registry.cursor() as holder, self.registry.cursor() as claimer:
+            holder.execute(
+                "SELECT id FROM ir_job WHERE id = ANY(%s) FOR UPDATE", (head,)
+            )
+            job = IrJob._claim_next(
+                claimer, "held:0", [self.CHANNEL], serialise=serialise
+            )
+            claimer.rollback()
+            holder.rollback()
+        return job
+
+    def test_a_claim_reaches_past_the_rows_other_transactions_hold(self):
+        first_free = self.job_ids[ir_job.CLAIM_CANDIDATES_PER_CHANNEL]
+        for serialise in (False, True):
+            with self.subTest(serialise=serialise):
+                job = self._claim_while_the_head_is_held(serialise)
+                self.assertIsNotNone(
+                    job, "two jobs were free, and the claim reported none"
+                )
+                self.assertEqual(
+                    job["id"], first_free, "the first free job in queue order"
+                )
+
+    def test_a_capped_channel_still_reaches_past_its_held_rows(self):
+        with self.registry.cursor() as cr:
+            cr.execute(
+                "INSERT INTO ir_job_channel (name, capacity, active) VALUES (%s, 1, TRUE)",
+                (self.CHANNEL,),
+            )
+        job = self._claim_while_the_head_is_held(serialise=True)
+        self.assertEqual(job and job["id"], self.job_ids[-2])
+
+    def test_a_claim_with_nothing_free_reports_an_empty_queue(self):
+        with self.registry.cursor() as holder, self.registry.cursor() as claimer:
+            holder.execute(
+                "SELECT id FROM ir_job WHERE id = ANY(%s) FOR UPDATE", (self.job_ids,)
+            )
+            self.assertIsNone(
+                IrJob._claim_next(claimer, "held:1", [self.CHANNEL], serialise=False)
+            )
+            holder.rollback()
+
+
+@common.tagged("post_install", "-at_install")
+class TestIrJobAdmission(BaseCase):
+    CHANNEL = "admissiontest"
+
+    def setUp(self):
+        super().setUp()
+        self.db_name = common.get_db_name()
+        self.registry = Registry(self.db_name)
+        self.addCleanup(self._clear_jobs)
+        self._clear_jobs()
+
+    def _clear_jobs(self):
+        with self.registry.cursor() as cr:
+            cr.execute("DELETE FROM ir_job WHERE channel = %s", (self.CHANNEL,))
+
+    def _enqueue(self):
+        with self.registry.cursor() as cr:
+            env = odoo.api.Environment(cr, common.ADMIN_USER_ID, {})
+            job = env["ir.job"].delayed(channel=self.CHANNEL)._job_ping("admission")
+            env.flush_all()
+            return job.id
+
+    def _state(self, job_id):
+        with self.registry.cursor() as cr:
+            cr.execute("SELECT state FROM ir_job WHERE id = %s", (job_id,))
+            return cr.fetchone()[0]
+
+    def _can_take_the_queue(self, cr):
+        cr.execute(
+            SQL("SELECT pg_try_advisory_xact_lock(%s)", ir_job.JOB_ADMISSION_LOCK)
+        )
+        taken = cr.fetchone()[0]
+        cr.rollback()
+        return taken
+
+    def test_a_running_job_holds_the_queue_against_a_module_operation(self):
+        job_id = self._enqueue()
+        seen = []
+
+        def probe(cr, job):
+            with self.registry.cursor() as operation:
+                seen.append(self._can_take_the_queue(operation))
+
+        with (
+            patch.object(IrJob, "_run_claimed", staticmethod(probe)),
+            patch.object(IrJob, "_notify_workers"),
+        ):
+            IrJob._claim_and_run_loop(self.db_name, channels=[self.CHANNEL])
+        self.assertEqual(seen, [False], "a module operation could start mid-job")
+        with self.registry.cursor() as operation:
+            self.assertTrue(
+                self._can_take_the_queue(operation), "the job let go of the queue"
+            )
+        self.assertNotEqual(self._state(job_id), "pending")
+
+    def test_no_job_starts_while_a_module_operation_holds_the_queue(self):
+        job_id = self._enqueue()
+        with self.registry.cursor() as operation:
+            operation.execute(
+                SQL("SELECT pg_advisory_lock(%s)", ir_job.JOB_ADMISSION_LOCK)
+            )
+            try:
+                with patch.object(IrJob, "_notify_workers"):
+                    IrJob._claim_and_run_loop(self.db_name, channels=[self.CHANNEL])
+                self.assertEqual(
+                    self._state(job_id),
+                    "pending",
+                    "a job started against a registry being replaced",
+                )
+            finally:
+                operation.execute(
+                    SQL("SELECT pg_advisory_unlock(%s)", ir_job.JOB_ADMISSION_LOCK)
+                )
+        with patch.object(IrJob, "_notify_workers"):
+            IrJob._claim_and_run_loop(self.db_name, channels=[self.CHANNEL])
+        self.assertEqual(self._state(job_id), "done", "the queue resumes after it")
+
+    def test_a_manual_run_is_refused_while_a_module_operation_holds_the_queue(self):
+        job_id = self._enqueue()
+        with (
+            self.registry.cursor() as operation,
+            self.registry.cursor() as cr_ui,
+        ):
+            operation.execute(
+                SQL("SELECT pg_advisory_lock(%s)", ir_job.JOB_ADMISSION_LOCK)
+            )
+            try:
+                job = odoo.api.Environment(cr_ui, common.ADMIN_USER_ID, {})[
+                    "ir.job"
+                ].browse(job_id)
+                with self.assertRaisesRegex(UserError, "module"):
+                    job.action_run_now()
+                cr_ui.rollback()
+            finally:
+                operation.execute(
+                    SQL("SELECT pg_advisory_unlock(%s)", ir_job.JOB_ADMISSION_LOCK)
+                )
+        self.assertEqual(self._state(job_id), "pending")
+
+    def test_a_manual_run_holds_the_queue_against_a_module_operation(self):
+        job_id = self._enqueue()
+        seen = []
+
+        def probe(cr, job):
+            with self.registry.cursor() as operation:
+                seen.append(self._can_take_the_queue(operation))
+
+        with (
+            self.registry.cursor() as cr_ui,
+            patch.object(IrJob, "_run_claimed", staticmethod(probe)),
+        ):
+            odoo.api.Environment(cr_ui, common.ADMIN_USER_ID, {})["ir.job"].browse(
+                job_id
+            ).action_run_now()
+            cr_ui.rollback()
+        self.assertEqual(seen, [False])
+
+
+class TestIrJobReaperHookRetry(BaseCase):
+    CHANNEL = "reaphook"
+
+    def setUp(self):
+        super().setUp()
+        self.db_name = common.get_db_name()
+        self.registry = Registry(self.db_name)
+        self.addCleanup(self._clear_jobs)
+        self._clear_jobs()
+        with self.registry.cursor() as cr:
+            cr.execute(
+                "INSERT INTO ir_job (channel, state, priority, model_name,"
+                " method_name, user_id, max_retries, retry, worker_ident,"
+                " started_at, create_uid, create_date, write_uid, write_date)"
+                " VALUES (%s, 'started', 10, 'ir.job', '_job_ping', 1, 0, 0,"
+                " 'dead:1', (now() AT TIME ZONE 'UTC') - interval '1 hour',"
+                " 1, now(), 1, now()) RETURNING id",
+                (self.CHANNEL,),
+            )
+            self.job_id = cr.fetchone()[0]
+
+    def _clear_jobs(self):
+        with self.registry.cursor() as cr:
+            cr.execute("DELETE FROM ir_job WHERE channel = %s", (self.CHANNEL,))
+        ir_job._last_maintenance.pop(self.db_name, None)
+
+    def _sweep_with_hook(self, hook):
+        ir_job._last_maintenance.pop(self.db_name, None)
+        with (
+            patch.object(IrJob, "_notify_failed", staticmethod(hook)),
+            patch.object(IrJob, "_release_ready_dependents"),
+            patch.object(ir_job, "CONCURRENCY_BACKOFF_BASE_S", 0.001),
+            patch.object(ir_job, "CONCURRENCY_BACKOFF_MAX_S", 0.002),
+        ):
+            IrJob._run_maintenance(odoo.db.db_connect(self.db_name))
+        with self.registry.cursor() as cr:
+            cr.execute("SELECT state FROM ir_job WHERE id = %s", (self.job_id,))
+            return cr.fetchone()[0]
+
+    @mute_logger("odoo.addons.base.models.ir_job")
+    def test_a_hook_losing_a_race_is_retried_not_dropped(self):
+        reported = []
+
+        def hook(cr, job, exc):
+            reported.append(job["id"])
+            if len(reported) == 1:
+                raise psycopg.errors.SerializationFailure("lost a race")
+
+        state = self._sweep_with_hook(hook)
+        self.assertEqual(
+            reported,
+            [self.job_id, self.job_id],
+            "the failure notification lost to a concurrency error was never sent",
+        )
+        self.assertEqual(state, "failed")
+
+    @mute_logger("odoo.addons.base.models.ir_job")
+    def test_a_hook_that_breaks_does_not_hold_up_the_sweep(self):
+        reported = []
+
+        def hook(cr, job, exc):
+            reported.append(job["id"])
+            raise ValueError("broken hook")
+
+        self.assertEqual(self._sweep_with_hook(hook), "failed")
+        self.assertEqual(reported, [self.job_id], "a broken hook is not replayed")

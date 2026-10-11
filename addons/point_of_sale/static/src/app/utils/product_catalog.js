@@ -20,14 +20,14 @@ export function areAllProductsSpecial(pos, products) {
     );
 }
 
-export function orderProductBySequenceAndFav(pos, products) {
+export function orderProductBySequenceAndFeatured(pos, products) {
     const searchWord = pos.searchProductWord.trim();
     const isSearchByWord = searchWord !== "";
     return isSearchByWord
-        ? products.sort((a, b) => b.is_favorite - a.is_favorite)
+        ? products.sort((a, b) => b.is_featured - a.is_featured)
         : products.sort((a, b) => {
-              if (b.is_favorite !== a.is_favorite) {
-                  return b.is_favorite - a.is_favorite;
+              if (b.is_featured !== a.is_featured) {
+                  return b.is_featured - a.is_featured;
               } else if (a.pos_sequence !== b.pos_sequence) {
                   return a.pos_sequence - b.pos_sequence;
               }
@@ -142,7 +142,7 @@ export function computeProductsToDisplay(pos) {
         return [];
     }
 
-    return pos.orderProductBySequenceAndFav(filteredList);
+    return pos.orderProductBySequenceAndFeatured(filteredList);
 }
 
 export function computeProductToDisplayByCateg(pos) {
@@ -187,7 +187,7 @@ export function computeProductToDisplayByCateg(pos) {
             : products;
 
         if (filtered.length) {
-            const sorted = pos.orderProductBySequenceAndFav(filtered);
+            const sorted = pos.orderProductBySequenceAndFeatured(filtered);
             results.push([catId, sorted.splice(0, 100)]);
         }
     }

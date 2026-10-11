@@ -111,12 +111,12 @@ class TestPosProductTemplate(CommonPosTest):
         self.assertIn(tip.product_tmpl_id.id, [row["id"] for row in rows])
 
     def test_a_changed_product_survives_the_load_limit(self):
-        favourites = self.env["product.template"].create(
+        featured = self.env["product.template"].create(
             [
                 {
-                    "name": f"Favourite {index}",
+                    "name": f"Featured {index}",
                     "available_in_pos": True,
-                    "is_favorite": True,
+                    "is_featured": True,
                 }
                 for index in range(3)
             ]
@@ -149,7 +149,7 @@ class TestPosProductTemplate(CommonPosTest):
             "first page of the unfiltered ordering",
         )
         self.assertFalse(
-            set(favourites.ids) & {row["id"] for row in rows},
+            set(featured.ids) & {row["id"] for row in rows},
             "products older than the cut-off have nothing to send",
         )
 

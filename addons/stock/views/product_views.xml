@@ -592,7 +592,7 @@
         <field name="priority" eval="100" />
         <field name="arch" type="xml">
             <list
-                default_order="is_favorite desc, default_code, name, id"
+                default_order="is_featured desc, default_code, name, id"
                 duplicate="0"
                 sample="1"
                 js_class="stock_report_list_view">

@@ -54,3 +54,4 @@ from . import test_website_form_phone_alias
 from . import test_theme_values
 from . import test_view_authoring
 from . import test_warm_assets
+from . import test_image_shape_hover

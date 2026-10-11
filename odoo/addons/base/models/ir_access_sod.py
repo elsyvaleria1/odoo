@@ -16,6 +16,7 @@ _logger = logging.getLogger(__name__)
 
 DUTY_FIELDS = frozenset({"group_ids", "excluded_group_ids", "verb_ids"})
 RULE_FIELDS = frozenset({"function_a_id", "function_b_id", "active"})
+WIDENING_EVENTS = frozenset({"grant_created", "grant_changed", "grant_started"})
 
 _SCANNING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "sod_scanning", default=False
@@ -117,11 +118,14 @@ class IrAccessSodFunction(models.Model):
         help="Holding a permission row for any of these verbs is holding the duty.",
     )
 
-    def _get_holder_ids(self, users) -> set[int]:
+    def _get_holder_ids(
+        self, users, scheduled: dict[int, frozenset[int]] | None = None
+    ) -> set[int]:
         self.check_singleton()
         spec = dict(self._get_duty_spec())
         spec["verb_groups"] = self._verb_groups(spec["verbs"])
-        scheduled = self._scheduled_group_ids(users)
+        if scheduled is None:
+            scheduled = self._scheduled_group_ids(users)
         return {
             user.id
             for user in users
@@ -294,7 +298,7 @@ class IrAccessSodRule(models.Model):
     )
 
     @api.model
-    def _check_users(self, users, cause: str) -> None:
+    def _check_users(self, users, cause: str, refuse: bool = True) -> None:
         users = users.filtered(
             lambda user: not user.share and user.active and user.id != SUPERUSER_ID
         )
@@ -306,18 +310,19 @@ class IrAccessSodRule(models.Model):
         logs: list[dict[str, Any]] = []
         refused = []
         Function = self.env["ir.access.sod.function"]
+        scheduled = Function._scheduled_group_ids(users)
         for rule_id, function_a_id, function_b_id in rule_ids:
-            holders = Function.browse(function_a_id)._get_holder_ids(users)
+            holders = Function.browse(function_a_id)._get_holder_ids(users, scheduled)
             if not holders:
                 continue
-            holders &= Function.browse(function_b_id)._get_holder_ids(users)
+            holders &= Function.browse(function_b_id)._get_holder_ids(users, scheduled)
             rule = self.browse(rule_id)
             for user in users.browse(sorted(holders)):
                 exception = self.env["ir.access.exception"]._find(user, "sod", rule)
                 if exception:
                     exception._record_use(cause)
                     continue
-                blocking = rule.action == "block" and self.env.registry.ready
+                blocking = refuse and rule.action == "block" and self.env.registry.ready
                 logs.append(rule._log_values(user, cause, blocking))
                 if blocking:
                     refused.append((rule, user))
@@ -417,10 +422,11 @@ class IrAccessSodRule(models.Model):
         users = self.env["res.users"].search(
             [("share", "=", False), ("id", "!=", SUPERUSER_ID)]
         )
+        scheduled = self.env["ir.access.sod.function"]._scheduled_group_ids(users)
         return {
             (rule.id, user_id)
             for rule in self.filtered("active")
-            for user_id in rule._get_conflicting_user_ids(users)
+            for user_id in rule._get_conflicting_user_ids(users, scheduled)
         }
 
     def _log_new_conflicts(self, standing: set[tuple[int, int]], cause: str) -> None:
@@ -440,11 +446,15 @@ class IrAccessSodRule(models.Model):
         self.env.registry.clear_cache("groups")
         return result
 
-    def _get_conflicting_user_ids(self, users) -> set[int]:
+    def _get_conflicting_user_ids(
+        self, users, scheduled: dict[int, frozenset[int]] | None = None
+    ) -> set[int]:
         self.check_singleton()
+        if scheduled is None:
+            scheduled = self.function_a_id._scheduled_group_ids(users)
         return self.function_a_id._get_holder_ids(
-            users
-        ) & self.function_b_id._get_holder_ids(users)
+            users, scheduled
+        ) & self.function_b_id._get_holder_ids(users, scheduled)
 
     def _log_values(self, user, cause: str, blocking: bool) -> dict[str, Any]:
         self.check_singleton()
@@ -461,11 +471,12 @@ class IrAccessSodRule(models.Model):
         internal = self.env["res.users"].search(
             [("share", "=", False), ("id", "!=", SUPERUSER_ID)]
         )
+        scheduled = self.env["ir.access.sod.function"]._scheduled_group_ids(internal)
         return [
             (rule, user)
             for rule in self
             for user in internal.browse(
-                sorted(rule._get_conflicting_user_ids(internal))
+                sorted(rule._get_conflicting_user_ids(internal, scheduled))
             )
         ]
 
@@ -542,12 +553,13 @@ class ResUsersGrant(models.Model):
         if not users:
             return conflicts
         Function = self.env["ir.access.sod.function"]
+        scheduled = Function._scheduled_group_ids(users)
         for rule_id, function_a_id, function_b_id in self.env[
             "ir.access.sod.rule"
         ]._get_active_rule_ids():
             both = Function.browse(function_a_id)._get_holder_ids(
-                users
-            ) & Function.browse(function_b_id)._get_holder_ids(users)
+                users, scheduled
+            ) & Function.browse(function_b_id)._get_holder_ids(users, scheduled)
             for user_id in both:
                 conflicts.setdefault(user_id, []).append(rule_id)
         return conflicts
@@ -557,7 +569,22 @@ class ResUsersGrant(models.Model):
         Rule = self.env["ir.access.sod.rule"]
         affecting = Rule._get_affecting_group_ids()
         if affecting and any(grant.group_id.id in affecting for grant in self):
-            Rule._check_users(self.user_id, event)
+            Rule._check_users(self.user_id, event, refuse=event in WIDENING_EVENTS)
+
+
+class ResUsers(models.Model):
+    _inherit = "res.users"
+
+    def write(self, vals):
+        archived = (
+            self.with_context(active_test=False).filtered(lambda user: not user.active)
+            if vals.get("active")
+            else self.browse()
+        )
+        result = super().write(vals)
+        if archived:
+            self.env["ir.access.sod.rule"]._check_users(archived, "user_reactivated")
+        return result
 
 
 class IrAccessSodConflict(models.TransientModel):

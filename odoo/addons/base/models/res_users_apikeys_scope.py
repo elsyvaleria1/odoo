@@ -1,7 +1,7 @@
 from odoo import api, fields, models, tools
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.service import api_scope
-from odoo.tools import frozendict
+from odoo.tools import SQL, frozendict
 
 
 class ResUsersApikeysScope(models.Model):
@@ -81,11 +81,37 @@ class ResUsersApikeysScope(models.Model):
         )
 
     @api.model
-    def _get_or_create(self, key: str):
-        scope = self._get(key)
-        if not scope:
-            scope = self.sudo().create({"name": key, "key": key})
-        return scope
+    def _get_declared(self, key: str):
+        return self.sudo().browse(self._get_declared_state(key)[0])
+
+    @api.model
+    @tools.ormcache("key")
+    def _get_declared_state(self, key: str) -> tuple[int, bool]:
+        self.flush_model(["key", "active"])
+        self.env["ir.model.data"].flush_model(["model", "res_id", "module"])
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT scope.id, scope.active
+                FROM res_users_apikeys_scope scope
+                WHERE scope.key = %s
+                  AND EXISTS (
+                    SELECT FROM ir_model_data imd
+                    WHERE imd.model = %s
+                      AND imd.res_id = scope.id
+                      AND left(imd.module, 2) != '__'
+                  )
+                """,
+                key,
+                self._name,
+            )
+        )
+        row = self.env.cr.fetchone()
+        if not row:
+            raise UserError(
+                self.env._("No module declares the API key scope %(key)s.", key=key)
+            )
+        return row
 
     @tools.ormcache("self.id")
     def _rules(self) -> api_scope.ScopeRules:
@@ -141,6 +167,10 @@ class ResUsersApikeysScope(models.Model):
         return self.browse(ids)
 
     def write(self, vals):
+        if "key" in vals and any(scope.key != vals["key"] for scope in self):
+            raise UserError(
+                self.env._("A scope's key names its door; it cannot change.")
+            )
         result = super().write(vals)
         self.env.registry.clear_cache()
         return result

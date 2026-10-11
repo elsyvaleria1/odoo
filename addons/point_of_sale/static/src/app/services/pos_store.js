@@ -106,7 +106,7 @@ import {
     computeProductToDisplayByCateg,
     getExcludedProductIds,
     getProductsBySearchWord,
-    orderProductBySequenceAndFav,
+    orderProductBySequenceAndFeatured,
 } from "../utils/product_catalog.js";
 
 export const CONSOLE_COLOR = "#F5B427";
@@ -3600,8 +3600,8 @@ export class PosStore extends WithLazyGetterTrap {
         return areAllProductsSpecial(this, products);
     }
 
-    orderProductBySequenceAndFav(products) {
-        return orderProductBySequenceAndFav(this, products);
+    orderProductBySequenceAndFeatured(products) {
+        return orderProductBySequenceAndFeatured(this, products);
     }
 
     get productsToDisplay() {

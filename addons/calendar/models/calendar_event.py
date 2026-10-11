@@ -25,20 +25,17 @@ from odoo.tools import (
     single_email_re,
 )
 
-from odoo.addons.base.models.mixin_recurrence_rrule import (
+from odoo.addons.base.models.mixin_recurrence_rule import (
+    REPEAT_UNIT_SELECTION,
+    WEEKDAY_SELECTION,
+)
+from odoo.addons.base.models.res_partner import _selection_timezones
+from odoo.addons.calendar.models.calendar_attendee import CalendarAttendee
+from odoo.addons.calendar.models.calendar_recurrence import (
     BYDAY_SELECTION,
     MONTH_BY_SELECTION,
     REPEAT_TYPE_SELECTION_RRULE,
-    WEEKDAY_SELECTION,
     weekday_to_field,
-)
-from odoo.addons.base.models.mixin_recurrence_rule import (
-    REPEAT_UNIT_SELECTION,
-)
-from odoo.addons.base.models.res_partner import _selection_timezones
-from odoo.addons.calendar.models.calendar_attendee import (
-    CalendarAttendee,
-    invitation_link_end,
 )
 from odoo.addons.calendar.models.utils import (
     generate_calendar_token,
@@ -53,6 +50,8 @@ except ImportError:
         "`vobject` Python module not found, iCal file generation disabled. Consider installing this module if you want to generate iCal files"
     )
     vobject = None
+
+INVITATION_OUTLIVES_EVENT = timedelta(days=30)
 
 REPEAT_UNIT_SELECTION_UI = [
     ("day", "Daily"),
@@ -96,7 +95,6 @@ class CalendarEvent(models.Model):
     )
     _inherit = [
         "mixin.mail.thread",
-        "mixin.recurrence.occurrence",
         "mixin.resource.scheduling",
         "mixin.bearer.token",
     ]
@@ -377,6 +375,9 @@ class CalendarEvent(models.Model):
             ("subsequent", "This and following events"),
             ("all", "All events"),
         ],
+        default="this",
+        store=False,
+        copy=False,
         help="Choose what to do with other events in the recurrence. Updating All Events is not allowed when dates or time is modified",
     )
     rrule = fields.Char(
@@ -473,6 +474,11 @@ class CalendarEvent(models.Model):
         readonly=False,
     )
     repeat_until = fields.Date(
+        compute="_compute_recurrence",
+        readonly=False,
+    )
+    custom_rrule = fields.Char(
+        string="Custom Rule",
         compute="_compute_recurrence",
         readonly=False,
     )
@@ -1299,11 +1305,13 @@ class CalendarEvent(models.Model):
             if touches_time:
                 vals["follow_recurrence"] = False
 
-        recurrence_values = {
-            field: vals.pop(field)
-            for field in self._get_fields_recurrent()
-            if field in vals
-        }
+        recurrence_values = self.env["calendar.recurrence"]._prepare_rule_vals(
+            {
+                field: vals.pop(field)
+                for field in self._get_fields_recurrent()
+                if field in vals
+            }
+        )
         notify_from = self
         if policy.update:
             notify_from, detached = self._write_update_recurrence(
@@ -1330,6 +1338,7 @@ class CalendarEvent(models.Model):
             self._write_reschedule_alarms()
         if touches_time:
             self._write_reset_organizer_answer()
+        if touches_time or "duration" in written_fnames:
             self._write_move_invitation_links()
         notify_from._write_notify_attendees(
             written_fnames,
@@ -1357,20 +1366,11 @@ class CalendarEvent(models.Model):
 
         return True
 
+    def _get_link_expiry(self) -> datetime:
+        return max(self.stop, fields.Datetime.now()) + INVITATION_OUTLIVES_EVENT
+
     def _write_move_invitation_links(self) -> None:
-        Link = self.env["access.link"]
-        notification = Domain("cause", "=", "notification")
-        links = (
-            Link._record_links(self.attendee_ids, notification)
-            | Link._record_links(self, notification)
-        ).with_privilege("base.privilege_manage_links", reason="the meeting moved")
-        ends = {
-            ("calendar.attendee", attendee.id): attendee._invitation_link_end()
-            for attendee in self.attendee_ids
-        } | {(self._name, event.id): invitation_link_end(event) for event in self}
-        for link in links:
-            if end := ends.get((link.res_model, link.res_id)):
-                link.date_to = end
+        self.env["access.link"]._sync_record_expiries(self.attendee_ids, self)
 
     def _write_prepare_values(self, values) -> None:
         self._set_videocall_location([values])
@@ -1810,6 +1810,10 @@ class CalendarEvent(models.Model):
         if self.res_model and self.res_id:
             return self.env[self.res_model].browse(self.res_id).get_formview_action()
         return None
+
+    def action_simplify_recurrence(self) -> None:
+        self.check_singleton()
+        self.write({"recurrence_update": "all", "custom_rrule": False})
 
     def action_sendmail(self) -> None:
         if self.env.user.email:
@@ -2464,7 +2468,6 @@ class CalendarEvent(models.Model):
         return round(duration, 2)
 
     @api.model
-    @api.model
     def _get_fields_recurrent(self) -> set:
         return {
             "byday",
@@ -2485,6 +2488,7 @@ class CalendarEvent(models.Model):
             "sun",
             "day",
             "weekday",
+            "custom_rrule",
         }
 
     @api.model

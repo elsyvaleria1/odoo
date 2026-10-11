@@ -1582,6 +1582,11 @@ msgid "Category"
 msgstr ""
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_access_link__cause
+msgid "Cause"
+msgstr ""
+
+#. module: website_slides
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_category__certification
 #: model:ir.model.fields.selection,name:website_slides.selection__slide_slide__slide_type__certification
 msgid "Certification"
@@ -2204,6 +2209,11 @@ msgid "Course finished"
 msgstr ""
 
 #. module: website_slides
+#: model:ir.model.fields.selection,name:website_slides.selection__access_link__cause__invitation
+msgid "Course invitation"
+msgstr ""
+
+#. module: website_slides
 #. odoo-python
 #: code:addons/website_slides/models/slide_channel.py:0
 msgid "Course not published yet"
@@ -2473,6 +2483,7 @@ msgid "Display"
 msgstr ""
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_access_link__display_name
 #: model:ir.model.fields,field_description:website_slides.field_gamification_challenge__display_name
 #: model:ir.model.fields,field_description:website_slides.field_gamification_karma_tracking__display_name
 #: model:ir.model.fields,field_description:website_slides.field_mail_activity__display_name
@@ -2795,6 +2806,11 @@ msgstr ""
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__embed_code_external
 msgid "External Embed Code"
+msgstr ""
+
+#. module: website_slides
+#: model:ir.model,name:website_slides.model_access_link
+msgid "External Link"
 msgstr ""
 
 #. module: website_slides
@@ -3174,6 +3190,7 @@ msgid "HowTo"
 msgstr ""
 
 #. module: website_slides
+#: model:ir.model.fields,field_description:website_slides.field_access_link__id
 #: model:ir.model.fields,field_description:website_slides.field_gamification_challenge__id
 #: model:ir.model.fields,field_description:website_slides.field_gamification_karma_tracking__id
 #: model:ir.model.fields,field_description:website_slides.field_mail_activity__id

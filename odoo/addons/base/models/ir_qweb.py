@@ -1,6 +1,7 @@
 import ast
 import base64
 import functools
+import hashlib
 import logging
 import math
 import pprint
@@ -9,7 +10,7 @@ import textwrap
 import threading
 import traceback
 import urllib.parse
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence, Sized
 from copy import deepcopy
 from dataclasses import dataclass
@@ -52,7 +53,7 @@ from odoo.tools.safe_eval import (
     guard_format_calls,
     to_opcodes,
 )
-from odoo.tools.translate import FORMAT_REGEX
+from odoo.tools.translate import FORMAT_REGEX, is_translatable_attrib
 from odoo.tools.urls import keep_query
 
 _logger = logging.getLogger(__name__)
@@ -165,6 +166,7 @@ T_CALL_SLOT = "0"
 
 QWEB_MAX_RENDER_DEPTH = 50
 RENDER_INTERNAL_PREFIXES = ("__qweb", "_qweb")
+RENDER_PROCESS_OPTIONS = frozenset({"dev_mode"})
 
 ETREE_TEMPLATE_REF = count()
 
@@ -229,9 +231,13 @@ def is_event_handler_attribute(name: object) -> bool:
     return str(name).lower().startswith("on")
 
 
+class TemplateAttributeValue(str):
+    __slots__ = ()
+
+
 def srcdoc_value(value: Any) -> Markup:
-    if isinstance(value, Markup):
-        return value
+    if hasattr(value, "__html__"):
+        return Markup(value)
     return escape(to_text(value))
 
 
@@ -274,7 +280,9 @@ def checked_call_values(value: Any) -> dict[Any, Any]:
 
 def checked_call_options(options: Mapping[str, Any]) -> Mapping[str, Any]:
     for name in options:
-        if isinstance(name, str) and name.startswith(RENDER_INTERNAL_PREFIXES):
+        if isinstance(name, str) and (
+            name.startswith(RENDER_INTERNAL_PREFIXES) or name in RENDER_PROCESS_OPTIONS
+        ):
             _debug.logic("call_option_rejected", name=name[:40])
             msg = f"t-call option {name!r} is reserved for the renderer"
             raise ValueError(msg)
@@ -336,75 +344,417 @@ def _attribute_name_html(name: str) -> str:
     return str(escape(name))
 
 
-EXPRESSION_DIRECTIVES = frozenset(
+AUTHORING_DIRECTIVES = frozendict(
     {
-        "t-args",
-        "t-att",
-        "t-elif",
-        "t-esc",
-        "t-foreach",
-        "t-if",
-        "t-lang",
-        "t-options",
-        "t-out",
-        "t-raw",
-        "t-value",
+        **dict.fromkeys(
+            (
+                "t-att",
+                "t-elif",
+                "t-esc",
+                "t-foreach",
+                "t-if",
+                "t-lang",
+                "t-options",
+                "t-out",
+                "t-raw",
+                "t-value",
+            ),
+            "expression",
+        ),
+        **dict.fromkeys(("t-call", "t-valuef", "t-valuef.translate"), "format"),
+        **dict.fromkeys(
+            (
+                "t-autoprefix",
+                "t-call-assets",
+                "t-consumed-options",
+                "t-css",
+                "t-debug",
+                "t-else",
+                "t-groups",
+                "t-ignore",
+                "t-inner-content",
+                "t-js",
+                "t-name",
+                "t-tag-close",
+                "t-tag-open",
+                "t-title",
+                "t-translation",
+            ),
+            "constant",
+        ),
+        "t-args": "mapping",
+        "t-as": "binding",
+        "t-field": "field",
+        "t-set": "set",
     }
 )
+AUTHORING_DIRECTIVE_PREFIXES = (
+    ("t-att-", "expression"),
+    ("t-attf-", "format"),
+    ("t-options-", "expression"),
+)
+COMPUTED_BINDING_PREFIX = "*"
 
 
-def iter_template_expressions(root: etree._Element) -> Iterator[str]:
+def _directive_kind(name: str, directives: Mapping[str, str]) -> str | None:
+    if kind := directives.get(name):
+        return kind
+    return next(
+        (
+            kind
+            for prefix, kind in AUTHORING_DIRECTIVE_PREFIXES
+            if name.startswith(prefix)
+        ),
+        None,
+    )
+
+
+def _authored_attributes(
+    root: etree._Element,
+) -> Iterator[tuple[bool | None, str, str]]:
     for el in root.iter():
         if not isinstance(el.tag, str):
+            continue
+        parent = el.getparent()
+        if (
+            el.tag == "attribute"
+            and parent is not None
+            and parent.get("position") == "attributes"
+        ):
+            if name := el.get("name"):
+                for value in (el.text, el.get("add")):
+                    if value:
+                        yield None, name, value
             continue
         is_call = "t-call" in el.attrib
         for name, value in el.attrib.items():
-            if name in EXPRESSION_DIRECTIVES or name.startswith(
-                ("t-att-", "t-options-")
-            ):
+            yield is_call, name, value
+
+
+def _parses_as_expression(value: str) -> bool:
+    try:
+        ast.parse(f"({value})", mode="eval")
+    except SyntaxError:
+        return False
+    return True
+
+
+def _format_expressions(value: str) -> Iterator[str]:
+    for match in FORMAT_REGEX.finditer(value):
+        yield match.group(1) or match.group(2)
+
+
+def mapping_binding_names(expression: str) -> list[str]:
+    try:
+        node = ast.parse(f"({expression})", mode="eval").body
+    except SyntaxError:
+        node = None
+    if isinstance(node, ast.Dict) and all(
+        isinstance(key, ast.Constant) and isinstance(key.value, str)
+        for key in node.keys
+    ):
+        return [key.value for key in node.keys]
+    return [f"{COMPUTED_BINDING_PREFIX}{expression}"]
+
+
+def iter_template_expressions(
+    root: etree._Element, directives: Mapping[str, str] = AUTHORING_DIRECTIVES
+) -> Iterator[str]:
+    for is_call, name, value in _authored_attributes(root):
+        match _directive_kind(name, directives):
+            case "expression" | "mapping":
                 yield value
-            elif name == "t-field":
+            case "field":
                 yield value.rpartition(".")[0]
-            elif (
-                name.startswith("t-attf-")
-                or name in ("t-valuef", "t-call")
-                or (is_call and name.endswith((".f", ".translate")))
-            ):
-                for match in FORMAT_REGEX.finditer(value):
-                    yield match.group(1) or match.group(2)
-            elif is_call and not name.startswith("t-"):
+            case "format":
+                yield from _format_expressions(value)
+            case "set" if value.lstrip().startswith("{"):
                 yield value
+            case None if is_call is not False and not name.startswith("t-"):
+                if name.endswith((".f", ".translate")):
+                    yield from _format_expressions(value)
+                elif is_call or _parses_as_expression(value):
+                    yield value
 
 
-BINDING_PREFIX = "binding:"
+def iter_template_bindings(
+    root: etree._Element, directives: Mapping[str, str] = AUTHORING_DIRECTIVES
+) -> Iterator[str]:
+    for is_call, name, value in _authored_attributes(root):
+        match _directive_kind(name, directives):
+            case "set" if value.lstrip().startswith("{"):
+                yield from mapping_binding_names(value)
+            case "set" | "binding":
+                yield value
+            case "mapping":
+                yield from mapping_binding_names(value)
+            case None if is_call is not False and not name.startswith("t-"):
+                yield name.removesuffix(".f").removesuffix(".translate")
 
 
-def iter_template_bindings(root: etree._Element) -> Iterator[str]:
-    for el in root.iter():
-        if not isinstance(el.tag, str):
-            continue
-        for name in ("t-set", "t-as"):
-            if name in el.attrib:
-                yield el.attrib[name]
+def _trust_value(name: str, value: str, el: etree._Element) -> str:
+    if name.endswith(".translate") or (
+        name.startswith("t-attf-") and is_translatable_attrib(name, el)
+    ):
+        return "".join(f"{{{{{expr}}}}}" for expr in sorted(_format_expressions(value)))
+    return value
+
+
+def _is_evaluated_attribute(name: str, el: etree._Element) -> bool:
+    return name.startswith("t-") or name == "groups" or "t-call" in el.attrib
+
+
+def _trust_skeleton(el: etree._Element) -> list[tuple]:
+    children = [
+        node
+        for child in el
+        if isinstance(child.tag, str)
+        for node in _trust_skeleton(child)
+    ]
+    spec = el.tag in ("xpath", "attribute") or "position" in el.attrib
+    attributes = tuple(
+        sorted(
+            (name, _trust_value(name, value, el))
+            for name, value in el.attrib.items()
+            if spec or _is_evaluated_attribute(name, el)
+        )
+    )
+    if not (attributes or spec):
+        return children
+    text = (
+        _trust_value(el.get("name", ""), el.text or "", el)
+        if el.tag == "attribute"
+        else None
+    )
+    return [(el.tag, attributes, text, tuple(children))]
+
+
+def trust_digest(*parts: object) -> str:
+    return hashlib.sha256(repr(parts).encode()).hexdigest()
+
+
+def template_trust_digest(root: etree._Element, *context: str) -> str:
+    return trust_digest(*context, _trust_skeleton(root))
+
+
+TEMPLATE_REF = "__template_ref__"
+
+
+class TemplateContext(NamedTuple):
+
+    directives: tuple[tuple[str, str], ...]
+    ancestors: tuple[tuple[str | None, tuple[tuple[str, str], ...]], ...]
+    conditions: tuple[tuple[str | None, tuple[tuple[str, str], ...]], ...]
+    bindings: tuple[tuple[str | None, tuple[str, ...] | None], ...]
+    body: tuple[str, ...]
+    parameters: tuple[tuple[str | None, tuple[str, ...] | None], ...]
+
+
+def evaluated_attributes(el: etree._Element) -> tuple[tuple[str, str], ...]:
+    return tuple(
+        sorted(
+            (name, value)
+            for name, value in el.attrib.items()
+            if name != TEMPLATE_REF and _is_evaluated_attribute(name, el)
+        )
+    )
+
+
+def _read_names(
+    el: etree._Element, directives: Mapping[str, str]
+) -> frozenset[str] | None:
+    if any(name.startswith("t-call") for name in el.attrib):
+        return None
+    names: set[str] = set()
+    for expression in iter_template_expressions(
+        etree.Element(el.tag, dict(el.attrib)), directives
+    ):
+        try:
+            tree = ast.parse(f"({expression})", mode="eval")
+        except SyntaxError:
+            return None
+        names.update(node.id for node in ast.walk(tree) if isinstance(node, ast.Name))
+    return frozenset(names)
+
+
+def _set_names(el: etree._Element) -> tuple[str, ...] | None:
+    value = el.get("t-set", "")
+    names = mapping_binding_names(value) if value.lstrip().startswith("{") else [value]
+    if any(name.startswith(COMPUTED_BINDING_PREFIX) for name in names):
+        return None
+    return tuple(names)
+
+
+def _is_set(el: etree._Element) -> bool:
+    return isinstance(el.tag, str) and "t-set" in el.attrib
+
+
+def _binding(el: etree._Element) -> tuple[str | None, tuple[str, ...] | None]:
+    return el.get(TEMPLATE_REF), _set_names(el)
+
+
+def _conditions(el: etree._Element) -> list[tuple[str | None, tuple]]:
+    conditions = []
+    if "t-elif" in el.attrib or "t-else" in el.attrib:
+        previous = el.getprevious()
+        while previous is not None:
+            if isinstance(previous.tag, str):
+                conditions.append(
+                    (previous.get(TEMPLATE_REF), evaluated_attributes(previous))
+                )
+                if "t-elif" not in previous.attrib:
+                    break
+            previous = previous.getprevious()
+    return conditions
+
+
+def template_contexts(
+    root: etree._Element, directives: Mapping[str, str] = AUTHORING_DIRECTIVES
+) -> dict[str, list[tuple[TemplateContext, etree._Element]]]:
+    contexts: dict[str, list[tuple[TemplateContext, etree._Element]]] = defaultdict(
+        list
+    )
+    ancestors: list[tuple[str | None, tuple[tuple[str, str], ...]]] = []
+    loops: list[etree._Element] = []
+    bindings_of = {el: _binding(el) for el in root.iter() if _is_set(el)}
+    loop_sets: dict[etree._Element, list[etree._Element]] = {}
+    bound: list[etree._Element] = []
+
+    def sets_in(loop: etree._Element) -> list[etree._Element]:
+        if loop not in loop_sets:
+            loop_sets[loop] = [el for el in loop.iter() if el in bindings_of]
+        return loop_sets[loop]
+
+    def context(
+        el: etree._Element, directives_of: tuple[tuple[str, str], ...]
+    ) -> TemplateContext:
+        reads = _read_names(el, directives)
+        candidates = dict.fromkeys(
+            [*bound, *(s for loop in loops for s in sets_in(loop))]
+        )
+        bindings = tuple(
+            binding
+            for candidate in candidates
+            if (binding := bindings_of[candidate])[1] is None
+            or reads is None
+            or not reads.isdisjoint(binding[1])
+        )
+        body: tuple[str, ...] = ()
+        if "t-set" in el.attrib:
+            body = (
+                el.text or "",
+                *(etree.tostring(child, encoding="unicode") for child in el),
+            )
+        parameters: tuple[tuple[str | None, tuple[str, ...] | None], ...] = ()
         if "t-call" in el.attrib:
-            for name in el.attrib:
-                if not name.startswith("t-"):
-                    yield name.removesuffix(".f").removesuffix(".translate")
+            parameters = tuple(
+                bindings_of[child]
+                for child in el.iter()
+                if child is not el and child in bindings_of
+            )
+        return TemplateContext(
+            directives_of,
+            tuple(ancestors),
+            tuple(_conditions(el)),
+            bindings,
+            body,
+            parameters,
+        )
+
+    def visit(el: etree._Element) -> None:
+        directives_of = evaluated_attributes(el)
+        ref = el.get(TEMPLATE_REF)
+        if ref is not None and directives_of:
+            contexts[ref].append((context(el, directives_of), el))
+        if directives_of:
+            ancestors.append((ref, directives_of))
+        is_loop = "t-foreach" in el.attrib
+        if is_loop:
+            loops.append(el)
+        for child in el:
+            if isinstance(child.tag, str):
+                visit(child)
+        if is_loop:
+            loops.pop()
+        if directives_of:
+            ancestors.pop()
+        if "t-set" in el.attrib:
+            bound.append(el)
+
+    visit(root)
+    return contexts
+
+
+def template_context_changes(
+    served: etree._Element,
+    trusted: etree._Element | None,
+    directives: Mapping[str, str] = AUTHORING_DIRECTIVES,
+) -> dict[str, tuple[str, str]]:
+    served_contexts = template_contexts(served, directives)
+    trusted_contexts = (
+        template_contexts(trusted, directives) if trusted is not None else {}
+    )
+    changes = {}
+    for ref in served_contexts.keys() | trusted_contexts.keys():
+        now = served_contexts.get(ref, [])
+        before = trusted_contexts.get(ref, [])
+        delta = Counter(context for context, _el in now)
+        delta.subtract(context for context, _el in before)
+        if not any(delta.values()):
+            continue
+        if len(now) != len(before):
+            how = "removed" if len(now) < len(before) else "added"
+        else:
+            new = next(context for context, count in delta.items() if count > 0)
+            old = next(context for context, count in delta.items() if count < 0)
+            if old.directives != new.directives:
+                how = "directives"
+            elif (old.ancestors, old.conditions) != (new.ancestors, new.conditions):
+                how = "placed"
+            else:
+                how = "bindings"
+        element = (now or before)[0][1]
+        label = " ".join(
+            [
+                element.tag,
+                *(f'{name}="{value}"' for name, value in evaluated_attributes(element)),
+            ]
+        )
+        changes[ref] = (how, f"<{textwrap.shorten(label, 120)}>")
+    return changes
+
+
+def _unknown_directives(
+    root: etree._Element, directives: Mapping[str, str] = AUTHORING_DIRECTIVES
+) -> Iterator[str]:
+    for _is_call, name, _value in _authored_attributes(root):
+        if name.startswith("t-") and _directive_kind(name, directives) is None:
+            yield name
+
+
+def template_binding_errors(name: str) -> list[str]:
+    if name.startswith(COMPUTED_BINDING_PREFIX):
+        return ["a template must spell out the names it binds"]
+    return restricted_binding_errors(name)
 
 
 def restricted_template_errors(
-    root: etree._Element, trusted: Callable[[str], bool] = lambda _expr: False
+    root: etree._Element, directives: Mapping[str, str] = AUTHORING_DIRECTIVES
 ) -> list[str]:
     errors = [
-        f"{binding}: {error}"
-        for binding in dict.fromkeys(iter_template_bindings(root))
-        if not trusted(f"{BINDING_PREFIX}{binding}")
-        for error in restricted_binding_errors(binding)
+        f"{name}: the directive is not available"
+        for name in dict.fromkeys(_unknown_directives(root, directives))
     ]
-    for expression in dict.fromkeys(iter_template_expressions(root)):
-        if refused := restricted_expression_errors(expression):
-            if not trusted(expression):
-                errors.append(f"{expression}: {'; '.join(refused)}")
+    errors += [
+        f"{binding}: {error}"
+        for binding in dict.fromkeys(iter_template_bindings(root, directives))
+        for error in template_binding_errors(binding)
+    ]
+    errors += [
+        f"{expression}: {'; '.join(refused)}"
+        for expression in dict.fromkeys(iter_template_expressions(root, directives))
+        if (refused := restricted_expression_errors(expression))
+    ]
     return errors
 
 
@@ -1787,6 +2137,7 @@ class IrQweb(models.AbstractModel):
             "escape_text": escape_text,
             "format_attributes": format_attributes,
             "srcdoc_value": srcdoc_value,
+            "TemplateAttributeValue": TemplateAttributeValue,
             "checked_attributes": checked_attributes,
             "checked_call_values": checked_call_values,
             "checked_call_options": checked_call_options,
@@ -1876,21 +2227,22 @@ class IrQweb(models.AbstractModel):
     def _get_element_marker(self, path: str | None, xml: str | None) -> str:
         return f"# element: {path!r} , {xml!r}"
 
-    def _compile_format(self, expr: str) -> str:
+    def _compile_format(self, expr: str, *, markup: bool = False) -> str:
         values = [
             f"self._compile_to_str({self._compile_expr(m.group(1) or m.group(2))})"
             for m in FORMAT_REGEX.finditer(expr)
         ]
         if not values:
-            return repr(expr)
+            return f"Markup({expr!r})" if markup else repr(expr)
         code = repr(FORMAT_REGEX.sub("%s", expr.replace("%", "%%")))
+        if markup:
+            code = f"Markup({code})"
         return code + f" % ({', '.join(values)},)"
 
     def _compile_translatable_format(self, expr: str) -> str:
-        code = self._compile_format(expr)
-        if self.env.context.get("edit_translations"):
-            return f"Markup({code})"
-        return code
+        return self._compile_format(
+            expr, markup=bool(self.env.context.get("edit_translations"))
+        )
 
     def _compile_dict_merge(
         self, target: str, expr: str, level: int, checker: str
@@ -1950,6 +2302,9 @@ class IrQweb(models.AbstractModel):
 
     def _compile_to_str(self, expr: Any) -> str:
         return to_text(expr)
+
+    def _get_authoring_directives(self) -> Mapping[str, str]:
+        return AUTHORING_DIRECTIVES
 
     def _get_directive_eval_order(self) -> list[str]:
         return [
@@ -2240,7 +2595,7 @@ class IrQweb(models.AbstractModel):
                 if name.lower() == "srcdoc":
                     value_code = f"Markup({value!r})"
                 else:
-                    value_code = repr(value)
+                    value_code = f"TemplateAttributeValue({value!r})"
                 code.append(indent_code(f"attrs[{name!r}] = {value_code}", level))
 
         for key in list(el.attrib):
@@ -3291,6 +3646,7 @@ class IrQweb(models.AbstractModel):
             for attr, value in atts.items():
                 if (
                     value
+                    and not isinstance(value, TemplateAttributeValue)
                     and str(attr).lower() in POST_PROCESSING_ATT_NAMES
                     and is_executable_url(value, tag_name)
                 ):

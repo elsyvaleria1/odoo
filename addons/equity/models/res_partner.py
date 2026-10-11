@@ -7,8 +7,6 @@ from odoo import api, fields, models
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools.misc import format_date, format_decimalized_amount
 
-from odoo.addons.base.models.access_link import DEFAULT_LIFETIME
-
 
 class ResPartner(models.Model):
     _name = "res.partner"
@@ -203,10 +201,11 @@ class ResPartner(models.Model):
 
     def _equity_get_or_create_token(self) -> str:
         self.check_singleton()
-        link, token = self.env["access.link"]._issue(
+        Link = self.env["access.link"]
+        link, token = Link._issue(
             self, partner=self, role="comment", cause="notification"
         )
-        renewed = fields.Datetime.now() + DEFAULT_LIFETIME["notification"]
+        renewed = Link._get_latest_date_to("notification")
         if link.date_to and link.date_to < renewed:
             link.with_privilege(
                 "base.privilege_manage_links", reason="an equity mail carries the link"

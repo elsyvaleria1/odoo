@@ -233,6 +233,19 @@ class IrAccessException(models.Model):
                     )
                 )
 
+    @api.constrains("date_from", "date_to")
+    def _check_length(self) -> None:
+        days = EXCEPTION_MAX_DAYS
+        for exception in self:
+            if exception.date_to - exception.date_from > timedelta(days=days):
+                raise ValidationError(
+                    self.env._(
+                        "An exception lasts %(days)s days at most; let this one "
+                        "lapse and grant another when it is reviewed.",
+                        days=days,
+                    )
+                )
+
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
         if not self.env.su and any(
@@ -243,7 +256,6 @@ class IrAccessException(models.Model):
             )
         exceptions = super().create(vals_list)
         exceptions._check_not_own()
-        exceptions._check_length()
         self.env["ir.access.log"]._record(
             [exception._log_values("exception_created") for exception in exceptions]
         )
@@ -272,7 +284,6 @@ class IrAccessException(models.Model):
                     )
         result = super().write(vals)
         if {"date_from", "date_to"} & set(vals):
-            self._check_length()
             self.env["ir.access.log"]._record(
                 [
                     exception._log_values(
@@ -283,21 +294,6 @@ class IrAccessException(models.Model):
                 ]
             )
         return result
-
-    def _check_length(self) -> None:
-        if self.env.su:
-            return
-        days = EXCEPTION_MAX_DAYS
-        for exception in self:
-            start = exception.date_from or exception.create_date
-            if exception.date_to - start > timedelta(days=days):
-                raise ValidationError(
-                    self.env._(
-                        "An exception lasts %(days)s days at most; let this one "
-                        "lapse and grant another when it is reviewed.",
-                        days=days,
-                    )
-                )
 
     def _check_not_own(self) -> None:
         if self.env.su:

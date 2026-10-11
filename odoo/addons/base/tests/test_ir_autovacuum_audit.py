@@ -1,10 +1,15 @@
 import contextlib
 import itertools
+from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from odoo import SUPERUSER_ID, api
 from odoo.exceptions import AccessDenied
-from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.modules.registry import Registry
+from odoo.tests import common
+from odoo.tests.common import BaseCase, TransactionCase, new_test_user, tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.base.models import ir_autovacuum
 
@@ -191,3 +196,69 @@ class TestTransientVacuumOverCount(TransactionCase):
         self.assertGreaterEqual(removed, 2)
         self.assertFalse(rows[:2].exists())
         self.assertEqual(rows[2].exists(), rows[2])
+
+
+@tagged("post_install", "-at_install")
+class TestAutovacuumEndsItsRun(BaseCase):
+    def setUp(self):
+        super().setUp()
+        self.registry = Registry(common.get_db_name())
+        with self.registry.cursor() as cr:
+            env = api.Environment(cr, SUPERUSER_ID, {})
+            self.cron_id = (
+                env["ir.cron"]
+                .create(
+                    {
+                        "name": "Autovacuum run probe",
+                        "state": "code",
+                        "code": "model._run_vacuum_cleaner()",
+                        "model_id": env.ref("base.model_ir_autovacuum").id,
+                        "user_id": SUPERUSER_ID,
+                        "nextcall": datetime(2000, 1, 1),
+                    }
+                )
+                .id
+            )
+            cr.commit()
+        self.addCleanup(self._drop_cron)
+
+    def _drop_cron(self):
+        with self.registry.cursor() as cr:
+            api.Environment(cr, SUPERUSER_ID, {})["ir.cron"].browse(
+                self.cron_id
+            ).unlink()
+            cr.commit()
+
+    @mute_logger(_IR_AUTOVACUUM_LOGGER, "odoo.addons.base.models.ir_cron")
+    def test_work_deferred_past_the_budget_ends_the_cron_run(self):
+        calls = []
+
+        def fake_gc(model):
+            calls.append(model._name)
+            return (5, True)
+
+        IrCronModel = self.registry["ir.cron"]
+        with (
+            patch.object(
+                ir_autovacuum,
+                "inspect",
+                SimpleNamespace(
+                    getmembers=TestAutovacuumTimeBudget._getmembers_stub(
+                        [("_gc_fake", fake_gc)]
+                    )
+                ),
+            ),
+            patch.object(ir_autovacuum, "MAX_VACUUM_RUNTIME", 0),
+            self.registry.cursor() as cron_cr,
+        ):
+            job = IrCronModel._acquire_job(
+                cron_cr, self.cron_id, include_not_ready=True
+            )
+            IrCronModel._run_job(cron_cr, job)
+            cron_cr.commit()
+        self.assertEqual(
+            len(calls),
+            1,
+            "a sweep that deferred its work must end the cron run; reported as "
+            "progress, the run loop starts the whole sweep again",
+        )

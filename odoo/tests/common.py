@@ -21,6 +21,9 @@ from odoo.libs.collections import DotDict
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.email import single_email_re
 from odoo.libs.logging import mute_logger
+from odoo.libs.secret_key import INDEX_SIZE
+from odoo.libs.sql import SQL
+from odoo.service.api_scope import RPC_SCOPE
 from odoo.tools import config
 from odoo.tools.cache import _COUNTERS
 
@@ -71,7 +74,9 @@ __all__ = [
     "get_db_name",
     "loaded_demo_data",
     "mute_logger",
+    "new_test_api_key",
     "new_test_user",
+    "new_unbound_test_api_key",
     "no_retry",
     "patch",
     "release_stranded_test_cursors",
@@ -98,6 +103,7 @@ def request_stand_in(**attributes: Any) -> DotDict:
             **attributes,
         }
     )
+
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -244,6 +250,31 @@ def new_test_user(env, login="", groups="base.group_user", context=None, **kwarg
         user = env["res.users"].with_context(**context).create(create_values)
         span.set(uid=user.id)
     return user
+
+
+def new_test_api_key(user, scope: str = RPC_SCOPE) -> str:
+    return (
+        user.env["res.users.apikeys"]
+        .with_user(user)
+        ._generate(
+            scope,
+            f"test key of {user.login}",
+            datetime.datetime.now() + datetime.timedelta(days=1),
+        )
+    )
+
+
+def new_unbound_test_api_key(user) -> str:
+    key = new_test_api_key(user)
+    user.env.cr.execute(
+        SQL(
+            "UPDATE res_users_apikeys SET scope_id = NULL"
+            " WHERE user_id = %s AND index = %s",
+            user.id,
+            key[:INDEX_SIZE],
+        )
+    )
+    return key
 
 
 def loaded_demo_data(env: api.Environment) -> bool:

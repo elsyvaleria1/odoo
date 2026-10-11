@@ -443,6 +443,12 @@ msgstr ""
 
 #. module: hr_holidays
 #. odoo-python
+#: code:addons/hr_holidays/models/hr_leave_accrual_plan_level.py:0
+msgid "A monthly or yearly schedule needs a day."
+msgstr ""
+
+#. module: hr_holidays
+#. odoo-python
 #: code:addons/hr_holidays/models/hr_leave.py:0
 msgid "A time off cannot be duplicated."
 msgstr ""
@@ -454,9 +460,21 @@ msgid "A time off request needs both a start date and an end date."
 msgstr ""
 
 #. module: hr_holidays
+#. odoo-python
+#: code:addons/hr_holidays/models/hr_leave_accrual_plan_level.py:0
+msgid "A weekly schedule needs a weekday."
+msgstr ""
+
+#. module: hr_holidays
 #. odoo-javascript
 #: code:addons/hr_holidays/static/src/components/accrual_level/accrual_levels.xml:0
 msgid "A yearly cap is set to"
+msgstr ""
+
+#. module: hr_holidays
+#. odoo-python
+#: code:addons/hr_holidays/models/hr_leave_accrual_plan_level.py:0
+msgid "A yearly schedule needs a month."
 msgstr ""
 
 #. module: hr_holidays
@@ -1008,6 +1026,8 @@ msgstr ""
 
 #. module: hr_holidays
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__first_month__4
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__4
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__4
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__4
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__4
 msgid "April"
@@ -1100,6 +1120,8 @@ msgid "Attachments"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__8
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__8
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__second_month__8
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__8
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__8
@@ -1639,6 +1661,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/hr_holidays/static/src/dashboard/time_off_card.xml:0
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__accrual_validity_type__day
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_unit__day
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__start_type__day
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__added_value_type__day
 #: model_terms:ir.ui.view,arch_db:hr_holidays.view_employee_form_leave_inherit
@@ -1651,6 +1674,8 @@ msgid "Death Leave"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__12
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__12
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__second_month__12
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__12
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__12
@@ -1999,6 +2024,8 @@ msgstr ""
 
 #. module: hr_holidays
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__first_month__2
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__2
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__2
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__2
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__2
 msgid "February"
@@ -2053,6 +2080,7 @@ msgid "Frequency"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_weekday__fri
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__week_day__4
 msgid "Friday"
 msgstr ""
@@ -2480,6 +2508,8 @@ msgstr ""
 
 #. module: hr_holidays
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__first_month__1
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__1
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__1
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__1
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__1
 msgid "January"
@@ -2498,6 +2528,8 @@ msgid "Job Position"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__7
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__7
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__second_month__7
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__7
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__7
@@ -2506,6 +2538,8 @@ msgstr ""
 
 #. module: hr_holidays
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__first_month__6
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__6
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__6
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__6
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__6
 msgid "June"
@@ -2548,6 +2582,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_mandatory_day__write_date
 #: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__write_date
 msgid "Last Updated on"
+msgstr ""
+
+#. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_day__last
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_day__last
+msgid "Last day"
 msgstr ""
 
 #. module: hr_holidays
@@ -2657,6 +2697,8 @@ msgstr ""
 
 #. module: hr_holidays
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__first_month__3
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__3
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__3
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__3
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__3
 msgid "March"
@@ -2721,6 +2763,8 @@ msgstr ""
 
 #. module: hr_holidays
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__first_month__5
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__5
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__5
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__5
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__5
 msgid "May"
@@ -2783,6 +2827,7 @@ msgid "Mode"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_weekday__mon
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__week_day__0
 msgid "Monday"
 msgstr ""
@@ -2799,6 +2844,7 @@ msgstr ""
 
 #. module: hr_holidays
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__accrual_validity_type__month
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_unit__month
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__start_type__month
 msgid "Months"
 msgstr ""
@@ -3074,6 +3120,8 @@ msgid "Notify HR"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__11
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__11
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__second_month__11
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__11
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__11
@@ -3130,6 +3178,8 @@ msgid "Number of messages with delivery error"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__10
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__10
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__second_month__10
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__10
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__10
@@ -3537,6 +3587,7 @@ msgid "SMS Delivery error"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_weekday__sat
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__week_day__5
 msgid "Saturday"
 msgstr ""
@@ -3631,6 +3682,8 @@ msgid ""
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_month__9
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_second_month__9
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__second_month__9
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__yearly_month__9
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_plan__carryover_month__9
@@ -3839,6 +3892,7 @@ msgid "Summary"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_weekday__sun
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__week_day__6
 msgid "Sunday"
 msgstr ""
@@ -3958,6 +4012,14 @@ msgid ""
 msgstr ""
 
 #. module: hr_holidays
+#. odoo-python
+#: code:addons/hr_holidays/models/hr_leave_accrual_plan_level.py:0
+msgid ""
+"The last day of a month and the first day of the next one close the same "
+"period, so they cannot be the two dates."
+msgstr ""
+
+#. module: hr_holidays
 #. odoo-javascript
 #: code:addons/hr_holidays/static/src/dashboard/time_off_card.xml:0
 msgid ""
@@ -4019,6 +4081,12 @@ msgstr ""
 #: code:addons/hr_holidays/models/hr_leave.py:0
 msgid ""
 "The time off request has been cancelled for the following reason:%(reason)s"
+msgstr ""
+
+#. module: hr_holidays
+#. odoo-python
+#: code:addons/hr_holidays/models/hr_leave_accrual_plan_level.py:0
+msgid "The two dates fall on the same day in shorter months."
 msgstr ""
 
 #. module: hr_holidays
@@ -4123,6 +4191,7 @@ msgid ""
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_weekday__thu
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__week_day__3
 msgid "Thursday"
 msgstr ""
@@ -4457,6 +4526,7 @@ msgid ""
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_weekday__tue
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__week_day__1
 msgid "Tuesday"
 msgstr ""
@@ -4730,6 +4800,7 @@ msgid "Waiting for Approval"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_weekday__wed
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__week_day__2
 msgid "Wednesday"
 msgstr ""
@@ -4743,6 +4814,11 @@ msgstr ""
 #. module: hr_holidays
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__frequency__weekly
 msgid "Weekly"
+msgstr ""
+
+#. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_unit__week
+msgid "Weeks"
 msgstr ""
 
 #. module: hr_holidays
@@ -4829,6 +4905,7 @@ msgid "Yearly"
 msgstr ""
 
 #. module: hr_holidays
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__repeat_unit__year
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_accrual_level__start_type__year
 msgid "Years"
 msgstr ""

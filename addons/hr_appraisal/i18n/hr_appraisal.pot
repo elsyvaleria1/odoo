@@ -2856,6 +2856,12 @@ msgstr ""
 
 #. module: hr_appraisal
 #. odoo-python
+#: code:addons/hr_appraisal/models/hr_appraisal_goal.py:0
+msgid "You cannot create recursive goals."
+msgstr ""
+
+#. module: hr_appraisal
+#. odoo-python
 #: code:addons/hr_appraisal/models/hr_employee.py:0
 msgid ""
 "You cannot delete an employee who is a goal's manager, archive it instead."

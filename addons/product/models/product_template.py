@@ -62,11 +62,10 @@ class ProductTemplate(models.Model):
         "mixin.mail.activity",
         "mixin.image",
         "mixin.product.price",
-        "mixin.favorite",
         "mixin.user.favorite",
     ]
     _description = "Product"
-    _order = "is_favorite desc, name"
+    _order = "is_featured desc, name"
     _check_company_auto = True
     _check_company_domain = models.check_company_domain_parent_of
 
@@ -105,6 +104,10 @@ class ProductTemplate(models.Model):
         help="Gives the sequence order when displaying a product list",
     )
     color = fields.Integer(string="Color Index")
+    is_featured = fields.Boolean(
+        string="Featured",
+        help="Featured products are listed first, for every user.",
+    )
     is_product_variant = fields.Boolean(
         string="Is a product variant",
         compute="_compute_is_product_variant",
@@ -349,7 +352,7 @@ class ProductTemplate(models.Model):
         copy=True,
     )
 
-    _is_favorite_index = models.Index("(is_favorite) WHERE is_favorite IS TRUE")
+    _is_featured_index = models.Index("(is_featured) WHERE is_featured IS TRUE")
 
     @api.constrains("type", "combo_ids")
     def _check_combo_ids_not_empty(self) -> None:

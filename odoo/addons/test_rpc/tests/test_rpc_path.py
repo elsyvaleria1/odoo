@@ -1,6 +1,7 @@
 import logging
 
 from odoo.tests import Like, get_db_name, tagged
+from odoo.tests.common import new_test_api_key
 from odoo.tools import mute_logger
 
 from odoo.addons.base.tests.common import HttpCaseWithUserDemo
@@ -115,7 +116,7 @@ class TestRpcPath(HttpCaseWithUserDemo):
             self.xmlrpc_object.execute_kw(
                 get_db_name(),
                 self.user_demo.id,
-                "demo",
+                new_test_api_key(self.user_demo),
                 "res.users",
                 "read",
                 [self.user_demo.id, ["login"]],

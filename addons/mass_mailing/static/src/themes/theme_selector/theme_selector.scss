@@ -123,10 +123,10 @@
         cursor: pointer;
         padding: 10px 1.5rem;
         width: 20%;
-        div i.o_mail_template_remove_favorite {
+        div i.o_mail_template_remove_saved {
             display: none;
         }
-        div:hover i.o_mail_template_remove_favorite {
+        div:hover i.o_mail_template_remove_saved {
             display: inline-block;
             &:hover {
                 color: red;

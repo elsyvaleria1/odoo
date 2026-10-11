@@ -147,10 +147,12 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             ]
         )
 
-        with self.assertRaises(
-            exceptions.UserError, msg="The article hierarchy contains a cycle"
-        ):
+        with self.assertRaises(exceptions.UserError) as caught:
             article.move_to(parent_id=article_children[1].id)
+        self.assertEqual(
+            str(caught.exception),
+            "An article cannot be moved under itself or one of its sub-articles.",
+        )
 
     @users("employee")
     def test_article_acyclic_graph_write_parent(self):
@@ -170,10 +172,12 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             ]
         )
 
-        with self.assertRaises(
-            exceptions.UserError, msg="The article hierarchy contains a cycle"
-        ):
+        with self.assertRaises(exceptions.UserError) as caught:
             article.write({"parent_id": article_children[1].id})
+        self.assertEqual(
+            str(caught.exception),
+            "An article cannot be moved under itself or one of its sub-articles.",
+        )
 
     @mute_logger(
         "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"

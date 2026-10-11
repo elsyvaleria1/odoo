@@ -1,15 +1,13 @@
-from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo import _lt, api, fields, models
 from odoo.fields import Domain
 
 
 class EsgEmissionSource(models.Model):
     _name = "esg.emission.source"
+    _inherit = ["mixin.hierarchy"]
     _description = "Emission Source"
     _order = "level desc,sequence,name"
     _rec_name = "complete_name"
-    _parent_name = "parent_id"
-    _parent_store = True
 
     sequence = fields.Integer(default=10)
     name = fields.Char(
@@ -25,7 +23,6 @@ class EsgEmissionSource(models.Model):
         comodel_name="esg.emission.source",
         inverse_name="parent_id",
     )
-    parent_path = fields.Char(index=True)
     complete_name = fields.Char(
         compute="_compute_complete_name",
         search="_search_complete_name",
@@ -76,12 +73,9 @@ class EsgEmissionSource(models.Model):
         store=True,
     )
 
-    @api.constrains("parent_id")
-    def _check_no_cyclic_dependencies(self) -> None:
-        if self._has_cycle():
-            raise ValidationError(
-                self.env._("You cannot create a cyclic hierarchy of emission sources.")
-            )
+    _hierarchy_cycle_message = _lt(
+        "You cannot create a cyclic hierarchy of emission sources."
+    )
 
     @api.depends("parent_id.level")
     def _compute_level(self) -> None:

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 from odoo.tests import tagged
+from odoo.tests.common import new_unbound_test_api_key
 
 from odoo.addons.device.tests.common import DeviceHttpCase
 
@@ -128,12 +129,11 @@ class TestDavAuthentication(DeviceHttpCase):
             self._propfind(self._basic(self.sync_user.login, rpc_key))
         )
 
-    def test_a_key_bound_to_no_door_is_accepted(self):
-        universal = self.sync_user.env(user=self.sync_user)[
-            "res.users.apikeys"
-        ]._generate(None, "Every door", datetime.now() + timedelta(days=1))
-        response = self._propfind(self._basic(self.sync_user.login, universal))
-        self.assertEqual(response.status_code, 207)
+    def test_a_key_bound_to_no_door_is_refused(self):
+        unbound = new_unbound_test_api_key(self.sync_user)
+        self._assert_challenged(
+            self._propfind(self._basic(self.sync_user.login, unbound))
+        )
 
     def test_the_device_mints_the_password_for_its_own_user_only(self):
         from odoo.exceptions import UserError

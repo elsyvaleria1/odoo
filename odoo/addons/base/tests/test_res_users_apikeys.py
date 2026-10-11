@@ -6,7 +6,14 @@ from freezegun import freeze_time
 from odoo import fields
 from odoo.exceptions import AccessDenied, AccessError, ValidationError
 from odoo.fields import Command
-from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.tests.common import (
+    TransactionCase,
+    new_test_user,
+    new_unbound_test_api_key,
+    tagged,
+)
+
+from odoo.addons.base.tests.common import declare_api_scope
 
 
 @tagged("post_install", "-at_install")
@@ -103,20 +110,24 @@ class TestResUsersApikeys(TransactionCase):
             self.Apikeys.with_user(portal)._generate("rpc", "k", exp)
 
     def test_check_credentials_scope_mismatch(self):
+        declare_api_scope(self.env, "base.test_scope_x", "scope_x")
+        declare_api_scope(self.env, "base.test_scope_y", "scope_y")
         key = self._generate(scope="scope_x")
         self.assertIsNone(self.Apikeys._check_credentials(scope="scope_y", key=key))
 
     def test_check_credentials_scope_match(self):
+        declare_api_scope(self.env, "base.test_scope_x", "scope_x")
         key = self._generate(scope="scope_x")
         self.assertEqual(
             self.Apikeys._check_credentials(scope="scope_x", key=key), self.user.id
         )
 
-    def test_check_credentials_null_scope_matches_any(self):
-        exp = fields.Datetime.now() + timedelta(hours=1)
-        key = self.Apikeys.with_user(self.user)._generate(None, "k", exp)
+    def test_check_credentials_null_scope_matches_rpc_alone(self):
+        declare_api_scope(self.env, "base.test_scope_any", "anything")
+        key = new_unbound_test_api_key(self.user)
+        self.assertIsNone(self.Apikeys._check_credentials(scope="anything", key=key))
         self.assertEqual(
-            self.Apikeys._check_credentials(scope="anything", key=key), self.user.id
+            self.Apikeys._check_credentials(scope="rpc", key=key), self.user.id
         )
 
     def test_generate_stores_hash_not_plaintext(self):
@@ -133,8 +144,7 @@ class TestResUsersApikeys(TransactionCase):
         self.assertTrue(stored_key.startswith("$pbkdf2-sha512$"))
 
     def test_remove_invalidates_cached_credentials(self):
-        exp = fields.Datetime.now() + timedelta(hours=1)
-        key = self.Apikeys.with_user(self.user)._generate(None, "k", exp)
+        key = self._generate()
         self._cached_auth(key)
         self.Apikeys.sudo().search([("user_id", "=", self.user.id)])._remove()
         with self.assertRaises(AccessDenied):
@@ -143,7 +153,7 @@ class TestResUsersApikeys(TransactionCase):
     def test_api_key_ids_not_writable_through_self_service(self):
         exp = fields.Datetime.now() + timedelta(hours=1)
         victim = new_test_user(self.env, login="ak_victim")
-        self.Apikeys.with_user(victim)._generate(None, "victim key", exp)
+        self.Apikeys.with_user(victim)._generate("rpc", "victim key", exp)
         victim_key = self.Apikeys.sudo().search([("user_id", "=", victim.id)])
 
         attacker = self.user.with_user(self.user)
@@ -155,8 +165,7 @@ class TestResUsersApikeys(TransactionCase):
         self.assertEqual(victim_key.user_id, victim, "the victim's key was stolen")
 
     def test_gc_invalidates_cached_credentials(self):
-        exp = fields.Datetime.now() + timedelta(hours=1)
-        key = self.Apikeys.with_user(self.user)._generate(None, "k", exp)
+        key = self._generate()
         self._cached_auth(key)
         self.env.cr.execute(
             """
@@ -169,6 +178,15 @@ class TestResUsersApikeys(TransactionCase):
         self.Apikeys._gc_user_apikeys()
         with self.assertRaises(AccessDenied):
             self._cached_auth(key)
+
+    def test_the_wizard_names_the_door_of_every_key(self):
+        wizard = (
+            self.env["wizard.res.users.apikeys.create"]
+            .with_user(self.user)
+            .create({"name": "w", "duration": "1"})
+        )
+        self.assertEqual(wizard.scope_id, self.env.ref("base.apikeys_scope_rpc"))
+        self.assertTrue(wizard._fields["scope_id"].required)
 
     def test_description_batch_create(self):
         Description = self.env["wizard.res.users.apikeys.create"].with_user(self.user)
@@ -193,14 +211,30 @@ class TestResUsersApikeys(TransactionCase):
             admin.id,
         )
 
-    def test_key_expiration_is_reported_for_the_scope_it_was_issued_for(self):
+    def test_issuing_and_removing_a_key_are_authentication_events(self):
+        expiration = fields.Datetime.now() + timedelta(hours=1)
+        self.Apikeys.with_user(self.user)._generate("rpc", "audited", expiration)
+        record = self.Apikeys.search([("user_id", "=", self.user.id)], limit=1)
+        events = self.env["auth.event"].sudo()
+        domain = [
+            ("model_name", "=", "res.users.apikeys"),
+            ("credential_ref", "=", record.id),
+            ("subject_user_id", "=", self.user.id),
+        ]
+        self.assertEqual(events.search(domain).mapped("event"), ["credential_issued"])
+        record.with_user(self.user)._remove()
+        self.assertEqual(
+            sorted(events.search(domain).mapped("event")),
+            ["credential_issued", "credential_revoked"],
+        )
+
+    def test_the_universal_door_reports_the_key_expiration(self):
         expiration = fields.Datetime.now() + timedelta(hours=1)
         key = self.Apikeys.with_user(self.user)._generate("rpc", "k", expiration)
         self.assertEqual(
-            self.Apikeys._get_key_expiration(scope="rpc", key=key), expiration
+            self.Apikeys._match_key("rpc", key), (self.user.id, expiration)
         )
-        self.assertIsNone(self.Apikeys._get_key_expiration(scope="other", key=key))
-        self.assertIsNone(self.Apikeys._get_key_expiration(scope="rpc", key="0" * 40))
+        self.assertIsNone(self.Apikeys._match_key("rpc", "0" * 40))
 
     def test_a_cached_key_stops_authenticating_when_it_expires(self):
         key = self._generate(hours=1)

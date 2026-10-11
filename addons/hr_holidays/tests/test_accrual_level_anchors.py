@@ -1,10 +1,12 @@
+from datetime import date
+
 from odoo.exceptions import ValidationError
 from odoo.tests.common import TransactionCase
 
 
-class TestRecurrenceAnchors(TransactionCase):
+class TestAccrualLevelAnchors(TransactionCase):
     def _anchored(self, **vals):
-        return self.env["mixin.recurrence.anchored"].new(vals)
+        return self.env["hr.leave.accrual.level"].new(vals)
 
     def test_a_missing_day_or_month_is_refused(self):
         for vals in (
@@ -53,3 +55,19 @@ class TestRecurrenceAnchors(TransactionCase):
                     repeat_day=first,
                     repeat_second_day=second,
                 )._check_repeat_anchors()
+
+    def test_a_twice_yearly_day_past_its_month_end_is_clamped_as_a_single_one_is(self):
+        for twice in (False, True):
+            anchored = self._anchored(
+                repeat_unit="year",
+                repeat_twice=twice,
+                repeat_day="31",
+                repeat_month="2",
+                repeat_second_day="1",
+                repeat_second_month="7",
+            )
+            with self.subTest(twice=twice):
+                anchored._check_repeat_anchors()
+                self.assertEqual(
+                    anchored._get_next_anchor(date(2025, 1, 1)), date(2025, 2, 28)
+                )

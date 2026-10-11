@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from itertools import count, islice, takewhile
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
 from odoo.fields import Command
 from odoo.libs.datetime import timezone
 from odoo.tools.date_utils import get_timedelta, occurrences_after
@@ -89,7 +88,6 @@ class MaintenancePlan(models.Model):
         default="month",
         required=True,
     )
-    repeat_until = fields.Date(string="End Date")
     repeat_anchor = fields.Selection(
         selection=[
             ("fixed", "Fixed Dates"),
@@ -133,15 +131,6 @@ class MaintenancePlan(models.Model):
         compute="_compute_dates",
         store=True,
     )
-
-    @api.constrains("repeat_type", "repeat_until")
-    def _check_until_has_end_date(self) -> None:
-        if self.filtered(
-            lambda plan: plan.repeat_type == "until" and not plan.repeat_until
-        ):
-            raise ValidationError(
-                self.env._("A plan repeated until a date needs its end date.")
-            )
 
     @api.model_create_multi
     def create(self, vals_list):

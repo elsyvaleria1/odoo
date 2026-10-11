@@ -5,7 +5,7 @@ from collections import defaultdict
 from datetime import timedelta
 from typing import Self
 
-from odoo import api, fields, models
+from odoo import _lt, api, fields, models
 from odoo.api import MODULE_UNINSTALL_FLAG
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
@@ -54,10 +54,9 @@ def merge_block_types(*block_types) -> str:
 
 class StockLocation(models.Model):
     _name = "stock.location"
-    _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
+    _inherit = ["mixin.mail.thread", "mixin.mail.activity", "mixin.hierarchy"]
     _description = "Inventory Locations"
     _parent_name = "location_id"
-    _parent_store = True
     _order = "complete_name, id"
     _rec_names_search = ["complete_name", "barcode"]
     _check_company_auto = True
@@ -120,7 +119,6 @@ class StockLocation(models.Model):
         compute="_compute_child_internal_location_ids",
         help="This location (if it's internal) and all its descendants filtered by type=Internal.",
     )
-    parent_path = fields.Char(index=True)
     company_id = fields.Many2one(
         comodel_name="res.company",
         default=lambda self: self.env.company,
@@ -278,6 +276,8 @@ class StockLocation(models.Model):
         "Comparable only where the location holds a single unit of measure; the "
         "chatter entry posted at blocking time carries the per-unit breakdown.",
     )
+
+    _hierarchy_cycle_message = _lt("You cannot create recursive locations.")
 
     _barcode_company_unique_idx = models.UniqueIndex(
         "(barcode, COALESCE(company_id, 0)) WHERE barcode IS NOT NULL",

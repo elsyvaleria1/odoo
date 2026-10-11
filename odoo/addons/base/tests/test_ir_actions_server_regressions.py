@@ -9,6 +9,7 @@ from requests.adapters import HTTPAdapter
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Command
 from odoo.libs.netguard import DestinationRefused
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase, tagged
 from odoo.tests.transaction_case import _super_send
 from odoo.tools import mute_logger
@@ -277,10 +278,10 @@ class TestObjectWriteCostsNothingPerExtraRecord(ServerActionCase):
         records = self._partners(n, f"cost{n}_")
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        action.with_context(**self._ctx(records)).run()
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            action.with_context(**self._ctx(records)).run()
+            self.env.flush_all()
+        return statements.count
 
     def test_a_static_update_costs_the_same_for_two_records_and_twenty(self):
         action = self._action(
@@ -887,6 +888,55 @@ class TestCrudTargetsAreCheckedWithoutGroups(ServerActionCase):
         self.assertEqual(action.crud_model_id.model, "res.partner")
         with self.assertRaises(AccessError):
             action.with_user(self.user).with_context(**self._ctx(partners)).run()
+
+    def _guard_creating(self, name):
+        group = self.env["res.groups"].create({"name": "CRUD target: guarded"})
+        self.user.write({"group_ids": [Command.link(group.id)]})
+        self.env["ir.access"].create(
+            {
+                "name": f"CRUD target probe: members may not create {name!r}",
+                "model_id": self.partner_model.id,
+                "group_id": group.id,
+                "kind": "guard",
+                "guard_scope": "members",
+                "operation": "c",
+                "domain": f"[('name', 'not ilike', {name!r})]",
+            }
+        )
+
+    def test_a_create_is_held_to_the_record_level_create_rule(self):
+        self._guard_creating("forbidden")
+        partners = self._partners(1)
+        action = self._action(
+            state="object_create",
+            crud_model_id=self.partner_model.id,
+            value="forbidden",
+        )
+        with self.assertRaises(AccessError):
+            action.with_user(self.user).with_context(**self._ctx(partners)).run()
+        self.assertFalse(self.env["res.partner"].search([("name", "=", "forbidden")]))
+
+    def test_a_copy_is_held_to_the_record_level_create_rule(self):
+        self._guard_creating("forbidden")
+        partners = self._partners(1)
+        source = self.env["res.partner"].create({"name": "forbidden"})
+        action = self._action(state="object_copy")
+        action.write({"resource_ref": f"res.partner,{source.id}"})
+        before = self.env["res.partner"].search_count([])
+        with self.assertRaises(AccessError):
+            action.with_user(self.user).with_context(**self._ctx(partners)).run()
+        self.assertEqual(self.env["res.partner"].search_count([]), before)
+
+    def test_a_sudo_caller_still_creates_past_the_rule(self):
+        self._guard_creating("forbidden")
+        partners = self._partners(1)
+        action = self._action(
+            state="object_create",
+            crud_model_id=self.partner_model.id,
+            value="forbidden",
+        )
+        action.with_user(self.user).sudo().with_context(**self._ctx(partners)).run()
+        self.assertTrue(self.env["res.partner"].search([("name", "=", "forbidden")]))
 
     def test_a_copy_within_the_user_s_rights_runs(self):
         partners = self._partners(2)

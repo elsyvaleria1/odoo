@@ -72,6 +72,7 @@ declare module "plugins" {
     import {
         default_shape_handlers,
         image_shape_groups_providers,
+        image_shape_save_params_providers,
         post_compute_shape_listeners,
     } from "@html_builder/plugins/image/image_shape_option_plugin";
     import {
@@ -170,6 +171,7 @@ declare module "plugins" {
         change_current_options_containers_listeners: change_current_options_containers_listeners;
         default_shape_handlers: default_shape_handlers;
         image_shape_groups_providers: image_shape_groups_providers;
+        image_shape_save_params_providers: image_shape_save_params_providers;
         on_bg_image_hide_handlers: on_bg_image_hide_handlers;
         on_cloned_handlers: on_cloned_handlers;
         on_element_dragged_handlers: on_element_dragged_handlers;

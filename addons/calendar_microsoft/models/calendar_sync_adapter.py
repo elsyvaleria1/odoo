@@ -3,7 +3,7 @@ from dateutil.parser import parse
 
 from odoo import Command, api, models
 
-from odoo.addons.base.models.mixin_recurrence_rrule import MAX_RECURRENT_OCCURRENCES
+from odoo.addons.calendar.models.calendar_recurrence import MAX_RECURRENT_OCCURRENCES
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     TIMEOUT,
     MicrosoftCalendarService,

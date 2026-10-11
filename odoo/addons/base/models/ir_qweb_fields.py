@@ -23,6 +23,7 @@ from odoo.tools import (
     format_duration,
     posix_to_ldml,
 )
+from odoo.tools.formatting import hours_to_minutes
 from odoo.tools.mail import safe_attrs
 from odoo.tools.misc import babel_locale_parse, get_lang
 
@@ -659,7 +660,7 @@ class IrQwebFieldTime(models.AbstractModel):
         if value >= 24:
             msg = f"The hour must be between 0 and 23, got {value!r}"
             raise ValueError(msg)
-        minutes_total = min(round(value * 60), 24 * 60 - 1)
+        minutes_total = min(hours_to_minutes(value), 24 * 60 - 1)
         hours, minutes = divmod(minutes_total, 60)
         t = time(hour=hours, minute=minutes)
 
@@ -722,7 +723,10 @@ class IrQwebFieldDuration(models.AbstractModel):
         if options.get("digital") and round_to > 3600:
             round_to = 3600
 
-        seconds = round((value * factor) / round_to) * round_to
+        seconds = (
+            int(float_utils.float_round(value * factor / round_to, precision_digits=0))
+            * round_to
+        )
         sign = "-" if seconds < 0 else ""
         remainder = abs(seconds)
         _debug.logic(

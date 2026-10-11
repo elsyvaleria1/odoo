@@ -30,7 +30,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.hashing import cache_hash
 from odoo.libs.json import OPT_SORT_KEYS
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
-from odoo.service import security
+from odoo.service import api_scope, security
 from odoo.tools.assets.constants import EXTENSION_TO_WEB_MIMETYPES
 from odoo.tools.json import json_default
 from odoo.tools.misc import get_lang, str2bool
@@ -180,7 +180,7 @@ class IrHttp(models.AbstractModel):
         }
 
     @classmethod
-    def _auth_method_bearer(cls, scope: str = "rpc") -> None:
+    def _auth_method_bearer(cls, scope: str = api_scope.RPC_SCOPE) -> None:
         headers = request.httprequest.headers
 
         def get_http_authorization_bearer_token() -> str | None:
@@ -235,7 +235,7 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _enter_api_scope(cls, scope: str, uid: int) -> None:
-        scope_row = request.env["res.users.apikeys.scope"]._get_or_create(scope)
+        scope_row = request.env["res.users.apikeys.scope"]._get_declared(scope)
         request.update_context(api_scope_id=scope_row.id)
         cls._consume_api_scope_budget(scope_row, uid)
 
@@ -287,7 +287,7 @@ class IrHttp(models.AbstractModel):
             record is not None
             and not request.env.user._is_public()
             and record.exists()
-            and record.has_access("read")
+            and record.has_access("write" if link_role == "edit" else "read")
         ):
             request.link_subject = record.with_user(SUPERUSER_ID)
             _debug.logic("link_auth", by="session", model=model_name)
@@ -480,6 +480,7 @@ class IrHttp(models.AbstractModel):
             env["auth.user.client"]._observe(request)
         except Exception:
             _logger.warning("Client observation failed after login", exc_info=True)
+        env.user._issue_login_device()
 
     @classmethod
     def _check_session_binding(cls, cr: BaseCursor, session: Session) -> bool:

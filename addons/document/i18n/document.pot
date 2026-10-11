@@ -747,6 +747,12 @@ msgid "A folder cannot be included in itself"
 msgstr ""
 
 #. module: document
+#. odoo-python
+#: code:addons/document/models/document_document.py:0
+msgid "A folder cannot be moved into itself or one of its subfolders."
+msgstr ""
+
+#. module: document
 #: model:ir.model.fields,help:document.field_document_access__company_id
 msgid ""
 "A group's grant limited to one company reaches only who holds the group in "

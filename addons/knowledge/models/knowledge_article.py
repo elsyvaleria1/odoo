@@ -7,7 +7,7 @@ from typing import Self
 from lxml import html
 from markupsafe import Markup
 
-from odoo import Command, api, fields, models
+from odoo import Command, _lt, api, fields, models
 from odoo.db.schema import create_index, get_index_name
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Domain
@@ -34,10 +34,10 @@ class KnowledgeArticle(models.Model):
         "mixin.mail.activity",
         "mixin.html.field.history",
         "mixin.access.graph",
+        "mixin.hierarchy",
     ]
     _order = "favorite_count desc, write_date desc, id desc"
     _mail_post_access = "read"
-    _parent_store = True
     _access_graph = AccessGraph(
         parent="parent_id",
         grants="access_grant_ids",
@@ -162,7 +162,6 @@ class KnowledgeArticle(models.Model):
         ondelete="cascade",
         tracking=30,
     )
-    parent_path = fields.Char(index=True)
     child_ids = fields.One2many(
         comodel_name="knowledge.article",
         inverse_name="parent_id",
@@ -329,6 +328,10 @@ class KnowledgeArticle(models.Model):
         string="Template used to generate the article",
     )
 
+    _hierarchy_cycle_message = _lt(
+        "An article cannot be moved under itself or one of its sub-articles."
+    )
+
     _check_desync_on_root = models.Constraint(
         "check(parent_id IS NOT NULL OR is_desynchronized IS NOT TRUE)",
         "Root articles cannot be desynchronized.",
@@ -399,16 +402,6 @@ class KnowledgeArticle(models.Model):
                     )
                 )
 
-    @api.constrains("parent_id")
-    def _check_parent_id_recursion(self) -> None:
-        if self._has_cycle():
-            raise ValidationError(
-                self.env._(
-                    "Articles %s cannot be updated as this would create a recursive hierarchy.",
-                    ", ".join(self.mapped("name")),
-                )
-            )
-
     @api.constrains("is_template", "parent_id")
     def _check_template_hierarchy(self) -> None:
         for article in self:
@@ -468,12 +461,7 @@ class KnowledgeArticle(models.Model):
             ancestors = self.env["knowledge.article"]
             while parent:
                 if parent in ancestors:
-                    raise ValidationError(
-                        self.env._(
-                            "Articles %s cannot be updated as this would create a recursive hierarchy.",
-                            ", ".join(articles.mapped("name")),
-                        )
-                    )
+                    raise ValidationError(str(self._hierarchy_cycle_message))
                 ancestors += parent
                 parent = parent.parent_id
             articles.root_article_id = ancestors[-1:]

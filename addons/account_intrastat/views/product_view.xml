@@ -131,7 +131,7 @@
             <field name="arch" type="xml">
                 <list
                     string="Product"
-                    default_order="is_favorite desc, default_code, name, id"
+                    default_order="is_featured desc, default_code, name, id"
                     editable="bottom"
                     duplicate="false"
                     multi_edit="1"
@@ -152,7 +152,7 @@
             <field name="arch" type="xml">
                 <list
                     string="product"
-                    default_order="is_favorite desc, default_code, name, id"
+                    default_order="is_featured desc, default_code, name, id"
                     editable="bottom"
                     duplicate="false"
                     multi_edit="1"
@@ -180,7 +180,7 @@
             <field name="arch" type="xml">
                 <list
                     string="Product"
-                    default_order="is_favorite desc, default_code, name, id"
+                    default_order="is_featured desc, default_code, name, id"
                     editable="bottom"
                     duplicate="false"
                     multi_edit="1"

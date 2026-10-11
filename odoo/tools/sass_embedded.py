@@ -565,15 +565,45 @@ def _first_stylesheet(base: Path) -> str | None:
 
 class OdooSassImporter(SassImporter):
     def __init__(self, bootstrap_path: str) -> None:
+        import odoo.addons
+
         self.bootstrap_path = bootstrap_path
+        roots = [*odoo.addons.__path__, bootstrap_path]
+        self._roots = tuple(
+            {os.path.normpath(root) for root in roots}
+            | {os.path.realpath(root) for root in roots}
+        )
+
+    def _confined(self, url: str, resolved: str | None) -> str | None:
+        if resolved is None:
+            return None
+        path = os.path.realpath(_file_url_to_path(resolved))
+        if not any(
+            path == root or path.startswith(root + os.sep) for root in self._roots
+        ):
+            self._refuse(url)
+        return resolved
+
+    @staticmethod
+    def _refuse(url: str) -> None:
+        _debug.logic("sass.load_outside_roots", url=url)
+        raise ValueError(f"{url!r} is outside the addons and may not be loaded")
 
     def canonicalize(self, url: str, from_import: bool) -> str | None:
         from odoo.tools.files import file_path
 
         if url.startswith("file:"):
-            return _first_stylesheet(_file_url_to_path(url))
+            return self._confined(url, _first_stylesheet(_file_url_to_path(url)))
 
-        *parent_parts, filename = unquote(url).replace("\\", "/").split("/")
+        relative = unquote(url).replace("\\", "/")
+        if (
+            urlparse(relative).scheme
+            or relative.startswith("/")
+            or Path(os.path.normpath(relative)).parts[:1] == ("..",)
+        ):
+            self._refuse(url)
+
+        *parent_parts, filename = relative.split("/")
         parent_path_str = str(Path(*parent_parts)) if parent_parts else ""
 
         search_dirs = []
@@ -589,7 +619,7 @@ class OdooSassImporter(SassImporter):
 
         for search_dir in search_dirs:
             if found := _first_stylesheet(Path(search_dir) / filename):
-                return found
+                return self._confined(url, found)
         return None
 
     def load(self, canonical_url: str) -> tuple[str, str] | None:

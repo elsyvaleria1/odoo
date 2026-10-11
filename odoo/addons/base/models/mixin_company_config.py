@@ -75,6 +75,9 @@ class MixinCompanyConfig(models.AbstractModel):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
+        if any("company_id" not in vals for vals in vals_list):
+            default = self.default_get(["company_id"]).get("company_id")
+            vals_list = [{"company_id": default, **vals} for vals in vals_list]
         self._inherit_delegated_fields(vals_list)
         company_ids = [vals.get("company_id") for vals in vals_list]
         existing = {

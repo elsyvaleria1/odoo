@@ -6,6 +6,7 @@ from odoo import api, fields, models
 from odoo.api import ValuesType
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
+from odoo.service import api_scope
 
 from ..models.res_users import check_identity
 
@@ -55,7 +56,13 @@ class WizardResUsersApikeysCreate(models.TransientModel):
     )
     scope_id = fields.Many2one(
         comodel_name="res.users.apikeys.scope",
-        help="Bind the key to one door; empty, it opens every door.",
+        string="Door",
+        default=lambda self: self.env["res.users.apikeys.scope"]._get_declared_state(
+            api_scope.RPC_SCOPE
+        )[0],
+        required=True,
+        help="The one door the key opens: RPC (XML-RPC, JSON-2) or one "
+        "integration's. A key opens no other door.",
     )
     duration = fields.Selection(
         selection="_selection_duration",
@@ -107,7 +114,7 @@ class WizardResUsersApikeysCreate(models.TransientModel):
 
         description = self.sudo()
         k = self.env["res.users.apikeys"]._generate(
-            description.scope_id.key or None, description.name, self.expiration_date
+            description.scope_id.key, description.name, self.expiration_date
         )
         _debug.lifecycle("apikey_wizard_done", uid=self.env.uid, wizard=self.id)
         description.unlink()

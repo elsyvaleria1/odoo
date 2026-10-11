@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mail_template_authoring_shipped" model="mail.template">
+        <field name="name">Mail: a shipped template that reaches the environment</field>
+        <field name="model_id" ref="base.model_res_partner" />
+        <field name="subject">{{ object.env.company.name }}: news for {{ object.name }}</field>
+        <field name="email_to">{{ object.email_formatted }}</field>
+        <field name="body_html" type="html">
+<div>
+    <p>Dear <t t-out="object.name">Partner</t>,</p>
+    <p>Thank you for your trust.</p>
+    <p>Kind regards, <t t-out="object.env.company.name">Company</t></p>
+</div>
+        </field>
+    </record>
+
+</odoo>

@@ -102,19 +102,22 @@ class ProductPricelist(models.Model):
         )
         if website:
             offered |= Domain("website_id", "=", website.id)
-        self.env["res.partner"].flush_model(["specific_property_product_pricelist"])
-        self.env.cr.execute(
-            SQL(
-                "SELECT (specific_property_product_pricelist ->> %s)::int "
-                "FROM res_partner WHERE id = %s",
-                str(self.env.company.id),
-                bind("commercial_partner"),
+        company_key = str(self.env.company.id)
+        partner_id = bind("commercial_partner")
+
+        def own_pricelist(model, alias, query) -> SQL:
+            model.env["res.partner"].flush_model(
+                ["specific_property_product_pricelist"]
             )
-        )
-        row = self.env.cr.fetchone()
-        if row and row[0]:
-            offered |= Domain("id", "=", row[0])
-        return offered
+            return SQL(
+                "%s IN (SELECT (specific_property_product_pricelist ->> %s)::int "
+                "FROM res_partner WHERE id = %s)",
+                SQL.identifier(alias, "id"),
+                company_key,
+                partner_id,
+            )
+
+        return offered | Domain.custom(to_sql=own_pricelist)
 
     def _get_domain_website_pricelists(self, website) -> list:
         return [

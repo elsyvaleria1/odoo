@@ -1,9 +1,9 @@
 import { Plugin } from "@html_editor/plugin";
 import { describe, expect, test } from "@odoo/hoot";
 import { queryFirst, setInputRange } from "@odoo/hoot-dom";
-import { contains } from "@web/../tests/web_test_helpers";
+import { contains, onRpc } from "@web/../tests/web_test_helpers";
 
-import { testImg } from "./image_test_helpers.js";
+import { testGifImg, testImg } from "./image_test_helpers.js";
 import {
     addPlugin,
     defineWebsiteModels,
@@ -13,6 +13,136 @@ import {
 const THEME_COLOR_1 = "#0071E3";
 
 defineWebsiteModels();
+
+function decodeBase64(data) {
+    return new TextDecoder("latin1").decode(Uint8Array.fromBase64(data));
+}
+
+function captureModifyImage(originalId) {
+    const sent = {};
+    onRpc(`/html_editor/modify_image/${originalId}`, async (request) => {
+        Object.assign(sent, (await request.json()).params);
+        expect.step("modify_image");
+        return `/web/image/${originalId}-shaped/shaped.svg`;
+    });
+    onRpc("ir.ui.view", "save", () => true);
+    return sent;
+}
+
+async function setShape(img, shapeId) {
+    const { getEditor, waitSidebarUpdated } = await setupWebsiteBuilder(`
+        <div class="test-options-target">
+            ${img}
+        </div>
+    `);
+    await contains(":iframe .test-options-target img").click();
+    await waitSidebarUpdated();
+    await contains("[data-label='Shape'] .dropdown").click();
+    await contains(`[data-action-value='${shapeId}']`).click();
+    await getEditor().shared.operation.next(() => {});
+    return { getEditor, waitSidebarUpdated };
+}
+
+async function save() {
+    await contains(".o-snippets-top-actions button:contains(Save)").click();
+    await expect.waitForSteps(["modify_image"]);
+}
+
+describe("saving a shaped image", () => {
+    test("sends the shape's parameters and its raster, never its SVG", async () => {
+        const sent = captureModifyImage(1);
+        const { getEditor, waitSidebarUpdated } = await setShape(
+            testImg,
+            "html_builder/geometric/geo_tetris",
+        );
+        await waitSidebarUpdated();
+        await contains(`[data-action-id="flipImageShape"]:has(.oi-arrows-h)`).click();
+        await getEditor().shared.operation.next(() => {});
+        await save();
+
+        expect(sent.mimetype).toBe(undefined);
+        expect(sent.shape.id).toBe("html_builder/geometric/geo_tetris");
+        expect(sent.shape.flip).toBe("x");
+        expect(sent.shape.rotate).toBe(0);
+        expect(sent.shape.animation_speed).toBe(0);
+        expect(sent.shape.width).toBeGreaterThan(0);
+        const raster = decodeBase64(sent.data);
+        expect(raster.startsWith("RIFF")).toBe(true);
+        expect(raster).not.toInclude("<svg");
+    });
+
+    test("sends a GIF as the raster of its shape", async () => {
+        const sent = captureModifyImage(456);
+        await setShape(testGifImg, "html_builder/geometric/geo_shuriken");
+        await save();
+
+        expect(sent.shape.id).toBe("html_builder/geometric/geo_shuriken");
+        expect("flip" in sent.shape).toBe(false);
+        expect(decodeBase64(sent.data).startsWith("GIF8")).toBe(true);
+    });
+
+    test("of an unprocessable original shows the original once unshaped", async () => {
+        const { getEditor, waitSidebarUpdated } = await setShape(
+            testGifImg,
+            "html_builder/geometric/geo_shuriken",
+        );
+        await waitSidebarUpdated();
+        await contains("[data-action-id='setImageShape']").click();
+        await getEditor().shared.operation.next(() => {});
+
+        expect(":iframe .test-options-target img").not.toHaveAttribute("data-shape");
+        expect(":iframe .test-options-target img").toHaveAttribute(
+            "src",
+            "/website/static/src/img/snippets_options/header_effect_fade_out.gif",
+        );
+        expect(":iframe .test-options-target img").not.toHaveClass(
+            "o_modified_image_to_save",
+        );
+    });
+
+    test("sends the hover effect of a shaped image", async () => {
+        const sent = captureModifyImage(1);
+        const { waitSidebarUpdated } = await setupWebsiteBuilder(`
+            <div class="test-options-target">
+                ${testImg}
+            </div>
+        `);
+        await contains(":iframe .test-options-target img").click();
+        await waitSidebarUpdated();
+        await contains(
+            ".options-container [data-label='Animation'] .dropdown-toggle",
+        ).click();
+        await contains(".o-dropdown--menu [data-action-value='onHover']").click();
+        await waitSidebarUpdated();
+        await save();
+
+        expect(sent.shape.id).toBe("html_builder/geometric/geo_square");
+        expect(sent.shape.hover_effect).toBe("overlay");
+        expect(sent.shape.hover_effect_intensity).toBe(20);
+        expect(decodeBase64(sent.data)).not.toInclude("<svg");
+    });
+
+    test("sends a hover color the server reads, whatever the browser computed", async () => {
+        const sent = captureModifyImage(1);
+        const { waitSidebarUpdated } = await setupWebsiteBuilder(`
+            <div class="test-options-target">
+                ${testImg}
+            </div>
+        `);
+        await contains(":iframe .test-options-target img").click();
+        await waitSidebarUpdated();
+        await contains(
+            ".options-container [data-label='Animation'] .dropdown-toggle",
+        ).click();
+        await contains(".o-dropdown--menu [data-action-value='onHover']").click();
+        await waitSidebarUpdated();
+        queryFirst(":iframe .test-options-target img").dataset.hoverEffectColor =
+            "color(srgb 1 0 0 / 0.5)";
+        await save();
+
+        expect(sent.shape.hover_effect_color).toBe("#FF000080");
+    });
+});
 
 test("Should set a shape on an image", async () => {
     const { getEditor, waitSidebarUpdated } = await setupWebsiteBuilder(`

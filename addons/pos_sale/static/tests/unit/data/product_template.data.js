@@ -24,7 +24,7 @@ export const applySaleProductTemplateRecords = () => {
             barcode: false,
             name: "Down Payment (POS)",
             list_price: 0,
-            is_favorite: false,
+            is_featured: false,
             default_code: false,
             to_weight: false,
             uom_id: 1,

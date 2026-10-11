@@ -72,14 +72,18 @@ class IrCron(models.Model):
     _inherits = {"ir.actions.server": "ir_actions_server_id"}
 ```
 
-### Parent Store (`_parent_store = True`)
+### Parent Store (`mixin.hierarchy`)
 
 Used for hierarchical models that need efficient ancestor/descendant queries.
+A tree model inherits `mixin.hierarchy` (which sets `_parent_store` and declares
+`parent_path`) and names its cycle in `_hierarchy_cycle_message`; it declares
+neither itself, nor a `_has_cycle` constraint, which the ORM's parent-path
+update on write pre-empts.
 
 ```python
-# These models use _parent_store:
+# These models of base inherit mixin.hierarchy:
 # - res.company (company tree)
-# - res.partner.tag (tag hierarchy)
+# - res.partner.tag, tag.tag (through mixin.tag.nested)
 # - ir.ui.menu (menu tree)
 ```
 
@@ -268,9 +272,9 @@ ir.actions.report._render_qweb_pdf(docids, data)
 
 ### Tag Strategy
 
-- **36% of test files have no `@tagged` decorator** — they run in all phases by default
-- **64% use `@tagged`** — typically `@tagged('post_install', '-at_install', 'feature_tag')`
-- `post_install` always travels with `-at_install`; 410 classes carry it
+- **35% of test files have no `@tagged` decorator** — they run in all phases by default
+- **65% use `@tagged`** — typically `@tagged('post_install', '-at_install', 'feature_tag')`
+- `post_install` always travels with `-at_install`; 423 classes carry it
 - The three figures above are derived by `factcheck.sh` from `_test_inventory.py`
 
 See `machine_doc_v1/TEST_TAGS.md` for full reference.

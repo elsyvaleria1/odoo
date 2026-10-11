@@ -363,7 +363,8 @@ stops addons reaching into ORM internals, this one stops the framework depending
 on its own consumer. It holds at zero module-scope edges: the four
 `odoo.service` → `odoo.addons.base.models.ir_cron` / `…ir_job` reaches it once
 tolerated are function-local imports now (`_threaded.py`, `_worker.py`), the
-sanctioned form. Reasoning in **Known boundary exceptions** in
+sanctioned form, as is the loader's reach into `…ir_job` for the job queue
+every module operation holds off (`modules/loading.py`). Reasoning in **Known boundary exceptions** in
 [`gates.md`](gates.md).
 
 ## Coupling the import graph cannot see

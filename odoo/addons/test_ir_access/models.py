@@ -162,6 +162,7 @@ class TestIrAccessClassified(models.Model):
     _description = "Fields that name the classes a principal must hold"
 
     name = fields.Char()
+    active = fields.Boolean(default=True)
     wage = fields.Float(classification="test_ir_access.pay")
     wage_note = fields.Char(
         classification="test_ir_access.pay",

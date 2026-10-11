@@ -71,6 +71,19 @@ class TestRecordLabels(TransactionCase):
         self.assertNotIn(self.locked, self.visible(self.user))
         self.assertEqual(self.locked.sudo().name, "locked")
 
+    def test_a_refusal_by_the_label_names_the_label(self):
+        secret = self.secret.with_user(self.user)
+        with self.assertRaisesRegex(AccessError, f"Refused by: the label of {MODEL}"):
+            secret.check_access("read")
+        explanation = (
+            self.env["ir.access"].with_user(self.user)._explain_record(secret, "read")
+        )
+        self.assertFalse(explanation["allowed"])
+        self.assertEqual(
+            [guard["name"] for guard in explanation["guards"] if not guard["admits"]],
+            [f"the label of {MODEL}"],
+        )
+
     def test_a_label_change_counts_at_once(self):
         self.secret.label_id = False
         self.assertIn(self.secret, self.visible(self.user))

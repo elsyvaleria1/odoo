@@ -398,9 +398,7 @@ class ResPartner(models.Model):
     def _search_mention_suggestions(
         self, domain: DomainType, limit: int, extra_domain: DomainType | None = None
     ) -> Self:
-        people = Domain.TRUE
-        if service := self.env["res.users"]._get_service_partner_ids():
-            people = Domain("id", "not in", service)
+        people = self.env["res.users"]._get_domain_partner_not_service()
         domain = Domain(domain) & people
         domain_is_user = (
             Domain("user_ids", "!=", False)

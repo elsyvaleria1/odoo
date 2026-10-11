@@ -1281,7 +1281,7 @@ class TestShopFloor(HttpCase):
         self.warehouse.manufacture_steps = "pbm"
         (self.product_1 | self.product_2).write(
             {
-                "is_favorite": True,
+                "is_featured": True,
                 "is_storable": True,
             }
         )

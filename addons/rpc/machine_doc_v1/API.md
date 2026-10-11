@@ -28,6 +28,27 @@ page that renders them, and depends on `rpc` and `web`; `rpc` keeps
 depending on `base` alone, so a database with no web client still serves
 both the doors and their contract.
 
+## Credentials
+
+- **The XML-RPC doors (`common.authenticate`, `object.execute_kw`) and
+  `/json/2` are the `rpc` scope's.** They take a key bound to `rpc`, and a
+  key bound to no scope (made before every key named its door; `-u base`
+  logs, per user, how many remain), and run it under `rpc`; every other door
+  (`mcp`, `dav`, `ogcapi`, `odoo.plugin.outlook`, ...) takes only a key bound
+  to it. Archiving `rpc` closes them to every key.
+- **A password is refused at XML-RPC while `base.rpc_api_key_only` is on**:
+  on for a database created since base 1.150, off for one upgraded to it. A
+  directory (LDAP) password is a password: a login without an account yet is
+  refused there before any auth method sees it.
+- **XML-RPC is behind the login cooldown** as the web login is: `dispatch_rpc`
+  hands the client's address to `res.users._assert_can_auth` through
+  `odoo.http.rpc_client()`, since the call runs with its request borrowed. A
+  credential is checked in a transaction of its own, so the claim on the
+  address ends with the check; one that already passed takes no claim. A
+  cooled address or account still takes an API key there (160 random bits,
+  no guessing oracle) and refuses anything else as "Too many login failures";
+  a refused key counts toward the address and the account.
+
 ## The document
 
 - **It is `rpc`'s doors alone**, not the server's. `/web/openapi.json`

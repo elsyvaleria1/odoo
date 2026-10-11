@@ -151,6 +151,58 @@ class TestFieldClassScopes(TransactionCase):
         with self.assertRaises(AccessError):
             UserAttachment.browse(attachments[self.rec_b].ids).write({"name": "x"})
 
+    def test_moving_a_field_attachment_keeps_the_grant(self):
+        self.rec_a.payslip = b"cGF5"
+        attachment = self.env["ir.attachment"].search(
+            [
+                ("res_model", "=", MODEL),
+                ("res_field", "=", "payslip"),
+                ("res_id", "=", self.rec_a.id),
+            ]
+        )
+        UserAttachment = attachment.with_env(self.as_user().env)
+        with self.assertRaises(AccessError):
+            UserAttachment.write({"res_id": self.rec_b.id})
+        loose = (
+            self.env["ir.attachment"]
+            .with_env(self.as_user().env)
+            .create(
+                {
+                    "name": "loose",
+                    "raw": b"x",
+                    "res_model": MODEL,
+                    "res_id": self.rec_a.id,
+                }
+            )
+        )
+        with self.assertRaises(AccessError):
+            loose.write({"res_id": self.rec_b.id, "res_field": "payslip"})
+
+    def test_a_field_attachment_of_an_archived_record_is_found_as_it_is_read(self):
+        self.records.payslip = b"cGF5"
+        self.rec_a.active = False
+        UserAttachment = self.env["ir.attachment"].with_env(self.as_user().env)
+        found = UserAttachment.search(
+            [
+                ("res_model", "=", MODEL),
+                ("res_field", "=", "payslip"),
+                ("res_id", "in", self.records.ids),
+            ]
+        )
+        readable = UserAttachment.browse(
+            self.env["ir.attachment"]
+            .search(
+                [
+                    ("res_model", "=", MODEL),
+                    ("res_field", "=", "payslip"),
+                    ("res_id", "in", self.records.ids),
+                ]
+            )
+            .ids
+        )._filtered_access("read")
+        self.assertEqual(found, readable)
+        self.assertIn(self.rec_a.id, found.mapped("res_id"))
+
     def test_export_masks_the_value_outside(self):
         records = self.as_user().sorted("name")
         rows = records.with_context(import_compat=False).export_data(["name", "wage"])

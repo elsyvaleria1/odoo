@@ -5,7 +5,7 @@
         <field name="name">res.users.apikeys.scope.form</field>
         <field name="model">res.users.apikeys.scope</field>
         <field name="arch" type="xml">
-            <form string="API Key Scope">
+            <form string="API Key Scope" create="0" delete="0">
                 <sheet>
                     <widget
                         name="web_ribbon"
@@ -17,7 +17,7 @@
                     </div>
                     <group>
                         <group>
-                            <field name="key" />
+                            <field name="key" readonly="1" />
                             <field name="active" invisible="1" />
                             <field name="door_only" />
                             <field name="closed_when_empty" invisible="door_only" />
@@ -68,7 +68,7 @@
         <field name="name">res.users.apikeys.scope.list</field>
         <field name="model">res.users.apikeys.scope</field>
         <field name="arch" type="xml">
-            <list string="API Key Scopes">
+            <list string="API Key Scopes" create="0" delete="0">
                 <field name="key" />
                 <field name="name" />
                 <field name="max_depth" optional="hide" />

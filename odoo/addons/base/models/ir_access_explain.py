@@ -1,8 +1,10 @@
+from collections.abc import Iterator
 from typing import Any
 
 from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import SQL
 
 from .ir_access import AccessInfo, covers
 from .ir_access_log import kept_on_uninstall
@@ -31,8 +33,6 @@ class IrAccess(models.Model):
         model_name = record._name
         self._check_operation(model_name, operation)
         target = env[model_name].browse(record.id)
-        scopes = env.user._get_group_scopes()
-        domain_of = self._row_domains()
         model = self._access_evaluator(model_name)
 
         def admits(domain: Domain) -> bool:
@@ -40,22 +40,25 @@ class IrAccess(models.Model):
 
         grants = self._explain_grants()
         permissions, guards = [], []
-        for row in self._get_all_access().get(model_name, ()):
-            if not covers(row, operation):
-                continue
-            binds_everyone = row.kind == "guard" and row.guard_scope == "everyone"
-            held = row.group_id in scopes
-            if not binds_everyone and not held:
-                continue
-            domain = domain_of(model_name, row)
-            if not binds_everyone:
-                domain = self._scoped(model_name, row, domain, scopes[row.group_id])
+        for row, domain in self._binding_row_domains(model_name, operation):
             entry = self._explain_row(model_name, row) | {"admits": admits(domain)}
             if row.kind == "permission":
                 entry["held_through"] = grants.get(row.group_id, [])
                 permissions.append(entry)
             else:
                 guards.append(entry)
+        if target._access_label_field:
+            guards.append(
+                {
+                    "row": 0,
+                    "name": self._label_guard_name(model_name),
+                    "kind": "guard",
+                    "scope": "everyone",
+                    "group": 0,
+                    "reach": "",
+                    "admits": admits(target._access_label_guard(operation)),
+                }
+            )
         own = target._access_guard(operation)
         own_guard = (
             None
@@ -110,6 +113,22 @@ class IrAccess(models.Model):
             allowed=explanation["allowed"],
         )
         return explanation
+
+    def _binding_row_domains(
+        self, model_name: str, operation: str
+    ) -> Iterator[tuple[AccessInfo, Domain]]:
+        scopes = self.env.user._get_group_scopes()
+        domain_of = self._row_domains()
+        for row in self._get_all_access().get(model_name, ()):
+            if not covers(row, operation):
+                continue
+            binds_everyone = row.kind == "guard" and row.guard_scope == "everyone"
+            if not binds_everyone and row.group_id not in scopes:
+                continue
+            domain = domain_of(model_name, row)
+            if not binds_everyone:
+                domain = self._scoped(model_name, row, domain, scopes[row.group_id])
+            yield row, domain
 
     def _explain_row(self, model_name: str, row: AccessInfo) -> dict:
         return {
@@ -199,15 +218,10 @@ class IrAccess(models.Model):
             target = principal.env[record._name].browse(record.id)
             if not target.has_access(operation):
                 continue
-            explanation = principal._explain_record(target, operation)
             result.append(
                 {
                     "user": user.id,
-                    "through": [
-                        entry["name"]
-                        for entry in explanation["permissions"]
-                        if entry["admits"]
-                    ],
+                    "through": principal._admitting_permissions(record, operation),
                 }
             )
         _debug.logic(
@@ -219,6 +233,33 @@ class IrAccess(models.Model):
             allowed=len(result),
         )
         return result
+
+    def _admitting_permissions(
+        self, record: models.BaseModel, operation: str
+    ) -> list[str]:
+        model = self._access_evaluator(record._name)
+        rows = [
+            (row, domain)
+            for row, domain in self._binding_row_domains(record._name, operation)
+            if row.kind == "permission"
+        ]
+        if not rows:
+            return []
+        reached = Domain("id", "=", record.id)
+        self.env.cr.execute(
+            SQL(
+                "SELECT %s",
+                SQL(", ").join(
+                    SQL("EXISTS(%s)", model._search(domain & reached).select())
+                    for _row, domain in rows
+                ),
+            )
+        )
+        return [
+            row.name
+            for (row, _domain), admits in zip(rows, self.env.cr.fetchone(), strict=True)
+            if admits
+        ]
 
     @api.model
     def _explain_as(

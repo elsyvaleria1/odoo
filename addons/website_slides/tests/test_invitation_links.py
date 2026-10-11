@@ -62,7 +62,7 @@ class TestInvitationLinks(HttpCase):
         link = self._link(self.invited)
         self.assertEqual(
             (len(link), link.partner_id, link.role, link.cause),
-            (1, self.invited.partner_id, "view", "share"),
+            (1, self.invited.partner_id, "view", "invitation"),
         )
         self.assertAlmostEqual(
             link.date_to,

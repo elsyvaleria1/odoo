@@ -55,14 +55,24 @@
                             <field
                                 name="audience_partner_ids"
                                 widget="many2many_tags"
-                                invisible="audience != 'partners'" />
+                                invisible="audience not in ('partners', 'organizations')" />
                         </group>
                         <group>
                             <field name="cause" />
                             <field name="create_uid" string="Shared By" />
                             <field name="create_date" string="Shared On" />
                             <field name="date_to" readonly="state == 'revoked'" />
-                            <field name="expiry_waived" invisible="not expiry_waived" />
+                            <field
+                                name="dated_by_record"
+                                invisible="not dated_by_record" />
+                            <field
+                                name="expiry_waived"
+                                groups="base.group_system"
+                                readonly="state == 'revoked'" />
+                            <field
+                                name="expiry_waived"
+                                groups="!base.group_system"
+                                invisible="not expiry_waived" />
                             <field name="legacy_source" invisible="not legacy_source" />
                             <field name="token_hint" />
                         </group>

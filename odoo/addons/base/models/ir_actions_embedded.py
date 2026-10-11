@@ -157,7 +157,7 @@ class IrEmbeddedActions(models.Model):
         "python_method",
         "user_id",
     )
-    @api.depends_context("active_id", "active_model", "uid")
+    @api.depends_context("active_id", "active_model", "uid", "allowed_company_ids")
     def _compute_is_visible(self) -> None:
         active_id = self.env.context.get("active_id", False)
         if not active_id:
@@ -166,6 +166,7 @@ class IrEmbeddedActions(models.Model):
             return
         active_model = self.env.context.get("active_model")
         domain_id = [("id", "=", active_id)]
+        user_group_ids = self.env.user._get_effective_group_ids()
         for parent_res_model, records in self.grouped("parent_res_model").items():
             if parent_res_model not in self.env or (
                 active_model and parent_res_model != active_model
@@ -193,7 +194,8 @@ class IrEmbeddedActions(models.Model):
                     parent_model, record.python_method
                 )
                 if is_valid_method and (
-                    not action_groups or (action_groups & self.env.user.all_group_ids)
+                    not action_groups
+                    or not set(action_groups.ids).isdisjoint(user_group_ids)
                 ):
                     try:
                         domain_model = literal_eval(record.domain or "[]")

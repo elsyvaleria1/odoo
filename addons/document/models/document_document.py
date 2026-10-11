@@ -10,7 +10,7 @@ from urllib.parse import urlencode as url_encode
 from dateutil.relativedelta import relativedelta
 
 import odoo
-from odoo import SUPERUSER_ID, Command, api, fields, models, modules
+from odoo import SUPERUSER_ID, Command, _lt, api, fields, models, modules
 from odoo.api import ValuesType
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Domain
@@ -83,11 +83,11 @@ class DocumentsDocument(models.Model):
         "mixin.mail.alias.optional",
         "mixin.user.favorite",
         "mixin.access.graph",
+        "mixin.hierarchy",
     ]
     _mail_post_access = "read"
     _order = "sequence, id desc"
     _parent_name = "folder_id"
-    _parent_store = True
     _access_graph = AccessGraph(
         parent="folder_id",
         grants="access_ids",
@@ -347,7 +347,6 @@ class DocumentsDocument(models.Model):
         compute_sudo=True,
     )
 
-    parent_path = fields.Char(index=True)
     folder_id = fields.Many2one(
         comodel_name="document.document",
         search="_search_folder_id",
@@ -447,6 +446,10 @@ class DocumentsDocument(models.Model):
         search="_search_last_access_date_group",
         order_by_sql="_order_by_sql_last_access_date_group",
         value_sql="_last_access_date_group_sql",
+    )
+
+    _hierarchy_cycle_message = _lt(
+        "A folder cannot be moved into itself or one of its subfolders."
     )
 
     _res_model_res_id_idx = models.Index("(res_model, res_id)")
@@ -974,10 +977,11 @@ class DocumentsDocument(models.Model):
                     document, changes, domain=DOCUMENT_LINK_DOMAIN
                 )
             if not any(link.id in showable for link in links):
+                latest = Link._get_latest_date_to(cause)
                 Link._issue(
                     document,
                     role=role,
-                    date_to=date_to or links[:1].date_to or None,
+                    date_to=date_to or min(links[:1].date_to or latest, latest),
                     cause=cause,
                 )
         records.invalidate_recordset(["access_token", "access_url", "link_date_to"])

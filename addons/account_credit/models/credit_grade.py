@@ -104,6 +104,10 @@ class CreditGrade(models.Model):
         self.check_singleton()
         return self.kind != "entry" and bool(self.min_value or self.max_value)
 
+    @api.model
+    def _get_band_scope_fields(self) -> tuple[str, ...]:
+        return (*super()._get_band_scope_fields(), "kind")
+
     @api.constrains("min_value", "max_value")
     def _check_score_range(self) -> None:
         for grade in self:

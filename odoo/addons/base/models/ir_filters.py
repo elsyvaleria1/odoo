@@ -13,7 +13,7 @@ from odoo.tools.safe_eval import dateutil, safe_eval
 from odoo.tools.safe_eval import time as safe_time
 from odoo.tools.view_validation import IGNORED_IN_EXPRESSION
 
-_ALLOWED_DOMAIN_NAMES = frozenset(IGNORED_IN_EXPRESSION) | {
+_ALLOWED_DOMAIN_NAMES = (frozenset(IGNORED_IN_EXPRESSION) - {"self"}) | {
     "companies",
     "company_id",
 }
@@ -138,7 +138,7 @@ class IrFilters(models.Model):
         self.check_singleton()
         try:
             domain = safe_eval(self.domain, self._domain_eval_context())
-        except (ValueError, SyntaxError) as e:
+        except Exception as e:
             _debug.logic("domain_unevaluable", filter=self.id, error=type(e).__name__)
             raise ValueError(f"Invalid domain: {self.domain}") from e
         if not isinstance(domain, list):
@@ -309,7 +309,7 @@ class IrFilters(models.Model):
                     "Invalid filter %(field)s: %(error)s", field="domain", error=e
                 )
             ) from e
-        if not isinstance(tree.body, (ast.List, ast.Tuple)):
+        if not isinstance(tree.body, ast.List):
             _debug.logic("domain_rejected", reason="not_list")
             raise ValidationError(
                 self.env._(

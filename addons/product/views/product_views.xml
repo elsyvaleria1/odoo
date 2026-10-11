@@ -51,9 +51,9 @@
                 <field name="product_tmpl_id" string="Product Template" />
                 <!-- Filter -->
                 <filter
-                    name="favorites"
-                    string="Favorites"
-                    domain="[('is_favorite', '=', True)]" />
+                    name="featured"
+                    string="Featured"
+                    domain="[('is_featured', '=', True)]" />
                 <filter
                     name="my_favorites"
                     string="My Favorites"
@@ -96,15 +96,11 @@
         <field name="arch" type="xml">
             <list
                 string="Product Variants"
-                default_order="is_favorite desc, default_code, name, id"
+                default_order="is_featured desc, default_code, name, id"
                 duplicate="false"
                 multi_edit="1"
                 sample="1">
-                <field
-                    name="is_favorite"
-                    widget="boolean_favorite"
-                    nolabel="1"
-                    readonly="1" />
+                <field name="is_user_favorite" widget="boolean_favorite" nolabel="1" />
                 <field name="default_code" optional="show" readonly="1" />
                 <field name="barcode" optional="hide" readonly="1" />
                 <field name="name" readonly="1" />
@@ -148,7 +144,7 @@
         <field name="arch" type="xml">
             <list
                 string="Product Variants"
-                default_order="is_favorite desc, default_code, name, id"
+                default_order="is_featured desc, default_code, name, id"
                 editable="bottom">
                 <field name="name" readonly="1" />
                 <field name="default_code" optional="show" readonly="1" />
@@ -166,7 +162,7 @@
         <field name="name">Product Kanban</field>
         <field name="model">product.product</field>
         <field name="arch" type="xml">
-            <kanban default_order="is_favorite desc, default_code, name, id" sample="1">
+            <kanban default_order="is_featured desc, default_code, name, id" sample="1">
                 <field name="activity_state" />
                 <field name="color" />
                 <progressbar
@@ -177,7 +173,7 @@
                         <main class="col-10 pe-2">
                             <div class="d-flex mb-1 h5">
                                 <field
-                                    name="is_favorite"
+                                    name="is_user_favorite"
                                     widget="boolean_favorite"
                                     nolabel="1"
                                     class="me-1" />
@@ -210,7 +206,7 @@
         <field name="model">product.product</field>
         <field name="arch" type="xml">
             <kanban
-                default_order="is_favorite desc, default_code, name, id"
+                default_order="is_featured desc, default_code, name, id"
                 js_class="product_kanban_catalog"
                 records_draggable="0">
                 <field name="id" />
@@ -221,7 +217,7 @@
                         </div>
                         <div class="container p-0">
                             <field
-                                name="is_favorite"
+                                name="is_user_favorite"
                                 widget="boolean_favorite"
                                 class="col-12 pe-0" />
                         </div>
@@ -237,10 +233,10 @@
                                         name="name"
                                         class="fw-bold fs-4 text-reset mb-1 me-2" />
                                     <field
-                                        name="is_favorite"
+                                        name="is_user_favorite"
                                         widget="boolean_favorite"
                                         nolabel="1"
-                                        invisible="not is_favorite"
+                                        invisible="not is_user_favorite"
                                         readonly="1"
                                         class="mt-1 me-1" />
                                 </div>
@@ -418,7 +414,7 @@
                 <field name="default_code" />
                 <field name="barcode" />
             </xpath>
-            <xpath expr="//field[@name='is_favorite']" position="attributes">
+            <xpath expr="//field[@name='is_featured']" position="attributes">
                 <attribute name="readonly">1</attribute>
             </xpath>
             <field name="list_price" position="attributes">

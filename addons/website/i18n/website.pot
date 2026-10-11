@@ -12670,6 +12670,15 @@ msgid "People"
 msgstr ""
 
 #. module: website
+#: model:ir.model.fields,help:website.field_website_controller_page__shipped_digests
+#: model:ir.model.fields,help:website.field_website_page__shipped_digests
+msgid ""
+"Per template field, the digest of what the text its module file ships "
+"evaluates: a text with the same digest in the same field is trusted as the "
+"module's own, wherever it is stored."
+msgstr ""
+
+#. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_features
 #: model_terms:ir.ui.view,arch_db:website.s_features_wave
 msgid "Performance"
@@ -14452,6 +14461,12 @@ msgstr ""
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Shared Link Auth"
+msgstr ""
+
+#. module: website
+#: model:ir.model.fields,field_description:website.field_website_controller_page__shipped_digests
+#: model:ir.model.fields,field_description:website.field_website_page__shipped_digests
+msgid "Shipped Digests"
 msgstr ""
 
 #. module: website
@@ -18188,6 +18203,12 @@ msgid ""
 "info@yourcompany.example.com, calling +1 555-555-5556, or using the live "
 "chat on our website. Our dedicated team is available 24/7 to assist with any"
 " inquiries or issues."
+msgstr ""
+
+#. module: website
+#. odoo-python
+#: code:addons/website/models/website_menu.py:0
+msgid "You cannot create recursive menus."
 msgstr ""
 
 #. module: website

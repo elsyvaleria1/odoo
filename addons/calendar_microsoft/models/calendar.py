@@ -11,7 +11,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.libs.datetime import timezone
 from odoo.tools import email_normalize
 
-from odoo.addons.base.models.mixin_recurrence_rrule import (
+from odoo.addons.calendar.models.calendar_recurrence import (
     MAX_RECURRENT_OCCURRENCES,
 )
 

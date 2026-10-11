@@ -2,7 +2,7 @@ from urllib.parse import parse_qsl, urlsplit
 
 import werkzeug.exceptions
 
-from odoo import api, fields, models
+from odoo import _lt, api, fields, models
 from odoo.exceptions import AccessError, UserError
 from odoo.fields import Domain
 from odoo.http import request
@@ -14,10 +14,8 @@ _debug = DebugLog(__name__)
 
 class WebsiteMenu(models.Model):
     _name = "website.menu"
-
+    _inherit = ["mixin.hierarchy"]
     _description = "Website Menu"
-
-    _parent_store = True
     _order = "sequence, id"
 
     def _default_sequence(self):
@@ -86,7 +84,6 @@ class WebsiteMenu(models.Model):
         inverse_name="parent_id",
         string="Child Menus",
     )
-    parent_path = fields.Char(index=True)
     is_visible = fields.Boolean(compute="_compute_is_visible")
     group_ids = fields.Many2many(
         comodel_name="res.groups",
@@ -104,6 +101,8 @@ class WebsiteMenu(models.Model):
         prefetch=True,
     )
     mega_menu_classes = fields.Char()
+
+    _hierarchy_cycle_message = _lt("You cannot create recursive menus.")
 
     @api.depends("website_id")
     @api.depends_context("display_website", "uid")

@@ -1,10 +1,40 @@
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.models import MAGIC_COLUMNS
 from odoo.tools import format_list
 
 _debug = DebugLog(__name__)
+
+
+def _x2many_ids_after(current: set, value) -> set | None:
+    if isinstance(value, models.BaseModel):
+        return set(value.ids)
+    if not value:
+        return current if isinstance(value, (list, tuple)) else set()
+    if not any(isinstance(item, (tuple, list, dict)) for item in value):
+        return set(value)
+    ids = set(current)
+    for command in value:
+        if isinstance(command, dict):
+            return None
+        if not isinstance(command, (tuple, list)):
+            ids.add(command)
+            continue
+        if not command:
+            continue
+        match command[0]:
+            case Command.CREATE:
+                return None
+            case Command.DELETE | Command.UNLINK:
+                ids.discard(command[1])
+            case Command.UPDATE | Command.LINK:
+                ids.add(command[1])
+            case Command.CLEAR:
+                ids = set()
+            case Command.SET:
+                ids = set(command[2] or ())
+    return ids
 
 
 class MixinLifecycle(models.AbstractModel):
@@ -237,9 +267,8 @@ class MixinLifecycle(models.AbstractModel):
         self.check_singleton()
         field = self._fields[field_name]
         if field.type in ("many2many", "one2many"):
-            return set(self[field_name].ids) != set(
-                self.new({field_name: value})[field_name].ids,
-            )
+            current = set(self[field_name].ids)
+            return _x2many_ids_after(current, value) != current
         return field.convert_to_cache(
             value, self, validate=False
         ) != field.convert_to_cache(self[field_name], self, validate=False)

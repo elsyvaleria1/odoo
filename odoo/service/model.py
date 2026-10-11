@@ -300,12 +300,15 @@ def dispatch(dispatch_method: str, params: Sequence) -> typing.Any:
             args, kw = args
             if kw is None:
                 kw = {}
+        with (
+            registry.cursor() as cr,
+            _debug.perf("rpc.dispatch.password_checked", cr=cr, db=db, uid=uid),
+        ):
+            scope_id = api.Environment(cr, api.SUPERUSER_ID, {})[
+                "res.users"
+            ]._check_uid_passwd(uid, passwd)
+        context: dict[str, int] = {"api_scope_id": scope_id} if scope_id else {}
         with registry.cursor() as cr:
-            with _debug.perf("rpc.dispatch.password_checked", cr=cr, db=db, uid=uid):
-                scope_id = api.Environment(cr, api.SUPERUSER_ID, {})[
-                    "res.users"
-                ]._check_uid_passwd(uid, passwd)
-            context: dict[str, int] = {"api_scope_id": scope_id} if scope_id else {}
             res = execute_cr(cr, uid, model, model_method, args, kw, context=context)
     except Exception:
         _debug.logic("rpc.dispatch.failed", db=db, model=model, method=model_method)

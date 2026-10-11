@@ -32,6 +32,10 @@ class MixinBand(models.AbstractModel):
         self.check_singleton()
         return []
 
+    @api.model
+    def _get_band_scope_fields(self) -> tuple[str, ...]:
+        return ()
+
     @staticmethod
     def _is_range_overlapping(band_a, band_b) -> bool:
         max_a = band_a.max_value or float("inf")
@@ -43,7 +47,14 @@ class MixinBand(models.AbstractModel):
         upper = self.max_value or float("inf")
         return self.min_value <= value < upper
 
-    @api.constrains("min_value", "max_value", "active")
+    @api.constrains(
+        lambda self: (
+            "min_value",
+            "max_value",
+            "active",
+            *self._get_band_scope_fields(),
+        )
+    )
     def _check_band(self) -> None:
         scales = defaultdict(self.browse)
         for record in self:

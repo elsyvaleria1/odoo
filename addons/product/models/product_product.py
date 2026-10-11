@@ -36,8 +36,8 @@ class ProductProduct(models.Model):
         ondelete="cascade",
         bypass_search_access=True,
     )
-    is_favorite = fields.Boolean(  # noqa: E8529 -- index (is_favorite) partial
-        related="product_tmpl_id.is_favorite",
+    is_featured = fields.Boolean(  # noqa: E8529 -- index (is_featured) partial
+        related="product_tmpl_id.is_featured",
         store=True,
         readonly=False,
     )
@@ -214,7 +214,7 @@ class ProductProduct(models.Model):
         compute="_compute_can_image_1024_be_zoomed",
     )
 
-    _is_favorite_index = models.Index("(is_favorite) WHERE is_favorite IS TRUE")
+    _is_featured_index = models.Index("(is_featured) WHERE is_featured IS TRUE")
     _combination_unique = models.UniqueIndex(
         "(product_tmpl_id, combination_indices) WHERE active IS TRUE",
     )

@@ -1,6 +1,6 @@
 import re
 
-from odoo import api, fields, models
+from odoo import _lt, api, fields, models
 from odoo.db.schema import create_index
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
@@ -28,9 +28,8 @@ RELEVANT_PLANS = TransactionMemo(
 
 class AccountAnalyticPlan(models.Model):
     _name = "account.analytic.plan"
-    _inherit = ["mixin.color"]
+    _inherit = ["mixin.color", "mixin.hierarchy"]
     _description = "Analytic Plans"
-    _parent_store = True
     _rec_name = "complete_name"
     _order = "sequence asc, id"
 
@@ -47,7 +46,6 @@ class AccountAnalyticPlan(models.Model):
         domain="['!', ('id', 'child_of', id)]",
         ondelete="cascade",
     )
-    parent_path = fields.Char(index="btree")
     root_id = fields.Many2one(
         comodel_name="account.analytic.plan",
         compute="_compute_root_id",
@@ -97,6 +95,8 @@ class AccountAnalyticPlan(models.Model):
         inverse_name="analytic_plan_id",
         domain="[('company_id', '=', current_company_id)]",
     )
+
+    _hierarchy_cycle_message = _lt("You cannot create recursive analytic plans.")
 
     def _auto_init(self):
         super()._auto_init()

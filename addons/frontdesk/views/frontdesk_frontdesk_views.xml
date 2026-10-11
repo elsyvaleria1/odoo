@@ -59,6 +59,7 @@
                                 groups="base.group_multi_company" />
                             <field name="access_token" groups="base.group_no_one" />
                             <field name="kiosk_url" widget="CopyClipboardChar" />
+                            <field name="is_featured" />
                         </group>
                     </group>
                     <notebook>
@@ -180,7 +181,7 @@
                     <t t-name="card">
                         <div class="d-flex gap-1 align-items-baseline ms-2">
                             <field
-                                name="is_favorite"
+                                name="is_user_favorite"
                                 widget="boolean_favorite"
                                 nolabel="1" />
                             <field name="name" class="fw-bold fs-4 mb16" />
@@ -235,9 +236,9 @@
                     string="My Station"
                     domain="[('responsible_ids', '=', uid)]" />
                 <filter
-                    name="is_favorite"
-                    string="Favorite"
-                    domain="[('is_favorite', '=', True)]" />
+                    name="featured"
+                    string="Featured"
+                    domain="[('is_featured', '=', True)]" />
                 <filter
                     name="my_favorites"
                     string="My Favorites"

@@ -2,8 +2,7 @@ import hashlib
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-_SOURCE_KEY_VERSION = "6"
-
+from odoo.tools.assets.fingerprint import pipeline_fingerprint
 
 DEFAULT_VARIANT = "default"
 
@@ -47,7 +46,7 @@ def source_key(
         digest.update(script_format.encode())
         digest.update(b"\0")
     for part in (
-        _SOURCE_KEY_VERSION,
+        pipeline_fingerprint(),
         bundle,
         target,
         source_maps,
@@ -108,7 +107,7 @@ def group_source_key(
 ) -> str:
     digest = hashlib.sha256()
     for part in (
-        _SOURCE_KEY_VERSION,
+        pipeline_fingerprint(),
         group,
         target,
         source_maps,

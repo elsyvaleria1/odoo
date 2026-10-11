@@ -195,6 +195,7 @@ class FileStorage(AttachmentStorage):
         cr = self.env.cr
         cr.commit()
 
+        model._restore_set_aside_files()
         checklist = model._get_gc_checklist(limit=model._GC_MAX_ENTRIES)
         capped = len(checklist) >= model._GC_MAX_ENTRIES
         _debug.pipeline("filestore_gc_checklist", entries=len(checklist), capped=capped)

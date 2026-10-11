@@ -131,7 +131,7 @@ test("should apply text color class to completely selected and partially selecte
 test("should apply color to completely selected list items and paragraph tag", async () => {
     await testEditor({
         contentBefore: "<ul><li>[abc</li><li>def</li></ul><p>ghi]</p>",
-        stepFunction: setColor("rgb(255, 0, 0", "color"),
+        stepFunction: setColor("rgb(255, 0, 0)", "color"),
         contentAfter:
             '<ul><li style="color: rgb(255, 0, 0);">[abc</li><li style="color: rgb(255, 0, 0);">def</li></ul><p><font style="color: rgb(255, 0, 0);">ghi]</font></p>',
     });

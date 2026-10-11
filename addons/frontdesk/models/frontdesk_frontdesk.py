@@ -22,8 +22,8 @@ MOBILE_CODE_SCOPE = tools.register_signed_scope(
 class FrontdeskFrontdesk(models.Model):
     _name = "frontdesk.frontdesk"
     _description = "Frontdesk"
-    _inherit = ["mixin.favorite", "mixin.user.favorite"]
-    _order = "is_favorite desc, is_user_favorite desc"
+    _inherit = ["mixin.user.favorite"]
+    _order = "is_featured desc, is_user_favorite desc"
     _access_anchors = frozendict(
         {
             "owner": "responsible_ids",
@@ -149,6 +149,10 @@ class FrontdeskFrontdesk(models.Model):
         column2="user_id",
     )
     active = fields.Boolean(default=True)
+    is_featured = fields.Boolean(
+        string="Featured",
+        help="Featured stations are listed first, for every user.",
+    )
     notify_warning = fields.Char(compute="_compute_notify_warning")
 
     @api.depends("host_ids.user_id", "host_ids.work_email", "host_ids.phone_ids")

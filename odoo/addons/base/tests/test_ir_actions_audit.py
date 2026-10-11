@@ -851,6 +851,45 @@ class TestIrActionsTodoLaunchContext(TransactionCase):
 
 
 @tagged("post_install", "-at_install")
+class TestIrActionsEmptyListHelpRunsAsTheUser(TransactionCase):
+    def test_the_help_of_a_loaded_action_is_asked_as_the_loading_user(self):
+        action = self.env["ir.actions.act_window"].create(
+            {"name": "audit-help-env", "res_model": "res.partner", "help": "<p>h</p>"}
+        )
+        user = self.env["res.users"].create(
+            {"name": "help reader", "login": "audit_help_reader"}
+        )
+        seen = []
+        Partner = self.env.registry["res.partner"]
+        original = Partner.get_empty_list_help
+
+        def get_empty_list_help(self, help_message):
+            seen.append((self.env.uid, self.env.su))
+            return original(self, help_message)
+
+        with patch.object(Partner, "get_empty_list_help", get_empty_list_help):
+            action.with_user(user).sudo()._get_action_dict()
+        self.assertEqual(seen, [(user.id, False)])
+
+    def test_help_the_user_may_not_compute_leaves_the_stored_help(self):
+        action = self.env["ir.actions.act_window"].create(
+            {
+                "name": "audit-help-denied",
+                "res_model": "res.partner",
+                "help": "<p>h</p>",
+            }
+        )
+
+        def get_empty_list_help(self, help_message):
+            raise AccessError("not yours")
+
+        Partner = self.env.registry["res.partner"]
+        with patch.object(Partner, "get_empty_list_help", get_empty_list_help):
+            result = action.sudo()._get_action_dict()
+        self.assertEqual(result["help"], "<p>h</p>")
+
+
+@tagged("post_install", "-at_install")
 class TestIrActionsTableInheritanceRoot(TransactionCase):
     def test_the_root_declares_itself(self):
         self.assertTrue(

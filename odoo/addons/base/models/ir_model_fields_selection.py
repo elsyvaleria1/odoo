@@ -418,8 +418,7 @@ class IrModelFieldsSelection(models.Model):
         if not uninstalling and self.pool.ready:
             self._check_base_field_mutation(self.field_id)
         self._process_ondelete()
-        if not uninstalling:
-            self._discard_defaults()
+        self._discard_defaults()
         result = super().unlink()
 
         if not uninstalling:
@@ -434,16 +433,36 @@ class IrModelFieldsSelection(models.Model):
     def _discard_defaults(self) -> None:
         IrDefault = self.env["ir.default"]
         for field_record, selections in self.grouped("field_id").items():
-            if field_record.model in self.env:
+            for model_name in self._models_sharing_field(
+                field_record.model, field_record.name
+            ):
                 _debug.pipeline(
                     "discard_defaults",
-                    model=field_record.model,
+                    model=model_name,
                     field=field_record.name,
                     values=len(selections),
                 )
                 IrDefault.discard_values(
-                    field_record.model, field_record.name, selections.mapped("value")
+                    model_name, field_record.name, selections.mapped("value")
                 )
+
+    def _models_sharing_field(self, model_name: str, field_name: str) -> list[str]:
+        if model_name not in self.env:
+            return []
+        sharing = []
+        pending = [model_name]
+        while pending:
+            parent_name = pending.pop()
+            sharing.append(parent_name)
+            for child_name in self.env[parent_name]._inherits_children:
+                field = self.env[child_name]._fields.get(field_name)
+                if (
+                    field is not None
+                    and field.inherited_field is not None
+                    and field.inherited_field.model_name == parent_name
+                ):
+                    pending.append(child_name)
+        return sharing
 
     def _process_ondelete(self) -> None:
 

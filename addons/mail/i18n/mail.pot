@@ -8673,14 +8673,6 @@ msgstr ""
 
 #. module: mail
 #. odoo-python
-#: code:addons/mail/models/mixin_mail_render.py:0
-msgid ""
-"Only administrators may add expressions that reach the environment or call methods to a template:\n"
-"%(errors)s"
-msgstr ""
-
-#. module: mail
-#. odoo-python
 #: code:addons/mail/models/ir_model.py:0
 msgid "Only custom models can be modified."
 msgstr ""
@@ -9193,6 +9185,15 @@ msgstr ""
 #. module: mail
 #: model:ir.model.fields,field_description:mail.field_mail_push__payload
 msgid "Payload"
+msgstr ""
+
+#. module: mail
+#: model:ir.model.fields,help:mail.field_mail_template__shipped_digests
+#: model:ir.model.fields,help:mail.field_mixin_template_reset__shipped_digests
+msgid ""
+"Per template field, the digest of what the text its module file ships "
+"evaluates: a text with the same digest in the same field is trusted as the "
+"module's own, wherever it is stored."
 msgstr ""
 
 #. module: mail
@@ -11059,6 +11060,12 @@ msgstr ""
 #. module: mail
 #: model_terms:ir.ui.view,arch_db:mail.email_template_form
 msgid "Shared with all users"
+msgstr ""
+
+#. module: mail
+#: model:ir.model.fields,field_description:mail.field_mail_template__shipped_digests
+#: model:ir.model.fields,field_description:mail.field_mixin_template_reset__shipped_digests
+msgid "Shipped Digests"
 msgstr ""
 
 #. module: mail

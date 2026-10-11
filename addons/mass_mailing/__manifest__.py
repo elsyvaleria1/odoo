@@ -1,6 +1,6 @@
 {
     "name": "Email Marketing",
-    "version": "2.11",
+    "version": "2.12",
     "oldest_upgradable_version": "2.11",
     "category": "Marketing/Email Marketing",
     "sequence": 60,

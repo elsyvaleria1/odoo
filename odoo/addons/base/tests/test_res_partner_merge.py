@@ -442,6 +442,33 @@ class TestMergePartnerAbsorbSourceValues(TransactionCase):
         self.assertEqual(child.commercial_partner_id, dst)
         self.assertEqual(child.commercial_company_name, "ACME Corporation")
 
+    def _merge_company_with_child(self, absorb):
+        Partner = self.env["res.partner"]
+        dst = Partner.create(
+            {"name": "Dest Co", "is_company": True, "vat": "DST-1", "street": "Dst st"}
+        )
+        src = Partner.create(
+            {"name": "Src Co", "is_company": True, "vat": "SRC-1", "street": "Src st"}
+        )
+        child = Partner.create({"name": "Jane", "parent_id": src.id})
+        self.assertEqual((child.vat, child.street), ("SRC-1", "Src st"))
+        wizard = self.Wizard.create({"absorb_source_values": absorb})
+        wizard._merge([dst.id, src.id], dst, extra_checks=False)
+        return dst, child
+
+    def test_a_moved_child_takes_its_new_parents_commercial_fields_and_address(self):
+        for absorb in (True, False):
+            with self.subTest(absorb=absorb):
+                dst, child = self._merge_company_with_child(absorb)
+                self.assertEqual(child.parent_id, dst)
+                self.assertEqual(child.vat, "DST-1")
+                self.assertEqual(child.street, "Dst st")
+
+    def test_editing_a_moved_child_does_not_push_the_old_address_up(self):
+        dst, child = self._merge_company_with_child(absorb=True)
+        child.write({"zip": "1000"})
+        self.assertEqual(dst.street, "Dst st")
+
     def test_an_archived_source_bank_account_moves_rather_than_cascading(self):
         dst, src, _attachment = self._prepare_pair()
         bank = src.bank_account_ids
@@ -615,6 +642,22 @@ class TestMergePartnerDefaultsCache(TransactionCase):
             "a record created after the merge must not default to a deleted partner",
         )
         self.assertEqual(default, dst)
+
+    def test_a_plain_many2one_default_follows_the_merge(self):
+        Partner = self.env["res.partner"]
+        src = Partner.create({"name": "plain src", "email": "plain@example.com"})
+        dst = Partner.create({"name": "plain dst", "email": "plain@example.com"})
+        self.env["ir.default"].set("res.partner", "parent_id", src.id)
+        self.env.flush_all()
+
+        self.env["wizard.res.partner.merge"].create({})._merge([src.id, dst.id], dst)
+        self.env.flush_all()
+
+        self.assertEqual(
+            self.env["ir.default"]._get_model_defaults("res.partner").get("parent_id"),
+            dst.id,
+            "a default naming the source must name the destination after the merge",
+        )
 
 
 @tagged("res_partner_merge")

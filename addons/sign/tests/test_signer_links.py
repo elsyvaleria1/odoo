@@ -2,11 +2,11 @@ from datetime import datetime, time, timedelta
 from unittest.mock import patch
 
 from odoo import fields
-from odoo.tests import tagged
+from odoo.tests import new_test_user, tagged
 from odoo.tools import mute_logger
 
 from .sign_controller_common import TestSignControllerCommon
-from odoo.addons.base.models.access_link import hash_token
+from odoo.addons.base.models.access_link import LinkRefused, hash_token
 
 
 @tagged("post_install", "-at_install", "access_link")
@@ -39,6 +39,39 @@ class TestSignerLinks(TestSignControllerCommon):
             "WHERE table_name = 'sign_request_item' AND column_name = 'access_token'"
         )
         self.assertEqual(self.env.cr.fetchone()[0], 0, "no token is kept in clear")
+
+    def test_a_validity_far_ahead_keeps_the_links_until_that_day(self):
+        sign_request = self.create_sign_request_1_role(self.partner_1, self.partner_4)
+        Link = self.env["access.link"].sudo()
+
+        def link_ends():
+            links = Link.search(
+                [
+                    ("res_model", "in", ("sign.request", "sign.request.item")),
+                    (
+                        "res_id",
+                        "in",
+                        (sign_request.id, *sign_request.request_item_ids.ids),
+                    ),
+                    ("revoked_at", "=", False),
+                ]
+            )
+            return {(link.res_model, link.res_id): link.date_to for link in links}
+
+        for days in (730, 3):
+            with self.subTest(days=days):
+                sign_request.validity = fields.Date.today() + timedelta(days=days)
+                end = datetime.combine(sign_request.validity, time(23, 59, 59))
+                self.assertEqual(
+                    link_ends(),
+                    {
+                        ("sign.request", sign_request.id): end,
+                        (
+                            "sign.request.item",
+                            sign_request.request_item_ids.id,
+                        ): end,
+                    },
+                )
 
     @mute_logger("odoo.http")
     def test_a_signer_token_opens_its_own_request_only_and_not_once_cancelled(self):
@@ -113,4 +146,31 @@ class TestRequestLinks(TestSignControllerCommon):
         self.assertEqual(
             self._state(sign_request, sign_request.access_token),
             "canceled",
+        )
+
+    def test_a_signer_s_chatter_link_opens_for_that_signer_alone(self):
+        sign_request = self.create_sign_request_1_role(self.partner_1, self.partner_4)
+        company = self.env["res.partner"].create(
+            {"name": "Signer Co", "is_company": True}
+        )
+        signer, colleague = (
+            new_test_user(
+                self.env,
+                login,
+                groups="base.group_portal",
+                partner_id=self.env["res.partner"]
+                .create({"name": login, "parent_id": company.id})
+                .id,
+            )
+            for login in ("chatter_signer", "chatter_colleague")
+        )
+        token = sign_request._signer_chatter_token(signer.partner_id)
+        Link = self.env["access.link"]
+        link = Link.with_user(signer)._resolve(token, action=None).link
+        with self.assertRaises(LinkRefused):
+            Link.with_user(colleague)._resolve(token, action=None)
+        self.assertAlmostEqual(
+            link.sudo().date_to,
+            fields.Datetime.now() + timedelta(days=365),
+            delta=timedelta(minutes=5),
         )

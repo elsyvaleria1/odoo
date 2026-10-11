@@ -99,6 +99,8 @@ GROUP_TESTS = frozenset(
         "has_groups",
         "_has_group",
         "_get_group_ids",
+        "_get_effective_group_ids",
+        "has_any_group_id",
     }
 )
 
@@ -361,13 +363,22 @@ class _Principal:
         return self._bind(name, None) if name == "teams" else self._bind(name)
 
 
+class _RefsAsIds(ast.NodeTransformer):
+    def visit_Call(self, node: ast.Call) -> ast.Constant:
+        return ast.copy_location(ast.Constant(0), node)
+
+
 def filter_reads_user(registry: Any, model_name: str, text: str | None) -> bool:
     if not text or model_name not in registry:
         return False
     try:
         leaves = ast.literal_eval(text)
     except ValueError, SyntaxError:
-        return True
+        if not reads_only_refs(text):
+            return True
+        leaves = ast.literal_eval(
+            _RefsAsIds().visit(ast.parse(text.strip(), mode="eval"))
+        )
     if not isinstance(leaves, (list, tuple)):
         return False
     for leaf in leaves:
@@ -1075,7 +1086,8 @@ class IrAccess(models.Model):
             ):
                 vals["operation"] = operation
             if not vals.get("group_id"):
-                if vals.get("kind") == "permission":
+                kind = vals.get("kind") or self.env.context.get("default_kind")
+                if kind != "guard":
                     raise ValidationError(
                         self.env._(
                             "The permission %(access)s names no group: say whom it "
@@ -1531,37 +1543,54 @@ class IrAccess(models.Model):
     ) -> frozenset[int]:
         every_group = frozenset(self._group_ids_implying())
 
-        def combine(domain: Domain) -> frozenset[int]:
+        def access_only(domain: Domain) -> Domain:
+            def keep(condition: DomainCondition) -> Domain:
+                if condition.operator == "access":
+                    return condition
+                if condition.operator in ("any", "any!") and isinstance(
+                    condition.value, (Domain, list, tuple)
+                ):
+                    return DomainCondition(
+                        condition.field_expr,
+                        condition.operator,
+                        access_only(Domain(condition.value)),
+                    )
+                return Domain.TRUE
+
+            return domain.map_conditions(keep)
+
+        def combine(model: models.BaseModel, domain: Domain) -> frozenset[int]:
             if domain.is_true():
                 return every_group
             if domain.is_false():
                 return frozenset()
             if isinstance(domain, DomainCondition):
+                *path, last = domain.field_expr.split(".")
+                owner = model
+                for name in path:
+                    owner = owner.env[owner._fields[name].comodel_name]
+                if domain.operator != "access":
+                    comodel = owner.env[owner._fields[last].comodel_name]
+                    return combine(comodel, Domain(domain.value))
                 comodel_name = (
-                    model._name
-                    if domain.field_expr == "id"
-                    else model._fields[domain.field_expr].comodel_name
+                    owner._name if last == "id" else owner._fields[last].comodel_name
                 )
                 return self._group_ids_with_access(comodel_name, domain.value)
             operator = getattr(domain, "OPERATOR", None)
             if operator == "|":
-                return frozenset().union(*map(combine, domain.children))
+                return frozenset().union(
+                    *(combine(model, child) for child in domain.children)
+                )
             if operator == "&":
                 result = every_group
                 for child in domain.children:
-                    result &= combine(child)
+                    result &= combine(model, child)
                 return result
             if operator == "!":
-                return every_group - combine(domain.child)
+                return every_group - combine(model, domain.child)
             return every_group
 
-        return combine(
-            domain.map_conditions(
-                lambda condition: (
-                    condition if condition.operator == "access" else Domain.TRUE
-                )
-            )
-        )
+        return combine(model, access_only(domain))
 
     def _group_names_with_access(self, model_name: str, operation: str) -> list[str]:
         groups = self._get_groups_with_access(model_name, operation).filtered(
@@ -1637,7 +1666,7 @@ class IrAccess(models.Model):
             self.env.uid,
             records._name,
         )
-        self = self.with_context(self.env.user.context_get())
+        self = self.with_context(**self.env.user.context_get())
         model_name = records._name
         description = self.env["ir.model"]._get(model_name).name or model_name
         operation_names = {
@@ -1662,7 +1691,9 @@ class IrAccess(models.Model):
         debug = self._explains_in_full()
         display_records = records[:6].sudo()
         failing = self._get_failed_accesses(records, operation)
-        company_related = any("company_id" in row.text for row in failing)
+        company_related = any(
+            row.reach == "company" or "company_id" in row.text for row in failing
+        )
         context = None
         if company_related:
             resolution_info, context = self._get_company_resolution_info(
@@ -1719,6 +1750,9 @@ class IrAccess(models.Model):
         if context:
             exception.context = context
         return exception
+
+    def _label_guard_name(self, model_name: str) -> str:
+        return self.env._("the label of %(model)s", model=model_name)
 
     def _get_company_resolution_info(
         self, display_records: Any, resolution_info: str
@@ -1825,6 +1859,21 @@ class IrAccess(models.Model):
                     str(own),
                 )
             )
+        if model._access_label_field:
+            label = user_model._access_label_guard(operation)
+            if not admits_all(label):
+                failing.append(
+                    AccessInfo(
+                        0,
+                        0,
+                        "guard",
+                        "everyone",
+                        letter,
+                        label,
+                        self._label_guard_name(model._name),
+                        str(label),
+                    )
+                )
         if model._inherits_rules:
             policy = self.env.registry.access_policy
             for parent_model_name, field_name in model._inherits.items():

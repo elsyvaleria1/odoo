@@ -1,6 +1,7 @@
 import collections
 import datetime
 import time
+import xmlrpc.client
 
 import odoo
 from odoo.exceptions import AccessDenied, AccessError
@@ -12,7 +13,7 @@ from odoo.tests import common
 from odoo.tools import DotDict, mute_logger
 from odoo.tools.misc import ReadonlyDict
 
-from odoo.addons.base.tests.common import SavepointCaseWithUserDemo
+from odoo.addons.base.tests.common import SavepointCaseWithUserDemo, declare_api_scope
 from odoo.addons.rpc.controllers.xmlrpc import OdooMarshaller
 
 
@@ -34,6 +35,7 @@ class TestXMLRPC(common.HttpCase):
     def setUp(self):
         super().setUp()
         self.admin_uid = self.env.ref("base.user_admin").id
+        self.admin_key = common.new_test_api_key(self.env.ref("base.user_admin"))
 
         ml_xml = mute_logger("odoo.addons.rpc.controllers.xmlrpc")
         ml_xml.__enter__()
@@ -41,20 +43,30 @@ class TestXMLRPC(common.HttpCase):
 
     def xmlrpc(self, model, method, *args, **kwargs):
         return self.xmlrpc_object.execute_kw(
-            common.get_db_name(), self.admin_uid, "admin", model, method, args, kwargs
+            common.get_db_name(),
+            self.admin_uid,
+            self.admin_key,
+            model,
+            method,
+            args,
+            kwargs,
         )
 
     def test_01_xmlrpc_login(self):
         db_name = common.get_db_name()
-        uid = self.xmlrpc_common.login(db_name, "admin", "admin")
+        uid = self.xmlrpc_common.login(db_name, "admin", self.admin_key)
         self.assertEqual(uid, self.admin_uid)
 
     def test_xmlrpc_ir_model_search(self):
         o = self.xmlrpc_object
         db_name = common.get_db_name()
-        ids = o.execute(db_name, self.admin_uid, "admin", "ir.model", "search", [])
+        ids = o.execute(
+            db_name, self.admin_uid, self.admin_key, "ir.model", "search", []
+        )
         self.assertIsInstance(ids, list)
-        ids = o.execute(db_name, self.admin_uid, "admin", "ir.model", "search", [], {})
+        ids = o.execute(
+            db_name, self.admin_uid, self.admin_key, "ir.model", "search", [], {}
+        )
         self.assertIsInstance(ids, list)
 
     def test_xmlrpc_datetime(self):
@@ -90,7 +102,7 @@ class TestXMLRPC(common.HttpCase):
         self.xmlrpc_object.execute(
             common.get_db_name(),
             self.admin_uid,
-            "admin",
+            self.admin_key,
             "res.partner",
             "formatted_read_group",
             [],
@@ -102,7 +114,7 @@ class TestXMLRPC(common.HttpCase):
         self.xmlrpc_object.execute(
             common.get_db_name(),
             self.admin_uid,
-            "admin",
+            self.admin_key,
             "res.partner",
             "name_search",
             "admin",
@@ -122,7 +134,7 @@ class TestXMLRPC(common.HttpCase):
         ctx = self.xmlrpc_object.execute(
             common.get_db_name(),
             self.admin_uid,
-            "admin",
+            self.admin_key,
             "res.users",
             "context_get",
         )
@@ -168,7 +180,7 @@ class TestXMLRPC(common.HttpCase):
         [att] = self.xmlrpc_object.execute(
             common.get_db_name(),
             self.admin_uid,
-            "admin",
+            self.admin_key,
             "ir.attachment",
             "read",
             ids,
@@ -186,6 +198,7 @@ class TestAPIKeys(common.HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
         cls._user = cls.env["res.users"].create(
             {
                 "name": "Bylan",
@@ -215,6 +228,7 @@ class TestAPIKeys(common.HttpCase):
             session={"identity-check-last": time.time()},
             geoip={},
             get_json_data=get_json_data,
+            call_after_release=lambda func: None,
         )
         _request_stack.push(fake_req)
         self.addCleanup(_request_stack.pop)
@@ -356,3 +370,102 @@ class TestXmlrpcMarshalsFrozenList(common.BaseCase):
         dumped = OdooMarshaller(allow_none=True).dumps(({"context": context},))
         self.assertIn("<array><data>", dumped)
         self.assertIn("<int>2</int>", dumped)
+
+
+@common.tagged("post_install", "-at_install")
+class TestXmlrpcAuthentication(common.HttpCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = common.new_test_user(
+            cls.env, login="xmlrpc_target", password="xmlrpc-target-pw"
+        )
+        cls.key = common.new_test_api_key(cls.user)
+
+    def setUp(self):
+        super().setUp()
+        for name in (
+            "odoo.addons.rpc.controllers.xmlrpc",
+            "odoo.addons.base.models.res_users",
+            "odoo.http",
+        ):
+            muted = mute_logger(name)
+            muted.__enter__()
+            self.addCleanup(muted.__exit__)
+
+    def _call(self, secret):
+        return self.xmlrpc_object.execute_kw(
+            common.get_db_name(), self.user.id, secret, "res.users", "context_get", []
+        )
+
+    def _authenticate(self, secret):
+        return self.xmlrpc_common.authenticate(
+            common.get_db_name(), "xmlrpc_target", secret, {}
+        )
+
+    def test_a_new_database_refuses_passwords_and_takes_keys(self):
+        self.assertFalse(self._authenticate("xmlrpc-target-pw"))
+        with self.assertRaises(xmlrpc.client.Fault):
+            self._call("xmlrpc-target-pw")
+        self.assertEqual(self._authenticate(self.key), self.user.id)
+        self.assertEqual(self._call(self.key)["uid"], self.user.id)
+
+    def test_wrong_passwords_cool_the_client_down(self):
+        self.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
+        for _ in range(25):
+            with self.assertRaisesRegex(xmlrpc.client.Fault, "Access Denied|Too many"):
+                self._call("wrong-password")
+        with self.assertRaisesRegex(xmlrpc.client.Fault, "Too many login failures"):
+            self._call("xmlrpc-target-pw")
+        self.assertFalse(self._authenticate("xmlrpc-target-pw"))
+
+    def test_a_key_enters_from_a_cooled_address_and_a_wrong_one_is_counted(self):
+        self.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
+        for _ in range(10):
+            with self.assertRaisesRegex(xmlrpc.client.Fault, "Access Denied"):
+                self._call("wrong-password")
+        with self.assertRaisesRegex(xmlrpc.client.Fault, "Too many login failures"):
+            self._call("xmlrpc-target-pw")
+        self.assertEqual(self._call(self.key)["uid"], self.user.id)
+        self.assertEqual(self._authenticate(self.key), self.user.id)
+        self.assertEqual(self._failures(common.HOST), 11, "a key clears nothing")
+        with self.assertRaisesRegex(xmlrpc.client.Fault, "Too many login failures"):
+            self._call("0" * 40)
+        self.assertEqual(self._failures(common.HOST), 12)
+        self.assertEqual(self._failures(f"account:{self.user.id}"), 12)
+
+    def _failures(self, source):
+        self.env.cr.execute(
+            "SELECT failures FROM res_users_login_cooldown WHERE source = %s",
+            [source],
+        )
+        return self.env.cr.fetchone()[0]
+
+    def test_an_unbound_key_still_opens_the_rpc_doors(self):
+        unbound = common.new_unbound_test_api_key(self.user)
+        self.assertEqual(self._authenticate(unbound), self.user.id)
+        self.assertEqual(self._call(unbound)["uid"], self.user.id)
+        response = self.url_open(
+            "/json/2/res.users/context_get",
+            json={},
+            method="POST",
+            headers={"Authorization": f"Bearer {unbound}"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["uid"], self.user.id)
+
+    def test_a_key_bound_to_another_door_is_refused(self):
+        declare_api_scope(self.env, "rpc.test_scope_other_door", "test_other_door")
+        foreign = (
+            self.env["res.users.apikeys"]
+            .with_user(self.user)
+            ._generate(
+                "test_other_door",
+                "k",
+                datetime.datetime.now() + datetime.timedelta(hours=1),
+            )
+        )
+        self.assertFalse(self._authenticate(foreign))
+        with self.assertRaises(xmlrpc.client.Fault):
+            self._call(foreign)

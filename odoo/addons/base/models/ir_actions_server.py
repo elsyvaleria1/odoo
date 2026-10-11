@@ -1041,6 +1041,9 @@ class IrActionsServer(models.Model):
             )
             return response.status_code
 
+    def _get_caller_env(self, eval_context: dict[str, Any] | None) -> api.Environment:
+        return (eval_context or {}).get("env") or self.env(su=False)
+
     def _link_to_active_record(
         self, new_id: int, eval_context: dict[str, Any] | None = None
     ) -> None:
@@ -1072,7 +1075,7 @@ class IrActionsServer(models.Model):
         with _debug.perf(
             "action_copy", cr=self.env.cr, action=self.id, source=self.resource_ref
         ) as span:
-            dupe = self.resource_ref.copy()
+            dupe = self.resource_ref.with_env(self._get_caller_env(eval_context)).copy()
             span.set(new_id=dupe.id)
         self._link_to_active_record(dupe.id, eval_context)
 
@@ -1085,7 +1088,8 @@ class IrActionsServer(models.Model):
             action=self.id,
             model=self.crud_model_id.model,
         ) as span:
-            res_id, _res_name = self.env[self.crud_model_id.model].name_create(
+            caller_env = self._get_caller_env(eval_context)
+            res_id, _res_name = caller_env[self.crud_model_id.model].name_create(
                 self.value
             )
             span.set(new_id=res_id)
@@ -1314,7 +1318,9 @@ class IrActionsServer(models.Model):
 
         action_groups = config.group_ids
         if action_groups:
-            if not (action_groups & self.env.user.sudo().all_group_ids):
+            if set(action_groups.ids).isdisjoint(
+                self.env.user._get_effective_group_ids()
+            ):
                 _debug.logic(
                     "run_denied", action=self.id, uid=self.env.uid, by="groups"
                 )

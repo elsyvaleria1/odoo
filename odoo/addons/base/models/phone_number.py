@@ -1,10 +1,11 @@
 import re
+from collections import defaultdict
 from typing import Self
 
 from odoo import Command, api, fields, models
 from odoo.api import ValuesType
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import frozendict
+from odoo.tools import SQL, frozendict
 
 _debug = DebugLog(__name__)
 
@@ -45,6 +46,11 @@ class PhoneNumber(models.Model):
         required=True,
     )
     country_id = fields.Many2one(comodel_name="res.country")
+    country_inferred = fields.Boolean(
+        help="The country was read from the contact the number was created for, "
+        "and follows that contact's corrections while no other contact holds "
+        "the number. Choosing a country on the number clears it.",
+    )
     primary = fields.Boolean(default=False)
     sequence = fields.Integer(default=10)
     label = fields.Char()
@@ -71,16 +77,11 @@ class PhoneNumber(models.Model):
             number = "+" + number[2:]
         return number
 
-    def _get_phone_country(self):
-        return self.country_id or self.partner_ids[:1].country_id
-
-    @api.depends("number", "country_id", "partner_ids.country_id")
+    @api.depends("number", "country_id")
     def _compute_sanitized(self) -> None:
         _debug.perf.count("sanitized_computed", phones=len(self))
         for phone in self:
-            phone.sanitized = self._normalize_number(
-                phone.number, phone._get_phone_country()
-            )
+            phone.sanitized = self._normalize_number(phone.number, phone.country_id)
 
     @api.depends("number", "label", "type")
     def _compute_display_name(self) -> None:
@@ -91,9 +92,11 @@ class PhoneNumber(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
+        vals_list = [self._with_inferred_country(vals) for vals in vals_list]
+        Country = self.env["res.country"]
         wanted = [
             self._normalize_number(
-                vals.get("number"), self._get_country_from_vals(vals)
+                vals.get("number"), Country.browse(vals["country_id"])
             )
             for vals in vals_list
         ]
@@ -138,11 +141,21 @@ class PhoneNumber(models.Model):
             by_position[position] = phone
         return self.browse(by_position[i].id for i in range(len(vals_list)))
 
+    def write(self, vals: ValuesType) -> bool:
+        if "country_id" in vals and "country_inferred" not in vals:
+            vals = {**vals, "country_inferred": False}
+        return super().write(vals)
+
     @api.model
-    def _get_country_from_vals(self, vals: ValuesType):
+    def _with_inferred_country(self, vals: ValuesType) -> ValuesType:
         if vals.get("country_id"):
             _debug.logic("country_from_vals", by="country_id")
-            return self.env["res.country"].browse(vals["country_id"])
+            return vals
+        country = self._get_contact_country_from_vals(vals)
+        return {**vals, "country_id": country.id, "country_inferred": True}
+
+    @api.model
+    def _get_contact_country_from_vals(self, vals: ValuesType):
         partner_ids = [
             id_
             for command in (vals.get("partner_ids") or [])
@@ -192,3 +205,88 @@ class PhoneNumber(models.Model):
             fallback=bool(types) and candidates is self,
         )
         return candidates[:1]
+
+    def _update_country_from_contact(self) -> None:
+        phones = self.filtered("country_inferred")
+        if not phones:
+            return
+        self.env["res.partner"].flush_model(["country_id", "phone_ids"])
+        self.flush_model(["partner_ids", "sanitized"])
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT rel.phone_number_id, MIN(rel.partner_id), MIN(partner.country_id)
+                  FROM res_partner_phone_number_rel AS rel
+                  JOIN res_partner AS partner ON partner.id = rel.partner_id
+                 WHERE rel.phone_number_id = ANY(%s)
+                 GROUP BY rel.phone_number_id
+                HAVING COUNT(*) = 1 AND MIN(partner.country_id) IS NOT NULL
+                """,
+                phones.ids,
+            )
+        )
+        rereads = {}
+        for phone_id, contact_id, country_id in self.env.cr.fetchall():
+            phone = self.browse(phone_id)
+            if phone.country_id.id != country_id:
+                country = self.env["res.country"].browse(country_id)
+                rereads[phone] = (
+                    country,
+                    contact_id,
+                    self._normalize_number(phone.number, country),
+                )
+        _debug.logic("country_rereads", phones=len(self), rereads=len(rereads))
+        if not rereads:
+            return
+        changing = {
+            sanitized
+            for phone, (_, _, sanitized) in rereads.items()
+            if sanitized != phone.sanitized
+        }
+        holders = {}
+        if changing:
+            self.env.cr.execute(
+                SQL(
+                    "SELECT sanitized, id FROM phone_number"
+                    " WHERE sanitized = ANY(%s) AND id != ALL(%s)",
+                    list(changing),
+                    [phone.id for phone in rereads],
+                )
+            )
+            holders = {
+                sanitized: self.browse(id_) for sanitized, id_ in self.env.cr.fetchall()
+            }
+        leaving = {phone.sanitized for phone in rereads}
+        privileged = self.sudo()
+        moved = defaultdict(privileged.browse)
+        for phone, (country, contact_id, sanitized) in rereads.items():
+            holder = holders.get(sanitized)
+            if sanitized == phone.sanitized or not (holder or sanitized in leaving):
+                moved[country] |= privileged.browse(phone.id)
+                holders[sanitized] = phone
+            elif holder and holder.with_user(self.env.user).has_access("read"):
+                privileged.browse(phone.id)._merge_into(
+                    privileged.browse(holder.id),
+                    self.env["res.partner"].browse(contact_id),
+                )
+            else:
+                _debug.logic(
+                    "country_reread_skipped",
+                    phone=phone.id,
+                    holder=holder.id if holder else None,
+                    reason="unreadable_holder" if holder else "number_leaving",
+                )
+        for country, to_move in moved.items():
+            _debug.lifecycle("country_reread", phones=to_move.ids, country=country.id)
+            to_move.write({"country_id": country.id, "country_inferred": True})
+
+    def _merge_into(self, holder: Self, contact) -> None:
+        self.check_singleton()
+        _debug.lifecycle(
+            "merged_into_holder", phone=self.id, holder=holder.id, contact=contact.id
+        )
+        self.env["mixin.merge"]._update_foreign_keys_generic(self._name, self, holder)
+        if not holder.active:
+            holder.active = True
+        self.unlink()
+        contact.modified(["phone_ids"])

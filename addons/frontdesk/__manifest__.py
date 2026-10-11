@@ -1,6 +1,6 @@
 {
     "name": "Visitor Reception",
-    "version": "1.1",
+    "version": "1.2",
     "oldest_upgradable_version": "1.1",
     "category": "Human Resources/Frontdesk",
     "summary": "Register visitor check-ins and notify their hosts",
@@ -10,6 +10,7 @@
     "depends": [
         "hr",
         "sms",
+        "web_gantt",
     ],
     "data": [
         "security/security.xml",

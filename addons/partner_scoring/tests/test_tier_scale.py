@@ -62,6 +62,12 @@ class TestTierScale(TransactionCase):
         with self.assertRaises(ValidationError):
             self._band("Shared overlapping", 0.0, 0.0, None)
 
+    def test_a_band_moved_into_a_company_cannot_overlap_its_bands(self):
+        self._band("B low", 0.0, 60.0, self.company_b)
+        moved = self._band("A high", 50.0, 0.0, self.company_a)
+        with self.assertRaises(ValidationError):
+            moved.company_id = self.company_b
+
     def test_a_top_band_ending_at_100_is_rejected(self):
         self._band("Low", 0.0, 50.0, self.company_a)
         with self.assertRaises(ValidationError):

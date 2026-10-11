@@ -13,6 +13,7 @@ from odoo.addons.base.models.mixin_access_graph_reach import REACH_COLUMNS
 
 ROLES = ("view", "edit", "manage")
 REACH_TABLE = '"test_access_right_graph_node_access_reach"'
+REACH_LOOKUP = f"FROM {REACH_TABLE} WHERE key = ANY("
 
 
 def oracle_role(nodes, grants, user, groups, scoped, node_id, now, in_use):
@@ -371,6 +372,18 @@ class TestAccessGraph(TransactionCase):
             raise ValueError
         self.assert_table_is_derived()
 
+    def test_the_module_owns_its_reach_tables(self):
+        reach = self.Node._access_reach_table()
+        owned = self.env["ir.model.relation"].search(
+            [("name", "in", [reach, f"{reach}_lock"])]
+        )
+        self.assertEqual(
+            sorted(
+                owned.mapped(lambda relation: (relation.name, relation.module.name))
+            ),
+            [(reach, "test_access_rights"), (f"{reach}_lock", "test_access_rights")],
+        )
+
     def test_the_sql_and_the_compute_agree_with_the_formula(self):
         for seed in (1, 2, 3):
             with self.subTest(seed=seed):
@@ -436,7 +449,7 @@ class TestAccessGraph(TransactionCase):
     def test_a_run_of_bands_is_one_reach(self):
         def reaches(domain):
             query = self.Node.with_user(self.alice).sudo()._search(domain)
-            return query.select().code.count(REACH_TABLE)
+            return query.select().code.count(REACH_LOOKUP)
 
         once = reaches(self.Node.with_user(self.alice)._access_graph_domain("view"))
         self.assertTrue(once)
@@ -520,9 +533,9 @@ class TestAccessGraph(TransactionCase):
         walked = reach | Domain("parent_id", "any", reach)
 
         alone = Node.sudo()._search(reach).statement().code
-        self.assertEqual(alone.count(REACH_TABLE), 1)
+        self.assertEqual(alone.count(REACH_LOOKUP), 1)
         self.assertEqual(
-            Node.sudo()._search(walked).statement().code.count(REACH_TABLE), 2
+            Node.sudo()._search(walked).statement().code.count(REACH_LOOKUP), 2
         )
         self.assertEqual(Node.sudo().search(reach) & nodes, mid | other)
         self.assertEqual(Node.sudo().search(walked) & nodes, mid | leaf | other)
@@ -533,15 +546,16 @@ class TestAccessGraph(TransactionCase):
             "a subquery of another search",
         )
 
-    def test_the_reach_is_one_principal_lookup(self):
+    def test_the_reach_looks_the_principals_up_by_index(self):
         Node = self.Node.with_user(self.alice)
         statement = Node.sudo()._search(Node._access_graph_reach("view")).statement()
+        self.assertIn('"id" IN (SELECT resource_id FROM (', statement.code)
+        self.assertIn(REACH_LOOKUP, statement.code)
         self.assertIn(
-            f'"id" IN (SELECT resource_id FROM {REACH_TABLE} WHERE key = ANY(',
+            f"JOIN {REACH_TABLE} AS reach ON reach.grant_id = grant_row.id",
             statement.code,
         )
         self.assertNotIn("string_to_array(", statement.code)
-        self.assertNotIn("grant_row", statement.code)
 
     def test_opened_groups_read_each_set_of_granted_nodes_once(self):
         companies = (self.company_a | self.company_b).ids
@@ -565,7 +579,7 @@ class TestAccessGraph(TransactionCase):
             allowed_company_ids=companies
         )
         reach = Node._access_graph_reach("view") & Domain("id", "in", nodes.ids)
-        sets = Node.sudo()._search(reach).statement().code.count(REACH_TABLE)
+        sets = Node.sudo()._search(reach).statement().code.count(REACH_LOOKUP)
         self.assertTrue(sets)
 
         statements = []
@@ -585,7 +599,7 @@ class TestAccessGraph(TransactionCase):
         self.assertEqual(len(result["groups"]), 3)
         [opened] = [code for code in statements if "__gidx" in code]
         self.assertEqual(
-            opened.count(REACH_TABLE), sets, "one lookup per expression, not per group"
+            opened.count(REACH_LOOKUP), sets, "one lookup per expression, not per group"
         )
         opened_groups = [group for group in result["groups"] if group["company_id"]]
         self.assertEqual(len(opened_groups), 2)

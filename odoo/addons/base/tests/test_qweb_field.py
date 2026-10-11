@@ -3,7 +3,7 @@ from datetime import date, datetime
 from unittest.mock import patch
 
 from odoo import Command, fields
-from odoo.tests import common, new_test_user
+from odoo.tests import common, counting_statements, new_test_user
 from odoo.tools import NEGATIVE_SIGN_JOINER
 
 from odoo.addons.base.models.ir_qweb import IrQweb as BaseIrQweb
@@ -117,6 +117,21 @@ class TestQwebFieldDuration(common.TransactionCase):
         self.assertEqual(
             self.value_to_html(1.5, {"unit": "hour", "round": "day", "digital": True}),
             "02",
+        )
+
+    def test_duration_rounds_a_half_unit_away_from_zero(self):
+        self.assertEqual(
+            self.value_to_html(150, {"round": "minute", "format": "short"}), "3 min"
+        )
+        self.assertEqual(
+            self.value_to_html(2.5, {"unit": "hour", "round": "hour", "digital": True}),
+            "03",
+        )
+        self.assertEqual(
+            self.value_to_html(
+                -2.5, {"unit": "hour", "round": "hour", "digital": True}
+            ),
+            "-03",
         )
 
     def test_duration_textual_formats(self):
@@ -280,9 +295,9 @@ class TestQwebFieldContact(common.TransactionCase):
         counts = {}
         for shown in (["name"], ["name", "phone"]):
             self.env.invalidate_all()
-            count0 = self.cr.sql_statement_count
-            Contact.value_to_html(self.partner, {"fields": shown})
-            counts[len(shown)] = self.cr.sql_statement_count - count0
+            with counting_statements(self.cr) as statements:
+                Contact.value_to_html(self.partner, {"fields": shown})
+            counts[len(shown)] = statements.count
         self.assertLess(counts[1], counts[2])
 
 
@@ -554,6 +569,18 @@ class TestQwebFieldTimeRounding(common.TransactionCase):
         for value in (23.99, 23.9917, 23.995, 23.999, 23.99999):
             with self.subTest(value):
                 self.assertEqual(self._time(value), "23:59")
+
+    def test_a_half_minute_rounds_up_like_the_web_client(self):
+        for value, float_time, time in (
+            (0.375, "00:23", "00:23"),
+            (1.375, "01:23", "01:23"),
+            (2.625, "02:38", "02:38"),
+            (-0.375, "-00:23", None),
+        ):
+            with self.subTest(value):
+                self.assertEqual(self._float_time(value), float_time)
+                if time:
+                    self.assertEqual(self._time(value), time)
 
     def test_the_range_guard_still_fires_on_the_input(self):
         for value in (24.0, 24.0001, 25.0):

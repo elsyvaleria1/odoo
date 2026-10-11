@@ -585,13 +585,16 @@
                     </h3>
                     <field name="duration" />
                     <field name="expiration_date" invisible="duration != '-1'" />
-                    <field
-                        name="scope_id"
-                        placeholder="Every door"
-                        groups="base.group_system" />
                     <p>
                         The key will be deleted once this period has elapsed.
                     </p>
+                    <h3 class="fw-bold">
+                        Choose the door the key opens
+                    </h3>
+                    <p>RPC for scripts and XML-RPC or JSON-2 clients; an
+                        integration's own door (DAV, Outlook, ...) for that
+                        integration. The key opens no other door.</p>
+                    <field name="scope_id" />
                     <footer>
                         <button
                             name="action_generate_key"
@@ -620,8 +623,8 @@
                         Write down your key
                     </h3>
                     <p>
-                        Here is your new API key, use it instead of a password for RPC access.
-                        Your login is still necessary for interactive usage.
+                        Here is your new API key, use it instead of a password at the door
+                        you chose. Your login is still necessary for interactive usage.
                     </p>
                     <p>
                         <code>

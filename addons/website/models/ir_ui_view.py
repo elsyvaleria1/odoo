@@ -144,9 +144,11 @@ class IrUiView(models.Model):
     def write(self, vals):
         current_website_id = self.env.context.get("website_id")
         if not current_website_id or self.env.context.get("no_cow"):
-            return super().write(vals)
-        with self._validation_deferred() as views:
-            return views._write_on_copies(vals, current_website_id)
+            result = super().write(vals)
+        else:
+            with self._validation_deferred() as views:
+                result = views._write_on_copies(vals, current_website_id)
+        return result
 
     def _write_on_copies(self, vals, current_website_id) -> bool:
         for view in self.with_context(active_test=False).sorted("website_id.id"):
@@ -445,6 +447,49 @@ class IrUiView(models.Model):
             IrUiView, views.with_context(active_test=False)
         )._get_views_inheriting()
         return views._filtered_most_specific().filtered("active")
+
+    def _get_template_context_errors(self):
+        return self._get_errors_in_each_website("_get_template_context_errors")
+
+    def _get_template_removal_errors(self, deactivated):
+        return self._get_errors_in_each_website(
+            "_get_template_removal_errors", deactivated
+        )
+
+    def _get_errors_in_each_website(self, method, *args):
+        errors = {}
+
+        def check(views, website_id):
+            for primary, refused in getattr(
+                super(IrUiView, views.with_context(website_id=website_id)), method
+            )(*args).items():
+                errors[primary] = list(
+                    dict.fromkeys([*errors.get(primary, []), *refused])
+                )
+
+        generic = self.filtered(lambda view: not view.website_id)
+        for website, views in (self - generic).grouped("website_id").items():
+            check(views, website.id)
+        if generic:
+            check(generic, False)
+            for (website_id,) in self.env.execute_query(
+                SQL("SELECT id FROM website ORDER BY id")
+            ):
+                check(generic, website_id)
+        return errors
+
+    def _get_removed_templates(self, deactivated):
+        removed = super()._get_removed_templates(deactivated)
+        copies = removed.filtered("website_id")
+        if not (deactivated and copies):
+            return removed
+        return removed | self.with_context(active_test=False).search(
+            [
+                ("key", "in", copies.mapped("key")),
+                ("website_id", "=", False),
+                ("type", "=", "qweb"),
+            ]
+        )
 
     def _get_sql_view_loaded(self, view, modules):
         loaded = super()._get_sql_view_loaded(view, modules)

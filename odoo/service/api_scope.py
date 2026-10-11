@@ -16,6 +16,8 @@ from odoo.fields import Domain
 if TYPE_CHECKING:
     from odoo.api import Environment
 
+RPC_SCOPE = "rpc"
+
 OPERATIONS = ("read", "create", "write", "unlink", "call")
 
 METHOD_OPERATIONS: Mapping[str, str] = {

@@ -13,7 +13,7 @@ export const applySettleDueProductTemplateRecords = () => {
             barcode: false,
             name: "Deposit",
             list_price: 1,
-            is_favorite: false,
+            is_featured: false,
             default_code: false,
             to_weight: false,
             uom_id: 1,

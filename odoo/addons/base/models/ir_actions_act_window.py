@@ -2,7 +2,7 @@ from typing import Any, Self
 
 from odoo import api, fields, models
 from odoo.api import ValuesType
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.libs.debug_log import DebugLog
 
 from .ir_actions_actions import WINDOW_TARGETS
@@ -156,7 +156,7 @@ class IrActionsAct_Window(models.Model):
         return super().create(vals_list)
 
     @api.depends("all_embedded_action_ids.is_visible")
-    @api.depends_context("active_id", "active_model", "uid")
+    @api.depends_context("active_id", "active_model", "uid", "allowed_company_ids")
     def _compute_embedded_action_ids(self) -> None:
         for action in self:
             visible = action.all_embedded_action_ids.filtered("is_visible")
@@ -208,11 +208,12 @@ class IrActionsAct_Window(models.Model):
             model=self.res_model,
             context_keys=len(ctx),
         )
-        return (
-            self.with_context({**self.env.context, **ctx})
-            .env[self.res_model]
-            .get_empty_list_help(stored_help)
-        )
+        env = self.env(context={**self.env.context, **ctx}, su=False)
+        try:
+            return env[self.res_model].get_empty_list_help(stored_help)
+        except AccessError:
+            _debug.logic("empty_list_help_refused", action=self.id, uid=env.uid)
+            return stored_help
 
     def _get_field_target_model(self) -> str:
         return "res_model"

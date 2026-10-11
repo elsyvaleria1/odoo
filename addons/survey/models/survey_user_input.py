@@ -2,7 +2,7 @@ import logging
 import operator as op
 import re
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Self
 
 import requests
@@ -471,6 +471,12 @@ class SurveyUser_Input(models.Model):
         responses._issue_invitation_links()
         return responses
 
+    def write(self, vals: ValuesType) -> bool:
+        result = super().write(vals)
+        if "deadline" in vals:
+            self.env["access.link"]._sync_record_expiries(self)
+        return result
+
     def _compute_invitation_token(self) -> None:
         links = (
             self.env["access.link"]
@@ -497,14 +503,15 @@ class SurveyUser_Input(models.Model):
             partner_field="partner_id",
             role="comment",
             cause="notification",
-            date_to=lambda answer: (
-                answer.deadline and answer.deadline + LINK_OUTLIVES_DEADLINE
-            ),
+            dated_by_record=True,
         )
         for answer in invited:
             answer._update_cache(
                 {"invitation_token": tokens[answer.id]}, validate=False
             )
+
+    def _get_link_expiry(self) -> datetime | None:
+        return self.deadline + LINK_OUTLIVES_DEADLINE if self.deadline else None
 
     def _mailed_token(self) -> str:
         self.check_singleton()

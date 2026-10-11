@@ -34,9 +34,9 @@ class TestFsmStockUI(HttpCase):
             )
         )
         exiting_products = cls.env["product.product"].search(
-            [("is_favorite", "!=", False)]
+            [("is_featured", "!=", False)]
         )
-        exiting_products.write({"is_favorite": False})
+        exiting_products.write({"is_featured": False})
         cls.product_not_lot, cls.product_lot = cls.env["product.product"].create(
             [
                 {
@@ -55,7 +55,7 @@ class TestFsmStockUI(HttpCase):
                 },
             ]
         )
-        (cls.product_not_lot + cls.product_lot).product_tmpl_id.is_favorite = True
+        (cls.product_not_lot + cls.product_lot).product_tmpl_id.is_featured = True
         cls.lot_id1 = cls.env["product.trace"].create(
             {
                 "product_id": cls.product_lot.id,

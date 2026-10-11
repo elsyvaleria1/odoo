@@ -602,7 +602,7 @@ class TestIrAccess(TransactionCaseWithUserDemo):
         with self.assertRaisesRegex(
             ValueError,
             r"a_module: security/ir.model.access.csv ships ir.model.access data.*"
-            r"ship security/ir.access.csv.*ir_access_convert",
+            r"ship security/ir.access.csv.*ir_access_legacy",
         ):
             convert_csv_import(
                 self.env, "a_module", "security/ir.model.access.csv", csv_content

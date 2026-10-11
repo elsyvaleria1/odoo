@@ -1,6 +1,6 @@
 import base64
 import logging
-from datetime import timedelta
+from datetime import datetime
 from itertools import batched, zip_longest
 from typing import Self
 
@@ -15,12 +15,6 @@ from odoo.addons.base.models.res_partner import _selection_timezones
 from odoo.addons.integration.tools.admission import Resolution
 
 _logger = logging.getLogger(__name__)
-
-INVITATION_OUTLIVES_EVENT = timedelta(days=30)
-
-
-def invitation_link_end(event):
-    return max(event.stop, fields.Datetime.now()) + INVITATION_OUTLIVES_EVENT
 
 
 class CalendarAttendee(models.Model):
@@ -86,8 +80,8 @@ class CalendarAttendee(models.Model):
         for attendee in self:
             attendee.access_token = tokens.get(attendee.id, False)
 
-    def _invitation_link_end(self):
-        return invitation_link_end(self.event_id)
+    def _get_link_expiry(self) -> datetime:
+        return self.event_id._get_link_expiry()
 
     def _issue_invitation_links(self) -> None:
         attendees = self.filtered("partner_id")
@@ -96,7 +90,7 @@ class CalendarAttendee(models.Model):
             partner_field="partner_id",
             role="comment",
             cause="notification",
-            date_to=lambda attendee: attendee._invitation_link_end(),
+            dated_by_record=True,
         )
         for attendee in attendees:
             attendee._update_cache(

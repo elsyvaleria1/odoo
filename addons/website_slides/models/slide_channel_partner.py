@@ -129,7 +129,7 @@ class SlideChannelPartner(models.Model):
                 if pending
                 else None
             )
-            cause = "share" if pending else "notification"
+            cause = "invitation" if pending else "notification"
             if date_to:
                 Link._update_record_links(
                     member,

@@ -522,6 +522,35 @@ class TestResCurrency(TransactionCase):
         self.assertIn("Sixty-Eight", usd.amount_to_text(2.675))
         self.assertIn(" and One ", usd.amount_to_text(1.005))
 
+    def test_decimal_places_hold_every_digit_of_the_rounding(self):
+        for rounding, places in (
+            (1.0, 0),
+            (5.0, 0),
+            (0.5, 1),
+            (0.1, 1),
+            (0.05, 2),
+            (0.01, 2),
+            (0.25, 2),
+            (0.125, 3),
+            (0.00001, 5),
+            (0.000001, 6),
+        ):
+            with self.subTest(rounding=rounding):
+                currency = self.env["res.currency"].new({"rounding": rounding})
+                self.assertEqual(currency.decimal_places, places)
+
+    def test_amount_to_text_names_a_quarter_rounded_subunit(self):
+        currency = self.env["res.currency"].create(
+            {
+                "name": "QRT",
+                "symbol": "Q",
+                "rounding": 0.25,
+                "currency_unit_label": "Quarter",
+                "currency_subunit_label": "Cents",
+            }
+        )
+        self.assertIn("Twenty-Five Cents", currency.amount_to_text(10.25))
+
     def test_amount_to_text_of_a_negative_rounding_to_zero_is_zero(self):
         text = self.env.ref("base.USD").amount_to_text(-0.001)
         self.assertFalse(text.startswith("Minus"), text)

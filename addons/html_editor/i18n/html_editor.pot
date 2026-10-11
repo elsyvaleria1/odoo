@@ -1510,6 +1510,12 @@ msgstr ""
 #. module: html_editor
 #. odoo-python
 #: code:addons/html_editor/controllers/main.py:0
+msgid "Only images can be modified."
+msgstr ""
+
+#. module: html_editor
+#. odoo-python
+#: code:addons/html_editor/controllers/main.py:0
 msgid "Oops, it looks like our AI is unreachable!"
 msgstr ""
 
@@ -2257,6 +2263,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/html_editor/static/src/main/media/image_crop.js:0
 msgid "This image is an external image"
+msgstr ""
+
+#. module: html_editor
+#. odoo-python
+#: code:addons/html_editor/models/ir_attachment.py:0
+msgid "This image shape cannot be applied."
 msgstr ""
 
 #. module: html_editor

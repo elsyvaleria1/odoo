@@ -3,9 +3,9 @@
  <t t-name="point_of_sale.ProductInfoPopup">
  <Dialog>
  <t t-set-slot="header">
- <button t-on-click="this.toggleFavorite" class="border-0 bg-transparent mb-2" t-att-disabled="this.pos.cashierIsMinimal">
- <i t-attf-class="fa-lg {{this.props.productTemplate.is_favorite ? 'fa-solid fa-star' : 'fa-regular fa-star'}}"
- t-att-style="this.props.productTemplate.is_favorite ? 'color: #f3cc00;' : ''"
+ <button t-on-click="this.toggleFeatured" class="border-0 bg-transparent mb-2" t-att-disabled="this.pos.cashierIsMinimal">
+ <i t-attf-class="fa-lg {{this.props.productTemplate.is_featured ? 'fa-solid fa-star' : 'fa-regular fa-star'}}"
+ t-att-style="this.props.productTemplate.is_featured ? 'color: #f3cc00;' : ''"
  role="img"/>
  </button>
  <h3 class="section-title" t-out="this.props.productTemplate.displayName + ' | ' + this.utils.formatCurrency(this.props.info.productInfo.all_prices.price_with_tax)"/>

@@ -63727,7 +63727,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/ir_fields.py:0
 msgid "true"
-msgstr "否"
+msgstr "真"
 
 #. module: base
 #. odoo-python

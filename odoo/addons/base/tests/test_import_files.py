@@ -141,6 +141,21 @@ class TestFieldConverters(TransactionCase):
             self.assertFalse(warnings)
             self.assertEqual(result, expected)
 
+    def test_a_token_meaning_both_true_and_false_is_not_read_as_true(self):
+        self.converter._get_transaction_cache().clear()
+        translations = {"true": ["否"], "no": ["否"]}
+        with patch.object(
+            type(self.converter),
+            "_get_boolean_translations",
+            lambda _self, src: translations.get(src, []),
+        ):
+            with self.assertRaises(ValueError):
+                self.converter._str_to_boolean(self.flds["bool"], "否")
+            self.assertEqual(
+                self.converter._str_to_boolean(self.flds["bool"], "no"), (False, [])
+            )
+        self.converter._get_transaction_cache().clear()
+
     def test_str_to_boolean_unknown_raises(self):
         with self.assertRaises(ValueError) as cm:
             self.converter._str_to_boolean(self.flds["bool"], "maybe")
@@ -1546,6 +1561,30 @@ class TestSelectionIndexPrecedence(TransactionCase):
             [result["ids"][0]],
         )
         self.assertEqual(self.env.cr.fetchone()[0], "sent")
+
+    def test_the_readers_language_outranks_another_languages_label(self):
+        for lang in ("fr_FR", "es_ES"):
+            self.env["res.lang"]._activate_lang(lang)
+        field = self.env["res.partner"]._fields["type"]
+        options = self.env["ir.model.fields.selection"].search(
+            [
+                ("field_id.model", "=", "res.partner"),
+                ("field_id.name", "=", "type"),
+                ("value", "in", ["invoice", "delivery"]),
+            ]
+        )
+        by_value = {option.value: option for option in options}
+        self.assertLess(by_value["invoice"].sequence, by_value["delivery"].sequence)
+        by_value["invoice"].update_field_translations("name", {"fr_FR": "Zorglub"})
+        by_value["delivery"].update_field_translations("name", {"es_ES": "Zorglub"})
+        self.env.flush_all()
+        cache = self.converter._get_transaction_cache()
+        for lang, expected in (("es_ES", "delivery"), ("fr_FR", "invoice")):
+            cache.pop(("selection_index", field.model_name, field.name, lang), None)
+            reader = self.converter.with_context(lang=lang)
+            self.assertEqual(
+                reader._str_to_selection(field, "Zorglub"), (expected, []), lang
+            )
 
     def test_the_error_lists_possible_values_in_the_readers_language(self):
         self.env["res.lang"]._activate_lang("fr_FR")

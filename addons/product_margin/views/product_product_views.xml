@@ -66,7 +66,7 @@
         <field name="arch" type="xml">
             <list
                 string="Product Margins"
-                default_order="is_favorite desc, default_code, name, id">
+                default_order="is_featured desc, default_code, name, id">
                 <field name="name" />
                 <field name="default_code" />
                 <field name="sale_avg_price" />

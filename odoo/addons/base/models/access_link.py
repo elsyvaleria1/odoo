@@ -2,14 +2,15 @@ import base64
 import hashlib
 import logging
 import secrets
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Self
 
+from dateutil.relativedelta import relativedelta
+
 from odoo import SUPERUSER_ID, api, fields, models, tools
 from odoo.api import ValuesType
-from odoo.exceptions import AccessError, MissingError, UserError
+from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.fields import Command, Domain
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
@@ -29,7 +30,9 @@ LINK_AUDIENCES = [
     ("anyone", "Anyone with the link"),
     ("signed_in", "Signed-in users"),
     ("partners", "These people"),
+    ("organizations", "These people's organizations"),
 ]
+NAMED_AUDIENCES = frozenset({"partners", "organizations"})
 
 LINK_CAUSES = [
     ("share", "Shared by hand"),
@@ -45,14 +48,6 @@ LINK_ACTIONS = [
     ("comment", "Comment"),
     ("act", "Act"),
 ]
-
-DEFAULT_LIFETIME = {
-    "share": timedelta(days=30),
-    "notification": timedelta(days=365),
-    "request": timedelta(days=365),
-    "system": timedelta(days=365),
-    "migration": timedelta(days=365),
-}
 
 TOKEN_SCOPE = tools.register_signed_scope(
     "access.link",
@@ -84,6 +79,7 @@ SERVER_FIELDS = frozenset(
         "cause_model",
         "cause_res_id",
         "legacy_source",
+        "dated_by_record",
         "last_used_at",
         "use_count",
     }
@@ -193,6 +189,13 @@ class AccessLink(models.Model):
         string="Expires",
         index=True,
     )
+    dated_by_record = fields.Boolean(
+        string="Follows the Record's Date",
+        readonly=True,
+        help="The link expires with a date of its record, such as a meeting's "
+        "end or a request's validity, and moves with it, rather than after its "
+        "cause's lifetime.",
+    )
     revoked_at = fields.Datetime(
         copy=False,
         readonly=True,
@@ -251,16 +254,16 @@ class AccessLink(models.Model):
         "UNIQUE (token_hash)",
         "A token opens one link.",
     )
-    _anyone_expires = models.Constraint(
-        "CHECK (audience <> 'anyone' OR date_to IS NOT NULL "
-        "OR revoked_at IS NOT NULL OR expiry_waived)",
-        "A link anyone can use has an expiry date.",
+    _expires = models.Constraint(
+        "CHECK (date_to IS NOT NULL OR revoked_at IS NOT NULL OR expiry_waived)",
+        "A link has an expiry date.",
     )
     expiry_waived = fields.Boolean(
         readonly=True,
         write_classification="base.link_token",
         write_groups="base.group_system",
-        help="An administrator chose that this link anyone can use never expires.",
+        help="An administrator chose this link's expiry outside what its cause "
+        "allows: later, or never.",
     )
     _res_index = models.Index("(res_model, res_id)")
 
@@ -314,6 +317,71 @@ class AccessLink(models.Model):
             Domain("date_to", "=", False) | Domain("date_to", ">", now)
         )
 
+    @api.model
+    def _get_cause_lifetimes(self) -> dict[str, timedelta | relativedelta]:
+        return {
+            "share": timedelta(days=30),
+            "notification": timedelta(days=365),
+            "request": timedelta(days=365),
+            "system": timedelta(days=365),
+            "migration": timedelta(days=365),
+        }
+
+    @api.model
+    def _get_latest_date_to(self, cause: str) -> datetime:
+        return fields.Datetime.now() + self._get_cause_lifetimes()[cause]
+
+    @api.model
+    def _get_expiries(self, records: models.BaseModel) -> dict[int, datetime | None]:
+        expiries = {}
+        for record in records.with_user(SUPERUSER_ID):
+            try:
+                expiries[record.id] = record._get_link_expiry() or None
+            except MissingError:
+                expiries[record.id] = None
+        return expiries
+
+    def _get_record_expiries(self) -> dict[int, datetime]:
+        expiries = {}
+        dated = self.filtered("dated_by_record")
+        for (model_name, cause), links in dated.grouped(
+            lambda link: (link.res_model, link.cause)
+        ).items():
+            latest = self._get_latest_date_to(cause)
+            by_record = (
+                self._get_expiries(self.env[model_name].browse(links.mapped("res_id")))
+                if model_name in self.env
+                else {}
+            )
+            expiries.update(
+                {link.id: by_record.get(link.res_id) or latest for link in links}
+            )
+        return expiries
+
+    @api.constrains("date_to", "expiry_waived", "dated_by_record")
+    def _check_lifetime(self) -> None:
+        lifetimes = self._get_cause_lifetimes()
+        now = fields.Datetime.now()
+        record_expiries = self.filtered(
+            lambda link: not (link.expiry_waived or link.revoked_at)
+        )._get_record_expiries()
+        for link in self:
+            if link.expiry_waived or link.revoked_at:
+                continue
+            if not link.date_to:
+                raise ValidationError(
+                    self.env._("A link expires unless an administrator waives it.")
+                )
+            latest = record_expiries.get(link.id) or now + lifetimes[link.cause]
+            if link.date_to > latest:
+                raise ValidationError(
+                    self.env._(
+                        "This link can live until %(latest)s at most; ask an "
+                        "administrator for longer.",
+                        latest=fields.Datetime.to_string(latest),
+                    )
+                )
+
 
     @api.model
     def _derive_token(self, nonce: str) -> str:
@@ -354,6 +422,7 @@ class AccessLink(models.Model):
         cause: str = "share",
         cause_record: models.BaseModel | None = None,
         date_to: datetime | None = None,
+        dated_by_record: bool = False,
     ) -> tuple[Self, str | None]:
         record.check_singleton()
         self._check_may_issue(record, role)
@@ -378,13 +447,14 @@ class AccessLink(models.Model):
                     "cause_res_id", "=", cause_record.id if cause_record else False
                 )
                 & Domain("token_nonce", "!=", False)
+                & Domain("dated_by_record", "=", dated_by_record)
                 & (Domain("date_to", "=", date_to) if date_to else Domain.TRUE)
                 & self._live_domain(),
                 order="id desc",
             )
             .filtered(
                 lambda link: (
-                    audience != "partners"
+                    audience not in NAMED_AUDIENCES
                     or set(link.audience_partner_ids.ids) == people
                 )
             )[:1]
@@ -414,7 +484,12 @@ class AccessLink(models.Model):
         cause: str = "share",
         cause_record: models.BaseModel | None = None,
         waive_expiry: bool = False,
+        dated_by_record: bool = False,
     ) -> tuple[Self, str]:
+        if dated_by_record:
+            if date_to:
+                raise ValueError("a link following its record's date takes no date_to")
+            date_to = self._get_expiries(record)[record.id]
         reusable, token = self._find_reusable(
             record,
             partner=partner,
@@ -424,13 +499,14 @@ class AccessLink(models.Model):
             cause=cause,
             cause_record=cause_record,
             date_to=date_to,
+            dated_by_record=dated_by_record,
         )
         if token:
             _debug.logic("link.reused", link=reusable.id, model=record._name)
             return reusable, token
         partner = partner or self.env["res.partner"]
-        if audience == "anyone" and not date_to and not waive_expiry:
-            date_to = fields.Datetime.now() + DEFAULT_LIFETIME[cause]
+        if not date_to and not waive_expiry:
+            date_to = self._get_latest_date_to(cause)
         issuer = self.with_privilege(
             "base.privilege_manage_links", reason=f"issue a link to {record._name}"
         )
@@ -446,13 +522,14 @@ class AccessLink(models.Model):
                 "audience_partner_ids": [
                     Command.set((audience_partners or partner).ids)
                 ]
-                if audience == "partners"
+                if audience in NAMED_AUDIENCES
                 else [],
                 "token_hash": hash_token(token),
                 "token_nonce": nonce,
                 "token_hint": token[:4],
                 "date_to": date_to or False,
-                **({"expiry_waived": True} if waive_expiry and not date_to else {}),
+                "dated_by_record": dated_by_record,
+                **({"expiry_waived": True} if waive_expiry else {}),
                 "cause": cause,
                 "cause_model": cause_record._name if cause_record else False,
                 "cause_res_id": cause_record.id if cause_record else False,
@@ -471,7 +548,7 @@ class AccessLink(models.Model):
         partner_field: str,
         role: str = "view",
         cause: str = "notification",
-        date_to: Callable[[models.BaseModel], datetime | None] | None = None,
+        dated_by_record: bool = False,
     ) -> dict[int, str]:
         if not records:
             return {}
@@ -483,6 +560,7 @@ class AccessLink(models.Model):
             & Domain("audience", "=", "anyone")
             & Domain("cause", "=", cause)
             & Domain("token_nonce", "!=", False)
+            & Domain("dated_by_record", "=", dated_by_record)
             & self._live_domain(),
             order="id desc",
         )
@@ -504,7 +582,7 @@ class AccessLink(models.Model):
                 partner_field=partner_field,
                 role=role,
                 cause=cause,
-                date_to=date_to,
+                dated_by_record=dated_by_record,
             )
         )
         return tokens
@@ -517,7 +595,7 @@ class AccessLink(models.Model):
         partner_field: str,
         role: str = "view",
         cause: str = "notification",
-        date_to: Callable[[models.BaseModel], datetime | None] | None = None,
+        dated_by_record: bool = False,
     ) -> dict[int, str]:
         if not records:
             return {}
@@ -526,7 +604,7 @@ class AccessLink(models.Model):
             partner_field=partner_field,
             role=role,
             cause=cause,
-            date_to=date_to,
+            dated_by_record=dated_by_record,
         )
 
     @api.model
@@ -545,10 +623,11 @@ class AccessLink(models.Model):
         partner_field: str,
         role: str,
         cause: str,
-        date_to: Callable[[models.BaseModel], datetime | None] | None,
+        dated_by_record: bool,
     ) -> dict[int, str]:
         companies = self._record_companies(records)
-        now = fields.Datetime.now()
+        latest = self._get_latest_date_to(cause)
+        expiries = self._get_expiries(records) if dated_by_record else {}
         tokens: dict[int, str] = {}
         vals_list = []
         for record in records:
@@ -564,8 +643,8 @@ class AccessLink(models.Model):
                     "token_hash": hash_token(token),
                     "token_nonce": nonce,
                     "token_hint": token[:4],
-                    "date_to": (date_to and date_to(record))
-                    or now + DEFAULT_LIFETIME[cause],
+                    "date_to": expiries.get(record.id) or latest,
+                    "dated_by_record": dated_by_record,
                     "cause": cause,
                     "company_id": companies.get(record.id, False),
                 }
@@ -589,7 +668,7 @@ class AccessLink(models.Model):
     ) -> dict[int, str]:
         record.check_singleton()
         self._check_may_issue(record, role)
-        date_to = date_to or fields.Datetime.now() + DEFAULT_LIFETIME[cause]
+        date_to = date_to or self._get_latest_date_to(cause)
         issuer = self.with_privilege(
             "base.privilege_manage_links", reason=f"issue links to {record._name}"
         )
@@ -731,7 +810,7 @@ class AccessLink(models.Model):
         record_sudo = record.with_user(SUPERUSER_ID).exists()
         if not record_sudo:
             raise MissingError(self.env._("This document does not exist."))
-        if record.has_access("read"):
+        if record.has_access("write" if role == "edit" else "read"):
             _debug.logic("link.opened", model=model, by="session")
             return record_sudo
         try:
@@ -787,11 +866,10 @@ class AccessLink(models.Model):
         if self.audience == "signed_in":
             return True
         partner = user.partner_id
-        allowed = self.audience_partner_ids | self.partner_id
-        return bool(
-            partner & allowed
-            or partner.commercial_partner_id & allowed.commercial_partner_id
-        )
+        named = self.audience_partner_ids | self.partner_id
+        if self.audience == "organizations":
+            return bool(partner.commercial_partner_id & named.commercial_partner_id)
+        return bool(partner & named)
 
     def _record_use(self, action: str) -> None:
         self.check_singleton()
@@ -851,7 +929,6 @@ class AccessLink(models.Model):
         date_to = fields.Datetime.to_datetime(date_to)
         if not date_to or date_to <= fields.Datetime.now():
             raise UserError(self.env._("A link is extended to a date to come."))
-        self._check_lifetime(date_to)
         live = self.with_privilege(
             "base.privilege_manage_links", reason="extend a link"
         ).filtered(lambda link: not link.revoked_at)
@@ -916,6 +993,25 @@ class AccessLink(models.Model):
                 "link_extended", reason=fields.Datetime.to_string(vals["date_to"])
             )
 
+    @api.model
+    def _sync_record_expiries(self, *recordsets: models.BaseModel) -> None:
+        links = self.with_privilege(
+            "base.privilege_manage_links", reason="a record's date moved"
+        ).search(
+            Domain.OR(
+                Domain("res_model", "=", records._name)
+                & Domain("res_id", "in", records.ids)
+                for records in recordsets
+            )
+            & Domain("dated_by_record", "=", True)
+            & Domain("expiry_waived", "=", False)
+            & self._live_domain()
+        )
+        expiries = links._get_record_expiries()
+        moved = links.filtered(lambda link: link.date_to != expiries[link.id])
+        for date_to, same in moved.grouped(lambda link: expiries[link.id]).items():
+            same.write({"date_to": date_to})
+
     def _log(self, event: str, reason: str | None = None) -> None:
         self.env["ir.access.log"]._record(
             [
@@ -956,8 +1052,6 @@ class AccessLink(models.Model):
             raise AccessError(
                 self.env._("Revoke or extend a link; its token and record are fixed.")
             )
-        if by_hand and "date_to" in vals:
-            self._check_lifetime(vals["date_to"])
         result = super().write(vals)
         if by_hand and "date_to" in vals:
             self._log(
@@ -965,26 +1059,6 @@ class AccessLink(models.Model):
                 reason=fields.Datetime.to_string(vals["date_to"]) or "no expiry",
             )
         return result
-
-    def _check_lifetime(self, date_to: Any) -> None:
-        if self.env.user._is_system():
-            return
-        date_to = fields.Datetime.to_datetime(date_to)
-        now = fields.Datetime.now()
-        for link in self:
-            if not date_to and link.date_to:
-                raise UserError(
-                    self.env._("Only an administrator removes a link's expiry.")
-                )
-            limit = now + DEFAULT_LIFETIME[link.cause]
-            if date_to and date_to > limit:
-                raise UserError(
-                    self.env._(
-                        "This link can be extended to %(limit)s at most; ask an "
-                        "administrator for longer.",
-                        limit=fields.Datetime.to_string(limit),
-                    )
-                )
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_by_the_superuser(self) -> None:

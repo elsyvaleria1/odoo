@@ -139,7 +139,6 @@ class ProjectTask(models.Model):
         "mixin.mail.tracking.duration",
         "mixin.portal",
         "mixin.rating",
-        "mixin.recurrence.occurrence",
         "mixin.resource.allocation",
     ]
     _mail_post_access = "read"
@@ -863,6 +862,9 @@ class ProjectTask(models.Model):
             ("subsequent", "This and following tasks"),
             ("all", "All tasks"),
         ],
+        default="this",
+        store=False,
+        copy=False,
         help="Which tasks of the recurrence this change applies to.",
     )
 

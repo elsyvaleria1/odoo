@@ -62,7 +62,7 @@ from ._protocols import HttpExtension
 from ._cors import is_cors_preflight, resolve_cors_same_host
 from ._dbfilter import filter_dbs_served, get_dbs_served, invalidate_db_catalog_cache
 from ._error_serialization import serialize_exception
-from ._rpc import dispatch_rpc
+from ._rpc import dispatch_rpc, rpc_client
 from ._retry import rewind_uploaded_files
 from ._session_lifecycle import get_session_max_inactivity
 
@@ -246,6 +246,7 @@ __all__ = [
     "rewind_uploaded_files",
     "root",
     "route",
+    "rpc_client",
     "serialize_exception",
     "set_error_response",
 ]

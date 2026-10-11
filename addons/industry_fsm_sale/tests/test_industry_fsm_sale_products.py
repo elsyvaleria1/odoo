@@ -24,7 +24,7 @@ class TestFsmSaleProducts(HttpCase, TestFsmFlowCommon):
                 "date_end": fields.Datetime.today() + timedelta(days=2),
             }
         )
-        cls.consu_product_ordered.is_favorite = True
+        cls.consu_product_ordered.is_featured = True
         cls.my_custom_price_list = cls.env["product.pricelist"].create(
             {
                 "name": "TKPriceList",
@@ -103,7 +103,7 @@ class TestFsmSaleProducts(HttpCase, TestFsmFlowCommon):
                 "list_price": 100.0,
             }
         )
-        super_product.product_tmpl_id.is_favorite = True
+        super_product.product_tmpl_id.is_featured = True
         self.start_tour(
             "/odoo", "industry_fsm_sale_products_compute_catalog_tour", login="admin"
         )

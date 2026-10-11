@@ -68,7 +68,6 @@ class MailingMailing(models.Model):
         "mixin.mail.attachment.owner",
         "mixin.mail.render",
         "mixin.utm.source",
-        "mixin.favorite",
         "mixin.user.favorite",
     ]
     _order = "calendar_date DESC"
@@ -149,16 +148,17 @@ class MailingMailing(models.Model):
         store=True,
         readonly=False,
     )
-    is_favorite = fields.Boolean(
+    is_template = fields.Boolean(
+        string="Saved as Template",
         copy=False,
         tracking=True,
+        help="Its design is offered to every marketer as a starting point.",
     )
-    date_favorite = fields.Datetime(
-        string="Favorite Date",
-        compute="_compute_date_favorite",
+    date_template = fields.Datetime(
+        string="Saved as Template On",
+        compute="_compute_date_template",
         store=True,
         copy=False,
-        help="When this mailing was added in the favorites",
     )
     sent_date = fields.Datetime(copy=False)
     schedule_type = fields.Selection(
@@ -480,13 +480,13 @@ class MailingMailing(models.Model):
             else:
                 mailing.email_from = mailing.email_from or user_email
 
-    @api.depends("is_favorite")
-    def _compute_date_favorite(self) -> None:
-        favorited = self.filtered("is_favorite")
-        (self - favorited).date_favorite = False
-        favorited.filtered(
-            lambda mailing: not mailing.date_favorite
-        ).date_favorite = fields.Datetime.now()
+    @api.depends("is_template")
+    def _compute_date_template(self) -> None:
+        templates = self.filtered("is_template")
+        (self - templates).date_template = False
+        templates.filtered(
+            lambda mailing: not mailing.date_template
+        ).date_template = fields.Datetime.now()
 
     def _compute_total(self) -> None:
         for mass_mailing in self:
@@ -877,8 +877,8 @@ class MailingMailing(models.Model):
         return vals_list
 
 
-    def action_set_favorite(self) -> dict:
-        self.is_favorite = True
+    def action_add_to_templates(self) -> dict:
+        self.is_template = True
 
         return {
             "type": "ir.actions.client",
@@ -894,8 +894,8 @@ class MailingMailing(models.Model):
             },
         }
 
-    def action_remove_favorite(self) -> dict:
-        self.is_favorite = False
+    def action_remove_from_templates(self) -> dict:
+        self.is_template = False
 
         return {
             "type": "ir.actions.client",
@@ -1150,15 +1150,15 @@ class MailingMailing(models.Model):
         return action
 
     @api.model
-    def action_fetch_favorites(self, extra_domain=None):
-        domain = Domain("is_favorite", "=", True)
+    def action_fetch_templates(self, extra_domain=None):
+        domain = Domain("is_template", "=", True)
         if extra_domain:
             domain &= Domain(extra_domain)
 
         values_list = self.with_context(active_test=False).search_read(
             domain=domain,
             fields=["id", "subject", "body_arch", "user_id", "mailing_model_id"],
-            order="date_favorite DESC",
+            order="date_template DESC",
         )
 
         values_list = [

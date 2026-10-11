@@ -2,6 +2,7 @@ from datetime import timedelta
 from urllib.parse import urlparse
 
 from odoo import fields
+from odoo.exceptions import ValidationError
 from odoo.tests import HttpCase, tagged
 from odoo.tools import SQL
 
@@ -99,22 +100,22 @@ class TestDocumentLinks(HttpCase):
             fields.Datetime.now() + timedelta(days=30),
             delta=timedelta(minutes=5),
         )
-        later = fields.Datetime.now() + timedelta(days=200)
-        sharing = (
-            self.env["wizard.document.document.share"]
-            .with_user(self.owner)
-            .action_open(self.file.ids)
-        )
-        wizard = (
-            self.env["wizard.document.document.share"]
-            .with_user(self.owner)
-            .browse(sharing["res_id"])
-        )
+        later = fields.Datetime.now() + timedelta(days=20)
+        wizard = self._sharing_wizard()
         wizard.link_date_to = later
         self.assertTrue(wizard.is_access_modified)
         wizard.action_update_rights()
         self.file.invalidate_recordset(["link_date_to"])
         self.assertEqual(self.file.link_date_to, later.replace(microsecond=0))
+
+        wizard = self._sharing_wizard()
+        wizard.link_date_to = fields.Datetime.now() + timedelta(days=200)
+        with self.assertRaises(ValidationError):
+            wizard.action_update_rights()
+
+    def _sharing_wizard(self):
+        Sharing = self.env["wizard.document.document.share"].with_user(self.owner)
+        return Sharing.browse(Sharing.action_open(self.file.ids)["res_id"])
 
     def test_a_document_created_shared_keeps_its_link_a_year(self):
         document = (

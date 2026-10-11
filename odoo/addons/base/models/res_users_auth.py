@@ -14,11 +14,6 @@ if typing.TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-_DUMMY_PASSWORD_HASH = (
-    "$pbkdf2-sha512$600000$7w4wftbyNcmfyucdH94fxA$"
-    "6gY5uDHtaWIcyKdWlT0sfnF8OhSZMjbKmB8DizAUKVRJ8HidOesEczP4wP5dSBKAZPAuoE2TuABEWSXm6XGR1Q"
-)
-
 MIN_ROUNDS = 600_000
 
 
@@ -62,7 +57,7 @@ class PasswordStore:
         hashed = self.stored_hash(users, uid)
         if hashed is None:
             _debug.logic("password_match_skipped", uid=uid, reason="no_hash")
-            users._get_crypt_context().match_and_update(password, _DUMMY_PASSWORD_HASH)
+            self.spend(users, password)
             return False, None
         with _debug.perf("password_matched", uid=uid) as span:
             valid, replacement = users._get_crypt_context().match_and_update(
@@ -70,6 +65,11 @@ class PasswordStore:
             )
             span.set(valid=valid, rehashed=replacement is not None)
         return valid, replacement
+
+    def spend(self, users, password: str) -> None:
+        users._get_crypt_context().match_and_update(
+            password, users._get_dummy_password_hash()
+        )
 
     def store(self, users, hashed: typing.Collection[tuple[int, str]]) -> None:
         if not hashed:

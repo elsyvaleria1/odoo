@@ -22,6 +22,7 @@
         "security/res_groups.xml",
         "security/ir.access.csv",
         "data/ir_config_param_data.xml",
+        "data/res_users_apikeys_scope_data.xml",
         "views/ir_model_fields_views.xml",
         "views/ir_ui_view_views.xml",
         "views/geoengine_view_settings_views.xml",

@@ -156,6 +156,41 @@ class TestPlanningPageLinks(HttpCase, TestCommonPlanning):
         self.assertEqual(self.url_open(joseph_url).status_code, 200)
         self.assertEqual(self.url_open("/slot/%s.ics" % ("x" * 32)).status_code, 404)
 
+    def test_a_shift_far_ahead_keeps_its_link_until_a_month_after_it(self):
+        far = datetime.combine(
+            fields.Date.today() + timedelta(days=730), datetime.min.time()
+        )
+        shift = self._shift(far)
+        shift._get_ics_url(self.resource_bert.partner_id)
+        self.assertEqual(
+            self._slot_links(shift).date_to, shift.end_datetime + timedelta(days=30)
+        )
+        shift.write(
+            {
+                "start_datetime": far - timedelta(days=700),
+                "end_datetime": far - timedelta(days=700) + timedelta(hours=4),
+            }
+        )
+        self.assertEqual(
+            self._slot_links(shift).date_to, shift.end_datetime + timedelta(days=30)
+        )
+
+    def test_a_shift_reshaped_by_a_template_moves_its_link(self):
+        start = datetime.combine(
+            fields.Date.today() + timedelta(days=400), datetime.min.time()
+        )
+        shift = self._shift(start)
+        shift.end_datetime = start + timedelta(days=100)
+        shift._get_ics_url(self.resource_bert.partner_id)
+        template = self.env["planning.slot.template"].create(
+            {"start_time": 8.0, "end_time": 12.0, "duration_days": 1}
+        )
+        shift.write({"template_id": template.id})
+        self.assertLess(shift.end_datetime, start + timedelta(days=2))
+        self.assertEqual(
+            self._slot_links(shift).date_to, shift.end_datetime + timedelta(days=30)
+        )
+
     def test_a_past_shift_s_link_lives_a_month_from_issue(self):
         shift = self._shift(datetime(2023, 6, 2, 8, 0))
         shift._get_ics_url(self.resource_bert.partner_id)

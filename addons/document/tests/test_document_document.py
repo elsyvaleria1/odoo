@@ -7,6 +7,7 @@ from unittest.mock import patch
 from odoo import Command, fields, http
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.libs import pdf_raster
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase, new_test_user, tagged, users
 from odoo.tools import mute_logger
 
@@ -256,9 +257,9 @@ class TestCaseDocuments(TransactionCaseDocuments):
             self.env.flush_all()
             self.env.invalidate_all()
             as_user = documents.with_user(user)
-            count0 = self.cr.sql_statement_count
-            as_user.mapped("user_permission")
-            return self.cr.sql_statement_count - count0
+            with counting_statements(self.cr) as statements:
+                as_user.mapped("user_permission")
+            return statements.count
 
         few, many = measure(2), measure(20)
         self.assertLess(
@@ -1560,9 +1561,9 @@ class TestDocumentsResName(TransactionCaseDocuments):
         self.env.flush_all()
         documents.invalidate_recordset()
         self.env.invalidate_all()
-        count0 = self.cr.sql_statement_count
-        names = documents.mapped("res_name")
-        queries = self.cr.sql_statement_count - count0
+        with counting_statements(self.cr) as statements:
+            names = documents.mapped("res_name")
+        queries = statements.count
 
         self.assertEqual(names, partners.mapped("display_name"))
         self.assertLess(
@@ -1633,15 +1634,15 @@ class TestDocumentsResName(TransactionCaseDocuments):
         as_user = documents.with_user(self.doc_user)
         few = as_user[:1] | as_user[10:11]
 
-        def statements(docs):
+        def cost(docs):
             self.env.invalidate_all()
-            start = self.cr.sql_statement_count
-            names = docs.mapped("res_name")
-            return self.cr.sql_statement_count - start, names
+            with counting_statements(self.cr) as statements:
+                names = docs.mapped("res_name")
+            return statements.count, names
 
-        statements(few)
-        few_count, _names = statements(few)
-        all_count, names = statements(as_user)
+        cost(few)
+        few_count, _names = cost(few)
+        all_count, names = cost(as_user)
         self.assertEqual(names[:10], partners.mapped("display_name"))
         self.assertEqual(names[10:], ["Restricted"] * 10)
         self.assertEqual(
@@ -1883,6 +1884,17 @@ class TestDocumentsFolderHelpers(TransactionCaseDocuments):
         sub1.action_move_folder(str(self.folder_a.id), before_folder_id=ghost_id)
         self.assertEqual(sub1.folder_id, self.folder_a)
 
+    def test_a_folder_cannot_move_into_its_own_subfolder(self):
+        sub = self.env["document.document"].create(
+            {"type": "folder", "name": "sub", "folder_id": self.folder_a.id}
+        )
+        with self.assertRaises(UserError) as caught:
+            self.folder_a.folder_id = sub
+        self.assertEqual(
+            str(caught.exception),
+            "A folder cannot be moved into itself or one of its subfolders.",
+        )
+
     def test_traceback_folder_survives_a_malformed_parameter(self):
         self.env["ir.config_parameter"].sudo().set_param(
             "document.support_folder", "not-an-int"
@@ -1948,15 +1960,15 @@ class TestDocumentsCreateBatching(TransactionCaseDocuments):
         self._create_with_content(1, "warmup")
         self.env.flush_all()
 
-        before = self.env.cr.sql_statement_count
-        self._create_with_content(1, "one")
-        self.env.flush_all()
-        cost_of_one = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self._create_with_content(1, "one")
+            self.env.flush_all()
+        cost_of_one = statements.count
 
-        before = self.env.cr.sql_statement_count
-        documents = self._create_with_content(20, "twenty")
-        self.env.flush_all()
-        cost_of_twenty = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            documents = self._create_with_content(20, "twenty")
+            self.env.flush_all()
+        cost_of_twenty = statements.count
 
         self.assertEqual(len(documents), 20)
         self.assertTrue(all(documents.mapped("attachment_id")))

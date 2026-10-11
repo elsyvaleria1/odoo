@@ -137,3 +137,16 @@ class TestEligibility(TransactionCase):
             self.Eligibility.create(
                 {"user_id": self.other.id, "group_id": self.partner_manager.id}
             )
+
+    def test_an_activation_ends_or_stretches_only_through_its_own_verbs(self):
+        glass = self.Eligibility.create(
+            {"user_id": self.person.id, "group_id": self.break_glass.id}
+        )
+        glass.with_user(self.person).action_activate(1, "the payroll run is stuck")
+        grant = self.activations(glass).with_user(self.admin)
+        for date_to in (False, self.env.cr.now() + timedelta(days=365)):
+            with self.subTest(date_to=date_to), self.assertRaises(UserError):
+                grant.write({"date_to": date_to})
+        with self.assertRaises(UserError):
+            grant.write({"date_from": self.env.cr.now() + timedelta(hours=1)})
+        self.assertEqual(grant.state, "active")

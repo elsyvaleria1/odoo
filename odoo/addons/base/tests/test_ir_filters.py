@@ -627,6 +627,19 @@ class TestDynamicDomainValidation(FiltersCase):
         with self.assertRaises(ValidationError):
             self._create_dynamic(hostile)
 
+    def test_rejects_what_evaluation_could_never_read(self):
+        for domain in (
+            "[('id', '=', self.id)]",
+            "(('is_company', '=', True),)",
+        ):
+            with self.subTest(domain=domain), self.assertRaises(ValidationError):
+                self._create_dynamic(domain)
+
+    def test_an_evaluation_error_reads_as_an_invalid_domain(self):
+        ir_filter = self._create_dynamic("[('id', '=', 1 / 0)]")
+        with self.assertRaisesRegex(ValueError, "Invalid domain"):
+            ir_filter._get_domain_evaluated()
+
     def test_static_domain_still_accepted(self):
         ir_filter = self._create_dynamic("[('is_company', '=', True)]")
         self.assertEqual(ir_filter._get_domain_evaluated(), [("is_company", "=", True)])

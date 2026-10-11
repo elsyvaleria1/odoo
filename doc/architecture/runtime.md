@@ -248,7 +248,13 @@ keeps two refreshes apart, or one followed by a write to the row a concurrent
 holder also writes, which the level's first-updater-wins rule already rejects.
 A **session** lock is released after the transaction that did the work
 commits, or the next holder's snapshot misses that work
-(`odoo/modules/loading.py`, `_lock_module_operations`).
+(`odoo/modules/loading.py`, `lock_module_operations`).
+
+Rows derived in SQL from other rows (the access graph's reach table) take the
+same first-updater-wins rule on purpose: every write that changes what reaches
+a node first writes a lock row of each node it derives and reads
+(`mixin_access_graph_reach.py`), so of two writers whose snapshots miss each
+other the later fails to serialize and is retried, in either commit order.
 
 ### Transaction, cache and flush
 
@@ -469,7 +475,7 @@ one2many path.
 
 **A tree member's polymorphic references name its root.** `BaseModel._get_reference_model_name()`
 is `_name` for an ordinary model and the root's name for a member of a table-inheritance tree
-(`mixin.table.inheritance.root`). A `One2many` over a `Many2oneReference` reads and writes that
+(`ir.actions.actions`). A `One2many` over a `Many2oneReference` reads and writes that
 name, so `message_ids`, followers, activities and attachments of a row are the same set whichever
 model the row was read through; `mail.thread.get_views` hands the client `thread_model` for such a
 model and the form's chatter binds to it. Python that must record a reference itself records the

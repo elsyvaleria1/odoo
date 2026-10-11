@@ -1,5 +1,5 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
-maintenance_order_rule_asset_user,Maintenance Order: asset users see the orders of the kinds they are enabled for,maintenance.model_maintenance_order,asset_ledger.group_asset_user,permission,crud,,,,,"[('asset_ids', 'any', [('kind_id', 'not in', user._get_hidden_asset_kinds())])]"
+maintenance_order_rule_asset_user,Maintenance Order: asset users see the orders of the kinds they are enabled for,maintenance.model_maintenance_order,asset_ledger.group_asset_user,permission,crud,,,,,"[('asset_ids', 'any', ['|', '|', ('kind_id', '=', False), ('kind_id.group_id', '=', False), ('kind_id.group_id', 'in', group_ids)])]"
 maintenance_order_rule_stock_user,Maintenance Order: warehouse users read the orders they move equipment for,maintenance.model_maintenance_order,stock.group_stock_user,permission,r,all,,,,"[('picking_ids', '!=', False)]"
 access_maintenance_plan_template_user,maintenance.plan.template.user,model_maintenance_plan_template,asset_ledger.group_asset_user,permission,cru,,,,,
 access_maintenance_plan_template_manager,maintenance.plan.template.manager,model_maintenance_plan_template,asset_ledger.group_asset_manager,permission,d,,,,,
@@ -9,5 +9,5 @@ access_maintenance_plan_asset_manager,maintenance.plan.asset.manager,maintenance
 maintenance_order_rule_user_group_asset_manager,Users are allowed to access their own maintenance orders,maintenance.model_maintenance_order,asset_ledger.group_asset_manager,permission,crud,own,creator,,,
 maintenance_order_rule_user_group_asset_manager_2,Users are allowed to access their own maintenance orders (2),maintenance.model_maintenance_order,asset_ledger.group_asset_manager,permission,crud,predicate,,mail.access_predicate_follows,"{""at"": """"}",
 maintenance_order_rule_user_group_asset_manager_3,Users are allowed to access their own maintenance orders (3),maintenance.model_maintenance_order,asset_ledger.group_asset_manager,permission,crud,own,user,,,
-maintenance_order_rule_asset_user_group_asset_manager,Maintenance Order: asset users see the orders of the kinds they are enabled for,maintenance.model_maintenance_order,asset_ledger.group_asset_manager,permission,crud,,,,,"[('asset_ids', 'any', [('kind_id', 'not in', user._get_hidden_asset_kinds())])]"
+maintenance_order_rule_asset_user_group_asset_manager,Maintenance Order: asset users see the orders of the kinds they are enabled for,maintenance.model_maintenance_order,asset_ledger.group_asset_manager,permission,crud,,,,,"[('asset_ids', '!=', False)]"
 maintenance_plan_template_comp_rule,Maintenance Plan Template: multi-company,model_maintenance_plan_template,base.group_everyone,guard,crud,company,,,,

@@ -1,6 +1,6 @@
 {
     "name": "Documents",
-    "version": "1.28",
+    "version": "1.29",
     "oldest_upgradable_version": "1.26",
     "category": "Productivity/Documents",
     "sequence": 80,

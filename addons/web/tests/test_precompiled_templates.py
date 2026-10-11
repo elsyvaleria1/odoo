@@ -34,7 +34,9 @@ class PrecompiledTemplatesMixin:
         return IrHttp._get_web_translations_hash(modules, lang)
 
     def _precompiled(self, lang="en_US", env=None, dev=False):
-        return (env or self.env)["ir.qweb"]._get_or_create_precompiled_template_attachment(
+        return (env or self.env)[
+            "ir.qweb"
+        ]._get_or_create_precompiled_template_attachment(
             BUNDLE,
             self._pipeline().precompile_checksum(),
             lang,
@@ -292,7 +294,9 @@ class TestPrecompiledTemplates(PrecompiledTemplatesMixin, TransactionCase):
             "templates other than the bundle's",
         )
         self.assertFalse(
-            IrQweb._get_or_create_precompiled_template_attachment(BUNDLE, checksum, "en_US", "f" * 64),
+            IrQweb._get_or_create_precompiled_template_attachment(
+                BUNDLE, checksum, "en_US", "f" * 64
+            ),
             "translations other than the language's",
         )
         self.assertFalse(
@@ -354,6 +358,61 @@ class TestPrecompiledTemplates(PrecompiledTemplatesMixin, TransactionCase):
         self.assertTrue(
             any("pc.bad left to the browser" in line for line in logs.output)
         )
+
+
+@tagged("web_unit", "web_assets")
+class TestPrecompiledTemplatesCleanup(PrecompiledTemplatesMixin, TransactionCase):
+    def setUp(self):
+        super().setUp()
+        self.enterContext(
+            patch.dict(
+                "odoo.addons.base.models.ir_qweb_assets_precompile._recent_scripts",
+                clear=True,
+            )
+        )
+        self.translations_hash = self._translations_hash("en_US")
+
+    def _store(self, checksum):
+        IrQweb = self.env["ir.qweb"]
+        url = IrQweb._get_precompiled_templates_url(
+            BUNDLE, checksum, "en_US", self.translations_hash
+        )
+        return IrQweb._store_precompiled_templates(
+            url, BUNDLE, "en_US", self.translations_hash, f"/* {checksum} */"
+        )
+
+    def _age(self, attachment, days):
+        self.env.cr.execute(
+            "UPDATE ir_attachment SET create_date = now() - make_interval(days => %s)"
+            " WHERE id = %s",
+            (days, attachment.id),
+        )
+        attachment.invalidate_recordset(["create_date"])
+
+    def test_another_checksum_inside_the_grace_survives(self):
+        first = self._store("a" * 16)
+        second = self._store("b" * 16)
+        self.assertTrue(first.exists(), "a variant still served was deleted")
+        self.assertTrue(second.exists())
+
+    def test_an_old_artifact_goes_once_the_grace_is_over(self):
+        grace = self.env["ir.attachment"]._get_esm_gc_grace_days()
+        oldest = self._store("a" * 16)
+        previous = self._store("b" * 16)
+        self._age(oldest, grace + 2)
+        self._age(previous, grace + 1)
+        current = self._store("c" * 16)
+        self.assertFalse(oldest.exists())
+        self.assertTrue(
+            previous.exists(), "the version just replaced is still named by tabs"
+        )
+        self.assertTrue(current.exists())
+
+    def test_a_twin_of_the_same_artifact_goes_at_once(self):
+        first = self._store("a" * 16)
+        second = self._store("a" * 16)
+        self.assertFalse(first.exists())
+        self.assertTrue(second.exists())
 
 
 @tagged("post_install", "-at_install", "web_assets")
@@ -500,7 +559,11 @@ class TestPrecompiledTemplatesInTheBrowser(PrecompiledTemplatesMixin, HttpCase):
             return original_rc(cr_self)
 
         with (
-            patch.object(IrQweb, "_get_or_create_precompiled_template_attachment", cold_then_built),
+            patch.object(
+                IrQweb,
+                "_get_or_create_precompiled_template_attachment",
+                cold_then_built,
+            ),
             patch.object(Cursor, "execute", spy_execute),
             patch.object(BaseCursor, "use_read_committed", spy_rc),
         ):

@@ -987,7 +987,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         self.start_pos_tour("FloatingOrderTour")
 
     def test_product_screen_tour(self):
-        self.whiteboard_pen.write({"is_favorite": True})
+        self.whiteboard_pen.write({"is_featured": True})
         self.start_pos_tour("ProductScreenTour")
 
     def test_payment_screen_tour(self):
@@ -4509,7 +4509,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         )
 
     def test_available_product_uom_ids(self):
-        self.env["product.template"].search([]).write({"is_favorite": False})
+        self.env["product.template"].search([]).write({"is_featured": False})
 
         self.env["ir.config_parameter"].sudo().set_param(
             "point_of_sale.limited_product_count", "2"
@@ -4525,12 +4525,12 @@ class TestUi(TestPointOfSaleHttpCommon):
                 {
                     "name": "product_one",
                     "available_in_pos": True,
-                    "is_favorite": True,
+                    "is_featured": True,
                 },
                 {
                     "name": "product_two",
                     "available_in_pos": True,
-                    "is_favorite": True,
+                    "is_featured": True,
                 },
                 {
                     "name": "product_three",

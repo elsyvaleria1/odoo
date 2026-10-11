@@ -74,4 +74,18 @@
         <field name="class_id" ref="access_class_link_token" />
     </record>
 
+    <record id="access_class_template_trust" model="ir.access.class">
+        <field name="name">base.template_trust</field>
+        <field
+            name="description">The digest of a template a module file ships, which trusts every template of the same text: the module loader writes it, and no user does.</field>
+    </record>
+
+    <record id="access_template_trust_system" model="ir.access">
+        <field name="name">base.template_trust: system administrators read it</field>
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_template_trust" />
+    </record>
+
 </odoo>

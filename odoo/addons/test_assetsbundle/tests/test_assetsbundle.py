@@ -589,6 +589,26 @@ class TestJavascriptAssetsBundle(FileTouchable):
             ),
         )
 
+    def test_19b_an_external_url_with_a_query_or_fragment_is_rendered(self):
+        urls = ("https://cdn.example.com/lib.js?v=2", "https://cdn.example.com/x.css#y")
+        self.env["ir.asset"].create(
+            [
+                {"name": url, "bundle": "test_assetsbundle.bundle4", "path": url}
+                for url in urls
+            ]
+        )
+        bundle = self.env["ir.qweb"]._get_asset_bundle("test_assetsbundle.bundle4")
+        self.assertTrue(set(urls) <= set(bundle.get_links()))
+        rendered = {
+            attrs.get("src") or attrs.get("href")
+            for _tag, attrs in self.env["ir.qweb"]._get_asset_nodes(
+                "test_assetsbundle.bundle4"
+            )
+        }
+        self.assertTrue(
+            set(urls) <= rendered, "the bundle keeps them, so the page must link them"
+        )
+
     def test_20_external_lib_assets_debug_mode(self):
         html = self.env["ir.ui.view"]._render_template(
             "test_assetsbundle.template2", {"debug": "assets"}

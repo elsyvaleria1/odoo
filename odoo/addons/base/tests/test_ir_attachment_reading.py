@@ -1,7 +1,11 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+import psycopg.errors
+
+from odoo import api
 from odoo.api import SUPERUSER_ID
+from odoo.db import db_connect
 from odoo.exceptions import AccessError
 from odoo.fields import Datetime
 from odoo.libs.documents import (
@@ -13,7 +17,13 @@ from odoo.libs.documents import (
     register_reader,
     unregister_reader,
 )
-from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.tests.common import (
+    BaseCase,
+    TransactionCase,
+    get_db_name,
+    new_test_user,
+    tagged,
+)
 
 MIMETYPE = "application/x-reading-test"
 
@@ -144,6 +154,17 @@ class TestAttachmentReading(TransactionCase):
         self.assertEqual(attachment._as_document().text, "typed by hand")
         self.assertIn("typed by hand", attachment.index_content)
 
+    def test_a_reading_outlives_a_content_write_still_pending(self):
+        attachment = self.env["ir.attachment"].create(
+            {"name": "note.txt", "raw": b"first raw words", "mimetype": "text/plain"}
+        )
+        attachment._read_later(TEXT)
+        attachment.write({"raw": b"second raw words"})
+        attachment._store_reading(TEXT, "words worth finding", read_by="test")
+        self.env.flush_all()
+        attachment.invalidate_recordset(["index_content"])
+        self.assertEqual(attachment.index_content, "words worth finding")
+
     def test_history_is_kept_without_telling_anyone(self):
         attachment = self._file()
         told = []
@@ -212,3 +233,37 @@ class TestAttachmentReading(TransactionCase):
         )
         own.sudo()._read(CUES)
         self.assertTrue(Reading.search([("attachment_id", "=", own.id)]))
+
+
+@tagged("post_install", "-at_install")
+class TestReadingRowRace(BaseCase):
+    def test_a_row_another_transaction_created_is_a_retry_not_nothing(self):
+        dbname = get_db_name()
+        with db_connect(dbname).cursor() as setup_cr:
+            attachment_id = (
+                api.Environment(setup_cr, SUPERUSER_ID, {})["ir.attachment"]
+                .create({"name": "raced.bin", "raw": b"raced", "mimetype": MIMETYPE})
+                .id
+            )
+            setup_cr.commit()
+
+        def cleanup():
+            with db_connect(dbname).cursor() as cr:
+                api.Environment(cr, SUPERUSER_ID, {})["ir.attachment"].browse(
+                    attachment_id
+                ).unlink()
+                cr.commit()
+
+        self.addCleanup(cleanup)
+        with (
+            db_connect(dbname).cursor() as first_cr,
+            db_connect(dbname).cursor() as second_cr,
+        ):
+            first = api.Environment(first_cr, SUPERUSER_ID, {})["ir.attachment"]
+            second = api.Environment(second_cr, SUPERUSER_ID, {})["ir.attachment"]
+            second_cr.execute("SELECT 1")
+            first.browse(attachment_id)._reading_row(TEXT)
+            first_cr.commit()
+            with self.assertRaises(psycopg.errors.SerializationFailure):
+                second.browse(attachment_id)._store_reading(TEXT, "lost words")
+            second_cr.rollback()

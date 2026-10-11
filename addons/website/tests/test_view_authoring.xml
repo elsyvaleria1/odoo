@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="test_guarded_page" name="Guarded page">
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="guard" t-if="request.env.user.has_group('base.group_system')">
+                    <div class="slot" />
+                </div>
+                <section class="s_text_block"><p>Plain text</p></section>
+                <p class="visit" t-out="request.website.name" />
+            </div>
+        </t>
+    </template>
+
+    <template id="test_guarded_page_secret" inherit_id="website.test_guarded_page">
+        <xpath expr="//div[hasclass('slot')]" position="inside">
+            <p class="secret" t-out="request.env.user.login" />
+        </xpath>
+    </template>
+
+    <template id="test_guarded_page_guard" inherit_id="website.test_guarded_page" priority="1">
+        <xpath expr="//p[hasclass('visit')]" position="attributes">
+            <attribute name="t-if">request.env.user.has_group('base.group_system')</attribute>
+        </xpath>
+    </template>
+
+    <template
+        id="test_guarded_page_option"
+        inherit_id="website.test_guarded_page"
+        name="Visit in bold"
+        active="False">
+        <xpath expr="//p[hasclass('visit')]" position="attributes">
+            <attribute name="t-attf-class">visit #{'fw-bold' if request.website else ''}</attribute>
+        </xpath>
+    </template>
+
+    <template id="test_caller" name="Caller">
+        <t t-set="secret" t-value="request.env.user.login" />
+        <t t-call="website.test_called" />
+    </template>
+
+    <template id="test_called" name="Called">
+        <p class="called">Called</p>
+    </template>
+</odoo>

@@ -119,6 +119,19 @@ class TestCompany(TransactionCase):
         self.assertIn("arch co A", message)
         self.assertIn("arch co B", message)
 
+    def test_an_archived_branch_follows_its_roots_currency(self):
+        currency = self.env["res.currency"].create({"name": "BRX", "symbol": "B"})
+        root = self.env["res.company"].create({"name": "currency root"})
+        branch = self.env["res.company"].create(
+            {"name": "archived branch", "parent_id": root.id}
+        )
+        branch.action_archive()
+
+        root.write({"currency_id": currency.id})
+        branch.action_unarchive()
+
+        self.assertEqual(branch.currency_id, currency)
+
     def test_logo_check(self):
         company = self.env["res.company"].create({"name": "foo"})
 

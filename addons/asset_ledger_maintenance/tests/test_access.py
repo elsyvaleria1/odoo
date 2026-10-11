@@ -164,3 +164,30 @@ class TestMaintenanceAccess(TransactionCase):
             .search([("id", "in", (loose | planned).ids)])
         )
         self.assertEqual(visible, planned)
+
+    def test_an_asset_user_loses_the_orders_of_a_kind_closed_to_it_at_once(self):
+        asset_user = self.env["res.users"].create(
+            {
+                "name": "Gated asset user",
+                "login": "maint_access_gated",
+                "group_ids": [
+                    (
+                        6,
+                        0,
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("asset_ledger.group_asset_user").id,
+                            self.env.ref(
+                                "asset_ledger.group_enable_machinery_assets"
+                            ).id,
+                        ],
+                    )
+                ],
+            }
+        )
+        operators = self.env["res.groups"].create({"name": "Machinery operators"})
+        order = self.plan._get_open_order()
+        self.assertTrue(order.with_user(asset_user).has_access("read"))
+        self.lot.asset_id.kind_id.group_id = operators
+        self.env.invalidate_all()
+        self.assertFalse(order.with_user(asset_user).has_access("read"))

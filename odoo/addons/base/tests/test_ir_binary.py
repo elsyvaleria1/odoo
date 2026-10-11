@@ -1,4 +1,5 @@
 import base64
+import pathlib
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -203,6 +204,37 @@ class TestIrBinaryImageBranches(TransactionCase):
         self.assertEqual(stream.type, "data")
         self.assertTrue(stream.data)
 
+    def test_a_file_that_is_no_image_is_refused_without_being_read(self):
+        attachment = self.env["ir.attachment"].create(
+            {"name": "movie.mp4", "raw": b"\0" * 4096, "mimetype": "video/mp4"}
+        )
+        self.assertTrue(attachment.store_fname)
+        with (
+            patch("odoo.addons.base.models.ir_binary.request", None),
+            patch.object(
+                pathlib.Path, "read_bytes", side_effect=AssertionError("read")
+            ),
+            self.assertRaises(UserError),
+        ):
+            self._binary._get_stream_image_from_record(
+                attachment, "raw", width=10, height=10
+            )
+
+    def test_a_file_asked_for_as_an_image_is_judged_by_its_bytes(self):
+        attachment = self.env["ir.attachment"].create(
+            {"name": "movie.mp4", "raw": b"\0" * 4096, "mimetype": "video/mp4"}
+        )
+        with (
+            patch("odoo.addons.base.models.ir_binary.request", None),
+            patch.object(
+                pathlib.Path, "read_bytes", side_effect=AssertionError("read")
+            ),
+            self.assertRaises(UserError),
+        ):
+            self._binary._get_stream_image_from_record(
+                attachment, "raw", mimetype="image/png", width=10, height=10
+            )
+
 
 @tagged("post_install", "-at_install")
 class TestIrBinaryFilenameField(TransactionCaseWithUserDemo):
@@ -240,5 +272,65 @@ class TestIrBinaryFilenameField(TransactionCaseWithUserDemo):
             with self.subTest(field_name=field_name):
                 self.assertEqual(self._download_name(field_name), "pub.txt")
 
+    def test_a_token_opens_the_file_and_not_the_names_of_its_record(self):
+        owner = self.env["ir.config_parameter"].create(
+            {"key": "test.ir_binary.owner_name", "value": "x"}
+        )
+        private = self.env["ir.attachment"].create(
+            {
+                "name": "private.txt",
+                "raw": b"private bytes",
+                "res_model": "ir.config_parameter",
+                "res_id": owner.id,
+            }
+        )
+        Binary = self.env["ir.binary"].with_user(self.user_demo)
+        record = Binary._get_record(
+            res_model="ir.attachment",
+            res_id=private.id,
+            access_token=private._get_raw_access_token(),
+            field_name="raw",
+        )
+        for field_name in ("res_name", "res_model"):
+            with self.subTest(field_name=field_name):
+                stream = Binary._get_stream_from_record(
+                    record, "raw", filename_field=field_name
+                )
+                self.assertEqual(stream.download_name, "private.txt")
+
     def test_the_name_field_itself_still_names_the_download(self):
         self.assertEqual(self._download_name("name"), "pub.txt")
+
+
+@tagged("post_install", "-at_install")
+class TestIrBinaryRequestedMimetype(TransactionCaseWithUserDemo):
+    def _stream(self, attachment, mimetype):
+        return (
+            self.env["ir.binary"]
+            .with_user(self.user_demo)
+            ._get_stream_from_record(attachment.sudo(), "raw", mimetype=mimetype)
+        )
+
+    def test_a_markup_upload_stored_as_text_is_not_served_as_markup_on_request(self):
+        upload = (
+            self.env["ir.attachment"]
+            .with_user(self.user_demo)
+            .create({"name": "page.html", "raw": b"<form action='/x'></form>"})
+        )
+        self.assertEqual(upload.mimetype, "text/plain")
+        for mimetype in ("text/html", "image/svg+xml", "application/xhtml+xml"):
+            with self.subTest(mimetype=mimetype):
+                self.assertEqual(self._stream(upload, mimetype).mimetype, "text/plain")
+
+    def test_a_requested_mimetype_that_is_no_markup_is_still_honoured(self):
+        upload = self.env["ir.attachment"].create(
+            {"name": "notes.txt", "raw": b"plain words"}
+        )
+        self.assertEqual(self._stream(upload, "text/csv").mimetype, "text/csv")
+
+    def test_markup_stored_as_markup_is_served_as_asked(self):
+        page = self.env["ir.attachment"].create(
+            {"name": "page.html", "raw": b"<p>x</p>", "mimetype": "text/html"}
+        )
+        self.assertEqual(page.mimetype, "text/html")
+        self.assertEqual(self._stream(page, "text/html").mimetype, "text/html")

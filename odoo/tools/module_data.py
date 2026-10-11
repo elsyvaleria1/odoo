@@ -107,6 +107,138 @@ def _map_column_values(
         )
 
 
+_SAVED_FIELD_EXPRESSIONS = (
+    ("ir_filters", "model_id", "domain", ("context", "sort")),
+    ("ir_act_window", "res_model", "domain", ("context",)),
+)
+
+
+def _saved_field_name_patterns(old: str) -> tuple[str, str]:
+    name = re.escape(old)
+    return (
+        rf"([(\[]\s*['\"]){name}(?=(\.[^'\"]*)?['\"]\s*,)",
+        rf"(['\"]){name}(?=['\"\s.:])",
+    )
+
+
+_SAVED_PATH = re.compile(r"""(?<=['"])[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+(?=[:\s'"])""")
+
+
+def _rename_in_path(
+    relations: Mapping[tuple[str, str], str],
+    base: str | None,
+    names: list[str],
+    renamed: tuple[str, str, str],
+    start: int,
+) -> list[str]:
+    model, old, new = renamed
+    current = base
+    result = list(names)
+    for index, name in enumerate(names):
+        if current is None:
+            break
+        if index >= start and current == model and name == old:
+            result[index] = new
+        current = relations.get((current, name))
+    return result
+
+
+def _rewrite_saved_paths(cr: BaseCursor, model: str, old: str, new: str) -> None:
+    if not table_exists(cr, "ir_model_fields"):
+        return
+    cr.execute(
+        SQL(
+            "SELECT model, name, relation FROM ir_model_fields"
+            " WHERE relation IS NOT NULL AND ttype = ANY(%s)",
+            ["many2one", "one2many", "many2many"],
+        )
+    )
+    relations = {(owner, name): relation for owner, name, relation in cr.fetchall()}
+    renamed = (model, old, new)
+    name = re.escape(old)
+    for table, model_column, domain, others in _SAVED_FIELD_EXPRESSIONS:
+        for column in _existing_columns(cr, table, (domain, *others)):
+            cr.execute(
+                SQL(
+                    "SELECT id, %(model_column)s, %(column)s FROM %(table)s"
+                    " WHERE %(column)s ~ %(pattern)s",
+                    table=SQL.identifier(table),
+                    column=SQL.identifier(column),
+                    model_column=SQL.identifier(model_column),
+                    pattern=rf"\.{name}([^\w]|$)",
+                )
+            )
+            for row_id, base, text in cr.fetchall():
+                rewritten = _SAVED_PATH.sub(
+                    lambda match, base=base: ".".join(
+                        _rename_in_path(
+                            relations, base, match.group(0).split("."), renamed, 1
+                        )
+                    ),
+                    text,
+                )
+                if rewritten != text:
+                    cr.execute(
+                        SQL(
+                            "UPDATE %s SET %s = %s WHERE id = %s",
+                            SQL.identifier(table),
+                            SQL.identifier(column),
+                            rewritten,
+                            row_id,
+                        )
+                    )
+    if not table_exists(cr, "ir_exports_line"):
+        return
+    cr.execute(
+        SQL(
+            "SELECT line.id, export.resource, line.name FROM ir_exports_line line"
+            " JOIN ir_exports export ON export.id = line.export_id"
+            " WHERE line.name ~ %s",
+            rf"(^|/){name}(/|$)",
+        )
+    )
+    for line_id, resource, path in cr.fetchall():
+        rewritten = "/".join(
+            _rename_in_path(relations, resource, path.split("/"), renamed, 0)
+        )
+        if rewritten != path:
+            cr.execute(
+                SQL(
+                    "UPDATE ir_exports_line SET name = %s WHERE id = %s",
+                    rewritten,
+                    line_id,
+                )
+            )
+
+
+def _rewrite_saved_field_name(cr: BaseCursor, model: str, old: str, new: str) -> None:
+    _rewrite_saved_paths(cr, model, old, new)
+    leaf_pattern, name_pattern = _saved_field_name_patterns(old)
+    for table, model_column, domain, others in _SAVED_FIELD_EXPRESSIONS:
+        patterns = {domain: leaf_pattern} | dict.fromkeys(others, name_pattern)
+        for column in _existing_columns(cr, table, patterns):
+            cr.execute(
+                SQL(
+                    "UPDATE %(table)s SET %(column)s = "
+                    "regexp_replace(%(column)s, %(pattern)s, %(replacement)s, 'g') "
+                    "WHERE %(model_column)s = %(model)s AND %(column)s ~ %(pattern)s",
+                    table=SQL.identifier(table),
+                    column=SQL.identifier(column),
+                    model_column=SQL.identifier(model_column),
+                    model=model,
+                    pattern=patterns[column],
+                    replacement=rf"\1{new}",
+                )
+            )
+            _debug.logic(
+                "module_data.rename_field_saved",
+                model=model,
+                table=table,
+                column=column,
+                rows=cr.rowcount,
+            )
+
+
 def rename_field(
     cr: BaseCursor,
     model: str,
@@ -153,6 +285,7 @@ def rename_field(
                 get_default_constraint_name(table, old, "fkey"),
             )
         )
+    _rewrite_saved_field_name(cr, model, old, new)
 
     cr.execute(
         SQL(

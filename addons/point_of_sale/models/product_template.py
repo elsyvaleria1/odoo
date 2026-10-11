@@ -157,23 +157,25 @@ class ProductTemplate(models.Model):
         if self.available_in_pos and not self.sale_ok:
             self.sale_ok = True
 
-    def set_pos_favorite(self, is_favorite):
+    def set_pos_featured(self, is_featured):
         self.check_singleton()
-        _debug.lifecycle("template_favorite", template=self, favorite=bool(is_favorite))
+        _debug.lifecycle("template_featured", template=self, featured=bool(is_featured))
         if not self.env.user.has_group("point_of_sale.group_pos_user"):
             raise AccessError(
-                self.env._("Only Point of Sale users can change a POS favorite.")
+                self.env._(
+                    "Only Point of Sale users can feature a product in the Point of Sale."
+                )
             )
         if not self.available_in_pos:
             raise AccessError(
                 self.env._(
                     "%s is not available in the Point of Sale, so it cannot be "
-                    "marked as a favorite there.",
+                    "featured there.",
                     self.display_name,
                 )
             )
-        self.sudo().is_favorite = bool(is_favorite)
-        return self.is_favorite
+        self.sudo().is_featured = bool(is_featured)
+        return self.is_featured
 
     def create_product_variant_from_pos(self, attribute_value_ids, config_id) -> dict:
         self.check_singleton()

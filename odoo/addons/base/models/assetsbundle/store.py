@@ -181,23 +181,19 @@ class AssetAttachmentStore:
             versioned=not ignore_version,
         )
         ira = self.env["ir.attachment"].sudo()
-        attachment_ids = [
-            max_id
-            for _name, max_id in ira._read_group(
-                ira._get_domain_generated_assets(url_pattern=url_pattern),
-                groupby=["name"],
-                aggregates=["id:max"],
-                order="name",
-            )
-        ]
+        attachment = ira.search(
+            ira._get_domain_generated_assets(url_pattern=url_pattern),
+            order="id desc",
+            limit=1,
+        )
         _debug.logic(
             "attachments_looked_up",
             bundle=self.name,
             extension=extension,
             ignore_version=ignore_version,
-            found=len(attachment_ids),
+            found=len(attachment),
         )
-        return ira.browse(attachment_ids)
+        return attachment
 
     def _versioned_attachment_values(
         self, extension: str, content: str

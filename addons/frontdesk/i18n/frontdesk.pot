@@ -443,8 +443,14 @@ msgid "Enter the visitor's name."
 msgstr ""
 
 #. module: frontdesk
+#: model:ir.model.fields,field_description:frontdesk.field_frontdesk_frontdesk__is_featured
 #: model_terms:ir.ui.view,arch_db:frontdesk.frontdesk_frontdesk_view_search
-msgid "Favorite"
+msgid "Featured"
+msgstr ""
+
+#. module: frontdesk
+#: model:ir.model.fields,help:frontdesk.field_frontdesk_frontdesk__is_featured
+msgid "Featured stations are listed first, for every user."
 msgstr ""
 
 #. module: frontdesk

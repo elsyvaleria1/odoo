@@ -1,6 +1,6 @@
 {
     "name": "eLearning",
-    "version": "2.13",
+    "version": "2.14",
     "oldest_upgradable_version": "2.12",
     "category": "Website/eLearning",
     "sequence": 125,

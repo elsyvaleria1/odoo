@@ -264,3 +264,47 @@ registerWebsitePreviewTour(
         },
     ],
 );
+
+registerWebsitePreviewTour(
+    "website_image_shape_save",
+    {
+        url: "/",
+        edition: true,
+    },
+    () => [
+        ...insertSnippet({
+            id: "s_text_image",
+            name: "Text - Image",
+            groupName: "Content",
+        }),
+        {
+            content: "Click on the image",
+            trigger:
+                ":iframe .s_text_image img:not(:visible), :iframe .s_text_image img",
+            run: "click",
+        },
+        changeOption("Image", "[data-label='Shape'] .dropdown-toggle"),
+        {
+            content: "Pick a shape that can be flipped",
+            trigger:
+                "[data-action-id='setImageShape'][data-action-value='html_builder/geometric/geo_tetris']",
+            run: "click",
+        },
+        {
+            content: "Flip the shape horizontally",
+            trigger: "[data-action-id='flipImageShape']:has(.oi-arrows-h)",
+            run: "click",
+        },
+        {
+            content: "The preview is shaped and flipped",
+            trigger:
+                ":iframe .s_text_image img[data-shape-flip='x'][src^='data:image/svg+xml']",
+        },
+        ...clickOnSave(),
+        {
+            content: "The saved image is served from an attachment",
+            trigger:
+                ":iframe .s_text_image img[data-shape='html_builder/geometric/geo_tetris'][src^='/web/image/']",
+        },
+    ],
+);

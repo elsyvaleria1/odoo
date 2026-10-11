@@ -1,6 +1,6 @@
 {
     "name": "SMS Messaging",
-    "version": "3.2",
+    "version": "3.3",
     "oldest_upgradable_version": "3.2",
     "category": "Sales/Sales",
     "summary": "Compose SMS messages and track provider delivery statuses",

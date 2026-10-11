@@ -218,7 +218,7 @@ adds `CHECK (id = <link>)`, and the link must cascade. One id names both, so a r
 child is a reference to its parent; `_get_reference_model_name()` returns the parent's, which
 files the child's messages, followers and attachments under the parent; unlinking the child
 unlinks its parent, and the parent's delete cascades to the child's row. Unlike a
-table-inheritance tree (`mixin.table.inheritance.root`), every foreign key to the parent and to
+table-inheritance tree (`ir.actions.actions`), every foreign key to the parent and to
 the child stays enforced by PostgreSQL. `test_inherits`' `test.crate` pins it.
 
 ## Lifecycle and the operations that cross stores

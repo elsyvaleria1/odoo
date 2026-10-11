@@ -38,7 +38,7 @@ declare module "plugins" {
     import { ImageCropShared } from "@html_editor/main/media/image_crop_plugin";
     import { delete_image_overrides, image_name_predicates, ImageShared } from "@html_editor/main/media/image_plugin";
     import { ImagePostProcessShared, on_image_updated_handlers, process_image_post_handlers, process_image_warmup_handlers } from "@html_editor/main/media/image_post_process_plugin";
-    import { closest_savable_providers, ImageSaveShared } from "@html_editor/main/media/image_save_plugin";
+    import { closest_savable_providers, ImageSaveShared, modified_image_save_params_providers } from "@html_editor/main/media/image_save_plugin";
     import { after_save_media_dialog_handlers, media_dialog_extra_tabs, MediaShared, on_added_media_handlers, on_image_saved_handlers, on_media_dialog_saved_handlers, on_replaced_media_handlers } from "@html_editor/main/media/media_plugin";
     import { move_node_blacklist_selectors, move_node_whitelist_selectors, set_movable_element_handlers, unset_movable_element_handlers } from "@html_editor/main/movenode_plugin";
     import { layout_geometry_change_handlers } from "@html_editor/main/position_plugin";
@@ -246,6 +246,7 @@ declare module "plugins" {
         content_not_editable_providers: content_not_editable_providers;
         feff_providers: feff_providers;
         hint_targets_providers: hint_targets_providers;
+        modified_image_save_params_providers: modified_image_save_params_providers;
         paste_media_url_command_providers: paste_media_url_command_providers;
         removable_descendants_providers: removable_descendants_providers;
         selectors_for_feff_providers: selectors_for_feff_providers;

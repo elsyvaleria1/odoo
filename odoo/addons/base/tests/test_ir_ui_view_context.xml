@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="test_context_card">
+        <p t-out="card.name" />
+    </template>
+
+    <template id="test_context_page">
+        <div class="page">
+            <t t-set="partner" t-value="user.partner_id" />
+            <div id="guard" t-if="user.has_group('base.group_system')">
+                <p class="secret" t-out="partner.sudo().email" />
+            </div>
+            <p id="anchor">Anchor</p>
+            <p id="slot" />
+            <span class="greeting" t-out="partner.name" />
+            <p class="notice" t-out="partner.sudo().comment" />
+            <ul><li t-foreach="partner.child_ids" t-as="child" t-out="child.name" /></ul>
+            <t t-call="base.test_context_card"><t t-set="card" t-value="partner" /></t>
+            <p id="free">Some text</p>
+        </div>
+    </template>
+
+    <template id="test_context_module_extension" inherit_id="base.test_context_page">
+        <xpath expr="//p[@id='anchor']" position="after">
+            <p class="phone" t-out="partner.sudo().phone" />
+        </xpath>
+        <xpath expr="//p[@id='slot']" position="inside">
+            <t t-out="partner.sudo().vat" />
+        </xpath>
+    </template>
+
+    <template id="test_context_guard" inherit_id="base.test_context_page" priority="1">
+        <xpath expr="//p[hasclass('notice')]" position="attributes">
+            <attribute name="t-if">user.has_group('base.group_system')</attribute>
+        </xpath>
+    </template>
+
+    <template
+        id="test_context_option"
+        inherit_id="base.test_context_page"
+        name="Notice in bold"
+        active="False">
+        <xpath expr="//p[hasclass('notice')]" position="attributes">
+            <attribute name="t-attf-class">notice #{'fw-bold' if partner.comment else ''}</attribute>
+        </xpath>
+    </template>
+</odoo>

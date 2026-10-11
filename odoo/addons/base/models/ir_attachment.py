@@ -421,6 +421,10 @@ class IrAttachment(models.Model):
             "write", count=len(self), fields=list(vals), has_content=has_content
         )
         res = super().write(vals)
+        if not self.env.su and vals.keys() & {"res_model", "res_id", "res_field"}:
+            self.sudo().filtered(lambda att: att.res_model and att.res_id).sudo(
+                False
+            ).check_access("write")
         if "url" in vals or "type" in vals or vals.get("public"):
             self._check_serving_attachments()
         return res
@@ -669,7 +673,9 @@ class IrAttachment(models.Model):
                 readable.append(field.name)
                 continue
             per_record |= Domain("res_field", "=", field.name) & Domain(
-                "res_id", "in", Owner._search(field_domain, bypass_access=True)
+                "res_id",
+                "in",
+                Owner._search(field_domain, active_test=False, bypass_access=True),
             )
         return Domain("res_field", "in", readable) | per_record
 
@@ -769,6 +775,13 @@ class IrAttachment(models.Model):
             else:
                 tmp_path.replace(full_path_str)
         return fname, size, checksum
+
+    @api.model
+    def _get_stored_file_size(self, fname: str) -> int | None:
+        try:
+            return Path(self._get_full_path(fname)).stat().st_size
+        except ValueError, OSError:
+            return None
 
     @api.model
     def _is_stored_file_complete(self, full_path: str, size: int) -> bool:
@@ -1060,6 +1073,7 @@ class IrAttachment(models.Model):
     def _note_readings(self) -> None:
         if not self:
             return
+        self.flush_recordset(["has_readings"])
         self.env.cr.execute(
             SQL(
                 "UPDATE ir_attachment SET has_readings = true"
@@ -1067,7 +1081,7 @@ class IrAttachment(models.Model):
                 self.ids,
             )
         )
-        self.invalidate_recordset(["has_readings"])
+        self.invalidate_recordset(["has_readings"], flush=False)
 
     def _reading(self, representation: str) -> IrAttachmentReading:
         self.check_singleton()
@@ -1113,13 +1127,18 @@ class IrAttachment(models.Model):
                 return Reading.create(
                     {"attachment_id": self.id, "representation": representation}
                 )
-        except psycopg.errors.UniqueViolation:
-            return Reading.search(
+        except psycopg.errors.UniqueViolation as exc:
+            existing = Reading.search(
                 [
                     ("attachment_id", "=", self.id),
                     ("representation", "=", representation),
                 ]
             )
+            if existing:
+                return existing
+            _debug.logic("reading_row_raced", attachment=self.id, of=representation)
+            msg = f"reading {representation} of attachment {self.id} raced"
+            raise psycopg.errors.SerializationFailure(msg) from exc
 
     def _read(
         self,
@@ -1268,6 +1287,7 @@ class IrAttachment(models.Model):
         if not text:
             return
         limit = self._get_index_max_chars()
+        self.flush_recordset(["index_content"])
         self.env.cr.execute(
             SQL(
                 "UPDATE ir_attachment SET index_content = %s WHERE id = %s",
@@ -1275,7 +1295,7 @@ class IrAttachment(models.Model):
                 self.id,
             )
         )
-        self.invalidate_recordset(["index_content"])
+        self.invalidate_recordset(["index_content"], flush=False)
 
     def _release_content(self) -> None:
         self._check_serving_attachments()
@@ -2017,9 +2037,12 @@ class IrAttachment(models.Model):
         backend = self._get_storage_backend()
         for attach in legacy:
             raw = attach._with_bin_size_disabled().raw
-            if self._is_content_unreadable(
+            expected_size = attach.file_size or self._get_stored_file_size(
+                attach.store_fname
+            )
+            if expected_size is None or self._is_content_unreadable(
                 raw,
-                attach.file_size,
+                expected_size,
                 att_id=attach.id,
                 key=attach.store_fname,
                 action="skipping rehash",
@@ -2150,12 +2173,13 @@ class IrAttachment(models.Model):
                     dropped += 1
                     continue
                 if fname not in whitelist:
-                    if grace:
-                        try:
-                            if filepath.stat().st_mtime > time.time() - grace:
-                                continue
-                        except OSError:
-                            pass
+                    seen = self._get_marker_mtime_ns(filepath)
+                    if (
+                        grace
+                        and seen is not None
+                        and seen > (time.time() - grace) * 1e9
+                    ):
+                        continue
                     try:
                         full_path = self._get_full_path(fname)
                     except ValueError:
@@ -2169,7 +2193,10 @@ class IrAttachment(models.Model):
                         dropped += 1
                         continue
                     try:
-                        Path(full_path).unlink(missing_ok=True)
+                        if not self._sweep_stored_file(
+                            fname, Path(full_path), filepath, seen
+                        ):
+                            continue
                         _logger.debug("filestore gc unlinked %s", full_path)
                         removed += 1
                     except OSError:
@@ -2190,6 +2217,69 @@ class IrAttachment(models.Model):
             dropped=dropped,
         )
         return removed
+
+    @api.model
+    def _get_marker_mtime_ns(self, marker: Path) -> int | None:
+        try:
+            return marker.stat().st_mtime_ns
+        except OSError:
+            return None
+
+    @api.model
+    def _sweep_stored_file(
+        self, fname: str, full_path: Path, marker: Path, seen: int | None
+    ) -> bool:
+        aside = self._get_filestore_dir("gc") / fname
+        aside.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            full_path.rename(aside)
+        except FileNotFoundError:
+            return True
+        if self._get_marker_mtime_ns(marker) != seen:
+            aside.replace(full_path)
+            _debug.logic("gc_sweep_restored", key=full_path.name, reason="remarked")
+            return False
+        aside.unlink()
+        return True
+
+    @api.model
+    def _restore_set_aside_files(self) -> int:
+        aside_root = self._get_filestore_dir("gc")
+        restored = []
+        for dirpath, _subdirs, filenames in aside_root.walk():
+            for filename in filenames:
+                aside = dirpath / filename
+                fname = str(aside.relative_to(aside_root))
+                try:
+                    full_path = Path(self._get_full_path(fname))
+                except ValueError:
+                    _logger.warning(
+                        "filestore gc: leaving %s set aside, its store key "
+                        "resolves outside the filestore",
+                        aside,
+                    )
+                    continue
+                try:
+                    if full_path.exists():
+                        aside.unlink()
+                    else:
+                        full_path.parent.mkdir(parents=True, exist_ok=True)
+                        aside.replace(full_path)
+                except OSError:
+                    _logger.warning(
+                        "filestore gc: could not put back %s", aside, exc_info=True
+                    )
+                    continue
+                restored.append(fname)
+        if restored:
+            self._mark_for_gc_multi(restored)
+            _logger.warning(
+                "filestore gc: put back %d file(s) an interrupted sweep had set "
+                "aside; the next sweeps decide on them again",
+                len(restored),
+            )
+        _debug.lifecycle("gc_set_aside_restored", count=len(restored))
+        return len(restored)
 
     def _mark_for_gc(self, fname: str) -> None:
         self._mark_for_gc_multi((fname,))
@@ -2380,16 +2470,17 @@ class IrAttachment(models.Model):
 
     def _prepare_contents(self, values: dict[str, Any]) -> dict[str, Any]:
         mimetype = values["mimetype"] = self._get_mimetype_from_values(values)
-        force_text = self._is_xml_like_mimetype(mimetype) and (
-            self.env.context.get("attachments_mime_plainxml")
-            or not self.env["ir.ui.view"].sudo(False).has_access("write")
-        )
-        if force_text:
+        if self._is_xml_like_mimetype(mimetype) and not self._can_store_markup():
             values["mimetype"] = "text/plain"
             _debug.logic("xml_mimetype_forced_text", original=mimetype)
         if not self.env.context.get("image_no_postprocess"):
             values = self._prepare_contents_resized(values)
         return values
+
+    def _can_store_markup(self) -> bool:
+        if self.env.context.get("attachments_mime_plainxml"):
+            return False
+        return self.env["ir.ui.view"].sudo(False).has_access("write")
 
     def _check_serving_attachments(self) -> None:
         if self.env.is_admin():

@@ -52,12 +52,6 @@ class ResPartnerIdentifierType(models.Model):
         "person to the state -- a national number, a passport -- and leave it "
         "off for what a company publishes about itself, such as a tax ID.",
     )
-    synced_with_commercial = fields.Boolean(
-        default=False,
-        help="Copy this identifier from the commercial entity down to its "
-        "contacts. Use it for what identifies the *company* -- a tax ID -- and "
-        "leave it off for what identifies a person, such as a national number.",
-    )
 
     _code_uniq = models.Constraint(
         "UNIQUE(code)",
@@ -133,11 +127,3 @@ class ResPartnerIdentifierType(models.Model):
 
     def _check_hook(self, normalized):
         pass
-
-    @api.model
-    def _get_type_by_code(self, code):
-        identifier_type = self.search([("code", "=", code)], limit=1)
-        _debug.perf.count(
-            "identifier_type_by_code", code=code, found=bool(identifier_type)
-        )
-        return identifier_type

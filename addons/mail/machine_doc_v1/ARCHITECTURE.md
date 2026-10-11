@@ -185,7 +185,7 @@ every one as a literal, so re-run it rather than trusting this table.
 | JS OWL services | 23 |
 | JS tests (`static/tests/`, `*.test.js`) | 165 |
 | SCSS (`static/src/`) | 98 |
-| XML (module-wide) | 234 = 165 static OWL + 41 views + 17 data + 6 wizard + 4 demo + 1 test |
+| XML (module-wide) | 235 = 165 static OWL + 41 views + 17 data + 6 wizard + 4 demo + 2 test |
 | i18n (.po/.pot) | 64 |
 
 > **Counting the JS models:** grep for `extends Record` and you get the wrong set, twice over

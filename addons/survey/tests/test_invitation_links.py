@@ -50,6 +50,18 @@ class TestSurveyInvitationLinks(common.TestSurveyCommon, HttpCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(answer.access_token, response.text, "the page runs its session")
 
+    def test_moving_the_deadline_moves_the_invitation_link(self):
+        now = fields.Datetime.now().replace(microsecond=0)
+        answer = self._add_answer(
+            self.survey, self.customer, deadline=now + timedelta(days=9)
+        )
+        for deadline in (now + timedelta(days=730), now + timedelta(days=2)):
+            with self.subTest(deadline=deadline):
+                answer.deadline = deadline
+                self.assertEqual(
+                    self._links(answer).date_to, deadline + timedelta(days=30)
+                )
+
     def test_an_anonymous_answer_keeps_its_own_token(self):
         answer = self._add_answer(self.survey, False)
         self.assertFalse(self._links(answer))

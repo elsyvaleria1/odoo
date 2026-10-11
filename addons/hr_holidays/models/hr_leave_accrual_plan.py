@@ -3,7 +3,7 @@ from calendar import monthrange
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
-from odoo.addons.base.models.mixin_recurrence_anchored import (
+from odoo.addons.hr_holidays.models.hr_leave_accrual_plan_level import (
     DAY_SELECTION,
     MONTH_SELECTION,
 )

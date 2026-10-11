@@ -192,12 +192,11 @@ export function opacityToHex(opacity) {
         .padStart(2, "0");
 }
 const RGB_FUNCTION_REGEX =
-    /^rgba?\(\s*(\d*\.?\d+)\s*(?:,\s*|\s+)(\d*\.?\d+)\s*(?:,\s*|\s+)(\d*\.?\d+)\s*(?:[,/]\s*(\d*\.?\d+)(%?)\s*)?\)?$/;
+    /^rgba?\(\s*(\d*\.?\d+)\s*(?:,\s*|\s+)(\d*\.?\d+)\s*(?:,\s*|\s+)(\d*\.?\d+)\s*(?:[,/]\s*(\d*\.?\d+)(%?)\s*)?\)$/;
 
 /**
  * The one reader of `rgb()` / `rgba()`, comma or space syntax, alpha as a
- * fraction or a percentage. Channels and alpha are returned unrounded. As in
- * CSS, the end of the input closes a function left open.
+ * fraction or a percentage. Channels and alpha are returned unrounded.
  *
  * @param {string} value
  * @returns {RgbFunction | null}
@@ -218,10 +217,14 @@ function parseRgbFunction(value) {
 }
 
 /**
+ * A color literal -- hex, `rgb()` or `rgba()` -- read by the grammar the
+ * server reads the image shape colors with (`parse_css_rgba` in html_editor):
+ * html_editor's color conformance vectors hold the two to one result.
+ *
  * @param {string} cssColor
  * @returns {RgbaColor | false}
  */
-export function convertCSSColorToRgba(cssColor = "") {
+export function parseCSSColor(cssColor = "") {
     const rgb = parseRgbFunction(cssColor);
     if (rgb) {
         return {
@@ -253,6 +256,21 @@ export function convertCSSColorToRgba(cssColor = "") {
         };
     }
 
+    return false;
+}
+
+/**
+ * Any color `parseCSSColor` reads, and the `color()` a browser computes (a
+ * `color-mix()` resolves to one), read through a canvas.
+ *
+ * @param {string} cssColor
+ * @returns {RgbaColor | false}
+ */
+export function convertCSSColorToRgba(cssColor = "") {
+    const rgba = parseCSSColor(cssColor);
+    if (rgba) {
+        return rgba;
+    }
     if (/color\(.+\)/.test(cssColor)) {
         const canvasEl = document.createElement("canvas");
         canvasEl.height = 1;

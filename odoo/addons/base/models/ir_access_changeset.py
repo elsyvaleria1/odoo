@@ -15,6 +15,7 @@ from odoo.tools import frozendict
 
 from .ir_access_audit import _plain
 from .ir_access_log import kept_on_uninstall
+from .res_users_grant import _marked
 
 _debug = DebugLog(__name__)
 
@@ -27,6 +28,22 @@ POLICY_VERSION = "base.access_policy_version"
 IMPACT_OPERATIONS = ("read", "write", "create", "unlink")
 _APPLYING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "ir_access_changeset_applying", default=False
+)
+_MOVING: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "ir_access_changeset_moving", default=False
+)
+LIFECYCLE_FIELDS = frozenset(
+    {
+        "author_id",
+        "state",
+        "cause",
+        "module",
+        "rollback_of_id",
+        "impact",
+        "policy_version",
+        "activated_at",
+        "activated_by_id",
+    }
 )
 
 
@@ -263,6 +280,18 @@ class ResUsersEligibility(models.Model):
     )
 
 
+def _named_ids(value: Any) -> set[int]:
+    ids: set[int] = set()
+    for item in value or ():
+        if isinstance(item, int):
+            ids.add(item)
+        elif item and item[0] == fields.Command.SET:
+            ids.update(item[2])
+        elif len(item) > 1 and isinstance(item[1], int):
+            ids.add(item[1])
+    return ids
+
+
 def _shape(impact: dict[str, Any]) -> set[tuple]:
     return {
         (user_id, model, operation, gained > 0, lost > 0, before < 0, after < 0)
@@ -271,6 +300,22 @@ def _shape(impact: dict[str, Any]) -> set[tuple]:
         for model, by_operation in by_model.items()
         for operation, (before, after, gained, lost) in by_operation.items()
     }
+
+
+def _widens_eligibility(before: dict[str, Any], after: dict[str, Any]) -> bool:
+    if after.get("max_hours", 0) > before.get("max_hours", 0):
+        return True
+    if before.get("justification_required") and not after.get(
+        "justification_required", True
+    ):
+        return True
+    if "company_ids" in after:
+        was, now = (
+            _named_ids(before.get("company_ids")),
+            _named_ids(after["company_ids"]),
+        )
+        return bool(was) and not (now and now <= was)
+    return False
 
 
 def _widened(impact: dict[str, Any]) -> set[int]:
@@ -372,6 +417,32 @@ class IrAccessChangeset(models.Model):
                 self.env._("Nobody's reach changes.") if changeset.impact else False
             )
 
+    @api.model_create_multi
+    def create(self, vals_list: list[ValuesType]) -> Self:
+        if not (self.env.su or _MOVING.get()):
+            fresh = {"author_id": self.env.uid, "state": "draft", "cause": "manual"}
+            for vals in vals_list:
+                if any(
+                    vals[name] != fresh.get(name, False)
+                    for name in LIFECYCLE_FIELDS & vals.keys()
+                ):
+                    raise UserError(
+                        self.env._(
+                            "A change set is created a draft of the person staging it."
+                        )
+                    )
+        return super().create(vals_list)
+
+    def write(self, vals: ValuesType) -> bool:
+        if LIFECYCLE_FIELDS & vals.keys() and not (self.env.su or _MOVING.get()):
+            raise UserError(
+                self.env._(
+                    "A change set is proposed, activated or cancelled; who staged "
+                    "it and what it does are not written by hand."
+                )
+            )
+        return super().write(vals)
+
     @api.model
     def _open_for_author(self) -> Self:
         changesets = self.env["ir.access"]._access_evaluator(self._name)
@@ -396,14 +467,16 @@ class IrAccessChangeset(models.Model):
         self.env["ir.access"]._access_evaluator("ir.access.changeset.line").create(
             [{"changeset_id": self.id, **line} for line in lines]
         )
-        self.impact = False
+        with _marked(_MOVING):
+            self.impact = False
 
     def action_propose(self) -> None:
         for changeset in self:
             if changeset.state != "draft":
                 raise UserError(self.env._("Only a draft change set is proposed."))
-            changeset._compute_impact()
-            changeset.state = "proposed"
+            with _marked(_MOVING):
+                changeset._compute_impact()
+                changeset.state = "proposed"
             changeset._log("changeset_proposed")
 
     def action_cancel(self) -> bool:
@@ -412,7 +485,8 @@ class IrAccessChangeset(models.Model):
                 changeset.line_ids.filtered(
                     lambda line: line.operation == "create"
                 )._discard_created()
-            changeset.state = "cancelled"
+            with _marked(_MOVING):
+                changeset.state = "cancelled"
             changeset._log("changeset_cancelled")
         return True
 
@@ -454,13 +528,14 @@ class IrAccessChangeset(models.Model):
         self.check_singleton()
         if self.state != "active":
             raise UserError(self.env._("Only an active change set is rolled back."))
-        inverse = self.create(
-            {
-                "name": self.env._("Rollback of %s", self.name),
-                "cause": "rollback",
-                "rollback_of_id": self.id,
-            }
-        )
+        with _marked(_MOVING):
+            inverse = self.create(
+                {
+                    "name": self.env._("Rollback of %s", self.name),
+                    "cause": "rollback",
+                    "rollback_of_id": self.id,
+                }
+            )
         inverse._stage([line._inverse_values() for line in self.line_ids])
         return {
             "type": "ir.actions.act_window",
@@ -479,7 +554,8 @@ class IrAccessChangeset(models.Model):
                     "what was reviewed."
                 )
             )
-        if (widened := _widened(impact)) and self.author_id == self.env.user:
+        widened = _widened(impact) | self.line_ids._eligible_user_ids()
+        if widened and self.author_id == self.env.user:
             raise UserError(
                 self.env._(
                     "This change set widens what %(count)s people reach "
@@ -499,11 +575,12 @@ class IrAccessChangeset(models.Model):
         self.check_singleton()
         models_, groups = self.line_ids._affected()
         users = self.env["res.users"].search(
-            [
-                ("active", "=", True),
-                ("share", "=", False),
-                ("all_group_ids", "in", list(groups)),
-            ]
+            Domain("active", "=", True)
+            & (
+                Domain.TRUE
+                if groups is None
+                else Domain("all_group_ids", "in", sorted(groups))
+            )
         )
         before = self._reach_counts(users, models_)
         try:
@@ -728,9 +805,25 @@ class IrAccessChangesetLine(models.Model):
             )
         )
 
-    def _affected(self) -> tuple[set[str], set[int]]:
+    def _eligible_user_ids(self) -> set[int]:
+        return {
+            line._record().user_id.id
+            for line in self
+            if line.res_model == "res.users.eligibility"
+            and (
+                line.operation == "create"
+                or (
+                    line.operation == "write"
+                    and _widens_eligibility(
+                        line.values_before or {}, line.values_after or {}
+                    )
+                )
+            )
+        }
+
+    def _affected(self) -> tuple[set[str], set[int] | None]:
         model_names: set[str] = set()
-        group_ids: set[int] = set()
+        named: set[int] = set()
         implied: set[int] = set()
         evaluator = self.env["ir.access"]._access_evaluator
         rows = (
@@ -738,26 +831,48 @@ class IrAccessChangesetLine(models.Model):
             .browse([line.res_id for line in self if line.res_model == "ir.access"])
             .exists()
         )
+        if predicate_ids := [
+            line.res_id for line in self if line.res_model == "ir.access.predicate"
+        ]:
+            rows |= evaluator("ir.access").search(
+                Domain("predicate_id", "in", predicate_ids)
+            )
         groups = evaluator("res.groups").browse(
             [line.res_id for line in self if line.res_model == "res.groups"]
         )
         model_names.update(rows.model_id.mapped("model"))
-        group_ids.update((rows.group_id | groups).all_implied_by_ids.ids)
+        named.update((rows.group_id | groups).ids)
+        everyone = any(
+            row.kind == "guard" and row.guard_scope == "everyone" for row in rows
+        )
         for line in self:
             for values in (line.values_before or {}, line.values_after or {}):
-                if line.res_model == "ir.access" and isinstance(
-                    values.get("group_id"), int
-                ):
-                    group_ids.add(values["group_id"])
+                if line.res_model == "ir.access":
+                    if isinstance(values.get("group_id"), int):
+                        named.add(values["group_id"])
+                    everyone |= values.get("guard_scope") == "everyone"
                 if line.res_model == "res.groups":
-                    implied.update(values.get("implied_ids") or [])
+                    implied.update(_named_ids(values.get("implied_ids")))
+        group_ids = (
+            None
+            if everyone
+            else set(
+                evaluator("res.groups").browse(sorted(named)).all_implied_by_ids.ids
+            )
+        )
         if implied:
+            implied_groups = evaluator("res.groups").browse(sorted(implied)).exists()
             model_names.update(
                 evaluator("ir.access")
                 .search(
-                    Domain("group_id", "in", sorted(implied))
+                    Domain("group_id", "in", implied_groups.all_implied_ids.ids)
                     & Domain("model_id", "!=", False)
                 )
                 .model_id.mapped("model")
             )
+        _debug.logic(
+            "affected",
+            models=sorted(model_names),
+            groups=None if group_ids is None else len(group_ids),
+        )
         return {name for name in model_names if name in self.env}, group_ids

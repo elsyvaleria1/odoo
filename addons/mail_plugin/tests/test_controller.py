@@ -5,8 +5,8 @@ from unittest.mock import Mock, patch
 
 from odoo.exceptions import AccessError
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
-from odoo.tests.common import HttpCase
-from odoo.tools import hmac
+from odoo.tests.common import HttpCase, new_unbound_test_api_key
+from odoo.tools import hmac, mute_logger
 
 from odoo.addons.iap.tools import iap_tools
 from odoo.addons.mail.tests.common import mail_new_test_user
@@ -14,6 +14,7 @@ from odoo.addons.mail_plugin.controllers.authenticate import AUTH_CODE_SCOPE
 from odoo.addons.mail_plugin.tests.common import (
     TestMailPluginControllerCommon,
     as_outlook_user,
+    outlook_api_key,
 )
 
 
@@ -42,6 +43,29 @@ class TestMailPluginController(TestMailPluginControllerCommon):
         partner.invalidate_recordset()
         self.assertEqual(
             partner.parent_id, company, "Should change the company of the partner"
+        )
+
+    def test_a_key_bound_to_no_door_is_refused(self):
+        def modules_get(key):
+            return self.url_open(
+                "/mail_client_extension/modules/get",
+                data=json_dumps_bytes(
+                    {"id": 0, "jsonrpc": "2.0", "method": "call", "params": {}}
+                ),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {key}",
+                },
+            )
+
+        outlook = modules_get(outlook_api_key(self.env, "employee"))
+        self.assertEqual(outlook.json()["result"], {"modules": ["contacts", "crm"]})
+        with mute_logger("odoo.http"):
+            unbound = modules_get(new_unbound_test_api_key(self.user_test))
+        body = unbound.json()
+        self.assertNotIn("result", body)
+        self.assertEqual(
+            body["error"]["data"]["message"], "401 Unauthorized: Invalid apikey"
         )
 
     @as_outlook_user("employee")
@@ -249,12 +273,14 @@ class TestMailPluginAuthCode(HttpCase):
     def _redeem(self, auth_code):
         return self.url_open(
             "/mail_plugin/auth/access_token",
-            data=json_dumps_bytes({
+            data=json_dumps_bytes(
+                {
                     "id": 0,
                     "jsonrpc": "2.0",
                     "method": "call",
                     "params": {"auth_code": auth_code},
-                }),
+                }
+            ),
             headers={"Content-Type": "application/json"},
         ).json()
 

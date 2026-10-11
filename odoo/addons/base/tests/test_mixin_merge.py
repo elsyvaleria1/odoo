@@ -191,6 +191,22 @@ class TestMixinMergeSummableCompanyDependent(TransactionCase):
             "not only the current one",
         )
 
+    def test_a_summable_value_held_by_the_source_alone_is_counted_once(self):
+        fname = self._company_dependent_integer()
+        company_b = self.env["res.company"].create({"name": "merge sum once b"})
+        Partner = self.env["res.partner"]
+        src = Partner.create({"name": "once src"})
+        dst = Partner.create({"name": "once dst"})
+        src.with_company(company_b)[fname] = 7
+        self.env.flush_all()
+
+        self.env["wizard.res.partner.merge"].create({})._update_values_generic(
+            src, dst, summable_fields=[fname]
+        )
+        self.env.invalidate_all()
+
+        self.assertEqual(dst.with_company(company_b)[fname], 7)
+
     def test_a_company_dependent_field_that_is_not_summable_takes_the_destination(
         self,
     ):

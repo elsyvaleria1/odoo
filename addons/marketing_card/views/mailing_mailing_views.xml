@@ -18,7 +18,7 @@
                 </header>
             </xpath>
             <xpath
-                expr="//header//button[@name='action_set_favorite']"
+                expr="//header//button[@name='action_add_to_templates']"
                 position="attributes">
                 <attribute name="invisible" add="card_campaign_id" separator=" or " />
             </xpath>

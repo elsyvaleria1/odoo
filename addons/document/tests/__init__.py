@@ -19,6 +19,7 @@ from . import test_document_gc
 from . import test_document_multicompany
 from . import test_document_multipage
 from . import test_document_permission_algebra
+from . import test_document_reach_races
 from . import test_document_permissions
 from . import test_document_public_routes
 from . import test_document_request

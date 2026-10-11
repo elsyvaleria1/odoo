@@ -24,9 +24,9 @@
                 <filter name="combo" string="Combo" domain="[('type', '=', 'combo')]" />
                 <separator />
                 <filter
-                    name="favorites"
-                    string="Favorites"
-                    domain="[('is_favorite', '=', True)]" />
+                    name="featured"
+                    string="Featured"
+                    domain="[('is_featured', '=', True)]" />
                 <filter
                     name="my_favorites"
                     string="My Favorites"
@@ -104,7 +104,7 @@
                 <field name="currency_id" column_invisible="True" />
                 <field name="cost_currency_id" column_invisible="True" />
                 <field
-                    name="is_favorite"
+                    name="is_user_favorite"
                     widget="boolean_favorite"
                     nolabel="1"
                     optional="show" />
@@ -201,7 +201,7 @@
                             <div class="mb-1">
                                 <div class="d-flex mb-0 h5">
                                     <field
-                                        name="is_favorite"
+                                        name="is_user_favorite"
                                         widget="boolean_favorite"
                                         nolabel="1"
                                         class="me-1" />
@@ -277,7 +277,7 @@
                         <h1>
                             <div class="d-flex">
                                 <field
-                                    name="is_favorite"
+                                    name="is_user_favorite"
                                     widget="boolean_favorite"
                                     nolabel="1"
                                     class="me-2" />
@@ -294,6 +294,10 @@
                         <span name="sale_option" class="d-inline-flex">
                             <field name="sale_ok" />
                             <label for="sale_ok" />
+                        </span>
+                        <span name="featured_option" class="d-inline-flex">
+                            <field name="is_featured" />
+                            <label for="is_featured" />
                         </span>
                     </div>
                     <notebook>

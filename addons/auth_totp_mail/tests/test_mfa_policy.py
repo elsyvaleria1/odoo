@@ -46,6 +46,7 @@ class TestMfaPolicy(TransactionCase):
         self.assertEqual(self.internal_user._get_mfa_url(), "/web/login/totp")
 
     def test_rpc_requires_api_keys_under_policy(self):
+        self.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
         self._set_policy("all_required")
         self.assertTrue(self.internal_user._is_rpc_api_key_only())
         self._set_policy(False)

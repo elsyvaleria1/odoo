@@ -273,9 +273,11 @@ class IrUiMenu(models.Model):
                 continue
             model_fname = MODEL_BY_TYPE.get(action._name)
             groups_fname = GROUPS_BY_TYPE.get(action._name)
-            if actions._get_load_refusal(
-                action[groups_fname]._ids if groups_fname else (),
-                action[model_fname] if model_fname else None,
+            action_group_ids = action[groups_fname]._ids if groups_fname else ()
+            if (
+                action_group_ids and group_ids.isdisjoint(action_group_ids)
+            ) or actions._get_load_refusal(
+                (), action[model_fname] if model_fname else None
             ):
                 access_denied += 1
                 continue
@@ -468,9 +470,19 @@ class IrUiMenu(models.Model):
         return menu_root
 
     @api.model
-    @tools.ormcache("self.env.access_signature", "bool(debug)", "self.env.lang")
     def load_menus(self, debug: bool) -> dict[str | int, Any]:
         self = self.sudo(False)
+        return self._load_menus(
+            bool(debug), frozenset(self._get_blacklisted_menu_ids())
+        )
+
+    @api.model
+    @tools.ormcache(
+        "self.env.access_signature", "debug", "self.env.lang", "blacklisted_menu_ids"
+    )
+    def _load_menus(
+        self, debug: bool, blacklisted_menu_ids: frozenset[int]
+    ) -> dict[str | int, Any]:
         with _debug.perf("load_menus.fetch", cr=self.env.cr, uid=self.env.uid):
             visible_menus = self.search_fetch(
                 [],
@@ -483,7 +495,7 @@ class IrUiMenu(models.Model):
                     "web_accent_light",
                     "web_accent_dark",
                 ],
-            )._filter_visible_menus(bool(debug))
+            )._filter_visible_menus(debug)
 
         children_dict = defaultdict(list)
         for menu in visible_menus:

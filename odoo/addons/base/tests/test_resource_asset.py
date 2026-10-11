@@ -817,3 +817,46 @@ class TestResourceAsset(TransactionCase):
         )
         self.assertEqual(group_currency, currency)
         self.assertEqual(total, 48000.0)
+
+    def test_a_kind_closed_to_a_group_closes_the_shipped_write_rows_at_once(self):
+        kind = self.env["resource.kind"].create({"name": "Hoist", "code": "HST"})
+        hoist = self.Asset.create({"name": "Hoist 1", "kind_id": kind.id})
+        operators = self.env["res.groups"].create({"name": "Hoist operators"})
+        user = new_test_user(
+            self.env, login="hoist_user", groups="base.group_asset_user"
+        )
+        self.assertTrue(hoist.with_user(user).has_access("write"))
+        kind.group_id = operators
+        self.env.invalidate_all()
+        self.assertFalse(hoist.with_user(user).has_access("write"))
+        user.group_ids += operators
+        self.env.invalidate_all()
+        self.assertTrue(hoist.with_user(user).has_access("write"))
+
+    def test_a_kind_closed_to_a_group_hides_its_assets_at_once(self):
+        kind = self.env["resource.kind"].create({"name": "Crane", "code": "CRN"})
+        crane = self.Asset.create({"name": "Crane 1", "kind_id": kind.id})
+        bound, operators = self.env["res.groups"].create(
+            [{"name": "Kind bound"}, {"name": "Crane operators"}]
+        )
+        self.env["ir.access"].create(
+            {
+                "name": "resource.resource: only the kinds the user is enabled for",
+                "model_id": self.env["ir.model"]._get_id("resource.resource"),
+                "group_id": bound.id,
+                "kind": "guard",
+                "guard_scope": "members",
+                "operation": "r",
+                "reach": "predicate",
+                "predicate_id": self.env.ref(
+                    "base.access_predicate_enabled_kind"
+                ).id,
+                "predicate_args": {"field": "kind_id"},
+            }
+        )
+        user = new_test_user(self.env, login="kind_bound")
+        user.group_ids += bound
+        self.assertTrue(crane.with_user(user).has_access("read"))
+        kind.group_id = operators
+        self.env.invalidate_all()
+        self.assertFalse(crane.with_user(user).has_access("read"))

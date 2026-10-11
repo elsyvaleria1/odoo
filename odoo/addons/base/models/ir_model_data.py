@@ -1,3 +1,4 @@
+import itertools
 import logging
 import random
 import types
@@ -15,7 +16,7 @@ from odoo.exceptions import AccessError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.models import add_field
-from odoo.tools import SQL, Query, groupby, reset_cached_properties, unique
+from odoo.tools import SQL, Query, reset_cached_properties, unique
 
 from .ir_model_common import MODULE_UNINSTALL_FLAG
 
@@ -450,7 +451,7 @@ class IrModelData(models.Model):
 
         undeletable_ids: list[int] = []
 
-        for model, items in groupby(unique(records_items), itemgetter(0)):
+        for model, items in itertools.groupby(unique(records_items), itemgetter(0)):
             ids = [item[1] for item in items]
             if model in self.env:
                 self._remove_uninstalled(

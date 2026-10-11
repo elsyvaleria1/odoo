@@ -1,6 +1,7 @@
 from typing import Any, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import AccessError, ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import ormcache
@@ -51,6 +52,15 @@ class PropertiesBaseDefinition(models.Model):
                     ", ".join(invalid_fields.mapped("name")),
                 )
             )
+
+    @api.model_create_multi
+    def create(self, vals_list: list[ValuesType]) -> Self:
+        definitions = super().create(vals_list)
+        self.env.registry.clear_cache("stable")
+        _debug.lifecycle(
+            "definition_created_cache_cleared", definitions=definitions.ids
+        )
+        return definitions
 
     def write(self, vals: dict[str, Any]) -> bool:
         if "properties_field_id" in vals:

@@ -38,8 +38,8 @@ class IrAccessSodFunction(models.Model):
             "approver_category_ids": frozenset(steps.category_id._ids),
         }
 
-    def _get_holder_ids(self, users) -> set[int]:
-        holders = super()._get_holder_ids(users)
+    def _get_holder_ids(self, users, scheduled=None) -> set[int]:
+        holders = super()._get_holder_ids(users, scheduled)
         categories = self._get_duty_spec().get("approver_category_ids")
         if not categories:
             return holders

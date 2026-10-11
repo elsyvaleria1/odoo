@@ -10,11 +10,7 @@ from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
 
-from odoo.addons.base.models.access_link import (
-    DEFAULT_LIFETIME,
-    LinkLoginRequired,
-    LinkRefused,
-)
+from odoo.addons.base.models.access_link import LinkLoginRequired, LinkRefused
 from odoo.addons.hr_contract_salary.utils.hr_version import requires_hr_version_context
 
 if TYPE_CHECKING:
@@ -345,9 +341,11 @@ class HrContractSalaryOffer(models.Model):
         for offer in self:
             offer.access_token = tokens.get(offer.id, False)
 
-    def _offer_link_end(self) -> datetime | None:
-        return self.offer_end_date and datetime.combine(
-            self.offer_end_date, time(23, 59, 59)
+    def _get_link_expiry(self) -> datetime | None:
+        return (
+            datetime.combine(self.offer_end_date, time(23, 59, 59))
+            if self.offer_end_date
+            else None
         )
 
     def _issue_offer_links(self) -> None:
@@ -358,22 +356,9 @@ class HrContractSalaryOffer(models.Model):
                 partner=offer.applicant_id.partner_id or offer.employee_id.partner_id,
                 role="comment",
                 cause="notification",
-                date_to=offer._offer_link_end(),
+                dated_by_record=True,
             )
             offer._update_cache({"access_token": token}, validate=False)
-
-    def _update_offer_link_ends(self) -> None:
-        Link = self.env["access.link"].with_privilege(
-            "base.privilege_manage_links", reason="an offer's expiration moved"
-        )
-        for offer in self:
-            links = Link._record_links(offer, Domain("cause", "=", "notification"))
-            links.write(
-                {
-                    "date_to": offer._offer_link_end()
-                    or fields.Datetime.now() + DEFAULT_LIFETIME["notification"]
-                }
-            )
 
     def _offer_token_opens(self, token: str | None) -> bool:
         self.check_singleton()
@@ -548,7 +533,7 @@ class HrContractSalaryOffer(models.Model):
             )
             self._issue_offer_links()
         elif {"offer_end_date", "validity_days_count"} & vals.keys():
-            self._update_offer_link_ends()
+            self.env["access.link"]._sync_record_expiries(self)
         return result
 
     def unlink(self):

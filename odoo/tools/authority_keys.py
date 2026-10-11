@@ -42,6 +42,8 @@ declare_authority_keys(
     "cron_id",
     "install_mode",
     "install_module",
+    "install_filename",
+    "install_xmlid",
     "_force_unlink",
     "bypass_locked_check",
     "force_deactivate",

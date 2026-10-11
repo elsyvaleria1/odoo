@@ -1,4 +1,4 @@
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import TransactionCase, tagged
 
 
@@ -11,6 +11,26 @@ class TestGeofenceValidation(TransactionCase):
                 "geofence_type": "polygon",
                 "polygon_points": points_json,
             }
+        )
+
+    def test_a_geofence_cannot_become_its_own_ancestor(self) -> None:
+        property_, parcel = self.env["device.geo.fence"].create(
+            [
+                {
+                    "name": name,
+                    "geofence_type": "circle",
+                    "center_latitude": 19.43,
+                    "center_longitude": -99.13,
+                    "radius": 500,
+                }
+                for name in ("property", "parcel")
+            ]
+        )
+        parcel.parent_id = property_
+        with self.assertRaises(UserError) as caught:
+            property_.parent_id = parcel
+        self.assertEqual(
+            str(caught.exception), "You cannot create recursive geofences."
         )
 
     def test_geometry_keeps_its_projection_across_a_type_only_write(self) -> None:

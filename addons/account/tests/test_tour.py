@@ -112,7 +112,7 @@ class TestUi(AccountTestInvoicingHttpCommon):
     def test_use_product_catalog_on_invoice(self):
         self.product.write(
             {
-                "is_favorite": True,
+                "is_featured": True,
                 "default_code": "0",
             }
         )
@@ -150,7 +150,7 @@ class TestUi(AccountTestInvoicingHttpCommon):
         )
 
     def test_add_section_from_product_catalog_on_invoice_tour(self):
-        self.product.write({"is_favorite": True})
+        self.product.write({"is_featured": True})
         self.start_tour(
             "/odoo/customer-invoices/new",
             "test_add_section_from_product_catalog_on_invoice",
@@ -158,7 +158,7 @@ class TestUi(AccountTestInvoicingHttpCommon):
         )
 
     def test_a_product_added_after_creating_a_section_lands_in_that_section(self):
-        self.product.write({"is_favorite": True})
+        self.product.write({"is_featured": True})
         invoice = (
             self.env["account.move"]
             .with_user(self.env.ref("base.user_admin"))

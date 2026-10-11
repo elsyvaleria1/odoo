@@ -1395,6 +1395,18 @@ msgid ""
 msgstr ""
 
 #. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "A recurrence cannot repeat more than %(maximum)s times."
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "A recurrence that repeats until a date needs that date."
+msgstr ""
+
+#. module: calendar
 #: model_terms:ir.actions.act_window,help:calendar.appointment_resource_action_stat
 msgid ""
 "A resource is what people book: a table, a tennis court, a meeting room."
@@ -2706,6 +2718,19 @@ msgid "Custom Link"
 msgstr ""
 
 #. module: calendar
+#: model:ir.model.fields,field_description:calendar.field_calendar_event__custom_rrule
+#: model:ir.model.fields,field_description:calendar.field_calendar_recurrence__custom_rrule
+#: model_terms:ir.ui.view,arch_db:calendar.view_calendar_event_form
+msgid "Custom Rule"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Custom rule: %(rule)s"
+msgstr ""
+
+#. module: calendar
 #: model_terms:ir.ui.view,arch_db:calendar.appointment_answer_input_view_search
 msgid "Customer"
 msgstr ""
@@ -2744,6 +2769,7 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields,field_description:calendar.field_calendar_event__day
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__month_by__date
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__month_by__date
 msgid "Date of month"
 msgstr ""
 
@@ -2771,6 +2797,7 @@ msgstr ""
 
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__month_by__day
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__month_by__day
 msgid "Day of month"
 msgstr ""
 
@@ -3121,6 +3148,7 @@ msgstr ""
 
 #. module: calendar
 #: model:ir.model.fields,field_description:calendar.field_calendar_event__stop_date
+#: model:ir.model.fields,field_description:calendar.field_calendar_recurrence__repeat_until
 #: model:ir.model.fields,field_description:calendar.field_wizard_resource_schedule_exception_create__leave_end_dt
 #: model_terms:ir.ui.view,arch_db:calendar.view_calendar_event_tree
 msgid "End Date"
@@ -3182,6 +3210,139 @@ msgid "Every"
 msgstr ""
 
 #. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Days"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Days for %(count)s events"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Days until %(until)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Months day %(day)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Months day %(day)s for %(count)s events"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Months day %(day)s until %(until)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Months on the %(position)s %(weekday)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid ""
+"Every %(interval)s Months on the %(position)s %(weekday)s for %(count)s "
+"events"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid ""
+"Every %(interval)s Months on the %(position)s %(weekday)s until %(until)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Months on the last day"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Months on the last day for %(count)s events"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Months on the last day until %(until)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Weeks on %(days)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Weeks on %(days)s for %(count)s events"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Weeks on %(days)s until %(until)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Years"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Years for %(count)s events"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Years on the %(position)s %(weekday)s of %(month)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid ""
+"Every %(interval)s Years on the %(position)s %(weekday)s of %(month)s for "
+"%(count)s events"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid ""
+"Every %(interval)s Years on the %(position)s %(weekday)s of %(month)s until "
+"%(until)s"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "Every %(interval)s Years until %(until)s"
+msgstr ""
+
+#. module: calendar
 #: model_terms:ir.ui.view,arch_db:calendar.appointment_type_view_form_custom_share
 msgid "Extra Message on Confirmation"
 msgstr ""
@@ -3209,6 +3370,7 @@ msgstr ""
 
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__byday__1
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__byday__1
 msgid "First"
 msgstr ""
 
@@ -3263,6 +3425,7 @@ msgstr ""
 
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__byday__4
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__byday__4
 msgid "Fourth"
 msgstr ""
 
@@ -3280,6 +3443,8 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__appointment_slot__weekday__5
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__weekday__fri
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__week_start__fri
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__weekday__fri
 msgid "Friday"
 msgstr ""
 
@@ -3694,6 +3859,7 @@ msgstr ""
 
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__byday__-1
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__byday__-1
 msgid "Last"
 msgstr ""
 
@@ -3989,6 +4155,8 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__appointment_slot__weekday__1
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__weekday__mon
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__week_start__mon
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__weekday__mon
 msgid "Monday"
 msgstr ""
 
@@ -4273,6 +4441,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:calendar.field_calendar_event__repeat_number
 #: model:ir.model.fields,field_description:calendar.field_calendar_recurrence__repeat_number
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__repeat_type__count
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__repeat_type__count
 msgid "Number of Repetitions"
 msgstr ""
 
@@ -4730,7 +4899,6 @@ msgstr ""
 
 #. module: calendar
 #: model:ir.model.fields,field_description:calendar.field_calendar_event__repeat_until
-#: model:ir.model.fields,field_description:calendar.field_calendar_recurrence__repeat_until
 msgid "Repeat Until"
 msgstr ""
 
@@ -4900,6 +5068,8 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__appointment_slot__weekday__6
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__weekday__sat
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__week_start__sat
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__weekday__sat
 msgid "Saturday"
 msgstr ""
 
@@ -5019,6 +5189,7 @@ msgstr ""
 
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__byday__2
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__byday__2
 msgid "Second"
 msgstr ""
 
@@ -5420,6 +5591,8 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__appointment_slot__weekday__7
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__weekday__sun
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__week_start__sun
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__weekday__sun
 msgid "Sunday"
 msgstr ""
 
@@ -5572,6 +5745,11 @@ msgid ""
 msgstr ""
 
 #. module: calendar
+#: model:ir.model.constraint,message:calendar.constraint_calendar_recurrence_month_day
+msgid "The day must be between 1 and 31, or the last day of the month"
+msgstr ""
+
+#. module: calendar
 #: model:ir.model.constraint,message:calendar.constraint_appointment_slot_check_start_and_end_hour
 msgid "The end time must be later than the start time."
 msgstr ""
@@ -5625,6 +5803,12 @@ msgid "The following question(s) do not have any selectable answers : %s"
 msgstr ""
 
 #. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "The interval cannot be negative."
+msgstr ""
+
+#. module: calendar
 #: model:ir.model.fields,help:calendar.field_appointment_type__max_bookings
 msgid ""
 "The maximum amount of bookings per slot the appointment can handle (e.g. Allow 6 bookings for the given user/resource).\n"
@@ -5640,6 +5824,12 @@ msgstr ""
 
 #. module: calendar
 #. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "The number of repetitions cannot be negative."
+msgstr ""
+
+#. module: calendar
+#. odoo-python
 #: code:addons/calendar/models/calendar_alarm.py:0
 msgid "The reminder delay cannot be negative."
 msgstr ""
@@ -5648,6 +5838,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/calendar/models/booking/survey_user_input.py:0
 msgid "The response and meeting must belong to the same appointment type."
+msgstr ""
+
+#. module: calendar
+#: model:ir.model.fields,help:calendar.field_calendar_recurrence__custom_rrule
+msgid "The rule this recurrence follows when its options cannot express it."
 msgstr ""
 
 #. module: calendar
@@ -5692,6 +5887,7 @@ msgstr ""
 
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__byday__3
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__byday__3
 msgid "Third"
 msgstr ""
 
@@ -5759,6 +5955,13 @@ msgid "This resource is offered by at least one appointment type."
 msgstr ""
 
 #. module: calendar
+#: model_terms:ir.ui.view,arch_db:calendar.view_calendar_event_form
+msgid ""
+"This series follows a rule its options cannot express. Its occurrences will "
+"follow the options shown instead, which can move or remove some of them."
+msgstr ""
+
+#. module: calendar
 #: model:ir.model.fields,field_description:calendar.field_calendar_event__thu
 #: model:ir.model.fields,field_description:calendar.field_calendar_recurrence__thu
 msgid "Thu"
@@ -5767,6 +5970,8 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__appointment_slot__weekday__4
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__weekday__thu
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__week_start__thu
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__weekday__thu
 msgid "Thursday"
 msgstr ""
 
@@ -5871,6 +6076,8 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__appointment_slot__weekday__2
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__weekday__tue
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__week_start__tue
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__weekday__tue
 msgid "Tuesday"
 msgstr ""
 
@@ -5947,6 +6154,11 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields,help:calendar.field_calendar_alarm__default_for_new_appointment_type
 msgid "Use as default for new Appointment Types"
+msgstr ""
+
+#. module: calendar
+#: model_terms:ir.ui.view,arch_db:calendar.view_calendar_event_form
+msgid "Use the options instead"
 msgstr ""
 
 #. module: calendar
@@ -6057,12 +6269,19 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__appointment_slot__weekday__3
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__weekday__wed
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__week_start__wed
+#: model:ir.model.fields.selection,name:calendar.selection__calendar_recurrence__weekday__wed
 msgid "Wednesday"
 msgstr ""
 
 #. module: calendar
 #: model:ir.model.fields,field_description:calendar.field_appointment_slot__weekday
 msgid "Week Day"
+msgstr ""
+
+#. module: calendar
+#: model:ir.model.fields,field_description:calendar.field_calendar_recurrence__week_start
+msgid "Week Start"
 msgstr ""
 
 #. module: calendar
@@ -6183,6 +6402,12 @@ msgstr ""
 #: code:addons/calendar/static/src/booking/interactions/appointment_form.js:0
 #: code:addons/calendar/static/src/booking/interactions/appointment_validation.js:0
 msgid "You cannot invite more than 10 people"
+msgstr ""
+
+#. module: calendar
+#. odoo-python
+#: code:addons/calendar/models/calendar_recurrence.py:0
+msgid "You have to choose at least one day in the week"
 msgstr ""
 
 #. module: calendar

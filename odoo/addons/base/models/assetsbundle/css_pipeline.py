@@ -82,8 +82,9 @@ def _rtlcss_config_path() -> str:
 
 class CssPipeline:
     rx_preprocess_imports = re.compile(
-        r"""@import\s*['"](?P<ref>[^'"]+)['"](?P<tail>[^;{]*;?)"""
+        r"""@(?P<rule>import|use|forward)\s*['"](?P<ref>[^'"]+)['"](?P<tail>[^;{]*;?)"""
     )
+    rx_load_css = re.compile(r"\bload-css\s*\(")
     rx_css_split = re.compile(r"/\*! odoo-split:([a-f0-9-]+) \*/")
     rx_css_import = re.compile(r"(@import[^;{]+;?)")
 
@@ -275,15 +276,17 @@ class CssPipeline:
         seen_imports: set[str] = set()
 
         def sanitize_import(matchobj: re.Match) -> str:
-            ref = matchobj.group("ref")
-            line = f'@import "{ref}"{matchobj.group("tail")}'
+            rule, ref = matchobj.group("rule", "ref")
+            line = f'@{rule} "{ref}"{matchobj.group("tail")}'
             if line in seen_imports:
                 _debug.logic(
                     "scss_import_deduplicated", bundle=self._bundle.name, ref=ref
                 )
                 return ""
             seen_imports.add(line)
-            if "." in ref or ref.startswith((".", "/", "~")):
+            if rule != "import" and ref.startswith("sass:"):
+                return line
+            if any(char in ref for char in ".:\\%") or ref.startswith(("/", "~")):
                 msg = (
                     f"Local import {ref!r} is forbidden for security reasons."
                     " Remove @import statements from custom files;"
@@ -301,6 +304,26 @@ class CssPipeline:
             source,
             _SCSS_STATEMENT_SPANS,
         )
+
+        load_css_calls: list[str] = []
+
+        def note_load_css(matchobj: re.Match) -> str:
+            load_css_calls.append(matchobj.group(0))
+            return matchobj.group(0)
+
+        _rewrite_css_outside_strings(
+            self.rx_load_css, note_load_css, source, _SCSS_STATEMENT_SPANS
+        )
+        if load_css_calls:
+            msg = (
+                "meta.load-css is forbidden for security reasons: it loads a "
+                "stylesheet the way @import does. In Odoo, import files via the "
+                "assets bundle instead."
+            )
+            _logger.warning(msg)
+            bundle.css_errors.append(msg)
+            _debug.logic("scss_load_css_forbidden", bundle=self._bundle.name)
+            return ""
 
         _debug.perf.count(
             "scss_imports_sanitized",

@@ -1,4 +1,5 @@
 from odoo.exceptions import ValidationError
+from odoo.tests import TransactionCase, new_test_user
 
 from odoo.addons.hr.tests.test_multi_company import TestMultiCompany
 
@@ -121,3 +122,18 @@ class TestHrDepartment(TestMultiCompany):
         employee.department_id = False
         employee.company_id = self.company_b
         self.assertEqual(employee.company_id, self.company_b)
+
+
+class TestDepartmentMenuFollowsManagement(TransactionCase):
+    def test_a_new_department_manager_sees_departments_without_a_cache_clear(self):
+        user = new_test_user(self.env, login="dept_manager", groups="base.group_user")
+        employee = self.env["hr.employee"].create(
+            {"name": "Department manager", "user_id": user.id}
+        )
+        department = self.env["hr.department"].create({"name": "Managed"})
+        menu_id = self.env.ref("hr.menu_hr_department_kanban").id
+        menus = self.env["ir.ui.menu"].with_user(user)
+        self.assertNotIn(menu_id, set(menus.load_menus(False)))
+
+        department.manager_id = employee
+        self.assertIn(menu_id, set(menus.load_menus(False)))

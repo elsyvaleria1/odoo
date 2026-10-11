@@ -273,7 +273,10 @@ The canonical messaging surface. Grouped by concern.
 `_render_template_qweb_view(...)`, `_render_template_inline_template(...)`,
 `_render_field(...)`, `_render_lang(...)`, `_render_eval_context()`,
 `_replace_local_links(...)`, `_process_scheduled_date(...)`, `_has_unsafe_expression(...)`,
-`_check_access_right_dynamic_template()`. (See CONVENTIONS.md on QWeb-vs-inline templating.)
+`_check_access_right_dynamic_template()`, `_check_render_authoring(...)`. Inherits base
+`mixin.template.authoring`: on a `_unrestricted_rendering` model each dynamic field is a
+template field, digested over its render model and engine (`_get_source_unit`). (See
+CONVENTIONS.md on QWeb-vs-inline templating.)
 
 **`mixin.mail.composer`** — `_compute_subject`, `_compute_body`,
 `_compute_body_has_template_value`, `_compute_lang`, `_compute_can_edit_body`, `_render_field`.
@@ -283,6 +286,7 @@ The canonical messaging surface. Grouped by concern.
 `_get_rotting_depends_fields()`, `_get_domain_rotting_records()`, `_is_rotting_feature_enabled()`.
 
 **`mixin.template.reset`** — `reset_template()`, `_override_translation_term(...)`, `_load_records_write`.
+Inherits base `mixin.template.trust`: the loader records `shipped_digests`, which a reset keeps.
 
 ## Central data models — key fields + methods
 

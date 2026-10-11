@@ -1649,15 +1649,17 @@ msgid "Fabric"
 msgstr ""
 
 #. module: product
-#: model:ir.model.fields,field_description:product.field_product_product__is_favorite
-#: model:ir.model.fields,field_description:product.field_product_template__is_favorite
-msgid "Favorite"
+#: model:ir.model.fields,field_description:product.field_product_product__is_featured
+#: model:ir.model.fields,field_description:product.field_product_template__is_featured
+#: model_terms:ir.ui.view,arch_db:product.view_product_product_search_catalog
+#: model_terms:ir.ui.view,arch_db:product.view_product_template_search
+msgid "Featured"
 msgstr ""
 
 #. module: product
-#: model_terms:ir.ui.view,arch_db:product.view_product_product_search_catalog
-#: model_terms:ir.ui.view,arch_db:product.view_product_template_search
-msgid "Favorites"
+#: model:ir.model.fields,help:product.field_product_product__is_featured
+#: model:ir.model.fields,help:product.field_product_template__is_featured
+msgid "Featured products are listed first, for every user."
 msgstr ""
 
 #. module: product

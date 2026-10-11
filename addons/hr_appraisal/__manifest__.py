@@ -12,6 +12,7 @@
     "depends": [
         "calendar",
         "hr_gantt",
+        "web_hierarchy",
     ],
     "data": [
         "security/hr_appraisal_security.xml",

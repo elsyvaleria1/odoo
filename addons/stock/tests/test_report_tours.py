@@ -26,7 +26,7 @@ class TestStockReportTour(HttpCase):
             {
                 "name": "Lovely Product",
                 "is_storable": True,
-                "is_favorite": True,
+                "is_featured": True,
             }
         )
         self.env["stock.warehouse"].create(
@@ -85,7 +85,7 @@ class TestStockReportTour(HttpCase):
             {
                 "name": "Lovely Product",
                 "is_storable": True,
-                "is_favorite": True,
+                "is_featured": True,
                 "route_ids": [Command.link(lovely_route.id)],
             }
         )

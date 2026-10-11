@@ -1,3 +1,4 @@
+from odoo.exceptions import UserError
 from odoo.tests import Form, tagged
 from odoo.tests.common import HttpCase
 
@@ -41,6 +42,18 @@ class TestHrAppraisalGoal(HttpCase):
                 "parent_id": cls.employee_without_hr_right.id,
             }
         )
+
+    def test_a_goal_cannot_become_its_own_ancestor(self):
+        parent, child = self.env["hr.appraisal.goal"].create(
+            [
+                {"name": "Parent", "employee_ids": self.employee.ids},
+                {"name": "Child", "employee_ids": self.employee.ids},
+            ]
+        )
+        child.parent_id = parent
+        with self.assertRaises(UserError) as caught:
+            parent.parent_id = child
+        self.assertEqual(str(caught.exception), "You cannot create recursive goals.")
 
     def test_create_goal_without_hr_right(self):
         goal_form = Form(

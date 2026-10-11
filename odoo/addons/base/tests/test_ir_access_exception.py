@@ -117,6 +117,14 @@ class TestIrAccessException(TransactionCase):
                 {"date_to": fields.Datetime.now() + timedelta(days=400)}
             )
 
+    def test_the_superuser_runs_no_exception_past_a_year_either(self):
+        far = fields.Datetime.now() + timedelta(days=400)
+        with self.assertRaises(ValidationError):
+            self._create(date_to=far)
+        exception = self._create()
+        with self.assertRaises(ValidationError):
+            exception.sudo().write({"date_to": far})
+
     def test_a_changed_exception_is_logged(self):
         exception = self._create(env_user=self.admin_a)
 

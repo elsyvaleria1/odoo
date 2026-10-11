@@ -7,7 +7,13 @@ from odoo.fields import Command
 from odoo.service import api_scope
 from odoo.service.model import call_kw
 from odoo.tests import tagged
-from odoo.tests.common import TransactionCase, new_test_user
+from odoo.tests.common import (
+    TransactionCase,
+    new_test_user,
+    new_unbound_test_api_key,
+)
+
+from odoo.addons.base.tests.common import declare_api_scope
 
 
 class ScopeCase(TransactionCase):
@@ -340,101 +346,161 @@ class TestUnknownFieldsAreTheCallersMistake(ScopeCase):
 
 @tagged("post_install", "-at_install")
 class TestKeysAndScopes(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.rpc = cls.env.ref("base.apikeys_scope_rpc")
+        cls.other_door = declare_api_scope(
+            cls.env, "base.test_scope_other_door", "other_door"
+        )
+        cls.user = new_test_user(
+            cls.env, login="scope_key_user", groups="base.group_user"
+        )
+        cls.keys = cls.env["res.users.apikeys"].with_user(cls.user)
+        cls.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
+
+    def _generate(self, scope):
+        return self.keys._generate(
+            scope, "k", fields.Datetime.now() + timedelta(hours=1)
+        )
+
     def test_a_key_bound_to_a_scope_opens_that_door_alone(self):
-        user = new_test_user(self.env, login="scope_key_user", groups="base.group_user")
-        keys = self.env["res.users.apikeys"].with_user(user)
-        expires = fields.Datetime.now() + timedelta(hours=1)
-        bound = keys._generate("rpc", "bound", expires)
-        universal = keys._generate(None, "universal", expires)
-        self.assertEqual(keys._check_credentials(scope="rpc", key=bound), user.id)
-        self.assertIsNone(keys._check_credentials(scope="mcp", key=bound))
-        self.assertEqual(keys._check_credentials(scope="mcp", key=universal), user.id)
-        self.assertEqual(keys._check_credentials(scope="rpc", key=universal), user.id)
+        bound = self._generate("rpc")
+        other = self._generate("other_door")
+        check = self.keys._check_credentials
+        self.assertEqual(check(scope="rpc", key=bound), self.user.id)
+        self.assertIsNone(check(scope="other_door", key=bound))
+        self.assertEqual(check(scope="other_door", key=other), self.user.id)
+        self.assertIsNone(check(scope="rpc", key=other))
+
+    def test_an_unbound_key_opens_the_rpc_door_alone(self):
+        unbound = new_unbound_test_api_key(self.user)
+        check = self.keys._check_credentials
+        self.assertIsNone(check(scope="other_door", key=unbound))
+        self.assertEqual(check(scope="rpc", key=unbound), self.user.id)
+
+    def test_every_key_is_minted_for_a_door(self):
+        with self.assertRaises(UserError):
+            self._generate(None)
+        with self.assertRaises(UserError):
+            self._generate("")
 
     def test_a_key_bound_to_an_archived_scope_opens_nothing(self):
-        user = new_test_user(
-            self.env, login="scope_archived_user", groups="base.group_user"
-        )
-        scope = self.env["res.users.apikeys.scope"].create(
-            {"name": "Archived door", "key": "archived_door"}
-        )
-        keys = self.env["res.users.apikeys"].with_user(user)
-        key = keys._generate(
-            "archived_door", "k", fields.Datetime.now() + timedelta(hours=1)
-        )
+        key = self._generate("other_door")
         self.assertEqual(
-            keys._check_credentials(scope="archived_door", key=key), user.id
+            self.keys._check_credentials(scope="other_door", key=key), self.user.id
         )
-        scope.action_archive()
-        self.assertIsNone(keys._check_credentials(scope="archived_door", key=key))
-        with self.assertRaises(AccessDenied):
-            self.env["res.users"]._check_uid_passwd(user.id, key)
+        self.other_door.action_archive()
+        self.assertIsNone(self.keys._check_credentials(scope="other_door", key=key))
 
-    def test_a_scope_string_nobody_described_is_a_record_reaching_everything(self):
-        scope = self.env["res.users.apikeys.scope"]._get_or_create("never_seen")
-        self.assertEqual((scope.key, scope.name), ("never_seen", "never_seen"))
-        self.assertIsNone(scope._rules().models)
+    def test_an_archived_rpc_scope_closes_the_rpc_door_to_every_key(self):
+        bound = self._generate("rpc")
+        unbound = new_unbound_test_api_key(self.user)
+        self.rpc.action_archive()
+        Users = self.env["res.users"]
+        for key in (bound, unbound):
+            with self.assertRaises(AccessDenied):
+                Users._check_uid_passwd(self.user.id, key)
+        self.assertIsNone(Users._check_uid_passwd(self.user.id, "scope_key_user"))
+
+    def test_a_key_bound_to_another_door_is_refused_at_the_rpc_door(self):
+        key = self._generate("other_door")
+        with self.assertRaises(AccessDenied):
+            self.env["res.users"]._check_uid_passwd(self.user.id, key)
+        with self.assertRaises(AccessDenied):
+            self.env["res.users"]._login(
+                {"login": "scope_key_user", "password": key, "type": "password"},
+                {"interactive": False},
+            )
+
+    def test_an_unbound_key_enters_the_rpc_door_under_rpc(self):
+        key = new_unbound_test_api_key(self.user)
         self.assertEqual(
-            self.env["res.users.apikeys.scope"]._get_or_create("never_seen"), scope
+            self.env["res.users"]._check_uid_passwd(self.user.id, key), self.rpc.id
         )
+        auth = self.env["res.users"]._login(
+            {"login": "scope_key_user", "password": key, "type": "password"},
+            {"interactive": False},
+        )
+        self.assertEqual(
+            (auth["uid"], auth["api_scope_id"]), (self.user.id, self.rpc.id)
+        )
+
+    def test_a_scope_name_no_module_declares_mints_nothing(self):
+        Scope = self.env["res.users.apikeys.scope"]
+        with self.assertRaisesRegex(UserError, "never_seen"):
+            self._generate("never_seen")
+        with self.assertRaisesRegex(UserError, "never_seen"):
+            self.keys._check_credentials(scope="never_seen", key="0" * 40)
+        with self.assertRaisesRegex(UserError, "never_seen"):
+            Scope._get_declared("never_seen")
+        self.assertFalse(
+            Scope.with_context(active_test=False).search([("key", "=", "never_seen")])
+        )
+
+    def test_a_row_no_module_declares_opens_no_door(self):
+        key = self._generate("other_door")
+        self.env["ir.model.data"].search(
+            [("module", "=", "base"), ("name", "=", "test_scope_other_door")]
+        ).unlink()
+        self.env.registry.clear_cache()
+        with self.assertRaisesRegex(UserError, "other_door"):
+            self.keys._check_credentials(scope="other_door", key=key)
+        with self.assertRaisesRegex(UserError, "other_door"):
+            self._generate("other_door")
+        with self.assertRaises(AccessDenied):
+            self.env["res.users"]._check_uid_passwd(self.user.id, key)
+
+    def test_a_scope_keeps_its_key(self):
+        with self.assertRaisesRegex(UserError, "key"):
+            self.other_door.key = "renamed_door"
+        self.other_door.write({"key": "other_door", "name": "Same door"})
+
+    def test_no_key_is_issued_for_an_archived_scope(self):
+        self.other_door.action_archive()
+        with self.assertRaisesRegex(UserError, "other_door"):
+            self._generate("other_door")
 
     def test_the_rpc_password_check_names_the_rpc_scope_for_a_key(self):
-        user = new_test_user(self.env, login="scope_rpc_user", groups="base.group_user")
-        key = (
-            self.env["res.users.apikeys"]
-            .with_user(user)
-            ._generate("rpc", "k", fields.Datetime.now() + timedelta(hours=1))
-        )
+        key = self._generate("rpc")
         Users = self.env["res.users"]
-        self.assertEqual(
-            Users._check_uid_passwd(user.id, key),
-            self.env.ref("base.apikeys_scope_rpc").id,
-        )
-        self.assertIsNone(Users._check_uid_passwd(user.id, "scope_rpc_user"))
+        self.assertEqual(Users._check_uid_passwd(self.user.id, key), self.rpc.id)
+        self.assertIsNone(Users._check_uid_passwd(self.user.id, "scope_key_user"))
 
     def test_a_user_without_a_password_still_enters_rpc_with_a_key(self):
-        user = new_test_user(
-            self.env, login="scope_nopass_user", groups="base.group_user"
-        )
-        key = (
-            self.env["res.users.apikeys"]
-            .with_user(user)
-            ._generate("rpc", "k", fields.Datetime.now() + timedelta(hours=1))
-        )
-        user._clear_password()
+        key = self._generate("rpc")
+        self.user._clear_password()
         self.env.flush_all()
         Users = self.env["res.users"]
-        self.assertEqual(
-            Users._check_uid_passwd(user.id, key),
-            self.env.ref("base.apikeys_scope_rpc").id,
-        )
+        self.assertEqual(Users._check_uid_passwd(self.user.id, key), self.rpc.id)
         with self.assertRaises(AccessDenied):
-            Users._check_uid_passwd(user.id, "anything")
-
-    def test_a_key_bound_to_another_door_enters_xmlrpc_under_its_own_scope(self):
-        user = new_test_user(
-            self.env, login="scope_bound_user", groups="base.group_user"
-        )
-        mcp = self.env["res.users.apikeys.scope"].create({"name": "MCP", "key": "mcp"})
-        key = (
-            self.env["res.users.apikeys"]
-            .with_user(user)
-            ._generate("mcp", "k", fields.Datetime.now() + timedelta(hours=1))
-        )
-        self.assertEqual(self.env["res.users"]._check_uid_passwd(user.id, key), mcp.id)
+            Users._check_uid_passwd(self.user.id, "anything")
 
 
 @tagged("post_install", "-at_install")
 class TestScopeRecords(TransactionCase):
     def test_a_data_record_adopts_the_row_a_migration_made_for_its_key(self):
         Scope = self.env["res.users.apikeys.scope"]
-        made = Scope._get_or_create("door.described.later")
-        self.assertEqual(made.name, "door.described.later")
+        made = Scope.create(
+            {"name": "door.described.later", "key": "door.described.later"}
+        )
+        with self.assertRaises(UserError):
+            Scope._get_declared("door.described.later")
 
-        described, other = Scope.create(
+        described, other = Scope._load_records(
             [
-                {"name": "Described", "key": "door.described.later", "max_depth": 3},
-                {"name": "Other", "key": "door.other"},
+                {
+                    "xml_id": "base.test_scope_described",
+                    "values": {
+                        "name": "Described",
+                        "key": "door.described.later",
+                        "max_depth": 3,
+                    },
+                },
+                {
+                    "xml_id": "base.test_scope_other",
+                    "values": {"name": "Other", "key": "door.other"},
+                },
             ]
         )
 
@@ -442,6 +508,7 @@ class TestScopeRecords(TransactionCase):
         self.assertEqual((described.name, described.max_depth), ("Described", 3))
         self.assertEqual(other.key, "door.other")
         self.assertEqual(Scope.search_count([("key", "=", "door.described.later")]), 1)
+        self.assertEqual(Scope._get_declared("door.described.later"), described)
 
     def test_a_door_only_scope_reaches_no_model_at_the_universal_door(self):
         Scope = self.env["res.users.apikeys.scope"]

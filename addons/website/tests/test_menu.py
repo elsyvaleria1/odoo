@@ -356,6 +356,15 @@ class TestMenu(common.TransactionCase):
         with self.assertRaises(UserError):
             self.main_menu.parent_id = self.another_menu.id
 
+    def test_a_menu_cannot_become_its_own_ancestor(self):
+        parent, child = self.env["website.menu"].create(
+            [{"name": "Parent"}, {"name": "Child"}]
+        )
+        child.parent_id = parent
+        with self.assertRaises(UserError) as caught:
+            parent.parent_id = child
+        self.assertEqual(str(caught.exception), "You cannot create recursive menus.")
+
     def test_08_menu_save_is_gated_and_field_whitelisted(self):
         Menu = self.env["website.menu"]
         website = self.env["website"].search([], limit=1)

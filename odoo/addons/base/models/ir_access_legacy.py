@@ -225,7 +225,7 @@ def convert_legacy(
     context_lines: Iterable[dict[str, Any]] = (),
 ) -> tuple[list[dict[str, Any]], list[str]]:
     context = [{**line, "module": None} for line in context_lines]
-    converter = _Converter([*lines, *context], rules, implications, None)
+    converter = _Converter([*lines, *context], rules, implications)
     closure = converter.closure
     rows: list[dict[str, Any]] = []
     notes: list[str] = []

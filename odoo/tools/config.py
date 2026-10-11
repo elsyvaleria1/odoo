@@ -393,6 +393,11 @@ class configmanager:
         parser.add_option(FileOnlyOption(dest="admin_passwd", my_default="admin"))
         parser.add_option(
             FileOnlyOption(
+                dest="access_log_seal_key", my_default="", file_exportable=False
+            )
+        )
+        parser.add_option(
+            FileOnlyOption(
                 dest="bin_path",
                 type="path",
                 my_default="",
@@ -554,6 +559,17 @@ class configmanager:
             "modules are skipped, based on the checksum stored in "
             "ir_module_module.content_checksum; explicitly listed modules "
             "(-u/--reinit) are always processed.",
+        )
+        group.add_option(
+            "--module-operation-job-wait",
+            dest="module_operation_job_wait",
+            my_default=30,
+            help="Seconds a module install, upgrade or removal (-i, -u, "
+            "--reinit, the odoo-bin module command, the Apps menu) waits for "
+            "the background jobs already running in its database. No job starts "
+            "meanwhile; when they have not finished by then, the operation is "
+            "refused, naming them. (default 30)",
+            type="int",
         )
 
     def _add_import_and_process_options(self, group: optparse.OptionGroup) -> None:

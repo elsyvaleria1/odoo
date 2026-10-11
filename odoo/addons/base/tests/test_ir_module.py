@@ -3,17 +3,40 @@ import io
 import logging
 import os
 import sys
+import threading
+import time
 from collections import Counter
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
+import psycopg.errors
+
+from odoo import api
+from odoo.api import SUPERUSER_ID
 from odoo.exceptions import AccessError, UserError
 from odoo.modules.db import _AUTO_INSTALL_CANDIDATES_QUERY
-from odoo.modules.loading import _DATA_FILE_CHECKSUM_VERSION
-from odoo.tests.common import TransactionCase, new_test_user
-from odoo.tools import config, mute_logger, translate
+from odoo.modules.loading import (
+    _DATA_FILE_CHECKSUM_VERSION,
+    _MODULE_OPERATIONS_LOCK_KEY,
+)
+from odoo.modules.registry import Registry
+from odoo.tests.common import (
+    BaseCase,
+    TransactionCase,
+    get_db_name,
+    new_test_user,
+    tagged,
+)
+from odoo.tools import SQL, config, mute_logger, translate
 from odoo.tools.files import file_open_temporary_directory
 
+from odoo.addons.base.models.ir_cron import CRON_ADVISORY_LOCK_NAMESPACE
+from odoo.addons.base.models.ir_job import (
+    JOB_ADMISSION_LOCK,
+    IrJob,
+    _advisory_key_sql,
+)
 from odoo.addons.base.models.ir_module import (
     GROUP_HIERARCHY_FIELDS,
     localize_description_images,
@@ -409,22 +432,44 @@ class IrModuleConcurrencyGuardCase(TransactionCase):
             "the guard must read committed state, not the request snapshot",
         )
 
+    def test_guard_does_not_deadlock_against_the_lock_it_runs_under(self):
+        self.env.cr.execute("SET LOCAL lock_timeout = '5s'")
+        self.env.cr.execute("LOCK ir_module_module IN EXCLUSIVE MODE")
+        self.assertIsInstance(
+            self.env["ir.module.module"]._has_pending_module_operation(), bool
+        )
+
+
+@tagged("post_install", "-at_install")
+class IrModuleOperationGuardCase(BaseCase):
+    def setUp(self):
+        super().setUp()
+        self.db_name = get_db_name()
+        self.registry = Registry(self.db_name)
+        with self.registry.cursor() as cr:
+            if api.Environment(cr, SUPERUSER_ID, {})[
+                "ir.module.module"
+            ]._has_pending_module_operation():
+                self.skipTest("a module operation is already pending in this database")
+
+    @contextmanager
+    def _operation(self):
+        with self.registry.cursor() as cr:
+            env = api.Environment(cr, SUPERUSER_ID, {})
+            with env["ir.module.module"]._lock_against_concurrent_module_operations():
+                yield env
+
+    def _enter_guard(self):
+        with self._operation():
+            pass
+
     def _guard_while_another_connection_holds(self, statement, expected):
         with self.registry.cursor() as side_cr:
             side_cr.execute(statement)
-            with (
-                self.env.cr.savepoint(flush=False) as savepoint,
-                patch.object(self.env.cr, "rollback", savepoint.rollback),
-                self.assertRaisesRegex(UserError, expected),
-            ):
-                self.env[
-                    "ir.module.module"
-                ]._lock_against_concurrent_module_operations()
+            with self.assertRaisesRegex(UserError, expected):
+                self._enter_guard()
             side_cr.rollback()
-        self.env.cr.execute("SELECT 1")
-        self.assertEqual(
-            self.env.cr.fetchone(), (1,), "the refusal leaves the cursor usable"
-        )
+        self.assertTrue(self._is_queue_open(), "the refusal let go of the queue")
 
     def test_a_held_table_lock_reads_as_a_busy_module_operation(self):
         self._guard_while_another_connection_holds(
@@ -432,18 +477,216 @@ class IrModuleConcurrencyGuardCase(TransactionCase):
         )
 
     def test_a_locked_cron_row_reads_as_a_running_scheduled_action(self):
-        if self.env["ir.module.module"]._has_pending_module_operation():
-            self.skipTest("a module operation is already pending in this database")
         self._guard_while_another_connection_holds(
             "SELECT id FROM ir_cron FOR UPDATE", "scheduled action"
         )
 
-    def test_guard_does_not_deadlock_against_the_lock_it_runs_under(self):
-        self.env.cr.execute("SET LOCAL lock_timeout = '5s'")
-        self.env.cr.execute("LOCK ir_module_module IN EXCLUSIVE MODE")
-        self.assertIsInstance(
-            self.env["ir.module.module"]._has_pending_module_operation(), bool
+    def test_a_job_the_cron_runner_holds_reads_as_a_running_scheduled_action(self):
+        with self.registry.cursor() as cr:
+            cron_id = (
+                api.Environment(cr, SUPERUSER_ID, {})["ir.cron"]
+                .with_context(active_test=False)
+                .search([], limit=1)
+                .id
+            )
+        self._guard_while_another_connection_holds(
+            f"SELECT pg_advisory_xact_lock({CRON_ADVISORY_LOCK_NAMESPACE}, {cron_id})",
+            "scheduled action",
         )
+
+    def test_an_operation_of_another_process_is_refused_at_once(self):
+        with self._wait_for_jobs(10), self._job_running_elsewhere():
+            started = time.monotonic()
+            self._guard_while_another_connection_holds(
+                f"SELECT pg_advisory_xact_lock({_MODULE_OPERATIONS_LOCK_KEY})",
+                "another module operation",
+            )
+            self.assertLess(
+                time.monotonic() - started, 5, "it waited for jobs it would not run"
+            )
+
+    @contextmanager
+    def _job_running_elsewhere(self, finishes_after=None, last_step=None):
+        side = self.registry.cursor()
+        side.execute(
+            "INSERT INTO ir_job (channel, state, priority, model_name,"
+            " method_name, user_id, max_retries, retry, worker_ident, started_at,"
+            " create_uid, create_date, write_uid, write_date) VALUES"
+            " ('modop', 'started', 10, 'ir.job', '_job_ping', 1, 5, 0,"
+            " 'elsewhere:1', now() AT TIME ZONE 'UTC', 1, now(), 1, now())"
+            " RETURNING id"
+        )
+        job_id = side.fetchone()[0]
+        side.execute(SQL("SELECT pg_advisory_lock_shared(%s)", JOB_ADMISSION_LOCK))
+        side.execute(SQL("SELECT pg_advisory_lock(%s)", _advisory_key_sql(job_id)))
+        side.commit()
+
+        def finish():
+            side.execute("SELECT pg_advisory_unlock_all()")
+            side.commit()
+
+        def run_to_its_end():
+            if last_step is not None:
+                last_step(side)
+            finish()
+
+        timer = (
+            threading.Timer(finishes_after, run_to_its_end) if finishes_after else None
+        )
+        try:
+            if timer:
+                timer.start()
+            yield job_id
+        finally:
+            if timer:
+                timer.join()
+            finish()
+            side.execute("DELETE FROM ir_job WHERE id = %s", [job_id])
+            side.commit()
+            side.close()
+
+    def _wait_for_jobs(self, seconds):
+        return config.patch(module_operation_job_wait=seconds)
+
+    def _is_queue_open(self):
+        with self.registry.cursor() as worker:
+            worker.execute(
+                SQL("SELECT pg_try_advisory_xact_lock_shared(%s)", JOB_ADMISSION_LOCK)
+            )
+            return worker.fetchone()[0]
+
+    def test_a_module_operation_waits_for_a_running_job_to_finish(self):
+        with self._wait_for_jobs(10), self._job_running_elsewhere(finishes_after=0.5):
+            started = time.monotonic()
+            self._enter_guard()
+            waited = time.monotonic() - started
+        self.assertGreaterEqual(waited, 0.4, "it did not wait for the job")
+        self.assertLess(waited, 9, "it waited out its budget, not the job")
+
+    def test_a_module_operation_refuses_naming_the_jobs_still_running(self):
+        with self._wait_for_jobs(1), self._job_running_elsewhere() as job_id:
+            with self.assertRaisesRegex(
+                UserError, rf"(?s)background jobs.*{job_id}.*ir\.job\._job_ping"
+            ):
+                self._enter_guard()
+            self.assertTrue(
+                self._is_queue_open(),
+                "the refused operation still holds new jobs off",
+            )
+
+    def test_a_refusal_wakes_the_job_workers_it_held_off(self):
+        with (
+            self._wait_for_jobs(1),
+            self._job_running_elsewhere(),
+            patch.object(IrJob, "_notify_workers") as notify,
+            self.assertRaisesRegex(UserError, "background jobs"),
+        ):
+            self._enter_guard()
+        notify.assert_called_once_with(self.db_name)
+
+    def test_the_wait_for_jobs_locks_no_module_row(self):
+        outcome = []
+
+        def operate():
+            try:
+                self._enter_guard()
+                outcome.append("done")
+            except Exception as exc:
+                outcome.append(exc)
+
+        with self._wait_for_jobs(10), self._job_running_elsewhere(finishes_after=2):
+            operation = threading.Thread(target=operate)
+            operation.start()
+            try:
+                time.sleep(0.5)
+                with self.registry.cursor() as writer:
+                    writer.execute("SET LOCAL lock_timeout = '500ms'")
+                    try:
+                        writer.execute(
+                            "SELECT id FROM ir_module_module LIMIT 1 FOR UPDATE"
+                        )
+                        locked_out = False
+                    except psycopg.errors.LockNotAvailable:
+                        locked_out = True
+                    writer.rollback()
+            finally:
+                operation.join()
+        self.assertFalse(
+            locked_out, "a writer of ir_module_module waited on the job wait"
+        )
+        self.assertEqual(outcome, ["done"])
+
+    def test_no_job_is_admitted_while_a_module_operation_runs(self):
+        with self._wait_for_jobs(5), self._operation():
+            self.assertFalse(self._is_queue_open(), "a job could start mid-operation")
+        self.assertTrue(self._is_queue_open(), "the operation let go of the queue")
+
+    def test_the_thread_of_a_module_operation_runs_its_own_jobs(self):
+        with self.registry.cursor() as cr:
+            job_id = (
+                api.Environment(cr, SUPERUSER_ID, {})["ir.job"]
+                .delayed(channel="modop")
+                ._job_ping("own")
+                .id
+            )
+        self.addCleanup(self._delete_job, job_id)
+        refused_elsewhere = []
+
+        def run_elsewhere():
+            with self.registry.cursor() as cr:
+                job = api.Environment(cr, SUPERUSER_ID, {})["ir.job"].browse(job_id)
+                try:
+                    job.action_run_now()
+                except UserError:
+                    refused_elsewhere.append(True)
+                cr.rollback()
+
+        with self._wait_for_jobs(5), self._operation():
+            elsewhere = threading.Thread(target=run_elsewhere)
+            elsewhere.start()
+            elsewhere.join()
+            with self.registry.cursor() as cr:
+                job = api.Environment(cr, SUPERUSER_ID, {})["ir.job"].browse(job_id)
+                job.action_run_now()
+                self.assertEqual(job.state, "done")
+        self.assertEqual(
+            refused_elsewhere, [True], "another thread ran a job mid-operation"
+        )
+
+    def _delete_job(self, job_id):
+        with self.registry.cursor() as cr:
+            cr.execute("DELETE FROM ir_job WHERE id = %s", [job_id])
+
+    def test_a_draining_job_can_still_reach_the_crons(self):
+        reached = []
+
+        def touch_a_cron(side):
+            try:
+                with side.savepoint(flush=False):
+                    side.execute("SET LOCAL lock_timeout = '2s'")
+                    side.execute("SELECT id FROM ir_cron LIMIT 1 FOR KEY SHARE")
+                reached.append(True)
+            except psycopg.errors.LockNotAvailable, psycopg.errors.DeadlockDetected:
+                reached.append(False)
+
+        with (
+            self._wait_for_jobs(10),
+            self._job_running_elsewhere(finishes_after=0.5, last_step=touch_a_cron),
+        ):
+            self._enter_guard()
+        self.assertEqual(
+            reached,
+            [True],
+            "the job waited on a cron row the module operation had locked "
+            "while it waited on the job",
+        )
+
+    def test_a_dead_worker_does_not_hold_up_a_module_operation(self):
+        with self._wait_for_jobs(10), self._job_running_elsewhere(finishes_after=0.01):
+            time.sleep(0.1)
+            started = time.monotonic()
+            self._enter_guard()
+            self.assertLess(time.monotonic() - started, 5)
 
 
 class IrModuleDescriptionRenderingCase(TransactionCase):

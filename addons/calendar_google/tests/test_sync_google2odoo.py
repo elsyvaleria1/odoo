@@ -620,6 +620,50 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         self.assertGoogleAPINotCalled()
 
     @patch_api
+    def test_a_rule_the_options_cannot_hold_comes_and_goes_unchanged(self):
+        recurrence = self._sync_google_series(
+            "RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1;COUNT=3",
+            "2024-01-31T10:00:00+00:00",
+            "UTC",
+        )
+        self.assertEqual(
+            recurrence.calendar_event_ids.sorted("start").mapped("start"),
+            [
+                datetime(2024, 1, 31, 10, 0),
+                datetime(2024, 2, 29, 10, 0),
+                datetime(2024, 3, 29, 10, 0),
+            ],
+        )
+        self.assertEqual(
+            recurrence.custom_rrule, "FREQ=MONTHLY;BYSETPOS=-1;BYDAY=MO,TU,WE,TH,FR"
+        )
+        self.assertEqual(
+            recurrence._google_values()["recurrence"],
+            ["RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1;COUNT=3"],
+        )
+        self.assertGoogleAPINotCalled()
+
+    @patch_api
+    def test_a_series_weeks_start_on_the_day_its_rule_names(self):
+        recurrence = self._sync_google_series(
+            "RRULE:FREQ=WEEKLY;INTERVAL=2;WKST=SU;BYDAY=SU,MO;COUNT=4",
+            "2024-01-07T10:00:00+00:00",
+            "UTC",
+        )
+        self.assertEqual(
+            recurrence.calendar_event_ids.sorted("start").mapped("start"),
+            [
+                datetime(2024, 1, 7, 10, 0),
+                datetime(2024, 1, 8, 10, 0),
+                datetime(2024, 1, 21, 10, 0),
+                datetime(2024, 1, 22, 10, 0),
+            ],
+        )
+        self.assertEqual(recurrence.week_start, "SUN")
+        self.assertFalse(recurrence.custom_rrule)
+        self.assertGoogleAPINotCalled()
+
+    @patch_api
     def test_recurrence_yearly_on_the_nth_weekday(self):
         recurrence = self._sync_google_series(
             "RRULE:FREQ=YEARLY;COUNT=3;BYMONTH=3;BYDAY=2SU",

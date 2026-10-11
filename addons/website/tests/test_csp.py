@@ -183,3 +183,40 @@ class TestWebsitePrecompiledTemplates(TransactionCase):
         )
         self.assertIn(f'registerTemplateBundle("{self.BUNDLE}", "', second_code)
         self.assertEqual(first_code, second_code)
+
+    def test_two_websites_artifacts_of_one_bundle_live_side_by_side(self):
+        website = self.env["website"].create({"name": "Own assets"})
+        self.env["ir.asset"].create(
+            {
+                "name": "own template",
+                "bundle": self.BUNDLE,
+                "path": "website/static/src/components/fullscreen_indication/"
+                "fullscreen_indication.xml",
+                "website_id": website.id,
+            }
+        )
+        IrQweb = self.env["ir.qweb"]
+        IrHttp = self.env["ir.http"]
+        with MockRequest(self.env, is_frontend=False):
+            modules = IrHttp._get_webclient_translation_modules()[0]
+            translations_hash = IrHttp._get_web_translations_hash(modules, "en_US")
+        stored, urls = [], []
+        for params in ({}, {"website_id": website.id}):
+            checksum = IrQweb._get_asset_bundle(
+                self.BUNDLE, css=False, js=True, assets_params=params
+            )._xml.precompile_checksum()
+            url = IrQweb._get_precompiled_templates_url(
+                self.BUNDLE, checksum, "en_US", translations_hash
+            )
+            urls.append(url)
+            with patch.dict(
+                "odoo.addons.base.models.ir_qweb_assets_precompile._recent_scripts",
+                clear=True,
+            ):
+                stored.append(
+                    IrQweb._store_precompiled_templates(
+                        url, self.BUNDLE, "en_US", translations_hash, f"// {checksum}"
+                    )
+                )
+        self.assertNotEqual(*urls)
+        self.assertEqual([bool(artifact.exists()) for artifact in stored], [True, True])

@@ -1,5 +1,6 @@
 from odoo import Command
 from odoo.tests import tagged
+from odoo.tests.common import new_test_api_key
 from odoo.tools import mute_logger
 
 from odoo.addons.base.tests.common import HttpCaseWithUserDemo
@@ -122,8 +123,10 @@ class TestGetCurrentWebsite(HttpCaseWithUserDemo):
 
     @mute_logger("odoo.addons.rpc.controllers.xmlrpc")
     def test_03_rpc_signin_user_website_id(self):
+        key = new_test_api_key(self.user_demo)
+
         def rpc_login_user_demo():
-            return self.xmlrpc_common.login(self.env.cr.dbname, "demo", "demo")
+            return self.xmlrpc_common.login(self.env.cr.dbname, "demo", key)
 
         website1 = self.website
         website1.domain = self.base_url()

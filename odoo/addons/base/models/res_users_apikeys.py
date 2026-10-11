@@ -3,11 +3,12 @@ import logging
 from hashlib import sha256
 
 from odoo import api, fields, models
-from odoo.exceptions import AccessError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.libs import secret_key
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.secret_key import INDEX_SIZE
+from odoo.service import api_scope
 from odoo.tools import SQL, frozendict
 
 from .res_users import check_identity
@@ -45,8 +46,8 @@ class ResUsersApikeys(models.Model):
         index=True,
         readonly=True,
         ondelete="cascade",
-        help="The one door this key opens; empty, it opens every door and each "
-        "door's scope applies.",
+        help="The one door this key opens. Empty only on a key made before "
+        "every key named its door: such a key opens the RPC doors alone.",
     )
     create_date = fields.Datetime(
         string="Creation Date",
@@ -108,6 +109,17 @@ class ResUsersApikeys(models.Model):
                 ip,
             )
             _debug.lifecycle("apikeys_removed", count=len(self), by=self.env.uid)
+            self.env["auth.event"]._append(
+                [
+                    {
+                        "event": "credential_revoked",
+                        "subject_user_id": key.user_id.id,
+                        "model_name": self._name,
+                        "credential_ref": key.id,
+                    }
+                    for key in keys
+                ]
+            )
             keys.unlink()
             return {"type": "ir.actions.act_window_close"}
         _debug.logic(
@@ -128,45 +140,40 @@ class ResUsersApikeys(models.Model):
         return res
 
     def _match_key(
-        self, scope: str | None, key: str, *, include_expired: bool
-    ) -> tuple[int, datetime.datetime | None, int | None, int] | None:
-        self.env["res.users.apikeys.scope"].flush_model(["active", "key"])
+        self, scope: str, key: str
+    ) -> tuple[int, datetime.datetime | None] | None:
+        scope_id, active = self.env["res.users.apikeys.scope"]._get_declared_state(
+            scope
+        )
+        if not active:
+            _debug.logic("apikey_rejected", scope=scope, reason="scope_archived")
+            return None
+        door = SQL("k.scope_id = %s", scope_id)
+        if scope == api_scope.RPC_SCOPE:
+            door = SQL("(%s OR k.scope_id IS NULL)", door)
         self.env.cr.execute(
             SQL(
                 """
-                SELECT k.user_id, k.key, k.expiration_date, k.scope_id, k.id
+                SELECT k.user_id, k.key, k.expiration_date
                 FROM %s k
                 INNER JOIN res_users u ON (u.id = k.user_id)
-                LEFT JOIN res_users_apikeys_scope s ON (s.id = k.scope_id)
-                WHERE u.active AND k.index = %s
-                  AND (k.scope_id IS NULL OR s.active)
-                  AND (%s::varchar IS NULL OR k.scope_id IS NULL OR s.key = %s) %s
+                WHERE u.active AND k.index = %s AND %s
+                  AND (k.expiration_date IS NULL
+                       OR k.expiration_date >= now() at time zone 'utc')
                 """,
                 SQL.identifier(self._table),
                 key[:INDEX_SIZE],
-                scope,
-                scope,
-                SQL()
-                if include_expired
-                else SQL(
-                    "AND (k.expiration_date IS NULL"
-                    " OR k.expiration_date >= now() at time zone 'utc')"
-                ),
+                door,
             )
         )
         candidates = self.env.cr.fetchall()
-        _debug.perf.count(
-            "apikey_candidates",
-            scope=scope,
-            candidates=len(candidates),
-            include_expired=include_expired,
-        )
-        for user_id, current_key, expiration_date, scope_id, key_id in candidates:
+        _debug.perf.count("apikey_candidates", scope=scope, candidates=len(candidates))
+        for user_id, current_key, expiration_date in candidates:
             if secret_key.is_key_valid(key, current_key):
                 _debug.logic(
                     "apikey_matched", scope=scope, uid=user_id, expires=expiration_date
                 )
-                return user_id, expiration_date, scope_id, key_id
+                return user_id, expiration_date
         _debug.logic("apikey_rejected", scope=scope, candidates=len(candidates))
         return None
 
@@ -175,22 +182,8 @@ class ResUsersApikeys(models.Model):
             _debug.logic("apikey_check_refused", reason="missing_scope_or_key")
             msg = "scope and key required"
             raise ValueError(msg)
-        match = self._match_key(scope, key, include_expired=False)
+        match = self._match_key(scope, key)
         return match[0] if match else None
-
-    def _check_credentials_any_scope(self, key: str) -> tuple[int, int | None] | None:
-        if not key:
-            return None
-        match = self._match_key(None, key, include_expired=False)
-        return (match[0], match[2]) if match else None
-
-    def _get_key_expiration(
-        self, *, scope: str | None, key: str
-    ) -> datetime.datetime | None:
-        if not key:
-            return None
-        match = self._match_key(scope, key, include_expired=True)
-        return match[1] if match else None
 
     def _get_max_duration(self) -> float:
         return (
@@ -233,23 +226,30 @@ class ResUsersApikeys(models.Model):
 
     def _generate(
         self,
-        scope: str | None,
+        scope: str,
         name: str,
         expiration_date: datetime.datetime | None,
     ) -> str:
         self._check_generate_access()
         self._check_expiration_date(expiration_date)
-        scope_id = (
-            self.env["res.users.apikeys.scope"]._get_or_create(scope).id
-            if scope
-            else None
+        scope_id, active = self.env["res.users.apikeys.scope"]._get_declared_state(
+            scope
         )
+        if not active:
+            raise UserError(
+                self.env._(
+                    "The API key scope %(key)s is archived: a key bound to "
+                    "it would open nothing.",
+                    key=scope,
+                )
+            )
         k = secret_key.generate()
         self.env.cr.execute(
             SQL(
                 """
                 INSERT INTO %s (name, user_id, scope_id, expiration_date, key, index)
                 VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
                 """,
                 SQL.identifier(self._table),
                 name,
@@ -261,8 +261,19 @@ class ResUsersApikeys(models.Model):
             )
         )
 
+        (key_id,) = self.env.cr.fetchone()
         self.env.user.invalidate_recordset(["api_key_ids"])
         _debug.pipeline("apikey_inserted", uid=self.env.uid, scope=scope)
+        self.env["auth.event"]._append(
+            [
+                {
+                    "event": "credential_issued",
+                    "subject_user_id": self.env.uid,
+                    "model_name": self._name,
+                    "credential_ref": key_id,
+                }
+            ]
+        )
 
         ip = request.httprequest.remote_addr if request else "n/a"
         _logger.info(

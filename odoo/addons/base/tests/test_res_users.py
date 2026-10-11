@@ -18,13 +18,15 @@ from odoo.tests import (
     Form,
     HttpCase,
     TransactionCase,
+    counting_statements,
     new_test_user,
     tagged,
     users,
     warmup,
 )
-from odoo.tools import mute_logger
+from odoo.tools import SQL, mute_logger
 
+from odoo.addons.base.models.res_users_auth import PasswordStore
 from odoo.addons.base.tests.common import make_access_row
 
 
@@ -648,10 +650,10 @@ class TestUsers2(UsersCommonCase):
         def grant_cost(grantees):
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.cr.sql_statement_count
-            grantees.write({"group_ids": [Command.link(contact_creation_group.id)]})
-            self.env.flush_all()
-            return self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as statements:
+                grantees.write({"group_ids": [Command.link(contact_creation_group.id)]})
+                self.env.flush_all()
+            return statements.count
 
         grant_cost(users[0])
         few = grant_cost(users[1:4])
@@ -828,6 +830,8 @@ class TestUsersIdentitycheck(HttpCase):
                     user_agent=UserAgent(""),
                 ),
                 cookies={TEST_CURSOR_COOKIE_NAME: self.http_request_key},
+                call_after_release=lambda func: None,
+                future_response=None,
             )
         )
         self.addCleanup(_request_stack.pop)
@@ -871,6 +875,7 @@ class TestContextGetPartnerInvalidation(TransactionCase):
 class _AttemptRequest:
     def __init__(self, addr):
         self.httprequest = SimpleNamespace(remote_addr=addr)
+        self.cookies = {}
         self.after_release = []
 
     def call_after_release(self, func):
@@ -910,7 +915,8 @@ class TestLoginCooldown(TransactionCase):
             raise AccessDenied
 
     def _failures(self, source):
-        return self.env["res.users"]._get_login_failure_state(source)[0]
+        cooldown = self.env["res.users"]._login_cooldown()
+        return cooldown.states(self.env.cr, [source])[source][0]
 
     @mute_logger("odoo.addons.base.models.res_users")
     def test_cooldown_after_threshold(self):
@@ -1038,9 +1044,10 @@ class TestLoginCooldown(TransactionCase):
         self._fail_once(users, "203.0.113.7")
 
         now = datetime.now(UTC).replace(tzinfo=None)
-        stale = now - timedelta(seconds=120)
+        stale = now - timedelta(days=2)
         stale_sources = [f"198.51.100.{i}" for i in range(4)]
         fresh_source = "198.51.100.200"
+        cooled_source = "198.51.100.201"
         with self.env.registry.cursor() as cr:
             for source in stale_sources:
                 cr.execute(
@@ -1053,6 +1060,11 @@ class TestLoginCooldown(TransactionCase):
                 "VALUES (%s, 1, %s)",
                 [fresh_source, now],
             )
+            cr.execute(
+                "INSERT INTO res_users_login_cooldown (source, failures, last_failure) "
+                "VALUES (%s, 3, %s)",
+                [cooled_source, now - timedelta(seconds=120)],
+            )
 
         self._fail_once(users, "203.0.113.8")
 
@@ -1063,6 +1075,12 @@ class TestLoginCooldown(TransactionCase):
         for source in stale_sources:
             self.assertNotIn(source, remaining, "stale entry must be pruned")
         self.assertIn(fresh_source, remaining, "in-window entry must survive")
+        self.assertIn(
+            cooled_source,
+            remaining,
+            "another source's failure must not hand a cooled-down source a "
+            "fresh threshold",
+        )
         self.assertIn("203.0.113.7", remaining)
         self.assertIn(
             "203.0.113.8", remaining, "the just-failed source must be recorded"
@@ -1072,7 +1090,7 @@ class TestLoginCooldown(TransactionCase):
         source = "203.0.113.50"
         cooldown = self.env["res.users"]._login_cooldown()
         racer = threading.Thread(
-            target=cooldown.record_failure, args=(source, timedelta(seconds=60))
+            target=cooldown.record_failure, args=([source], timedelta(seconds=60))
         )
         with self.leave_registry_test_mode():
             try:
@@ -1090,7 +1108,7 @@ class TestLoginCooldown(TransactionCase):
                 racer.join(10)
                 self.assertFalse(racer.is_alive())
                 with self.registry.cursor() as cr:
-                    self.assertEqual(cooldown.state(cr, source)[0], 2)
+                    self.assertEqual(cooldown.states(cr, [source])[source][0], 2)
             finally:
                 with self.registry.cursor() as cr:
                     cr.execute(
@@ -1114,8 +1132,7 @@ class TestLoginCooldown(TransactionCase):
 class TestLoginTimingSideChannel(TransactionCase):
     @mute_logger("odoo.addons.base.models.res_users")
     def test_unknown_user_pays_a_dummy_hash_check(self):
-        from odoo.addons.base.models.res_users import _DUMMY_PASSWORD_HASH
-
+        dummy = self.env["res.users"]._get_dummy_password_hash()
         with patch(
             "odoo.libs.password.CryptContext.match_and_update",
             return_value=(False, None),
@@ -1130,7 +1147,30 @@ class TestLoginTimingSideChannel(TransactionCase):
                     {"interactive": True},
                 )
 
-        match_and_update.assert_called_once_with("whatever", _DUMMY_PASSWORD_HASH)
+        match_and_update.assert_called_once_with("whatever", dummy)
+
+    @mute_logger("odoo.addons.base.models.res_users")
+    def test_a_refused_service_principal_pays_a_dummy_hash_check(self):
+        service = new_test_user(self.env, login="auth1-service")
+        service.principal_type = "service"
+        dummy = self.env["res.users"]._get_dummy_password_hash()
+        with patch(
+            "odoo.libs.password.CryptContext.match_and_update",
+            return_value=(False, None),
+        ) as match_and_update:
+            with self.assertRaises(AccessDenied):
+                self.env["res.users"].sudo()._login(
+                    {"login": "auth1-service", "type": "password", "password": "pw"},
+                    {"interactive": True},
+                )
+        match_and_update.assert_called_once_with("pw", dummy)
+
+    def test_the_dummy_hash_carries_the_rounds_a_real_hash_carries(self):
+        Users = self.env["res.users"]
+        self.assertEqual(
+            Users._get_dummy_password_hash().split("$")[:3],
+            Users._get_crypt_context().hash("x").split("$")[:3],
+        )
 
 
 @tagged("post_install", "-at_install")
@@ -1231,6 +1271,7 @@ class TestResUsersInitPasswordMigration(TransactionCase):
 class TestCheckUidPasswdCacheContract(TransactionCase):
     def setUp(self):
         super().setUp()
+        self.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
         self.addCleanup(self.env.registry.clear_cache)
         self.env.registry.clear_cache()
 
@@ -1391,6 +1432,26 @@ class TestWriteCacheInvalidation(UsersCommonCase):
         self.assertEqual(self._user_context_lang(user), "fr_FR")
         self.assertIn(group, user.all_group_ids)
 
+    def test_combined_group_and_company_write_closes_the_removed_company(self):
+        main = self.env.company
+        other = self.env["res.company"].create({"name": "cache inval company"})
+        group = self.env["res.groups"].create({"name": "cache inval group"})
+        user = self.user_internal
+        user.write({"company_ids": [Command.link(other.id)]})
+        as_user = self.env(user=user, context={"allowed_company_ids": [other.id]})
+        self.assertEqual(as_user.company, other)
+
+        user.write(
+            {
+                "company_ids": [Command.set(main.ids)],
+                "group_ids": [Command.link(group.id)],
+            }
+        )
+
+        self.assertEqual(user._get_company_ids(), (main.id,))
+        with self.assertRaises(AccessError):
+            _ = self.env(user=user, context={"allowed_company_ids": [other.id]}).company
+
 
 class TestInstalledLangCodes(TransactionCase):
     def test_codes_match_get_installed_and_track_activation(self):
@@ -1437,7 +1498,7 @@ class TestSelfServiceEscalation(TransactionCase):
         key = (
             self.env["res.users.apikeys"]
             .with_user(self.user)
-            ._generate(None, "k", datetime.now() + timedelta(hours=1))
+            ._generate("rpc", "k", datetime.now() + timedelta(hours=1))
         )
         self.assertTrue(key)
         record = (
@@ -1678,6 +1739,41 @@ class TestSessionTokenInvalidation(TransactionCase):
 
     def _user(self, login):
         return new_test_user(self.env, login, password="Secret!Pwd123")
+
+    def test_the_secret_stays_out_of_the_statement_and_the_token_is_unchanged(self):
+        user = self._user("sess_secret")
+        secret = self.env["ir.config_parameter"].sudo().get_param("database.secret")
+        statements = []
+        execute = type(self.env.cr).execute
+
+        def recording(cr, query, params=None, *args, **kwargs):
+            statements.append(repr((query, params)))
+            return execute(cr, query, params, *args, **kwargs)
+
+        with patch.object(type(self.env.cr), "execute", recording):
+            values = user._get_session_token_values()
+        self.assertTrue(statements)
+        self.assertFalse([s for s in statements if secret in s])
+
+        columns = SQL(", ").join(
+            SQL.identifier(fname)
+            for fname in sorted(user._get_fields_session_token())
+            if not user._fields[fname].relational
+        )
+        self.env.cr.execute(
+            SQL(
+                "SELECT %s::text AS database_secret, %s FROM res_users WHERE id = %s",
+                secret,
+                columns,
+                user.id,
+            )
+        )
+        row = self.env.cr.fetchone()
+        legacy = tuple(
+            (column.name, row[index])
+            for index, column in enumerate(self.env.cr.description)
+        )
+        self.assertEqual(values[: len(legacy)], legacy)
 
     def test_write_path_rotates_the_token(self):
         user = self._user("sess_write")
@@ -2006,10 +2102,10 @@ class TestRelatedInverseIsBatched(TransactionCase):
 
     def _cost(self, users, vals):
         self.env.flush_all()
-        before = self.env.cr.sql_statement_count
-        users.write(vals)
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            users.write(vals)
+            self.env.flush_all()
+        return statements.count
 
     def test_one_shared_value_costs_one_write_however_many_records(self):
         few = self._users(2, "ru_rel_few")
@@ -2232,6 +2328,9 @@ class TestLoginPath(TransactionCase):
             .with_user(self.user)
             ._generate("rpc", "k", datetime.now() + timedelta(days=1))
         )
+        key_record = self.env["res.users.apikeys"].search(
+            [("user_id", "=", self.user.id)], order="id desc", limit=1
+        )
         with self.assertRaises(AccessDenied):
             self._login(password=key)
         auth = self.user.with_user(self.user)._check_credentials(
@@ -2243,10 +2342,25 @@ class TestLoginPath(TransactionCase):
                 "uid": self.user.id,
                 "auth_method": "apikey",
                 "api_scope_id": self.env.ref("base.apikeys_scope_rpc").id,
+                "api_key_expiration": key_record.expiration_date,
                 "mfa": "default",
             },
             "a key logs in under its own scope",
         )
+
+    def test_an_api_key_is_checked_without_hashing_a_password(self):
+        key = (
+            self.env["res.users.apikeys"]
+            .with_user(self.user)
+            ._generate("rpc", "k", datetime.now() + timedelta(days=1))
+        )
+        with patch.object(
+            PasswordStore, "match_and_update", side_effect=AssertionError
+        ):
+            auth = self.user.with_user(self.user)._check_credentials(
+                {**self.credential, "password": key}, {"interactive": False}
+            )
+        self.assertEqual(auth["auth_method"], "apikey")
 
     def test_authenticate_records_the_base_url_for_system_users_only(self):
         ICP = self.env["ir.config_parameter"].sudo()

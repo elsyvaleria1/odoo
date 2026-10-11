@@ -1,5 +1,5 @@
-from odoo.exceptions import ValidationError
-from odoo.tests import TransactionCase, tagged
+from odoo.exceptions import AccessError, ValidationError
+from odoo.tests import TransactionCase, new_test_user, tagged
 
 
 class TestViews(TransactionCase):
@@ -108,3 +108,39 @@ class TestViewSaveValidation(TransactionCase):
         )
         with self.assertRaises(ValidationError):
             view.save(value=section % '<p t-if="a b">New</p>', xpath="/t/div/section")
+
+
+@tagged("post_install", "-at_install")
+class TestSnippetDirectiveAuthoring(TransactionCase):
+    def test_a_snippet_directive_obeys_the_template_grammar(self):
+        author = new_test_user(
+            self.env, login="snippet_author", groups="base.group_user"
+        )
+        self.env["ir.access"].create(
+            {
+                "name": "Probe: the author reads qweb views, like a website designer",
+                "model_id": self.env["ir.model"]._get_id("ir.ui.view"),
+                "group_id": self.env.ref("base.group_user").id,
+                "kind": "permission",
+                "operation": "r",
+                "domain": "[('type', '=', 'qweb')]",
+            }
+        )
+        view = self.env["ir.ui.view"].create(
+            {
+                "name": "snippet authoring",
+                "type": "qweb",
+                "key": "html_editor.test_snippet_authoring",
+                "arch": '<t t-name="html_editor.test_snippet_authoring"><p/></t>',
+            }
+        )
+        for body in (
+            '<input t-placeholder="env.cr.dbname"/>',
+            '<t t-snippet-call="{{ env.cr.dbname }}"/>',
+        ):
+            view.arch = f'<t t-name="html_editor.test_snippet_authoring">{body}</t>'
+            with (
+                self.subTest(body=body),
+                self.assertRaisesRegex(AccessError, "the name 'env' is not available"),
+            ):
+                view.with_user(author)._check_template_authoring()

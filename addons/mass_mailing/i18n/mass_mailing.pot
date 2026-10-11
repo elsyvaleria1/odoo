@@ -2850,16 +2850,6 @@ msgid "Fair pricing"
 msgstr ""
 
 #. module: mass_mailing
-#: model:ir.model.fields,field_description:mass_mailing.field_mailing_mailing__is_favorite
-msgid "Favorite"
-msgstr ""
-
-#. module: mass_mailing
-#: model:ir.model.fields,field_description:mass_mailing.field_mailing_mailing__date_favorite
-msgid "Favorite Date"
-msgstr ""
-
-#. module: mass_mailing
 #: model:ir.model.fields,field_description:mass_mailing.field_mailing_mailing__mailing_filter_id
 msgid "Favorite Filter"
 msgstr ""
@@ -2873,11 +2863,6 @@ msgstr ""
 #. module: mass_mailing
 #: model:ir.model.fields,field_description:mass_mailing.field_mailing_mailing__mailing_filter_domain
 msgid "Favorite filter domain"
-msgstr ""
-
-#. module: mass_mailing
-#: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_search
-msgid "Favorites"
 msgstr ""
 
 #. module: mass_mailing
@@ -3389,6 +3374,11 @@ msgstr ""
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.email_designer_snippets
 msgid "Items"
+msgstr ""
+
+#. module: mass_mailing
+#: model:ir.model.fields,help:mass_mailing.field_mailing_mailing__is_template
+msgid "Its design is offered to every marketer as a starting point."
 msgstr ""
 
 #. module: mass_mailing
@@ -5101,6 +5091,16 @@ msgid "Save as Favorite Filter"
 msgstr ""
 
 #. module: mass_mailing
+#: model:ir.model.fields,field_description:mass_mailing.field_mailing_mailing__is_template
+msgid "Saved as Template"
+msgstr ""
+
+#. module: mass_mailing
+#: model:ir.model.fields,field_description:mass_mailing.field_mailing_mailing__date_template
+msgid "Saved as Template On"
+msgstr ""
+
+#. module: mass_mailing
 #: model:ir.model.fields,field_description:mass_mailing.field_mailing_filter__create_uid
 #: model_terms:ir.ui.view,arch_db:mass_mailing.mailing_filter_view_tree
 msgid "Saved by"
@@ -5665,6 +5665,11 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/mass_mailing/static/src/builder/options/masonry_block_template_option.xml:0
 msgid "Template"
+msgstr ""
+
+#. module: mass_mailing
+#: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_search
+msgid "Templates"
 msgstr ""
 
 #. module: mass_mailing
@@ -6252,11 +6257,6 @@ msgstr ""
 #. module: mass_mailing
 #: model:ir.actions.act_window,name:mass_mailing.mailing_mailing_schedule_date_action
 msgid "When do you want to send your mailing?"
-msgstr ""
-
-#. module: mass_mailing
-#: model:ir.model.fields,help:mass_mailing.field_mailing_mailing__date_favorite
-msgid "When this mailing was added in the favorites"
 msgstr ""
 
 #. module: mass_mailing

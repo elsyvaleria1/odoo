@@ -17,6 +17,7 @@ _debug = DebugLog(__name__)
 
 class MixinTemplateReset(models.AbstractModel):
     _name = "mixin.template.reset"
+    _inherit = ["mixin.template.trust"]
     _description = "Template Reset Mixin"
 
     template_fs = fields.Char(
@@ -36,7 +37,7 @@ class MixinTemplateReset(models.AbstractModel):
         return super().create(vals_list)
 
     def _get_reset_preserved_fields(self) -> set[str]:
-        return {*models.MAGIC_COLUMNS, "template_fs"}
+        return {*models.MAGIC_COLUMNS, "template_fs", "shipped_digests"}
 
     def _load_records_write(self, values: dict) -> None:
         if self.env.context.get("reset_template"):

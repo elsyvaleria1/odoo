@@ -466,7 +466,7 @@ class WizardSmsSmsSend(models.TransientModel):
         else:
             renderer = self.env["mixin.mail.render"]
             renderer._check_render_authoring(
-                self.body, "inline_template", self.template_id
+                self.body, "inline_template", records._name, self.template_id
             )
             all_bodies = renderer._render_template(
                 self.body, records._name, records.ids, add_context=additional_context

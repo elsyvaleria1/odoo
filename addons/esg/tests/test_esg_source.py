@@ -33,10 +33,12 @@ class TestEsgSource(TestEsgCommon):
             }
         )
 
-        with self.assertRaises(
-            UserError, msg="You cannot create a cyclic hierarchy of emission sources."
-        ):
+        with self.assertRaises(UserError) as caught:
             source_1.parent_id = source_3
+        self.assertEqual(
+            str(caught.exception),
+            "You cannot create a cyclic hierarchy of emission sources.",
+        )
         self.assertEqual(
             source_4.scope, source_1.scope, "Scope should be inherited from parent"
         )

@@ -118,4 +118,17 @@
         <field name="verbs">activate</field>
     </record>
 
+    <record
+        id="access_ir_ui_view_privilege_compare_template_contexts"
+        model="ir.access">
+        <field
+            name="name">ir.ui.view: a template author's save is compared with every view of its templates</field>
+        <field name="model_id" ref="model_ir_ui_view" />
+        <field name="group_id" ref="privilege_compare_template_contexts" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="domain">[('type', '=', 'qweb')]</field>
+        <field name="reach">all</field>
+    </record>
+
 </odoo>

@@ -8,7 +8,7 @@ from lxml import etree
 
 from odoo.db import db_connect
 from odoo.exceptions import MissingError, UserError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 from odoo.tests.common import TransactionCase, skip_if_dev_mode
 from odoo.tools import file_open, misc, mute_logger
 from odoo.tools.json import scriptsafe as json_scriptsafe
@@ -3374,11 +3374,11 @@ class TestQwebPerformance(TransactionCaseWithUserDemo):
 
         def check(template, name, queries):
             doc.name = name
-            init = env.cr.sql_statement_count
-            value = env["ir.qweb"]._render(template, {"doc": doc})
+            with counting_statements(env.cr) as statements:
+                value = env["ir.qweb"]._render(template, {"doc": doc})
             self.assertEqual(str(value), expected % name)
             self.assertEqual(
-                env.cr.sql_statement_count - init,
+                statements.count,
                 queries,
                 f"Maximum queries: {queries}",
             )
@@ -5196,3 +5196,78 @@ class TestQWebErrorOrigin(TransactionCase):
         with self.assertRaises(QWebError) as caught:
             self.env["ir.qweb"]._render(root.id)
         self.assertIsNone(caught.exception.qweb.origin)
+
+
+class TestQWebRenderedValueBoundaries(TransactionCase):
+    PAYLOAD = "<img src=x onerror=alert(1)>"
+
+    @staticmethod
+    def _load(templates):
+        def load(ref):
+            return (etree.fromstring(templates[ref]), ref)
+
+        return load
+
+    def test_a_translatable_format_escapes_its_values_while_editing_translations(self):
+        templates = {
+            "m": '<t><t t-set="y" t-valuef.translate="Hi {{ name }}"/><t t-out="y"/>|'
+            '<t t-call="s" label.translate="Hi {{ name }}"/></t>',
+            "s": '<t><b t-out="label"/></t>',
+        }
+        for editing in (False, True):
+            with self.subTest(edit_translations=editing):
+                out = str(
+                    render(
+                        "m",
+                        {"name": self.PAYLOAD},
+                        self._load(templates),
+                        edit_translations=editing,
+                    )
+                )
+                self.assertNotIn("<img", out)
+                self.assertEqual(out.count("Hi &lt;img src=x onerror=alert(1)&gt;"), 2)
+
+    def test_a_translatable_format_keeps_its_own_markup_while_editing_translations(
+        self,
+    ):
+        templates = {
+            "m": '<t><t t-set="y" t-valuef.translate="&lt;b&gt;Hi&lt;/b&gt;"/><t t-out="y"/></t>'
+        }
+        out = str(render("m", {}, self._load(templates), edit_translations=True))
+        self.assertEqual(out, "<b>Hi</b>")
+
+    def test_dev_mode_cannot_be_set_by_a_template_call(self):
+        templates = {
+            "m": '<t><t t-call="s" t-options="{\'dev_mode\': True}"/></t>',
+            "s": '<t><t t-debug=""/>S</t>',
+        }
+        with (
+            patch("sys.breakpointhook") as debugger,
+            self.assertRaises(QWebError) as cm,
+        ):
+            str(render("m", {}, self._load(templates)))
+        self.assertIn("reserved for the renderer", str(cm.exception.__cause__))
+        debugger.assert_not_called()
+
+    def test_a_body_given_to_srcdoc_stays_the_document(self):
+        templates = {
+            "m": "<t><t t-set='body'><p>hi</p></t><iframe t-att-srcdoc='body'/>"
+            "<iframe t-att=\"{'srcdoc': body}\"/></t>"
+        }
+        out = str(render("m", {}, self._load(templates)))
+        self.assertEqual(out.count('srcdoc="&lt;p&gt;hi&lt;/p&gt;"'), 2, out)
+
+    def test_a_static_url_beside_a_dynamic_attribute_is_kept(self):
+        templates = {
+            "m": '<t><a href="javascript:void(0)" t-att-class="cls">x</a>'
+            '<a t-att-href="url" class="k">y</a>'
+            '<a t-attf-href="{{ url }}">z</a>'
+            "<a t-att=\"{'href': url}\">w</a></t>"
+        }
+        out = str(
+            render(
+                "m", {"cls": "c", "url": "javascript:alert(1)"}, self._load(templates)
+            )
+        )
+        self.assertIn('<a href="javascript:void(0)" class="c">x</a>', out)
+        self.assertNotIn("alert(1)", out)

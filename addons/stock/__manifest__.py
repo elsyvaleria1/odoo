@@ -1,6 +1,6 @@
 {
     "name": "Inventory",
-    "version": "1.23",
+    "version": "1.24",
     "oldest_upgradable_version": "1.22",
     "category": "Supply Chain/Inventory",
     "sequence": 25,

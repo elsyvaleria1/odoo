@@ -103,12 +103,17 @@ export class ImagePostProcessPlugin extends Plugin {
                 formatMimetype || mimetypeBeforeConversion,
             ))
         ) {
+            const originalDataURL = await loadImageDataURL(originalSrc);
             const [postUrl, postDataset] = await this.postProcessImage(
-                await loadImageDataURL(originalSrc),
+                originalDataURL,
                 newDataset,
                 processContext,
             );
-            return { url: postUrl, newDataset: postDataset };
+            return {
+                url: postUrl,
+                newDataset: postDataset,
+                src: postUrl === originalDataURL ? originalSrc : postUrl,
+            };
         }
         const container = document.createElement("div");
         container.appendChild(originalImg);
@@ -277,7 +282,11 @@ export class ImagePostProcessPlugin extends Plugin {
             return () => {};
         }
         return () =>
-            this.updateImageAttributes(params.img, processed.url, processed.newDataset);
+            this.updateImageAttributes(
+                params.img,
+                processed.src ?? processed.url,
+                processed.newDataset,
+            );
     }
     async getProcessedImageSize(img) {
         const processed = await this._processImage({ img });
@@ -293,7 +302,7 @@ export class ImagePostProcessPlugin extends Plugin {
         return [url, newDataset];
     }
     updateImageAttributes(el, url, newDataset) {
-        el.classList.add("o_modified_image_to_save");
+        el.classList.toggle("o_modified_image_to_save", url.startsWith("data:"));
         if (el.tagName === "IMG") {
             el.setAttribute("src", url);
         } else {

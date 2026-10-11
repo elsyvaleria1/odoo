@@ -17,6 +17,8 @@ from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 FORGED = {
     "test_rpc_authority": True,
     "install_mode": True,
+    "install_filename": "/forged/views/forged.xml",
+    "install_xmlid": "forged",
     "uid": 1,
     "privilege_reason": "forged by the client",
 }
@@ -94,6 +96,8 @@ class TestAuthorityKeyDoors(HttpCaseWithUserDemo):
         self.assertDoorStrips(keys)
 
     def test_xmlrpc_strips_authority_keys(self):
+        self.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "0")
+        self.env.flush_all()
         with mute_logger("odoo.addons.rpc.controllers.xmlrpc"):
             keys = self.xmlrpc_object.execute_kw(
                 get_db_name(),
@@ -110,7 +114,7 @@ class TestAuthorityKeyDoors(HttpCaseWithUserDemo):
         api_key = (
             self.env["res.users.apikeys"]
             .with_user(self.user_demo)
-            ._generate(None, "authority keys", datetime.now() + timedelta(days=1))
+            ._generate("rpc", "authority keys", datetime.now() + timedelta(days=1))
         )
         with mute_logger("odoo.http"):
             response = self.url_open(

@@ -16,7 +16,6 @@ from odoo.tools.mail import (
 )
 
 from odoo.addons.base.models.access_link import LinkLoginRequired, LinkRefused
-from odoo.addons.calendar.models.calendar_attendee import invitation_link_end
 from odoo.addons.calendar.models.utils import interval_from_events
 
 _logger = logging.getLogger(__name__)
@@ -577,7 +576,7 @@ class CalendarEvent(models.Model):
             partner_field="appointment_booker_id",
             role="comment",
             cause="notification",
-            date_to=invitation_link_end,
+            dated_by_record=True,
         )
         for event in bookings:
             event._update_cache(

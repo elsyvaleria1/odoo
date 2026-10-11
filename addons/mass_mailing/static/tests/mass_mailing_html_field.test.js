@@ -50,7 +50,7 @@ class Mailing extends models.Model {
         }
     }
 
-    action_fetch_favorites() {
+    action_fetch_templates() {
         return [];
     }
 

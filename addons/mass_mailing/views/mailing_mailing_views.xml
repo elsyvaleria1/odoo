@@ -22,9 +22,9 @@
                     domain="[('user_id', '=', uid)]" />
                 <separator />
                 <filter
-                    name="filter_favorite"
-                    string="Favorites"
-                    domain="[('is_favorite', '=', True)]" />
+                    name="filter_template"
+                    string="Templates"
+                    domain="[('is_template', '=', True)]" />
                 <filter
                     name="filter_my_favorite"
                     string="My Favorites"
@@ -74,6 +74,11 @@
         <field name="priority">10</field>
         <field name="arch" type="xml">
             <list string="Mailings" sample="1" class="o_mass_mailing_mailing_tree">
+                <field
+                    name="is_user_favorite"
+                    widget="boolean_favorite"
+                    nolabel="1"
+                    optional="show" />
                 <field name="calendar_date" string="Date" widget="datetime" />
                 <field name="subject" readonly="state in ('sending', 'done')" />
                 <field name="mailing_model_id" string="Recipients" optional="hide" />
@@ -168,16 +173,16 @@
                         class="oe_highlight"
                         data-hotkey="y" />
                     <button
-                        name="action_set_favorite"
+                        name="action_add_to_templates"
                         type="object"
                         string="Add to Templates"
-                        invisible="is_favorite"
+                        invisible="is_template"
                         class="btn-secondary" />
                     <button
-                        name="action_remove_favorite"
+                        name="action_remove_from_templates"
                         type="object"
                         string="Remove from Templates"
-                        invisible="not is_favorite"
+                        invisible="not is_template"
                         class="btn-secondary" />
                     <field
                         name="state"
@@ -652,7 +657,15 @@
                         <a role="menuitem" type="object" name="action_unarchive" class="dropdown-item o_kanban_mailing_active" t-if="!record.active.raw_value">Restore</a>
                     </t>
                     <t t-name="card">
-                        <field name="subject" class="my-1 text-truncate fs-3 fw-bold" />
+                        <div class="d-flex align-items-baseline gap-1">
+                            <field
+                                name="is_user_favorite"
+                                widget="boolean_favorite"
+                                nolabel="1" />
+                            <field
+                                name="subject"
+                                class="my-1 text-truncate fs-3 fw-bold" />
+                        </div>
                         <field
                             name="campaign_id"
                             groups="mass_mailing.group_mass_mailing_campaign"

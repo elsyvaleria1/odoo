@@ -11,3 +11,5 @@ from . import test_attachment_media_urls
 from . import test_view_save_helpers
 from . import test_install_directive
 from . import test_html_data_images
+from . import test_image_shape
+from . import test_color_conformance

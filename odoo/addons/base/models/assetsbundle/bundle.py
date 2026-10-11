@@ -22,6 +22,8 @@ from odoo.tools.assets.esm_registry import (
     external_libs,
     invalidate_esm_registry,
 )
+from odoo.tools.assets.fingerprint import pipeline_fingerprint
+from odoo.tools.assets.nodes import url_extension
 from odoo.tools.misc import file_path
 
 from .sourcemap_generator import SourceMapGenerator
@@ -40,7 +42,6 @@ from .common import (
     NativeModuleData,
     XMLBlock,
     _bundle_log,
-    _pipeline_fingerprint,
     _sourcemap_source_root,
 )
 from .css_pipeline import CssPipeline
@@ -108,10 +109,6 @@ class AssetsBundle:
             )
 
     @staticmethod
-    def _url_extension(url: str) -> str:
-        return url.partition("#")[0].partition("?")[0].rpartition(".")[2].lower()
-
-    @staticmethod
     def _is_addon_path_present(rel: str) -> bool:
         try:
             file_path(rel)
@@ -124,7 +121,7 @@ class AssetsBundle:
     ) -> list[str]:
         kept = []
         for url in external_assets:
-            ext = self._url_extension(url)
+            ext = url_extension(url)
             if (css and ext in STYLE_EXTENSIONS) or (js and ext in SCRIPT_EXTENSIONS):
                 kept.append(url)
             elif ext not in STYLE_EXTENSIONS and ext not in SCRIPT_EXTENSIONS:
@@ -146,7 +143,7 @@ class AssetsBundle:
 
     def _collect_files(self, files: list[BundleFileSpec], css: bool, js: bool) -> None:
         for spec in files:
-            extension = self._url_extension(spec["url"])
+            extension = url_extension(spec["url"])
             params = {
                 "url": spec["url"],
                 "filename": spec["filename"],
@@ -477,7 +474,7 @@ class AssetsBundle:
                 )
                 raise ValueError(f"Asset type {asset_type} not known")
             h = hashlib.sha256()
-            h.update(_pipeline_fingerprint().encode())
+            h.update(pipeline_fingerprint().encode())
             h.update(b"\x00")
             for asset in self._version_assets[asset_type]:
                 h.update(asset.unique_descriptor.encode())
@@ -568,7 +565,7 @@ class AssetsBundle:
             minified=not self.is_debug_assets,
             hit=bool(stored),
         )
-        return stored[0] if stored else build(extension)
+        return stored or build(extension)
 
     def js(self) -> IrAttachment:
         if not self.has_js_content:

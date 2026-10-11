@@ -1328,6 +1328,9 @@ class AccountMove(models.Model):
                 self.env.add_to_compute(move.line_ids._fields["date"], move.line_ids)
                 self.env.add_to_compute(self._fields["name"], move)
 
+    def _is_repeat_until_required(self) -> bool:
+        return False
+
     @api.depends("auto_post", "repeat_type")
     def _compute_repeat_until(self) -> None:
         for record in self:

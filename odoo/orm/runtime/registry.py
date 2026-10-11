@@ -186,6 +186,7 @@ class Registry(
                     if cr.rowcount:
                         update_module = True
             from odoo.modules.loading import (
+                ModuleOperationInProgress,
                 load_modules,
                 reset_modules_state,
             )
@@ -209,6 +210,8 @@ class Registry(
                     models_to_check=models_to_check,
                     run_tests=run_tests,
                 )
+            except ModuleOperationInProgress:
+                raise
             except Exception:
                 reset_modules_state(db_name)
                 raise

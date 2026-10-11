@@ -52,6 +52,7 @@ import { applyFunDependOnSelectorAndExclude } from "../utils.js";
  *         shapeColors: string,
  *     }
  * ) => Promise<void>)[]} post_compute_shape_listeners
+ * @typedef {((dataset: DOMStringMap) => object | undefined)[]} image_shape_save_params_providers
  */
 
 const CSS_ANIMATION_RULE_REGEX =
@@ -93,6 +94,7 @@ export class ImageShapeOptionPlugin extends Plugin {
         },
         process_image_warmup_handlers: this.processImageWarmup.bind(this),
         process_image_post_handlers: this.processImagePost.bind(this),
+        modified_image_save_params_providers: (el) => this.getShapeSaveParams(el),
         hover_effect_allowed_predicates: (el) => this.canHaveHoverEffect(el),
         image_shape_groups_providers: withSequence(0, () =>
             deepCopy(imageShapeDefinitions),
@@ -322,6 +324,51 @@ export class ImageShapeOptionPlugin extends Plugin {
         });
         const dataURL = await createDataURL(blob);
         return [dataURL, { ...handlerDataset, mimetype: "image/svg+xml" }];
+    }
+
+    /**
+     * The server builds the stored SVG from the shape's parameters and the
+     * image the preview embeds; the preview itself is never uploaded.
+     *
+     * @param {HTMLElement} img
+     */
+    getShapeSaveParams(img) {
+        const src = img.getAttribute("src") || "";
+        const shapeId = img.dataset.shape || this.getDefaultShapeId(img.dataset);
+        if (
+            img.tagName !== "IMG" ||
+            !shapeId ||
+            !src.startsWith("data:image/svg+xml")
+        ) {
+            return;
+        }
+        const bytes = Uint8Array.fromBase64(src.split(",")[1]);
+        const svg = new DOMParser().parseFromString(
+            new TextDecoder().decode(bytes),
+            "image/svg+xml",
+        ).documentElement;
+        const [, mimetype, data] = svg
+            .querySelector("image")
+            .getAttribute("xlink:href")
+            .match(/^data:([^;,]+);base64,(.*)$/s);
+        const shape = {
+            id: shapeId,
+            colors: img.dataset.shapeColors?.split(";") ?? [],
+            animation_speed: Number(img.dataset.shapeAnimationSpeed) || 0,
+            width: parseInt(svg.getAttribute("width")),
+        };
+        if (this.isTransformableShape(shapeId)) {
+            shape.flip = img.dataset.shapeFlip || "";
+            shape.rotate = parseInt(img.dataset.shapeRotate) || 0;
+        }
+        for (const provider of this.getResource("image_shape_save_params_providers")) {
+            Object.assign(shape, provider(img.dataset));
+        }
+        return {
+            shape,
+            data: mimetype === "image/svg+xml" ? undefined : data,
+            mimetype: undefined,
+        };
     }
 
     /**

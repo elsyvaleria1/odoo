@@ -30,7 +30,6 @@ class ProjectTaskRecurrence(models.Model):
         store=True,
         index=True,
     )
-    repeat_until = fields.Date(string="End Date")
     date_recurrence_origin = fields.Datetime(copy=False)
     recurrence_anchor_field = fields.Char(copy=False)
 
@@ -45,10 +44,6 @@ class ProjectTaskRecurrence(models.Model):
     @api.constrains("repeat_type", "repeat_until")
     def _check_repeat_until_date(self) -> None:
         today = fields.Date.today()
-        if self.filtered(lambda t: t.repeat_type == "until" and not t.repeat_until):
-            raise ValidationError(
-                self.env._("The end date is required for 'Until' recurrence.")
-            )
         if self.filtered(
             lambda t: (
                 t.repeat_type == "until" and t.repeat_until and t.repeat_until < today

@@ -111,6 +111,7 @@ from . import test_res_partner
 from . import test_res_partner_sync
 from . import test_res_partner_bank_account
 from . import test_res_partner_main_channels
+from . import test_phone_number_country
 from . import test_res_partner_identifier
 from . import test_partner_identifier_confidentiality
 from . import test_partner_private_address_access
@@ -118,6 +119,7 @@ from . import test_res_partner_merge
 from . import test_mixin_merge
 from . import test_res_users
 from . import test_res_users_apikeys
+from . import test_login_cooldown_rpc
 from . import test_res_users_apikeys_scope
 from . import test_res_users_identitycheck
 from . import test_res_users_log
@@ -160,7 +162,7 @@ from . import test_ir_access_fixed_records
 from . import test_acting_partner
 from . import test_ir_access_reach
 from . import test_ir_access_flags
-from . import test_mixin_recurrence_rrule
+from . import test_mixin_recurrence_rule
 from . import test_access_verdicts
 from . import test_access_decisions
 from . import test_res_users_grant
@@ -176,7 +178,6 @@ from . import test_with_privilege
 from . import test_service_principal
 from . import test_mixin_company_config
 from . import test_mixin_lifecycle
-from . import test_mixin_recurrence_anchored
 from . import test_view_depends
 from . import test_ir_model_fields_inherited_translation
 
@@ -207,3 +208,4 @@ from . import test_resource_slot_search
 from . import test_resource_utils
 from . import test_resource_views
 from . import test_resource_asset
+from . import test_template_trust_attacks

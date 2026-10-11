@@ -175,7 +175,7 @@
             <list position="attributes">
                 <attribute name="default_order">pos_sequence</attribute>
             </list>
-            <field name="is_favorite" position="before">
+            <field name="is_user_favorite" position="before">
                 <field name="pos_sequence" widget="handle" nolabel="1" />
             </field>
         </field>

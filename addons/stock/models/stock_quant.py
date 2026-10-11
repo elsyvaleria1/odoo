@@ -76,7 +76,7 @@ class StockQuant(models.Model):
         related="product_id.product_tmpl_id",
         string="Product Template",
     )
-    is_favorite = fields.Boolean(related="product_tmpl_id.is_favorite")
+    is_featured = fields.Boolean(related="product_tmpl_id.is_featured")
     product_uom_id = fields.Many2one(
         comodel_name="uom.uom",
         related="product_id.uom_id",

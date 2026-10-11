@@ -142,6 +142,11 @@ class AuthUserClient(models.Model):
         readonly=True,
         required=True,
     )
+    marker_generation = fields.Integer(
+        default=0,
+        readonly=True,
+        required=True,
+    )
     name = fields.Char(
         string="Device Name",
         help="A name of your choosing, shown instead of the platform and browser.",
@@ -634,10 +639,14 @@ class AuthUserClient(models.Model):
         )
 
     @api.model
-    def _retention_cutoff(self) -> datetime | None:
-        retention_days = self.env["ir.config_parameter"].get_param_int(
-            "base.device_retention_days", DEFAULT_RETENTION_DAYS
+    def _retention_days(self) -> int:
+        return self.env.registry.settings.get_int(
+            self.env, "base.device_retention_days", DEFAULT_RETENTION_DAYS
         )
+
+    @api.model
+    def _retention_cutoff(self) -> datetime | None:
+        retention_days = self._retention_days()
         if retention_days <= 0:
             return None
         return self.env.cr.now() - timedelta(days=retention_days)

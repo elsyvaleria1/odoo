@@ -21,6 +21,7 @@ _default_parameters = {
     "web.base.url": lambda: f"http://localhost:{config.get('http_port')}",
     "base.login_cooldown_after": lambda: 10,
     "base.login_cooldown_duration": lambda: 60,
+    "base.login_cooldown_account_after": lambda: 30,
 }
 
 _SEALED_PARAMETERS = frozenset({"database.secret"})

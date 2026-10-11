@@ -317,3 +317,193 @@ class TestRenameFieldRenamesSelectionXmlids(TransactionCase):
                 "selection__probe_pick__sort__ñandú",
             ],
         )
+
+
+@tagged("post_install", "-at_install")
+class TestRenameFieldRewritesSavedSearches(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cr = cls.env.cr
+        cr.execute("CREATE TABLE probe_star (id serial PRIMARY KEY, is_star bool)")
+        _insert_probe_model(cr, "probe.star", ("is_star",), "boolean")
+        cls.filter_ids = {}
+        for name, model, domain, context, sort in (
+            (
+                "own",
+                "probe.star",
+                "['|', ('is_star', '=', True), [\"is_star.id\", '!=', False]]",
+                "{'group_by': ['is_star:day', 'is_starred']}",
+                '["is_star desc", "is_star_count"]',
+            ),
+            (
+                "other model",
+                "probe.other",
+                "[('is_star', '=', True)]",
+                "{'group_by': 'is_star'}",
+                '["is_star desc"]',
+            ),
+            (
+                "path and value",
+                "probe.star",
+                (
+                    "[('partner_id.is_star', '=', True), ('name', '=', 'is_star'),"
+                    " ('code', 'in', ('x', 'is_star.y')), ('is_stars', '=', 1)]"
+                ),
+                "{}",
+                "[]",
+            ),
+        ):
+            cr.execute(
+                "INSERT INTO ir_filters (name, model_id, domain, context, sort)"
+                " VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                (name, model, domain, context, sort),
+            )
+            cls.filter_ids[name] = cr.fetchone()[0]
+        cr.execute(
+            "INSERT INTO ir_act_window"
+            " (type, binding_type, name, res_model, view_mode, domain, context)"
+            " VALUES ('ir.actions.act_window', 'action', '{\"en_US\": \"probe\"}',"
+            " 'probe.star', 'list', %s, %s) RETURNING id",
+            ("[('is_star', '=', True)]", "{'group_by': 'is_star'}"),
+        )
+        cls.action_id = cr.fetchone()[0]
+        rename_field(cr, "probe.star", "is_star", "is_featured")
+
+    def _filter(self, name):
+        self.env.cr.execute(
+            "SELECT domain, context, sort FROM ir_filters WHERE id = %s",
+            (self.filter_ids[name],),
+        )
+        return self.env.cr.fetchone()
+
+    def test_a_saved_search_of_the_model_names_the_new_field(self):
+        self.assertEqual(
+            self._filter("own"),
+            (
+                "['|', ('is_featured', '=', True), [\"is_featured.id\", '!=', False]]",
+                "{'group_by': ['is_featured:day', 'is_starred']}",
+                '["is_featured desc", "is_star_count"]',
+            ),
+        )
+
+    def test_a_window_action_on_the_model_names_the_new_field(self):
+        self.env.cr.execute(
+            "SELECT domain, context FROM ir_act_window WHERE id = %s",
+            (self.action_id,),
+        )
+        self.assertEqual(
+            self.env.cr.fetchone(),
+            ("[('is_featured', '=', True)]", "{'group_by': 'is_featured'}"),
+        )
+
+    def test_another_model_a_path_and_a_value_keep_the_old_name(self):
+        self.assertEqual(
+            self._filter("other model"),
+            ("[('is_star', '=', True)]", "{'group_by': 'is_star'}", '["is_star desc"]'),
+        )
+        self.assertEqual(
+            self._filter("path and value")[0],
+            "[('partner_id.is_star', '=', True), ('name', '=', 'is_star'),"
+            " ('code', 'in', ('x', 'is_star.y')), ('is_stars', '=', 1)]",
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestRenameFieldRewritesPathsFromOtherModels(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cr = cls.env.cr
+        cr.execute("CREATE TABLE probe_lamp (id serial PRIMARY KEY, is_lit bool)")
+        _insert_probe_model(cr, "probe.lamp", ("is_lit",), "boolean")
+        lamp_id, other_id = _insert_probe_model(
+            cr, "probe.room", ("lamp_id", "other_id"), "many2one"
+        )
+        [room_ids] = _insert_probe_model(cr, "probe.house", ("room_ids",), "one2many")
+        for field_id, relation in (
+            (lamp_id, "probe.lamp"),
+            (other_id, "probe.other"),
+            (room_ids, "probe.room"),
+        ):
+            cr.execute(
+                "UPDATE ir_model_fields SET relation = %s WHERE id = %s",
+                (relation, field_id),
+            )
+        cls.filter_ids = {}
+        for name, model, domain, context, sort in (
+            (
+                "one hop",
+                "probe.room",
+                "[('lamp_id.is_lit', '=', True), ('other_id.is_lit', '=', True)]",
+                "{'group_by': ['lamp_id.is_lit:day']}",
+                '["lamp_id.is_lit desc"]',
+            ),
+            (
+                "two hops",
+                "probe.house",
+                "[('room_ids.lamp_id.is_lit', '=', True), ('name', '=', 'lamp_id.is_lit')]",
+                "{}",
+                "[]",
+            ),
+        ):
+            cr.execute(
+                "INSERT INTO ir_filters (name, model_id, domain, context, sort)"
+                " VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                (name, model, domain, context, sort),
+            )
+            cls.filter_ids[name] = cr.fetchone()[0]
+        cls.export_lines = {}
+        for resource, path in (
+            ("probe.lamp", "is_lit"),
+            ("probe.room", "lamp_id/is_lit"),
+            ("probe.house", "room_ids/lamp_id/is_lit"),
+            ("probe.room", "other_id/is_lit"),
+        ):
+            cr.execute(
+                "INSERT INTO ir_exports (name, resource) VALUES ('probe', %s) RETURNING id",
+                (resource,),
+            )
+            cr.execute(
+                "INSERT INTO ir_exports_line (export_id, name) VALUES (%s, %s) RETURNING id",
+                (cr.fetchone()[0], path),
+            )
+            cls.export_lines[resource, path] = cr.fetchone()[0]
+        rename_field(cr, "probe.lamp", "is_lit", "is_on")
+
+    def _filter(self, name):
+        self.env.cr.execute(
+            "SELECT domain, context, sort FROM ir_filters WHERE id = %s",
+            (self.filter_ids[name],),
+        )
+        return self.env.cr.fetchone()
+
+    def test_a_path_through_a_relation_names_the_new_field(self):
+        self.assertEqual(
+            self._filter("one hop"),
+            (
+                "[('lamp_id.is_on', '=', True), ('other_id.is_lit', '=', True)]",
+                "{'group_by': ['lamp_id.is_on:day']}",
+                '["lamp_id.is_on desc"]',
+            ),
+        )
+        self.assertEqual(
+            self._filter("two hops")[0],
+            "[('room_ids.lamp_id.is_on', '=', True), ('name', '=', 'lamp_id.is_lit')]",
+        )
+
+    def test_an_export_template_names_the_new_field(self):
+        self.env.cr.execute(
+            "SELECT id, name FROM ir_exports_line WHERE id = ANY(%s)",
+            (list(self.export_lines.values()),),
+        )
+        names = dict(self.env.cr.fetchall())
+        self.assertEqual(
+            {key: names[line_id] for key, line_id in self.export_lines.items()},
+            {
+                ("probe.lamp", "is_lit"): "is_on",
+                ("probe.room", "lamp_id/is_lit"): "lamp_id/is_on",
+                ("probe.house", "room_ids/lamp_id/is_lit"): "room_ids/lamp_id/is_on",
+                ("probe.room", "other_id/is_lit"): "other_id/is_lit",
+            },
+        )

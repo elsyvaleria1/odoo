@@ -739,6 +739,12 @@ msgstr ""
 
 #. module: base
 #. odoo-python
+#: code:odoo/addons/base/models/uom_uom.py:0
+msgid "You cannot create recursive units of measure."
+msgstr ""
+
+#. module: base
+#. odoo-python
 #: code:addons/base/models/ir_ui_view_arch.py:0
 msgid "\"group_by\" value must be a string %(attribute)s=“%(value)s”"
 msgstr ""
@@ -880,7 +886,7 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:addons/base/models/mixin_table_inheritance_root.py:0
+#: code:addons/base/models/ir_actions_actions.py:0
 msgid "%(count)s %(model)s record(s) still reference it"
 msgstr ""
 
@@ -1208,6 +1214,20 @@ msgstr ""
 
 #. module: base
 #. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid "%(template)s does not combine: %(error)s"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid ""
+"%(template)s: a module's extension applies to what an author added: "
+"%(error)s"
+msgstr ""
+
+#. module: base
+#. odoo-python
 #: code:addons/base/models/ir_access_exception.py:0
 msgid ""
 "%(user)s cannot grant or change an exception that lets them through: another"
@@ -1386,6 +1406,12 @@ msgstr ""
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_partner_form
 msgid "(Same"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_module.py:0
+msgid "(they finished meanwhile)"
 msgstr ""
 
 #. module: base
@@ -2013,12 +2039,33 @@ msgid ""
 msgstr ""
 
 #. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_changeset.py:0
+msgid "A change set is created a draft of the person staging it."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_changeset.py:0
+msgid ""
+"A change set is proposed, activated or cancelled; who staged it and what it "
+"does are not written by hand."
+msgstr ""
+
+#. module: base
 #: model_terms:ir.actions.act_window,help:base.ir_job_channel_act
 msgid ""
 "A channel bounds how many background jobs of its kind run\n"
 "            concurrently across all job workers. Jobs whose channel is not\n"
 "            listed here run with a capacity of 1. Archiving a channel pauses\n"
 "            it: none of its jobs is claimed until it is restored."
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_res_users_login_cooldown__source
+msgid ""
+"A client's address, an account (`account:<user id>`), or a login no account "
+"carries (`login:<sha256 of the login>`)."
 msgstr ""
 
 #. module: base
@@ -2203,6 +2250,12 @@ msgid ""
 msgstr ""
 
 #. module: base
+#. odoo-python
+#: code:addons/base/models/res_groups.py:0
+msgid "A group is created on its own, then implies another."
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
 msgid ""
 "A group only code holds, through with_privilege(): its accesses say exactly "
@@ -2232,8 +2285,14 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.model.constraint,message:base.constraint_access_link_anyone_expires
-msgid "A link anyone can use has an expiry date."
+#. odoo-python
+#: code:addons/base/models/access_link.py:0
+msgid "A link expires unless an administrator waives it."
+msgstr ""
+
+#. module: base
+#: model:ir.model.constraint,message:base.constraint_access_link_expires
+msgid "A link has an expiry date."
 msgstr ""
 
 #. module: base
@@ -2278,14 +2337,14 @@ msgid "A module cannot declare the same exclusion twice!"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_test_legacy_access
-msgid "A module whose access is written as stock Odoo 19.0 writes it"
+#. odoo-python
+#: code:addons/base/models/ir_job.py:0
+msgid "A module operation is in progress; run the job once it is done."
 msgstr ""
 
 #. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_anchored.py:0
-msgid "A monthly or yearly schedule needs a day."
+#: model:ir.module.module,summary:base.module_test_legacy_access
+msgid "A module whose access is written as stock Odoo 19.0 writes it"
 msgstr ""
 
 #. module: base
@@ -2351,7 +2410,15 @@ msgstr ""
 #. module: base
 #. odoo-python
 #: code:addons/base/models/ir_access_log.py:0
-msgid "A purge of the log states its reason."
+msgid "A purge or an erasure of the log states its reason."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_log.py:0
+msgid ""
+"A purge removes the oldest sealed rows of the log, never rows inside its "
+"seal chain: erase those instead."
 msgstr ""
 
 #. module: base
@@ -2389,13 +2456,7 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "A recurrence cannot repeat more than %(maximum)s times."
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
+#: code:addons/base/models/mixin_recurrence_rule.py:0
 msgid "A recurrence that repeats until a date needs that date."
 msgstr ""
 
@@ -2502,6 +2563,12 @@ msgstr ""
 #. module: base
 #. odoo-python
 #: code:addons/base/models/res_users_apikeys_scope.py:0
+msgid "A scope's key names its door; it cannot change."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/res_users_apikeys_scope.py:0
 msgid "A scope's path depth must be at least 1."
 msgstr ""
 
@@ -2549,8 +2616,14 @@ msgstr ""
 #: model_terms:ir.actions.act_window,help:base.res_partner_identifier_type_action
 msgid ""
 "A tax ID, a national number, a trade register entry. Each type\n"
-"                carries its own format and decides whether it identifies the\n"
-"                company or the person."
+"                carries its own format."
+msgstr ""
+
+#. module: base
+#: model:res.groups,comment:base.privilege_compare_template_contexts
+msgid ""
+"A template author's save is compared, view by view, with every view of the "
+"templates it takes part in, those the author does not read included."
 msgstr ""
 
 #. module: base
@@ -2622,18 +2695,6 @@ msgstr ""
 msgid ""
 "A voice note replying to an Odoo notification in Telegram is posted as its "
 "transcript"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_anchored.py:0
-msgid "A weekly schedule needs a weekday."
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_anchored.py:0
-msgid "A yearly schedule needs a month."
 msgstr ""
 
 #. module: base
@@ -9369,11 +9430,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_occurrence__recurrence_update__all
-msgid "All of them"
-msgstr ""
-
-#. module: base
 #. odoo-python
 #: code:addons/base/models/ir_profile.py:0
 msgid ""
@@ -10416,6 +10472,14 @@ msgstr ""
 
 #. module: base
 #. odoo-python
+#: code:addons/base/models/res_users_grant.py:0
+msgid ""
+"An activation lasts the hours it was opened for: stop it or revoke it "
+"instead."
+msgstr ""
+
+#. module: base
+#. odoo-python
 #: code:addons/base/models/res_users_eligibility.py:0
 msgid "An activation of %(group)s lasts at most %(hours)s hours."
 msgstr ""
@@ -10432,7 +10496,9 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields,help:base.field_access_link__expiry_waived
-msgid "An administrator chose that this link anyone can use never expires."
+msgid ""
+"An administrator chose this link's expiry outside what its cause allows: "
+"later, or never."
 msgstr ""
 
 #. module: base
@@ -10615,11 +10681,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_access__anchor
 msgid "Anchor"
-msgstr ""
-
-#. module: base
-#: model:ir.model,name:base.model_mixin_recurrence_anchored
-msgid "Anchored Recurrence Mixin"
 msgstr ""
 
 #. module: base
@@ -11339,12 +11400,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_wizard_ir_module_module_apply_scheduled__module_info
 msgid "Apps to Update"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__4
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__4
-msgid "April"
 msgstr ""
 
 #. module: base
@@ -12506,12 +12561,6 @@ msgid "Audit Privilege"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__8
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__8
-msgid "August"
-msgstr ""
-
-#. module: base
 #: model:res.currency,currency_subunit_label:base.ISK
 msgid "Aurar"
 msgstr ""
@@ -13612,11 +13661,6 @@ msgid "Bhutan"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,help:base.field_wizard_res_users_apikeys_create__scope_id
-msgid "Bind the key to one door; empty, it opens every door."
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,field_description:base.field_ir_actions_act_url__binding_icon
 #: model:ir.model.fields,field_description:base.field_ir_actions_act_window__binding_icon
 #: model:ir.model.fields,field_description:base.field_ir_actions_act_window_close__binding_icon
@@ -14258,11 +14302,6 @@ msgstr ""
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.module_form
 msgid "By"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__byday
-msgid "By day"
 msgstr ""
 
 #. module: base
@@ -15036,7 +15075,7 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:addons/base/models/mixin_table_inheritance_root.py:0
+#: code:addons/base/models/ir_actions_actions.py:0
 msgid "Cannot delete this record: %s"
 msgstr ""
 
@@ -15954,6 +15993,11 @@ msgid "Choose a website domain for document and folder access links"
 msgstr ""
 
 #. module: base
+#: model_terms:ir.ui.view,arch_db:base.form_res_users_key_description
+msgid "Choose the door the key opens"
+msgstr ""
+
+#. module: base
 #. odoo-python
 #: code:addons/base/models/ir_actions_actions.py:0
 msgid "Choose the model to bind %s to."
@@ -16584,6 +16628,11 @@ msgstr ""
 msgid ""
 "Company tagline, which is included in a printed document's header or footer "
 "(depending on the selected layout)."
+msgstr ""
+
+#. module: base
+#: model:res.groups,name:base.privilege_compare_template_contexts
+msgid "Compare Template Contexts"
 msgstr ""
 
 #. module: base
@@ -18659,6 +18708,11 @@ msgid "Content Expires At"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_ir_access_log__content_hash
+msgid "Content Hash"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_ir_attachment__content_released_at
 msgid "Content Released At"
 msgstr ""
@@ -18792,14 +18846,6 @@ msgid "Copy project links from purchases to generated stock transfers"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,help:base.field_res_partner_identifier_type__synced_with_commercial
-msgid ""
-"Copy this identifier from the commercial entity down to its contacts. Use it"
-" for what identifies the *company* -- a tax ID -- and leave it off for what "
-"identifies a person, such as a national number."
-msgstr ""
-
-#. module: base
 #: model:res.currency,currency_unit_label:base.NIO
 msgid "Cordoba"
 msgstr ""
@@ -18930,13 +18976,13 @@ msgid "Country Groups"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_res_country__name
-msgid "Country Name"
+#: model:ir.model.fields,field_description:base.field_phone_number__country_inferred
+msgid "Country Inferred"
 msgstr ""
 
 #. module: base
-#: model:ir.model,name:base.model_mixin_format_vat_label
-msgid "Country Specific VAT Label"
+#: model:ir.model.fields,field_description:base.field_res_country__name
+msgid "Country Name"
 msgstr ""
 
 #. module: base
@@ -20509,12 +20555,6 @@ msgid "Date Start"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__month_by__date
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__month_by__date
-msgid "Date of month"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,help:base.field_res_partner_identifier__valid_until
 msgid ""
 "Date the document carrying this identifier expires. Leave empty for an "
@@ -20531,22 +20571,9 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__day
-msgid "Day"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__month_by__day
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__month_by__day
-msgid "Day of month"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__day
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__day
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_unit__day
 #: model:uom.uom,name:base.product_uom_day
@@ -20581,12 +20608,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/ir_ui_view_name_manager.py:0
 msgid "Debugging information:"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__12
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__12
-msgid "December"
 msgstr ""
 
 #. module: base
@@ -22179,9 +22200,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_mixin_catalog__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_color__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_company_config__display_name
-#: model:ir.model.fields,field_description:base.field_mixin_favorite__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_format_address__display_name
-#: model:ir.model.fields,field_description:base.field_mixin_format_vat_label__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_hierarchy__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_image__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_lifecycle__display_name
@@ -22189,14 +22208,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_mixin_module_link__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_owner_access__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_properties_base_definition__display_name
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_anchored__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_recurrence_interval__display_name
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_occurrence__display_name
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_recurrence_rule__display_name
-#: model:ir.model.fields,field_description:base.field_mixin_table_inheritance_root__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_tag__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_tag_nested__display_name
+#: model:ir.model.fields,field_description:base.field_mixin_template_authoring__display_name
+#: model:ir.model.fields,field_description:base.field_mixin_template_trust__display_name
 #: model:ir.model.fields,field_description:base.field_mixin_user_favorite__display_name
 #: model:ir.model.fields,field_description:base.field_phone_number__display_name
 #: model:ir.model.fields,field_description:base.field_properties_base_definition__display_name
@@ -22652,6 +22669,11 @@ msgid "Dong"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_wizard_res_users_apikeys_create__scope_id
+msgid "Door"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_res_users_apikeys_scope__door_only
 msgid "Door Only"
 msgstr ""
@@ -22716,11 +22738,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_stock_dropshipping
 msgid "Dropshipping Routes"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__dtstart
-msgid "Dtstart"
 msgstr ""
 
 #. module: base
@@ -23459,6 +23476,11 @@ msgid "Encrypted Field Mixin"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rule__repeat_until
+msgid "End Date"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_auth_user_client_session__end_reason
 msgid "End Reason"
 msgstr ""
@@ -23599,6 +23621,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_equity
 msgid "Equity Records"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_ir_access_log__erasure_id
+msgid "Erased By"
 msgstr ""
 
 #. module: base
@@ -24392,148 +24419,10 @@ msgid "Events Spreadsheet Dashboards"
 msgstr ""
 
 #. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Days"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Days for %(count)s events"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Days until %(until)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Months day %(day)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Months day %(day)s for %(count)s events"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Months day %(day)s until %(until)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Months on the %(position)s %(weekday)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid ""
-"Every %(interval)s Months on the %(position)s %(weekday)s for %(count)s "
-"events"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid ""
-"Every %(interval)s Months on the %(position)s %(weekday)s until %(until)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Months on the last day"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Months on the last day for %(count)s events"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Months on the last day until %(until)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Weeks on %(days)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Weeks on %(days)s for %(count)s events"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Weeks on %(days)s until %(until)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Years"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Years for %(count)s events"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Years on the %(position)s %(weekday)s of %(month)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid ""
-"Every %(interval)s Years on the %(position)s %(weekday)s of %(month)s for "
-"%(count)s events"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid ""
-"Every %(interval)s Years on the %(position)s %(weekday)s of %(month)s until "
-"%(until)s"
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "Every %(interval)s Years until %(until)s"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,help:base.field_res_groups__audit_privilege
 msgid ""
 "Every create, write and delete made under this privilege is recorded in the "
 "authorization log, whatever the model."
-msgstr ""
-
-#. module: base
-#: model_terms:ir.ui.view,arch_db:base.form_res_users_key_description
-msgid "Every door"
 msgstr ""
 
 #. module: base
@@ -26779,24 +26668,8 @@ msgid "Faroe Islands"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_favorite__is_favorite
-msgid "Favorite"
-msgstr ""
-
-#. module: base
-#: model:ir.model,name:base.model_mixin_favorite
-msgid "Favorite Mixin"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields.selection,name:base.selection__phone_number__type__fax
 msgid "Fax"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__2
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__2
-msgid "February"
 msgstr ""
 
 #. module: base
@@ -27521,8 +27394,6 @@ msgid "Finland - Sales Payment References"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__1
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__1
 #: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__week_type__0
 msgid "First"
 msgstr ""
@@ -27651,6 +27522,11 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_access_link__dated_by_record
+msgid "Follows the Record's Date"
+msgstr ""
+
+#. module: base
 #: model:ir.module.category,name:base.module_category_theme_food
 msgid "Food"
 msgstr ""
@@ -27729,7 +27605,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__account_move__repeat_type__forever
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_type__forever
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_type__forever
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_type__forever
 #: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_type__forever
 msgid "Forever"
@@ -27798,12 +27673,6 @@ msgstr ""
 msgid ""
 "Found multiple matches for value \"%(value)s\" in field \"%%(field)s\" "
 "(%(match_count)s matches)"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__4
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__4
-msgid "Fourth"
 msgstr ""
 
 #. module: base
@@ -27907,14 +27776,6 @@ msgid "French Southern Territories"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__fri
-msgid "Fri"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__fri
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__fri
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__5
 #: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__4
 msgid "Friday"
@@ -29434,8 +29295,8 @@ msgstr ""
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.form_res_users_key_show
 msgid ""
-"Here is your new API key, use it instead of a password for RPC access.\n"
-"                        Your login is still necessary for interactive usage."
+"Here is your new API key, use it instead of a password at the door\n"
+"                        you chose. Your login is still necessary for interactive usage."
 msgstr ""
 
 #. module: base
@@ -29789,9 +29650,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_mixin_catalog__id
 #: model:ir.model.fields,field_description:base.field_mixin_color__id
 #: model:ir.model.fields,field_description:base.field_mixin_company_config__id
-#: model:ir.model.fields,field_description:base.field_mixin_favorite__id
 #: model:ir.model.fields,field_description:base.field_mixin_format_address__id
-#: model:ir.model.fields,field_description:base.field_mixin_format_vat_label__id
 #: model:ir.model.fields,field_description:base.field_mixin_hierarchy__id
 #: model:ir.model.fields,field_description:base.field_mixin_image__id
 #: model:ir.model.fields,field_description:base.field_mixin_lifecycle__id
@@ -29799,14 +29658,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_mixin_module_link__id
 #: model:ir.model.fields,field_description:base.field_mixin_owner_access__id
 #: model:ir.model.fields,field_description:base.field_mixin_properties_base_definition__id
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_anchored__id
 #: model:ir.model.fields,field_description:base.field_mixin_recurrence_interval__id
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_occurrence__id
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__id
 #: model:ir.model.fields,field_description:base.field_mixin_recurrence_rule__id
-#: model:ir.model.fields,field_description:base.field_mixin_table_inheritance_root__id
 #: model:ir.model.fields,field_description:base.field_mixin_tag__id
 #: model:ir.model.fields,field_description:base.field_mixin_tag_nested__id
+#: model:ir.model.fields,field_description:base.field_mixin_template_authoring__id
+#: model:ir.model.fields,field_description:base.field_mixin_template_trust__id
 #: model:ir.model.fields,field_description:base.field_mixin_user_favorite__id
 #: model:ir.model.fields,field_description:base.field_phone_number__id
 #: model:ir.model.fields,field_description:base.field_properties_base_definition__id
@@ -31932,12 +31789,6 @@ msgid "Jamaica"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__1
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__1
-msgid "January"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__japan
 #: model:res.country,name:base.jp
 msgid "Japan"
@@ -32112,18 +31963,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_wizard_res_partner_merge__exclude_journal_item
 msgid "Journal Items associated to the contact"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__7
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__7
-msgid "July"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__6
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__6
-msgid "June"
 msgstr ""
 
 #. module: base
@@ -32631,11 +32470,6 @@ msgid "Lari"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__-1
-msgid "Last"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,field_description:base.field_auth_user_client__last_activity
 #: model:ir.model.fields,field_description:base.field_auth_user_client_address__last_activity
 #: model:ir.model.fields,field_description:base.field_auth_user_client_session__last_activity
@@ -32923,12 +32757,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_access_drift__writer_id
 msgid "Last Written By"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_day__last
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_day__last
-msgid "Last day"
 msgstr ""
 
 #. module: base
@@ -34183,6 +34011,11 @@ msgid "Log out from all other devices"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__ir_access_log__event__log_erased
+msgid "Log rows erased"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_access_log__event__log_purged
 msgid "Log rows purged"
 msgstr ""
@@ -35078,12 +34911,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__3
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__3
-msgid "March"
-msgstr ""
-
-#. module: base
 #: model:res.currency,currency_unit_label:base.BAM
 msgid "Mark"
 msgstr ""
@@ -35232,12 +35059,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_wizard_res_partner_merge__maximum_group
 msgid "Maximum of Group of Contacts"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__5
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__5
-msgid "May"
 msgstr ""
 
 #. module: base
@@ -36017,6 +35838,15 @@ msgid "Modules \"%(module)s\" and \"%(incompatible_module)s\" are incompatible."
 msgstr ""
 
 #. module: base
+#. odoo-python
+#: code:addons/base/models/ir_module.py:0
+msgid ""
+"Modules cannot be installed, upgraded or removed while background jobs run, and these did not finish within %(seconds)s seconds:\n"
+"%(jobs)s\n"
+"Try again once they are done."
+msgstr ""
+
+#. module: base
 #: model:res.country,name:base.md
 msgid "Moldova"
 msgstr ""
@@ -36037,11 +35867,6 @@ msgid "Mollie Payments"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__mon
-msgid "Mon"
-msgstr ""
-
-#. module: base
 #: model:res.country,name:base.mc
 msgid "Monaco"
 msgstr ""
@@ -36052,9 +35877,6 @@ msgid "Monaco - Accounting"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__mon
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__mon
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__1
 #: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__0
 msgid "Monday"
@@ -36116,11 +35938,6 @@ msgid "Month"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__month_by
-msgid "Month By"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,summary:base.module_l10n_mx_report_isr
 msgid "Monthly ISR provisional payments working paper (LISR art. 106)"
 msgstr ""
@@ -36128,9 +35945,7 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_unit__month
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__month
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_unit__month
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__month
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__month
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__month
 #: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_unit__month
 msgid "Months"
@@ -36290,7 +36105,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_ir_sequence__name
 #: model:ir.model.fields,field_description:base.field_mixin_catalog__name
 #: model:ir.model.fields,field_description:base.field_mixin_module_link__name
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__name
 #: model:ir.model.fields,field_description:base.field_report_paperformat__name
 #: model:ir.model.fields,field_description:base.field_res_bank__name
 #: model:ir.model.fields,field_description:base.field_res_company__name
@@ -36662,6 +36476,12 @@ msgid ""
 msgstr ""
 
 #. module: base
+#. odoo-python
+#: code:addons/base/models/res_users_apikeys_scope.py:0
+msgid "No module declares the API key scope %(key)s."
+msgstr ""
+
+#. module: base
 #: model_terms:ir.actions.act_window,help:base.open_module_tree
 msgid "No module found!"
 msgstr ""
@@ -36890,12 +36710,6 @@ msgid "Notify customers when orders are received or ready"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__11
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__11
-msgid "November"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,field_description:base.field_phone_number__number
 msgid "Number"
 msgstr ""
@@ -36913,13 +36727,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users__companies_count
 msgid "Number of Companies"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__repeat_number
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_type__count
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_type__count
-msgid "Number of Repetitions"
 msgstr ""
 
 #. module: base
@@ -37001,12 +36808,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_auth_event__occurred_at
 msgid "Occurred At"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__10
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__10
-msgid "October"
 msgstr ""
 
 #. module: base
@@ -37319,9 +37120,25 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:addons/base/models/ir_ui_view_authoring.py:0
+#: code:addons/base/models/mixin_template_authoring.py:0
 msgid ""
 "Only administrators may add expressions that reach the environment or call methods to a template:\n"
+"%(errors)s"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid ""
+"Only administrators may change how a template a module ships evaluates:\n"
+"%(errors)s"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid ""
+"Only administrators may remove a template a module ships where that changes how another one evaluates:\n"
 "%(errors)s"
 msgstr ""
 
@@ -37335,12 +37152,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/ir_access_changeset.py:0
 msgid "Only an active change set is rolled back."
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/access_link.py:0
-msgid "Only an administrator removes a link's expiry."
 msgstr ""
 
 #. module: base
@@ -37420,7 +37231,13 @@ msgstr ""
 #. module: base
 #. odoo-python
 #: code:addons/base/models/ir_access_log.py:0
-msgid "Only the superuser purges the log."
+msgid "Only the superuser purges or erases the log."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_log.py:0
+msgid "Only the superuser re-seals the log."
 msgstr ""
 
 #. module: base
@@ -38930,6 +38747,15 @@ msgstr ""
 msgid ""
 "Per person, model and operation, how many records they reach before and "
 "after the change set."
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_ir_ui_view__shipped_digests
+#: model:ir.model.fields,help:base.field_mixin_template_trust__shipped_digests
+msgid ""
+"Per template field, the digest of what the text its module file ships "
+"evaluates: a text with the same digest in the same field is trusted as the "
+"module's own, wherever it is stored."
 msgstr ""
 
 #. module: base
@@ -42445,6 +42271,14 @@ msgid "RPC Tests"
 msgstr ""
 
 #. module: base
+#: model_terms:ir.ui.view,arch_db:base.form_res_users_key_description
+msgid ""
+"RPC for scripts and XML-RPC or JSON-2 clients; an\n"
+"                        integration's own door (DAV, Outlook, ...) for that\n"
+"                        integration. The key opens no other door."
+msgstr ""
+
+#. module: base
 #: model:res.country,vat_label:base.hn
 msgid "RTN"
 msgstr ""
@@ -43057,18 +42891,8 @@ msgid "Recurrence Interval Mixin"
 msgstr ""
 
 #. module: base
-#: model:ir.model,name:base.model_mixin_recurrence_occurrence
-msgid "Recurrence Occurrence Mixin"
-msgstr ""
-
-#. module: base
 #: model:ir.model,name:base.model_mixin_recurrence_rule
 msgid "Recurrence Rule Mixin"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_occurrence__recurrence_update
-msgid "Recurrence Update"
 msgstr ""
 
 #. module: base
@@ -45122,13 +44946,7 @@ msgid "Repairs"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_anchored__repeat_day
-msgid "Repeat Day"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,field_description:base.field_mixin_recurrence_interval__repeat_interval
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__repeat_interval
 #: model:ir.model.fields,field_description:base.field_mixin_recurrence_rule__repeat_interval
 msgid "Repeat Every"
 msgstr ""
@@ -45136,26 +44954,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_access_review_campaign__recurrence_months
 msgid "Repeat Every (months)"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_anchored__repeat_month
-msgid "Repeat Month"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_anchored__repeat_second_day
-msgid "Repeat Second Day"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_anchored__repeat_second_month
-msgid "Repeat Second Month"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__repeat_until
-msgid "Repeat Until"
 msgstr ""
 
 #. module: base
@@ -46191,11 +45989,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_attachment_reading__representation__rows
 msgid "Rows"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__rrule
-msgid "Rrule"
 msgstr ""
 
 #. module: base
@@ -47309,19 +47102,11 @@ msgid "Santims"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__sat
-msgid "Sat"
-msgstr ""
-
-#. module: base
 #: model:res.currency,currency_subunit_label:base.THB
 msgid "Satang"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__sat
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sat
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__6
 #: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__5
 msgid "Saturday"
@@ -47541,7 +47326,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_ir_access_exception__res_id
 #: model:ir.model.fields,field_description:base.field_res_users_apikeys__scope_id
 #: model:ir.model.fields,field_description:base.field_res_users_apikeys_scope_line__scope_id
-#: model:ir.model.fields,field_description:base.field_wizard_res_users_apikeys_create__scope_id
 msgid "Scope"
 msgstr ""
 
@@ -47679,8 +47463,6 @@ msgid "Searchpanel items with a domain attribute must have select='multi'."
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__2
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__2
 #: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__week_type__1
 msgid "Second"
 msgstr ""
@@ -48304,12 +48086,6 @@ msgid "Separator Format"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__9
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_second_month__9
-msgid "September"
-msgstr ""
-
-#. module: base
 #: model:ir.model,name:base.model_ir_sequence
 #: model:ir.model.fields,field_description:base.field_ir_actions_act_window_view__sequence
 #: model:ir.model.fields,field_description:base.field_ir_actions_server__sequence
@@ -48791,6 +48567,12 @@ msgstr ""
 #. module: base
 #: model:res.currency,currency_unit_label:base.SOS
 msgid "Shillings"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_ir_ui_view__shipped_digests
+#: model:ir.model.fields,field_description:base.field_mixin_template_trust__shipped_digests
+msgid "Shipped Digests"
 msgstr ""
 
 #. module: base
@@ -50466,14 +50248,6 @@ msgid "Summary"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__sun
-msgid "Sun"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__sun
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sun
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__7
 #: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__6
 msgid "Sunday"
@@ -51107,11 +50881,6 @@ msgid "Symbol Position"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_res_partner_identifier_type__synced_with_commercial
-msgid "Synced With Commercial"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,summary:base.module_device_access_control
 msgid ""
 "Synchronize access-device users and schedules and receive access events"
@@ -51231,11 +51000,6 @@ msgstr ""
 #. module: base
 #: model:res.country,vat_label:base.ae
 msgid "TRN"
-msgstr ""
-
-#. module: base
-#: model:ir.model,name:base.model_mixin_table_inheritance_root
-msgid "Table Inheritance Root"
 msgstr ""
 
 #. module: base
@@ -51570,8 +51334,18 @@ msgid "Template %(template)s:"
 msgstr ""
 
 #. module: base
+#: model:ir.model,name:base.model_mixin_template_authoring
+msgid "Template Authoring Mixin"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_ir_actions_report__report_name
 msgid "Template Name"
+msgstr ""
+
+#. module: base
+#: model:ir.model,name:base.model_mixin_template_trust
+msgid "Template Trust Mixin"
 msgstr ""
 
 #. module: base
@@ -52175,6 +51949,13 @@ msgstr ""
 
 #. module: base
 #. odoo-python
+#: code:addons/base/models/res_users_apikeys.py:0
+msgid ""
+"The API key scope %(key)s is archived: a key bound to it would open nothing."
+msgstr ""
+
+#. module: base
+#. odoo-python
 #: code:odoo/service/api_scope.py:0
 msgid ""
 "The API key's scope '%(scope)s' does not allow %(operation)s on '%(model)s' "
@@ -52306,6 +52087,22 @@ msgid "The authorization log cannot be deleted."
 msgstr ""
 
 #. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_log.py:0
+msgid ""
+"The authorization log cannot be erased while it cannot be sealed: set "
+"access_log_seal_key in the server configuration."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_log.py:0
+msgid ""
+"The authorization log's seals cannot be checked: access_log_seal_key is not "
+"set in the server configuration."
+msgstr ""
+
+#. module: base
 #: model:ir.model.constraint,message:base.constraint_ir_job_channel_check_capacity
 msgid "The channel capacity must be strictly positive."
 msgstr ""
@@ -52399,6 +52196,14 @@ msgid "The country group code must be unique!"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,help:base.field_phone_number__country_inferred
+msgid ""
+"The country was read from the contact the number was created for, and "
+"follows that contact's corrections while no other contact holds the number. "
+"Choosing a country on the number clears it."
+msgstr ""
+
+#. module: base
 #: model:ir.model.constraint,message:base.constraint_res_currency_unique_name
 msgid "The currency code must be unique!"
 msgstr ""
@@ -52431,12 +52236,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.model.constraint,message:base.constraint_calendar_recurrence_month_day
-#: model:ir.model.constraint,message:base.constraint_mixin_recurrence_rrule_month_day
-msgid "The day must be between 1 and 31, or the last day of the month"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,help:base.field_res_users__company_id
 msgid "The default company for this user."
 msgstr ""
@@ -52452,6 +52251,13 @@ msgstr ""
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.demo_failures_dialog
 msgid "The demonstration data of"
+msgstr ""
+
+#. module: base
+#: model:ir.access.class,description:base.access_class_template_trust
+msgid ""
+"The digest of a template a module file ships, which trusts every template of"
+" the same text: the module loader writes it, and no user does."
 msgstr ""
 
 #. module: base
@@ -52472,6 +52278,12 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,help:base.field_ir_filters__embedded_action_id
 msgid "The embedded action this filter is applied to"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_log.py:0
+msgid "The erasure could not be sealed; the server log says why."
 msgstr ""
 
 #. module: base
@@ -52532,18 +52344,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,help:base.field_access_link__token_hint
 msgid "The first characters of the token, to tell links apart."
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_anchored.py:0
-msgid "The first date must be earlier in the year than the second date."
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_anchored.py:0
-msgid "The first day must be lower than the second day."
 msgstr ""
 
 #. module: base
@@ -52639,13 +52439,6 @@ msgid "The group's administrators"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,help:base.field_ir_access_log__seal
-msgid ""
-"The hash chaining the row to the one sealed before it: a row changed or "
-"deleted after it was sealed breaks the chain from there on."
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,help:base.field_res_users_apikeys_scope__key
 msgid ""
 "The identifier a route declares (`scope=`) and a key is bound to; the string"
@@ -52674,12 +52467,6 @@ msgid "The internal user in charge of this contact."
 msgstr ""
 
 #. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "The interval cannot be negative."
-msgstr ""
-
-#. module: base
 #: model:ir.model.constraint,message:base.constraint_ir_cron_check_strictly_positive_interval
 msgid "The interval number must be a strictly positive number."
 msgstr ""
@@ -52701,6 +52488,13 @@ msgid "The key will be deleted once this period has elapsed."
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,help:base.field_ir_access_log__seal
+msgid ""
+"The keyed hash chaining the row's content hash to the row sealed before it: "
+"a row changed or deleted after it was sealed breaks the chain from there on."
+msgstr ""
+
+#. module: base
 #. odoo-python
 #: code:addons/base/models/res_lang.py:0
 msgid "The language %s is not installed."
@@ -52717,16 +52511,16 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:addons/base/models/mixin_recurrence_anchored.py:0
-msgid ""
-"The last day of a month and the first day of the next one close the same "
-"period, so they cannot be the two dates."
+#: code:addons/base/models/res_country.py:0
+msgid "The layout contains an invalid format key"
 msgstr ""
 
 #. module: base
-#. odoo-python
-#: code:addons/base/models/res_country.py:0
-msgid "The layout contains an invalid format key"
+#: model:ir.model.fields,help:base.field_access_link__dated_by_record
+msgid ""
+"The link expires with a date of its record, such as a meeting's end or a "
+"request's validity, and moves with it, rather than after its cause's "
+"lifetime."
 msgstr ""
 
 #. module: base
@@ -52912,16 +52706,17 @@ msgid "The number of digits cannot be negative."
 msgstr ""
 
 #. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "The number of repetitions cannot be negative."
+#: model:ir.model.fields,help:base.field_wizard_res_users_apikeys_create__scope_id
+msgid ""
+"The one door the key opens: RPC (XML-RPC, JSON-2) or one integration's. A "
+"key opens no other door."
 msgstr ""
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_users_apikeys__scope_id
 msgid ""
-"The one door this key opens; empty, it opens every door and each door's "
-"scope applies."
+"The one door this key opens. Empty only on a key made before every key named"
+" its door: such a key opens the RPC doors alone."
 msgstr ""
 
 #. module: base
@@ -53184,8 +52979,36 @@ msgid "The rounding factor must be greater than 0!"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,help:base.field_ir_access_log__erasure_id
+msgid ""
+"The row recording this row's erasure: its content is gone, its content hash "
+"and its seal stay."
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_ir_access_log__content_hash
+msgid ""
+"The row's content hashed under the seal key when it was sealed: the chain "
+"seals this hash, so a row erased later keeps its place."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_log.py:0
+msgid "The rows to erase could not be sealed first; the server log says why."
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,help:base.field_ir_access_exception__kind
 msgid "The rule the exception lets the person past."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_log.py:0
+msgid ""
+"The seal chain does not verify under the previous key, so it is not sealed "
+"again: %(broken)s"
 msgstr ""
 
 #. module: base
@@ -53260,12 +53083,6 @@ msgstr ""
 msgid ""
 "The translation mode is a selection since Odoo 19: pass 'standard', "
 "'html_translate' or 'xml_translate' instead of %(value)s."
-msgstr ""
-
-#. module: base
-#. odoo-python
-#: code:addons/base/models/mixin_recurrence_anchored.py:0
-msgid "The two dates fall on the same day in shorter months."
 msgstr ""
 
 #. module: base
@@ -53409,12 +53226,6 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:addons/base/models/res_partner.py:0
-msgid "There is no identifier type with code %(code)s."
-msgstr ""
-
-#. module: base
-#. odoo-python
 #: code:addons/base/wizards/wizard_res_users_check_identity.py:0
 msgid "There is no method to run after the identity check."
 msgstr ""
@@ -53422,6 +53233,11 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__access_link__audience__partners
 msgid "These people"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__access_link__audience__organizations
+msgid "These people's organizations"
 msgstr ""
 
 #. module: base
@@ -53435,12 +53251,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_wizard_res_users_simulate_access__reached_count
 msgid "They Reach"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__3
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__3
-msgid "Third"
 msgstr ""
 
 #. module: base
@@ -53469,11 +53279,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,help:base.field_res_partner_bank_account__allow_out_payment
 msgid "This account can be used for outgoing payments"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_occurrence__recurrence_update__subsequent
-msgid "This and the following ones"
 msgstr ""
 
 #. module: base
@@ -53554,7 +53359,7 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:odoo/tools/image.py:0
+#: code:addons/base/models/ir_binary.py:0 code:odoo/tools/image.py:0
 msgid "This file could not be decoded as an image file."
 msgstr ""
 
@@ -53630,7 +53435,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/access_link.py:0
 msgid ""
-"This link can be extended to %(limit)s at most; ask an administrator for "
+"This link can live until %(latest)s at most; ask an administrator for "
 "longer."
 msgstr ""
 
@@ -53661,11 +53466,6 @@ msgstr ""
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_base_module_upgrade
 msgid "This module will trigger the uninstallation of below modules."
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_occurrence__recurrence_update__this
-msgid "This one"
 msgstr ""
 
 #. module: base
@@ -53713,14 +53513,6 @@ msgid "Through %(field)s:"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__thu
-msgid "Thu"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__thu
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__thu
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__4
 #: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__3
 msgid "Thursday"
@@ -53827,7 +53619,6 @@ msgid "Timesheets Spreadsheet Dashboards"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__event_tz
 #: model:ir.model.fields,field_description:base.field_res_bank__tz
 #: model:ir.model.fields,field_description:base.field_res_company__tz
 #: model:ir.model.fields,field_description:base.field_res_partner__tz
@@ -54425,14 +54216,6 @@ msgid "Trips over Telegram"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__tue
-msgid "Tue"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__tue
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__tue
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__2
 #: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__1
 msgid "Tuesday"
@@ -54493,18 +54276,8 @@ msgid "Tuvalu"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_anchored__repeat_twice
-msgid "Twice per Period"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_integration_twilio
 msgid "Twilio Integration"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,help:base.field_mixin_recurrence_anchored__repeat_twice
-msgid "Two anchors in each month or year instead of one"
 msgstr ""
 
 #. module: base
@@ -55244,7 +55017,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_res_users_grant__date_to
 #: model:ir.model.fields.selection,name:base.selection__account_move__repeat_type__until
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_type__until
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_type__until
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_type__until
 #: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_type__until
 msgid "Until"
@@ -56714,31 +56486,15 @@ msgid "Website Visitor Lead SMS"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__wed
-msgid "Wed"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__wed
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__wed
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__3
 #: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__2
 msgid "Wednesday"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_anchored__repeat_weekday
-#: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__weekday
-msgid "Weekday"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_unit__week
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__week
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_unit__week
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__week
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__week
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__week
 #: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_unit__week
 msgid "Weeks"
@@ -57431,9 +57187,7 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_unit__year
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__year
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_unit__year
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__year
-#: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__year
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__year
 #: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_unit__year
 msgid "Years"
@@ -57811,12 +57565,6 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:addons/base/models/mixin_recurrence_rrule.py:0
-msgid "You have to choose at least one day in the week"
-msgstr ""
-
-#. module: base
-#. odoo-python
 #: code:addons/base/wizards/wizard_res_partner_merge.py:0
 msgid ""
 "You have to specify a filter for your selection, or tick Similar Names."
@@ -57976,8 +57724,26 @@ msgstr ""
 
 #. module: base
 #. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid "a name it reads is bound differently"
+msgstr ""
+
+#. module: base
+#. odoo-python
 #: code:addons/base/wizards/wizard_base_explain_access.py:0
 msgid "a record you cannot read"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_log.py:0
+msgid "access_log_seal_key is not set in the server configuration."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_log.py:0
+msgid "access_log_seal_key is shorter than %(length)s characters."
 msgstr ""
 
 #. module: base
@@ -58337,11 +58103,6 @@ msgid "html_value"
 msgstr ""
 
 #. module: base
-#: model:ir.model,name:base.model_mixin_recurrence_rrule
-msgid "iCalendar Recurrence Rule Mixin"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,help:base.field_ir_filters__embedded_parent_res_id
 msgid ""
 "id of the record the filter should be applied to. Only used in combination "
@@ -58400,6 +58161,37 @@ msgstr ""
 #. odoo-python
 #: code:odoo/service/api_scope.py:0
 msgid "is"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid "it evaluates only where an author put it"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid "it gains directives, or is copied"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid "it is moved or wrapped in directives"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid "it is removed or replaced"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid ""
+"it takes the key of a template a module ships, which other templates call"
 msgstr ""
 
 #. module: base
@@ -58563,6 +58355,12 @@ msgid "the condition of %(model)s itself"
 msgstr ""
 
 #. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access.py:0
+msgid "the label of %(model)s"
+msgstr ""
+
+#. module: base
 #: model:ir.access.predicate,description:base.access_predicate_user_has_access
 msgid "the record says you have access to it"
 msgstr ""
@@ -58593,6 +58391,12 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__value_field_to_show__value
 msgid "value"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_ui_view_context.py:0
+msgid "what it evaluates changes"
 msgstr ""
 
 #. module: base

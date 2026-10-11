@@ -41,26 +41,26 @@ export class ProductInfoPopup extends Component {
     get allowProductEdition() {
         return true;
     }
-    async toggleFavorite() {
+    async toggleFeatured() {
         const template = this.props.productTemplate;
-        const next = !template.is_favorite;
-        log.pipeline("toggleFavorite", () => ({ template: template.id, next }));
+        const next = !template.is_featured;
+        log.pipeline("toggleFeatured", () => ({ template: template.id, next }));
         try {
             const applied = await this.pos.data.call(
                 "product.template",
-                "set_pos_favorite",
+                "set_pos_featured",
                 [[template.id], next],
             );
-            template.is_favorite = applied;
+            template.is_featured = applied;
         } catch (error) {
             this.pos.dialog.add(AlertDialog, {
-                title: _t("Favorite not saved"),
-                body: _t("This product could not be marked as a favorite."),
+                title: _t("Not saved"),
+                body: _t("Whether this product is featured could not be saved."),
             });
             logPosMessage(
                 "ProductInfoPopup",
-                "toggleFavorite",
-                `Could not set is_favorite on product.template ${template.id}`,
+                "toggleFeatured",
+                `Could not set is_featured on product.template ${template.id}`,
                 undefined,
                 [error],
             );

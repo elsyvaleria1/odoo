@@ -22,15 +22,17 @@ from . import ir_model_data
 from . import ir_sequence
 
 from . import ir_ui_menu
+from . import mixin_template_authoring
+from . import mixin_template_trust
 from . import ir_ui_view_custom
 from . import ir_ui_view
 from . import ir_ui_view_authoring
+from . import ir_ui_view_context
 from . import ir_ui_view_base
 from . import ir_ui_view_name_manager
 from . import ir_asset_paths
 from . import ir_asset
 
-from . import mixin_table_inheritance_root
 from . import ir_actions_actions
 from . import ir_actions_path
 from . import ir_actions_act_window_view
@@ -54,9 +56,7 @@ from . import ir_binary
 from . import ir_egress
 
 from . import mixin_recurrence_interval
-from . import mixin_recurrence_anchored
 from . import mixin_recurrence_rule
-from . import mixin_recurrence_occurrence
 from . import ir_cron
 from . import ir_job
 from . import ir_autovacuum
@@ -96,7 +96,6 @@ from . import mixin_avatar
 from . import mixin_catalog
 from . import mixin_lifecycle
 from . import mixin_merge
-from . import mixin_favorite
 from . import mixin_user_favorite
 from . import mixin_band
 from . import mixin_color
@@ -104,7 +103,6 @@ from . import mixin_tag
 from . import mixin_tag_nested
 from . import tag_tag
 
-from . import mixin_format_vat_label
 from . import mixin_format_address
 from . import res_partner_tag
 from . import res_partner_industry
@@ -114,9 +112,6 @@ from . import phone_number
 from . import res_partner
 from . import res_partner_identifier
 from . import res_partner_identifier_type
-
-from . import mixin_recurrence_rrule
-
 
 from . import res_bank
 from . import res_partner_bank_account

@@ -349,6 +349,13 @@ class ResGroups(models.Model):
         )
 
     def write(self, vals: dict[str, Any]) -> bool:
+        implied_by = None
+        if "implied_by_ids" in vals:
+            vals = dict(vals)
+            implied_by = vals.pop("implied_by_ids")
+            if not vals:
+                self._write_implied_by(implied_by)
+                return True
         if "name" in vals:
             if vals["name"].startswith("-"):
                 _debug.logic("write_refused", groups=self.ids, reason="name_dash")
@@ -389,7 +396,32 @@ class ResGroups(models.Model):
                 self.all_user_ids, "implication_changed"
             )
 
+        if implied_by is not None:
+            self._write_implied_by(implied_by)
         return res
+
+    def _write_implied_by(self, value: Any) -> None:
+        field = self._fields["implied_by_ids"]
+        commands: dict[int, list[tuple]] = {}
+        for group in self:
+            wanted = field.convert_to_cache(value, group)
+            if not all(isinstance(id_, int) for id_ in wanted):
+                raise UserError(
+                    self.env._("A group is created on its own, then implies another.")
+                )
+            held = set(group.implied_by_ids._ids)
+            for implying_id in sorted(set(wanted) - held):
+                commands.setdefault(implying_id, []).append(Command.link(group.id))
+            for implying_id in sorted(held - set(wanted)):
+                commands.setdefault(implying_id, []).append(Command.unlink(group.id))
+        _debug.logic(
+            "implied_by_written_as_implied", groups=self.ids, implying=sorted(commands)
+        )
+        by_commands: dict[tuple, list[int]] = {}
+        for implying_id, group_commands in commands.items():
+            by_commands.setdefault(tuple(group_commands), []).append(implying_id)
+        for group_commands, implying_ids in by_commands.items():
+            self.browse(implying_ids).write({"implied_ids": list(group_commands)})
 
     def _add_missing_xml_ids(self) -> dict[int, str]:
         result = self.get_external_id()
@@ -578,7 +610,15 @@ class ResGroups(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
+        implied_by = [vals.get("implied_by_ids") for vals in vals_list]
+        vals_list = [
+            {name: value for name, value in vals.items() if name != "implied_by_ids"}
+            for vals in vals_list
+        ]
         groups = super().create(vals_list)
+        for group, value in zip(groups, implied_by, strict=True):
+            if value:
+                group._write_implied_by(value)
         if not projecting():
             self.env["res.users.grant"]._follow_membership(
                 groups._user_membership(), ()

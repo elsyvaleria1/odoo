@@ -1,7 +1,7 @@
 import logging
-import math
 from bisect import bisect_left, bisect_right
 from collections.abc import Iterable
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Self
 
 from num2words import num2words
@@ -356,10 +356,8 @@ class ResCurrency(models.Model):
     @api.depends("rounding")
     def _compute_decimal_places(self) -> None:
         for currency in self:
-            if 0 < currency.rounding < 1:
-                currency.decimal_places = math.ceil(math.log10(1 / currency.rounding))
-            else:
-                currency.decimal_places = 0
+            exponent = Decimal(repr(currency.rounding)).normalize().as_tuple().exponent
+            currency.decimal_places = max(0, -exponent)
 
     @api.depends("rate_ids.name")
     def _compute_date(self) -> None:

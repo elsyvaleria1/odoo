@@ -703,6 +703,86 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
             "a file whose marker was refreshed after the scan must be spared",
         )
 
+    def test_gc_sweep_spares_content_a_writer_reuses_after_its_last_look(self):
+        payload = os.urandom(16)
+        a1 = self.Attachment.create({"name": "reused", "raw": payload})
+        fname, checksum = a1.store_fname, a1.checksum
+        store_path = Path(self.filestore, fname)
+        a1.unlink()
+        self._age_marker(fname, IrAttachment._GC_CHECKLIST_GRACE + 60)
+        marker = self._checklist_marker(fname)
+        checklist = self.Attachment._get_gc_checklist()
+        self.assertIn(fname, checklist)
+
+        real_stat = Path.stat
+        written = []
+
+        def stat(path, *args, **kwargs):
+            result = real_stat(path, *args, **kwargs)
+            if path == marker and not written:
+                written.append(self.Attachment._write_file(payload, checksum))
+            return result
+
+        with patch.object(Path, "stat", stat):
+            self.Attachment._gc_file_store_unsafe({fname: checklist[fname]})
+        self.assertEqual(written, [fname])
+        self.assertEqual(store_path.read_bytes(), payload)
+
+    def test_gc_sweep_interrupted_after_setting_a_file_aside_loses_nothing(self):
+        payload = os.urandom(16)
+        a1 = self.Attachment.create({"name": "crash", "raw": payload})
+        fname = a1.store_fname
+        store_path = Path(self.filestore, fname)
+        a1.unlink()
+        self._age_marker(fname, IrAttachment._GC_CHECKLIST_GRACE + 60)
+        checklist = self.Attachment._get_gc_checklist()
+        self.assertIn(fname, checklist)
+
+        class Crash(BaseException):
+            pass
+
+        real_mtime = IrAttachment._get_marker_mtime_ns
+        reuser = []
+
+        def mtime(model, marker):
+            if reuser:
+                raise Crash
+            seen = real_mtime(model, marker)
+            reuser.append(self.Attachment.create({"name": "reuse", "raw": payload}))
+            self.env.flush_all()
+            return seen
+
+        with (
+            patch.object(IrAttachment, "_get_marker_mtime_ns", mtime),
+            contextlib.suppress(Crash),
+        ):
+            self.Attachment._gc_file_store_unsafe({fname: checklist[fname]})
+        self.assertEqual(len(reuser), 1, "the sweep never reached the crash")
+        self.assertEqual(reuser[0].store_fname, fname)
+        self.assertFalse(store_path.exists(), "the crash left the file set aside")
+
+        self.Attachment._restore_set_aside_files()
+
+        self.assertEqual(
+            reuser[0].with_context(bin_size=False).raw,
+            payload,
+            "a row committed against the content lost its file to the crash",
+        )
+        self.assertIn(
+            fname,
+            self.Attachment._get_gc_checklist(grace=0),
+            "the restored content is left for a sweep to decide",
+        )
+
+    def test_every_filestore_gc_run_first_restores_what_a_crash_set_aside(self):
+        with (
+            patch.object(self.env.cr, "commit"),
+            patch.object(IrAttachment, "_get_gc_checklist", return_value={}),
+            patch.object(IrAttachment, "_restore_set_aside_files") as restore,
+        ):
+            self.Attachment._gc_file_store()
+        restore.assert_called_once_with()
+
     def test_gc_sweep_flushes_before_reading_the_whitelist(self):
         att = self.Attachment.create({"name": "unflushed", "raw": os.urandom(16)})
         first = att.store_fname
@@ -2343,6 +2423,42 @@ class TestContentDigestKeys(TransactionCaseWithUserDemo):
             )
             self.assertTrue(readable.store_fname.startswith("b3/"))
 
+    @mute_logger("odoo.addons.base.models.ir_attachment")
+    def test_rehash_keeps_the_key_of_an_unsized_row_it_cannot_read(self):
+        with self._tagged_digest_build():
+            self._drain_legacy_rows()
+            att, fname = self._legacy_row(b"unsized-" + os.urandom(16))
+            self.env.cr.execute(
+                "UPDATE ir_attachment SET file_size = 0 WHERE id = %s", [att.id]
+            )
+            att.invalidate_recordset()
+            real_read = IrAttachment._read_file
+
+            def read(records, key, *args, **kwargs):
+                if key == fname:
+                    return b""
+                return real_read(records, key, *args, **kwargs)
+
+            with patch.object(IrAttachment, "_read_file", read):
+                self.assertEqual(self.Attachment._gc_rehash_legacy_keys(limit=10)[0], 0)
+            att.invalidate_recordset()
+            self.assertEqual(att.store_fname, fname)
+            self.assertFalse(Path(self.filestore, "checklist", fname).exists())
+
+    @mute_logger("odoo.addons.base.models.ir_attachment")
+    def test_rehash_keeps_the_key_of_an_unsized_row_whose_file_is_missing(self):
+        with self._tagged_digest_build():
+            self._drain_legacy_rows()
+            att, fname = self._legacy_row(b"unsized-missing-" + os.urandom(16))
+            self.env.cr.execute(
+                "UPDATE ir_attachment SET file_size = 0 WHERE id = %s", [att.id]
+            )
+            att.invalidate_recordset()
+            Path(self.filestore, fname).unlink()
+            self.assertEqual(self.Attachment._gc_rehash_legacy_keys(limit=10)[0], 0)
+            att.invalidate_recordset()
+            self.assertEqual(att.store_fname, fname)
+
     def test_rehash_skips_other_backends_keys(self):
         with self._tagged_digest_build():
             att = self.Attachment.create({"name": "remote", "raw": b"remote-ish"})
@@ -2683,6 +2799,15 @@ class TestPermissions(TransactionCaseWithUserDemo):
                 theirs.write(vals)
         self.assertEqual(mine.name, "mine")
         self.assertEqual(mine.raw, b"mine")
+
+    def test_a_writer_of_its_record_detaches_an_attachment_someone_else_added(self):
+        holder = self.Attachments.create({"name": "holder"})
+        added = self.Attachments.with_user(SUPERUSER_ID).create(
+            {"name": "added", "res_model": holder._name, "res_id": holder.id}
+        )
+        added.with_env(self.env).write({"res_model": False, "res_id": 0})
+        self.assertFalse(added.res_model)
+        self.assertFalse(added.res_id)
 
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models")
     def test_res_field_write_access(self):

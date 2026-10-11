@@ -163,6 +163,7 @@ class MixinMailComposer(models.AbstractModel):
             self._check_render_authoring(
                 self[field_name],
                 getattr(self._fields[field_name], "render_engine", None) or engine,
+                self.render_model,
             )
             return super()._render_field(
                 field_name,
@@ -213,6 +214,7 @@ class MixinMailComposer(models.AbstractModel):
             self._check_render_authoring(
                 self[field_name],
                 getattr(self._fields[field_name], "render_engine", None) or engine,
+                self.render_model,
                 self.template_id,
             )
         _debug.logic(

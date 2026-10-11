@@ -1843,6 +1843,12 @@ msgid ""
 msgstr ""
 
 #. module: knowledge
+#. odoo-python
+#: code:addons/knowledge/models/knowledge_article.py:0
+msgid "An article cannot be moved under itself or one of its sub-articles."
+msgstr ""
+
+#. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_hr_faq
 msgid "An hour or two (medical appointment, ...)"
 msgstr ""
@@ -2100,13 +2106,6 @@ msgstr ""
 #: model:ir.ui.menu,name:knowledge.knowledge_menu_article
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_article_view_search
 msgid "Articles"
-msgstr ""
-
-#. module: knowledge
-#. odoo-python
-#: code:addons/knowledge/models/knowledge_article.py:0
-msgid ""
-"Articles %s cannot be updated as this would create a recursive hierarchy."
 msgstr ""
 
 #. module: knowledge

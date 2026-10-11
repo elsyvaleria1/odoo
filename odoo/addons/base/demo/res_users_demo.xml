@@ -6,7 +6,7 @@
         <field name="company_id" ref="main_company" />
         <field name="street">3575 Buena Vista Avenue</field>
         <field name="city">Eugene</field>
-        <field name="state_id" model="res.country.state" search="[('code','=','OR')]" />
+        <field name="state_id" ref="state_us_32" />
         <field name="zip">97401</field>
         <field name="country_id" ref="us" />
         <field name="tz">Europe/Brussels</field>
@@ -78,10 +78,7 @@
         <field name="email">joel.willis63@example.com</field>
         <field name="street">858 Lynn Street</field>
         <field name="city">Bayonne</field>
-        <field
-            name="state_id"
-            model="res.country.state"
-            search="[('code','ilike','NJ')]" />
+        <field name="state_id" ref="state_us_25" />
         <field name="zip">07002</field>
         <field name="country_id" ref="base.us" />
         <field

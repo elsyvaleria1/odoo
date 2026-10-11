@@ -5,13 +5,10 @@ from unittest.mock import patch
 
 import odoo
 from odoo.tests.common import BaseCase
+from odoo.tools.assets import fingerprint
+from odoo.tools.assets.fingerprint import pipeline_fingerprint, pipeline_sources
 
-from odoo.addons.base.models.assetsbundle.common import (
-    CompileError,
-    _pipeline_fingerprint,
-    _pipeline_sources,
-    _run_cli_pipe,
-)
+from odoo.addons.base.models.assetsbundle.common import CompileError, _run_cli_pipe
 from odoo.addons.base.models.assetsbundle.css_pipeline import _rtlcss_bin
 
 
@@ -120,7 +117,7 @@ class TestNodeToolchainManifest(BaseCase):
 class TestPipelineFingerprint(BaseCase):
     def _covered_files(self):
         covered = []
-        for source in _pipeline_sources():
+        for source in pipeline_sources():
             if source.is_dir():
                 covered.extend(source.glob("*.py"))
             elif source.is_file():
@@ -136,7 +133,7 @@ class TestPipelineFingerprint(BaseCase):
         )
 
     def test_every_declared_source_still_resolves(self):
-        missing = [s for s in _pipeline_sources() if not (s.is_dir() or s.is_file())]
+        missing = [s for s in pipeline_sources() if not (s.is_dir() or s.is_file())]
         self.assertFalse(
             missing,
             "a declared source resolving to nothing is skipped silently, so "
@@ -144,19 +141,19 @@ class TestPipelineFingerprint(BaseCase):
         )
 
     def _assert_edit_moves_digest(self, target):
-        before = _pipeline_fingerprint()
+        before = pipeline_fingerprint()
         real_read = type(target).read_bytes
 
         def _mutated(self):
             data = real_read(self)
             return data + b"\n/* pretend edit */\n" if self == target else data
 
-        _pipeline_fingerprint.cache_clear()
+        pipeline_fingerprint.cache_clear()
         try:
             with patch.object(type(target), "read_bytes", _mutated):
-                after = _pipeline_fingerprint()
+                after = pipeline_fingerprint()
         finally:
-            _pipeline_fingerprint.cache_clear()
+            pipeline_fingerprint.cache_clear()
         self.assertNotEqual(before, after, f"editing {target.name} did not invalidate")
 
     def test_editing_the_rtlcss_config_moves_the_digest(self):
@@ -175,61 +172,46 @@ class TestPipelineFingerprint(BaseCase):
     def test_an_unresolvable_package_degrades_instead_of_crashing(self):
         from odoo import release
 
-        from odoo.addons.base.models.assetsbundle import common
-
-        _pipeline_fingerprint.cache_clear()
-        common._toolchain_versions.cache_clear()
+        pipeline_fingerprint.cache_clear()
+        fingerprint.toolchain_versions.cache_clear()
         try:
-            with patch.object(common.odoo.tools, "__file__", None):
-                self.assertEqual(_pipeline_sources(), ())
-                self.assertEqual(_pipeline_fingerprint(), release.version)
+            with patch.object(fingerprint.odoo.tools, "__file__", None):
+                self.assertEqual(pipeline_sources(), ())
+                self.assertEqual(pipeline_fingerprint(), release.version)
         finally:
-            _pipeline_fingerprint.cache_clear()
-            common._toolchain_versions.cache_clear()
+            pipeline_fingerprint.cache_clear()
+            fingerprint.toolchain_versions.cache_clear()
 
 
 class TestToolchainParticipatesInBundleIdentity(BaseCase):
     def _fingerprint_with(self, versions):
-        from odoo.addons.base.models.assetsbundle import common
-
-        _pipeline_fingerprint.cache_clear()
+        pipeline_fingerprint.cache_clear()
         try:
-            with patch.object(common, "_toolchain_versions", lambda: versions):
-                return _pipeline_fingerprint.__wrapped__()
+            with patch.object(fingerprint, "toolchain_versions", lambda: versions):
+                return pipeline_fingerprint.__wrapped__()
         finally:
-            _pipeline_fingerprint.cache_clear()
+            pipeline_fingerprint.cache_clear()
 
     def test_every_output_affecting_tool_is_reported(self):
-        from odoo.addons.base.models.assetsbundle.common import (
-            _OUTPUT_AFFECTING_NPM_TOOLS,
-            _toolchain_versions,
-        )
-
-        reported = _toolchain_versions()
-        for name in _OUTPUT_AFFECTING_NPM_TOOLS:
+        reported = fingerprint.toolchain_versions()
+        for name in fingerprint.OUTPUT_AFFECTING_NPM_TOOLS:
             self.assertIn(f"{name}@", reported)
         for name in ("sass-embedded", "rtlcss", "esbuild"):
-            self.assertIn(name, _OUTPUT_AFFECTING_NPM_TOOLS)
+            self.assertIn(name, fingerprint.OUTPUT_AFFECTING_NPM_TOOLS)
 
     def test_the_javascript_minifier_is_part_of_the_identity(self):
-        from odoo.addons.base.models.assetsbundle.common import _toolchain_versions
-
-        self.assertRegex(_toolchain_versions(), r"rjsmin@\d+\.\d+")
+        self.assertRegex(fingerprint.toolchain_versions(), r"rjsmin@\d+\.\d+")
 
     def test_the_sourcemap_generator_is_a_fingerprinted_source(self):
-        from odoo.addons.base.models.assetsbundle.common import _pipeline_sources
-
         fingerprinted = {
             path.name
-            for source in _pipeline_sources()
+            for source in pipeline_sources()
             for path in (source.glob("*.py") if source.is_dir() else (source,))
         }
         self.assertIn("sourcemap_generator.py", fingerprinted)
 
     def test_this_checkout_resolves_real_versions(self):
-        from odoo.addons.base.models.assetsbundle.common import _toolchain_versions
-
-        reported = _toolchain_versions()
+        reported = fingerprint.toolchain_versions()
         self.assertNotIn(
             "@absent",
             reported,
@@ -285,34 +267,30 @@ class TestRunCliPipeFailures(BaseCase):
 class TestFingerprintDegradation(BaseCase):
     def setUp(self):
         super().setUp()
-        _pipeline_fingerprint.cache_clear()
-        self.addCleanup(_pipeline_fingerprint.cache_clear)
+        pipeline_fingerprint.cache_clear()
+        self.addCleanup(pipeline_fingerprint.cache_clear)
 
     def test_a_source_that_resolves_to_nothing_warns(self):
-        from odoo.addons.base.models.assetsbundle import common
-
         ghost = pathlib.Path("/nonexistent/asset_pipeline_source")
         with (
-            patch.object(common, "_pipeline_sources", return_value=(ghost,)),
-            self.assertLogs("odoo.addons.base.models.assetsbundle", "WARNING") as log,
+            patch.object(fingerprint, "pipeline_sources", return_value=(ghost,)),
+            self.assertLogs(fingerprint.__name__, "WARNING") as log,
         ):
-            _pipeline_fingerprint()
+            pipeline_fingerprint()
         self.assertIn("does not exist", "\n".join(log.output))
 
     def test_an_unreadable_source_falls_back_to_the_release_version(self):
         from odoo import release
 
-        from odoo.addons.base.models.assetsbundle import common
-
         target = next(
-            p for s in _pipeline_sources() if s.is_dir() for p in s.glob("*.py")
+            p for s in pipeline_sources() if s.is_dir() for p in s.glob("*.py")
         )
         with (
-            patch.object(common, "_pipeline_sources", return_value=(target,)),
+            patch.object(fingerprint, "pipeline_sources", return_value=(target,)),
             patch.object(
                 type(target), "read_bytes", side_effect=OSError("permission denied")
             ),
-            self.assertLogs("odoo.addons.base.models.assetsbundle", "WARNING") as log,
+            self.assertLogs(fingerprint.__name__, "WARNING") as log,
         ):
-            self.assertEqual(_pipeline_fingerprint(), release.version)
+            self.assertEqual(pipeline_fingerprint(), release.version)
         self.assertIn("falling back to the release version", "\n".join(log.output))

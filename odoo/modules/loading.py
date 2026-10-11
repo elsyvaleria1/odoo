@@ -59,8 +59,14 @@ _debug = DebugLog(__name__)
 _GC_YOUNG_BACKLOG_LIMIT = 100_000
 
 _MODULE_OPERATIONS_LOCK_KEY = 0x0D00_0001_1A0D
-_module_operations_held: dict[str, int] = {}
-_module_operations_guard = threading.Lock()
+
+
+class _HeldModuleOperations(threading.local):
+    def __init__(self) -> None:
+        self.counts: dict[str, int] = {}
+
+
+_module_operations_held = _HeldModuleOperations()
 _GC_FULL_CYCLE_EVERY = 16
 
 
@@ -2212,20 +2218,24 @@ class ModuleOperationInProgress(RuntimeError):
     pass
 
 
+def holds_module_operations(db_name: str) -> bool:
+    return _module_operations_held.counts.get(db_name, 0) > 0
+
+
 @contextlib.contextmanager
-def _lock_module_operations(cr: typing.Any, db_name: str) -> typing.Iterator[None]:
-    with _module_operations_guard:
-        reentered = _module_operations_held.get(db_name, 0) > 0
-        if reentered:
-            _module_operations_held[db_name] += 1
-    if reentered:
+def lock_module_operations(cr: typing.Any, db_name: str) -> typing.Iterator[None]:
+    held = _module_operations_held.counts
+    if held.get(db_name):
+        held[db_name] += 1
         try:
             yield
         finally:
-            with _module_operations_guard:
-                _module_operations_held[db_name] -= 1
+            held[db_name] -= 1
         return
 
+    unstarted = (
+        cr.connection.info.transaction_status == psycopg.pq.TransactionStatus.IDLE
+    )
     cr.execute("SELECT pg_try_advisory_lock(%s)", [_MODULE_OPERATIONS_LOCK_KEY])
     if not cr.fetchone()[0]:
         cr.execute(
@@ -2247,23 +2257,33 @@ def _lock_module_operations(cr: typing.Any, db_name: str) -> typing.Iterator[Non
             f"database {db_name!r}: {holders or 'holder unknown'}; wait for it to "
             f"finish, then run this again"
         )
-    with _module_operations_guard:
-        _module_operations_held[db_name] = 1
+    from odoo.addons.base.models.ir_job import hold_off_jobs, let_jobs_in
+
+    try:
+        hold_off_jobs(cr, tools.config["module_operation_job_wait"])
+    except BaseException:
+        _unlock_module_operations(cr, db_name)
+        raise
+    if unstarted:
+        cr.rollback()
+    held[db_name] = 1
     _debug.lifecycle("modules.operations_lock.acquired", db=db_name)
     try:
         with cr.holding_session_state():
             yield
         cr.commit()
     finally:
-        with _module_operations_guard:
-            _module_operations_held.pop(db_name, None)
-        try:
-            cr.execute("SELECT pg_advisory_unlock(%s)", [_MODULE_OPERATIONS_LOCK_KEY])
-        except psycopg.Error as e:
-            _debug.logic(
-                "modules.operations_lock.unlock_deferred", error=type(e).__name__
-            )
-        _debug.lifecycle("modules.operations_lock.released", db=db_name)
+        held.pop(db_name, None)
+        _unlock_module_operations(cr, db_name)
+        let_jobs_in(cr)
+
+
+def _unlock_module_operations(cr: typing.Any, db_name: str) -> None:
+    try:
+        cr.execute("SELECT pg_advisory_unlock(%s)", [_MODULE_OPERATIONS_LOCK_KEY])
+    except psycopg.Error as e:
+        _debug.logic("modules.operations_lock.unlock_deferred", error=type(e).__name__)
+    _debug.lifecycle("modules.operations_lock.released", db=db_name)
 
 
 def load_modules(
@@ -2295,7 +2315,7 @@ def load_modules(
             run_tests=run_tests,
         ) as span,
         (
-            _lock_module_operations(cr, registry.db_name)
+            lock_module_operations(cr, registry.db_name)
             if update_module
             else contextlib.nullcontext()
         ),

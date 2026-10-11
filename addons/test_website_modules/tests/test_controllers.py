@@ -1,4 +1,4 @@
-from base64 import b64encode
+from lxml import etree
 
 from odoo import Command, tests
 from odoo.tools import mute_logger
@@ -24,14 +24,10 @@ class TestWebEditorController(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
 
         def modify(login, name, expect_fail=False):
             self.authenticate(login, login)
-            svg = (
-                b'<svg viewBox="0 0 400 400"><!-- %s --><image url="data:image/gif;base64,%s" /></svg>'
-                % (name.encode("ascii"), gif_base64)
-            )
             params = {
                 "name": name,
-                "mimetype": "image/svg+xml",
-                "data": b64encode(svg).decode("ascii"),
+                "data": gif_base64.decode("ascii"),
+                "shape": {"id": "html_builder/geometric/geo_diamond"},
             }
             if attachment.res_id:
                 params["res_model"] = attachment.res_model
@@ -60,7 +56,14 @@ class TestWebEditorController(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
                 "image/svg+xml" in response.headers.get("Content-Type"),
                 "Expect SVG mimetype",
             )
-            self.assertEqual(svg, response.content, "Expect unchanged SVG")
+            image = etree.fromstring(response.content).find(
+                ".//{http://www.w3.org/2000/svg}image"
+            )
+            self.assertEqual(
+                image.get("{http://www.w3.org/1999/xlink}href"),
+                f"data:image/gif;base64,{gif_base64.decode('ascii')}",
+                "Expect the shape built around the image",
+            )
             return True
 
         modify("admin", "page-admin.gif")

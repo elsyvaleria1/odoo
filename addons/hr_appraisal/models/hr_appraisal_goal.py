@@ -1,6 +1,6 @@
 from dateutil.relativedelta import relativedelta
 
-from odoo import api, fields, models
+from odoo import _lt, api, fields, models
 from odoo.api import ValuesType
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Domain
@@ -10,10 +10,13 @@ from odoo.tools.misc import get_lang
 
 class HrAppraisalGoal(models.Model):
     _name = "hr.appraisal.goal"
-    _inherit = ["mixin.hr", "mixin.mail.thread", "mixin.mail.activity"]
+    _inherit = [
+        "mixin.hr",
+        "mixin.mail.thread",
+        "mixin.mail.activity",
+        "mixin.hierarchy",
+    ]
     _description = "Appraisal Goal"
-    _parent_name = "parent_id"
-    _parent_store = True
     _access_anchors = frozendict(
         {
             "employee_parent_user": models.Anchor(
@@ -109,7 +112,6 @@ class HrAppraisalGoal(models.Model):
         store=True,
     )
     active = fields.Boolean(default=True)
-    parent_path = fields.Char(index=True)
     parent_id = fields.Many2one(
         comodel_name="hr.appraisal.goal",
         string="Parent Goal Template",
@@ -125,6 +127,8 @@ class HrAppraisalGoal(models.Model):
         string="Usual Timing",
         help="The average timing for the goals to be completed. It will populate the estimated end date when assigned",
     )
+
+    _hierarchy_cycle_message = _lt("You cannot create recursive goals.")
 
     @api.depends_context("uid")
     def _compute_has_edit_right(self) -> None:

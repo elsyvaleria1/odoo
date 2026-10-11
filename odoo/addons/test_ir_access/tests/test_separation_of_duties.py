@@ -239,3 +239,64 @@ class TestSeparationOfDuties(TransactionCase):
             self.assertRaises(AccessError),
         ):
             self._grant(posters)
+
+    def test_an_implication_written_from_the_implied_side_is_refused_too(self):
+        self._grant(self.payers)
+        with (
+            mute_logger("odoo.addons.base.models.ir_access_sod"),
+            self.assertRaises(AccessError),
+        ):
+            self.approvers.write({"implied_by_ids": [Command.link(self.payers.id)]})
+
+    def test_ending_a_grant_is_never_refused_for_a_conflict_already_held(self):
+        self.rule.action = "warn"
+        approving = self._grant(self.approvers)
+        self._grant(self.payers | self.env.ref("base.group_system"))
+        self.rule.action = "block"
+
+        approving.action_revoke("held twice")
+        self.assertEqual(approving.state, "revoked")
+
+    def test_ending_a_grant_that_lifted_a_duty_logs_the_conflict_it_leaves(self):
+        managers = self.env["res.groups"].create({"name": "SoD Managers"})
+        self.pay.excluded_group_ids = [Command.link(managers.id)]
+        self.approve.group_ids = [Command.link(managers.id)]
+        self._grant(self.approvers)
+        managing = self._grant(managers)
+        self._grant(self.payers)
+        self.assertFalse(self._logged("sod_conflict"))
+
+        managing.action_revoke("no longer a manager")
+
+        self.assertEqual(managing.state, "revoked")
+        self.assertTrue(self._logged("sod_conflict"))
+
+    def test_a_person_unarchived_holding_both_duties_is_refused(self):
+        self.clerk.active = False
+        self._grant(self.payers | self.approvers)
+        with (
+            mute_logger("odoo.addons.base.models.ir_access_sod"),
+            self.assertRaises(AccessError),
+        ):
+            self.clerk.active = True
+
+    def test_checking_the_duties_reads_the_scheduled_grants_once(self):
+        Function = self.env["ir.access.sod.function"]
+        for index in range(3):
+            self.env["ir.access.sod.rule"].create(
+                {
+                    "name": f"probe rule {index}",
+                    "function_a_id": Function.create(
+                        {"name": f"probe a {index}", "group_ids": self.payers.ids}
+                    ).id,
+                    "function_b_id": Function.create(
+                        {"name": f"probe b {index}", "group_ids": self.approvers.ids}
+                    ).id,
+                    "action": "warn",
+                }
+            )
+        self._grant(self.payers)
+        Rule = self.env["ir.access.sod.rule"]
+        Rule._check_users(self.clerk, "probe")
+        with self.assertQueryCount(1):
+            Rule._check_users(self.clerk, "probe")

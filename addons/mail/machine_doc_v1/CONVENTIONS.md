@@ -79,7 +79,9 @@ Incoming email routed to a model calls exactly one of two hooks:
 
 `mail.template` (and other `mixin.template.reset` models) can be reset to their XML source via
 `reset_template()`. When editing a shipped template's XML, remember users may have customized
-their copy; the reset wizard is the sanctioned way back to source.
+their copy; the reset wizard is the sanctioned way back to source. Each loaded template field
+carries the loader's digest (`shipped_digests`, base `mixin.template.trust`): an author below
+Settings may save a text whose evaluated part matches one, and nothing else the grammar refuses.
 
 ## JavaScript conventions
 

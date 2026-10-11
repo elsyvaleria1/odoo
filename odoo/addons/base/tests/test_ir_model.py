@@ -12,7 +12,7 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import NO_ACCESS
 from odoo.models import BaseModel, is_model_definition, pop_field
 from odoo.modules.registry import Registry
-from odoo.tests import Form, HttpCase, TransactionCase, tagged
+from odoo.tests import Form, HttpCase, TransactionCase, counting_statements, tagged
 from odoo.tests.common import BaseCase, get_db_name, new_test_user
 from odoo.tools import SQL, escape_psql, mute_logger
 
@@ -1734,13 +1734,15 @@ class TestIrModelInherit(TransactionCase):
 
         self.env.flush_all()
         self.env.registry.clear_cache("stable")
-        count0 = self.env.cr.sql_statement_count
-        with patch.object(cls, "_get_ids_by_name", spy):
+        with (
+            counting_statements(self.env.cr) as statements,
+            patch.object(cls, "_get_ids_by_name", spy),
+        ):
             mapping = IrModelInherit._prepare_inherit_mapping(
                 ["res.partner", "res.users", "res.country"]
             )
         self.assertEqual(asked, ["res.users"])
-        self.assertEqual(self.env.cr.sql_statement_count - count0, 2)
+        self.assertEqual(statements.count, 2)
         self.assertTrue(mapping)
 
     def test_inherit_and_inherits_same_parent_is_rejected_clearly(self):
@@ -2009,6 +2011,23 @@ class TestIrModelFieldsSelection(TransactionCase):
             self.env["ir.model.fields"].get_field_selection(Model._name, field.name),
         )
 
+    def test_selection_label_rename_reaches_the_untranslated_labels(self):
+        Model, field = self._make_selection_field("labelen")
+        field.selection_ids.filtered(lambda s: s.value == "draft").write(
+            {"name": "Brouillon"}
+        )
+
+        registry_field = Model._fields[field.name]
+        self.assertIn(
+            ("draft", "Brouillon"),
+            registry_field._description_selection(self.env(context={})),
+        )
+        converter = self.env["ir.fields.converter"]
+        converter._get_transaction_cache().clear()
+        self.assertEqual(
+            converter._str_to_selection(registry_field, "Brouillon"), ("draft", [])
+        )
+
     def test_selection_value_rename_triggers_registry_setup(self):
         _model, field = self._make_selection_field("setup")
         draft = field.selection_ids.filtered(lambda s: s.value == "draft")
@@ -2070,6 +2089,36 @@ class TestIrModelFieldsSelection(TransactionCase):
 
         self.assertIsNone(self.env["ir.default"]._get(Model._name, field.name))
         self.assertFalse(Model.create({}).x_defdel)
+
+    def test_option_unlink_discards_the_default_of_an_inheriting_model(self):
+        field = self.env["ir.model.fields"].create(
+            {
+                "name": "x_inhdef",
+                "field_description": "Sel inhdef",
+                "model_id": self.env["ir.model"]._get_id("res.partner"),
+                "ttype": "selection",
+                "selection_ids": [
+                    Command.create({"value": value, "name": value, "sequence": index})
+                    for index, value in enumerate(("draft", "done"))
+                ],
+            }
+        )
+        self.assertTrue(self.env["res.users"]._fields[field.name].inherited)
+        self.env["ir.default"].set("res.users", field.name, "done")
+
+        field.selection_ids.filtered(lambda s: s.value == "done").unlink()
+
+        self.assertIsNone(self.env["ir.default"]._get("res.users", field.name))
+
+    def test_option_unlink_at_uninstall_discards_its_default(self):
+        Model, field = self._make_selection_field("defuni")
+        self.env["ir.default"].set(Model._name, field.name, "done")
+
+        field.selection_ids.filtered(lambda s: s.value == "done").with_context(
+            **{MODULE_UNINSTALL_FLAG: True}
+        ).unlink()
+
+        self.assertIsNone(self.env["ir.default"]._get(Model._name, field.name))
 
     def test_option_value_rename_renames_its_default(self):
         Model, field = self._make_selection_field("defren")

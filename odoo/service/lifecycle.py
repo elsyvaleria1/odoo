@@ -16,6 +16,7 @@ from odoo.libs import gc
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.filesystem import osutil
 from odoo.libs.worker_thread import current_worker_thread
+from odoo.modules.loading import ModuleOperationInProgress
 from odoo.modules.module import load_odoo_module
 from odoo.modules.registry import Registry
 from odoo.release import nt_service_name
@@ -369,9 +370,12 @@ def preload_registries(dbnames: list[str] | None) -> int:
                         span.set(unrun=unrun)
                     rc += _get_test_run_rc(dbname, _get_assertion_report(dbname), unrun)
         except Exception as exc:
-            _logger.critical(
-                "Failed to initialize database `%s`.", dbname, exc_info=True
-            )
+            if isinstance(exc, ModuleOperationInProgress):
+                _logger.critical("Database `%s` was not initialized: %s", dbname, exc)
+            else:
+                _logger.critical(
+                    "Failed to initialize database `%s`.", dbname, exc_info=True
+                )
             if (
                 settings.test_enable
                 and (report := _find_assertion_report(dbname)) is not None

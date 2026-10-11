@@ -1,4 +1,5 @@
 import datetime
+import math
 import re
 import typing
 from typing import Any
@@ -349,12 +350,13 @@ def format_amount(
     return f"{pre}{formatted_amount}{post}"
 
 
+def hours_to_minutes(value: float) -> int:
+    milliseconds = math.floor(abs(value) * 3_600_000 + 0.5)
+    return math.floor(milliseconds / 60_000 + 0.5)
+
+
 def format_duration(value: float) -> str:
-    hours, minutes = divmod(abs(value) * 60, 60)
-    minutes = round(minutes)
-    if minutes == 60:
-        minutes = 0
-        hours += 1
+    hours, minutes = divmod(hours_to_minutes(value), 60)
     if value < 0 and (hours or minutes):
         return "-%02d:%02d" % (hours, minutes)
     return "%02d:%02d" % (hours, minutes)

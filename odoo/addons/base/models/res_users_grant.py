@@ -295,6 +295,18 @@ class ResUsersGrant(models.Model):
                     self.env._("An expired or revoked grant cannot be changed.")
                 )
             self._check_delegation("write", narrowing=set(vals) <= {"reason"})
+            if {"date_from", "date_to"} & vals.keys() and (
+                activated := self.sudo().filtered(
+                    lambda grant: grant.cause in ACTIVATED_CAUSES
+                )
+            ):
+                _debug.logic("write_refused", grants=activated.ids, reason="activated")
+                raise UserError(
+                    self.env._(
+                        "An activation lasts the hours it was opened for: stop it "
+                        "or revoke it instead."
+                    )
+                )
         result = super().write(vals)
         if "company_ids" in vals:
             self._check_scope()

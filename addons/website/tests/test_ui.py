@@ -2,6 +2,8 @@ import base64
 import json
 from urllib.parse import urlencode
 
+from lxml import etree
+
 import odoo.tests
 from odoo import http
 from odoo.fields import Command
@@ -742,6 +744,24 @@ class TestUi(HttpCaseWithWebsiteUser):
 
     def test_website_media_dialog_image_shape(self):
         self.start_tour("/", "website_media_dialog_image_shape", login="admin")
+
+    def test_a_saved_image_shape_is_built_by_the_server(self):
+        self.start_tour("/", "website_image_shape_save", login="admin")
+
+        shaped = self.env["ir.attachment"].search(
+            [("mimetype", "=", "image/svg+xml"), ("original_id", "!=", False)]
+        )
+        self.assertEqual(len(shaped), 1)
+        root = etree.fromstring(shaped.raw)
+        self.assertIsNone(root.find(".//*[@id='preview']"))
+        self.assertEqual(
+            root.find(".//*[@id='filterPath']").get("style"),
+            "transform: scaleX(-1); transform-origin: 0.5px 0.5px;",
+        )
+        href = next(root.iter("{http://www.w3.org/2000/svg}image")).get(
+            "{http://www.w3.org/1999/xlink}href"
+        )
+        self.assertRegex(href, r"^data:image/(webp|jpeg|png);base64,")
 
     def test_website_media_dialog_insert_media(self):
         self.start_tour("/", "website_media_dialog_insert_media", login="admin")

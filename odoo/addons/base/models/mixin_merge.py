@@ -407,7 +407,7 @@ class MixinMerge(models.AbstractModel):
             "repoint_company_dependent", cr=self.env.cr, model=referenced_model
         ):
             self._repoint_company_dependent_many2ones(src_records, dst_record)
-            self._repoint_company_dependent_defaults(src_records, dst_record)
+            self._repoint_many2one_defaults(src_records, dst_record)
 
         self.env.flush_all()
         self.env["ir.default"]._invalidate_defaults_cache()
@@ -797,7 +797,7 @@ class MixinMerge(models.AbstractModel):
                 )
             )
 
-    def _repoint_company_dependent_defaults(
+    def _repoint_many2one_defaults(
         self,
         src_records: models.BaseModel,
         dst_record: models.BaseModel,
@@ -806,26 +806,20 @@ class MixinMerge(models.AbstractModel):
             SQL(
                 """
             UPDATE ir_default
-            SET json_value =
-                CASE
-                    WHEN json_value::int IN %(src_record_ids)s
-                    THEN %(dest_record_id)s
-                    ELSE json_value
-                END
+            SET json_value = %(dest_record_id)s
             FROM ir_model_fields f
             WHERE f.id = ir_default.field_id
-            AND f.company_dependent
             AND f.relation = %(model_name)s
             AND f.ttype = 'many2one'
-            AND json_value ~ '^[0-9]+$';
+            AND json_value = ANY(%(src_values)s)
             """,
-                src_record_ids=tuple(src_records.ids),
-                dest_record_id=str(dst_record.id),
+                src_values=[json_dumps(src_id) for src_id in src_records.ids],
+                dest_record_id=json_dumps(dst_record.id),
                 model_name=dst_record._name,
             )
         )
         _debug.perf.count(
-            "company_dependent_defaults_repointed",
+            "many2one_defaults_repointed",
             model=dst_record._name,
             rows=self.env.cr.rowcount,
         )
@@ -852,14 +846,16 @@ class MixinMerge(models.AbstractModel):
         src_records: models.BaseModel,
         dst_record: models.BaseModel,
         withheld: set[str] | None = None,
+        summable_fields: Iterable[str] = (),
     ) -> None:
         self.env.flush_all()
         if withheld is None:
             withheld = self._get_merge_withheld_fields(dst_record)
+        skipped = withheld | set(summable_fields)
 
         merged = 0
         for fname, field in dst_record._fields.items():
-            if not field.company_dependent or fname in withheld:
+            if not field.company_dependent or fname in skipped:
                 continue
             merged += 1
             self.env.execute_query(
@@ -929,12 +925,12 @@ class MixinMerge(models.AbstractModel):
         )
 
         withheld = self._get_merge_withheld_fields(dst_record)
+        summable_fields = set(summable_fields)
         self._update_company_dependent_values_generic(
-            src_records, dst_record, withheld=withheld
+            src_records, dst_record, withheld=withheld, summable_fields=summable_fields
         )
 
         model_fields = dst_record.fields_get().keys()
-        summable_fields = set(summable_fields)
 
         def write_serializer(item: Any) -> Any:
             if isinstance(item, models.BaseModel):

@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.73
+:Version: 7.78
 :Date: 2026-10-11
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -2173,6 +2173,12 @@ Checklist -- a rename must also update:
 #. **A new migration directory** -- never edit a shipped migration, unless the
    module consolidates (§12.2). Read the module's manifest version first; a
    database past that directory never runs it again.
+#. **Saved searches** -- rename a field with ``module_data.rename_field``,
+   which also rewrites the name in the domains, contexts and sorts of the
+   ``ir.filters`` and ``ir.actions.act_window`` rows and in export templates
+   (``ir.exports.line``), on the field's model and along a path reaching it
+   through relations from another model. Custom view arches, server actions
+   and automation domains are not rewritten; find those by hand.
 #. **``default_<field>`` on ``res.config.settings``** -- a field rename owes a
    search for ``default_<old>`` on every settings model in every repository.
    ``set_values`` strips the prefix and ``ir.default`` raises on an unknown
@@ -5449,6 +5455,12 @@ Corollaries:
   declared. Carry the decision server-side, then declare the key. Keys still
   undeclared for this reason: ``skip_consumption`` (mrp) and ``skip_expired``
   (product_expiry).
+* **What only the module loader may do is never decided by a context key**
+  ``[review]``, declared or not: a caller's context survives ``sudo()``, and a
+  door that forgets to strip reaches every server path behind it. The loader
+  says it in-process: ``odoo.tools.convert.is_loading_data_file()`` is true
+  only while it writes a record an XML or CSV data file names. The ``install_*``
+  keys stay, declared, for what they describe (the file, the module).
 * **A key compared by identity to an ``object()`` sentinel needs no
   declaration** (``bypass_audit``, ``skip_captcha_login``,
   ``bypass_restricted_rendering``). JSON cannot produce that object.
@@ -5477,15 +5489,54 @@ accepts:
 * no rebinding of a function the grammar allows (``t-set``, ``t-as``, a
   ``t-call`` value, a lambda parameter).
 
-An expression the template already held, one its module source spells (for
-a website-specific copy, the view it was copied from), one the view a copy
-was made from is trusted with, or one a shipped template of the model spells
-is kept: the rule binds what the author adds, and duplicating a view adds
-nothing.
-``ir.ui.view._audit_template_authoring()`` and
-``<model>._audit_template_authoring()`` list the stored templates holding
-expressions no module source vouches for. **Widen the grammar only with a
-function that neither mutates nor reaches the environment.**
+**A stored template is trusted by its text, never by its record**
+``[review]``. Each template field -- a QWeb view's arch, each dynamic field of
+``mail.template`` and the other mail-render models, an l10n_mx addenda's arch
+-- is judged on its own, by the digest of what it evaluates: for QWeb
+(``ir_qweb.template_trust_digest``) every directive, ``groups``, ``t-call``
+parameter and inheritance spec, in tree order, with markup, text and the
+literal of a translated format string left out; for an inline template the
+set of its ``{{ }}`` expressions; a mail field's digest also covers the model
+it renders against. A text whose digest the module loader recorded for that
+field (``shipped_digests``, ``mixin.template.trust``) is the module's, wherever
+it is stored: a copy keeps that trust while its author edits markup, text and
+translations, and loses it on any edit to what it evaluates. Every other text
+is authored and held to the grammar whole -- one that shares a module
+template's ``key``, extends one through ``inherit_id``, was copied from a
+trusted record, reuses an expression a module ships elsewhere, or holds what
+an administrator saved. A composer body is trusted only as the whole text of a
+field of the template it was loaded from. A ``t-*`` attribute that
+``ir.qweb._get_authoring_directives()`` does not classify is refused; an addon
+classifies its own directives there. A model whose records hold templates
+inherits ``mixin.template.authoring`` (the check) or ``mixin.template.trust``
+(the check plus loader-recorded digests, for records a data file ships) and
+implements ``_get_template_unit``; ``<model>._audit_template_authoring()``
+lists the stored templates an author below Settings could not save as they
+are; they render unchanged. **Widen the grammar only with a function that
+neither mutates nor reaches the environment.**
+
+**An authored arch changes nothing a trusted arch evaluates** ``[review]``.
+Trusted is an arch whose text a module ships, or one holding what the grammar
+refuses (an administrator's); a trusted element is one a trusted arch
+contributes to the combined template, a copy ``$0`` puts back included. Below
+Settings, the template as served is compared to the one the trusted archs
+combine into alone -- an authored view that shadows another of its key, as a
+website's does, left out, and an arch whose markup or text the author edited
+taken in the text its module's file ships -- and every trusted element that
+evaluates (a ``t-*`` attribute, ``groups``, a ``t-call`` parameter) must keep:
+its directives; the directives of the elements around it and the conditions
+it is the ``t-else`` of; the ``t-set`` bindings of every name it reads -- any
+name, for a ``t-call`` -- ahead of it or in a loop around it; the body of its
+``t-set`` and the ``t-set`` parameters of its ``t-call``. An authored arch may
+restyle, re-text, add, move or remove plain markup, add what the grammar
+allows, and replace an element a module's extension anchors on while what that
+extension adds keeps its context. An authored primary may not take the key of
+a trusted template: a trusted ``t-call`` of that key would render it with its
+bindings. Removing (deleting or turning off) a trusted extension its module
+does not ship as an option is refused where what stays evaluates differently.
+The comparison reads every view of the tree, whatever the author reads
+(``base.privilege_compare_template_contexts``), and compares the combined
+result, not the forms of a spec (``ir_ui_view_context``).
 
 11. Performance
 ===============
@@ -6252,6 +6303,32 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.78
+     - 2026-10-11
+     - §10.11: what only the module loader may do is decided by
+       ``convert.is_loading_data_file()``, never by a context key;
+       ``install_filename`` and ``install_xmlid`` are authority keys.
+   * - 7.77
+     - 2026-10-11
+     - §10.12: an authored QWeb arch may not change what a trusted arch of the
+       same combined template evaluates, its context or the bindings it reads,
+       nor take a trusted template's key; removing a trusted extension that is
+       no option may not either.
+   * - 7.76
+     - 2026-10-11
+     - §10.12: mail templates and l10n_mx addenda are trusted, like views, only
+       by a loader-recorded digest of each field's whole evaluated text, never by
+       an expression the record held or a module ships elsewhere.
+   * - 7.75
+     - 2026-10-11
+     - §2.4.14: a field rename carries its saved searches and export
+       templates, which ``module_data.rename_field`` rewrites on the field's
+       model and along relation paths from other models.
+   * - 7.74
+     - 2026-10-10
+     - §10.12: a stored QWeb view is trusted only when its text is, by digest,
+       one a module file ships, never by its key, inherit_id or copy origin;
+       an unclassified ``t-*`` directive is refused.
    * - 7.73
      - 2026-10-11
      - §10.3: a ``bytes`` value has no ``isdecimal()``; its guard is

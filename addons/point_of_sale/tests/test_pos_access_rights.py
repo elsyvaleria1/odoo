@@ -87,28 +87,28 @@ class TestPosAccessRights(CommonPosTest):
         config.open_ui()
         self.assertTrue(config.current_session_id)
 
-    def test_cashier_can_toggle_a_pos_favorite(self):
+    def test_cashier_can_feature_a_pos_product(self):
         template = self.env["product.template"].create(
-            {"name": "Favorite probe", "available_in_pos": True}
+            {"name": "Featured probe", "available_in_pos": True}
         )
-        template.with_user(self.cashier).set_pos_favorite(True)
-        self.assertTrue(template.is_favorite)
-        template.with_user(self.cashier).set_pos_favorite(False)
-        self.assertFalse(template.is_favorite)
+        template.with_user(self.cashier).set_pos_featured(True)
+        self.assertTrue(template.is_featured)
+        template.with_user(self.cashier).set_pos_featured(False)
+        self.assertFalse(template.is_featured)
 
-    def test_favorite_toggle_writes_nothing_else(self):
+    def test_featuring_writes_nothing_else(self):
         template = self.env["product.template"].create(
-            {"name": "Favorite probe 2", "available_in_pos": True, "list_price": 7}
+            {"name": "Featured probe 2", "available_in_pos": True, "list_price": 7}
         )
-        template.with_user(self.cashier).set_pos_favorite(True)
+        template.with_user(self.cashier).set_pos_featured(True)
         self.assertEqual(template.list_price, 7)
 
-    def test_favorite_toggle_refuses_a_non_pos_product(self):
+    def test_featuring_refuses_a_non_pos_product(self):
         template = self.env["product.template"].create(
             {"name": "Not in pos", "available_in_pos": False}
         )
         with self.assertRaises(AccessError):
-            template.with_user(self.cashier).set_pos_favorite(True)
+            template.with_user(self.cashier).set_pos_featured(True)
 
     def _paid_order_payload(self, uuid):
         product = self.env["product.product"].search(
@@ -183,12 +183,12 @@ class TestPosAccessRights(CommonPosTest):
         self.assertTrue(invoice_lines)
         self.assertTrue(all(invoice_lines.mapped("reconciled")))
 
-    def test_favorite_toggle_refuses_a_non_pos_user(self):
+    def test_featuring_refuses_a_non_pos_user(self):
         outsider = new_test_user(
             self.env, login="pos_outsider", groups="base.group_user"
         )
         template = self.env["product.template"].create(
-            {"name": "Favorite probe 3", "available_in_pos": True}
+            {"name": "Featured probe 3", "available_in_pos": True}
         )
         with self.assertRaises(AccessError):
-            template.with_user(outsider).set_pos_favorite(True)
+            template.with_user(outsider).set_pos_featured(True)

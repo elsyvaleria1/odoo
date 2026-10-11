@@ -335,6 +335,9 @@ class WizardResPartnerMerge(models.TransientModel):
                 }
             )
 
+        moved_children = (
+            src_partners.with_context(active_test=False).child_ids - src_partners
+        )
         deferred_values = {}
         if self._is_source_absorbed_on_merge():
             self._merge_phone_numbers(src_partners, dst_partner)
@@ -360,6 +363,18 @@ class WizardResPartnerMerge(models.TransientModel):
 
         if deferred_values:
             dst_partner.write(deferred_values)
+
+        if moved_children := moved_children.exists():
+            _debug.pipeline(
+                "merge_children_synced",
+                destination=dst_partner.id,
+                children=moved_children.ids,
+            )
+            moved_children._fields_sync(
+                {"parent_id": dst_partner.id},
+                commercial_changed=True,
+                was_commercial=False,
+            )
 
     def _log_merge_operation(
         self, src_partners: models.BaseModel, dst_partner: models.BaseModel

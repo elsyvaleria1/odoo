@@ -99,6 +99,8 @@ class MicrosoftEvent(ProviderEvents):
             result[week_day] = week_day in week_days
         if week_days:
             result["weekday"] = week_days[0].upper()
+        if pattern["type"] == "weekly" and pattern.get("firstDayOfWeek"):
+            result["week_start"] = pattern["firstDayOfWeek"][:3].upper()
         return result
 
     def is_cancelled(self) -> bool:

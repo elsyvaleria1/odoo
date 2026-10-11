@@ -66,7 +66,10 @@ class CalendarRecurrence(models.Model):
     def _write_from_google(self, gevent, vals) -> None:
         current_rrule = self.rrule
         current_parsed_rrule = self._rrule_parse(
-            current_rrule, self.dtstart, tz=self._get_timezone()
+            current_rrule,
+            self.dtstart,
+            tz=self._get_timezone(),
+            allday=self._is_allday(),
         )
         vals["event_tz"] = gevent.start.get("timeZone")
         super()._write_from_google(gevent, vals)
@@ -76,7 +79,7 @@ class CalendarRecurrence(models.Model):
             gevent, event=self.base_event_id
         )
         new_parsed_rrule = self._rrule_parse(
-            self.rrule, self.dtstart, tz=self._get_timezone()
+            self.rrule, self.dtstart, tz=self._get_timezone(), allday=self._is_allday()
         )
         google_attendees = gevent.attendees or []
         emails = [a.get("email") for a in google_attendees]

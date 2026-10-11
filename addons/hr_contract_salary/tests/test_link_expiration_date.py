@@ -94,6 +94,18 @@ class TestLinkExpirationDate(HttpCase):
             ),
         )
 
+    def test_an_offer_ending_far_ahead_keeps_its_link_until_that_day(self):
+        end = datetime.date.today() + relativedelta(years=2)
+        offer = self._applicant_offer(offer_end_date=end)
+        link = (
+            self.env["access.link"]
+            .sudo()
+            .search([("res_model", "=", offer._name), ("res_id", "=", offer.id)])
+        )
+        self.assertEqual(
+            link.date_to, datetime.datetime.combine(end, datetime.time(23, 59, 59))
+        )
+
     def test_another_applicant_revokes_the_offer_s_link(self):
         offer = self._applicant_offer()
         token = offer.access_token
