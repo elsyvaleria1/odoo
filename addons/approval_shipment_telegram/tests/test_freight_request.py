@@ -1,9 +1,11 @@
 from datetime import datetime
 
+from odoo import Command
 from odoo.tests import tagged
 
 from odoo.addons.approval.tests.common import add_category_approver
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
+from odoo.addons.telegram.tools.authority import operating
 
 SHEET = {
     "destination": "TAPACHULA, CHIS.",
@@ -168,4 +170,24 @@ class TestFreightRequest(TelegramBotTestCase):
         self.assertFalse(self._freights(), "no request is left half made")
         self.assertEqual(picking.carrier_tracking_ref, "TOL01584640")
         self.assertEqual(sheet.state, "done")
+        self.assertIn("could not prepare the freight request", "\n".join(lines))
+
+    def test_a_sender_who_may_not_join_the_open_freight_keeps_the_number(self):
+        self.category.privacy_visibility = "employees"
+        first, second = self._picking(self.out_type), self._picking(self.out_type)
+        self._sheet()._assign(first, b"one")
+        clerk = self.env["res.users"].create(
+            {
+                "name": "Dock Clerk",
+                "login": "tg_dock_clerk",
+                "group_ids": [Command.set([self.env.ref("stock.group_stock_user").id])],
+            }
+        )
+        sheet = operating(self._sheet().with_user(clerk))
+
+        lines = sheet._assign(second.with_user(clerk), b"two")
+
+        request = self._freights()
+        self.assertEqual(request.shipment_picking_ids, first, "not someone else's")
+        self.assertEqual(second.carrier_tracking_ref, "TOL01584640")
         self.assertIn("could not prepare the freight request", "\n".join(lines))

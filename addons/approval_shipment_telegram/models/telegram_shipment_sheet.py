@@ -62,9 +62,9 @@ class TelegramShipmentSheet(models.Model):
             existing.shipment_picking_ids |= picking
             return self.env._(
                 "Freight %(request)s already covers %(ref)s; %(picking)s is now on it.",
-                request=existing.display_name,
-                ref=self.tracking_ref,
-                picking=picking.name,
+                request=tg.escape(existing.display_name),
+                ref=tg.escape(self.tracking_ref),
+                picking=tg.escape(picking.name),
             )
         request = Request.create(self._freight_request_values(category))
         self.env["ir.attachment"].create(
@@ -80,13 +80,13 @@ class TelegramShipmentSheet(models.Model):
             return self.env._(
                 "Freight request %(category)s prepared as a draft for %(amount)s: "
                 "check it against the sheet and submit it.",
-                category=category.name,
+                category=tg.escape(category.name),
                 amount=f"${total:,.2f}",
             )
         return self.env._(
             "Freight request %(category)s prepared as a draft without an "
             "amount: the total could not be read off the sheet.",
-            category=category.name,
+            category=tg.escape(category.name),
         )
 
     def _freight_request_values(self, category) -> dict:
