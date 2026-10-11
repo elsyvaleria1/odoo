@@ -1,6 +1,5 @@
 from odoo import Command, fields
-from odoo.db.metrics import observing_statements
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from .common_report_engine import TestAccountReportsCommon
 
@@ -1326,10 +1325,9 @@ class TestAgedReceivableReport(TestAccountReportsCommon):
 
         def count_statements():
             self.env.invalidate_all()
-            with observing_statements():
-                count = self.env.cr.sql_statement_count
+            with counting_statements(self.env.cr) as counted:
                 self.report._get_lines(options)
-                return self.env.cr.sql_statement_count - count
+            return counted.count
 
         count_statements()
         baseline = count_statements()
