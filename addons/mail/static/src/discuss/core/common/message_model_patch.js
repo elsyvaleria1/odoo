@@ -20,9 +20,6 @@ const messagePatch = {
             inverse: "firstUnreadMessage",
         });
     },
-    // the seen states below are getters, not computed fields: computes are
-    // eager, and these walk the channel's members for every loaded message
-    // while only the seen indicator of a self-authored message reads them
     /** @returns {boolean} */
     get hasEveryoneSeen() {
         return Boolean(this.thread?.membersThatCanSeen.every((m) => m.hasSeen(this)));

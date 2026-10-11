@@ -340,9 +340,6 @@ export class SuggestionService {
     }
 
     /**
-     * What the comparators would otherwise recompute on each of the sort's
-     * P·log(P) comparisons.
-     *
      * @param {import("models").Thread} [thread]
      */
     sortPartnerSuggestionsContext(thread) {

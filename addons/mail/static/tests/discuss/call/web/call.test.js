@@ -198,8 +198,6 @@ test("a key released in another window's realm is judged by its key", async () =
     await keyDown("f");
     await advanceTime(PTT_RELEASE_DURATION);
     await contains(".o-discuss-CallParticipantCard .o-isTalking");
-    // a picture-in-picture window is another realm: its events are instances
-    // of its own KeyboardEvent, as an iframe's are
     const frame = document.createElement("iframe");
     getFixture().append(frame);
     const ForeignKeyboardEvent = frame.contentWindow.KeyboardEvent;

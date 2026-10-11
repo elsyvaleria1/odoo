@@ -143,8 +143,6 @@ export function compareDatetime(date1, date2) {
 }
 
 /**
- * Keys starting with `prefix` first, then alphabetically.
- *
  * @param {string} key1
  * @param {string} key2
  * @param {string} prefix

@@ -105,9 +105,6 @@ export const stepUtils = {
     },
 
     goToMenuSteps(sectionXmlid, menuXmlid, description) {
-        // by xmlid: a text match clicks whatever first shows the word, and the
-        // section's button exists only once its app's menus are rendered; the
-        // dropdown opens in the overlay, outside the navbar
         return [
             {
                 content: description,

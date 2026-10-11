@@ -591,9 +591,6 @@ export class Rtc extends Record {
     }
 
     /**
-     * The key test reads the event, not its class: a picture-in-picture
-     * window's events are instances of that window's KeyboardEvent.
-     *
      * @param {KeyboardEvent} [ev] absent when the window lost focus
      * @returns {boolean}
      */
@@ -755,8 +752,6 @@ export class Rtc extends Record {
             current: this.state.channel?.id,
         }));
         const isCurrent = channel.eq(this.state.channel);
-        // an invitation timing out while a join or leave is in flight must not
-        // release that request's guard nor forget the session it is leaving
         const holdsGuard = isCurrent || !this.state.hasPendingRequest;
         const leavingSession = isCurrent ? this.localSession : undefined;
         if (isCurrent) {

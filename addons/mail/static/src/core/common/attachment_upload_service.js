@@ -90,8 +90,6 @@ export class AttachmentUploadService {
      * @param {number} tmpId
      */
     _onUploadLoaded(upload, tmpId) {
-        // file_upload fires LOADED only for a 2xx answer without an error, and
-        // keeps the body it parsed: upload.xhr may since be another request
         const response = upload.response;
         log.pipeline("upload loaded", () => ({ tmpId, ok: Boolean(response?.data) }));
         if (!response?.data) {

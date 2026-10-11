@@ -658,8 +658,6 @@ export class PeerToPeer extends EventTarget {
             this._emitLog(id, `offer rejected: ${error}`, LOG_LEVEL.INFO);
             return;
         }
-        // accepting can wait for the session record: the call may have been
-        // left, or left and joined again as another session, meanwhile
         if (!this.isActive || this.channelId !== channelId || this.selfId !== selfId) {
             this._emitLog(id, "offer accepted after leaving the call", LOG_LEVEL.INFO);
             return;

@@ -199,8 +199,6 @@ export class LocalMediaController {
         } catch (_e) {
             this.blurManager?.close();
             this.blurManager = undefined;
-            // leaving closes the manager, which rejects its stream: no reason to
-            // turn the user's blur preference off
             if (this.hooks.getSelfSession() === selfSession) {
                 this.hooks.notify(_e.message);
                 settings.setUseBlur(false);
