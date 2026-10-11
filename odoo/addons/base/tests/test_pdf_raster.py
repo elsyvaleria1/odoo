@@ -1,3 +1,4 @@
+import subprocess
 import time
 import unittest
 from unittest.mock import patch
@@ -113,3 +114,26 @@ class TestPdfRasterUnavailable(BaseCase):
 
         self.assertEqual(rendering.outcome, pdf_raster.Outcome.UNAVAILABLE)
         run.assert_not_called()
+
+
+class TestPdfRasterReadsTheChild(BaseCase):
+    def _render(self, stdout: bytes) -> pdf_raster.Rendering:
+        child = subprocess.CompletedProcess([], 0, stdout=stdout, stderr=b"")
+        with (
+            patch.object(pdf_raster, "available", return_value=True),
+            patch.object(pdf_raster.subprocess, "run", return_value=child),
+        ):
+            return pdf_raster.render_first_page(b"%PDF-1.4", 400, 280)
+
+    def test_the_page_count_header_is_read(self):
+        rendering = self._render(b"12\n" + PNG)
+
+        self.assertEqual(rendering.outcome, pdf_raster.Outcome.RENDERED)
+        self.assertEqual(rendering.pages, 12)
+        self.assertEqual(rendering.png, PNG)
+
+    def test_a_header_that_is_not_a_count_fails(self):
+        for head in (b"", b"x", b"-1", b"1.5", "²".encode()):
+            with self.subTest(head=head):
+                rendering = self._render(head + b"\n" + PNG)
+                self.assertEqual(rendering.outcome, pdf_raster.Outcome.FAILED)

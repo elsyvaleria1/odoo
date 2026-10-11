@@ -85,7 +85,8 @@ def render_first_page(
     head, _newline, png = proc.stdout.partition(b"\n")
     if (
         proc.returncode
-        or not head.isdecimal()
+        or not head.isascii()
+        or not head.isdigit()
         or not png.startswith(_PNG)
         or len(png) > limits.output_bytes
     ):

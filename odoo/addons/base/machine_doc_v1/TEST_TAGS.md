@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (5352 methods, 1044 classes, 205 files)
+# All base tests (5354 methods, 1045 classes, 205 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -322,8 +322,8 @@ These run in **both** at_install and post_install phases by default.
 | Metric | Value |
 |--------|-------|
 | Total test files | 205 |
-| Total test classes | 1044 |
-| Total test methods | 5352 |
+| Total test classes | 1045 |
+| Total test methods | 5354 |
 | Files with @tagged | 131 (64%) |
 | Files without @tagged | 74 (36%) |
 | Classes using post_install | 410 |

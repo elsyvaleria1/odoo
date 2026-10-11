@@ -4,8 +4,8 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.72
-:Date: 2026-10-09
+:Version: 7.73
+:Date: 2026-10-11
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
 
@@ -5122,7 +5122,10 @@ characters ``int()`` rejects (superscripts such as ``²``, circled digits such a
 conversion behind it raises ``ValueError``. On a route that is a 500 from one
 query parameter (``/shop/compare?products=²``, 49b3da9fd823). ``isdecimal()``
 is exactly the set ``int()`` accepts. Where only ASCII digits will do,
-``isascii() and isdigit()`` says so.
+``isascii() and isdigit()`` says so. ``bytes`` has no ``isdecimal()`` (a
+guard calling it raises ``AttributeError``) and its ``isdigit()`` is ASCII
+already; ``E8545`` cannot tell ``bytes`` from ``str``, so a ``bytes`` guard is
+written ``isascii() and isdigit()`` (``pdf_raster``'s page count, a58199d7ad1f).
 
 .. code-block:: python
 
@@ -6249,6 +6252,10 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.73
+     - 2026-10-11
+     - §10.3: a ``bytes`` value has no ``isdecimal()``; its guard is
+       ``isascii() and isdigit()``.
    * - 7.72
      - 2026-10-11
      - §4.3.1: a bus claim has an owner that gives it back (``bus_dropped_claim``),
