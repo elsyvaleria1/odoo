@@ -22,7 +22,7 @@ class TestStockFlow(TestStockCommon):
                 ],
             }
         )
-        decimal_product_uom = cls.env.ref("uom.decimal_product_uom")
+        decimal_product_uom = cls.env.ref("base.decimal_product_uom")
         decimal_product_uom.digits = 3
         cls.partner_company2 = cls.env["res.partner"].create(
             {

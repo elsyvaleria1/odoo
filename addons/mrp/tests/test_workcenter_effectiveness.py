@@ -702,8 +702,8 @@ class TestWorkcenterCapacityLookup(common.TestMrpCommon):
         cls.workcenter = cls.workcenter_3
         cls.workcenter.write({"time_start": 3.0, "time_stop": 4.0})
         cls.workcenter.capacity_ids.unlink()
-        cls.units = cls.env.ref("uom.product_uom_unit")
-        cls.dozens = cls.env.ref("uom.product_uom_dozen")
+        cls.units = cls.env.ref("base.product_uom_unit")
+        cls.dozens = cls.env.ref("base.product_uom_dozen")
         cls.product = cls.env["product.product"].create(
             {"name": "Ranked", "uom_id": cls.units.id}
         )

@@ -68,7 +68,7 @@ class TestSaleAgreement(SaleCommon):
             self.agreement.action_done()
 
     def test_the_agreed_price_follows_the_unit_of_measure(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         order = self._order_against_agreement(1.0)
         order.line_ids.product_uom_id = dozen
         self.assertAlmostEqual(order.line_ids.price_unit, 42.0 * 12)

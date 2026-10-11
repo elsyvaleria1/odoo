@@ -22,8 +22,8 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
         super().setUpClass()
         cls.company_data_2 = cls.setup_other_company()
 
-        cls.uom_units = cls.env.ref("uom.product_uom_unit")
-        cls.uom_dozens = cls.env.ref("uom.product_uom_dozen")
+        cls.uom_units = cls.env.ref("base.product_uom_unit")
+        cls.uom_dozens = cls.env.ref("base.product_uom_dozen")
 
         cls.displace_prdct = cls.env["product.product"].create(
             {

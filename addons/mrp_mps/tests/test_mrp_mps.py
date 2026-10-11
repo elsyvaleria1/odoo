@@ -1363,7 +1363,7 @@ class TestMpsMps(common.TransactionCase):
             {
                 "product_id": product_a.id,
                 "product_uom_qty": 1,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "location_id": self.warehouse.lot_stock_id.id,
                 "location_dest_id": self.env.ref("stock.stock_location_customers").id,
             }
@@ -1372,7 +1372,7 @@ class TestMpsMps(common.TransactionCase):
             {
                 "product_id": product_a.id,
                 "product_uom_qty": 1,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "location_id": self.env.ref("stock.stock_location_customers").id,
                 "location_dest_id": self.warehouse.lot_stock_id.id,
             }
@@ -1621,7 +1621,7 @@ class TestMpsMps(common.TransactionCase):
         )
         purchase_order_line.write(
             {
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "product_qty": 2,
             }
         )
@@ -1652,7 +1652,7 @@ class TestMpsMps(common.TransactionCase):
         )
         purchase_order_line_2.write(
             {
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "product_qty": 1,
             }
         )
@@ -1718,7 +1718,7 @@ class TestMpsMps(common.TransactionCase):
         )
         purchase_order_line.write(
             {
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "product_qty": 2,
             }
         )

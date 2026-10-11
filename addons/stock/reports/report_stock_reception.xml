@@ -124,7 +124,7 @@
                                 </td>
                                 <td>
                                     <span t-out="line['quantity']">DEMO_QUANTITY</span>
-                                    <span groups="uom.group_uom" t-out="line['uom']">DEMO_UOM</span>
+                                    <span groups="base.group_uom" t-out="line['uom']">DEMO_UOM</span>
                                 </td>
                             </tr>
                         </t>

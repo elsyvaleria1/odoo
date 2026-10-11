@@ -195,7 +195,7 @@
                                 name="trace_id"
                                 groups="stock.group_production_lot" />
                             <field name="quantity" />
-                            <field name="product_uom_id" groups="uom.group_uom" />
+                            <field name="product_uom_id" groups="base.group_uom" />
                         </list>
                         <kanban class="o_kanban_mobile">
                             <templates>
@@ -206,7 +206,7 @@
                                         <field name="quantity" />
                                         <field
                                             name="product_uom_id"
-                                            groups="uom.group_uom"
+                                            groups="base.group_uom"
                                             class="mx-2" />
                                     </div>
                                 </t>

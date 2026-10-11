@@ -49,13 +49,13 @@ class TestDeliveryProof(TransactionCase):
             {
                 "name": "Test Van",
                 "type": "consu",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
         cls.vehicle = cls.env["resource.resource"].create(
             {
                 "name": "Van",
-                "kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "kind_id": cls.env.ref("base.kind_vehicle").id,
                 "product_id": cls.model.id,
             }
         )

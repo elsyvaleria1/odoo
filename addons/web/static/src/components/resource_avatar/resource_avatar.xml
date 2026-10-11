@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web.ResourceAvatarField">
+        <t t-if="this.isHuman">
+            <t t-call="web.ImageField"/>
+        </t>
+        <t t-else="">
+            <div t-attf-class="d-flex o_resource_icon align-items-center justify-content-center me-1 rounded bg-200 {{ this.backgroundClass }}">
+                <i t-attf-class="fa {{ this.icon }}"/>
+            </div>
+        </t>
+    </t>
+</templates>

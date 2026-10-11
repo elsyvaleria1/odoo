@@ -11,7 +11,7 @@ from odoo.libs.intervals import Intervals, boundaries, invert_intervals
 from odoo.libs.numbers import float_compare
 from odoo.tools.date_utils import get_intervals_hours
 
-from odoo.addons.resource.models.utils import last_day_of, split_at_midnight
+from odoo.addons.base.models.resource_utils import last_day_of, split_at_midnight
 
 _debug = DebugLog(__name__)
 

@@ -38,7 +38,7 @@ class TestStockLandedCostsMrp(ValuationReconciliationTestCommon):
                 "categ_id": cls.env.ref("product.product_category_goods").id,
             }
         )
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
         cls.bom_refri = cls.env["mrp.bom"].create(
             {
                 "product_id": cls.product_refrigerator.id,

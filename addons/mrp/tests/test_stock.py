@@ -44,9 +44,7 @@ class TestWarehouseMrp(common.TestMrpCommon):
         cls.env["mrp.workcenter"].create(
             {
                 "name": "Assembly Line 1",
-                "resource_calendar_id": cls.env.ref(
-                    "resource.resource_calendar_std"
-                ).id,
+                "resource_calendar_id": cls.env.ref("base.resource_calendar_std").id,
             }
         )
         cls.env["stock.quant"].create(
@@ -805,7 +803,7 @@ class TestKitPicking(common.TestMrpCommon):
             {
                 "name": "Pack of 2",
                 "relative_factor": 2,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         component = bom.bom_line_ids.product_id

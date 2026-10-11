@@ -212,7 +212,7 @@ class TestSalePurchase(TestSalePurchaseCommon):
 
     def test_uom_conversion(self):
         self.service_purchase_2.seller_ids.product_uom_id = self.env.ref(
-            "uom.product_uom_unit"
+            "base.product_uom_unit"
         )
         self.sale_order_2.action_confirm()
         purchase_line = self.env["purchase.order.line"].search(

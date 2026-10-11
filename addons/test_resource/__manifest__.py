@@ -7,7 +7,7 @@
     "author": "Odoo S.A.",
     "license": "LGPL-3",
     "depends": [
-        "resource",
+        "base",
     ],
     "data": [
         "security/ir.access.csv",

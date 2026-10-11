@@ -70,9 +70,10 @@ access control, and ORM extensions that those controllers depend on.
 odoo/addons/base/
 ├── __manifest__.py              # Module metadata + asset/data file declarations
 ├── __init__.py                  # Imports models, report, wizard + post_init hook
-├── models/                      # 136 Python model files (core ORM infrastructure)
+├── models/                      # 160 Python model files (core ORM infrastructure)
 │   ├── assetsbundle/            #   Asset compilation package (bundle, JS/CSS/XML pipelines, store)
 │   ├── decimal_precision.py         #   Configurable decimal precision
+│   ├── uom_uom.py                   #   Units of measure and conversion
 │   ├── ir_access.py                 #   ir.access: permissions and guards with domains, the decision of every model
 │   ├── ir_access_obligation.py      #   ir.access.obligation: what a declared verb obliges beyond holding it (abstract; approval extends it)
 │   ├── ir_access_predicate.py       #   ir.access.predicate: a named, validated reach no anchor states
@@ -207,6 +208,29 @@ odoo/addons/base/
 │   ├── res_users_log.py             #   Login tracking
 │   ├── res_users_login_cooldown.py  #   Login-failure cooldown counter
 │   ├── res_users_settings.py        #   Per-user settings
+│   ├── mixin_resource.py            #   A business record that is a resource (owner or reference)
+│   ├── mixin_resource_allocation.py #   Hosts allocating resources over time
+│   ├── mixin_resource_kind.py       #   Kind-gated asset fields on a resource host
+│   ├── mixin_resource_ledger.py     #   Ledger hooks of a resource host
+│   ├── mixin_resource_scheduling.py #   Hosts scheduled against resource calendars
+│   ├── mixin_resource_scheduling_tools.py#   Interval arithmetic for scheduling hosts
+│   ├── resource_assignment.py       #   Custody: who holds a resource, when
+│   ├── resource_calendar.py         #   Working schedules
+│   ├── resource_calendar_attendance.py#   A schedule's attendance lines
+│   ├── resource_config.py           #   A company's resource settings, on mixin.company.config
+│   ├── resource_identifier.py       #   One identifier value of a resource
+│   ├── resource_identifier_type.py  #   Identifier kinds (plate, VIN, serial...)
+│   ├── resource_kind.py             #   Asset kinds, optionally gated by a group
+│   ├── resource_meter.py            #   A resource's meters (odometer, hours...)
+│   ├── resource_meter_reading.py    #   Meter readings, monotonic per meter
+│   ├── resource_nationality.py      #   A person's nationalities
+│   ├── resource_relation.py         #   Composition: a resource inside another
+│   ├── resource_reservation.py      #   Bookings of a resource's time
+│   ├── resource_resource.py         #   The resource: a person, a thing or a capacity (resource/index.md)
+│   ├── resource_role.py             #   Roles a resource can play
+│   ├── resource_schedule_exception.py#   Time off and other schedule exceptions
+│   ├── resource_time_type.py        #   Kinds of time (work, leave)
+│   ├── resource_utils.py            #   Pure interval and context helpers (non-ORM)
 │   └── tag_tag.py                   #   Generic tag records
 ├── wizards/                      # 22 transient model files
 │   ├── common.py                #   Base test classes (demo user, portal user)
@@ -233,9 +257,9 @@ odoo/addons/base/
 │   ├── wizard_res_users_update_password.py #   Password change, admin form (one line per user)
 │   ├── wizard_res_users_update_password_line.py #   One user and their new password
 │   └── wizard_res_users_update_password_own.py #   Password change, self-service
-├── tests/                       # 181 Python test files + test assets
-├── views/                       # 44 XML view definition files
-├── data/                        # 24 data files (XML, CSV, SQL, JSON)
+├── tests/                       # 205 Python test files + test assets
+├── views/                       # 57 XML view definition files
+├── data/                        # 28 data files (XML, CSV, SQL, JSON)
 ├── security/                    # ir.access.csv + groups and access-row XML
 ├── rng/                         # RelaxNG schemas (view validation)
 ├── static/                      # CSS, JS, images, test assets
@@ -318,14 +342,14 @@ Derived by `factcheck.sh`, which re-measures every row against the tree.
 
 | Category | Count |
 |----------|-------|
-| Python (models) | 136 |
+| Python (models) | 160 |
 | Python (wizards) | 22 |
-| Python (tests) | 181 |
-| XML (views) | 44 |
-| Data files | 24 |
+| Python (tests) | 205 |
+| XML (views) | 57 |
+| Data files | 28 |
 | XML (reports) | 0 |
 | XML (wizard views) | 11 |
-| Security files | 5 |
+| Security files | 6 |
 | RNG (schemas) | 7 |
 | i18n (translations) | 64 |
-| Static assets | 348 |
+| Static assets | 349 |

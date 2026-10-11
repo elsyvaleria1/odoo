@@ -11,7 +11,7 @@ class TestResourceAssetCalendar(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, no_mail_to_attendees=True))
-        cls.kind = cls.env.ref("resource.kind_equipment")
+        cls.kind = cls.env.ref("base.kind_equipment")
         cls.projector = cls.env["resource.resource"].create(
             {"name": "Projector", "kind_id": cls.kind.id, "state": "in_service"}
         )

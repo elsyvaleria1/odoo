@@ -63,7 +63,7 @@ class TestDeliveryUSPS(TransactionCase):
             "delivery_usps_rest.delivery_carrier_usps_international"
         )
 
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
 
     def wiz_put_in_pack(self, picking):
         """Helper to use the 'wizard.stock.move.line.put.in.pack' wizard

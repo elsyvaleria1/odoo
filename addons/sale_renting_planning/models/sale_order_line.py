@@ -43,7 +43,7 @@ class SaleOrderLine(models.Model):
         vals_list_per_sol = super()._planning_slot_vals_list_per_sol()
         assigned_resource_ids = []
         problematic_services = []
-        unit_uom = self.env.ref("uom.product_uom_unit")
+        unit_uom = self.env.ref("base.product_uom_unit")
         for sol, vals_list in vals_list_per_sol.items():
             if not sol.is_rental:
                 continue

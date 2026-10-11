@@ -19,7 +19,7 @@ class TestResourceAssetLifecycle(TestAccountAssetCommon):
         cls.keeper = new_test_user(
             cls.env,
             login="asset_keeper",
-            groups="base.group_user,resource.group_asset_manager",
+            groups="base.group_user,base.group_asset_manager",
         )
 
     def _running_board(self, **vals):
@@ -124,7 +124,7 @@ class TestResourceAssetLifecycle(TestAccountAssetCommon):
     def test_disposing_several_assets_refuses_when_one_has_a_running_board(self):
         board = self._running_board()
         van = self.env["account.depreciation.board"].create(
-            {"name": "Van", "kind_id": self.env.ref("resource.kind_vehicle").id}
+            {"name": "Van", "kind_id": self.env.ref("base.kind_vehicle").id}
         )
         with self.assertRaises(UserError):
             (board + van).action_dispose()
@@ -132,7 +132,7 @@ class TestResourceAssetLifecycle(TestAccountAssetCommon):
 
     def test_disposing_an_asset_without_a_running_board_disposes_it(self):
         van = self.env["account.depreciation.board"].create(
-            {"name": "Van", "kind_id": self.env.ref("resource.kind_vehicle").id}
+            {"name": "Van", "kind_id": self.env.ref("base.kind_vehicle").id}
         )
         draft = self.create_asset(1200, "yearly", 4)
         (van + draft).action_dispose()
@@ -174,7 +174,7 @@ class TestResourceAssetLifecycle(TestAccountAssetCommon):
 
     def test_disposing_an_asset_without_a_board_needs_no_accounts(self):
         van = self.env["account.depreciation.board"].create(
-            {"name": "Van", "kind_id": self.env.ref("resource.kind_vehicle").id}
+            {"name": "Van", "kind_id": self.env.ref("base.kind_vehicle").id}
         )
         van._dispose(self.today)
         self.assertRecordValues(
@@ -221,7 +221,7 @@ class TestResourceAssetLifecycle(TestAccountAssetCommon):
 
     def test_disposing_an_asset_without_a_board_needs_no_accounting_access(self):
         forklift = self.env["resource.resource"].create(
-            {"name": "Forklift", "kind_id": self.env.ref("resource.kind_vehicle").id}
+            {"name": "Forklift", "kind_id": self.env.ref("base.kind_vehicle").id}
         )
         forklift.with_user(self.keeper)._transition("disposed", self.today)
         self.assertRecordValues(forklift, [{"state": "disposed", "active": False}])

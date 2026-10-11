@@ -9,7 +9,7 @@ class TestSaleProjectCommon(TestSaleCommon):
 
         cls.env.user.group_ids |= cls.env.ref("project.group_project_milestone")
 
-        cls.uom_hour = cls.env.ref("uom.product_uom_hour")
+        cls.uom_hour = cls.env.ref("base.product_uom_hour")
         cls.account_sale = cls.company_data["default_account_revenue"]
 
         cls.analytic_plan, _other_plans = cls.env[

@@ -10,7 +10,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import format_date, format_time
 from odoo.tools.date_utils import localized
 
-from odoo.addons.resource.models.utils import last_day_of
+from odoo.addons.base.models.resource_utils import last_day_of
 
 _debug = DebugLog(__name__)
 

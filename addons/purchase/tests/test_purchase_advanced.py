@@ -14,7 +14,7 @@ class TestPurchaseAdvanced(AccountTestInvoicingCommon):
             {
                 "name": "Service Product",
                 "type": "service",
-                "uom_id": cls.env.ref("uom.product_uom_hour").id,
+                "uom_id": cls.env.ref("base.product_uom_hour").id,
                 "standard_price": 50.0,
             }
         )

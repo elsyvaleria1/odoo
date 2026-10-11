@@ -19,7 +19,7 @@ def _document_resource_asset_post_init(env) -> None:
     )
     if not cr.fetchone():
         return
-    vehicle = env.ref("resource.kind_vehicle", raise_if_not_found=False)
+    vehicle = env.ref("base.kind_vehicle", raise_if_not_found=False)
     if not vehicle:
         return
     cr.execute(

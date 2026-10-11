@@ -47,7 +47,7 @@
                 <div class="col-md-auto text-center" t-att-class="{ 'text-danger': this.virtualAvailable &lt; 0 }" name="forecasted_value">
                     <div class="h3">
                         <span t-out="this._formatFloat(this.virtualAvailable)"/>
-                        <span t-out="' ' + this.uom" groups="uom.group_uom"/>
+                        <span t-out="' ' + this.uom" groups="base.group_uom"/>
                     </div>
                     <div>Forecasted</div>
                 </div>

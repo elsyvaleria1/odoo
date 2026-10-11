@@ -22,7 +22,7 @@ class TestAssetLogTyping(AccountTestInvoicingCommon):
                 "type": "consu",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource.kind_machinery").id,
+                "asset_kind_id": cls.env.ref("base.kind_machinery").id,
             }
         )
         cls.service_product = product.create(

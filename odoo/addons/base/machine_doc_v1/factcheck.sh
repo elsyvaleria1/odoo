@@ -287,6 +287,15 @@ while IFS='|' read -r verdict detail; do
     [ "$verdict" = "OK" ] && ok || bad "$detail"
 done <<< "$tree_report"
 
+# ----------------------------------------------------------------- resource --
+# The resource models base holds (until 1.151 the resource module) keep their
+# own machine doc under resource/, with their own derivations.
+if resource_report="$(bash "$SCRIPT_DIR/resource/factcheck.sh" 2>&1)"; then ok
+else
+    printf '%s\n' "$resource_report" | grep -F 'FAIL' | sed 's/^ */  resource: /'
+    bad "resource/factcheck.sh is red"
+fi
+
 # ------------------------------------------------------------------ summary --
 printf '\n%d passed, %d failed, %d skipped\n' "$pass" "$fail" "$skip"
 [ "$fail" -eq 0 ] || exit 1

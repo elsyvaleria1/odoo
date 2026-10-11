@@ -46,7 +46,7 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
 
     def test_generate_timesheet_after_validation(self):
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
-            "uom.product_uom_day"
+            "base.product_uom_day"
         )
         Timesheet = self.env["account.analytic.line"]
         today = fields.Date.today()
@@ -275,13 +275,13 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         # self.project_customer.allow_timesheets = True
 
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
-            "uom.product_uom_hour"
+            "base.product_uom_hour"
         )
         self.assertTrue(self.timesheet1.display_timer)
 
         # Force recompute field
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
-            "uom.product_uom_day"
+            "base.product_uom_day"
         )
         self.timesheet1._compute_display_timer()
         self.assertFalse(self.timesheet1.display_timer)

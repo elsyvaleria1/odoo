@@ -46,7 +46,7 @@
     <menuitem
         id="menu_resource_calendar_view"
         parent="menu_hr_work_entry_configuration"
-        action="resource.action_resource_calendar_form"
+        action="base.action_resource_calendar_form"
         sequence="20" />
 
 </odoo>

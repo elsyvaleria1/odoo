@@ -3370,7 +3370,7 @@ class TestStockUOM(TestStockCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        dp = cls.env.ref("uom.decimal_product_uom")
+        dp = cls.env.ref("base.decimal_product_uom")
         dp.digits = 7
 
     def test_pickings_transfer_with_different_uom_and_back_orders(self):
@@ -3451,7 +3451,7 @@ class TestStockUOM(TestStockCommon):
         )
 
     def test_move_product_with_different_uom(self):
-        precision = self.env.ref("uom.decimal_product_uom")
+        precision = self.env.ref("base.decimal_product_uom")
         precision.digits = 3
 
         product_G = self.env["product.product"].create(
@@ -4381,7 +4381,7 @@ class TestPickShipBackorder(TestStockCommon):
                 "type": "consu",
                 "is_storable": True,
                 "tracking": "lot",
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
             }
         )
 

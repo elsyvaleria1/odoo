@@ -2298,7 +2298,7 @@ class TestAccountAsset(TestAccountReportsCommon):
                             "price_unit": 400.0,
                             "name": "stuff",
                             "quantity": 2,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "tax_ids": [],
                         },
                     ),
@@ -2338,7 +2338,7 @@ class TestAccountAsset(TestAccountReportsCommon):
                             "name": "stuff",
                             "quantity": 3.0,
                             "price_unit": 1000.0,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         },
                     ),
                     (

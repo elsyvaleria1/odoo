@@ -625,9 +625,9 @@ class TestSaleStock(TestSaleStockCommon, ValuationReconciliationTestCommon):
         self.assertEqual(picking2.partner_id.id, partner2.id)
 
     def test_06_uom(self):
-        self.env.ref("uom.decimal_product_uom").digits = 0
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        self.env.ref("base.decimal_product_uom").digits = 0
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         item1 = self.company_data["product_order_no"]
 
         self.assertEqual(item1.uom_id.id, uom_unit.id)
@@ -686,8 +686,8 @@ class TestSaleStock(TestSaleStockCommon, ValuationReconciliationTestCommon):
         self.assertEqual(product_line.qty_transferred, 3.0)
 
     def test_07_forced_qties(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         item1 = self.company_data["product_order_no"]
 
         self.assertEqual(item1.uom_id.id, uom_unit.id)
@@ -747,7 +747,7 @@ class TestSaleStock(TestSaleStockCommon, ValuationReconciliationTestCommon):
         )
 
         item1 = self.company_data["product_order_no"]
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         so1 = self.env["sale.order"].create(
             {
                 "partner_id": self.partner_a.id,
@@ -1264,13 +1264,13 @@ class TestSaleStock(TestSaleStockCommon, ValuationReconciliationTestCommon):
             {
                 "name": "Yards",
                 "relative_factor": 0.9144,
-                "relative_uom_id": self.env.ref("uom.product_uom_meter").id,
+                "relative_uom_id": self.env.ref("base.product_uom_meter").id,
             }
         )
         product = self.env["product.product"].create(
             {
                 "name": "Test Product",
-                "uom_id": self.env.ref("uom.product_uom_meter").id,
+                "uom_id": self.env.ref("base.product_uom_meter").id,
             }
         )
         so = self.env["sale.order"].create(
@@ -1400,8 +1400,8 @@ class TestSaleStock(TestSaleStockCommon, ValuationReconciliationTestCommon):
         )
 
     def test_18_deliver_more_and_multi_uom(self):
-        uom_m_id = self.ref("uom.product_uom_meter")
-        uom_km_id = self.ref("uom.product_uom_km")
+        uom_m_id = self.ref("base.product_uom_meter")
+        uom_km_id = self.ref("base.product_uom_km")
         self.product_b.write(
             {
                 "uom_id": uom_m_id,
@@ -2597,7 +2597,7 @@ class TestSaleStock(TestSaleStockCommon, ValuationReconciliationTestCommon):
         product = self.env["product.product"].create(
             {
                 "name": "Super product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "lst_price": 100.0,
                 "is_storable": True,
                 "invoice_policy": "transferred",

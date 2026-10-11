@@ -124,7 +124,7 @@ class TestMoveReservation(TestStockCommon):
         self.assertEqual(out.move_line_ids.quantity, 5)
 
     def test_uom_conversion_dozen_over_unit_stock(self):
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         p = self._product()
         self._add_stock(p, self.stock_loc, 24)
         move = self._move(

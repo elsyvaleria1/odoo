@@ -399,7 +399,7 @@ class TestOrderGuards(TestMrpCommon):
         self.assertTrue(production.is_delayed)
 
     def test_switching_the_bom_of_a_draft_order_keeps_its_quantity(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         boms = self.env["mrp.bom"].create(
             [
                 {
@@ -535,7 +535,7 @@ class TestOrderGuards(TestMrpCommon):
         )
 
     def test_confirming_a_serial_order_in_dozens_keeps_edited_components(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         self.finished.tracking = "serial"
         bom = self.env["mrp.bom"].create(
             {

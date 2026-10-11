@@ -738,7 +738,7 @@ msgstr ""
 #. module: stock
 #: model_terms:ir.ui.view,arch_db:stock.product_form_view_procurement_button
 #: model_terms:ir.ui.view,arch_db:stock.product_template_form_view_procurement_button
-msgid "<span groups=\"!uom.group_uom\">On Hand</span>"
+msgid "<span groups=\"!base.group_uom\">On Hand</span>"
 msgstr ""
 
 #. module: stock

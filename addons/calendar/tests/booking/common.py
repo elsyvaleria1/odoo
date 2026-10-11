@@ -4,10 +4,10 @@ from unittest.mock import patch
 
 from odoo.tests import common, tagged
 
+from odoo.addons.base.models.resource_calendar import ResourceCalendar
 from odoo.addons.calendar.models.calendar_event import CalendarEvent
 from odoo.addons.calendar.models.res_partner import ResPartner
 from odoo.addons.mail.tests.common import MailCase, mail_new_test_user
-from odoo.addons.resource.models.resource_calendar import ResourceCalendar
 
 
 class AppointmentCommon(MailCase, common.HttpCase):

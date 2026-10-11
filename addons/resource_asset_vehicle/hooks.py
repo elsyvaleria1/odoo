@@ -5,7 +5,7 @@ from lxml import etree
 from odoo import api
 from odoo.tools import file_path
 
-from odoo.addons.resource.models.utils import KIND_MODEL_CREATING
+from odoo.addons.base.models.resource_utils import KIND_MODEL_CREATING
 
 _logger = logging.getLogger(__name__)
 

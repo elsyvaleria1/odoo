@@ -9,7 +9,7 @@
         <field name="type">service</field>
         <field name="list_price">200.0</field>
         <field name="invoice_policy">ordered</field>
-        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="uom_id" ref="base.product_uom_unit" />
     </record>
 
     <record id="product_pricing_insurance1" model="product.pricelist.item">

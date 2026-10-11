@@ -93,9 +93,9 @@
         id="menu_purchase_uom_form_action"
         name="Units &amp; Packagings"
         parent="menu_product_in_config_purchase"
-        action="uom.action_uom_uom"
+        action="base.action_uom_uom"
         sequence="10"
-        groups="uom.group_uom" />
+        groups="base.group_uom" />
 
     <menuitem
         id="menu_purchase_products"

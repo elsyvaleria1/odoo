@@ -83,7 +83,7 @@
                 <field name="product_uom_qty" />
                 <field name="qty_transferred_at_date" />
                 <field name="qty_invoiced_at_date" />
-                <field name="product_uom_id" groups="uom.group_uom" />
+                <field name="product_uom_id" groups="base.group_uom" />
                 <field name="price_unit" widget="monetary" />
                 <field name="amount_to_invoice_at_date" widget="monetary" />
             </list>

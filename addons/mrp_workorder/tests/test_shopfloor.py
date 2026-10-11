@@ -25,7 +25,7 @@ class TestShopFloor(HttpCase):
         group_lot = self.env.ref("stock.group_production_lot")
         group_multi_loc = self.env.ref("stock.group_stock_multi_locations")
         group_pack = self.env.ref("stock.group_tracking_lot")
-        group_uom = self.env.ref("uom.group_uom")
+        group_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [Command.unlink(group_lot.id)]})
         self.env.user.write({"group_ids": [Command.unlink(group_multi_loc.id)]})
         self.env.user.write({"group_ids": [Command.unlink(group_pack.id)]})
@@ -858,7 +858,7 @@ class TestShopFloor(HttpCase):
         work_center = self.env["mrp.workcenter"].create(
             {"name": "WorkCenter", "time_start": 11}
         )
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         bom = self.env["mrp.bom"].create(
             {
                 "product_id": demo.id,
@@ -1186,7 +1186,7 @@ class TestShopFloor(HttpCase):
             {
                 "product_id": demo.id,
                 "product_tmpl_id": demo.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "product_qty": 1.0,
                 "type": "normal",
                 "operation_ids": [
@@ -1298,7 +1298,7 @@ class TestShopFloor(HttpCase):
                     "name": "component",
                     "is_storable": True,
                     "tracking": "lot",
-                    "uom_id": self.ref("uom.product_uom_kgm"),
+                    "uom_id": self.ref("base.product_uom_kgm"),
                 },
                 {
                     "name": "product",
@@ -1321,7 +1321,7 @@ class TestShopFloor(HttpCase):
                         {
                             "product_id": component.id,
                             "product_qty": 50,
-                            "product_uom_id": self.ref("uom.product_uom_gram"),
+                            "product_uom_id": self.ref("base.product_uom_gram"),
                         }
                     ),
                 ],
@@ -1360,7 +1360,7 @@ class TestShopFloor(HttpCase):
                     "product_qty": 0.05,
                     "product_uom_qty": 50.0,
                     "trace_ids": lot_1.ids,
-                    "product_uom_id": self.ref("uom.product_uom_gram"),
+                    "product_uom_id": self.ref("base.product_uom_gram"),
                 },
             ],
         )

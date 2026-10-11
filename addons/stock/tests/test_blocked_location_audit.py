@@ -564,7 +564,7 @@ class TestAuditAccuracy(BlockedLocationCase):
 
 class TestReservedQuantityReporting(BlockedLocationCase):
     def test_the_chatter_splits_reserved_quantities_by_unit(self):
-        kilogram = self.env.ref("uom.product_uom_kgm")
+        kilogram = self.env.ref("base.product_uom_kgm")
         heavy = (
             self.env["product.template"]
             .create(

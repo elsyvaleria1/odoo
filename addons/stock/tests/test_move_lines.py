@@ -126,7 +126,7 @@ class TestStockMoveLine(TestStockCommon):
         self.assertEqual(move.move_line_ids.quantity, 0)
 
     def test_pick_from_5(self):
-        precision = self.env.ref("uom.decimal_product_uom")
+        precision = self.env.ref("base.decimal_product_uom")
         precision.digits = 6
         self.product.uom_id = self.uom_kg
         move = self.env["stock.move"].create(

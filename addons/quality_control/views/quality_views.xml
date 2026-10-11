@@ -353,7 +353,7 @@
                                 <field
                                     name="uom_id"
                                     widget="many2one_uom"
-                                    groups="uom.group_uom" />
+                                    groups="base.group_uom" />
                             </div>
                             <field
                                 name="failure_location_id"
@@ -369,7 +369,7 @@
                                 <field
                                     name="uom_id"
                                     widget="many2one_uom"
-                                    groups="uom.group_uom" />
+                                    groups="base.group_uom" />
                             </div>
                             <label
                                 for="qty_tested"
@@ -383,7 +383,7 @@
                                 <field
                                     name="uom_id"
                                     widget="many2one_uom"
-                                    groups="uom.group_uom" />
+                                    groups="base.group_uom" />
                             </div>
                             <field name="test_type" invisible="1" />
                             <field name="measure" invisible="test_type != 'measure'" />

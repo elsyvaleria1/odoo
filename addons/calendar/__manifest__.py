@@ -10,7 +10,6 @@
     "license": "OEEL-1",
     "depends": [
         "mail",
-        "resource",
         "phone_validation",
         "portal",
         "survey",

@@ -82,7 +82,7 @@ class ProjectProject(models.Model):
     def _compute_encode_uom_in_days(self) -> None:
         self.encode_uom_in_days = (
             self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
-            == self.env.ref("uom.product_uom_day")
+            == self.env.ref("base.product_uom_day")
         )
 
     @api.depends(
@@ -320,7 +320,7 @@ class ProjectProject(models.Model):
             return buttons
 
         encode_uom = self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
-        uom_ratio = self.env.ref("uom.product_uom_hour").factor / encode_uom.factor
+        uom_ratio = self.env.ref("base.product_uom_hour").factor / encode_uom.factor
 
         allocated = self.allocated_hours * uom_ratio
         effective = self.total_timesheet_time

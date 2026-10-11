@@ -19,15 +19,15 @@
         </record>
         <record id="mrp_workcenter_3" model="mrp.workcenter">
             <field name="name">Assembly 1</field>
-            <field name="resource_calendar_id" ref="resource.resource_calendar_std" />
+            <field name="resource_calendar_id" ref="base.resource_calendar_std" />
         </record>
         <record id="mrp_workcenter_1" model="mrp.workcenter">
             <field name="name">Drill 1</field>
-            <field name="resource_calendar_id" ref="resource.resource_calendar_std" />
+            <field name="resource_calendar_id" ref="base.resource_calendar_std" />
         </record>
         <record id="mrp_workcenter_2" model="mrp.workcenter">
             <field name="name">Assembly 2</field>
-            <field name="resource_calendar_id" ref="resource.resource_calendar_std" />
+            <field name="resource_calendar_id" ref="base.resource_calendar_std" />
         </record>
         <record
             id="product.product_product_3_product_template"
@@ -40,7 +40,7 @@
             <field
                 name="product_tmpl_id"
                 ref="product.product_product_3_product_template" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field name="produce_delay">10</field>
         </record>
@@ -54,27 +54,27 @@
         <record id="mrp_bom_manufacture_line_1" model="mrp.bom.line">
             <field name="product_id" ref="product.product_product_12" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">5</field>
             <field name="bom_id" ref="mrp_bom_manufacture" />
         </record>
         <record id="mrp_bom_manufacture_line_2" model="mrp.bom.line">
             <field name="product_id" ref="product.product_product_13" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">5</field>
             <field name="bom_id" ref="mrp_bom_manufacture" />
         </record>
         <record id="mrp_bom_manufacture_line_3" model="mrp.bom.line">
             <field name="product_id" ref="product.product_product_16" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">5</field>
             <field name="bom_id" ref="mrp_bom_manufacture" />
         </record>
         <record id="mrp_production_1" model="mrp.production">
             <field name="product_id" ref="product.product_product_3" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="product_qty">3</field>
             <field name="bom_id" ref="mrp_bom_manufacture" />
         </record>
@@ -85,7 +85,7 @@
             <field name="list_price">520</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description">Solid wood table.</field>
             <field name="default_code">FURN_9666</field>
             <field name="tracking">serial</field>
@@ -97,7 +97,7 @@
             model="stock.warehouse.orderpoint">
             <field name="product_max_qty">0.0</field>
             <field name="product_min_qty">0.0</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="company_id" ref="base.main_company" />
             <field name="warehouse_id" ref="stock.warehouse0" />
             <field
@@ -113,7 +113,7 @@
             <field name="list_price">380</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description">Solid wood is a durable natural material.</field>
             <field name="default_code">FURN_8522</field>
             <field name="tracking">serial</field>
@@ -133,7 +133,7 @@
             <field name="list_price">50</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description">18″ x 2½″ Square Leg</field>
             <field name="default_code">FURN_2333</field>
             <field name="tracking">lot</field>
@@ -170,7 +170,7 @@
             <field name="list_price">0.5</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="description">Stainless steel screw full (dia - 5mm, Length - 10mm)</field>
             <field name="default_code">CONS_89957</field>
@@ -187,7 +187,7 @@
             <field name="list_price">0.2</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description">Stainless steel screw</field>
             <field name="default_code">CONS_25630</field>
             <field
@@ -202,7 +202,7 @@
             <field name="list_price">10</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="description">Layers that are stick together to assemble wood panels.</field>
             <field name="default_code">FURN_7111</field>
@@ -218,7 +218,7 @@
             <field name="list_price">10</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description">Top layer of a wood panel.</field>
             <field name="default_code">FURN_8111</field>
             <field
@@ -233,7 +233,7 @@
             <field name="list_price">10</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="default_code">FURN_9111</field>
             <field
                 name="image_1920"
@@ -247,7 +247,7 @@
             <field name="list_price">100</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="default_code">FURN_7023</field>
             <field
                 name="image_1920"
@@ -264,7 +264,7 @@
             <field name="list_price">1000</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="default_code">FURN_8621</field>
             <field
                 name="image_1920"
@@ -282,7 +282,7 @@
             <field
                 name="product_tmpl_id"
                 ref="product_product_computer_desk_product_template" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">3</field>
             <field name="consumption">flexible</field>
             <field name="days_to_prepare_mo">3</field>
@@ -297,7 +297,7 @@
         <record id="mrp_bom_desk_line_1" model="mrp.bom.line">
             <field name="product_id" ref="product_product_computer_desk_head" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field name="bom_id" ref="mrp_bom_desk" />
             <field name="operation_id" ref="mrp.mrp_routing_workcenter_5" />
@@ -305,7 +305,7 @@
         <record id="mrp_bom_desk_line_2" model="mrp.bom.line">
             <field name="product_id" ref="product_product_computer_desk_leg" />
             <field name="product_qty">4</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">2</field>
             <field name="bom_id" ref="mrp_bom_desk" />
             <field name="operation_id" ref="mrp.mrp_routing_workcenter_5" />
@@ -313,20 +313,20 @@
         <record id="mrp_bom_desk_line_3" model="mrp.bom.line">
             <field name="product_id" ref="product_product_computer_desk_bolt" />
             <field name="product_qty">4</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">3</field>
             <field name="bom_id" ref="mrp_bom_desk" />
         </record>
         <record id="mrp_bom_desk_line_4" model="mrp.bom.line">
             <field name="product_id" ref="product_product_computer_desk_screw" />
             <field name="product_qty">10</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">4</field>
             <field name="bom_id" ref="mrp_bom_desk" />
         </record>
         <record id="mrp_production_3" model="mrp.production">
             <field name="product_id" ref="product_product_computer_desk" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="product_qty">1</field>
             <field
                 name="date_start"
@@ -337,7 +337,7 @@
             <field
                 name="product_tmpl_id"
                 ref="product_product_computer_desk_head_product_template" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
         </record>
         <record id="mrp_routing_workcenter_0" model="mrp.routing.workcenter">
@@ -350,14 +350,14 @@
         <record id="mrp_bom_line_wood_panel" model="mrp.bom.line">
             <field name="product_id" ref="product_product_wood_panel" />
             <field name="product_qty">2</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field name="bom_id" ref="mrp_bom_table_top" />
         </record>
         <record id="mrp_bom_line_plastic_laminate" model="mrp.bom.line">
             <field name="product_id" ref="product_product_plastic_laminate" />
             <field name="product_qty">4</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">2</field>
             <field name="bom_id" ref="mrp_bom_table_top" />
         </record>
@@ -365,7 +365,7 @@
             <field
                 name="product_tmpl_id"
                 ref="product_product_plastic_laminate_product_template" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
         </record>
         <record id="mrp_routing_workcenter_1" model="mrp.routing.workcenter">
@@ -392,7 +392,7 @@
         <record id="mrp_bom_line_plastic_laminate" model="mrp.bom.line">
             <field name="product_id" ref="product_product_ply_veneer" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field name="bom_id" ref="mrp_bom_plastic_laminate" />
         </record>
@@ -400,26 +400,26 @@
             <field
                 name="product_tmpl_id"
                 ref="product_product_wood_panel_product_template" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
         </record>
         <record id="mrp_bom_line_wood_panel_ply" model="mrp.bom.line">
             <field name="product_id" ref="product_product_wood_ply" />
             <field name="product_qty">3</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field name="bom_id" ref="mrp_bom_wood_panel" />
         </record>
         <record id="mrp_bom_line_wood_panel_wear" model="mrp.bom.line">
             <field name="product_id" ref="product_product_wood_wear" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field name="bom_id" ref="mrp_bom_wood_panel" />
         </record>
         <record id="mrp_production_4" model="mrp.production">
             <field name="product_id" ref="product_product_computer_desk_head" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="product_qty">1</field>
             <field name="location_src_id" ref="stock.stock_location_stock" />
             <field name="location_dest_id" ref="stock.stock_location_stock" />
@@ -432,7 +432,7 @@
             <field name="list_price">147.0</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description">Table kit</field>
             <field name="default_code">FURN_78236</field>
             <field
@@ -451,20 +451,20 @@
             <field
                 name="product_tmpl_id"
                 ref="product_product_table_kit_product_template" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">2</field>
             <field name="type">phantom</field>
         </record>
         <record id="mrp_bom_kit_line_1" model="mrp.bom.line">
             <field name="product_id" ref="product_product_wood_panel" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="bom_id" ref="mrp_bom_kit" />
         </record>
         <record id="mrp_bom_kit_line_2" model="mrp.bom.line">
             <field name="product_id" ref="product_product_computer_desk_bolt" />
             <field name="product_qty">4</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="bom_id" ref="mrp_bom_kit" />
         </record>
         <record id="product_product_drawer_drawer" model="product.product">
@@ -475,7 +475,7 @@
             <field name="list_price">24.0</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description">Drawer on casters for great usability.</field>
             <field name="default_code">FURN_2100</field>
             <field name="barcode">601647855646</field>
@@ -492,7 +492,7 @@
             <field name="list_price">20</field>
             <field name="is_storable" eval="True" />
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="default_code">FURN_5623</field>
             <field name="barcode">601647855647</field>
             <field
@@ -586,21 +586,21 @@
             <field
                 name="product_tmpl_id"
                 ref="product.product_product_27_product_template" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field name="code">PRIM-ASSEM</field>
         </record>
         <record id="mrp_bom_drawer_line_1" model="mrp.bom.line">
             <field name="product_id" ref="product_product_drawer_drawer" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field name="bom_id" ref="mrp_bom_drawer" />
         </record>
         <record id="mrp_bom_drawer_line_2" model="mrp.bom.line">
             <field name="product_id" ref="product_product_drawer_case" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">2</field>
             <field name="bom_id" ref="mrp_bom_drawer" />
         </record>
@@ -608,7 +608,7 @@
             <field
                 name="product_tmpl_id"
                 ref="product.product_product_27_product_template" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">2</field>
             <field name="code">SEC-ASSEM</field>
         </record>
@@ -636,14 +636,14 @@
         <record id="mrp_bom_drawer_rout_line_1" model="mrp.bom.line">
             <field name="product_id" ref="product_product_drawer_drawer" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field name="bom_id" ref="mrp_bom_drawer_rout" />
         </record>
         <record id="mrp_bom_drawer_rout_line_2" model="mrp.bom.line">
             <field name="product_id" ref="product_product_drawer_case" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">2</field>
             <field name="bom_id" ref="mrp_bom_drawer_rout" />
         </record>
@@ -652,7 +652,7 @@
         </record>
         <record id="mrp_production_drawer" model="mrp.production">
             <field name="product_id" ref="product.product_product_27" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="product_qty">5</field>
             <field name="location_src_id" ref="stock.stock_location_stock" />
             <field name="location_dest_id" ref="stock.stock_location_stock" />

@@ -146,7 +146,7 @@
                                     widget="statinfo"
                                     nolabel="1"
                                     class="mr4" />
-                                <field name="uom_name" groups="uom.group_uom" />
+                                <field name="uom_name" groups="base.group_uom" />
                             </span>
                             <span class="o_stat_text">Manufactured</span>
                         </div>
@@ -201,7 +201,7 @@
                                     widget="statinfo"
                                     nolabel="1"
                                     class="mr4" />
-                                <field name="uom_name" groups="uom.group_uom" />
+                                <field name="uom_name" groups="base.group_uom" />
                             </span>
                             <span class="o_stat_text">Manufactured</span>
                         </div>

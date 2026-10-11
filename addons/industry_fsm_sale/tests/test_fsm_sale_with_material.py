@@ -53,7 +53,7 @@ class TestFsmSaleWithMaterial(TestFsmFlowCommon):
         cls.product_a = cls.env["product.product"].create(
             {
                 "name": "product_a",
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
                 "lst_price": 1000.0,
                 "standard_price": 800.0,
                 "property_account_income_id": cls.account_revenue.id,

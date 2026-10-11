@@ -3,7 +3,7 @@ from datetime import datetime
 from odoo import api, fields, models
 from odoo.tools import frozendict
 
-from odoo.addons.resource.models.utils import filter_domain_leaf
+from odoo.addons.base.models.resource_utils import filter_domain_leaf
 
 COMMISSION_LINE_COLUMNS = (
     "user_id",

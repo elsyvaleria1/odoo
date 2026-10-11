@@ -31,7 +31,7 @@ Thank you!</field>
         <field name="ticket_id" ref="helpdesk_repair.helpdesk_repair_ticket_1" />
         <field name="user_id" ref="base.user_admin" />
         <field name="state">done</field>
-        <field name="product_uom_id" ref="uom.product_uom_unit" />
+        <field name="product_uom_id" ref="base.product_uom_unit" />
         <field name="picking_type_id" ref="repair.picking_type_warehouse0_repair" />
         <field
             name="move_ids"

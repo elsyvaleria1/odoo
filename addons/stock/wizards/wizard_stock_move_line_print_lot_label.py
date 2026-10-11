@@ -33,7 +33,7 @@ class WizardStockMoveLinePrintLotLabel(models.TransientModel):
         if self.label_quantity == "lots":
             docids = self.move_line_ids.trace_id.ids
         else:
-            uom_unit = self.env.ref("uom.product_uom_unit")
+            uom_unit = self.env.ref("base.product_uom_unit")
             quantity_by_lot = defaultdict(int)
             for move_line in self.move_line_ids:
                 if not move_line.trace_id:

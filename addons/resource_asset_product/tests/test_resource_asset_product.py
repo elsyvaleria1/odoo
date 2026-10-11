@@ -4,7 +4,7 @@ from odoo.tests import TransactionCase, tagged
 @tagged("post_install", "-at_install")
 class TestResourceAssetProduct(TransactionCase):
     def test_kind_follows_the_product(self):
-        vehicle = self.env.ref("resource.kind_vehicle")
+        vehicle = self.env.ref("base.kind_vehicle")
         template = self.env["product.template"].create(
             {"name": "Pickup", "asset_kind_id": vehicle.id}
         )
@@ -20,7 +20,7 @@ class TestResourceAssetProduct(TransactionCase):
         )
 
     def test_an_explicit_kind_survives_a_product_without_one(self):
-        tool = self.env.ref("resource.kind_tool")
+        tool = self.env.ref("base.kind_tool")
         template = self.env["product.template"].create({"name": "Wrench"})
         asset = self.env["resource.resource"].create(
             {

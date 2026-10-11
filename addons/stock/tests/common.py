@@ -354,9 +354,9 @@ class TestMoveLineCommon(TestStockCommon):
         super().setUpClass()
         cls.MoveLine = cls.env["stock.move.line"]
         cls.Quant = cls.env["stock.quant"]
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
-        cls.uom_kg = cls.env.ref("uom.product_uom_kgm")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_dozen = cls.env.ref("base.product_uom_dozen")
+        cls.uom_kg = cls.env.ref("base.product_uom_kgm")
 
     def _product(self, name, tracking="none", uom=None, uoms=None):
         vals = {"name": name, "is_storable": True, "tracking": tracking}

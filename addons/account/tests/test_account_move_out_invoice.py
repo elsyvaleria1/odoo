@@ -135,7 +135,7 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
             "amount_tax": 210.0,
             "amount_total": 1410.0,
         }
-        cls.env.user.group_ids += cls.env.ref("uom.group_uom")
+        cls.env.user.group_ids += cls.env.ref("base.group_uom")
 
     def setUp(self):
         super().setUp()
@@ -253,7 +253,7 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
         product = self.env["product.product"].create(
             {
                 "name": "product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "lst_price": 110.0,
                 "taxes_id": [(6, 0, tax_price_include.ids)],
             }
@@ -319,7 +319,7 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
             },
         )
 
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         with Form(invoice) as move_form:
             with move_form.invoice_line_ids.edit(0) as line_form:
                 line_form.product_uom_id = uom_dozen
@@ -439,7 +439,7 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
         product = self.env["product.product"].create(
             {
                 "name": "product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "lst_price": 110.0,
                 "taxes_id": [(6, 0, tax_price_include_1.ids)],
             }
@@ -505,7 +505,7 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
             },
         )
 
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         with Form(invoice) as move_form:
             with move_form.invoice_line_ids.edit(0) as line_form:
                 line_form.product_uom_id = uom_dozen
@@ -4189,7 +4189,7 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
         product = self.env["product.product"].create(
             {
                 "name": "product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "lst_price": 1000.0,
                 "standard_price": 800.0,
                 "company_id": False,

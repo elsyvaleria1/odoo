@@ -6,7 +6,7 @@ class ResConfigSettings(models.TransientModel):
 
     group_uom = fields.Boolean(
         string="Units of Measure & Packagings",
-        implied_group="uom.group_uom",
+        implied_group="base.group_uom",
     )
     group_product_variant = fields.Boolean(
         string="Variants",

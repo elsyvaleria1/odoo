@@ -509,7 +509,7 @@ class DeliveryCarrier(models.Model):
         # then pretends to have. The sibling carriers (ups, ups_rest, fedex,
         # dhl, shiprocket) already convert weights this way.
         weight_in_pounds = weight_uom_id._get_quantity_in_unit(
-            weight, self.env.ref("uom.product_uom_lb"), round=False
+            weight, self.env.ref("base.product_uom_lb"), round=False
         )
         return max(0.1, float_round((weight_in_pounds * 16), precision_digits=1))
 

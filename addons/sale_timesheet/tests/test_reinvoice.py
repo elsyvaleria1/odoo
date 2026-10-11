@@ -518,7 +518,7 @@ class TestReInvoice(TestCommonSaleTimesheet):
                 "standard_price": 30,
                 "list_price": 90,
                 "type": "service",
-                "uom_id": self.env.ref("uom.product_uom_hour").id,
+                "uom_id": self.env.ref("base.product_uom_hour").id,
                 "service_policy": "delivered_timesheet",
                 "invoice_policy": "transferred",
                 "default_code": "SERV-DELI2",

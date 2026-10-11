@@ -314,7 +314,7 @@ class TestProductionIntegrity(TestMrpCommon):
         self.assertNotIn(third, merged.production_group_id.move_ids.production_id)
 
     def test_merging_keeps_the_orders_unit(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         finished, component = self.env["product.product"].create(
             [
                 {"name": "Boxed", "is_storable": True, "uom_id": dozen.id},

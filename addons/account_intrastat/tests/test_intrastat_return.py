@@ -138,7 +138,7 @@ class TestIntrastatReturn(TestAccountReportsCommon):
                                 "quantity": 1.0,
                                 "price_unit": 100.0,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                             }
                         )
@@ -157,7 +157,7 @@ class TestIntrastatReturn(TestAccountReportsCommon):
                                 "quantity": 1.0,
                                 "price_unit": 100.0,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                             }
                         )

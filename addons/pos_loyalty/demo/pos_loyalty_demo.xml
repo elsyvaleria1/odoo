@@ -63,7 +63,7 @@
         <field name="name">Simple Pen</field>
         <field name="weight">0.01</field>
         <field name="default_code">CONS_0002</field>
-        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="uom_id" ref="base.product_uom_unit" />
         <field name="categ_id" ref="product.product_category_goods" />
         <field
             name="image_1920"

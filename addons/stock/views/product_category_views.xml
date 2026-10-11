@@ -33,7 +33,7 @@
                         <field
                             name="packaging_reserve_method"
                             widget="radio"
-                            groups="uom.group_uom" />
+                            groups="base.group_uom" />
                     </group>
                 </group>
             </group>

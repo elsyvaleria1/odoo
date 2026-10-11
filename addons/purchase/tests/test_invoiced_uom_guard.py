@@ -10,8 +10,8 @@ class TestInvoicedUomGuard(AccountTestInvoicingCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_incompatible = cls.env.ref("uom.product_uom_hour")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_incompatible = cls.env.ref("base.product_uom_hour")
         cls.product = cls.env["product.product"].create(
             {
                 "name": "Guarded billed product",

@@ -508,7 +508,7 @@ class TestSubcontractingDropshippingFlows(
             bom = bom_form.save()
             finished_products += finished_product
             boms += bom
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         so = self.env["sale.order"].create(
             {
                 "partner_id": customer.id,

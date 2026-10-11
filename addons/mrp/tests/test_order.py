@@ -2529,7 +2529,7 @@ class TestMrpOrder(TestMrpCommon):
         self.assertEqual(component.qty_available, 13)
 
     def test_immediate_validate_uom_2(self):
-        uom_L = self.env.ref("uom.product_uom_litre")
+        uom_L = self.env.ref("base.product_uom_litre")
         uom_cL = self.env["uom.uom"].create(
             {
                 "name": "cL",
@@ -2562,7 +2562,7 @@ class TestMrpOrder(TestMrpCommon):
             storable_component, self.stock_location, 100
         )
 
-        self.env.user.group_ids -= self.env.ref("uom.group_uom")
+        self.env.user.group_ids -= self.env.ref("base.group_uom")
         for component in [consumable_component, storable_component]:
             bom = self.env["mrp.bom"].create(
                 {
@@ -2609,7 +2609,7 @@ class TestMrpOrder(TestMrpCommon):
         self.assertEqual(mo_copy.state, "done")
 
     def test_product_produce_different_uom(self):
-        precision = self.env.ref("uom.decimal_product_uom")
+        precision = self.env.ref("base.decimal_product_uom")
         precision.digits = 3
 
         uom_ml = self.env["uom.uom"].create(
@@ -3326,7 +3326,7 @@ class TestMrpOrder(TestMrpCommon):
         mo_form.product_id = product1
         mo_form.product_qty = 1
         mo_form.product_uom_id = self.env["uom.uom"].browse(
-            self.ref("uom.product_uom_dozen")
+            self.ref("base.product_uom_dozen")
         )
         mo3 = mo_form.save()
         self.assertEqual(

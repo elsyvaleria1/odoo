@@ -5687,14 +5687,14 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             {
                 "group_ids": [
                     Command.link(self.ref("stock.group_tracking_lot")),
-                    Command.link(self.ref("uom.group_uom")),
+                    Command.link(self.ref("base.group_uom")),
                 ]
             }
         )
         # Create a delivery for product1 (demand of 10,000 g, stock packaged as 10 kg)
         # and product2 (demand of 8 kg, stock packaged as 10,000 g).
-        uom_kg = self.env.ref("uom.product_uom_kgm")
-        uom_g = self.env.ref("uom.product_uom_gram")
+        uom_kg = self.env.ref("base.product_uom_kgm")
+        uom_g = self.env.ref("base.product_uom_gram")
         self.product1.uom_id = uom_kg
         self.product2.uom_id = uom_g
         package1, package2 = self.env["stock.package"].create(
@@ -5750,18 +5750,18 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         receipt 3: - 10 units
                    - 1 pack of 6
         """
-        self.env.user.write({"group_ids": [Command.link(self.ref("uom.group_uom"))]})
+        self.env.user.write({"group_ids": [Command.link(self.ref("base.group_uom"))]})
         self.uom_dozen.action_unarchive()
         unit, pack_of_6 = (
-            self.ref("uom.product_uom_unit"),
-            self.ref("uom.product_uom_pack_6"),
+            self.ref("base.product_uom_unit"),
+            self.ref("base.product_uom_pack_6"),
         )
         lovely_product = self.env["product.product"].create(
             {
                 "name": "Lovely product",
                 "is_storable": True,
                 "barcode": "love",
-                "uom_id": self.ref("uom.product_uom_unit"),
+                "uom_id": self.ref("base.product_uom_unit"),
                 "uom_ids": [Command.link(pack_of_6), Command.link(self.uom_dozen.id)],
                 "product_uom_ids": [
                     Command.create(
@@ -6015,7 +6015,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         Do the same test by scanning a packaging instead of the product.
         """
         self.env.user.write(
-            {"group_ids": [Command.link(self.env.ref("uom.group_uom").id)]}
+            {"group_ids": [Command.link(self.env.ref("base.group_uom").id)]}
         )
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
@@ -6049,7 +6049,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
                 # Without a parent this UoM is its own root, i.e. it measures something unrelated
                 # to the Units the product is sold in, and `product.template`'s check rejects it
                 # ("they do not measure the same thing as its unit Units").
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         product_a.uom_ids = packaging
@@ -6162,7 +6162,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
                 "name": "PRO_GTIN_8",
                 "is_storable": True,
                 "barcode": "11011019",  # GTIN-8 format.
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.env["stock.quant"]._update_available_quantity(
@@ -6204,7 +6204,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
                 "name": "PRO_GTIN_8",
                 "is_storable": True,
                 "barcode": "11011019",  # GTIN-8 format -> Will become 00000011011019.
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
@@ -6215,7 +6215,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
                 "name": "PRO_GTIN_12",
                 "is_storable": True,
                 "barcode": "000011011019",  # GTIN-12 format -> Will also become 00000011011019.
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
@@ -6308,7 +6308,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
                 "name": "Product AI 21",
                 "is_storable": True,
                 "barcode": "21000000000003",  # Can be read as a serial number (AI 21)
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.env["product.product"].create(
@@ -6316,7 +6316,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
                 "name": "Product AI 30",
                 "is_storable": True,
                 "barcode": "3000000015",  # Can be read as a quantity (15 units, AI 30)
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.env["stock.package"].create({"name": "21-Chouette-MegaPack"})
@@ -6366,14 +6366,14 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         """
         # Enables the UoM and the GS1 nomenclature.
         self.env.user.write(
-            {"group_ids": [Command.link(self.env.ref("uom.group_uom").id)]}
+            {"group_ids": [Command.link(self.env.ref("base.group_uom").id)]}
         )
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
         # Configures three products using units, kg and g.
-        uom_g = self.env.ref("uom.product_uom_gram")
-        uom_kg = self.env.ref("uom.product_uom_kgm")
+        uom_g = self.env.ref("base.product_uom_gram")
+        uom_kg = self.env.ref("base.product_uom_kgm")
         uom_unit = self.env["uom.uom"].create(
             {
                 "name": "Units",
@@ -6484,13 +6484,13 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
                     "name": "PRO_GTIN_8",
                     "is_storable": True,
                     "barcode": "82655853",  # GTIN-8
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 },
                 {
                     "name": "PRO_GTIN_12",
                     "is_storable": True,
                     "barcode": "584687955629",  # GTIN-12
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 },
             ]
         )
@@ -6538,7 +6538,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         This test ensures that a user can scan a packaging when processing a receipt
         """
         self.env.user.write(
-            {"group_ids": [Command.link(self.env.ref("uom.group_uom").id)]}
+            {"group_ids": [Command.link(self.env.ref("base.group_uom").id)]}
         )
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
@@ -6549,11 +6549,11 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
                 "name": "Bottle",
                 "is_storable": True,
                 "barcode": "1113",
-                "uom_ids": [Command.link(self.env.ref("uom.product_uom_dozen").id)],
+                "uom_ids": [Command.link(self.env.ref("base.product_uom_dozen").id)],
                 "product_uom_ids": [
                     Command.create(
                         {
-                            "uom_id": self.env.ref("uom.product_uom_dozen").id,
+                            "uom_id": self.env.ref("base.product_uom_dozen").id,
                             "barcode": "2226",
                         }
                     )
@@ -6581,7 +6581,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             {
                 "group_ids": [
                     Command.link(self.env.ref("stock.group_production_lot").id),
-                    Command.link(self.env.ref("uom.group_uom").id),
+                    Command.link(self.env.ref("base.group_uom").id),
                 ],
             }
         )
@@ -6589,12 +6589,12 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
 
-        self.productlot1.uom_ids = self.env.ref("uom.product_uom_dozen")
+        self.productlot1.uom_ids = self.env.ref("base.product_uom_dozen")
         self.env["product.uom"].create(
             {
                 "barcode": "12653256",
                 "product_id": self.productlot1.id,
-                "uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "uom_id": self.env.ref("base.product_uom_dozen").id,
             }
         )
 
@@ -6631,7 +6631,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             {
                 "group_ids": [
                     Command.link(self.env.ref("stock.group_production_lot").id),
-                    Command.link(self.env.ref("uom.group_uom").id),
+                    Command.link(self.env.ref("base.group_uom").id),
                 ],
             }
         )
@@ -6639,7 +6639,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "Pack of 4",
                 "relative_factor": 4,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.productserial1.uom_ids = pack_4
@@ -6864,12 +6864,12 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         """Test that when creating a receipt and updating the uom using the barcode app, the
         quantity demand of the move line is correctly updated according to the uom.
         """
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
         product = self.env["product.product"].create(
             {
                 "name": "test_product_uom_update",
                 "barcode": "test_product_uom_update",
-                "uom_ids": [Command.link(self.env.ref("uom.product_uom_dozen").id)],
+                "uom_ids": [Command.link(self.env.ref("base.product_uom_dozen").id)],
             }
         )
         receipt = self.env["stock.picking"].create(
@@ -6883,7 +6883,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
                         {
                             "product_id": product.id,
                             "product_uom_qty": 10,
-                            "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                            "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                             "location_id": self.customer_location.id,
                             "location_dest_id": self.stock_location.id,
                         }

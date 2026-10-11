@@ -242,7 +242,7 @@ class TestProductAuditFixes(ProductCommon):
     def test_packaging_barcode_is_unique_per_company_not_globally(self):
         company_a = self.env["res.company"].create({"name": "PkgCoA"})
         company_b = self.env["res.company"].create({"name": "PkgCoB"})
-        uom = self.env.ref("uom.product_uom_unit")
+        uom = self.env.ref("base.product_uom_unit")
         products = {}
         for company in (company_a, company_b):
             template = self.env["product.template"].create(
@@ -270,7 +270,7 @@ class TestProductAuditFixes(ProductCommon):
 
     def test_packaging_barcode_still_unique_within_a_company(self):
         company = self.env["res.company"].create({"name": "PkgCoSolo"})
-        uom = self.env.ref("uom.product_uom_unit")
+        uom = self.env.ref("base.product_uom_unit")
         template = self.env["product.template"].create(
             {"name": "PkgSolo", "company_id": company.id}
         )
@@ -296,7 +296,7 @@ class TestProductAuditFixes(ProductCommon):
 
     def test_product_barcode_collides_with_same_company_packaging(self):
         company = self.env["res.company"].create({"name": "PkgCoSym"})
-        uom = self.env.ref("uom.product_uom_unit")
+        uom = self.env.ref("base.product_uom_unit")
         template = self.env["product.template"].create(
             {"name": "SymHolder", "company_id": company.id}
         )
@@ -322,7 +322,7 @@ class TestProductAuditFixes(ProductCommon):
     def test_packaging_not_visible_across_companies(self):
         company_a = self.env["res.company"].create({"name": "RuleCoA"})
         company_b = self.env["res.company"].create({"name": "RuleCoB"})
-        uom = self.env.ref("uom.product_uom_unit")
+        uom = self.env.ref("base.product_uom_unit")
         template = self.env["product.template"].create(
             {"name": "SecretPkg", "company_id": company_b.id}
         )
@@ -443,7 +443,7 @@ class TestProductAuditFixes(ProductCommon):
         self.assertTrue(field.readonly)
 
     def test_price_in_incompatible_uom_raises(self):
-        liter = self.env.ref("uom.product_uom_litre", raise_if_not_found=False)
+        liter = self.env.ref("base.product_uom_litre", raise_if_not_found=False)
         if not liter:
             self.skipTest("liter UoM not available")
         template = self.env["product.template"].create(
@@ -458,8 +458,8 @@ class TestProductAuditFixes(ProductCommon):
             template.product_variant_id._get_prices("list_price", uom=liter)
 
     def test_price_in_compatible_uom_still_converts(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
-        unit = self.env.ref("uom.product_uom_unit")
+        dozen = self.env.ref("base.product_uom_dozen")
+        unit = self.env.ref("base.product_uom_unit")
         template = self.env["product.template"].create(
             {"name": "UomOk", "list_price": 12.0, "uom_id": unit.id}
         )

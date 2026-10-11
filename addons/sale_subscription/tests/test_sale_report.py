@@ -20,7 +20,7 @@ class TestSaleReport(TestSubscriptionCommon):
                     "list_price": 100,
                     "taxes_id": [Command.set(self.tax_10.ids)],
                     "recurring_invoice": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 },
                 {
                     "name": "Product B",
@@ -28,7 +28,7 @@ class TestSaleReport(TestSubscriptionCommon):
                     "list_price": 100,
                     "taxes_id": [Command.set(self.tax_10.ids)],
                     "recurring_invoice": False,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 },
             ]
         )

@@ -18,11 +18,11 @@ class TestAccountFleet(TestAccountTaxDetailsReport):
             [
                 {
                     "name": "Car 1",
-                    "kind_id": self.env.ref("resource.kind_vehicle").id,
+                    "kind_id": self.env.ref("base.kind_vehicle").id,
                 },
                 {
                     "name": "Car 2",
-                    "kind_id": self.env.ref("resource.kind_vehicle").id,
+                    "kind_id": self.env.ref("base.kind_vehicle").id,
                 },
             ]
         )

@@ -198,7 +198,7 @@ class DeliverCarrier(models.Model):
         self.check_singleton()
         size_uom_id = self.env["product.template"]._get_uom_from_setting("length")
         return size_uom_id._get_quantity_in_unit(
-            size, self.env.ref("uom.product_uom_cm"), round=False
+            size, self.env.ref("base.product_uom_cm"), round=False
         )
 
     def action_view_envia_wizard(self) -> dict:

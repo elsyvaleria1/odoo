@@ -17,7 +17,7 @@ class TestPurchaseMrpMoOverview(AccountTestInvoicingCommon):
             Command.link(cls.env.ref("purchase.group_purchase_user").id),
         ]
         goods = cls.env.ref("product.product_category_goods")
-        uom_unit = cls.env.ref("uom.product_uom_unit")
+        uom_unit = cls.env.ref("base.product_uom_unit")
         cls.component = cls.env["product.product"].create(
             {
                 "name": "MTO Component",

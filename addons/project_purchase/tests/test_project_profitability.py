@@ -1118,7 +1118,7 @@ class TestProjectPurchaseProfitability(
             }
         )
         purchase_order.action_confirm()
-        purchase_order.line_ids.product_uom_id = self.env.ref("uom.product_uom_dozen")
+        purchase_order.line_ids.product_uom_id = self.env.ref("base.product_uom_dozen")
         purchase_order._create_invoices()
         self.assertDictEqual(
             self.project._get_profitability_items(False)["costs"],

@@ -21,7 +21,7 @@
 
     <record id="ir_cron_resource_state_from_leaves" model="ir.cron">
         <field name="name">Time Off: Put people on leave and back</field>
-        <field name="model_id" ref="resource.model_resource_resource" />
+        <field name="model_id" ref="base.model_resource_resource" />
         <field name="state">code</field>
         <field name="code">model._cron_sync_state_from_leaves()</field>
         <field name="repeat_interval">1</field>

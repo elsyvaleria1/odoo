@@ -4,7 +4,7 @@ from odoo.fields import Command
 from odoo.tests import HttpCase
 from odoo.tools.misc import file_open
 
-from odoo.addons.uom.tests.common import UomCommon
+from odoo.addons.base.tests.common import UomCommon
 
 
 class TestProductConfiguratorCommon(UomCommon, HttpCase):

@@ -132,7 +132,7 @@ class TestSaleCompetition(SaleCommon):
         self.assertEqual(line.limit_price, 5.0)
 
     def test_market_price_converts_to_the_line_unit(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         self._offer(96.0, line={"product_uom_id": dozen.id})
 
         line = self._quote(10.0).line_ids

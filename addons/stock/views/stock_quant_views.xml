@@ -186,7 +186,7 @@
                 <field
                     name="product_uom_id"
                     widget="many2one_uom"
-                    groups="uom.group_uom" />
+                    groups="base.group_uom" />
                 <field name="lot_properties" optional="hide" />
                 <button
                     name="action_view_stock_moves"
@@ -233,7 +233,7 @@
                     name="available_quantity"
                     string="Available"
                     column_invisible="context.get('hide_available', False)" />
-                <field name="product_uom_id" groups="uom.group_uom" />
+                <field name="product_uom_id" groups="base.group_uom" />
                 <field
                     name="company_id"
                     optional="hide"
@@ -363,7 +363,7 @@
                     decoration-danger="inventory_diff_quantity &lt; 0"
                     decoration-muted="inventory_diff_quantity == 0"
                     decoration-success="inventory_diff_quantity &gt; 0" />
-                <field name="product_uom_id" groups="uom.group_uom" />
+                <field name="product_uom_id" groups="base.group_uom" />
                 <field
                     name="company_id"
                     optional="hide"
@@ -468,7 +468,7 @@
                                 <field
                                     name="product_uom_id"
                                     options="{'no_open': True}"
-                                    groups="uom.group_uom" />
+                                    groups="base.group_uom" />
                             </div>
                             <label
                                 for="available_quantity"
@@ -478,7 +478,7 @@
                                 <field
                                     name="product_uom_id"
                                     options="{'no_open': True}"
-                                    groups="uom.group_uom" />
+                                    groups="base.group_uom" />
                             </div>
                             <label for="reserved_quantity" string="Quantity Reserved" />
                             <div class="o_row">
@@ -486,7 +486,7 @@
                                 <field
                                     name="product_uom_id"
                                     options="{'no_open': True}"
-                                    groups="uom.group_uom" />
+                                    groups="base.group_uom" />
                             </div>
                         </group>
                     </group>

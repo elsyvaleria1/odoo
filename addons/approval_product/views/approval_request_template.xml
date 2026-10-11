@@ -13,7 +13,7 @@
                             <th>Product</th>
                             <th>Description</th>
                             <th class="text-end">Quantity</th>
-                            <th groups="uom.group_uom">Unit</th>
+                            <th groups="base.group_uom">Unit</th>
                             <th class="text-end">Unit Price</th>
                             <th class="text-end">Subtotal</th>
                         </tr>
@@ -23,7 +23,7 @@
                             <td><span t-field="line.product_id" /></td>
                             <td><span t-field="line.description" /></td>
                             <td class="text-end"><span t-field="line.quantity" /></td>
-                            <td groups="uom.group_uom">
+                            <td groups="base.group_uom">
                                 <span t-field="line.product_uom_id" />
                             </td>
                             <td class="text-end">
@@ -40,8 +40,8 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" groups="uom.group_uom" />
-                            <td colspan="3" groups="!uom.group_uom" />
+                            <td colspan="4" groups="base.group_uom" />
+                            <td colspan="3" groups="!base.group_uom" />
                             <td class="text-end fw-bold">Total</td>
                             <td class="text-end fw-bold">
                                 <span

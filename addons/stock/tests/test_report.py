@@ -2816,7 +2816,7 @@ class TestReports(TestReportsCommon):
                     Command.create(
                         {
                             "product_id": self.product.id,
-                            "product_uom_id": self.ref("uom.product_uom_unit"),
+                            "product_uom_id": self.ref("base.product_uom_unit"),
                             "product_uom_qty": 3.0,
                         }
                     )
@@ -2835,7 +2835,7 @@ class TestReports(TestReportsCommon):
                     Command.create(
                         {
                             "product_id": self.product.id,
-                            "product_uom_id": self.ref("uom.product_uom_unit"),
+                            "product_uom_id": self.ref("base.product_uom_unit"),
                             "product_uom_qty": 1.0,
                         }
                     )
@@ -2872,7 +2872,7 @@ class TestReports(TestReportsCommon):
                         Command.create(
                             {
                                 "product_id": self.product.id,
-                                "product_uom_id": self.ref("uom.product_uom_unit"),
+                                "product_uom_id": self.ref("base.product_uom_unit"),
                                 "product_uom_qty": qty,
                             }
                         )
@@ -2889,7 +2889,7 @@ class TestReports(TestReportsCommon):
                     Command.create(
                         {
                             "product_id": self.product.id,
-                            "product_uom_id": self.ref("uom.product_uom_unit"),
+                            "product_uom_id": self.ref("base.product_uom_unit"),
                             "product_uom_qty": 10.0,
                         }
                     )
@@ -2957,7 +2957,7 @@ class TestReports(TestReportsCommon):
         pick = Move.create(
             {
                 "product_id": self.product.id,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "product_uom_qty": 1,
                 "location_id": warehouse.lot_stock_id.id,
                 "location_dest_id": pack.id,

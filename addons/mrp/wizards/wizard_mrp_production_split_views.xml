@@ -16,7 +16,7 @@
                             <field
                                 name="product_uom_id"
                                 widget="many2one_uom"
-                                groups="uom.group_uom" />
+                                groups="base.group_uom" />
                             <button
                                 name="action_prepare_split"
                                 type="object"
@@ -48,14 +48,14 @@
                             <label for="product_qty" />
                             <div class="o_row">
                                 <span><field name="product_qty" /></span>
-                                <span><field name="product_uom_id" widget="many2one_uom" groups="uom.group_uom" /></span>
+                                <span><field name="product_uom_id" widget="many2one_uom" groups="base.group_uom" /></span>
                             </div>
                         </group>
                         <group>
                             <label for="max_batch_size" />
                             <div class="d-flex">
                                 <field name="max_batch_size" class="w-50" />
-                                <field name="product_uom_id" groups="uom.group_uom" />
+                                <field name="product_uom_id" groups="base.group_uom" />
                             </div>
                             <field name="num_splits" />
                         </group>

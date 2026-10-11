@@ -18,7 +18,7 @@ from odoo.tools import float_compare, frozendict
 from odoo.tools.misc import babel_locale_parse, get_lang
 
 from odoo.addons.base.models.res_partner import _selection_timezones
-from odoo.addons.resource.models.utils import peak_capacity
+from odoo.addons.base.models.resource_utils import peak_capacity
 
 
 def _utc_to_tz(naive_utc, tz):

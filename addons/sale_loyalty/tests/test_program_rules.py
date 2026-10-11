@@ -661,7 +661,7 @@ class TestProgramRules(TestSaleCouponCommon, PaymentCommon):
             Command.create(
                 {
                     "product_id": self.product_A.id,
-                    "product_uom_id": self.ref("uom.product_uom_dozen"),
+                    "product_uom_id": self.ref("base.product_uom_dozen"),
                     "product_qty": 1,
                 }
             ),

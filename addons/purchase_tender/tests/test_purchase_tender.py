@@ -22,7 +22,7 @@ class TestPurchaseTender(TestPurchaseTenderCommon):
             line.product_id = self.product_09
             line.product_qty = 5.0
             line.price_unit = unit_price
-            line.product_uom_id = self.env.ref("uom.product_uom_dozen")
+            line.product_uom_id = self.env.ref("base.product_uom_dozen")
         with po_form.line_ids.new() as line:
             line.display_type = "line_section"
             line.name = "Products"
@@ -278,7 +278,7 @@ class TestPurchaseTender(TestPurchaseTenderCommon):
         with po_form.line_ids.new() as line:
             line.product_id = self.product_09
             line.product_qty = 1
-            line.product_uom_id = self.env.ref("uom.product_uom_dozen")
+            line.product_uom_id = self.env.ref("base.product_uom_dozen")
         po_1 = po_form.save()
         self.assertEqual(po_1.line_ids[0].price_unit, 120)
 

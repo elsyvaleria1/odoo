@@ -76,7 +76,7 @@ class TestDeliveryUSPS(TransactionCase):
         )
         self.stock_location = self.env.ref("stock.stock_location_stock")
         self.customer_location = self.env.ref("stock.stock_location_customers")
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
 
     def test_01_usps_basic_us_domestic_flow(self):
         SaleOrder = self.env["sale.order"]

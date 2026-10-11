@@ -284,7 +284,7 @@ class AccountAnalyticLine(models.Model):
                 companies,
                 [
                     company.hr_timesheet_config_id.timesheet_encode_uom_id
-                    == self.env.ref("uom.product_uom_day")
+                    == self.env.ref("base.product_uom_day")
                     for company in companies
                 ],
                 strict=True,
@@ -715,7 +715,7 @@ class AccountAnalyticLine(models.Model):
             reason="timesheets are shown in the unit their company encodes them in",
         )
         company_uom = company.hr_timesheet_config_id.timesheet_encode_uom_id
-        return company_uom == self.env.ref("uom.product_uom_day")
+        return company_uom == self.env.ref("base.product_uom_day")
 
     def _is_updatable_timesheet(self) -> bool:
         return True
@@ -742,7 +742,7 @@ class AccountAnalyticLine(models.Model):
 
     @api.model
     def _create_missing_uom_hours(self) -> None:
-        uom_hours = self.env.ref("uom.product_uom_hour", raise_if_not_found=False)
+        uom_hours = self.env.ref("base.product_uom_hour", raise_if_not_found=False)
         if not uom_hours:
             uom_hours = self.env["uom.uom"].create(
                 {

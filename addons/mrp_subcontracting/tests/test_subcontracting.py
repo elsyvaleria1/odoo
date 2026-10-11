@@ -591,7 +591,7 @@ class TestSubcontractingFlows(TestMrpSubcontractingCommon):
         self.assertEqual(len(mo), 1)
 
     def test_receipt_in_units_of_a_per_dozen_bom_is_made_in_units(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         self.bom.write(
             {
                 "product_uom_id": dozen.id,
@@ -630,7 +630,7 @@ class TestSubcontractingFlows(TestMrpSubcontractingCommon):
         )
 
     def test_backorder_of_a_receipt_in_dozens_splits_the_order_in_dozens(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         receipt_type = self.env.ref("stock.picking_type_in")
         supplier = self.env.ref("stock.stock_location_suppliers")
         receipt = self.env["stock.picking"].create(
@@ -1033,7 +1033,7 @@ class TestSubcontractingFlows(TestMrpSubcontractingCommon):
             {
                 "name": "Duos",
                 "relative_factor": 2.0,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
@@ -1970,7 +1970,7 @@ class TestSubcontractingSerialMassReceipt(TransactionCase):
         product_template = self.env["product.template"].create(
             {
                 "name": "Cake",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "is_storable": True,
             }
         )

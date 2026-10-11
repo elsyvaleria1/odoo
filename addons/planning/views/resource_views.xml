@@ -3,7 +3,7 @@
 
     <record id="resource_resource_form_tags_view_inherit" model="ir.ui.view">
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource.resource_resource_form" />
+        <field name="inherit_id" ref="base.resource_resource_form" />
         <field name="mode">primary</field>
         <field name="priority">50</field>
         <field name="arch" type="xml">
@@ -18,7 +18,7 @@
 
     <record id="resource_resource_with_employee_form_view_inherit" model="ir.ui.view">
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource.resource_resource_form" />
+        <field name="inherit_id" ref="base.resource_resource_form" />
         <field name="mode">primary</field>
         <field name="priority">70</field>
         <field name="arch" type="xml">
@@ -61,7 +61,7 @@
 
     <record id="resource_resource_tree_view_inherit" model="ir.ui.view">
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource.resource_resource_tree" />
+        <field name="inherit_id" ref="base.resource_resource_tree" />
         <field name="mode">primary</field>
         <field name="priority">50</field>
         <field name="arch" type="xml">
@@ -108,7 +108,7 @@
     <record id="resource_resource_search_view_roles" model="ir.ui.view">
         <field name="name">resource.resource.search.view.roles</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource.view_resource_resource_search" />
+        <field name="inherit_id" ref="base.view_resource_resource_search" />
         <field name="mode">primary</field>
         <field name="arch" type="xml">
             <xpath expr="//filter[@name='working_period']" position="before">
@@ -122,7 +122,7 @@
 
     <record id="resource_resource_search_view_inherit" model="ir.ui.view">
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource.view_resource_resource_search" />
+        <field name="inherit_id" ref="base.view_resource_resource_search" />
         <field name="mode">primary</field>
         <field name="priority">50</field>
         <field name="arch" type="xml">

@@ -8,8 +8,8 @@ import {
     Many2ManyTagsAvatarUserField,
     many2ManyTagsAvatarUserField,
 } from "@mail/views/web/fields/many2many_avatar_user_field/many2many_avatar_user_field";
-import { RESOURCE_TYPE_ICONS } from "@resource/resource_type_icons";
 import { AvatarCardResourcePopover } from "@resource_mail/components/avatar_card_resource/avatar_card_resource_popover";
+import { RESOURCE_TYPE_ICONS } from "@web/components/resource_avatar/resource_type_icons";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { useService } from "@web/core/utils/hooks";

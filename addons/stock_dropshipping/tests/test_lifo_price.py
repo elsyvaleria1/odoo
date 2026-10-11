@@ -12,7 +12,7 @@ from odoo.addons.stock_account.tests.test_anglo_saxon_valuation_reconciliation_c
 @skip("Temporary to fast merge new valuation")
 class TestLifoPrice(ValuationReconciliationTestCommon):
     def test_lifoprice(self):
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
 
         product_category_001 = self.env["product.category"].create(
             {
@@ -30,7 +30,7 @@ class TestLifoPrice(ValuationReconciliationTestCommon):
         product_form.is_storable = True
         product_form.categ_id = product_category_001
         product_form.lst_price = 100.0
-        product_form.uom_id = self.env.ref("uom.product_uom_kgm")
+        product_form.uom_id = self.env.ref("base.product_uom_kgm")
         product_lifo_icecream = product_form.save()
 
         product_lifo_icecream.standard_price = 70.0

@@ -23,7 +23,7 @@ class TestLoyaltyDeliveryCost(TestSaleCouponCommon):
                 "list_price": 200.0,
             }
         )
-        cls.product_uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.product_uom_unit = cls.env.ref("base.product_uom_unit")
         cls.product_delivery = cls.env["product.product"].create(
             {
                 "name": "Delivery Charges",

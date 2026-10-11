@@ -26,7 +26,7 @@
                     placeholder="e.g. Cleaning Services"
                     widget="many2many_tags"
                     optional="hide"
-                    context="{                         'default_type': 'service',                         'default_planning_enabled': True,                         'default_planning_role_id': id,                         'default_uom_id': %(uom.product_uom_hour)d,                     }" />
+                    context="{                         'default_type': 'service',                         'default_planning_enabled': True,                         'default_planning_role_id': id,                         'default_uom_id': %(base.product_uom_hour)d,                     }" />
             </field>
         </field>
     </record>
@@ -53,7 +53,7 @@
                     <field
                         name="product_ids"
                         widget="many2many_tags"
-                        context="{                             'default_type': 'service',                             'default_planning_enabled': True,                             'default_planning_role_id': id,                             'default_uom_id': %(uom.product_uom_hour)d,                         }" />
+                        context="{                             'default_type': 'service',                             'default_planning_enabled': True,                             'default_planning_role_id': id,                             'default_uom_id': %(base.product_uom_hour)d,                         }" />
                 </group>
             </xpath>
         </field>

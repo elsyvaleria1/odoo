@@ -5,7 +5,7 @@
         <field name="name">Commercial Office Building</field>
         <field name="type">consu</field>
         <field name="categ_id" ref="product_category_properties" />
-        <field name="asset_kind_id" ref="resource.kind_property" />
+        <field name="asset_kind_id" ref="base.kind_property" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field
@@ -16,7 +16,7 @@
         <field name="name">Industrial Warehouse</field>
         <field name="type">consu</field>
         <field name="categ_id" ref="product_category_properties" />
-        <field name="asset_kind_id" ref="resource.kind_property" />
+        <field name="asset_kind_id" ref="base.kind_property" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="description">Large-scale distribution and storage warehouse</field>
@@ -26,7 +26,7 @@
         <field name="name">Retail Store Space</field>
         <field name="type">consu</field>
         <field name="categ_id" ref="product_category_properties" />
-        <field name="asset_kind_id" ref="resource.kind_property" />
+        <field name="asset_kind_id" ref="base.kind_property" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field
@@ -37,7 +37,7 @@
         <field name="name">Toyota 8-Series Forklift</field>
         <field name="type">consu</field>
         <field name="categ_id" ref="product_category_machinery" />
-        <field name="asset_kind_id" ref="resource.kind_machinery" />
+        <field name="asset_kind_id" ref="base.kind_machinery" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="description">Electric forklift with 2.5-ton capacity</field>
@@ -48,7 +48,7 @@
         <field name="name">Haas VF-2 CNC Mill</field>
         <field name="type">consu</field>
         <field name="categ_id" ref="product_category_machinery" />
-        <field name="asset_kind_id" ref="resource.kind_machinery" />
+        <field name="asset_kind_id" ref="base.kind_machinery" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field
@@ -60,7 +60,7 @@
         <field name="name">Dell Latitude 5440</field>
         <field name="type">consu</field>
         <field name="categ_id" ref="product_category_it_equipment" />
-        <field name="asset_kind_id" ref="resource.kind_equipment" />
+        <field name="asset_kind_id" ref="base.kind_equipment" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field
@@ -72,7 +72,7 @@
         <field name="name">HP LaserJet Enterprise M507</field>
         <field name="type">consu</field>
         <field name="categ_id" ref="product_category_it_equipment" />
-        <field name="asset_kind_id" ref="resource.kind_equipment" />
+        <field name="asset_kind_id" ref="base.kind_equipment" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field

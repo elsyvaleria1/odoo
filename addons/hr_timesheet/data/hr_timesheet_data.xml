@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="uom.product_uom_day" model="uom.uom">
+    <record id="base.product_uom_day" model="uom.uom">
         <field name="timesheet_widget">float_toggle</field>
     </record>
 
     <function model="account.analytic.line" name="_create_missing_uom_hours" />
 
-    <record id="uom.product_uom_hour" model="uom.uom">
+    <record id="base.product_uom_hour" model="uom.uom">
         <field name="timesheet_widget">float_time</field>
     </record>
 

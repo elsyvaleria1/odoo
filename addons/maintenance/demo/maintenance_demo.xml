@@ -38,7 +38,7 @@
         <record id="equipment_monitor1" model="resource.resource">
             <field name="name">Samsung Monitor 15"</field>
             <field name="type">material</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="state">in_service</field>
             <field name="kind_id" ref="equipment_monitor" />
             <field name="technician_user_id" ref="base.user_admin" />
@@ -46,13 +46,13 @@
         </record>
         <record id="equipment_monitor1_serial" model="resource.identifier">
             <field name="resource_id" ref="equipment_monitor1" />
-            <field name="type_id" ref="resource.identifier_type_serial" />
+            <field name="type_id" ref="base.identifier_type_serial" />
             <field name="value">MT/122/11112222</field>
         </record>
         <record id="equipment_monitor4" model="resource.resource">
             <field name="name">Samsung Monitor 15"</field>
             <field name="type">material</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="state">in_service</field>
             <field name="kind_id" ref="equipment_monitor" />
             <field name="technician_user_id" ref="base.user_admin" />
@@ -60,13 +60,13 @@
         </record>
         <record id="equipment_monitor4_serial" model="resource.identifier">
             <field name="resource_id" ref="equipment_monitor4" />
-            <field name="type_id" ref="resource.identifier_type_serial" />
+            <field name="type_id" ref="base.identifier_type_serial" />
             <field name="value">MT/125/22778837</field>
         </record>
         <record id="equipment_monitor6" model="resource.resource">
             <field name="name">Samsung Monitor 15"</field>
             <field name="type">material</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="state">in_service</field>
             <field name="kind_id" ref="equipment_monitor" />
             <field name="technician_user_id" ref="base.user_demo" />
@@ -75,13 +75,13 @@
         </record>
         <record id="equipment_monitor6_serial" model="resource.identifier">
             <field name="resource_id" ref="equipment_monitor6" />
-            <field name="type_id" ref="resource.identifier_type_serial" />
+            <field name="type_id" ref="base.identifier_type_serial" />
             <field name="value">MT/127/18291018</field>
         </record>
         <record id="equipment_computer3" model="resource.resource">
             <field name="name">Acer Laptop</field>
             <field name="type">material</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="state">in_service</field>
             <field name="kind_id" ref="equipment_computer" />
             <field name="technician_user_id" ref="base.user_admin" />
@@ -89,13 +89,13 @@
         </record>
         <record id="equipment_computer3_serial" model="resource.identifier">
             <field name="resource_id" ref="equipment_computer3" />
-            <field name="type_id" ref="resource.identifier_type_serial" />
+            <field name="type_id" ref="base.identifier_type_serial" />
             <field name="value">LP/203/19281928</field>
         </record>
         <record id="equipment_computer5" model="resource.resource">
             <field name="name">Acer Laptop</field>
             <field name="type">material</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="state">in_service</field>
             <field name="kind_id" ref="equipment_computer" />
             <field name="technician_user_id" ref="base.user_demo" />
@@ -103,13 +103,13 @@
         </record>
         <record id="equipment_computer5_serial" model="resource.identifier">
             <field name="resource_id" ref="equipment_computer5" />
-            <field name="type_id" ref="resource.identifier_type_serial" />
+            <field name="type_id" ref="base.identifier_type_serial" />
             <field name="value">LP/205/12928291</field>
         </record>
         <record id="equipment_computer9" model="resource.resource">
             <field name="name">HP Laptop</field>
             <field name="type">material</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="state">in_service</field>
             <field name="kind_id" ref="equipment_computer" />
             <field name="technician_user_id" ref="base.user_demo" />
@@ -117,33 +117,33 @@
         </record>
         <record id="equipment_computer9_serial" model="resource.identifier">
             <field name="resource_id" ref="equipment_computer9" />
-            <field name="type_id" ref="resource.identifier_type_serial" />
+            <field name="type_id" ref="base.identifier_type_serial" />
             <field name="value">LP/303/28292090</field>
         </record>
         <record id="equipment_computer11" model="resource.resource">
             <field name="name">HP Laptop</field>
             <field name="type">material</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="state">in_service</field>
             <field name="kind_id" ref="equipment_computer" />
             <field name="technician_user_id" ref="base.user_demo" />
         </record>
         <record id="equipment_computer11_serial" model="resource.identifier">
             <field name="resource_id" ref="equipment_computer11" />
-            <field name="type_id" ref="resource.identifier_type_serial" />
+            <field name="type_id" ref="base.identifier_type_serial" />
             <field name="value">LP/305/17281718</field>
         </record>
         <record id="equipment_printer1" model="resource.resource">
             <field name="name">HP Inkjet printer</field>
             <field name="type">material</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="state">in_service</field>
             <field name="kind_id" ref="equipment_printer" />
             <field name="technician_user_id" ref="base.user_demo" />
         </record>
         <record id="equipment_printer1_serial" model="resource.identifier">
             <field name="resource_id" ref="equipment_printer1" />
-            <field name="type_id" ref="resource.identifier_type_serial" />
+            <field name="type_id" ref="base.identifier_type_serial" />
             <field name="value">PR/011/2928191889</field>
         </record>
         <!--Maintenance Order-->

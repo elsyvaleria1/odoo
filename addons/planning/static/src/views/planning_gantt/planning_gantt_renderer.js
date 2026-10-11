@@ -1,7 +1,7 @@
 /** @odoo-module native */
 import { markup, onWillStart, proxy } from "@odoo/owl";
 import { AddressRecurrencyConfirmationDialog } from "@planning/components/address_recurrency_confirmation_dialog/address_recurrency_confirmation_dialog";
-import { RESOURCE_TYPE_ICONS } from "@resource/resource_type_icons";
+import { RESOURCE_TYPE_ICONS } from "@web/components/resource_avatar/resource_type_icons";
 import { formatFloatTime } from "@web/core/formatters";
 import {
     compareDates,

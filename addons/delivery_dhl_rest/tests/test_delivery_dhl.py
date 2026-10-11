@@ -27,7 +27,7 @@ class TestDeliveryDHLCommon(TransactionCase):
                 "weight": 0.01,
             }
         )
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
 
         self.incoterm = self.env["account.incoterms"].create(
             {

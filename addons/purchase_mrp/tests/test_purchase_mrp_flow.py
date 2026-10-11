@@ -18,15 +18,15 @@ class TestPurchaseMrpFlow(AccountTestInvoicingCommon):
         )
         cls.stock_location = cls.warehouse.lot_stock_id
 
-        grp_uom = cls.env.ref("uom.group_uom")
+        grp_uom = cls.env.ref("base.group_uom")
         group_user = cls.env.ref("base.group_user")
         group_user.write({"implied_ids": [(4, grp_uom.id)]})
         cls.env.user.write({"group_ids": [(4, grp_uom.id)]})
 
-        cls.uom_kg = cls.env.ref("uom.product_uom_kgm")
-        cls.uom_gm = cls.env.ref("uom.product_uom_gram")
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.uom_kg = cls.env.ref("base.product_uom_kgm")
+        cls.uom_gm = cls.env.ref("base.product_uom_gram")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_dozen = cls.env.ref("base.product_uom_dozen")
 
         cls.component_a = cls._create_product_with_form("Comp A", cls.uom_unit)
         cls.component_b = cls._create_product_with_form("Comp B", cls.uom_unit)
@@ -894,7 +894,7 @@ class TestPurchaseMrpFlow(AccountTestInvoicingCommon):
 
     def test_bom_report_incoming_po(self):
         location = self.stock_location
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         final_product_tmpl = self.env["product.template"].create(
             {"name": "Final Product", "is_storable": True}
         )
@@ -967,7 +967,7 @@ class TestPurchaseMrpFlow(AccountTestInvoicingCommon):
         )
 
     def test_bom_report_incoming_po2(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         final_product_tmpl = self.env["product.template"].create(
             {"name": "Final Product", "is_storable": True}
         )

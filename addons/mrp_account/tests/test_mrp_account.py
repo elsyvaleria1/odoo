@@ -172,10 +172,10 @@ class TestMrpAccount(TestBomPriceCommon):
         self.assertEqual(productB_credit_line.account_id, self.account_production)
 
     def test_mo_overview_comp_different_uom(self):
-        self.screw.uom_id = self.env.ref("uom.product_uom_pack_6")
+        self.screw.uom_id = self.env.ref("base.product_uom_pack_6")
         self.bom_1.bom_line_ids.filtered(
             lambda l: l.product_id == self.screw
-        ).product_uom_id = self.env.ref("uom.product_uom_unit")
+        ).product_uom_id = self.env.ref("base.product_uom_unit")
         mo = self._create_mo(self.bom_1, 1)
         overview_values = self.env["report.mrp.report_mo_overview"]._get_report_data(
             mo.id

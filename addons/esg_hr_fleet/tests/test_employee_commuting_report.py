@@ -33,14 +33,14 @@ class TestEmployeeCommutingReport(TransactionCase):
             {
                 "name": "A3",
                 "type": "consu",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
                 "co2": 120,
             }
         )
         cls.vehicle = cls.env["resource.resource"].create(
             {
                 "name": "EcoCar",
-                "kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "kind_id": cls.env.ref("base.kind_vehicle").id,
                 "product_id": model.id,
                 "company_id": cls.company.id,
             }
@@ -267,13 +267,13 @@ class TestEmployeeCommutingReport(TransactionCase):
         vehicle2 = self.env["resource.resource"].create(
             {
                 "name": "HybridCar",
-                "kind_id": self.env.ref("resource.kind_vehicle").id,
+                "kind_id": self.env.ref("base.kind_vehicle").id,
                 "product_id": self.env["product.product"]
                 .create(
                     {
                         "name": "Prius",
                         "type": "consu",
-                        "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                        "asset_kind_id": self.env.ref("base.kind_vehicle").id,
                         "co2": 80,
                     }
                 )
@@ -358,13 +358,13 @@ class TestEmployeeCommutingReport(TransactionCase):
         vehicle_other = self.env["resource.resource"].create(
             {
                 "name": "OtherCar",
-                "kind_id": self.env.ref("resource.kind_vehicle").id,
+                "kind_id": self.env.ref("base.kind_vehicle").id,
                 "product_id": self.env["product.product"]
                 .create(
                     {
                         "name": "Clio",
                         "type": "consu",
-                        "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                        "asset_kind_id": self.env.ref("base.kind_vehicle").id,
                         "co2": 100,
                     }
                 )

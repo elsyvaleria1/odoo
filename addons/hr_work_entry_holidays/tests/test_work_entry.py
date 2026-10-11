@@ -45,7 +45,7 @@ class TestWorkeEntryHolidaysWorkEntry(TestWorkEntryHolidaysBase):
         cls.leave_remote_type = cls.env["hr.leave.type"].create(
             {
                 "name": "Legal Leaves",
-                "time_type_id": cls.env.ref("resource.time_type_work").id,
+                "time_type_id": cls.env.ref("base.time_type_work").id,
                 "requires_allocation": False,
                 "allow_request_on_top": True,
                 "work_entry_type_id": cls.work_entry_type_remote.id,

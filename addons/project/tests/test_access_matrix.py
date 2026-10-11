@@ -583,7 +583,7 @@ class TestProjectAccessMatrix(AccessMatrixCase):
                 {
                     "name": "matrix exception",
                     "company_id": a.id,
-                    "time_type_id": env.ref("resource.time_type_leave").id,
+                    "time_type_id": env.ref("base.time_type_leave").id,
                     "date_from": "2026-09-01 08:00:00",
                     "date_to": "2026-09-01 12:00:00",
                 }

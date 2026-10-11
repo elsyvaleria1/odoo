@@ -22,7 +22,7 @@ class TestCarrierPropagation(TransactionCase):
             {"name": "My Carrier Propagation Customer"}
         )
 
-        cls.product_uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.product_uom_unit = cls.env.ref("base.product_uom_unit")
         cls.product_delivery_normal = cls.env["product.product"].create(
             {
                 "name": "Normal Delivery Charges",

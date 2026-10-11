@@ -22,10 +22,10 @@ class TestReservationQuantConsistency(TransactionCase):
         cls.stock = cls.warehouse.lot_stock_id
         cls.customers = cls.env.ref("stock.stock_location_customers")
         cls.suppliers = cls.env.ref("stock.stock_location_suppliers")
-        cls.unit = cls.env.ref("uom.product_uom_unit")
-        cls.kg = cls.env.ref("uom.product_uom_kgm")
-        cls.gram = cls.env.ref("uom.product_uom_gram")
-        cls.ton = cls.env.ref("uom.product_uom_ton")
+        cls.unit = cls.env.ref("base.product_uom_unit")
+        cls.kg = cls.env.ref("base.product_uom_kgm")
+        cls.gram = cls.env.ref("base.product_uom_gram")
+        cls.ton = cls.env.ref("base.product_uom_ton")
 
     def _product(self, uom=None, tracking="none", **vals):
         return self.env["product.product"].create(

@@ -31,11 +31,11 @@ class HrTimesheetConfig(models.Model):
 
     @api.model
     def _default_project_time_mode_id(self):
-        return self.env.ref("uom.product_uom_hour", raise_if_not_found=False)
+        return self.env.ref("base.product_uom_hour", raise_if_not_found=False)
 
     @api.model
     def _default_timesheet_encode_uom_id(self):
-        return self.env.ref("uom.product_uom_hour", raise_if_not_found=False)
+        return self.env.ref("base.product_uom_hour", raise_if_not_found=False)
 
     @api.constrains("internal_project_id")
     def _check_internal_project_id_company(self) -> None:

@@ -15,8 +15,8 @@ class TestRobustness(TransactionCase):
         cls.supplier_location = cls.env.ref("stock.stock_location_suppliers")
         cls.stock_location = cls.env.ref("stock.stock_location_stock")
         cls.customer_location = cls.env.ref("stock.stock_location_customers")
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_dozen = cls.env.ref("base.product_uom_dozen")
         cls.product1 = cls.env["product.product"].create(
             {
                 "name": "Product A",
@@ -452,7 +452,7 @@ class TestRobustness(TransactionCase):
         self.assertEqual(quant.reserved_quantity, 0)
 
     def test_clean_quants_synch_with_different_uom(self):
-        uom_kg = self.env.ref("uom.product_uom_kgm")
+        uom_kg = self.env.ref("base.product_uom_kgm")
         product_reservation_too_high = self.env["product.product"].create(
             {
                 "name": "Product Reservation",
@@ -472,7 +472,7 @@ class TestRobustness(TransactionCase):
                 "location_dest_id": self.customer_location.id,
                 "product_id": product_reservation_too_high.id,
                 "product_uom_qty": 100,
-                "product_uom_id": self.env.ref("uom.product_uom_gram").id,
+                "product_uom_id": self.env.ref("base.product_uom_gram").id,
             }
         )
         move._action_confirm()

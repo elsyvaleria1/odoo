@@ -23,7 +23,7 @@ class TestHrLeaveType(TestHrHolidaysCommon):
         worked_leave_type = self.env["hr.leave.type"].create(
             {
                 "name": "Worked Time",
-                "time_type_id": self.env.ref("resource.time_type_work").id,
+                "time_type_id": self.env.ref("base.time_type_work").id,
                 "requires_allocation": False,
             }
         )

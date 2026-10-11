@@ -132,7 +132,7 @@
                                 <field
                                     name="product_uom_id"
                                     widget="many2one_uom"
-                                    groups="uom.group_uom" />
+                                    groups="base.group_uom" />
                             </div>
                             <field
                                 name="state"
@@ -216,7 +216,7 @@
                     name="product_uom_id"
                     widget="many2one_uom"
                     options="{'no_open': True, 'no_create': True}"
-                    groups="uom.group_uom" />
+                    groups="base.group_uom" />
                 <field
                     name="state"
                     widget="badge"
@@ -265,7 +265,7 @@
                     widget="many2one_uom"
                     optional="show"
                     options="{'no_open': True, 'no_create': True}"
-                    groups="uom.group_uom" />
+                    groups="base.group_uom" />
                 <field
                     name="company_id"
                     optional="hide"
@@ -362,7 +362,7 @@
                     name="product_uom_id"
                     widget="many2one_uom"
                     options="{'no_open': True, 'no_create': True}"
-                    groups="uom.group_uom"
+                    groups="base.group_uom"
                     readonly="state == 'done' and id" />
             </list>
         </field>
@@ -456,7 +456,7 @@
                     name="product_uom_id"
                     widget="many2one_uom"
                     force_save="1"
-                    groups="uom.group_uom"
+                    groups="base.group_uom"
                     readonly="state != 'draft' and id" />
             </list>
         </field>
@@ -506,7 +506,7 @@
                                     name="product_uom_id"
                                     widget="many2one_uom"
                                     options="{'no_create': True}"
-                                    groups="uom.group_uom" />
+                                    groups="base.group_uom" />
                             </div>
                             <field
                                 name="trace_id"

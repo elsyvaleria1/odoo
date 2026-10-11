@@ -142,7 +142,7 @@ class TestMrpCommon(TestStockCommon):
             login="hilda",
             email="h.h@example.com",
             notification_type="inbox",
-            groups="mrp.group_mrp_user, stock.group_stock_user, mrp.group_mrp_byproducts, uom.group_uom",
+            groups="mrp.group_mrp_user, stock.group_stock_user, mrp.group_mrp_byproducts, base.group_uom",
         )
         cls.user_mrp_manager = mail_new_test_user(
             cls.env,
@@ -150,7 +150,7 @@ class TestMrpCommon(TestStockCommon):
             login="gary",
             email="g.g@example.com",
             notification_type="inbox",
-            groups="mrp.group_mrp_manager, stock.group_stock_user, mrp.group_mrp_byproducts, uom.group_uom",
+            groups="mrp.group_mrp_manager, stock.group_stock_user, mrp.group_mrp_byproducts, base.group_uom",
         )
         cls.env.user.group_ids += cls.group_uom + cls.group_mrp_routings
         cls.picking_type_manu = cls.warehouse_1.manu_type_id

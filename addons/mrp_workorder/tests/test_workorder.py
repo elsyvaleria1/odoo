@@ -150,17 +150,13 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         cls.mrp_workcenter_1 = cls.env["mrp.workcenter"].create(
             {
                 "name": "Drill Station 1",
-                "resource_calendar_id": cls.env.ref(
-                    "resource.resource_calendar_std"
-                ).id,
+                "resource_calendar_id": cls.env.ref("base.resource_calendar_std").id,
             }
         )
         cls.mrp_workcenter_3 = cls.env["mrp.workcenter"].create(
             {
                 "name": "Assembly Line 1",
-                "resource_calendar_id": cls.env.ref(
-                    "resource.resource_calendar_std"
-                ).id,
+                "resource_calendar_id": cls.env.ref("base.resource_calendar_std").id,
             }
         )
         # --------------

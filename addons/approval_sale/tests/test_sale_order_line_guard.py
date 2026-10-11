@@ -96,7 +96,7 @@ class TestSaleOrderLineGuard(TransactionCase):
     def test_changing_the_unit_of_measure_is_blocked(self):
         order = self._pending_order()
         total_before = order.amount_total
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
 
         with self.assertRaises(UserError):
             order.with_user(self.salesperson).line_ids[0].write(

@@ -4,7 +4,7 @@
     <record id="view_uom_uom_list" model="ir.ui.view">
         <field name="name">uom.uom.list.inherit</field>
         <field name="model">uom.uom</field>
-        <field name="inherit_id" ref="uom.view_uom_uom_list" />
+        <field name="inherit_id" ref="base.view_uom_uom_list" />
         <field name="arch" type="xml">
             <field name="name" position="after">
                 <field name="package_type_id" groups="stock.group_tracking_lot" />
@@ -15,7 +15,7 @@
     <record id="view_uom_uom_form" model="ir.ui.view">
         <field name="name">uom.uom.form.inherit</field>
         <field name="model">uom.uom</field>
-        <field name="inherit_id" ref="uom.view_uom_uom_form" />
+        <field name="inherit_id" ref="base.view_uom_uom_form" />
         <field name="arch" type="xml">
             <div name="relative_factor" position="after">
                 <field

@@ -20,7 +20,7 @@ class ProductProduct(models.Model):
                     and record.service_policy == record._origin.service_policy
                 )
             ):
-                record.uom_id = self.env.ref("uom.product_uom_hour")
+                record.uom_id = self.env.ref("base.product_uom_hour")
             elif record._origin.uom_id:
                 record.uom_id = record._origin.uom_id
             else:

@@ -15,7 +15,7 @@ class WorkorderSchedulingCase(TestMrpCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.dozen = cls.env.ref("base.product_uom_dozen")
         cls.calendar = cls.env["resource.calendar"].create(
             {
                 "name": "UTC 08-12 13-17",
@@ -117,7 +117,7 @@ class TestWorkorderWorkedTime(WorkorderSchedulingCase):
                 "name": "Press training",
                 "calendar_id": self.calendar.id,
                 "resource_id": self.workcenter.resource_id.id,
-                "time_type_id": self.env.ref("resource.time_type_work").id,
+                "time_type_id": self.env.ref("base.time_type_work").id,
                 "date_from": self._at(2030, 1, 7, 8),
                 "date_to": self._at(2030, 1, 7, 10),
             }

@@ -241,7 +241,7 @@ class StockQuant(models.Model):
             [("id", "parent_of", self.package_id.ids)]
         )
         # If UoM setting is active, fetch all UoM's data: any of them can be scanned.
-        if self.env.user.has_group("uom.group_uom"):
+        if self.env.user.has_group("base.group_uom"):
             uoms = self.env["uom.uom"].search([])
         else:
             uoms = products.uom_id | products.uom_ids

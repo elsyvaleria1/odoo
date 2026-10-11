@@ -616,7 +616,7 @@ class TestQuantGatherAndReserve(TestStockCommon):
                 "name": "qimp-lp-order-prod",
                 "is_storable": True,
                 "categ_id": categ.id,
-                "uom_id": self.env.ref("uom.product_uom_kgm").id,
+                "uom_id": self.env.ref("base.product_uom_kgm").id,
             }
         )
         for index, amount in enumerate((8.0, 1.0, 0.75)):
@@ -679,7 +679,7 @@ class TestQuantGatherAndReserve(TestStockCommon):
                 "name": "qimp-lp-frac-prod",
                 "is_storable": True,
                 "categ_id": categ.id,
-                "uom_id": self.env.ref("uom.product_uom_kgm").id,
+                "uom_id": self.env.ref("base.product_uom_kgm").id,
             }
         )
         pkg = self.env["stock.package"].create({"name": "QIMP-LP-FRAC"})
@@ -1569,7 +1569,7 @@ class TestQuantGatherAndReserve(TestStockCommon):
         return picking
 
     def test_gs1_barcode_quantity_rounds_instead_of_truncating(self):
-        kg = self.env.ref("uom.product_uom_kgm")
+        kg = self.env.ref("base.product_uom_kgm")
         product = self.env["product.product"].create(
             {
                 "name": "gs1-round",

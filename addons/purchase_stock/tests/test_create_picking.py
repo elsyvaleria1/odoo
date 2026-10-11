@@ -220,12 +220,12 @@ class TestCreatePicking(ProductVariantsCommon):
         )
 
     def test_03_uom(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
 
         self.assertEqual(self.product_id_1.uom_id.id, uom_unit.id)
 
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
 
         po_form = Form(self.env["purchase.order"])
         po_form.partner_id = self.partner_id
@@ -475,7 +475,7 @@ class TestCreatePicking(ProductVariantsCommon):
 
     def test_04_rounding(self):
         self.env["decimal.precision"].search([("name", "=", "Product Unit")]).digits = 0
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         self.env["decimal.precision"].search([("name", "=", "Product Unit")]).digits = 0
 
         po = self.env["purchase.order"].create(self.po_vals)
@@ -502,8 +502,8 @@ class TestCreatePicking(ProductVariantsCommon):
     def test_05_uom_rounding(self):
         self.env["decimal.precision"].search([("name", "=", "Product Unit")]).digits = 0
 
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         self.env["decimal.precision"].search([("name", "=", "Product Unit")]).digits = 0
 
         po = self.env["purchase.order"].create(self.po_vals)
@@ -529,7 +529,7 @@ class TestCreatePicking(ProductVariantsCommon):
     def create_delivery_order(self):
         stock_location = self.env.ref("stock.stock_location_stock")
         customer_location = self.env.ref("stock.stock_location_customers")
-        unit = self.ref("uom.product_uom_unit")
+        unit = self.ref("base.product_uom_unit")
         picking_type_out = self.env.ref("stock.picking_type_out")
         partner = self.env["res.partner"].create(
             {"name": "AAA", "email": "from.test@example.com"}

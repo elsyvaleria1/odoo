@@ -10,8 +10,8 @@ class TestPurchaseGeneration(TestSalePurchaseCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_dozen = cls.env.ref("base.product_uom_dozen")
 
     def _create_service(self, uom, seller_uom, **kwargs):
         return self.env["product.product"].create(

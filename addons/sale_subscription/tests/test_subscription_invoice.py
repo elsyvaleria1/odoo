@@ -31,7 +31,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                     "name": "Subscription Product",
                     "type": "service",
                     "recurring_invoice": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                     "list_price": 42,
                 }
             )
@@ -147,7 +147,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                     "name": "Subscription #A",
                     "type": "service",
                     "recurring_invoice": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 }
             )
         )
@@ -160,7 +160,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                     "name": "Subscription #B",
                     "type": "service",
                     "recurring_invoice": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 }
             )
         )
@@ -173,7 +173,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                     "name": "Initial discount",
                     "type": "service",
                     "recurring_invoice": False,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 }
             )
         )
@@ -402,7 +402,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                         "name": "Subscription Product",
                         "type": "service",
                         "recurring_invoice": True,
-                        "uom_id": self.env.ref("uom.product_uom_unit").id,
+                        "uom_id": self.env.ref("base.product_uom_unit").id,
                     }
                 )
             )
@@ -462,7 +462,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                     "name": "Subscription Product",
                     "type": "service",
                     "recurring_invoice": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 }
             )
             product = sub_product_tmpl.product_variant_id
@@ -650,7 +650,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                     "name": "Delivery product",
                     "type": "service",
                     "recurring_invoice": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                     "invoice_policy": "transferred",
                 }
             )
@@ -1077,7 +1077,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                 "name": "Free product",
                 "type": "service",
                 "recurring_invoice": True,
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "list_price": 0,
             }
         )

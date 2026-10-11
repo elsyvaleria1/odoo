@@ -21,7 +21,7 @@ class TestActionButtons(TransactionCase):
             )
         cls.customer = cls.env["res.partner"].create({"name": "My Customer"})
         cls.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = cls.env.ref(
-            "uom.product_uom_hour"
+            "base.product_uom_hour"
         )
         cls.project = cls.env["project.project"].create(
             {

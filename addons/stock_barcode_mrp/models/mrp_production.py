@@ -91,7 +91,7 @@ class MrpProduction(models.Model):
 
         uoms = products.uom_id | move_lines.product_uom_id | products.uom_ids
         # If UoM setting is active, fetch all UoM's data.
-        if self.env.user.has_group("uom.group_uom"):
+        if self.env.user.has_group("base.group_uom"):
             uoms |= self.env["uom.uom"].search([])
 
         # Fetch `stock.location`

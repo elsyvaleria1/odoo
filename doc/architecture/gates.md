@@ -240,8 +240,7 @@ The suites run this way: `base` (less the excluded `TestReportsRendering` and
 `TestIrModelFieldsTranslation`), `test_http`, `test_orm`, `mrp`, `certificate`,
 `stock`, `rpc`, `crm`, `data_recycle`, `mixin_report_sql` with
 `test_mixin_report_sql`, `test_read_group`, `test_access_rights`,
-`hr_work_entry` with `hr_work_entry_holidays`, `hr_holidays`, `resource` with
-`test_resource`, the three `extract` branches, `test_trade` with `test_trade_account`, `approval` with `test_approval`,
+`hr_work_entry` with `hr_work_entry_holidays`, `hr_holidays`, `test_resource`, the three `extract` branches, `test_trade` with `test_trade_account`, `approval` with `test_approval`,
 `integration_machine_learning`, `project_hr`, `exchange`, `date_range`, `team`, `account`'s chart-of-accounts
 classes (`TestAccountCoa`, `TestAccountRoot`, `TestAccountCodeMapping`,
 `TestAccountNameDuplication`, `TestAccountCopyAndName`, `TestSplitCodeName`),

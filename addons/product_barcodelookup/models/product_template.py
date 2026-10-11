@@ -36,10 +36,10 @@ class ProductTemplate(models.Model):
     def _update_product_by_barcodelookup(self, product, barcode_lookup_data):
         product.check_singleton()
         imperial_len = self._get_uom_from_setting("volume") == self.env.ref(
-            "uom.product_uom_cubic_foot"
+            "base.product_uom_cubic_foot"
         )
         imperial_weight = self._get_uom_from_setting("weight") == self.env.ref(
-            "uom.product_uom_lb"
+            "base.product_uom_lb"
         )
         if not barcode_lookup_data:
             return None
@@ -68,9 +68,9 @@ class ProductTemplate(models.Model):
             barcode_lookup_weight := product_data.get("weight", "")
         ):
             if imperial_weight:
-                convert_weight_uom = self.env.ref("uom.product_uom_kgm")
+                convert_weight_uom = self.env.ref("base.product_uom_kgm")
             else:
-                convert_weight_uom = self.env.ref("uom.product_uom_lb")
+                convert_weight_uom = self.env.ref("base.product_uom_lb")
             weight_re_match = re.match(BARCODE_UOM_REGEX, barcode_lookup_weight)
             if weight_re_match:
                 weight_dict = weight_re_match.groupdict()
@@ -185,10 +185,10 @@ class ProductTemplate(models.Model):
         dimensions = {
             dim: (product_data.get(dim)) for dim in ["length", "width", "height"]
         }
-        uom_cm = self.env.ref("uom.product_uom_cm")
-        uom_m = self.env.ref("uom.product_uom_meter")
-        uom_in = self.env.ref("uom.product_uom_inch")
-        uom_foot = self.env.ref("uom.product_uom_foot")
+        uom_cm = self.env.ref("base.product_uom_cm")
+        uom_m = self.env.ref("base.product_uom_meter")
+        uom_in = self.env.ref("base.product_uom_inch")
+        uom_foot = self.env.ref("base.product_uom_foot")
 
         convert_volume_uom = False
         for dim_name, dimension in dimensions.items():
@@ -203,12 +203,14 @@ class ProductTemplate(models.Model):
                         dimensions[dim_name] = uom_cm._get_quantity_estimate(
                             dim_value, to_unit=uom_in
                         )
-                        convert_volume_uom = self.env.ref("uom.product_uom_cubic_meter")
+                        convert_volume_uom = self.env.ref(
+                            "base.product_uom_cubic_meter"
+                        )
                     if dim_dict["unit"] == "in" and not imperial_len:
                         dimensions[dim_name] = uom_in._get_quantity_estimate(
                             dim_value, to_unit=uom_cm
                         )
-                        convert_volume_uom = self.env.ref("uom.product_uom_cubic_foot")
+                        convert_volume_uom = self.env.ref("base.product_uom_cubic_foot")
             dimensions[dim_name] = dim_value
 
         volume = 1 if re_match else 0

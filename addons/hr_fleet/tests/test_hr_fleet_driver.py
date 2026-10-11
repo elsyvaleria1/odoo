@@ -12,7 +12,7 @@ class TestHrFleetDriver(common.TransactionCase):
             {
                 "name": "A3",
                 "type": "consu",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
 
@@ -20,7 +20,7 @@ class TestHrFleetDriver(common.TransactionCase):
         return self.env["resource.resource"].create(
             {
                 "name": plate,
-                "kind_id": self.env.ref("resource.kind_vehicle").id,
+                "kind_id": self.env.ref("base.kind_vehicle").id,
                 "product_id": self.model.id,
                 "license_plate": plate,
                 **vals,

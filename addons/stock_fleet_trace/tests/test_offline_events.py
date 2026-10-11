@@ -59,7 +59,7 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
             {"name": "Driver", "user_id": cls.driver_user.id}
         )
         cls.rescue_driver = cls.env["hr.employee"].create({"name": "Rescue Driver"})
-        kind = cls.env.ref("resource.kind_vehicle")
+        kind = cls.env.ref("base.kind_vehicle")
         cls.model = cls.env["product.product"].create(
             {"name": "Test Truck", "type": "consu", "asset_kind_id": kind.id}
         )

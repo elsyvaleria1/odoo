@@ -58,7 +58,7 @@ class TestPricelist(ProductVariantsCommon):
         )
 
         cls.env.user.group_ids += cls.env.ref("product.group_product_pricelist")
-        cls.uom_ton = cls.env.ref("uom.product_uom_ton")
+        cls.uom_ton = cls.env.ref("base.product_uom_ton")
 
     def test_10_discount(self):
 

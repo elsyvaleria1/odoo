@@ -252,7 +252,7 @@ class TestSaleStockLeadTime(TestSaleStockCommon, ValuationReconciliationTestComm
             {
                 "product_id": self.test_product_order.id,
                 "product_qty": 10,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "order_id": order.id,
             }
         )

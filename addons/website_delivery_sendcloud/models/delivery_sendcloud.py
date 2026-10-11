@@ -35,7 +35,7 @@ class DeliveryCarrier(models.Model):
         comodel_name="uom.uom",
         compute="_compute_sendcloud_locations_radius_unit",
         search="_search_sendcloud_locations_radius_unit",
-        default=lambda self: self.env.ref("uom.product_uom_km"),
+        default=lambda self: self.env.ref("base.product_uom_km"),
         store=True,
     )
     sendcloud_locations_radius_unit_name = fields.Char(
@@ -81,7 +81,7 @@ class DeliveryCarrier(models.Model):
 
     @api.constrains("sendcloud_locations_radius_value")
     def _check_radius_value(self):
-        uom_meter = self.env.ref("uom.product_uom_meter")
+        uom_meter = self.env.ref("base.product_uom_meter")
         for delivery in self:
             distance_meters = (
                 delivery.sendcloud_locations_radius_unit._get_quantity_in_unit(
@@ -130,7 +130,7 @@ class DeliveryCarrier(models.Model):
         distance = int(
             self.sendcloud_locations_radius_unit._get_quantity_in_unit(
                 self.sendcloud_locations_radius_value,
-                self.env.ref("uom.product_uom_meter"),
+                self.env.ref("base.product_uom_meter"),
             )
         )
         slr = SendcloudLocationsRequest(

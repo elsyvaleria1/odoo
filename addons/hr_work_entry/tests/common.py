@@ -10,7 +10,7 @@ class TestWorkEntryBase(TransactionCase):
         super().setUpClass()
 
         cls.env.user.tz = "Europe/Brussels"
-        cls.env.ref("resource.resource_calendar_std").tz = "Europe/Brussels"
+        cls.env.ref("base.resource_calendar_std").tz = "Europe/Brussels"
 
         cls.dep_rd = cls.env["hr.department"].create(
             {

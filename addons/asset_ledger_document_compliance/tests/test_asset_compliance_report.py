@@ -95,13 +95,13 @@ class TestAssetRequirements(TransactionCase):
                 "type": "consu",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
         cls.asset = cls.env["resource.resource"].create(
             {
                 "name": "Reported Asset",
-                "kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "kind_id": cls.env.ref("base.kind_vehicle").id,
                 "product_id": cls.product.id,
             }
         )

@@ -282,7 +282,7 @@ class TestPurchaseOrder(ValuationReconciliationTestCommon):
         )
 
         item1 = self.product_id_1
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         po1 = self.env["purchase.order"].create(
             {
                 "partner_id": self.partner_a.id,
@@ -497,12 +497,12 @@ class TestPurchaseOrder(ValuationReconciliationTestCommon):
             {
                 "name": "Yards",
                 "relative_factor": 0.91,
-                "relative_uom_id": self.env.ref("uom.product_uom_meter").id,
+                "relative_uom_id": self.env.ref("base.product_uom_meter").id,
             }
         )
         self.product_id_2.write(
             {
-                "uom_id": self.env.ref("uom.product_uom_meter").id,
+                "uom_id": self.env.ref("base.product_uom_meter").id,
                 "seller_ids": [
                     Command.create(
                         {

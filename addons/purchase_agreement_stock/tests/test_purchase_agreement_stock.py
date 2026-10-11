@@ -70,7 +70,7 @@ class ReturnsAgainstAgreement:
 
 class TestPurchaseAgreementStock(ReturnsAgainstAgreement, TestPurchaseAgreementCommon):
     def test_02_purchase_agreement_stock(self):
-        unit = self.ref("uom.product_uom_unit")
+        unit = self.ref("base.product_uom_unit")
         warehouse1 = self.env.ref("stock.warehouse0")
         route_buy = self.ref("purchase_stock.route_warehouse0_buy")
         route_mto = warehouse1.mto_pull_id.route_id.id
@@ -184,7 +184,7 @@ class TestPurchaseAgreementStock(ReturnsAgainstAgreement, TestPurchaseAgreementC
 
     def test_03_purchase_agreement_stock(self):
 
-        unit = self.ref("uom.product_uom_unit")
+        unit = self.ref("base.product_uom_unit")
         warehouse1 = self.env.ref("stock.warehouse0")
         route_buy = self.ref("purchase_stock.route_warehouse0_buy")
         route_mto = warehouse1.mto_pull_id.route_id.id

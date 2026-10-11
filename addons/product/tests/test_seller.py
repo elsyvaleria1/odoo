@@ -202,7 +202,7 @@ class TestSeller(TransactionCase):
         )
 
     def test_40_seller_min_qty_precision(self):
-        uom_precision = self.env.ref("uom.decimal_product_uom")
+        uom_precision = self.env.ref("base.decimal_product_uom")
         uom_precision.digits = 3
         product = self.product_service
         product.seller_ids = [

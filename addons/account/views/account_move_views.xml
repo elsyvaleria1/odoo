@@ -1479,7 +1479,7 @@
                                         width="92px"
                                         optional="conditional"
                                         options="{'no_create': True, 'quantity_field': 'quantity'}"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                     <field
                                         name="product_uom_id"
                                         column_invisible="True" />
@@ -1555,7 +1555,7 @@
                                                                 <field
                                                                     name="product_uom_id"
                                                                     widget="many2one_uom"
-                                                                    groups="uom.group_uom" />
+                                                                    groups="base.group_uom" />
                                                             </div>
                                                             <div class="text-muted"> Unit Price: <field name="price_unit" />
                                                             </div>
@@ -1616,7 +1616,7 @@
                                             <field
                                                 name="product_uom_id"
                                                 widget="many2one_uom"
-                                                groups="uom.group_uom" />
+                                                groups="base.group_uom" />
                                             <field name="price_unit" />
                                             <field name="discount" string="Disc.%" />
                                         </group>

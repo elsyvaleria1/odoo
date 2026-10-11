@@ -9,7 +9,6 @@
     "license": "LGPL-3",
     "depends": [
         "barcodes",
-        "uom",
     ],
     "data": [
         "data/barcodes_gs1_rules.xml",

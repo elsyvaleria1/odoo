@@ -55,7 +55,7 @@ class ResourceAssetLog(models.Model):
 
     @api.depends("odometer_uom_name")
     def _compute_efficiency_uom_name(self) -> None:
-        fuel_unit = self.env.ref("uom.product_uom_litre", raise_if_not_found=False)
+        fuel_unit = self.env.ref("base.product_uom_litre", raise_if_not_found=False)
         fuel_label = fuel_unit.display_name if fuel_unit else "L"
         for log in self:
             distance = log.odometer_uom_name

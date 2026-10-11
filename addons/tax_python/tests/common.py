@@ -30,7 +30,7 @@ class TestTaxCommonTaxPython(TestTaxCommon):
             uom = self.env["uom.uom"].create(
                 {
                     "name": "assert_python_taxes_computation",
-                    "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "relative_uom_id": self.env.ref("base.product_uom_unit").id,
                     **product_uom_values,
                 }
             )

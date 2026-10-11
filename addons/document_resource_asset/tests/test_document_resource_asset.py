@@ -9,7 +9,7 @@ class TestAssetDocuments(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.kind = cls.env.ref("resource.kind_vehicle")
+        cls.kind = cls.env.ref("base.kind_vehicle")
         cls.asset = cls.env["resource.resource"].create(
             {"name": "Van", "kind_id": cls.kind.id}
         )
@@ -32,7 +32,7 @@ class TestAssetDocuments(TransactionCase):
 
     def test_a_kind_without_a_row_files_nothing(self):
         other = self.env["resource.resource"].create(
-            {"name": "Drill", "kind_id": self.env.ref("resource.kind_tool").id}
+            {"name": "Drill", "kind_id": self.env.ref("base.kind_tool").id}
         )
         self.assertFalse(other._get_document_folder())
         self.assertFalse(other._check_create_documents())

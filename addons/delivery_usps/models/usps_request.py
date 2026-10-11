@@ -99,7 +99,7 @@ class USPSRequest:
             # rounding is UP at the destination unit's precision, so a parcel
             # just under the 4 lb limit could be quantised over it and refused.
             weight_in_pounds = weight_uom_id._get_quantity_in_unit(
-                tot_weight, order.env.ref("uom.product_uom_lb"), round=False
+                tot_weight, order.env.ref("base.product_uom_lb"), round=False
             )
             if (
                 weight_in_pounds > 4 and order.carrier_id.usps_service == "First Class"

@@ -17,7 +17,7 @@ class TestApprovalRequestAsset(TransactionCase):
             {
                 "name": "Fleet Pickup",
                 "is_storable": True,
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
                 "tracking": "serial",
             },
         )
@@ -157,7 +157,7 @@ class TestApprovalAssetLog(TransactionCase):
             {
                 "name": "Log Pickup",
                 "is_storable": True,
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
                 "tracking": "serial",
             },
         )

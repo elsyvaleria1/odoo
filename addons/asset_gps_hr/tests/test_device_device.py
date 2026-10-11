@@ -34,13 +34,13 @@ class TestRemoteDeviceHrComputation(TransactionCase):
         cls.DeviceDevice = cls.env["device.device"]
         cls.config = cls.env["device.profile"].create({"name": "Test Config"})
 
-        cls.km_uom = cls.env.ref("uom.product_uom_km", raise_if_not_found=False)
+        cls.km_uom = cls.env.ref("base.product_uom_km", raise_if_not_found=False)
         if not cls.km_uom:
             cls.km_uom = cls.env["uom.uom"].create(
                 {
                     "name": "km",
                     "relative_factor": 1000,
-                    "relative_uom_id": cls.env.ref("uom.product_uom_meter").id,
+                    "relative_uom_id": cls.env.ref("base.product_uom_meter").id,
                 }
             )
 
@@ -50,7 +50,7 @@ class TestRemoteDeviceHrComputation(TransactionCase):
                 "type": "consu",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
 
@@ -130,13 +130,13 @@ class TestRemoteDeviceHrSearch(TransactionCase):
         cls.DeviceDevice = cls.env["device.device"]
         cls.config = cls.env["device.profile"].create({"name": "Test Config"})
 
-        cls.km_uom = cls.env.ref("uom.product_uom_km", raise_if_not_found=False)
+        cls.km_uom = cls.env.ref("base.product_uom_km", raise_if_not_found=False)
         if not cls.km_uom:
             cls.km_uom = cls.env["uom.uom"].create(
                 {
                     "name": "km",
                     "relative_factor": 1000,
-                    "relative_uom_id": cls.env.ref("uom.product_uom_meter").id,
+                    "relative_uom_id": cls.env.ref("base.product_uom_meter").id,
                 }
             )
 
@@ -146,7 +146,7 @@ class TestRemoteDeviceHrSearch(TransactionCase):
                 "type": "consu",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
 
@@ -230,7 +230,7 @@ class TestRemoteDeviceSearchViewDefault(TransactionCase):
                 "type": "consu",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
         cls.employee = cls.env["hr.employee"].create(

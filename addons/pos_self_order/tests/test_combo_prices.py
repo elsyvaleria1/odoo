@@ -51,7 +51,7 @@ class TestSelfOrderCombo(SelfOrderCommonTest):
             {
                 "name": "Big Combo",
                 "type": "combo",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "combo_ids": [(6, 0, [self.combo1.id, self.combo2.id, self.combo3.id])],
                 "pos_categ_ids": [(6, 0, [self.combo_category.id])],
             }

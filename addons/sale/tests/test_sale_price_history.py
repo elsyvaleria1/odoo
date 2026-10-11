@@ -10,8 +10,8 @@ class TestSalePriceHistory(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_dozen = cls.env.ref("base.product_uom_dozen")
         cls.product = cls.env["product.product"].create(
             {
                 "name": "History widget",

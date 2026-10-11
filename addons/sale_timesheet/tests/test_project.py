@@ -243,7 +243,7 @@ class TestProject(TestCommonSaleTimesheet):
         self.assertEqual("delivered_timesheet", form.service_policy)
 
     def test_open_product_form_with_default_uom_id(self):
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         product_form = Form(
             self.env["product.product"].with_context(
                 default_uom_id=uom_dozen.id,
@@ -252,7 +252,7 @@ class TestProject(TestCommonSaleTimesheet):
         self.assertEqual(uom_dozen, product_form.uom_id, "Default uom should be Dozen")
         product_form.type = "service"
         product_form.service_policy = "delivered_timesheet"
-        uom_hour = self.env.ref("uom.product_uom_hour")
+        uom_hour = self.env.ref("base.product_uom_hour")
         self.assertEqual(
             uom_hour,
             product_form.uom_id,

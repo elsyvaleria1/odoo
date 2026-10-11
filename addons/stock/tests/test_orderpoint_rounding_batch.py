@@ -4,7 +4,7 @@ from odoo.tests import TransactionCase, tagged
 @tagged("post_install", "-at_install")
 class TestOrderpointRoundingBatch(TransactionCase):
     def test_the_replenishment_multiple_is_resolved_once_per_batch(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         pack = self.env["uom.uom"].create(
             {
                 "name": "Batch pack of 4",

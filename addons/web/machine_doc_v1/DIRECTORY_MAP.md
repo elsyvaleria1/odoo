@@ -1,6 +1,6 @@
 # Directory Map
 
-> **253 entries** (249 subdirectories + `(root)`) | Maps directory → layer + responsibility
+> **257 entries** (249 subdirectories + `(root)`) | Maps directory → layer + responsibility
 >
 > Layers (Feature-Sliced Design): shared → entities → features → widgets → pages
 >
@@ -18,6 +18,7 @@
 | `boot/` | misc | 2 | `main.js` / `start.js` — backend entry points that build the env and mount `WebClient` |
 | `components/` | features | 29 | Module faces for the component directories below (barcode, datetime, dropdown, dropzone, editor_dialog, file_upload, file_viewer, model_field_selector, record_selectors, signature, tree_editor) |
 | `components/action_swiper/` | features | 1 | Touch swipe component that triggers actions on left/right swipe gestures |
+| `components/ask_recurrence_update_dialog/` | features | 1 | Dialog asking which occurrences of a recurring event an edit applies to (`askRecurrenceUpdate`) |
 | `components/autocomplete/` | features | 2 | Generic autocomplete dropdown with multi-source results and keyboard navigation, plus the shared quick-search core (`name_search.js`) both record autocompletes consume |
 | `components/barcode/` | features | 4 | Camera barcode scanning: video scanner, its dialog, a draggable crop overlay, and a ZXing `BarcodeDetector` polyfill |
 | `components/checkbox/` | features | 1 | Accessible checkbox component with label slot and hotkey support |
@@ -47,6 +48,7 @@
 | `components/pager/` | features | 2 | Pagination with editable range input, and the transient small-screen indicator |
 | `components/record_selectors/` | features | 6 | Record pickers over `AutoComplete`: single and multi selectors, shared display-name loading, tag keyboard navigation |
 | `components/resizable_panel/` | features | 2 | Side panel with a drag handle for interactive width resizing |
+| `components/resource_avatar/` | features | 2 | Resource avatar field: a person's image, or the icon of a material or intangible resource (`RESOURCE_TYPE_ICONS`) |
 | `components/select_menu/` | features | 1 | Searchable select menu with multi-select tags and keyboard navigation |
 | `components/signature/` | features | 3 | Signature pad with draw, auto-generate, and load modes (lazy `signature_pad` import) |
 | `components/tags_list/` | features | 1 | Renders coloured tags with an optional visibility limit and overflow counter |
@@ -129,6 +131,8 @@
 | `fields/relational/many2one_barcode/` | features | 1 | Many2one field with barcode scanner support |
 | `fields/relational/many2one_reference/` | features | 1 | Many2one field for Many2oneReference columns with dynamic relation model |
 | `fields/relational/many2one_reference_integer/` | features | 1 | Integer display field for Many2oneReference columns showing the record ID |
+| `fields/relational/many2one_uom/` | features | 1 | Many2one unit-of-measure field whose autocomplete shows each unit's equivalent for the record's product and quantity |
+| `fields/relational/many2x_uom_tags/` | features | 1 | Many2many unit-of-measure tags with the same product-aware autocomplete; owns the shared helpers |
 | `fields/relational/reference/` | features | 1 | Reference field combining a model selector with a Many2one picker |
 | `fields/relational/x2many/` | features | 2 | x2many field (`one2many` + `many2many`) and its list-view variant |
 | `fields/selection/` | features | 1 | Shared base for selection-like fields with special data loading |

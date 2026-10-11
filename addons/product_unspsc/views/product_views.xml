@@ -22,7 +22,7 @@
         <record id="view_product_uom_form_unspsc" model="ir.ui.view">
             <field name="name">view.uom.uom.unspsc.form</field>
             <field name="model">uom.uom</field>
-            <field name="inherit_id" ref="uom.view_uom_uom_form" />
+            <field name="inherit_id" ref="base.view_uom_uom_form" />
             <field name="arch" type="xml">
                 <xpath expr="//div[@name='relative_factor']" position="after">
                     <field

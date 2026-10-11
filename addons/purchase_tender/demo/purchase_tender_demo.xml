@@ -14,7 +14,7 @@
                 model="purchase.order.line" />
             <field name="date_commitment" eval="time.strftime('%Y-%m-10')" />
             <field name="product_id" ref="product.product_product_13" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="price_unit">100</field>
             <field name="product_qty">5</field>
         </record>
@@ -30,7 +30,7 @@
                 model="purchase.order.line" />
             <field name="date_commitment" eval="time.strftime('%Y-%m-15')" />
             <field name="product_id" ref="product.product_product_13" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="price_unit">120</field>
             <field name="product_qty">4</field>
         </record>

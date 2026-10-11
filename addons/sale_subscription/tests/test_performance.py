@@ -85,7 +85,7 @@ class TestSubscriptionPerformance(TestSubscriptionCommon):
             {
                 "name": "Non recurring Product",
                 "type": "service",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         product_id = product_tmpl.product_variant_id

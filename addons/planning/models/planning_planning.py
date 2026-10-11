@@ -9,7 +9,7 @@ from odoo.libs.debug_log import DebugLog
 if TYPE_CHECKING:
     from vobject.base import Component
 
-    from odoo.addons.resource.models.resource_resource import ResourceResource
+    from odoo.addons.base.models.resource_resource import ResourceResource
 
 _debug = DebugLog(__name__)
 

@@ -37,7 +37,7 @@ class TestMaintenanceOrderTeam(TransactionCase):
         cls.asset = cls.env["resource.resource"].create(
             {
                 "name": "Probe Asset",
-                "kind_id": cls.env.ref("resource.kind_equipment").id,
+                "kind_id": cls.env.ref("base.kind_equipment").id,
                 "maintenance_team_id": cls.asset_team.id,
             }
         )

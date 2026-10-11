@@ -430,7 +430,7 @@ class TestProductPricelist(ProductCommon):
         self.customer_pricelist.unlink()
 
     def test_40_pricelist_item_min_quantity_precision(self):
-        uom_precision = self.env.ref("uom.decimal_product_uom")
+        uom_precision = self.env.ref("base.decimal_product_uom")
         uom_precision.digits = 3
         pricelist_item = self.customer_pricelist.item_ids[0]
         precise_value = 1.234

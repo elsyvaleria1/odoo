@@ -21,7 +21,7 @@
                         <field name="qty_rejected" />
                         <field name="reason_id" required="qty_rejected &gt; 0" />
                         <field name="note" optional="hide" />
-                        <field name="uom_id" groups="uom.group_uom" />
+                        <field name="uom_id" groups="base.group_uom" />
                     </list>
                 </field>
                 <group>

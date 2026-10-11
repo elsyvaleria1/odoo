@@ -24,7 +24,7 @@ from odoo.tools import (
 from odoo.tools.date_utils import get_intervals_hours
 
 from ..tools import demo
-from odoo.addons.resource.models.utils import last_day_of
+from odoo.addons.base.models.resource_utils import last_day_of
 
 _debug = DebugLog(__name__)
 

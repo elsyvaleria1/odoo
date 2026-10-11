@@ -42,8 +42,8 @@ class SaleOrderLine(models.Model):
         sol_planning = self.filtered_domain([("state", "not in", ["draft", "sent"])])
         if sol_planning:
             # For every confirmed SO service lines, the qty are transformed into hours
-            uom_hour = self.env.ref("uom.product_uom_hour")
-            uom_unit = self.env.ref("uom.product_uom_unit")
+            uom_hour = self.env.ref("base.product_uom_hour")
+            uom_unit = self.env.ref("base.product_uom_unit")
             for sol in sol_planning:
                 if sol.product_uom_id in (uom_hour, uom_unit):
                     sol.planning_hours_to_plan = sol.product_uom_qty

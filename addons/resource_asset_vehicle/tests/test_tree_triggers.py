@@ -6,7 +6,7 @@ class TestTreeTriggers(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        kind = cls.env.ref("resource.kind_vehicle")
+        kind = cls.env.ref("base.kind_vehicle")
         cls.brand_a, cls.brand_b = cls.env["res.partner"].create(
             [
                 {"name": "Tree Motors A", "is_manufacturer": True, "is_company": True},

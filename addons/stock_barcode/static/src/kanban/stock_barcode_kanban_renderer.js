@@ -31,7 +31,7 @@ export class StockBarcodeKanbanRenderer extends KanbanRenderer {
         const groups = [
             "stock.group_tracking_lot",
             "stock.group_production_lot",
-            "uom.group_uom",
+            "base.group_uom",
         ];
         const hasGroups = await Promise.all(groups.map((g) => user.hasGroup(g)));
         this.packageEnabled = hasGroups[0];

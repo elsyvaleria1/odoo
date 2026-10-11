@@ -33,10 +33,10 @@
                         <t t-if="sol.remaining_hours_available">
                             <span class="text-muted fw-normal">
                                 <t t-if="is_uom_day">
-                                    (<span t-out="timesheets._timesheet_convert_sol_uom(sol, 'uom.product_uom_day')" t-options="{&quot;widget&quot;: &quot;timesheet_uom&quot;}" /> Days Ordered, <span t-out="timesheets._convert_hours_to_days(sol.remaining_hours)" t-options="{&quot;widget&quot;: &quot;timesheet_uom&quot;}" /> Days Remaining)
+                                    (<span t-out="timesheets._timesheet_convert_sol_uom(sol, 'base.product_uom_day')" t-options="{&quot;widget&quot;: &quot;timesheet_uom&quot;}" /> Days Ordered, <span t-out="timesheets._convert_hours_to_days(sol.remaining_hours)" t-options="{&quot;widget&quot;: &quot;timesheet_uom&quot;}" /> Days Remaining)
                                 </t>
                                 <t t-else="">
-                                    (<span t-out="timesheets._timesheet_convert_sol_uom(sol, 'uom.product_uom_hour')" t-options="{&quot;widget&quot;: &quot;float_time&quot;}" /> Hours Ordered, <span t-out="sol.remaining_hours" t-options="{&quot;widget&quot;: &quot;float_time&quot;}" /> Hours Remaining)
+                                    (<span t-out="timesheets._timesheet_convert_sol_uom(sol, 'base.product_uom_hour')" t-options="{&quot;widget&quot;: &quot;float_time&quot;}" /> Hours Ordered, <span t-out="sol.remaining_hours" t-options="{&quot;widget&quot;: &quot;float_time&quot;}" /> Hours Remaining)
                                 </t>
                             </span>
                         </t>

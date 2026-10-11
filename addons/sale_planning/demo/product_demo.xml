@@ -38,7 +38,7 @@
             <field name="type">service</field>
             <field name="planning_enabled" eval="True" />
             <field name="planning_role_id" ref="planning_role_technician" />
-            <field name="uom_id" ref="uom.product_uom_hour" />
+            <field name="uom_id" ref="base.product_uom_hour" />
             <field name="description">Take a rest. We'll do our best.</field>
         </record>
         <record id="developer_product" model="product.product">
@@ -49,7 +49,7 @@
             <field name="type">service</field>
             <field name="planning_enabled" eval="True" />
             <field name="planning_role_id" ref="planning.planning_role_developer" />
-            <field name="uom_id" ref="uom.product_uom_hour" />
+            <field name="uom_id" ref="base.product_uom_hour" />
             <field
                 name="description">Our developer will help you to add new features to your Software.</field>
         </record>
@@ -70,14 +70,14 @@
             <field name="order_id" ref="sale_order_51" />
             <field name="product_id" ref="technical_maintainance_product" />
             <field name="product_qty">42</field>
-            <field name="product_uom_id" ref="uom.product_uom_hour" />
+            <field name="product_uom_id" ref="base.product_uom_hour" />
             <field name="price_unit">275.00</field>
         </record>
         <record id="sale_order_line_52" model="sale.order.line">
             <field name="order_id" ref="sale_order_51" />
             <field name="product_id" ref="developer_product" />
             <field name="product_qty">60</field>
-            <field name="product_uom_id" ref="uom.product_uom_hour" />
+            <field name="product_uom_id" ref="base.product_uom_hour" />
             <field name="price_unit">100.00</field>
         </record>
         <record id="sale_order_52" model="sale.order">
@@ -97,14 +97,14 @@
             <field name="order_id" ref="sale_order_52" />
             <field name="product_id" ref="technical_maintainance_product" />
             <field name="product_qty">24</field>
-            <field name="product_uom_id" ref="uom.product_uom_hour" />
+            <field name="product_uom_id" ref="base.product_uom_hour" />
             <field name="price_unit">120.50</field>
         </record>
         <record id="sale_order_line_54" model="sale.order.line">
             <field name="order_id" ref="sale_order_52" />
             <field name="product_id" ref="developer_product" />
             <field name="product_qty">120</field>
-            <field name="product_uom_id" ref="uom.product_uom_hour" />
+            <field name="product_uom_id" ref="base.product_uom_hour" />
             <field name="price_unit">40.50</field>
         </record>
         <record id="sale_order_53" model="sale.order">
@@ -124,14 +124,14 @@
             <field name="order_id" ref="sale_order_53" />
             <field name="product_id" ref="technical_maintainance_product" />
             <field name="product_qty">30</field>
-            <field name="product_uom_id" ref="uom.product_uom_hour" />
+            <field name="product_uom_id" ref="base.product_uom_hour" />
             <field name="price_unit">275.00</field>
         </record>
         <record id="sale_order_line_56" model="sale.order.line">
             <field name="order_id" ref="sale_order_53" />
             <field name="product_id" ref="developer_product" />
             <field name="product_qty">10</field>
-            <field name="product_uom_id" ref="uom.product_uom_hour" />
+            <field name="product_uom_id" ref="base.product_uom_hour" />
             <field name="price_unit">400.00</field>
         </record>
         <!-- Confirm some Sales Orders-->

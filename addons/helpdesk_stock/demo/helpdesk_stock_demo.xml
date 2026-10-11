@@ -112,7 +112,7 @@
         <field name="location_id" ref="stock.stock_location_stock" />
         <field name="location_dest_id" ref="stock.stock_location_output" />
         <field name="product_uom_qty">1</field>
-        <field name="product_uom_id" ref="uom.product_uom_unit" />
+        <field name="product_uom_id" ref="base.product_uom_unit" />
         <field name="quantity">0.0</field>
         <field name="product_id" ref="product.product_product_10" />
     </record>
@@ -146,7 +146,7 @@
         <field name="location_id" ref="stock.stock_location_stock" />
         <field name="location_dest_id" ref="stock.stock_location_output" />
         <field name="product_uom_qty">1</field>
-        <field name="product_uom_id" ref="uom.product_uom_unit" />
+        <field name="product_uom_id" ref="base.product_uom_unit" />
         <field name="quantity">0.0</field>
         <field name="product_id" ref="product.product_product_12" />
     </record>

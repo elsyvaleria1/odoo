@@ -48,11 +48,11 @@ class TestAggregatesDoNotReadTheLines(PickingCase):
         # legacy data: a move kept in a unit its product no longer converts to
         self.env.cr.execute(
             "UPDATE stock_move SET product_uom_id = %s WHERE id = ANY(%s)",
-            [self.env.ref("uom.product_uom_hour").id, picking.move_ids.ids],
+            [self.env.ref("base.product_uom_hour").id, picking.move_ids.ids],
         )
         self.env.cr.execute(
             "UPDATE stock_move_line SET product_uom_id = %s WHERE id = ANY(%s)",
-            [self.env.ref("uom.product_uom_hour").id, picking.move_line_ids.ids],
+            [self.env.ref("base.product_uom_hour").id, picking.move_line_ids.ids],
         )
         self.env.invalidate_all()
 

@@ -468,7 +468,7 @@ class QualityCheck(models.Model):
         return res
 
     def _get_print_qty(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         if (
             self.product_tracking != "serial"
             and self.product_id.uom_id._has_common_reference(uom_unit)

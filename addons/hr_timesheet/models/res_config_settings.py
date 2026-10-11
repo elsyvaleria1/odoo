@@ -41,7 +41,7 @@ class ResConfigSettings(models.TransientModel):
 
     @api.depends("company_id")
     def _compute_timesheet_encode_method(self) -> None:
-        uom_day = self.env.ref("uom.product_uom_day", raise_if_not_found=False)
+        uom_day = self.env.ref("base.product_uom_day", raise_if_not_found=False)
         for settings in self:
             settings.timesheet_encode_method = (
                 "days"
@@ -51,8 +51,8 @@ class ResConfigSettings(models.TransientModel):
             )
 
     def _inverse_timesheet_encode_method(self) -> None:
-        uom_day = self.env.ref("uom.product_uom_day", raise_if_not_found=False)
-        uom_hour = self.env.ref("uom.product_uom_hour", raise_if_not_found=False)
+        uom_day = self.env.ref("base.product_uom_day", raise_if_not_found=False)
+        uom_hour = self.env.ref("base.product_uom_hour", raise_if_not_found=False)
         for settings in self:
             _debug.lifecycle(
                 "timesheet_encode_method_set",

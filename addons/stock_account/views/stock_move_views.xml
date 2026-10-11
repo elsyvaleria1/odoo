@@ -39,7 +39,7 @@
                 <field name="reference" width="300px" />
                 <field name="date" />
                 <field name="quantity" />
-                <field name="product_uom_id" groups="uom.group_uom" />
+                <field name="product_uom_id" groups="base.group_uom" />
                 <field
                     name="trace_ids"
                     widget="many2many_tags"

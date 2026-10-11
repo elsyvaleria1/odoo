@@ -15,7 +15,7 @@ class TestCarrierMatchWeightOnPicking(TransactionCase):
                 "type": "consu",
                 "weight": 1.0,
                 "volume": 1.0,
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
             }
         )
         service = cls.env["product.product"].create(
@@ -44,7 +44,7 @@ class TestCarrierMatchWeightOnPicking(TransactionCase):
             {
                 "product_id": cls.product.id,
                 "product_uom_qty": 2.0,
-                "product_uom_id": cls.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": cls.env.ref("base.product_uom_dozen").id,
                 "picking_id": cls.picking.id,
                 "location_id": cls.picking.location_id.id,
                 "location_dest_id": cls.picking.location_dest_id.id,

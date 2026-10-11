@@ -149,7 +149,7 @@ class TestMrpMaintenance(common.TransactionCase):
                 10-05-2018              = 05-05-2018 + 5day
         """
 
-        asset_form = Form(self.asset, view="resource.resource_asset_view_form")
+        asset_form = Form(self.asset, view="base.resource_asset_view_form")
         asset_form.name = "Acer Laptop"
         asset_form.maintenance_team_id = self.maintenance_team_id
         asset_form.kind_id = self.kind_id
@@ -198,7 +198,7 @@ class TestMrpMaintenance(common.TransactionCase):
         latest failure of an asset's orders.
         """
 
-        asset_form = Form(self.asset, view="resource.resource_asset_view_form")
+        asset_form = Form(self.asset, view="base.resource_asset_view_form")
         asset_form.name = "Acer Laptop"
         asset_form.maintenance_team_id = self.maintenance_team_id
         asset_form.kind_id = self.kind_id
@@ -450,7 +450,7 @@ class TestMrpMaintenance(common.TransactionCase):
 
     def test_workcenter_unavailability(self):
         self.env.user.group_ids += self.env.ref("mrp.group_mrp_routings")
-        asset_form = Form(self.asset, view="resource.resource_asset_view_form")
+        asset_form = Form(self.asset, view="base.resource_asset_view_form")
         asset_form.name = "Screwdriver"
         asset_form.maintenance_team_id = self.maintenance_team_id
         asset_form.kind_id = self.kind_id

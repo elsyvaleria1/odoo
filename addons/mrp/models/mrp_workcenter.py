@@ -15,7 +15,10 @@ from odoo.libs.numbers import float_is_zero, float_round
 from odoo.tools.date_utils import end_of, localized, start_of, to_timezone
 from odoo.tools.misc import get_lang
 
-from odoo.addons.resource.models.utils import SlotIntervals, find_available_interval
+from odoo.addons.base.models.resource_utils import (
+    SlotIntervals,
+    find_available_interval,
+)
 
 _debug = DebugLog(__name__)
 
@@ -1319,5 +1322,5 @@ class MrpWorkcenterCapacity(models.Model):
     def _compute_product_uom_id(self):
         for capacity in self:
             capacity.product_uom_id = capacity.product_id.uom_id or self.env.ref(
-                "uom.product_uom_unit"
+                "base.product_uom_unit"
             )

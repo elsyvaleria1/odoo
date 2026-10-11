@@ -11,7 +11,7 @@
                 name="description_sale">Cranberry Jus, lime jus, vodka and Cointreau</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -30,7 +30,7 @@
                 name="description_sale">Tequila Jose Cuervo, lime jus, sugar cane Cointreau</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -49,7 +49,7 @@
                 name="description_sale">Vodka 42 Below, lime, sugar, ginger beer</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -68,7 +68,7 @@
                 name="description_sale">White rhum, Malibu, Batida de coco, coconut liqueur, pineapple juice</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -86,7 +86,7 @@
             <field name="description_sale">Prosecco, aperol, soda</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -106,7 +106,7 @@
                 name="description_sale">Bourbon, bitters, sugar, and a twist of citrus zest.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -125,7 +125,7 @@
                 name="description_sale">White rum, sugar, lime juice, soda water, and mint.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -144,7 +144,7 @@
                 name="description_sale">Rum, lime juice, orgeat syrup, and orange liqueur.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -163,7 +163,7 @@
                 name="description_sale">Whiskey, lemon juice, sugar, and a dash of egg white.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -182,7 +182,7 @@
                 name="description_sale">Gin, vermouth rosso, Campari, and an orange peel.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"

@@ -318,10 +318,10 @@
                                                 name="td_quantity"
                                                 class="o_td_quantity text-end">
                                                 <span t-field="line.quantity" class="text-nowrap">3.00</span>
-                                                <span t-field="line.product_uom_id" groups="uom.group_uom">units</span>
+                                                <span t-field="line.product_uom_id" groups="base.group_uom">units</span>
                                                 <span
                                                     t-if="line.product_uom_id != line.product_id.uom_id"
-                                                    groups="uom.group_uom"
+                                                    groups="base.group_uom"
                                                     class="text-muted small">
                                                     <br />
                                                     <t
@@ -449,17 +449,17 @@
                                                 class="o_td_quantity text-end">
                                                 <div t-if="hide_details">
                                                     <span>1.00</span>
-                                                    <span groups="uom.group_uom">Units</span>
+                                                    <span groups="base.group_uom">Units</span>
                                                 </div>
                                                 <div
                                                     t-if="hide_prices and grouped_line['display_type'] not in ('line_section', 'line_subsection')">
                                                     <span t-out="grouped_line['quantity']" t-options="{'widget': 'float', 'decimal_precision': 'Product Unit'}">1.00</span>
                                                     <t
                                                         t-if="grouped_line.get('line_uom')">
-                                                        <span t-out="grouped_line['line_uom'].display_name" groups="uom.group_uom">Unit</span>
+                                                        <span t-out="grouped_line['line_uom'].display_name" groups="base.group_uom">Unit</span>
                                                         <span
                                                             t-if="grouped_line.get('product_uom_id') != grouped_line['line_uom']"
-                                                            groups="uom.group_uom"
+                                                            groups="base.group_uom"
                                                             class="text-muted small">
                                                             <br />
                                                             <t

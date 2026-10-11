@@ -133,9 +133,9 @@
                 <menuitem
                     id="menu_product_uom_form_action"
                     name="Units &amp; Packagings"
-                    action="uom.action_uom_uom"
+                    action="base.action_uom_uom"
                     sequence="35"
-                    groups="uom.group_uom" />
+                    groups="base.group_uom" />
             </menuitem>
             <menuitem
                 id="payment_menu"

@@ -927,7 +927,7 @@ class TestAngloSaxonValuation(TestStockValuationCommon, TestSaleStockCommon):
             {
                 "name": "Pack of 12 units",
                 "relative_factor": 12,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 

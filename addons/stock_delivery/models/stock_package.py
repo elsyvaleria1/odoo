@@ -28,7 +28,7 @@ class StockPackage(models.Model):
     def _compute_weight_uom_info(self) -> None:
         self.weight_is_kg = False
         uom_id = self.env["product.template"]._get_uom_from_setting("weight")
-        if uom_id == self.env.ref("uom.product_uom_kgm"):
+        if uom_id == self.env.ref("base.product_uom_kgm"):
             self.weight_is_kg = True
         self.weight_uom_rounding = uom_id.rounding
 

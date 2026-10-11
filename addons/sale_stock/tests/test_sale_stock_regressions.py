@@ -117,7 +117,7 @@ class TestSaleStockRegressions(TestSaleStockCommon):
         self.assertEqual(partner.customer_on_time_rate, -1)
 
     def test_on_time_rate_converts_the_delivered_quantity(self):
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         product = self._storable("OTR UOM", 1000)
         order = self.env["sale.order"].create(
             {

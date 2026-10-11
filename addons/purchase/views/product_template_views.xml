@@ -93,7 +93,7 @@
                                 class="oe_inline" />
                             <field
                                 name="uom_name"
-                                groups="uom.group_uom"
+                                groups="base.group_uom"
                                 class="oe_inline" />
                         </span>
                         <span class="o_stat_text">Purchased</span>

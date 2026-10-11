@@ -12,7 +12,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.intervals import Intervals
 from odoo.tools import float_is_zero, ormcache
 
-from odoo.addons.resource.models.utils import last_day_of, split_at_midnight
+from odoo.addons.base.models.resource_utils import last_day_of, split_at_midnight
 
 CRON_BATCH_SIZE = 100
 

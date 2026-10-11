@@ -9,7 +9,7 @@ class TestDuplicatedRecordsetCopy(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
 
     def _assert_copy_data_tolerates_a_none_entry(self, record):
         seen = defaultdict(set)
@@ -123,9 +123,9 @@ class TestPriceUomConversion(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
-        cls.uom_kgm = cls.env.ref("uom.product_uom_kgm")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_dozen = cls.env.ref("base.product_uom_dozen")
+        cls.uom_kgm = cls.env.ref("base.product_uom_kgm")
 
         attribute = cls.env["product.attribute"].create({"name": "Price Colour"})
         cls.red, cls.blue = cls.env["product.attribute.value"].create(
@@ -252,9 +252,9 @@ class TestPackagingUomCategory(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
-        cls.uom_kgm = cls.env.ref("uom.product_uom_kgm")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_dozen = cls.env.ref("base.product_uom_dozen")
+        cls.uom_kgm = cls.env.ref("base.product_uom_kgm")
         cls.uom_dozen.action_unarchive()
 
     def test_packaging_in_the_same_category_is_allowed(self):
@@ -299,8 +299,8 @@ class TestPackagingUomCategory(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestTemplateUomChange(TransactionCase):
     def test_uom_change_covers_archived_variants(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         attribute = self.env["product.attribute"].create({"name": "Archived Size"})
         values = self.env["product.attribute.value"].create(
             [{"name": name, "attribute_id": attribute.id} for name in ("S", "M")]

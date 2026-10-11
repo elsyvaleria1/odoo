@@ -446,18 +446,18 @@ class TestProduct(AccountTestInvoicingCommon):
         return move
 
     def test_uom_change_is_blocked_after_an_invoice_in_the_same_uom(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         product = self.env["product.template"].create(
             {"name": "ZZ Uom Same", "uom_id": unit.id}
         )
         self._post_invoice_for(product, unit)
         with self.assertRaises(ValidationError):
-            product.uom_id = self.env.ref("uom.product_uom_kgm")
+            product.uom_id = self.env.ref("base.product_uom_kgm")
             self.env.flush_all()
 
     def test_uom_change_is_blocked_after_an_invoice_in_another_uom(self):
-        unit = self.env.ref("uom.product_uom_unit")
-        dozen = self.env.ref("uom.product_uom_dozen")
+        unit = self.env.ref("base.product_uom_unit")
+        dozen = self.env.ref("base.product_uom_dozen")
         product = self.env["product.template"].create(
             {"name": "ZZ Uom Other", "uom_id": unit.id}
         )
@@ -481,7 +481,7 @@ class TestProduct(AccountTestInvoicingCommon):
         )
 
     def test_uom_can_be_rewritten_to_the_same_value(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         product = self.env["product.template"].create(
             {"name": "ZZ Uom Rewrite", "uom_id": unit.id}
         )
@@ -491,8 +491,8 @@ class TestProduct(AccountTestInvoicingCommon):
         self.assertEqual(product.uom_id, unit)
 
     def test_uom_change_is_allowed_while_the_entry_is_a_draft(self):
-        unit = self.env.ref("uom.product_uom_unit")
-        kilogram = self.env.ref("uom.product_uom_kgm")
+        unit = self.env.ref("base.product_uom_unit")
+        kilogram = self.env.ref("base.product_uom_kgm")
         product = self.env["product.template"].create(
             {"name": "ZZ Uom Draft", "uom_id": unit.id}
         )

@@ -119,7 +119,7 @@ class TestPurchaseProductCatalog(AccountTestInvoicingCommon, HttpCase):
 
     def test_catalog_vendor_uom(self):
         self._enable_uom()
-        uom_liter = self.env.ref("uom.product_uom_litre")
+        uom_liter = self.env.ref("base.product_uom_litre")
         vendor_by_liter, vendor_by_unit = self.env["res.partner"].create(
             [
                 {"name": "Vendor A (l)"},
@@ -185,7 +185,7 @@ class TestPurchaseProductCatalog(AccountTestInvoicingCommon, HttpCase):
 
     def test_catalog_price_vendor_uom_cross_category(self):
         self._enable_uom()
-        uom_liter = self.env.ref("uom.product_uom_litre")
+        uom_liter = self.env.ref("base.product_uom_litre")
         vendor_l, vendor_u = self.env["res.partner"].create(
             [{"name": "Vendor A (l)"}, {"name": "Vendor B (unit)"}]
         )
@@ -264,7 +264,7 @@ class TestPurchaseProductCatalog(AccountTestInvoicingCommon, HttpCase):
         product_template = self.env["product.template"].create(
             {
                 "name": "Test Product Template",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "standard_price": 200.0,
                 "attribute_line_ids": [
                     Command.create(
@@ -284,7 +284,7 @@ class TestPurchaseProductCatalog(AccountTestInvoicingCommon, HttpCase):
             {
                 "partner_id": self.partner_a.id,
                 "product_tmpl_id": product_template.id,
-                "product_uom_id": self.env.ref("uom.product_uom_pack_6").id,
+                "product_uom_id": self.env.ref("base.product_uom_pack_6").id,
                 "price": 100.0,
             }
         )

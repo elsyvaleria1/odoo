@@ -10,7 +10,7 @@
                 name="description_sale">High fibre loaf. Baked with fine wholemeal flour to give a soft texture.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -30,7 +30,7 @@
             <field name="description_sale">Flour sold by the kilogram.</field>
             <field name="type">consu</field>
             <field name="weight">1.00</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -52,7 +52,7 @@
                 name="description_sale">Tiger bloomer. Baked for a soft inside, with its distinctive savoury crackled crust.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -73,7 +73,7 @@
                 name="description_sale">Flaky all butter pastry, layered for a light and golden croissant.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -94,7 +94,7 @@
                 name="description_sale">Shortcrust pastry with a Bramley apple filling.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -115,7 +115,7 @@
                 name="description_sale">Shortcrust pastry with a Morello cherry filling.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -136,7 +136,7 @@
                 name="description_sale">Artisan sourdough bread with a crisp crust and soft interior.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -157,7 +157,7 @@
                 name="description_sale">Hearty multigrain loaf with seeds and grains for extra nutrition.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -178,7 +178,7 @@
                 name="description_sale">Dense and dark, made with rye flour, perfect for sandwiches.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -199,7 +199,7 @@
                 name="description_sale">Soft dough with a buttery cinnamon filling, topped with cream cheese icing.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -220,7 +220,7 @@
                 name="description_sale">Rich buttery pastry with a dark chocolate center.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -241,7 +241,7 @@
                 name="description_sale">Moist and fluffy muffins bursting with blueberries.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -262,7 +262,7 @@
                 name="description_sale">Chewy and dense bagel, perfect for sandwiches or with cream cheese.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -283,7 +283,7 @@
                 name="description_sale">Flaky croissant filled with creamy cheese, a savory twist on a classic.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -304,7 +304,7 @@
                 name="description_sale">Sweet pie filled with pecans, with a rich, buttery filling and flaky saltt.</field>
             <field name="type">consu</field>
             <field name="weight">0.01</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"

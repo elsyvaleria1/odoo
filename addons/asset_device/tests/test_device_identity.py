@@ -13,7 +13,7 @@ class TestDeviceIsAnAsset(TransactionCase):
                 "name": "Company phone",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource.kind_it").id,
+                "asset_kind_id": cls.env.ref("base.kind_it").id,
             }
         )
         cls.lot = cls.env["product.trace"].create(
@@ -27,7 +27,7 @@ class TestDeviceIsAnAsset(TransactionCase):
         cls.env["resource.identifier"].create(
             {
                 "resource_id": cls.asset.id,
-                "type_id": cls.env.ref("resource.identifier_type_serial").id,
+                "type_id": cls.env.ref("base.identifier_type_serial").id,
                 "value": "PHONE-1-SN",
             }
         )

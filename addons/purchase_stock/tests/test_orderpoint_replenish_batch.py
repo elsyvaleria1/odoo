@@ -18,7 +18,7 @@ class TestOrderpointReplenishBatch(TransactionCase):
             {
                 "name": "Batch pack of 6",
                 "relative_factor": 6.0,
-                "relative_uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": cls.env.ref("base.product_uom_unit").id,
             }
         )
 

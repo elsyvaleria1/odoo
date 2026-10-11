@@ -113,7 +113,7 @@ class TestWebsiteDeliverySendcloudLocationsController(WebsiteSaleCommon):
             {"name": "SendCloud Delivery", "type": "service"}
         )
 
-        uom = cls.env.ref("uom.product_uom_meter")
+        uom = cls.env.ref("base.product_uom_meter")
 
         cls.sendcloud_shipping = cls.env["sendcloud.shipping.product"].create(
             {
@@ -362,8 +362,8 @@ class TestWebsiteDeliverySendcloudLocationsController(WebsiteSaleCommon):
 
     def test_pickup_radius_units_follow_configuration(self):
         for value, xmlid in (
-            ("1", "uom.product_uom_mile"),
-            ("0", "uom.product_uom_km"),
+            ("1", "base.product_uom_mile"),
+            ("0", "base.product_uom_km"),
         ):
             with self.subTest(value=value):
                 self.env["ir.config_parameter"].set_param(

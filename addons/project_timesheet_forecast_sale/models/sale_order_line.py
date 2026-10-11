@@ -87,7 +87,7 @@ class SaleOrderLine(models.Model):
                 sale_line.id: allocated_hours
                 for sale_line, allocated_hours in group_allocated_hours
             }
-            uom_hour = self.env.ref("uom.product_uom_hour")
+            uom_hour = self.env.ref("base.product_uom_hour")
             for sol in planning_forecast_sols:
                 # Convert timesheeted unit amounts to hours
                 converted_unit_amount = sol.company_id.hr_timesheet_config_id.project_time_mode_id._get_quantity_in_unit(

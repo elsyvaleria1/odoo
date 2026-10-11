@@ -57,7 +57,7 @@
                     name="product_uom_id"
                     widget="many2one_uom"
                     context="{'product_id': product_id}"
-                    groups="uom.group_uom" />
+                    groups="base.group_uom" />
                 <field name="price_subtotal" widget="monetary" sum="Total" />
                 <field name="currency_id" column_invisible="True" />
             </list>
@@ -113,7 +113,7 @@
                                 name="product_uom_id"
                                 widget="many2one_uom"
                                 force_save="1"
-                                groups="uom.group_uom"
+                                groups="base.group_uom"
                                 readonly="product_uom_readonly"
                                 required="not display_type" />
                             <field
@@ -174,7 +174,7 @@
                     optional="show"
                     groups="base.group_multi_company" />
                 <field name="product_qty" optional="hide" />
-                <field name="product_uom_id" optional="hide" groups="uom.group_uom" />
+                <field name="product_uom_id" optional="hide" groups="base.group_uom" />
                 <field name="product_uom_qty" />
                 <field name="price_unit" optional="hide" />
                 <field name="price_unit_product_uom" widget="monetary" />

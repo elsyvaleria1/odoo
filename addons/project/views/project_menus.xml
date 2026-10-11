@@ -140,7 +140,7 @@
             <menuitem
                 id="menu_project_config_roles"
                 name="Project Roles"
-                action="resource.resource_role_action"
+                action="base.resource_role_action"
                 sequence="40" />
             <menuitem
                 id="menu_project_config_activity_type"

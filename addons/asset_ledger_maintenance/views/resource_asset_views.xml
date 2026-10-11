@@ -151,7 +151,7 @@
         <field name="domain">[('kind_code', '=', 'equipment')]</field>
         <field
             name="context"
-            eval="{'search_default_maintenance_ok': True, 'default_kind_id': ref('resource.kind_equipment')}" />
+            eval="{'search_default_maintenance_ok': True, 'default_kind_id': ref('base.kind_equipment')}" />
         <field
             name="view_ids"
             eval="[Command.clear(), Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_maintenance')}), Command.create({'view_mode': 'list', 'view_id': False}), Command.create({'view_mode': 'form', 'view_id': ref('asset_ledger.resource_asset_view_form_ledger')})]" />
@@ -165,7 +165,7 @@
         <field name="domain">[('kind_code', '=', 'machinery')]</field>
         <field
             name="context"
-            eval="{'search_default_maintenance_ok': True, 'default_kind_id': ref('resource.kind_machinery')}" />
+            eval="{'search_default_maintenance_ok': True, 'default_kind_id': ref('base.kind_machinery')}" />
         <field
             name="view_ids"
             eval="[Command.clear(), Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_maintenance')}), Command.create({'view_mode': 'list', 'view_id': False}), Command.create({'view_mode': 'form', 'view_id': ref('asset_ledger.resource_asset_view_form_ledger')})]" />
@@ -179,7 +179,7 @@
         <field name="domain">[('kind_code', '=', 'property')]</field>
         <field
             name="context"
-            eval="{'search_default_maintenance_ok': True, 'default_kind_id': ref('resource.kind_property')}" />
+            eval="{'search_default_maintenance_ok': True, 'default_kind_id': ref('base.kind_property')}" />
         <field
             name="view_ids"
             eval="[Command.clear(), Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_maintenance')}), Command.create({'view_mode': 'list', 'view_id': False}), Command.create({'view_mode': 'form', 'view_id': ref('asset_ledger.resource_asset_view_form_ledger')})]" />
@@ -193,7 +193,7 @@
         <field name="domain">[('kind_code', '=', 'vehicle')]</field>
         <field
             name="context"
-            eval="{'search_default_maintenance_ok': True, 'default_kind_id': ref('resource.kind_vehicle')}" />
+            eval="{'search_default_maintenance_ok': True, 'default_kind_id': ref('base.kind_vehicle')}" />
         <field
             name="view_ids"
             eval="[Command.clear(), Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_maintenance')}), Command.create({'view_mode': 'list', 'view_id': False}), Command.create({'view_mode': 'form', 'view_id': ref('asset_ledger.resource_asset_view_form_ledger')})]" />

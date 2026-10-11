@@ -13,7 +13,6 @@
         "analytic",
         "mail",
         "product",
-        "uom",
     ],
     "data": [
         "security/ir.access.csv",

@@ -22,7 +22,7 @@ class TestProductTemplate(TransactionCase):
         vehicle = self._create_product(
             {
                 "name": "Test Truck",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": self.env.ref("base.kind_vehicle").id,
                 "power": 250,
                 "co2": 180.5,
                 "fuel_tank_capacity": 80,
@@ -42,7 +42,7 @@ class TestProductTemplate(TransactionCase):
         equipment = self._create_product(
             {
                 "name": "Industrial Crane",
-                "asset_kind_id": self.env.ref("resource.kind_equipment").id,
+                "asset_kind_id": self.env.ref("base.kind_equipment").id,
                 "power": 500,
                 "weight_capacity": 5000.0,
             }
@@ -56,7 +56,7 @@ class TestProductTemplate(TransactionCase):
         machinery = self._create_product(
             {
                 "name": "Excavator",
-                "asset_kind_id": self.env.ref("resource.kind_machinery").id,
+                "asset_kind_id": self.env.ref("base.kind_machinery").id,
                 "power": 350,
                 "fuel_tank_capacity": 120,
             }
@@ -70,7 +70,7 @@ class TestProductTemplate(TransactionCase):
         it_asset = self._create_product(
             {
                 "name": "Server Rack",
-                "asset_kind_id": self.env.ref("resource.kind_it").id,
+                "asset_kind_id": self.env.ref("base.kind_it").id,
                 "power": 2,
             }
         )
@@ -82,7 +82,7 @@ class TestProductTemplate(TransactionCase):
         property_asset = self._create_product(
             {
                 "name": "Warehouse Building",
-                "asset_kind_id": self.env.ref("resource.kind_property").id,
+                "asset_kind_id": self.env.ref("base.kind_property").id,
                 "volume_capacity": 10000.0,
             }
         )
@@ -94,7 +94,7 @@ class TestProductTemplate(TransactionCase):
         tool = self._create_product(
             {
                 "name": "Power Drill Set",
-                "asset_kind_id": self.env.ref("resource.kind_tool").id,
+                "asset_kind_id": self.env.ref("base.kind_tool").id,
                 "weight_capacity": 5.0,
             }
         )
@@ -115,7 +115,7 @@ class TestProductTemplate(TransactionCase):
         vehicle = self._create_product(
             {
                 "name": "Efficient Car",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": self.env.ref("base.kind_vehicle").id,
                 "fuel_efficiency_theoretical": 15.0,
                 "fuel_efficiency_min": 12.0,
                 "fuel_efficiency_max": 18.0,
@@ -130,7 +130,7 @@ class TestProductTemplate(TransactionCase):
         truck = self._create_product(
             {
                 "name": "Cargo Truck",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": self.env.ref("base.kind_vehicle").id,
                 "weight_capacity": 3500.0,
                 "volume_capacity": 25.0,
             }
@@ -143,7 +143,7 @@ class TestProductTemplate(TransactionCase):
         electric_car = self._create_product(
             {
                 "name": "Electric Vehicle",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": self.env.ref("base.kind_vehicle").id,
                 "vehicle_range": 450,
             }
         )
@@ -155,18 +155,18 @@ class TestProductTemplate(TransactionCase):
         vehicle = self._create_product(
             {
                 "name": "Test Vehicle",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": self.env.ref("base.kind_vehicle").id,
                 "fuel_efficiency_theoretical": 15.0,
             }
         )
         icp.set_param("product.fuel_efficiency_in_mpg", "0")
         vehicle.invalidate_recordset(["fuel_efficiency_uom_name"])
-        expected_kml = self.env.ref("uom.product_uom_km_per_liter").display_name
+        expected_kml = self.env.ref("base.product_uom_km_per_liter").display_name
         self.assertEqual(vehicle.fuel_efficiency_uom_name, expected_kml)
 
         icp.set_param("product.fuel_efficiency_in_mpg", "1")
         vehicle.invalidate_recordset(["fuel_efficiency_uom_name"])
-        expected_mpg = self.env.ref("uom.product_uom_miles_per_galon").display_name
+        expected_mpg = self.env.ref("base.product_uom_miles_per_galon").display_name
         self.assertEqual(vehicle.fuel_efficiency_uom_name, expected_mpg)
 
     def test_promoting_a_template_gives_its_lots_an_asset(self):
@@ -189,7 +189,7 @@ class TestProductTemplate(TransactionCase):
         )
         self.assertFalse(lot.asset_id)
 
-        template.write({"asset_kind_id": self.env.ref("resource.kind_machinery").id})
+        template.write({"asset_kind_id": self.env.ref("base.kind_machinery").id})
         lot.invalidate_recordset()
         self.assertTrue(lot.asset_id)
         self.assertEqual(lot.asset_id.kind_id.code, "machinery")
@@ -203,7 +203,7 @@ class TestProductTemplate(TransactionCase):
                 "name": "Already typed truck",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": self.env.ref("base.kind_vehicle").id,
             }
         )
         lot = self.env["product.trace"].create(
@@ -215,7 +215,7 @@ class TestProductTemplate(TransactionCase):
         )
         asset = lot.asset_id
         self.assertTrue(asset)
-        template.write({"asset_kind_id": self.env.ref("resource.kind_machinery").id})
+        template.write({"asset_kind_id": self.env.ref("base.kind_machinery").id})
         lot.invalidate_recordset()
         self.assertEqual(lot.asset_id, asset, "a second asset was created")
 

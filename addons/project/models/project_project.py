@@ -17,9 +17,9 @@ from odoo.tools.misc import unquote
 
 from .project_task import CLOSED_STATES, DELIVERED_STATES
 from .project_update import STATUS_COLOR
+from odoo.addons.base.models.resource_utils import last_day_of
 from odoo.addons.mail.tools.discuss import Store, StoreFieldSpec
 from odoo.addons.rating.models import rating_data
-from odoo.addons.resource.models.utils import last_day_of
 
 _debug = DebugLog(__name__)
 _lt = LazyTranslate(__name__)

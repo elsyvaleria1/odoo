@@ -1,6 +1,6 @@
 from odoo import fields, models
 
-from odoo.addons.resource.models.utils import CUSTODY_SILENT, MANAGER_ROLE
+from odoo.addons.base.models.resource_utils import CUSTODY_SILENT, MANAGER_ROLE
 
 
 class ResourceResource(models.Model):

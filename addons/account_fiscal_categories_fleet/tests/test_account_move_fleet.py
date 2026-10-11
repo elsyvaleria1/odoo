@@ -15,7 +15,7 @@ class TestAccountMoveFleet(AccountTestInvoicingCommon):
         cls.batmobile = cls.env["resource.resource"].create(
             {
                 "name": "Batmobile",
-                "kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "kind_id": cls.env.ref("base.kind_vehicle").id,
                 "rate_ids": [
                     Command.create(
                         {

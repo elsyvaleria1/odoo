@@ -1,34 +1,34 @@
 from odoo import api, models
 
 UOM_TO_UNECE_CODE = {
-    "uom.product_uom_unit": "C62",
-    "uom.product_uom_dozen": "DZN",
-    "uom.product_uom_kgm": "KGM",
-    "uom.product_uom_gram": "GRM",
-    "uom.product_uom_day": "DAY",
-    "uom.product_uom_hour": "HUR",
-    "uom.product_uom_minute": "MIN",
-    "uom.product_uom_ton": "TNE",
-    "uom.product_uom_meter": "MTR",
-    "uom.product_uom_km": "KMT",
-    "uom.product_uom_cm": "CMT",
-    "uom.product_uom_litre": "LTR",
-    "uom.product_uom_lb": "LBR",
-    "uom.product_uom_oz": "ONZ",
-    "uom.product_uom_inch": "INH",
-    "uom.product_uom_foot": "FOT",
-    "uom.product_uom_mile": "SMI",
-    "uom.product_uom_floz": "OZA",
-    "uom.product_uom_qt": "QTL",
-    "uom.product_uom_gal": "GLL",
-    "uom.product_uom_cubic_meter": "MTQ",
-    "uom.product_uom_cubic_inch": "INQ",
-    "uom.product_uom_cubic_foot": "FTQ",
+    "base.product_uom_unit": "C62",
+    "base.product_uom_dozen": "DZN",
+    "base.product_uom_kgm": "KGM",
+    "base.product_uom_gram": "GRM",
+    "base.product_uom_day": "DAY",
+    "base.product_uom_hour": "HUR",
+    "base.product_uom_minute": "MIN",
+    "base.product_uom_ton": "TNE",
+    "base.product_uom_meter": "MTR",
+    "base.product_uom_km": "KMT",
+    "base.product_uom_cm": "CMT",
+    "base.product_uom_litre": "LTR",
+    "base.product_uom_lb": "LBR",
+    "base.product_uom_oz": "ONZ",
+    "base.product_uom_inch": "INH",
+    "base.product_uom_foot": "FOT",
+    "base.product_uom_mile": "SMI",
+    "base.product_uom_floz": "OZA",
+    "base.product_uom_qt": "QTL",
+    "base.product_uom_gal": "GLL",
+    "base.product_uom_cubic_meter": "MTQ",
+    "base.product_uom_cubic_inch": "INQ",
+    "base.product_uom_cubic_foot": "FTQ",
     "uom.uom_square_meter": "MTK",
     "uom.uom_square_foot": "FTK",
-    "uom.product_uom_yard": "YRD",
-    "uom.product_uom_millimeter": "MMT",
-    "uom.product_uom_kwh": "KWH",
+    "base.product_uom_yard": "YRD",
+    "base.product_uom_millimeter": "MMT",
+    "base.product_uom_kwh": "KWH",
 }
 
 
@@ -44,5 +44,5 @@ class UomUom(models.Model):
     @api.model
     def _get_uom_from_unece_code(self, unece_code):
         unece_code_to_uom = {v: k for k, v in UOM_TO_UNECE_CODE.items()}
-        uom_xmlid = unece_code_to_uom.get(unece_code, "uom.product_uom_unit")
+        uom_xmlid = unece_code_to_uom.get(unece_code, "base.product_uom_unit")
         return self.env.ref(uom_xmlid, raise_if_not_found=False)

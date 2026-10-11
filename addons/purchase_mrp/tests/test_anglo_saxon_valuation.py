@@ -113,8 +113,8 @@ class TestAngloSaxonValuationPurchaseMRP(TestStockValuationCommon):
         type_out = self.env["stock.picking.type"].search(
             [("company_id", "=", self.env.company.id), ("name", "=", "Delivery Orders")]
         )
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_litre = self.env.ref("uom.product_uom_litre")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_litre = self.env.ref("base.product_uom_litre")
 
         component01, component02 = self.env["product.product"].create(
             [
@@ -290,8 +290,8 @@ class TestAngloSaxonValuationPurchaseMRP(TestStockValuationCommon):
     def test_multicurrency_kit_different_uom_categories(self):
         eur = self.env.ref("base.EUR")
 
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_meter = self.env.ref("uom.product_uom_meter")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_meter = self.env.ref("base.product_uom_meter")
 
         kit, component = self.env["product.product"].create(
             [

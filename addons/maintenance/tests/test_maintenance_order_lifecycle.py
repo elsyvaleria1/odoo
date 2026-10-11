@@ -229,7 +229,7 @@ class TestMaintenanceKindsAndDashboards(TransactionCase):
             }
         )
         self.assertEqual(explicit.technician_user_id, other)
-        with Form(Asset, view="resource.resource_asset_view_form") as form:
+        with Form(Asset, view="base.resource_asset_view_form") as form:
             form.name = "Form asset"
             form.kind_id = self.kind
         self.assertEqual(form.record.technician_user_id, self.technician)
@@ -325,7 +325,7 @@ class TestMaintenanceReliabilityFigures(TransactionCase):
         asset = self.env["resource.resource"].create(
             {
                 "name": "Reliability probe",
-                "kind_id": self.env.ref("resource.kind_equipment").id,
+                "kind_id": self.env.ref("base.kind_equipment").id,
                 "date_in_service": date_in_service,
             }
         )
@@ -406,7 +406,7 @@ class TestMaintenanceAssetAccess(TransactionCase):
                 },
             ]
         )
-        cls.machinery = cls.env.ref("resource.kind_machinery")
+        cls.machinery = cls.env.ref("base.kind_machinery")
 
     def test_the_technician_reads_the_asset_they_maintain(self):
         asset = self.env["resource.resource"].create(
@@ -429,7 +429,7 @@ class TestMaintenanceAssetAccess(TransactionCase):
         # A kind with a model of its own is a table, and no row moves between
         # tables: the asset starts on a kind that stays in the root.
         asset = self.env["resource.resource"].create(
-            {"name": "Lathe", "kind_id": self.env.ref("resource.kind_tool").id}
+            {"name": "Lathe", "kind_id": self.env.ref("base.kind_tool").id}
         )
         kind = self.env["resource.kind"].create(
             {

@@ -33,7 +33,7 @@
                                             <span t-field="packaging.uom_id.relative_factor">10</span>
                                         </strong>
                                         <strong>
-                                            <span t-field="packaging.uom_id.relative_uom_id" groups="uom.group_uom">Units</span>
+                                            <span t-field="packaging.uom_id.relative_uom_id" groups="base.group_uom">Units</span>
                                         </strong>
                                     </div>
                                 </td>

@@ -127,7 +127,7 @@
                         groups="!stock.group_stock_manager"
                         readonly="True"
                         style="max-width: fit-content;" />
-                    <span name="uom_span" groups="uom.group_uom">
+                    <span name="uom_span" groups="base.group_uom">
                         <field name="uom_name" class="oe_inline" />
                     </span>
                 </div>
@@ -239,7 +239,7 @@
                     groups="stock.group_stock_user" />
             </xpath>
             <xpath expr="//field[@name='product_properties']" position="before">
-                <div groups="stock.group_stock_user" t-if="record.show_on_hand_qty_status_button.raw_value"> On hand: <field name="qty_available" /> <field name="uom_id" groups="uom.group_uom" />
+                <div groups="stock.group_stock_user" t-if="record.show_on_hand_qty_status_button.raw_value"> On hand: <field name="qty_available" /> <field name="uom_id" groups="base.group_uom" />
                 </div>
             </xpath>
         </field>
@@ -295,8 +295,8 @@
                                         name="uom_name"
                                         widget="statinfo"
                                         nolabel="1"
-                                        groups="uom.group_uom" />
-                                    <span groups="!uom.group_uom">On Hand</span>
+                                        groups="base.group_uom" />
+                                    <span groups="!base.group_uom">On Hand</span>
                                 </span>
                                 <span class="o_stat_value text-muted">
                                     Forecasted
@@ -627,7 +627,7 @@
                     name="uom_id"
                     widget="many2one_uom"
                     options="{'no_create': True}"
-                    groups="uom.group_uom" />
+                    groups="base.group_uom" />
                 <button
                     name="%(stock_move_line_action)d"
                     type="action"
@@ -712,8 +712,8 @@
                                         name="uom_name"
                                         widget="statinfo"
                                         nolabel="1"
-                                        groups="uom.group_uom" />
-                                    <span groups="!uom.group_uom">On Hand</span>
+                                        groups="base.group_uom" />
+                                    <span groups="!base.group_uom">On Hand</span>
                                 </span>
                                 <span class="o_stat_value text-muted">
                                     Forecasted

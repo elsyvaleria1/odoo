@@ -14,7 +14,7 @@ class TestPurchaseOrderReport(AccountTestInvoicingCommon):
         cls.other_currency = cls.setup_other_currency("EUR")
 
     def test_00_purchase_order_report(self):
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
 
         po = self.env["purchase.order"].create(
             {
@@ -252,8 +252,8 @@ class TestPurchaseOrderReport(AccountTestInvoicingCommon):
         self.assertEqual(round(report[0]["price_average:avg"], 2), 46.36)
 
     def test_purchase_report_multi_uom(self):
-        uom_units = self.env.ref("uom.product_uom_unit")
-        uom_dozens = self.env.ref("uom.product_uom_dozen")
+        uom_units = self.env.ref("base.product_uom_unit")
+        uom_dozens = self.env.ref("base.product_uom_dozen")
         uom_pairs = self.env["uom.uom"].create(
             {
                 "name": "Pairs",

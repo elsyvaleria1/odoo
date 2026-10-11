@@ -15,7 +15,7 @@ class TestInterCompanyRulesCommon(AccountTestInvoicingCommon):
         cls.product_consultant = cls.env["product.product"].create(
             {
                 "name": "Service",
-                "uom_id": cls.env.ref("uom.product_uom_hour").id,
+                "uom_id": cls.env.ref("base.product_uom_hour").id,
                 "type": "service",
                 "taxes_id": [
                     (

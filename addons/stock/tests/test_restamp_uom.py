@@ -7,9 +7,9 @@ class TestRestampUom(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.unit = cls.env.ref("uom.product_uom_unit")
-        cls.pack_of_6 = cls.env.ref("uom.product_uom_pack_6")
-        cls.dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.unit = cls.env.ref("base.product_uom_unit")
+        cls.pack_of_6 = cls.env.ref("base.product_uom_pack_6")
+        cls.dozen = cls.env.ref("base.product_uom_dozen")
         cls.warehouse = cls.env["stock.warehouse"].search([], limit=1)
 
     def _product_with_a_move(self, name, move_uom):

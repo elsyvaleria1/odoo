@@ -60,7 +60,7 @@ class TestTaxesTaxTotalsSummaryAccountTaxPython(
         product.uom_id = self.env["uom.uom"].create(
             {
                 "name": "test_point_of_sale_custom_tax_with_extra_product_uom_field",
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
                 "relative_factor": 4.2,
             }
         )

@@ -312,7 +312,7 @@ class DeliveryCarrier(models.Model):
     def _bpost_convert_weight(self, weight):
         weight_uom_id = self.env["product.template"]._get_uom_from_setting("weight")
         return weight_uom_id._get_quantity_in_unit(
-            weight, self.env.ref("uom.product_uom_kgm"), round=False
+            weight, self.env.ref("base.product_uom_kgm"), round=False
         )
 
     @api.model

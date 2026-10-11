@@ -24,7 +24,7 @@ class TestOnchangeProductId(TransactionCase):
         )
 
     def test_onchange_product_id(self):
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
 
         uom_id = self.product_uom_model.search([("name", "=", "Units")])[0]
 
@@ -89,7 +89,7 @@ class TestOnchangeProductId(TransactionCase):
         )
 
         po_line.write(
-            {"product_qty": 3, "product_uom_id": self.ref("uom.product_uom_dozen")}
+            {"product_qty": 3, "product_uom_id": self.ref("base.product_uom_dozen")}
         )
         self.assertEqual(
             1200, po_line.price_unit, "Unit price should be 1200 for one Dozen"

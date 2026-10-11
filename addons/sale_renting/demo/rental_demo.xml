@@ -10,7 +10,7 @@
         <field name="name">Projector</field>
         <field name="categ_id" ref="sale_renting.product_category_renting" />
         <field name="type">consu</field>
-        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="uom_id" ref="base.product_uom_unit" />
         <field name="default_code">RENT001</field>
         <field
             name="image_1920"
@@ -34,7 +34,7 @@
         <field name="name">Meeting Room</field>
         <field name="categ_id" ref="sale_renting.product_category_renting" />
         <field name="type">service</field>
-        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="uom_id" ref="base.product_uom_unit" />
         <field
             name="image_1920"
             type="base64"
@@ -47,7 +47,7 @@
     <record id="rental_product_3_template" model="product.template">
         <field name="name">Printer</field>
         <field name="categ_id" ref="sale_renting.product_category_renting" />
-        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="uom_id" ref="base.product_uom_unit" />
         <field name="default_code">RENT003</field>
         <field name="description_sale">Compact laser printer with fast output</field>
         <field

@@ -32,7 +32,7 @@ class TestPosMargin(TestPoSCommon):
         )
         cls.customer_location = cls.env.ref("stock.stock_location_customers")
         cls.supplier_location = cls.env.ref("stock.stock_location_suppliers")
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
 
     def _synced_orders(self):
         return self.pos_session.order_ids.sorted("id")

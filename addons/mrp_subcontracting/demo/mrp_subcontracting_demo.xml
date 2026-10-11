@@ -6,7 +6,7 @@
             <field
                 name="product_tmpl_id"
                 ref="product.product_delivery_02_product_template" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="type">subcontract</field>
             <field
                 name="subcontractor_ids"
@@ -15,7 +15,7 @@
         <record id="mrp_bom_line_subcontract" model="mrp.bom.line">
             <field name="product_id" ref="mrp.product_product_computer_desk_screw" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="bom_id" ref="mrp_bom_subcontract" />
         </record>
         <record id="product_supplierinfo_subcontracting" model="product.supplierinfo">

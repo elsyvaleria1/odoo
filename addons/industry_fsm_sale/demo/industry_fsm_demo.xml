@@ -9,7 +9,7 @@
             <field name="list_price">0</field>
             <field name="type">consu</field>
             <field name="weight">1</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="invoice_policy">transferred</field>
             <field
                 name="image_1920"
@@ -23,7 +23,7 @@
             <field name="list_price">0</field>
             <field name="type">consu</field>
             <field name="weight">1</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="invoice_policy">transferred</field>
             <field
                 name="image_1920"
@@ -37,7 +37,7 @@
             <field name="list_price">0</field>
             <field name="type">consu</field>
             <field name="weight">1</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="invoice_policy">transferred</field>
         </record>
         <record id="field_service_product_zero_cost_4" model="product.product">
@@ -47,7 +47,7 @@
             <field name="list_price">0</field>
             <field name="type">consu</field>
             <field name="weight">1</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="invoice_policy">transferred</field>
         </record>
     </data>

@@ -86,7 +86,7 @@ class TestStockLotDocuments(TransactionCase):
             }
         )
 
-        self._set_kind_documents("resource.kind_vehicle", centralize=True)
+        self._set_kind_documents("base.kind_vehicle", centralize=True)
 
         self.assertTrue(
             vehicle_lot.asset_id.document_centralized,
@@ -102,7 +102,7 @@ class TestStockLotDocuments(TransactionCase):
             }
         )
 
-        self._set_kind_documents("resource.kind_property", centralize=True)
+        self._set_kind_documents("base.kind_property", centralize=True)
 
         self.assertTrue(
             property_lot.asset_id.document_centralized,
@@ -118,7 +118,7 @@ class TestStockLotDocuments(TransactionCase):
             }
         )
 
-        self._set_kind_documents("resource.kind_machinery", centralize=True)
+        self._set_kind_documents("base.kind_machinery", centralize=True)
 
         self.assertTrue(
             machinery_lot.asset_id.document_centralized,
@@ -134,7 +134,7 @@ class TestStockLotDocuments(TransactionCase):
             }
         )
 
-        self._set_kind_documents("resource.kind_equipment", centralize=True)
+        self._set_kind_documents("base.kind_equipment", centralize=True)
 
         self.assertTrue(
             equipment_lot.asset_id.document_centralized,
@@ -151,7 +151,7 @@ class TestStockLotDocuments(TransactionCase):
         )
 
         self._set_kind_documents(
-            "resource.kind_vehicle", folder=self.folder_fleet
+            "base.kind_vehicle", folder=self.folder_fleet
         )
 
         folder = vehicle_lot.asset_id._get_document_folder()
@@ -171,7 +171,7 @@ class TestStockLotDocuments(TransactionCase):
         )
 
         self._set_kind_documents(
-            "resource.kind_property", folder=self.folder_property
+            "base.kind_property", folder=self.folder_property
         )
 
         folder = property_lot.asset_id._get_document_folder()
@@ -191,7 +191,7 @@ class TestStockLotDocuments(TransactionCase):
         )
 
         self._set_kind_documents(
-            "resource.kind_machinery", folder=self.folder_machinery
+            "base.kind_machinery", folder=self.folder_machinery
         )
 
         folder = machinery_lot.asset_id._get_document_folder()
@@ -211,7 +211,7 @@ class TestStockLotDocuments(TransactionCase):
         )
 
         self._set_kind_documents(
-            "resource.kind_equipment", folder=self.folder_equipment
+            "base.kind_equipment", folder=self.folder_equipment
         )
 
         folder = equipment_lot.asset_id._get_document_folder()
@@ -246,9 +246,9 @@ class TestStockLotDocuments(TransactionCase):
             }
         )
 
-        self._set_kind_documents("resource.kind_vehicle", centralize=True)
+        self._set_kind_documents("base.kind_vehicle", centralize=True)
         self._set_kind_documents(
-            "resource.kind_vehicle", folder=self.folder_fleet
+            "base.kind_vehicle", folder=self.folder_fleet
         )
 
         action = vehicle_lot.action_view_documents()
@@ -278,7 +278,7 @@ class TestStockLotDocuments(TransactionCase):
             }
         )
 
-        self._set_kind_documents("resource.kind_vehicle", centralize=True)
+        self._set_kind_documents("base.kind_vehicle", centralize=True)
 
         can_create = vehicle_lot.asset_id._check_create_documents()
         self.assertTrue(
@@ -295,7 +295,7 @@ class TestStockLotDocuments(TransactionCase):
             }
         )
 
-        self._set_kind_documents("resource.kind_vehicle", centralize=False)
+        self._set_kind_documents("base.kind_vehicle", centralize=False)
 
         can_create = vehicle_lot.asset_id._check_create_documents()
         self.assertFalse(
@@ -337,7 +337,7 @@ class TestStockLotDocuments(TransactionCase):
 
     def test_it_asset_and_tools_file_under_equipment(self):
         self._set_kind_documents(
-            "resource.kind_equipment", folder=self.folder_equipment
+            "base.kind_equipment", folder=self.folder_equipment
         )
         for asset_kind in ("it", "tool"):
             with self.subTest(asset_kind=asset_kind):
@@ -361,9 +361,9 @@ class TestStockLotDocuments(TransactionCase):
                 )
 
     def test_company_less_lot_uses_active_company(self):
-        self._set_kind_documents("resource.kind_vehicle", centralize=True)
+        self._set_kind_documents("base.kind_vehicle", centralize=True)
         self._set_kind_documents(
-            "resource.kind_vehicle", folder=self.folder_fleet
+            "base.kind_vehicle", folder=self.folder_fleet
         )
         lot = self.product_trace.create(
             {
@@ -387,16 +387,16 @@ class TestStockLotDocuments(TransactionCase):
                 "company_id": self.company.id,
             }
         )
-        self._set_kind_documents("resource.kind_vehicle", centralize=True)
+        self._set_kind_documents("base.kind_vehicle", centralize=True)
         self.assertTrue(vehicle_lot.asset_id.document_centralized)
 
-        self._set_kind_documents("resource.kind_vehicle", centralize=False)
+        self._set_kind_documents("base.kind_vehicle", centralize=False)
         self.assertFalse(
             vehicle_lot.asset_id.document_centralized,
             "turning the fleet toggle off must hide the Documents button",
         )
 
-        self._set_kind_documents("resource.kind_vehicle", centralize=True)
+        self._set_kind_documents("base.kind_vehicle", centralize=True)
         self.assertTrue(
             vehicle_lot.asset_id.document_centralized,
             "turning it back on must show the button again",
@@ -417,7 +417,7 @@ class TestStockLotDocuments(TransactionCase):
         self.env["resource.kind.document"].create(
             {"kind_id": gauge.id, "company_id": self.company.id, "centralize": True}
         )
-        self._set_kind_documents("resource.kind_tool", centralize=False)
+        self._set_kind_documents("base.kind_tool", centralize=False)
         self.assertFalse(tool_lot.asset_id.document_centralized)
 
         tool_lot.asset_id.kind_id = gauge
@@ -435,10 +435,10 @@ class TestStockLotDocuments(TransactionCase):
             }
         )
         self.vehicle_product.asset_kind_id = self.env.ref(
-            "resource.kind_equipment"
+            "base.kind_equipment"
         )
         self.assertEqual(
-            vehicle_lot.asset_id.kind_id, self.env.ref("resource.kind_vehicle")
+            vehicle_lot.asset_id.kind_id, self.env.ref("base.kind_vehicle")
         )
 
     def test_count_document_follows_the_documents(self):
@@ -619,9 +619,9 @@ class TestStockLotDocuments(TransactionCase):
     def test_auto_created_document_is_readable_by_colleagues(self):
         owner = self._internal_user("asset_doc_owner")
         colleague = self._internal_user("asset_doc_colleague")
-        self._set_kind_documents("resource.kind_vehicle", centralize=True)
+        self._set_kind_documents("base.kind_vehicle", centralize=True)
         self._set_kind_documents(
-            "resource.kind_vehicle", folder=self.folder_fleet
+            "base.kind_vehicle", folder=self.folder_fleet
         )
 
         lot = self.product_trace.create(
@@ -657,9 +657,9 @@ class TestStockLotDocuments(TransactionCase):
 
     def test_auto_created_document_carries_the_asset_tags(self):
         owner = self._internal_user("asset_tag_owner")
-        self._set_kind_documents("resource.kind_vehicle", centralize=True)
+        self._set_kind_documents("base.kind_vehicle", centralize=True)
         self._set_kind_documents(
-            "resource.kind_vehicle", folder=self.folder_fleet
+            "base.kind_vehicle", folder=self.folder_fleet
         )
         fleet_tag = self.env.ref("asset_ledger_document.documents_tag_fleet_doc")
 

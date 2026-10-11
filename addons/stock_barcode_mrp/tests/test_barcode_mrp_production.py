@@ -804,10 +804,10 @@ class TestMRPBarcodeClientAction(TestBarcodeClientAction):
 
     def test_barcode_production_component_different_uom(self):
         self.env.user.write(
-            {"group_ids": [Command.link(self.env.ref("uom.group_uom").id)]}
+            {"group_ids": [Command.link(self.env.ref("base.group_uom").id)]}
         )
-        uom_kg = self.env.ref("uom.product_uom_kgm")
-        uom_gm = self.env.ref("uom.product_uom_gram")
+        uom_kg = self.env.ref("base.product_uom_kgm")
+        uom_gm = self.env.ref("base.product_uom_gram")
         self.component01.uom_id = uom_gm
         self.env["mrp.bom"].create(
             {

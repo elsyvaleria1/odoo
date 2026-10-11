@@ -184,7 +184,7 @@ class TestPurchaseStockReports(TestReportsCommon):
                     )
 
     def test_vendor_delay_report_with_uom(self):
-        uom_12 = self.env.ref("uom.product_uom_dozen")
+        uom_12 = self.env.ref("base.product_uom_dozen")
 
         po_form = Form(self.env["purchase.order"])
         po_form.partner_id = self.partner

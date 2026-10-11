@@ -219,8 +219,8 @@ class TestMoveChainEdgeCases(TransactionCase):
         )
 
     def test_availability_reads_one_quantity_in_the_products_unit(self):
-        dozens = self.env.ref("uom.product_uom_dozen")
-        units = self.env.ref("uom.product_uom_unit")
+        dozens = self.env.ref("base.product_uom_dozen")
+        units = self.env.ref("base.product_uom_unit")
         product = self._product(
             "coarse-uom",
             uom_id=dozens.id,

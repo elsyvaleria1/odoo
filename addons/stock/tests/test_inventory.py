@@ -15,7 +15,7 @@ class TestInventory(TransactionCase):
         cls.pack_location = cls.env.ref("stock.location_pack_zone")
         cls.pack_location.active = True
         cls.customer_location = cls.env.ref("stock.stock_location_customers")
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
         cls.product1 = cls.env["product.product"].create(
             {
                 "name": "Product A",

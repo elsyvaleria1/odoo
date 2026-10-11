@@ -136,7 +136,7 @@
     <record id="product_uom_form_view_inherit" model="ir.ui.view">
         <field name="name">product.uom.form.view.inherit</field>
         <field name="model">uom.uom</field>
-        <field name="inherit_id" ref="uom.view_uom_uom_form" />
+        <field name="inherit_id" ref="base.view_uom_uom_form" />
         <field name="arch" type="xml">
             <div name="relative_factor" position="after">
                 <field name="is_pos_groupable" groups="base.group_no_one" />

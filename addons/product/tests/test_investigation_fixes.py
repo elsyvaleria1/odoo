@@ -203,7 +203,7 @@ class TestPackagingCompanyConsistency(TransactionCase):
                 {"name": "Packaging Co B", "currency_id": currency.id},
             ],
         )
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
 
     def _product(self, company):
         return (

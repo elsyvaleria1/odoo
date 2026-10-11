@@ -63,7 +63,7 @@ class TestTimesheetHolidays(TestCommonTimesheet):
                 {
                     "name": "Time Off Type (worked time)",
                     "requires_allocation": False,
-                    "time_type_id": self.env.ref("resource.time_type_work").id,
+                    "time_type_id": self.env.ref("base.time_type_work").id,
                 }
             )
         )

@@ -598,11 +598,11 @@ class DeliveryCarrier(models.Model):
         original_weight_uom = (
             self.env["product.template"].sudo()._get_uom_from_setting("weight")
         )
-        target_weight_uom = self.env.ref("uom.product_uom_kgm")
+        target_weight_uom = self.env.ref("base.product_uom_kgm")
         original_length_uom = (
             self.env["product.template"].sudo()._get_uom_from_setting("length")
         )
-        target_length_uom = self.env.ref("uom.product_uom_meter")
+        target_length_uom = self.env.ref("base.product_uom_meter")
         if picking:
             # Will get the precise package information, with the packages set on the picking if any.
             # When used to rate the order, this will be accurate.

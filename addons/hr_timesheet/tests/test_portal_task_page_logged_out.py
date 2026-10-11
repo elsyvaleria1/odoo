@@ -28,12 +28,12 @@ class TestPortalTaskPageLoggedOut(HttpCase):
         public = self.env.ref("base.public_user")
         Line = self.env["account.analytic.line"].with_user(public)
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
-            "uom.product_uom_day"
+            "base.product_uom_day"
         )
         self.env.invalidate_all()
         self.assertTrue(Line._is_timesheet_encode_uom_day())
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
-            "uom.product_uom_hour"
+            "base.product_uom_hour"
         )
         self.env.invalidate_all()
         self.assertFalse(Line._is_timesheet_encode_uom_day())

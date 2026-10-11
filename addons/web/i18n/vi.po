@@ -7531,6 +7531,7 @@ msgstr "Mở ra"
 #: code:addons/web/static/src/views/fields/formatters.js:0
 #: code:addons/web/static/src/views/fields/many2one/many2one.js:0
 #: code:addons/web/static/src/views/fields/relational_utils.js:0
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
 msgid "Unnamed"
 msgstr "Chưa đặt tên"
 
@@ -27025,6 +27026,18 @@ msgstr "“vacancy”"
 #: code:addons/web/static/src/core/emoji_picker/emoji_data.js:0
 msgid "ココ"
 msgstr "ココ"
+
+#. odoo-javascript
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
+#: code:addons/web/static/src/fields/relational/many2x_uom_tags/many2x_uom_tags.js:0
+msgid "Product Field Name"
+msgstr "Tên trường sản phẩm"
+
+#. odoo-javascript
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
+#: code:addons/web/static/src/fields/relational/many2x_uom_tags/many2x_uom_tags.js:0
+msgid "Quantity Field Name"
+msgstr "Tên trường số lượng"
 
 #~ msgid "<span itemprop=\"name\">Deco Addict</span>"
 #~ msgstr "<span itemprop=\"name\">Deco Addict</span>"

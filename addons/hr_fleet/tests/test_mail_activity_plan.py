@@ -29,14 +29,14 @@ class TestActivitySchedule(ActivityScheduleHRCase):
             {
                 "name": "A3",
                 "type": "consu",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
         for employee in (cls.employee_1, cls.employee_2):
             cls.env["resource.resource"].create(
                 {
                     "name": f"Car of {employee.name}",
-                    "kind_id": cls.env.ref("resource.kind_vehicle").id,
+                    "kind_id": cls.env.ref("base.kind_vehicle").id,
                     "product_id": model.id,
                     "operator_employee_id": employee.id,
                     "manager_id": cls.user_manager.partner_id._get_or_create_resources(

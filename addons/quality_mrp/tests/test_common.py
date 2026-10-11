@@ -9,7 +9,7 @@ class TestQualityMrpCommon(TestQualityCommon):
             {"implied_ids": [(4, cls.env.ref("stock.group_production_lot").id)]}
         )
 
-        cls.product_uom_id = cls.env.ref("uom.product_uom_unit").id
+        cls.product_uom_id = cls.env.ref("base.product_uom_unit").id
         cls.product = cls.env["product.product"].create(
             {
                 "name": "Drawer",

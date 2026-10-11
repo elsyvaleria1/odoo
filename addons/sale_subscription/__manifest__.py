@@ -14,7 +14,6 @@
         "sale",
         "sale_team",
         "portal",
-        "resource",
         "web_cohort",
         "rating",
         "sms",

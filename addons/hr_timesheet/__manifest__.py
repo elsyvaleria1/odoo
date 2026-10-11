@@ -14,7 +14,6 @@
         "hr_hourly_cost",
         "analytic",
         "project",
-        "uom",
     ],
     "data": [
         "security/hr_timesheet_security.xml",

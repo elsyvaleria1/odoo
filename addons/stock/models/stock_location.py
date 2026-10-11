@@ -381,7 +381,7 @@ class StockLocation(models.Model):
             # writer bypassing the ORM's rounding (see the analogous epsilon
             # window in `_remove_zero_quants`).
             precision_digits = max(
-                6, self.env.ref("uom.decimal_product_uom").sudo().digits * 2
+                6, self.env.ref("base.decimal_product_uom").sudo().digits * 2
             )
             epsilon = 5 * 10 ** -(precision_digits + 1)
             domain &= Domain("quantity", ">", epsilon) | Domain(

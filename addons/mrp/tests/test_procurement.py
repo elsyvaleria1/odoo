@@ -1382,8 +1382,8 @@ class TestProcurement(TestMrpCommon):
         fifth larger than the BoM asked for, there are 34 of them instead of
         40, and they add up to 1020 kg against a demand of 1000.
         """
-        kg = self.env.ref("uom.product_uom_kgm")
-        ton = self.env.ref("uom.product_uom_ton")
+        kg = self.env.ref("base.product_uom_kgm")
+        ton = self.env.ref("base.product_uom_ton")
         product = self.env["product.product"].create(
             {"name": "Bulk", "is_storable": True, "uom_id": kg.id}
         )
@@ -1414,8 +1414,8 @@ class TestProcurement(TestMrpCommon):
 
     def test_an_unbatched_procurement_is_not_converted(self):
         """A gram of a kilogram-based product is a gram, not 0.01 kg (10 g)."""
-        kg = self.env.ref("uom.product_uom_kgm")
-        gram = self.env.ref("uom.product_uom_gram")
+        kg = self.env.ref("base.product_uom_kgm")
+        gram = self.env.ref("base.product_uom_gram")
         product = self.env["product.product"].create(
             {"name": "Rounded", "is_storable": True, "uom_id": kg.id}
         )

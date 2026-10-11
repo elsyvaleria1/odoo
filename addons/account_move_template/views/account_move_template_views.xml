@@ -223,7 +223,7 @@
                                     <field
                                         name="product_uom_id"
                                         optional="hide"
-                                        groups="uom.group_uom"
+                                        groups="base.group_uom"
                                         invisible="display_type != 'product' or parent.move_type == 'entry'" />
                                     <field
                                         name="price_unit"
@@ -293,7 +293,7 @@
                                                 <field name="quantity" />
                                                 <field
                                                     name="product_uom_id"
-                                                    groups="uom.group_uom" />
+                                                    groups="base.group_uom" />
                                                 <field name="price_unit" />
                                             </group>
                                             <group>

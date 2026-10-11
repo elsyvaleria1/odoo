@@ -138,7 +138,7 @@
                 <field
                     name="uom_id"
                     optional="show"
-                    groups="uom.group_uom"
+                    groups="base.group_uom"
                     readonly="1" />
                 <field name="active" column_invisible="True" />
                 <field
@@ -252,7 +252,7 @@
                             name="action_open_packaging_barcodes"
                             type="object"
                             icon="fa-barcode"
-                            groups="uom.group_uom"
+                            groups="base.group_uom"
                             invisible="not uom_ids"
                             class="oe_stat_button">
                             <div class="o_field_widget o_stat_info">
@@ -328,7 +328,7 @@
                                             widget="monetary"
                                             options="{'currency_field': 'currency_id', 'field_digits': True}"
                                             class="oe_inline" />
-                                        <span name="uom_span" groups="uom.group_uom" invisible="type == 'combo'"> per <field name="uom_id" widget="many2one_uom" options="{'no_quick_create': True}" class="oe_inline" style="max-width:136px" />
+                                        <span name="uom_span" groups="base.group_uom" invisible="type == 'combo'"> per <field name="uom_id" widget="many2one_uom" options="{'no_quick_create': True}" class="oe_inline" style="max-width:136px" />
                                         </span>
                                     </div>
                                     <label
@@ -343,7 +343,7 @@
                                             widget="monetary"
                                             options="{'currency_field': 'cost_currency_id', 'field_digits': True}"
                                             class="oe_inline" />
-                                        <span groups="uom.group_uom"> per <field name="uom_id" widget="many2one_uom" options="{'no_quick_create': True}" class="oe_inline" style="max-width:136px" />
+                                        <span groups="base.group_uom"> per <field name="uom_id" widget="many2one_uom" options="{'no_quick_create': True}" class="oe_inline" style="max-width:136px" />
                                         </span>
                                     </div>
                                     <field name="categ_id" string="Category" />
@@ -377,7 +377,7 @@
                                         force_save="1"
                                         context="{'product_id': product_variant_id if product_variant_count == 1 else False, 'product_ids': product_variant_ids, 'show_variant_name': product_variant_count &gt; 1}"
                                         options="{'no_quick_create': True, 'edit_tags': True}"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                 </group>
                                 <group name="extra_info" string="Extra Info">
                                     <field
@@ -438,7 +438,7 @@
                         <page
                             name="purchase"
                             string="Purchase"
-                            groups="uom.group_uom"
+                            groups="base.group_uom"
                             invisible="1 or not purchase_ok or type == 'combo'">
                             <group name="purchase">
                                 <group name="bill" string="Vendor Bills">
@@ -448,7 +448,7 @@
                         <page
                             name="inventory"
                             string="Inventory"
-                            groups="uom.group_uom"
+                            groups="base.group_uom"
                             invisible="type in ['service', 'combo']">
                             <group name="inventory">
                                 <group

@@ -10,7 +10,7 @@ from odoo.libs.datetime import timezone
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.numbers import float_round
 
-from odoo.addons.resource.models.utils import HOURS_PER_DAY, last_day_of
+from odoo.addons.base.models.resource_utils import HOURS_PER_DAY, last_day_of
 
 _FIRST_WORKING_INTERVAL_LOOKAHEAD_DAYS = (7, 30, 90, 180, 365, 730)
 

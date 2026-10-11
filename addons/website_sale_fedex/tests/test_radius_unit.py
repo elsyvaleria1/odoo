@@ -6,8 +6,8 @@ class TestFedexPickupRadiusUnit(TransactionCase):
         carrier = self.env["delivery.carrier"]
         records = carrier.new({"name": "One"}) | carrier.new({"name": "Two"})
         for value, xmlid in (
-            ("1", "uom.product_uom_mile"),
-            ("0", "uom.product_uom_km"),
+            ("1", "base.product_uom_mile"),
+            ("0", "base.product_uom_km"),
         ):
             with self.subTest(value=value):
                 self.env["ir.config_parameter"].set_param(

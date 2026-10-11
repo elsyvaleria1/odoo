@@ -12,9 +12,9 @@ class TestPurchaseToInvoiceCommon(AccountTestInvoicingCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.other_currency = cls.setup_other_currency("EUR")
-        cls.env.user.group_ids += cls.env.ref("uom.group_uom")
-        uom_unit = cls.env.ref("uom.product_uom_unit")
-        uom_hour = cls.env.ref("uom.product_uom_hour")
+        cls.env.user.group_ids += cls.env.ref("base.group_uom")
+        uom_unit = cls.env.ref("base.product_uom_unit")
+        uom_hour = cls.env.ref("base.product_uom_hour")
         cls.product_order = cls.env["product.product"].create(
             {
                 "name": "Zed+ Antivirus",
@@ -865,7 +865,7 @@ class TestPurchaseToInvoice(TestPurchaseToInvoiceCommon):
         )
 
     def test_supplier_discounted_price(self):
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         supplierinfo_common_vals = {
             "partner_id": self.partner_a.id,
             "product_id": self.product_order.id,
@@ -1184,7 +1184,7 @@ class TestInvoicePurchaseMatch(TestPurchaseToInvoiceCommon):
                 self.assertFalse(line.purchase_line_ids & po.line_ids)
 
     def test_subset_not_match_non_invoice_lines(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         product_order_zero_price = self.env["product.product"].create(
             {
                 "name": "A zero price product",
@@ -1436,7 +1436,7 @@ class TestInvoicePurchaseMatch(TestPurchaseToInvoiceCommon):
         bill_2.invoice_line_ids.write(
             {
                 "discount": 2.0,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
             }
         )
         bill_2.action_post()

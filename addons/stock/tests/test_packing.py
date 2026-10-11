@@ -1209,7 +1209,7 @@ class TestPacking(TestPackingCommon):
         self.env.user.write(
             {"group_ids": [(4, self.env.ref("stock.group_tracking_lot").id)]}
         )
-        pack_of_6 = self.env.ref("uom.product_uom_pack_6")
+        pack_of_6 = self.env.ref("base.product_uom_pack_6")
 
         package_01, package_02 = self.env["stock.package"].create(
             [
@@ -2897,7 +2897,7 @@ class TestPackagePropagation(TestPackingCommon):
         supplier_location = self.env.ref("stock.stock_location_suppliers")
         self.warehouse.in_type_id.set_package_type = False
         self.warehouse.reception_steps = "two_steps"
-        pack_of_6 = self.env.ref("uom.product_uom_pack_6")
+        pack_of_6 = self.env.ref("base.product_uom_pack_6")
         self.productA.uom_ids = [Command.link(pack_of_6.id)]
 
         receipt = self.env["stock.picking"].create(

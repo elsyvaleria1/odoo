@@ -8,7 +8,7 @@ from odoo.addons.sale_timesheet.tests.common import TestCommonSaleTimesheet
 class TestSaleTimesheetMargin(TestCommonSaleTimesheet):
     def setUp(self):
         super().setUp()
-        uom_day_id = self.ref("uom.product_uom_day")
+        uom_day_id = self.ref("base.product_uom_day")
         self.uom_day = self.env["uom.uom"].browse(uom_day_id)
         self.product_1 = self.env["product.product"].create(
             {
@@ -77,7 +77,7 @@ class TestSaleTimesheetMargin(TestCommonSaleTimesheet):
         )
         self.product_1.write(
             {
-                "uom_id": self.ref("uom.product_uom_unit"),
+                "uom_id": self.ref("base.product_uom_unit"),
                 "service_type": "timesheet",
                 "service_policy": "ordered_prepaid",
                 "service_tracking": "task_global_project",

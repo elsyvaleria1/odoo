@@ -11,7 +11,7 @@ class TestSaleTimesheetUi(HttpCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        uom_hour_id = cls.env.ref("uom.product_uom_hour").id
+        uom_hour_id = cls.env.ref("base.product_uom_hour").id
         cls.prepaid_service_product = cls.env["product.product"].create(
             {
                 "name": "Service Product (Prepaid Hours)",

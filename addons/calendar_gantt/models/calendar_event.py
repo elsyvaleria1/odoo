@@ -3,7 +3,7 @@ from odoo.libs.intervals import Intervals, invert_intervals
 from odoo.tools import float_compare
 from odoo.tools.date_utils import localized
 
-from odoo.addons.resource.models.utils import capacity_timeline
+from odoo.addons.base.models.resource_utils import capacity_timeline
 
 
 class CalendarEvent(models.Model):

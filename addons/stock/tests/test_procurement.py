@@ -186,7 +186,7 @@ class TestProcurementMoveValues(ProcurementCase):
                 Procurement(
                     self._product(f"Sourceless {index}"),
                     1.0,
-                    self.env.ref("uom.product_uom_unit"),
+                    self.env.ref("base.product_uom_unit"),
                     self.customer_location,
                     "audit",
                     "audit",

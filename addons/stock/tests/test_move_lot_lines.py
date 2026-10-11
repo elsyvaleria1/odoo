@@ -64,8 +64,8 @@ class TestMoveLotLineEdgeCases(TransactionCase):
         )
 
     def test_prefilled_serial_lines_count_units(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
-        units = self.env.ref("uom.product_uom_unit")
+        dozen = self.env.ref("base.product_uom_dozen")
+        units = self.env.ref("base.product_uom_unit")
         product = self._product(
             "sn-dozen",
             tracking="serial",
@@ -303,8 +303,8 @@ class TestMoveLotLineEdgeCases(TransactionCase):
         )
 
     def test_merging_cancelling_quantities_does_not_divide_by_zero(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
-        units = self.env.ref("uom.product_uom_unit")
+        dozen = self.env.ref("base.product_uom_dozen")
+        units = self.env.ref("base.product_uom_unit")
         product = self._product("merge-zero", uom_id=dozen.id, uom_ids=[(4, units.id)])
         picking = self.env["stock.picking"].create(
             {

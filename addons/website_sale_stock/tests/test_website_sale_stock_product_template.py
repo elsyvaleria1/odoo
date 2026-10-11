@@ -149,7 +149,7 @@ class TestWebsiteSaleStockProductTemplate(HttpCase, WebsiteSaleStockCommon):
                 ._get_additionnal_combination_info(
                     self.product_oos_order_not_allowed,
                     quantity=9,
-                    uom=self.env.ref("uom.product_uom_pack_6"),
+                    uom=self.env.ref("base.product_uom_pack_6"),
                     date=datetime(2000, 1, 1),
                     website=self.website,
                 )

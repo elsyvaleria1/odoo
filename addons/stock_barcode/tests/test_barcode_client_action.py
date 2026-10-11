@@ -62,8 +62,8 @@ class TestBarcodeClientAction(HttpCase):
         self.picking_type_out = self.warehouse.out_type_id
         self.picking_type_out.restrict_scan_source_location = "mandatory"
 
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
-        self.uom_dozen = self.env.ref("uom.product_uom_dozen")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
+        self.uom_dozen = self.env.ref("base.product_uom_dozen")
 
         # Two stockable products without tracking
         self.product1 = self.env["product.product"].create(
@@ -116,12 +116,12 @@ class TestBarcodeClientAction(HttpCase):
                 "is_storable": True,
                 "tracking": "lot",
                 "barcode": "76543210",  # (01)00000076543210 (GTIN-8 format)
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
         # Remove all access rights linked to stock application to "reset" Inventory settings.
-        group_uom_id = self.ref("uom.group_uom")
+        group_uom_id = self.ref("base.group_uom")
         self.env.ref("base.group_user").write(
             {
                 "implied_ids": [

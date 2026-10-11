@@ -27,7 +27,7 @@ class TestMaintenanceTransfer(TransactionCase):
                 "name": "Transfer probe machine",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource.kind_machinery").id,
+                "asset_kind_id": cls.env.ref("base.kind_machinery").id,
             }
         )
         cls.lot = cls._stocked_lot("TRANSFER-1")

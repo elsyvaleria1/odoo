@@ -18,8 +18,8 @@ class TestMoveSplitMergeEdgeCases(TransactionCase):
         cls.output = cls.wh.wh_output_stock_loc_id
         cls.supplier = cls.env.ref("stock.stock_location_suppliers")
         cls.customer = cls.env.ref("stock.stock_location_customers")
-        cls.unit = cls.env.ref("uom.product_uom_unit")
-        cls.dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.unit = cls.env.ref("base.product_uom_unit")
+        cls.dozen = cls.env.ref("base.product_uom_dozen")
         cls.Move = cls.env["stock.move"]
 
     def _product(self, name, qty=0.0, **kw):

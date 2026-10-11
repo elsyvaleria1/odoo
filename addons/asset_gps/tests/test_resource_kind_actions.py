@@ -23,7 +23,7 @@ class TestResourceKindGpsActions(TransactionCase):
                 "config_id": profile.id,
             }
         )
-        kind = cls.env.ref("resource.kind_vehicle")
+        kind = cls.env.ref("base.kind_vehicle")
         model = cls.env["product.product"].create(
             {"name": "Kind GPS Truck", "type": "consu", "asset_kind_id": kind.id}
         )

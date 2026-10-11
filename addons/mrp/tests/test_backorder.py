@@ -1409,7 +1409,7 @@ class TestMrpWorkorderBackorder(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
         cls.finished1 = cls.env["product.product"].create(
             {
                 "name": "finished1",

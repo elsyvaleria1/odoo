@@ -837,7 +837,7 @@ class TestARerateDoesNotRewriteHistory(TestStockCommon):
     missing dependency, and adding it is the defect."""
 
     def test_a_done_move_keeps_the_quantity_it_recorded(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         box = self.env["uom.uom"].create(
             {"name": "Rerate box", "relative_factor": 10, "relative_uom_id": unit.id}
         )
@@ -885,7 +885,7 @@ class TestARerateDoesNotRewriteHistory(TestStockCommon):
         )
 
     def test_the_guard_still_refuses_a_rerate_while_a_move_is_open(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         box = self.env["uom.uom"].create(
             {
                 "name": "Rerate open box",
@@ -910,7 +910,7 @@ class TestARerateDoesNotRewriteHistory(TestStockCommon):
             box.relative_factor = 20
 
     def test_the_guard_refuses_a_rerate_that_rescales_a_unit_in_stock(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         pack = self.env["uom.uom"].create(
             {"name": "Rerate pack", "relative_factor": 6, "relative_uom_id": unit.id}
         )
@@ -1099,7 +1099,7 @@ class TestANoOpWriteOfQuantityMovesNoStock(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.unit = cls.env.ref("uom.product_uom_unit")
+        cls.unit = cls.env.ref("base.product_uom_unit")
         # one unit is 0.125 of this, exactly representable in binary, so the
         # gap to the stored value is exactly half an ulp -- the one case
         # HALF-UP rounding sends away from zero
@@ -1199,7 +1199,7 @@ class TestApplyingACountLandsOnIt(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.warehouse = cls.env["stock.warehouse"].search([], limit=1)
-        cls.unit = cls.env.ref("uom.product_uom_unit")
+        cls.unit = cls.env.ref("base.product_uom_unit")
 
     def _count_and_apply(self, on_hand, counted, name):
         product = self.env["product.product"].create(
@@ -1265,7 +1265,7 @@ class TestSplittingAMoveCannotAlwaysConserve(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.unit = cls.env.ref("uom.product_uom_unit")
+        cls.unit = cls.env.ref("base.product_uom_unit")
         cls.dozen = cls.env["uom.uom"].create(
             {
                 "name": "Split dozen",
@@ -1343,7 +1343,7 @@ class TestReservationAgreesWithTheQuant(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.unit = cls.env.ref("uom.product_uom_unit")
+        cls.unit = cls.env.ref("base.product_uom_unit")
         cls.uoms = {"unit": cls.unit}
         for name, factor in (("dozen", 12), ("third", 3), ("seventh", 7)):
             cls.uoms[name] = cls.env["uom.uom"].create(

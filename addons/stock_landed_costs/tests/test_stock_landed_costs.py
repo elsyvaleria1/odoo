@@ -52,7 +52,7 @@ class TestStockLandedCosts(TestStockLandedCostsCommon):
                     {
                         "product_id": product_landed_cost_1.id,
                         "product_uom_qty": 15,
-                        "product_uom_id": self.ref("uom.product_uom_unit"),
+                        "product_uom_id": self.ref("base.product_uom_unit"),
                         "location_id": self.warehouse.lot_stock_id.id,
                         "location_dest_id": self.ref("stock.stock_location_customers"),
                     },
@@ -83,7 +83,7 @@ class TestStockLandedCosts(TestStockLandedCostsCommon):
                     {
                         "product_id": product_landed_cost_2.id,
                         "product_uom_qty": 10,
-                        "product_uom_id": self.ref("uom.product_uom_unit"),
+                        "product_uom_id": self.ref("base.product_uom_unit"),
                         "location_id": self.warehouse.lot_stock_id.id,
                         "location_dest_id": self.ref("stock.stock_location_customers"),
                     },

@@ -34,7 +34,7 @@ printf '== doc/architecture factcheck ==\n'
 # scenarios.md had been in the directory since 2026-08-07 and are in no list
 # here. Only the forward direction was rebuilt, and the forward direction is
 # the half that cannot notice.
-PAGES="ARCHITECTURE.md authentication-clients.md data.md deployment.md gates.md module.md qualities.md risks.md runtime.md scenarios.md"
+PAGES="ARCHITECTURE.md authentication-clients.md data.md deployment.md gates.md module.md qualities.md risks.md runtime.md scenarios.md uom.md"
 
 for f in $PAGES; do
     [ -f "$SCRIPT_DIR/$f" ] && ok || bad "$f is in this harness's list and not in doc/architecture/"

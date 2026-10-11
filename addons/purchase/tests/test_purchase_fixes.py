@@ -692,7 +692,7 @@ class TestTransferredQtyPostingGuard(AccountTestInvoicingCommon):
 
     def test_guard_still_raises_on_an_impossible_conversion(self):
         line = self._confirmed_po_with_received(10, 5).line_ids
-        hour = self.env.ref("uom.product_uom_hour")
+        hour = self.env.ref("base.product_uom_hour")
         with patch.object(
             type(line),
             "_prepare_qty_transferred",

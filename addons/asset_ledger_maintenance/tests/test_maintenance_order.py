@@ -24,7 +24,7 @@ class TestMaintenanceOrderAsset(TransactionCase):
                 "is_storable": True,
                 "tracking": "serial",
                 "maintenance_ok": True,
-                "asset_kind_id": cls.env.ref("resource.kind_machinery").id,
+                "asset_kind_id": cls.env.ref("base.kind_machinery").id,
             }
         )
         cls.lot = cls.env["product.trace"].create(

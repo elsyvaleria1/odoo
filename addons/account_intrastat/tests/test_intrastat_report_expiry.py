@@ -42,7 +42,7 @@ class IntrastatExpiryReportTest(TestAccountReportsCommon):
         cls.product_c = cls.env["product.product"].create(
             {
                 "name": "product_c",
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
                 "lst_price": 1000.0,
                 "standard_price": 800.0,
                 "property_account_income_id": cls.company_data[

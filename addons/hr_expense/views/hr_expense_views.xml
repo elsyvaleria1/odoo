@@ -359,7 +359,7 @@
                                     widget="many2one_uom"
                                     force_save="1"
                                     options="{'no_open': True, 'no_create': True}"
-                                    groups="uom.group_uom"
+                                    groups="base.group_uom"
                                     readonly="not is_editable"
                                     required="1" />
                             </div>

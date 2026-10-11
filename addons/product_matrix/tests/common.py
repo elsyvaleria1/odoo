@@ -31,7 +31,7 @@ class TestMatrixCommon(common.HttpCase):
             {
                 "name": "Matrix",
                 "type": "consu",
-                "uom_id": self.ref("uom.product_uom_unit"),
+                "uom_id": self.ref("base.product_uom_unit"),
                 "attribute_line_ids": [
                     (
                         0,

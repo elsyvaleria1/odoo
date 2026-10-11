@@ -121,7 +121,7 @@
                                                     <span t-field="move_operation.quantity">Quantity Done</span>
                                                     <span
                                                         t-field="move_operation.product_uom_id"
-                                                        groups="uom.group_uom" />
+                                                        groups="base.group_uom" />
                                                 </td>
                                                 <td>
                                                     <span t-out="move_operation.picking_id.display_name">Transfer Display Name</span>

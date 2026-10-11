@@ -8,7 +8,7 @@ class TestMultistepManufacturing(TestMrpCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.env.user.group_ids += cls.env.ref("uom.group_uom")
+        cls.env.user.group_ids += cls.env.ref("base.group_uom")
         cls.env.user.group_ids += cls.env.ref("stock.group_adv_location")
         cls._enable_variants()
 
@@ -20,7 +20,7 @@ class TestMultistepManufacturing(TestMrpCommon):
         cls.warehouse = warehouse_form.save()
         cls.warehouse.mto_pull_id.route_id.rule_ids.procure_method = "make_to_order"
 
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
 
         product_form = Form(cls.env["product.product"])
         product_form.name = "Stick"

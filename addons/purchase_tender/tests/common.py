@@ -6,7 +6,7 @@ class TestPurchaseTenderCommon(common.TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.env.user.group_ids += cls.env.ref("uom.group_uom")
+        cls.env.user.group_ids += cls.env.ref("base.group_uom")
 
         user_group_purchase_manager = cls.env.ref("purchase.group_purchase_manager")
         user_group_purchase_user = cls.env.ref("purchase.group_purchase_user")
@@ -33,7 +33,7 @@ class TestPurchaseTenderCommon(common.TransactionCase):
             }
         )
 
-        cls.product_uom_id = cls.env.ref("uom.product_uom_unit")
+        cls.product_uom_id = cls.env.ref("base.product_uom_unit")
 
         cls.product_09 = cls.env["product.product"].create(
             {

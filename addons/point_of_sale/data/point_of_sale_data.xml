@@ -19,13 +19,13 @@
             <field name="available_in_pos">False</field>
             <field name="taxes_id" eval="[Command.clear()]" />
         </record>
-        <record id="uom.product_uom_unit" model="uom.uom">
+        <record id="base.product_uom_unit" model="uom.uom">
             <field name="is_pos_groupable">True</field>
         </record>
-        <record id="uom.product_uom_pack_6" model="uom.uom" forcecreate="0">
+        <record id="base.product_uom_pack_6" model="uom.uom" forcecreate="0">
             <field name="is_pos_groupable">True</field>
         </record>
-        <record id="uom.product_uom_dozen" model="uom.uom" forcecreate="0">
+        <record id="base.product_uom_dozen" model="uom.uom" forcecreate="0">
             <field name="is_pos_groupable">True</field>
         </record>
         <record id="0_05" model="pos.bill" forcecreate="0">

@@ -12,7 +12,7 @@
             <field name="weight">2</field>
             <field name="default_code">D_0045</field>
             <field name="tracking">serial</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description_sale">Small wooden stool</field>
             <field name="sale_delay">1</field>
             <field
@@ -67,7 +67,7 @@
             <field name="is_storable" eval="True" />
             <field name="weight">2</field>
             <field name="sale_ok" eval="False" />
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description_sale">wooden stool foot</field>
             <field
                 name="image_1920"
@@ -134,7 +134,7 @@
             <field name="is_storable" eval="True" />
             <field name="weight">2</field>
             <field name="sale_ok" eval="False" />
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="description_sale">wooden stool top</field>
             <field
                 name="image_1920"
@@ -263,7 +263,7 @@
         </function>
         <record id="mrp_bom_stool" model="mrp.bom" forcecreate="0">
             <field name="product_tmpl_id" ref="product_template_stool" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">3</field>
             <field name="consumption">flexible</field>
             <field name="produce_delay">1</field>
@@ -281,7 +281,7 @@
         <record id="mrp_bom_stool_line_1" model="mrp.bom.line" forcecreate="0">
             <field name="product_id" ref="product_product_stool_top_1" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field
                 name="bom_product_template_attribute_value_ids"
@@ -291,7 +291,7 @@
         <record id="mrp_bom_stool_line_2" model="mrp.bom.line" forcecreate="0">
             <field name="product_id" ref="product_product_stool_top_2" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field
                 name="bom_product_template_attribute_value_ids"
@@ -301,7 +301,7 @@
         <record id="mrp_bom_stool_line_3" model="mrp.bom.line" forcecreate="0">
             <field name="product_id" ref="product_product_stool_top_3" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field
                 name="bom_product_template_attribute_value_ids"
@@ -311,7 +311,7 @@
         <record id="mrp_bom_stool_line_4" model="mrp.bom.line" forcecreate="0">
             <field name="product_id" ref="product_product_stool_foot_1" />
             <field name="product_qty">4</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field
                 name="bom_product_template_attribute_value_ids"
@@ -321,7 +321,7 @@
         <record id="mrp_bom_stool_line_5" model="mrp.bom.line" forcecreate="0">
             <field name="product_id" ref="product_product_stool_foot_2" />
             <field name="product_qty">4</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field
                 name="bom_product_template_attribute_value_ids"
@@ -331,7 +331,7 @@
         <record id="mrp_bom_stool_line_6" model="mrp.bom.line" forcecreate="0">
             <field name="product_id" ref="product_product_stool_foot_3" />
             <field name="product_qty">4</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="sequence">1</field>
             <field
                 name="bom_product_template_attribute_value_ids"

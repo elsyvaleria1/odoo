@@ -98,8 +98,8 @@ class TestMrpAuditFixes(TestMrpCommon):
         )
 
     def test_bom_producible_qty_sums_mixed_uom_component_lines(self):
-        unit = self.env.ref("uom.product_uom_unit")
-        dozen = self.env.ref("uom.product_uom_dozen")
+        unit = self.env.ref("base.product_uom_unit")
+        dozen = self.env.ref("base.product_uom_dozen")
         component = self.env["product.product"].create(
             {"name": "Mixed-UoM Component", "is_storable": True, "uom_id": unit.id}
         )
@@ -153,7 +153,7 @@ class TestMrpAuditFixes(TestMrpCommon):
         )
 
     def test_bom_create_syncs_product_uom_id(self):
-        square_meter = self.env.ref("uom.product_uom_square_meter")
+        square_meter = self.env.ref("base.product_uom_square_meter")
         template = self.env["product.template"].create(
             {"name": "Audit m2 product", "uom_id": square_meter.id}
         )
@@ -244,8 +244,8 @@ class TestMrpAuditFixes(TestMrpCommon):
             bom_a._explode(prod_a, 1.0)
 
     def test_bom_rejects_product_uom_of_another_category(self):
-        kgm = self.env.ref("uom.product_uom_kgm")
-        unit = self.env.ref("uom.product_uom_unit")
+        kgm = self.env.ref("base.product_uom_kgm")
+        unit = self.env.ref("base.product_uom_unit")
         template = self.env["product.template"].create(
             {"name": "Audit uom-category product", "uom_id": unit.id}
         )
@@ -259,8 +259,8 @@ class TestMrpAuditFixes(TestMrpCommon):
             )
 
     def test_bom_accepts_convertible_product_uom(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
-        unit = self.env.ref("uom.product_uom_unit")
+        dozen = self.env.ref("base.product_uom_dozen")
+        unit = self.env.ref("base.product_uom_unit")
         template = self.env["product.template"].create(
             {"name": "Audit dozen product", "uom_id": unit.id}
         )
@@ -274,8 +274,8 @@ class TestMrpAuditFixes(TestMrpCommon):
         self.assertEqual(bom.product_uom_id, dozen)
 
     def test_bom_line_rejects_product_uom_of_another_category(self):
-        kgm = self.env.ref("uom.product_uom_kgm")
-        unit = self.env.ref("uom.product_uom_unit")
+        kgm = self.env.ref("base.product_uom_kgm")
+        unit = self.env.ref("base.product_uom_unit")
         template = self.env["product.template"].create(
             {"name": "Audit line parent", "uom_id": unit.id}
         )
@@ -300,8 +300,8 @@ class TestMrpAuditFixes(TestMrpCommon):
             )
 
     def test_byproduct_rejects_product_uom_of_another_category(self):
-        kgm = self.env.ref("uom.product_uom_kgm")
-        unit = self.env.ref("uom.product_uom_unit")
+        kgm = self.env.ref("base.product_uom_kgm")
+        unit = self.env.ref("base.product_uom_unit")
         template = self.env["product.template"].create(
             {"name": "Audit byproduct parent", "uom_id": unit.id}
         )
@@ -326,7 +326,7 @@ class TestMrpAuditFixes(TestMrpCommon):
             )
 
     def _audit_mo_with_two_workorders(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         finished = self.env["product.product"].create(
             {"name": "Audit WO finished", "is_storable": True}
         )
@@ -415,7 +415,7 @@ class TestMrpAuditFixes(TestMrpCommon):
         self.assertEqual(vals, snapshot)
 
     def _audit_two_productions(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         finished = self.env["product.product"].create(
             {"name": "Audit MO finished", "is_storable": True}
         )
@@ -500,7 +500,7 @@ class TestMrpAuditFixes(TestMrpCommon):
         self.assertEqual(productions._prepare_actions_autoprint_generated_lots(), [])
 
     def test_bom_counts_are_deduplicated(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         finished = self.env["product.product"].create(
             {"name": "Count finished", "is_storable": True}
         )
@@ -766,7 +766,7 @@ class TestMrpAuditFixes(TestMrpCommon):
                 {"name": "Variant counts component", "is_storable": True},
             ]
         )
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         self.env["mrp.bom"].create(
             [
                 {
@@ -1356,7 +1356,7 @@ class TestMrpAuditFixes(TestMrpCommon):
         )
 
     def _audit_cancel_fixture(self, consumption="flexible", with_byproduct=False):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         finished = self.env["product.product"].create(
             {"name": "Audit cancel finished", "is_storable": True}
         )
@@ -1449,7 +1449,7 @@ class TestMrpAuditFixes(TestMrpCommon):
         )
 
     def _audit_one_production(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         finished = self.env["product.product"].create(
             {"name": "Audit depends finished", "is_storable": True}
         )
@@ -1541,7 +1541,7 @@ class TestMrpAuditFixes(TestMrpCommon):
         )
 
     def _audit_availability_population(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         location = self.env["stock.warehouse"].search([], limit=1).lot_stock_id
         start = datetime(2026, 9, 15, 8, 0, 0)
         made = {}
@@ -1665,7 +1665,7 @@ class TestMrpAuditFixes(TestMrpCommon):
             self.assertIn(made[tag], candidates)
 
     def _audit_byproduct_fixture(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         finished = self.env["product.product"].create(
             {"name": "Audit byp finished", "is_storable": True}
         )
@@ -1832,7 +1832,7 @@ class TestMrpAuditFixes(TestMrpCommon):
         self.assertEqual(confirmed.product_id, original)
 
     def test_every_path_agrees_on_the_orders_production_location(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         company = self.env.company
         finished_location = self.env["stock.location"].create(
             {"name": "Audit prod FIN", "usage": "production", "company_id": company.id}
@@ -1896,7 +1896,7 @@ class TestMrpAuditFixes(TestMrpCommon):
         )
 
     def _audit_confirmed_orders(self, count, tag):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         location = self.env["stock.warehouse"].search([], limit=1).lot_stock_id
         components = self.env["product.product"].create(
             [
@@ -2007,7 +2007,7 @@ class TestMrpAuditFixes(TestMrpCommon):
             )
 
     def _audit_serial_byproduct_order(self, line_count, tag):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         location = self.env["stock.warehouse"].search([], limit=1).lot_stock_id
         component = self.env["product.product"].create(
             {"name": "Audit sn %s c" % tag, "is_storable": True}

@@ -6,7 +6,7 @@ ir_rule_res_partner_bank_partner_manager,HR: contact creation does not reach emp
 res_partner_identifier_rule_hr_user,res.partner.identifier: HR officers read their companies' employees' identifiers,base.model_res_partner_identifier,group_hr_user,permission,r,company,employee_company,"[('partner_id.employee_ids', '!=', False)]"
 access_hr_employee_user,hr.employee user,model_hr_employee,group_hr_user,permission,cud,,,
 access_hr_employee_internal_user,hr.employee internal user,model_hr_employee,base.group_user,permission,r,,,
-access_hr_employee_resource_user,resource.resource.user,resource.model_resource_resource,group_hr_user,permission,cud,,,
+access_hr_employee_resource_user,resource.resource.user,base.model_resource_resource,group_hr_user,permission,cud,,,
 access_hr_department_user,hr.department.user,model_hr_department,group_hr_user,permission,cud,,,
 access_hr_department_employee,hr.department.employee,model_hr_department,base.group_user,permission,r,,,
 access_hr_job_user,hr.job user,model_hr_job,group_hr_user,permission,cud,,,
@@ -25,8 +25,8 @@ access_hr_version_internal_user,hr.version internal user,model_hr_version,base.g
 mail_plan_rule_group_hr_manager,Manager can edit employee plan,mail.model_mail_activity_plan,group_hr_manager,permission,cud,all,,"[('res_model', '=', 'hr.employee')]"
 mail_plan_templates_rule_group_hr_manager,Manager can edit employee plan template,mail.model_mail_activity_plan_template,group_hr_manager,permission,cud,all,,"[('plan_id.res_model', '=', 'hr.employee')]"
 access_hr_payroll_structure_type_hr_contract_manager,hr.payroll.structure.type.contract.manager,model_hr_payroll_structure_type,group_hr_manager,permission,crud,,,
-access_hr_resource_calendar_user,hr.employee.resource.calendar.user,resource.model_resource_calendar,group_hr_user,permission,cud,,,
-access_hr_resource_calendar_attendance_user,hr.employee.resource.calendar.attendance.user,resource.model_resource_calendar_attendance,group_hr_user,permission,cud,,,
+access_hr_resource_calendar_user,hr.employee.resource.calendar.user,base.model_resource_calendar,group_hr_user,permission,cud,,,
+access_hr_resource_calendar_attendance_user,hr.employee.resource.calendar.attendance.user,base.model_resource_calendar_attendance,group_hr_user,permission,cud,,,
 access_res_partner_tag_hr_user,res.partner.tag hr user,base.model_res_partner_tag,group_hr_user,permission,cud,,,
 hr_employee_change_request_own_rule,A change request is its subject's,model_hr_employee_change_request,base.group_user,permission,cru,own,employee,
 hr_employee_change_request_hr_rule,An HR user reviews every change request,model_hr_employee_change_request,group_hr_user,permission,crud,,,
@@ -46,4 +46,4 @@ access_res_partner_apply_change,res.partner: an approved change request writes i
 access_hr_version_apply_change,hr.version: an approved change request writes through its employee's version,model_hr_version,privilege_apply_employee_change,permission,u,own,employee,
 hr_employee_change_request_comp_rule,Employee change request multi-company,model_hr_employee_change_request,base.group_everyone,guard,crud,company,,
 hr_work_location_comp_rule,Work location multi-company,model_hr_work_location,base.group_everyone,guard,crud,company,,
-access_resource_nationality_officer,resource.nationality: HR officers manage the nationalities of their companies' employees,resource.model_resource_nationality,group_hr_user,permission,crud,company,employee_company,"[('partner_id', '!=', False)]"
+access_resource_nationality_officer,resource.nationality: HR officers manage the nationalities of their companies' employees,base.model_resource_nationality,group_hr_user,permission,crud,company,employee_company,"[('partner_id', '!=', False)]"

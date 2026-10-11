@@ -12,7 +12,7 @@ from odoo.addons.stock_landed_costs.tests.common import TestStockLandedCostsComm
 class TestStockLandedCostsRounding(TestStockLandedCostsCommon):
     def test_stock_landed_costs_rounding(self):
 
-        product_uom_unit_round_1 = self.env.ref("uom.product_uom_unit")
+        product_uom_unit_round_1 = self.env.ref("base.product_uom_unit")
         product_uom_unit_round_1.write(
             {
                 "name": "Undivisible Units",
@@ -88,7 +88,7 @@ class TestStockLandedCostsRounding(TestStockLandedCostsCommon):
                     {
                         "product_id": product_landed_cost_4.id,
                         "product_uom_qty": 1,
-                        "product_uom_id": self.ref("uom.product_uom_dozen"),
+                        "product_uom_id": self.ref("base.product_uom_dozen"),
                         "location_id": self.ref("stock.stock_location_customers"),
                         "location_dest_id": self.warehouse.lot_stock_id.id,
                         "price_unit": 17.00 / 12.00,

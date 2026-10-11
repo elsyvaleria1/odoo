@@ -143,7 +143,7 @@
         <field name="list_price">150.0</field>
         <field name="invoice_policy">ordered</field>
         <field name="standard_price">100.0</field>
-        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="uom_id" ref="base.product_uom_unit" />
         <field name="company_id" eval="[]" />
         <field
             name="image_1920"
@@ -158,7 +158,7 @@
         <field name="categ_id" ref="product.product_category_office" />
         <field name="list_price">12.0</field>
         <field name="weight">0.01</field>
-        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="uom_id" ref="base.product_uom_unit" />
         <field
             name="description_sale">Office chairs can harm your floor: protect it</field>
         <field

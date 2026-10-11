@@ -12,10 +12,10 @@ class TestSaleMrpKitQuantity(BaseCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_unit = cls.quick_ref("uom.product_uom_unit")
-        cls.uom_dozen = cls.quick_ref("uom.product_uom_dozen")
-        cls.uom_gram = cls.quick_ref("uom.product_uom_gram")
-        cls.uom_kg = cls.quick_ref("uom.product_uom_kgm")
+        cls.uom_unit = cls.quick_ref("base.product_uom_unit")
+        cls.uom_dozen = cls.quick_ref("base.product_uom_dozen")
+        cls.uom_gram = cls.quick_ref("base.product_uom_gram")
+        cls.uom_kg = cls.quick_ref("base.product_uom_kgm")
         cls.categ = cls.env["product.category"].create(
             {
                 "name": "Kit quantity",

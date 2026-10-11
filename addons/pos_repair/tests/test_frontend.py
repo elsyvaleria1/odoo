@@ -13,7 +13,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         self.repair1 = self.env["repair.order"].create(
             {
                 "product_id": self.product_1.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "picking_type_id": self.stock_warehouse.repair_type_id.id,
                 "move_ids": [
                     (

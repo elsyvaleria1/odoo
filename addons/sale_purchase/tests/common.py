@@ -8,8 +8,8 @@ class TestSalePurchaseCommon(TestSaleCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        uom_unit = cls.env.ref("uom.product_uom_unit")
-        uom_dozen = cls.env.ref("uom.product_uom_dozen")
+        uom_unit = cls.env.ref("base.product_uom_unit")
+        uom_dozen = cls.env.ref("base.product_uom_dozen")
 
         cls.product_category_purchase = cls.env["product.category"].create(
             {

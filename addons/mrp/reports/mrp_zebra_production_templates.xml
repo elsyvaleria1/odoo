@@ -3,7 +3,7 @@
 
     <data>
         <template id="label_production_view">
-            <t t-set="uom_unit" t-value="env.ref('uom.product_uom_unit')" />
+            <t t-set="uom_unit" t-value="env.ref('base.product_uom_unit')" />
             <t t-foreach="docs" t-as="production">
                 <t t-foreach="production.move_finished_ids" t-as="move">
                     <t t-foreach="move.move_line_ids" t-as="move_line">

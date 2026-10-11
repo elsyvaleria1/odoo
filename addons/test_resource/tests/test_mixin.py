@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime
 from odoo.exceptions import ValidationError
 from odoo.tools import mute_logger
 
-from odoo.addons.resource.tests.common import ResourceCase
+from odoo.addons.base.tests.common import ResourceCase
 from odoo.addons.test_resource.tests.common import TestResourceCommon
 
 

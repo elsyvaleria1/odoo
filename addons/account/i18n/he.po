@@ -27935,10 +27935,10 @@ msgstr ""
 
 #~ msgid ""
 #~ "<span>1.00</span>\n"
-#~ "                                                        <span groups=\"uom.group_uom\">Units</span>"
+#~ "                                                        <span groups=\"base.group_uom\">Units</span>"
 #~ msgstr ""
 #~ "<span>1.00</span>\n"
-#~ "                                                        <span groups=\"uom.group_uom\">יחידות</span>"
+#~ "                                                        <span groups=\"base.group_uom\">יחידות</span>"
 
 #~ msgid ""
 #~ "<span>This entry has been generated through the Invoicing app, before "

@@ -473,19 +473,21 @@ class TestSalePurchaseStockFlow(TransactionCase):
                 "name": "Fuzzy Drink",
                 "is_storable": True,
                 "route_ids": [Command.set((self.mto_route + self.buy_route).ids)],
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "seller_ids": [
                     Command.create(
                         {
                             "partner_id": self.vendor.id,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "price": 1,
                         }
                     ),
                     Command.create(
                         {
                             "partner_id": self.vendor.id,
-                            "product_uom_id": self.env.ref("uom.product_uom_pack_6").id,
+                            "product_uom_id": self.env.ref(
+                                "base.product_uom_pack_6"
+                            ).id,
                             "min_qty": 2,
                             "price": 5,
                         }
@@ -502,7 +504,7 @@ class TestSalePurchaseStockFlow(TransactionCase):
                             "name": fuzzy_drink.name,
                             "product_id": fuzzy_drink.id,
                             "product_qty": 10,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         }
                     )
                 ],
@@ -511,7 +513,7 @@ class TestSalePurchaseStockFlow(TransactionCase):
         so.action_confirm()
         po = so._get_purchase_orders()
         self.assertEqual(
-            po.line_ids.product_uom_id, self.env.ref("uom.product_uom_unit")
+            po.line_ids.product_uom_id, self.env.ref("base.product_uom_unit")
         )
         self.assertEqual(po.line_ids.product_qty, 10)
         self.assertEqual(po.line_ids.price_unit, 1)
@@ -525,7 +527,7 @@ class TestSalePurchaseStockFlow(TransactionCase):
                             "name": fuzzy_drink.name,
                             "product_id": fuzzy_drink.id,
                             "product_qty": 15,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         }
                     )
                 ]
@@ -534,7 +536,7 @@ class TestSalePurchaseStockFlow(TransactionCase):
         so.action_confirm()
         po = so._get_purchase_orders()
         self.assertEqual(
-            po.line_ids.product_uom_id, self.env.ref("uom.product_uom_pack_6")
+            po.line_ids.product_uom_id, self.env.ref("base.product_uom_pack_6")
         )
         self.assertEqual(po.line_ids.product_qty, 2.5)
         self.assertEqual(po.line_ids.price_unit, 5)

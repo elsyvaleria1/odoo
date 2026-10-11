@@ -53,7 +53,7 @@
                             <div class="content-group" invisible="not group_uom">
                                 <div class="mt8">
                                     <button
-                                        name="%(uom.action_uom_uom)d"
+                                        name="%(base.action_uom_uom)d"
                                         type="action"
                                         string="Units &amp; Packagings"
                                         icon="oi-arrow-right"

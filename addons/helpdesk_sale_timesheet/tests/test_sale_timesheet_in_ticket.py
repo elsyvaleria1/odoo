@@ -205,7 +205,7 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
             {
                 "name": "50(hours)",
                 "relative_factor": 6.25,
-                "relative_uom_id": self.env.ref("uom.product_uom_day").id,
+                "relative_uom_id": self.env.ref("base.product_uom_day").id,
             }
         )
 

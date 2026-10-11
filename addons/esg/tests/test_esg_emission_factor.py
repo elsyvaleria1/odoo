@@ -36,7 +36,7 @@ class TestEsgEmissionFactor(TestEsgCommon):
         )
         self.assertEqual(
             self.emission_factor_computers_production.uom_id,
-            self.env.ref("uom.product_uom_unit"),
+            self.env.ref("base.product_uom_unit"),
         )
         # Let's change the compute method to monetary
         self.emission_factor_computers_production.compute_method = "monetary"

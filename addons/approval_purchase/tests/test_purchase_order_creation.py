@@ -419,9 +419,9 @@ class TestPurchaseOrderCreationVendorUom(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
-        cls.uom_kgm = cls.env.ref("uom.product_uom_kgm")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_dozen = cls.env.ref("base.product_uom_dozen")
+        cls.uom_kgm = cls.env.ref("base.product_uom_kgm")
 
         cls.vendor = cls.env["res.partner"].create(
             {"name": "Uom Vendor", "supplier_rank": 1},

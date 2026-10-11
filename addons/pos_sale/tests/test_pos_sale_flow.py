@@ -36,7 +36,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                 "name": "Chicken",
                 "is_storable": True,
                 "available_in_pos": True,
-                "uom_id": self.env.ref("uom.product_uom_gram").id,
+                "uom_id": self.env.ref("base.product_uom_gram").id,
                 "lst_price": 10.0,
             }
         )
@@ -1160,7 +1160,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                 "available_in_pos": True,
                 "taxes_id": False,
                 "lst_price": 10.0,
-                "uom_id": self.env.ref("uom.product_uom_kgm").id,
+                "uom_id": self.env.ref("base.product_uom_kgm").id,
             }
         )
 
@@ -1181,7 +1181,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                                 "name": self.component_kg.name,
                                 "product_qty": 500,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_gram"
+                                    "base.product_uom_gram"
                                 ).id,
                                 "price_unit": 0.01,
                             },
@@ -2683,7 +2683,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                                 "name": product_a.name,
                                 "product_qty": 1,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_dozen"
+                                    "base.product_uom_dozen"
                                 ).id,
                                 "price_unit": product_a.lst_price,
                             }

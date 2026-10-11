@@ -833,7 +833,7 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             {
                 "tz": "Europe/Brussels",
                 "resource_calendar_id": self.env["ir.model.data"]._xmlid_to_res_id(
-                    "resource.resource_calendar_std"
+                    "base.resource_calendar_std"
                 ),
             }
         )

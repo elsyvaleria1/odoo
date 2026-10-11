@@ -12,7 +12,7 @@ class TestAssetCustody(TransactionCase):
         cls.employee = cls.env["hr.employee"].create({"name": "Custodian"})
         cls.department = cls.env["hr.department"].create({"name": "Workshop"})
         cls.laptop = cls.env["resource.resource"].create(
-            {"name": "Laptop", "kind_id": cls.env.ref("resource.kind_it").id}
+            {"name": "Laptop", "kind_id": cls.env.ref("base.kind_it").id}
         )
 
     def _assign(self, **vals):
@@ -64,7 +64,7 @@ class TestEmployeeCustody(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.employee = cls.env["hr.employee"].create({"name": "Holder"})
-        cls.kind = cls.env.ref("resource.kind_tool")
+        cls.kind = cls.env.ref("base.kind_tool")
 
     def test_naming_the_operator_by_employee_writes_the_assignment(self):
         asset = self.env["resource.resource"].create(

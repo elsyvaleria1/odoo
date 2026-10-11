@@ -106,7 +106,7 @@ class StockPicking(models.Model):
             | products.uom_ids
         )
         # If UoM setting is active, fetch all UoM's data.
-        if self.env.user.has_group("uom.group_uom"):
+        if self.env.user.has_group("base.group_uom"):
             uoms |= self.env["uom.uom"].search([])
 
         product_uoms = products.product_uom_ids
@@ -281,7 +281,7 @@ class StockPicking(models.Model):
         ]
         is_lot_enabled = self.env.user.has_group("stock.group_production_lot")
         is_pack_enabled = self.env.user.has_group("stock.group_tracking_lot")
-        is_uom_enabled = self.env.user.has_group("uom.group_uom")
+        is_uom_enabled = self.env.user.has_group("base.group_uom")
 
         picking_nums = 0
         # `action_view_new_picking` ("New" on the filtered kanban) requires `active_model`.

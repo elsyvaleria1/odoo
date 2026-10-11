@@ -38,7 +38,7 @@ class TestRoomBooking(RoomCommon):
         asset = self.env["resource.resource"].create(
             {
                 "name": "Parcel",
-                "kind_id": self.env.ref("resource.kind_property").id,
+                "kind_id": self.env.ref("base.kind_property").id,
                 "state": "in_service",
             }
         )

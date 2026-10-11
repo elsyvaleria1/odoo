@@ -67,7 +67,7 @@
             <field name="standard_price">30</field>
             <field name="list_price">45</field>
             <field name="type">service</field>
-            <field name="uom_id" ref="uom.product_uom_hour" />
+            <field name="uom_id" ref="base.product_uom_hour" />
             <field name="categ_id" ref="product.product_category_services" />
             <field name="service_tracking">project_only</field>
             <field

@@ -652,7 +652,7 @@ class TestUnbuildAndWizards(TestMrpCommon):
         self.assertLess((counts[1] - counts[0]) / 9, 2, counts)
 
     def _dozen_stocked_order(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         component, other, finished = self.env["product.product"].create(
             [
                 {"name": "Dozen-stocked part", "is_storable": True, "uom_id": dozen.id},

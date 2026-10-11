@@ -52,7 +52,7 @@
                                         </t>
                                         <span
                                             t-field="line.product_uom_id"
-                                            groups="uom.group_uom">
+                                            groups="base.group_uom">
                                             Units</span>
                                     </td>
                                 </tr>

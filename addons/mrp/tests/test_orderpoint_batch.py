@@ -18,7 +18,7 @@ class TestMrpOrderpointBatch(TransactionCase):
         cls.component = cls.env["product.product"].create(
             {"name": "Batch component", "is_storable": True}
         )
-        cls.dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.dozen = cls.env.ref("base.product_uom_dozen")
 
     def make_products(self, count, with_bom):
         products = self.env["product.product"].create(

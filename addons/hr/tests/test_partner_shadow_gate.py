@@ -113,9 +113,12 @@ class TestPartnerShadowGate(TransactionCase):
         for name in set(employee) & set(partner):
             if name in MAGIC:
                 continue
-            shared = set(employee[name]._modules or ()) & set(
-                partner[name]._modules or ()
-            )
+            # base sits under every model, and since resource moved into it
+            # declares the resource fields an employee shadows: sharing it
+            # proves no shared declaration
+            shared = (
+                set(employee[name]._modules or ()) & set(partner[name]._modules or ())
+            ) - {"base"}
             if shared:
                 # One module declares both sides. Either both models inherit
                 # the same mixin -- an employee's chatter is not the contact's

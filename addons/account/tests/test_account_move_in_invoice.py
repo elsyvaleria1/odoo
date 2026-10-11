@@ -134,7 +134,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
             "amount_tax": 168.0,
             "amount_total": 1128.0,
         }
-        cls.env.user.group_ids += cls.env.ref("uom.group_uom")
+        cls.env.user.group_ids += cls.env.ref("base.group_uom")
 
     @classmethod
     def setup_armageddon_tax(cls, tax_name, company_data, **kwargs):
@@ -272,7 +272,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         product = self.env["product.product"].create(
             {
                 "name": "product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "standard_price": 110.0,
                 "supplier_taxes_id": [(6, 0, tax_price_include.ids)],
             }
@@ -338,7 +338,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
             },
         )
 
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         with Form(invoice) as move_form:
             with move_form.invoice_line_ids.edit(0) as line_form:
                 line_form.product_uom_id = uom_dozen
@@ -427,7 +427,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         product = self.env["product.product"].create(
             {
                 "name": "product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "standard_price": 110.0,
                 "supplier_taxes_id": [(6, 0, tax_price_include_1.ids)],
             }
@@ -493,7 +493,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
             },
         )
 
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         with Form(invoice) as move_form:
             with move_form.invoice_line_ids.edit(0) as line_form:
                 line_form.product_uom_id = uom_dozen
@@ -3320,12 +3320,12 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         self.assertEqual(payment_term_line.name, "temp")
 
     def test_taxes_onchange_product_uom_and_price_unit(self):
-        self.env.user.group_ids -= self.env.ref("uom.group_uom")
+        self.env.user.group_ids -= self.env.ref("base.group_uom")
         tax = self.company_data["default_tax_purchase"]
         product = self.env["product.product"].create(
             {
                 "name": "product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "standard_price": 0.0,
                 "supplier_taxes_id": [Command.set(tax.ids)],
             }
@@ -3491,8 +3491,8 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         )
 
     def test_purchase_uom_on_vendor_bills(self):
-        uom_gram = self.env.ref("uom.product_uom_gram")
-        uom_kgm = self.env.ref("uom.product_uom_kgm")
+        uom_gram = self.env.ref("base.product_uom_gram")
+        uom_kgm = self.env.ref("base.product_uom_kgm")
 
         product = self.env["product.product"].create(
             {
@@ -3517,9 +3517,9 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         self.assertEqual(bill_uom, uom_kgm)
 
     def test_vendor_uom_per_company(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_gram = self.env.ref("uom.product_uom_gram")
-        uom_kgm = self.env.ref("uom.product_uom_kgm")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_gram = self.env.ref("base.product_uom_gram")
+        uom_kgm = self.env.ref("base.product_uom_kgm")
         other_company = self.setup_other_company()["company"]
 
         product = self.env["product.product"].create(
@@ -3561,9 +3561,9 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         )
 
     def test_vendor_uom_incompatible_with_the_product_is_skipped(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_gram = self.env.ref("uom.product_uom_gram")
-        uom_kgm = self.env.ref("uom.product_uom_kgm")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_gram = self.env.ref("base.product_uom_gram")
+        uom_kgm = self.env.ref("base.product_uom_kgm")
         product = self.env["product.product"].create(
             {
                 "name": "Priced per kilogram",
@@ -3608,8 +3608,8 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         self.assertAlmostEqual(line.price_unit, 0.1, msg="100/kg restated per gram")
 
     def test_vendor_uom_falls_back_to_the_product_unit(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_kgm = self.env.ref("uom.product_uom_kgm")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_kgm = self.env.ref("base.product_uom_kgm")
         product = self.env["product.product"].create(
             {
                 "name": "Only an incompatible seller",

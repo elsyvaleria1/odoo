@@ -32529,8 +32529,8 @@ msgstr ""
 #, fuzzy
 #~ msgid ""
 #~ "<span>1.00</span>\n"
-#~ "                                                        <span groups=\"uom.group_uom\">Units</span>"
-#~ msgstr "<span>1,00</span> <span groups=\"uom.group_uom\">Dona</span>"
+#~ "                                                        <span groups=\"base.group_uom\">Units</span>"
+#~ msgstr "<span>1,00</span> <span groups=\"base.group_uom\">Dona</span>"
 
 #, fuzzy
 #~ msgid ""

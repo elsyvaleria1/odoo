@@ -716,11 +716,11 @@ class ProviderDHL(models.Model):
         unit = self.dhl_unit_system
         if unit == "imperial":
             weight = weight_uom_id._get_quantity_in_unit(
-                weight, self.env.ref("uom.product_uom_lb"), round=False
+                weight, self.env.ref("base.product_uom_lb"), round=False
             )
         else:
             weight = weight_uom_id._get_quantity_in_unit(
-                weight, self.env.ref("uom.product_uom_kgm"), round=False
+                weight, self.env.ref("base.product_uom_kgm"), round=False
             )
         return float_round(weight, 3)
 

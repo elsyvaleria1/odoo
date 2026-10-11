@@ -18,7 +18,7 @@ class StockLocation(models.Model):
     def action_view_assets(self):
         self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
-            "resource.action_resource_asset"
+            "base.action_resource_asset"
         )
         action["domain"] = [("location_id", "=", self.id)]
         action["context"] = {"default_location_id": self.id}

@@ -331,7 +331,7 @@ class TestSaleStockInvoices(TestSaleCommon):
 
     def test_invoice_less_than_delivered(self):
         display_lots = self.env.ref("stock_account.group_lot_on_invoice")
-        display_uom = self.env.ref("uom.group_uom")
+        display_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
 
         so = self.env["sale.order"].create(
@@ -374,7 +374,7 @@ class TestSaleStockInvoices(TestSaleCommon):
 
     def test_invoice_before_delivery(self):
         display_lots = self.env.ref("stock_account.group_lot_on_invoice")
-        display_uom = self.env.ref("uom.group_uom")
+        display_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
 
         self.product_by_lot.invoice_policy = "ordered"
@@ -461,7 +461,7 @@ class TestSaleStockInvoices(TestSaleCommon):
 
     def test_backorder_and_several_invoices(self):
         display_lots = self.env.ref("stock_account.group_lot_on_invoice")
-        display_uom = self.env.ref("uom.group_uom")
+        display_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
 
         so = self.env["sale.order"].create(
@@ -557,7 +557,7 @@ class TestSaleStockInvoices(TestSaleCommon):
 
     def test_invoice_with_several_returns(self):
         display_lots = self.env.ref("stock_account.group_lot_on_invoice")
-        display_uom = self.env.ref("uom.group_uom")
+        display_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
 
         lot01 = self.env["product.trace"].search([("name", "=", "LOT0001")])
@@ -698,7 +698,7 @@ class TestSaleStockInvoices(TestSaleCommon):
 
     def test_refund_cancel_invoices(self):
         display_lots = self.env.ref("stock_account.group_lot_on_invoice")
-        display_uom = self.env.ref("uom.group_uom")
+        display_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
 
         so = self.env["sale.order"].create(
@@ -798,7 +798,7 @@ class TestSaleStockInvoices(TestSaleCommon):
 
     def test_refund_modify_invoices(self):
         display_lots = self.env.ref("stock_account.group_lot_on_invoice")
-        display_uom = self.env.ref("uom.group_uom")
+        display_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
 
         so = self.env["sale.order"].create(

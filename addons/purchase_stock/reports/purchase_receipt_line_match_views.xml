@@ -30,7 +30,7 @@
                 <field name="product_uom_qty" string="Quantity" />
                 <field name="qty_transferred" optional="hide" />
                 <field name="qty_to_transfer" optional="show" />
-                <field name="product_uom_id" groups="uom.group_uom" />
+                <field name="product_uom_id" groups="base.group_uom" />
                 <field name="trace_ids" widget="many2many_tags" optional="hide" />
                 <field name="date_expected" optional="show" />
                 <field name="transferred_qty" string="Received" sum="Total Received" />

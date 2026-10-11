@@ -106,7 +106,7 @@
                             <field
                                 name="product_uom_id"
                                 optional="show"
-                                groups="uom.group_uom" />
+                                groups="base.group_uom" />
                         </list>
                     </field>
                 </sheet>

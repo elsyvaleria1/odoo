@@ -91,7 +91,7 @@ class MixinProductCatalog(models.AbstractModel):
 
     def _prepare_catalog_extra_context(self):
         return {
-            "display_uom": self.env.user.has_group("uom.group_uom"),
+            "display_uom": self.env.user.has_group("base.group_uom"),
             "order_id": self.id,
             "product_catalog_order_model": self._name,
         }

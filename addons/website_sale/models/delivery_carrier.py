@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, cast
 from odoo import api, fields, models
 
 if TYPE_CHECKING:
+    from odoo.addons.base.models.uom_uom import UomUom
     from odoo.addons.product.models.product_template import ProductTemplate
-    from odoo.addons.uom.models.uom_uom import UomUom
 
 
 class DeliveryCarrier(models.Model):

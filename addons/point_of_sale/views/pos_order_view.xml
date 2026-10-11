@@ -136,7 +136,7 @@
                                                 class="ms-auto me-3" />
                                         </div>
                                         <div class="text-muted">
-                                            Quantity: <field name="qty" /> <field name="product_uom_id" groups="uom.group_uom" />
+                                            Quantity: <field name="qty" /> <field name="product_uom_id" groups="base.group_uom" />
                                         </div>
                                         <div class="text-muted">
                                             Unit price: <field name="price_unit" widget="monetary" />
@@ -163,7 +163,7 @@
                                     groups="stock.group_production_lot" />
                                 <field name="qty" />
                                 <field name="customer_note" optional="hide" />
-                                <field name="product_uom_id" groups="uom.group_uom" />
+                                <field name="product_uom_id" groups="base.group_uom" />
                                 <field name="price_unit" widget="monetary" />
                                 <field
                                     name="is_total_cost_computed"

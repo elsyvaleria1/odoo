@@ -192,7 +192,7 @@
         <record id="planning_resource_laptop" model="resource.resource">
             <field name="name">Laptop</field>
             <field name="type">material</field>
-            <field name="calendar_id" ref="resource.resource_calendar_std_35h" />
+            <field name="calendar_id" ref="base.resource_calendar_std_35h" />
             <field name="color">8</field>
         </record>
         <record id="planning_resource_3" model="resource.resource">
@@ -250,7 +250,7 @@
         </record>
         <record id="planning_resource_4" model="resource.resource">
             <field name="name">Drill Machine</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="type">material</field>
             <field
                 name="role_ids"
@@ -259,7 +259,7 @@
         </record>
         <record id="planning_resource_5" model="resource.resource">
             <field name="name">Table Saw</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="type">material</field>
             <field
                 name="role_ids"
@@ -268,7 +268,7 @@
         </record>
         <record id="planning_resource_6" model="resource.resource">
             <field name="name">Wood</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="type">material</field>
             <field
                 name="role_ids"
@@ -277,7 +277,7 @@
         </record>
         <record id="planning_resource_7" model="resource.resource">
             <field name="name">Rattan and Wicker</field>
-            <field name="calendar_id" ref="resource.resource_calendar_fully_flexible" />
+            <field name="calendar_id" ref="base.resource_calendar_fully_flexible" />
             <field name="type">material</field>
             <field
                 name="role_ids"
@@ -326,9 +326,7 @@
                 type="base64"
                 file="planning/static/img/akaforest.jpg" />
             <field name="create_date">2023-01-01 00:00:00</field>
-            <field
-                name="resource_calendar_id"
-                ref="resource.resource_calendar_flex_40h" />
+            <field name="resource_calendar_id" ref="base.resource_calendar_flex_40h" />
             <field
                 name="default_planning_role_id"
                 ref="planning.planning_quality_control" />
@@ -364,9 +362,7 @@
                 type="base64"
                 file="planning/static/img/cherrynilson.jpg" />
             <field name="create_date">2023-01-01 00:00:00</field>
-            <field
-                name="resource_calendar_id"
-                ref="resource.resource_calendar_flex_40h" />
+            <field name="resource_calendar_id" ref="base.resource_calendar_flex_40h" />
             <field
                 name="default_planning_role_id"
                 ref="planning.planning_maintenance_technician" />
@@ -398,9 +394,7 @@
                 type="base64"
                 file="planning/static/img/sumanoza.jpg" />
             <field name="create_date">2023-01-01 00:00:00</field>
-            <field
-                name="resource_calendar_id"
-                ref="resource.resource_calendar_std_38h" />
+            <field name="resource_calendar_id" ref="base.resource_calendar_std_38h" />
             <field
                 name="default_planning_role_id"
                 ref="planning.planning_maintenance_technician" />

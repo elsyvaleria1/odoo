@@ -85,7 +85,7 @@ class TestEsgCommon(AccountTestInvoicingCommon):
                 "source_id": cls.emission_source_upstream.id,
                 "esg_uncertainty_value": 0.15,
                 "compute_method": "physically",
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
             }
         )
 
@@ -117,7 +117,7 @@ class TestEsgCommon(AccountTestInvoicingCommon):
                 "source_id": cls.emission_source_downstream.id,
                 "esg_uncertainty_value": 0.35,
                 "compute_method": "physically",
-                "uom_id": cls.env.ref("uom.product_uom_km").id,
+                "uom_id": cls.env.ref("base.product_uom_km").id,
                 "esg_emissions_value": 0.1,
             }
         )
@@ -154,7 +154,7 @@ class TestEsgCommon(AccountTestInvoicingCommon):
                 "source_id": cls.emission_source_upstream.id,
                 "esg_uncertainty_value": 0.25,
                 "compute_method": "physically",
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
                 "esg_emissions_value": 75.0,
             }
         )

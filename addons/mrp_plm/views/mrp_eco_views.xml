@@ -620,7 +620,7 @@
                                     <field
                                         name="upd_product_qty"
                                         widget="plm_upd_qty" />
-                                    <field name="uom_change" groups="uom.group_uom" />
+                                    <field name="uom_change" groups="base.group_uom" />
                                     <field
                                         name="operation_change"
                                         groups="mrp.group_mrp_routings" />
@@ -677,7 +677,7 @@
                                     <field
                                         name="upd_product_qty"
                                         widget="plm_upd_qty" />
-                                    <field name="uom_change" groups="uom.group_uom" />
+                                    <field name="uom_change" groups="base.group_uom" />
                                     <field
                                         name="operation_change"
                                         groups="mrp.group_mrp_routings" />
@@ -697,7 +697,7 @@
                                     <field
                                         name="upd_product_qty"
                                         widget="plm_upd_qty" />
-                                    <field name="uom_change" groups="uom.group_uom" />
+                                    <field name="uom_change" groups="base.group_uom" />
                                     <field
                                         name="operation_change"
                                         groups="mrp.group_mrp_routings" />

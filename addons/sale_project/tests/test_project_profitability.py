@@ -15,7 +15,7 @@ class TestProjectProfitabilityCommon(Common):
     def setUpClass(cls):
         super().setUpClass()
         cls.env.user.group_ids += cls.env.ref("sale.group_sale_manager")
-        uom_unit_id = cls.env.ref("uom.product_uom_unit").id
+        uom_unit_id = cls.env.ref("base.product_uom_unit").id
 
         cls.material_product = cls.env["product.product"].create(
             {
@@ -28,7 +28,7 @@ class TestProjectProfitabilityCommon(Common):
             }
         )
 
-        cls.uom_hour = cls.env.ref("uom.product_uom_hour")
+        cls.uom_hour = cls.env.ref("base.product_uom_hour")
         cls.product_delivery_service = cls.env["product.product"].create(
             {
                 "name": "Service Delivery, create task in global project",

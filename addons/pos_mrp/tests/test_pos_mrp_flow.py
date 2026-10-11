@@ -90,17 +90,17 @@ class TestPosMrp(CommonPosMrpTest):
         """This test make sure that when a kit is made of product using UoM A but the bom line uses UoM B
         the price unit is correctly computed on the invoice lines.
         """
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
 
         # Edit kit product and component product
         self.product_product_kit_one.categ_id = self.category_fifo_realtime
         self.product_product_comp_one.standard_price = 12000
-        self.product_product_comp_one.uom_id = self.env.ref("uom.product_uom_dozen").id
+        self.product_product_comp_one.uom_id = self.env.ref("base.product_uom_dozen").id
 
         # Edit kit product quantity
         self.bom_one_line.bom_line_ids[0].product_qty = 6.0
         self.bom_one_line.bom_line_ids[0].product_uom_id = self.env.ref(
-            "uom.product_uom_unit"
+            "base.product_uom_unit"
         ).id
         self.bom_one_line.product_qty = 2.0
 

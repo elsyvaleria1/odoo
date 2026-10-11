@@ -92,7 +92,7 @@ class PlanningSlot(models.Model):
             default_rental_return_date=self.end_datetime,
         )
         if products := self.role_id.product_ids.filtered("rent_ok"):
-            uom_hour = self.env.ref("uom.product_uom_hour")
+            uom_hour = self.env.ref("base.product_uom_hour")
             # `default_line_ids`, not `default_order_line`: this fork renamed
             # `sale.order.order_line` to `line_ids`, and a default keyed on a
             # field that no longer exists is silently ignored -- the rental
@@ -160,7 +160,7 @@ class PlanningSlot(models.Model):
                 self.sale_line_id = sol
                 break
         if not self.sale_line_id:
-            uom_hour = self.env.ref("uom.product_uom_hour")
+            uom_hour = self.env.ref("base.product_uom_hour")
             sale_line = order.line_ids.filtered(
                 lambda l: l.is_rental and l.product_template_id in products
             )[:1]

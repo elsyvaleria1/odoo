@@ -16,7 +16,7 @@ class TestProcRule(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
         cls.product = cls.env["product.product"].create(
             {
                 "name": "Desk Combination",
@@ -486,7 +486,7 @@ class TestProcRule(TransactionCase):
             {
                 "name": "pack of 10",
                 "relative_factor": 10.0,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.env["stock.quant"].with_context(inventory_mode=True).create(
@@ -520,7 +520,7 @@ class TestProcRule(TransactionCase):
                     {
                         "name": "Test UoM",
                         "relative_factor": 1,
-                        "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                        "relative_uom_id": self.env.ref("base.product_uom_unit").id,
                     }
                 )
             }
@@ -534,7 +534,7 @@ class TestProcRule(TransactionCase):
         self.assertEqual(orderpoint.qty_to_order, 15.5)
 
     def test_get_multiple_rounded_qty_rounds_up_to_multiple(self):
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         pack_of_10 = self.env["uom.uom"].create(
             {
                 "name": "round-pack of 10",
@@ -855,7 +855,7 @@ class TestProcRule(TransactionCase):
         self.assertEqual(orderpoint.qty_forecast, 10.0)
         orderpoint.action_replenish(force_to_max=True)
         self.assertEqual(orderpoint.qty_forecast, 200.0)
-        orderpoint.replenishment_uom_id = self.env.ref("uom.product_uom_dozen")
+        orderpoint.replenishment_uom_id = self.env.ref("base.product_uom_dozen")
         orderpoint.product_max_qty = 240
         orderpoint.action_replenish(force_to_max=True)
         self.assertEqual(

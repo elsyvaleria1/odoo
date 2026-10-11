@@ -49,10 +49,10 @@ class SaleOrderLine(models.Model):
             encoding_uom = company.hr_timesheet_config_id.timesheet_encode_uom_id
             is_hour = is_day = False
             unit_label = ""
-            if encoding_uom == self.env.ref("uom.product_uom_hour"):
+            if encoding_uom == self.env.ref("base.product_uom_hour"):
                 is_hour = True
                 unit_label = self.env._("remaining")
-            elif encoding_uom == self.env.ref("uom.product_uom_day"):
+            elif encoding_uom == self.env.ref("base.product_uom_day"):
                 is_day = True
                 unit_label = self.env._("days remaining")
             for line in self:
@@ -77,14 +77,14 @@ class SaleOrderLine(models.Model):
             is_time_product = (
                 line.product_uom_id
                 and line.product_uom_id._has_common_reference(
-                    self.env.ref("uom.product_uom_hour")
+                    self.env.ref("base.product_uom_hour")
                 )
             )
             line.remaining_hours_available = is_ordered_prepaid and is_time_product
 
     @api.depends("qty_transferred", "product_qty", "analytic_line_ids")
     def _compute_remaining_hours(self) -> None:
-        uom_hour = self.env.ref("uom.product_uom_hour")
+        uom_hour = self.env.ref("base.product_uom_hour")
         for line in self:
             remaining_hours = None
             if line.remaining_hours_available:
@@ -143,8 +143,8 @@ class SaleOrderLine(models.Model):
         company_time_uom_id = dest_company.hr_timesheet_config_id.project_time_mode_id
         allocated_hours = 0.0
         product_uom_id = self.product_uom_id
-        if product_uom_id == self.env.ref("uom.product_uom_unit"):
-            product_uom_id = self.env.ref("uom.product_uom_hour")
+        if product_uom_id == self.env.ref("base.product_uom_unit"):
+            product_uom_id = self.env.ref("base.product_uom_hour")
         if (
             product_uom_id != company_time_uom_id
             and product_uom_id._has_common_reference(company_time_uom_id)
@@ -168,8 +168,8 @@ class SaleOrderLine(models.Model):
             )
             return project
         project_uom = self.company_id.hr_timesheet_config_id.project_time_mode_id
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_hour = self.env.ref("uom.product_uom_hour")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_hour = self.env.ref("base.product_uom_hour")
 
         factor_per_id = {
             uom.id: uom.factor for uom in self.order_id.line_ids.product_uom_id

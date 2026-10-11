@@ -157,7 +157,7 @@ class TestPurchaseInvoice(AccountTestInvoicingCommon):
         self.assertEqual(vendor_bill_user1.amount_total, vendor_bill_user2.amount_total)
 
     def test_create_product_purchase_user(self):
-        uom = self.env.ref("uom.product_uom_gram")
+        uom = self.env.ref("base.product_uom_gram")
         self.purchase_user.group_ids += self.env.ref("product.group_product_manager")
         product = (
             self.env["product.template"]

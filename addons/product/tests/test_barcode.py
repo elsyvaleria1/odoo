@@ -89,7 +89,7 @@ class TestProductBarcode(TransactionCase):
             {
                 "name": "Pack of 10",
                 "relative_factor": 10,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         product = self.env["product.product"].create(

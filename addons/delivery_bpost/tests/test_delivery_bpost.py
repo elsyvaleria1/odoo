@@ -85,7 +85,7 @@ class TestDeliveryBpost(TransactionCase):
         self.iPadMini = self.env.ref("product.product_product_6")
         self.product2 = self.env.ref("product.product_product_7")
         self.product3 = self.env.ref("product.product_product_9")
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
         self.stock_location = self.env.ref("stock.stock_location_stock")
         self.customer_location = self.env.ref("stock.stock_location_customers")
 

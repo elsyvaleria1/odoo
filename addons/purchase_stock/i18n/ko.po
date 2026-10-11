@@ -78,7 +78,7 @@ msgstr "<span class=\"o_stat_value\">%</span>"
 #. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.product_view_kanban_catalog_purchase_only
 msgid ""
-"<span class=\"text-info fw-bold fs-5 me-1\" groups=\"!uom.group_uom\">Units</"
+"<span class=\"text-info fw-bold fs-5 me-1\" groups=\"!base.group_uom\">Units</"
 "span>"
 msgstr ""
 
@@ -95,7 +95,7 @@ msgstr ""
 #. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.product_view_kanban_catalog_purchase_only
 msgid ""
-"<span class=\"text-muted small ms-1\" groups=\"!uom.group_uom\">Units</span>"
+"<span class=\"text-muted small ms-1\" groups=\"!base.group_uom\">Units</span>"
 msgstr ""
 
 #. module: purchase_stock

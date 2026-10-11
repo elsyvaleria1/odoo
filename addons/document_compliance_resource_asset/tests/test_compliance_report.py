@@ -17,7 +17,7 @@ class TestComplianceReportAssets(ComplianceCase):
         cls.asset = cls.env["resource.resource"].create(
             {
                 "name": "Reported Asset",
-                "kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
 
@@ -77,8 +77,8 @@ class TestKindScopedRequirements(ComplianceCase):
         cls.env["document.type"].search([("is_mandatory", "=", True)]).write(
             {"is_mandatory": False}
         )
-        cls.vehicle_kind = cls.env.ref("resource.kind_vehicle")
-        cls.tool_kind = cls.env.ref("resource.kind_tool")
+        cls.vehicle_kind = cls.env.ref("base.kind_vehicle")
+        cls.tool_kind = cls.env.ref("base.kind_tool")
         cls.vehicle = cls.env["resource.resource"].create(
             {"name": "Scoped Vehicle", "kind_id": cls.vehicle_kind.id}
         )

@@ -22,7 +22,7 @@ class TestDeliveryDHL(TransactionCase):
                 "weight": 0.01,
             }
         )
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
 
         self.your_company = self.env.ref("base.main_partner")
         self.your_company.write(

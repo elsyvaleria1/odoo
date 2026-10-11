@@ -78,7 +78,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                     "name": "Subscription Product",
                     "type": "service",
                     "recurring_invoice": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 }
             )
             product = sub_product_tmpl.product_variant_id
@@ -609,7 +609,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "name": "Delivery product",
                 "type": "service",
                 "recurring_invoice": True,
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "invoice_policy": "transferred",
             }
         )
@@ -1070,7 +1070,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "name": "Delivery product",
                 "type": "service",
                 "recurring_invoice": False,
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "invoice_policy": "transferred",
             }
         )
@@ -2686,7 +2686,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "name": "One shot product",
                 "type": "service",
                 "recurring_invoice": False,
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         one_shot_product = one_shot_product_tmpl.product_variant_id
@@ -3636,7 +3636,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "name": "Delivery product",
                 "type": "consu",
                 "recurring_invoice": True,
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "invoice_policy": "ordered",
                 "list_price": 50.0,
             }
@@ -3655,7 +3655,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                             "name": product.name,
                             "product_id": product.id,
                             "product_qty": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "price_unit": 10,
                         }
                     ),
@@ -3749,7 +3749,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                         "name": self.product3.name,
                         "product_id": self.product3.id,
                         "product_qty": 0,
-                        "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                        "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         "price_unit": 10,
                     }
                 )
@@ -4522,7 +4522,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "name": "Car Leasing (SUB)",
                 "type": "service",
                 "recurring_invoice": True,
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "list_price": 20,
             }
         )
@@ -4531,7 +4531,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "name": "Office Cleaning Service (SUB)",
                 "type": "service",
                 "recurring_invoice": True,
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "list_price": 10,
             }
         )

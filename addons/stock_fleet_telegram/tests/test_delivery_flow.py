@@ -90,7 +90,7 @@ class TestDeliveryFlow(TelegramBotTestCase):
         seller = cls.env["hr.employee"].create(
             {"name": "Seller", "user_id": cls.seller_user.id}
         )
-        kind = cls.env.ref("resource.kind_vehicle")
+        kind = cls.env.ref("base.kind_vehicle")
         car = cls.env["resource.resource"].create(
             {
                 "name": "Pickup",

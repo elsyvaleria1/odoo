@@ -13,7 +13,7 @@
             <field name="type">service</field>
             <field name="purchase_ok" eval="False" />
             <field name="categ_id" ref="product.product_category_services" />
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"

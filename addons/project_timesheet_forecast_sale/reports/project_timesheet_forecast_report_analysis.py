@@ -62,7 +62,7 @@ class ProjectTimesheetForecastReportAnalysis(models.Model):
             LEFT JOIN uom_uom P_UOM ON SOL.product_uom_id = P_UOM.id,
             (SELECT U.factor FROM uom_uom U WHERE U.id = %s) HOUR_UOM
         """
-            % (self.env.ref("uom.product_uom_hour").id)
+            % (self.env.ref("base.product_uom_hour").id)
         )
 
     @api.model

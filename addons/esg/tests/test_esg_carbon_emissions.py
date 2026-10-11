@@ -16,7 +16,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
                 "name": "Package Delivery",
                 "date": fields.Date.today(),
                 "esg_emission_factor_id": self.emission_factor_delivery_transportation.id,
-                "uom_id": self.env.ref("uom.product_uom_mile").id,
+                "uom_id": self.env.ref("base.product_uom_mile").id,
                 "quantity": 100,
             }
         )
@@ -67,7 +67,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
                 "name": "Computer",
                 "quantity": 50,
                 "esg_emission_factor_id": self.emission_factor_computers_production.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.assertEqual(
@@ -94,7 +94,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
     def test_physical_method_account_move_line_emission_value_with_relative_uom(self):
         self.assertEqual(
             self.emission_factor_phones_production.uom_id,
-            self.env.ref("uom.product_uom_unit"),
+            self.env.ref("base.product_uom_unit"),
         )
         bill_line_values = {
             "move_id": self.bill_1.id,
@@ -105,7 +105,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
         bill_line_1 = self.env["account.move.line"].create(
             {
                 **bill_line_values,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
             }
         )
         self.assertEqual(
@@ -117,12 +117,12 @@ class TestEsgCarbonEmission(TestEsgCommon):
 
         # Inverse both uoms
         self.emission_factor_phones_production.uom_id = self.env.ref(
-            "uom.product_uom_dozen"
+            "base.product_uom_dozen"
         )
         bill_line_2 = self.env["account.move.line"].create(
             {
                 **bill_line_values,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.assertEqual(
@@ -181,7 +181,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
         )
         self.assertEqual(
             other_emission.uom_id,
-            self.env.ref("uom.product_uom_km"),
+            self.env.ref("base.product_uom_km"),
             "The default UoM should be the same as the emission factor",
         )
         other_emission.esg_emission_factor_id = (
@@ -212,7 +212,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
                         "name": "Computer",
                         "quantity": 50,
                         "esg_emission_factor_id": self.emission_factor_phones_production.id,
-                        "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                        "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         "account_id": account.id,
                     }
                 )
@@ -309,7 +309,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
                 "date": fields.Date.today(),
                 "esg_emission_factor_id": self.emission_factor_delivery_transportation.id,
                 "quantity": 150,
-                "uom_id": self.env.ref("uom.product_uom_km").id,
+                "uom_id": self.env.ref("base.product_uom_km").id,
             }
         )
         # Test on physical compute method

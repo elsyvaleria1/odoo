@@ -4,9 +4,7 @@
     <record id="resource_schedule_exception_view_search_inherit" model="ir.ui.view">
         <field name="name">resource.schedule.exception.search.inherit</field>
         <field name="model">resource.schedule.exception</field>
-        <field
-            name="inherit_id"
-            ref="resource.view_resource_schedule_exception_search" />
+        <field name="inherit_id" ref="base.view_resource_schedule_exception_search" />
         <field name="arch" type="xml">
             <filter name="resource" position="attributes">
                 <attribute name="invisible">1</attribute>
@@ -17,7 +15,7 @@
     <record id="resource_schedule_exception_form_inherit" model="ir.ui.view">
         <field name="name">resource.schedule.exception.form.inherit</field>
         <field name="model">resource.schedule.exception</field>
-        <field name="inherit_id" ref="resource.resource_schedule_exception_form" />
+        <field name="inherit_id" ref="base.resource_schedule_exception_form" />
         <field name="arch" type="xml">
             <field name="name" position="after">
                 <field name="holiday_id" options="{'no_quick_create': True}" />
@@ -28,7 +26,7 @@
     <record id="resource_schedule_exception_tree_inherit" model="ir.ui.view">
         <field name="name">resource.schedule.exception.list.inherit</field>
         <field name="model">resource.schedule.exception</field>
-        <field name="inherit_id" ref="resource.resource_schedule_exception_tree" />
+        <field name="inherit_id" ref="base.resource_schedule_exception_tree" />
         <field name="mode">primary</field>
         <field name="priority">10</field>
         <field name="arch" type="xml">
@@ -83,10 +81,10 @@
     <record id="resource_calendar_form_inherit" model="ir.ui.view">
         <field name="name">resource.calendar.form.inherit</field>
         <field name="model">resource.calendar</field>
-        <field name="inherit_id" ref="resource.resource_calendar_form" />
+        <field name="inherit_id" ref="base.resource_calendar_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="//button[@name='%(resource.resource_schedule_exception_action_from_calendar)d']"
+                expr="//button[@name='%(base.resource_schedule_exception_action_from_calendar)d']"
                 position="before">
                 <button
                     name="%(resource_calendar_global_leaves_action_from_calendar)d"
@@ -126,7 +124,7 @@
     <record id="resource_calendar_view_tree" model="ir.ui.view">
         <field name="name">resource.calendar.view.list.inherit.hr.holidays</field>
         <field name="model">resource.calendar</field>
-        <field name="inherit_id" ref="resource.view_resource_calendar_tree" />
+        <field name="inherit_id" ref="base.view_resource_calendar_tree" />
         <field name="arch" type="xml">
             <field name="work_resources_count" position="after">
                 <field

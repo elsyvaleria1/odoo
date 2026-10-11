@@ -11,7 +11,7 @@ from odoo.libs.intervals import Intervals
 from odoo.tools.date_utils import get_timedelta, occurrences_after
 
 from odoo.addons.base.models.mixin_recurrence_rule import REPEAT_TYPE_COUNT
-from odoo.addons.resource.models.utils import peak_capacity
+from odoo.addons.base.models.resource_utils import peak_capacity
 
 _debug = DebugLog(__name__)
 

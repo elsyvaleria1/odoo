@@ -7658,6 +7658,7 @@ msgstr "Desplegar"
 #: code:addons/web/static/src/views/fields/formatters.js:0
 #: code:addons/web/static/src/views/fields/many2one/many2one.js:0
 #: code:addons/web/static/src/views/fields/relational_utils.js:0
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
 msgid "Unnamed"
 msgstr "Sin nombre"
 
@@ -27617,6 +27618,18 @@ msgstr "Densidad"
 #: model:ir.model.fields.selection,name:web.selection__res_users_settings__color_scheme__light
 msgid "Light"
 msgstr "Claro"
+
+#. odoo-javascript
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
+#: code:addons/web/static/src/fields/relational/many2x_uom_tags/many2x_uom_tags.js:0
+msgid "Product Field Name"
+msgstr "Nombre del campo de producto"
+
+#. odoo-javascript
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
+#: code:addons/web/static/src/fields/relational/many2x_uom_tags/many2x_uom_tags.js:0
+msgid "Quantity Field Name"
+msgstr "Nombre del campo de cantidad"
 
 #~ msgid "<span itemprop=\"name\">Deco Addict</span>"
 #~ msgstr "<span itemprop=\"name\">Deco Addict</span>"

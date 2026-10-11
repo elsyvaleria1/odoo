@@ -131,7 +131,7 @@ class ProjectTask(models.Model):
     def _uom_in_days(self) -> bool:
         return (
             self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
-            == self.env.ref("uom.product_uom_day")
+            == self.env.ref("base.product_uom_day")
         )
 
     def _compute_encode_uom_in_days(self) -> None:

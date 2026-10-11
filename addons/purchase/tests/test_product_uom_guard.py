@@ -15,8 +15,8 @@ class TestProductUomGuard(TransactionCase):
                 "purchase_ok": True,
             }
         )
-        cls.unit = cls.env.ref("uom.product_uom_unit")
-        cls.dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.unit = cls.env.ref("base.product_uom_unit")
+        cls.dozen = cls.env.ref("base.product_uom_dozen")
 
     def _order(self, qty=2):
         return self.env["purchase.order"].create(

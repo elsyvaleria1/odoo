@@ -667,10 +667,10 @@ class EsgDatabase(models.Model):
             return amount
 
         emission_factor_xmlid_list = []
-        uom_kg = self.env.ref("uom.product_uom_kgm")
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_m3 = self.env.ref("uom.product_uom_cubic_meter")
-        uom_tonne = self.env.ref("uom.product_uom_ton")
+        uom_kg = self.env.ref("base.product_uom_kgm")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_m3 = self.env.ref("base.product_uom_cubic_meter")
+        uom_tonne = self.env.ref("base.product_uom_ton")
         uom_ha, uom_lto = self.env["uom.uom"]._load_records(
             [
                 {

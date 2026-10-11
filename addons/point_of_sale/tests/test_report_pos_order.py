@@ -293,7 +293,7 @@ class TestReportPoSOrder(TestPoSCommon):
             {
                 "name": "Report dozen",
                 "relative_factor": 12,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         order.lines.product_id.uom_id = dozen

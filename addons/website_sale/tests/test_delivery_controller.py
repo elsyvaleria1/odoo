@@ -144,7 +144,7 @@ class TestPickupRadiusUnit(TransactionCase):
             with self.subTest(value=value):
                 config.set_param("product.volume_in_cubic_feet", value)
                 expected = (
-                    "uom.product_uom_mile" if value == "1" else "uom.product_uom_km"
+                    "base.product_uom_mile" if value == "1" else "base.product_uom_km"
                 )
                 unit = carrier._get_pickup_radius_uom()
                 self.assertEqual(unit, self.env.ref(expected))
@@ -153,8 +153,8 @@ class TestPickupRadiusUnit(TransactionCase):
     def test_reloads_changed_configuration(self):
         config = self.env["ir.config_parameter"]
         for value, xmlid in (
-            ("1", "uom.product_uom_mile"),
-            ("0", "uom.product_uom_km"),
+            ("1", "base.product_uom_mile"),
+            ("0", "base.product_uom_km"),
         ):
             config.set_param("product.volume_in_cubic_feet", value)
             self.assertEqual(
@@ -169,7 +169,7 @@ class TestPickupRadiusUnit(TransactionCase):
         self.env["ir.config_parameter"].set_param("product.volume_in_cubic_feet", "1")
         carrier = self.env["delivery.carrier"].with_user(user)
         unit = carrier._get_pickup_radius_uom()
-        self.assertEqual(unit.id, self.env.ref("uom.product_uom_mile").id)
+        self.assertEqual(unit.id, self.env.ref("base.product_uom_mile").id)
         self.assertEqual(unit.env.uid, user.id)
         self.assertFalse(unit.env.su)
 

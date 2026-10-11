@@ -1,7 +1,7 @@
 /** @odoo-module native */
 import { Component, useProps } from "@odoo/owl";
-import { RESOURCE_TYPE_ICONS } from "@resource/resource_type_icons";
 import { AvatarResource } from "@resource_mail/components/avatar_resource/avatar_resource";
+import { RESOURCE_TYPE_ICONS } from "@web/components/resource_avatar/resource_type_icons";
 import { registry } from "@web/core/registry";
 import {
     buildM2OFieldDescription,

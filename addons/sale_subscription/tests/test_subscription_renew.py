@@ -35,7 +35,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                     "internal_note": "internal note",
                 }
             )  # add an so line with a different uom
-            uom_dozen = self.env.ref("uom.product_uom_dozen").id
+            uom_dozen = self.env.ref("base.product_uom_dozen").id
             self.subscription_tmpl.duration_value = (
                 2  # end after 2 months to adapt to the following line
             )
@@ -587,7 +587,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                     "name": "BaseTestProduct",
                     "type": "service",
                     "recurring_invoice": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                     "subscription_rule_ids": [
                         (6, 0, (pricing_month_1 | pricing_month_2).ids)
                     ],
@@ -989,7 +989,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                     "name": "BaseTestProduct",
                     "type": "service",
                     "recurring_invoice": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                     "subscription_rule_ids": [
                         Command.set((pricing_month_1_usd | pricing_month_2_eur).ids)
                     ],

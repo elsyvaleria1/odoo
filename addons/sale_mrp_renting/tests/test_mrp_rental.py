@@ -310,7 +310,7 @@ class TestRentalKits(TestRentalCommon):
         self.assertEqual(rental.line_ids.qty_transferred, 1)
 
     def test_kit_written_per_dozen_counts_units_transferred_and_returned(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         self.bom.active = False
         self.env["mrp.bom"].create(
             {

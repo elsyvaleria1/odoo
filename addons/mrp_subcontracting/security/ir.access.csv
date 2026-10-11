@@ -13,7 +13,7 @@ consumption_warning_subcontractor_rule,MRP Consumption Warnings Subcontractor,mr
 consumption_warning_line_subcontractor_rule,MRP Consumption Warning Lines Subcontractor,mrp.model_wizard_mrp_production_produce_consumption_mismatch_line,base.group_portal,permission,cru,,,"[('mrp_production_id', 'in', user.partner_id.commercial_partner_id.production_ids.ids)]"
 access_subcontracting_portal_product,subcontracting.portal.product,product.model_product_product,base.group_portal,permission,r,,,
 product_template_subcontracting_rule,Product Template Subcontractor,product.model_product_template,base.group_portal,permission,r,,,"[ '|', '|', ('id', 'in', user.partner_id.commercial_partner_id.bom_ids.product_id.product_tmpl_id.ids), ('id', 'in', user.partner_id.commercial_partner_id.bom_ids.product_tmpl_id.ids), ('id', 'in', user.partner_id.commercial_partner_id.bom_ids.bom_line_ids.product_id.product_tmpl_id.ids), ]"
-access_subcontracting_portal_uom,subcontracting.portal.uom,uom.model_uom_uom,base.group_portal,permission,r,,,
+access_subcontracting_portal_uom,subcontracting.portal.uom,base.model_uom_uom,base.group_portal,permission,r,,,
 access_subcontracting_portal_barcode_nomenclature_stock_user,subcontracting.portal.barcode.nomenclature,barcodes.model_barcode_nomenclature,base.group_portal,permission,r,,,
 access_subcontracting_portal_sequence,subcontracting.portal.sequence,base.model_ir_sequence,base.group_portal,permission,ru,,,
 access_subcontracting_portal_mrp_production_serials,subcontracting.portal.mrp.production.serials,mrp.model_wizard_mrp_production_update_serial,base.group_portal,permission,cru,,,

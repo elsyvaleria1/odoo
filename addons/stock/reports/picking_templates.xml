@@ -2,7 +2,7 @@
 <odoo>
 
     <template id="label_transfer_template_view_zpl">
-        <t t-set="uom_unit" t-value="env.ref('uom.product_uom_unit')" />
+        <t t-set="uom_unit" t-value="env.ref('base.product_uom_unit')" />
         <t t-foreach="docs" t-as="picking">
 
             <t
@@ -53,7 +53,7 @@
     <template id="label_transfer_template_view_pdf">
         <t t-call="web.basic_layout">
             <div class="page">
-                <t t-set="uom_unit" t-value="env.ref('uom.product_uom_unit')" />
+                <t t-set="uom_unit" t-value="env.ref('base.product_uom_unit')" />
                 <t t-foreach="docs" t-as="picking">
                     <t
                         t-set="picking_quantity"

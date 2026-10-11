@@ -2723,6 +2723,23 @@ Create menu item for custom model.
 
 ---
 
+## Units and Resources
+
+Until base 1.151 these were the `uom` and `resource` modules. Units of measure are
+detailed in `doc/architecture/uom.md`; the resource models, their fields and hook
+contracts in `resource/MODEL_MAP.md` and `resource/index.md` (this directory), with
+their own `resource/factcheck.sh`.
+
+### models/uom_uom.py
+
+#### UomUom — `uom.uom` (`_name`)
+
+**Fields:** `name`, `sequence`, `relative_factor` (unlimited NUMERIC), `rounding`, `active`,
+`relative_uom_id` (parent unit), `factor` (root units in one), `reference_uom_id` (the
+root: the dimension), `parent_path`
+**Key Methods:** `round()`, `compare()`, `is_zero()`, `_get_quantity_in_unit()` and its
+`_lenient` / `_report` / `_estimate` / `_reconcile` / `_stored` variants
+
 ## Model Index
 
 Quick lookup — file → model → primary role:
@@ -2796,6 +2813,29 @@ Quick lookup — file → model → primary role:
 | `mixin_hierarchy.py` | mixin.hierarchy | `_parent_store` tree on a materialized path |
 | `tag_tag.py` | tag.tag | Generic tag records |
 | `decimal_precision.py` | decimal.precision | Decimal precision config |
+| `uom_uom.py` | uom.uom | Units of measure and conversion |
+| `mixin_resource.py` | mixin.resource | Resource model -- see resource/MODEL_MAP.md |
+| `mixin_resource_allocation.py` | mixin.resource.allocation | Resource model -- see resource/MODEL_MAP.md |
+| `mixin_resource_kind.py` | mixin.resource.kind | Resource model -- see resource/MODEL_MAP.md |
+| `mixin_resource_ledger.py` | mixin.resource.ledger | Resource model -- see resource/MODEL_MAP.md |
+| `mixin_resource_scheduling.py` | mixin.resource.scheduling | Resource model -- see resource/MODEL_MAP.md |
+| `mixin_resource_scheduling_tools.py` | mixin.resource.scheduling.tools | Resource model -- see resource/MODEL_MAP.md |
+| `resource_assignment.py` | resource.assignment | Resource model -- see resource/MODEL_MAP.md |
+| `resource_calendar.py` | resource.calendar | Resource model -- see resource/MODEL_MAP.md |
+| `resource_calendar_attendance.py` | resource.calendar.attendance | Resource model -- see resource/MODEL_MAP.md |
+| `resource_config.py` | resource.config | Resource model -- see resource/MODEL_MAP.md |
+| `resource_identifier.py` | resource.identifier | Resource model -- see resource/MODEL_MAP.md |
+| `resource_identifier_type.py` | resource.identifier.type | Resource model -- see resource/MODEL_MAP.md |
+| `resource_kind.py` | resource.kind | Resource model -- see resource/MODEL_MAP.md |
+| `resource_meter.py` | resource.meter | Resource model -- see resource/MODEL_MAP.md |
+| `resource_meter_reading.py` | resource.meter.reading | Resource model -- see resource/MODEL_MAP.md |
+| `resource_nationality.py` | resource.nationality | Resource model -- see resource/MODEL_MAP.md |
+| `resource_relation.py` | resource.relation | Resource model -- see resource/MODEL_MAP.md |
+| `resource_reservation.py` | resource.reservation | Resource model -- see resource/MODEL_MAP.md |
+| `resource_resource.py` | resource.resource | Resource model -- see resource/MODEL_MAP.md |
+| `resource_role.py` | resource.role | Resource model -- see resource/MODEL_MAP.md |
+| `resource_schedule_exception.py` | resource.schedule.exception | Resource model -- see resource/MODEL_MAP.md |
+| `resource_time_type.py` | resource.time.type | Resource model -- see resource/MODEL_MAP.md |
 | `mixin_image.py` | mixin.image | Multi-resolution images |
 | `properties_base_definition.py` | properties.base.definition | Properties definitions |
 | `mixin_properties_base_definition.py` | mixin.properties.base.definition | Properties mixin |

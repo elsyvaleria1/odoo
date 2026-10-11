@@ -438,7 +438,7 @@ class StockBarcodeController(http.Controller):
                 result[0]["display_name"],
             )
         # Ignore UoM barcode if the UoM setting is toggled off.
-        elif result := self.env.user.has_group("uom.group_uom") and request.env[
+        elif result := self.env.user.has_group("base.group_uom") and request.env[
             "product.uom"
         ].search_read([("barcode", "=", barcode)], ["product_id"], limit=1):
             product_id, product_display_name = result[0]["product_id"]
@@ -635,7 +635,7 @@ class StockBarcodeController(http.Controller):
             "group_production_lot": request.env.user.has_group(
                 "stock.group_production_lot"
             ),
-            "group_uom": request.env.user.has_group("uom.group_uom"),
+            "group_uom": request.env.user.has_group("base.group_uom"),
             "group_stock_sign_delivery": request.env.user.has_group(
                 "stock.group_stock_sign_delivery"
             ),

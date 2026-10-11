@@ -13,7 +13,7 @@ class MixinTimesheetGrid(models.AbstractModel):
         """
         company = self.env.company
         uom = company.hr_timesheet_config_id.timesheet_encode_uom_id
-        day_uom = self.env.ref("uom.product_uom_day")
+        day_uom = self.env.ref("base.product_uom_day")
         rounding = (
             len(
                 str(

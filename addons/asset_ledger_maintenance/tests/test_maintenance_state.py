@@ -15,7 +15,7 @@ class TestMaintenanceState(TransactionCase):
                 "is_storable": True,
                 "tracking": "serial",
                 "maintenance_ok": True,
-                "asset_kind_id": cls.env.ref("resource.kind_machinery").id,
+                "asset_kind_id": cls.env.ref("base.kind_machinery").id,
             }
         )
         cls.asset = cls.env["product.trace"].create(
@@ -91,7 +91,7 @@ class TestOperationalState(TransactionCase):
             {
                 "name": "State probe parcel",
                 "is_storable": False,
-                "asset_kind_id": cls.env.ref("resource.kind_property").id,
+                "asset_kind_id": cls.env.ref("base.kind_property").id,
             }
         )
 

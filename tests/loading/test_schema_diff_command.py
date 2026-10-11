@@ -35,7 +35,7 @@ def test_schema_diff_previews_an_install_and_commits_nothing(base_db):
         _get_installed_modules(base_db),
         _get_tables(base_db),
     )
-    assert "uom" not in before_modules
+    assert "utm" not in before_modules
     proc = subprocess.run(
         [
             sys.executable,
@@ -46,7 +46,7 @@ def test_schema_diff_previews_an_install_and_commits_nothing(base_db):
             "-d",
             base_db,
             "-i",
-            "uom",
+            "utm",
             "--log-level",
             "warn",
         ],
@@ -58,7 +58,7 @@ def test_schema_diff_previews_an_install_and_commits_nothing(base_db):
     assert proc.returncode == 0, proc.stderr[-3000:]
     assert "DDL statements that would run:" in proc.stdout
     assert "CREATE TABLE" in proc.stdout
-    assert "uom" in proc.stdout
+    assert "utm" in proc.stdout
     assert _get_installed_modules(base_db) == before_modules
     assert _get_tables(base_db) == before_tables
 

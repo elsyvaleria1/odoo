@@ -2,7 +2,7 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError
 from odoo.fields import Domain
 
-from odoo.addons.resource.models.utils import HOURS_PER_DAY
+from odoo.addons.base.models.resource_utils import HOURS_PER_DAY
 
 
 class WizardHrLeaveAllocationCreate(models.TransientModel):

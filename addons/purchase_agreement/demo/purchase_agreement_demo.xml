@@ -10,7 +10,7 @@
         <record id="bo_requisition_line" model="purchase.agreement.line">
             <field name="agreement_id" ref="bo_requisition" />
             <field name="product_id" ref="product.product_product_13" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="product_qty">100</field>
             <field name="price_unit">60</field>
         </record>
@@ -31,7 +31,7 @@
                 model="purchase.order.line" />
             <field name="date_commitment" eval="time.strftime('%Y-%m-10')" />
             <field name="product_id" ref="product.product_product_13" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="price_unit">60</field>
             <field name="product_qty">25</field>
         </record>
@@ -49,7 +49,7 @@
                 model="purchase.order.line" />
             <field name="date_commitment" eval="time.strftime('%Y-%m-15')" />
             <field name="product_id" ref="product.product_product_13" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="price_unit">60</field>
             <field name="product_qty">10</field>
         </record>

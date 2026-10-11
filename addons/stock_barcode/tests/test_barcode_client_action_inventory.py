@@ -657,7 +657,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         counted regardless if there is already products in stock or not.
         """
         self.env.user.write(
-            {"group_ids": [Command.link(self.env.ref("uom.group_uom").id)]}
+            {"group_ids": [Command.link(self.env.ref("base.group_uom").id)]}
         )
         self.env["ir.config_parameter"].set_param(
             "stock.show_expected_quantity_count", "True"
@@ -667,7 +667,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "Pack of 15",
                 "relative_factor": 15,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.product1.uom_ids = pack_15
@@ -691,7 +691,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             {
                 "group_ids": [
                     Command.link(self.env.ref("stock.group_production_lot").id),
-                    Command.link(self.env.ref("uom.group_uom").id),
+                    Command.link(self.env.ref("base.group_uom").id),
                 ],
             }
         )
@@ -699,7 +699,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "Product Serial 1 Packaging",
                 "relative_factor": 3,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.productserial1.uom_ids = pack_3
@@ -728,7 +728,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "LP x15",
                 "relative_factor": 15,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.env["ir.config_parameter"].set_param(
@@ -751,13 +751,13 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         location of the product contained in that packaging.
         """
         self.env.user.write(
-            {"group_ids": [Command.link(self.env.ref("uom.group_uom").id)]}
+            {"group_ids": [Command.link(self.env.ref("base.group_uom").id)]}
         )
 
         self.env["product.uom"].create(
             {
                 "product_id": self.product1.id,
-                "uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "uom_id": self.env.ref("base.product_uom_dozen").id,
                 "barcode": "DOZENPACK001",
             }
         )
@@ -1108,7 +1108,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         # Create a bunch of products with EAN13.
         product_common_vals = {
             "is_storable": True,
-            "uom_id": self.env.ref("uom.product_uom_unit").id,
+            "uom_id": self.env.ref("base.product_uom_unit").id,
         }
         products = self.env["product.product"].create(
             [
@@ -1248,7 +1248,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 "name": "PRO_GTIN_8",
                 "is_storable": True,
                 "barcode": "82655853",  # GTIN-8 format
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
@@ -1277,7 +1277,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 "name": "PRO_GTIN_8",
                 "is_storable": True,
                 "barcode": "82655853",  # GTIN-8 format
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
@@ -1323,7 +1323,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 "name": "PRO_GTIN_8",
                 "is_storable": True,
                 "barcode": "82655853",  # GTIN-8 format
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
@@ -1365,7 +1365,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 "name": "PRO_GTIN_12_lot",
                 "is_storable": True,
                 "barcode": "111155555717",  # GTIN-12 format
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "tracking": "lot",
             }
         )
@@ -1375,7 +1375,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 "name": "PRO_GTIN_14_serial",
                 "is_storable": True,
                 "barcode": "15222222222219",  # GTIN-14 format
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "tracking": "serial",
             }
         )

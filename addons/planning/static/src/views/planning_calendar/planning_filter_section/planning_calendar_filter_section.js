@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { RESOURCE_TYPE_ICONS } from "@resource/resource_type_icons";
+import { RESOURCE_TYPE_ICONS } from "@web/components/resource_avatar/resource_type_icons";
 import { CalendarFilterSection } from "@web/views/calendar";
 
 export class PlanningCalendarFilterSection extends CalendarFilterSection {

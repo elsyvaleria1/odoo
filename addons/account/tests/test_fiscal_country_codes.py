@@ -20,7 +20,7 @@ class TestFiscalCountryCodes(AccountTestInvoicingCommon):
                 {"name": "ZZ Fiscal Codes"}
             ),
             "res.partner": self.env["res.partner"].create({"name": "ZZ Fiscal Codes"}),
-            "uom.uom": self.env.ref("uom.product_uom_unit"),
+            "uom.uom": self.env.ref("base.product_uom_unit"),
             "res.currency": self.env.company.currency_id,
             "account.payment.term": self.env["account.payment.term"].create(
                 {

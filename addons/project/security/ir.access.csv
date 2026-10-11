@@ -88,7 +88,7 @@ mail_plan_rule_group_project_manager_task,Manager can manage project/task plans,
 mail_plan_templates_rule_group_project_manager_task,Manager can manage project/task plan templates,mail.model_mail_activity_plan_template,group_project_manager,permission,cud,all,,,,"[('plan_id.res_model', 'in', ('project.project', 'project.task'))]"
 access_project_template_create_wizard_manager,project.template.create.wizard.manager,model_wizard_project_project_create_from_template,group_project_manager,permission,crud,,,,,
 access_project_template_role_to_users_map_manager,project.template.role.to.users.map.manager,model_wizard_project_project_create_from_template_mapping,group_project_manager,permission,crud,,,,,
-access_resource_role_project_manager,resource.role.project.manager,resource.model_resource_role,group_project_manager,permission,cud,,,,,
+access_resource_role_project_manager,resource.role.project.manager,base.model_resource_role,group_project_manager,permission,cud,,,,,
 project_comp_rule,Project: multi-company,model_project_project,base.group_everyone,guard,crud,company,,,,
 project_phase_rule,Project Phase: multi-company,model_project_phase,base.group_everyone,guard,crud,company,,,,
 task_comp_rule,Project/Task: multi-company,model_project_task,base.group_everyone,guard,crud,company,,,,

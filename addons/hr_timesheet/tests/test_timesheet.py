@@ -937,7 +937,7 @@ class TestTimesheet(TestCommonTimesheet):
         )
         self.env["project.project"].invalidate_model()
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
-            "uom.product_uom_day"
+            "base.product_uom_day"
         )
         self.assertEqual(
             project.total_timesheet_time, 1, "Total timesheet time should be 1 day"
@@ -1201,7 +1201,7 @@ class TestTimesheet(TestCommonTimesheet):
         )
         timesheet.unit_amount = 8
         timesheet.company_id.hr_timesheet_config_id.timesheet_encode_uom_id = (
-            self.env.ref("uom.product_uom_day")
+            self.env.ref("base.product_uom_day")
         )
         timesheet.invalidate_recordset(["calendar_display_name"])
         self.assertEqual(

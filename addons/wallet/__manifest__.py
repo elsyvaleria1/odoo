@@ -12,7 +12,6 @@
     "depends": [
         "account",
         "mail",
-        "uom",
     ],
     "data": [
         "security/wallet_security.xml",

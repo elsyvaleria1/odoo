@@ -566,7 +566,7 @@
                         </div>
                         <footer>
                             <h5>
-                                <field name="product_id" />, <field name="qty_production" class="ms-1" /> <field name="product_uom_id" groups="uom.group_uom" /><t t-if="record.finished_trace_ids.value">, </t> <field name="finished_trace_ids" class="ms-1" t-if="record.finished_trace_ids.value" />
+                                <field name="product_id" />, <field name="qty_production" class="ms-1" /> <field name="product_uom_id" groups="base.group_uom" /><t t-if="record.finished_trace_ids.value">, </t> <field name="finished_trace_ids" class="ms-1" t-if="record.finished_trace_ids.value" />
                             </h5>
                             <div
                                 class="o_kanban_workorder_status d-flex ms-auto"

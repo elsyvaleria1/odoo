@@ -112,6 +112,6 @@ class TestCounterReset(DeviceMachinesCommon):
                 "name": "Reset WO",
                 "production_id": production.id,
                 "workcenter_id": self.env["mrp.workcenter"].search([], limit=1).id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )

@@ -3,7 +3,7 @@
 
     <template id="report_package_barcode">
         <t t-call="web.basic_layout">
-            <t t-set="uom_unit_id" t-value="env.ref('uom.product_uom_unit').id" />
+            <t t-set="uom_unit_id" t-value="env.ref('base.product_uom_unit').id" />
             <t
                 t-set="gs1_uom_patterns"
                 t-value="{rule.associated_uom_id.id: rule.pattern[1:4] + str(len(str('{:.10f}'.format(rule.associated_uom_id.rounding).rstrip('0')).split('.')[1])) for rule in env['barcode.rule'].search([('associated_uom_id', '!=', False), ('associated_uom_id.id', '!=', uom_unit_id), ('is_gs1_nomenclature', '=', True)])}" />
@@ -169,7 +169,7 @@
                         </th>
                         <th name="th_quantity" class="text-end" style="width: 20%;">
                             <span t-out="product_qty">12.0</span>
-                            <span t-field="product.uom_id.name" groups="uom.group_uom">Units</span>
+                            <span t-field="product.uom_id.name" groups="base.group_uom">Units</span>
                         </th>
                         <th
                             name="th_content_barcode"
@@ -200,7 +200,7 @@
                                     <div t-field="quant.trace_id.name" class="mt-2">54326786758</div>
                                     <div class="mt-1">
                                         <span t-field="quant.quantity">3.00</span>
-                                        <span t-field="quant.product_id.uom_id.name" groups="uom.group_uom">Units</span>
+                                        <span t-field="quant.product_id.uom_id.name" groups="base.group_uom">Units</span>
                                     </div>
                                 </div>
                                 <div class="d-inline-block py-2 text-center">

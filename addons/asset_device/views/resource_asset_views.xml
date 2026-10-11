@@ -4,7 +4,7 @@
     <record id="view_resource_asset_form_device" model="ir.ui.view">
         <field name="name">resource.asset.form.device</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource.resource_asset_view_form" />
+        <field name="inherit_id" ref="base.resource_asset_view_form" />
         <field name="arch" type="xml">
             <xpath expr="//sheet" position="inside">
                 <div class="oe_button_box" name="button_box_device">

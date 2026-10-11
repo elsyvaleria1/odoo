@@ -28,7 +28,7 @@
             <field name="is_storable" eval="True" />
             <field name="list_price">0.0</field>
             <field name="invoice_policy">ordered</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="subscription_rule_ids"
                 eval="[Command.set([ref('detergent_order_pricing_1'), ref('detergent_order_pricing_2'), ref('detergent_order_pricing_3')])]" />

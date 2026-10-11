@@ -201,7 +201,7 @@
                     icon="fa-undo"
                     invisible="qty_to_order_manual_set"
                     class="disabled opacity-0" />
-                <field name="product_uom_name" string="Unit" groups="uom.group_uom" />
+                <field name="product_uom_name" string="Unit" groups="base.group_uom" />
                 <field
                     name="deadline_date"
                     string="Deadline"

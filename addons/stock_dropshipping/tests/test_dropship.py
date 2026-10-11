@@ -16,7 +16,7 @@ class TestDropship(common.TransactionCase):
                 "is_storable": True,
                 "lst_price": 100.0,
                 "standard_price": 0.0,
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
                 "seller_ids": [
                     (0, 0, {"delay": 1, "partner_id": cls.supplier.id, "min_qty": 2.0})
                 ],
@@ -297,7 +297,7 @@ class TestDropship(common.TransactionCase):
                 "is_storable": "True",
                 "lst_price": 100.0,
                 "standard_price": 0.0,
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "seller_ids": [
                     (
                         0,
@@ -544,7 +544,7 @@ class TestDropship(common.TransactionCase):
                 "name": "Super Product",
                 "is_storable": "True",
                 "lst_price": 100.0,
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "seller_ids": [
                     Command.create({"partner_id": self.supplier.id, "price": 4}),
                 ],

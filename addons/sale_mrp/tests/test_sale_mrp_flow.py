@@ -505,7 +505,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
         self.env["mrp.bom"].create(
             {
                 "product_tmpl_id": product.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "sequence": 2,
                 "type": "phantom",
                 "bom_line_ids": [
@@ -515,7 +515,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
                         {
                             "product_id": product_wood_panel.id,
                             "product_qty": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         },
                     ),
                     (
@@ -524,7 +524,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
                         {
                             "product_id": product_desk_bolt.id,
                             "product_qty": 4,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         },
                     ),
                 ],
@@ -1678,7 +1678,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
             "default_warehouse"
         ].manufacture_pull_id.route_id.id
         route_mto = self.company_data["default_warehouse"].mto_pull_id.route_id.id
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
 
         finished_product = self.env["product.product"].create(
             {
@@ -1699,7 +1699,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
             {
                 "product_id": finished_product.id,
                 "product_tmpl_id": finished_product.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "product_qty": 1.0,
                 "type": "normal",
                 "bom_line_ids": [(5, 0), (0, 0, {"product_id": product_raw.id})],
@@ -1731,7 +1731,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
         ].manufacture_pull_id.route_id
         route_mto = self.company_data["default_warehouse"].mto_pull_id.route_id
         route_mto.rule_ids.procure_method = "make_to_order"
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
 
         finished_product = self.env["product.product"].create(
             {
@@ -1752,7 +1752,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
             {
                 "product_id": finished_product.id,
                 "product_tmpl_id": finished_product.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "product_qty": 1.0,
                 "type": "normal",
                 "bom_line_ids": [(5, 0), (0, 0, {"product_id": product_raw.id})],
@@ -1792,7 +1792,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
         ].manufacture_pull_id.route_id
         route_mto = self.company_data["default_warehouse"].mto_pull_id.route_id
         route_mto.rule_ids.procure_method = "make_to_order"
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
 
         finished_product = self.env["product.product"].create(
             {
@@ -1813,7 +1813,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
             {
                 "product_id": finished_product.id,
                 "product_tmpl_id": finished_product.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "product_qty": 1.0,
                 "type": "normal",
                 "bom_line_ids": [(5, 0), (0, 0, {"product_id": product_raw.id})],
@@ -2496,7 +2496,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
         stock_location = self.company_data["default_warehouse"].lot_stock_id
         custo_location = self.env.ref("stock.stock_location_customers")
 
-        grp_uom = self.env.ref("uom.group_uom")
+        grp_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [(4, grp_uom.id)]})
 
         self.env["stock.quant"]._update_available_quantity(
@@ -2599,7 +2599,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
     def test_kit_decrease_sol_qty_to_zero(self):
         stock_location = self.company_data["default_warehouse"].lot_stock_id
 
-        grp_uom = self.env.ref("uom.group_uom")
+        grp_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [(4, grp_uom.id)]})
 
         self.env["stock.quant"]._update_available_quantity(
@@ -2642,7 +2642,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
         stock_location = self.company_data["default_warehouse"].lot_stock_id
         self.company_data["default_warehouse"].delivery_steps = "pick_ship"
 
-        grp_uom = self.env.ref("uom.group_uom")
+        grp_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [(4, grp_uom.id)]})
 
         self.env["stock.quant"]._update_available_quantity(
@@ -3210,7 +3210,7 @@ class TestSaleMrpFlow(TestSaleMrpFlowCommon):
         self.env["mrp.bom"].create(
             {
                 "product_tmpl_id": product.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 

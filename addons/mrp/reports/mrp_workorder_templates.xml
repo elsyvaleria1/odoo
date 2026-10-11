@@ -35,7 +35,7 @@
                             <div class="col-3">
                                 <strong>Quantity to Produce:</strong><br />
                                 <span t-field="o.qty_production">2</span>
-                                <span t-field="o.product_uom_id.name" groups="uom.group_uom">Unit</span>
+                                <span t-field="o.product_uom_id.name" groups="base.group_uom">Unit</span>
                             </div>
                         </div>
                         <br />

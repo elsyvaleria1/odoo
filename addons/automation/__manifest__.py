@@ -11,7 +11,6 @@
         "bus",
         "digest",
         "mail",
-        "resource",
         "sms",
     ],
     "data": [

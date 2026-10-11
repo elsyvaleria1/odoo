@@ -23,7 +23,7 @@ class TestPurchaseLinePreparationBatch(PurchaseTestCommon):
         super().setUpClass()
         cls.env["res.lang"]._activate_lang("fr_FR")
         today = fields.Date.context_today(cls.env.user)
-        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.uom_dozen = cls.env.ref("base.product_uom_dozen")
         cls.vendor.lang = "en_US"
         cls.vendor_fr = cls.env["res.partner"].create(
             {"name": "Fournisseur", "lang": "fr_FR", "is_company": True},

@@ -130,7 +130,7 @@ class TestSaleMrpKitBom(BaseCommon):
                 "product_id": self.component_a.id,
                 "product_qty": 1.0,
                 "bom_id": self.bom.id,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
             }
         )
         self.env["mrp.bom.line"].create(
@@ -138,7 +138,7 @@ class TestSaleMrpKitBom(BaseCommon):
                 "product_id": self.component_b.id,
                 "product_qty": 2.0,
                 "bom_id": self.bom.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
@@ -191,7 +191,7 @@ class TestSaleMrpKitBom(BaseCommon):
 
         self.kit_product = self._create_product("Kit Product", "product", 1.00)
         self.component_a = self._create_product("Component A", "product", 1.00)
-        self.component_a.uom_id = self.env.ref("uom.product_uom_meter").id
+        self.component_a.uom_id = self.env.ref("base.product_uom_meter").id
         self.component_a.product_tmpl_id.list_price = 8
         self.component_b = self._create_product("Component B", "product", 1.00)
         self.component_b.product_tmpl_id.list_price = 5
@@ -222,14 +222,14 @@ class TestSaleMrpKitBom(BaseCommon):
                         {
                             "product_id": self.component_a.id,
                             "product_qty": 10.0,
-                            "product_uom_id": self.env.ref("uom.product_uom_meter").id,
+                            "product_uom_id": self.env.ref("base.product_uom_meter").id,
                         }
                     ),
                     Command.create(
                         {
                             "product_id": self.component_b.id,
                             "product_qty": 2.0,
-                            "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                            "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                         }
                     ),
                 ],
@@ -262,7 +262,7 @@ class TestSaleMrpKitBom(BaseCommon):
         )
 
     def test_qty_transferred_with_bom(self):
-        self.env.ref("uom.decimal_product_uom").digits = 5
+        self.env.ref("base.decimal_product_uom").digits = 5
 
         self.kit = self._create_product("Kit", True, 0.00)
         self.comp = self._create_product("Component", True, 0.00)
@@ -743,7 +743,7 @@ class TestSaleMrpKitBom(BaseCommon):
         kit_prod = self._create_product("kit_prod", "product", 0.00)
         sub_kit = self._create_product("sub_kit", "product", 0.00)
         component = self._create_product("component", "product", 0.00)
-        component.uom_id = self.env.ref("uom.product_uom_dozen")
+        component.uom_id = self.env.ref("base.product_uom_dozen")
         self.env["stock.quant"]._update_available_quantity(
             component, warehouse.lot_stock_id, 30
         )
@@ -1086,8 +1086,8 @@ class TestSaleMrpKitBom(BaseCommon):
         return move
 
     def test_kit_component_packaging_uom_falls_back_cross_category(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_kg = self.env.ref("uom.product_uom_kgm")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_kg = self.env.ref("base.product_uom_kgm")
         self.assertFalse(uom_kg._has_common_reference(uom_unit))
 
         move = self._confirm_kit_sale(uom_unit, uom_kg)
@@ -1102,8 +1102,8 @@ class TestSaleMrpKitBom(BaseCommon):
         self.assertEqual(move.quantity_packaging_uom, 6.0)
 
     def test_kit_component_packaging_uom_inherited_when_compatible(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         self.assertTrue(uom_dozen._has_common_reference(uom_unit))
 
         move = self._confirm_kit_sale(uom_unit, uom_dozen)

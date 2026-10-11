@@ -5,7 +5,7 @@
         <field name="name">Employee Commuting</field>
         <field name="source_id" ref="esg.esg_emission_source_direct_2" />
         <field name="esg_emissions_value">1</field>
-        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="uom_id" ref="base.product_uom_unit" />
         <field name="esg_uncertainty_value">0.2</field>
     </record>
 

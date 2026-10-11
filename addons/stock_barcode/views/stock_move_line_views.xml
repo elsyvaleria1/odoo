@@ -59,12 +59,12 @@
                             options="{'type': 'number'}"
                             class="text-end" />
                     </div>
-                    <div class="col-3 ps-0" groups="uom.group_uom">
+                    <div class="col-3 ps-0" groups="base.group_uom">
                         <field
                             name="product_uom_id"
                             widget="many2one_uom"
                             options="{'no_open': True}"
-                            groups="uom.group_uom" />
+                            groups="base.group_uom" />
                     </div>
                 </div>
                 <div name="digipad" class="row">
@@ -253,7 +253,7 @@
                             <field name="quantity" string="Quantity Done" />
                             <field
                                 name="product_uom_id"
-                                groups="uom.group_uom"
+                                groups="base.group_uom"
                                 class="ms-1" />
                         </div>
                     </t>
@@ -277,7 +277,7 @@
                             <div>
                                 <field name="available_quantity" />
                                 <span invisible="not quantity"> / <field name="quantity" /></span>
-                                <span> <field name="product_uom_id" groups="uom.group_uom" /></span>
+                                <span> <field name="product_uom_id" groups="base.group_uom" /></span>
                             </div>
                         </div>
                         <div

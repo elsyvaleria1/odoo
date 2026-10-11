@@ -467,11 +467,11 @@ class DeliveryCarrier(models.Model):
         weight_uom_id = self.env["product.template"]._get_uom_from_setting("weight")
         if unit == "KGS":
             return weight_uom_id._get_quantity_in_unit(
-                weight, self.env.ref("uom.product_uom_kgm"), round=False
+                weight, self.env.ref("base.product_uom_kgm"), round=False
             )
         elif unit == "LBS":
             return weight_uom_id._get_quantity_in_unit(
-                weight, self.env.ref("uom.product_uom_lb"), round=False
+                weight, self.env.ref("base.product_uom_lb"), round=False
             )
         else:
             raise ValueError

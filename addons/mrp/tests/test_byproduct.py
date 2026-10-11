@@ -14,7 +14,7 @@ class TestMrpByProduct(common.TransactionCase):
         cls.warehouse = cls.env.ref("stock.warehouse0")
         route_manufacture = cls.warehouse.manufacture_pull_id.route_id.id
         route_mto = cls.warehouse.mto_pull_id.route_id.id
-        cls.uom_unit_id = cls.env.ref("uom.product_uom_unit").id
+        cls.uom_unit_id = cls.env.ref("base.product_uom_unit").id
 
         def create_product(name, route_ids=None):
             return cls.env["product.product"].create(
@@ -232,7 +232,7 @@ class TestMrpByProduct(common.TransactionCase):
         self.assertFalse(mnf_product_a.move_byproduct_ids)
 
     def test_default_uom(self):
-        self.product_b.product_tmpl_id.uom_id = self.env.ref("uom.product_uom_dozen")
+        self.product_b.product_tmpl_id.uom_id = self.env.ref("base.product_uom_dozen")
         bom = self.MrpBom.create(
             {
                 "product_tmpl_id": self.product_a.product_tmpl_id.id,
@@ -244,7 +244,7 @@ class TestMrpByProduct(common.TransactionCase):
             }
         )
         self.assertEqual(
-            bom.byproduct_ids.product_uom_id, self.env.ref("uom.product_uom_dozen")
+            bom.byproduct_ids.product_uom_id, self.env.ref("base.product_uom_dozen")
         )
 
     def test_finished_and_byproduct_moves(self):
@@ -503,7 +503,7 @@ class TestMrpByProduct(common.TransactionCase):
         byproduct_1 = self.env["stock.move"].create(
             {
                 "product_id": self.product_d.id,
-                "product_uom_id": self.ref("uom.product_uom_unit"),
+                "product_uom_id": self.ref("base.product_uom_unit"),
                 "production_id": mo.id,
                 "location_id": self.ref("stock.stock_location_stock"),
                 "location_dest_id": self.ref("stock.stock_location_output"),
@@ -512,7 +512,7 @@ class TestMrpByProduct(common.TransactionCase):
         byproduct_2 = self.env["stock.move"].create(
             {
                 "product_id": self.product_e.id,
-                "product_uom_id": self.ref("uom.product_uom_unit"),
+                "product_uom_id": self.ref("base.product_uom_unit"),
                 "production_id": mo.id,
                 "location_id": self.ref("stock.stock_location_stock"),
                 "location_dest_id": self.ref("stock.stock_location_output"),
@@ -787,7 +787,7 @@ class TestByproductMoves(common.TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.env.user.group_ids += cls.env.ref("mrp.group_mrp_byproducts")
-        cls.unit = cls.env.ref("uom.product_uom_unit")
+        cls.unit = cls.env.ref("base.product_uom_unit")
         cls.component, cls.finished, cls.byproduct, cls.other_byproduct, cls.extra = (
             cls.env["product.product"].create(
                 [

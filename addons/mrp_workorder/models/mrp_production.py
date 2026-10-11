@@ -198,7 +198,7 @@ class MrpProduction(models.Model):
                 "values": {
                     "name": name,
                     "is_storable": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                     "description": desc,
                     "default_code": code,
                     "image_1920": read_file_datas(img),
@@ -256,7 +256,7 @@ class MrpProduction(models.Model):
                     "noupdate": True,
                     "values": {
                         "product_tmpl_id": table.product_tmpl_id.id,
-                        "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                        "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         "sequence": 3,
                         "consumption": "flexible",
                         "days_to_prepare_mo": 3,
@@ -273,7 +273,7 @@ class MrpProduction(models.Model):
                 "values": {
                     "product_id": prod,
                     "product_qty": qty,
-                    "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "product_uom_id": self.env.ref("base.product_uom_unit").id,
                     "sequence": seq,
                     "bom_id": bom.id,
                 },
@@ -292,7 +292,7 @@ class MrpProduction(models.Model):
                     "noupdate": True,
                     "values": {
                         "product_id": table.id,
-                        "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                        "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         "product_qty": 1,
                         "date_start": datetime.today() + relativedelta(days=1),
                         "bom_id": bom.id,
@@ -313,7 +313,7 @@ class MrpProduction(models.Model):
                         "values": {
                             "name": "Assembly line 1",
                             "resource_calendar_id": self.env.ref(
-                                "resource.resource_calendar_std"
+                                "base.resource_calendar_std"
                             ).id,
                         },
                     }

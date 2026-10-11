@@ -63,8 +63,8 @@ class TestMrpWorkorderPlm(TestPlmCommon):
     def test_create_eco_from_production_with_wo_using_uom(self):
         """Creates an ECO from a Manufacturing Order and checks the modifications done in the MO
         are correct even if the UoM used in the MO is different than the BoM's one."""
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         # Creates a new MO and modifies some fields. Don't confirm it since we want to keep the dozen as the used UoM.
         mo_form = Form(self.env["mrp.production"])
         mo_form.bom_id = self.bom_table

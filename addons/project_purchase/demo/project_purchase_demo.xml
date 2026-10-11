@@ -16,7 +16,7 @@
             <field name="list_price">110.0</field>
             <field name="type">consu</field>
             <field name="weight">1.00</field>
-            <field name="uom_id" ref="uom.product_uom_ton" />
+            <field name="uom_id" ref="base.product_uom_ton" />
         </record>
         <record id="product_product_sand" model="product.product">
             <field name="name">Sand</field>
@@ -25,7 +25,7 @@
             <field name="list_price">70.0</field>
             <field name="type">consu</field>
             <field name="weight">1.00</field>
-            <field name="uom_id" ref="uom.product_uom_ton" />
+            <field name="uom_id" ref="base.product_uom_ton" />
         </record>
         <record id="product_product_bricks" model="product.product">
             <field name="name">Bricks</field>
@@ -34,7 +34,7 @@
             <field name="list_price">50.0</field>
             <field name="type">consu</field>
             <field name="weight">1.00</field>
-            <field name="uom_id" ref="uom.product_uom_ton" />
+            <field name="uom_id" ref="base.product_uom_ton" />
         </record>
         <record id="purchase_order_for_home_construction" model="purchase.order">
             <field name="partner_id" ref="base.res_partner_4" />
@@ -56,7 +56,7 @@
                 eval="obj().env.ref('project_purchase.product_product_cement').partner_ref"
                 model="purchase.order.line" />
             <field name="product_id" ref="project_purchase.product_product_cement" />
-            <field name="product_uom_id" ref="uom.product_uom_ton" />
+            <field name="product_uom_id" ref="base.product_uom_ton" />
             <field name="price_unit">150</field>
             <field name="product_qty">5</field>
             <field
@@ -75,7 +75,7 @@
                 eval="obj().env.ref('project_purchase.product_product_sand').partner_ref"
                 model="purchase.order.line" />
             <field name="product_id" ref="project_purchase.product_product_sand" />
-            <field name="product_uom_id" ref="uom.product_uom_ton" />
+            <field name="product_uom_id" ref="base.product_uom_ton" />
             <field name="price_unit">100</field>
             <field name="product_qty">10</field>
             <field
@@ -94,7 +94,7 @@
                 eval="obj().env.ref('project_purchase.product_product_bricks').partner_ref"
                 model="purchase.order.line" />
             <field name="product_id" ref="project_purchase.product_product_bricks" />
-            <field name="product_uom_id" ref="uom.product_uom_ton" />
+            <field name="product_uom_id" ref="base.product_uom_ton" />
             <field name="price_unit">50</field>
             <field name="product_qty">15</field>
             <field

@@ -706,12 +706,12 @@ class TestExpenses(TestExpenseCommon):
         )
 
     def test_corner_case_defaults_values_from_product(self):
-        self.env.ref("base.group_user").implied_ids -= self.env.ref("uom.group_uom")
-        self.expense_user_employee.group_ids -= self.env.ref("uom.group_uom")
+        self.env.ref("base.group_user").implied_ids -= self.env.ref("base.group_uom")
+        self.expense_user_employee.group_ids -= self.env.ref("base.group_uom")
 
         Expense = self.env["hr.expense"].with_user(self.expense_user_employee)
 
-        self.assertFalse(Expense.env.user.has_group("uom.group_uom"))
+        self.assertFalse(Expense.env.user.has_group("base.group_uom"))
 
         product = Expense.env.ref("hr_expense.expense_product_mileage")
 

@@ -169,7 +169,7 @@
                                         name="product_uom_id"
                                         widget="many2one_uom"
                                         optional="show"
-                                        groups="uom.group_uom"
+                                        groups="base.group_uom"
                                         required="product_id" />
                                     <field
                                         name="analytic_distribution"
@@ -199,7 +199,7 @@
                                     <field name="min_qty" />
                                     <field
                                         name="product_uom_id"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                     <field name="price_unit" />
                                 </list>
                             </field>

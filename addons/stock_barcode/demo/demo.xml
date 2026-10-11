@@ -86,7 +86,7 @@
             <field name="standard_price">90.0</field>
             <field name="weight">1.1</field>
             <field name="tracking">lot</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -100,7 +100,7 @@
             <field name="list_price">200</field>
             <field name="is_storable" eval="True" />
             <field name="weight">2</field>
-            <field name="uom_id" ref="uom.product_uom_cubic_foot" />
+            <field name="uom_id" ref="base.product_uom_cubic_foot" />
             <field name="default_code">E-COM99</field>
             <field
                 name="image_1920"
@@ -115,7 +115,7 @@
             <field name="list_price">210</field>
             <field name="is_storable" eval="True" />
             <field name="weight">2</field>
-            <field name="uom_id" ref="uom.product_uom_litre" />
+            <field name="uom_id" ref="base.product_uom_litre" />
             <field name="default_code">E-COM98</field>
             <field
                 name="image_1920"

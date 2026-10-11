@@ -31,7 +31,7 @@
                             </tr>
                             <tr>
                                 <th class="px-1">Products</th>
-                                <th class="px-1" groups="uom.group_uom">UOM</th>
+                                <th class="px-1" groups="base.group_uom">UOM</th>
                                 <t t-foreach="quantities" t-as="qty">
                                     <th class="text-end px-1">
                                         <span t-out="qty">10 Units</span>
@@ -55,7 +55,7 @@
                                         <span t-else="" t-out="product['name']">Acme Widget</span>
                                     </td>
                                     <td
-                                        groups="uom.group_uom"
+                                        groups="base.group_uom"
                                         class="px-1"
                                         t-out="product['uom']" />
                                     <t t-foreach="quantities" t-as="qty">
@@ -82,7 +82,7 @@
                                                 Widget - Blue</span>
                                         </td>
                                         <td
-                                            groups="uom.group_uom"
+                                            groups="base.group_uom"
                                             class="px-1"
                                             t-out="variant['uom']" />
                                         <t t-foreach="quantities" t-as="qty">

@@ -413,7 +413,7 @@ class TestStockValuationCommon(BaseCommon):
 
         cls.picking_type_in = cls.warehouse.in_type_id
         cls.picking_type_out = cls.warehouse.out_type_id
-        cls.uom = cls.env.ref("uom.product_uom_unit")
+        cls.uom = cls.env.ref("base.product_uom_unit")
         cls.uom_pack_of_6 = cls.env["uom.uom"].create(
             {
                 "name": "Pack of 6",

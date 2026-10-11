@@ -1,0 +1,91 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import {
+    buildM2OFieldDescription,
+    computeM2OProps,
+    extractM2OFieldProps,
+    m2oSupportedOptions,
+    Many2One,
+    Many2OneField,
+} from "@web/fields/relational/many2one";
+
+import {
+    getProductId,
+    getProductQuantity,
+    getProductRelatedModel,
+    Many2XUomTagsAutocomplete,
+} from "../many2x_uom_tags/many2x_uom_tags.js";
+
+// @todo: this extension will be removed in the future
+// when the autocomplete source generation come from a hook.
+class UomMany2One extends Many2One {
+    static components = {
+        ...super.components,
+        Many2XAutocomplete: Many2XUomTagsAutocomplete,
+    };
+    static props = {
+        ...super.props,
+        productModel: t.string().optional(),
+        productId: t.number().optional(),
+        productQuantity: t.number().optional(),
+    };
+
+    get many2XAutocompleteProps() {
+        return {
+            ...super.many2XAutocompleteProps,
+            productModel: this.props.productModel,
+            productId: this.props.productId,
+            productQuantity: this.props.productQuantity,
+        };
+    }
+}
+
+export class Many2OneUomField extends Component {
+    static template = "web.Many2OneUomField";
+    static components = { UomMany2One };
+    static props = {
+        ...Many2OneField.props,
+        productField: t.string().optional("product_id"),
+        quantityField: t.string().optional("product_uom_qty"),
+    };
+    props = useProps(this.constructor.props);
+
+    get m2oProps() {
+        return {
+            ...computeM2OProps(this.props),
+            productModel: getProductRelatedModel.call(this),
+            productId: getProductId.call(this),
+            productQuantity: getProductQuantity.call(this),
+        };
+    }
+}
+
+registry.category("fields").add("many2one_uom", {
+    ...buildM2OFieldDescription(Many2OneUomField),
+    additionalClasses: ["o_field_many2one"],
+    extractProps(staticInfo, dynamicInfo) {
+        return {
+            ...extractM2OFieldProps(staticInfo, dynamicInfo),
+            productField: staticInfo.options.product_field,
+            quantityField: staticInfo.options.quantity_field,
+        };
+    },
+    supportedOptions: [
+        ...m2oSupportedOptions,
+        {
+            label: _t("Product Field Name"),
+            name: "product_field",
+            type: "field",
+            availableTypes: ["many2one"],
+        },
+        {
+            label: _t("Quantity Field Name"),
+            name: "quantity_field",
+            type: "field",
+            availableTypes: ["float", "integer"],
+        },
+    ],
+});

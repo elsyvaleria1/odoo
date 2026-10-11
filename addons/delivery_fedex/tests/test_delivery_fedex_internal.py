@@ -27,7 +27,7 @@ class TestDeliveryFedexInternal(TransactionCase):
         )
         self.env["res.currency"].invalidate_model(["active"])
 
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
         test_product = self.env["product.product"].create(
             {
                 "name": "Product A",

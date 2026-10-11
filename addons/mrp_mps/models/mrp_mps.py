@@ -680,7 +680,7 @@ class MrpProductionSchedule(models.Model):
         ]
         if self.env.user.has_group("stock.group_stock_multi_warehouses"):
             read_fields.append("warehouse_id")
-        if self.env.user.has_group("uom.group_uom"):
+        if self.env.user.has_group("base.group_uom"):
             read_fields.append("product_uom_id")
         production_schedule_states = schedules_to_compute.read(read_fields)
         production_schedule_states_by_id = {

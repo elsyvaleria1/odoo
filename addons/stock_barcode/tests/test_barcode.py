@@ -467,7 +467,7 @@ class TestBarcodeSearch(TransactionCase):
 
     def test_filter_on_packaging_barcode(self):
         self.env.user.write(
-            {"group_ids": [Command.link(self.env.ref("uom.group_uom").id)]}
+            {"group_ids": [Command.link(self.env.ref("base.group_uom").id)]}
         )
         magic_beer = self.env["product.product"].create(
             {
@@ -480,7 +480,7 @@ class TestBarcodeSearch(TransactionCase):
             {
                 "name": "Pack of 24",
                 "relative_factor": 24,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         packing_barcode = self.env["product.uom"].create(

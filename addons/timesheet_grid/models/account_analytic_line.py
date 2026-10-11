@@ -12,7 +12,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import format_date
 from odoo.tools.date_utils import localized
 
-from odoo.addons.resource.models.utils import split_at_midnight
+from odoo.addons.base.models.resource_utils import split_at_midnight
 from odoo.addons.timer.utils.timer_utils import round_time_spent
 
 _debug = DebugLog(__name__)
@@ -71,7 +71,7 @@ class AccountAnalyticLine(models.Model):
 
     @api.depends("encoding_uom_id", "employee_id", "validated")
     def _compute_display_timer(self) -> None:
-        uom_hour = self.env.ref("uom.product_uom_hour")
+        uom_hour = self.env.ref("base.product_uom_hour")
         is_uom_hour = (
             self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id == uom_hour
         )

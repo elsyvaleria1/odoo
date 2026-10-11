@@ -10,7 +10,7 @@ class TestResourceAssetComponents(TestAccountAssetCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.vehicle = cls.env.ref("resource.kind_vehicle")
+        cls.vehicle = cls.env.ref("base.kind_vehicle")
         cls.account = cls.company_data["default_account_assets"].copy()
         cls.account.write({"can_create_asset": True, "create_asset": "draft"})
         cls.depreciable = cls._profile("Automovil FF")
@@ -21,7 +21,7 @@ class TestResourceAssetComponents(TestAccountAssetCommon):
         return cls.env["account.depreciation.profile"].create(
             {
                 "name": name,
-                "kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "kind_id": cls.env.ref("base.kind_vehicle").id,
                 "account_asset_id": cls.company_data["default_account_assets"].id,
                 "account_depreciation_id": cls.company_data[
                     "default_account_assets"

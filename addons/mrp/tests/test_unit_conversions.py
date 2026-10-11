@@ -9,8 +9,8 @@ class TestBomBatchFactor(TestMrpCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_gram = cls.env.ref("uom.product_uom_gram")
-        cls.uom_kgm = cls.env.ref("uom.product_uom_kgm")
+        cls.uom_gram = cls.env.ref("base.product_uom_gram")
+        cls.uom_kgm = cls.env.ref("base.product_uom_kgm")
         cls.finished, cls.component, cls.byproduct = cls.env["product.product"].create(
             [
                 {"name": "Finished", "is_storable": True},

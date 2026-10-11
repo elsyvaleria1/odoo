@@ -342,7 +342,7 @@ class TestBatchPicking(TransactionCase):
         self.assertEqual(len(all_db_pickings) + 1, len(new_all_db_picking))
 
     def test_wave_split_move_uom(self):
-        self.uom_dozen = self.env.ref("uom.product_uom_dozen")
+        self.uom_dozen = self.env.ref("base.product_uom_dozen")
         sns = self.env["product.trace"].create(
             [
                 {
@@ -372,7 +372,7 @@ class TestBatchPicking(TransactionCase):
         self.assertEqual(len(dozen_move.move_line_ids), 12)
         self.assertEqual(
             dozen_move.move_line_ids.product_uom_id,
-            self.env.ref("uom.product_uom_unit"),
+            self.env.ref("base.product_uom_unit"),
         )
 
         lines = dozen_move.move_line_ids[0:5]

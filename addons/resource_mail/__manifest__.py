@@ -7,7 +7,6 @@
     "author": "Odoo S.A.",
     "license": "LGPL-3",
     "depends": [
-        "resource",
         "mail",
     ],
     "data": [

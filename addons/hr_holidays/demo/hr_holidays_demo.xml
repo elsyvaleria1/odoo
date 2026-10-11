@@ -431,7 +431,7 @@
         <record id="resource_public_time_off_1" model="resource.schedule.exception">
             <field name="name">Public Time Off</field>
             <field name="company_id" ref="base.main_company" />
-            <field name="calendar_id" ref="resource.resource_calendar_std" />
+            <field name="calendar_id" ref="base.resource_calendar_std" />
             <field name="date_from" eval="time.strftime('%Y-02-13 05:00:00')" />
             <field name="date_to" eval="time.strftime('%Y-02-13 17:00:00')" />
         </record>

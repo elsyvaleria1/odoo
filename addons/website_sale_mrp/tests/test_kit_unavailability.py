@@ -57,7 +57,7 @@ class TestKitUnavailability(TransactionCase):
                 "product_tmpl_id": kit.product_tmpl_id.id,
                 "type": "phantom",
                 "product_qty": 1,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "bom_line_ids": [
                     Command.create({"product_id": component.id, "product_qty": 24})
                 ],

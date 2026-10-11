@@ -43,7 +43,7 @@
                         name="kanban_monthly_demand_qty" />
                     <field
                         name="uom_id"
-                        groups="uom.group_uom"
+                        groups="base.group_uom"
                         class="text-muted small ms-1" />
                 </div>
                 <div
@@ -56,9 +56,9 @@
                         name="kanban_purchase_suggest_qty" />
                     <field
                         name="uom_id"
-                        groups="uom.group_uom"
+                        groups="base.group_uom"
                         class="text-info fw-bold fs-5 me-1" />
-                    <span class="text-info fw-bold fs-5 me-1" groups="!uom.group_uom">Units</span>
+                    <span class="text-info fw-bold fs-5 me-1" groups="!base.group_uom">Units</span>
                 </div>
             </div>
         </field>

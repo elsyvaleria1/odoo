@@ -8399,7 +8399,7 @@ class TestStockMove(TestStockCommon):
         )
         self.assertEqual(move.product_uom_id, self.productA.uom_id)
         self.assertEqual(move.move_line_ids.product_uom_id, self.productA.uom_id)
-        uom_kg = self.env.ref("uom.product_uom_kgm")
+        uom_kg = self.env.ref("base.product_uom_kgm")
         product1 = self.env["product.product"].create(
             {
                 "name": "product1",
@@ -8746,7 +8746,7 @@ class TestStockMove(TestStockCommon):
         )
 
     def test_correct_quantity_autofilled(self):
-        self.productA.uom_id = self.env.ref("uom.product_uom_gram")
+        self.productA.uom_id = self.env.ref("base.product_uom_gram")
         quant = self.env["stock.quant"].create(
             {
                 "product_id": self.productA.id,
@@ -8758,7 +8758,7 @@ class TestStockMove(TestStockCommon):
             {
                 "product_id": self.productA.id,
                 "product_uom_qty": 2,
-                "product_uom_id": self.env.ref("uom.product_uom_kgm").id,
+                "product_uom_id": self.env.ref("base.product_uom_kgm").id,
                 "location_id": self.stock_location.id,
                 "location_dest_id": self.customer_location.id,
             }
@@ -8961,8 +8961,8 @@ class TestStockMove(TestStockCommon):
         self.assertEqual(picking.move_ids.location_dest_id, self.stock_location)
 
     def test_set_quantity_done_with_rounding_issues(self):
-        gram_uom = self.env.ref("uom.product_uom_gram")
-        oz_uom = self.env.ref("uom.product_uom_oz")
+        gram_uom = self.env.ref("base.product_uom_gram")
+        oz_uom = self.env.ref("base.product_uom_oz")
 
         self.productA.write({"uom_id": oz_uom.id})
         self.env["stock.quant"]._update_available_quantity(
@@ -9011,8 +9011,8 @@ class TestStockMove(TestStockCommon):
         )
 
     def test_in_sub_precision_quantity_is_not_dropped(self):
-        gram_uom = self.env.ref("uom.product_uom_gram")
-        kg_uom = self.env.ref("uom.product_uom_kgm")
+        gram_uom = self.env.ref("base.product_uom_gram")
+        kg_uom = self.env.ref("base.product_uom_kgm")
         self.productA.write({"uom_id": kg_uom.id, "is_storable": True})
 
         move = self.env["stock.move"].create(
@@ -9118,7 +9118,7 @@ class TestStockMove(TestStockCommon):
         self.assertEqual(picking.move_ids.trace_ids, lot2)
 
     def test_delivery_slip_aggregated_lines_with_canceled_move_and_packaging(self):
-        pack_of_6 = self.env.ref("uom.product_uom_pack_6")
+        pack_of_6 = self.env.ref("base.product_uom_pack_6")
         self.env["stock.quant"]._update_available_quantity(
             self.productA, self.stock_location, 6
         )

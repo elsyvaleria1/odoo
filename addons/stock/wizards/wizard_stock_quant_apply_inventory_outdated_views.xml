@@ -72,7 +72,7 @@
                             <field
                                 name="product_uom_id"
                                 widget="many2one_uom"
-                                groups="uom.group_uom" />
+                                groups="base.group_uom" />
                             <field
                                 name="company_id"
                                 optional="show"

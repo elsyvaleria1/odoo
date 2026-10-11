@@ -164,7 +164,7 @@ class TestPurchaseOrderLineGuard(TransactionCase):
 
         with self.assertRaises(UserError):
             order.line_ids.with_user(self.manager).write(
-                {"product_uom_id": self.env.ref("uom.product_uom_dozen").id},
+                {"product_uom_id": self.env.ref("base.product_uom_dozen").id},
             )
 
     def test_manager_cannot_rewrite_the_description_while_pending(self):
@@ -197,7 +197,7 @@ class TestPurchaseOrderLineGuard(TransactionCase):
         self.assertTrue(line, "an approved order is editable again")
         line.with_user(self.manager).write(
             {
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "name": "renamed once decided",
             },
         )

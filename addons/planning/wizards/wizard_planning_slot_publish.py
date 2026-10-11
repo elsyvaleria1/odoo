@@ -1,7 +1,7 @@
 from odoo import Command, api, fields, models
 from odoo.fields import Domain
 
-from odoo.addons.resource.models.utils import filter_domain_leaf
+from odoo.addons.base.models.resource_utils import filter_domain_leaf
 
 
 class WizardPlanningSlotPublish(models.TransientModel):

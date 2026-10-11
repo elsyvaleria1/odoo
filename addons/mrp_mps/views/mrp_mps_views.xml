@@ -36,7 +36,7 @@
                             <field name="forecast_target_qty" />
                             <field
                                 name="product_uom_id"
-                                groups="uom.group_uom"
+                                groups="base.group_uom"
                                 readonly="1" />
                         </div>
                         <label for="min_to_replenish_qty" />
@@ -44,7 +44,7 @@
                             <field name="min_to_replenish_qty" />
                             <field
                                 name="product_uom_id"
-                                groups="uom.group_uom"
+                                groups="base.group_uom"
                                 readonly="1" />
                         </div>
                         <label for="replenish_trigger" />

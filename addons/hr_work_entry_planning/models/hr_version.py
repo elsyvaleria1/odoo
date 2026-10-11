@@ -5,7 +5,7 @@ from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.intervals import Intervals
 
-from odoo.addons.resource.models.utils import last_day_of
+from odoo.addons.base.models.resource_utils import last_day_of
 
 _debug = DebugLog(__name__)
 

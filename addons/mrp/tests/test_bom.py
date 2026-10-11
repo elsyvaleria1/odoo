@@ -664,7 +664,7 @@ class TestBoM(TestMrpCommon):
         self.assertEqual(product_unit.qty_available, 12.0)
 
     def test_13_negative_on_hand_qty(self):
-        precision = self.env.ref("uom.decimal_product_uom")
+        precision = self.env.ref("base.decimal_product_uom")
         precision.digits = 5
 
         _ = self.env["mrp.bom"].create(
@@ -830,8 +830,8 @@ class TestBoM(TestMrpCommon):
         self.assertNotIn(kit_products.product_tmpl_id, product_tmpl_without_kit)
 
     def test_20_bom_report(self):
-        uom_kg = self.env.ref("uom.product_uom_kgm")
-        uom_litre = self.env.ref("uom.product_uom_litre")
+        uom_kg = self.env.ref("base.product_uom_kgm")
+        uom_litre = self.env.ref("base.product_uom_litre")
         crumble = self.env["product.product"].create(
             {
                 "name": "Crumble",
@@ -1445,7 +1445,7 @@ class TestBoM(TestMrpCommon):
             1
         ]
 
-        uom_litre = self.env.ref("uom.product_uom_litre")
+        uom_litre = self.env.ref("base.product_uom_litre")
         self.paint = self.env["product.template"].create(
             {"name": "Paint", "uom_id": uom_litre.id}
         )
@@ -1632,7 +1632,7 @@ class TestBoM(TestMrpCommon):
         self.assertEqual(report_values["lines"]["bom_cost"], 210)
 
     def test_22_bom_report_recursive_bom(self):
-        uom_litre = self.env.ref("uom.product_uom_litre")
+        uom_litre = self.env.ref("base.product_uom_litre")
 
         finished = self.env["product.product"].create(
             {
@@ -2105,7 +2105,7 @@ class TestBoM(TestMrpCommon):
         )
 
     def test_bom_generated_from_mo_with_different_uom(self):
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
         common_vals = {"is_storable": True}
         finished_product = self.env["product.product"].create(
             dict(common_vals, name="CO² Molecule")
@@ -2419,7 +2419,7 @@ class TestBoM(TestMrpCommon):
         )
 
     def test_bom_updates_mo_with_different_uom(self):
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
         common_vals = {"is_storable": True}
         finished_product = self.env["product.product"].create(
             dict(common_vals, name="Monster in Jar")
@@ -3078,7 +3078,7 @@ class TestBoM(TestMrpCommon):
         self.assertEqual(len(mo_order.workorder_ids), 1)
 
     def test_update_bom_in_routing_workcenter(self):
-        resource_calendar_std_id = self.env.ref("resource.resource_calendar_std").id
+        resource_calendar_std_id = self.env.ref("base.resource_calendar_std").id
         mrp_workcenter_1 = self.env["mrp.workcenter"].create(
             {
                 "name": "Drill Station 1",
@@ -3835,7 +3835,7 @@ class TestBoM(TestMrpCommon):
         product_in_square_meter = self.env["product.template"].create(
             {
                 "name": "test",
-                "uom_id": self.env.ref("uom.product_uom_square_meter").id,
+                "uom_id": self.env.ref("base.product_uom_square_meter").id,
             }
         )
         workcenter = self.env["mrp.workcenter"].create(
@@ -3899,7 +3899,7 @@ class TestTourBoM(HttpCase):
         )
 
     def test_mrp_bom_product_catalog(self):
-        grp_uom = self.env.ref("uom.group_uom")
+        grp_uom = self.env.ref("base.group_uom")
         group_user = self.env.ref("base.group_user")
         group_user.write({"implied_ids": [Command.link(grp_uom.id)]})
         self.env.user.write({"group_ids": [Command.link(grp_uom.id)]})
@@ -4315,9 +4315,9 @@ class TestBoMAuditFixes(TestMrpCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.unit = cls.env.ref("uom.product_uom_unit")
-        cls.kg = cls.env.ref("uom.product_uom_kgm")
-        cls.gram = cls.env.ref("uom.product_uom_gram")
+        cls.unit = cls.env.ref("base.product_uom_unit")
+        cls.kg = cls.env.ref("base.product_uom_kgm")
+        cls.gram = cls.env.ref("base.product_uom_gram")
 
     def _product(self, name, uom=None):
         return self.env["product.product"].create(
@@ -5328,7 +5328,7 @@ class TestBoMAuditFixes(TestMrpCommon):
         )
 
     def test_a_kit_sold_by_the_dozen_counts_whole_units_not_whole_dozens(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         kit, part = self._product("Dozen kit", dozen), self._product("Dozen part")
         self.env["mrp.bom"].create(
             {

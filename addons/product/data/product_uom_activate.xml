@@ -3,7 +3,7 @@
 
     <function model="uom.uom" name="write">
         <value
-            eval="[ref('uom.product_uom_km'), ref('uom.product_uom_mile'), ref('uom.product_uom_square_foot')]" />
+            eval="[ref('base.product_uom_km'), ref('base.product_uom_mile'), ref('base.product_uom_square_foot')]" />
         <value eval="{'active': True}" />
     </function>
 

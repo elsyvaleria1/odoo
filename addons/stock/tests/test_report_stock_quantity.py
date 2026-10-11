@@ -25,7 +25,7 @@ class TestReportStockQuantity(tests.TransactionCase):
         cls.wh = cls.env["stock.warehouse"].create(
             {"name": "Base Warehouse", "code": "TESTWH"}
         )
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
         cls.customer_location = cls.env.ref("stock.stock_location_customers")
         cls.supplier_location = cls.env.ref("stock.stock_location_suppliers")
         cls.move1 = cls.env["stock.move"].create(

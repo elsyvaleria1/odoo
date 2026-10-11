@@ -149,6 +149,24 @@ class ResCompany(models.Model):
         comodel_name="ir.module.module",
         compute="_compute_uninstalled_l10n_module_ids",
     )
+    resource_calendar_ids = fields.One2many(
+        comodel_name="resource.calendar",
+        inverse_name="company_id",
+        string="Working Hours",
+    )
+    resource_config_id = fields.Many2one(
+        comodel_name="resource.config",
+        compute="_compute_resource_config_id",
+        search="_search_resource_config_id",
+    )
+    resource_calendar_id = fields.Many2one(
+        related="resource_config_id.resource_calendar_id",
+        readonly=False,
+    )
+    resource_week_start = fields.Selection(
+        related="resource_config_id.week_start",
+        readonly=False,
+    )
 
     _code_uniq = models.Constraint(
         "unique (code)",
@@ -296,6 +314,10 @@ class ResCompany(models.Model):
         if companies_needs_l10n:
             companies_needs_l10n.install_l10n_modules()
 
+        if companies_without_calendar := companies.filtered(
+            lambda c: not c.resource_calendar_id
+        ):
+            companies_without_calendar.sudo()._create_resource_calendar()
         return companies
 
     def write(self, vals: dict[str, Any]) -> bool:
@@ -492,6 +514,32 @@ class ResCompany(models.Model):
 
     def _compute_report_config_id(self) -> None:
         self._compute_config_link("report_config_id")
+
+    def _search_resource_config_id(self, operator, value):
+        return self._search_config_link("resource.config", operator, value)
+
+    def _compute_resource_config_id(self) -> None:
+        self._compute_config_link("resource_config_id")
+
+    def _get_resource_week_start(self) -> int:
+        return int((self[:1] or self.env.company).resource_week_start or 0)
+
+    @api.model
+    def _init_data_resource_calendar(self) -> None:
+        self.search([("resource_calendar_id", "=", False)])._create_resource_calendar()
+
+    def _create_resource_calendar(self) -> None:
+        vals_list = [company._prepare_resource_calendar_values() for company in self]
+        resource_calendars = self.env["resource.calendar"].create(vals_list)
+        for company, calendar in zip(self, resource_calendars, strict=True):
+            company.resource_calendar_id = calendar
+
+    def _prepare_resource_calendar_values(self) -> ValuesType:
+        self.check_singleton()
+        return {
+            "name": self.env._("Standard 40 hours/week"),
+            "company_id": self.id,
+        }
 
     @api.onchange("country_id")
     def _onchange_country_id(self) -> None:

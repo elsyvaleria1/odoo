@@ -15,37 +15,37 @@ PRICE_CONTEXT_KEYS = ["pricelist", "quantity", "uom", "date"]
 # kind: (setting, unit when the setting is "1", unit otherwise). Length and
 # distance have no setting of their own: they follow the imperial volume one.
 UOM_SETTINGS = {
-    "weight": ("product.weight_in_lbs", "uom.product_uom_lb", "uom.product_uom_kgm"),
+    "weight": ("product.weight_in_lbs", "base.product_uom_lb", "base.product_uom_kgm"),
     "volume": (
         "product.volume_in_cubic_feet",
-        "uom.product_uom_cubic_foot",
-        "uom.product_uom_cubic_meter",
+        "base.product_uom_cubic_foot",
+        "base.product_uom_cubic_meter",
     ),
     "length": (
         "product.volume_in_cubic_feet",
-        "uom.product_uom_foot",
-        "uom.product_uom_millimeter",
+        "base.product_uom_foot",
+        "base.product_uom_millimeter",
     ),
     "distance": (
         "product.volume_in_cubic_feet",
-        "uom.product_uom_mile",
-        "uom.product_uom_km",
+        "base.product_uom_mile",
+        "base.product_uom_km",
     ),
     "odometer": (
         "product.odometer_in_mi",
-        "uom.product_uom_mile",
-        "uom.product_uom_km",
+        "base.product_uom_mile",
+        "base.product_uom_km",
     ),
     "area": (
         "product.area_in_square_ft",
-        "uom.product_uom_square_foot",
-        "uom.product_uom_square_meter",
+        "base.product_uom_square_foot",
+        "base.product_uom_square_meter",
     ),
-    "power": ("product.power_in_hp", "uom.product_uom_hp", "uom.product_uom_kw"),
+    "power": ("product.power_in_hp", "base.product_uom_hp", "base.product_uom_kw"),
     "fuel_efficiency": (
         "product.fuel_efficiency_in_mpg",
-        "uom.product_uom_miles_per_galon",
-        "uom.product_uom_km_per_liter",
+        "base.product_uom_miles_per_galon",
+        "base.product_uom_km_per_liter",
     ),
 }
 
@@ -514,7 +514,7 @@ class ProductTemplate(models.Model):
 
     @tools.ormcache()
     def _default_uom_id(self):
-        return self.env.ref("uom.product_uom_unit").id
+        return self.env.ref("base.product_uom_unit").id
 
     def _read_group_categ_id(self, categories, domain):
         category_ids = self.env.context.get("default_categ_id")
@@ -1637,7 +1637,7 @@ class ProductTemplate(models.Model):
         if self.type == "combo":
             return False
         return (
-            self.env["res.groups"]._is_feature_enabled("uom.group_uom")
+            self.env["res.groups"]._is_feature_enabled("base.group_uom")
             and len(self._get_available_uoms()) > 1
         )
 

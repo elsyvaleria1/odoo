@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError
 from odoo.tests import new_test_user, tagged
 from odoo.tests.common import TransactionCase
 
-from odoo.addons.resource.tests.common import ResourceCase
+from odoo.addons.base.tests.common import ResourceCase
 
 
 @tagged("post_install", "-at_install")

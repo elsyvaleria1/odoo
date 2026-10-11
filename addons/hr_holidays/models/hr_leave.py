@@ -18,7 +18,7 @@ from odoo.tools.misc import clean_context, format_date
 
 from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG
 from odoo.addons.base.models.res_partner import _selection_timezones
-from odoo.addons.resource.models.utils import HOURS_PER_DAY, last_day_of
+from odoo.addons.base.models.resource_utils import HOURS_PER_DAY, last_day_of
 
 declare_authority_keys(
     "hr_holidays",

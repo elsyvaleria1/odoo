@@ -823,7 +823,7 @@ class TestStockApprovalCoversPerProduct(TransactionCase):
         picking = self._approved_two_move_picking()
         move = picking.move_ids[0]
 
-        move.product_uom_id = self.env.ref("uom.product_uom_dozen")
+        move.product_uom_id = self.env.ref("base.product_uom_dozen")
 
         picking.button_validate()
         self.assertNotEqual(picking.state, "done", "5 dozen against 5 units approved")

@@ -7,7 +7,7 @@ planning_rule_manager,Planning: manager can create/update/delete all planning en
 planning_rule_internal_user_read_group_planning_user,Planning: internal user can read their own shifts only and open shifts,model_planning_slot,group_planning_user,permission,r,own,,"[('state', '!=', '1_draft')]"
 planning_rule_internal_user_read_group_planning_user_2,Planning: internal user can read their own shifts only and open shifts (2),model_planning_slot,group_planning_user,permission,r,all,,"['&', ('resource_id', '=', False), ('state', '!=', '1_draft')]"
 planning_rule_internal_user_read_group_planning_user_3,Planning: internal user can read their own shifts only and open shifts (3),model_planning_slot,group_planning_user,permission,r,all,,"['&', ('request_to_switch', '=', True), ('state', '!=', '1_draft')]"
-access_resource_role_planning_manager,resource.role.planning.manager,resource.model_resource_role,group_planning_manager,permission,cud,,,
+access_resource_role_planning_manager,resource.role.planning.manager,base.model_resource_role,group_planning_manager,permission,cud,,,
 access_planning_recurrency_employee,planning.recurrency.employee,model_planning_recurrency,base.group_user,permission,r,,,
 access_planning_recurrency_manager,planning.recurrency.manager,model_planning_recurrency,group_planning_manager,permission,cud,,,
 access_planning_planning,access_planning_planning,model_planning_planning,group_planning_manager,permission,crud,,,

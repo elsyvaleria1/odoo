@@ -116,7 +116,7 @@
                         widget="many2one_uom"
                         optional="show"
                         options="{'no_open':True,'no_create':True}"
-                        groups="uom.group_uom"
+                        groups="base.group_uom"
                         readonly="1" />
                     <field
                         name="duration_expected"
@@ -550,13 +550,13 @@
                                     name="product_uom_id"
                                     widget="many2one_uom"
                                     options="{'no_open': True, 'no_create': True, 'quantity_field': 'product_qty'}"
-                                    groups="uom.group_uom"
+                                    groups="base.group_uom"
                                     readonly="state != 'draft'"
                                     class="flex-grow-0"
                                     style="width:auto!important" />
                                 <field
                                     name="product_uom_id"
-                                    groups="!uom.group_uom"
+                                    groups="!base.group_uom"
                                     invisible="1" />
                                 <span name="to_produce" class="fw-bold text-nowrap">To Produce</span>
                                 <button
@@ -709,7 +709,7 @@
                                     <field
                                         name="product_uom_id"
                                         widget="many2one_uom"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                     <field name="operation_id" />
                                     <field name="byproduct_id" />
                                     <field name="date_deadline" />
@@ -848,7 +848,7 @@
                                         name="product_uom_id"
                                         widget="many2one_uom"
                                         options="{'no_open': True, 'no_create': True}"
-                                        groups="uom.group_uom"
+                                        groups="base.group_uom"
                                         readonly="state != 'draft' and id" />
                                     <field name="picked" column_invisible="True" />
                                     <field
@@ -986,7 +986,7 @@
                                     <field
                                         name="product_uom_id"
                                         widget="many2one_uom"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                     <field name="cost_share" optional="hide" />
                                     <field
                                         name="show_details_visible"
@@ -1087,7 +1087,7 @@
                                     class="ms-auto flex-shrink-0" />
                                 <field
                                     name="product_uom_id"
-                                    groups="uom.group_uom"
+                                    groups="base.group_uom"
                                     class="small ms-1 flex-shrink-0" />
                             </div>
                             <footer class="text-muted">

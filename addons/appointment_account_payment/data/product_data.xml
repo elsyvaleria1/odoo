@@ -5,7 +5,7 @@
         <record id="default_booking_product" model="product.product">
             <field name="name">Booking Fees</field>
             <field name="standard_price">0.00</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="list_price">50.00</field>
             <field name="type">service</field>
             <field name="purchase_ok" eval="False" />

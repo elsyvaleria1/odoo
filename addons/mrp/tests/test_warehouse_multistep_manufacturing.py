@@ -8,7 +8,7 @@ class TestMultistepManufacturingWarehouse(TestMrpCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.env.user.group_ids += cls.env.ref("uom.group_uom")
+        cls.env.user.group_ids += cls.env.ref("base.group_uom")
         cls.env.user.group_ids += cls.env.ref("product.group_product_variant")
         cls.env.user.group_ids += cls.env.ref("stock.group_adv_location")
         cls.env.user.group_ids += cls.env.ref("product.group_product_variant")
@@ -18,7 +18,7 @@ class TestMultistepManufacturingWarehouse(TestMrpCommon):
         cls.warehouse = warehouse_form.save()
         cls.warehouse.mto_pull_id.route_id.active = True
 
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
 
         product_form = Form(cls.env["product.product"])
         product_form.name = "Stick"
@@ -405,7 +405,7 @@ class TestMultistepManufacturingWarehouse(TestMrpCommon):
         pre_production_location = warehouse.pbm_loc_id
         post_production_location = warehouse.sam_loc_id
 
-        one_unit_uom = self.env.ref("uom.product_uom_unit")
+        one_unit_uom = self.env.ref("base.product_uom_unit")
         [two_units_uom, four_units_uom] = self.env["uom.uom"].create(
             [
                 {

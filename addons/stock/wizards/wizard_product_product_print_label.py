@@ -52,7 +52,7 @@ class WizardProductProductPrintLabel(models.TransientModel):
             data["zpl_template"] = self.zpl_template
 
         quantities = defaultdict(int)
-        uom_unit = self.env.ref("uom.product_uom_unit", raise_if_not_found=False)
+        uom_unit = self.env.ref("base.product_uom_unit", raise_if_not_found=False)
         if (
             self.move_quantity == "move"
             and self.move_ids

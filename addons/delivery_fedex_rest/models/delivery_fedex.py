@@ -476,9 +476,9 @@ class ProviderFedex(models.Model):
 
     def _fedex_rest_convert_weight(self, weight):
         if self.fedex_rest_weight_unit == "KG":
-            convert_to = "uom.product_uom_kgm"
+            convert_to = "base.product_uom_kgm"
         elif self.fedex_rest_weight_unit == "LB":
-            convert_to = "uom.product_uom_lb"
+            convert_to = "base.product_uom_lb"
         else:
             raise ValueError
 

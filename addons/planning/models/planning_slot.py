@@ -34,7 +34,7 @@ from odoo.addons.base.models.mixin_recurrence_rule import (
     REPEAT_TYPE_SELECTION,
     REPEAT_UNIT_SELECTION,
 )
-from odoo.addons.resource.models.utils import (
+from odoo.addons.base.models.resource_utils import (
     FirstServedClaim,
     last_day_of,
     peak_capacity,

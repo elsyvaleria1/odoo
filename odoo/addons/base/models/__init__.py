@@ -154,5 +154,29 @@ from . import auth_user_client_session
 from . import auth_user_client_address
 
 from . import decimal_precision
+from . import uom_uom
+from . import mixin_resource_ledger
+from . import resource_config
+from . import resource_time_type
+from . import resource_calendar
+from . import resource_calendar_attendance
+from . import resource_schedule_exception
+from . import mixin_resource
+from . import resource_kind
+from . import resource_resource
+from . import mixin_resource_kind
+from . import resource_identifier_type
+from . import resource_identifier
+from . import resource_nationality
+from . import resource_meter
+from . import resource_meter_reading
+from . import resource_role
+from . import mixin_resource_scheduling_tools
+from . import mixin_resource_scheduling
+from . import mixin_resource_allocation
+from . import resource_reservation
+from . import resource_assignment
+from . import resource_utils
+from . import resource_relation
 
 from . import kpi_provider

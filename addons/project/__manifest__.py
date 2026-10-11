@@ -13,7 +13,6 @@
         "analytic",
         "loss_reason",
         "rating",
-        "resource",
         "digest",
     ],
     "data": [

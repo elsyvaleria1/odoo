@@ -27,14 +27,14 @@ class TestLengthIsResolvedOffTheVolumeSetting(UomSettingsCommon):
         self._set("product.volume_in_cubic_feet", "0")
         self.assertEqual(
             self.template._get_uom_from_setting("length"),
-            self.env.ref("uom.product_uom_millimeter"),
+            self.env.ref("base.product_uom_millimeter"),
         )
 
     def test_length_uom_follows_the_volume_setting(self):
         self._set("product.volume_in_cubic_feet", "1")
         self.assertEqual(
             self.template._get_uom_from_setting("length"),
-            self.env.ref("uom.product_uom_foot"),
+            self.env.ref("base.product_uom_foot"),
         )
 
     def test_there_is_no_length_setting(self):
@@ -48,7 +48,7 @@ class TestLengthIsResolvedOffTheVolumeSetting(UomSettingsCommon):
 class TestResolvedUnitsAreSelectable(UomSettingsCommon):
     """Every unit a resolver can return has to be active.
 
-    uom archives the imperial units and `uom.product_uom_km` with them, so a
+    uom archives the imperial units and `base.product_uom_km` with them, so a
     resolver handing one out as a `default=` puts a value on a Many2one that
     the user can read but never re-select. `data/product_uom_activate.xml` is
     what keeps this true.
@@ -65,7 +65,7 @@ class TestResolvedUnitsAreSelectable(UomSettingsCommon):
     def test_every_resolved_unit_is_active(self):
         # Weight, volume, length and distance are deliberately absent: those
         # resolve a unit only to label or convert a value, and no user is ever
-        # asked to re-select it, so `uom.product_uom_lb` staying archived costs
+        # asked to re-select it, so `base.product_uom_lb` staying archived costs
         # nothing.
         for kind in ("odometer", "area", "power", "fuel_efficiency"):
             for unit in self._resolved(kind):
@@ -142,8 +142,8 @@ class TestTheSettingsBlockCarriesEveryUnit(UomSettingsCommon):
     def test_each_setting_label_matches_the_unit_it_selects(self):
         settings = self.env["res.config.settings"]
         pairs = (
-            ("product_power_in_hp", "uom.product_uom_kw"),
-            ("product_fuel_efficiency_in_mpg", "uom.product_uom_km_per_liter"),
+            ("product_power_in_hp", "base.product_uom_kw"),
+            ("product_fuel_efficiency_in_mpg", "base.product_uom_km_per_liter"),
         )
         for field_name, xml_id in pairs:
             labels = dict(settings._fields[field_name].selection)

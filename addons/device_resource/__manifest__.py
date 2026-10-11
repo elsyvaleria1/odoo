@@ -9,7 +9,6 @@
     "license": "LGPL-3",
     "depends": [
         "device",
-        "resource",
     ],
     "data": [
         "views/device_device_views.xml",

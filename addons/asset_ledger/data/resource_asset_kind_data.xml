@@ -2,27 +2,27 @@
 <odoo>
 
     <!-- The app that owns a kind gates it: a fleet user sees vehicles. -->
-    <record id="resource.kind_vehicle" model="resource.kind">
+    <record id="base.kind_vehicle" model="resource.kind">
         <field name="group_id" ref="resource_asset_vehicle.fleet_group_user" />
     </record>
 
-    <record id="resource.kind_property" model="resource.kind">
+    <record id="base.kind_property" model="resource.kind">
         <field name="group_id" ref="group_enable_property_assets" />
     </record>
 
-    <record id="resource.kind_equipment" model="resource.kind">
+    <record id="base.kind_equipment" model="resource.kind">
         <field name="group_id" ref="group_enable_equipment_assets" />
     </record>
 
-    <record id="resource.kind_machinery" model="resource.kind">
+    <record id="base.kind_machinery" model="resource.kind">
         <field name="group_id" ref="group_enable_machinery_assets" />
     </record>
 
-    <record id="resource.kind_tool" model="resource.kind">
+    <record id="base.kind_tool" model="resource.kind">
         <field name="group_id" ref="group_enable_tools" />
     </record>
 
-    <record id="resource.kind_it" model="resource.kind">
+    <record id="base.kind_it" model="resource.kind">
         <field name="group_id" ref="group_enable_it_assets" />
     </record>
 

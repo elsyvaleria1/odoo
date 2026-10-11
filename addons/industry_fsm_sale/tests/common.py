@@ -65,7 +65,7 @@ class TestFsmFlowCommon(TransactionCase):
                 # A service tracked by timesheet is sold in hours: its delivered
                 # quantity is summed from analytic lines in the company's time unit,
                 # and quantities do not convert across unit categories.
-                "uom_id": cls.env.ref("uom.product_uom_hour").id,
+                "uom_id": cls.env.ref("base.product_uom_hour").id,
                 "invoice_policy": "ordered",
                 "taxes_id": False,
             }
@@ -79,7 +79,7 @@ class TestFsmFlowCommon(TransactionCase):
                 # A service tracked by timesheet is sold in hours: its delivered
                 # quantity is summed from analytic lines in the company's time unit,
                 # and quantities do not convert across unit categories.
-                "uom_id": cls.env.ref("uom.product_uom_hour").id,
+                "uom_id": cls.env.ref("base.product_uom_hour").id,
                 "invoice_policy": "transferred",
                 "taxes_id": False,
             }
@@ -110,7 +110,7 @@ class TestFsmFlowCommon(TransactionCase):
                 # Delivered by timesheet, so it is sold in hours: the delivered quantity
                 # is summed from analytic lines in the company's time unit, and a
                 # quantity cannot be converted across unit categories.
-                "uom_id": cls.env.ref("uom.product_uom_hour").id,
+                "uom_id": cls.env.ref("base.product_uom_hour").id,
                 "service_policy": "delivered_timesheet",
             }
         )

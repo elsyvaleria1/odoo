@@ -28,7 +28,7 @@ class TestMaintenanceAccess(TransactionCase):
                 "name": "Access probe machine",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource.kind_machinery").id,
+                "asset_kind_id": cls.env.ref("base.kind_machinery").id,
                 "maintenance_ok": True,
             }
         )

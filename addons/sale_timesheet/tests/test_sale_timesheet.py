@@ -1178,7 +1178,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheet):
                 "user_id": self.user_employee_company_B.id,
             }
         )
-        uom_days = self.env.ref("uom.product_uom_day")
+        uom_days = self.env.ref("base.product_uom_day")
         sale_order_line = self.env["sale.order.line"].create(
             {
                 "order_id": sale_order.id,
@@ -1273,7 +1273,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheet):
                 "user_id": self.user_employee_company_B.id,
             }
         )
-        uom_days = self.env.ref("uom.product_uom_day")
+        uom_days = self.env.ref("base.product_uom_day")
         sale_order_line = self.env["sale.order.line"].create(
             {
                 "order_id": sale_order.id,
@@ -1584,8 +1584,8 @@ class TestSaleTimesheet(TestCommonSaleTimesheet):
         self.assertEqual(5, sale_order_line_template_2.project_id.allocated_hours)
 
     def test_onchange_uom_service_product(self):
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_kg = self.env.ref("uom.product_uom_kgm")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_kg = self.env.ref("base.product_uom_kgm")
 
         product_1 = self.env["product.template"].create(
             [

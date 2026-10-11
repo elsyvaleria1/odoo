@@ -14,7 +14,7 @@ class ProjectProject(models.Model):
         self.check_singleton()
         if (
             self.sudo().company_id.hr_timesheet_config_id.timesheet_encode_uom_id
-            == self.env.ref("uom.product_uom_day")
+            == self.env.ref("base.product_uom_day")
         ):
             return {
                 "type": "ir.actions.client",

@@ -151,7 +151,7 @@ class TestApprovalRequestAssetLog(TransactionCase):
                 "name": "Approval probe truck",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": self.env.ref("base.kind_vehicle").id,
             }
         )
         vehicle = self.env["product.trace"].create(

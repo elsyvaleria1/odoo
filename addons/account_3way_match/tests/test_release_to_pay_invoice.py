@@ -256,7 +256,7 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
 
     def test_over_billing_is_seen_across_units_of_measure(self):
         """Quantities are compared in the order's unit, not the bill's."""
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         order = self._confirmed_order_lines([13], price=1.0)
 
         # 12.00 per dozen is 1.00 per unit: the same money the order agreed to,
@@ -270,7 +270,7 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
 
     def test_same_money_in_another_unit_is_not_a_price_change(self):
         """12.00 per dozen and 1.00 per unit are the same price."""
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         order = self._confirmed_order_lines([12], price=1.0)
 
         bill = self._bill_for(order.line_ids, 1, price=12.0, uom=dozen)
@@ -493,7 +493,7 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         line = bill.invoice_line_ids.filtered(lambda l: l.purchase_line_ids)
         self.assertEqual(line.can_be_paid, "yes")
 
-        hours = self.env.ref("uom.product_uom_hour")
+        hours = self.env.ref("base.product_uom_hour")
         self.assertFalse(line.product_uom_id._has_common_reference(hours))
         self.env.cr.execute(
             "UPDATE account_move_line SET product_uom_id = %s WHERE id = %s",

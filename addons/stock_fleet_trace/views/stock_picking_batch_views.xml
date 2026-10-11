@@ -193,7 +193,7 @@
                             <field name="qty_returned" sum="Total" />
                             <field name="qty_difference" sum="Total" />
                             <field name="qty_expected" optional="hide" sum="Total" />
-                            <field name="uom_id" groups="uom.group_uom" />
+                            <field name="uom_id" groups="base.group_uom" />
                         </list>
                     </field>
                 </page>

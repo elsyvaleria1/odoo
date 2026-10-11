@@ -289,7 +289,7 @@ class TestWebsiteEventSaleCartSeats(TestWebsiteEventSaleCommon):
             self.empty_cart._prepare_order_line_values(
                 self.product_event.id,
                 1,
-                self.env.ref("uom.product_uom_unit").id,
+                self.env.ref("base.product_uom_unit").id,
                 event_ticket_id=-1,
             )
 

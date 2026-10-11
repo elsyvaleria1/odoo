@@ -17,7 +17,7 @@ class TestReorderingRule(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.env.user.group_ids += cls.env.ref("uom.group_uom")
+        cls.env.user.group_ids += cls.env.ref("base.group_uom")
         cls.partner = cls.env["res.partner"].create({"name": "Smith"})
         cls.buy_route = cls.env.ref("purchase_stock.route_warehouse0_buy")
         cls.buy_route.product_selectable = True
@@ -635,7 +635,7 @@ class TestReorderingRule(TransactionCase):
 
     def test_procure_not_default_partner(self):
         purchase_route = self.env.ref("purchase_stock.route_warehouse0_buy")
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         warehouse = self.env["stock.warehouse"].search(
             [("company_id", "=", self.env.company.id)], limit=1
         )
@@ -765,7 +765,7 @@ class TestReorderingRule(TransactionCase):
                 "rule_ids": [(6, 0, [mto_rule.id])],
             }
         )
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         product = self.env["product.product"].create(
             {
                 "name": "product TEST",
@@ -840,7 +840,7 @@ class TestReorderingRule(TransactionCase):
                 "name": "product TEST",
                 "standard_price": 100.0,
                 "is_storable": True,
-                "uom_id": self.ref("uom.product_uom_unit"),
+                "uom_id": self.ref("base.product_uom_unit"),
                 "default_code": "A",
                 "route_ids": [Command.set([route_buy_id])],
             }
@@ -1379,7 +1379,7 @@ class TestReorderingRule(TransactionCase):
             {
                 "name": "Storable Product",
                 "is_storable": True,
-                "uom_id": self.env.ref("uom.product_uom_kgm").id,
+                "uom_id": self.env.ref("base.product_uom_kgm").id,
                 "seller_ids": [
                     (
                         0,
@@ -1387,7 +1387,7 @@ class TestReorderingRule(TransactionCase):
                         {
                             "partner_id": self.partner.id,
                             "min_qty": 6,
-                            "product_uom_id": self.env.ref("uom.product_uom_ton").id,
+                            "product_uom_id": self.env.ref("base.product_uom_ton").id,
                         },
                     )
                 ],

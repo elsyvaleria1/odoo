@@ -15,7 +15,7 @@ class TestTimesheetTimeUnits(TransactionCase):
                     )
 
     def test_conversion_uses_configured_day_length(self):
-        self.env.ref("uom.product_uom_day").relative_factor = 6
+        self.env.ref("base.product_uom_day").relative_factor = 6
         for name in ("project.task", "account.analytic.line"):
             self.assertEqual(self.env[name]._convert_hours_to_days(9), 1.5)
 

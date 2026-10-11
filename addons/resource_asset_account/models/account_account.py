@@ -6,7 +6,7 @@ class AccountAccount(models.Model):
 
     asset_log_type = fields.Selection(
         selection="_selection_asset_log_type",
-        groups="resource.group_asset_manager",
+        groups="base.group_asset_manager",
         help="Kind of asset spend booked to this account. Used whenever the bill "
         "line's product category types nothing — including an account-only "
         "line with no product at all, which is where it matters most: "

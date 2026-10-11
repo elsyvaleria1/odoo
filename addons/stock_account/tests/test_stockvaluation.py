@@ -2748,7 +2748,7 @@ class TestStockValuation(TestStockValuationCommon):
 
     def test_create_receipts_different_uom(self):
         product = self.product_standard
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         receipt = self.env["stock.picking"].create(
             {
                 "location_id": self.supplier_location.id,
@@ -2948,7 +2948,7 @@ class TestStockValuation(TestStockValuationCommon):
     def test_diff_uom_quantity_update_after_done(self):
         product = self.product_standard
         unit_uom = self.uom
-        dozen_uom = self.env.ref("uom.product_uom_dozen")
+        dozen_uom = self.env.ref("base.product_uom_dozen")
         move = self.env["stock.move"].create(
             {
                 "product_id": product.id,
@@ -3131,8 +3131,8 @@ class TestStockValuation(TestStockValuationCommon):
         self.assertEqual(credit_line.account_id, accounts_data["stock_valuation"])
 
     def test_valuation_rounding_method(self):
-        uom_g = self.env.ref("uom.product_uom_gram")
-        uom_kg = self.env.ref("uom.product_uom_kgm")
+        uom_g = self.env.ref("base.product_uom_gram")
+        uom_kg = self.env.ref("base.product_uom_kgm")
         product = self.product_standard
         product.uom_id = uom_kg
 
@@ -3346,7 +3346,7 @@ class TestStockValuation(TestStockValuationCommon):
 
     def test_stock_move_value_with_different_uom(self):
         move = self._make_in_move(
-            self.product_standard, 1, uom_id=self.env.ref("uom.product_uom_dozen").id
+            self.product_standard, 1, uom_id=self.env.ref("base.product_uom_dozen").id
         )
         self.assertEqual(
             move.value,
@@ -3357,7 +3357,7 @@ class TestStockValuation(TestStockValuationCommon):
     def test_product_valuation_scrap_different_uom(self):
         product = self.product_avco
         product.standard_price = 8
-        uom_pack_6 = self.env.ref("uom.product_uom_pack_6")
+        uom_pack_6 = self.env.ref("base.product_uom_pack_6")
         product.uom_ids = uom_pack_6
         self._make_in_move(product, 10)
         self.assertEqual(product.total_value, 80)
@@ -3386,7 +3386,7 @@ class TestStockValuation(TestStockValuationCommon):
             self.product_avco_auto,
             quantity=10,
             price_unit=100,
-            product_uom_id=self.env.ref("uom.product_uom_pack_6"),
+            product_uom_id=self.env.ref("base.product_uom_pack_6"),
         )
         self.assertEqual(self.product_avco_auto.standard_price, 10)
         self.assertRecordValues(

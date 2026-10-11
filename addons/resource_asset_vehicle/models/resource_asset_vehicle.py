@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 
-from odoo.addons.resource.fields import ResourceIdentifier
+from odoo.addons.base.fields import ResourceIdentifier
 
 
 class ResourceAssetVehicle(models.Model):

@@ -4,7 +4,7 @@ from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.tools import SQL, frozendict
 
-from odoo.addons.resource.models.utils import filter_domain_leaf
+from odoo.addons.base.models.resource_utils import filter_domain_leaf
 
 
 class SaleCommissionReport(models.Model):

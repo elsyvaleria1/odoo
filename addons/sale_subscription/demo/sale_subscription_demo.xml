@@ -45,7 +45,7 @@
             <field name="type">service</field>
             <field name="list_price">25.0</field>
             <field name="invoice_policy">ordered</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
         </record>
         <!-- Recurring products -->
         <record id="product_office_cleaning" model="product.product">
@@ -55,7 +55,7 @@
             <field name="type">service</field>
             <field name="list_price">200.0</field>
             <field name="invoice_policy">ordered</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="image_1920"
                 type="base64"
@@ -86,7 +86,7 @@
             <field name="type">service</field>
             <field name="list_price">200.0</field>
             <field name="invoice_policy">transferred</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field
                 name="description_sale">Monthly lease for city or business driving</field>
             <field
@@ -128,14 +128,14 @@
             <field name="name">Office Cleaning Service (SUB)</field>
             <field name="product_id" ref="product_office_cleaning" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
         </record>
         <record id="montly_template_line2" model="sale.order.template.line">
             <field name="template_id" ref="monthly_template" />
             <field name="name">Registration fee</field>
             <field name="product_id" ref="product_fee" />
             <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
         </record>
         <record id="yearly_template" model="sale.order.template">
             <field name="name">Yearly Cleaning</field>
@@ -149,7 +149,7 @@
             <field name="name">Office Cleaning Service (SUB)</field>
             <field name="product_id" ref="product_office_cleaning" />
             <field name="product_qty">2</field>
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
         </record>
         <!-- Demo Subscriptions -->
         <record id="subscription_portal_1" model="sale.order">

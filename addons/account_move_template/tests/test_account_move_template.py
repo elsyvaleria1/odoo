@@ -1384,9 +1384,9 @@ class TestAccountMoveTemplate(TransactionCase):
         self.assertTrue(hasattr(model, "_prepare_payment_vals"))
 
     def test_a_template_lines_unit_of_measure_reaches_the_move(self):
-        dozens = self.env.ref("uom.product_uom_dozen", raise_if_not_found=False)
+        dozens = self.env.ref("base.product_uom_dozen", raise_if_not_found=False)
         if not dozens:
-            self.skipTest("uom.product_uom_dozen is not available")
+            self.skipTest("base.product_uom_dozen is not available")
         product = self.env["product.product"].create(
             {
                 "name": "AMT UoM Product",
@@ -1940,7 +1940,7 @@ class TestAccountMoveTemplate(TransactionCase):
         # The template line's unit describes the product it pins. A product an
         # extension draws in its place carries its own unit, and an empty unit
         # sends an empty `ClaveUnidad` to the SAT (CFDI40165).
-        dozens = self.env.ref("uom.product_uom_dozen")
+        dozens = self.env.ref("base.product_uom_dozen")
         drawn = self.env["product.product"].create(
             {
                 "name": "AMT Drawn Product",

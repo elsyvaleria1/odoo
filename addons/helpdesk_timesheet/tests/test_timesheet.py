@@ -658,7 +658,7 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
             }
         )
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
-            "uom.product_uom_day"
+            "base.product_uom_day"
         )
         self.assertEqual(
             helpdesk_ticket.team_id.total_timesheet_time,

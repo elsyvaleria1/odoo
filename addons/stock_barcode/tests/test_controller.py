@@ -287,7 +287,7 @@ class TestStockBarcodeController(HttpCase):
             {
                 "name": "Pack of 3",
                 "relative_factor": 3,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.env["product.uom"].create(

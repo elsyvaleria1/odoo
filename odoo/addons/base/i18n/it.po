@@ -20714,6 +20714,8 @@ msgstr ""
 #: code:addons/base/models/res_partner.py:0
 #: code:addons/base/models/res_users.py:0
 #: code:addons/base/tests/test_catalog_mixin.py:0
+#: code:addons/base/models/resource_calendar.py:0
+#: code:addons/base/models/resource_resource.py:0
 msgid "%s (copy)"
 msgstr "%s (copia)"
 
@@ -26273,6 +26275,9 @@ msgstr "Attiva"
 #: model_terms:ir.ui.view,arch_db:base.view_currency_search
 #: model_terms:ir.ui.view,arch_db:base.view_ir_access_exception_search
 #: model_terms:ir.ui.view,arch_db:base.view_view_search
+#: model:ir.model.fields,field_description:base.field_uom_uom__active
+#: model:ir.model.fields,field_description:base.field_resource_calendar__active
+#: model:ir.model.fields,field_description:base.field_resource_resource__active
 msgid "Active"
 msgstr "Attivo"
 
@@ -29087,6 +29092,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.view_res_partner_filter
 #: model_terms:ir.ui.view,arch_db:base.view_sequence_search
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
+#: model_terms:ir.ui.view,arch_db:base.uom_uom_view_search
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Archived"
 msgstr "In archivio"
 
@@ -30390,6 +30400,7 @@ msgstr "Avatar 1024"
 #: model:ir.model.fields,field_description:base.field_res_company__avatar_128
 #: model:ir.model.fields,field_description:base.field_res_partner__avatar_128
 #: model:ir.model.fields,field_description:base.field_res_users__avatar_128
+#: model:ir.model.fields,field_description:base.field_resource_resource__avatar_128
 msgid "Avatar 128"
 msgstr "Avatar 128"
 
@@ -33349,6 +33360,12 @@ msgstr "Aziende"
 #: model_terms:ir.ui.view,arch_db:base.view_res_partner_filter
 #: model_terms:ir.ui.view,arch_db:base.view_users_search
 #: model_terms:ir.ui.view,arch_db:base.view_users_simple_form
+#: model:ir.model.fields,field_description:base.field_resource_calendar__company_id
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__company_id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__company_id
+#: model:ir.model.fields,field_description:base.field_resource_resource__company_id
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Company"
 msgstr "Azienda"
 
@@ -33641,6 +33658,7 @@ msgstr "Configurare la fatturazione dei fogli ore"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_base_module_upgrade
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
 msgid "Confirm"
 msgstr "Conferma"
 
@@ -34467,6 +34485,11 @@ msgstr "Viste create"
 #: model:ir.model.fields,field_description:base.field_tag_tag__create_uid
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__create_uid
 #: model_terms:ir.ui.view,arch_db:base.view_attachment_search
+#: model:ir.model.fields,field_description:base.field_uom_uom__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_resource__create_uid
 msgid "Created by"
 msgstr "Creato da"
 
@@ -34571,6 +34594,11 @@ msgstr "Creato da"
 #: model:ir.model.fields,field_description:base.field_tag_tag__create_date
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__create_date
 #: model_terms:ir.ui.view,arch_db:base.ir_job_view_search
+#: model:ir.model.fields,field_description:base.field_uom_uom__create_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar__create_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__create_date
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__create_date
+#: model:ir.model.fields,field_description:base.field_resource_resource__create_date
 msgid "Created on"
 msgstr "Data creazione"
 
@@ -35116,6 +35144,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_res_currency_rate__name
 #: model_terms:ir.ui.view,arch_db:base.ir_access_log_view_list
 #: model_terms:ir.ui.view,arch_db:base.view_currency_rate_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
 msgid "Date"
 msgstr "Data"
 
@@ -35169,6 +35198,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__day
+#: model:uom.uom,name:base.product_uom_day
 msgid "Days"
 msgstr "Giorni"
 
@@ -35981,6 +36011,12 @@ msgstr "Gruppi disgiunti"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__display_name
 #: model:ir.model.fields,field_description:base.field_tag_tag__display_name
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__display_name
+#: model:ir.model.fields,field_description:base.field_uom_uom__display_name
+#: model:ir.model.fields,field_description:base.field_resource_calendar__display_name
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__display_name
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__display_name
+#: model:ir.model.fields,field_description:base.field_resource_mixin__display_name
+#: model:ir.model.fields,field_description:base.field_resource_resource__display_name
 msgid "Display Name"
 msgstr "Nome visualizzato"
 
@@ -36884,6 +36920,7 @@ msgstr "Fatturazione elettronica per la Colombia con DIAN"
 #: model_terms:ir.ui.view,arch_db:base.view_partner_form
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
 #: model_terms:ir.ui.view,arch_db:base.view_users_form_simple_modif
+#: model:ir.model.fields,field_description:base.field_resource_resource__email
 msgid "Email"
 msgstr "E-mail"
 
@@ -38598,6 +38635,7 @@ msgstr "Utente esterno"
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_users__share
+#: model:ir.model.fields,help:base.field_resource_resource__share
 msgid ""
 "External user with limited access, created only for the purpose of sharing "
 "data."
@@ -39263,6 +39301,7 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__1
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__1
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__week_type__0
 msgid "First"
 msgstr ""
 
@@ -39663,6 +39702,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__5
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__4
 msgid "Friday"
 msgstr "Venerdì"
 
@@ -41092,6 +41132,8 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__hour
+#: model:uom.uom,name:base.product_uom_hour
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_attendance_form
 msgid "Hours"
 msgstr "Ore"
 
@@ -41438,6 +41480,12 @@ msgstr "Conti bancari IBAN"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__id
 #: model:ir.model.fields,field_description:base.field_tag_tag__id
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__id
+#: model:ir.model.fields,field_description:base.field_uom_uom__id
+#: model:ir.model.fields,field_description:base.field_resource_calendar__id
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__id
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__id
+#: model:ir.model.fields,field_description:base.field_resource_resource__id
 msgid "ID"
 msgstr "ID"
 
@@ -44010,6 +44058,11 @@ msgstr "Ultimo aggiornamento"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__write_uid
 #: model:ir.model.fields,field_description:base.field_tag_tag__write_uid
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__write_uid
+#: model:ir.model.fields,field_description:base.field_uom_uom__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_resource__write_uid
 msgid "Last Updated by"
 msgstr "Ultimo aggiornamento di"
 
@@ -44113,6 +44166,11 @@ msgstr "Ultimo aggiornamento di"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__write_date
 #: model:ir.model.fields,field_description:base.field_tag_tag__write_date
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__write_date
+#: model:ir.model.fields,field_description:base.field_uom_uom__write_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar__write_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__write_date
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__write_date
+#: model:ir.model.fields,field_description:base.field_resource_resource__write_date
 msgid "Last Updated on"
 msgstr "Ultimo aggiornamento il"
 
@@ -46676,6 +46734,7 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__minute
+#: model:uom.uom,name:base.product_uom_minute
 msgid "Minutes"
 msgstr "Minuti"
 
@@ -47108,6 +47167,7 @@ msgstr "Monaco - Contabilità"
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__1
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__0
 msgid "Monday"
 msgstr "Lunedì"
 
@@ -47388,6 +47448,9 @@ msgstr "Nakfa"
 #: model_terms:ir.ui.view,arch_db:base.view_partner_tree
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_tree
+#: model:ir.model.fields,field_description:base.field_resource_calendar__name
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__name
+#: model:ir.model.fields,field_description:base.field_resource_resource__name
 msgid "Name"
 msgstr "Nome"
 
@@ -50957,6 +51020,7 @@ msgstr "Vista originale"
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__gender__other
 #: model:ir.model.fields.selection,name:base.selection__res_partner__type__other
+#: model:ir.model.fields.selection,name:base.selection__resource_schedule_exception__time_type__other
 msgid "Other"
 msgstr "Altro"
 
@@ -51679,6 +51743,7 @@ msgstr "Menù padre"
 #: model:ir.model.fields,field_description:base.field_res_company__parent_path
 #: model:ir.model.fields,field_description:base.field_res_partner_tag__parent_path
 #: model:ir.model.fields,field_description:base.field_tag_tag__parent_path
+#: model:ir.model.fields,field_description:base.field_uom_uom__parent_path
 msgid "Parent Path"
 msgstr "Percorso padre"
 
@@ -52440,6 +52505,7 @@ msgstr "Layout assegni FIlippine"
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
 #: model_terms:ir.ui.view,arch_db:base.view_users_form_simple_modif
 #: model_terms:ir.ui.view,arch_db:base.view_users_simple_form
+#: model:ir.model.fields,field_description:base.field_resource_resource__phone
 msgid "Phone"
 msgstr "Telefono"
 
@@ -54345,6 +54411,9 @@ msgstr "Tempo reale trascorso"
 #: model:ir.model.fields,field_description:base.field_ir_access_exception__reason
 #: model:ir.model.fields,field_description:base.field_ir_access_log__reason
 #: model:ir.model.fields,field_description:base.field_res_users_grant__reason
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__name
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_form
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_tree
 msgid "Reason"
 msgstr ""
 
@@ -55007,6 +55076,12 @@ msgstr "Correggere prima gli altri errori"
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_resource
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__resource_id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__resource_id
+#: model:ir.ui.menu,name:base.menu_resource_config
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
 msgid "Resource"
 msgstr "Risorsa"
 
@@ -55923,6 +55998,7 @@ msgstr "Satang"
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__6
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__5
 msgid "Saturday"
 msgstr "Sabato"
 
@@ -56197,6 +56273,7 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__2
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__2
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__week_type__1
 msgid "Second"
 msgstr ""
 
@@ -56622,6 +56699,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
 #: model_terms:ir.ui.view,arch_db:base.view_sequence_search
 #: model_terms:ir.ui.view,arch_db:base.view_view_tree
+#: model:ir.model.fields,field_description:base.field_uom_uom__sequence
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__sequence
 msgid "Sequence"
 msgstr "Sequenza"
 
@@ -56872,6 +56951,7 @@ msgstr "Condividi Partner"
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users__share
+#: model:ir.model.fields,field_description:base.field_resource_resource__share
 msgid "Share User"
 msgstr "Condividi utente"
 
@@ -58278,6 +58358,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__7
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__6
 msgid "Sunday"
 msgstr "Domenica"
 
@@ -61338,6 +61419,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__4
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__3
 msgid "Thursday"
 msgstr "Giovedì"
 
@@ -61364,6 +61446,8 @@ msgstr "Formato ora"
 #. module: base
 #: model:ir.module.category,name:base.module_category_human_resources_time_off
 #: model:ir.module.module,shortdesc:base.module_hr_holidays
+#: model:ir.model.fields,field_description:base.field_resource_calendar__leave_ids
+#: model:ir.model.fields.selection,name:base.selection__resource_schedule_exception__time_type__leave
 msgid "Time Off"
 msgstr "Ferie"
 
@@ -61452,6 +61536,9 @@ msgstr "Resoconto presenze/fogli ore"
 #: model:ir.model.fields,field_description:base.field_res_company__tz
 #: model:ir.model.fields,field_description:base.field_res_partner__tz
 #: model:ir.model.fields,field_description:base.field_res_users__tz
+#: model:ir.model.fields,field_description:base.field_resource_calendar__tz
+#: model:ir.model.fields,field_description:base.field_resource_mixin__tz
+#: model:ir.model.fields,field_description:base.field_resource_resource__tz
 msgid "Timezone"
 msgstr "Fuso orario"
 
@@ -61460,6 +61547,7 @@ msgstr "Fuso orario"
 #: model:ir.model.fields,field_description:base.field_res_company__tz_offset
 #: model:ir.model.fields,field_description:base.field_res_partner__tz_offset
 #: model:ir.model.fields,field_description:base.field_res_users__tz_offset
+#: model:ir.model.fields,field_description:base.field_resource_calendar__tz_offset
 msgid "Timezone offset"
 msgstr "Offset fuso orario"
 
@@ -61804,6 +61892,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__2
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__1
 msgid "Tuesday"
 msgstr "Martedì"
 
@@ -61914,6 +62003,8 @@ msgstr "Tyiyn"
 #: model_terms:ir.ui.view,arch_db:base.ir_logging_search_view
 #: model_terms:ir.ui.view,arch_db:base.view_attachment_search
 #: model_terms:ir.ui.view,arch_db:base.view_view_search
+#: model:ir.model.fields,field_description:base.field_resource_resource__resource_type
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Type"
 msgstr "Tipologia"
 
@@ -63011,6 +63102,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.auth_user_client_view_search
 #: model_terms:ir.ui.view,arch_db:base.res_users_grant_view_search
 #: model_terms:ir.ui.view,arch_db:base.view_users_search
+#: model:ir.model.fields,field_description:base.field_resource_resource__user_id
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "User"
 msgstr "Utente"
 
@@ -63542,6 +63635,8 @@ msgstr "Visibile"
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_currency_form
 #: model_terms:ir.ui.view,arch_db:base.view_partner_form
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
 msgid "Visible to all"
 msgstr "Visibile a tutti"
 
@@ -63634,6 +63729,7 @@ msgstr "Attenzione"
 #. odoo-python
 #: code:addons/base/models/decimal_precision.py:0
 #: code:addons/base/models/res_currency.py:0
+#: code:addons/base/models/uom_uom.py:0
 msgid "Warning for %s"
 msgstr "Avviso per %s"
 
@@ -63952,6 +64048,7 @@ msgstr "Matrimonio, amore, fotografia, servizi"
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__3
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__2
 msgid "Wednesday"
 msgstr "Mercoledì"
 
@@ -65715,6 +65812,1031 @@ msgstr ""
 #: code:addons/base/models/mixin_lifecycle.py:0
 msgid "• Cancelled: %s"
 msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__factor
+msgid "Absolute Quantity"
+msgstr "Quantità assoluta"
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.product_uom_form_action
+msgid "Add a new unit of measure"
+msgstr "Aggiungi una nuova unità di misura"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__relative_factor
+msgid "Contains"
+msgstr "Contiene"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_dozen
+msgid "Dozens"
+msgstr "Dozzine"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_uom_uom__relative_factor
+msgid ""
+"How much bigger or smaller this unit is compared to the reference UoM for "
+"this unit"
+msgstr ""
+"Quanto l'unità di misura è maggiore/minore dell'unità di misura di "
+"riferimento per quest'unità"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_kwh
+msgid "KWH"
+msgstr "KWH"
+
+#. module: base
+#: model:res.groups,name:base.group_uom
+msgid "Manage Multiple Units of Measure"
+msgstr "Gestione unità di misura multiple"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_pack_6
+msgid "Pack of 6"
+msgstr "Pacco da 6"
+
+#. module: base
+#: model:ir.model,name:base.model_uom_uom
+msgid "Product Unit of Measure"
+msgstr "Unità di misura prodotto"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.product_uom_form_view
+msgid "Quantity"
+msgstr "Quantità"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__relative_uom_id
+#: model_terms:ir.ui.view,arch_db:base.product_uom_form_view
+msgid "Reference Unit"
+msgstr "Unità di riferimento"
+
+#. module: base
+#: code:addons/base/models/uom_uom.py:0
+msgid "Reference unit of measure is missing."
+msgstr "Unità di misura di riferimento mancante."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__related_uom_ids
+msgid "Related UoMs"
+msgstr "UdM correlate"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__rounding
+msgid "Rounding Precision"
+msgstr "Precisione arrotondamento"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.uom_uom_view_search
+msgid "Search UOM"
+msgstr "Ricerca UdM"
+
+#. module: base
+#: code:addons/base/models/uom_uom.py:0
+msgid ""
+"Some critical fields have been modified on %s.\n"
+"Note that existing data WON'T be updated by this change.\n"
+"\n"
+"As units of measure impact the whole system, this may cause critical "
+"issues.\n"
+"Therefore, changing core units of measure in a running database is not "
+"recommended."
+msgstr ""
+"Alcuni campi critici sono stati modificati su %s.\n"
+"Nota che i dati esistenti NON saranno aggiornati da questa modifica.\n"
+"\n"
+"Dato che le unità di misura hanno un impatto sul sistema, questo potrebbe "
+"creare seri problemi.\n"
+"Pertanto, non è consigliabile cambiare le unità di misura principali in un "
+"database in esecuzione."
+
+#. module: base
+#: model:ir.model.constraint,message:base.constraint_uom_uom_factor_gt_zero
+msgid "The conversion ratio for a unit of measure cannot be 0!"
+msgstr "Il rapporto di conversione per una unità di misura non può essere 0."
+
+#. module: base
+#: code:addons/base/models/uom_uom.py:0
+msgid ""
+"The following units of measure are used by the system and cannot be deleted: "
+"%s\n"
+"You can archive them instead."
+msgstr ""
+"Le seguenti unità di misura sono utilizzate dal sistema e non possono essere "
+"eliminate: %s\n"
+"Puoi invece archiviarle."
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_ton
+msgid "Ton"
+msgstr "Tonn."
+
+#. module: base
+#: model:ir.model.fields,help:base.field_uom_uom__active
+msgid ""
+"Uncheck the active field to disable a unit of measure without deleting it."
+msgstr ""
+"Deselezionare il campo attivo per disabilitare una unità di misura senza "
+"eliminarla."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__name
+msgid "Unit Name"
+msgstr "Nome unità"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_unit
+msgid "Units"
+msgstr "Unità"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.product_uom_form_action
+#: model_terms:ir.ui.view,arch_db:base.product_uom_tree_view
+msgid "Units & Packagings"
+msgstr "Unità e imballaggi"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.product_uom_form_view
+msgid "Units of Measure"
+msgstr "Unità di misura"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cm
+msgid "cm"
+msgstr "cm"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_floz
+msgid "fl oz (US)"
+msgstr "fl oz (Stati Uniti)"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_foot
+msgid "ft"
+msgstr "ft"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_square_foot
+msgid "ft²"
+msgstr "ft²"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cubic_foot
+msgid "ft³"
+msgstr "ft³"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_gal
+msgid "gal (US)"
+msgstr "gal (Stati Uniti)"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_inch
+msgid "in"
+msgstr "in"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cubic_inch
+msgid "in³"
+msgstr "in³"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_kgm
+msgid "kg"
+msgstr "kg"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_km
+msgid "km"
+msgstr "km"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_lb
+msgid "lb"
+msgstr "lb"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_mile
+msgid "mi"
+msgstr "mi"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_milliliter
+msgid "ml"
+msgstr "ml"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_millimeter
+msgid "mm"
+msgstr "mm"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_square_meter
+msgid "m²"
+msgstr "m²"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cubic_meter
+msgid "m³"
+msgstr "m³"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_oz
+msgid "oz"
+msgstr "oz"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_qt
+msgid "qt (US)"
+msgstr "qt (Stati Uniti)"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_yard
+msgid "yd"
+msgstr "yd"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_tree
+msgid "# Work Resources"
+msgstr "# Risorse lavorative"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid ""
+"%(att)s is a break attendance, You should not have such record on duration "
+"based calendar"
+msgstr ""
+"%(att)s rappresenta una pausa. Non dovresti avere un record del genere nel "
+"calendario basato sulla durata"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "2 Week's Calendar"
+msgstr "Calendario di 2 settimane"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"ms-1\">%</span>"
+msgstr "<span class=\"ms-1\">%</span>"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"ms-2\">hours/day</span>"
+msgstr "<span class=\"ms-2\">ore/giorno</span>"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"ms-2\">hours/week</span>"
+msgstr "<span class=\"ms-2\">ore/settimana</span>"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"o_stat_text\">Time Off</span>"
+msgstr "<span class=\"o_stat_text\">Congedo</span>"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span>hours/week</span>"
+msgstr "<span>ore/settimana</span>"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__afternoon
+msgid "Afternoon"
+msgstr "Pomeriggio"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"Are you sure you want to switch to a 1-week calendar? All work entries will "
+"be lost."
+msgstr ""
+"Sei sicuro di passare al calendario di una settimana? Tutte le voci "
+"lavorative verranno perse."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"Are you sure you want to switch to a 2-week calendar? All work entries will "
+"be lost."
+msgstr ""
+"Sei sicuro di passare al calendario di due settimane? Tutte le voci "
+"lavorative verranno perse."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__duration_based
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__duration_based
+msgid "Attendance based on duration"
+msgstr "Presenza basata sulla durata"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Attendances can't overlap."
+msgstr "Le presenze non possono sovrapporsi."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__hours_per_day
+msgid "Average Hour per Day"
+msgstr "Ore giornaliere medie"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__hours_per_day
+msgid ""
+"Average hours per day a resource is supposed to work with this calendar."
+msgstr ""
+"Ore lavorative giornaliere medie ipotizzate per la risorsa in base a questo "
+"calendario."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Avg"
+msgstr "Media"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__lunch
+msgid "Break"
+msgstr "Pausa"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__two_weeks_calendar
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__two_weeks_calendar
+msgid "Calendar in 2 weeks mode"
+msgstr "Calendario in modalità bisettimanale"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__schedule_type
+msgid ""
+"Choose which level of definition you want to define on your Schedule\n"
+"- Flexible : Define an amount of hours to work on the week.\n"
+"- Fully Fixed : define the days, periods and the start & end time for each "
+"period of the day"
+msgstr ""
+"Scegli quale livello di definizione vuoi stabilire nella tua pianificazione\n"
+"- Flessibile: stabilisci un importo di ore durante le quali lavorare nella "
+"settimana\n"
+"- Definitivo: stabilisci i giorni, i periodi e le date di inizio e fine per "
+"ogni periodo del giorno"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.resource_calendar_closing_days
+msgid "Closing Days"
+msgstr "Giorni di chiusura"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__day_period
+msgid "Day Period"
+msgstr "Fase del giorno"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__dayofweek
+msgid "Day of Week"
+msgstr "Giorno settimanale"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_res_company__resource_calendar_id
+#: model:ir.model.fields,field_description:base.field_res_users__resource_calendar_id
+msgid "Default Working Hours"
+msgstr "Orario lavorativo predefinito"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Define Amount of Hours per day"
+msgstr "Indica il numero di ore al giorno"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_res_users__resource_calendar_id
+#: model:ir.model.fields,help:base.field_resource_mixin__resource_calendar_id
+#: model:ir.model.fields,help:base.field_resource_resource__calendar_id
+msgid ""
+"Define the working schedule of the resource. If not set, the resource will "
+"have fully flexible working hours."
+msgstr ""
+"Definisci l'orario di lavoro di una risorsa. Se non configurato, la risorsa "
+"avrà un orario completamente flessibile."
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.action_resource_calendar_form
+msgid ""
+"Define working hours and time table that could be scheduled to your project "
+"members"
+msgstr ""
+"Definisci l'orario lavorativo e il calendario che potrebbero essere "
+"programmati per gli iscritti al progetto"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__display_type
+msgid "Display Type"
+msgstr "Tipo di visualizzazione"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__duration_days
+msgid "Duration (days)"
+msgstr "Durata (giorni)"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__duration_hours
+msgid "Duration (hours)"
+msgstr "Durata (ore)"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_resource__time_efficiency
+msgid "Efficiency Factor"
+msgstr "Fattore di efficienza"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__date_to
+msgid "End Date"
+msgstr "Data fine"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__two_weeks_explanation
+msgid "Explanation"
+msgstr "Spiegazione"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "First week"
+msgstr "Prima settimana"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar__schedule_type__flexible
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+msgid "Flexible"
+msgstr "Flessibile"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__flexible_hours
+msgid "Flexible Hours"
+msgstr "Orario flessibile"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Friday Afternoon"
+msgstr "Venerdì pomeriggio"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Friday Lunch"
+msgstr "Pranzo del venerdì"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Friday Morning"
+msgstr "Venerdì mattina"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__full_day
+msgid "Full Day"
+msgstr "Intera giornata"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__full_time_required_hours
+msgid "Full Time Equivalent"
+msgstr "Equivalente tempo pieno"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar__schedule_type__fully_fixed
+msgid "Fully Fixed"
+msgstr "Definitivo"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
+msgid "Fully Flexible"
+msgstr "Completamente flessibile"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__sequence
+msgid "Gives the sequence of this line when displaying the resource calendar."
+msgstr ""
+"Fornisce la sequenza della riga quando viene visualizzato il calendario "
+"delle risorse."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__global_leave_ids
+msgid "Global Time Off"
+msgstr "Ferie globali"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__hours_per_week
+msgid "Hours per Week"
+msgstr "Ore alla settimana"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_resource__resource_type__user
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Human"
+msgstr "Umana"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"If checked, the working schedule will be based on an amount of hours "
+"(defined for each day) and not a start & end time anymore.Do you confirm ?"
+msgstr ""
+"Se contrassegnato, i turni di lavoro si baseranno sul numero di ore "
+"(indicate per ogni giorno) e non più su una data di inizio e fine. Confermi?"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_schedule_exception__resource_id
+msgid ""
+"If empty, this is a generic time off for the company. If a resource is set, "
+"the time off is only for this resource"
+msgstr ""
+"Se vuoto, sono ferie generiche per l'azienda. Se viene impostata una "
+"risorsa, le ferie sono solo relative alla risorsa"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_resource__active
+msgid ""
+"If the active field is set to False, it will allow you to hide the resource "
+"record without removing it."
+msgstr ""
+"Se il campo Attivo è impostato a falso, consente di nascondere il record "
+"della risorsa senza rimuoverlo."
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__active
+msgid ""
+"If the active field is set to false, it will allow you to hide the Working "
+"Time without removing it."
+msgstr ""
+"Se il campo Attivo è impostato a falso, consente di nascondere l'orario "
+"lavorativo senza rimuoverlo."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"If unchecked, the working schedule will be based on a defined start and end "
+"hours.Do you confirm ?"
+msgstr ""
+"Se non contrassegnato, i turni di lavoro si baseranno su orari di inizio e "
+"fine ben definiti. Confermi?"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid ""
+"In a calendar with 2 weeks mode, all periods need to be in the sections."
+msgstr ""
+"In un calendario con modalità bisettimanale, i periodi devono stare tutti "
+"nelle sezioni."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__is_fulltime
+msgid "Is Full Time"
+msgstr "È a tempo pieno"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_resource__resource_type__material
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Material"
+msgstr "Materiale"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Monday Afternoon"
+msgstr "Lunedì pomeriggio"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Monday Lunch"
+msgstr "Pranzo del lunedì"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Monday Morning"
+msgstr "Lunedì mattina"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__morning
+msgid "Morning"
+msgstr "Mattino"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__full_time_required_hours
+msgid ""
+"Number of hours to work on the company schedule to be considered as fulltime."
+msgstr ""
+"Numero di ore di lavoro secondo l'orario dell'azienda da considerare come "
+"tempo pieno"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+msgid "Partial working schedules"
+msgstr "Orari lavorativi parziali"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+msgid "Period"
+msgstr "Periodo"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Provided datetimes needs to be timezoned"
+msgstr "Gli orari e le date forniti devono avere un fuso orario"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_resource__user_id
+msgid "Related user name for the resource to manage its access."
+msgstr "Nome utente correlato per gestire l'accesso alla risorsa."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Required Full Time"
+msgstr "Tempo pieno richiesto"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_mixin
+msgid "Resource Mixin"
+msgstr "Mixin risorsa"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.action_resource_schedule_exception_tree
+#: model:ir.actions.act_window,name:base.resource_schedule_exception_action_from_calendar
+#: model:ir.ui.menu,name:base.menu_view_resource_schedule_exception_search
+msgid "Resource Time Off"
+msgstr "Ferie risorsa"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_schedule_exception
+msgid "Resource Time Off Detail"
+msgstr "Dettaglio ferie della risorsa"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_calendar
+msgid "Resource Working Time"
+msgstr "Orario lavorativo risorsa"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__calendar_id
+msgid "Resource's Calendar"
+msgstr "Calendario risorse"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.action_resource_resource_tree
+#: model:ir.actions.act_window,name:base.resource_resource_action_from_calendar
+#: model:ir.model,name:base.model_resource_resource
+#: model:ir.model.fields,field_description:base.field_res_users__resource_ids
+#: model:ir.ui.menu,name:base.menu_resource_resource
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_tree
+msgid "Resources"
+msgstr "Risorse"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.resource_calendar_resources_leaves
+msgid "Resources Time Off"
+msgstr "Ferie delle risorse"
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.action_resource_resource_tree
+#: model_terms:ir.actions.act_window,help:base.resource_resource_action_from_calendar
+msgid ""
+"Resources allow you to create and manage resources that should be involved "
+"in a specific project phase. You can also set their efficiency level and "
+"workload based on their weekly working hours."
+msgstr ""
+"Risorse consente di creare e gestire le risorse che devono essere coinvolte "
+"in una specifica fase di progetto. È anche possibile impostare il livello di "
+"efficienza e il carico di lavoro in base alle ore di lavoro settimanali."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_tree
+msgid "Schedule Total Time"
+msgstr "Tempo totale programmato"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__schedule_type
+msgid "Schedule Type"
+msgstr "Tipo di orario"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Search Resource"
+msgstr "Ricerca risorsa"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+msgid "Search Working Period Time Off"
+msgstr "Ricerca ferie periodo lavorativo"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+msgid "Search Working Time"
+msgstr "Ricerca orario lavorativo"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "Second week"
+msgstr "Seconda settimana"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__display_type__line_section
+msgid "Section"
+msgstr "Sezione"
+
+#. module: base
+#: code:addons/base/models/res_company.py:0
+msgid "Standard 40 hours/week"
+msgstr "40 ore/settimana regolari"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__date_from
+msgid "Start Date"
+msgstr "Data inizio"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__hour_from
+msgid ""
+"Start and End time of working.\n"
+"A specific value of 24:00 is interpreted as 23:59:59.999999."
+msgstr ""
+"Orario di inizio e fine del lavoro.\n"
+"Un valore di 24:00 preciso viene interpretato come 23:59:59.999999."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+msgid "Starting Date of Time Off"
+msgstr "Data di inizio delle ferie"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch"
+msgstr "Cambia"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to 1-week calendar"
+msgstr "Passa al calendario di 1 settimana"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to 2-weeks calendar"
+msgstr "Passa al calendario di 2 settimane"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to Duration based attendance"
+msgstr "Passa a presenze basate sulla durata"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to fixed attendance"
+msgstr "Passa a presenza fissa"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__display_type
+msgid "Technical field for UX purpose."
+msgstr "Campo tecnico per l'esperienza utente (UX)."
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid ""
+"The current week (from %(first_day)s to %(last_day)s) corresponds to %"
+"(number)s week."
+msgstr ""
+"La settimana corrente (da %(first_day)s a %(last_day)s) corrisponde a %"
+"(number)s settimana/e."
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__duration_based
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__duration_based
+msgid ""
+"The hours will be centered around 12:00 to cover the duration for the day"
+msgstr ""
+"L'orario sarà concentrato intorno alle 12:00 per coprire l'intera giornata"
+
+#. module: base
+#: code:addons/base/models/resource_schedule_exception.py:0
+msgid "The start date of the time off must be earlier than the end date."
+msgstr "La data di inizio delle ferie deve essere precedente la data di fine."
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__tz
+#: model:ir.model.fields,help:base.field_resource_mixin__tz
+msgid ""
+"This field is used in order to define in which timezone the resources will "
+"work."
+msgstr ""
+"Questo campo è utilizzato per definire in quale fuso orario lavora la "
+"risorsa."
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_resource__time_efficiency
+msgid ""
+"This field is used to calculate the expected duration of a work order at "
+"this work center. For example, if a work order takes one hour and the "
+"efficiency factor is 100%, then the expected duration will be one hour. If "
+"the efficiency factor is 200%, however the expected duration will be 30 "
+"minutes."
+msgstr ""
+"Campo usato per calcolare la durata prevista di un ordine nel centro di "
+"lavoro. Se, ad esempio, un ordine di lavoro impiega un'ora con fattore di "
+"efficienza pari a 100%, la durata prevista corrisponde a un'ora. Ma se il "
+"fattore di efficienza è 200%, è prevista una durata di 30 minuti."
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Thursday Afternoon"
+msgstr "Giovedì pomeriggio"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Thursday Lunch"
+msgstr "Pranzo del giovedì"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Thursday Morning"
+msgstr "Giovedì mattina"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_form
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_tree
+msgid "Time Off Detail"
+msgstr "Dettaglio ferie"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__time_type
+msgid "Time Type"
+msgstr "Tipo di periodo"
+
+#. module: base
+#: model:ir.model.constraint,message:base.constraint_resource_resource_check_time_efficiency
+msgid "Time efficiency must be strictly positive"
+msgstr "L'efficienza temporale deve essere strettamente positiva"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Total"
+msgstr "Totale"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Tuesday Afternoon"
+msgstr "Martedì pomeriggio"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Tuesday Lunch"
+msgstr "Pranzo del martedì"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Tuesday Morning"
+msgstr "Martedì mattina"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Wednesday Afternoon"
+msgstr "Mercoledì pomeriggio"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Wednesday Lunch"
+msgstr "Pranzo del mercoledì"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Wednesday Morning"
+msgstr "Mercoledì mattina"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Week 1 Working Hours"
+msgstr "Ore di lavoro settimana 1"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Week 2 Working Hours"
+msgstr "Ore di lavoro settimana 2"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__week_type
+msgid "Week Number"
+msgstr "Numero settimana"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__flexible_hours
+msgid ""
+"When enabled, it will allow employees to work flexibly, without relying on "
+"the company's working schedule (working hours)."
+msgstr ""
+"Quando abilitato, permetterà ai dipendenti di lavorare in maniera flessibile "
+"senza dover dipendere dall'orario di lavoro dell'azienda (orario lavorativo)."
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_schedule_exception__time_type
+msgid ""
+"Whether this should be computed as a time off or as work time (eg: formation)"
+msgstr ""
+"Indica se deve essere calcolato come ferie o come orario di lavoro (es. "
+"formazione)"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_calendar_attendance
+msgid "Work Detail"
+msgstr "Dettaglio lavoro"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Work Resources"
+msgstr "Risorse lavorative"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__work_resources_count
+msgid "Work Resources count"
+msgstr "Numero risorse lavorative"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__work_time_rate
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Work Time Rate"
+msgstr "Tasso orario di lavoro"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__hour_from
+msgid "Work from"
+msgstr "Inizio lavoro"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__work_time_rate
+msgid ""
+"Work time rate versus full time working schedule, should be between 0 and "
+"100 %."
+msgstr ""
+"Il tasso di tempo di lavoro rispetto all'orario di lavoro a tempo pieno, "
+"dovrebbe essere compreso tra 0 e 100 %."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__hour_to
+msgid "Work to"
+msgstr "Fine lavoro"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_res_company__resource_calendar_ids
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__calendar_id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__resource_calendar_id
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Working Hours"
+msgstr "Orario lavorativo"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Working Hours of %s"
+msgstr "Orario lavorativo di %s"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.action_resource_calendar_form
+#: model:ir.ui.menu,name:base.menu_resource_calendar
+msgid "Working Schedules"
+msgstr "Orari lavorativi"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__attendance_ids
+#: model:ir.model.fields,field_description:base.field_resource_resource__calendar_id
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_attendance_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_attendance_tree
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_tree
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Working Time"
+msgstr "Orario lavorativo"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__attendance_ids_1st_week
+msgid "Working Time 1st Week"
+msgstr "Orario di lavoro settimana 1"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__attendance_ids_2nd_week
+msgid "Working Time 2nd Week"
+msgstr "Orario di lavoro settimana 2"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "You can't delete section between weeks."
+msgstr "Impossibile eliminare una sezione tra le settimane."
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "even"
+msgstr "pari"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "odd"
+msgstr "dispari"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "other week"
+msgstr "altra settimana"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "this week"
+msgstr "questa settimana"
 
 #~ msgid "Device Log"
 #~ msgstr "Log dispositivo"

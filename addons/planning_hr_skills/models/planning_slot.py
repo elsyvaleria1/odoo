@@ -2,7 +2,7 @@ from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 
-from odoo.addons.resource.models.utils import filter_domain_leaf
+from odoo.addons.base.models.resource_utils import filter_domain_leaf
 
 _debug = DebugLog(__name__)
 

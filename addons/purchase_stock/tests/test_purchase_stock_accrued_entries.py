@@ -11,7 +11,7 @@ class TestAccruedPurchaseStock(AccountTestInvoicingCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        uom_unit = cls.env.ref("uom.product_uom_unit")
+        uom_unit = cls.env.ref("base.product_uom_unit")
         product = cls.env["product.product"].create(
             {
                 "name": "Product",

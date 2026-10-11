@@ -13,8 +13,8 @@ class TestPurchasePriceResolver(AccountTestInvoicingCommon):
         super().setUpClass()
         cls.resolver = cls.env["purchase.price.resolver"]
         cls.foreign_currency = cls.setup_other_currency("EUR")
-        cls.unit = cls.env.ref("uom.product_uom_unit")
-        cls.dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.unit = cls.env.ref("base.product_uom_unit")
+        cls.dozen = cls.env.ref("base.product_uom_dozen")
         cls.product = cls.env["product.product"].create(
             {
                 "name": "Resolved product",

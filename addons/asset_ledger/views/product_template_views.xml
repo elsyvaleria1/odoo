@@ -112,7 +112,7 @@
         <field name="domain">[('asset_kind_id', '!=', False)]</field>
         <field
             name="context"
-            eval="{'default_asset_kind_id': ref('resource.kind_equipment')}" />
+            eval="{'default_asset_kind_id': ref('base.kind_equipment')}" />
     </record>
 
     <record id="action_product_template_property" model="ir.actions.act_window">
@@ -122,7 +122,7 @@
         <field name="domain">[('asset_kind_code', '=', 'property')]</field>
         <field
             name="context"
-            eval="{'default_asset_kind_id': ref('resource.kind_property')}" />
+            eval="{'default_asset_kind_id': ref('base.kind_property')}" />
     </record>
 
 </odoo>

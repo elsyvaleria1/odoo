@@ -176,7 +176,7 @@ class ProjectSaleLineEmployeeMap(models.Model):
     @api.depends("cost", "employee_id.resource_calendar_id")
     def _compute_display_cost(self) -> None:
         is_uom_day = (
-            self.env.ref("uom.product_uom_day")
+            self.env.ref("base.product_uom_day")
             == self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
         )
         resource_calendar_per_hours = self._get_working_hours_per_calendar(is_uom_day)
@@ -191,7 +191,7 @@ class ProjectSaleLineEmployeeMap(models.Model):
 
     def _inverse_display_cost(self) -> None:
         is_uom_day = (
-            self.env.ref("uom.product_uom_day")
+            self.env.ref("base.product_uom_day")
             == self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
         )
         resource_calendar_per_hours = self._get_working_hours_per_calendar(is_uom_day)

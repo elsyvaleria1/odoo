@@ -9,7 +9,7 @@
                 <p> The forecasted quantity of <field name="product_id" domain="[('product_tmpl_id', '=', product_tmpl_id)]" options="{'no_open': 1, 'no_create': 1}" readonly="not product_has_variants" class="fw-bold" /> is <field name="forecasted_quantity" />
                     <field
                         name="forecast_uom_id"
-                        groups="uom.group_uom"
+                        groups="base.group_uom"
                         readonly="1"
                         class="ps-1" />
                 </p>
@@ -26,7 +26,7 @@
                                 name="product_uom_id"
                                 widget="many2one_uom"
                                 options="{'no_open': 1, 'no_create': 1, 'quantity_field': 'quantity'}"
-                                groups="uom.group_uom" />
+                                groups="base.group_uom" />
                         </div>
                         <field name="date_planned" />
                         <field

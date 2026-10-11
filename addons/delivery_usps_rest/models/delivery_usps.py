@@ -282,13 +282,13 @@ class ProviderUSPS(models.Model):
     def _usps_convert_weight(self, weight):
         weight_uom_id = self.env["product.template"]._get_uom_from_setting("weight")
         return weight_uom_id._get_quantity_in_unit(
-            weight, self.env.ref("uom.product_uom_lb")
+            weight, self.env.ref("base.product_uom_lb")
         )
 
     def _usps_convert_length(self, length):
         length_uom_id = self.env["product.template"]._get_uom_from_setting("length")
         return length_uom_id._get_quantity_in_unit(
-            length, self.env.ref("uom.product_uom_inch")
+            length, self.env.ref("base.product_uom_inch")
         )
 
     def _prepare_usps_rest_packages_from_order(self, order) -> list:

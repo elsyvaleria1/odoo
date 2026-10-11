@@ -123,15 +123,13 @@ class TestWorkOrderProcessCommon(TestMrpWorkorderCommon):
         cls.mrp_workcenter = cls.env["mrp.workcenter"].create(
             {
                 "name": "Assembly Line 1",
-                "resource_calendar_id": cls.env.ref(
-                    "resource.resource_calendar_std"
-                ).id,
+                "resource_calendar_id": cls.env.ref("base.resource_calendar_std").id,
             }
         )
         cls.mrp_bom_desk = cls.env["mrp.bom"].create(
             {
                 "product_tmpl_id": cls.dining_table.product_tmpl_id.id,
-                "product_uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": cls.env.ref("base.product_uom_unit").id,
                 "sequence": 3,
                 "ready_to_produce": "asap",
                 "consumption": "flexible",
@@ -152,7 +150,7 @@ class TestWorkOrderProcessCommon(TestMrpWorkorderCommon):
                         {
                             "product_id": cls.product_table_sheet.id,
                             "product_qty": 1,
-                            "product_uom_id": cls.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": cls.env.ref("base.product_uom_unit").id,
                             "sequence": 1,
                             "operation_id": cls.mrp_bom_desk.operation_ids.id,
                         }
@@ -161,7 +159,7 @@ class TestWorkOrderProcessCommon(TestMrpWorkorderCommon):
                         {
                             "product_id": cls.product_table_leg.id,
                             "product_qty": 4,
-                            "product_uom_id": cls.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": cls.env.ref("base.product_uom_unit").id,
                             "sequence": 2,
                             "operation_id": cls.mrp_bom_desk.operation_ids.id,
                         }
@@ -170,7 +168,7 @@ class TestWorkOrderProcessCommon(TestMrpWorkorderCommon):
                         {
                             "product_id": cls.product_bolt.id,
                             "product_qty": 4,
-                            "product_uom_id": cls.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": cls.env.ref("base.product_uom_unit").id,
                             "sequence": 3,
                             "operation_id": cls.mrp_bom_desk.operation_ids.id,
                         }
@@ -179,7 +177,7 @@ class TestWorkOrderProcessCommon(TestMrpWorkorderCommon):
                         {
                             "product_id": cls.product_screw.id,
                             "product_qty": 10,
-                            "product_uom_id": cls.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": cls.env.ref("base.product_uom_unit").id,
                             "sequence": 4,
                             "operation_id": cls.mrp_bom_desk.operation_ids.id,
                         }
@@ -190,17 +188,13 @@ class TestWorkOrderProcessCommon(TestMrpWorkorderCommon):
         cls.mrp_workcenter_1 = cls.env["mrp.workcenter"].create(
             {
                 "name": "Drill Station 1",
-                "resource_calendar_id": cls.env.ref(
-                    "resource.resource_calendar_std"
-                ).id,
+                "resource_calendar_id": cls.env.ref("base.resource_calendar_std").id,
             }
         )
         cls.mrp_workcenter_3 = cls.env["mrp.workcenter"].create(
             {
                 "name": "Assembly Line 1",
-                "resource_calendar_id": cls.env.ref(
-                    "resource.resource_calendar_std"
-                ).id,
+                "resource_calendar_id": cls.env.ref("base.resource_calendar_std").id,
             }
         )
         cls.bom_laptop = cls.env["mrp.bom"].create(
@@ -231,7 +225,7 @@ class TestWorkOrderProcessCommon(TestMrpWorkorderCommon):
             }
         )
         # remove leaves that may affect our tests
-        cls.env.ref("resource.resource_calendar_std").leave_ids.unlink()
+        cls.env.ref("base.resource_calendar_std").leave_ids.unlink()
 
     def test_cancel_mo_with_routing(self):
         """Cancel a Manufacturing Order with routing (so generate a Work Order)
@@ -1358,7 +1352,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
         mo_custom_laptop_form.product_id = custom_laptop
         mo_custom_laptop_form.bom_id = bom_custom_laptop
         mo_custom_laptop_form.product_qty = 10.0
-        mo_custom_laptop_form.product_uom_id = self.env.ref("uom.product_uom_unit")
+        mo_custom_laptop_form.product_uom_id = self.env.ref("base.product_uom_unit")
         mo_custom_laptop = mo_custom_laptop_form.save()
 
         mo_custom_laptop.action_confirm()
@@ -1523,7 +1517,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
 
         laptop = self.laptop
         graphics_card = self.graphics_card
-        unit = self.env.ref("uom.product_uom_unit")
+        unit = self.env.ref("base.product_uom_unit")
         self.env["stock.quant"]._update_available_quantity(
             graphics_card, self.stock_location, 20
         )
@@ -1651,7 +1645,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
         bom = self.env["mrp.bom"].create(
             {
                 "product_tmpl_id": drawer.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "consumption": "flexible",
                 "sequence": 2,
                 "operation_ids": [
@@ -1685,7 +1679,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
                         {
                             "product_id": drawer_drawer.id,
                             "product_qty": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "sequence": 1,
                         }
                     ),
@@ -1693,7 +1687,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
                         {
                             "product_id": drawer_case.id,
                             "product_qty": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "sequence": 2,
                         }
                     ),
@@ -1880,7 +1874,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
         bom = self.env["mrp.bom"].create(
             {
                 "product_tmpl_id": drawer.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "consumption": "flexible",
                 "sequence": 2,
                 "operation_ids": [
@@ -1914,7 +1908,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
                         {
                             "product_id": drawer_drawer.id,
                             "product_qty": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "sequence": 1,
                         }
                     ),
@@ -1922,7 +1916,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
                         {
                             "product_id": drawer_case.id,
                             "product_qty": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "sequence": 2,
                         }
                     ),
@@ -2314,9 +2308,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
         mrp_workcenter_3 = self.env["mrp.workcenter"].create(
             {
                 "name": "assembly line 1",
-                "resource_calendar_id": self.env.ref(
-                    "resource.resource_calendar_std"
-                ).id,
+                "resource_calendar_id": self.env.ref("base.resource_calendar_std").id,
             }
         )
         self.planning_bom.operation_ids = False
@@ -3040,7 +3032,7 @@ class TestRoutingAndKits(TransactionCase):
         grp_workorder = cls.env.ref("mrp.group_mrp_routings")
         cls.env.user.write({"group_ids": [(4, grp_workorder.id)]})
 
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
         cls.kit1 = cls.env["product.product"].create(
             {
                 "name": "kit1",
@@ -3375,7 +3367,7 @@ class TestRoutingAndKits(TransactionCase):
         on a specific operation and check that the produce is consumed into the
         right workorder."""
         # Required for `product_uom_id` to be visible in the view
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
         self.bom_finished1.consumption = "flexible"
         add_product = self.env["product.product"].create(
             {
@@ -3411,7 +3403,7 @@ class TestRoutingAndKits(TransactionCase):
         on a specific operation and check that the produce is consumed into the
         right workorder."""
         # Required for `product_uom_id` to be visible in the view
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
         self.bom_finished1.consumption = "flexible"
         add_product = self.env["product.product"].create(
             {

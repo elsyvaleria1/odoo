@@ -236,16 +236,21 @@ also remain distinct facts; an employee can hold several devices.
 Module and repository boundaries
 --------------------------------
 
+``base`` holds the resource itself, with units of measure: everything in the ERP
+can be a resource, so every database has them. Until ``base`` 1.151 they were the
+``resource`` and ``uom`` modules; their widgets are ``web``'s.
+
+* Resources: identity and operational mechanics. An asset is a resource of a
+  ``resource.kind``; the kind, its identifiers, meters, odometer, components,
+  custody and the Assets menu are ``base``'s, and a model extending one kind
+  inherits ``mixin.resource.kind``. They need no ``mail``: ``resource_mail``
+  makes resources and kind models mail threads, tracks an asset's changes and
+  posts its custody hand-overs.
+
 ``odoo/addons`` owns generic infrastructure and integration capabilities:
 
-* ``resource``: identity and operational mechanics. An asset is a resource of a
-  ``resource.kind``; the kind, its identifiers, meters, odometer, components,
-  custody and the Assets menu are ``resource``'s, and a model extending one kind
-  inherits ``mixin.resource.kind``. ``resource`` needs no ``mail``:
-  ``resource_mail`` makes resources and kind models mail threads, tracks an
-  asset's changes and posts its custody hand-overs. The ``resource_asset_*``
-  bridges extend assets into products, stock, accounting, employees,
-  manufacturing and calendars.
+* The ``resource_asset_*`` bridges extend assets into products, stock,
+  accounting, employees, manufacturing and calendars.
 * ``device`` and its transport, access, mobile, DAV and manufacturing adapters:
   endpoint capabilities. Protocol adapters remain optional dependencies.
 * ``device_gps``: ingestion, validation, observations and resource tracking.
@@ -276,10 +281,13 @@ model names and routes; the configured addon paths continue to discover them.
 Upgrade and temporal limits
 ---------------------------
 
+``uom`` and ``resource`` folded into ``base`` in ``base`` 1.151, which refuses a
+database whose ``uom`` is below 1.2 or whose ``resource`` is below 1.40.
 ``resource_asset`` folded into ``resource`` in ``base`` 1.150, which refuses a
-database whose ``resource_asset`` is below 2.0: such a database upgrades on a
-commit before the fold first. The paragraphs below describe the upgrades that
-preceded it.
+database whose ``resource_asset`` is below 2.0. Such a database upgrades on a
+commit before the fold first, so a database still below ``base`` 1.150 crosses
+the two folds in two upgrades. The paragraphs below describe the upgrades that
+preceded them.
 
 Upgrade ``resource``, ``resource_asset``, ``device_gps`` and ``asset_gps``,
 together with installed GPS report bridges. Asset GPS 1.14.0 transfers stored attachments from every

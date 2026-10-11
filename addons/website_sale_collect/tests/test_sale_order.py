@@ -155,7 +155,7 @@ class TestSaleOrder(ClickAndCollectCommon):
         self.assertEqual(insufficient_stock_data[cart.line_ids], 10)
 
     def test_insufficient_stock_with_mixed_uom_order_lines(self):
-        pack_of_6_id = self.ref("uom.product_uom_pack_6")
+        pack_of_6_id = self.ref("base.product_uom_pack_6")
         cart = self._create_in_store_delivery_order(
             line_ids=[
                 Command.create(
@@ -183,7 +183,7 @@ class TestSaleOrder(ClickAndCollectCommon):
         self.assertEqual(insufficient_stock_data[ol_unit], 4)
 
     def test_product_in_stock_with_mixed_uom_order_lines_is_available(self):
-        pack_of_6_id = self.ref("uom.product_uom_pack_6")
+        pack_of_6_id = self.ref("base.product_uom_pack_6")
         cart = self._create_in_store_delivery_order(
             line_ids=[
                 Command.create(

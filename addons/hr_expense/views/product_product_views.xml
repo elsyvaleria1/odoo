@@ -140,7 +140,7 @@
                         name="uom_id"
                         widget="many2one_uom"
                         options="{'no_open': True, 'no_create': True}"
-                        groups="uom.group_uom" />
+                        groups="base.group_uom" />
                     <field name="barcode" />
                 </list>
             </field>

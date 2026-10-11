@@ -4,9 +4,7 @@
     <record id="resource_schedule_exception_view_search_inherit" model="ir.ui.view">
         <field name="name">resource.schedule.exception.search.inherit</field>
         <field name="model">resource.schedule.exception</field>
-        <field
-            name="inherit_id"
-            ref="resource.view_resource_schedule_exception_search" />
+        <field name="inherit_id" ref="base.view_resource_schedule_exception_search" />
         <field name="arch" type="xml">
             <filter name="resource" position="after">
                 <field name="work_entry_type_id" groups="hr.group_hr_user" />
@@ -23,9 +21,7 @@
         <field
             name="name">resource.calendar.attendance.list.inherit.hr.work.entry</field>
         <field name="model">resource.calendar.attendance</field>
-        <field
-            name="inherit_id"
-            ref="resource.view_resource_calendar_attendance_tree" />
+        <field name="inherit_id" ref="base.view_resource_calendar_attendance_tree" />
         <field name="arch" type="xml">
             <field name="week_type" position="after">
                 <field name="work_entry_type_id" />
@@ -37,9 +33,7 @@
         <field
             name="name">resource.calendar.attendance.form.inherit.hr.work.entry</field>
         <field name="model">resource.calendar.attendance</field>
-        <field
-            name="inherit_id"
-            ref="resource.view_resource_calendar_attendance_form" />
+        <field name="inherit_id" ref="base.view_resource_calendar_attendance_form" />
         <field name="arch" type="xml">
             <field name="day_period" position="after">
                 <field name="work_entry_type_id" />
@@ -51,7 +45,7 @@
         <field
             name="name">resource.schedule.exception.form.inherit.hr.work.entry</field>
         <field name="model">resource.schedule.exception</field>
-        <field name="inherit_id" ref="resource.resource_schedule_exception_form" />
+        <field name="inherit_id" ref="base.resource_schedule_exception_form" />
         <field name="arch" type="xml">
             <field name="resource_id" position="after">
                 <field name="work_entry_type_id" />
@@ -63,7 +57,7 @@
         <field
             name="name">resource.schedule.exception.list.inherit.hr.work.entry</field>
         <field name="model">resource.schedule.exception</field>
-        <field name="inherit_id" ref="resource.resource_schedule_exception_tree" />
+        <field name="inherit_id" ref="base.resource_schedule_exception_tree" />
         <field name="arch" type="xml">
             <field name="local_hour_to" position="after">
                 <field name="work_entry_type_id" />

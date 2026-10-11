@@ -66,7 +66,7 @@ class ProjectTask(models.Model):
             or 0.0
             for task in self
         }
-        uom_hour = self.env.ref("uom.product_uom_hour")
+        uom_hour = self.env.ref("base.product_uom_hour")
         for timesheet in timesheets:
             delta = 0
             if timesheet._origin.so_line == timesheet.task_id.sale_line_id:

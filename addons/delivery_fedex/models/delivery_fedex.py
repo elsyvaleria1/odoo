@@ -843,9 +843,9 @@ class DeliveryCarrier(models.Model):
 
     def _fedex_convert_weight(self, weight, unit="KG"):
         if unit == "KG":
-            convert_to = "uom.product_uom_kgm"
+            convert_to = "base.product_uom_kgm"
         elif unit == "LB":
-            convert_to = "uom.product_uom_lb"
+            convert_to = "base.product_uom_lb"
         else:
             raise ValueError
 

@@ -12,9 +12,9 @@ class TestMrpPlm(TestPlmCommon):
     def test_create_eco_from_production_using_uom(self):
         """Creates an ECO from a Manufacturing Order (using different UoM than its BoM) and checks
         the modifications done in the MO are in the revised BoM."""
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
-        uom_unit = self.env.ref("uom.product_uom_unit")
-        uom_dozen = self.env.ref("uom.product_uom_dozen")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
+        uom_unit = self.env.ref("base.product_uom_unit")
+        uom_dozen = self.env.ref("base.product_uom_dozen")
         # Creates a BoM.
         common_vals = {"is_storable": True}
         finished_product = self.env["product.product"].create(
@@ -78,7 +78,7 @@ class TestMrpPlm(TestPlmCommon):
 
         # Does the same test but switches the BoM and MO's UoM, and use an UoM
         # from another UoM's category for one of the component.
-        uom_cm = self.env.ref("uom.product_uom_cm")
+        uom_cm = self.env.ref("base.product_uom_cm")
         comp_cm_vals = {"name": "Clover's stem", "uom_id": uom_cm.id}
         component_1_in_cm = self.env["product.product"].create(
             dict(common_vals, **comp_cm_vals)

@@ -80,7 +80,7 @@
                         <field
                             name="odometer_uom_id"
                             nolabel="1"
-                            groups="uom.group_uom"
+                            groups="base.group_uom"
                             class="oe_inline" />
                     </div>
                     <field name="date_return" />

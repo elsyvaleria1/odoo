@@ -65,7 +65,7 @@ class TestPricingScope(ProductVariantsCommon):
 
     def test_vendor_unit_follows_an_incompatible_product_change(self):
         kg_product = self.env["product.template"].create(
-            {"name": "Flour", "uom_id": self.env.ref("uom.product_uom_kgm").id}
+            {"name": "Flour", "uom_id": self.env.ref("base.product_uom_kgm").id}
         )
         seller = self.env["product.supplierinfo"].create(
             {

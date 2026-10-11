@@ -8,11 +8,11 @@ from odoo.libs.intervals import Intervals
 from odoo.tools import SQL
 from odoo.tools.date_utils import get_intervals_hours, get_timedelta
 
+from odoo.addons.base.models.resource_utils import filter_domain_leaf
 from odoo.addons.project.models.project_task import (
     FINISH_ANCHORED_TYPES,
     START_CONSTRAINED_TYPES,
 )
-from odoo.addons.resource.models.utils import filter_domain_leaf
 
 _debug = DebugLog(__name__)
 

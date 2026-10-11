@@ -1066,7 +1066,7 @@ class StockQuantReservation(models.Model):
             ["quantity", "reserved_quantity", "inventory_quantity", "user_id"]
         )
         precision_digits = max(
-            6, self.env.ref("uom.decimal_product_uom").sudo().digits * 2
+            6, self.env.ref("base.decimal_product_uom").sudo().digits * 2
         )
         epsilon = Decimal(5) * Decimal(10) ** -(precision_digits + 1)
         query = SQL(

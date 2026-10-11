@@ -24,7 +24,7 @@ class TestDeliveryUPS(TransactionCase):
                 "weight": 0.01,
             }
         )
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
 
         # Add a full address to "Your Company" and "Agrolait"
         self.your_company = self.env.ref("base.main_partner")

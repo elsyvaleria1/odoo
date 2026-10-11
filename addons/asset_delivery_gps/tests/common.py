@@ -15,13 +15,13 @@ class GpsBridgeCase(TransactionCase):
             [("company_id", "=", cls.company.id)], limit=1
         )
 
-        cls.km_uom = cls.env.ref("uom.product_uom_km", raise_if_not_found=False)
+        cls.km_uom = cls.env.ref("base.product_uom_km", raise_if_not_found=False)
         if not cls.km_uom:
             cls.km_uom = cls.env["uom.uom"].create(
                 {
                     "name": "km",
                     "relative_factor": 1000,
-                    "relative_uom_id": cls.env.ref("uom.product_uom_meter").id,
+                    "relative_uom_id": cls.env.ref("base.product_uom_meter").id,
                 }
             )
 

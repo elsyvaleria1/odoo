@@ -1,6 +1,6 @@
 from odoo.fields import Command
 
-from odoo.addons.uom.tests.common import UomCommon
+from odoo.addons.base.tests.common import UomCommon
 
 
 class ProductCommon(UomCommon):

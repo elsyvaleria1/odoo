@@ -4,7 +4,7 @@ import { HrEmployee } from "@hr/../tests/mock_server/mock_models/hr_employee";
 import { M2xAvatarEmployee } from "@hr/../tests/mock_server/mock_models/m2x_avatar_employee";
 import { mailModels } from "@mail/../tests/mail_test_helpers";
 import { registerMailMockRoutes } from "@mail/../tests/mock_server/mail_mock_server";
-import { ResourceResource } from "@resource/../tests/mock_server/mock_models/resource_resource";
+import { ResourceResource } from "@web/../tests/_framework/mock_server/mock_models/resource_resource";
 import { defineModels, defineParams, onRpc } from "@web/../tests/web_test_helpers";
 
 import { HrJob } from "./mock_server/mock_models/hr_job.js";

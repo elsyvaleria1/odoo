@@ -4,7 +4,7 @@
     <record id="product_product_civic" model="product.product">
         <field name="name">Civic LX</field>
         <field name="manufacturer_id" ref="resource_asset_vehicle.brand_honda" />
-        <field name="asset_kind_id" ref="resource.kind_vehicle" />
+        <field name="asset_kind_id" ref="base.kind_vehicle" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -24,7 +24,7 @@
     <record id="product_product_f150" model="product.product">
         <field name="name">F-150 XLT</field>
         <field name="manufacturer_id" ref="resource_asset_vehicle.brand_ford" />
-        <field name="asset_kind_id" ref="resource.kind_vehicle" />
+        <field name="asset_kind_id" ref="base.kind_vehicle" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -45,7 +45,7 @@
     <record id="product_product_model3" model="product.product">
         <field name="name">Model 3 Long Range</field>
         <field name="manufacturer_id" ref="resource_asset_vehicle.brand_tesla_motors" />
-        <field name="asset_kind_id" ref="resource.kind_vehicle" />
+        <field name="asset_kind_id" ref="base.kind_vehicle" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -61,7 +61,7 @@
     <record id="product_product_transit" model="product.product">
         <field name="name">Transit 350</field>
         <field name="manufacturer_id" ref="resource_asset_vehicle.brand_ford" />
-        <field name="asset_kind_id" ref="resource.kind_vehicle" />
+        <field name="asset_kind_id" ref="base.kind_vehicle" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -81,7 +81,7 @@
     <record id="product_product_tractor_5075e" model="product.product">
         <field name="name">5075E Utility Tractor</field>
         <field name="manufacturer_id" ref="resource_asset_vehicle.brand_john_deere" />
-        <field name="asset_kind_id" ref="resource.kind_machinery" />
+        <field name="asset_kind_id" ref="base.kind_machinery" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -94,7 +94,7 @@
     <record id="product_product_forklift" model="product.product">
         <field name="name">H2.5FT Forklift</field>
         <field name="manufacturer_id" ref="resource_asset_vehicle.brand_hyster_yale" />
-        <field name="asset_kind_id" ref="resource.kind_machinery" />
+        <field name="asset_kind_id" ref="base.kind_machinery" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -105,7 +105,7 @@
 
     <record id="product_product_generator" model="product.product">
         <field name="name">Industrial Generator 50kW</field>
-        <field name="asset_kind_id" ref="resource.kind_equipment" />
+        <field name="asset_kind_id" ref="base.kind_equipment" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -115,7 +115,7 @@
 
     <record id="product_product_office_building" model="product.product">
         <field name="name">Commercial Office Building</field>
-        <field name="asset_kind_id" ref="resource.kind_property" />
+        <field name="asset_kind_id" ref="base.kind_property" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -123,7 +123,7 @@
 
     <record id="product_product_warehouse" model="product.product">
         <field name="name">Industrial Warehouse</field>
-        <field name="asset_kind_id" ref="resource.kind_property" />
+        <field name="asset_kind_id" ref="base.kind_property" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -131,7 +131,7 @@
 
     <record id="product_product_farmland" model="product.product">
         <field name="name">Agricultural Farmland</field>
-        <field name="asset_kind_id" ref="resource.kind_property" />
+        <field name="asset_kind_id" ref="base.kind_property" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />
@@ -139,7 +139,7 @@
 
     <record id="product_product_retail_store" model="product.product">
         <field name="name">Retail Store Space</field>
-        <field name="asset_kind_id" ref="resource.kind_property" />
+        <field name="asset_kind_id" ref="base.kind_property" />
         <field name="is_storable" eval="True" />
         <field name="tracking">serial</field>
         <field name="categ_id" ref="product_category_vehicles" />

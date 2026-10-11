@@ -32,7 +32,7 @@ class ReportStockReport_Reception(models.AbstractModel):
                 report_values.get("sources_to_formatted_scheduled_date", {})
             )
         )
-        report_values["show_uom"] = self.env.user.has_group("uom.group_uom")
+        report_values["show_uom"] = self.env.user.has_group("base.group_uom")
         return report_values
 
     @_debug.perf.timed

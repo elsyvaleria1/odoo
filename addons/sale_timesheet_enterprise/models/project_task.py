@@ -141,7 +141,7 @@ class ProjectTask(models.Model):
     def _gantt_progress_bar_sale_line_id(self, res_ids) -> dict:
         if not self.env["sale.order.line"].has_access("read"):
             return {}
-        uom_hour = self.env.ref("uom.product_uom_hour")
+        uom_hour = self.env.ref("base.product_uom_hour")
         planned_hours_per_sol = self.env["project.task"]._read_group(
             [
                 ("sale_line_id", "in", res_ids),

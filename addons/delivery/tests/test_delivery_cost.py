@@ -43,7 +43,7 @@ class TestDeliveryCost(DeliveryCommon, SaleCommon):
             }
         )
         cls.partner_address_13 = cls.partner_4.child_ids
-        cls.product_uom_hour = cls.env.ref("uom.product_uom_hour")
+        cls.product_uom_hour = cls.env.ref("base.product_uom_hour")
 
     def test_00_delivery_cost(self):
         # In order to test Carrier Cost

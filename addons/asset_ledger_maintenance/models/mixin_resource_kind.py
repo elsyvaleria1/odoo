@@ -1,6 +1,6 @@
 from odoo import models
 
-from odoo.addons.resource.models.mixin_resource_kind import _resource_action
+from odoo.addons.base.models.mixin_resource_kind import _resource_action
 
 
 class MixinResourceKind(models.AbstractModel):

@@ -63,7 +63,7 @@
             <field name="name">Travel by car</field>
             <field name="employee_id" ref="hr.employee_admin" />
             <field name="product_id" ref="expense_product_mileage" />
-            <field name="product_uom_id" ref="uom.product_uom_km" />
+            <field name="product_uom_id" ref="base.product_uom_km" />
             <field name="quantity" eval="108.84" />
             <field name="review_state">submitted</field>
         </record>
@@ -81,7 +81,7 @@
                 eval="{ref('analytic.analytic_our_super_product'): 100}" />
             <field name="product_id" ref="expense_product_travel_accommodation" />
             <field name="total_amount_currency" eval="700.0" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="date" eval="time.strftime('%Y-%m')+'-12'" />
             <field name="review_state">submitted</field>
             <field name="payment_mode">company_account</field>
@@ -94,7 +94,7 @@
                 eval="{ref('analytic.analytic_nebula'): 100}" />
             <field name="product_id" ref="expense_product_travel_accommodation" />
             <field name="total_amount_currency" eval="2000.0" />
-            <field name="product_uom_id" ref="uom.product_uom_unit" />
+            <field name="product_uom_id" ref="base.product_uom_unit" />
             <field name="date" eval="time.strftime('%Y-%m')+'-17'" />
             <field name="review_state">submitted</field>
         </record>
@@ -125,7 +125,7 @@
                 name="analytic_distribution"
                 eval="{ref('analytic.analytic_our_super_product'): 100}" />
             <field name="product_id" ref="expense_product_mileage" />
-            <field name="product_uom_id" ref="uom.product_uom_km" />
+            <field name="product_uom_id" ref="base.product_uom_km" />
             <field name="date" eval="time.strftime('%Y')+'-01-15'" />
             <field name="quantity" eval="120.85" />
         </record>

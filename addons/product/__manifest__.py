@@ -8,7 +8,6 @@
     "author": "Odoo S.A.",
     "license": "LGPL-3",
     "depends": [
-        "uom",
         "mail",
         "mixin_attribute",
     ],

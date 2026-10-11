@@ -12,7 +12,6 @@
     "depends": [
         "trade",
         "credential",
-        "resource",
         "stock_account",
         "phone_validation",
         "partner_autocomplete",

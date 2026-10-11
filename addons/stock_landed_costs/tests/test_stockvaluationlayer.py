@@ -109,7 +109,7 @@ class TestStockValuationLCCommon(TestStockLandedCostsCommon):
                 ].lot_stock_id.id,
                 "product_uom_id": product_uom_id.id
                 if product_uom_id
-                else self.env.ref("uom.product_uom_unit").id,
+                else self.env.ref("base.product_uom_unit").id,
                 "product_uom_qty": quantity,
                 "price_unit": unit_cost,
                 "picking_type_id": self.company_data["default_warehouse"].in_type_id.id,
@@ -143,7 +143,7 @@ class TestStockValuationLCCommon(TestStockLandedCostsCommon):
                 "product_id": product.id,
                 "location_id": self.company_data["default_warehouse"].lot_stock_id.id,
                 "location_dest_id": self.env.ref("stock.stock_location_customers").id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "product_uom_qty": quantity,
                 "picking_type_id": self.company_data[
                     "default_warehouse"
@@ -304,8 +304,8 @@ class TestStockValuationLCFIFO(TestStockValuationLCCommon):
         self.assertEqual(move2.stock_valuation_layer_ids.value, -115)
 
     def test_landed_cost_different_uom(self):
-        uom_gram = self.env.ref("uom.product_uom_gram")
-        uom_kgm = self.env.ref("uom.product_uom_kgm")
+        uom_gram = self.env.ref("base.product_uom_gram")
+        uom_kgm = self.env.ref("base.product_uom_kgm")
         self.product1.uom_id = uom_gram
         move1 = self._make_in_move(
             self.product1, 1, unit_cost=10, create_picking=True, product_uom_id=uom_kgm

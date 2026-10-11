@@ -14,8 +14,8 @@ class TestResourceAssetLink(TransactionCase):
         cls.product = create_test_product(
             cls.env, name="Pickup", tracking="serial", asset_kind="vehicle"
         )
-        cls.plate_type = cls.env.ref("resource.identifier_type_plate")
-        cls.vin_type = cls.env.ref("resource.identifier_type_vin")
+        cls.plate_type = cls.env.ref("base.identifier_type_plate")
+        cls.vin_type = cls.env.ref("base.identifier_type_vin")
 
     def _lot(self, name="PK-1", **vals):
         return self.env["product.trace"].create(
@@ -31,7 +31,7 @@ class TestResourceAssetLink(TransactionCase):
         self.assertEqual(self.product.asset_kind_id.code, "vehicle")
         plain = create_test_product(self.env, name="Bolt", tracking="serial")
         self.assertFalse(plain.asset_kind_id)
-        self.product.product_tmpl_id.asset_kind_id = self.env.ref("resource.kind_tool")
+        self.product.product_tmpl_id.asset_kind_id = self.env.ref("base.kind_tool")
         self.assertEqual(self.product.asset_kind_id.code, "tool")
         self.product.product_tmpl_id.asset_kind_id = False
         self.assertFalse(self.product.asset_kind_id)

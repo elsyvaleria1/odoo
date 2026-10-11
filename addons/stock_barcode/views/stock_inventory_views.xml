@@ -46,13 +46,13 @@
                     </div>
                     <div
                         class="col-3 ps-0"
-                        groups="uom.group_uom"
+                        groups="base.group_uom"
                         invisible="not product_uom_id">
                         <field
                             name="product_uom_id"
                             widget="many2one_uom"
                             options="{'no_open': True}"
-                            groups="uom.group_uom" />
+                            groups="base.group_uom" />
                     </div>
                 </div>
                 <div name="digipad" class="row">

@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { askRecurrenceUpdate } from "@resource/recurrence/ask_recurrence_update_dialog";
+import { askRecurrenceUpdate } from "@web/components/ask_recurrence_update_dialog/ask_recurrence_update_dialog";
 import { _t } from "@web/core/translation";
 
 export function planningAskRecurrenceUpdate(dialogService) {

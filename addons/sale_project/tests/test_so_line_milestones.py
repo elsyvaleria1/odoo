@@ -16,7 +16,7 @@ class TestSoLineMilestones(TestSaleCommon):
         cls.env.user.group_ids += cls.quick_ref("project.group_project_manager")
 
         cls.env.user.group_ids += cls.env.ref("project.group_project_milestone")
-        uom_hour = cls.env.ref("uom.product_uom_hour")
+        uom_hour = cls.env.ref("base.product_uom_hour")
 
         cls.product_delivery_milestones1 = cls.env["product.product"].create(
             {

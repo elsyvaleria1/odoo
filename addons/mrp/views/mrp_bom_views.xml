@@ -24,7 +24,7 @@
                             <field
                                 name="product_uom_id"
                                 widget="many2one_uom"
-                                groups="uom.group_uom" />
+                                groups="base.group_uom" />
                         </div>
                         <field
                             name="operation_id"
@@ -102,7 +102,7 @@
                                     name="product_uom_id"
                                     widget="many2one_uom"
                                     options="{'no_open':True, 'no_create':True, 'product_field': 'product_tmpl_id', 'quantity_field': 'product_qty'}"
-                                    groups="uom.group_uom" />
+                                    groups="base.group_uom" />
                             </div>
                         </group>
                         <group>
@@ -180,7 +180,7 @@
                                         name="product_uom_id"
                                         widget="many2one_uom"
                                         options="{'no_open': True, 'no_create': True, 'quantity_field': 'product_qty'}"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                     <field
                                         name="possible_bom_product_template_attribute_value_ids"
                                         column_invisible="True" />
@@ -284,7 +284,7 @@
                                         name="product_uom_id"
                                         widget="many2one_uom"
                                         options="{'quantity_field': 'product_qty'}"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                     <field name="cost_share" optional="hide" />
                                     <field
                                         name="allowed_operation_ids"
@@ -357,7 +357,7 @@
                                                 decoration-danger="batch_size &lt;= 0.0" />
                                             <field
                                                 name="product_uom_id"
-                                                groups="uom.group_uom"
+                                                groups="base.group_uom"
                                                 invisible="not enable_batch_size"
                                                 readonly="1" />
                                         </div>
@@ -398,7 +398,7 @@
                         name="product_uom_id"
                         widget="many2one_uom"
                         optional="hide"
-                        groups="uom.group_uom" />
+                        groups="base.group_uom" />
                 </list>
             </field>
         </record>
@@ -411,7 +411,7 @@
                         <t t-name="card">
                             <div>
                                 <field name="product_tmpl_id" class="fw-medium fs-5" />
-                                <span class="float-end badge rounded-pill"><field name="product_qty" /> <field name="product_uom_id" groups="uom.group_uom" class="small" /></span>
+                                <span class="float-end badge rounded-pill"><field name="product_qty" /> <field name="product_uom_id" groups="base.group_uom" class="small" /></span>
                             </div>
                             <footer class="pt-1">
                                 <field name="code" />
@@ -497,7 +497,7 @@
                                         name="product_uom_id"
                                         widget="many2one_uom"
                                         options="{'no_open':True,'no_create':True, 'quantity_field': 'product_qty'}"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                 </div>
                                 <field
                                     name="possible_bom_product_template_attribute_value_ids"

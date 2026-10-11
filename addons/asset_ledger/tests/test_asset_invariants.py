@@ -30,7 +30,7 @@ class TestAssetInvariants(TransactionCase):
         tmpl = self.env["product.template"].create(
             {
                 "name": f"{name} model",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": self.env.ref("base.kind_vehicle").id,
                 "is_storable": True,
                 "tracking": "serial",
             }
@@ -352,7 +352,7 @@ class TestAssetUserCannotEditTheCatalogue(TransactionCase):
         cls.vehicle = cls.Template.create(
             {
                 "name": "Vehicle Model",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
 
@@ -374,7 +374,7 @@ class TestAssetUserCannotEditTheCatalogue(TransactionCase):
         estate = self.Template.create(
             {
                 "name": "A Building",
-                "asset_kind_id": self.env.ref("resource.kind_property").id,
+                "asset_kind_id": self.env.ref("base.kind_property").id,
             }
         )
         with self.assertRaises(AccessError):
@@ -432,7 +432,7 @@ class TestOneAssetOneCompanyLedger(TransactionCase):
         template = cls.env["product.template"].create(
             {
                 "name": "Shared asset model",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
                 "is_storable": True,
                 "tracking": "serial",
             }
@@ -522,7 +522,7 @@ class TestLicensePlateIsActuallyUnique(TransactionCase):
         cls.template = cls.env["product.template"].create(
             {
                 "name": "Plate test model",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
                 "is_storable": True,
                 "tracking": "serial",
             }
@@ -575,7 +575,7 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
         template = cls.env["product.template"].create(
             {
                 "name": "Cron test model",
-                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
                 "is_storable": True,
                 "tracking": "serial",
             }

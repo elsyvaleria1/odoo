@@ -283,7 +283,7 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
             {
                 "name": "Quarter-Hours",
                 "relative_factor": 0.25,
-                "relative_uom_id": self.env.ref("uom.product_uom_hour").id,
+                "relative_uom_id": self.env.ref("base.product_uom_hour").id,
             }
         )
         self.service_timesheet._update_service_policy_fields()  # trigger value changes for invoice policy and service_type

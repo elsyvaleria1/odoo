@@ -12,7 +12,7 @@ class TestKitQtyTransferred(AccountTestInvoicingCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.partner = cls.env["res.partner"].create({"name": "KI kit vendor"})
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
         cls.component_a, cls.component_b, cls.kit = (
             cls.env["product.product"].create(
                 {
@@ -80,7 +80,7 @@ class TestKitQtyTransferred(AccountTestInvoicingCommon):
             {
                 "product_tmpl_id": kit.product_tmpl_id.id,
                 "product_qty": 1.0,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "type": "phantom",
                 "bom_line_ids": [
                     Command.create({"product_id": component.id, "product_qty": 12})
@@ -152,7 +152,7 @@ class TestMoPurchaseLinks(AccountTestInvoicingCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.partner = cls.env["res.partner"].create({"name": "KI mo vendor"})
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
         cls.raw_a, cls.raw_b, cls.manufactured = (
             cls.env["product.product"].create(
                 {

@@ -2374,6 +2374,7 @@ msgstr ""
 #: code:addons/web/static/src/components/expression_editor_dialog/expression_editor_dialog.xml:0
 #: code:addons/web/static/src/views/view_utils.js:0
 #: code:addons/web/static/src/webclient/switch_company_menu/switch_company_menu.xml:0
+#: code:addons/web/static/src/components/ask_recurrence_update_dialog/ask_recurrence_update_dialog.xml:0
 msgid "Confirm"
 msgstr ""
 
@@ -10270,6 +10271,7 @@ msgstr ""
 #: code:addons/web/static/src/fields/relational/many2one/many2one.js:0
 #: code:addons/web/static/src/fields/relational/many2x_autocomplete.js:0
 #: code:addons/web/static/src/search/breadcrumbs/breadcrumbs.xml:0
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
 msgid "Unnamed"
 msgstr ""
 
@@ -30184,4 +30186,16 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/components/emoji_picker/emoji_data.js:0
 msgid "空"
+msgstr ""
+
+#. odoo-javascript
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
+#: code:addons/web/static/src/fields/relational/many2x_uom_tags/many2x_uom_tags.js:0
+msgid "Product Field Name"
+msgstr ""
+
+#. odoo-javascript
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
+#: code:addons/web/static/src/fields/relational/many2x_uom_tags/many2x_uom_tags.js:0
+msgid "Quantity Field Name"
 msgstr ""

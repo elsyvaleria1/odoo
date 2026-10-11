@@ -214,7 +214,7 @@ class TestMoveCancelPropagation(PurchaseTestCommon):
                 "seller_ids": [
                     Command.create(
                         {
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "partner_id": partner.id,
                             "price": 10.0,
                         }

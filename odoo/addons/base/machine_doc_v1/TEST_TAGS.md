@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (4790 methods, 955 classes, 181 files)
+# All base tests (5352 methods, 1044 classes, 205 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -102,7 +102,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 
 ## Test File Reference
 
-### Tagged Files (110 files, 574 classes)
+### Tagged Files (130 files, 656 classes)
 
 | File | Tags | Classes | Tests | Base Class |
 |------|------|---------|-------|------------|
@@ -203,6 +203,26 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_res_users_identitycheck.py` | `post_install`, `-at_install` | 1 | 5 | TransactionCase |
 | `test_res_users_log.py` | `post_install`, `-at_install` | 3 | 6 | TransactionCase |
 | `test_res_users_settings.py` | `post_install`, `-at_install` | 6 | 21 | TransactionCase |
+| `test_resource_acl_coverage.py` | `post_install`, `-at_install` | 4 | 7 | TransactionCase |
+| `test_resource_asset.py` | `post_install`, `-at_install` | 1 | 51 | TransactionCase |
+| `test_resource_assignment.py` | `post_install`, `-at_install` | 1 | 44 | TransactionCase |
+| `test_resource_booking_capacity.py` | `post_install`, `-at_install` | 1 | 17 | TransactionCase |
+| `test_resource_calendar.py` | `post_install`, `-at_install` | 9 | 45 | TransactionCase, ResourceCase |
+| `test_resource_calendar_attendance.py` | `post_install`, `-at_install` | 9 | 22 | TransactionCase, ResourceCase |
+| `test_resource_calendar_flexible.py` | `post_install`, `-at_install` | 10 | 41 | TransactionCase, ResourceCase |
+| `test_resource_calendar_schedule.py` | `post_install`, `-at_install` | 14 | 59 | TransactionCase |
+| `test_resource_identity.py` | `post_install`, `-at_install` | 1 | 5 | TransactionCase |
+| `test_resource_lifecycle.py` | `post_install`, `-at_install` | 1 | 5 | TransactionCase |
+| `test_resource_origin.py` | `post_install`, `-at_install` | 1 | 6 | TransactionCase |
+| `test_resource_party.py` | `post_install`, `-at_install` | 1 | 20 | TransactionCase |
+| `test_resource_relation.py` | `post_install`, `-at_install` | 1 | 19 | TransactionCase |
+| `test_resource_reservation.py` | `post_install`, `-at_install` | 14 | 79 | TransactionCase, ResourceCase |
+| `test_resource_reservation_status.py` | `post_install`, `-at_install` | 1 | 15 | TransactionCase |
+| `test_resource_resource_crud.py` | `at_install`, `-post_install`, `post_install`, `-at_install` | 2 | 17 | TransactionCase |
+| `test_resource_roles.py` | `post_install`, `-at_install` | 1 | 3 | TransactionCase |
+| `test_resource_schedule_exception.py` | `post_install`, `-at_install` | 6 | 21 | TransactionCase, ResourceCase |
+| `test_resource_slot_search.py` | `post_install`, `-at_install` | 2 | 18 | TransactionCase |
+| `test_resource_views.py` | `post_install`, `-at_install` | 2 | 3 | TransactionCase |
 | `test_seeded_users.py` | `-at_install`, `post_install` | 1 | 3 | HttpCaseWithUserDemo, HttpCaseWithUserPortal |
 | `test_service_principal.py` | `post_install`, `-at_install` | 1 | 2 | TransactionCase |
 | `test_table_object_conversion.py` | `post_install`, `-at_install` | 2 | 8 | TransactionCase |
@@ -217,7 +237,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_with_privilege.py` | `post_install`, `-at_install` | 2 | 13 | TransactionCase |
 | `test_x2many_cache_scope.py` | `post_install`, `-at_install` | 4 | 15 | TransactionCase |
 
-### Untagged Files (71 files)
+### Untagged Files (75 files)
 
 These run in **both** at_install and post_install phases by default.
 
@@ -278,6 +298,8 @@ These run in **both** at_install and post_install phases by default.
 - `test_res_currency.py` — Currency conversion
 - `test_res_lang.py` — Language management
 - `test_res_partner_bank_account.py` — Bank accounts
+- `test_resource_reservation_load.py` — TestReservationLoad
+- `test_resource_utils.py` — TestExpression
 - `test_search.py` — Search operations
 - `test_server_action_tools.py` — TestServerActionTools
 - `test_signature.py` — Digital signatures
@@ -289,6 +311,8 @@ These run in **both** at_install and post_install phases by default.
 - `test_tz.py` — Timezone handling
 - `test_unaccent_parity.py` — TestUnaccentParity
 - `test_uninstall.py` — Module uninstallation
+- `test_uom.py` — TestUom, TestUomConversionScale, TestUomPriceDegradeWrappers, TestUomSmallApiGaps
+- `test_uom_units.py` — TestPowerAndFuelEfficiency
 - `test_user_has_group.py` — Group membership
 - `test_view_depends.py` — TestViewColumnReads, TestUndeclaredViewReads
 - `test_xml_utils.py` — XSD validation from attachment and remote archive
@@ -297,12 +321,12 @@ These run in **both** at_install and post_install phases by default.
 
 | Metric | Value |
 |--------|-------|
-| Total test files | 181 |
-| Total test classes | 955 |
-| Total test methods | 4790 |
-| Files with @tagged | 110 (61%) |
-| Files without @tagged | 71 (39%) |
-| Classes using post_install | 347 |
+| Total test files | 205 |
+| Total test classes | 1044 |
+| Total test methods | 5352 |
+| Files with @tagged | 130 (63%) |
+| Files without @tagged | 75 (37%) |
+| Classes using post_install | 409 |
 | Unique tags | 29 |
 | Largest test file | test_db_cursor.py (125 classes, 403 tests) |
 

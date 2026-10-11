@@ -56,7 +56,7 @@ class TestBomPriceCommon(TestStockValuationCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.env.user.group_ids += cls.env.ref("uom.group_uom")
+        cls.env.user.group_ids += cls.env.ref("base.group_uom")
         cls.env.user.group_ids += cls.env.ref("product.group_product_variant")
         cls.Product = cls.env["product.product"]
         cls.Bom = cls.env["mrp.bom"]
@@ -72,7 +72,7 @@ class TestBomPriceCommon(TestStockValuationCommon):
             "Glass", 100, quantity=0, category=cls.category_avco_auto
         )
 
-        cls.dozen = cls.env.ref("uom.product_uom_dozen")
+        cls.dozen = cls.env.ref("base.product_uom_dozen")
 
         bom_form = Form(cls.Bom)
         bom_form.product_id = cls.dining_table

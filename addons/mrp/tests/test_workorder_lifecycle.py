@@ -166,7 +166,7 @@ class TestWorkorderLifecycle(TestMrpCommon):
         self.assertEqual(workorder.duration, 0)
 
     def test_a_capacity_written_in_the_order_unit_wins(self):
-        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen = self.env.ref("base.product_uom_dozen")
         workcenter = self.env["mrp.workcenter"].create(
             {"name": "Packing", "time_start": 0, "time_stop": 0}
         )
@@ -545,7 +545,7 @@ class TestWorkorderLifecycle(TestMrpCommon):
 
     def test_a_kit_counted_in_dozens_is_frozen_unrounded(self):
         _kit, _bom, production = self._leg_kit_order(
-            kit_uom=self.env.ref("uom.product_uom_dozen")
+            kit_uom=self.env.ref("base.product_uom_dozen")
         )
         workorder = self._work_forty_minutes_and_finish(production)
 

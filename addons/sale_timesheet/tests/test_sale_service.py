@@ -93,7 +93,7 @@ class TestSaleService(TestCommonSaleTimesheet):
                 "list_price": 90,
                 "type": "service",
                 "invoice_policy": "transferred",
-                "uom_id": self.env.ref("uom.product_uom_hour").id,
+                "uom_id": self.env.ref("base.product_uom_hour").id,
                 "default_code": "SERV-DELI",
                 "service_type": "timesheet",
                 "service_tracking": "task_global_project",
@@ -127,7 +127,7 @@ class TestSaleService(TestCommonSaleTimesheet):
         )
 
     def test_timesheet_uom(self):
-        uom_days = self.env.ref("uom.product_uom_day")
+        uom_days = self.env.ref("base.product_uom_day")
         sale_order_line = self.env["sale.order.line"].create(
             {
                 "order_id": self.sale_order.id,
@@ -413,7 +413,7 @@ class TestSaleService(TestCommonSaleTimesheet):
                 "list_price": 34,
                 "type": "service",
                 "invoice_policy": "transferred",
-                "uom_id": self.env.ref("uom.product_uom_hour").id,
+                "uom_id": self.env.ref("base.product_uom_hour").id,
                 "default_code": "SERV-DELI4",
                 "service_type": "timesheet",
                 "service_tracking": "project_only",
@@ -846,7 +846,7 @@ class TestSaleService(TestCommonSaleTimesheet):
         }
 
         for uom_name in allocated_hours_for_uom:
-            uom_id = self.env.ref("uom.product_uom_%s" % uom_name)
+            uom_id = self.env.ref("base.product_uom_%s" % uom_name)
 
             product_vals.update(
                 {
@@ -970,13 +970,13 @@ class TestSaleService(TestCommonSaleTimesheet):
                     "order_id": self.sale_order.id,
                     "product_id": self.product_delivery_timesheet3.id,
                     "product_qty": 2,
-                    "product_uom_id": self.env.ref("uom.product_uom_day").id,
+                    "product_uom_id": self.env.ref("base.product_uom_day").id,
                 },
                 {
                     "order_id": self.sale_order.id,
                     "product_id": self.product_delivery_timesheet3.id,
                     "product_qty": 8,
-                    "product_uom_id": self.env.ref("uom.product_uom_hour").id,
+                    "product_uom_id": self.env.ref("base.product_uom_hour").id,
                 },
             ]
         )
@@ -989,7 +989,7 @@ class TestSaleService(TestCommonSaleTimesheet):
         )
 
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
-            "uom.product_uom_day"
+            "base.product_uom_day"
         )
         so_copy = self.sale_order.copy()
         so_copy.action_confirm()
@@ -1180,7 +1180,7 @@ class TestSaleService(TestCommonSaleTimesheet):
             )
 
     def test_prepaid_pack_remaining_hours_rounding(self):
-        uom_hour = self.env.ref("uom.product_uom_hour")
+        uom_hour = self.env.ref("base.product_uom_hour")
         pack20 = self.env["uom.uom"].create(
             {
                 "name": "Pack of 20 Hours",

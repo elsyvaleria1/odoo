@@ -12,7 +12,7 @@ class TestSaleMrpProcurement(TransactionCase):
         )
 
     def test_sale_mrp(self):
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
         self.env.ref("stock.route_warehouse0_mto").active = True
         warehouse0 = self.env.ref("stock.warehouse0")
 
@@ -21,7 +21,7 @@ class TestSaleMrpProcurement(TransactionCase):
         pc.name = "Mobile Products Sellable"
         product_category_allproductssellable0 = pc.save()
 
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
 
         self.assertIn("seller_ids", self.env["product.template"].fields_get())
 
@@ -70,7 +70,7 @@ class TestSaleMrpProcurement(TransactionCase):
         self.assertEqual(mo.id, sale_order_so0.action_view_mrp_production()["res_id"])
 
     def test_sale_mrp_pickings(self):
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
         self.env.user.group_ids += self.env.ref("stock.group_adv_location")
         self.env.ref("stock.route_warehouse0_mto").active = True
         self.customer_location = self.env["ir.model.data"]._xmlid_to_res_id(
@@ -80,7 +80,7 @@ class TestSaleMrpProcurement(TransactionCase):
             {"name": "Test Warehouse", "code": "TWH"}
         )
 
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        self.uom_unit = self.env.ref("base.product_uom_unit")
 
         product_form = Form(self.env["product.product"])
         product_form.name = "Raw Stick"
@@ -308,8 +308,8 @@ class TestSaleMrpProcurement(TransactionCase):
         mto_route = warehouse.mto_pull_id.route_id
         mto_route.active = True
 
-        uom_kg = self.env.ref("uom.product_uom_kgm")
-        uom_gram = self.env.ref("uom.product_uom_gram")
+        uom_kg = self.env.ref("base.product_uom_kgm")
+        uom_gram = self.env.ref("base.product_uom_gram")
 
         product, component = self.env["product.product"].create(
             [

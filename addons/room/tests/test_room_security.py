@@ -34,7 +34,7 @@ class TestRoomSecurity(RoomCommon, MailCase):
         cls.vehicle = cls.env["resource.resource"].create(
             {
                 "name": "Van",
-                "kind_id": cls.env.ref("resource.kind_vehicle").id,
+                "kind_id": cls.env.ref("base.kind_vehicle").id,
             }
         )
         cls.bookings[0].user_id = cls.user_employee

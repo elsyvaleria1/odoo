@@ -18,7 +18,9 @@ from odoo.libs.text import name_length_band, similarity_ratio
 from odoo.tools import SQL, frozendict
 
 if typing.TYPE_CHECKING:
+    from .res_company import ResCompany
     from .res_users import ResUsers
+    from .resource_resource import ResourceResource
 
 from .mixin_format_address import ADDRESS_FIELDS
 
@@ -458,6 +460,21 @@ class ResPartner(models.Model):
     application_statistics = fields.Json(
         string="Stats",
         compute="_compute_application_statistics",
+    )
+
+    resource_ids = fields.One2many(
+        comodel_name="resource.resource",
+        inverse_name="partner_id",
+        string="Resources",
+    )
+    # what a person IS lives on the private facet of their party, a child of
+    # type private behind base's guard, where it shows to no one but its readers
+    place_of_birth = fields.Char()
+    country_of_birth = fields.Many2one(comodel_name="res.country")
+    nationality_ids = fields.One2many(
+        comodel_name="resource.nationality",
+        inverse_name="partner_id",
+        string="Nationalities",
     )
 
     _complete_name_trgm_index = models.Index(_complete_name_trgm_index_definition)
@@ -2493,3 +2510,57 @@ class ResPartner(models.Model):
             return False
 
         return self.filtered(moves)
+
+    def _get_private_facets(self) -> dict:
+        # searched as the reader, so base's guard hides a facet they may not see
+        facets = self.search(
+            [("parent_id", "in", self.ids), ("type", "=", "private")], order="id desc"
+        )
+        return {facet.parent_id: facet for facet in facets}
+
+    def _get_private_facet(self):
+        if not self:
+            return self
+        self.check_singleton()
+        return self._get_private_facets().get(self, self.browse())
+
+    def _ensure_private_facet(self):
+        self.check_singleton()
+        return self._get_private_facet() or self.create(
+            {"parent_id": self.id, "type": "private"}
+        )
+
+    def _get_resources(self, company: ResCompany) -> ResourceResource:
+        return (
+            self.env["resource.resource"]
+            .with_context(active_test=False)
+            .search(
+                [
+                    ("partner_id", "in", self.ids),
+                    ("type", "=", "human"),
+                    ("company_id", "=", company.id),
+                ]
+            )
+        )
+
+    def _get_or_create_resources(self, company: ResCompany) -> ResourceResource:
+        resource_by_party = {
+            resource.partner_id: resource for resource in self._get_resources(company)
+        }
+        missing = self.browse(
+            list(dict.fromkeys(p.id for p in self if p not in resource_by_party))
+        )
+        created = self.env["resource.resource"].create(
+            [
+                {
+                    "partner_id": party.id,
+                    "type": "human",
+                    "company_id": company.id,
+                }
+                for party in missing
+            ]
+        )
+        resource_by_party.update(zip(missing, created, strict=True))
+        return self.env["resource.resource"].browse(
+            [resource_by_party[party].id for party in self]
+        )

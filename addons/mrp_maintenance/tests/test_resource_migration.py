@@ -13,7 +13,7 @@ class TestEquipmentResourceMigration(TransactionCase):
         machine = self.env["resource.resource"].create(
             {
                 "name": "Component",
-                "kind_id": self.env.ref("resource.kind_machinery").id,
+                "kind_id": self.env.ref("base.kind_machinery").id,
             }
         )
         station = self.env["mrp.workcenter"].create({"name": "Composite station"})
@@ -51,7 +51,7 @@ class TestEquipmentResourceMigration(TransactionCase):
         machine = self.env["resource.resource"].create(
             {
                 "name": "Ambiguous component",
-                "kind_id": self.env.ref("resource.kind_machinery").id,
+                "kind_id": self.env.ref("base.kind_machinery").id,
             }
         )
         stations = self.env["mrp.workcenter"].create(

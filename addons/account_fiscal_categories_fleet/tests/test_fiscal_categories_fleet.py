@@ -61,7 +61,7 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             [
                 {
                     "name": name,
-                    "kind_id": cls.env.ref("resource.kind_vehicle").id,
+                    "kind_id": cls.env.ref("base.kind_vehicle").id,
                     "rate_ids": [
                         Command.create(
                             {

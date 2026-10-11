@@ -52,7 +52,7 @@ class StockGenerateCommon(TransactionCase):
                 "tracking": "serial",
             }
         )
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
 
         cls.warehouse = cls.env["stock.warehouse"].create(
             {

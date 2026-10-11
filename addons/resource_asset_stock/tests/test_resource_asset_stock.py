@@ -9,7 +9,7 @@ class TestResourceAssetStock(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.vehicle = cls.env.ref("resource.kind_vehicle")
+        cls.vehicle = cls.env.ref("base.kind_vehicle")
         cls.template = cls.env["product.template"].create(
             {
                 "name": "Pickup",
@@ -61,7 +61,7 @@ class TestResourceAssetStock(TransactionCase):
         self.assertEqual(received.asset_id.trace_id, received)
         self.assertEqual(received.asset_id.kind_id, self.vehicle)
         asset = received.asset_id
-        mower.product_tmpl_id.asset_kind_id = self.env.ref("resource.kind_machinery")
+        mower.product_tmpl_id.asset_kind_id = self.env.ref("base.kind_machinery")
         self.assertEqual(received.asset_id, asset)
         self.assertEqual(
             self.env["resource.resource"].search_count(
@@ -184,7 +184,7 @@ class TestResourceAssetStock(TransactionCase):
         drill = self.env["resource.resource"].create(
             {
                 "name": "Drill",
-                "kind_id": self.env.ref("resource.kind_tool").id,
+                "kind_id": self.env.ref("base.kind_tool").id,
                 "location_id": shelf.id,
             }
         )
@@ -203,7 +203,7 @@ class TestReceivingAnEnforcedAsset(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.vehicle = cls.env.ref("resource.kind_vehicle")
+        cls.vehicle = cls.env.ref("base.kind_vehicle")
         cls.vehicle.enforce_identifiers = True
         cls.template = cls.env["product.template"].create(
             {

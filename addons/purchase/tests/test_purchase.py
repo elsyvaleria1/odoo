@@ -344,9 +344,9 @@ class TestPurchase(AccountTestInvoicingCommon):
         )
 
     def test_with_different_uom(self):
-        self.env.user.group_ids += self.env.ref("uom.group_uom")
-        uom_units = self.env.ref("uom.product_uom_unit")
-        uom_dozens = self.env.ref("uom.product_uom_dozen")
+        self.env.user.group_ids += self.env.ref("base.group_uom")
+        uom_units = self.env.ref("base.product_uom_unit")
+        uom_dozens = self.env.ref("base.product_uom_dozen")
         uom_pairs = self.env["uom.uom"].create(
             {
                 "name": "Pairs",
@@ -409,7 +409,7 @@ class TestPurchase(AccountTestInvoicingCommon):
         product = self.env["product.product"].create(
             {
                 "name": "product_test",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "lst_price": 10.0,
                 "standard_price": 0.12345,
             }
@@ -476,7 +476,7 @@ class TestPurchase(AccountTestInvoicingCommon):
             .create(
                 {
                     "name": "product_2",
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                     "standard_price": 0.0,
                 }
             )
@@ -514,7 +514,7 @@ class TestPurchase(AccountTestInvoicingCommon):
                                 "product_id": product_b.id,
                                 "product_qty": 1,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                             },
                         )
@@ -661,7 +661,7 @@ class TestPurchase(AccountTestInvoicingCommon):
                         {
                             "product_id": product.id,
                             "product_qty": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "price_unit": 1,
                         },
                     )
@@ -682,7 +682,7 @@ class TestPurchase(AccountTestInvoicingCommon):
                         {
                             "product_id": product.id,
                             "product_qty": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "price_unit": 2,
                         },
                     )
@@ -1265,19 +1265,21 @@ class TestPurchase(AccountTestInvoicingCommon):
         fuzzy_drink = self.env["product.product"].create(
             {
                 "name": "Fuzzy Drink",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "seller_ids": [
                     Command.create(
                         {
                             "partner_id": self.partner_a.id,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "price": 1,
                         }
                     ),
                     Command.create(
                         {
                             "partner_id": self.partner_a.id,
-                            "product_uom_id": self.env.ref("uom.product_uom_pack_6").id,
+                            "product_uom_id": self.env.ref(
+                                "base.product_uom_pack_6"
+                            ).id,
                             "min_qty": 2,
                             "price": 5,
                         }
@@ -1294,7 +1296,7 @@ class TestPurchase(AccountTestInvoicingCommon):
                         {
                             "product_id": fuzzy_drink.id,
                             "product_qty": 15,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                         }
                     )
                 ],
@@ -1302,7 +1304,7 @@ class TestPurchase(AccountTestInvoicingCommon):
         )
         self.assertEqual(po.line_ids.price_unit, 1)
         po.line_ids.product_qty = 1
-        po.line_ids.product_uom_id = self.env.ref("uom.product_uom_pack_6")
+        po.line_ids.product_uom_id = self.env.ref("base.product_uom_pack_6")
         self.assertEqual(po.line_ids.price_unit, 6)
         po.line_ids.product_qty = 2
         self.assertEqual(po.line_ids.price_unit, 5)

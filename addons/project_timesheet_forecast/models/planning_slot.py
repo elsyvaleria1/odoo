@@ -5,7 +5,7 @@ from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 
-from odoo.addons.resource.models.utils import last_day_of
+from odoo.addons.base.models.resource_utils import last_day_of
 
 _debug = DebugLog(__name__)
 
@@ -58,7 +58,7 @@ class PlanningSlot(models.Model):
     def _compute_encode_uom_in_days(self) -> None:
         self.encode_uom_in_days = (
             self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
-            == self.env.ref("uom.product_uom_day")
+            == self.env.ref("base.product_uom_day")
         )
 
     @api.depends("allocated_hours", "effective_hours")

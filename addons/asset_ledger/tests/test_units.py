@@ -10,8 +10,8 @@ class TestOdometerUnits(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.km = cls.env.ref("uom.product_uom_km")
-        cls.mile = cls.env.ref("uom.product_uom_mile")
+        cls.km = cls.env.ref("base.product_uom_km")
+        cls.mile = cls.env.ref("base.product_uom_mile")
         cls.template = create_test_template(
             cls.env,
             name="Units probe truck",
@@ -106,7 +106,7 @@ class TestAreaUnits(TransactionCase):
         self.parcel.invalidate_recordset()
         self.assertEqual(
             self.parcel.asset_id.area_uom_name,
-            self.env.ref("uom.product_uom_square_meter").display_name,
+            self.env.ref("base.product_uom_square_meter").display_name,
         )
 
     def test_area_follows_the_imperial_setting(self):
@@ -114,5 +114,5 @@ class TestAreaUnits(TransactionCase):
         self.parcel.invalidate_recordset()
         self.assertEqual(
             self.parcel.asset_id.area_uom_name,
-            self.env.ref("uom.product_uom_square_foot").display_name,
+            self.env.ref("base.product_uom_square_foot").display_name,
         )

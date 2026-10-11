@@ -7,7 +7,7 @@ from odoo.addons.sale_timesheet.tests.common import TestCommonSaleTimesheet
 @tagged("post_install", "-at_install")
 class TestSaleTimesheetReport(TestCommonSaleTimesheet):
     def test_timesheet_report_uom_difference(self):
-        uom_days = self.env.ref("uom.product_uom_day")
+        uom_days = self.env.ref("base.product_uom_day")
 
         self.product_order_timesheet3.write(
             {

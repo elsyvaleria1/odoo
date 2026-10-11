@@ -4,7 +4,7 @@
     <record id="resource_asset_view_form" model="ir.ui.view">
         <field name="name">resource.resource.asset.form.mail</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource.resource_asset_view_form" />
+        <field name="inherit_id" ref="base.resource_asset_view_form" />
         <field name="arch" type="xml">
             <sheet position="after">
                 <chatter />

@@ -7,7 +7,7 @@ from odoo.libs.datetime import timezone
 from odoo.tools import float_round
 from odoo.tools.date_utils import get_intervals_hours
 
-from odoo.addons.resource.models.utils import HOURS_PER_DAY, hours_by_day
+from odoo.addons.base.models.resource_utils import HOURS_PER_DAY, hours_by_day
 
 
 class HrEmployee(models.Model):

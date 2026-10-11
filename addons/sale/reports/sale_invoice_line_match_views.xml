@@ -34,7 +34,7 @@
                 <field name="product_uom_qty" string="Quantity" />
                 <field name="qty_invoiced" optional="hide" />
                 <field name="qty_to_invoice" optional="show" />
-                <field name="product_uom_id" groups="uom.group_uom" />
+                <field name="product_uom_id" groups="base.group_uom" />
                 <field name="product_uom_price" string="Price" />
                 <field
                     name="invoiced_amount_taxexc"

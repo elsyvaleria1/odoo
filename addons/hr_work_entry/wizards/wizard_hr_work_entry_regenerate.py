@@ -10,7 +10,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import format_date
 from odoo.tools.authority_keys import declare_authority_keys
 
-from odoo.addons.resource.models.utils import last_day_of
+from odoo.addons.base.models.resource_utils import last_day_of
 
 declare_authority_keys("hr_work_entry", "work_entry_skip_validation")
 

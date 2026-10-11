@@ -9,7 +9,6 @@
     "author": "Odoo S.A.",
     "license": "OEEL-1",
     "depends": [
-        "resource",
         "hr",
         "hr_hourly_cost",
         "web_gantt",

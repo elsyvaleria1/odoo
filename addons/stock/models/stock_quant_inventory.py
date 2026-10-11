@@ -801,7 +801,7 @@ class StockQuantInventory(models.Model):
         aggregate_barcodes = []
         aggregate_barcode = ""
 
-        uom_unit_id = self.env.ref("uom.product_uom_unit").id
+        uom_unit_id = self.env.ref("base.product_uom_unit").id
         gs1_quantity_rules = self.env["barcode.rule"].search(
             [
                 ("associated_uom_id", "!=", False),

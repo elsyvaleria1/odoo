@@ -1693,7 +1693,7 @@ class TestUi(TestPointOfSaleHttpCommon):
                 "list_price": 20,
                 "name": "Sofa Combo",
                 "type": "combo",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "combo_ids": [
                     Command.set([self.sofa_combo.id]),
                 ],
@@ -1840,7 +1840,7 @@ class TestUi(TestPointOfSaleHttpCommon):
             {
                 "name": "Pack of 10",
                 "relative_factor": 10,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
                 "is_pos_groupable": True,
             }
         )
@@ -2506,7 +2506,7 @@ class TestUi(TestPointOfSaleHttpCommon):
                 "list_price": 3,
                 "taxes_id": False,
                 "available_in_pos": True,
-                "uom_id": self.env.ref("uom.product_uom_kgm").id,
+                "uom_id": self.env.ref("base.product_uom_kgm").id,
             }
         )
 
@@ -2839,7 +2839,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         product_template = self.env["product.template"].create(
             {
                 "name": "Dynamic Product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "is_storable": True,
                 "available_in_pos": True,
             }
@@ -4517,7 +4517,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         uom = self.env["uom.uom"].create(
             {
                 "name": "Random UOM",
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         product_one, product_two, product_three = self.env["product.product"].create(

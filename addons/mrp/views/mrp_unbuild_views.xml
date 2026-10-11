@@ -84,7 +84,7 @@
                             <field name="product_qty" class="ms-auto me-1 fs-6" />
                             <field
                                 name="product_uom_id"
-                                groups="uom.group_uom"
+                                groups="base.group_uom"
                                 class="small" />
                         </div>
                         <div class="d-flex text-muted">
@@ -161,7 +161,7 @@
                                     widget="many2one_uom"
                                     force_save="1"
                                     options="{'no_open': True, 'no_create': True}"
-                                    groups="uom.group_uom"
+                                    groups="base.group_uom"
                                     readonly="mo_id or state == 'done'" />
                             </div>
                         </group>
@@ -228,7 +228,7 @@
                                     widget="many2one_uom"
                                     force_save="1"
                                     options="{'no_open': True, 'no_create': True}"
-                                    groups="uom.group_uom"
+                                    groups="base.group_uom"
                                     readonly="mo_id" />
                             </div>
                         </group>
@@ -289,7 +289,7 @@
                 <field
                     name="product_uom_id"
                     widget="many2one_uom"
-                    groups="uom.group_uom" />
+                    groups="base.group_uom" />
                 <field
                     name="location_id"
                     options="{'no_create': True}"

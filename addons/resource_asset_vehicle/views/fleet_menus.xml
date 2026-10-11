@@ -9,7 +9,7 @@
     <menuitem
         id="fleet_vehicles"
         name="Vehicles"
-        parent="resource.menu_asset_root"
+        parent="base.menu_asset_root"
         sequence="5"
         groups="fleet_group_user" />
 
@@ -44,7 +44,7 @@
     <menuitem
         id="fleet_models_configuration"
         name="Vehicle Models"
-        parent="resource.menu_asset_config"
+        parent="base.menu_asset_config"
         sequence="10"
         groups="fleet_group_manager" />
 
@@ -65,7 +65,7 @@
     <menuitem
         id="fleet_vehicles_configuration"
         name="Vehicle"
-        parent="resource.menu_asset_config"
+        parent="base.menu_asset_config"
         sequence="11"
         groups="base.group_no_one" />
 

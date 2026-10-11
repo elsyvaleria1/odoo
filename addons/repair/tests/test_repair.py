@@ -93,7 +93,7 @@ class TestRepairCommon(common.TransactionCase):
         cls.repair1 = cls.env["repair.order"].create(
             {
                 "product_id": cls.product_product_3.id,
-                "product_uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": cls.env.ref("base.product_uom_unit").id,
                 "picking_type_id": cls.stock_warehouse.repair_type_id.id,
                 "move_ids": [
                     (
@@ -115,7 +115,7 @@ class TestRepairCommon(common.TransactionCase):
         cls.repair0 = cls.env["repair.order"].create(
             {
                 "product_id": cls.product_product_5.id,
-                "product_uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": cls.env.ref("base.product_uom_unit").id,
                 "user_id": False,
                 "picking_type_id": cls.stock_warehouse.repair_type_id.id,
                 "move_ids": [
@@ -138,7 +138,7 @@ class TestRepairCommon(common.TransactionCase):
         cls.repair2 = cls.env["repair.order"].create(
             {
                 "product_id": cls.product_product_6.id,
-                "product_uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": cls.env.ref("base.product_uom_unit").id,
                 "user_id": False,
                 "picking_type_id": cls.stock_warehouse.repair_type_id.id,
                 "move_ids": [

@@ -7487,6 +7487,7 @@ msgstr "펼치기"
 #: code:addons/web/static/src/views/fields/formatters.js:0
 #: code:addons/web/static/src/views/fields/many2one/many2one.js:0
 #: code:addons/web/static/src/views/fields/relational_utils.js:0
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
 msgid "Unnamed"
 msgstr "이름 없음"
 
@@ -26976,6 +26977,18 @@ msgstr "“공석”"
 #: code:addons/web/static/src/core/emoji_picker/emoji_data.js:0
 msgid "ココ"
 msgstr "ココ"
+
+#. odoo-javascript
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
+#: code:addons/web/static/src/fields/relational/many2x_uom_tags/many2x_uom_tags.js:0
+msgid "Product Field Name"
+msgstr "품목 필드명"
+
+#. odoo-javascript
+#: code:addons/web/static/src/fields/relational/many2one_uom/many2one_uom_field.js:0
+#: code:addons/web/static/src/fields/relational/many2x_uom_tags/many2x_uom_tags.js:0
+msgid "Quantity Field Name"
+msgstr "수량 필드명"
 
 #~ msgid "<span itemprop=\"name\">Deco Addict</span>"
 #~ msgstr "<span itemprop=\"name\">Deco Addict</span>"

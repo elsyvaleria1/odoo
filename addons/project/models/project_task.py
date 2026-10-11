@@ -33,10 +33,10 @@ from odoo.addons.base.models.mixin_recurrence_rule import (
     REPEAT_TYPE_SELECTION,
     REPEAT_UNIT_SELECTION,
 )
+from odoo.addons.base.models.resource_utils import filter_domain_leaf, split_at_midnight
 from odoo.addons.html_editor.tools import handle_history_divergence
 from odoo.addons.mail.tools.discuss import Store
 from odoo.addons.rating.models import rating_data
-from odoo.addons.resource.models.utils import filter_domain_leaf, split_at_midnight
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

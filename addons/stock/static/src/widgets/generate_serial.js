@@ -66,7 +66,7 @@ export class GenerateDialog extends Component {
         });
 
         onWillStart(async () => {
-            this.displayUOM = await user.hasGroup("uom.group_uom");
+            this.displayUOM = await user.hasGroup("base.group_uom");
         });
     }
 

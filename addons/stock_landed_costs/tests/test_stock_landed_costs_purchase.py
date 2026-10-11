@@ -725,7 +725,7 @@ class TestLandedCostsWithPurchaseAndInv(TestStockValuationLCCommon):
         )
         self.landed_cost.categ_id = self.product1.categ_id.id
         product = self.product1
-        product.uom_id = self.env.ref("uom.product_uom_kgm")
+        product.uom_id = self.env.ref("base.product_uom_kgm")
 
         purchase_order = self.env["purchase.order"].create(
             {
@@ -932,7 +932,7 @@ class TestLandedCostsWithPurchaseAndInv(TestStockValuationLCCommon):
     def test_landed_cost_avco_partial_bill_rounding(self):
         decimal_price = self.env.ref("product.decimal_price")
         decimal_price.digits = 5
-        decimal_product_uom = self.env.ref("uom.decimal_product_uom")
+        decimal_product_uom = self.env.ref("base.decimal_product_uom")
         decimal_product_uom.digits = 5
 
         self.env.company.account_config_id.anglo_saxon_accounting = True

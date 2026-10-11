@@ -14,7 +14,7 @@ class TestResourceAssetBoard(TestAccountAssetCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.vehicle = cls.env.ref("resource.kind_vehicle")
+        cls.vehicle = cls.env.ref("base.kind_vehicle")
 
     def _plain_asset(self, **vals):
         return self.env["resource.resource"].create(
@@ -90,7 +90,7 @@ class TestResourceAssetBoard(TestAccountAssetCommon):
         asset_user = new_test_user(
             self.env,
             login="asset_board_asset_user",
-            groups="base.group_user,resource.group_asset_user",
+            groups="base.group_user,base.group_asset_user",
         )
         van = (
             self.env["resource.resource"]

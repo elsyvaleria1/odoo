@@ -1,5 +1,5 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
-resource_schedule_exception_rule_appointment_manager,resource.schedule.exception: apt administrator modifies bookable resource leaves,resource.model_resource_schedule_exception,group_appointment_manager,permission,cud,all,,"[('resource_id.is_bookable', '=', True)]"
+resource_schedule_exception_rule_appointment_manager,resource.schedule.exception: apt administrator modifies bookable resource leaves,base.model_resource_schedule_exception,group_appointment_manager,permission,cud,all,,"[('resource_id.is_bookable', '=', True)]"
 access_calendar_attendee_portal,calendar.attendee_portal,model_calendar_attendee,base.group_portal,permission,r,none,,
 access_calendar_attendee_employee,calendar.attendee_employee,model_calendar_attendee,base.group_user,permission,crud,,,
 access_calendar_attendee_employee_delete_wizard,calendar.attendee_employee_delete_wizard,model_wizard_calendar_event_delete,base.group_user,permission,crud,,,
@@ -62,7 +62,7 @@ appointment_booking_line_rule_internal,appointment.booking.line: apt internal ru
 appointment_booking_line_rule_internal_published,appointment.booking.line: apt internal rule (read published),model_appointment_booking_line,base.group_user,permission,r,all,,"[('appointment_type_id.is_published', '=', True)]"
 appointment_booking_line_rule_user,"appointment.booking.line: apt user rule (read self-create, self-staff and resources)",model_appointment_booking_line,group_appointment_user,permission,r,,,"[ ('appointment_type_id', 'any', [ '|', '|', ('create_uid', '=', user.id), ('staff_user_ids', 'in', [user.id, False]), ('schedule_based_on', '=', 'resources'), ]) ]"
 access_appointment_booking_line_all,appointment.booking.line.all,model_appointment_booking_line,base.group_everyone,permission,r,none,,
-access_resource_resource_appointment_manager,resource.resource.appointment.manager,resource.model_resource_resource,group_appointment_manager,permission,cud,,,
+access_resource_resource_appointment_manager,resource.resource.appointment.manager,base.model_resource_resource,group_appointment_manager,permission,cud,,,
 appointment_response_rule_internal,survey.user_input.line: apt internal rule (read self-staff and resources),survey.model_survey_user_input,base.group_user,permission,r,,,"[ ('appointment_type_id', 'any', [ '|', ('staff_user_ids', 'in', [user.id, False]), ('schedule_based_on', '=', 'resources') ]) ]"
 appointment_response_rule_internal_published,survey.user_input.line: apt internal rule (read published),survey.model_survey_user_input,base.group_user,permission,r,all,,"[('appointment_type_id.is_published', '=', True)]"
 appointment_response_rule_user,"survey.user_input.line: apt user rule (read self-create, self-staff and resources)",survey.model_survey_user_input,group_appointment_user,permission,r,,,"[ ('appointment_type_id', 'any', [ '|', '|', ('create_uid', '=', user.id), ('staff_user_ids', 'in', [user.id, False]), ('schedule_based_on', '=', 'resources'), ]) ]"

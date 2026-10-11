@@ -62,7 +62,7 @@ class TestPoSProductVariants(ProductVariantsCommon, TestPointOfSaleHttpCommon):
         product_template = self.env["product.template"].create(
             {
                 "name": "A always product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "is_storable": True,
                 "taxes_id": False,
                 "available_in_pos": True,
@@ -92,7 +92,7 @@ class TestPoSProductVariants(ProductVariantsCommon, TestPointOfSaleHttpCommon):
         product_template = self.env["product.template"].create(
             {
                 "name": "A never product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "is_storable": True,
                 "taxes_id": False,
                 "available_in_pos": True,
@@ -269,7 +269,7 @@ class TestPoSProductVariants(ProductVariantsCommon, TestPointOfSaleHttpCommon):
         product_template = self.env["product.template"].create(
             {
                 "name": "A alw/nev product",
-                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "uom_id": self.env.ref("base.product_uom_unit").id,
                 "is_storable": True,
                 "taxes_id": False,
                 "available_in_pos": True,

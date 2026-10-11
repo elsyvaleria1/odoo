@@ -57,7 +57,7 @@
             <field name="source_id" ref="esg_emission_source_direct_2" />
             <field name="esg_uncertainty_value">0.5</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_litre" />
+            <field name="uom_id" ref="base.product_uom_litre" />
         </record>
         <record id="esg_diesel_transport_gas_line_1" model="esg.emission.factor.line">
             <field name="activity_type_id" ref="esg_activity_type_1" />
@@ -132,7 +132,7 @@
             <field name="source_id" ref="esg_emission_source_upstream_1" />
             <field name="esg_uncertainty_value">0.15</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
         </record>
         <record
             id="esg_computers_production_gas_line_1"
@@ -175,7 +175,7 @@
             <field name="source_id" ref="esg_emission_source_upstream_1" />
             <field name="esg_uncertainty_value">0.45</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_kgm" />
+            <field name="uom_id" ref="base.product_uom_kgm" />
         </record>
         <record id="esg_employee_lunch_gas_line_1" model="esg.emission.factor.line">
             <field name="esg_emission_factor_id" ref="esg_employee_lunch_factor" />
@@ -198,7 +198,7 @@
             <field name="source_id" ref="esg_emission_source_upstream_1" />
             <field name="esg_uncertainty_value">0.5</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
         </record>
         <record
             id="esg_smartphones_production_gas_line_1"
@@ -233,7 +233,7 @@
             <field name="source_id" ref="esg_emission_source_upstream_1" />
             <field name="esg_uncertainty_value">0.1</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
         </record>
         <record id="esg_wooden_chairs_gas_line_1" model="esg.emission.factor.line">
             <field name="esg_emission_factor_id" ref="esg_wooden_chairs_factor" />
@@ -259,7 +259,7 @@
             <field name="source_id" ref="esg_emission_source_upstream_1" />
             <field name="esg_uncertainty_value">0.5</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
         </record>
         <record id="esg_coffee_machines_gas_line_1" model="esg.emission.factor.line">
             <field name="esg_emission_factor_id" ref="esg_coffee_machines_factor" />
@@ -285,7 +285,7 @@
             <field name="source_id" ref="esg_emission_source_upstream_1" />
             <field name="esg_uncertainty_value">0.5</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
         </record>
         <record
             id="esg_advertising_screens_2m2_gas_line_1"
@@ -399,7 +399,7 @@
             <field name="source_id" ref="esg_emission_source_upstream_6" />
             <field name="esg_uncertainty_value">0.38</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_km" />
+            <field name="uom_id" ref="base.product_uom_km" />
         </record>
         <record
             id="esg_business_travel_train_gas_line_1"
@@ -434,7 +434,7 @@
             <field name="source_id" ref="esg_emission_source_direct_1" />
             <field name="esg_uncertainty_value">0.5</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_litre" />
+            <field name="uom_id" ref="base.product_uom_litre" />
         </record>
         <record id="esg_gasoline_vehicles_gas_line_1" model="esg.emission.factor.line">
             <field name="esg_emission_factor_id" ref="esg_gasoline_vehicles_factor" />
@@ -457,7 +457,7 @@
             <field name="source_id" ref="esg_emission_source_upstream_5" />
             <field name="esg_uncertainty_value">0.72</field>
             <field name="compute_method">physically</field>
-            <field name="uom_id" ref="uom.product_uom_kgm" />
+            <field name="uom_id" ref="base.product_uom_kgm" />
         </record>
         <record
             id="esg_waste_disposal_office_gas_line_1"
@@ -508,7 +508,7 @@
         <!-- Products -->
         <record id="product_computer" model="product.product">
             <field name="name">Computer</field>
-            <field name="uom_id" ref="uom.product_uom_unit" />
+            <field name="uom_id" ref="base.product_uom_unit" />
             <field name="standard_price">695.00</field>
             <field name="type">consu</field>
             <field name="sale_ok" eval="False" />
@@ -617,7 +617,7 @@
             <field name="date" eval="time.strftime('%Y')+'-01-05'" />
             <field
                 name="invoice_line_ids"
-                eval="[Command.create({'name': 'Fuel', 'price_unit': 1.5, 'quantity': 150, 'product_uom_id': ref('uom.product_uom_litre')})]" />
+                eval="[Command.create({'name': 'Fuel', 'price_unit': 1.5, 'quantity': 150, 'product_uom_id': ref('base.product_uom_litre')})]" />
         </record>
         <record id="vendor_bill_3" model="account.move">
             <field name="move_type">in_invoice</field>

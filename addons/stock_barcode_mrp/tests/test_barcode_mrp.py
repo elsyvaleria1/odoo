@@ -310,7 +310,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
 
     def test_picking_kit_variant_packaging(self):
         """Test packaging related to a specific variant."""
-        group_uom = self.env.ref("uom.group_uom")
+        group_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [Command.link(group_uom.id)]})
         att_color = self.env["product.attribute"].create(
             {"name": "Color", "sequence": 1}
@@ -340,7 +340,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "pack of two",
                 "relative_factor": 2,
-                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "relative_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
         self.env["product.uom"].create(

@@ -195,7 +195,7 @@ class ProjectTimesheetForecastReportAnalysis(models.Model):
                   FROM uom_uom U
                  WHERE U.id = %s
             ) HOUR_UOM
-        """ % (self.env.ref("uom.product_uom_hour").id)
+        """ % (self.env.ref("base.product_uom_hour").id)
 
     @api.model
     def _where_union(self):

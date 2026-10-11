@@ -296,6 +296,51 @@ class BaseCommon(TransactionCase):
         return cls.env[model].browse(id)
 
 
+class UomCommon(BaseCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.uom_gram = cls.quick_ref("base.product_uom_gram")
+        cls.uom_kgm = cls.quick_ref("base.product_uom_kgm")
+        cls.uom_ton = cls.quick_ref("base.product_uom_ton")
+        cls.uom_unit = cls.quick_ref("base.product_uom_unit")
+        cls.uom_dozen = cls.quick_ref("base.product_uom_dozen")
+        cls.uom_dozen.active = True
+        cls.uom_hour = cls.quick_ref("base.product_uom_hour")
+
+        cls.group_uom = cls.quick_ref("base.group_uom")
+
+    @classmethod
+    def _enable_uom(cls):
+        cls.env.user.group_ids += cls.group_uom
+
+    @classmethod
+    def _disable_uom(cls):
+        cls.env.user.group_ids -= cls.group_uom
+
+
+class ResourceCase(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company = cls.env["res.company"].create({"name": "Second Pass Co"})
+        cls.calendar = cls.env["resource.calendar"].create(
+            {"name": "SP calendar", "company_id": cls.company.id, "tz": "UTC"}
+        )
+
+    def _resource(self, **vals):
+        return self.env["resource.resource"].create(
+            {
+                "name": vals.pop("name", "SP resource"),
+                "company_id": vals.pop("company_id", self.company.id),
+                "calendar_id": vals.pop("calendar_id", self.calendar.id),
+                "tz": vals.pop("tz", "UTC"),
+                **vals,
+            }
+        )
+
+
 class _SeededUserCase:
     @classmethod
     def _rename_admin_partner(cls):

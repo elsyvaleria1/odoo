@@ -34,7 +34,7 @@ class TestPackingNeg(TransactionCase):
                         },
                     )
                 ],
-                "uom_id": self.ref("uom.product_uom_unit"),
+                "uom_id": self.ref("base.product_uom_unit"),
             }
         )
 
@@ -77,7 +77,7 @@ class TestPackingNeg(TransactionCase):
         self.env["stock.move.line"].create(
             {
                 "product_id": product_neg.id,
-                "product_uom_id": self.ref("uom.product_uom_unit"),
+                "product_uom_id": self.ref("base.product_uom_unit"),
                 "picking_id": pick_neg.id,
                 "trace_id": lot_a.id,
                 "quantity": 120,
@@ -89,7 +89,7 @@ class TestPackingNeg(TransactionCase):
         self.env["stock.move.line"].create(
             {
                 "product_id": product_neg.id,
-                "product_uom_id": self.ref("uom.product_uom_unit"),
+                "product_uom_id": self.ref("base.product_uom_unit"),
                 "picking_id": pick_neg.id,
                 "result_package_id": package3.id,
                 "quantity": 60,

@@ -10,10 +10,10 @@ from odoo.tools import DOMAIN_PREDICATES
 from odoo.addons.stock.const import QUANTITY_FIELDS
 
 MEASURED_KIT_REFERENCES = (
-    "uom.product_uom_gram",
-    "uom.product_uom_milliliter",
-    "uom.product_uom_millimeter",
-    "uom.product_uom_square_meter",
+    "base.product_uom_gram",
+    "base.product_uom_milliliter",
+    "base.product_uom_millimeter",
+    "base.product_uom_square_meter",
 )
 
 _debug = DebugLog(__name__)

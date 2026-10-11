@@ -10,7 +10,6 @@
     "license": "LGPL-3",
     "depends": [
         "device_transport",
-        "resource",
     ],
     "data": [
         "security/device_gps_security.xml",

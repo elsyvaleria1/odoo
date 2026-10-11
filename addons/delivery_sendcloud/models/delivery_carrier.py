@@ -376,9 +376,9 @@ class DeliveryCarrier(models.Model):
             self.env["product.template"].sudo()._get_uom_from_setting("weight")
         )
         to_uom_id = (
-            self.env.ref("uom.product_uom_gram")
+            self.env.ref("base.product_uom_gram")
             if grams
-            else self.env.ref("uom.product_uom_kgm")
+            else self.env.ref("base.product_uom_kgm")
         )
         if reverse:
             from_uom_id, to_uom_id = to_uom_id, from_uom_id

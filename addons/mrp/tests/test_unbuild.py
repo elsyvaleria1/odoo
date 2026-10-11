@@ -1229,7 +1229,7 @@ class TestUnbuild(TestMrpCommon):
             {
                 "product_id": product_1.id,
                 "product_tmpl_id": product_1.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "product_qty": 1.0,
                 "type": "normal",
                 "bom_line_ids": [
@@ -1247,7 +1247,7 @@ class TestUnbuild(TestMrpCommon):
             {
                 "product_id": product_2.id,
                 "product_tmpl_id": product_2.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                "product_uom_id": self.env.ref("base.product_uom_unit").id,
                 "product_qty": 1.0,
                 "type": "normal",
                 "bom_line_ids": [

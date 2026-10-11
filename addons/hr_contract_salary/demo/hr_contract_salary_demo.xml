@@ -266,7 +266,7 @@
     <function model="hr.employee" name="write">
         <value model="hr.employee" search="[('name', '=', 'Billy Kyle')]" />
         <value
-            eval="{             'contract_date_start': DateTime.today(),             'wage': 3100.0,             'wage_on_signature': 3100.0,             'structure_type_id': ref('hr.structure_type_employee'),             'hr_responsible_id': ref('base.user_demo'),             'contract_template_id': ref('contract_template_cdi_experienced_developer'),             'sign_template_id': ref('hr_contract_salary.sign_template_cdi_developer'),             'contract_update_template_id': ref('hr_contract_salary.sign_template_cdi_developer'),             'resource_calendar_id': ref('resource.resource_calendar_std_38h'),             'applicant_id': ref('hr_applicant_developper'),         }" />
+            eval="{             'contract_date_start': DateTime.today(),             'wage': 3100.0,             'wage_on_signature': 3100.0,             'structure_type_id': ref('hr.structure_type_employee'),             'hr_responsible_id': ref('base.user_demo'),             'contract_template_id': ref('contract_template_cdi_experienced_developer'),             'sign_template_id': ref('hr_contract_salary.sign_template_cdi_developer'),             'contract_update_template_id': ref('hr_contract_salary.sign_template_cdi_developer'),             'resource_calendar_id': ref('base.resource_calendar_std_38h'),             'applicant_id': ref('hr_applicant_developper'),         }" />
     </function>
 
 </odoo>

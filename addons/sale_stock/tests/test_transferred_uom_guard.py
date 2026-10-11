@@ -18,10 +18,10 @@ class TestTransferredUomGuard(TestSaleStockCommon):
                 "name": "Guarded delivered product",
                 "is_storable": True,
                 "invoice_policy": "transferred",
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
             }
         )
-        cls.uom_incompatible = cls.env.ref("uom.product_uom_hour")
+        cls.uom_incompatible = cls.env.ref("base.product_uom_hour")
 
     def test_incompatible_transferred_uom_blocks_invoicing(self):
         so = self._so_deliver(self.product_delivered, quantity=5)

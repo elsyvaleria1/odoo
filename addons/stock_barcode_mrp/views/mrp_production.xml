@@ -192,7 +192,7 @@
                     <div class="col-3 ps-0 no-radius-left" invisible="not id">
                         <field name="product_qty" widget="change_production_qty" />
                     </div>
-                    <div class="col-3 ps-0 no-radius-left" groups="uom.group_uom">
+                    <div class="col-3 ps-0 no-radius-left" groups="base.group_uom">
                         <field
                             name="product_uom_id"
                             placeholder="Unit"

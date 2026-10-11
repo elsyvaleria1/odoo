@@ -13,7 +13,7 @@
         <field name="privilege_id" ref="res_groups_privilege_fleet" />
         <field
             name="implied_ids"
-            eval="[Command.link(ref('base.group_user')), Command.link(ref('resource.group_asset_user'))]" />
+            eval="[Command.link(ref('base.group_user')), Command.link(ref('base.group_asset_user'))]" />
     </record>
 
     <record id="fleet_group_manager" model="res.groups">
@@ -22,7 +22,7 @@
         <field name="privilege_id" ref="res_groups_privilege_fleet" />
         <field
             name="implied_ids"
-            eval="[Command.link(ref('fleet_group_user')), Command.link(ref('resource.group_asset_manager')), Command.link(ref('product.group_product_manager'))]" />
+            eval="[Command.link(ref('fleet_group_user')), Command.link(ref('base.group_asset_manager')), Command.link(ref('product.group_product_manager'))]" />
         <field
             name="user_ids"
             eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />

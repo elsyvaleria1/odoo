@@ -696,11 +696,11 @@
                                     <field
                                         name="quantity_packaging_uom"
                                         optional="hide"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                     <field
                                         name="packaging_uom_id"
                                         optional="hide"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                     <field
                                         name="location_final_id"
                                         optional="hide"
@@ -755,7 +755,7 @@
                                         name="product_uom_id"
                                         widget="many2one_uom"
                                         options="{'no_open': True, 'no_create': True}"
-                                        groups="uom.group_uom"
+                                        groups="base.group_uom"
                                         readonly="state != 'draft' and not additional" />
                                     <field
                                         name="picked"

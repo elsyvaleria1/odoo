@@ -363,7 +363,7 @@ class TestRentalPlanning(TestSalePlanning):
                     "planning_enabled": True,
                     "planning_role_id": planning_role_projector.id,
                     "rent_ok": True,
-                    "uom_id": self.env.ref("uom.product_uom_unit").id,
+                    "uom_id": self.env.ref("base.product_uom_unit").id,
                 },
                 {
                     "name": "Service",
@@ -371,7 +371,7 @@ class TestRentalPlanning(TestSalePlanning):
                     "planning_enabled": True,
                     "planning_role_id": planning_role_projector.id,
                     "rent_ok": True,
-                    "uom_id": self.env.ref("uom.product_uom_hour").id,
+                    "uom_id": self.env.ref("base.product_uom_hour").id,
                 },
             ]
         )

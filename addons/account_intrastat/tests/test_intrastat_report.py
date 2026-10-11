@@ -68,7 +68,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                     "account_intrastat.commodity_code_2018_37061020"
                 ).id,
                 "intrastat_supplementary_unit_amount": 1,
-                "uom_id": cls.env.ref("uom.product_uom_meter").id,
+                "uom_id": cls.env.ref("base.product_uom_meter").id,
             }
         )
         # A product with the product origin country set to spain
@@ -106,7 +106,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
         cls.product_1 = cls.env["product.product"].create(
             {
                 "name": "product_a",
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
                 "lst_price": 100.0,
                 "standard_price": 80.0,
                 "property_account_income_id": cls.company_data[
@@ -125,7 +125,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
         cls.product_2 = cls.env["product.product"].create(
             {
                 "name": "product_2",
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
                 "lst_price": 150.0,
                 "standard_price": 120.0,
                 "property_account_income_id": cls.company_data[
@@ -144,7 +144,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
         cls.product_3 = cls.env["product.product"].create(
             {
                 "name": "product_3",
-                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "uom_id": cls.env.ref("base.product_uom_unit").id,
                 "lst_price": 1000.0,
                 "standard_price": 950.0,
                 "property_account_income_id": cls.company_data[
@@ -180,7 +180,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                                 if code_type
                                 else None,
                                 "product_uom_id": cls.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": cls.company_data[
@@ -200,7 +200,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                                 if code_type
                                 else None,
                                 "product_uom_id": cls.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 2.0,
                                 "account_id": cls.company_data[
@@ -228,7 +228,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                                 if code_type
                                 else None,
                                 "product_uom_id": cls.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": cls.company_data[
@@ -331,7 +331,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                                 "product_id": self.spanish_rioja.id,
                                 "intrastat_transaction_id": None,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": self.company_data[
@@ -356,7 +356,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                                 "product_id": self.spanish_rioja.id,
                                 "intrastat_transaction_id": None,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": self.company_data[
@@ -383,7 +383,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                                     "transaction"
                                 ].id,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": self.company_data[
@@ -835,7 +835,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                             {
                                 "product_id": self.spanish_rioja.id,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": self.company_data[
@@ -857,7 +857,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                             {
                                 "product_id": self.spanish_rioja.id,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": self.company_data[
@@ -879,7 +879,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                             {
                                 "product_id": self.spanish_rioja.id,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": self.company_data[
@@ -1009,7 +1009,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                     Command.create(
                         {
                             "product_id": self.spanish_rioja.id,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "quantity": 10.0,
                             "account_id": self.company_data[
                                 "default_account_revenue"
@@ -1020,7 +1020,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                     Command.create(
                         {
                             "product_id": self.spanish_rioja.id,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "quantity": -1.0,
                             "account_id": self.company_data[
                                 "default_account_revenue"
@@ -1068,7 +1068,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                         {
                             "product_id": self.product_no_supplementary_unit.id,
                             "quantity": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "price_unit": 10,
                             "tax_ids": [],
                         }
@@ -1119,7 +1119,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                         {
                             "product_id": self.product_unit_supplementary_unit.id,
                             "quantity": 123,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "price_unit": 10,
                             "tax_ids": [],
                         }
@@ -1129,7 +1129,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                         {
                             "product_id": self.product_unit_supplementary_unit.id,
                             "quantity": 20,
-                            "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                            "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                             "price_unit": 10,
                             "tax_ids": [],
                         }
@@ -1139,7 +1139,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                         {
                             "product_id": self.product_100_unit_supplementary_unit.id,
                             "quantity": 123,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "price_unit": 10,
                             "tax_ids": [],
                         }
@@ -1149,7 +1149,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                         {
                             "product_id": self.product_100_unit_supplementary_unit.id,
                             "quantity": 20,
-                            "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                            "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                             "price_unit": 10,
                             "tax_ids": [],
                         }
@@ -1207,7 +1207,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                         {
                             "product_id": self.product_metre_supplementary_unit.id,
                             "quantity": 1.23,
-                            "product_uom_id": self.env.ref("uom.product_uom_km").id,
+                            "product_uom_id": self.env.ref("base.product_uom_km").id,
                             "price_unit": 10,
                             "tax_ids": [],
                         }
@@ -1341,7 +1341,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                         {
                             "product_id": self.product_no_supplementary_unit.id,
                             "quantity": 1,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "price_unit": 10,
                         }
                     ),
@@ -1710,7 +1710,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                                 "product_id": self.spanish_rioja.id,
                                 "intrastat_transaction_id": None,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": self.company_data[
@@ -1735,7 +1735,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                                 "product_id": self.spanish_rioja.id,
                                 "intrastat_transaction_id": None,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": self.company_data[
@@ -1760,7 +1760,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                                 "product_id": self.spanish_rioja.id,
                                 "intrastat_transaction_id": None,
                                 "product_uom_id": self.env.ref(
-                                    "uom.product_uom_unit"
+                                    "base.product_uom_unit"
                                 ).id,
                                 "quantity": 1.0,
                                 "account_id": self.company_data[
@@ -1869,7 +1869,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
                     Command.create(
                         {
                             "product_id": self.spanish_rioja.id,
-                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "product_uom_id": self.env.ref("base.product_uom_unit").id,
                             "quantity": 1.0,
                             "account_id": self.company_data[
                                 "default_account_revenue"

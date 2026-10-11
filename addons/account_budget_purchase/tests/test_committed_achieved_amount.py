@@ -360,14 +360,14 @@ class TestCommittedAchievedAmount(TestAccountBudgetPurchaseCommon):
         gravel_ton = self.env["product.product"].create(
             {
                 "name": "Gravel 1T",
-                "uom_id": self.env.ref("uom.product_uom_ton").id,
+                "uom_id": self.env.ref("base.product_uom_ton").id,
                 "standard_price": 1000,
             }
         )
         gravel_kilo = self.env["product.product"].create(
             {
                 "name": "Gravel 1kg",
-                "uom_id": self.env.ref("uom.product_uom_kgm").id,
+                "uom_id": self.env.ref("base.product_uom_kgm").id,
                 "standard_price": 1,
             }
         )

@@ -488,9 +488,9 @@ class TestSubcontractingBomPriceUom(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
-        cls.uom_kgm = cls.env.ref("uom.product_uom_kgm")
-        cls.uom_gram = cls.env.ref("uom.product_uom_gram")
+        cls.uom_unit = cls.env.ref("base.product_uom_unit")
+        cls.uom_kgm = cls.env.ref("base.product_uom_kgm")
+        cls.uom_gram = cls.env.ref("base.product_uom_gram")
 
     def _build(self, tag, product_uom, seller_uom, bom_uom, seller_price=50.0):
         template = self.env["product.template"].create(

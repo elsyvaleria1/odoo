@@ -13,7 +13,7 @@
                 name="categ_id"
                 eval="ref('product.product_category_services', raise_if_not_found=False)" />
             <field name="list_price">100</field>
-            <field name="uom_id" ref="uom.product_uom_hour" />
+            <field name="uom_id" ref="base.product_uom_hour" />
             <field name="service_policy">delivered_timesheet</field>
             <field
                 name="image_1920"

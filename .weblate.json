@@ -2352,11 +2352,6 @@
                 "new_base": "addons/repair/i18n/repair.pot"
             },
             {
-                "name": "resource",
-                "filemask": "addons/resource/i18n/*.po",
-                "new_base": "addons/resource/i18n/resource.pot"
-            },
-            {
                 "name": "resource_asset_vehicle",
                 "filemask": "addons/resource_asset_vehicle/i18n/*.po",
                 "new_base": "addons/resource_asset_vehicle/i18n/resource_asset_vehicle.pot"
@@ -3015,11 +3010,6 @@
                 "name": "transifex",
                 "filemask": "addons/transifex/i18n/*.po",
                 "new_base": "addons/transifex/i18n/transifex.pot"
-            },
-            {
-                "name": "uom",
-                "filemask": "addons/uom/i18n/*.po",
-                "new_base": "addons/uom/i18n/uom.pot"
             },
             {
                 "name": "utm",

@@ -741,7 +741,7 @@ class DeliveryCarrier(models.Model):
         product_model = cast("ProductTemplate", self.env["product.template"])
         weight_uom = product_model._get_uom_from_setting("weight")
         return weight_uom._get_quantity_in_unit(
-            weight, self.env.ref("uom.product_uom_kgm"), round=False
+            weight, self.env.ref("base.product_uom_kgm"), round=False
         )
 
     def _get_conversion_currencies(self, order, conversion) -> tuple | None:

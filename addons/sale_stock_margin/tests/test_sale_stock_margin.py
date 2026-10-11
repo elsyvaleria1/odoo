@@ -494,7 +494,7 @@ class TestSaleStockMargin(TestStockValuationCommon):
         )
 
     def test_avco_does_not_mix_products_on_compute_avg_price(self):
-        self.product_avco_auto.uom_id = self.env.ref("uom.product_uom_dozen").id
+        self.product_avco_auto.uom_id = self.env.ref("base.product_uom_dozen").id
         sale_order = self._create_sale_order()
         sale_order_line = self._create_sale_order_line(sale_order, self.product_avco, 1)
         sale_order.action_confirm()
@@ -528,7 +528,7 @@ class TestSaleStockMargin(TestStockValuationCommon):
         self.assertEqual(sale_order_line.purchase_price, 10)
 
     def test_avco_different_uom(self):
-        pack_of_6 = self.ref("uom.product_uom_pack_6")
+        pack_of_6 = self.ref("base.product_uom_pack_6")
         self.product_avco.write(
             {
                 "standard_price": 1,

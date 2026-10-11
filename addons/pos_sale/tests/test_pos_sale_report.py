@@ -131,7 +131,7 @@ class TestPoSSaleReport(TestPoSCommon, TestPointOfSaleHttpCommon):
             ]
         )
 
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        uom_unit = self.env.ref("base.product_uom_unit")
         product_template = self.env["product.template"].create(
             {
                 "name": "Sofa",

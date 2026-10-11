@@ -4,7 +4,7 @@
     <record id="fleet_vehicle_view_form" model="ir.ui.view">
         <field name="name">resource.asset.form.fleet</field>
         <field name="model">resource.asset.vehicle</field>
-        <field name="inherit_id" ref="resource.resource_asset_view_form" />
+        <field name="inherit_id" ref="base.resource_asset_view_form" />
         <field name="mode">primary</field>
         <field name="priority">20</field>
         <field name="arch" type="xml">
@@ -182,7 +182,7 @@
     <record id="fleet_vehicle_view_search" model="ir.ui.view">
         <field name="name">resource.asset.search.fleet</field>
         <field name="model">resource.asset.vehicle</field>
-        <field name="inherit_id" ref="resource.resource_asset_view_search" />
+        <field name="inherit_id" ref="base.resource_asset_view_search" />
         <field name="mode">primary</field>
         <field name="priority">20</field>
         <field name="arch" type="xml">
@@ -229,9 +229,7 @@
         <field name="path">fleet</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="fleet_vehicle_view_search" />
-        <field
-            name="context"
-            eval="{'default_kind_id': ref('resource.kind_vehicle')}" />
+        <field name="context" eval="{'default_kind_id': ref('base.kind_vehicle')}" />
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Ready to manage your fleet more efficiently?

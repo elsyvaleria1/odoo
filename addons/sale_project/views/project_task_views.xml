@@ -373,7 +373,7 @@
                             <field
                                 name="product_uom_id"
                                 options="{'no_open': True}"
-                                groups="uom.group_uom"
+                                groups="base.group_uom"
                                 class="w-auto text-end" />
                             <span>)</span>
                         </span>

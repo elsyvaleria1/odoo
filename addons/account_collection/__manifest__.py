@@ -10,7 +10,6 @@
         "account",
         "mixin_report_sql",
         "portal",
-        "resource",
     ],
     "data": [
         "security/account_collection_security.xml",

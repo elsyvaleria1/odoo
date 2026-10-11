@@ -95,7 +95,7 @@
                 <field
                     name="product_uom_id"
                     widget="many2one_uom"
-                    groups="uom.group_uom" />
+                    groups="base.group_uom" />
                 <field name="price_unit" widget="monetary" />
                 <field name="price_subtotal" string="Total" />
                 <field name="currency_id" column_invisible="True" />
@@ -199,7 +199,7 @@
                                     <field name="product_qty" />
                                     <field
                                         name="product_uom_id"
-                                        groups="uom.group_uom" />
+                                        groups="base.group_uom" />
                                     <field name="date_needed" optional="show" />
                                     <field name="offer_count" optional="show" />
                                     <field name="qty_awarded" />

@@ -19639,6 +19639,8 @@ msgstr "%(xmlid)s 是 %(xmlid_model)s 類型，應為 ir.actions.actions 的子�
 #: code:addons/base/models/res_partner.py:0
 #: code:addons/base/models/res_users.py:0
 #: code:addons/base/tests/test_catalog_mixin.py:0
+#: code:addons/base/models/resource_calendar.py:0
+#: code:addons/base/models/resource_resource.py:0
 msgid "%s (copy)"
 msgstr "%s (副本)"
 
@@ -25180,6 +25182,9 @@ msgstr "啟動"
 #: model_terms:ir.ui.view,arch_db:base.view_currency_search
 #: model_terms:ir.ui.view,arch_db:base.view_ir_access_exception_search
 #: model_terms:ir.ui.view,arch_db:base.view_view_search
+#: model:ir.model.fields,field_description:base.field_uom_uom__active
+#: model:ir.model.fields,field_description:base.field_resource_calendar__active
+#: model:ir.model.fields,field_description:base.field_resource_resource__active
 msgid "Active"
 msgstr "啟用"
 
@@ -27889,6 +27894,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.view_res_partner_filter
 #: model_terms:ir.ui.view,arch_db:base.view_sequence_search
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
+#: model_terms:ir.ui.view,arch_db:base.uom_uom_view_search
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Archived"
 msgstr "已封存"
 
@@ -29184,6 +29194,7 @@ msgstr "頭像 1024"
 #: model:ir.model.fields,field_description:base.field_res_company__avatar_128
 #: model:ir.model.fields,field_description:base.field_res_partner__avatar_128
 #: model:ir.model.fields,field_description:base.field_res_users__avatar_128
+#: model:ir.model.fields,field_description:base.field_resource_resource__avatar_128
 msgid "Avatar 128"
 msgstr "頭像 128"
 
@@ -32111,6 +32122,12 @@ msgstr "公司"
 #: model_terms:ir.ui.view,arch_db:base.view_res_partner_filter
 #: model_terms:ir.ui.view,arch_db:base.view_users_search
 #: model_terms:ir.ui.view,arch_db:base.view_users_simple_form
+#: model:ir.model.fields,field_description:base.field_resource_calendar__company_id
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__company_id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__company_id
+#: model:ir.model.fields,field_description:base.field_resource_resource__company_id
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Company"
 msgstr "公司"
 
@@ -32399,6 +32416,7 @@ msgstr "設定工時表開立憑單"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_base_module_upgrade
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
 msgid "Confirm"
 msgstr "確認"
 
@@ -33216,6 +33234,11 @@ msgstr "建立的檢視"
 #: model:ir.model.fields,field_description:base.field_tag_tag__create_uid
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__create_uid
 #: model_terms:ir.ui.view,arch_db:base.view_attachment_search
+#: model:ir.model.fields,field_description:base.field_uom_uom__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_resource__create_uid
 msgid "Created by"
 msgstr "建立人員"
 
@@ -33320,6 +33343,11 @@ msgstr "建立人員"
 #: model:ir.model.fields,field_description:base.field_tag_tag__create_date
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__create_date
 #: model_terms:ir.ui.view,arch_db:base.ir_job_view_search
+#: model:ir.model.fields,field_description:base.field_uom_uom__create_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar__create_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__create_date
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__create_date
+#: model:ir.model.fields,field_description:base.field_resource_resource__create_date
 msgid "Created on"
 msgstr "建立於"
 
@@ -33860,6 +33888,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_res_currency_rate__name
 #: model_terms:ir.ui.view,arch_db:base.ir_access_log_view_list
 #: model_terms:ir.ui.view,arch_db:base.view_currency_rate_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
 msgid "Date"
 msgstr "日期"
 
@@ -33913,6 +33942,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__day
+#: model:uom.uom,name:base.product_uom_day
 msgid "Days"
 msgstr "天"
 
@@ -34711,6 +34741,12 @@ msgstr "不相交群組"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__display_name
 #: model:ir.model.fields,field_description:base.field_tag_tag__display_name
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__display_name
+#: model:ir.model.fields,field_description:base.field_uom_uom__display_name
+#: model:ir.model.fields,field_description:base.field_resource_calendar__display_name
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__display_name
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__display_name
+#: model:ir.model.fields,field_description:base.field_resource_mixin__display_name
+#: model:ir.model.fields,field_description:base.field_resource_resource__display_name
 msgid "Display Name"
 msgstr "顯示名稱"
 
@@ -35597,6 +35633,7 @@ msgstr "哥倫比亞電子發票 - 使用 DIAN"
 #: model_terms:ir.ui.view,arch_db:base.view_partner_form
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
 #: model_terms:ir.ui.view,arch_db:base.view_users_form_simple_modif
+#: model:ir.model.fields,field_description:base.field_resource_resource__email
 msgid "Email"
 msgstr "電郵地址"
 
@@ -37289,6 +37326,7 @@ msgstr "外部使用者"
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_users__share
+#: model:ir.model.fields,help:base.field_resource_resource__share
 msgid ""
 "External user with limited access, created only for the purpose of sharing "
 "data."
@@ -37940,6 +37978,7 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__1
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__1
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__week_type__0
 msgid "First"
 msgstr ""
 
@@ -38327,6 +38366,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__5
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__4
 msgid "Friday"
 msgstr "星期五"
 
@@ -39742,6 +39782,8 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__hour
+#: model:uom.uom,name:base.product_uom_hour
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_attendance_form
 msgid "Hours"
 msgstr "小時"
 
@@ -40088,6 +40130,12 @@ msgstr "IBAN銀行帳號"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__id
 #: model:ir.model.fields,field_description:base.field_tag_tag__id
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__id
+#: model:ir.model.fields,field_description:base.field_uom_uom__id
+#: model:ir.model.fields,field_description:base.field_resource_calendar__id
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__id
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__id
+#: model:ir.model.fields,field_description:base.field_resource_resource__id
 msgid "ID"
 msgstr "識別號"
 
@@ -42610,6 +42658,11 @@ msgstr "最近更新"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__write_uid
 #: model:ir.model.fields,field_description:base.field_tag_tag__write_uid
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__write_uid
+#: model:ir.model.fields,field_description:base.field_uom_uom__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_resource__write_uid
 msgid "Last Updated by"
 msgstr "最後更新者"
 
@@ -42713,6 +42766,11 @@ msgstr "最後更新者"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__write_date
 #: model:ir.model.fields,field_description:base.field_tag_tag__write_date
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__write_date
+#: model:ir.model.fields,field_description:base.field_uom_uom__write_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar__write_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__write_date
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__write_date
+#: model:ir.model.fields,field_description:base.field_resource_resource__write_date
 msgid "Last Updated on"
 msgstr "最後更新於"
 
@@ -45233,6 +45291,7 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__minute
+#: model:uom.uom,name:base.product_uom_minute
 msgid "Minutes"
 msgstr "分鐘"
 
@@ -45658,6 +45717,7 @@ msgstr "摩納哥 - 會計"
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__1
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__0
 msgid "Monday"
 msgstr "星期一"
 
@@ -45938,6 +45998,9 @@ msgstr "納克法"
 #: model_terms:ir.ui.view,arch_db:base.view_partner_tree
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_tree
+#: model:ir.model.fields,field_description:base.field_resource_calendar__name
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__name
+#: model:ir.model.fields,field_description:base.field_resource_resource__name
 msgid "Name"
 msgstr "名稱"
 
@@ -49244,6 +49307,7 @@ msgstr "原始檢視"
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__gender__other
 #: model:ir.model.fields.selection,name:base.selection__res_partner__type__other
+#: model:ir.model.fields.selection,name:base.selection__resource_schedule_exception__time_type__other
 msgid "Other"
 msgstr "其他"
 
@@ -49966,6 +50030,7 @@ msgstr "上層功能表"
 #: model:ir.model.fields,field_description:base.field_res_company__parent_path
 #: model:ir.model.fields,field_description:base.field_res_partner_tag__parent_path
 #: model:ir.model.fields,field_description:base.field_tag_tag__parent_path
+#: model:ir.model.fields,field_description:base.field_uom_uom__parent_path
 msgid "Parent Path"
 msgstr "上級路徑"
 
@@ -50726,6 +50791,7 @@ msgstr "菲律賓支票版面佈局"
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
 #: model_terms:ir.ui.view,arch_db:base.view_users_form_simple_modif
 #: model_terms:ir.ui.view,arch_db:base.view_users_simple_form
+#: model:ir.model.fields,field_description:base.field_resource_resource__phone
 msgid "Phone"
 msgstr "電話"
 
@@ -52617,6 +52683,9 @@ msgstr "實際經歷時間"
 #: model:ir.model.fields,field_description:base.field_ir_access_exception__reason
 #: model:ir.model.fields,field_description:base.field_ir_access_log__reason
 #: model:ir.model.fields,field_description:base.field_res_users_grant__reason
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__name
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_form
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_tree
 msgid "Reason"
 msgstr ""
 
@@ -53272,6 +53341,12 @@ msgstr ""
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_resource
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__resource_id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__resource_id
+#: model:ir.ui.menu,name:base.menu_resource_config
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
 msgid "Resource"
 msgstr "資源"
 
@@ -54180,6 +54255,7 @@ msgstr "撒丹"
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__6
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__5
 msgid "Saturday"
 msgstr "星期六"
 
@@ -54452,6 +54528,7 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__2
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__2
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__week_type__1
 msgid "Second"
 msgstr ""
 
@@ -54857,6 +54934,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
 #: model_terms:ir.ui.view,arch_db:base.view_sequence_search
 #: model_terms:ir.ui.view,arch_db:base.view_view_tree
+#: model:ir.model.fields,field_description:base.field_uom_uom__sequence
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__sequence
 msgid "Sequence"
 msgstr "序列號"
 
@@ -55103,6 +55182,7 @@ msgstr "共享合作夥伴"
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users__share
+#: model:ir.model.fields,field_description:base.field_resource_resource__share
 msgid "Share User"
 msgstr "共享使用者"
 
@@ -56493,6 +56573,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__7
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__6
 msgid "Sunday"
 msgstr "星期日"
 
@@ -59437,6 +59518,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__4
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__3
 msgid "Thursday"
 msgstr "星期四"
 
@@ -59463,6 +59545,8 @@ msgstr "時間格式"
 #. module: base
 #: model:ir.module.category,name:base.module_category_human_resources_time_off
 #: model:ir.module.module,shortdesc:base.module_hr_holidays
+#: model:ir.model.fields,field_description:base.field_resource_calendar__leave_ids
+#: model:ir.model.fields.selection,name:base.selection__resource_schedule_exception__time_type__leave
 msgid "Time Off"
 msgstr "休假"
 
@@ -59551,6 +59635,9 @@ msgstr "工時表/出勤報表"
 #: model:ir.model.fields,field_description:base.field_res_company__tz
 #: model:ir.model.fields,field_description:base.field_res_partner__tz
 #: model:ir.model.fields,field_description:base.field_res_users__tz
+#: model:ir.model.fields,field_description:base.field_resource_calendar__tz
+#: model:ir.model.fields,field_description:base.field_resource_mixin__tz
+#: model:ir.model.fields,field_description:base.field_resource_resource__tz
 msgid "Timezone"
 msgstr "時區"
 
@@ -59559,6 +59646,7 @@ msgstr "時區"
 #: model:ir.model.fields,field_description:base.field_res_company__tz_offset
 #: model:ir.model.fields,field_description:base.field_res_partner__tz_offset
 #: model:ir.model.fields,field_description:base.field_res_users__tz_offset
+#: model:ir.model.fields,field_description:base.field_resource_calendar__tz_offset
 msgid "Timezone offset"
 msgstr "時區調整"
 
@@ -59899,6 +59987,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__2
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__1
 msgid "Tuesday"
 msgstr "星期二"
 
@@ -60005,6 +60094,8 @@ msgstr "泰因/提因（吉爾吉斯）"
 #: model_terms:ir.ui.view,arch_db:base.ir_logging_search_view
 #: model_terms:ir.ui.view,arch_db:base.view_attachment_search
 #: model_terms:ir.ui.view,arch_db:base.view_view_search
+#: model:ir.model.fields,field_description:base.field_resource_resource__resource_type
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Type"
 msgstr "地圖類型"
 
@@ -61066,6 +61157,8 @@ msgstr "當用戶只選擇一種語言，並有切換到該語言的選項時使
 #: model_terms:ir.ui.view,arch_db:base.auth_user_client_view_search
 #: model_terms:ir.ui.view,arch_db:base.res_users_grant_view_search
 #: model_terms:ir.ui.view,arch_db:base.view_users_search
+#: model:ir.model.fields,field_description:base.field_resource_resource__user_id
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "User"
 msgstr "使用者"
 
@@ -61590,6 +61683,8 @@ msgstr "可見"
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_currency_form
 #: model_terms:ir.ui.view,arch_db:base.view_partner_form
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
 msgid "Visible to all"
 msgstr "向全部人顯示"
 
@@ -61682,6 +61777,7 @@ msgstr "警告"
 #. odoo-python
 #: code:addons/base/models/decimal_precision.py:0
 #: code:addons/base/models/res_currency.py:0
+#: code:addons/base/models/uom_uom.py:0
 msgid "Warning for %s"
 msgstr "%s 的警告"
 
@@ -62000,6 +62096,7 @@ msgstr "婚禮、愛情、攝影、服務"
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__3
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__2
 msgid "Wednesday"
 msgstr "星期三"
 
@@ -63720,6 +63817,978 @@ msgstr ""
 #: code:addons/base/models/mixin_lifecycle.py:0
 msgid "• Cancelled: %s"
 msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__factor
+msgid "Absolute Quantity"
+msgstr "絕對數量"
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.product_uom_form_action
+msgid "Add a new unit of measure"
+msgstr "新增量度單位"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__relative_factor
+msgid "Contains"
+msgstr "包含"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_dozen
+msgid "Dozens"
+msgstr "打"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_uom_uom__relative_factor
+msgid ""
+"How much bigger or smaller this unit is compared to the reference UoM for "
+"this unit"
+msgstr "此單位比相關參考計量單位大或小幾多"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_kwh
+msgid "KWH"
+msgstr ""
+
+#. module: base
+#: model:res.groups,name:base.group_uom
+msgid "Manage Multiple Units of Measure"
+msgstr "管理多個計量單位"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_pack_6
+msgid "Pack of 6"
+msgstr "6 件裝"
+
+#. module: base
+#: model:ir.model,name:base.model_uom_uom
+msgid "Product Unit of Measure"
+msgstr "產品計量單位"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.product_uom_form_view
+msgid "Quantity"
+msgstr "數量"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__relative_uom_id
+#: model_terms:ir.ui.view,arch_db:base.product_uom_form_view
+msgid "Reference Unit"
+msgstr "參考單位"
+
+#. module: base
+#: code:addons/base/models/uom_uom.py:0
+msgid "Reference unit of measure is missing."
+msgstr "缺漏參考計量單位。"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__related_uom_ids
+msgid "Related UoMs"
+msgstr "相關計量單位"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__rounding
+msgid "Rounding Precision"
+msgstr "捨入精度"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.uom_uom_view_search
+msgid "Search UOM"
+msgstr "搜尋計量單位"
+
+#. module: base
+#: code:addons/base/models/uom_uom.py:0
+msgid ""
+"Some critical fields have been modified on %s.\n"
+"Note that existing data WON'T be updated by this change.\n"
+"\n"
+"As units of measure impact the whole system, this may cause critical "
+"issues.\n"
+"Therefore, changing core units of measure in a running database is not "
+"recommended."
+msgstr ""
+"部份關鍵欄位在 %s 已被修改。\n"
+"請留意，此變更【不會】更新現有資料。\n"
+"\n"
+"由於計量單位的設定會影響整個系統，這可能會導致嚴重問題。\n"
+"因此，不建議為正式運行中的資料庫，更改核心計量單位。"
+
+#. module: base
+#: model:ir.model.constraint,message:base.constraint_uom_uom_factor_gt_zero
+msgid "The conversion ratio for a unit of measure cannot be 0!"
+msgstr "計量單位的轉換比率不能為 0！"
+
+#. module: base
+#: code:addons/base/models/uom_uom.py:0
+msgid ""
+"The following units of measure are used by the system and cannot be deleted: "
+"%s\n"
+"You can archive them instead."
+msgstr ""
+"以下計量單位由系統使用且無法刪除：%s\n"
+"您可以改為存檔它們。"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_ton
+msgid "Ton"
+msgstr "噸"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_uom_uom__active
+msgid ""
+"Uncheck the active field to disable a unit of measure without deleting it."
+msgstr "取消勾選有效欄位以停用度量單位，而不刪除它。"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__name
+msgid "Unit Name"
+msgstr "單位名稱"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_unit
+msgid "Units"
+msgstr "件"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.product_uom_form_action
+#: model_terms:ir.ui.view,arch_db:base.product_uom_tree_view
+msgid "Units & Packagings"
+msgstr "單位及包裝"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.product_uom_form_view
+msgid "Units of Measure"
+msgstr "量度單位"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cm
+msgid "cm"
+msgstr "厘米"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_floz
+msgid "fl oz (US)"
+msgstr "液安士（美制）"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_foot
+msgid "ft"
+msgstr "英尺"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_square_foot
+msgid "ft²"
+msgstr "平方英尺"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cubic_foot
+msgid "ft³"
+msgstr "立方英尺"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_gal
+msgid "gal (US)"
+msgstr "加侖（美制）"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_inch
+msgid "in"
+msgstr "英寸"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cubic_inch
+msgid "in³"
+msgstr "立方英寸"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_kgm
+msgid "kg"
+msgstr "公斤"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_km
+msgid "km"
+msgstr "公里"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_lb
+msgid "lb"
+msgstr "磅"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_mile
+msgid "mi"
+msgstr "英里"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_milliliter
+msgid "ml"
+msgstr "毫升"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_millimeter
+msgid "mm"
+msgstr "毫米"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_square_meter
+msgid "m²"
+msgstr "平方米"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cubic_meter
+msgid "m³"
+msgstr "立方米"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_oz
+msgid "oz"
+msgstr "安士"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_qt
+msgid "qt (US)"
+msgstr "夸脫（美制）"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_yard
+msgid "yd"
+msgstr "碼"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_tree
+msgid "# Work Resources"
+msgstr "# 工作資源"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid ""
+"%(att)s is a break attendance, You should not have such record on duration "
+"based calendar"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "2 Week's Calendar"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"ms-1\">%</span>"
+msgstr "<span class=\"ms-1\">%</span>"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"ms-2\">hours/day</span>"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"ms-2\">hours/week</span>"
+msgstr "<span class=\"ms-2\">小時/星期</span>"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"o_stat_text\">Time Off</span>"
+msgstr "<span class=\"o_stat_text\">休假</span>"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span>hours/week</span>"
+msgstr "<span>小時/星期</span>"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__afternoon
+msgid "Afternoon"
+msgstr "下午"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"Are you sure you want to switch to a 1-week calendar? All work entries will "
+"be lost."
+msgstr "確定要切換至一星期日曆檢視？所有工作記項都將遺失。"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"Are you sure you want to switch to a 2-week calendar? All work entries will "
+"be lost."
+msgstr "確定要切換至兩星期日曆檢視？所有工作記項都將遺失。"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__duration_based
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__duration_based
+msgid "Attendance based on duration"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Attendances can't overlap."
+msgstr "出勤時間不能重疊."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__hours_per_day
+msgid "Average Hour per Day"
+msgstr "平均每天工時"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__hours_per_day
+msgid ""
+"Average hours per day a resource is supposed to work with this calendar."
+msgstr "資源應該使用此日曆的平均每天小時數."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Avg"
+msgstr "平均"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__lunch
+msgid "Break"
+msgstr "分隔"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__two_weeks_calendar
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__two_weeks_calendar
+msgid "Calendar in 2 weeks mode"
+msgstr "雙週模式下的日曆"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__schedule_type
+msgid ""
+"Choose which level of definition you want to define on your Schedule\n"
+"- Flexible : Define an amount of hours to work on the week.\n"
+"- Fully Fixed : define the days, periods and the start & end time for each "
+"period of the day"
+msgstr ""
+
+#. module: base
+#: model:ir.actions.act_window,name:base.resource_calendar_closing_days
+msgid "Closing Days"
+msgstr "休息日"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__day_period
+msgid "Day Period"
+msgstr "期間"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__dayofweek
+msgid "Day of Week"
+msgstr "星期幾"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_res_company__resource_calendar_id
+#: model:ir.model.fields,field_description:base.field_res_users__resource_calendar_id
+msgid "Default Working Hours"
+msgstr "預設工作時間"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Define Amount of Hours per day"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_res_users__resource_calendar_id
+#: model:ir.model.fields,help:base.field_resource_mixin__resource_calendar_id
+#: model:ir.model.fields,help:base.field_resource_resource__calendar_id
+msgid ""
+"Define the working schedule of the resource. If not set, the resource will "
+"have fully flexible working hours."
+msgstr "定義該資源的工作時間表。若未設置，該資源將享有完全靈活的工作時間。"
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.action_resource_calendar_form
+msgid ""
+"Define working hours and time table that could be scheduled to your project "
+"members"
+msgstr "定義您的專案成員可計劃的工時和時間表"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__display_type
+msgid "Display Type"
+msgstr "顯示類型"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__duration_days
+msgid "Duration (days)"
+msgstr "持續時間（天）"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__duration_hours
+msgid "Duration (hours)"
+msgstr "時長(小時)"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_resource__time_efficiency
+msgid "Efficiency Factor"
+msgstr "效率因子"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__date_to
+msgid "End Date"
+msgstr "結束日期"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__two_weeks_explanation
+msgid "Explanation"
+msgstr "說明"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "First week"
+msgstr "第一週"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar__schedule_type__flexible
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+msgid "Flexible"
+msgstr "靈活"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__flexible_hours
+msgid "Flexible Hours"
+msgstr "靈活工時"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Friday Afternoon"
+msgstr "週五下午"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Friday Lunch"
+msgstr "週五午餐"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Friday Morning"
+msgstr "週五上午"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__full_day
+msgid "Full Day"
+msgstr "全日"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__full_time_required_hours
+msgid "Full Time Equivalent"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar__schedule_type__fully_fixed
+msgid "Fully Fixed"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
+msgid "Fully Flexible"
+msgstr "完全靈活"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__sequence
+msgid "Gives the sequence of this line when displaying the resource calendar."
+msgstr "顯示資源日曆時提供此明細的序列."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__global_leave_ids
+msgid "Global Time Off"
+msgstr "公眾休假"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__hours_per_week
+msgid "Hours per Week"
+msgstr "每週工時"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_resource__resource_type__user
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Human"
+msgstr "人力資源"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"If checked, the working schedule will be based on an amount of hours "
+"(defined for each day) and not a start & end time anymore.Do you confirm ?"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_schedule_exception__resource_id
+msgid ""
+"If empty, this is a generic time off for the company. If a resource is set, "
+"the time off is only for this resource"
+msgstr "如果為空，則這是公司的一般休假時間. 如果設定了資源，則休假僅針對該資源"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_resource__active
+msgid ""
+"If the active field is set to False, it will allow you to hide the resource "
+"record without removing it."
+msgstr "如果啟用欄位設定為未啟用，它將允許您隱藏資源記錄而不刪除它."
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__active
+msgid ""
+"If the active field is set to false, it will allow you to hide the Working "
+"Time without removing it."
+msgstr "如果啟用欄位設定為未啟用，它將允許您隱藏工作時間而不將其刪除."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"If unchecked, the working schedule will be based on a defined start and end "
+"hours.Do you confirm ?"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid ""
+"In a calendar with 2 weeks mode, all periods need to be in the sections."
+msgstr "在雙週模式的日曆中，所有時期都需要在分區中."
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__is_fulltime
+msgid "Is Full Time"
+msgstr "是全職的"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_resource__resource_type__material
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Material"
+msgstr "物料"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Monday Afternoon"
+msgstr "週一下午"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Monday Lunch"
+msgstr "週一午餐"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Monday Morning"
+msgstr "週一上午"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__morning
+msgid "Morning"
+msgstr "上午"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__full_time_required_hours
+msgid ""
+"Number of hours to work on the company schedule to be considered as fulltime."
+msgstr "視為全職工作所需要的公司時間表工作時數。"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+msgid "Partial working schedules"
+msgstr "不完整工作時間表"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+msgid "Period"
+msgstr "期間"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Provided datetimes needs to be timezoned"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_resource__user_id
+msgid "Related user name for the resource to manage its access."
+msgstr "用於管理資源存取權限的使用者名"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Required Full Time"
+msgstr ""
+
+#. module: base
+#: model:ir.model,name:base.model_resource_mixin
+msgid "Resource Mixin"
+msgstr "資源混入"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.action_resource_schedule_exception_tree
+#: model:ir.actions.act_window,name:base.resource_schedule_exception_action_from_calendar
+#: model:ir.ui.menu,name:base.menu_view_resource_schedule_exception_search
+msgid "Resource Time Off"
+msgstr "資源關閉時間"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_schedule_exception
+msgid "Resource Time Off Detail"
+msgstr "資源休假詳細資訊"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_calendar
+msgid "Resource Working Time"
+msgstr "資源工作時間"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__calendar_id
+msgid "Resource's Calendar"
+msgstr "資源的日曆"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.action_resource_resource_tree
+#: model:ir.actions.act_window,name:base.resource_resource_action_from_calendar
+#: model:ir.model,name:base.model_resource_resource
+#: model:ir.model.fields,field_description:base.field_res_users__resource_ids
+#: model:ir.ui.menu,name:base.menu_resource_resource
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_tree
+msgid "Resources"
+msgstr "資源"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.resource_calendar_resources_leaves
+msgid "Resources Time Off"
+msgstr "資源關閉時間"
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.action_resource_resource_tree
+#: model_terms:ir.actions.act_window,help:base.resource_resource_action_from_calendar
+msgid ""
+"Resources allow you to create and manage resources that should be involved "
+"in a specific project phase. You can also set their efficiency level and "
+"workload based on their weekly working hours."
+msgstr ""
+"資源允許您建立和管理資源參與的特定的計劃階段. 您還能在其每週工作時間基礎上設"
+"定其效率和工作量."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_tree
+msgid "Schedule Total Time"
+msgstr "時間表總時間"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__schedule_type
+msgid "Schedule Type"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Search Resource"
+msgstr "搜尋資源"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+msgid "Search Working Period Time Off"
+msgstr "搜索工作週期休假時間"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+msgid "Search Working Time"
+msgstr "搜尋工作時間"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "Second week"
+msgstr "第二週"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__display_type__line_section
+msgid "Section"
+msgstr "章節"
+
+#. module: base
+#: code:addons/base/models/res_company.py:0
+msgid "Standard 40 hours/week"
+msgstr "標準40小時/週"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__date_from
+msgid "Start Date"
+msgstr "開始日期"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__hour_from
+msgid ""
+"Start and End time of working.\n"
+"A specific value of 24:00 is interpreted as 23:59:59.999999."
+msgstr ""
+"工作的開始和結束時間.\n"
+"        24:00的特定值被解釋為23:59:59.999999."
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+msgid "Starting Date of Time Off"
+msgstr "休假開始日期"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch"
+msgstr "轉換"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to 1-week calendar"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to 2-weeks calendar"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to Duration based attendance"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to fixed attendance"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__display_type
+msgid "Technical field for UX purpose."
+msgstr "UX用途的技術欄位."
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid ""
+"The current week (from %(first_day)s to %(last_day)s) corresponds to %"
+"(number)s week."
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__duration_based
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__duration_based
+msgid ""
+"The hours will be centered around 12:00 to cover the duration for the day"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_schedule_exception.py:0
+msgid "The start date of the time off must be earlier than the end date."
+msgstr "休假的開始日期必須早於結束日期."
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__tz
+#: model:ir.model.fields,help:base.field_resource_mixin__tz
+msgid ""
+"This field is used in order to define in which timezone the resources will "
+"work."
+msgstr "此欄位用於設定資源可用的時區。"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_resource__time_efficiency
+msgid ""
+"This field is used to calculate the expected duration of a work order at "
+"this work center. For example, if a work order takes one hour and the "
+"efficiency factor is 100%, then the expected duration will be one hour. If "
+"the efficiency factor is 200%, however the expected duration will be 30 "
+"minutes."
+msgstr ""
+"此欄位用於計算此工作中心的工單的預期工期. 例如，如果工單耗時一小時，而效率係"
+"數為 100%，則預期工期將為一小時. 如果效率係數為 200%，則預計持續時間為 30 分"
+"鐘."
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Thursday Afternoon"
+msgstr "週四下午"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Thursday Lunch"
+msgstr "週四午餐"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Thursday Morning"
+msgstr "週四上午"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_form
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_tree
+msgid "Time Off Detail"
+msgstr "休假詳情"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__time_type
+msgid "Time Type"
+msgstr "時間類型"
+
+#. module: base
+#: model:ir.model.constraint,message:base.constraint_resource_resource_check_time_efficiency
+msgid "Time efficiency must be strictly positive"
+msgstr "時間效率必須為正數"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Total"
+msgstr "總計"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Tuesday Afternoon"
+msgstr "週二下午"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Tuesday Lunch"
+msgstr "週二午餐"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Tuesday Morning"
+msgstr "週二上午"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Wednesday Afternoon"
+msgstr "週三下午"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Wednesday Lunch"
+msgstr "週三午餐"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Wednesday Morning"
+msgstr "週三上午"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Week 1 Working Hours"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Week 2 Working Hours"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__week_type
+msgid "Week Number"
+msgstr "週數"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__flexible_hours
+msgid ""
+"When enabled, it will allow employees to work flexibly, without relying on "
+"the company's working schedule (working hours)."
+msgstr "啟用後，將允許員工靈活工作，不會依賴公司的工作時間表（工作時間）。"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_schedule_exception__time_type
+msgid ""
+"Whether this should be computed as a time off or as work time (eg: formation)"
+msgstr "應該計算為休息時間還是工作時間"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_calendar_attendance
+msgid "Work Detail"
+msgstr "工作詳情"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Work Resources"
+msgstr "工作資源"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__work_resources_count
+msgid "Work Resources count"
+msgstr "工作資源數目"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__work_time_rate
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Work Time Rate"
+msgstr "工時對全職比率"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__hour_from
+msgid "Work from"
+msgstr "工作開始"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__work_time_rate
+msgid ""
+"Work time rate versus full time working schedule, should be between 0 and "
+"100 %."
+msgstr "工作時間工資率與全職工作時間表的比率，應介乎 0% 至 100％ 之間。"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__hour_to
+msgid "Work to"
+msgstr "工作至"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_res_company__resource_calendar_ids
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__calendar_id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__resource_calendar_id
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Working Hours"
+msgstr "工作時間"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Working Hours of %s"
+msgstr "%s 的工作時間"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.action_resource_calendar_form
+#: model:ir.ui.menu,name:base.menu_resource_calendar
+msgid "Working Schedules"
+msgstr "工作時間表"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__attendance_ids
+#: model:ir.model.fields,field_description:base.field_resource_resource__calendar_id
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_attendance_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_attendance_tree
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_tree
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Working Time"
+msgstr "工作時間"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__attendance_ids_1st_week
+msgid "Working Time 1st Week"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__attendance_ids_2nd_week
+msgid "Working Time 2nd Week"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "You can't delete section between weeks."
+msgstr "不能刪除週與週之間的分區."
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "even"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "odd"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "other week"
+msgstr "其他星期"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "this week"
+msgstr "本星期"
 
 #~ msgid "Device Log"
 #~ msgstr "裝置記錄"

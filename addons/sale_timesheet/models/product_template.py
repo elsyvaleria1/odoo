@@ -39,8 +39,8 @@ class ProductTemplate(models.Model):
 
     @api.depends("uom_id", "company_id")
     def _compute_service_upsell_threshold_ratio(self) -> None:
-        product_uom_hour = self.env.ref("uom.product_uom_hour")
-        uom_unit = self.env.ref("uom.product_uom_unit")
+        product_uom_hour = self.env.ref("base.product_uom_hour")
+        uom_unit = self.env.ref("base.product_uom_unit")
         company_uom = self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
         for record in self:
             if (
@@ -79,7 +79,7 @@ class ProductTemplate(models.Model):
                     and record.service_policy == record._origin.service_policy
                 )
             ):
-                record.uom_id = self.env.ref("uom.product_uom_hour")
+                record.uom_id = self.env.ref("base.product_uom_hour")
             elif record._origin.uom_id:
                 record.uom_id = record._origin.uom_id
             else:

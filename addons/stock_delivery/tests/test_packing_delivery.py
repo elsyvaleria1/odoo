@@ -11,7 +11,7 @@ class TestPacking(TestPackingCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_kg = cls.env.ref("uom.product_uom_kgm")
+        cls.uom_kg = cls.env.ref("base.product_uom_kgm")
         cls.product_aw = cls.env["product.product"].create(
             {
                 "name": "Product AW",

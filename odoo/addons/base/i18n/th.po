@@ -19278,6 +19278,8 @@ msgstr ""
 #: code:addons/base/models/res_partner.py:0
 #: code:addons/base/models/res_users.py:0
 #: code:addons/base/tests/test_catalog_mixin.py:0
+#: code:addons/base/models/resource_calendar.py:0
+#: code:addons/base/models/resource_resource.py:0
 msgid "%s (copy)"
 msgstr "%s (สำเนา)"
 
@@ -24814,6 +24816,9 @@ msgstr "เปิดใช้งาน"
 #: model_terms:ir.ui.view,arch_db:base.view_currency_search
 #: model_terms:ir.ui.view,arch_db:base.view_ir_access_exception_search
 #: model_terms:ir.ui.view,arch_db:base.view_view_search
+#: model:ir.model.fields,field_description:base.field_uom_uom__active
+#: model:ir.model.fields,field_description:base.field_resource_calendar__active
+#: model:ir.model.fields,field_description:base.field_resource_resource__active
 msgid "Active"
 msgstr "เปิดใช้งาน"
 
@@ -27521,6 +27526,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.view_res_partner_filter
 #: model_terms:ir.ui.view,arch_db:base.view_sequence_search
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
+#: model_terms:ir.ui.view,arch_db:base.uom_uom_view_search
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Archived"
 msgstr "เก็บถาวรแล้ว"
 
@@ -28816,6 +28826,7 @@ msgstr "อวตาร 1024"
 #: model:ir.model.fields,field_description:base.field_res_company__avatar_128
 #: model:ir.model.fields,field_description:base.field_res_partner__avatar_128
 #: model:ir.model.fields,field_description:base.field_res_users__avatar_128
+#: model:ir.model.fields,field_description:base.field_resource_resource__avatar_128
 msgid "Avatar 128"
 msgstr "อวตาร 128"
 
@@ -31752,6 +31763,12 @@ msgstr "บริษัท"
 #: model_terms:ir.ui.view,arch_db:base.view_res_partner_filter
 #: model_terms:ir.ui.view,arch_db:base.view_users_search
 #: model_terms:ir.ui.view,arch_db:base.view_users_simple_form
+#: model:ir.model.fields,field_description:base.field_resource_calendar__company_id
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__company_id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__company_id
+#: model:ir.model.fields,field_description:base.field_resource_resource__company_id
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Company"
 msgstr "บริษัท"
 
@@ -32041,6 +32058,7 @@ msgstr "การแจ้งหนี้"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_base_module_upgrade
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
 msgid "Confirm"
 msgstr "ยืนยัน"
 
@@ -32859,6 +32877,11 @@ msgstr "มุมมองที่สร้างไว้"
 #: model:ir.model.fields,field_description:base.field_tag_tag__create_uid
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__create_uid
 #: model_terms:ir.ui.view,arch_db:base.view_attachment_search
+#: model:ir.model.fields,field_description:base.field_uom_uom__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__create_uid
+#: model:ir.model.fields,field_description:base.field_resource_resource__create_uid
 msgid "Created by"
 msgstr "สร้างโดย"
 
@@ -32963,6 +32986,11 @@ msgstr "สร้างโดย"
 #: model:ir.model.fields,field_description:base.field_tag_tag__create_date
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__create_date
 #: model_terms:ir.ui.view,arch_db:base.ir_job_view_search
+#: model:ir.model.fields,field_description:base.field_uom_uom__create_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar__create_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__create_date
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__create_date
+#: model:ir.model.fields,field_description:base.field_resource_resource__create_date
 msgid "Created on"
 msgstr "สร้างเมื่อ"
 
@@ -33504,6 +33532,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_res_currency_rate__name
 #: model_terms:ir.ui.view,arch_db:base.ir_access_log_view_list
 #: model_terms:ir.ui.view,arch_db:base.view_currency_rate_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
 msgid "Date"
 msgstr "วันที่"
 
@@ -33557,6 +33586,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__day
+#: model:uom.uom,name:base.product_uom_day
 msgid "Days"
 msgstr "วัน"
 
@@ -34355,6 +34385,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__display_name
 #: model:ir.model.fields,field_description:base.field_tag_tag__display_name
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__display_name
+#: model:ir.model.fields,field_description:base.field_uom_uom__display_name
+#: model:ir.model.fields,field_description:base.field_resource_calendar__display_name
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__display_name
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__display_name
+#: model:ir.model.fields,field_description:base.field_resource_mixin__display_name
+#: model:ir.model.fields,field_description:base.field_resource_resource__display_name
 msgid "Display Name"
 msgstr "แสดงชื่อ"
 
@@ -35243,6 +35279,7 @@ msgstr "การออกใบแจ้งหนี้ทางอิเล็
 #: model_terms:ir.ui.view,arch_db:base.view_partner_form
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
 #: model_terms:ir.ui.view,arch_db:base.view_users_form_simple_modif
+#: model:ir.model.fields,field_description:base.field_resource_resource__email
 msgid "Email"
 msgstr "อีเมล"
 
@@ -36935,6 +36972,7 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_users__share
+#: model:ir.model.fields,help:base.field_resource_resource__share
 msgid ""
 "External user with limited access, created only for the purpose of sharing "
 "data."
@@ -37587,6 +37625,7 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__1
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__1
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__week_type__0
 msgid "First"
 msgstr ""
 
@@ -37975,6 +38014,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__5
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__4
 msgid "Friday"
 msgstr "วันศุกร์"
 
@@ -39391,6 +39431,8 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__hour
+#: model:uom.uom,name:base.product_uom_hour
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_attendance_form
 msgid "Hours"
 msgstr "ชั่วโมง"
 
@@ -39737,6 +39779,12 @@ msgstr "บัญชีธนาคาร IBAN"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__id
 #: model:ir.model.fields,field_description:base.field_tag_tag__id
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__id
+#: model:ir.model.fields,field_description:base.field_uom_uom__id
+#: model:ir.model.fields,field_description:base.field_resource_calendar__id
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__id
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__id
+#: model:ir.model.fields,field_description:base.field_resource_resource__id
 msgid "ID"
 msgstr "ไอดี"
 
@@ -42258,6 +42306,11 @@ msgstr "อัปเดตครั้งล่าสุด"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__write_uid
 #: model:ir.model.fields,field_description:base.field_tag_tag__write_uid
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__write_uid
+#: model:ir.model.fields,field_description:base.field_uom_uom__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__write_uid
+#: model:ir.model.fields,field_description:base.field_resource_resource__write_uid
 msgid "Last Updated by"
 msgstr "อัปเดตครั้งล่าสุดโดย"
 
@@ -42361,6 +42414,11 @@ msgstr "อัปเดตครั้งล่าสุดโดย"
 #: model:ir.model.fields,field_description:base.field_wizard_ir_actions_server_restore_revision__write_date
 #: model:ir.model.fields,field_description:base.field_tag_tag__write_date
 #: model:ir.model.fields,field_description:base.field_wizard_ir_model_create_menu__write_date
+#: model:ir.model.fields,field_description:base.field_uom_uom__write_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar__write_date
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__write_date
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__write_date
+#: model:ir.model.fields,field_description:base.field_resource_resource__write_date
 msgid "Last Updated on"
 msgstr "อัปเดตครั้งล่าสุดเมื่อ"
 
@@ -44875,6 +44933,7 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__minute
+#: model:uom.uom,name:base.product_uom_minute
 msgid "Minutes"
 msgstr "นาที"
 
@@ -45302,6 +45361,7 @@ msgstr "ประเทศโมนาโก - ระบบบัญชี"
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__1
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__0
 msgid "Monday"
 msgstr "วันจันทร์"
 
@@ -45582,6 +45642,9 @@ msgstr "Nakfa"
 #: model_terms:ir.ui.view,arch_db:base.view_partner_tree
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_tree
+#: model:ir.model.fields,field_description:base.field_resource_calendar__name
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__name
+#: model:ir.model.fields,field_description:base.field_resource_resource__name
 msgid "Name"
 msgstr "ชื่อ"
 
@@ -48852,6 +48915,7 @@ msgstr "มุมมองดั้งเดิม"
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__gender__other
 #: model:ir.model.fields.selection,name:base.selection__res_partner__type__other
+#: model:ir.model.fields.selection,name:base.selection__resource_schedule_exception__time_type__other
 msgid "Other"
 msgstr "อื่น ๆ"
 
@@ -49574,6 +49638,7 @@ msgstr "เมนูแม่"
 #: model:ir.model.fields,field_description:base.field_res_company__parent_path
 #: model:ir.model.fields,field_description:base.field_res_partner_tag__parent_path
 #: model:ir.model.fields,field_description:base.field_tag_tag__parent_path
+#: model:ir.model.fields,field_description:base.field_uom_uom__parent_path
 msgid "Parent Path"
 msgstr "เส้นทางหลัก"
 
@@ -50334,6 +50399,7 @@ msgstr "รูปแบบเช็คของประเทศฟิลิป
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
 #: model_terms:ir.ui.view,arch_db:base.view_users_form_simple_modif
 #: model_terms:ir.ui.view,arch_db:base.view_users_simple_form
+#: model:ir.model.fields,field_description:base.field_resource_resource__phone
 msgid "Phone"
 msgstr "โทรศัพท์"
 
@@ -52224,6 +52290,9 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_ir_access_exception__reason
 #: model:ir.model.fields,field_description:base.field_ir_access_log__reason
 #: model:ir.model.fields,field_description:base.field_res_users_grant__reason
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__name
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_form
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_tree
 msgid "Reason"
 msgstr ""
 
@@ -52880,6 +52949,12 @@ msgstr "Resolve other errors first"
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_resource
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__resource_id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__resource_id
+#: model:ir.ui.menu,name:base.menu_resource_config
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
 msgid "Resource"
 msgstr "แหล่งข้อมูล"
 
@@ -53790,6 +53865,7 @@ msgstr "สตางค์"
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__6
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__5
 msgid "Saturday"
 msgstr "วันเสาร์"
 
@@ -54062,6 +54138,7 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__2
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__2
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__week_type__1
 msgid "Second"
 msgstr ""
 
@@ -54467,6 +54544,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
 #: model_terms:ir.ui.view,arch_db:base.view_sequence_search
 #: model_terms:ir.ui.view,arch_db:base.view_view_tree
+#: model:ir.model.fields,field_description:base.field_uom_uom__sequence
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__sequence
 msgid "Sequence"
 msgstr "ลำดับ"
 
@@ -54713,6 +54792,7 @@ msgstr "แบ่งปันพาร์ทเนอร์"
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users__share
+#: model:ir.model.fields,field_description:base.field_resource_resource__share
 msgid "Share User"
 msgstr "แบ่งปันผู้ใช้"
 
@@ -56103,6 +56183,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__7
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__6
 msgid "Sunday"
 msgstr "วันอาทิตย์"
 
@@ -59057,6 +59138,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__4
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__3
 msgid "Thursday"
 msgstr "วันพฤหัสบดี"
 
@@ -59083,6 +59165,8 @@ msgstr "รูปแบบเวลา"
 #. module: base
 #: model:ir.module.category,name:base.module_category_human_resources_time_off
 #: model:ir.module.module,shortdesc:base.module_hr_holidays
+#: model:ir.model.fields,field_description:base.field_resource_calendar__leave_ids
+#: model:ir.model.fields.selection,name:base.selection__resource_schedule_exception__time_type__leave
 msgid "Time Off"
 msgstr "การลา"
 
@@ -59171,6 +59255,9 @@ msgstr "รายงานระบบบันทึกเวลา/การ�
 #: model:ir.model.fields,field_description:base.field_res_company__tz
 #: model:ir.model.fields,field_description:base.field_res_partner__tz
 #: model:ir.model.fields,field_description:base.field_res_users__tz
+#: model:ir.model.fields,field_description:base.field_resource_calendar__tz
+#: model:ir.model.fields,field_description:base.field_resource_mixin__tz
+#: model:ir.model.fields,field_description:base.field_resource_resource__tz
 msgid "Timezone"
 msgstr "โซนเวลา"
 
@@ -59179,6 +59266,7 @@ msgstr "โซนเวลา"
 #: model:ir.model.fields,field_description:base.field_res_company__tz_offset
 #: model:ir.model.fields,field_description:base.field_res_partner__tz_offset
 #: model:ir.model.fields,field_description:base.field_res_users__tz_offset
+#: model:ir.model.fields,field_description:base.field_resource_calendar__tz_offset
 msgid "Timezone offset"
 msgstr "โซนเวลาชดเชย"
 
@@ -59519,6 +59607,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__2
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__1
 msgid "Tuesday"
 msgstr "วันอังคาร"
 
@@ -59625,6 +59714,8 @@ msgstr "Tyiyn"
 #: model_terms:ir.ui.view,arch_db:base.ir_logging_search_view
 #: model_terms:ir.ui.view,arch_db:base.view_attachment_search
 #: model_terms:ir.ui.view,arch_db:base.view_view_search
+#: model:ir.model.fields,field_description:base.field_resource_resource__resource_type
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Type"
 msgstr "ประเภท"
 
@@ -60692,6 +60783,8 @@ msgstr "ใช้เมื่อผู้ใช้เลือกเพียง
 #: model_terms:ir.ui.view,arch_db:base.auth_user_client_view_search
 #: model_terms:ir.ui.view,arch_db:base.res_users_grant_view_search
 #: model_terms:ir.ui.view,arch_db:base.view_users_search
+#: model:ir.model.fields,field_description:base.field_resource_resource__user_id
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "User"
 msgstr "ผู้ใช้"
 
@@ -61214,6 +61307,8 @@ msgstr "สามารถมองเห็น"
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_currency_form
 #: model_terms:ir.ui.view,arch_db:base.view_partner_form
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
 msgid "Visible to all"
 msgstr "มองเห็นได้ทุกคน"
 
@@ -61306,6 +61401,7 @@ msgstr "คำเตือน"
 #. odoo-python
 #: code:addons/base/models/decimal_precision.py:0
 #: code:addons/base/models/res_currency.py:0
+#: code:addons/base/models/uom_uom.py:0
 msgid "Warning for %s"
 msgstr "คำเตือนสำหรับ %s"
 
@@ -61624,6 +61720,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__3
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__dayofweek__2
 msgid "Wednesday"
 msgstr "วันพุธ"
 
@@ -63350,6 +63447,988 @@ msgstr ""
 #: code:addons/base/models/mixin_lifecycle.py:0
 msgid "• Cancelled: %s"
 msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__factor
+msgid "Absolute Quantity"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.product_uom_form_action
+msgid "Add a new unit of measure"
+msgstr "เพิ่มหน่วยวัดใหม่"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__relative_factor
+msgid "Contains"
+msgstr "ประกอบด้วย"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_dozen
+msgid "Dozens"
+msgstr "โหล"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_uom_uom__relative_factor
+msgid ""
+"How much bigger or smaller this unit is compared to the reference UoM for "
+"this unit"
+msgstr ""
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_kwh
+msgid "KWH"
+msgstr ""
+
+#. module: base
+#: model:res.groups,name:base.group_uom
+msgid "Manage Multiple Units of Measure"
+msgstr "จัดการหน่วยวัดหลายหน่วย"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_pack_6
+msgid "Pack of 6"
+msgstr "แพ็ค 6 ชิ้น"
+
+#. module: base
+#: model:ir.model,name:base.model_uom_uom
+msgid "Product Unit of Measure"
+msgstr "หน่วยวัดสินค้า"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.product_uom_form_view
+msgid "Quantity"
+msgstr "ปริมาณ"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__relative_uom_id
+#: model_terms:ir.ui.view,arch_db:base.product_uom_form_view
+msgid "Reference Unit"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/uom_uom.py:0
+msgid "Reference unit of measure is missing."
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__related_uom_ids
+msgid "Related UoMs"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__rounding
+msgid "Rounding Precision"
+msgstr "ความแม่นยำในการปัดเศษ"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.uom_uom_view_search
+msgid "Search UOM"
+msgstr "ค้นหา UOM"
+
+#. module: base
+#: code:addons/base/models/uom_uom.py:0
+msgid ""
+"Some critical fields have been modified on %s.\n"
+"Note that existing data WON'T be updated by this change.\n"
+"\n"
+"As units of measure impact the whole system, this may cause critical "
+"issues.\n"
+"Therefore, changing core units of measure in a running database is not "
+"recommended."
+msgstr ""
+"มีการแก้ไขฟิลด์สำคัญบางรายการใน %s\n"
+"โปรดทราบว่าข้อมูลเดิม จะไม่ถูกอัปเดต ตามการเปลี่ยนแปลงนี้\n"
+"\n"
+"เนื่องจากหน่วยวัดมีผลต่อทั้งระบบ การเปลี่ยนแปลงหน่วยวัดหลักในฐานข้อมูลที่กำลังใช้งาน "
+"อาจทำให้เกิดปัญหาสำคัญได้\n"
+"ดังนั้น ไม่แนะนำ ให้เปลี่ยนหน่วยวัดหลักในระบบที่กำลังใช้งานอยู่"
+
+#. module: base
+#: model:ir.model.constraint,message:base.constraint_uom_uom_factor_gt_zero
+msgid "The conversion ratio for a unit of measure cannot be 0!"
+msgstr "อัตราการแปลงสำหรับหน่วยวัดไม่สามารถเป็น 0!"
+
+#. module: base
+#: code:addons/base/models/uom_uom.py:0
+msgid ""
+"The following units of measure are used by the system and cannot be deleted: "
+"%s\n"
+"You can archive them instead."
+msgstr ""
+"ระบบใช้หน่วยวัดต่อไปนี้และไม่สามารถลบได้: %s\n"
+"คุณสามารถเก็บถาวรแทนได้"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_ton
+msgid "Ton"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_uom_uom__active
+msgid ""
+"Uncheck the active field to disable a unit of measure without deleting it."
+msgstr "ยกเลิกการเลือกช่องที่ใช้งานอยู่เพื่อปิดใช้งานหน่วยวัดโดยไม่ต้องลบ"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_uom_uom__name
+msgid "Unit Name"
+msgstr "ชื่อหน่วย"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_unit
+msgid "Units"
+msgstr "หน่วย"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.product_uom_form_action
+#: model_terms:ir.ui.view,arch_db:base.product_uom_tree_view
+msgid "Units & Packagings"
+msgstr "หน่วยและบรรจุภัณฑ์"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.product_uom_form_view
+msgid "Units of Measure"
+msgstr "หน่วยวัด"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cm
+msgid "cm"
+msgstr "ซม."
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_floz
+msgid "fl oz (US)"
+msgstr "fl oz (US)"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_foot
+msgid "ft"
+msgstr "ฟุต"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_square_foot
+msgid "ft²"
+msgstr "ft²"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cubic_foot
+msgid "ft³"
+msgstr "ft³"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_gal
+msgid "gal (US)"
+msgstr "gal (US)"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_inch
+msgid "in"
+msgstr "นิ้ว"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cubic_inch
+msgid "in³"
+msgstr "in³"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_kgm
+msgid "kg"
+msgstr "กก."
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_km
+msgid "km"
+msgstr "กม."
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_lb
+msgid "lb"
+msgstr "ปอนด์"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_mile
+msgid "mi"
+msgstr "ไมล์"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_milliliter
+msgid "ml"
+msgstr ""
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_millimeter
+msgid "mm"
+msgstr "มม."
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_square_meter
+msgid "m²"
+msgstr "m²"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_cubic_meter
+msgid "m³"
+msgstr "m³"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_oz
+msgid "oz"
+msgstr "ออนซ์"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_qt
+msgid "qt (US)"
+msgstr "qt (US)"
+
+#. module: base
+#: model:uom.uom,name:base.product_uom_yard
+msgid "yd"
+msgstr "หลา"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_tree
+msgid "# Work Resources"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid ""
+"%(att)s is a break attendance, You should not have such record on duration "
+"based calendar"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "2 Week's Calendar"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"ms-1\">%</span>"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"ms-2\">hours/day</span>"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"ms-2\">hours/week</span>"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span class=\"o_stat_text\">Time Off</span>"
+msgstr "<span class=\"o_stat_text\">การลา</span>"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "<span>hours/week</span>"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__afternoon
+msgid "Afternoon"
+msgstr "ช่วงบ่าย"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"Are you sure you want to switch to a 1-week calendar? All work entries will "
+"be lost."
+msgstr "คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนไปใช้ปฏิทินแบบ 1 สัปดาห์ รายการงานทั้งหมดจะหายไป"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"Are you sure you want to switch to a 2-week calendar? All work entries will "
+"be lost."
+msgstr "คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนไปใช้ปฏิทินแบบ 2 สัปดาห์ รายการงานทั้งหมดจะหายไป"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__duration_based
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__duration_based
+msgid "Attendance based on duration"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Attendances can't overlap."
+msgstr "การเข้าร่วมไม่สามารถทับซ้อนกันได้"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__hours_per_day
+msgid "Average Hour per Day"
+msgstr "ชั่วโมงเฉลี่ยต่อวัน"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__hours_per_day
+msgid ""
+"Average hours per day a resource is supposed to work with this calendar."
+msgstr "ชั่วโมงเฉลี่ยต่อวันที่ทรัพยากรควรจะทำงานกับปฏิทินนี้"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Avg"
+msgstr "เฉลี่ย"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__lunch
+msgid "Break"
+msgstr "เบรก"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__two_weeks_calendar
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__two_weeks_calendar
+msgid "Calendar in 2 weeks mode"
+msgstr "ปฏิทินในโหมด 2 สัปดาห์"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__schedule_type
+msgid ""
+"Choose which level of definition you want to define on your Schedule\n"
+"- Flexible : Define an amount of hours to work on the week.\n"
+"- Fully Fixed : define the days, periods and the start & end time for each "
+"period of the day"
+msgstr ""
+
+#. module: base
+#: model:ir.actions.act_window,name:base.resource_calendar_closing_days
+msgid "Closing Days"
+msgstr "วันปิดทำการ"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__day_period
+msgid "Day Period"
+msgstr "ช่วงวัน"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__dayofweek
+msgid "Day of Week"
+msgstr "วันของสัปดาห์"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_res_company__resource_calendar_id
+#: model:ir.model.fields,field_description:base.field_res_users__resource_calendar_id
+msgid "Default Working Hours"
+msgstr "ชั่วโมงการทำงานเริ่มต้น"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Define Amount of Hours per day"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_res_users__resource_calendar_id
+#: model:ir.model.fields,help:base.field_resource_mixin__resource_calendar_id
+#: model:ir.model.fields,help:base.field_resource_resource__calendar_id
+msgid ""
+"Define the working schedule of the resource. If not set, the resource will "
+"have fully flexible working hours."
+msgstr ""
+"กำหนดตารางการทำงานของทรัพยากร หากไม่ได้กำหนดไว้ "
+"ทรัพยากรจะมีชั่วโมงการทำงานที่ยืดหยุ่นได้เต็มที่"
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.action_resource_calendar_form
+msgid ""
+"Define working hours and time table that could be scheduled to your project "
+"members"
+msgstr "กำหนดชั่วโมงทำงานและตารางเวลาที่สามารถกำหนดให้กับสมาชิกโปรเจ็กต์ของคุณได้"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__display_type
+msgid "Display Type"
+msgstr "ประเภทการแสดง"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__duration_days
+msgid "Duration (days)"
+msgstr "ระยะเวลา (วัน)"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__duration_hours
+msgid "Duration (hours)"
+msgstr "ระยะเวลา (ชั่วโมง)"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_resource__time_efficiency
+msgid "Efficiency Factor"
+msgstr "ปัจจัยด้านประสิทธิภาพ"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__date_to
+msgid "End Date"
+msgstr "วันที่สิ้นสุด"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__two_weeks_explanation
+msgid "Explanation"
+msgstr "คำอธิบาย"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "First week"
+msgstr "สัปดาห์แรก"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar__schedule_type__flexible
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+msgid "Flexible"
+msgstr "ยืดหยุ่นได้"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__flexible_hours
+msgid "Flexible Hours"
+msgstr "ชั่วโมงที่ยืดหยุ่น"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Friday Afternoon"
+msgstr "ช่วงบ่ายวันศุกร์"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Friday Lunch"
+msgstr "มื้อเที่ยงวันศุกร์"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Friday Morning"
+msgstr "ช่วงเช้าวันศุกร์"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__full_day
+msgid "Full Day"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__full_time_required_hours
+msgid "Full Time Equivalent"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar__schedule_type__fully_fixed
+msgid "Fully Fixed"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_form
+msgid "Fully Flexible"
+msgstr "มีความยืดหยุ่นเต็มที่"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__sequence
+msgid "Gives the sequence of this line when displaying the resource calendar."
+msgstr "กำหนดลำดับของบรรทัดนี้เมื่อแสดงปฏิทินทรัพยากร"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__global_leave_ids
+msgid "Global Time Off"
+msgstr "การลาหยุดสากล"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__hours_per_week
+msgid "Hours per Week"
+msgstr "ชั่วโมงต่อสัปดาห์"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_resource__resource_type__user
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Human"
+msgstr "มนุษย์"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"If checked, the working schedule will be based on an amount of hours "
+"(defined for each day) and not a start & end time anymore.Do you confirm ?"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_schedule_exception__resource_id
+msgid ""
+"If empty, this is a generic time off for the company. If a resource is set, "
+"the time off is only for this resource"
+msgstr ""
+"หากว่างเปล่า แสดงว่าเป็นวันหยุดทั่วไปของบริษัท หากมีการตั้งค่าทรัพยากร "
+"การลาหยุดจะมีไว้สำหรับทรัพยากรนี้เท่านั้น"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_resource__active
+msgid ""
+"If the active field is set to False, it will allow you to hide the resource "
+"record without removing it."
+msgstr ""
+"หากฟิลด์ที่ใช้งานอยู่ถูกตั้งค่าเป็น เท็จ ฟิลด์นี้จะอนุญาตให้คุณซ่อนการบันทึกทรัพยากรโดยไม่ต้องลบออก"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__active
+msgid ""
+"If the active field is set to false, it will allow you to hide the Working "
+"Time without removing it."
+msgstr ""
+"หากฟิลด์ที่ใช้งานอยู่ถูกตั้งค่าเป็น False จะช่วยให้คุณสามารถซ่อนเวลาทำงานได้โดยไม่ต้องลบออก"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid ""
+"If unchecked, the working schedule will be based on a defined start and end "
+"hours.Do you confirm ?"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid ""
+"In a calendar with 2 weeks mode, all periods need to be in the sections."
+msgstr "ในปฏิทินที่มีโหมด 2 สัปดาห์ ทุกช่วงเวลาจะต้องอยู่ในส่วนต่างๆ"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__is_fulltime
+msgid "Is Full Time"
+msgstr "เป็นเต็มเวลา"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_resource__resource_type__material
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Material"
+msgstr "วัสดุ"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Monday Afternoon"
+msgstr "ช่วงบ่ายวันจันทร์"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Monday Lunch"
+msgstr "มื้อเที่ยงวันจันทร์"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Monday Morning"
+msgstr "ช่วงเช้าวันจันทร์"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__day_period__morning
+msgid "Morning"
+msgstr "ช่วงเช้า"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__full_time_required_hours
+msgid ""
+"Number of hours to work on the company schedule to be considered as fulltime."
+msgstr "จำนวนชั่วโมงทำงานในบริษัทที่กำหนดให้ถือเป็นงานเต็มเวลา"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+msgid "Partial working schedules"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+msgid "Period"
+msgstr "ช่วงเวลา"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Provided datetimes needs to be timezoned"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_resource__user_id
+msgid "Related user name for the resource to manage its access."
+msgstr "ชื่อผู้ใช้ที่เกี่ยวข้องสำหรับทรัพยากรเพื่อจัดการการเข้าถึง"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Required Full Time"
+msgstr ""
+
+#. module: base
+#: model:ir.model,name:base.model_resource_mixin
+msgid "Resource Mixin"
+msgstr "ทรัพยากร Mixin"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.action_resource_schedule_exception_tree
+#: model:ir.actions.act_window,name:base.resource_schedule_exception_action_from_calendar
+#: model:ir.ui.menu,name:base.menu_view_resource_schedule_exception_search
+msgid "Resource Time Off"
+msgstr "ทรัพยากรการลา"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_schedule_exception
+msgid "Resource Time Off Detail"
+msgstr "รายละเอียดทรัพยากรการลา"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_calendar
+msgid "Resource Working Time"
+msgstr "เวลาทำงานของทรัพยากร"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__calendar_id
+msgid "Resource's Calendar"
+msgstr "ปฏิทินของทรัพยากร"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.action_resource_resource_tree
+#: model:ir.actions.act_window,name:base.resource_resource_action_from_calendar
+#: model:ir.model,name:base.model_resource_resource
+#: model:ir.model.fields,field_description:base.field_res_users__resource_ids
+#: model:ir.ui.menu,name:base.menu_resource_resource
+#: model_terms:ir.ui.view,arch_db:base.resource_resource_tree
+msgid "Resources"
+msgstr "แหล่งข้อมูล"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.resource_calendar_resources_leaves
+msgid "Resources Time Off"
+msgstr "ระบบการลาของทรัพยากร"
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.action_resource_resource_tree
+#: model_terms:ir.actions.act_window,help:base.resource_resource_action_from_calendar
+msgid ""
+"Resources allow you to create and manage resources that should be involved "
+"in a specific project phase. You can also set their efficiency level and "
+"workload based on their weekly working hours."
+msgstr ""
+"ทรัพยากรช่วยให้คุณสร้างและจัดการทรัพยากรที่ควรเกี่ยวข้องกับระยะโปรเจ็กต์เฉพาะได้ "
+"คุณยังสามารถกำหนดระดับประสิทธิภาพและปริมาณงานตามเวลาทำงานรายสัปดาห์ได้"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_tree
+msgid "Schedule Total Time"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__schedule_type
+msgid "Schedule Type"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Search Resource"
+msgstr "ค้นหาทรัพยากร"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+msgid "Search Working Period Time Off"
+msgstr "ค้นหาช่วงเวลาทำงานของระบบการลา"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+msgid "Search Working Time"
+msgstr "ค้นหาเวลาทำงาน"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "Second week"
+msgstr "สัปดาห์ที่สอง"
+
+#. module: base
+#: model:ir.model.fields.selection,name:base.selection__resource_calendar_attendance__display_type__line_section
+msgid "Section"
+msgstr "ส่วน"
+
+#. module: base
+#: code:addons/base/models/res_company.py:0
+msgid "Standard 40 hours/week"
+msgstr "มาตรฐาน 40 ชั่วโมง/สัปดาห์"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__date_from
+msgid "Start Date"
+msgstr "วันที่เริ่ม"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__hour_from
+msgid ""
+"Start and End time of working.\n"
+"A specific value of 24:00 is interpreted as 23:59:59.999999."
+msgstr ""
+"เวลาเริ่มต้นและสิ้นสุดของการทำงาน\n"
+"ค่าเฉพาะของ 24:00 จะถูกตีความว่าเป็น 23:59:59.999999"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
+msgid "Starting Date of Time Off"
+msgstr "วันที่เริ่มต้นของระบบการลา"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch"
+msgstr "สลับ"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to 1-week calendar"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to 2-weeks calendar"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to Duration based attendance"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Switch to fixed attendance"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__display_type
+msgid "Technical field for UX purpose."
+msgstr "ฟิลด์เทคนิคสำหรับ UX เป้าหมาย"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid ""
+"The current week (from %(first_day)s to %(last_day)s) corresponds to %"
+"(number)s week."
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__duration_based
+#: model:ir.model.fields,help:base.field_resource_calendar_attendance__duration_based
+msgid ""
+"The hours will be centered around 12:00 to cover the duration for the day"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_schedule_exception.py:0
+msgid "The start date of the time off must be earlier than the end date."
+msgstr "วันที่เริ่มต้นของระบบการลาจะต้องอยู่ก่อนวันที่สิ้นสุด"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__tz
+#: model:ir.model.fields,help:base.field_resource_mixin__tz
+msgid ""
+"This field is used in order to define in which timezone the resources will "
+"work."
+msgstr "ฟิลด์นี้ใช้เพื่อกำหนดเขตเวลาที่ทรัพยากรจะทำงาน"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_resource__time_efficiency
+msgid ""
+"This field is used to calculate the expected duration of a work order at "
+"this work center. For example, if a work order takes one hour and the "
+"efficiency factor is 100%, then the expected duration will be one hour. If "
+"the efficiency factor is 200%, however the expected duration will be 30 "
+"minutes."
+msgstr ""
+"ฟิลด์นี้ใช้เพื่อคำนวณระยะเวลาที่คาดไว้ของคำสั่งงานที่ศูนย์งานนี้ ตัวอย่างเช่น "
+"หากคำสั่งงานใช้เวลาหนึ่งชั่วโมงและปัจจัยด้านประสิทธิภาพคือ 100% "
+"ระยะเวลาที่คาดไว้จะเป็นหนึ่งชั่วโมง หากปัจจัยด้านประสิทธิภาพเท่ากับ 200% อย่างไรก็ตาม "
+"ระยะเวลาที่คาดไว้จะเท่ากับ 30 นาที"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Thursday Afternoon"
+msgstr "ช่วงบ่ายวันพฤหัสบดี"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Thursday Lunch"
+msgstr "มื้อเที่ยงวันพฤหัส"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Thursday Morning"
+msgstr "ช่วงเช้าวันพฤหัสบดี"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_form
+#: model_terms:ir.ui.view,arch_db:base.resource_schedule_exception_tree
+msgid "Time Off Detail"
+msgstr "ข้อมูลระบบการลา"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__time_type
+msgid "Time Type"
+msgstr "ประเภทเวลา"
+
+#. module: base
+#: model:ir.model.constraint,message:base.constraint_resource_resource_check_time_efficiency
+msgid "Time efficiency must be strictly positive"
+msgstr "ประสิทธิภาพด้านเวลาจะต้องเป็นบวกเท่านั้น"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Total"
+msgstr "รวม"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Tuesday Afternoon"
+msgstr "ช่วงบ่ายวันอังคาร"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Tuesday Lunch"
+msgstr "มื้อเที่ยงวันอังคาร"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Tuesday Morning"
+msgstr "ช่วงเช้าวันอังคาร"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Wednesday Afternoon"
+msgstr "ช่วงบ่ายวันพุธ"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Wednesday Lunch"
+msgstr "มื้อเที่ยงวันพุธ"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Wednesday Morning"
+msgstr "ช่วงเช้าวันพุธ"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Week 1 Working Hours"
+msgstr ""
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Week 2 Working Hours"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__week_type
+msgid "Week Number"
+msgstr "หมายเลขสัปดาห์"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__flexible_hours
+msgid ""
+"When enabled, it will allow employees to work flexibly, without relying on "
+"the company's working schedule (working hours)."
+msgstr ""
+"เมื่อเปิดใช้งานแล้ว จะช่วยให้พนักงานทำงานได้อย่างยืดหยุ่น "
+"โดยไม่ต้องพึ่งพาตารางการทำงานของบริษัท (เวลาทำงาน)"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_schedule_exception__time_type
+msgid ""
+"Whether this should be computed as a time off or as work time (eg: formation)"
+msgstr "ไม่ว่าสิ่งนี้ควรคำนวณเป็นเวลาลางานหรือเป็นเวลาทำงาน (เช่น รูปแบบ)"
+
+#. module: base
+#: model:ir.model,name:base.model_resource_calendar_attendance
+msgid "Work Detail"
+msgstr "รายละเอียดงาน"
+
+#. module: base
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Work Resources"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__work_resources_count
+msgid "Work Resources count"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__work_time_rate
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Work Time Rate"
+msgstr "อัตราเวลาทำงาน"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__hour_from
+msgid "Work from"
+msgstr "ทำงานจาก"
+
+#. module: base
+#: model:ir.model.fields,help:base.field_resource_calendar__work_time_rate
+msgid ""
+"Work time rate versus full time working schedule, should be between 0 and "
+"100 %."
+msgstr "อัตราเวลาทำงานเทียบกับตารางการทำงานเต็มเวลาควรอยู่ระหว่าง 0 ถึง 100%"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar_attendance__hour_to
+msgid "Work to"
+msgstr "ทำงานถึง"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_res_company__resource_calendar_ids
+#: model:ir.model.fields,field_description:base.field_resource_schedule_exception__calendar_id
+#: model:ir.model.fields,field_description:base.field_resource_mixin__resource_calendar_id
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+msgid "Working Hours"
+msgstr "ชั่วโมงทำงาน"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "Working Hours of %s"
+msgstr "เวลาทำการของ %s"
+
+#. module: base
+#: model:ir.actions.act_window,name:base.action_resource_calendar_form
+#: model:ir.ui.menu,name:base.menu_resource_calendar
+msgid "Working Schedules"
+msgstr "ตารางการทำงาน"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__attendance_ids
+#: model:ir.model.fields,field_description:base.field_resource_resource__calendar_id
+#: model_terms:ir.ui.view,arch_db:base.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_attendance_form
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_attendance_tree
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_search
+#: model_terms:ir.ui.view,arch_db:base.view_resource_calendar_tree
+#: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
+msgid "Working Time"
+msgstr "เวลาทำงาน"
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__attendance_ids_1st_week
+msgid "Working Time 1st Week"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_resource_calendar__attendance_ids_2nd_week
+msgid "Working Time 2nd Week"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "You can't delete section between weeks."
+msgstr "คุณไม่สามารถลบส่วนระหว่างสัปดาห์ได้"
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "even"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar.py:0
+msgid "odd"
+msgstr ""
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "other week"
+msgstr "สัปดาห์อื่น"
+
+#. module: base
+#: code:addons/base/models/resource_calendar_attendance.py:0
+msgid "this week"
+msgstr "สัปดาห์นี้"
 
 #~ msgid "Device Log"
 #~ msgstr "บันทึกอุปกรณ์"

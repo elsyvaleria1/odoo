@@ -134,7 +134,7 @@
                 <field
                     name="uom_id"
                     optional="show"
-                    groups="uom.group_uom"
+                    groups="base.group_uom"
                     readonly="1" />
                 <field name="product_tmpl_id" column_invisible="True" readonly="1" />
                 <field name="active" column_invisible="True" />
@@ -366,7 +366,7 @@
                                 force_save="1"
                                 context="{'product_id': id}"
                                 options="{'no_quick_create': True, 'edit_tags': True}"
-                                groups="uom.group_uom" />
+                                groups="base.group_uom" />
                             <field
                                 name="product_tag_ids"
                                 widget="many2many_tags"

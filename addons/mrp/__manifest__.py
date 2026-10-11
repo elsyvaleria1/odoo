@@ -12,7 +12,6 @@
     "depends": [
         "document_product",
         "stock",
-        "resource",
     ],
     "data": [
         "security/mrp_security.xml",

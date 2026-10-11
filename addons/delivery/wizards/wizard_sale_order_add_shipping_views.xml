@@ -12,8 +12,11 @@
                         <label
                             name="carried_weight_label"
                             for="total_weight"
-                            groups="uom.group_uom" />
-                        <div name="carried_weight" class="o_row" groups="uom.group_uom">
+                            groups="base.group_uom" />
+                        <div
+                            name="carried_weight"
+                            class="o_row"
+                            groups="base.group_uom">
                             <field name="total_weight" />
                             <field name="weight_uom_name" />
                         </div>

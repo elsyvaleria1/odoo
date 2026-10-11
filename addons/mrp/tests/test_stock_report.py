@@ -249,7 +249,7 @@ class TestMrpStockReports(TestReportsCommon):
                     {
                         "name": "6-pack",
                         "relative_factor": 6,
-                        "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+                        "relative_uom_id": self.env.ref("base.product_uom_unit").id,
                     }
                 )
                 .id,
@@ -261,7 +261,7 @@ class TestMrpStockReports(TestReportsCommon):
                 {
                     "name": n,
                     "is_storable": True,
-                    "uom_id": self.env.ref("uom.product_uom_meter").id,
+                    "uom_id": self.env.ref("base.product_uom_meter").id,
                 }
                 for n in ["Compo 01", "Compo 02"]
             ]
@@ -852,7 +852,7 @@ class TestMrpStockReports(TestReportsCommon):
             {
                 "product_id": self.product.id,
                 "product_tmpl_id": self.product.product_tmpl_id.id,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "product_qty": 1.0,
                 "bom_line_ids": [
                     Command.create(
@@ -880,7 +880,7 @@ class TestMrpStockReports(TestReportsCommon):
             {
                 "name": "MO without BoM",
                 "product_id": self.product.id,
-                "product_uom_id": self.env.ref("uom.product_uom_dozen").id,
+                "product_uom_id": self.env.ref("base.product_uom_dozen").id,
                 "product_qty": 1.0,
                 "bom_id": False,
                 "move_raw_ids": [

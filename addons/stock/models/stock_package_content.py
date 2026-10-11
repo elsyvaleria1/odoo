@@ -56,7 +56,7 @@ class StockPackageContent(models.Model):
                 return f"{quantity} {product.uom_id.name} {product.display_name}"
             return f"{quantity} {product.display_name}"
 
-        display_uom = self.env.user.has_group("uom.group_uom")
+        display_uom = self.env.user.has_group("base.group_uom")
         for package in self:
             package.content_description = format_list(
                 self.env,
