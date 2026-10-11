@@ -1,5 +1,5 @@
 from odoo.tests.common import TransactionCase, tagged
-from odoo.tools.module_data import drop_views, fold_module, rename_module
+from odoo.tools.module_data import drop_views, fold_module, move_xmlids, rename_module
 
 
 @tagged("post_install", "-at_install")
@@ -278,6 +278,106 @@ class TestRenameModule(TransactionCase):
             [("probe_into",)],
         )
         self.assertNotEqual(into_id, self.old_id)
+
+    def test_folding_points_stored_references_at_the_surviving_module(self):
+        self._insert_module("probe_into")
+        self.env.flush_all()
+        fold_module(self.env.cr, "probe_old", "probe_into")
+        self.assertEqual(
+            self._read("SELECT key FROM ir_ui_view WHERE id = %s", [self.view.id]),
+            [("probe_into.probe_template",)],
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT code FROM ir_act_server WHERE id = %s", [self.action.id]
+            ),
+            [
+                (
+                    (
+                        "tpl = env.ref('probe_into.probe_template')\n"
+                        "boxes = env['probe_old.box']"
+                    ),
+                )
+            ],
+        )
+        self.assertIn(
+            "probe_into.group_probe",
+            self._read(
+                "SELECT arch_db->>'en_US' FROM ir_ui_view WHERE id = %s",
+                [self.form.id],
+            )[0][0],
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT value FROM ir_config_parameter WHERE key = 'probe_into.setting'"
+            ),
+            [("kept",)],
+        )
+
+    def test_folding_hands_constraints_and_tables_to_the_surviving_module(self):
+        into_id = self._insert_module("probe_into")
+        model_id = self.env.ref("base.model_res_partner").id
+        for module_id, name in (
+            (self.old_id, "probe_only_folded"),
+            (self.old_id, "probe_both"),
+            (into_id, "probe_both"),
+        ):
+            self.env.cr.execute(
+                "INSERT INTO ir_model_constraint (name, model, module, type) "
+                "VALUES (%s, %s, %s, 'u')",
+                [name, model_id, module_id],
+            )
+            self.env.cr.execute(
+                "INSERT INTO ir_model_relation (name, model, module) "
+                "VALUES (%s, %s, %s)",
+                [name, model_id, module_id],
+            )
+        fold_module(self.env.cr, "probe_old", "probe_into")
+        for query in (
+            (
+                "SELECT name, module FROM ir_model_constraint "
+                "WHERE name LIKE 'probe%%' ORDER BY name"
+            ),
+            (
+                "SELECT name, module FROM ir_model_relation "
+                "WHERE name LIKE 'probe%%' ORDER BY name"
+            ),
+        ):
+            self.assertEqual(
+                self._read(query, []),
+                [("probe_both", into_id), ("probe_only_folded", into_id)],
+                query,
+            )
+
+    def test_moved_xmlids_are_named_under_their_new_module(self):
+        self._insert_xmlid("probe_old", "probe_record_kept")
+        self.action.code = (
+            "moved = env.ref('probe_old.probe_record')\n"
+            "kept = env.ref('probe_old.probe_record_kept')"
+        )
+        self.env.flush_all()
+        move_xmlids(self.env.cr, ["probe_record"], "probe_old", "probe_into")
+        self.assertEqual(
+            self._read(
+                "SELECT module, name FROM ir_model_data "
+                "WHERE name LIKE 'probe_record%%' ORDER BY name",
+                [],
+            ),
+            [("probe_into", "probe_record"), ("probe_old", "probe_record_kept")],
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT code FROM ir_act_server WHERE id = %s", [self.action.id]
+            ),
+            [
+                (
+                    (
+                        "moved = env.ref('probe_into.probe_record')\n"
+                        "kept = env.ref('probe_old.probe_record_kept')"
+                    ),
+                )
+            ],
+        )
 
     def test_folding_into_an_absent_module_is_a_rename(self):
         fold_module(self.env.cr, "probe_old", "probe_into")

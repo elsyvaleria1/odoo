@@ -132,11 +132,11 @@ has an empty asset projection; clearing that projection leaves its membership
 alone. Assets participating in relation history must be archived rather than
 deleted.
 
-Upgrade ``resource`` and ``resource_asset`` together. Asset version 1.12 moves
-stored parent links, including archived components, into containment records
-with unknown starts. It preserves resource IDs and removes the redundant parent
-column from the root and physical subtype tables. Existing matching resource
-history is retained; conflicting history aborts the upgrade for reconciliation.
+Before the fold into ``resource``, ``resource_asset`` 1.12 moved stored parent
+links, including archived components, into containment records with unknown
+starts. It preserved resource IDs and removed the redundant parent column from
+the root and physical subtype tables. Existing matching resource history was
+retained; conflicting history aborted the upgrade for reconciliation.
 The endpoint tree remains separate: its edges can represent several endpoints
 on one physical asset and therefore cannot be copied blindly into containment.
 ``resource.assignment`` cannot already serve as that relation: its holder must

@@ -1646,6 +1646,16 @@ def rename_module(cr: BaseCursor, old: str, new: str) -> bool:
             )
         )
     moved = _rename_module_xmlids(cr, old, new)
+    _rename_stored_module_names(cr, rename)
+    _debug.lifecycle("module_data.module_renamed", old=old, new=new, xmlids=moved)
+    _logger.info("renamed module %s to %s with %s xml id(s)", old, new, moved)
+    return True
+
+
+def _rename_stored_module_names(cr: BaseCursor, rename: _ModuleRename) -> None:
+    # what stored data spells with the module's name, outside ir_model_data:
+    # its config keys, the xml ids expressions name, view keys and asset paths
+    old, new = rename.old, rename.new
     cr.execute(
         SQL(
             """
@@ -1699,16 +1709,15 @@ def rename_module(cr: BaseCursor, old: str, new: str) -> bool:
                 _like_prefix(f"{old}."),
             )
         )
-    _debug.lifecycle("module_data.module_renamed", old=old, new=new, xmlids=moved)
-    _logger.info("renamed module %s to %s with %s xml id(s)", old, new, moved)
-    return True
 
 
 def fold_module(cr: BaseCursor, folded: str, into: str) -> None:
     """Merge module ``folded`` into ``into``: a rename when ``into`` is not
-    installed, otherwise ``folded``'s external ids, dependencies and module row
-    move onto ``into``. Records both modules declare under the same name must be
-    the same record; a name each module gives a different record raises."""
+    installed, otherwise ``folded``'s external ids, dependencies, constraints,
+    many2many tables and module row move onto ``into``, and stored data naming
+    its external ids names ``into``'s. Records both modules declare under the
+    same name must be the same record; a name each module gives a different
+    record raises."""
     cr.execute(
         SQL(
             "SELECT name, state FROM ir_module_module WHERE name = ANY(%s)",
@@ -1721,6 +1730,8 @@ def fold_module(cr: BaseCursor, folded: str, into: str) -> None:
     if states.get(into, "uninstalled") == "uninstalled":
         rename_module(cr, folded, into)
         return
+    # read before the shared names below lose their folded copy
+    rename = _ModuleRename(folded, into, *_module_names(cr, folded))
     cr.execute(
         SQL(
             """
@@ -1750,26 +1761,53 @@ def fold_module(cr: BaseCursor, folded: str, into: str) -> None:
     cr.execute(
         SQL("UPDATE ir_model_data SET module = %s WHERE module = %s", into, folded)
     )
-    cr.execute(
-        SQL(
-            """
-            DELETE FROM ir_module_module_dependency d
-                  WHERE d.name = %(folded)s
-                    AND EXISTS (SELECT 1 FROM ir_module_module_dependency o
-                                 WHERE o.module_id = d.module_id
-                                   AND o.name = %(into)s)
-            """,
-            folded=folded,
-            into=into,
+    _rename_stored_module_names(cr, rename)
+    for table in ("ir_module_module_dependency", "ir_module_module_exclusion"):
+        cr.execute(
+            SQL(
+                """
+                DELETE FROM %(table)s d
+                      WHERE d.name = %(folded)s
+                        AND EXISTS (SELECT 1 FROM %(table)s o
+                                     WHERE o.module_id = d.module_id
+                                       AND o.name = %(into)s)
+                """,
+                table=SQL.identifier(table),
+                folded=folded,
+                into=into,
+            )
         )
-    )
-    cr.execute(
-        SQL(
-            "UPDATE ir_module_module_dependency SET name = %s WHERE name = %s",
-            into,
-            folded,
+        cr.execute(
+            SQL(
+                "UPDATE %s SET name = %s WHERE name = %s",
+                SQL.identifier(table),
+                into,
+                folded,
+            )
         )
-    )
+    # the constraints and many2many tables the folded module created are the
+    # surviving module's to drop on its uninstall
+    for table in ("ir_model_constraint", "ir_model_relation"):
+        cr.execute(
+            SQL(
+                """
+                WITH modules AS (
+                    SELECT (SELECT id FROM ir_module_module WHERE name = %(folded)s) AS folded,
+                           (SELECT id FROM ir_module_module WHERE name = %(into)s) AS into
+                ), shared AS (
+                    DELETE FROM %(table)s d USING modules m, %(table)s o
+                     WHERE d.module = m.folded AND o.module = m.into AND o.name = d.name
+                )
+                UPDATE %(table)s t SET module = m.into FROM modules m
+                 WHERE t.module = m.folded
+                   AND NOT EXISTS (SELECT 1 FROM %(table)s o
+                                    WHERE o.module = m.into AND o.name = t.name)
+                """,
+                table=SQL.identifier(table),
+                folded=folded,
+                into=into,
+            )
+        )
     retire_empty_module(cr, folded)
 
 
@@ -1954,6 +1992,18 @@ def _rename_module_references(cr: BaseCursor, rename: _ModuleRename) -> int:
         SQL("position(%s in arch_db::text) > 0", old),
         lambda value, _view_model: rename.in_arch(value),
     )
+    rewritten += _rewrite_expressions(cr, needle, rename.in_text)
+    _debug.perf.count(
+        "module_data.module_references_rewritten", old=old, new=new, rows=rewritten
+    )
+    return rewritten
+
+
+def _rewrite_expressions(
+    cr: BaseCursor, needle: str, rewrite: Callable[[str], str]
+) -> int:
+    # the stored expressions holding ``needle``, rewritten value by value
+    rewritten = 0
     tables = set(
         get_tables_existing(cr, [source.table for source in _EXPRESSION_SOURCES])
     )
@@ -1979,12 +2029,12 @@ def _rename_module_references(cr: BaseCursor, rename: _ModuleRename) -> int:
             for column, value in zip(columns, values, strict=True):
                 if isinstance(value, dict):
                     renamed_texts = {
-                        lang: rename.in_text(text) if text else text
+                        lang: rewrite(text) if text else text
                         for lang, text in value.items()
                     }
                     if renamed_texts != value:
                         changes[column] = Json(renamed_texts)
-                elif value and (renamed := rename.in_text(value)) != value:
+                elif value and (renamed := rewrite(value)) != value:
                     changes[column] = renamed
             if not changes:
                 continue
@@ -2000,9 +2050,6 @@ def _rename_module_references(cr: BaseCursor, rename: _ModuleRename) -> int:
                 )
             )
             rewritten += 1
-    _debug.perf.count(
-        "module_data.module_references_rewritten", old=old, new=new, rows=rewritten
-    )
     return rewritten
 
 
@@ -2063,6 +2110,41 @@ def _rewrite_view_arches(
         )
         rewritten += 1
     return rewritten
+
+
+def move_xmlids(cr: BaseCursor, names: Iterable[str], module: str, into: str) -> None:
+    """Hand the external ids ``module.<name>`` to ``into``; the stored
+    expressions and view arches naming one of them name it under ``into``."""
+    names = sorted(set(names))
+    cr.execute(
+        SQL(
+            "UPDATE ir_model_data SET module = %s WHERE module = %s AND name = ANY(%s)",
+            into,
+            module,
+            names,
+        )
+    )
+    named = re.compile(
+        rf"(?<![\w.]){re.escape(module)}\.(?P<name>{'|'.join(map(re.escape, names))})(?!\w)"
+    )
+
+    def rewrite(value: str) -> str:
+        return named.sub(lambda match: f"{into}.{match['name']}", value)
+
+    needle = f"{module}."
+    rewritten = _rewrite_view_arches(
+        cr,
+        SQL("position(%s in arch_db::text) > 0", needle),
+        lambda value, _view_model: rewrite(value) if value else value,
+    )
+    rewritten += _rewrite_expressions(cr, needle, rewrite)
+    _debug.lifecycle(
+        "module_data.xmlids_moved",
+        module=module,
+        into=into,
+        names=names,
+        rows=rewritten,
+    )
 
 
 def drop_views(cr: BaseCursor, module: str, names: Iterable[str]) -> int:
