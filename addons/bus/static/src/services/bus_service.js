@@ -16,6 +16,7 @@ import { session } from "@web/session";
 const INTERNAL_EVENTS = new Set([
     "BUS:INITIALIZED",
     "BUS:NOTIFICATION",
+    "BUS:NOTIFICATION_SEEN",
     // Handled by bus.logs_service through its own worker handler.
     "BUS:PROVIDE_LOGS",
     // Liveness probe, answered by worker_service — not an application event.
@@ -161,32 +162,23 @@ export const busService = {
                         id,
                         ...message,
                     }));
-                    if (!notifications.length) {
-                        break;
-                    }
-                    // Highest id of the batch, not `.at(-1)`: the worker
-                    // deliberately does not assume server batches arrive in
-                    // ascending id order (see `_onWebsocketMessage`). Compared
-                    // against the current value because the worker may also
-                    // legitimately deliver LOWER ids in later batches
-                    // (late-committed notifications inside the server's
-                    // hold-back window). A loop rather than
-                    // `Math.max(...ids)`, for the same reason as the worker:
-                    // the spread throws `RangeError` on a large enough batch.
-                    let highestId = state.lastNotificationId ?? 0;
-                    for (const { id } of notifications) {
-                        if (id > highestId) {
-                            highestId = id;
-                        }
-                    }
-                    state.lastNotificationId = highestId;
-                    scheduleWatermarkWrite();
                     for (const { id, type, payload } of notifications) {
                         notificationBus.trigger(type, { id, payload });
                         busService._onMessage(env, id, type, payload);
                     }
                     break;
                 }
+                case "BUS:NOTIFICATION_SEEN":
+                    // The highest id of a batch, whatever part of it this tab
+                    // was handed. Compared against the current value: the
+                    // worker may legitimately deliver LOWER ids in later
+                    // batches (late-committed notifications inside the
+                    // server's hold-back window).
+                    if (data > (state.lastNotificationId ?? 0)) {
+                        state.lastNotificationId = data;
+                        scheduleWatermarkWrite();
+                    }
+                    break;
                 case "BUS:INITIALIZED": {
                     // Channels claimed while the worker was initializing were
                     // NOT sent incrementally (see claimChannel/releaseChannel):

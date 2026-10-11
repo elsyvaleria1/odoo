@@ -1,3 +1,6 @@
+from collections import defaultdict
+from itertools import chain
+
 from odoo import models
 from odoo.http import SessionExpiredException
 from odoo.service import security
@@ -5,7 +8,7 @@ from odoo.tools.misc import OrderedSet
 
 from ..tools.channel_capability import resolve_capability
 from ..websocket import wsrequest
-from .bus import channel_with_db, dispatch
+from .bus import channel_with_db, dispatch, json_dump
 
 MAX_SUBSCRIBED_CHANNELS = 4096
 MAX_CHANNEL_LENGTH = 512
@@ -15,12 +18,38 @@ class IrWebsocket(models.AbstractModel):
     _name = "ir.websocket"
     _description = "websocket message handling"
 
-    def _get_bus_channels(self, channels):
+    def _bus_context(self, names: list[str]):
+        """The websocket model the names resolve under: a name may say who
+        the subscriber is (a guest token) rather than what it listens to."""
+        return self
+
+    def _bus_channels_by_name(self, names: list[str]) -> dict[str, list]:
+        """The channels each client name opens. A name nobody resolves opens
+        none: a made-up name is one anyone can say."""
+        return {
+            name: [channel] if (channel := resolve_capability(self.env, name)) else []
+            for name in names
+        }
+
+    def _implicit_bus_channels(self) -> list:
+        """The channels a subscriber gets whatever it names."""
         broadcast = channel_with_db(self.env.cr.dbname, "broadcast")
-        channels = [*channels, broadcast, *self.env.user.all_group_ids]
+        channels = [broadcast, *self.env.user.all_group_ids]
         if not self.env.user._is_public():
-            channels = [*channels, self.env.user.partner_id]
+            channels.append(self.env.user.partner_id)
         return channels
+
+    def _bus_channel_routes(self, names) -> tuple[dict[str, list], list]:
+        websocket = self._bus_context(names)
+        return (
+            websocket._bus_channels_by_name(names),
+            websocket._implicit_bus_channels(),
+        )
+
+    def _get_bus_channels(self, names) -> list:
+        """Every channel a subscriber to ``names`` gets."""
+        by_name, implicit = self._bus_channel_routes(list(names))
+        return list(OrderedSet([*implicit, *chain.from_iterable(by_name.values())]))
 
     def _serve_ir_websocket(self, event_name, data):
         pass
@@ -44,17 +73,33 @@ class IrWebsocket(models.AbstractModel):
         last = max(0, last)
         newest = self.env["bus.bus"].sudo()._bus_last_id() if last else 0
         reset = last > newest
-        channels = [resolve_capability(self.env, c) or c for c in channels]
-        # What an override did not turn into a channel of its own is a name the
-        # client made up, and a made-up name is one anyone can say.
-        channels = [
-            c for c in self._get_bus_channels(channels) if not isinstance(c, str)
-        ]
+        by_name, implicit = self._bus_channel_routes(list(channels))
+        db = self.env.cr.dbname
+
+        def key(channel):
+            return json_dump(channel_with_db(db, channel))
+
+        # A channel every subscriber gets reaches every tab; one only names
+        # open reaches the tabs that claimed one of them.
+        implicit_keys = {key(channel) for channel in implicit}
+        names_by_channel = defaultdict(set)
+        for name, opened in by_name.items():
+            for channel in opened:
+                if (channel_key := key(channel)) not in implicit_keys:
+                    names_by_channel[channel_key].add(name)
         # A watermark past the newest row was drawn from another history (a
         # database restored or recreated under the same name): the client is
         # told the one it now stands at, or it would keep it forever.
         return {
-            "channels": OrderedSet(channels),
+            "channels": OrderedSet(
+                channel
+                for channel in chain(implicit, *by_name.values())
+                if not isinstance(channel, str)
+            ),
+            "routes": frozenset(
+                (channel_key, tuple(sorted(names)))
+                for channel_key, names in names_by_channel.items()
+            ),
             "last": 0 if reset else last,
             "watermark_reset": newest if reset else None,
         }
@@ -69,7 +114,11 @@ class IrWebsocket(models.AbstractModel):
             )
         data = self._prepare_subscribe_data(og_data["channels"], og_data.get("last", 0))
         dispatch.subscribe(
-            data["channels"], data["last"], self.env.registry.db_name, wsrequest.ws
+            data["channels"],
+            data["last"],
+            self.env.registry.db_name,
+            wsrequest.ws,
+            data["routes"],
         )
         # Only to a client that asks: an IoT box reads every frame as a list
         # of notifications.

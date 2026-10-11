@@ -330,7 +330,7 @@ class BusBus(models.Model):
         channels = [json_dump(channel_with_db(self.env.cr.dbname, c)) for c in channels]
         self.env.cr.execute(
             SQL(
-                "SELECT id, message, octet_length(message) FROM bus_bus"
+                "SELECT id, channel, message, octet_length(message) FROM bus_bus"
                 " WHERE %s AND channel = ANY(%s)"
                 " ORDER BY id LIMIT %s",
                 where,
@@ -350,10 +350,14 @@ class BusBus(models.Model):
         )
         notifications = []
         payload_bytes = 0
-        for notification_id, message, size in rows:
+        for notification_id, channel, message, size in rows:
             payload_bytes += size
             notifications.append(
-                {"id": notification_id, "message": json_loads(message)}
+                {
+                    "id": notification_id,
+                    "channel": channel,
+                    "message": json_loads(message),
+                }
             )
             if payload_bytes >= max_bytes:
                 truncated = truncated or len(notifications) < len(rows)
@@ -468,7 +472,7 @@ class ImDispatch(threading.Thread):
                     self.start()
             self._ever_started = True
 
-    def subscribe(self, channels, last, db, websocket) -> None:
+    def subscribe(self, channels, last, db, websocket, routes=frozenset()) -> None:
         channels = frozenset(hashable(channel_with_db(db, c)) for c in channels)
         # A connection closes on the loop thread while its subscribe runs on a
         # job thread: checked and recorded under the lock its unsubscribe
@@ -482,6 +486,7 @@ class ImDispatch(threading.Thread):
             for channel in channels:
                 self._channels_to_ws.setdefault(channel, set()).add(websocket)
             websocket._channels = channels
+            websocket._routes = routes
         _debug.lifecycle(
             "subscribed", channels=len(channels), dropped=len(dropped), last=last
         )

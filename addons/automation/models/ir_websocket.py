@@ -7,25 +7,22 @@ SUBCHANNEL = "WORKFLOW"
 class IrWebsocket(models.AbstractModel):
     _inherit = "ir.websocket"
 
-    def _get_bus_channels(self, channels):
-        channels = list(channels)
-        requested = [
-            channel
-            for channel in channels
-            if isinstance(channel, str) and channel.startswith(CHANNEL_PREFIX)
-        ]
-        if requested:
-            rule_ids = set()
-            for channel in requested:
-                channels.remove(channel)
-                suffix = channel[len(CHANNEL_PREFIX) :]
+    def _bus_channels_by_name(self, names):
+        result = super()._bus_channels_by_name(names)
+        rule_ids = {}
+        for name in names:
+            if name.startswith(CHANNEL_PREFIX):
+                suffix = name[len(CHANNEL_PREFIX) :]
                 if suffix.isascii() and suffix.isdigit():
-                    rule_ids.add(int(suffix))
+                    rule_ids[name] = int(suffix)
+        if rule_ids:
             readable = (
                 self.env["automation.rule"]
-                .browse(sorted(rule_ids))
+                .browse(sorted(set(rule_ids.values())))
                 .exists()
                 ._filtered_access("read")
             )
-            channels.extend((rule, SUBCHANNEL) for rule in readable)
-        return super()._get_bus_channels(channels)
+            for name, rule_id in rule_ids.items():
+                rule = readable.filtered(lambda r, rid=rule_id: r.id == rid)
+                result[name] = [(rule, SUBCHANNEL)] if rule else []
+        return result

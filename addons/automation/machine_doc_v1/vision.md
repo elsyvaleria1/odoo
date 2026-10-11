@@ -337,9 +337,11 @@ Goal: `automation.rule` form view shows the workflow as an interactive DAG.
    **Both identifiers come from the client, so both are checked.** The
    `runtime_id` is matched against this automation before its states are
    returned. The channel is a *string* — `automation.workflow/<rule id>` — because
-   `ir.websocket` accepts only strings from a client; `_build_bus_channel_list`
+   `ir.websocket` accepts only strings from a client; `_bus_channels_by_name`
    translates it into the record channel `(rule, "WORKFLOW")` **only for a rule
-   the user may read**, and drops it otherwise. That is the shape `im_livechat`
+   the user may read**, and opens nothing otherwise. A notification on that
+   channel carries the name back, so the worker hands it only to the tabs that
+   claimed it. That is the shape `im_livechat`
    uses for `looking_for_help`, and it matters here because `automation.rule` is
    readable by `base.group_system` alone: without the check, any logged-in user
    could name the channel and watch an administrator's workflows advance.

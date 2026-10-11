@@ -4,8 +4,8 @@ from odoo import models
 class IrWebsocket(models.AbstractModel):
     _inherit = "ir.websocket"
 
-    def _get_bus_channels(self, channels):
-        channels = super()._get_bus_channels(channels)
+    def _implicit_bus_channels(self):
+        channels = super()._implicit_bus_channels()
         group = self.env.ref("device.group_device_user", raise_if_not_found=False)
         # beside the group's own channel, which bus subscribes to through
         # all_group_ids: one channel of that group per company of the user

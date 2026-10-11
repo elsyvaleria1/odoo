@@ -26,6 +26,12 @@ const startWebSocketWorker = async (onBroadcast) => {
                 onBroadcast(...args);
                 return super.broadcast(...args);
             },
+            // a batch is handed to the tabs it is for, not broadcast: still
+            // the one event the tests mean by a batch reaching the clients
+            _deliverNotifications(notifications, highestId) {
+                onBroadcast("BUS:NOTIFICATION", notifications);
+                return super._deliverNotifications(notifications, highestId);
+            },
         });
     }
     worker._start();
@@ -113,7 +119,7 @@ test("a user switch after an expired session connects, not reconnects", async ()
     await waitForSteps(["BUS:CONNECT"]);
 });
 
-test("notification event is broadcasted", async () => {
+test("a notification from the server is delivered to the tabs", async () => {
     const notifications = [
         {
             id: 70,
@@ -125,19 +131,55 @@ test("notification event is broadcasted", async () => {
             },
         },
     ];
-    await startWebSocketWorker((type, message) => {
-        if (type === "BUS:NOTIFICATION") {
-            expect(message).toEqual(notifications);
-        }
-        if (["BUS:CONNECT", "BUS:NOTIFICATION"].includes(type)) {
+    const worker = await startWebSocketWorker((type) => {
+        if (type === "BUS:CONNECT") {
             asyncStep(`broadcast ${type}`);
         }
+    });
+    patchWithCleanup(worker, {
+        _deliverNotifications(delivered, highestId) {
+            expect(delivered).toEqual(notifications);
+            asyncStep(`deliver up to ${highestId}`);
+            return super._deliverNotifications(delivered, highestId);
+        },
     });
     await waitForSteps(["broadcast BUS:CONNECT"]);
     for (const serverWs of MockServer.current._websockets) {
         serverWs.send(JSON.stringify(notifications));
     }
-    await waitForSteps(["broadcast BUS:NOTIFICATION"]);
+    await waitForSteps(["deliver up to 70"]);
+});
+
+test("a notification goes to the tabs that claimed a name of its channel, an unnamed one to every tab", async () => {
+    const worker = await startWebSocketWorker();
+    const tab = (name, claims) => {
+        const client = {
+            postMessage: ({ type, data }) =>
+                expect.step(
+                    type === "BUS:NOTIFICATION"
+                        ? `${name} ${data.map((n) => `${n.id}${n.names ? "!" : ""}`)}`
+                        : `${name} ${type} ${data}`,
+                ),
+        };
+        worker.channelsByClient.set(client, new Map(claims.map((c) => [c, 1])));
+    };
+    worker.channelsByClient.clear();
+    tab("sheet", ["spreadsheet:1"]);
+    tab("other", ["spreadsheet:2"]);
+    worker._deliverNotifications(
+        [
+            { id: 1, message: {}, names: ["spreadsheet:1"] },
+            { id: 2, message: {}, names: ["spreadsheet:2", "spreadsheet:1"] },
+            { id: 3, message: {} },
+        ],
+        3,
+    );
+    expect.verifySteps([
+        "sheet BUS:NOTIFICATION_SEEN 3",
+        "other BUS:NOTIFICATION_SEEN 3",
+        "sheet 1,2,3",
+        "other 2,3",
+    ]);
 });
 
 test("non-array JSON frame is ignored, not thrown on", async () => {
@@ -1012,7 +1054,7 @@ test("a very large notification batch is broadcast, not swallowed", async () => 
     expect(worker.lastNotificationId).toBe(200_000);
 });
 
-test("notification ids are recorded as seen only once broadcast", async () => {
+test("notification ids are recorded as seen only once delivered", async () => {
     // Marking first meant that anything throwing in between lost the batch for
     // good: the ids counted as delivered while no client had received them, so
     // the dedup filter discarded the server's redelivery too.
@@ -1023,11 +1065,9 @@ test("notification ids are recorded as seen only once broadcast", async () => {
     ];
     let seenDuringBroadcast = null;
     patchWithCleanup(worker, {
-        broadcast(type, message) {
-            if (type === "BUS:NOTIFICATION") {
-                seenDuringBroadcast = [...worker.seenNotificationIds.keys()];
-            }
-            return super.broadcast(type, message);
+        _deliverNotifications() {
+            seenDuringBroadcast = [...worker.seenNotificationIds.keys()];
+            return super._deliverNotifications(...arguments);
         },
     });
     worker._onWebsocketMessage(
@@ -1037,15 +1077,12 @@ test("notification ids are recorded as seen only once broadcast", async () => {
     expect([...worker.seenNotificationIds.keys()]).toEqual([11, 12]);
 });
 
-test("a batch whose broadcast throws is not remembered as delivered", async () => {
+test("a batch whose delivery throws is not remembered as delivered", async () => {
     const worker = await startWebSocketWorker();
     const notifications = [{ id: 21, message: { type: "probe", payload: {} } }];
     patchWithCleanup(worker, {
-        broadcast(type) {
-            if (type === "BUS:NOTIFICATION") {
-                throw new Error("boom");
-            }
-            return super.broadcast(...arguments);
+        _deliverNotifications() {
+            throw new Error("boom");
         },
     });
     expect(() =>

@@ -1795,10 +1795,11 @@ class TestWorkflowBusChannel(TransactionCase):
 
         self.assertFalse(set(malformed) & set(channels))
 
-    def test_other_channels_are_left_alone(self):
+    def test_a_name_it_does_not_own_opens_nothing_here(self):
         channels = self._channels(["some.other/channel"])
 
-        self.assertIn("some.other/channel", channels)
+        self.assertNotIn("some.other/channel", channels)
+        self.assertNotIn((self.automation, "WORKFLOW"), channels)
 
     def test_a_run_announces_itself_on_its_rule_channel(self):
         runtime = self.env["automation.runtime"].create(

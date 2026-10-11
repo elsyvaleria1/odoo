@@ -1,3 +1,5 @@
+from itertools import chain
+
 from odoo.libs.json import loads as json_loads
 from odoo.tests.common import new_test_user
 
@@ -11,11 +13,12 @@ class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
         # Simulates what's done when subscribing to a bus channel.
         # MockRequest would be useful, but it's currently only defined
         # with website
+        # the names, and what they open: not the channels every
+        # subscriber gets, whose notifications are not the spreadsheet's
+        opened = self.env["ir.websocket"]._bus_channels_by_name(channels)
         channels = [
             channel_with_db(self.env.registry.db_name, c)
-            for c in self.env[
-                "ir.websocket"
-            ]._add_spreadsheet_collaborative_bus_channels(channels)
+            for c in [*channels, *chain.from_iterable(opened.values())]
         ]
         self.env.cr.precommit.run()  # trigger the creation of bus.bus records
         return self.env["bus.bus"]._poll(channels, last)[0]

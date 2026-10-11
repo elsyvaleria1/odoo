@@ -300,6 +300,11 @@ class NotificationDispatchState:
 
 
 class Websocket:
+    # (channel, client names that reach it): a notification on one of these
+    # channels carries the names, and the worker hands it only to the tabs
+    # that claimed one; every other channel reaches every tab
+    _routes = frozenset()
+
     MESSAGE_MAX_SIZE = 2**20
     MAX_NOTIFICATION_HISTORY_SEC = NOTIFICATION_HOLD_BACK_SECONDS
     RL_BURST = max(1, int(config["websocket_rate_limit_burst"]))
@@ -1069,7 +1074,7 @@ class Websocket:
         if not notifications:
             return
         self._dispatch_state.record_dispatched([notif["id"] for notif in notifications])
-        self._send(notifications)
+        self._send(_addressed(notifications, self._routes))
         if truncated:
             self.trigger_notification_dispatching()
 
@@ -1079,6 +1084,7 @@ class Websocket:
             self._channels,
             self._dispatch_state.last_id,
             tuple(self._dispatch_state.ignore_ids),
+            self._routes,
         )
 
     def _can_join_batch(self) -> bool:
@@ -1583,13 +1589,29 @@ def _trigger_dispatch(websockets, poll_round) -> None:
                 websocket._job = None
 
 
+def _addressed(notifications, routes) -> list:
+    # What a connection sends: the channel stays on the server; a notification
+    # its routes reach through client names carries those names instead.
+    names_by_channel = dict(routes)
+    addressed = []
+    for notification in notifications:
+        sent = {"id": notification["id"], "message": notification["message"]}
+        if names := names_by_channel.get(notification.get("channel")):
+            sent["names"] = list(names)
+        addressed.append(sent)
+    return addressed
+
+
 def _answer_round(members, key, poll_round, now) -> tuple:
     due = [websocket for websocket in members if websocket._session_check_due(now)]
-    answer = dispatch.poll_memo_get(poll_round, key)
+    # the routes only address the answer: connections polling the same rows
+    # share it whatever names they claimed them by
+    poll_key = key[:4]
+    answer = dispatch.poll_memo_get(poll_round, poll_key)
     shared = answer is not None
     expired = set()
     if due or answer is None:
-        db, channels, last_id, ignore_ids = key
+        db, channels, last_id, ignore_ids = poll_key
         with acquire_cursor(db) as cr:
             expired = {
                 websocket
@@ -1600,7 +1622,7 @@ def _answer_round(members, key, poll_round, now) -> tuple:
             if answer is None and valid:
                 env = valid[0].new_env(cr, valid[0]._session)
                 answer = env["bus.bus"]._poll(channels, last_id, list(ignore_ids))
-                dispatch.poll_memo_set(poll_round, key, answer)
+                dispatch.poll_memo_set(poll_round, poll_key, answer)
     notifications, truncated = answer or ([], False)
     _debug.perf.count(
         "dispatched",
@@ -1620,7 +1642,7 @@ def _run_batch(hub, key, members, poll_round, woken_at) -> None:
             notifications, truncated, expired = _answer_round(
                 members, key, poll_round, members[0]._clock()
             )
-        frame = Frame(Opcode.TEXT, notifications)
+        frame = Frame(Opcode.TEXT, _addressed(notifications, key[4]))
         data = encode_frame(frame) if notifications else None
     except Exception:
         _logger.warning("Batched websocket dispatch failed", exc_info=True)

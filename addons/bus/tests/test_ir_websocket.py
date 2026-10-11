@@ -6,7 +6,7 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tests import TransactionCase, new_test_user, tagged
 
-from ..models.bus import channel_with_db
+from ..models.bus import channel_with_db, json_dump
 from ..models.ir_websocket import MAX_CHANNEL_LENGTH, MAX_SUBSCRIBED_CHANNELS
 from ..tools.channel_capability import channel_capability, channel_target
 from .common import TEST_CHANNEL, WebsocketCase, channel_key, channel_keys
@@ -86,7 +86,6 @@ class TestIrWebsocket(WebsocketCase):
             channel_keys(
                 self.env,
                 [
-                    "test_channel",
                     test_user.partner_id,
                     self.env.ref("base.group_system"),
                     self.env.ref("base.group_user"),
@@ -105,7 +104,8 @@ class TestBuildBusChannelList(TransactionCase):
         keys = channel_keys(
             self.env, self.env["ir.websocket"]._get_bus_channels(["custom"])
         )
-        self.assertIn(channel_key(self.env, "custom"), keys)
+        # a made-up name opens nothing: anyone can say it
+        self.assertNotIn(channel_key(self.env, "custom"), keys)
         self.assertIn(channel_key(self.env, "broadcast"), keys)
 
     def test_logged_in_user_gets_their_partner_channel(self):
@@ -180,3 +180,32 @@ class TestSubscribeDataValidation(TransactionCase):
         self.assertIn(channel_target(self.env, TEST_CHANNEL, "7"), channels)
         self.assertIn(channel_with_db(self.env.cr.dbname, "broadcast"), channels)
         self.assertIn(self.env.user.partner_id, channels)
+
+
+@tagged("-at_install", "post_install")
+class TestBusChannelRoutes(TransactionCase):
+    def test_a_named_channel_is_routed_and_one_every_subscriber_gets_is_not(self):
+        user = new_test_user(self.env, login="bus_routes_user")
+        partner = self.env["res.partner"].create({"name": "Routed"})
+        websocket = self.env["ir.websocket"].with_user(user)
+        opened = {"named": [partner], "own-partner": [user.partner_id], "none": []}
+        with patch.object(
+            type(self.env["ir.websocket"]), "_bus_channels_by_name", return_value=opened
+        ):
+            data = websocket._prepare_subscribe_data(list(opened), 0)
+        db = self.env.cr.dbname
+        self.assertEqual(
+            dict(data["routes"]),
+            {json_dump(channel_with_db(db, partner)): ("named",)},
+        )
+        self.assertIn(partner, data["channels"])
+        self.assertIn(user.partner_id, data["channels"])
+
+    def test_a_channel_two_names_open_is_routed_by_both(self):
+        partner = self.env["res.partner"].create({"name": "Shared"})
+        opened = {"b": [partner], "a": [partner]}
+        with patch.object(
+            type(self.env["ir.websocket"]), "_bus_channels_by_name", return_value=opened
+        ):
+            data = self.env["ir.websocket"]._prepare_subscribe_data(list(opened), 0)
+        self.assertEqual(list(dict(data["routes"]).values()), [("a", "b")])

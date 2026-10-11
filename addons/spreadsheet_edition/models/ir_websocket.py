@@ -7,39 +7,23 @@ _debug = DebugLog(__name__)
 class IrWebsocket(models.AbstractModel):
     _inherit = "ir.websocket"
 
-    def _get_bus_channels(self, channels):
-        if self.env.uid:
-            channels = self._add_spreadsheet_collaborative_bus_channels(channels)
-        return super()._get_bus_channels(channels)
-
-    def _add_spreadsheet_collaborative_bus_channels(self, channels):
-        """Add collaborative bus channels for active spreadsheets.
-
-        Listening to channel "spreadsheet_collaborative_session:{res_model}:{res_id}"
-        or "spreadsheet_collaborative_session:{res_model}:{res_id}:{access_token}"
-        tells the server the spreadsheet is active. But only users with read access
-        can actually read the associate bus messages.
-        We manually add the channel if the user has read access.
-        This channel is used to safely send messages to allowed users.
-
-        :param channels: bus channels
-        :return: channels
-        """
-        requested = list(channels)
-        channels = list(requested)
-        for channel in requested:
-            if not isinstance(channel, str):
-                continue
-            if channel.startswith("spreadsheet_collaborative_session:"):
-                record = self._check_spreadsheet_channel(channel)
-                if record:
-                    channels.append(record)
+    def _bus_channels_by_name(self, names):
+        # Listening to "spreadsheet_collaborative_session:{res_model}:{res_id}"
+        # (":{access_token}" for a share) tells the server the spreadsheet is
+        # active; only who can read it gets the record channel it is sent on.
+        result = super()._bus_channels_by_name(names)
+        if not self.env.uid:
+            return result
+        for name in names:
+            if name.startswith("spreadsheet_collaborative_session:"):
+                record = self._check_spreadsheet_channel(name)
+                result[name] = [record] if record else []
         _debug.pipeline(
             "spreadsheet_bus_channels_added",
-            requested=len(requested),
-            added=len(channels) - len(requested),
+            requested=len(names),
+            added=sum(bool(result[name]) for name in names),
         )
-        return channels
+        return result
 
     def _check_spreadsheet_channel(self, channel):
         params = channel.split(":")

@@ -9,36 +9,49 @@ _debug = DebugLog(__name__)
 class IrWebsocket(models.AbstractModel):
     _inherit = "ir.websocket"
 
-    def _get_bus_channels(self, channels: list) -> list:
-        remaining = []
-        discuss_channel_ids = []
-        token_guest = self.env["mail.guest"]
-        for channel in channels:
-            if isinstance(channel, str):
-                if channel.startswith("mail.guest_"):
-                    token_guest = self.env["mail.guest"]._get_guest_from_token(
-                        channel.split("_")[1]
-                    )
-                    continue
-                if match := re.findall(r"discuss\.channel_(\d+)", channel):
-                    discuss_channel_ids.append(int(match[0]))
-                    continue
-            remaining.append(channel)
-        if token_guest:
-            self = self.with_context(guest=token_guest)
-        if guest := self.env["mail.guest"]._get_guest_from_context():
-            remaining.append(guest)
-        domain = ["|", ("is_member", "=", True), ("id", "in", discuss_channel_ids)]
-        all_user_channels = self.env["discuss.channel"].search(domain)
+    def _bus_context(self, names: list[str]):
+        # a guest's token names who listens, not what: everything resolves
+        # under that guest
+        websocket = super()._bus_context(names)
+        for name in names:
+            if name.startswith("mail.guest_"):
+                guest = self.env["mail.guest"]._get_guest_from_token(name.split("_")[1])
+                if guest:
+                    websocket = websocket.with_context(guest=guest)
+        return websocket
+
+    def _bus_channels_by_name(self, names: list[str]) -> dict[str, list]:
+        result = super()._bus_channels_by_name(names)
+        requested = {}
+        for name in names:
+            if match := re.findall(r"discuss\.channel_(\d+)", name):
+                requested[name] = int(match[0])
+        if requested:
+            readable = self.env["discuss.channel"].search(
+                [("id", "in", list(requested.values()))]
+            )
+            for name, channel_id in requested.items():
+                channel = readable.filtered(lambda c, cid=channel_id: c.id == cid)
+                result[name] = self._discuss_bus_channels(channel)
+        return result
+
+    def _implicit_bus_channels(self) -> list:
+        channels = super()._implicit_bus_channels()
+        guest = self.env["mail.guest"]._get_guest_from_context()
+        if guest:
+            channels.append(guest)
+        members = self.env["discuss.channel"].search([("is_member", "=", True)])
         _debug.logic(
             "bus_channels_resolved",
-            asked=len(channels),
-            discuss_channels=len(discuss_channel_ids),
-            member_channels=len(all_user_channels),
-            guest=token_guest.id or None,
+            member_channels=len(members),
+            guest=guest.id or None,
             internal=not self.env.user.share,
         )
-        remaining.extend(all_user_channels)
+        channels.extend(self._discuss_bus_channels(members))
+        return channels
+
+    def _discuss_bus_channels(self, discuss_channels) -> list:
+        channels = list(discuss_channels)
         if not self.env.user.share:
-            remaining.extend((c, "internal_users") for c in all_user_channels)
-        return super()._get_bus_channels(remaining)
+            channels.extend((channel, "internal_users") for channel in discuss_channels)
+        return channels

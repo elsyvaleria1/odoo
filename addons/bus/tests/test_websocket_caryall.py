@@ -315,10 +315,35 @@ class TestWebsocketCaryall(WebsocketCase):
             )
             self.assertEqual(mock.call_args[0][1], client_last_notification_id)
 
+    def test_a_notification_carries_the_names_that_reach_its_channel(self):
+        websocket = self.websocket_connect()
+        self.subscribe(
+            websocket, [self.channel("routed")], self.env["bus.bus"]._bus_last_id()
+        )
+        self.env["bus.bus"]._sendone(self.target("routed"), "notif type", "message")
+        self.trigger_notification_dispatching([self.target("routed")])
+        [notification] = json_loads(websocket.recv())
+        self.assertEqual(notification["names"], [self.channel("routed")])
+        self.assertNotIn("channel", notification)
+
+    def test_a_channel_every_subscriber_gets_reaches_every_tab(self):
+        channel = self.env["res.partner"].create({"name": "John"})
+        websocket = self.websocket_connect()
+        with patch.object(
+            IrWebsocket, "_implicit_bus_channels", return_value=[channel]
+        ):
+            self.subscribe(websocket, [], self.env["bus.bus"]._bus_last_id())
+            channel._bus_send("notif type", "message")
+            self.trigger_notification_dispatching([channel])
+            [notification] = json_loads(websocket.recv())
+        self.assertNotIn("names", notification)
+
     def test_subscribe_to_custom_channel(self):
         channel = self.env["res.partner"].create({"name": "John"})
         websocket = self.websocket_connect()
-        with patch.object(IrWebsocket, "_get_bus_channels", return_value=[channel]):
+        with patch.object(
+            IrWebsocket, "_implicit_bus_channels", return_value=[channel]
+        ):
             self.subscribe(websocket, [], self.env["bus.bus"]._bus_last_id())
             channel._bus_send("notif_on_global_channel", "message")
             channel._bus_send(
@@ -333,7 +358,7 @@ class TestWebsocketCaryall(WebsocketCase):
             self.assertEqual(notifications[0]["message"]["payload"], "message")
 
         with patch.object(
-            IrWebsocket, "_get_bus_channels", return_value=[(channel, "PRIVATE")]
+            IrWebsocket, "_implicit_bus_channels", return_value=[(channel, "PRIVATE")]
         ):
             self.subscribe(websocket, [], self.env["bus.bus"]._bus_last_id())
             channel._bus_send("notif_on_global_channel", "message")

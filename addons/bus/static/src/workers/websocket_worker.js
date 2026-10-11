@@ -9,7 +9,7 @@ import {
 /**
  * Type of events that can be sent from the worker to its clients.
  *
- * @typedef { 'BUS:CONNECT' | 'BUS:RECONNECT' | 'BUS:DISCONNECT' | 'BUS:NOTIFICATION' | 'BUS:WATERMARK_RESET' | 'BUS:INITIALIZED' | 'BUS:OUTDATED'| 'BUS:WORKER_STATE_UPDATED' | 'BUS:PROVIDE_LOGS' | 'BUS:PING' } WorkerEvent
+ * @typedef { 'BUS:CONNECT' | 'BUS:RECONNECT' | 'BUS:DISCONNECT' | 'BUS:NOTIFICATION' | 'BUS:NOTIFICATION_SEEN' | 'BUS:WATERMARK_RESET' | 'BUS:INITIALIZED' | 'BUS:OUTDATED'| 'BUS:WORKER_STATE_UPDATED' | 'BUS:PROVIDE_LOGS' | 'BUS:PING' } WorkerEvent
  */
 
 /**
@@ -843,10 +843,37 @@ export class WebsocketWorker {
         // dedup filter discarded the server's redelivery too. Recording after
         // the broadcast can at worst repeat a batch, which subscribers already
         // tolerate; it can no longer swallow one.
-        this.broadcast("BUS:NOTIFICATION", notifications);
+        this._deliverNotifications(notifications, highestId);
         this.lastNotificationId = highestId;
         for (const notification of notifications) {
             this.seenNotificationIds.set(notification.id, now);
+        }
+    }
+
+    /**
+     * Hands each tab the notifications of the channels it claimed a name of,
+     * and the ones no name reaches (a channel every subscriber gets) to every
+     * tab. Every tab learns the batch's highest id: its watermark must not lag
+     * behind what another tab was handed.
+     *
+     * @param {{ id: number, message: Object, names?: string[] }[]} notifications
+     * @param {number} highestId
+     */
+    _deliverNotifications(notifications, highestId) {
+        // first, as a tab took its watermark before running a batch's
+        // subscribers when the batch itself carried it
+        this.broadcast("BUS:NOTIFICATION_SEEN", highestId);
+        for (const [client, claims] of this.channelsByClient) {
+            const own = [];
+            for (const { names, ...notification } of notifications) {
+                if (!names || names.some((name) => claims.has(name))) {
+                    own.push(notification);
+                }
+            }
+            this._logDebug("deliver", own.length, notifications.length);
+            if (own.length) {
+                client.postMessage({ type: "BUS:NOTIFICATION", data: own });
+            }
         }
     }
 

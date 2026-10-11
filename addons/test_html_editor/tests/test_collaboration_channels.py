@@ -53,9 +53,8 @@ class TestCollaborationChannels(TransactionCase):
 
     def test_public_user_is_refused_the_channel_alone(self):
         public = self.env.ref("base.public_user")
-        keys = self._subscribe(public, [self._channel(), ("custom", "channel")])
+        keys = self._subscribe(public, [self._channel()])
         self.assertFalse(self._editor_channels(keys))
-        self.assertIn(("custom", "channel"), keys)
 
     def test_an_unknown_model_is_refused_alone(self):
         keys = self._subscribe(
@@ -74,10 +73,6 @@ class TestCollaborationChannels(TransactionCase):
     def test_malformed_channel_is_ignored(self):
         keys = self._subscribe(self.admin, ["editor_collaboration:garbage"])
         self.assertFalse(self._editor_channels(keys))
-
-    def test_non_string_channels_are_preserved(self):
-        keys = self._subscribe(self.admin, [("custom", "channel")])
-        self.assertIn(("custom", "channel"), keys)
 
     def test_an_abstract_model_is_refused_alone(self):
         # browse().exists() on a model with no table aborts the transaction
