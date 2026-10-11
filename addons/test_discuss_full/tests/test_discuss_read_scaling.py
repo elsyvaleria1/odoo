@@ -1,3 +1,4 @@
+from odoo.tests import counting_statements
 from odoo.tests.common import HttpCase, new_test_user, tagged
 
 from odoo.addons.mail.tests.common import MailCommon
@@ -57,9 +58,9 @@ class TestDiscussReadScaling(HttpCase, MailCommon):
         self.call_jsonrpc(route, params)
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        self.call_jsonrpc(route, params)
-        return self.cr.sql_statement_count - before
+        with counting_statements(self.cr) as statements:
+            self.call_jsonrpc(route, params)
+            return statements.count
 
     def _statements_by_units(self, params):
         counts = {}

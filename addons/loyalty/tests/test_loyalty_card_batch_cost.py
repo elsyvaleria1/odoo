@@ -1,6 +1,6 @@
 
 from odoo.fields import Command
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -22,15 +22,19 @@ class TestLoyaltyCardBatchCost(TransactionCase):
         )
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self.env["loyalty.card"].with_context(loyalty_no_mail=True).create(
-            [
-                {"program_id": self.program.id, "partner_id": partner.id, "points": 1}
-                for partner in partners
-            ]
-        )
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.env["loyalty.card"].with_context(loyalty_no_mail=True).create(
+                [
+                    {
+                        "program_id": self.program.id,
+                        "partner_id": partner.id,
+                        "points": 1,
+                    }
+                    for partner in partners
+                ]
+            )
+            self.env.flush_all()
+            return statements.count
 
     def test_issuing_cards_costs_one_batch(self):
         self._queries_to_issue(2)

@@ -1,3 +1,4 @@
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase
 
 
@@ -10,11 +11,11 @@ class TestRecursiveRecomputeReadsItsOldValueOnce(TransactionCase):
         self.assertEqual(set(records.mapped("label")), {"first"})
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        group.value = "second"
-        records.mapped("label")
-        self.env.flush_all()
-        cost = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            group.value = "second"
+            records.mapped("label")
+            self.env.flush_all()
+            cost = statements.count
         self.assertEqual(set(records.mapped("label")), {"first"})
         return cost
 
@@ -171,9 +172,9 @@ class TestRecursiveModifiedReadsTheTreeOnce(TransactionCase):
         return chain
 
     def _cost(self, record, vals):
-        before = self.env.cr.sql_statement_count
-        record.write(vals)
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            record.write(vals)
+            return statements.count
 
     def _full_name(self, record):
         names = []

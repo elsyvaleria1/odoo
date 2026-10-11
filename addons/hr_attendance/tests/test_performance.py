@@ -7,6 +7,7 @@ from dateutil.rrule import DAILY, rrule
 from freezegun import freeze_time
 
 from odoo import Command, fields
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase, tagged
 
 _logger = logging.getLogger(__name__)
@@ -311,12 +312,12 @@ class TestAttendanceComputeBatchCost(TransactionCase):
         records = self.employees[:count]
         self.env.invalidate_all()
         records.mapped("attendance_ids")
-        before = self.env.cr.sql_statement_count
-        if field_name is None:
-            getattr(records, compute_name)()
-        else:
-            records.mapped(field_name)
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            if field_name is None:
+                getattr(records, compute_name)()
+            else:
+                records.mapped(field_name)
+            return statements.count
 
     def _assert_flat(self, compute_name, field_name=None):
         small = self._queries_for(compute_name, field_name, 2)

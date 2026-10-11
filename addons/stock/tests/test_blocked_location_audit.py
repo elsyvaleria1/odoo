@@ -1,7 +1,7 @@
 from markupsafe import Markup
 
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from .blocked_location_common import BlockedLocationCase
 from .common import LocationCase
@@ -97,9 +97,9 @@ class TestBlockMetadata(BlockedLocationCase):
             self.env.flush_all()
             self.env.invalidate_all()
             locations.mapped("parent_path")
-            before = self.env.cr.sql_statement_count
-            locations._get_reserved_quantity_totals()
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                locations._get_reserved_quantity_totals()
+                return statements.count
 
         self.assertEqual(
             aggregation_cost(2, "small"),

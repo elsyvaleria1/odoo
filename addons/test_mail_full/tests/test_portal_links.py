@@ -2,7 +2,7 @@ from datetime import timedelta
 from urllib.parse import parse_qsl, urlsplit
 
 from odoo import fields
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 from odoo.tools import SQL, mute_logger
 
 from odoo.addons.base.models.access_link import hash_token
@@ -216,9 +216,9 @@ class TestPortalLinks(TestPortal):
         def cost(listed):
             self.env.invalidate_all()
             listed = listed.browse(listed.ids)
-            count0 = self.env.cr.sql_statement_count
-            self.assertEqual(listed.mapped("access_token"), tokens[: len(listed)])
-            return self.env.cr.sql_statement_count - count0
+            with counting_statements(self.env.cr) as statements:
+                self.assertEqual(listed.mapped("access_token"), tokens[: len(listed)])
+                return statements.count
 
         cost(records)
         self.assertEqual(cost(records[:1]), cost(records))

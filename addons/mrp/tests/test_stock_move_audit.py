@@ -5,7 +5,7 @@ from psycopg.errors import CheckViolation
 
 from odoo import Command
 from odoo.exceptions import ValidationError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from .common import TestMrpCommon
 
@@ -445,10 +445,10 @@ class TestStockMoveAudit(TestMrpCommon):
         self.env.registry.clear_all_caches()
         self.env.cr.cache.clear()
         gc.collect()
-        before = self.env.cr.sql_statement_count
-        result = action()
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before, result
+        with counting_statements(self.env.cr) as statements:
+            result = action()
+            self.env.flush_all()
+            return statements.count, result
 
     def _kit_quantity_statements(self, count, tag):
         kits = self._make_kits(count, tag)
@@ -519,10 +519,10 @@ class TestStockMoveAudit(TestMrpCommon):
             ]
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            self.env["stock.move"].create(vals_list)
-            self.env.flush_all()
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                self.env["stock.move"].create(vals_list)
+                self.env.flush_all()
+                return statements.count
 
         few = create_for(2)
         many = create_for(20)

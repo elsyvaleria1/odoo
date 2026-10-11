@@ -1,4 +1,4 @@
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -44,9 +44,9 @@ class TestRemovalStrategyLineage(TransactionCase):
             self.env.flush_all()
             self.env.invalidate_all()
             self.product.categ_id.removal_strategy_id.method
-            before = self.env.cr.sql_statement_count
-            self.assertEqual(self.strategy(location), "closest")
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as counted:
+                self.assertEqual(self.strategy(location), "closest")
+                return counted.count
 
         self.assertEqual(statements(self.chain[1]), statements(self.deep))
 

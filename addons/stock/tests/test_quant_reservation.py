@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from odoo.exceptions import UserError
 from odoo.fields import Domain
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 from odoo.addons.stock.models.stock_quant_reservation import LOCKED_QUANTS_CACHE_KEY
 from odoo.addons.stock.tests.common import TestStockCommon
@@ -1427,17 +1427,15 @@ class TestQuantGatherAndReserve(TestStockCommon):
         self.env.invalidate_all()
 
         cache = self.Quant._get_quants_by_products_locations(products, self.loc)
-        before = self.env.cr.sql_statement_count
-        for product in products:
-            quants = cache[product.id, self.loc.id, False, False, False]
-            self.assertTrue(quants, "the scan covered this product/location")
-            self.assertEqual(quants.quantity, 7.0)
-            quants.mapped("in_date")
-            quants.mapped("reserved_quantity")
+        with counting_statements(self.env.cr) as statements:
+            for product in products:
+                quants = cache[product.id, self.loc.id, False, False, False]
+                self.assertTrue(quants, "the scan covered this product/location")
+                self.assertEqual(quants.quantity, 7.0)
+                quants.mapped("in_date")
+                quants.mapped("reserved_quantity")
         self.assertEqual(
-            self.env.cr.sql_statement_count,
-            before,
-            "cached quants must already carry their values",
+            statements.count, 0, "cached quants must already carry their values"
         )
 
     def _least_packages_location(self, name):
@@ -1847,10 +1845,10 @@ class TestQuantCleanReservations(TestStockCommon):
         return products
 
     def _clean_cost(self, products):
-        before = self.env.cr.sql_statement_count
-        self.Quant._sync_reserved_quantities(products=products, locations=self.loc)
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.Quant._sync_reserved_quantities(products=products, locations=self.loc)
+            self.env.flush_all()
+            return statements.count
 
     def test_clean_reservations_cost_per_group_is_bounded(self):
         small = self._clean_cost(self._drift(2, "small"))

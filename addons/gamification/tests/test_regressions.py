@@ -15,7 +15,7 @@ from psycopg import IntegrityError
 
 from odoo import fields
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.tests import common
+from odoo.tests import common, counting_statements
 
 from odoo.addons.mail.tests.common import mail_new_test_user
 
@@ -1580,9 +1580,9 @@ class TestXpProgressBatchesRankLookup(common.TransactionCase):
         def cost(count, tag):
             users = self._users(count, tag)
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            users.mapped("xp_progress_percent")
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                users.mapped("xp_progress_percent")
+                return statements.count
 
         few = cost(2, "few")
         many = cost(10, "many")

@@ -1,4 +1,4 @@
-from odoo.tests import TransactionCase
+from odoo.tests import TransactionCase, counting_statements
 from odoo.tools.misc import PENDING
 
 
@@ -14,9 +14,9 @@ class TestDeadPendingMarkers(TransactionCase):
         return field._get_cache(self.env).get(record.id, "<absent>")
 
     def _queries(self, func):
-        before = self.env.cr.sql_statement_count
-        func()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            func()
+            return statements.count
 
     def test_one_fetch_answers_every_unassigned_field(self):
         record = self.env["test_orm.partial.compute"].create({"mode": "leave"})

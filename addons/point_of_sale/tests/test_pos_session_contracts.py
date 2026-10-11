@@ -5,6 +5,7 @@ from unittest.mock import patch
 import odoo
 from odoo import fields
 from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tests import counting_statements
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
@@ -622,14 +623,14 @@ class TestPosSessionOldSessionAlert(TestPoSCommon):
         self.env.flush_all()
         self.env.invalidate_all()
 
-        before = self.cr.sql_statement_count
-        self.env["pos.session"]._alert_old_sessions()
-        first_run = self.cr.sql_statement_count - before
+        with counting_statements(self.cr) as counted:
+            self.env["pos.session"]._alert_old_sessions()
+            first_run = counted.count
 
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        self.env["pos.session"]._alert_old_sessions()
-        second_run = self.cr.sql_statement_count - before
+        with counting_statements(self.cr) as statements:
+            self.env["pos.session"]._alert_old_sessions()
+            second_run = statements.count
 
         self.assertLessEqual(
             second_run,

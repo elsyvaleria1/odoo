@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from odoo.exceptions import UserError
 from odoo.fields import Command
+from odoo.tests import counting_statements
 from odoo.tests.common import users
 
 from odoo.addons.event.tests.common import EventCase
@@ -395,15 +396,15 @@ class TestEventData(DefaultEventMixin, EventCase, MockVisitor):
 
         self.env.invalidate_all()
         self.env.flush_all()
-        count0 = self.env.cr.sql_statement_count
-        one_slot._filter_open_slots()
-        queries_for_one = self.env.cr.sql_statement_count - count0
+        with counting_statements(self.env.cr) as counted:
+            one_slot._filter_open_slots()
+            queries_for_one = counted.count
 
         self.env.invalidate_all()
         self.env.flush_all()
-        count0 = self.env.cr.sql_statement_count
-        (one_slot | more_slots)._filter_open_slots()
-        queries_for_five = self.env.cr.sql_statement_count - count0
+        with counting_statements(self.env.cr) as statements:
+            (one_slot | more_slots)._filter_open_slots()
+            queries_for_five = statements.count
 
         self.assertEqual(
             queries_for_one,

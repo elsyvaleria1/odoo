@@ -8,6 +8,7 @@ from lxml import etree
 from odoo import http
 from odoo.http._protocols import RoutedMethod
 from odoo.libs.json import dumps as json_dumps
+from odoo.tests import counting_statements
 from odoo.tests.common import BaseCase, HttpCase, TransactionCase, tagged
 from odoo.tools import file_path, mute_logger
 
@@ -1220,14 +1221,14 @@ class TestSmallRoutes(HttpCase):
 @tagged("web_http", "web_controllers_audit")
 class TestActionLoadCost(HttpCase):
     def _statements(self, action_id):
-        before = self.cr.sql_statement_count
-        body = self.url_open(
-            "/web/action/load",
-            headers={"Content-Type": "application/json"},
-            data=json_dumps({"params": {"action_id": action_id}}),
-        ).json()
-        self.assertIn("result", body)
-        return self.cr.sql_statement_count - before
+        with counting_statements(self.cr) as statements:
+            body = self.url_open(
+                "/web/action/load",
+                headers={"Content-Type": "application/json"},
+                data=json_dumps({"params": {"action_id": action_id}}),
+            ).json()
+            self.assertIn("result", body)
+            return statements.count
 
     def test_loading_by_xml_id_costs_no_more_than_by_id(self):
         self.authenticate("admin", "admin")

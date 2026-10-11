@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from odoo import Command
+from odoo.tests import counting_statements
 from odoo.tests.common import tagged
 
 from odoo.addons.device.tests.common import DeviceTransactionCase
@@ -59,10 +60,10 @@ class TestDeviceCallIngest(DeviceTransactionCase):
     def test_a_batch_is_created_in_one_pass(self):
         calls = self._calls(30)
         self.env.flush_all()
-        before = self.env.cr.sql_statement_count
-        self.calls.ingest_from_device(self.device, calls)
-        self.env.flush_all()
-        queries = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.calls.ingest_from_device(self.device, calls)
+            self.env.flush_all()
+            queries = statements.count
         self.assertLess(
             queries,
             len(calls),

@@ -1,6 +1,6 @@
 from odoo import Command
 from odoo.exceptions import ValidationError
-from odoo.tests import common
+from odoo.tests import common, counting_statements
 from odoo.tools import SetDefinitions, SetExpressionError
 
 
@@ -1573,9 +1573,9 @@ class TestAllUserIdsBatchCost(common.TransactionCase):
     def _queries_for(self, groups, field="all_user_ids"):
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        groups.mapped(field)
-        return self.cr.sql_statement_count - before
+        with counting_statements(self.cr) as statements:
+            groups.mapped(field)
+            return statements.count
 
     def test_reading_all_users_count_does_not_scale_with_group_count(self):
         small = self._make_groups(2, "count small")

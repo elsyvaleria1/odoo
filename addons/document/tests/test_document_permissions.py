@@ -5,6 +5,7 @@ from PIL import Image
 
 from odoo import Command
 from odoo.exceptions import AccessError, UserError
+from odoo.tests import counting_statements
 from odoo.tests.common import tagged, users
 
 from .test_document_common import (
@@ -264,9 +265,9 @@ class TestDocumentsReadCost(TransactionCaseDocuments):
         Document = self.env["document.document"].with_user(self.doc_user)
         self.env.invalidate_all()
 
-        before = self.env.cr.sql_statement_count
-        result = Document.search_read([("id", "in", documents.ids)], ["folder_id"])
-        queries = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            result = Document.search_read([("id", "in", documents.ids)], ["folder_id"])
+            queries = statements.count
 
         self.assertEqual(len(result), count)
         self.assertTrue(all(row["folder_id"] for row in result))

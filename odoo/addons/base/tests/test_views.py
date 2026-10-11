@@ -19,7 +19,7 @@ from odoo import Command, api
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs import xml
-from odoo.tests import common, tagged
+from odoo.tests import common, counting_statements, tagged
 from odoo.tests.common import get_cache_key_counter
 from odoo.tools import file_open, mute_logger, safe_eval, view_validation
 
@@ -8980,9 +8980,9 @@ class TestCombineIsBatched(ViewCase):
 
     def _queries_to_validate(self, count):
         views = self._forms(count)
-        before = self.env.cr.sql_statement_count
-        views._check_xml()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            views._check_xml()
+            return statements.count
 
     def test_validating_many_views_costs_one_combine_not_one_each(self):
         small = self._queries_to_validate(2)

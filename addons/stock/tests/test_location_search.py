@@ -1,4 +1,4 @@
-from odoo.tests import common
+from odoo.tests import common, counting_statements
 
 from odoo.addons.stock.tests.common import DoneMoveCase
 
@@ -47,11 +47,9 @@ class TestEmptyLocationSearch(DoneMoveCase):
         product = self.Product.create({"name": "Occupant", "is_storable": True})
         self.env["stock.quant"]._update_available_quantity(product, full, 1)
         self.env.flush_all()
-        before = self.env.cr.sql_statement_count
-        domain = self.Location._search_is_empty("in", [True])
-        self.assertEqual(
-            self.env.cr.sql_statement_count, before, "building the domain reads nothing"
-        )
+        with counting_statements(self.env.cr) as statements:
+            domain = self.Location._search_is_empty("in", [True])
+        self.assertEqual(statements.count, 0, "building the domain reads nothing")
         self.assertNotIsInstance(domain[0][2], list)
         found = self.Location.search([("is_empty", "=", True)])
         self.assertIn(empty, found)

@@ -4,7 +4,7 @@ from unittest.mock import patch
 import odoo
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
-from odoo.tests import new_test_user
+from odoo.tests import counting_statements, new_test_user
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
@@ -275,9 +275,9 @@ class TestReportPoSOrder(TestPoSCommon):
         domain = [("order_id", "=", order.id)]
         report._read_group(domain, aggregates=["price_total:sum"])
 
-        query_count = self.env.cr.sql_statement_count
-        [(total,)] = report._read_group(domain, aggregates=["price_total:sum"])
-        query_count = self.env.cr.sql_statement_count - query_count
+        with counting_statements(self.env.cr) as statements:
+            [(total,)] = report._read_group(domain, aggregates=["price_total:sum"])
+        query_count = statements.count
 
         _debug.perf.count("clean_aggregate_statements", queries=query_count)
         self.assertAlmostEqual(total, 240)

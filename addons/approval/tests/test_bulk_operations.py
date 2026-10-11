@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
-from odoo.tests import common, tagged
+from odoo.tests import common, counting_statements, tagged
 
 from .common import ApprovalCommon, add_category_approver, record_approval
 
@@ -324,18 +324,18 @@ class TestBatchCreateDoesNotSubscribePerRecord(ApprovalCommon):
         def create_n(count):
             self.env.invalidate_all()
             self.env.flush_all()
-            before = self.env.cr.sql_statement_count
-            self.env["approval.request"].create(
-                [
-                    {
-                        "category_id": category.id,
-                        "request_owner_id": self.owner_user.id,
-                    }
-                    for _ in range(count)
-                ],
-            )
-            self.env.flush_all()
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                self.env["approval.request"].create(
+                    [
+                        {
+                            "category_id": category.id,
+                            "request_owner_id": self.owner_user.id,
+                        }
+                        for _ in range(count)
+                    ],
+                )
+                self.env.flush_all()
+                return statements.count
 
         small = create_n(2)
         large = create_n(20)

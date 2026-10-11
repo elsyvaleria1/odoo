@@ -3,6 +3,7 @@ from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 
 from odoo import Command, fields
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase, new_test_user
 
 
@@ -1221,9 +1222,9 @@ class TestUnityRead(TransactionCase):
 
         def queries(subset):
             self.env.invalidate_all()
-            start = self.env.cr.sql_statement_count
-            subset.with_user(user).web_read(spec)
-            return self.env.cr.sql_statement_count - start
+            with counting_statements(self.env.cr) as statements:
+                subset.with_user(user).web_read(spec)
+                return statements.count
 
         queries(few)
         self.assertEqual(queries(few), queries(courses))

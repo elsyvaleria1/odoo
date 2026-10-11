@@ -3,7 +3,7 @@ from datetime import date
 from freezegun import freeze_time
 
 from odoo.exceptions import ValidationError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 from odoo.tests.form import Form
 from odoo.tools import mute_logger
 
@@ -540,12 +540,14 @@ class TestServerActionsMailBatch(MailCommon):
         leads = self._leads(count)
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        action.with_context(
-            active_model="mail.test.lead", active_ids=leads.ids, active_id=leads[0].id
-        ).run()
-        self.env.flush_all()
-        return self.cr.sql_statement_count - before, leads
+        with counting_statements(self.cr) as statements:
+            action.with_context(
+                active_model="mail.test.lead",
+                active_ids=leads.ids,
+                active_id=leads[0].id,
+            ).run()
+            self.env.flush_all()
+            return statements.count, leads
 
     def _assert_marginal_cost(self, action, budget, label):
         few, _few_records = self._run_on(action, 2)
@@ -618,14 +620,14 @@ class TestServerActionsMailBatch(MailCommon):
             )
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.cr.sql_statement_count
-            action.with_context(
-                active_model="mail.test.lead",
-                active_ids=leads.ids,
-                active_id=leads[0].id,
-            ).run()
-            self.env.flush_all()
-            return self.cr.sql_statement_count - before, leads
+            with counting_statements(self.cr) as statements:
+                action.with_context(
+                    active_model="mail.test.lead",
+                    active_ids=leads.ids,
+                    active_id=leads[0].id,
+                ).run()
+                self.env.flush_all()
+                return statements.count, leads
 
         few, _ = cost_of(2)
         many, leads = cost_of(20)
@@ -1481,12 +1483,12 @@ class TestMailPostBatch(MailCommon):
         )
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self.action.with_context(
-            active_model="mail.test.simple", active_ids=records.ids
-        ).run()
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.action.with_context(
+                active_model="mail.test.simple", active_ids=records.ids
+            ).run()
+            self.env.flush_all()
+            return statements.count
 
 
 @tagged("ir_actions")

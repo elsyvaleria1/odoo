@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from odoo import Command, fields
 from odoo.exceptions import ValidationError
-from odoo.tests import Form, tagged
+from odoo.tests import Form, counting_statements, tagged
 
 from .common import TestMrpCommon
 
@@ -568,9 +568,9 @@ class TestStockIntegration(TestMrpCommon):
         self.env.registry.clear_all_caches()
         self.env.cr.cache.clear()
         gc.collect()
-        before = self.env.cr.sql_statement_count
-        report._get_report_data(bom.id)
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            report._get_report_data(bom.id)
+            return statements.count
 
     def test_the_bom_structure_resolves_one_rule_chain_per_route_set(self):
         self.bom_structure_statements(2)

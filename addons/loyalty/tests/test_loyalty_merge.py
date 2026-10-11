@@ -1,5 +1,5 @@
 
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -205,10 +205,12 @@ class TestLoyaltyMerge(TransactionCase):
         self.env.flush_all()
         self.env.invalidate_all()
 
-        before = self.env.cr.sql_statement_count
-        self.env["wizard.res.partner.merge"]._merge_loyalty_cards(source, destination)
-        self.env.flush_all()
-        queries = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.env["wizard.res.partner.merge"]._merge_loyalty_cards(
+                source, destination
+            )
+            self.env.flush_all()
+            queries = statements.count
 
         self.assertLess(
             queries,

@@ -3,9 +3,8 @@ from datetime import datetime
 from markupsafe import Markup
 
 from odoo import Command
-from odoo.db.metrics import observing_statements
 from odoo.exceptions import AccessError, ValidationError
-from odoo.tests import freeze_time, tagged
+from odoo.tests import counting_statements, freeze_time, tagged
 
 from .test_project_base import TestProjectCommon
 
@@ -372,11 +371,10 @@ class TestCreateDerivedProject(TestProjectCommon):
 
     def _count(self, vals_list):
         self.env.flush_all()
-        with observing_statements():
-            count0 = self.env.cr.sql_statement_count
+        with counting_statements(self.env.cr) as statements:
             tasks = self.env["project.task"].create(vals_list)
             self.env.flush_all()
-            return tasks, self.env.cr.sql_statement_count - count0
+            return tasks, statements.count
 
     def test_derived_projects_cost_what_explicit_ones_cost(self) -> None:
         _tasks, explicit = self._count(

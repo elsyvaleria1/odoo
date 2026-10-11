@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from odoo import fields
+from odoo.tests import counting_statements
 
 from odoo.addons.device.tests.common import DeviceTransactionCase
 
@@ -40,9 +41,9 @@ class TestLastLogPointer(DeviceTransactionCase):
         self.env.flush_all()
         self.env.invalidate_all()
 
-        before = self.env.cr.sql_statement_count
-        self.assertTrue(self.device.log_last_id)
-        queries = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.assertTrue(self.device.log_last_id)
+            queries = statements.count
         self.assertLessEqual(
             queries,
             2,

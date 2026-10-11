@@ -6,7 +6,7 @@ from freezegun import freeze_time
 from markupsafe import Markup
 
 from odoo.exceptions import ValidationError
-from odoo.tests import tagged, users, warmup
+from odoo.tests import counting_statements, tagged, users, warmup
 from odoo.tools import mute_logger, safe_eval
 
 from odoo.addons.mail.models.mail_template import (
@@ -319,11 +319,11 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
         for size in (51, 100):
             self.env.flush_all()
             self.env.cr.flush()
-            before = self.env.cr.sql_statement_count
-            mails_sudo = template.send_mail_batch(record_ids[:size])
-            self.env.flush_all()
-            self.env.cr.flush()
-            counts[size] = self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                mails_sudo = template.send_mail_batch(record_ids[:size])
+                self.env.flush_all()
+                self.env.cr.flush()
+                counts[size] = statements.count
             sent[size] = len(mails_sudo)
 
         self.assertEqual(

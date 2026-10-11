@@ -1,5 +1,5 @@
 from odoo import Command
-from odoo.tests import tagged, users
+from odoo.tests import counting_statements, tagged, users
 
 from odoo.addons.mail.tests.common import MailCommon
 from odoo.addons.mail.tools.discuss import Store
@@ -21,9 +21,9 @@ class TestMailReadScaling(MailCommon):
         function()
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        function()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            function()
+            return statements.count
 
     def _assert_flat(self, serialize, small, large):
         self.assertEqual(

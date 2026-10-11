@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from lxml import etree
 
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase, tagged
 
 from odoo.addons.base.tests.common import TransactionCaseWithUserDemo
@@ -224,25 +225,25 @@ class TestQweb(TransactionCaseWithUserDemo):
                 IrUiView.invalidate_model()
 
         def check(template, name, queries):
-            init = env.cr.sql_statement_count
-            value = str(env["ir.qweb"]._render(template, {"doc": name}))
-            self.assertEqual(value, expected % name)
-            self.assertEqual(
-                env.cr.sql_statement_count - init,
-                queries,
-                f"Maximum queries: {queries}",
-            )
+            with counting_statements(env.cr) as counted:
+                value = str(env["ir.qweb"]._render(template, {"doc": name}))
+                self.assertEqual(value, expected % name)
+                self.assertEqual(
+                    counted.count,
+                    queries,
+                    f"Maximum queries: {queries}",
+                )
 
         def check_website(template, name, queries):
-            init = env.cr.sql_statement_count
-            with MockRequest(env, website=website) as request:
-                value = str(request.env["ir.qweb"]._render(template, {"doc": name}))
-            self.assertEqual(value, expected_website % name)
-            self.assertEqual(
-                env.cr.sql_statement_count - init,
-                queries,
-                f"Maximum queries: {queries}",
-            )
+            with counting_statements(env.cr) as statements:
+                with MockRequest(env, website=website) as request:
+                    value = str(request.env["ir.qweb"]._render(template, {"doc": name}))
+                self.assertEqual(value, expected_website % name)
+                self.assertEqual(
+                    statements.count,
+                    queries,
+                    f"Maximum queries: {queries}",
+                )
 
         FIRST_SEARCH_FETCH = 1
         OTHER_SEARCH_FETCH = 3

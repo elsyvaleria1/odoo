@@ -1,7 +1,7 @@
 import gc
 
 from odoo import Command
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -61,9 +61,9 @@ class TestOrderpointReplenishBatch(TransactionCase):
         self.env.registry.clear_all_caches()
         gc.collect()
         orderpoints = orderpoints.browse(orderpoints.ids)
-        before = self.env.cr.sql_statement_count
-        quantities = orderpoints._get_qty_to_order_map()
-        statements = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            quantities = orderpoints._get_qty_to_order_map()
+            statements = counted.count
         self.assertEqual(
             set(quantities.values()),
             {12.0},

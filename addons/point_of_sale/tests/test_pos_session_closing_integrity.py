@@ -5,7 +5,7 @@ from unittest.mock import patch
 from odoo import fields
 from odoo.exceptions import UserError
 from odoo.fields import Command
-from odoo.tests import new_test_user, tagged
+from odoo.tests import counting_statements, new_test_user, tagged
 
 from .common import PosLazySessionCommon, TestPoSCommon
 
@@ -582,18 +582,17 @@ class TestPosSessionClosingPaths(TestPoSCommon):
             return reconcile_plan(records, plan)
 
         self.env.flush_all()
-        statements = self.env.cr.sql_statement_count
         with (
+            counting_statements(self.env.cr) as statements,
             patch.object(AccountPayment, "create", counted_payment_create),
             patch.object(MoveLine, "_reconcile_plan", counted_reconcile_plan),
         ):
             session.action_pos_session_closing_control()
             self.env.flush_all()
-        statements = self.env.cr.sql_statement_count - statements
         _logger.debug(
             "Closing 20 split bank payments: %s statements, payment batches %s,"
             " reconcile plans %s",
-            statements,
+            statements.count,
             payment_batches,
             reconcile_plans,
         )

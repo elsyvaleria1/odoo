@@ -1,5 +1,6 @@
 import odoo.tests
 from odoo import Command
+from odoo.tests import counting_statements
 
 
 @odoo.tests.tagged("post_install", "-at_install")
@@ -161,11 +162,11 @@ class TestTranslationWritePropagation(odoo.tests.TransactionCase):
             "test premise: one language installed",
         )
 
-        before = self.env.cr.sql_statement_count
-        for index, record in enumerate(records):
-            record.with_context(lang="en_US").name = f"edited{index}"
-        self.env.flush_all()
-        statements = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            for index, record in enumerate(records):
+                record.with_context(lang="en_US").name = f"edited{index}"
+            self.env.flush_all()
+            statements = counted.count
 
         self.assertLess(
             statements,

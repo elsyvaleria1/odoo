@@ -10,7 +10,7 @@ from lxml.html import builder as h
 from odoo.exceptions import MissingError, UserError, ValidationError
 from odoo.libs.json import loads as json_loads
 from odoo.modules.module import _DEFAULT_MANIFEST, Manifest
-from odoo.tests import HttpCase, common, tagged
+from odoo.tests import HttpCase, common, counting_statements, tagged
 
 
 def attrs(**kwargs):
@@ -2397,9 +2397,9 @@ class TestFirstPageIdBatchCost(common.TransactionCase):
 
         def queries_for(count):
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            views[:count].mapped("first_page_id")
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                views[:count].mapped("first_page_id")
+                return statements.count
 
         small = queries_for(2)
         large = queries_for(20)

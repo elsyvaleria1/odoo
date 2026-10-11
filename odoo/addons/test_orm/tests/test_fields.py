@@ -17,7 +17,7 @@ from odoo.exceptions import (
 )
 from odoo.fields import Domain
 from odoo.orm.registration import add_model_to_registry
-from odoo.tests import Form, TransactionCase, tagged, users
+from odoo.tests import Form, TransactionCase, counting_statements, tagged, users
 from odoo.tests.file_samples import SVG, ZIP
 from odoo.tools import float_repr, html_sanitize, human_size, mute_logger
 from odoo.tools.image import image_data_uri
@@ -6142,9 +6142,9 @@ class TestTranslatedFieldEnUsFallback(TransactionCase):
 class TestReferenceBatchValidation(TransactionCase):
     def _query_count(self, func):
         self.env.flush_all()
-        count0 = self.cr.sql_statement_count
-        result = func()
-        return result, self.cr.sql_statement_count - count0
+        with counting_statements(self.cr) as statements:
+            result = func()
+            return result, statements.count
 
     def _reset_reference_memo(self):
         from odoo.orm.fields.reference import REFERENCE_VERIFIED_CACHE_KEY

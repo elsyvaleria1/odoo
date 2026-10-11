@@ -6,7 +6,7 @@ from psycopg.errors import UniqueViolation
 from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
-from odoo.tests import Form, TransactionCase, tagged
+from odoo.tests import Form, TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -612,9 +612,9 @@ class TestAccountMoveTemplate(TransactionCase):
         lines = template.line_ids
         lines.mapped("account_code")
 
-        before = self.env.cr.sql_statement_count
-        lines._check_account_code_exists()
-        self.assertLess(self.env.cr.sql_statement_count - before, 5)
+        with counting_statements(self.env.cr) as statements:
+            lines._check_account_code_exists()
+            self.assertLess(statements.count, 5)
 
     def test_sections_and_notes_reach_the_generated_move(self):
         self.template.write(
@@ -830,9 +830,9 @@ class TestAccountMoveTemplate(TransactionCase):
         lines = template.line_ids
         lines.mapped("account_code")
 
-        before = self.env.cr.sql_statement_count
-        lines.mapped("account_id")
-        self.assertLess(self.env.cr.sql_statement_count - before, 5)
+        with counting_statements(self.env.cr) as statements:
+            lines.mapped("account_id")
+            self.assertLess(statements.count, 5)
 
     def test_an_archived_template_keeps_its_name_reserved(self):
         self.template.active = False

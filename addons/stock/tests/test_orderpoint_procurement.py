@@ -6,7 +6,7 @@ from freezegun import freeze_time
 from odoo import fields
 from odoo.exceptions import ValidationError
 from odoo.fields import Command
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -85,9 +85,9 @@ class TestOrderpointProcurement(TransactionCase):
         )
 
     def _statements(self, function):
-        before = self.env.cr.sql_statement_count
-        function()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            function()
+            return statements.count
 
     def test_the_to_reorder_filter_follows_the_report_horizon(self):
         self.env.company.stock_config_id.horizon_days = 0

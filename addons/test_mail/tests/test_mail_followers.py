@@ -6,7 +6,7 @@ from psycopg.errors import IntegrityError
 
 from odoo import Command
 from odoo.exceptions import AccessError
-from odoo.tests import tagged, users
+from odoo.tests import counting_statements, tagged, users
 from odoo.tests.common import HttpCase
 from odoo.tools import mute_logger
 
@@ -1426,15 +1426,15 @@ class AdvancedResponsibleNotifiedTest(MailCommon):
         ]
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        records = (
-            self.env["mail.test.track"]
-            .with_user(self.user_employee)
-            .with_context(mail_notify_force_send=False)
-            .create(vals)
-        )
-        self.env.flush_all()
-        return self.cr.sql_statement_count - before, records
+        with counting_statements(self.cr) as statements:
+            records = (
+                self.env["mail.test.track"]
+                .with_user(self.user_employee)
+                .with_context(mail_notify_force_send=False)
+                .create(vals)
+            )
+            self.env.flush_all()
+            return statements.count, records
 
     def test_assigning_a_batch_to_different_people_costs_one_batch(self):
         users = self.env["res.users"].create(

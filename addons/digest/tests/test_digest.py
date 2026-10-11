@@ -9,7 +9,7 @@ from odoo import SUPERUSER_ID, fields, http
 from odoo.exceptions import AccessError
 from odoo.fields import Command, Domain
 from odoo.libs.web import urls
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 from odoo.tests.common import users
 from odoo.tools import mute_logger
 
@@ -818,16 +818,16 @@ class TestDigestDefects(TestDigestCommon):
                 None,
                 self.company_1,
             )
-            before = self.cr.sql_statement_count
-            one_scan = scoped._read_kpi_over_windows(
-                "kpi_probe",
-                "res.users",
-                "create_date",
-                Domain.TRUE,
-                None,
-                self.company_1,
-            )
-            spent = self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as statements:
+                one_scan = scoped._read_kpi_over_windows(
+                    "kpi_probe",
+                    "res.users",
+                    "create_date",
+                    Domain.TRUE,
+                    None,
+                    self.company_1,
+                )
+                spent = statements.count
         finally:
             self.cr.cache.pop(KPI_AGGREGATE_MEMO, None)
 
@@ -980,9 +980,9 @@ class TestDigestDefects(TestDigestCommon):
             )
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.cr.sql_statement_count
-            digests._get_digests_to_slowdown()
-            return self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as statements:
+                digests._get_digests_to_slowdown()
+                return statements.count
 
         small, large = measure(2), measure(20)
         self.assertLessEqual(

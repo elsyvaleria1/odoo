@@ -1,6 +1,6 @@
 from contextlib import suppress
 
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from odoo.addons.mail.models.mail_followers import AUTO_SUBSCRIBE_QUEUE
 from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
@@ -316,11 +316,11 @@ class TestAutoSubscribeScaling(AutoSubscribeCase):
             tickets = self.Ticket.create([{"name": f"T{i}"} for i in range(size)])
             self.env.invalidate_all()
             self.flush_tracking()
-            before = self.env.cr.sql_statement_count
-            for ticket in tickets:
-                ticket.user_id = self.user_assignee
-            self.flush_tracking()
-            counts[size] = self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                for ticket in tickets:
+                    ticket.user_id = self.user_assignee
+                self.flush_tracking()
+                counts[size] = statements.count
             for ticket in tickets:
                 self.assertEqual(len(self._get_assignments(ticket)), 1)
             self.assertEqual(

@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command, Domain
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 from odoo.addons.stock.models.stock_procurement import ProcurementException
 from odoo.addons.stock.models.stock_rule_selection import StockRuleSelection
@@ -483,10 +483,10 @@ class TestPushBatchCost(ProcurementCase):
         moves._action_confirm()
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        moves._push_apply()
-        self.env.flush_all()
-        return self.cr.sql_statement_count - before, moves
+        with counting_statements(self.cr) as statements:
+            moves._push_apply()
+            self.env.flush_all()
+            return statements.count, moves
 
     def test_pushing_a_batch_costs_no_create_per_move(self):
         few_queries, _few = self._push_cost(2)

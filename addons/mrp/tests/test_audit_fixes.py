@@ -7,7 +7,7 @@ from freezegun import freeze_time
 from odoo import Command, fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
-from odoo.tests import Form, tagged
+from odoo.tests import Form, counting_statements, tagged
 
 from .common import TestMrpCommon
 from odoo.addons.mail.tests.common import mail_new_test_user
@@ -974,15 +974,15 @@ class TestMrpAuditFixes(TestMrpCommon):
         def cost(count):
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            self.env["mrp.production"].create(
-                [
-                    {"product_id": product.id, "product_qty": 1.0, "bom_id": bom.id}
-                    for _ in range(count)
-                ]
-            )
-            self.env.flush_all()
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                self.env["mrp.production"].create(
+                    [
+                        {"product_id": product.id, "product_qty": 1.0, "bom_id": bom.id}
+                        for _ in range(count)
+                    ]
+                )
+                self.env.flush_all()
+                return statements.count
 
         few, many = cost(2), cost(12)
         per_order = (many - few) / 10
@@ -1899,22 +1899,22 @@ class TestMrpAuditFixes(TestMrpCommon):
             {"name": "Audit batch %s extra" % tag, "is_storable": True}
         )
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        productions.write(
-            {
-                "move_raw_ids": [
-                    Command.create(
-                        {
-                            "product_id": extra.id,
-                            "product_uom_qty": 1.0,
-                            "product_uom_id": unit.id,
-                        }
-                    )
-                ]
-            }
-        )
-        self.env.flush_all()
-        queries = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            productions.write(
+                {
+                    "move_raw_ids": [
+                        Command.create(
+                            {
+                                "product_id": extra.id,
+                                "product_uom_qty": 1.0,
+                                "product_uom_id": unit.id,
+                            }
+                        )
+                    ]
+                }
+            )
+            self.env.flush_all()
+            queries = statements.count
         added = productions.move_raw_ids.filtered(lambda m: not m.bom_line_id)
         self.assertEqual(len(added), count, "one move per order, whatever the batching")
         return queries
@@ -2032,9 +2032,9 @@ class TestMrpAuditFixes(TestMrpCommon):
     def _sn_uniqueness_cost(self, line_count, tag):
         production = self._audit_serial_byproduct_order(line_count, tag)
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        production._check_sn_uniqueness()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            production._check_sn_uniqueness()
+            return statements.count
 
     def test_checking_serial_byproducts_costs_one_batch(self):
         small = self._sn_uniqueness_cost(2, "small")
@@ -3393,11 +3393,11 @@ class TestMrpAuditFixes(TestMrpCommon):
             )
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            exploded = moves.action_explode()
-            self.env.flush_all()
-            self.assertTrue(exploded, "the fixture must actually explode")
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                exploded = moves.action_explode()
+                self.env.flush_all()
+                self.assertTrue(exploded, "the fixture must actually explode")
+                return statements.count
 
         few = queries_for(2)
         many = queries_for(20)

@@ -4,9 +4,8 @@ from unittest.mock import patch
 
 import odoo
 from odoo import Command, fields
-from odoo.db.metrics import observing_statements
 from odoo.exceptions import AccessError, UserError
-from odoo.tests import new_test_user
+from odoo.tests import counting_statements, new_test_user
 
 from odoo.addons.point_of_sale.models.pos_config import (
     DEFAULT_LIMIT_LOAD_PARTNER,
@@ -46,10 +45,9 @@ class TestPosConfigDataLoad(TestPoSCommon):
     def _statements_to_compute_fiscal_positions(self, partners):
         partners.invalidate_recordset(["fiscal_position_id"])
         partners = partners.browse(partners.ids)
-        with observing_statements():
-            before = self.env.cr.sql_statement_count
+        with counting_statements(self.env.cr) as statements:
             positions = [partner.fiscal_position_id for partner in partners]
-            return self.env.cr.sql_statement_count - before, positions
+            return statements.count, positions
 
     def test_partner_fiscal_positions_cost_the_same_for_three_or_thirty(self):
         FiscalPosition = self.env["account.fiscal.position"]

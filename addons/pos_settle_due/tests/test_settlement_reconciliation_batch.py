@@ -2,7 +2,7 @@ import logging
 from unittest.mock import patch
 
 import odoo
-from odoo.db.metrics import observing_statements
+from odoo.tests import counting_statements
 
 from odoo.addons.pos_settle_due.tests.test_receivable_account_reconciliation import (
     TestPOSCustomerAccountReconciliation,
@@ -44,12 +44,11 @@ class TestSettlementReconciliationBatch(TestPOSCustomerAccountReconciliation):
                 autospec=True,
                 side_effect=reconcile_plan,
             ) as plan,
-            observing_statements(),
         ):
             self.env.flush_all()
-            before = self.env.cr.sql_statement_count
-            session2.close_session_from_ui()
-            statements = self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as counted:
+                session2.close_session_from_ui()
+                statements = counted.count
         _logger.debug(
             "closing with 20 settlements: %s statements, %s plans",
             statements,

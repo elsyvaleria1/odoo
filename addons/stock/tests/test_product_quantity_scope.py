@@ -3,7 +3,7 @@ import datetime
 from odoo import fields
 from odoo.exceptions import RedirectWarning, UserError
 from odoo.fields import Domain
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 from odoo.addons.stock.models.product_product_quantity import (
     ProductProductQuantity as StockProductProduct,
@@ -287,14 +287,12 @@ class TestProductQuantityScope(TransactionCase):
         ]._get_domains_quantity_from_context()
         self.env.flush_all()
         past = fields.Datetime.now() - datetime.timedelta(days=5)
-        queries_before = self.env.cr.sql_statement_count
-        scope = self.product._prepare_quantities_scope(
-            QuantityFilters(to_date=past), location_domains=location_domains
-        )
+        with counting_statements(self.env.cr) as statements:
+            scope = self.product._prepare_quantities_scope(
+                QuantityFilters(to_date=past), location_domains=location_domains
+            )
         self.assertEqual(
-            self.env.cr.sql_statement_count,
-            queries_before,
-            "assembling the scope must not hit the database",
+            statements.count, 0, "assembling the scope must not hit the database"
         )
         self.assertTrue(scope.dates_in_the_past)
         self.assertIsNone(scope.expired_quant)

@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from odoo import Command
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.tests import new_test_user, tagged
+from odoo.tests import counting_statements, new_test_user, tagged
 from odoo.tools import OrderedSet
 
 from odoo.addons.stock.models.stock_move_line import (
@@ -269,10 +269,10 @@ class TestBatchQuantCost(TestMoveLineCommon):
         lines = self._lines(self._delivery(product, 10 * count), count, 5)
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        lines.write({"quantity": 3})
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            lines.write({"quantity": 3})
+            self.env.flush_all()
+            return statements.count
 
     def test_writing_a_quantity_costs_the_same_for_two_lines_as_for_twenty(self):
         small, large = self._write_cost(2), self._write_cost(20)
@@ -318,10 +318,10 @@ class TestBatchQuantCost(TestMoveLineCommon):
                 }
             ] * count
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            self.MoveLine.create(vals)
-            self.env.flush_all()
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                self.MoveLine.create(vals)
+                self.env.flush_all()
+                return statements.count
 
         small, large = cost(2), cost(20)
         per_line = (large - small) / 18

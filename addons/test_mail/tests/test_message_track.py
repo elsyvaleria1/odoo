@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from odoo import Command, fields
-from odoo.tests import Form, new_test_user, tagged, users
+from odoo.tests import Form, counting_statements, new_test_user, tagged, users
 from odoo.tools import mute_logger
 
 from odoo.addons.mail.tests.common import MailCommon
@@ -237,9 +237,9 @@ class TestTracking(MailCommon):
 
         self.env.invalidate_all()
         with patch.object(TrackingValue, "_tracking_value_format", traced):
-            before = self.cr.sql_statement_count
-            result = Store().add(messages).get_result()["mail.message"]
-            statements = self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as counted:
+                result = Store().add(messages).get_result()["mail.message"]
+                statements = counted.count
         self.assertEqual(calls, [30])
         self.assertTrue(all(len(values["trackingValues"]) == 1 for values in result))
         self.assertLess(statements, 60, "formatting a page must not scale per message")
@@ -1712,11 +1712,11 @@ class TestTrackingBatchCost(MailCommon):
         )
         self.flush_tracking()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        for index, record in enumerate(records):
-            record.customer_id = self.customers[index % len(self.customers)]
-        self.flush_tracking()
-        return self.cr.sql_statement_count - before, records
+        with counting_statements(self.cr) as statements:
+            for index, record in enumerate(records):
+                record.customer_id = self.customers[index % len(self.customers)]
+            self.flush_tracking()
+            return statements.count, records
 
     def _tracking_messages_of(self, records):
         return (
@@ -1785,13 +1785,13 @@ class TestTrackingBatchCost(MailCommon):
         records.message_subscribe(partner_ids=self.customers[:3].ids)
         self.flush_tracking()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        for index, record in enumerate(records):
-            if authors:
-                record._track_set_author(authors[index % len(authors)])
-            record.container_id = containers[index % len(containers)]
-        self.flush_tracking()
-        return self.cr.sql_statement_count - before, records
+        with counting_statements(self.cr) as statements:
+            for index, record in enumerate(records):
+                if authors:
+                    record._track_set_author(authors[index % len(authors)])
+                record.container_id = containers[index % len(containers)]
+            self.flush_tracking()
+            return statements.count, records
 
     def test_tracking_with_a_subtype_costs_no_query_per_record(self):
         few_queries, _few = self._subtype_tracked_write_on(2)
@@ -1828,13 +1828,13 @@ class TestTrackingBatchCost(MailCommon):
         )
         self.flush_tracking()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        for index, record in enumerate(records):
-            if authors:
-                record._track_set_author(authors[index % len(authors)])
-            record.email_from = f"logged.{index}@test.example.com"
-        self.flush_tracking()
-        return self.cr.sql_statement_count - before, records
+        with counting_statements(self.cr) as statements:
+            for index, record in enumerate(records):
+                if authors:
+                    record._track_set_author(authors[index % len(authors)])
+                record.email_from = f"logged.{index}@test.example.com"
+            self.flush_tracking()
+            return statements.count, records
 
     def test_distinct_authors_cost_no_query_per_author(self):
         for label, writer in (
@@ -1871,10 +1871,10 @@ class TestTrackingBatchCost(MailCommon):
             records.message_subscribe(partner_ids=self.customers[:3].ids)
             self.flush_tracking()
             self.env.invalidate_all()
-            before = self.cr.sql_statement_count
-            records.container_id = container
-            self.flush_tracking()
-            return self.cr.sql_statement_count - before, records
+            with counting_statements(self.cr) as statements:
+                records.container_id = container
+                self.flush_tracking()
+                return statements.count, records
 
         few_queries, _few = batched_write_on(2)
         many_queries, many_records = batched_write_on(20)
@@ -2144,9 +2144,9 @@ class TestTrackingFieldReadOnSomeRecords(MailCommon):
         def queries(records):
             trackings = records.message_ids.sudo().tracking_value_ids
             self.env.invalidate_all()
-            before = self.cr.sql_statement_count
-            trackings._filtered_has_field_access(env)
-            return self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as statements:
+                trackings._filtered_has_field_access(env)
+                return statements.count
 
         queries(self.records)
         self.assertEqual(queries(self.records), queries(self.records[:1]))

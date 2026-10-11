@@ -7,7 +7,7 @@ from freezegun import freeze_time
 from odoo import Command
 from odoo.exceptions import AccessError, ValidationError
 from odoo.libs.datetime import timezone
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from odoo.addons.base.models.ir_module import Manifest
 from odoo.addons.hr_holidays.models.hr_employee import HrEmployee
@@ -1457,10 +1457,10 @@ class TestCreatingManyRequests(TestHrHolidaysCommon):
     def _statements_to_create(self, count):
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self._create(count)
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self._create(count)
+            self.env.flush_all()
+            return statements.count
 
     def test_the_cost_does_not_grow_with_the_number_of_requests(self):
         self._statements_to_create(5)

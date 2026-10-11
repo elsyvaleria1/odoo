@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 
-from odoo.tests import freeze_time
+from odoo.tests import counting_statements, freeze_time
 
 from odoo.addons.project_forecast.tests.common import TestCommonForecast
 
@@ -325,10 +325,10 @@ class TestPlanningSlotEffectiveCost(TestCommonForecast):
         self._slots(extra_slots)
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self._timesheet()
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self._timesheet()
+            self.env.flush_all()
+            return statements.count
 
     def test_recomputing_many_shifts_does_not_cost_a_query_per_shift(self):
         few = self._cost_of_a_timesheet_with(4)

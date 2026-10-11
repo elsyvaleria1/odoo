@@ -1,7 +1,7 @@
 import unittest
 
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 from odoo.tools.misc import format_datetime, formatLang
 
 from .common import create_test_product
@@ -442,14 +442,14 @@ class TestAuditRegressions(ApprovalCommon):
         args = ("sale.order", "sale_order_line_id", "order_id")
 
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        small._documents_of_model_by_request(*args)
-        small_cost = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            small._documents_of_model_by_request(*args)
+            small_cost = counted.count
 
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        large._documents_of_model_by_request(*args)
-        large_cost = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            large._documents_of_model_by_request(*args)
+            large_cost = statements.count
 
         self.assertEqual(
             small_cost,

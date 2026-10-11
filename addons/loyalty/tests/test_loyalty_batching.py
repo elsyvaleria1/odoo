@@ -1,6 +1,6 @@
 
 from odoo.fields import Command
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -32,10 +32,10 @@ class TestLoyaltyBatching(TransactionCase):
     def _queries(self, operation):
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        operation()
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            operation()
+            self.env.flush_all()
+            return statements.count
 
     def test_resolving_discounted_products_costs_one_search(self):
         small, large = self._rewards(2), self._rewards(20)

@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime, timedelta
 from psycopg import IntegrityError
 
 from odoo.exceptions import UserError, ValidationError
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 from odoo.tools import mute_logger
 
 
@@ -38,10 +38,10 @@ class TestResourceResourceCrud(TransactionCase):
         ]
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self.env["resource.resource"].create(vals_list)
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.env["resource.resource"].create(vals_list)
+            self.env.flush_all()
+            return statements.count
 
     def test_a_batch_reads_its_users_and_companies_once(self):
         self.assertEqual(

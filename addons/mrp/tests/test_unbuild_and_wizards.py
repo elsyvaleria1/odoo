@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from odoo import Command, fields
 from odoo.exceptions import UserError
-from odoo.tests import Form, tagged
+from odoo.tests import Form, counting_statements, tagged
 
 from odoo.addons.mrp.tests.common import TestMrpCommon
 
@@ -315,10 +315,10 @@ class TestUnbuildAndWizards(TestMrpCommon):
             self.env.invalidate_all()
             self.env.registry.clear_all_caches()
             gc.collect()
-            before = self.env.cr.sql_statement_count
-            wizard.change_prod_qty()
-            self.env.flush_all()
-            counts.append(self.env.cr.sql_statement_count - before)
+            with counting_statements(self.env.cr) as statements:
+                wizard.change_prod_qty()
+                self.env.flush_all()
+                counts.append(statements.count)
         self.assertLessEqual(counts[1] - counts[0], (8 - 2) * 10, counts)
 
     def test_replenishment_info_lists_only_boms_the_orderpoint_can_use(self):
@@ -439,10 +439,10 @@ class TestUnbuildAndWizards(TestMrpCommon):
         self.env.invalidate_all()
         self.env.registry.clear_all_caches()
         gc.collect()
-        before = self.env.cr.sql_statement_count
-        unbuild.action_unbuild()
-        self.env.flush_all()
-        statements = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            unbuild.action_unbuild()
+            self.env.flush_all()
+            statements = counted.count
         for part in parts:
             self.assertEqual(
                 self.env["stock.quant"]._get_available_quantity(
@@ -642,10 +642,10 @@ class TestUnbuildAndWizards(TestMrpCommon):
             self.env.invalidate_all()
             self.env.registry.clear_all_caches()
             gc.collect()
-            before = self.env.cr.sql_statement_count
-            wizard.change_prod_qty()
-            self.env.flush_all()
-            counts.append(self.env.cr.sql_statement_count - before)
+            with counting_statements(self.env.cr) as statements:
+                wizard.change_prod_qty()
+                self.env.flush_all()
+                counts.append(statements.count)
             self.assertEqual(set(mo.move_raw_ids.mapped("quantity")), {4.0})
         self.assertLess((counts[1] - counts[0]) / 9, 2, counts)
 

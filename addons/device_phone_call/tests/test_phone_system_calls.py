@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta
 
 from odoo import Command, fields
+from odoo.tests import counting_statements
 from odoo.tests.common import tagged
 
 from odoo.addons.device.tests.common import DeviceTransactionCase
@@ -235,10 +236,10 @@ class TestPhoneSystemCalls(DeviceTransactionCase):
         self.env.flush_all()
         self.env.invalidate_all()
 
-        before = self.env.cr.sql_statement_count
-        self.calls._cron_complete_awaiting_calls()
-        self.env.flush_all()
-        statements = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            self.calls._cron_complete_awaiting_calls()
+            self.env.flush_all()
+            statements = counted.count
         _logger.debug("joining 30 waiting calls took %d statements", statements)
 
         self.assertLessEqual(statements, 5)

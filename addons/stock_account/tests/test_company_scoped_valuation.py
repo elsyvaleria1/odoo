@@ -3,7 +3,7 @@ from datetime import timedelta
 from freezegun import freeze_time
 
 from odoo import Command, fields
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from odoo.addons.stock_account.tests.common import TestStockValuationCommon
 
@@ -400,9 +400,9 @@ class TestValuationBatching(TestStockValuationCommon):
 
     def _stock_value_query_count(self):
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self.company._get_stock_value()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.company._get_stock_value()
+            return statements.count
 
     def test_stock_value_does_not_scale_with_the_catalogue(self):
         categ = self.env["product.category"].create({"name": "batched"})
@@ -519,14 +519,14 @@ class TestLotValuationBatching(TestStockValuationCommon):
         self.env.flush_all()
 
         self.lots.invalidate_recordset()
-        before = self.env.cr.sql_statement_count
-        self.lots[:2].mapped("total_value")
-        two_lots = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            self.lots[:2].mapped("total_value")
+            two_lots = counted.count
 
         self.lots.invalidate_recordset()
-        before = self.env.cr.sql_statement_count
-        self.lots.mapped("total_value")
-        six_lots = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.lots.mapped("total_value")
+            six_lots = statements.count
 
         self.assertLess(
             six_lots,
@@ -564,11 +564,11 @@ class TestQuantValuationBatching(TestStockValuationCommon):
 
     def _read_group_query_count(self, products):
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self.env["stock.quant"]._read_group(
-            [("product_id", "in", products.ids)], ["location_id"], ["value:sum"]
-        )
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.env["stock.quant"]._read_group(
+                [("product_id", "in", products.ids)], ["location_id"], ["value:sum"]
+            )
+            return statements.count
 
     def test_value_sum_does_not_scale_with_the_product_count(self):
         categ = self._avco_categ()
@@ -634,11 +634,11 @@ class TestValuationScopeReuse(TestStockValuationCommon):
         scoped = product._with_valuation_context()
         self.env.flush_all()
 
-        before = self.env.cr.sql_statement_count
-        rescoped = scoped._with_valuation_context()
+        with counting_statements(self.env.cr) as statements:
+            rescoped = scoped._with_valuation_context()
         self.assertEqual(
-            self.env.cr.sql_statement_count,
-            before,
+            statements.count,
+            0,
             "re-scoping an already-scoped recordset searched the locations again",
         )
         for key in ("location", "owners", "strict"):

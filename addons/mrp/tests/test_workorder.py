@@ -4,7 +4,7 @@ from runpy import run_path
 
 from odoo import Command, fields
 from odoo.exceptions import UserError, ValidationError
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 from odoo.tools import file_path
 
 
@@ -553,20 +553,20 @@ class TestWorkorderAudit(TransactionCase):
             self.env.invalidate_all()
             self.env.registry.clear_all_caches()
             gc.collect()
-            before = self.env.cr.sql_statement_count
-            self.env["mrp.production"].create(
-                [
-                    {
-                        "product_id": product.id,
-                        "bom_id": bom.id,
-                        "product_qty": 1 + index,
-                        "date_start": date_start,
-                    }
-                    for index in range(count)
-                ]
-            )
-            self.env.flush_all()
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                self.env["mrp.production"].create(
+                    [
+                        {
+                            "product_id": product.id,
+                            "bom_id": bom.id,
+                            "product_qty": 1 + index,
+                            "date_start": date_start,
+                        }
+                        for index in range(count)
+                    ]
+                )
+                self.env.flush_all()
+                return statements.count
 
         few, many = cost(3), cost(12)
         self.assertLess((many - few) / 9, 1, (few, many))

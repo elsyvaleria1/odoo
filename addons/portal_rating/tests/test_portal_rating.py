@@ -5,7 +5,7 @@ from markupsafe import Markup
 
 from odoo import fields
 from odoo.exceptions import AccessError
-from odoo.tests import TransactionCase, new_test_user, tagged
+from odoo.tests import TransactionCase, counting_statements, new_test_user, tagged
 
 from odoo.addons.http_routing.tests.common import MockRequest
 
@@ -36,9 +36,9 @@ class TestPortalRating(TransactionCase):
         for batch in (messages[:3], messages):
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            values = batch.portal_message_format(options={"rating_include": True})
-            costs.append(self.env.cr.sql_statement_count - before)
+            with counting_statements(self.env.cr) as statements:
+                values = batch.portal_message_format(options={"rating_include": True})
+                costs.append(statements.count)
             for value in values:
                 self.assertEqual(value["rating_id"]["id"], expected[value["id"]])
         _logger.debug("Rating metadata SQL for 3/30 messages: %s", costs)

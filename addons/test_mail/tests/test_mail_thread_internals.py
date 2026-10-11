@@ -4,7 +4,7 @@ from unittest.mock import DEFAULT, patch
 from markupsafe import Markup
 
 from odoo import Command, exceptions, tools
-from odoo.tests import Form, tagged, users, warmup
+from odoo.tests import Form, counting_statements, tagged, users, warmup
 from odoo.tools import mute_logger
 
 from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
@@ -943,11 +943,11 @@ class TestAPI(ThreadRecipients):
             )
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        suggested = records._message_get_suggested_recipients_batch(
-            reply_discussion=True
-        )
-        return self.cr.sql_statement_count - before, suggested
+        with counting_statements(self.cr) as statements:
+            suggested = records._message_get_suggested_recipients_batch(
+                reply_discussion=True
+            )
+            return statements.count, suggested
 
     @users("employee")
     def test_message_get_suggested_recipients_batch_costs_no_query_per_record(self):

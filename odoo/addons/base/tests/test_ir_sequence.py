@@ -9,7 +9,7 @@ from freezegun import freeze_time
 import odoo
 from odoo.exceptions import ConcurrencyError, UserError
 from odoo.modules.registry import Registry
-from odoo.tests import common
+from odoo.tests import common, counting_statements
 from odoo.tests.common import BaseCase
 from odoo.tools.misc import mute_logger
 
@@ -857,13 +857,13 @@ class TestIrSequenceNextBatch(common.TransactionCase):
                 sequence = self._sequence(implementation=implementation)
                 sequence._next()
                 self.env.flush_all()
-                before = self.env.cr.sql_statement_count
-                sequence._next_batch(20)
-                self.assertLessEqual(
-                    self.env.cr.sql_statement_count - before,
-                    3,
-                    "twenty values should not cost twenty statements",
-                )
+                with counting_statements(self.env.cr) as statements:
+                    sequence._next_batch(20)
+                    self.assertLessEqual(
+                        statements.count,
+                        3,
+                        "twenty values should not cost twenty statements",
+                    )
 
 
 class TestIrSequenceTimezone(common.TransactionCase):

@@ -1,7 +1,7 @@
 import logging
 from unittest.mock import patch
 
-from odoo.tests import tagged, users
+from odoo.tests import counting_statements, tagged, users
 
 from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
 
@@ -39,10 +39,10 @@ class TestMailNotifyScaling(MailCommon):
     def _statements(self, function):
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        function()
-        self.flush_tracking()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            function()
+            self.flush_tracking()
+            return statements.count
 
     def _spy(self, model_name, method_name):
         model_class = type(self.env[model_name])

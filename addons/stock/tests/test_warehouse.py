@@ -5,7 +5,7 @@ from psycopg.errors import UniqueViolation
 
 from odoo import Command
 from odoo.exceptions import UserError, ValidationError
-from odoo.tests import Form, TransactionCase
+from odoo.tests import Form, TransactionCase, counting_statements
 from odoo.tests.common import new_test_user
 
 from odoo.addons.stock.tests.common import TestStockCommon
@@ -1754,10 +1754,10 @@ class TestWarehouse(TestStockCommon):
 
     def _cost(self, work):
         self.env.flush_all()
-        before = self.env.cr.sql_statement_count
-        work()
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            work()
+            self.env.flush_all()
+            return statements.count
 
     def test_creating_warehouses_in_a_batch_is_never_worse_per_warehouse(self):
         Warehouse = self.env["stock.warehouse"]

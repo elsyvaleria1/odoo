@@ -4,7 +4,7 @@ from unittest.mock import patch
 from markupsafe import Markup
 
 from odoo import Command, fields
-from odoo.tests import Form, tagged, users, warmup
+from odoo.tests import Form, counting_statements, tagged, users, warmup
 from odoo.tools import formataddr, mute_logger
 
 from odoo.addons.base.tests.common import TransactionCaseWithUserDemo
@@ -1228,16 +1228,16 @@ class TestMailAPIPerformance(BaseMailPerformance):
             self.env.invalidate_all()
             self.env.flush_all()
             self.env.cr.flush()
-            before = self.env.cr.sql_statement_count
-            records = self.env["mail.test.ticket"].create(
-                [
-                    {"name": f"Ticket {idx}", "container_id": container.id}
-                    for idx in range(size)
-                ]
-            )
-            self.env.flush_all()
-            self.env.cr.flush()
-            counts[size] = self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                records = self.env["mail.test.ticket"].create(
+                    [
+                        {"name": f"Ticket {idx}", "container_id": container.id}
+                        for idx in range(size)
+                    ]
+                )
+                self.env.flush_all()
+                self.env.cr.flush()
+                counts[size] = statements.count
 
             self.assertEqual(len(records.message_ids), size)
             for record in records:
@@ -1275,16 +1275,16 @@ class TestMailAPIPerformance(BaseMailPerformance):
             self.env.invalidate_all()
             self.env.flush_all()
             self.env.cr.flush()
-            before = self.env.cr.sql_statement_count
-            messages = records._message_post_batch(
-                {record.id: f"<p>Body {record.id}</p>" for record in records},
-                message_type="comment",
-                subtype_ids={record.id: subtype_id for record in records},
-                mail_auto_delete=False,
-            )
-            self.env.flush_all()
-            self.env.cr.flush()
-            counts[size] = self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                messages = records._message_post_batch(
+                    {record.id: f"<p>Body {record.id}</p>" for record in records},
+                    message_type="comment",
+                    subtype_ids={record.id: subtype_id for record in records},
+                    mail_auto_delete=False,
+                )
+                self.env.flush_all()
+                self.env.cr.flush()
+                counts[size] = statements.count
             posted[size] = (records, messages)
 
         records, messages = posted[25]

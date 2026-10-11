@@ -1,5 +1,5 @@
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from odoo.addons.approval.tests.common import ApprovalCommon
 from odoo.addons.mail.tests.common import mail_new_test_user
@@ -121,11 +121,11 @@ class TestGateBatchRaisesTogether(ApprovalCommon):
         )
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        documents.action_ship()
-        self.env.flush_all()
-        self.assertEqual(set(documents.mapped("approval_state")), {"pending"})
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            documents.action_ship()
+            self.env.flush_all()
+            self.assertEqual(set(documents.mapped("approval_state")), {"pending"})
+            return statements.count
 
     def test_each_further_document_costs_a_bounded_number_of_queries(self):
         ten = self._queries_to_ship(10)

@@ -6,7 +6,7 @@ from unittest.mock import patch
 import psycopg
 
 from odoo import exceptions
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 from odoo.tests.common import users
 from odoo.tools import SQL, formataddr, mute_logger
 
@@ -2741,16 +2741,16 @@ class TestMailAliasAddressAvailability(TestMailAliasCommon):
                 for index in range(count)
             ]
 
-        before = self.env.cr.sql_statement_count
-        self.env["mail.alias"].create(make(2, 0))
-        self.env.flush_all()
-        small = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            self.env["mail.alias"].create(make(2, 0))
+            self.env.flush_all()
+            small = counted.count
 
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self.env["mail.alias"].create(make(20, 100))
-        self.env.flush_all()
-        large = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self.env["mail.alias"].create(make(20, 100))
+            self.env.flush_all()
+            large = statements.count
 
         self.assertLessEqual(
             large - small,

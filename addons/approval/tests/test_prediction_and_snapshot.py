@@ -1,5 +1,5 @@
 from odoo import fields
-from odoo.tests import common, tagged
+from odoo.tests import common, counting_statements, tagged
 
 from .common import ApprovalCommon, add_category_approver, new_trip_category
 
@@ -136,9 +136,9 @@ class TestApprovalInsightsAuditRegressions(ApprovalCommon):
         self.env.invalidate_all()
         self.env.flush_all()
 
-        queries_before = self.env.cr.sql_statement_count
-        requests._predict_outcomes()
-        queries_issued = self.env.cr.sql_statement_count - queries_before
+        with counting_statements(self.env.cr) as statements:
+            requests._predict_outcomes()
+            queries_issued = statements.count
         self.assertLessEqual(
             queries_issued,
             3,

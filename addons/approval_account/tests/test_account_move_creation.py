@@ -1,5 +1,5 @@
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from .common import AccountApprovalCommon
 from odoo.addons.approval.tests.common import add_category_approver
@@ -449,14 +449,14 @@ class TestAccountMoveCreation(AccountApprovalCommon):
         large = self._make_invoiced_requests(6, "Cost large")
 
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        small._account_moves_by_request()
-        small_cost = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            small._account_moves_by_request()
+            small_cost = counted.count
 
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        large._account_moves_by_request()
-        large_cost = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            large._account_moves_by_request()
+            large_cost = statements.count
 
         self.assertEqual(
             small_cost,

@@ -9,6 +9,8 @@ import statistics
 import time
 from pathlib import Path
 
+from odoo.tests import counting_statements
+
 REPORT_VERSION = 1
 
 OUTLIER_PCT = 5
@@ -127,14 +129,13 @@ class BenchmarkRecorder:
                     setup()
                 if invalidate is not None:
                     invalidate()
-                q0 = cr.sql_statement_count
-                t0 = time.perf_counter_ns()
-                func()
-                t1 = time.perf_counter_ns()
-                q1 = cr.sql_statement_count
+                with counting_statements(cr) as statements:
+                    t0 = time.perf_counter_ns()
+                    func()
+                    t1 = time.perf_counter_ns()
                 if i >= warmup:
                     times_us.append((t1 - t0) / 1000.0)
-                    q_counts.append(q1 - q0)
+                    q_counts.append(statements.count)
         finally:
             if gc_was_enabled:
                 gc.enable()

@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from psycopg.errors import UniqueViolation
 
 from odoo.exceptions import UserError, ValidationError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 from odoo.tools import mute_logger
 
 from ..models.stock_location_putaway import PutawayScan
@@ -133,9 +133,9 @@ class TestPutawayScanCost(TestStockCommon):
         )
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        zone._get_putaway_strategy(self.productA, 1, package=package)
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            zone._get_putaway_strategy(self.productA, 1, package=package)
+            return statements.count
 
     def test_scanning_twice_as_many_candidates_costs_the_same(self):
         narrow = self._queries_to_scan("Narrow scan", 5)

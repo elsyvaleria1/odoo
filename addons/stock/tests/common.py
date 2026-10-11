@@ -1,7 +1,7 @@
 import re
 
 from odoo import Command
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.addons.product.tests.common import ProductVariantsCommon
@@ -493,7 +493,7 @@ class WarehousePickingCase(TransactionCase):
         for _attempt in range(2):
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            function()
-            counts.append(self.env.cr.sql_statement_count - before)
+            with counting_statements(self.env.cr) as statements:
+                function()
+                counts.append(statements.count)
         return counts[-1]

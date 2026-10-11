@@ -1,6 +1,7 @@
 import contextlib
 
 from odoo.exceptions import AccessError
+from odoo.tests import counting_statements
 from odoo.tests.common import tagged, users
 from odoo.tools import mute_logger
 
@@ -348,15 +349,15 @@ class TestMailMessageCreateDetails(MailCommon):
         Message.create(create(1))
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        Message.create(create(1))
-        self.env.flush_all()
-        one = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            Message.create(create(1))
+            self.env.flush_all()
+            one = counted.count
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        Message.create(create(20))
-        self.env.flush_all()
-        twenty = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            Message.create(create(20))
+            self.env.flush_all()
+            twenty = statements.count
         self.assertLess(
             twenty,
             one * 3,
@@ -635,14 +636,14 @@ class TestMailMessageLinkedMessages(MailCommon):
         self._store(Message.browse(self.linkers[:2].ids))
 
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self._store(Message.browse(self.linkers[:5].ids))
-        five = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            self._store(Message.browse(self.linkers[:5].ids))
+            five = counted.count
 
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        self._store(Message.browse(self.linkers.ids))
-        twenty = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self._store(Message.browse(self.linkers.ids))
+            twenty = statements.count
 
         self.assertEqual(
             five,

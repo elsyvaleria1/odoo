@@ -1,5 +1,5 @@
 from odoo.exceptions import ValidationError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from odoo.addons.stock.tests.common import TestStockCommon
 
@@ -23,9 +23,9 @@ class TestLocationSubtreeCost(TestStockCommon):
         zone = self._fan(name, width)
         locations = zone | zone.child_ids
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        locations.mapped("child_internal_location_ids")
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            locations.mapped("child_internal_location_ids")
+            return statements.count
 
     def test_reading_the_field_over_a_recordset_is_one_query(self):
         narrow = self._queries_to_read_the_fan("Narrow", 5)

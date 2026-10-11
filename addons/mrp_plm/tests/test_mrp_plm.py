@@ -2,7 +2,7 @@ import gc
 
 from odoo import Command
 from odoo.exceptions import ValidationError
-from odoo.tests import Form
+from odoo.tests import Form, counting_statements
 from odoo.tests.common import new_test_user
 
 from .test_common import TestPlmCommon
@@ -997,18 +997,18 @@ class TestMrpPlm(TestPlmCommon):
             self.env.invalidate_all()
             self.env.registry.clear_all_caches()
             gc.collect()
-            before = self.env.cr.sql_statement_count
-            self.Bom.create(
-                {
-                    "product_tmpl_id": finished.product_tmpl_id.id,
-                    "bom_line_ids": [
-                        Command.create({"product_id": component.id})
-                        for component in components[:count]
-                    ],
-                }
-            )
-            self.env.flush_all()
-            cost[count] = self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                self.Bom.create(
+                    {
+                        "product_tmpl_id": finished.product_tmpl_id.id,
+                        "bom_line_ids": [
+                            Command.create({"product_id": component.id})
+                            for component in components[:count]
+                        ],
+                    }
+                )
+                self.env.flush_all()
+                cost[count] = statements.count
         self.assertLess(
             (cost[16] - cost[4]) / 12,
             1,

@@ -1,5 +1,6 @@
 import random
 
+from odoo.tests import counting_statements
 from odoo.tests.common import tagged
 from odoo.tools import mute_logger
 
@@ -251,10 +252,10 @@ class TestLeadAssignPerf(TestLeadAssignCommon):
             self.env.flush_all()
             self.env.invalidate_all()
 
-            before = self.cr.sql_statement_count
-            team._allocate_leads(creation_delta_days=0)
-            self.env.flush_all()
-            counts[count] = self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as statements:
+                team._allocate_leads(creation_delta_days=0)
+                self.env.flush_all()
+                counts[count] = statements.count
 
         marginal = (counts[20] - counts[2]) / 18.0
         self.assertLess(

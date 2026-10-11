@@ -5,7 +5,7 @@ from psycopg.errors import UniqueViolation
 
 from odoo import Command
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.tests import new_test_user, tagged
+from odoo.tests import counting_statements, new_test_user, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.product.tests.common import ProductCommon
@@ -533,16 +533,16 @@ class TestProductAuditFixes(ProductCommon):
 
         def query_count(products):
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            Report._prepare_pricelist_rendering_context(
-                {
-                    "active_model": "product.template",
-                    "active_ids": products.ids,
-                    "pricelist_id": pricelist.id,
-                    "quantities": [1, 2, 3, 4, 5],
-                }
-            )
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                Report._prepare_pricelist_rendering_context(
+                    {
+                        "active_model": "product.template",
+                        "active_ids": products.ids,
+                        "pricelist_id": pricelist.id,
+                        "quantities": [1, 2, 3, 4, 5],
+                    }
+                )
+                return statements.count
 
         few = query_count(templates[:5])
         many = query_count(templates)

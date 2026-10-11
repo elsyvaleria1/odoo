@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from odoo import Command
 from odoo.exceptions import UserError
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG
 from odoo.addons.stock.const import CONTEXT_BLOCK_COMPLETING, is_internal_flag
@@ -56,10 +56,10 @@ class TestMoveSplitMergeEdgeCases(TransactionCase):
 
     def _statements(self, function):
         self.env.flush_all()
-        before = self.env.cr.sql_statement_count
-        function()
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            function()
+            self.env.flush_all()
+            return statements.count
 
     def test_backorder_of_a_dozen_move_splits_what_the_lines_left(self):
         product = self._product("bo-dozen", 100, uom_ids=[(4, self.dozen.id)])

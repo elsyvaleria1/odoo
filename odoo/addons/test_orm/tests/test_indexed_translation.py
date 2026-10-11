@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import odoo.tests
 from odoo.orm.runtime._registry_capabilities import _TextTables
+from odoo.tests import counting_statements
 
 from odoo.addons.base.tests.test_expression import TransactionExpressionCase
 from odoo.addons.base.tests.test_translate import SPECIAL_CHARACTERS
@@ -215,9 +216,9 @@ class TestIndexedTranslation(TransactionExpressionCase):
 
     def _count_search_statements(self, Model, value):
         self.env.flush_all()
-        count = self.cr.sql_statement_count
-        Model.search([("name", "ilike", value)])
-        return self.cr.sql_statement_count - count
+        with counting_statements(self.cr) as statements:
+            Model.search([("name", "ilike", value)])
+            return statements.count
 
     def test_first_ascii_search_reads_no_character_table(self):
         Model = self.env["test_orm.indexed_translation"].with_context(lang="en_US")

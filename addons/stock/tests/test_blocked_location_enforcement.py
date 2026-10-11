@@ -1,4 +1,5 @@
 from odoo.exceptions import UserError
+from odoo.tests import counting_statements
 
 from .blocked_location_common import BlockedLocationCase
 from odoo.addons.stock.const import (
@@ -356,10 +357,10 @@ class TestGathering(BlockedLocationCase):
         def gather_queries():
             self.env.invalidate_all()
             quant_user._gather(self.product, self.stock_location)
-            before = self.env.cr.sql_statement_count
-            for _ in range(5):
-                quant_user._gather(self.product, self.stock_location)
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                for _ in range(5):
+                    quant_user._gather(self.product, self.stock_location)
+                return statements.count
 
         self.Location.create(
             [

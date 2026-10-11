@@ -3,6 +3,7 @@ import time
 from unittest.mock import patch
 
 import odoo
+from odoo.tests import counting_statements
 
 from odoo.addons.point_of_sale.tests.common import (
     PosCashRoundingSessionCommon,
@@ -434,11 +435,11 @@ class TestPosMargin(TestPoSCommon):
 
         def count_queries(orders, stock_moves):
             orders.env.flush_all()
-            before = orders.env.cr.sql_statement_count
-            started = time.perf_counter()
-            update_at_closing(orders, stock_moves)
-            orders.env.flush_all()
-            queries.append(orders.env.cr.sql_statement_count - before)
+            with counting_statements(orders.env.cr) as statements:
+                started = time.perf_counter()
+                update_at_closing(orders, stock_moves)
+                orders.env.flush_all()
+                queries.append(statements.count)
             elapsed.append(time.perf_counter() - started)
 
         total_cash = sum(self.pos_session.order_ids.payment_ids.mapped("amount"))

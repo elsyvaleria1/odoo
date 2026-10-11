@@ -7,7 +7,13 @@ from werkzeug.http import parse_options_header
 
 from odoo import Command
 from odoo.exceptions import AccessError, UserError
-from odoo.tests import HttpCase, JsonRpcException, new_test_user, tagged
+from odoo.tests import (
+    HttpCase,
+    JsonRpcException,
+    counting_statements,
+    new_test_user,
+    tagged,
+)
 from odoo.tools import mute_logger
 
 from odoo.addons.base.tests.common import HttpCaseWithUserPortal
@@ -125,9 +131,9 @@ class TestPortalShareEmails(SaleCommon, MockEmail):
                 self.env.flush_all()
                 self.env.invalidate_all()
                 post.reset_mock()
-                before = self.env.cr.sql_statement_count
-                wizard._send_public_link(batch)
-                costs.append(self.env.cr.sql_statement_count - before)
+                with counting_statements(self.env.cr) as statements:
+                    wizard._send_public_link(batch)
+                    costs.append(statements.count)
                 self.assertEqual(post.call_count, len(batch))
                 for recipient, call in zip(batch, post.call_args_list, strict=True):
                     query = parse_qs(urlsplit(call.args[1]).query)

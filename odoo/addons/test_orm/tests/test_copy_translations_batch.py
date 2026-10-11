@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 from odoo import Command
-from odoo.tests import TransactionCase
+from odoo.tests import TransactionCase, counting_statements
 from odoo.tools.translate import code_translations
 
 _logger = logging.getLogger(__name__)
@@ -62,10 +62,10 @@ class TestCopyTranslationsBatch(TransactionCase):
     def test_fifty_copies_read_each_translated_field_once(self):
         records = self._translated_records(50)
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        with self._column_reads(records) as reads:
-            copies = records.copy()
-        queries = self.cr.sql_statement_count - before
+        with counting_statements(self.cr) as statements:
+            with self._column_reads(records) as reads:
+                copies = records.copy()
+            queries = statements.count
         _logger.info(
             "copy of 50 records, 2 translated fields: %d queries, stored reads %s",
             queries,

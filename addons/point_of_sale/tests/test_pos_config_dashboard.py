@@ -4,7 +4,7 @@ import time
 from unittest.mock import patch
 
 from odoo import Command, fields
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
@@ -390,9 +390,9 @@ class TestPosConfigDashboard(TestPoSCommon):
                     {"name": f"clone-{number_of_clones}-{index}"}
                 )
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            configs.mapped("last_session_closing_cash")
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                configs.mapped("last_session_closing_cash")
+                return statements.count
 
         few = count_for(2)
         many = count_for(16)

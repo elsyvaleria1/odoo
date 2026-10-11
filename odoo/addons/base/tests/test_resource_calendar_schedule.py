@@ -6,7 +6,7 @@ from odoo import Command
 from odoo.exceptions import ValidationError
 from odoo.libs.datetime import timezone
 from odoo.libs.intervals import Intervals
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 from odoo.addons.base.models.resource_utils import week_type_of
 
@@ -845,9 +845,9 @@ class TestBatchedResourceQueries(TransactionCase):
     def _count(self, fn):
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        result = fn()
-        return self.env.cr.sql_statement_count - before, result
+        with counting_statements(self.env.cr) as statements:
+            result = fn()
+            return statements.count, result
 
     def test_unavailable_intervals_of_flexible_resources_are_batched(self):
         one, _ = self._count(

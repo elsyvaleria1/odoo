@@ -1,5 +1,5 @@
 
-from odoo.tests import common, tagged
+from odoo.tests import common, counting_statements, tagged
 
 
 @tagged("link_tracker", "post_install", "-at_install")
@@ -17,10 +17,10 @@ class TestLinkTrackerCost(common.TransactionCase):
     def _queries(self, func):
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        func()
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            func()
+            self.env.flush_all()
+            return statements.count
 
     def _body(self, count, tag):
         return "".join(

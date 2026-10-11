@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from odoo import fields
-from odoo.tests import JsonRpcException, tagged
+from odoo.tests import JsonRpcException, counting_statements, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.mail.tests.common_controllers import MailControllerCommon
@@ -592,9 +592,9 @@ class TestMessagingMenu(MailControllerCommon):
         def statements(batch):
             batch.invalidate_model()
             self.env.flush_all()
-            count0 = self.cr.sql_statement_count
-            result = Store().add(batch).get_result()
-            return self.cr.sql_statement_count - count0, result
+            with counting_statements(self.cr) as counted:
+                result = Store().add(batch).get_result()
+                return counted.count, result
 
         statements(messages)
         one, _result = statements(messages[:1])

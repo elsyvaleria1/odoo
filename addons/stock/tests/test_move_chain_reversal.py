@@ -4,7 +4,7 @@ import psycopg
 
 from odoo.exceptions import UserError
 from odoo.fields import Command
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -341,11 +341,11 @@ class TestMoveChainReversalEdgeCases(TransactionCase):
         walked_queries = []
 
         def counting(records, *args, **kwargs):
-            before = records.env.cr.sql_statement_count
-            try:
-                return original(records, *args, **kwargs)
-            finally:
-                walked_queries.append(records.env.cr.sql_statement_count - before)
+            with counting_statements(records.env.cr) as statements:
+                try:
+                    return original(records, *args, **kwargs)
+                finally:
+                    walked_queries.append(statements.count)
 
         self.env.invalidate_all()
         moves = self.Move.browse(move_ids)

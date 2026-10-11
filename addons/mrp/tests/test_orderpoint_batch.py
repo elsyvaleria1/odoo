@@ -1,7 +1,7 @@
 import gc
 
 from odoo import Command
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -70,9 +70,9 @@ class TestMrpOrderpointBatch(TransactionCase):
         self.env.cr.cache.clear()
         gc.collect()
         orderpoints = orderpoints.browse(orderpoints.ids)
-        before = self.env.cr.sql_statement_count
-        result = reader(orderpoints)
-        return self.env.cr.sql_statement_count - before, result
+        with counting_statements(self.env.cr) as statements:
+            result = reader(orderpoints)
+            return statements.count, result
 
     def rule_ids_statements(self, pairs):
         made = self.make_products(pairs, with_bom=True)

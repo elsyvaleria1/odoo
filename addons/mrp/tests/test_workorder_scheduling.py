@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from freezegun import freeze_time
 
 from odoo import Command, fields
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from .common import TestMrpCommon
 from odoo.addons.mrp.models.mrp_workorder import MrpWorkorder
@@ -403,11 +403,11 @@ class TestWorkorderMarkAsDoneBatch(WorkorderSchedulingCase):
         ).workorder_ids
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        MrpWorkorder.action_mark_as_done(workorders)
-        self.env.flush_all()
-        self.assertEqual(set(workorders.mapped("state")), {"done"})
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            MrpWorkorder.action_mark_as_done(workorders)
+            self.env.flush_all()
+            self.assertEqual(set(workorders.mapped("state")), {"done"})
+            return statements.count
 
     def test_finishing_is_one_batch_not_one_per_work_order(self):
         two = self._statements_to_mark_done(2)
@@ -433,10 +433,10 @@ class TestWorkorderTimeBatch(WorkorderSchedulingCase):
             self.env.invalidate_all()
             self.env.registry.clear_all_caches()
             gc.collect()
-            before = self.env.cr.sql_statement_count
-            action(workorders)
-            self.env.flush_all()
-            cost[count] = self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                action(workorders)
+                self.env.flush_all()
+                cost[count] = statements.count
         return (cost[8] - cost[2]) / 6, cost
 
     def test_measuring_blockages_reads_the_calendar_once(self):

@@ -6,7 +6,7 @@ from psycopg.errors import CheckViolation
 from odoo import exceptions, fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
-from odoo.tests import Form, HttpCase, freeze_time, tagged
+from odoo.tests import Form, HttpCase, counting_statements, freeze_time, tagged
 from odoo.tools import float_compare, float_repr, float_round
 
 from odoo.addons.mrp.tests.common import TestMrpCommon
@@ -5104,9 +5104,9 @@ class TestBoMAuditFixes(TestMrpCommon):
         self.env.invalidate_all()
         self.env.registry.clear_all_caches()
         gc.collect()
-        before = self.env.cr.sql_statement_count
-        bom.operation_ids.read(["time_total", "cost", "capacity_varies_by_variant"])
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            bom.operation_ids.read(["time_total", "cost", "capacity_varies_by_variant"])
+            return statements.count
 
     def test_the_operation_list_reads_in_constant_statements(self):
         small = self._operation_list_statements(("a", "b"), 1)

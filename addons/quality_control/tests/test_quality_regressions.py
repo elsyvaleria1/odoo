@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from odoo import Command
 from odoo.exceptions import AccessError
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 from odoo.tools.authority_keys import strip_authority_keys
 
 from .test_common import TestQualityCommon
@@ -247,9 +247,9 @@ class TestQualityCheckWizardFailure(TestQualityCommon):
 class TestProductQualityCounters(TestQualityCommon):
     def _query_cost(self, products, field_name):
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        products.mapped(field_name)
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            products.mapped(field_name)
+            return statements.count
 
     def test_the_counters_do_not_cost_a_query_per_product(self):
         products = self.env["product.product"].create(
@@ -546,10 +546,10 @@ class TestCheckCreationCost(TestQualityCommon):
         )
 
     def _query_cost(self, fn):
-        before = self.env.cr.sql_statement_count
-        fn()
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            fn()
+            self.env.flush_all()
+            return statements.count
 
 
 @tagged("post_install", "-at_install")

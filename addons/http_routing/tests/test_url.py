@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, Mock, patch
 import werkzeug.exceptions
 import werkzeug.routing
 
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 from .common import (
     FRONTEND_PROBE_ROUTE,
@@ -591,10 +591,10 @@ class TestDefaultLang(TestUrlCommon):
         with MockRequest(self.env, context={"lang": "fr_FR"}, mock_router=False):
             self.IrHttp._get_default_lang()
             self.env.flush_all()
-            before = self.cr.sql_statement_count
-            for _ in range(10):
-                self.IrHttp._get_default_lang()
-            self.assertEqual(self.cr.sql_statement_count - before, 0)
+            with counting_statements(self.cr) as statements:
+                for _ in range(10):
+                    self.IrHttp._get_default_lang()
+                self.assertEqual(statements.count, 0)
 
     def test_default_lang_cache_is_invalidated(self):
         self.assertEqual(self.IrHttp._get_default_lang_code(), "en_US")

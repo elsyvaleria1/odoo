@@ -6,7 +6,7 @@ from markupsafe import Markup
 
 from odoo import Command
 from odoo.exceptions import RedirectWarning, UserError, ValidationError
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 from odoo.addons.account.models.chart_template import (
     TEMPLATE_MODELS,
@@ -2014,11 +2014,11 @@ class TestChartTemplate(AccountTestInvoicingCommon):
             )
 
         self.env.invalidate_all()
-        before = self.cr.sql_statement_count
-        for record in mapping.values():
-            record.code
-            record.account_type
-        queries = self.cr.sql_statement_count - before
+        with counting_statements(self.cr) as statements:
+            for record in mapping.values():
+                record.code
+                record.account_type
+            queries = statements.count
         self.assertLess(
             queries,
             len(mapping),

@@ -3,7 +3,7 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 
 from odoo.fields import Command
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from .common import SkillsCase
 
@@ -122,22 +122,22 @@ class TestMultiRecordSkillWrite(SkillsCase):
         self.env.invalidate_all()
 
     def _queries_to_promote(self, employees):
-        before = self.env.cr.sql_statement_count
-        employees.write(
-            {
-                "current_employee_skill_ids": [
-                    Command.create(
-                        {
-                            "skill_id": self.skill_piano.id,
-                            "skill_level_id": self.level_expert.id,
-                            "skill_type_id": self.skill_type.id,
-                        }
-                    )
-                ]
-            }
-        )
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            employees.write(
+                {
+                    "current_employee_skill_ids": [
+                        Command.create(
+                            {
+                                "skill_id": self.skill_piano.id,
+                                "skill_level_id": self.level_expert.id,
+                                "skill_type_id": self.skill_type.id,
+                            }
+                        )
+                    ]
+                }
+            )
+            self.env.flush_all()
+            return statements.count
 
     def test_the_cost_of_a_multi_record_write_does_not_grow_with_the_records(self):
         few = self.env["hr.employee"].create([{"name": f"Few {i}"} for i in range(2)])

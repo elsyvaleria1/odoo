@@ -1,4 +1,4 @@
-from odoo.tests import TransactionCase
+from odoo.tests import TransactionCase, counting_statements
 
 from odoo.addons.base.tests.common import make_guard_row
 
@@ -30,12 +30,12 @@ class CreateAccessBatchingCase(TransactionCase):
     def _create_as_user(self, fname, count):
         holder = self.env["test_orm.bypass.holder"].with_user(self.user)
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        holder.create(
-            [{"name": f"h{i}", fname: self.targets[i].id} for i in range(count)]
-        )
-        self.env.flush_all()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            holder.create(
+                [{"name": f"h{i}", fname: self.targets[i].id} for i in range(count)]
+            )
+            self.env.flush_all()
+            return statements.count
 
     def _warm(self):
         self._create_as_user("target_id", 1)

@@ -7,7 +7,7 @@ import odoo
 from odoo.fields import Command
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from odoo.addons.point_of_sale.tests.common import (
     PosCashRoundingSessionCommon,
@@ -114,23 +114,23 @@ class TestPosOrderUuidRelations(PosCashRoundingSessionCommon):
             return original_search(records, domain, *args, **kwargs)
 
         self.env.flush_all()
-        before = self.env.cr.sql_statement_count
-        with patch.object(type(child), "search", record_search):
-            order._link_uuid_relations(
-                {
-                    "pos.order.line": {
-                        child.uuid: {
-                            "combo_parent_id": parent.uuid,
-                            "combo_line_ids": [grandchild.uuid],
+        with counting_statements(self.env.cr) as statements:
+            with patch.object(type(child), "search", record_search):
+                order._link_uuid_relations(
+                    {
+                        "pos.order.line": {
+                            child.uuid: {
+                                "combo_parent_id": parent.uuid,
+                                "combo_line_ids": [grandchild.uuid],
+                            }
                         }
                     }
-                }
+                )
+            _logger.debug(
+                "Nonempty UUID relations: searches=%s SQL statements=%s",
+                len(searches),
+                statements.count,
             )
-        _logger.debug(
-            "Nonempty UUID relations: searches=%s SQL statements=%s",
-            len(searches),
-            self.env.cr.sql_statement_count - before,
-        )
         self.assertEqual(child.combo_parent_id, parent)
         self.assertEqual(child.combo_line_ids, grandchild)
         self.assertEqual(grandchild.combo_parent_id, child)
@@ -194,21 +194,21 @@ class TestPosOrderUuidRelations(PosCashRoundingSessionCommon):
             return original_write(records, vals)
 
         started = time.perf_counter()
-        statements_before = self.env.cr.sql_statement_count
-        with (
-            patch.object(type(children), "write", record_write),
-            patch.object(type(children), "search", record_search),
-        ):
-            self.env["pos.order"].sync_from_ui([values])
+        with counting_statements(self.env.cr) as statements:
+            with (
+                patch.object(type(children), "write", record_write),
+                patch.object(type(children), "search", record_search),
+            ):
+                self.env["pos.order"].sync_from_ui([values])
 
-        _logger.debug(
-            "UUID batching: owners=%d writes=%d statements=%d elapsed_ms=%.2f batches=%s",
-            len(children),
-            len(write_batches),
-            self.env.cr.sql_statement_count - statements_before,
-            (time.perf_counter() - started) * 1000,
-            write_batches,
-        )
+            _logger.debug(
+                "UUID batching: owners=%d writes=%d statements=%d elapsed_ms=%.2f batches=%s",
+                len(children),
+                len(write_batches),
+                statements.count,
+                (time.perf_counter() - started) * 1000,
+                write_batches,
+            )
         self.assertEqual(parent.combo_line_ids, children)
         self.assertLessEqual(len(write_batches), len(children))
         _logger.debug("UUID relation searches: %s", uuid_searches)

@@ -5,9 +5,8 @@ from unittest.mock import patch
 from freezegun import freeze_time
 
 from odoo import Command, fields
-from odoo.db.metrics import observing_statements
 from odoo.exceptions import UserError
-from odoo.tests import Form, TransactionCase, new_test_user, tagged
+from odoo.tests import Form, TransactionCase, counting_statements, new_test_user, tagged
 
 from .common import TestMrpCommon
 
@@ -747,11 +746,10 @@ class TestProductionStatementGuards(TransactionCase):
         self.env.registry.clear_all_caches()
         gc.collect()
         productions = productions.browse(productions.ids)
-        with observing_statements():
-            before = self.env.cr.sql_statement_count
+        with counting_statements(self.env.cr) as statements:
             action(productions)
             self.env.flush_all()
-            return self.env.cr.sql_statement_count - before
+            return statements.count
 
     def test_mark_done_preflight_statements_do_not_grow_with_orders(self):
         def preflight(count):

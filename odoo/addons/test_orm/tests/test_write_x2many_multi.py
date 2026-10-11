@@ -1,5 +1,6 @@
 from odoo import Command
 from odoo.exceptions import AccessError
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase
 
 
@@ -40,10 +41,10 @@ class TestWriteX2manyMulti(TransactionCase):
             self.env.flush_all()
             self.env.invalidate_all()
             values = [[Command.link(self.tags[index % 3].id)] for index in range(count)]
-            before = self.env.cr.sql_statement_count
-            orders._write_x2many_multi("tag_ids", values)
-            self.env.flush_all()
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                orders._write_x2many_multi("tag_ids", values)
+                self.env.flush_all()
+                return statements.count
 
         cost(1)
         self.assertEqual(cost(2), cost(8))

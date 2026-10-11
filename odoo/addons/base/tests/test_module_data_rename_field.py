@@ -1,3 +1,4 @@
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase, tagged
 from odoo.tools import module_data
 from odoo.tools.module_data import rename_field, selection_xmlid
@@ -255,9 +256,9 @@ class TestRepointReferences(TransactionCase):
         cr, ids = self.env.cr, self.field_ids
 
         def spent(moves):
-            before = cr.sql_statement_count
-            module_data._repoint_references(cr, "ir_model_fields", moves)
-            return cr.sql_statement_count - before
+            with counting_statements(cr) as statements:
+                module_data._repoint_references(cr, "ir_model_fields", moves)
+                return statements.count
 
         self.assertEqual(
             spent({ids[0]: ids[1]}),

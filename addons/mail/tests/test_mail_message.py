@@ -7,7 +7,7 @@ from markupsafe import Markup
 
 from odoo.exceptions import AccessError
 from odoo.fields import Command
-from odoo.tests import new_test_user, tagged, users
+from odoo.tests import counting_statements, new_test_user, tagged, users
 
 from odoo.addons.mail.models import mail_message as mail_message_module
 from odoo.addons.mail.tests import common
@@ -245,11 +245,11 @@ class TestMailMessageCreateBatch(common.MailCommon):
             self.env.flush_all()
             self.env.invalidate_all()
             self.env.cr.flush()
-            before = self.cr.sql_statement_count
-            Message.create(vals_list)
-            self.env.flush_all()
-            self.env.cr.flush()
-            return self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as statements:
+                Message.create(vals_list)
+                self.env.flush_all()
+                self.env.cr.flush()
+                return statements.count
 
         few = create_with(2)
         many = create_with(20)

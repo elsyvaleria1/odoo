@@ -1,6 +1,6 @@
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
-from odoo.tests import tagged
+from odoo.tests import counting_statements, tagged
 
 from odoo.addons.product.tests.common import ProductCommon
 
@@ -253,9 +253,9 @@ class TestTemplateBarcodeCheckBatching(ProductCommon):
         )
         self.env.flush_all()
         self.env.invalidate_all()
-        before = self.env.cr.sql_statement_count
-        templates._check_barcode_uniqueness()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            templates._check_barcode_uniqueness()
+            return statements.count
 
     def test_barcode_constraint_does_not_scale_with_batch_size(self):
         small = self._count_check_queries(5, "small")

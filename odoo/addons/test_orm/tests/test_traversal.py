@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command, Domain
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase
 
 
@@ -392,12 +393,12 @@ class TestCycleCheckOnCreate(TransactionCase):
 
     def _create_under_child(self) -> int:
         self.env.flush_all()
-        before = self.cr.sql_statement_count
-        self.env["res.partner"].create(
-            {"name": "Cycle Grandchild", "parent_id": self.child.id}
-        )
-        self.env.flush_all()
-        return self.cr.sql_statement_count - before
+        with counting_statements(self.cr) as statements:
+            self.env["res.partner"].create(
+                {"name": "Cycle Grandchild", "parent_id": self.child.id}
+            )
+            self.env.flush_all()
+            return statements.count
 
     def test_a_create_under_a_valid_parent_runs_no_cycle_query(self):
         self._create_under_child()
@@ -494,10 +495,10 @@ class TestCycleCheckOnParentStoreCreate(TransactionCase):
 
         def create_child() -> int:
             self.env.flush_all()
-            before = self.cr.sql_statement_count
-            Menu.create({"name": "Cycle Menu Child", "parent_id": parent.id})
-            self.env.flush_all()
-            return self.cr.sql_statement_count - before
+            with counting_statements(self.cr) as statements:
+                Menu.create({"name": "Cycle Menu Child", "parent_id": parent.id})
+                self.env.flush_all()
+                return statements.count
 
         create_child()
         checked = create_child()

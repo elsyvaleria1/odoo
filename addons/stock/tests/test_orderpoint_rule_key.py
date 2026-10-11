@@ -1,5 +1,5 @@
 from odoo import Command
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -103,9 +103,9 @@ class TestOrderpointRuleKey(TransactionCase):
         self.env.flush_all()
         self.env.invalidate_all()
         orderpoints = orderpoints.browse(orderpoints.ids)
-        before = self.env.cr.sql_statement_count
-        rules = orderpoints.mapped("rule_ids")
-        statements = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as counted:
+            rules = orderpoints.mapped("rule_ids")
+            statements = counted.count
         self.assertIn(self.gated_rule, rules)
         return statements
 

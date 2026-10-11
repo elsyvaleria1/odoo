@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from odoo import fields
 from odoo.exceptions import ValidationError
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.integration.tools.exceptions import (
@@ -167,9 +167,9 @@ class TestSelectModel(_SelectionCase):
         def count():
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            self._select("chat")
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                self._select("chat")
+                return statements.count
 
         count()
         few = count()

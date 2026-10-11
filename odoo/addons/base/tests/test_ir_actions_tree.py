@@ -1,6 +1,7 @@
 from psycopg.errors import CheckViolation
 
 from odoo.exceptions import AccessError, ValidationError
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase, tagged
 from odoo.tools import mute_logger
 
@@ -187,9 +188,9 @@ class TestIrActionsLoadAudit(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestIrActionsConcreteCache(TransactionCase):
     def _queries(self, fn):
-        before = self.env.cr.sql_statement_count
-        result = fn()
-        return result, self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            result = fn()
+            return result, statements.count
 
     def test_a_second_resolution_of_the_same_id_costs_no_query(self):
         window = self.env["ir.actions.act_window"].create(

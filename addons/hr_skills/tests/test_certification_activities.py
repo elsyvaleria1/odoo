@@ -2,7 +2,7 @@ from datetime import date
 
 from dateutil.relativedelta import relativedelta
 
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("recruitment")
@@ -309,10 +309,12 @@ class TestCertificationActivities(TransactionCase):
         self.env.flush_all()
         self.env.invalidate_all()
 
-        before = self.env.cr.sql_statement_count
-        activities = self.env["hr.employee"]._add_certification_activity_to_employees()
-        self.env.flush_all()
-        cost = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            activities = self.env[
+                "hr.employee"
+            ]._add_certification_activity_to_employees()
+            self.env.flush_all()
+            cost = statements.count
 
         mine = activities.filtered(lambda a: a.res_id in batch.ids)
         self.assertEqual(len(mine), 40)

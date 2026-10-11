@@ -7,7 +7,7 @@ from lxml import etree
 from odoo import Command, fields
 from odoo.exceptions import ValidationError
 from odoo.fields import Domain
-from odoo.tests import Form, tagged
+from odoo.tests import Form, counting_statements, tagged
 from odoo.tools.safe_eval import safe_eval
 
 from . import common
@@ -115,10 +115,10 @@ class TestProductivityDuration(common.TestMrpCommon):
             Productivity.search([("workcenter_id", "=", self.workcenter.id)]).unlink()
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            Productivity.create(make(count))
-            self.env.flush_all()
-            cost[count] = self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                Productivity.create(make(count))
+                self.env.flush_all()
+                cost[count] = statements.count
         marginal = (cost[20] - cost[2]) / 18
         self.assertLess(
             marginal,

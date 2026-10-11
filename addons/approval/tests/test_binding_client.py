@@ -1,6 +1,6 @@
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.json import dumps as json_dumps
-from odoo.tests import common, tagged
+from odoo.tests import common, counting_statements, tagged
 
 from odoo.addons.approval.tests.common import add_category_approver
 
@@ -120,10 +120,10 @@ class TestApprovalBindingClient(common.TransactionCase):
             ]
             Binding.get_button_approvals(specs)
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            answers = Binding.get_button_approvals(specs)
-            self.assertEqual(len(answers), len(rows))
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as statements:
+                answers = Binding.get_button_approvals(specs)
+                self.assertEqual(len(answers), len(rows))
+                return statements.count
 
         self.assertEqual(queries(partners), queries(partners[:2]))
 

@@ -1,4 +1,4 @@
-from odoo.tests import TransactionCase, new_test_user, tagged
+from odoo.tests import TransactionCase, counting_statements, new_test_user, tagged
 
 
 @tagged("web_unit", "web_read_group")
@@ -405,9 +405,9 @@ class TestSearchOpenedGroupsBatching(TransactionCase):
         n_groups = 60
         self.env.invalidate_all()
         self.env.cr.flush()
-        before = self.env.cr.sql_statement_count
-        self._records_per_group(n_groups, None, 5, 0)
-        queries = self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            self._records_per_group(n_groups, None, 5, 0)
+            queries = statements.count
         self.assertLess(
             queries,
             n_groups // 2,

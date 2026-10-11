@@ -3,7 +3,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from odoo.exceptions import AccessError
 from odoo.fields import Command, Domain
-from odoo.tests import Form, tagged
+from odoo.tests import Form, counting_statements, tagged
 from odoo.tools import mute_logger
 
 from .test_project_base import TestProjectCommon
@@ -183,9 +183,9 @@ class TestProjectSharing(TestProjectSharingCommon):
         for batch in (messages[:3], messages):
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            values = batch.portal_message_format(options={"rating_include": True})
-            costs.append(self.env.cr.sql_statement_count - before)
+            with counting_statements(self.env.cr) as statements:
+                values = batch.portal_message_format(options={"rating_include": True})
+                costs.append(statements.count)
             self.assertEqual(len(values), len(batch))
             for value in values:
                 self.assertEqual(value["rating_stats"]["total"], 30)

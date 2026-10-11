@@ -2,7 +2,7 @@ import logging
 from urllib.parse import parse_qs, urlsplit
 
 from odoo import Command
-from odoo.tests import HttpCase, common, tagged
+from odoo.tests import HttpCase, common, counting_statements, tagged
 from odoo.tools import format_datetime, mute_logger
 
 from odoo.addons.mail.tests.common import mail_new_test_user
@@ -79,9 +79,9 @@ class TestMessageFormatPortal(common.TransactionCase):
         for batch in (messages[:3], messages):
             self.env.flush_all()
             self.env.invalidate_all()
-            before = self.env.cr.sql_statement_count
-            formatted = batch.portal_message_format()
-            costs.append(self.env.cr.sql_statement_count - before)
+            with counting_statements(self.env.cr) as statements:
+                formatted = batch.portal_message_format()
+                costs.append(statements.count)
             returned = [message["attachment_ids"][0] for message in formatted]
             self.assertEqual(
                 {attachment["id"] for attachment in returned},

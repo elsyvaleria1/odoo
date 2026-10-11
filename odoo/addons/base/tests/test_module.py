@@ -3,6 +3,7 @@ from odoo.modules.db import (
     _AUTO_INSTALL_CLOSURE_QUERY,
     get_or_create_category_id,
 )
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase
 
 
@@ -82,12 +83,10 @@ class TestGetOrCreateCategoryIdCache(TransactionCase):
         cache = {}
         cat_id = get_or_create_category_id(self.cr, ["Audit Cat", "Sub"], cache)
         self.assertIsInstance(cat_id, int)
-        queries_before = self.cr.sql_statement_count
-        again = get_or_create_category_id(self.cr, ["Audit Cat", "Sub"], cache)
+        with counting_statements(self.cr) as statements:
+            again = get_or_create_category_id(self.cr, ["Audit Cat", "Sub"], cache)
         self.assertEqual(again, cat_id)
-        self.assertEqual(
-            self.cr.sql_statement_count, queries_before, "expected 0 queries"
-        )
+        self.assertEqual(statements.count, 0, "expected 0 queries")
 
     def test_without_cache_behaviour_unchanged(self):
         cat_id = get_or_create_category_id(self.cr, ["Audit Cat", "Sub"])

@@ -1,4 +1,4 @@
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("-at_install", "post_install")
@@ -77,9 +77,9 @@ class TestEditableAddresses(TransactionCase):
 
     def _query_count(self, call):
         call()
-        before = self.env.cr.sql_statement_count
-        call()
-        return self.env.cr.sql_statement_count - before
+        with counting_statements(self.env.cr) as statements:
+            call()
+            return statements.count
 
     def test_batch_cost_does_not_grow_with_the_address_book(self):
         two = self._as_user(self.own_addresses[:2])

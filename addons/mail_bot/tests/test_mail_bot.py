@@ -3,7 +3,7 @@ from unittest.mock import patch
 from markupsafe import Markup
 
 from odoo.libs.json import loads as json_loads
-from odoo.tests import new_test_user, tagged
+from odoo.tests import counting_statements, new_test_user, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.mail.models.mixin_mail_thread import MixinMailThread
@@ -190,11 +190,11 @@ class TestPostCost(MailBotCommon):
         self.env.flush_all()
         self.env.invalidate_all()
         with patch("random.random", lambda: 1):
-            count0 = self.env.cr.sql_statement_count
-            post()
-            self.env.flush_all()
-            self.env.cr.flush()
-            return self.env.cr.sql_statement_count - count0
+            with counting_statements(self.env.cr) as statements:
+                post()
+                self.env.flush_all()
+                self.env.cr.flush()
+                return statements.count
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_chat_without_odoobot_pays_only_the_membership_probe(self):

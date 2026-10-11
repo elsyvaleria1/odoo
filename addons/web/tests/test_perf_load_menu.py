@@ -2,7 +2,7 @@ from collections import defaultdict
 from uuid import uuid4
 
 from odoo.libs.json import dumps as json_dumps
-from odoo.tests import common, tagged
+from odoo.tests import common, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install", "web_perf", "web_menu")
@@ -73,9 +73,9 @@ class TestPerfSessionInfo(common.HttpCase):
         self.env.registry.clear_all_caches()
         self.env.invalidate_all()
         self.env.flush_all()
-        count0 = self.cr.sql_statement_count
-        self.env["ir.ui.menu"]._get_visible_menu_ids()
-        return self.cr.sql_statement_count - count0
+        with counting_statements(self.cr) as statements:
+            self.env["ir.ui.menu"]._get_visible_menu_ids()
+            return statements.count
 
     def _add_menus_over_visible_action_kinds(self, count, parent=None):
         Menu = self.env["ir.ui.menu"].sudo()
