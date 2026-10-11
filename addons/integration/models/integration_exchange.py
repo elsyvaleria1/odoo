@@ -913,6 +913,8 @@ class IntegrationExchange(models.Model):
         return channels
 
     def _remove_logs_past_retention(self, days, scope) -> None:
+        # A terminal row can lack date_completed; its creation then dates it,
+        # otherwise such a row would never be swept.
         cutoff = fields.Datetime.now() - timedelta(days=days)
         self.env.cr.execute(
             SQL(
@@ -921,7 +923,7 @@ class IntegrationExchange(models.Model):
                 WHERE %s
                     AND (
                         (state IN ('success', 'failed', 'duplicate', 'refused')
-                        AND date_completed < %s)
+                        AND COALESCE(date_completed, create_date) < %s)
                         OR (state IN ('pending', 'processing', 'retry')
                         AND create_date < %s)
                     )

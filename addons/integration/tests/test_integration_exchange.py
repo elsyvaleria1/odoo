@@ -310,6 +310,42 @@ class TestIntegrationExchangeRetention(TransactionCase):
         self.assertFalse(old_event.exists())
         self.assertTrue(recent_event.exists())
 
+    def test_gc_ages_terminal_rows_without_completion_by_creation(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "integration.log_retention_days",
+            "30",
+        )
+        Exchange = self.env["integration.exchange"]
+        old_event, recent_event = Exchange.create(
+            [
+                {
+                    "direction": "inbound",
+                    "channel_id": self.channel_ref,
+                    "state": "failed",
+                },
+                {
+                    "direction": "inbound",
+                    "channel_id": self.channel_ref,
+                    "state": "failed",
+                },
+            ],
+        )
+        Exchange.flush_model()
+        self.env.cr.execute(
+            "UPDATE integration_exchange SET date_completed = NULL, create_date = %s"
+            " WHERE id = %s",
+            (fields.Datetime.now() - timedelta(days=60), old_event.id),
+        )
+        self.env.cr.execute(
+            "UPDATE integration_exchange SET date_completed = NULL WHERE id = %s",
+            (recent_event.id,),
+        )
+
+        Exchange._gc_old_logs()
+
+        self.assertFalse(old_event.exists())
+        self.assertTrue(recent_event.exists())
+
 
 class TestInboundEventEnqueue(TestIntegrationExchange):
     """One event, one job, however many callers ask for it."""
