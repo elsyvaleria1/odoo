@@ -12,10 +12,25 @@ import { KanbanRecord } from "@web/views/kanban";
 
 import { useBankReconciliation } from "../bank_reconciliation_service.js";
 import { BankRecButtonList } from "../button_list/button_list.js";
+import { BankRecDraftMatchProposal } from "../draft_match_proposal/draft_match_proposal.js";
 import { BankRecLineToReconcile } from "../line_to_reconcile/line_to_reconcile.js";
 import { BankRecReconciledLineName } from "../reconciled_line_name/reconciled_line_name.js";
 
 const log = makeLogger("account.bank_rec.line");
+
+export function getReconciledLineName(line) {
+    const reconciled = line.reconciled_lines_excluding_exchange_diff_ids.records;
+    if (reconciled.length === 1 && reconciled[0].data.move_name) {
+        return { move: reconciled[0].data.move_name };
+    }
+    if (line.pending_match_label) {
+        return { move: line.pending_match_label };
+    }
+    if (line.tax_ids.count) {
+        return { tax: line.tax_ids.records };
+    }
+    return { account: line.account_id.display_name };
+}
 
 export class BankRecStatementLine extends KanbanRecord {
     static template = "account.BankRecStatementLine";
@@ -24,6 +39,7 @@ export class BankRecStatementLine extends KanbanRecord {
         BankRecButtonList,
         DropdownItem,
         BankRecReconciledLineName,
+        BankRecDraftMatchProposal,
     };
     static props = { ...KanbanRecord.props };
 
@@ -158,27 +174,9 @@ export class BankRecStatementLine extends KanbanRecord {
     }
 
     _computeReconciledLineName(linesToReconcile) {
-        const reconciledLine = {};
-        for (const line of linesToReconcile) {
-            if (
-                line.reconciled_lines_excluding_exchange_diff_ids.records.length ===
-                    1 &&
-                line.reconciled_lines_excluding_exchange_diff_ids.records[0].data
-                    .move_name
-            ) {
-                reconciledLine[line.id] = {
-                    move: line.reconciled_lines_excluding_exchange_diff_ids.records[0]
-                        .data.move_name,
-                };
-            } else if (line.pending_match_label) {
-                reconciledLine[line.id] = { move: line.pending_match_label };
-            } else if (line.tax_ids.count) {
-                reconciledLine[line.id] = { tax: line.tax_ids.records };
-            } else {
-                reconciledLine[line.id] = { account: line.account_id.display_name };
-            }
-        }
-        this.state.reconciledLineName = reconciledLine;
+        this.state.reconciledLineName = Object.fromEntries(
+            linesToReconcile.map((line) => [line.id, getReconciledLineName(line)]),
+        );
     }
 
     get record() {

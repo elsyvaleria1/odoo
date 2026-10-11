@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="account.BankRecDraftMatchProposal">
+        <div class="o_draft_match_proposal text-wrap text-muted" name="draft_match_proposal">
+            <i class="fa-regular fa-lightbulb me-1" role="img" aria-label="Suggestion"/>
+            <span>Matches the draft</span>
+            <span class="fw-bold ms-1" t-out="this.props.label" name="draft_match_proposal_label"/>
+            <button type="button" class="btn btn-link p-0 ms-2 align-baseline o_confirm_draft_match" t-on-click.stop="() => this.props.onConfirm()">
+                Match, pending its posting
+            </button>
+            <button type="button" class="btn btn-link p-0 ms-2 align-baseline o_dismiss_draft_match" t-on-click.stop="() => this.props.onDismiss()">
+                Dismiss
+            </button>
+        </div>
+    </t>
+</templates>
