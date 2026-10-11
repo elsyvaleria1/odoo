@@ -48,81 +48,78 @@ class IrWebsocket(models.AbstractModel):
             self.env.user if partner else guest, inactivity_period
         )
 
-    def _prepare_subscribe_data(self, channels: list, last: int) -> dict:
-        data = super()._prepare_subscribe_data(channels, last)
-        model_ids_to_token = defaultdict(dict)
-        for channel in channels:
-            if not isinstance(channel, str) or not channel.startswith(
-                PRESENCE_CHANNEL_PREFIX
-            ):
+    def _bus_channels_by_name(self, names: list[str]) -> dict[str, list]:
+        result = super()._bus_channels_by_name(names)
+        requested = defaultdict(dict)
+        for name in names:
+            if not name.startswith(PRESENCE_CHANNEL_PREFIX):
                 continue
-            if not (match := re.match(PRESENCE_CHANNEL_REGEX, channel)):
-                _debug.logic("presence_channel_malformed", channel=channel[:80])
-                _logger.warning("Malformed presence channel: %s", channel)
+            if not (match := re.match(PRESENCE_CHANNEL_REGEX, name)):
+                _debug.logic("presence_channel_malformed", channel=name[:80])
+                _logger.warning("Malformed presence channel: %s", name)
                 continue
             model, record_id, token = match.groups()
-            model_ids_to_token[model][int(record_id)] = token or ""
-        partner_ids = model_ids_to_token["res.partner"].keys()
-        partners = (
-            self.env["res.partner"]
-            .with_context(active_test=False)
-            .sudo()
-            .search([("id", "in", partner_ids)])
-            .sudo(False)
-        )
-        partner, guest = self.env["res.partner"]._get_current_persona()
-        accessible_partner_ids = set(partners._filtered_access("read")._ids)
-        allowed_partners = (
-            partners.filtered(
-                lambda p: (
-                    is_valid_limited_field_access_token(
-                        p,
-                        "im_status",
-                        model_ids_to_token["res.partner"][p.id],
-                        scope=PRESENCE_SCOPE,
-                    )
-                    or p.id in accessible_partner_ids
-                )
-            )
-            | partner
-        )
-        guest_ids = model_ids_to_token["mail.guest"].keys()
-        guests = (
-            self.env["mail.guest"].sudo().search([("id", "in", guest_ids)]).sudo(False)
-        )
-        accessible_guest_ids = set(guests._filtered_access("read")._ids)
-        allowed_guests = (
-            guests.filtered(
-                lambda g: (
-                    is_valid_limited_field_access_token(
-                        g,
-                        "im_status",
-                        model_ids_to_token["mail.guest"][g.id],
-                        scope=PRESENCE_SCOPE,
-                    )
-                    or g.id in accessible_guest_ids
-                )
-            )
-            | guest
-        )
+            requested[model][name] = (int(record_id), token or "")
+        allowed = {
+            model: self._presence_readable(model, list(by_name.values()))
+            for model, by_name in requested.items()
+        }
+        for model, by_name in requested.items():
+            for name, (record_id, _token) in by_name.items():
+                record = allowed[model].filtered(lambda r, rid=record_id: r.id == rid)
+                result[name] = [(record, "presence")] if record else []
         _debug.logic(
             "presence_subscriptions",
-            partners_asked=len(partner_ids),
-            partners_allowed=len(allowed_partners),
-            guests_asked=len(guest_ids),
-            guests_allowed=len(allowed_guests),
+            partners_asked=len(requested["res.partner"]),
+            partners_allowed=len(allowed.get("res.partner", ())),
+            guests_asked=len(requested["mail.guest"]),
+            guests_allowed=len(allowed.get("mail.guest", ())),
         )
-        data["channels"].update((partner, "presence") for partner in allowed_partners)
-        data["channels"].update((guest, "presence") for guest in allowed_guests)
+        return result
+
+    def _presence_readable(self, model: str, ids_and_tokens: list[tuple]):
+        """The records of ``model`` whose presence this subscriber may hear: it
+        reads them, or holds their im_status token."""
+        tokens = dict(ids_and_tokens)
+        records = self.env[model].with_context(active_test=False).sudo()
+        records = records.search([("id", "in", list(tokens))]).sudo(False)
+        readable = set(records._filtered_access("read")._ids)
+        return records.filtered(
+            lambda r: (
+                r.id in readable
+                or is_valid_limited_field_access_token(
+                    r, "im_status", tokens[r.id], scope=PRESENCE_SCOPE
+                )
+            )
+        )
+
+    def _implicit_bus_channels(self) -> list:
+        channels = super()._implicit_bus_channels()
+        partner, guest = self.env["res.partner"]._get_current_persona()
+        channels.extend(
+            (persona, "presence") for persona in (partner, guest) if persona
+        )
+        return channels
+
+    def _prepare_subscribe_data(self, channels: list, last: int) -> dict:
+        data = super()._prepare_subscribe_data(channels, last)
+        heard = defaultdict(list)
+        for channel in data["channels"]:
+            if isinstance(channel, tuple) and channel[1:] == ("presence",):
+                heard[channel[0]._name].append(channel[0].id)
         presence_domain = Domain(
             "last_poll", ">", datetime.now() - timedelta(seconds=2)
         ) & (
             Domain(
                 "user_id",
                 "in",
-                allowed_partners.with_context(active_test=False).sudo().user_ids.ids,
+                self.env["res.partner"]
+                .browse(heard["res.partner"])
+                .with_context(active_test=False)
+                .sudo()
+                .user_ids.ids,
             )
-            | Domain("guest_id", "in", allowed_guests.ids)
+            | Domain("guest_id", "in", heard["mail.guest"])
         )
         data["missed_presences"] = (
             self.env["mail.presence"].sudo().search(presence_domain)

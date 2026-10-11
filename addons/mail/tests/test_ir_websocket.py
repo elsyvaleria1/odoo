@@ -202,3 +202,21 @@ class TestIrWebsocket(WebsocketCase):
             "channel": channel.id,
         }
         self.browser_js("/odoo", code, login="bus_live_john", timeout=60)
+
+    def test_a_presence_is_routed_by_its_name_and_ones_own_by_none(self):
+        bob = new_test_user(self.env, login="bob_routes", groups="base.group_user")
+        alice = new_test_user(self.env, login="alice_routes", groups="base.group_user")
+        name = f"odoo-presence-res.partner_{alice.partner_id.id}"
+        data = (
+            self.env["ir.websocket"].with_user(bob)._prepare_subscribe_data([name], 0)
+        )
+        db = self.env.cr.dbname
+        routes = dict(data["routes"])
+        self.assertEqual(
+            routes[json_dump(channel_with_db(db, (alice.partner_id, "presence")))],
+            (name,),
+        )
+        self.assertNotIn(
+            json_dump(channel_with_db(db, (bob.partner_id, "presence"))), routes
+        )
+        self.assertIn((bob.partner_id, "presence"), data["channels"])
