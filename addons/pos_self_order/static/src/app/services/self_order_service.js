@@ -69,7 +69,8 @@ export class SelfOrder extends SignalStore {
         this.orderSubscribtion = new Set();
         // each order's own bus channel, named by the server: payment results
         // are sent there, not where every holder of a QR code listens
-        this.orderChannels = new Set();
+        /** @type {Map<string, { orderId: number, release: () => void, unsubscribes: (() => void)[] }>} */
+        this.orderChannels = new Map();
         this.orderNotifications = {};
         this.kitchenPrinters = [];
         this.productCategories = [];
@@ -91,6 +92,9 @@ export class SelfOrder extends SignalStore {
         };
         this.models["pos.order"].addEventListener("create", listenToOrders);
         this.models["pos.order"].addEventListener("update", listenToOrders);
+        this.models["pos.order"].addEventListener("delete", ({ id }) =>
+            this.stopListeningToOrder(id),
+        );
         listenToOrders();
 
         this.data.connectWebSocket("ORDER_STATE_CHANGED", () =>
@@ -247,8 +251,8 @@ export class SelfOrder extends SignalStore {
 
     onOrderNotified(name, handler) {
         this.orderNotifications[name] = handler;
-        for (const channel of this.orderChannels) {
-            this.bus.subscribe(`${channel}-${name}`, handler);
+        for (const [channel, claim] of this.orderChannels) {
+            claim.unsubscribes.push(this.bus.subscribe(`${channel}-${name}`, handler));
         }
     }
 
@@ -257,10 +261,32 @@ export class SelfOrder extends SignalStore {
         if (!channel || this.orderChannels.has(channel)) {
             return;
         }
-        this.orderChannels.add(channel);
-        this.bus.addChannel(channel);
+        const claim = {
+            orderId: order.id,
+            release: this.bus.addChannel(channel),
+            unsubscribes: [],
+        };
         for (const [name, handler] of Object.entries(this.orderNotifications)) {
-            this.bus.subscribe(`${channel}-${name}`, handler);
+            claim.unsubscribes.push(this.bus.subscribe(`${channel}-${name}`, handler));
+        }
+        this.orderChannels.set(channel, claim);
+    }
+
+    /**
+     * An order gone from the kiosk is heard from no more: a kiosk that
+     * listened to every order of its day would pass the server's channel
+     * limit, and the whole browser's subscription with it.
+     * @param {number} orderId
+     */
+    stopListeningToOrder(orderId) {
+        for (const [channel, claim] of this.orderChannels) {
+            if (claim.orderId === orderId) {
+                for (const unsubscribe of claim.unsubscribes) {
+                    unsubscribe();
+                }
+                claim.release();
+                this.orderChannels.delete(channel);
+            }
         }
     }
 

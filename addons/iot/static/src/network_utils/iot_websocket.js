@@ -93,7 +93,7 @@ export class IotWebsocket {
                 deviceIdentifier,
                 sessionId,
             );
-            this.busService.unsubscribe(messageType, messageCallback);
+            unsubscribe();
         }, 6000); // error callback if the listener is not called within 6 seconds
 
         const messageCallback = (event) => {
@@ -113,11 +113,11 @@ export class IotWebsocket {
                     : onFailure;
             callback(message);
             clearTimeout(timeoutId);
-            this.busService.unsubscribe(messageType, messageCallback);
+            unsubscribe();
         };
 
         this.claimChannel();
-        this.busService.subscribe(messageType, messageCallback);
+        const unsubscribe = this.busService.subscribe(messageType, messageCallback);
     }
 
     /**

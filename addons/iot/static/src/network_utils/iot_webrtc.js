@@ -214,9 +214,9 @@ export class IotWebRtc {
                 return;
             }
             peerConnection.setRemoteDescription(answer);
-            this.busService.unsubscribe("webrtc_answer", onIotAnswer);
+            unsubscribe();
         };
-        this.busService.subscribe("webrtc_answer", onIotAnswer);
+        const unsubscribe = this.busService.subscribe("webrtc_answer", onIotAnswer);
         this.websocket.claimChannel();
 
         await this.websocket.sendMessage(

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "@odoo/hoot";
+import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { mockDate } from "@odoo/hoot-mock";
 import { OrderReceipt } from "@point_of_sale/app/screens/receipt_screen/receipt/order_receipt";
 
@@ -388,4 +389,26 @@ test("the order receipt renders in the self-order app, which has no contextual_u
     const order = await getFilledSelfOrder(store);
     const receipt = await store.renderer.toHtml(OrderReceipt, { order });
     expect(receipt).toHaveClass("pos-receipt");
+});
+
+test("an order gone from the kiosk gives its bus channel back", async () => {
+    const store = await setupSelfPosEnv();
+    const order = store.currentOrder;
+    patchWithCleanup(store.bus, {
+        addChannel(channel) {
+            expect.step(`claim ${channel}`);
+            const release = super.addChannel(channel);
+            return () => {
+                expect.step(`release ${channel}`);
+                release();
+            };
+        },
+    });
+    order.self_order_channel = "an-order-channel";
+    store.listenToOrder(order);
+    expect.verifySteps(["claim an-order-channel"]);
+    expect(store.orderChannels.has("an-order-channel")).toBe(true);
+    order.delete();
+    expect.verifySteps(["release an-order-channel"]);
+    expect(store.orderChannels.has("an-order-channel")).toBe(false);
 });

@@ -70,14 +70,12 @@ const websocketMessages = [];
 
 const setupWebRtc = () => {
     const bus = new EventBus();
-    const busCallbacks = new Map();
     const mockBusService = {
         subscribe: (type, callback) => {
-            busCallbacks.set(callback, (event) => callback(event.detail));
-            bus.addEventListener(type, busCallbacks.get(callback));
+            const listener = (event) => callback(event.detail);
+            bus.addEventListener(type, listener);
+            return () => bus.removeEventListener(type, listener);
         },
-        unsubscribe: (type, callback) =>
-            bus.removeEventListener(type, busCallbacks.get(callback)),
         trigger: bus.trigger.bind(bus),
     };
     const mockWebsocket = {
