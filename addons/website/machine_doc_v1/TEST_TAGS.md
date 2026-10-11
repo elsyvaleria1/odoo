@@ -46,7 +46,7 @@ used nowhere** — all browser interaction goes through `start_tour`.
 | `test_client_action.py` | HttpCaseWithWebsiteUser | Backend→frontend editor client action (tours) |
 | `test_configurator.py` | HttpCase | Configurator wizard + translation (tours) |
 | `test_controllers.py` | HttpCase | Controller routing / responses |
-| `test_converter.py` | BaseCase | slug/unslug + title→slug pure-python helpers |
+| `test_converter.py` | BaseCase / TransactionCase | slug/unslug + title→slug pure-python helpers; the routing map built off a request thread (no thread `dbname`) still slugs through the registry's `ir.http` |
 | `test_crawl.py` | HttpCaseWithUserDemo | Crawls the CMS; asserts internal links return 200 |
 | `test_csp.py` | HttpCase | Website pages, the 404 page and the custom head/footer code run their scripts under the response's nonce policy |
 | `test_custom_snippets.py` | TransactionCase / HttpCase | User-saved custom snippets (tours) |

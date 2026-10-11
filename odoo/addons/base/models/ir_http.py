@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import threading
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -31,7 +30,6 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.hashing import cache_hash
 from odoo.libs.json import OPT_SORT_KEYS
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
-from odoo.modules.registry import Registry
 from odoo.service import security
 from odoo.tools.assets.constants import EXTENSION_TO_WEB_MIMETYPES
 from odoo.tools.json import json_default
@@ -59,19 +57,15 @@ class ModelConverter(werkzeug.routing.BaseConverter):
         super().__init__(url_map)
         self.model = model
 
-        IrHttp = Registry(threading.current_thread().dbname)["ir.http"]
-        self.slug = IrHttp._slug
-        self.unslug = IrHttp._unslug
-
     def to_python(self, value: str) -> models.BaseModel:
         _uid = RequestUID(value=value, converter=self)
         env = api.Environment(request.env.cr, _uid, request.env.context)
-        record_id = self.unslug(value)[1]
+        record_id = env.registry["ir.http"]._unslug(value)[1]
         _debug.logic("route_model_converted", model=self.model, id=record_id)
         return env[self.model].browse(record_id)
 
     def to_url(self, value: models.BaseModel) -> str:
-        return self.slug(value)
+        return value.env.registry["ir.http"]._slug(value)
 
 
 class ModelsConverter(werkzeug.routing.BaseConverter):
