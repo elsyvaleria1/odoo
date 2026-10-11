@@ -83,6 +83,7 @@ chardet==5.2.0  # base_import, mail
 dbfread==2.0.7  # account_winbooks_import
 defusedxml==0.7.1  # attachment_indexation, website
 google-auth==2.59.1  # cloud_storage_google
+icalendar==7.3.0  # device_dav_sync
 numpy==2.5.3  # speech_local, speech_voiceprint
 odfpy==1.4.1  # base_import: .ods reader (models/odf_ods_reader.py) — optional
 openpyxl==3.1.5  # attachment_indexation, base_import, survey — optional
@@ -95,6 +96,8 @@ pymodbus==3.15.0  # integration_modbus
 # only in a child process of its own. setup.py offers the same package as the
 # `pdf-raster` extra.
 PyMuPDF==1.28.2  # base, document (odoo.libs.pdf_raster) — optional
+pyproj==3.8.0  # geoengine
+pyshp==3.1.6  # geoengine, imported as `shapefile`
 python-ldap==3.4.8 ; sys_platform != 'win32'  # auth_ldap
 python-stdnum==2.2  # account_vat + 15 l10n modules. Fixes operation_timeout in SOAP client
 qrcode==8.2  # auth_totp, pos_self_order
@@ -109,6 +112,7 @@ qrcode==8.2  # auth_totp, pos_self_order
 # `ImportError: onnxruntime is not installed`.
 rapidocr==3.9.2
 onnxruntime==1.30.0
+shapely==2.1.2  # geoengine
 sherpa-onnx==1.13.8  # speech_local, speech_voiceprint
 # The only remaining reason pytz is installed anywhere: vobject depends on it.
 vobject==0.9.9  # calendar, event, web, website_event_track — optional
