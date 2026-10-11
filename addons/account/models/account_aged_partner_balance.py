@@ -254,11 +254,13 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
 
         def prepare_result_dict(report, query_res_lines, groupby):
             rslt = {f"period{i}": 0 for i in range(len(periods))}
+            rslt["pending_match"] = 0
 
             for query_res in query_res_lines:
                 for i in range(len(periods)):
                     period_key = f"period{i}"
                     rslt[period_key] += query_res[period_key]
+                rslt["pending_match"] += query_res["pending_match"]
 
             if groupby == "id":
                 query_res = query_res_lines[
@@ -400,6 +402,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                 ARRAY_AGG(DISTINCT %(account_code)s) AS account_name,
                 ARRAY_AGG(DISTINCT COALESCE(%(aging_date_field)s, account_move_line.date)) AS due_date,
                 ARRAY_AGG(DISTINCT account_move_line.currency_id) AS currency_id,
+                %(multiplicator)s * COALESCE(SUM(%(pending_select)s), 0) AS pending_match,
                 %(select_period_query)s
 
             FROM %(table_references)s
@@ -428,6 +431,12 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                 GROUP BY part.credit_move_id
             ) part_credit ON TRUE
 
+            LEFT JOIN LATERAL (
+                SELECT SUM(pending.amount) AS amount
+                FROM account_pending_match pending
+                WHERE pending.posted_line_id = account_move_line.id
+            ) pending ON TRUE
+
             JOIN period_table ON
                 (
                     period_table.date_start IS NULL
@@ -455,6 +464,9 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             period_table=period_table,
             select_from_groupby=select_from_groupby,
             select_period_query=select_period_query,
+            pending_select=report._currency_table_apply_rate(
+                SQL("SIGN(account_move_line.balance) * pending.amount")
+            ),
             multiplicator=multiplicator,
             aging_date_field=aging_date_field,
             table_references=query.from_clause,
@@ -625,11 +637,15 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                                     for expression in expressions_to_evaluate
                                 },
                             )
+                            partner_values["pending_match"] = 0
                             for aml_data in aml_data_list:
                                 for i in range(report_periods):
                                     period_value = aml_data[f"period{i}"]
                                     partner_values[f"period{i}"] += period_value
                                     partner_values["total"] += period_value
+                                partner_values["pending_match"] += aml_data[
+                                    "pending_match"
+                                ]
 
                                 for expression in expressions_to_evaluate:
                                     partner_aml_expression_totals[expression][

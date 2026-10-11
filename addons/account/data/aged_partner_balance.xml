@@ -77,6 +77,13 @@
                 <field name="expression_label">total</field>
                 <field name="sortable" eval="True" />
             </record>
+            <record
+                id="aged_receivable_report_pending_match"
+                model="report.formula.column">
+                <field name="name">Pending Match</field>
+                <field name="expression_label">pending_match</field>
+                <field name="blank_if_zero" eval="True" />
+            </record>
         </field>
         <field name="line_ids">
             <record id="aged_receivable_line" model="report.formula.line">
@@ -202,6 +209,16 @@
                         <field name="subformula">total</field>
                         <field name="auditable" eval="True" />
                     </record>
+                    <record
+                        id="aged_receivable_line_pending_match"
+                        model="report.formula.expression">
+                        <field name="label">pending_match</field>
+                        <field name="engine">custom</field>
+                        <field
+                            name="formula">_report_custom_engine_aged_receivable</field>
+                        <field name="subformula">pending_match</field>
+                        <field name="auditable" eval="False" />
+                    </record>
                 </field>
             </record>
         </field>
@@ -278,6 +295,13 @@
                 <field name="name">Total</field>
                 <field name="expression_label">total</field>
                 <field name="sortable" eval="True" />
+            </record>
+            <record
+                id="aged_payable_report_pending_match"
+                model="report.formula.column">
+                <field name="name">Pending Match</field>
+                <field name="expression_label">pending_match</field>
+                <field name="blank_if_zero" eval="True" />
             </record>
         </field>
         <field name="line_ids">
@@ -391,6 +415,15 @@
                         <field name="formula">_report_custom_engine_aged_payable</field>
                         <field name="subformula">total</field>
                         <field name="auditable" eval="True" />
+                    </record>
+                    <record
+                        id="aged_payable_line_pending_match"
+                        model="report.formula.expression">
+                        <field name="label">pending_match</field>
+                        <field name="engine">custom</field>
+                        <field name="formula">_report_custom_engine_aged_payable</field>
+                        <field name="subformula">pending_match</field>
+                        <field name="auditable" eval="False" />
                     </record>
                 </field>
             </record>
