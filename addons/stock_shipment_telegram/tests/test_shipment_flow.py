@@ -239,9 +239,8 @@ class TestShipmentFlow(TelegramBotTestCase):
         reply = self._say(self._tail(self.other_out))
 
         self.assertIn("ending in", reply)
-        self.assertEqual(
-            self._transfer_buttons(), [f"emb:p:{sheet.id}:{self.other_out.id}"]
-        )
+        self.assertIn(f"emb:p:{sheet.id}:{self.other_out.id}", self._transfer_buttons())
+        self.assertNotIn(f"emb:p:{sheet.id}:{self.out.id}", self._transfer_buttons())
         self._press(f"emb:p:{sheet.id}:{self.other_out.id}")
         self.assertEqual(self.other_out.carrier_tracking_ref, "TOL01584640")
         self.assertFalse(self.out.carrier_tracking_ref)
@@ -325,3 +324,50 @@ class TestShipmentFlow(TelegramBotTestCase):
         self._press(f"emb:p:{sheet.id}:{self.out.id}")
 
         self.assertEqual(self.out.carrier_tracking_ref, "TOL01584640")
+
+    def _second_sheet(self):
+        """A second sheet, of another tracking number, sent after the first."""
+        self._sheet_photo(read={**SHEET, "tracking_ref": "TOL01584641"})
+        return self._last_sheet()
+
+    def test_a_button_of_an_older_sheet_leaves_the_digits_on_the_newest(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        older = self._last_sheet()
+        newest = self._second_sheet()
+
+        reply = self._press(f"emb:p:{older.id}:{self.out.id}")
+        self.assertNotIn("also cover another", reply, "no offer for the older sheet")
+        self._say(self._tail(self.other_out))
+
+        self.assertIn(
+            f"emb:p:{newest.id}:{self.other_out.id}", self._transfer_buttons()
+        )
+        self.assertFalse(
+            [data for data in self._transfer_buttons() if data.startswith("emb:m:")]
+        )
+
+    def test_receipt_of_an_older_sheet_leaves_the_newest_on_deliveries(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        older = self._last_sheet()
+        newest = self._second_sheet()
+
+        self._press(f"emb:in:{older.id}")
+        self._say(self._tail(self.other_out))
+
+        self.assertIn(
+            f"emb:p:{newest.id}:{self.other_out.id}", self._transfer_buttons()
+        )
+
+    def test_one_more_after_finishing_is_refused(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        sheet = self._last_sheet()
+        self._press(f"emb:p:{sheet.id}:{self.out.id}")
+        self._press("emb:fin")
+
+        reply = self._press(f"emb:m:{sheet.id}:{self.other_out.id}")
+
+        self.assertIn("no longer valid", reply)
+        self.assertFalse(self.other_out.carrier_tracking_ref)

@@ -77,6 +77,16 @@ class TelegramHandlerShipment(models.AbstractModel):
             )
         ]
 
+    def _continues(self, chat, sheet) -> bool:
+        """Whether `sheet` carries the tracking number of the open flow's
+        sheet: the one an "add one more transfer" button may act on."""
+        current = (
+            self.env["telegram.shipment.sheet"]
+            .browse(self._flow_data(chat).get("sheet") or 0)
+            .exists()
+        )
+        return bool(sheet and current) and current.tracking_ref == sheet.tracking_ref
+
     def _remember(self, chat, **values) -> None:
         """Keep `values` on the open flow: a button pressed after it ended
         still acts, with nothing to remember."""
@@ -298,10 +308,14 @@ class TelegramHandlerShipment(models.AbstractModel):
             ),
         )
 
-    def _offer_more(self, bot, chat, sheet, digits=None, lines=()) -> None:
+    def _offer_more(self, bot, chat, sheet, digits=None, lines=(), offer=True) -> None:
         """After `lines`, offer the transfers the assigned `sheet`'s number may
-        also go on: a shipment often carries several transfers."""
+        also go on: a shipment often carries several transfers. Only while the
+        flow is open and on this sheet: its buttons would not act otherwise."""
         tr = self._tr(bot, chat)
+        if not (offer and self._owns_flow(chat)):
+            self._send(bot, chat, "\n".join(lines), self._finish_markup(bot, chat))
+            return
         candidates = sheet._more_candidates(digits=digits)
         if digits and not candidates:
             text = tr._(
@@ -392,6 +406,10 @@ class TelegramHandlerShipment(models.AbstractModel):
                 )
             )
         )
+        current = self._flow_data(chat).get("sheet")
+        if kind == "m" and not self._continues(chat, sheet):
+            # "one more" acts only in the open flow, on the number it is on
+            sheet = sheet.browse()
         offered = (
             sheet._more_candidates() if kind == "m" and sheet else sheet.candidate_ids
         )
@@ -405,7 +423,8 @@ class TelegramHandlerShipment(models.AbstractModel):
             return
         self._clear_keyboard(bot, chat, callback_query)
         if kind == "in":
-            self._remember(chat, incoming=True)
+            if current == sheet.id:
+                self._remember(chat, incoming=True)
             self._offer(
                 bot, chat, sheet, sheet._candidates(incoming=True), incoming=True
             )
@@ -438,13 +457,16 @@ class TelegramHandlerShipment(models.AbstractModel):
                 bot, chat, tg.escape(str(refusal)), self._finish_markup(bot, chat)
             )
             return
-        self._remember(chat, sheet=sheet.id)
+        # an older sheet's button does not move the flow off the newest sheet
+        current_now = kind == "m" or current == sheet.id
+        if current_now:
+            self._remember(chat, sheet=sheet.id)
         lines = [
             self._assigned_line(tr, sheet),
             *lines,
             *self._tracking_lines(tr, picking),
         ]
-        self._offer_more(bot, chat, sheet, lines=lines)
+        self._offer_more(bot, chat, sheet, lines=lines, offer=current_now)
 
     @staticmethod
     def _assigned_line(tr, sheet) -> str:
