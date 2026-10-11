@@ -165,6 +165,27 @@ class TestAttachmentUnlinkProtection(common.TransactionCase):
                 {**moved, "name": "renamed.pdf"}
             )
 
+    def test_attachment_create_by_system_relocation_allowed_in_terminal(self):
+        request, _ = self._draft_request_with_attachment("Relocated Image")
+        request.action_confirm()
+        request.approver_ids[0].with_context(skip_wizard=True).action_approve()
+        vals = {
+            "name": "image0",
+            "res_model": "approval.request",
+            "res_id": request.id,
+            "datas": "dGVzdA==",
+        }
+        with self.assertRaises(UserError):
+            self.env["ir.attachment"].with_user(self.admin_user).with_context(
+                attachment_storage_relocation=True
+            ).create(vals)
+        image = (
+            self.env["ir.attachment"]
+            .with_context(attachment_storage_relocation=True)
+            .create(vals)
+        )
+        self.assertEqual(image.res_id, request.id)
+
     def test_attachment_read_allowed_in_terminal(self):
         request, attachment = self._draft_request_with_attachment("Read OK")
         request.action_confirm()

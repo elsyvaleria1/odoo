@@ -64,6 +64,11 @@ class IrAttachment(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        if self.env.su and self.env.context.get("attachment_storage_relocation"):
+            # bytes the request already holds, moved out of one of its own
+            # columns (an inline image of its HTML) into an attachment: the
+            # document is unchanged, and only the system may do it
+            return super().create(vals_list)
         candidate_ids = {
             vals.get("res_id")
             for vals in vals_list
