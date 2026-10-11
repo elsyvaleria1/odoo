@@ -20,6 +20,7 @@ from . import wizard_account_move_line_reconcile_auto
 from . import wizard_account_bank_statement_line_reconcile_auto
 from . import wizard_account_move_line_split
 from . import wizard_account_payment_correct_accounts
+from . import wizard_account_move_apply_advance
 from . import wizard_account_config_update_lock_date
 from . import wizard_account_move_line_reconcile
 from . import wizard_account_move_line_reconcile_amounts

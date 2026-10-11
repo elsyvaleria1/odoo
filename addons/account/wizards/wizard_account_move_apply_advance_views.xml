@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_wizard_account_move_apply_advance_form" model="ir.ui.view">
+        <field name="name">wizard.account.move.apply.advance.form</field>
+        <field name="model">wizard.account.move.apply.advance</field>
+        <field name="arch" type="xml">
+            <form string="Apply Advance">
+                <field name="company_id" invisible="1" />
+                <field name="company_currency_id" invisible="1" />
+                <field name="available_advance_line_ids" invisible="1" />
+                <group>
+                    <field name="partner_id" readonly="1" />
+                    <field name="line_ids" widget="many2many_tags" readonly="1" />
+                    <field name="source" widget="radio" />
+                    <field
+                        name="advance_line_ids"
+                        options="{'no_create': True}"
+                        invisible="source != 'advance'"
+                        required="source == 'advance'">
+                        <list>
+                            <field name="date" />
+                            <field name="move_name" />
+                            <field name="account_id" />
+                            <field name="name" />
+                            <field name="amount_residual" />
+                        </list>
+                    </field>
+                    <field
+                        name="account_id"
+                        options="{'no_create': True}"
+                        invisible="source != 'account'"
+                        required="source == 'account'" />
+                    <field name="amount" />
+                    <field name="journal_id" options="{'no_create': True}" />
+                    <field name="date" />
+                    <field name="ref" />
+                </group>
+                <footer>
+                    <button
+                        name="action_apply"
+                        type="object"
+                        string="Apply"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Discard" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_wizard_account_move_apply_advance" model="ir.actions.act_window">
+        <field name="name">Apply Advance…</field>
+        <field name="res_model">wizard.account.move.apply.advance</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_account_move" />
+        <field name="binding_view_types">list</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('account.group_account_user'))]" />
+    </record>
+
+</odoo>

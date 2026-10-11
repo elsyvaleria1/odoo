@@ -495,6 +495,7 @@ class AccountPayment(models.Model):
             )
 
         self._check_counterpart_account()
+        self._check_liquidity_account()
 
         line_name = "".join(
             x[1] for x in self._get_aml_default_display_name_list() if x[1]
@@ -1190,6 +1191,28 @@ class AccountPayment(models.Model):
             "target": "new",
             "context": {"default_payment_id": self.id},
         }
+
+    @api.model
+    def _get_liquidity_account_types(self) -> tuple:
+        return ("asset_cash", "liability_credit_card", "asset_current")
+
+    def _check_liquidity_account(self) -> None:
+        liquidity_types = self._get_liquidity_account_types()
+        for pay in self:
+            account = pay.outstanding_account_id
+            if account.account_type in liquidity_types:
+                continue
+            _debug.logic("liquidity_account_refused", payment=pay, account=account)
+            raise UserError(
+                self.env._(
+                    "%(payment)s would book its money on %(account)s, which is not a "
+                    "bank, cash, card or outstanding account: a payment moves money. "
+                    "To settle documents from an advance, or from a payment a third "
+                    "party made in the company's name, use Apply Advance on them.",
+                    payment=pay.display_name,
+                    account=account.display_name,
+                )
+            )
 
     def _check_counterpart_account(self) -> None:
         for pay in self:

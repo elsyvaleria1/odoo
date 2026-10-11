@@ -512,3 +512,140 @@ class TestStatementLineEntryOwnership(AccountTestInvoicingCommon):
         self.assertEqual(suspense.account_id, expense)
         self.assertFalse(suspense.payment_role)
         self.assertTrue(st_line.is_reconciled)
+
+
+@tagged("post_install", "-at_install")
+class TestAdvanceApplication(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.payable = cls.company_data["default_account_payable"]
+        cls.advances = cls.env["account.account"].create(
+            {
+                "name": "Supplier advances",
+                "code": "ADV001",
+                "account_type": "asset_prepayments",
+                "reconcile": True,
+            }
+        )
+        cls.third_party = cls.env["account.account"].create(
+            {
+                "name": "Paid by a third party",
+                "code": "TPP001",
+                "account_type": "liability_current",
+                "reconcile": True,
+            }
+        )
+        cls.misc_journal = cls.company_data["default_journal_misc"]
+
+    def _bill(self, amount=100.0):
+        bill = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-08-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "goods",
+                            "price_unit": amount,
+                            "tax_ids": [Command.clear()],
+                        }
+                    )
+                ],
+            }
+        )
+        bill.action_post()
+        return bill
+
+    def _advance(self, amount):
+        entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "journal_id": self.misc_journal.id,
+                "date": "2026-07-15",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "account_id": self.advances.id,
+                            "partner_id": self.partner_a.id,
+                            "balance": amount,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "account_id": self.company_data[
+                                "default_journal_bank"
+                            ].default_account_id.id,
+                            "balance": -amount,
+                        }
+                    ),
+                ],
+            }
+        )
+        entry.action_post()
+        return entry.line_ids.filtered(lambda line: line.account_id == self.advances)
+
+    def _wizard(self, bill, **vals):
+        return (
+            self.env["wizard.account.move.apply.advance"]
+            .with_context(active_model="account.move", active_ids=bill.ids)
+            .create(vals)
+        )
+
+    def test_a_payment_that_moves_no_money_is_refused(self):
+        advance_journal = self.company_data["default_journal_cash"].copy(
+            {"name": "Supplier advances", "code": "ANT"}
+        )
+        advance_journal.default_account_id = self.advances
+        for channel in advance_journal.outbound_payment_channel_ids:
+            channel.payment_account_id = self.advances
+        payment = self.env["account.payment"].create(
+            {
+                "amount": 100.0,
+                "date": "2026-08-01",
+                "partner_id": self.partner_a.id,
+                "partner_type": "supplier",
+                "payment_type": "outbound",
+                "journal_id": advance_journal.id,
+            }
+        )
+
+        with self.assertRaisesRegex(UserError, "use Apply Advance"):
+            payment.action_post()
+
+    def test_an_advance_pays_a_bill_without_a_payment(self):
+        advance = self._advance(60.0)
+        bill = self._bill(100.0)
+
+        wizard = self._wizard(bill, advance_line_ids=[Command.set(advance.ids)])
+        self.assertIn(advance, wizard.available_advance_line_ids)
+        self.assertEqual(wizard.amount, 60.0)
+        wizard.action_apply()
+
+        entry = advance.matched_credit_ids.credit_move_id.move_id
+        self.assertEqual(
+            sorted(
+                entry.line_ids.mapped(lambda line: (line.account_id.id, line.balance))
+            ),
+            sorted([(self.payable.id, 60.0), (self.advances.id, -60.0)]),
+        )
+        self.assertFalse(entry.payment_ids)
+        self.assertTrue(advance.reconciled)
+        self.assertEqual(bill.payment_state, "partial")
+        self.assertEqual(bill.amount_residual, 40.0)
+
+    def test_a_third_party_payment_moves_the_bill_to_its_account(self):
+        bill = self._bill(100.0)
+
+        wizard = self._wizard(bill, source="account", account_id=self.third_party.id)
+        wizard.action_apply()
+
+        self.assertIn(bill.payment_state, ("paid", "in_payment"))
+        entry = bill.line_ids.matched_debit_ids.debit_move_id.move_id
+        self.assertEqual(
+            sorted(
+                entry.line_ids.mapped(lambda line: (line.account_id.id, line.balance))
+            ),
+            sorted([(self.payable.id, 100.0), (self.third_party.id, -100.0)]),
+        )

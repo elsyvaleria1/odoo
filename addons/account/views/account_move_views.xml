@@ -757,6 +757,12 @@
                         invisible="(                             state != 'posted'                             or payment_state not in ('not_paid', 'partial', 'in_payment')                             or move_type not in ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt')                             or not invoice_has_outstanding                         )"
                         data-hotkey="g" />
                     <button
+                        name="%(action_wizard_account_move_apply_advance)d"
+                        type="action"
+                        string="Apply Advance"
+                        groups="account.group_account_user"
+                        invisible="state != 'posted' or payment_state not in ('not_paid', 'partial') or move_type not in ('out_invoice', 'in_invoice', 'out_receipt', 'in_receipt')" />
+                    <button
                         name="preview_invoice"
                         type="object"
                         string="Preview"
