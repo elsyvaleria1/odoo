@@ -214,12 +214,12 @@ class HrAttendance(models.Model):
         periods_without_calendar_by_employee = defaultdict(list)
         for employee, calendar_periods in calendar_periods_by_employee.items():
             employee_interval_UTC = Intervals([])
-            for start, stop, calendar in calendar_periods:
+            for period_start, period_stop, calendar in calendar_periods:
                 calendar_periods_interval_UTC = Intervals(
                     [
                         (
-                            start.astimezone(UTC),
-                            stop.astimezone(UTC),
+                            period_start.astimezone(UTC),
+                            period_stop.astimezone(UTC),
                             self.env["resource.calendar"],
                         )
                     ]
@@ -274,8 +274,10 @@ class HrAttendance(models.Model):
         unavailable_intervals_by_employees = {}
         for employee, calendar_periods in calendar_periods_by_employee.items():
             employee_unavailable_full_interval = Intervals([])
-            for start, stop, calendar in calendar_periods:
-                interval = Intervals([(start, stop, self.env["resource.calendar"])])
+            for period_start, period_stop, calendar in calendar_periods:
+                interval = Intervals(
+                    [(period_start, period_stop, self.env["resource.calendar"])]
+                )
                 calendar_unavailable_interval_list = unavailable_intervals_by_calendar[
                     calendar
                 ][employee.id]

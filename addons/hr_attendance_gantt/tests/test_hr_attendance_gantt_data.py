@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from odoo import Command
 from odoo.tests.common import TransactionCase, new_test_user
@@ -165,3 +165,28 @@ class TestHrAttendanceGanttData(TransactionCase):
         )
         first_interval = standard_intervals[0]
         self.assertLess(first_interval["start"], first_interval["stop"])
+
+    def test_unavailability_keeps_the_window_when_another_contract_starts_later(self):
+        later_employee = self.env["hr.employee"].create(
+            {
+                "name": "Later Gantt Contract",
+                "resource_calendar_id": self.calendar.id,
+                "date_version": date(2024, 1, 10),
+                "contract_date_start": date(2024, 1, 10),
+                "wage": 10,
+            }
+        )
+        result = self.env["hr.attendance"]._gantt_unavailability(
+            "employee_id",
+            [self.employee.id, later_employee.id],
+            datetime(2024, 1, 8),
+            datetime(2024, 1, 14),
+            "week",
+        )
+        self.assertEqual(
+            result[self.employee.id][0],
+            {
+                "start": datetime(2024, 1, 8, tzinfo=UTC),
+                "stop": datetime(2024, 1, 8, 9, tzinfo=UTC),
+            },
+        )
