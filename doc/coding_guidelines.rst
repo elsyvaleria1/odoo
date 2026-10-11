@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.71
+:Version: 7.72
 :Date: 2026-10-09
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -4207,6 +4207,26 @@ escape hatch for a run that must survive a known-broken bundle, not a fix.
   return inside the effect. Drag is a capability of every pointer: the drag
   engine already turns a touch into a 300 ms long-press, so touch is never a
   reason to switch drag off.
+* **A bus claim has an owner that gives it back** ``[test_lint bus_dropped_claim]``.
+  ``bus_service.addChannel`` and ``subscribe`` return their release. A component
+  claims through ``useBusChannel`` / ``useBusSubscription``
+  (``@bus/services/bus_service``), which release on destroy; what an action holds
+  past its component -- a collaborative session in the breadcrumbs -- registers
+  its release on ``useControllerLifetime()`` (``@web/core/action_hook``); any
+  other owner keeps the release and calls it when it ends. Only a service, which
+  lives as long as the page, drops it. The bus hands a tab only the
+  notifications of the channel names it claimed, but one tab may claim several:
+  a consumer still checks which record a notification is for. On the server, a
+  client name opens its channels in ``ir.websocket._bus_channels_by_name``, a
+  channel every subscriber gets is ``_implicit_bus_channels``, and who the
+  subscriber is (a guest token) is ``_bus_context``; ``_get_bus_channels`` is
+  their union and is not overridden ``[review]``: a channel added any other way
+  reaches every tab.
+* **``doAction`` takes only the options ``ActionOptions`` declares**
+  ``[test_lint action_unknown_option]``. The action service ignores any other key
+  without a word: four spreadsheet calls passed ``clear_breadcrumbs`` for years
+  and stacked instead of clearing. What the action itself carries -- its
+  ``target``, its ``params`` -- goes on the action, not in the options.
 * **A standing condition is a banner; a transient outcome is a notification**
   ``[review]``. Something true until it is resolved -- a subscription about to
   expire, a maintenance window, a misconfiguration -- is an entry in the
@@ -6227,6 +6247,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.72
+     - 2026-10-11
+     - §4.3.1: a bus claim has an owner that gives it back (``bus_dropped_claim``),
+       the server's channel hooks are named; ``doAction`` takes only declared
+       options (``action_unknown_option``).
    * - 7.71
      - 2026-10-10
      - §10.3: a string is checked with ``isdecimal()`` before ``int()``, not
