@@ -59,6 +59,31 @@ class TestAutoReconcileRegressions(TestBankRecWidgetCommon):
         st_line._try_auto_reconcile_statement_lines()
         self.assertTrue(st_line.is_reconciled)
 
+    def test_a_draft_named_in_the_label_is_left_to_a_person(self):
+        invoice = self._invoice_with_ref("DRAFTREF01", 100.0)
+        invoice.action_draft()
+        st_line = self._create_st_line(
+            100.0, payment_ref="PAGO DRAFTREF01", partner_id=self.partner_a.id
+        )
+
+        st_line._try_auto_reconcile_statement_lines()
+
+        self.assertFalse(st_line.is_reconciled)
+        self.assertFalse(invoice.line_ids.matched_credit_ids)
+
+    def test_a_draft_of_the_partner_s_amount_is_left_to_a_person(self):
+        invoice = self._invoice_with_ref("UNNAMED", 250.0)
+        invoice.action_draft()
+        st_line = self._create_st_line(
+            250.0, payment_ref="PAGO", partner_id=self.partner_a.id
+        )
+
+        st_line._try_auto_reconcile_statement_lines()
+
+        self.assertFalse(st_line.is_reconciled)
+        self.assertFalse(invoice.line_ids.matched_credit_ids)
+        self.assertEqual(invoice.payment_state, "not_paid")
+
     def test_failing_line_does_not_retire_its_batch(self):
         StatementLine = type(self.env["account.bank.statement.line"])
         genuine = StatementLine._try_auto_reconcile_statement_lines

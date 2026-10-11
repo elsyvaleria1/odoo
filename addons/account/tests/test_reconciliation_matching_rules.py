@@ -2984,6 +2984,7 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
             quantity=1,
             date="2019-09-01",
             move_name="INV/2019/0010",
+            post=True,
             company_id=branch_a["company"].id,
         )
         invoice_line_1 = invoice_1.line_ids.filtered(
@@ -3016,6 +3017,7 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
             quantity=1,
             date="2019-09-01",
             move_name="INV/2019/0042",
+            post=True,
             company_id=branch["company"].id,
         ).line_ids.filtered(
             lambda l: (

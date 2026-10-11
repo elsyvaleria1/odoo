@@ -410,7 +410,7 @@ class AccountBankStatementLine(models.Model):
                    AND aml.move_id != ALL(%s)
                    AND aml.reconciled IS NOT TRUE
                    AND aml.account_id = ANY(%s)
-                   AND (aml.parent_state IN ('draft', 'posted'))
+                   AND aml.parent_state = 'posted'
                    AND st_line.id = ANY(%s)
               GROUP BY st_line.id
         """,

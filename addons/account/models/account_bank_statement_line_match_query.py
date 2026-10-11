@@ -193,8 +193,7 @@ class AccountBankStatementLine(models.Model):
                       JOIN res_company company ON company.id = aml.company_id
                      WHERE aml.account_id = ANY(%(payable_ids)s)
                        AND aml.balance = ANY(%(amounts)s::numeric[])
-                       -- a bill waiting to be posted is owed as well
-                       AND aml.parent_state IN ('draft', 'posted')
+                       AND aml.parent_state = 'posted'
                        AND aml.currency_id = company.currency_id
                        AND move.statement_line_id IS NULL
                 ),
@@ -549,7 +548,7 @@ class AccountBankStatementLine(models.Model):
                     AND aml.account_id = ANY(%(account_ids)s)
                     AND %(aml_and_st_line_related)s
                     AND ((st_line.amount > 0 AND aml.balance > 0) OR (st_line.amount < 0 AND aml.balance < 0))
-                    AND (aml.parent_state IN ('draft', 'posted'))
+                    AND aml.parent_state = 'posted'
                     AND st_line.id = ANY(%(st_line_ids)s)
                     AND (
                         length(word) > 5 AND strpos(lower(st_line.payment_ref), lower(word)) > 0

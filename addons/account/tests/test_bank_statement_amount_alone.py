@@ -33,22 +33,21 @@ class TestBankStatementAmountAlone(TestBankRecWidgetCommon):
             "a match resting on the amount alone waits for a person to review it",
         )
 
-    def test_a_bill_waiting_to_be_posted_is_matched_as_well(self):
+    def test_a_bill_waiting_to_be_posted_is_left_to_a_person(self):
         bill = self._bill(31250.4)
         bill.move_id.action_draft()
         st_line = self._create_st_line(-31250.4, payment_ref="SPEI ENVIADO 0010")
 
         st_line._try_auto_reconcile_statement_lines()
 
-        self.assertTrue(st_line.is_reconciled)
-        self.assertEqual(st_line.auto_reconcile_rule, "amount_alone")
-        self.assertEqual(st_line.partner_id, self.partner_a)
-        self.assertFalse(st_line.move_id.checked)
-        self.assertEqual(bill.move_id.state, "draft")
+        self.assertFalse(st_line.is_reconciled)
+        self.assertFalse(bill.matched_debit_ids)
+        self.assertEqual(bill.move_id.payment_state, "not_paid")
 
         bill.move_id.action_post()
+        st_line._try_auto_reconcile_statement_lines()
         self.assertTrue(bill.reconciled)
-        self.assertEqual(bill.move_id.payment_state, "paid")
+        self.assertEqual(st_line.auto_reconcile_rule, "amount_alone")
 
     def test_a_draft_bill_of_the_same_amount_makes_it_usual(self):
         bill = self._bill(9150.0)
