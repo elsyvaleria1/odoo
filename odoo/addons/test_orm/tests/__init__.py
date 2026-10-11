@@ -74,4 +74,5 @@ from . import test_field_ddl_transitions
 from . import test_predicate_access, test_x2many_archived_corecords
 from . import test_precompute_required
 from . import test_bigint
+from . import test_write_many2one_multi
 from . import test_write_x2many_multi

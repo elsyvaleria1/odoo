@@ -5,8 +5,12 @@ from odoo import Command, api, fields, models
 from odoo.exceptions import MissingError, UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, frozendict
+from odoo.tools.authority_keys import declare_authority_keys
 
 _debug = DebugLog(__name__)
+
+_ENTRIES_JUST_CREATED = "account_payment_entries_just_created"
+declare_authority_keys("account", _ENTRIES_JUST_CREATED)
 
 _SQL_RECONCILED_INVOICES_PER_PAYMENT = """
     SELECT
@@ -1312,9 +1316,18 @@ class AccountPayment(models.Model):
                 line_ids=line_ids,
             )
         default_entry_payments._create_journal_entry()
+        moves_per_vals = []
         for pay, vals in entry_payments_vals:
-            if move_vals := pay._move_vals_from_related(vals):
-                pay.move_id.write(move_vals)
+            if not (move_vals := pay._move_vals_from_related(vals)):
+                continue
+            for written_vals, moves in moves_per_vals:
+                if written_vals == move_vals:
+                    moves.append(pay.move_id.id)
+                    break
+            else:
+                moves_per_vals.append((move_vals, [pay.move_id.id]))
+        for move_vals, move_ids in moves_per_vals:
+            self.env["account.move"].browse(move_ids).write(move_vals)
         return payments
 
     def _move_vals_from_related(self, vals) -> dict:
@@ -1353,7 +1366,11 @@ class AccountPayment(models.Model):
                 state=set(self.mapped("state")),
                 state_to=vals["state"],
             )
-        if vals.get("state") in ("in_process", "paid") and not vals.get("move_id"):
+        if (
+            vals.get("state") in ("in_process", "paid")
+            and not vals.get("move_id")
+            and not self.env.context.get(_ENTRIES_JUST_CREATED)
+        ):
             self.filtered(lambda p: not p.move_id)._create_journal_entry()
             draft_moves = self.move_id.filtered(lambda m: m.state == "draft")
             _debug.pipeline("posting_moves", payment=self, draft_moves=draft_moves)
@@ -1526,8 +1543,20 @@ class AccountPayment(models.Model):
             moves=moves,
             skipped=self - need_move,
         )
-        for pay, move in zip(need_move, moves, strict=True):
-            pay.write({"move_id": move.id, "state": "in_process"})
+        need_move._write_many2one_multi("move_id", moves.ids)
+        need_move.with_context(**{_ENTRIES_JUST_CREATED: True}).write(
+            {"state": "in_process"}
+        )
+
+    def _link_matched_invoices(self, invoices_per_payment) -> None:
+        links = defaultdict(list)
+        for payment, invoices in zip(self, invoices_per_payment, strict=True):
+            for invoice in invoices:
+                links[invoice].append(Command.link(payment.id))
+        invoices = self.env["account.move"].concat(*links)
+        invoices._write_x2many_multi(
+            "matched_payment_ids", [links[invoice] for invoice in invoices]
+        )
 
     @_debug.perf.timed
     def _generate_move_vals(

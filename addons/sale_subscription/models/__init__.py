@@ -1,5 +1,6 @@
 from . import account_move
 from . import account_move_line
+from . import account_payment
 from . import mixin_account_move_send
 from . import ir_http
 from . import payment_provider

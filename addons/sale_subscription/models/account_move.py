@@ -16,15 +16,18 @@ class AccountMove(models.Model):
     def write(self, vals):
         res = super().write(vals)
         if "matched_payment_ids" in vals:
-            for move in self.filtered_domain(
-                [
-                    ("payment_state", "in", ["paid", "in_payment"]),
-                    ("move_type", "=", "out_invoice"),
-                ]
-            ):
-                _debug.pipeline("paid_invoice_may_reopen_subscription", move=move)
-                move._reopen_paid_churned_subscription()
+            self._reopen_subscriptions_of_paid_invoices()
         return res
+
+    def _reopen_subscriptions_of_paid_invoices(self) -> None:
+        for move in self.filtered_domain(
+            [
+                ("payment_state", "in", ["paid", "in_payment"]),
+                ("move_type", "=", "out_invoice"),
+            ]
+        ):
+            _debug.pipeline("paid_invoice_may_reopen_subscription", move=move)
+            move._reopen_paid_churned_subscription()
 
     def _post_entries(self):
         posted_moves = super()._post_entries()

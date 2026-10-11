@@ -1755,9 +1755,13 @@ class WizardAccountMoveLinePay(models.TransientModel):
             clean_context(self.env.context)
         )
         plan_list = []
+        payments = self.env["account.payment"].concat(
+            *(vals["payment"] for vals in to_process)
+        )
+        reconcilable = payments.move_id.line_ids.filtered_domain(domain)
         for vals in to_process:
             payment = vals["payment"]
-            payment_lines = payment.move_id.line_ids.filtered_domain(domain)
+            payment_lines = payment.move_id.line_ids & reconcilable
             lines = vals["to_reconcile"]
 
             _debug.pipeline(
@@ -1785,10 +1789,9 @@ class WizardAccountMoveLinePay(models.TransientModel):
                 plan_list += payment_plan_list
         if plan_list:
             aml_model._reconcile_plan(plan_list)
-        for vals in to_process:
-            vals["to_reconcile"].move_id.matched_payment_ids = [
-                Command.link(vals["payment"].id)
-            ]
+        payments._link_matched_invoices(
+            [vals["to_reconcile"].move_id for vals in to_process]
+        )
 
     def _get_payable_batches(self):
         batches = []
