@@ -1635,9 +1635,52 @@ class AccountAccount(models.Model):
         move_type,
         limit=None,
     ) -> list:
+        return self._get_most_frequent_accounts_for_partners(
+            company_id, [partner_id], move_type, limit
+        )[partner_id]
+
+    @api.model
+    def _get_most_frequent_accounts_for_partners(
+        self,
+        company_id,
+        partner_ids,
+        move_type,
+        limit=None,
+    ) -> dict[int, list[int]]:
+        partner_ids = list(dict.fromkeys(partner_ids))
+        ranked = {partner_id: [] for partner_id in partner_ids}
+        if not partner_ids:
+            return ranked
+        query, code_sql = self._frequent_partner_lines_query(
+            company_id, partner_ids, move_type, limit
+        )
+        for partner_id, account_id in self.env.execute_query(
+            SQL(
+                """
+            SELECT account_move_line.partner_id,
+                   account_move_line__account_id.id
+              FROM %(from_clause)s
+             WHERE %(where_clause)s
+          GROUP BY account_move_line.partner_id,
+                   account_move_line__account_id.id
+          ORDER BY account_move_line.partner_id,
+                   COUNT(account_move_line.id) DESC,
+                   MAX(%(code_sql)s)
+        """,
+                from_clause=query.from_clause,
+                where_clause=query.where_clause or SQL("TRUE"),
+                code_sql=code_sql,
+            )
+        ):
+            accounts = ranked[partner_id]
+            if not limit or len(accounts) < limit:
+                accounts.append(account_id)
+        return ranked
+
+    def _frequent_partner_lines_query(self, company_id, partner_ids, move_type, limit):
         domain = [
             *self.env["account.move.line"]._check_company_domain(company_id),
-            ("partner_id", "=", partner_id),
+            ("partner_id", "in", list(partner_ids)),
             ("account_id.active", "=", True),
             (
                 "date",
@@ -1662,7 +1705,7 @@ class AccountAccount(models.Model):
             _debug.logic(
                 "frequency_query_shaped",
                 company=company_id,
-                partner=partner_id,
+                partners=len(partner_ids),
                 move_type=move_type,
                 suggestion_domain=str(suggestion_domain),
                 limit=limit,
@@ -1674,27 +1717,7 @@ class AccountAccount(models.Model):
             "code",
             query,
         )
-
-        return [
-            r[0]
-            for r in self.env.execute_query(
-                SQL(
-                    """
-                SELECT account_move_line__account_id.id
-                  FROM %(from_clause)s
-                 WHERE %(where_clause)s
-              GROUP BY account_move_line__account_id.id
-              ORDER BY COUNT(account_move_line.id) DESC,
-                       MAX(%(code_sql)s)
-                %(limit_clause)s
-            """,
-                    from_clause=query.from_clause,
-                    where_clause=query.where_clause or SQL("TRUE"),
-                    code_sql=code_sql,
-                    limit_clause=SQL("LIMIT %s", limit) if limit else SQL(),
-                )
-            )
-        ]
+        return query, code_sql
 
     @api.model
     def _get_most_frequent_account_for_partner(
@@ -1703,19 +1726,37 @@ class AccountAccount(models.Model):
         partner_id,
         move_type=None,
     ):
+        return self._get_most_frequent_account_for_partners(
+            company_id, [partner_id], move_type
+        )[partner_id]
+
+    @api.model
+    def _get_most_frequent_account_for_partners(
+        self,
+        company_id,
+        partner_ids,
+        move_type=None,
+    ) -> dict:
         cache = self.env.cr.cache.setdefault("most_frequent_accounts_for_partner", {})
-        key = (company_id, partner_id, move_type)
-
-        if key not in cache:
-            most_frequent_account = self._get_most_frequent_accounts_for_partner(
-                company_id,
-                partner_id,
-                move_type,
-                limit=1,
+        missing = list(
+            dict.fromkeys(
+                partner_id
+                for partner_id in partner_ids
+                if (company_id, partner_id, move_type) not in cache
             )
-            cache[key] = most_frequent_account[0] if most_frequent_account else False
-
-        return cache[key]
+        )
+        if missing:
+            ranked = self._get_most_frequent_accounts_for_partners(
+                company_id, missing, move_type, limit=1
+            )
+            for partner_id in missing:
+                cache[company_id, partner_id, move_type] = (
+                    ranked[partner_id][0] if ranked[partner_id] else False
+                )
+        return {
+            partner_id: cache[company_id, partner_id, move_type]
+            for partner_id in partner_ids
+        }
 
     @_debug.perf.timed
     def _order_to_sql(

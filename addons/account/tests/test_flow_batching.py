@@ -310,3 +310,28 @@ class TestFlowBatching(AccountTestInvoicingCommon):
             self.env["account.move"].browse(entries[:size].ids).unlink()
 
         self.assertQueriesConstant(delete, small=2, large=6)
+
+    def test_partner_account_rankings_come_from_one_query(self):
+        self.invoices.action_post()
+        Account = self.env["account.account"]
+        company_id = self.env.company.id
+
+        def rank(size):
+            Account._get_most_frequent_accounts_for_partners(
+                company_id, self.partners[:size].ids, "out_invoice"
+            )
+
+        self.assertQueriesConstant(rank, small=2, large=6)
+        ranked = Account._get_most_frequent_accounts_for_partners(
+            company_id, self.partners.ids, "out_invoice"
+        )
+        for partner, invoice in zip(self.partners, self.invoices, strict=True):
+            self.assertEqual(
+                ranked[partner.id][:1], invoice.invoice_line_ids.account_id.ids
+            )
+            self.assertEqual(
+                Account._get_most_frequent_account_for_partner(
+                    company_id, partner.id, "out_invoice"
+                ),
+                invoice.invoice_line_ids.account_id.id,
+            )

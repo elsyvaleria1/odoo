@@ -828,6 +828,21 @@ class AccountMoveLine(models.Model):
         )
         accounts_per_key = {}
         partner_account_per_key = {}
+        partners_per_key = defaultdict(set)
+        for line in product_lines:
+            if not line.product_id and line.partner_id:
+                partners_per_key[line.company_id.id, line.move_id.move_type].add(
+                    line.partner_id.id
+                )
+        for (company_id, move_type), partner_ids in partners_per_key.items():
+            for partner_id, account_id in (
+                self.env["account.account"]
+                ._get_most_frequent_account_for_partners(
+                    company_id, partner_ids, move_type
+                )
+                .items()
+            ):
+                partner_account_per_key[company_id, partner_id, move_type] = account_id
         for line in product_lines:
             if line.product_id:
                 template = line.product_id.product_tmpl_id
@@ -849,12 +864,6 @@ class AccountMoveLine(models.Model):
                     line.account_id = accounts["expense"] or line.account_id
             elif line.partner_id:
                 key = (line.company_id.id, line.partner_id.id, line.move_id.move_type)
-                if key not in partner_account_per_key:
-                    partner_account_per_key[key] = self.env[
-                        "account.account"
-                    ]._get_most_frequent_account_for_partner(
-                        company_id=key[0], partner_id=key[1], move_type=key[2]
-                    )
                 if partner_account_per_key[key]:
                     line.account_id = partner_account_per_key[key]
         _debug.pipeline(
