@@ -26,6 +26,7 @@ class ResPartner(models.Model):
         groups="hr.group_hr_user",
     )
     employee = fields.Boolean(
+        string="Is an Employee",
         compute="_compute_employee",
         search="_search_employee",
         help="Whether this contact is an Employee.",
@@ -44,10 +45,7 @@ class ResPartner(models.Model):
     spouse_complete_name = fields.Char(string="Spouse Legal Name")
     spouse_birthdate = fields.Date()
     dependent_children = fields.Integer()
-    education_certificate = fields.Selection(
-        selection="_selection_certificate",
-        string="Certificate Level",
-    )
+    education_certificate = fields.Selection(selection="_selection_certificate")
     study_field = fields.Char(string="Field of Study")
     study_school = fields.Char(string="School")
 

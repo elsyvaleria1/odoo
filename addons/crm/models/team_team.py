@@ -49,7 +49,7 @@ class TeamTeam(models.Model):
     )
     lead_alias_contact = fields.Selection(
         related="lead_alias_id.alias_contact",
-        string="Leads Alias Domain Name",
+        string="Leads Alias Contact Security",
         readonly=False,
     )
     lead_alias_email = fields.Char(

@@ -68,7 +68,10 @@ class HrEmployee(models.Model):
         string="Parent User",
     )
     last_appraisal_id = fields.Many2one(comodel_name="hr.appraisal")
-    last_appraisal_state = fields.Selection(related="last_appraisal_id.state")
+    last_appraisal_state = fields.Selection(
+        related="last_appraisal_id.state",
+        string="Last Appraisal Status",
+    )
 
     def _get_appraisal_plan_starting_date(self):
         self.check_singleton()

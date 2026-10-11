@@ -42,3 +42,4 @@ from . import test_access_binds
 from . import test_access_matrix
 from . import test_employee_departure_resource
 from . import test_employee_nationality
+from . import test_employee_field_ownership

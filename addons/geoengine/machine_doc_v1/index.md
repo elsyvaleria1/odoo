@@ -63,7 +63,7 @@ disagree, neither is authority -- go to the code.**
 | `base.py` | 443 | extends `base` (Abstract) | spatial aggregates, `get_layers()`, view validation |
 | `geoengine_raster_layer.py` | 236 | `geoengine.raster.layer` | Raster layer config (OSM, XYZ, WMTS, WMS, Google) |
 | `geoengine_vector_layer.py` | 715 | `geoengine.vector.layer` | Vector layer config with classification, styling, heatmap/cluster, render engine |
-| `ir_ui_view.py` | 197 | extends `ir.ui.view` | `geoengine` view type, layer o2m, `map_settings_id`, view-load validation |
+| `ir_ui_view.py` | 198 | extends `ir.ui.view` | `geoengine` view type, layer o2m, `map_settings_id`, view-load validation |
 | `geoengine_view_settings.py` | 148 | `geoengine.view.settings` | Per-view map settings: projection, extents, zoom, render engine, control toggles (one row per view that departs from the defaults) |
 | `ir_model_fields.py` | 55 | extends `ir.model.fields` | `geo_type`/`dim`/`srid`/`is_geo_field` metadata. Does **not** touch `ttype` -- see models.md |
 

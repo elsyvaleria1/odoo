@@ -702,12 +702,12 @@
                             <label for="weight_capacity" />
                             <div class="o_row">
                                 <field name="weight_capacity" />
-                                <field name="weight_capacity_uom_name" />
+                                <field name="weight_uom_name" />
                             </div>
                             <label for="volume_capacity" />
                             <div class="o_row">
                                 <field name="volume_capacity" />
-                                <field name="volume_capacity_uom_name" />
+                                <field name="volume_uom_name" />
                             </div>
                             <field name="fuel_tank_capacity" />
                         </group>

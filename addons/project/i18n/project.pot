@@ -1690,6 +1690,11 @@ msgid "Check it out <i class=\"oi oi-chevron-right ms-2\"/>"
 msgstr ""
 
 #. module: project
+#: model:ir.model.fields,field_description:project.field_project_project__rating_child_ids
+msgid "Child Ratings"
+msgstr ""
+
+#. module: project
 #. odoo-javascript
 #: code:addons/project/static/src/js/tours/project.js:0
 msgid ""
@@ -5721,7 +5726,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:project.field_project_benefit__rating_ids
 #: model:ir.model.fields,field_description:project.field_project_gate__rating_ids
 #: model:ir.model.fields,field_description:project.field_project_milestone__rating_ids
-#: model:ir.model.fields,field_description:project.field_project_project__rating_child_ids
 #: model:ir.model.fields,field_description:project.field_project_project__rating_ids
 #: model:ir.model.fields,field_description:project.field_project_retrospective__rating_ids
 #: model:ir.model.fields,field_description:project.field_project_risk__rating_ids

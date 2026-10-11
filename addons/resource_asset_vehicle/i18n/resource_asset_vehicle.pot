@@ -233,10 +233,7 @@ msgstr ""
 
 #. module: resource_asset_vehicle
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__color
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__vehicle_color
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__vehicle_color
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__color
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__vehicle_color
 msgid "Color"
 msgstr ""
 
@@ -1653,6 +1650,13 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.product_template_form_view_fleet
 msgid "Vehicle"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__vehicle_color
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__vehicle_color
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__vehicle_color
+msgid "Vehicle Color"
 msgstr ""
 
 #. module: resource_asset_vehicle

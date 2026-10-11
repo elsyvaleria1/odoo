@@ -31298,6 +31298,11 @@ msgstr ""
 "Los módulos time, datetime y dateutil están disponibles."
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_res_groups__is_privilege
+msgid "Code-Only Privilege"
+msgstr "Privilegio solo de código"
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_web_cohort
 msgid "Cohort View"
 msgstr "Vista de cohorte"
@@ -50806,7 +50811,6 @@ msgid "Private Address"
 msgstr "Dirección Privada"
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_res_groups__is_privilege
 #: model:ir.model.fields,field_description:base.field_res_groups__privilege_id
 msgid "Privilege"
 msgstr "Privilegio"

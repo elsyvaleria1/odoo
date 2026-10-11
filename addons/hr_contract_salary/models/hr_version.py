@@ -95,7 +95,7 @@ class HrVersion(models.Model):
         groups="hr.group_hr_user",
     )
     signatures_count = fields.Integer(
-        string="# Signatures",
+        string="# Contract Signatures",
         compute="_compute_signatures_count",
         groups="hr.group_hr_user",
         help="The number of signatures on the pdf contract with the most signatures.",
@@ -103,12 +103,6 @@ class HrVersion(models.Model):
     image_1920_filename = fields.Char(
         tracking=True,
         groups="hr.group_hr_user",
-    )
-    image_1920 = fields.Image(
-        related="employee_id.image_1920",
-        readonly=False,
-        classification="hr.compensation",
-        groups="hr.group_hr_manager",
     )
     # FIXME: holidays and wage_with_holidays are defined twice...
     holidays = fields.Float(

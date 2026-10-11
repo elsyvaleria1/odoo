@@ -289,6 +289,11 @@ msgid "Control Point"
 msgstr ""
 
 #. module: quality_control
+#: model:ir.model.fields,field_description:quality_control.field_quality_check__point_spreadsheet_template_id
+msgid "Control Point Spreadsheet Template"
+msgstr ""
+
+#. module: quality_control
 #: model:ir.actions.act_window,name:quality_control.quality_point_action
 #: model:ir.ui.menu,name:quality_control.menu_quality_control_points
 msgid "Control Points"
@@ -1236,7 +1241,6 @@ msgid "Spreadsheet Snapshot"
 msgstr ""
 
 #. module: quality_control
-#: model:ir.model.fields,field_description:quality_control.field_quality_check__point_spreadsheet_template_id
 #: model:ir.model.fields,field_description:quality_control.field_quality_check__spreadsheet_template_id
 #: model:ir.model.fields,field_description:quality_control.field_quality_point__spreadsheet_template_id
 msgid "Spreadsheet Template"

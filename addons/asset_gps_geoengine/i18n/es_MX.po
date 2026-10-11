@@ -920,6 +920,11 @@ msgid "OpenStreetMap"
 msgstr "OpenStreetMap"
 
 #. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__place_id
+msgid "OpenStreetMap Place"
+msgstr "Lugar de OpenStreetMap"
+
+#. module: asset_gps_geoengine
 #: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_client_visit__operator_id
 #: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__operator_id
 #: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__operator_id
@@ -1025,7 +1030,6 @@ msgstr "Farmacia"
 #: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__place
 #: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__place
 #: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__place
-#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__place_id
 #: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
 #: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
 msgid "Place"

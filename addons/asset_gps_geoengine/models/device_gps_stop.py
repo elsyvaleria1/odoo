@@ -174,7 +174,7 @@ class DeviceGpsStop(models.Model):
     )
     place_id = fields.Many2one(
         comodel_name="device.gps.place",
-        string="Place",
+        string="OpenStreetMap Place",
         readonly=True,
         help="Outside every geofence: what the place is, as OpenStreetMap "
         "names it -- a fonda, a gas station, a street.",

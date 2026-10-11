@@ -23,7 +23,7 @@ class ProductTemplate(models.Model):
         selection="_selection_vehicle_model_years",
         string="Model Year",
     )
-    vehicle_color = fields.Char(string="Color")
+    vehicle_color = fields.Char()
     seats = fields.Integer(string="Seating Capacity")
     doors = fields.Integer(
         string="Number of Doors",

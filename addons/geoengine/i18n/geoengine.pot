@@ -1451,10 +1451,14 @@ msgstr ""
 
 #. module: geoengine
 #: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__map_settings_id
-#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__map_settings_ids
 #: model_terms:ir.ui.view,arch_db:geoengine.geoengine_view_form
 #: model_terms:ir.ui.view,arch_db:geoengine.geoengine_view_settings_view_form
 msgid "Map Settings"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__map_settings_ids
+msgid "Map Settings Records"
 msgstr ""
 
 #. module: geoengine

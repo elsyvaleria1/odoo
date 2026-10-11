@@ -45,7 +45,6 @@ class ProductProduct(models.Model):
     # there is no one column that could hold it.
     is_user_favorite = fields.Boolean(
         related="product_tmpl_id.is_user_favorite",
-        string="My Favorite",
         readonly=False,
     )
     active = fields.Boolean(

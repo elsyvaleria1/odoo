@@ -6,25 +6,7 @@ class ProductTemplate(models.Model):
     _inherit = "product.template"
 
     weight_capacity = fields.Float(string="Max Weight")
-    weight_capacity_uom_name = fields.Char(
-        string="Weight unit of measure label",
-        compute="_compute_weight_capacity_uom_name",
-    )
     volume_capacity = fields.Float(string="Max Volume")
-    volume_capacity_uom_name = fields.Char(
-        string="Volume unit of measure label",
-        compute="_compute_volume_capacity_uom_name",
-    )
-
-    def _compute_weight_capacity_uom_name(self) -> None:
-        self.weight_capacity_uom_name = self._get_uom_from_setting(
-            "weight"
-        ).display_name
-
-    def _compute_volume_capacity_uom_name(self) -> None:
-        self.volume_capacity_uom_name = self._get_uom_from_setting(
-            "volume"
-        ).display_name
 
 
 class ProductProduct(models.Model):
@@ -42,7 +24,7 @@ class ProductProduct(models.Model):
                     self.env._(
                         "%(weight_capacity)s %(weight_uom)s",
                         weight_capacity=product.weight_capacity,
-                        weight_uom=product.weight_capacity_uom_name,
+                        weight_uom=product.weight_uom_name,
                     )
                 )
             if product.volume_capacity:
@@ -50,7 +32,7 @@ class ProductProduct(models.Model):
                     self.env._(
                         "%(volume_capacity)s %(volume_uom)s",
                         volume_capacity=product.volume_capacity,
-                        volume_uom=product.volume_capacity_uom_name,
+                        volume_uom=product.volume_uom_name,
                     )
                 )
             if capacities:

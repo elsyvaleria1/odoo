@@ -16119,6 +16119,11 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_res_groups__is_privilege
+msgid "Code-Only Privilege"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_web_cohort
 msgid "Cohort View"
 msgstr ""
@@ -39881,7 +39886,6 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_access_matrix__privilege_id
-#: model:ir.model.fields,field_description:base.field_res_groups__is_privilege
 #: model:ir.model.fields,field_description:base.field_res_groups__privilege_id
 #: model_terms:ir.ui.view,arch_db:base.ir_access_matrix_view_search
 msgid "Privilege"

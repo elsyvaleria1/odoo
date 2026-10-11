@@ -4,10 +4,6 @@ from odoo import api, fields, models
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
-    subscribed_courses = fields.Many2many(
-        comodel_name="slide.channel",
-        related="partner_id.slide_channel_ids",
-    )
     has_subscribed_courses = fields.Boolean(
         compute="_compute_courses_completion_text",
         compute_sudo=True,
@@ -18,7 +14,9 @@ class HrEmployee(models.Model):
     )
 
     @api.depends_context("lang")
-    @api.depends("subscribed_courses", "partner_id.slide_channel_completed_ids")
+    @api.depends(
+        "partner_id.slide_channel_ids", "partner_id.slide_channel_completed_ids"
+    )
     def _compute_courses_completion_text(self) -> None:
         for employee in self:
             if not employee.user_id:
@@ -28,7 +26,7 @@ class HrEmployee(models.Model):
             total_completed_courses = len(
                 employee.partner_id.slide_channel_completed_ids
             )
-            total = len(employee.subscribed_courses)
+            total = len(employee.partner_id.slide_channel_ids)
             employee.courses_completion_text = self.env._(
                 "%(completed)s / %(total)s",
                 completed=total_completed_courses,

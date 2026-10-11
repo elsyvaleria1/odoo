@@ -24,7 +24,7 @@ class MixinRatingParent(models.AbstractModel):
     rating_child_ids = fields.One2many(
         comodel_name="rating.rating",
         inverse_name="parent_res_id",
-        string="Ratings",
+        string="Child Ratings",
         domain=lambda self: [
             ("parent_res_model", "=", self._get_reference_model_name())
         ],

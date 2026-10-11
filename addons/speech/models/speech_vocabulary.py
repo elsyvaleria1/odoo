@@ -108,7 +108,7 @@ class SpeechVocabularyForm(models.Model):
 
     vocabulary_id = fields.Many2one(
         comodel_name="speech.vocabulary",
-        string="Word",
+        string="Vocabulary Entry",
         index=True,
         required=True,
         ondelete="cascade",

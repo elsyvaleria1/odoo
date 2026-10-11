@@ -26,6 +26,7 @@ class LoyaltyHistory(models.Model):
     order_model = fields.Char(readonly=True)
     order_id = fields.Many2oneReference(
         model_field="order_model",
+        string="Order ID",
         readonly=True,
     )
     order_description = fields.Char(

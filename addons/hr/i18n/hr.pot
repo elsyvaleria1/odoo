@@ -836,8 +836,6 @@ msgstr ""
 #. module: hr
 #: model:ir.model,name:hr.model_res_partner_bank_account
 #: model:ir.model.fields,field_description:hr.field_hr_employee__bank_account_ids
-#: model:ir.model.fields,field_description:hr.field_hr_employee__salary_bank_account_ids
-#: model:ir.model.fields,field_description:hr.field_res_users__salary_bank_account_ids
 msgid "Bank Accounts"
 msgstr ""
 
@@ -980,11 +978,6 @@ msgstr ""
 
 #. module: hr
 #: model:ir.model.fields,field_description:hr.field_hr_employee__certificate
-#: model:ir.model.fields,field_description:hr.field_hr_employee__education_certificate
-#: model:ir.model.fields,field_description:hr.field_res_bank__education_certificate
-#: model:ir.model.fields,field_description:hr.field_res_company__education_certificate
-#: model:ir.model.fields,field_description:hr.field_res_partner__education_certificate
-#: model:ir.model.fields,field_description:hr.field_res_users__education_certificate
 msgid "Certificate Level"
 msgstr ""
 
@@ -1473,6 +1466,11 @@ msgid "Current Date Version"
 msgstr ""
 
 #. module: hr
+#: model:ir.model.fields,field_description:hr.field_hr_employee__nationality_country_ids
+msgid "Current Nationalities"
+msgstr ""
+
+#. module: hr
 #: model:ir.model.fields,field_description:hr.field_hr_job__no_of_employee
 msgid "Current Number of Employees"
 msgstr ""
@@ -1625,12 +1623,10 @@ msgid ""
 msgstr ""
 
 #. module: hr
-#: model:ir.model.fields,field_description:hr.field_hr_employee__children
 #: model:ir.model.fields,field_description:hr.field_hr_employee__dependent_children
 #: model:ir.model.fields,field_description:hr.field_res_bank__dependent_children
 #: model:ir.model.fields,field_description:hr.field_res_company__dependent_children
 #: model:ir.model.fields,field_description:hr.field_res_partner__dependent_children
-#: model:ir.model.fields,field_description:hr.field_res_users__children
 #: model:ir.model.fields,field_description:hr.field_res_users__dependent_children
 msgid "Dependent Children"
 msgstr ""
@@ -1754,6 +1750,15 @@ msgid "Education"
 msgstr ""
 
 #. module: hr
+#: model:ir.model.fields,field_description:hr.field_hr_employee__education_certificate
+#: model:ir.model.fields,field_description:hr.field_res_bank__education_certificate
+#: model:ir.model.fields,field_description:hr.field_res_company__education_certificate
+#: model:ir.model.fields,field_description:hr.field_res_partner__education_certificate
+#: model:ir.model.fields,field_description:hr.field_res_users__education_certificate
+msgid "Education Certificate"
+msgstr ""
+
+#. module: hr
 #: model_terms:ir.ui.view,arch_db:hr.hr_version_list_view
 msgid "Effective Date"
 msgstr ""
@@ -1812,17 +1817,12 @@ msgstr ""
 #: code:addons/hr/models/res_partner.py:0 code:addons/hr/models/res_users.py:0
 #: model:hr.contract.type,name:hr.contract_type_employee
 #: model:ir.model,name:hr.model_hr_employee
-#: model:ir.model.fields,field_description:hr.field_hr_employee__employee
 #: model:ir.model.fields,field_description:hr.field_hr_employee__employee_id
 #: model:ir.model.fields,field_description:hr.field_hr_employee_bank_allocation__employee_id
 #: model:ir.model.fields,field_description:hr.field_hr_employee_change_request__employee_id
 #: model:ir.model.fields,field_description:hr.field_hr_version__employee_id
 #: model:ir.model.fields,field_description:hr.field_mixin_hr_manager_department_report__employee_id
-#: model:ir.model.fields,field_description:hr.field_res_bank__employee
-#: model:ir.model.fields,field_description:hr.field_res_company__employee
-#: model:ir.model.fields,field_description:hr.field_res_partner__employee
 #: model:ir.model.fields,field_description:hr.field_res_partner_bank_account__employee_id
-#: model:ir.model.fields,field_description:hr.field_res_users__employee
 #: model:ir.model.fields,field_description:hr.field_resource_resource__employee_id
 #: model:ir.model.fields,field_description:hr.field_wizard_hr_employee_update_bank_allocation__employee_id
 #: model:ir.model.fields.selection,name:hr.selection__hr_version__employee_type__employee
@@ -1874,6 +1874,7 @@ msgstr ""
 
 #. module: hr
 #: model:ir.model.fields,field_description:hr.field_hr_config__employee_properties_definition
+#: model:ir.model.fields,field_description:hr.field_hr_employee__employee_properties
 #: model:ir.model.fields,field_description:hr.field_res_company__employee_properties_definition
 msgid "Employee Properties"
 msgstr ""
@@ -2162,8 +2163,6 @@ msgstr ""
 
 #. module: hr
 #: model:ir.model.fields,field_description:hr.field_hr_employee__gender
-#: model:ir.model.fields,field_description:hr.field_hr_employee__sex
-#: model:ir.model.fields,field_description:hr.field_res_users__sex
 #: model_terms:ir.ui.view,arch_db:hr.view_employee_form
 msgid "Gender"
 msgstr ""
@@ -2597,6 +2596,15 @@ msgid "Is a Company"
 msgstr ""
 
 #. module: hr
+#: model:ir.model.fields,field_description:hr.field_hr_employee__employee
+#: model:ir.model.fields,field_description:hr.field_res_bank__employee
+#: model:ir.model.fields,field_description:hr.field_res_company__employee
+#: model:ir.model.fields,field_description:hr.field_res_partner__employee
+#: model:ir.model.fields,field_description:hr.field_res_users__employee
+msgid "Is an Employee"
+msgstr ""
+
+#. module: hr
 #: model:ir.model.fields,field_description:hr.field_hr_employee__job_id
 #: model:ir.model.fields,field_description:hr.field_hr_version__job_id
 #: model_terms:ir.ui.view,arch_db:hr.view_hr_job_form
@@ -2734,6 +2742,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr.field_hr_employee__legal_name
 #: model:ir.model.fields,field_description:hr.field_res_users__legal_name
 msgid "Legal Name"
+msgstr ""
+
+#. module: hr
+#: model:ir.model.fields,field_description:hr.field_hr_employee__sex
+#: model:ir.model.fields,field_description:hr.field_res_users__sex
+msgid "Legal Sex"
 msgstr ""
 
 #. module: hr
@@ -3055,6 +3069,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr.field_hr_job__message_needaction_counter
 #: model:ir.model.fields,field_description:hr.field_hr_version__message_needaction_counter
 msgid "Number of Actions"
+msgstr ""
+
+#. module: hr
+#: model:ir.model.fields,field_description:hr.field_hr_employee__children
+#: model:ir.model.fields,field_description:hr.field_res_users__children
+msgid "Number of Dependent Children"
 msgstr ""
 
 #. module: hr
@@ -3568,7 +3588,6 @@ msgid "Private Zip"
 msgstr ""
 
 #. module: hr
-#: model:ir.model.fields,field_description:hr.field_hr_employee__employee_properties
 #: model:ir.model.fields,field_description:hr.field_hr_employee__properties
 #: model_terms:ir.ui.view,arch_db:hr.view_employee_filter
 msgid "Properties"
@@ -3802,6 +3821,12 @@ msgid "Salary Allocations"
 msgstr ""
 
 #. module: hr
+#: model:ir.model.fields,field_description:hr.field_hr_employee__salary_bank_account_ids
+#: model:ir.model.fields,field_description:hr.field_res_users__salary_bank_account_ids
+msgid "Salary Bank Accounts"
+msgstr ""
+
+#. module: hr
 #: model_terms:ir.ui.view,arch_db:hr.hr_contract_template_form_view
 msgid "Salary Information"
 msgstr ""
@@ -3818,6 +3843,11 @@ msgstr ""
 #. module: hr
 #: model:ir.model,name:hr.model_hr_employee_bank_allocation
 msgid "Salary allocation to an employee's bank account"
+msgstr ""
+
+#. module: hr
+#: model:ir.model.fields,field_description:hr.field_hr_employee__client_salesperson_name
+msgid "Salesperson Name"
 msgstr ""
 
 #. module: hr

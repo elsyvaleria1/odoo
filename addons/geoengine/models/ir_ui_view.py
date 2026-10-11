@@ -35,6 +35,7 @@ class IrUIView(models.Model):
     map_settings_ids = fields.One2many(
         comodel_name="geoengine.view.settings",
         inverse_name="view_id",
+        string="Map Settings Records",
     )
     map_settings_id = fields.Many2one(
         comodel_name="geoengine.view.settings",

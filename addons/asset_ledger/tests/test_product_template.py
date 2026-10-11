@@ -169,34 +169,6 @@ class TestProductTemplate(TransactionCase):
         expected_mpg = self.env.ref("uom.product_uom_miles_per_galon").display_name
         self.assertEqual(vehicle.fuel_efficiency_uom_name, expected_mpg)
 
-    def test_compute_weight_capacity_uom_name(self):
-        truck = self._create_product(
-            {
-                "name": "Test Truck",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
-                "weight_capacity": 5000.0,
-            }
-        )
-        expected = (
-            self.env["product.template"]._get_uom_from_setting("weight").display_name
-        )
-        self.assertEqual(truck.weight_capacity_uom_name, expected)
-        self.assertTrue(truck.weight_capacity_uom_name)
-
-    def test_compute_volume_capacity_uom_name(self):
-        van = self._create_product(
-            {
-                "name": "Test Van",
-                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
-                "volume_capacity": 20.0,
-            }
-        )
-        expected = (
-            self.env["product.template"]._get_uom_from_setting("volume").display_name
-        )
-        self.assertEqual(van.volume_capacity_uom_name, expected)
-        self.assertTrue(van.volume_capacity_uom_name)
-
     def test_promoting_a_template_gives_its_lots_an_asset(self):
         """Core creates the `resource.resource` from `stock.lot.create` alone, so
         a unit received before the promotion had none and stayed invisible to

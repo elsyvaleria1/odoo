@@ -21,7 +21,7 @@ class ResPartner(models.Model):
     )
     client_salesperson_name = fields.Char(
         related="user_id.name",
-        string="Salesperson",
+        string="Salesperson Name",
         help="Plain-text mirror of Salesperson, for map layers that can "
         "only carry a char/text field (Client Locations overlay's "
         "color_field_id) alongside the geometry.",

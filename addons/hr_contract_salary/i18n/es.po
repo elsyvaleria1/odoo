@@ -40,8 +40,8 @@ msgstr ""
 #. module: hr_contract_salary
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee__signatures_count
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_version__signatures_count
-msgid "# Signatures"
-msgstr "N.° de firmas"
+msgid "# Contract Signatures"
+msgstr "N.° de firmas del contrato"
 
 #. module: hr_contract_salary
 #. odoo-python
@@ -1378,11 +1378,6 @@ msgid "If unchecked, Description will only be shown when Benefit is selected"
 msgstr ""
 "Si no está seleccionado, la descripción solo se mostrará cuando se "
 "seleccione el beneficio"
-
-#. module: hr_contract_salary
-#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_version__image_1920
-msgid "Image"
-msgstr "Imagen"
 
 #. module: hr_contract_salary
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee__image_1920_filename

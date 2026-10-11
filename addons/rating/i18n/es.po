@@ -76,6 +76,11 @@ msgid "Average Rating (%)"
 msgstr "Calificación promedio (%)"
 
 #. module: rating
+#: model:ir.model.fields,field_description:rating.field_mixin_rating_parent__rating_child_ids
+msgid "Child Ratings"
+msgstr "Calificaciones de registros hijos"
+
+#. module: rating
 #: model:ir.model.fields,field_description:rating.field_rating_rating__feedback
 msgid "Comment"
 msgstr "Comentario"
@@ -441,7 +446,6 @@ msgstr "Calificación:"
 #: model:ir.model.fields,field_description:rating.field_mixin_mail_thread_phone__rating_ids
 #: model:ir.model.fields,field_description:rating.field_mixin_mail_tracking_duration__rating_ids
 #: model:ir.model.fields,field_description:rating.field_mixin_rating__rating_ids
-#: model:ir.model.fields,field_description:rating.field_mixin_rating_parent__rating_child_ids
 #: model:ir.model.fields,field_description:rating.field_phone_blacklist__rating_ids
 #: model:ir.model.fields,field_description:rating.field_res_bank__rating_ids
 #: model:ir.model.fields,field_description:rating.field_res_company__rating_ids

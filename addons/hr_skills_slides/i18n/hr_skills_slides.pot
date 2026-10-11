@@ -187,7 +187,6 @@ msgstr ""
 
 #. module: hr_skills_slides
 #: model:ir.actions.act_window,name:hr_skills_slides.slide_channel_training_elearning_action
-#: model:ir.model.fields,field_description:hr_skills_slides.field_hr_employee__subscribed_courses
 #: model_terms:ir.ui.view,arch_db:hr_skills_slides.slide_channel_view_list
 msgid "eLearning Courses"
 msgstr ""

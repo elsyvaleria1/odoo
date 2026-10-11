@@ -1833,6 +1833,11 @@ msgid "Last Appraisal"
 msgstr ""
 
 #. module: hr_appraisal
+#: model:ir.model.fields,field_description:hr_appraisal.field_hr_employee__last_appraisal_state
+msgid "Last Appraisal Status"
+msgstr ""
+
+#. module: hr_appraisal
 #: model:ir.model.fields,field_description:hr_appraisal.field_hr_employee__last_ongoing_appraisal_date
 msgid "Last Ongoing Appraisal Date"
 msgstr ""
@@ -2508,7 +2513,6 @@ msgstr ""
 
 #. module: hr_appraisal
 #: model:ir.model.fields,field_description:hr_appraisal.field_hr_appraisal__state
-#: model:ir.model.fields,field_description:hr_appraisal.field_hr_employee__last_appraisal_state
 msgid "Status"
 msgstr ""
 

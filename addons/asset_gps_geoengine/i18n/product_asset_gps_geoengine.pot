@@ -474,6 +474,11 @@ msgid ""
 "               critical limit are in red."
 msgstr ""
 
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__place_id
+msgid "OpenStreetMap Place"
+msgstr ""
+
 #. module: product_asset_remote_geoengine
 #: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail__operator_ids
 #: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_client_visit__operator_id

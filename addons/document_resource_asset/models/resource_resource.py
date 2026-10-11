@@ -13,7 +13,7 @@ class ResourceResource(models.Model):
     )
     count_document = fields.Count(
         count_of="document_ids",
-        string="Documents",
+        string="Document Count",
     )
     document_centralized = fields.Boolean(compute="_compute_document_centralized")
 

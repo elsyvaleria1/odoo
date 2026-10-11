@@ -300,6 +300,7 @@ msgstr "% de volumen"
 
 #. module: stock_fleet
 #: model:ir.model.fields,field_description:stock_fleet.field_fleet_vehicle_model_category__volume_capacity_uom_name
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_vehicle__volume_uom_name
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_picking_batch__volume_uom_name
 msgid "Volume unit of measure label"
 msgstr "Etiqueta de unidad de medida de volumen"
@@ -321,6 +322,7 @@ msgstr "% de peso"
 
 #. module: stock_fleet
 #: model:ir.model.fields,field_description:stock_fleet.field_fleet_vehicle_model_category__weight_capacity_uom_name
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_vehicle__weight_uom_name
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_picking_batch__weight_uom_name
 msgid "Weight unit of measure label"
 msgstr "Etiqueta de unidad de medida de peso"

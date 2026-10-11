@@ -1367,9 +1367,7 @@ msgid "Volume %"
 msgstr "Volumen %"
 
 #. module: stock_fleet
-#: model:ir.model.fields,field_description:stock_fleet.field_product_product__volume_capacity_uom_name
-#: model:ir.model.fields,field_description:stock_fleet.field_product_template__volume_capacity_uom_name
-#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_vehicle__volume_capacity_uom_name
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_vehicle__volume_uom_name
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_picking_batch__volume_uom_name
 msgid "Volume unit of measure label"
 msgstr "Etiqueta de la unidad de volumen"
@@ -1390,9 +1388,7 @@ msgid "Weight %"
 msgstr "Peso %"
 
 #. module: stock_fleet
-#: model:ir.model.fields,field_description:stock_fleet.field_product_product__weight_capacity_uom_name
-#: model:ir.model.fields,field_description:stock_fleet.field_product_template__weight_capacity_uom_name
-#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_vehicle__weight_capacity_uom_name
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_vehicle__weight_uom_name
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_picking_batch__weight_uom_name
 msgid "Weight unit of measure label"
 msgstr "Etiqueta de la unidad de peso"

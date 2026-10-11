@@ -2148,6 +2148,11 @@ msgid "Last Appraisal State"
 msgstr "Estado de la última evaluación"
 
 #. module: hr_appraisal
+#: model:ir.model.fields,field_description:hr_appraisal.field_hr_employee__last_appraisal_state
+msgid "Last Appraisal Status"
+msgstr "Estado de la última evaluación"
+
+#. module: hr_appraisal
 #: model:ir.model.fields,field_description:hr_appraisal.field_hr_employee__last_ongoing_appraisal_date
 msgid "Last Ongoing Appraisal Date"
 msgstr "Última fecha de evaluación en curso"
@@ -2836,7 +2841,6 @@ msgstr "Habilidades blandas"
 
 #. module: hr_appraisal
 #: model:ir.model.fields,field_description:hr_appraisal.field_hr_appraisal__state
-#: model:ir.model.fields,field_description:hr_appraisal.field_hr_employee__last_appraisal_state
 msgid "Status"
 msgstr "Estado"
 

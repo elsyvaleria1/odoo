@@ -19,7 +19,7 @@ class MixinUserFavorite(models.AbstractModel):
         copy=False,
     )
     is_user_favorite = fields.Boolean(
-        string="Favorite",
+        string="My Favorite",
         export_string_translation=False,
         compute="_compute_is_user_favorite",
         inverse="_inverse_is_user_favorite",

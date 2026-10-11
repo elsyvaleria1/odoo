@@ -11843,6 +11843,12 @@ msgid "Map"
 msgstr "Mapa"
 
 #. module: website
+#: model:ir.model.fields,field_description:website.field_website_controller_page__map_settings_ids
+#: model:ir.model.fields,field_description:website.field_website_page__map_settings_ids
+msgid "Map Settings Records"
+msgstr "Registros de configuración del mapa"
+
+#. module: website
 #. odoo-javascript
 #: code:addons/website/static/src/builder/plugins/options/google_maps_option/google_maps_api_key_dialog.xml:0
 msgid "Maps JavaScript API"

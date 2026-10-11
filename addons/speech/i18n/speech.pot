@@ -572,6 +572,11 @@ msgid "Vocabulary"
 msgstr ""
 
 #. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__vocabulary_id
+msgid "Vocabulary Entry"
+msgstr ""
+
+#. module: speech
 #: model:ir.model.fields,help:speech.field_ir_attachment__transcript_cues
 #: model:ir.model.fields,help:speech.field_media_segment__transcript_cues
 msgid ""
@@ -598,7 +603,6 @@ msgid "What the transcriber called this voice, e.g. SPEAKER_0"
 msgstr ""
 
 #. module: speech
-#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__vocabulary_id
 #: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__word
 msgid "Word"
 msgstr ""

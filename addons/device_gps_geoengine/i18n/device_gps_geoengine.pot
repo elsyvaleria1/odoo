@@ -1608,7 +1608,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:device_gps_geoengine.field_res_company__client_salesperson_name
 #: model:ir.model.fields,field_description:device_gps_geoengine.field_res_partner__client_salesperson_name
 #: model:ir.model.fields,field_description:device_gps_geoengine.field_res_users__client_salesperson_name
-msgid "Salesperson"
+msgid "Salesperson Name"
 msgstr ""
 
 #. module: device_gps_geoengine

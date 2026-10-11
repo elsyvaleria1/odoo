@@ -25,7 +25,7 @@ msgstr ""
 #. module: hr_contract_salary
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee__signatures_count
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_version__signatures_count
-msgid "# Signatures"
+msgid "# Contract Signatures"
 msgstr ""
 
 #. module: hr_contract_salary
@@ -1227,11 +1227,6 @@ msgstr ""
 #. module: hr_contract_salary
 #: model:ir.model.fields,help:hr_contract_salary.field_hr_contract_salary_benefit__always_show_description
 msgid "If unchecked, Description will only be shown when Benefit is selected"
-msgstr ""
-
-#. module: hr_contract_salary
-#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_version__image_1920
-msgid "Image"
 msgstr ""
 
 #. module: hr_contract_salary

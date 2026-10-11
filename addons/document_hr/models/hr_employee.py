@@ -13,7 +13,10 @@ class HrEmployee(models.Model):
         compute="_compute_document_count",
         compute_sudo=True,
     )
-    partner_document_count = fields.Integer(related="partner_id.document_count")
+    partner_document_count = fields.Integer(
+        related="partner_id.document_count",
+        string="Contact Document Count",
+    )
     hr_employee_folder_id = fields.Many2one(
         comodel_name="document.document",
         string="HR Employee Folder",

@@ -91,7 +91,7 @@ class ResGroups(models.Model):
         search="_search_full_name",
     )
     is_privilege = fields.Boolean(
-        string="Privilege",
+        string="Code-Only Privilege",
         help="A group only code holds, through with_privilege(): its accesses "
         "say exactly what the elevation allows. It is never granted to a user "
         "and never implied. (Unrelated to the privilege a group sits under in "

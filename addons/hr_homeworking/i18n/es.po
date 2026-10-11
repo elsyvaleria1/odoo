@@ -292,10 +292,14 @@ msgid "Thursdays"
 msgstr "Jueves"
 
 #. module: hr_homeworking
-#: model:ir.model.fields,field_description:hr_homeworking.field_hr_employee__today_location_name
 #: model:ir.model.fields,field_description:hr_homeworking.field_hr_employee_public__today_location_name
 msgid "Today Location Name"
 msgstr "Nombre de la ubicación de hoy"
+
+#. module: hr_homeworking
+#: model:ir.model.fields,field_description:hr_homeworking.field_hr_employee__today_location_name
+msgid "Today's Work Location"
+msgstr "Ubicación de trabajo de hoy"
 
 #. module: hr_homeworking
 #: model:ir.model.fields,field_description:hr_homeworking.field_hr_employee__tuesday_location_id

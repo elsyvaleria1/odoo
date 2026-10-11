@@ -435,7 +435,8 @@ class QualityCheck(models.Model):
         domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]",
     )
     point_spreadsheet_template_id = fields.Many2one(
-        related="point_id.spreadsheet_template_id"
+        related="point_id.spreadsheet_template_id",
+        string="Control Point Spreadsheet Template",
     )
     hide_picking_id = fields.Boolean(compute="_compute_hide_source_documents")
 

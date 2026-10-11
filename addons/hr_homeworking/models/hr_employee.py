@@ -63,7 +63,10 @@ class HrEmployee(models.Model):
     # at today". `get_views` rewrites it to the current weekday's field, which is
     # stored and so can be grouped by and edited inline. It carries no column of
     # its own; an unrewritten read still answers, through work_location_name.
-    today_location_name = fields.Char(related="work_location_name")
+    today_location_name = fields.Char(
+        related="work_location_name",
+        string="Today's Work Location",
+    )
     hr_icon_display = fields.Selection(
         selection_add=[
             ("presence_home", "At Home"),

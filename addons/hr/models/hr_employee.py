@@ -308,7 +308,7 @@ class HrEmployee(models.Model):
     )
     nationality_country_ids = fields.Many2many(
         comodel_name="res.country",
-        string="Nationalities",
+        string="Current Nationalities",
         compute="_compute_nationality_country_ids",
         search="_search_nationality_country_ids",
         compute_sudo=True,
@@ -385,7 +385,7 @@ class HrEmployee(models.Model):
     )
     sex = fields.Selection(
         related="private_address_id.gender",
-        string="Gender",
+        string="Legal Sex",
         readonly=False,
         tracking=True,
         groups="hr.group_hr_user",
@@ -475,7 +475,7 @@ class HrEmployee(models.Model):
     )
     children = fields.Integer(
         related="private_address_id.dependent_children",
-        string="Dependent Children",
+        string="Number of Dependent Children",
         readonly=False,
         tracking=True,
         groups="hr.group_hr_user",
@@ -536,7 +536,7 @@ class HrEmployee(models.Model):
     )
     salary_bank_account_ids = fields.Many2many(
         comodel_name="res.partner.bank.account",
-        string="Bank Accounts",
+        string="Salary Bank Accounts",
         compute="_compute_salary_bank_account_ids",
         inverse="_inverse_salary_bank_account_ids",
         search="_search_salary_bank_account_ids",
@@ -678,7 +678,7 @@ class HrEmployee(models.Model):
     )
     employee_properties = fields.Properties(
         definition="company_id.employee_properties_definition",
-        string="Properties",
+        string="Employee Properties",
         precompute=False,
         groups="hr.group_hr_user",
     )
@@ -1143,9 +1143,11 @@ class HrEmployee(models.Model):
     def _unlink_except_change_request_reviewed(self):
         # the change requests go with the employee by an SQL cascade, which skips
         # their own refusal to be deleted while reviewed: it is asked here
-        reviewed = self.env["hr.employee.change.request"].search(
-            [("employee_id", "in", self.ids)]
-        ).filtered(lambda change: change.approval_state in ("new", "pending"))
+        reviewed = (
+            self.env["hr.employee.change.request"]
+            .search([("employee_id", "in", self.ids)])
+            .filtered(lambda change: change.approval_state in ("new", "pending"))
+        )
         if reviewed:
             raise UserError(
                 self.env._(

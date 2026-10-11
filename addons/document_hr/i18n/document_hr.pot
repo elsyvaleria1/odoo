@@ -61,6 +61,11 @@ msgid "Config Settings"
 msgstr ""
 
 #. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee__partner_document_count
+msgid "Contact Document Count"
+msgstr ""
+
+#. module: document_hr
 #. odoo-python
 #: code:addons/document_hr/models/hr_employee.py:0
 #: model:ir.model.fields,field_description:document_hr.field_res_config_settings__documents_hr_contracts_tags
@@ -89,7 +94,6 @@ msgstr ""
 
 #. module: document_hr
 #: model:ir.model.fields,field_description:document_hr.field_hr_employee__document_count
-#: model:ir.model.fields,field_description:document_hr.field_hr_employee__partner_document_count
 msgid "Document Count"
 msgstr ""
 

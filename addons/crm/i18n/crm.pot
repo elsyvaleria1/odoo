@@ -2104,6 +2104,11 @@ msgid "Leads (last 24h)"
 msgstr ""
 
 #. module: crm
+#: model:ir.model.fields,field_description:crm.field_team_team__lead_alias_contact
+msgid "Leads Alias Contact Security"
+msgstr ""
+
+#. module: crm
 #: model:ir.actions.act_window,name:crm.action_report_crm_lead_salesteam
 #: model:ir.actions.act_window,name:crm.crm_opportunity_report_action_lead
 #: model_terms:ir.ui.view,arch_db:crm.crm_opportunity_report_view_graph_lead

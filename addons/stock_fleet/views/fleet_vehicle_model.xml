@@ -12,12 +12,12 @@
                 <label for="weight_capacity" />
                 <div class="o_row">
                     <field name="weight_capacity" class="oe_inline" />
-                    <field name="weight_capacity_uom_name" class="oe_inline" />
+                    <field name="weight_uom_name" class="oe_inline" />
                 </div>
                 <label for="volume_capacity" />
                 <div class="o_row">
                     <field name="volume_capacity" class="oe_inline" />
-                    <field name="volume_capacity_uom_name" class="oe_inline" />
+                    <field name="volume_uom_name" class="oe_inline" />
                 </div>
             </group>
         </field>

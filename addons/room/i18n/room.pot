@@ -442,6 +442,10 @@ msgstr ""
 
 #. module: room
 #: model:ir.model.fields,field_description:room.field_resource_asset_room__count_document
+msgid "Document Count"
+msgstr ""
+
+#. module: room
 #: model:ir.model.fields,field_description:room.field_resource_asset_room__document_ids
 msgid "Documents"
 msgstr ""
