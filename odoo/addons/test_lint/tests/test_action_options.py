@@ -8,7 +8,7 @@ from odoo.tools.misc import file_path
 from . import _js_sources, lint_case
 
 _COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
-_DO_ACTION = re.compile(r"\.doAction\(")
+_DO_ACTION = re.compile(r"(?<![\w$])doAction\(")
 _OPTIONS_TYPEDEF = re.compile(
     r"@typedef \{Object\} ActionOptions\n(?P<body>(?: \* @property [^\n]*\n)+)"
 )
@@ -134,6 +134,12 @@ class TestActionOptionsSeeTheirFaults(lint_case.LintCase):
             "});\n"
             "action.doAction({ target: 'new' });\n"
             "action.doAction(request, options);\n"
+            "doAction(request, { fullscreen: true });\n"
+            "async doAction(request, options = {}) {}\n"
+            "redoAction(request, { nope: 1 });\n"
         )
         known = frozenset({"clearBreadcrumbs", "onClose"})
-        self.assertEqual(unknown_options(source, known), [(1, "clear_breadcrumbs")])
+        self.assertEqual(
+            unknown_options(source, known),
+            [(1, "clear_breadcrumbs"), (10, "fullscreen")],
+        )
