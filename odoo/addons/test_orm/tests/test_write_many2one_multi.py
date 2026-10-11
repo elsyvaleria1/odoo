@@ -1,6 +1,6 @@
 from odoo import Command
 from odoo.exceptions import AccessError
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, counting_statements
 
 
 class TestWriteMany2oneMulti(TransactionCase):
@@ -47,10 +47,10 @@ class TestWriteMany2oneMulti(TransactionCase):
             self.env.flush_all()
             self.env.invalidate_all()
             values = [self.categories[index % 3].id for index in range(count)]
-            before = self.env.cr.sql_statement_count
-            orders._write_many2one_multi("category_id", values)
-            self.env.flush_all()
-            return self.env.cr.sql_statement_count - before
+            with counting_statements(self.env.cr) as counted:
+                orders._write_many2one_multi("category_id", values)
+                self.env.flush_all()
+            return counted.count
 
         cost(1)
         self.assertEqual(cost(2), cost(8))
