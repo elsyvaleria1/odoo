@@ -220,3 +220,24 @@ class TestIrWebsocket(WebsocketCase):
             json_dump(channel_with_db(db, (bob.partner_id, "presence"))), routes
         )
         self.assertIn((bob.partner_id, "presence"), data["channels"])
+
+    def test_named_and_member_discuss_channels_resolve_in_one_query(self):
+        bob = new_test_user(self.env, login="bob_reach", groups="base.group_user")
+        joined, other = self.env["discuss.channel"].create(
+            [{"name": "reach-joined"}, {"name": "reach-other"}]
+        )
+        joined._add_members(users=bob)
+        names = [f"discuss.channel_{joined.id}", f"discuss.channel_{other.id}"]
+        websocket = self.env["ir.websocket"].with_user(bob)
+        self.env.invalidate_all()
+        with self.capturedQueries() as queries:
+            data = websocket._prepare_subscribe_data(names, 0)
+        self.assertEqual(
+            len([query for query in queries if 'FROM "discuss_channel"' in query]), 1
+        )
+        db = self.env.cr.dbname
+        routes = dict(data["routes"])
+        self.assertIn(joined, data["channels"])
+        self.assertNotIn(json_dump(channel_with_db(db, joined)), routes)
+        self.assertIn(other, data["channels"])
+        self.assertEqual(routes[json_dump(channel_with_db(db, other))], (names[1],))
