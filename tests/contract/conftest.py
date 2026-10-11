@@ -9,12 +9,14 @@ from .._pg import (
     dropdb_path,
     pg_dump_path,
     pg_reachable,
+    pg_restore_path,
     psql_path,
 )
 
 requires_pg = pytest.mark.requires_pg
 requires_psql = pytest.mark.requires_psql
 requires_pg_dump = pytest.mark.requires_pg_dump
+requires_pg_restore = pytest.mark.requires_pg_restore
 requires_createdb = pytest.mark.requires_createdb
 
 
@@ -26,6 +28,10 @@ REQUIREMENTS = {
     "requires_pg": (pg_reachable, "no reachable PostgreSQL (contract suite needs one)"),
     "requires_psql": (lambda: psql_path() is not None, "psql not on PATH"),
     "requires_pg_dump": (lambda: pg_dump_path() is not None, "pg_dump not on PATH"),
+    "requires_pg_restore": (
+        lambda: pg_restore_path() is not None,
+        "pg_restore not on PATH",
+    ),
     "requires_createdb": (_createdb_available, "createdb/dropdb not on PATH"),
 }
 

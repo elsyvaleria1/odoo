@@ -522,11 +522,15 @@ them on the process that holds the websockets — the evented port under
 ## Restoring a backup executes its SQL
 
 A `.zip` backup's `dump.sql` is restored with `psql -X -q -v ON_ERROR_STOP=1
--f`, and a `.dump` backup with `pg_restore --no-owner --exit-on-error`. Both
-replay the archive's SQL **with the privileges of the role that connects**, so
-restoring a backup is as trusted an operation as running that SQL by hand.
+-f`, and a `.dump` backup is streamed: `pg_restore --no-owner --file=-` writes
+its SQL into the same scan, which feeds `psql -f -` line by line, so no SQL
+reaches the disk and no line reaches psql unscanned. Both paths stop once the
+SQL passes the expansion budget (`ODOO_RESTORE_MAX_EXPANSION_RATIO` times the
+backup's size, 100 MiB at least). Either replays the archive's SQL **with the
+privileges of the role that connects**, so restoring a backup is as trusted an
+operation as running that SQL by hand.
 
-`odoo/service/db/_dump_scanner.py` scans the plain-SQL path and refuses psql
+`odoo/service/db/_dump_scanner.py` scans that SQL and refuses psql
 meta-commands — `\!`, `\i`, `\copy ... from program` and the rest — because
 those are interpreted by the psql **client**, with the privileges of whoever
 runs the server process, which is a different and larger blast radius than the
@@ -537,8 +541,7 @@ desynchronise the scan from what psql parses.
 **The scan does not make the SQL safe, and no scan could.** A dump it accepts
 can still carry `COPY ... FROM PROGRAM`, `CREATE FUNCTION ... LANGUAGE
 plpython3u`, `ALTER SYSTEM` or `CREATE SERVER`, each of which runs as the
-connecting role. `pg_restore` is unscanned and equivalent, not worse: it speaks
-libpq and has no meta-commands, so no archive can hand it a `\!`.
+connecting role.
 
 | If the restore role is | Then a hostile backup |
 |---|---|
@@ -554,6 +557,46 @@ Restoring a backup you produced is unaffected either way.
 The database manager's master password gates *who may ask for a restore*. It
 says nothing about what the backup contains, and a backup is a file that
 travels.
+
+## A backup carries no credential and no role
+
+`pg_dump` writes a foreign server's user mappings with their options, so a
+`postgres_fdw` mapping's remote password lands in every backup in clear, and
+`--no-owner` still leaves `GRANT`/`REVOKE` naming the source cluster's roles. A
+restore on a cluster without those roles stops at the first one
+(`role "odoo" does not exist`).
+
+`dump_db` therefore runs `pg_dump --no-owner --no-privileges
+--no-subscriptions`, and the zip format passes its SQL through
+`_PortableSqlWriter` (`odoo/service/db/_dump_scanner.py`), which drops every
+`CREATE USER MAPPING`. The custom format cannot be filtered, so it is refused
+while the database holds a mapping whose options the dumping role can read.
+The restore applies the same rule to backups written before it: the SQL of
+either format passes through the same writer, which drops user mappings and
+privilege statements. A restore pipeline that runs psql itself pipes the SQL
+through `odoo-bin db portable-sql` for the same result, instead of carrying its
+own copy of the rule.
+
+The foreign server survives; its mapping is the deployment's to re-create, and
+the restore logs a WARNING naming each server left without one for the
+restoring role.
+
+## A restore starts from `db_template`
+
+A restore creates its database from `db_template`, as database creation does,
+so a restored database has the collation and the extensions of one created
+here. A template that already holds the extensions a superuser created there
+(PostGIS, `postgis_topology`, `pg_trgm`, `unaccent`, `postgres_fdw` with
+`USAGE` granted) lets a **non-superuser** `db_user` restore a backup that
+needs them: `CREATE EXTENSION IF NOT EXISTS` finds each one, and the writer,
+told what the new database already holds, drops what only the extensions'
+owner may run there — `CREATE SCHEMA` and `COMMENT ON SCHEMA` for a schema the
+template holds, `COMMENT ON EXTENSION`, and, on a table or sequence an
+extension owns, an empty `COPY` and `setval(..., 1, false)`. A `COPY` that
+carries rows into such a table (a custom `spatial_ref_sys` entry) is kept, so a
+non-superuser restore fails on it rather than losing the rows.
+`odoo-bin db portable-sql --target <db>` applies the same adaptation for a
+pipeline that creates its database itself.
 
 ## Upgrading across the forced UTC session
 

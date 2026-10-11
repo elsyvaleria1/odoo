@@ -20,10 +20,13 @@ from odoo.tools.subprocess import exec_pg_environ, get_pg_tool_path
 
 from .._env import get_env_float
 from ._checks import check_db_management_enabled, check_db_name
+from ._dump_scanner import _PortableSqlWriter
 from .listing import check_db_exposed
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+
+    from _typeshed import SupportsWrite
 
     from odoo.db import BaseCursor
 else:
@@ -159,7 +162,7 @@ def _reap_pg_dump(proc: subprocess.Popen) -> None:
             proc.wait()
 
 
-def _run_pg_dump(cmd: list[str], env: dict, stream: IO[bytes]) -> None:
+def _run_pg_dump(cmd: list[str], env: dict, stream: SupportsWrite[bytes]) -> None:
     proc = subprocess.Popen(
         cmd,
         env=env,
@@ -287,9 +290,14 @@ def _write_zip_dump(
         zipf.writestr("manifest.json", json.dumps(manifest, indent=4))
         _debug.pipeline("database.dump.zip.manifest_written", db=db_name)
         with zipf.open("dump.sql", "w", force_zip64=True) as sql_member:
-            _run_pg_dump(cmd, env, sql_member)
+            portable = _PortableSqlWriter(sql_member)
+            _run_pg_dump(cmd, env, portable)
+            portable.finish()
         _debug.pipeline(
-            "database.dump.zip.sql_written", db=db_name, filestore=with_filestore
+            "database.dump.zip.sql_written",
+            db=db_name,
+            filestore=with_filestore,
+            dropped=portable.dropped,
         )
         if with_filestore:
             _add_filestore_to_zip(zipf, odoo.tools.config.filestore(db_name))
@@ -317,7 +325,13 @@ def dump_db(
         "with filestore" if with_filestore else "without filestore",
     )
 
-    cmd = [get_pg_tool_path("pg_dump"), "--no-owner", db_name]
+    cmd = [
+        get_pg_tool_path("pg_dump"),
+        "--no-owner",
+        "--no-privileges",
+        "--no-subscriptions",
+        db_name,
+    ]
     env = exec_pg_environ()
 
     with _debug.perf(
@@ -333,6 +347,7 @@ def dump_db(
                 _write_zip_dump(db_name, target, cmd, env, with_filestore)
 
         else:
+            _check_no_mapping_credentials(db_name)
             cmd.insert(-1, "--format=c")
 
             def write(target: IO[bytes]) -> None:
@@ -342,6 +357,23 @@ def dump_db(
             write(stream)
             return None
         return _dump_into_tempfile(write)
+
+
+def _check_no_mapping_credentials(db_name: str) -> None:
+    with odoo.db.db_connect(db_name).cursor() as cr:
+        cr.execute(
+            "SELECT srvname || ' for ' || usename FROM pg_user_mappings"
+            " WHERE umoptions IS NOT NULL ORDER BY 1"
+        )
+        mappings = [row[0] for row in cr.fetchall()]
+    _debug.logic("database.dump.mapping_credentials", db=db_name, count=len(mappings))
+    if mappings:
+        raise RuntimeError(
+            f"Refusing a custom-format dump of {db_name!r}: pg_dump would write "
+            f"the options of user mapping(s) {', '.join(mappings)} into it, "
+            f"passwords included, and a custom-format archive cannot be "
+            f"filtered. Dump in the zip format, which leaves user mappings out."
+        )
 
 
 def _dump_into_tempfile(write: Callable[[IO[bytes]], None]) -> IO[bytes]:

@@ -37,6 +37,11 @@ def pg_dump_path() -> str | None:
 
 
 @functools.cache
+def pg_restore_path() -> str | None:
+    return shutil.which("pg_restore")
+
+
+@functools.cache
 def createdb_path() -> str | None:
     return shutil.which("createdb")
 

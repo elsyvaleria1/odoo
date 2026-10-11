@@ -177,11 +177,14 @@ threaded server and the prefork worker over real sockets, and a seeded fuzz
 that differs against h11 outside a named allowlist; each test must give back
 every thread and descriptor it took), and four real-dependency suites run
 only when named: `tests/contract` (`ODOO_CONTRACT_REQUIRE_DEPS=1`; PostgreSQL + psql +
-pg_dump), `tests/process` (boots real `odoo-bin` processes), `tests/loading`
+pg_dump + pg_restore), `tests/process` (boots real `odoo-bin` processes), `tests/loading`
 (installs `base` into a scratch database; pins the loader phase order, the
 uninstall reload, migration ordering, migration-stage schema visibility, the
-refusal to update a database older than a module's `oldest_upgradable_version`
-and the upgrade of base an update run adds when base's code is ahead)
+refusal to update a database older than a module's `oldest_upgradable_version`,
+the upgrade of base an update run adds when base's code is ahead, and that a
+backup carries no user mapping or privilege and restores without the source's
+roles, from `db_template`, and as a non-superuser into a template that holds
+its extensions)
 and `tests/perf` (`pytest tests/perf --perf-counts-only` for the counts alone,
 without the flag for the time floors too;
 installs `base` and the four-module set

@@ -108,14 +108,14 @@ Every `factcheck.sh` under `odoo` and `addons` blocks. Nothing runs them for you
 
 ```bash
 pytest tests/transport                               # no database: parser, servers, raw sockets; seconds
-ODOO_CONTRACT_REQUIRE_DEPS=1 pytest tests/contract   # needs PostgreSQL + psql + pg_dump
+ODOO_CONTRACT_REQUIRE_DEPS=1 pytest tests/contract   # needs PostgreSQL + psql + pg_dump + pg_restore
 pytest tests/process                                 # boots real odoo-bin processes
 pytest tests/loading                                 # installs base into a scratch database
 ```
 
 `tests/transport` holds `odoo/libs/http1.py`, `odoo/service/_transport.py`, `httpd.py` and the prefork worker over real sockets: framing and smuggling cases, pipelining, timeouts, descriptor and thread leaks, and a seeded fuzz (`test_fuzz.py`: 20 000 mutated requests by default, `ODOO_TRANSPORT_FUZZ_CASES` / `ODOO_TRANSPORT_FUZZ_SEED` for long runs, memory-capped) that checks split-independence and differs against h11 outside a named allowlist. Each of its tests must give back every thread and descriptor it took (`conftest.py`). Run it after any change to those files.
 
-`tests/contract` pins what we *assume* about psycopg, psql and pg_dump against the real programs. It is skip-guarded: without that variable a missing dependency reports green while comparing nothing.
+`tests/contract` pins what we *assume* about psycopg, psql, pg_dump and pg_restore against the real programs. It is skip-guarded: without that variable a missing dependency reports green while comparing nothing.
 
 ```bash
 pytest tests/perf                                    # local time + count floors

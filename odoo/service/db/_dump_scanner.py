@@ -26,27 +26,55 @@ worse than no check because the next reader stops looking.
 The property that makes a restore safe against a hostile backup is a
 **non-superuser restore role** with no `pg_execute_server_program` and no right
 to create an untrusted procedural language.  That is a deployment fact, and
-`doc/architecture/deployment.md` states it.  `pg_restore` -- the custom-format
-path, which this module does not scan -- speaks libpq and has no meta-commands
-at all, so it carries exactly this same exposure and no more; its absence here
-is consistent rather than a second gap.
+`doc/architecture/deployment.md` states it.  A custom-format archive takes
+the same road: `pg_restore --file=-` streams its SQL through this scan into
+psql's stdin, and a line reaches psql only once it has been scanned.
+
+The same pass also drops what binds a dump to the cluster it came from:
+`CREATE USER MAPPING` (whose options carry the remote password, and whose
+role need not exist here) and the privilege statements, `GRANT`, `REVOKE`
+and `ALTER DEFAULT PRIVILEGES`, which name the source's roles.  A restore is
+`--no-owner`, so the restoring role owns everything and those statements
+have nothing left to say.  A foreign server survives; its mapping is the
+deployment's to re-create.
+
+A restore also writes into a database made from `db_template`, which may
+already hold extensions a superuser created there, so that a non-superuser
+can restore.  Given that database's `_RestoreTarget`, the pass drops what the
+template already answers and only its owner may run: `CREATE SCHEMA` and
+`COMMENT ON SCHEMA` for a schema the target holds, `COMMENT ON EXTENSION` for
+an extension it holds, and, for a table or sequence an extension of the
+target owns, an empty `COPY` and a `setval(..., 1, false)` -- both no-ops on
+a fresh template.  A `COPY` that carries rows is kept: those rows are data,
+and a role that may not write them fails loudly instead of losing them.
+
+`_PortableSqlWriter` is the one place these rules live.  The dump runs
+pg_dump's output through it before the SQL reaches the backup, the restore
+runs every backup through it before psql sees it, and `odoo-bin db
+portable-sql` runs it for a pipeline that feeds psql itself.
 """
 
 from __future__ import annotations
 
 import logging
 import re
+import shutil
 import string
-from pathlib import Path
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+import odoo.db
 from odoo.libs.debug_log import DebugLog
 
 from .._env import get_env_int
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import TextIO
+    from typing import IO, NoReturn
+
+    from _typeshed import SupportsRead
+
+    from odoo.db import BaseCursor
 
 _logger = logging.getLogger("odoo.service.db")
 _debug = DebugLog(__name__)
@@ -133,6 +161,17 @@ class _PsqlSqlScanner:
         self.in_single_quote = False
         self.single_quote_escaped = False
         self.in_double_quote = False
+
+    def at_statement_start(self) -> bool:
+        return not (
+            self._stmt_seen_token
+            or self.in_copy_data
+            or self.copy_pending
+            or self.comment_depth
+            or self.dollar_tag is not None
+            or self.in_single_quote
+            or self.in_double_quote
+        )
 
     def _resume_carry_over(self, line: str, n: int) -> int:
         if self.comment_depth:
@@ -435,80 +474,259 @@ def _get_disallowed_psql_meta_command(text: str) -> tuple[int, str] | None:
     return None
 
 
-def _drain_physical_line(fh: TextIO, cap: int) -> None:
-    while True:
-        part = fh.readline(cap)
-        if not part or part.endswith("\n"):
-            return
+_CLUSTER_BOUND_STATEMENT_RE = re.compile(
+    r"(?:CREATE USER MAPPING|GRANT|REVOKE|ALTER DEFAULT PRIVILEGES) "
+)
+
+_SQL_IDENT = r'(?:"(?:[^"]|"")*"|[^\s".;(),]+)'
+_TARGET_SCHEMA_RE = re.compile(
+    rf"(?:CREATE SCHEMA ({_SQL_IDENT});\s*$|COMMENT ON SCHEMA ({_SQL_IDENT}) IS )"
+)
+_TARGET_EXTENSION_COMMENT_RE = re.compile(rf"COMMENT ON EXTENSION ({_SQL_IDENT}) IS ")
+_TARGET_UNUSED_SETVAL_RE = re.compile(
+    r"SELECT pg_catalog\.setval\('((?:[^']|'')+)', 1, false\);\s*$"
+)
+_COPY_HEADER_RE = re.compile(rf"COPY ({_SQL_IDENT})\.({_SQL_IDENT}) .*FROM stdin;\s*$")
+_QUALIFIED_RE = re.compile(rf"({_SQL_IDENT})\.({_SQL_IDENT})")
 
 
-def _refuse_psql_meta_commands(sql_path: str) -> None:
-    max_line = get_env_int(
-        "ODOO_DUMP_SCAN_MAX_LINE",
-        _DEFAULT_MAX_SCAN_LINE,
-        minimum=_MIN_MAX_SCAN_LINE,
-        logger=_logger,
-    )
-    scanner = _PsqlSqlScanner()
-    hit = None
-    with _debug.perf("database.restore.dump_scan", path=sql_path) as span:
-        with Path(sql_path).open(encoding="latin-1") as fh:
-            while chunk := fh.readline(max_line + 1):
-                if len(chunk) > max_line and not chunk.endswith("\n"):
-                    if scanner.in_copy_data:
-                        _debug.logic(
-                            "database.restore.copy_line_drained",
-                            lineno=scanner.lineno,
-                            max_line=max_line,
-                        )
-                        _drain_physical_line(fh, max_line + 1)
-                        scanner.lineno += 1
-                        continue
-                    _debug.logic(
-                        "database.restore.dump_line_too_long",
-                        lineno=scanner.lineno,
-                        max_line=max_line,
-                    )
-                    raise RuntimeError(
-                        f"Refusing to restore: the dump's SQL has a line longer than "
-                        f"{max_line} characters (at line {scanner.lineno}), which "
-                        f"cannot be scanned within a bounded amount of memory. A "
-                        f"backup produced by Odoo's own dump has no such line; raise "
-                        f"ODOO_DUMP_SCAN_MAX_LINE if this dump is genuinely legitimate."
-                    )
-                hit = scanner.feed(chunk)
-                if hit is not None:
-                    break
-        span.set(lines=scanner.lineno, refused=hit is not None)
-    _debug.logic(
-        "database.restore.dump_scanned",
-        path=sql_path,
-        lines=scanner.lineno,
-        max_line=max_line,
-        refused=hit is not None,
-    )
-    if hit is not None:
-        lineno, command = hit
-        if not command.startswith("\\"):
-            raise RuntimeError(
-                f"Refusing to restore: the dump's SQL sets {command!r} (line "
-                f"{lineno}), which changes how a quoted string is escaped and "
-                f"can desynchronize this scanner from what psql actually runs. "
-                f"A backup produced by Odoo's own dump never needs this setting."
-            )
-        raise RuntimeError(
-            f"Refusing to restore: the dump's SQL contains the psql "
-            f"meta-command {command!r} (line {lineno}), which would run with "
-            f"this server's OS/database privileges. A backup produced by Odoo's "
-            f"own dump contains no such command; the only permitted forms are "
-            f"``\\restrict <key>`` / ``\\unrestrict <key>`` with an alphanumeric "
-            f"key, and the ``\\.`` COPY terminator alone on its line."
+def _unquote(ident: str) -> str:
+    if ident.startswith('"'):
+        return ident[1:-1].replace('""', '"')
+    return ident
+
+
+@dataclass(frozen=True, slots=True)
+class _RestoreTarget:
+    schemas: frozenset[str]
+    extensions: frozenset[str]
+    extension_relations: frozenset[tuple[str, str]]
+
+    @classmethod
+    def read(cls, cr: BaseCursor) -> _RestoreTarget:
+        cr.execute("SELECT nspname FROM pg_namespace")
+        schemas = frozenset(row[0] for row in cr.fetchall())
+        cr.execute("SELECT extname FROM pg_extension")
+        extensions = frozenset(row[0] for row in cr.fetchall())
+        cr.execute(
+            "SELECT n.nspname, c.relname FROM pg_depend d"
+            " JOIN pg_class c ON c.oid = d.objid"
+            " JOIN pg_namespace n ON n.oid = c.relnamespace"
+            " WHERE d.classid = 'pg_class'::regclass"
+            " AND d.refclassid = 'pg_extension'::regclass AND d.deptype = 'e'"
         )
+        relations = frozenset((row[0], row[1]) for row in cr.fetchall())
+        _debug.logic(
+            "database.restore_target.read",
+            schemas=len(schemas),
+            extensions=len(extensions),
+            extension_relations=len(relations),
+        )
+        return cls(schemas, extensions, relations)
+
+    def get_drop_reason(self, text: str) -> str | None:
+        if match := _TARGET_SCHEMA_RE.match(text):
+            if _unquote(match.group(1) or match.group(2)) in self.schemas:
+                return "schema the target holds"
+        elif match := _TARGET_EXTENSION_COMMENT_RE.match(text):
+            if _unquote(match.group(1)) in self.extensions:
+                return "comment on an extension the target holds"
+        elif match := _TARGET_UNUSED_SETVAL_RE.match(text):
+            qualified = _QUALIFIED_RE.fullmatch(match.group(1).replace("''", "'"))
+            if qualified is not None and self._holds_relation(*qualified.groups()):
+                return "unused sequence of an extension the target holds"
+        return None
+
+    def holds_copy_target(self, text: str) -> bool:
+        match = _COPY_HEADER_RE.match(text)
+        return match is not None and self._holds_relation(*match.groups())
+
+    def _holds_relation(self, schema: str, relation: str) -> bool:
+        return (_unquote(schema), _unquote(relation)) in self.extension_relations
+
+
+def _raise_refusal(hit: tuple[int, str]) -> NoReturn:
+    lineno, command = hit
+    if not command.startswith("\\"):
+        raise RuntimeError(
+            f"Refusing to restore: the dump's SQL sets {command!r} (line "
+            f"{lineno}), which changes how a quoted string is escaped and "
+            f"can desynchronize this scanner from what psql actually runs. "
+            f"A backup produced by Odoo's own dump never needs this setting."
+        )
+    raise RuntimeError(
+        f"Refusing to restore: the dump's SQL contains the psql "
+        f"meta-command {command!r} (line {lineno}), which would run with "
+        f"this server's OS/database privileges. A backup produced by Odoo's "
+        f"own dump contains no such command; the only permitted forms are "
+        f"``\\restrict <key>`` / ``\\unrestrict <key>`` with an alphanumeric "
+        f"key, and the ``\\.`` COPY terminator alone on its line."
+    )
+
+
+class _PortableSqlWriter:
+    __slots__ = (
+        "_buf",
+        "_dropping",
+        "_held_copy",
+        "_in_overlong_line",
+        "_max_line",
+        "_out",
+        "_target",
+        "dropped",
+        "scanner",
+    )
+
+    def __init__(self, out: IO[bytes], target: _RestoreTarget | None = None) -> None:
+        self._out = out
+        self._target = target
+        self._held_copy: bytes | None = None
+        self._max_line = get_env_int(
+            "ODOO_DUMP_SCAN_MAX_LINE",
+            _DEFAULT_MAX_SCAN_LINE,
+            minimum=_MIN_MAX_SCAN_LINE,
+            logger=_logger,
+        )
+        self._buf = bytearray()
+        self._dropping = False
+        self._in_overlong_line = False
+        self.dropped = 0
+        self.scanner = _PsqlSqlScanner()
+
+    def write(self, data: bytes) -> int:
+        buf = self._buf
+        search = len(buf)
+        buf += data
+        start = 0
+        while (nl := buf.find(b"\n", search)) != -1:
+            self._take_line(bytes(buf[start : nl + 1]))
+            start = search = nl + 1
+        del buf[:start]
+        if len(buf) > self._max_line:
+            self._take_overlong_part(bytes(buf))
+            buf.clear()
+        return len(data)
+
+    def finish(self) -> None:
+        if self._buf:
+            self._take_line(bytes(self._buf))
+            self._buf.clear()
+        if self._held_copy is not None:
+            self._out.write(self._held_copy)
+            self._held_copy = None
+        _debug.logic(
+            "database.dump_sql.filtered",
+            lines=self.scanner.lineno,
+            dropped=self.dropped,
+            max_line=self._max_line,
+        )
+
+    def _take_overlong_part(self, part: bytes) -> None:
+        if not (self._in_overlong_line or self.scanner.in_copy_data):
+            _debug.logic(
+                "database.dump_sql.line_too_long",
+                lineno=self.scanner.lineno,
+                max_line=self._max_line,
+            )
+            raise RuntimeError(
+                f"Refusing to restore: the dump's SQL has a line longer than "
+                f"{self._max_line} characters (at line {self.scanner.lineno}), "
+                f"which cannot be scanned within a bounded amount of memory. A "
+                f"backup produced by Odoo's own dump has no such line; raise "
+                f"ODOO_DUMP_SCAN_MAX_LINE if this dump is genuinely legitimate."
+            )
+        if self._held_copy is not None:
+            self._out.write(self._held_copy)
+            self._held_copy = None
+        if not self._in_overlong_line:
+            _debug.logic(
+                "database.dump_sql.copy_line_passed",
+                lineno=self.scanner.lineno,
+                max_line=self._max_line,
+            )
+            self._in_overlong_line = True
+        self._out.write(part)
+
+    def _take_line(self, line: bytes) -> None:
+        scanner = self.scanner
+        if self._in_overlong_line:
+            self._in_overlong_line = False
+            scanner.lineno += 1
+            self._out.write(line)
+            return
+        text = line.decode("latin-1")
+        if self._held_copy is not None:
+            self._release_held_copy(line, text)
+            return
+        target = self._target
+        hold_copy = False
+        if not self._dropping and scanner.at_statement_start():
+            reason = self._get_drop_reason(text)
+            if reason is not None:
+                _debug.logic(
+                    "database.dump_sql.statement_dropped",
+                    lineno=scanner.lineno,
+                    reason=reason,
+                )
+                self._dropping = True
+                self.dropped += 1
+            elif target is not None and target.holds_copy_target(text):
+                hold_copy = True
+        self._feed(text)
+        if hold_copy:
+            self._held_copy = line
+        elif not self._dropping:
+            self._out.write(line)
+        elif scanner.at_statement_start():
+            self._dropping = False
+
+    def _feed(self, text: str) -> None:
+        hit = self.scanner.feed(text)
+        if hit is not None:
+            _raise_refusal(hit)
+
+    def _get_drop_reason(self, text: str) -> str | None:
+        if match := _CLUSTER_BOUND_STATEMENT_RE.match(text):
+            return match.group(0).rstrip()
+        if self._target is not None:
+            return self._target.get_drop_reason(text)
+        return None
+
+    def _release_held_copy(self, line: bytes, text: str) -> None:
+        held = self._held_copy
+        assert held is not None
+        self._held_copy = None
+        self._feed(text)
+        if not self.scanner.in_copy_data:
+            _debug.logic(
+                "database.dump_sql.statement_dropped",
+                lineno=self.scanner.lineno,
+                reason="empty copy into a table an extension of the target holds",
+            )
+            self.dropped += 1
+            return
+        self._out.write(held)
+        self._out.write(line)
+
+
+def copy_portable_sql(
+    src: SupportsRead[bytes], dst: IO[bytes], target_db: str | None = None
+) -> int:
+    target = None
+    if target_db is not None:
+        with odoo.db.db_connect(target_db).cursor() as cr:
+            target = _RestoreTarget.read(cr)
+    writer = _PortableSqlWriter(dst, target)
+    shutil.copyfileobj(src, writer)
+    writer.finish()
+    return writer.dropped
 
 
 __all__ = (
+    "_PortableSqlWriter",
     "_PsqlSqlScanner",
+    "_RestoreTarget",
     "_get_disallowed_psql_meta_command",
     "_iter_physical_lines",
-    "_refuse_psql_meta_commands",
+    "copy_portable_sql",
 )

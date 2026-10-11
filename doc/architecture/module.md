@@ -63,7 +63,8 @@ odoo/
 │   ├── db/         Database management, the /web/database/manager service
 │   │               (seven modules in one-way order). Reads downward:
 │   │               rpc -> {restore -> {lifecycle, listing, _dump_scanner},
-│   │                       dump -> listing, lifecycle -> listing},
+│   │                       dump -> {listing, _dump_scanner},
+│   │                       lifecycle -> listing},
 │   │               every one of them over _checks (the db-name, master
 │   │               password and list_db guards)
 │   └── transaction (the retrying() primitive), model, api_scope (what an API

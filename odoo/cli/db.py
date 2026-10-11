@@ -16,6 +16,7 @@ from ..db import SYSTEM_DBS
 from ..libs.debug_log import DebugLog
 from ..service.db import (
     check_db_name,
+    copy_portable_sql,
     drop_database,
     dump_db,
     duplicate_database,
@@ -109,6 +110,7 @@ class Db(Command):
                 self._add_rename_parser,
                 self._add_drop_parser,
                 self._add_list_parser,
+                self._add_portable_sql_parser,
             )
         ]
         for sub in subparsers:
@@ -307,6 +309,25 @@ class Db(Command):
         )
         list_parser.set_defaults(func=self.list_databases)
         return list_parser
+
+    def _add_portable_sql_parser(self, subs: _SubParsers) -> argparse.ArgumentParser:
+        portable = subs.add_parser(
+            "portable-sql",
+            help="Filter a plain pg_dump from stdin to stdout the way `load` runs it",
+            description="Reads a plain-format pg_dump on stdin and writes it to "
+            "stdout without its user mappings and privilege statements, refusing "
+            "psql meta-commands: the SQL `load` hands psql, for a restore "
+            "pipeline that runs psql itself.",
+        )
+        portable.set_defaults(func=self.portable_sql)
+        portable.add_argument(
+            "--target",
+            metavar="DATABASE",
+            help="the existing database the SQL will be restored into: what its "
+            "template already holds (schemas, extensions and their tables) is "
+            "dropped too, as `load` does",
+        )
+        return portable
 
     def run(self, cmdargs: list[str]) -> None:
         args, unknown = self.parser.parse_known_args(cmdargs)
@@ -530,6 +551,21 @@ class Db(Command):
             span.set(count=len(db_names))
         for db_name in db_names:
             print(db_name)
+
+    def portable_sql(self, args: argparse.Namespace) -> None:
+        if args.target is not None:
+            self._check_source_exists(args.target)
+        try:
+            with _debug.perf("cli.db.portable_sql", target=args.target) as span:
+                dropped = copy_portable_sql(
+                    sys.stdin.buffer, sys.stdout.buffer, args.target
+                )
+                sys.stdout.buffer.flush()
+                span.set(dropped=dropped)
+        except RuntimeError as e:
+            _debug.logic("cli.db.portable_sql.refused")
+            sys.exit(str(e))
+        eprint(f"portable-sql: dropped {dropped} statement(s)")
 
     def _check_target_free(self, target: str, *, force: bool) -> None:
         check_db_not_maintenance(target)

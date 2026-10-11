@@ -7,6 +7,7 @@ from ._checks import (
     check_db_name,
     check_super,
 )
+from ._dump_scanner import copy_portable_sql
 from .dump import BACKUP_FORMATS, dump_db, dump_db_manifest, exp_dump
 from .lifecycle import (
     DatabaseExists,
@@ -45,6 +46,7 @@ __all__ = (
     "check_db_management_enabled",
     "check_db_name",
     "check_super",
+    "copy_portable_sql",
     "create_empty_database",
     "dispatch",
     "drop_database",
