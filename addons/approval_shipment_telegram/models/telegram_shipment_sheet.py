@@ -35,8 +35,8 @@ class TelegramShipmentSheet(models.Model):
                 self.env._(
                     "%(picking)s keeps the tracking number and the sheet, but I "
                     "could not prepare the freight request %(category)s: %(reason)s",
-                    picking=picking.name,
-                    category=category.name,
+                    picking=tg.escape(picking.name),
+                    category=tg.escape(category.name),
                     reason=tg.escape(reason),
                 ),
             ]
