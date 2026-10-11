@@ -106,6 +106,16 @@ msgstr "Nombre en pantalla"
 #. module: stock_shipment_telegram
 #. odoo-python
 #: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid ""
+"Does tracking number %(ref)s also cover another %(kind)s? Tap it or type the"
+" last digits of its number. If not, send the next sheet or tap Finish."
+msgstr ""
+"¿La guía %(ref)s cubre también otra %(kind)s? Tócala o escribe los últimos "
+"dígitos de su número. Si no, manda la siguiente hoja o toca Terminar."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
 msgid "Done."
 msgstr "Listo."
 
@@ -181,6 +191,12 @@ msgstr "Ningún transportista usa guías como %(ref)s."
 #. module: stock_shipment_telegram
 #. odoo-python
 #: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "No open %(kind)s for tracking number %(ref)s ends in %(digits)s."
+msgstr "Ninguna %(kind)s abierta para la guía %(ref)s termina en %(digits)s."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
 msgid "None of these"
 msgstr "Ninguna de estas"
 
@@ -233,6 +249,15 @@ msgstr ""
 #: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
 msgid "Send the shipping order as a PDF or a photo."
 msgstr "Manda la hoja de embarque en PDF o en foto."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid ""
+"Send the shipping order first, then type the last digits of its transfer."
+msgstr ""
+"Manda primero la hoja de embarque y luego escribe los últimos dígitos de su "
+"transferencia."
 
 #. module: stock_shipment_telegram
 #. odoo-python
@@ -319,8 +344,12 @@ msgstr "Número de guía"
 #. module: stock_shipment_telegram
 #. odoo-python
 #: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
-msgid "Tracking number %(ref)s of %(carrier)s. Which %(kind)s is it?"
-msgstr "Guía %(ref)s de %(carrier)s. ¿Qué %(kind)s es?"
+msgid ""
+"Tracking number %(ref)s of %(carrier)s. Which %(kind)s is it? Tap it or type"
+" the last digits of its number."
+msgstr ""
+"Guía %(ref)s de %(carrier)s. ¿Qué %(kind)s es? Tócala o escribe los últimos "
+"dígitos de su número."
 
 #. module: stock_shipment_telegram
 #. odoo-python
@@ -331,6 +360,12 @@ msgid ""
 msgstr ""
 "Guía %(ref)s de %(carrier)s: no hay ninguna %(kind)s abierta tuya "
 "esperando guía."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Tracking number %(ref)s: which %(kind)s ending in %(digits)s is it?"
+msgstr "Guía %(ref)s: ¿cuál es la %(kind)s que termina en %(digits)s?"
 
 #. module: stock_shipment_telegram
 #: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__picking_id

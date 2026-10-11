@@ -162,10 +162,13 @@ class TelegramShipmentSheet(models.Model):
             }
         )
 
-    def _candidates(self, incoming=False):
+    def _candidates(self, incoming=False, digits=None):
         """The open transfers this sheet may go on, the ones already carrying
         its number first: deliveries of its carrier or none, or receipts when
-        the carrier brings a purchase."""
+        the carrier brings a purchase.
+
+        :param str digits: keep only the transfers whose name ends in them
+        """
         self.check_singleton()
         lookback = IN_LOOKBACK if incoming else OUT_LOOKBACK
         domain = [
@@ -178,9 +181,44 @@ class TelegramShipmentSheet(models.Model):
         ]
         if not incoming:
             domain += [("carrier_id", "in", [self.carrier_id.id, False])]
+        if digits:
+            domain += [("name", "=like", f"%{digits}")]
         pickings = self.env["stock.picking"].search(domain, order="create_date desc")
         return pickings.sorted(
             lambda picking: (picking.carrier_tracking_ref or "") != self.tracking_ref
+        )
+
+    def _more_candidates(self, digits=None):
+        """The open transfers of the same kind this assigned sheet's number
+        may also go on: one shipment often carries several transfers.
+
+        :param str digits: keep only the transfers whose name ends in them
+        """
+        self.check_singleton()
+        incoming = self.picking_id.picking_type_code == "incoming"
+        return self._candidates(incoming=incoming, digits=digits).filtered(
+            lambda picking: (
+                (picking.carrier_tracking_ref or "").strip().upper()
+                != self.tracking_ref
+            )
+        )
+
+    def _sibling(self):
+        """A pending copy of this sheet, to put its number on one more
+        transfer: each transfer keeps its own record of the sheet."""
+        self.check_singleton()
+        return self.create(
+            {
+                "bot_id": self.bot_id.id,
+                "chat_id": self.chat_id.id,
+                "tracking_ref": self.tracking_ref,
+                "carrier_id": self.carrier_id.id,
+                "extracted": self.extracted,
+                "file_id": self.file_id,
+                "file_name": self.file_name,
+                "file_unique_id": self.file_unique_id,
+                "checksum": self.checksum,
+            }
         )
 
     def _assign(self, picking, content) -> list:

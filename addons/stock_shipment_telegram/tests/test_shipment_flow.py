@@ -4,6 +4,7 @@ from unittest.mock import patch
 from PIL import Image
 
 from odoo import Command
+from odoo.libs.json import loads as json_loads
 from odoo.tests import tagged
 
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
@@ -99,6 +100,7 @@ class TestShipmentFlow(TelegramBotTestCase):
                 self.test_bot.with_user(self.public).sudo(),
                 {"update_id": self.update_id, **payload},
             )
+        self.posted = [call.kwargs.get("json") or {} for call in post.call_args_list]
         return "\n".join(
             call.kwargs["json"].get("text", "")
             for call in post.call_args_list
@@ -134,6 +136,20 @@ class TestShipmentFlow(TelegramBotTestCase):
 
     def _last_sheet(self):
         return self.Sheet.search([], limit=1)
+
+    def _offered(self):
+        """The buttons of the last keyboard the bot sent, in order."""
+        for message in reversed(self.posted):
+            markup = message.get("reply_markup") or {}
+            if isinstance(markup, str):
+                markup = json_loads(markup)
+            if markup.get("inline_keyboard"):
+                return [
+                    button["callback_data"]
+                    for row in markup["inline_keyboard"]
+                    for button in row
+                ]
+        return []
 
     def test_the_tracking_number_goes_on_the_chosen_delivery(self):
         self._say("/embarque")
@@ -183,7 +199,8 @@ class TestShipmentFlow(TelegramBotTestCase):
         self.other_out.carrier_tracking_ref = "TOL01584640"
         self._say("/embarque")
         self._sheet_photo()
-        self.assertEqual(self._last_sheet().candidate_ids[:1], self.other_out)
+        sheet = self._last_sheet()
+        self.assertEqual(self._offered()[0], f"emb:p:{sheet.id}:{self.other_out.id}")
 
     def test_a_purchase_the_carrier_brings_goes_on_the_receipt(self):
         self._say("/embarque")
@@ -202,3 +219,91 @@ class TestShipmentFlow(TelegramBotTestCase):
         self._press(f"emb:x:{sheet.id}")
         self.assertEqual(sheet.state, "error")
         self.assertFalse(self.out.carrier_tracking_ref)
+
+    @staticmethod
+    def _tail(picking):
+        """What the sender types: the digits closing the transfer's name."""
+        return picking.name.rpartition("/")[2]
+
+    def test_typed_digits_offer_the_delivery_ending_in_them(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        sheet = self._last_sheet()
+
+        reply = self._say(self._tail(self.other_out))
+
+        self.assertIn("ending in", reply)
+        self.assertEqual(sheet.candidate_ids, self.other_out)
+        self._press(f"emb:p:{sheet.id}:{self.other_out.id}")
+        self.assertEqual(self.other_out.carrier_tracking_ref, "TOL01584640")
+        self.assertFalse(self.out.carrier_tracking_ref)
+
+    def test_digits_no_open_delivery_ends_in_offer_none(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        sheet = self._last_sheet()
+
+        reply = self._say("999999")
+
+        self.assertIn("ends in", reply)
+        self.assertFalse(sheet.candidate_ids)
+        self.assertEqual(sheet.state, "pending", "the sheet still waits")
+
+    def test_digits_before_any_sheet_ask_for_the_sheet(self):
+        self._say("/embarque")
+        reply = self._say(self._tail(self.out))
+        self.assertIn("Send the shipping order first", reply)
+        self.assertFalse(self.Sheet.search([]))
+
+    def test_one_tracking_number_goes_on_several_deliveries(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        sheet = self._last_sheet()
+
+        reply = self._press(f"emb:p:{sheet.id}:{self.out.id}")
+        self.assertIn("also cover another", reply)
+        self._press(f"emb:m:{sheet.id}:{self.other_out.id}")
+
+        sheets = self.Sheet.search([("tracking_ref", "=", "TOL01584640")])
+        self.assertEqual(sheets.picking_id, self.out | self.other_out)
+        self.assertEqual(set(sheets.mapped("state")), {"done"})
+        self.assertEqual(self.other_out.carrier_tracking_ref, "TOL01584640")
+        self.assertEqual(self.other_out.carrier_id, self.carrier)
+        self.assertTrue(
+            self.other_out.message_ids.attachment_ids, "each transfer keeps the sheet"
+        )
+
+    def test_typed_digits_add_one_more_delivery(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        sheet = self._last_sheet()
+        self._press(f"emb:p:{sheet.id}:{self.out.id}")
+
+        reply = self._say(self._tail(self.other_out))
+        self.assertIn("ending in", reply)
+        self._press(f"emb:m:{sheet.id}:{self.other_out.id}")
+
+        self.assertEqual(self.other_out.carrier_tracking_ref, "TOL01584640")
+
+    def test_a_delivery_already_carrying_the_number_is_not_added_twice(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        sheet = self._last_sheet()
+        self._press(f"emb:p:{sheet.id}:{self.out.id}")
+
+        reply = self._press(f"emb:m:{sheet.id}:{self.out.id}")
+
+        self.assertIn("no longer valid", reply)
+        self.assertEqual(
+            self.Sheet.search_count([("tracking_ref", "=", "TOL01584640")]), 1
+        )
+
+    def test_a_button_pressed_after_finishing_still_assigns(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        sheet = self._last_sheet()
+        self._press("emb:fin")
+
+        self._press(f"emb:p:{sheet.id}:{self.out.id}")
+
+        self.assertEqual(self.out.carrier_tracking_ref, "TOL01584640")
