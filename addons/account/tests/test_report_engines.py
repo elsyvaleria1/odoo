@@ -672,6 +672,138 @@ class TestReportEngines(TestAccountReportsCommon):
                     "count_rows must agree with what expanding the line actually shows",
                 )
 
+    def test_engine_domain_counts_rows_without_a_distinct_sort(self):
+        partner = self.env["res.partner"].create({"name": "Partner summed"})
+        self._create_test_account_moves(
+            [
+                self._prepare_test_account_move_line(
+                    100.0, account_code="101001", partner_id=partner.id
+                ),
+                self._prepare_test_account_move_line(-100.0, account_code="101002"),
+            ]
+        )
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_domain(
+                        "[('account_id.code', '=', '101001')]", "sum"
+                    ),
+                    groupby="partner_id",
+                    foldable=True,
+                ),
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_domain(
+                        "[('account_id.code', '=', 'nothing')]", "sum"
+                    ),
+                    groupby="partner_id",
+                    foldable=True,
+                ),
+            ]
+        )
+        options = self._generate_options(report, "2020-01-01", "2020-01-31")
+
+        with self.capturedQueries() as queries:
+            lines = report._get_lines(options)
+
+        self.assertFalse([query for query in queries if "COUNT(DISTINCT" in query])
+        self.assertEqual(
+            [(line["columns"][0]["no_format"], line["unfoldable"]) for line in lines],
+            [(100.0, True), (0.0, False)],
+        )
+
+    def test_engine_domain_folds_row_local_formulas_into_one_scan(self):
+        partner = self.env["res.partner"].create({"name": "Partner folded"})
+        self._create_test_account_moves(
+            [
+                self._prepare_test_account_move_line(
+                    100.0, account_code="101001", partner_id=partner.id
+                ),
+                self._prepare_test_account_move_line(40.0, account_code="101001"),
+                self._prepare_test_account_move_line(
+                    -25.0, account_code="101002", partner_id=partner.id
+                ),
+            ]
+        )
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_domain(formula, "sum"),
+                    groupby="partner_id",
+                )
+                for formula in (
+                    "[('balance', '>', 0)]",
+                    "[('account_id.code', '=', '101001'), ('partner_id', '=', False)]",
+                    "[('debit', '>', 1000)]",
+                    "[('tax_tag_ids', '=', False), ('account_id.code', '=', '101002')]",
+                    "[('matched_debit_ids', '=', False), ('account_id.code', '=', '101002')]",
+                )
+            ]
+        )
+        options = self._generate_options(report, "2020-01-01", "2020-01-31")
+        options["unfold_all"] = True
+
+        def line_values(lines):
+            return [
+                (line["name"], line["columns"][0]["no_format"], line["unfoldable"])
+                for line in lines
+            ]
+
+        with patch.object(
+            type(report), "_fetch_folded_domain_formulas", lambda *args: {}
+        ):
+            one_scan_per_formula = report._get_lines(options)
+
+        def priced(fold_cost, branch_cost, *branch_costs):
+            return patch.object(
+                type(report),
+                "_get_statement_costs",
+                lambda self, statements: [
+                    fold_cost,
+                    *(branch_costs or [branch_cost] * (len(statements) - 1)),
+                ],
+            )
+
+        with (
+            priced(fold_cost=10.0, branch_cost=100.0),
+            self.capturedQueries() as queries,
+        ):
+            folded = report._get_lines(options)
+        with (
+            priced(fold_cost=100.0, branch_cost=10.0),
+            self.capturedQueries() as narrow_queries,
+        ):
+            branched = report._get_lines(options)
+
+        with (
+            priced(100.0, None, 80.0, 80.0, 80.0, 1.0),
+            self.capturedQueries() as mixed_queries,
+        ):
+            mixed = report._get_lines(options)
+
+        self.assertEqual(line_values(folded), line_values(one_scan_per_formula))
+        self.assertEqual(line_values(branched), line_values(one_scan_per_formula))
+        self.assertEqual(line_values(mixed), line_values(one_scan_per_formula))
+        [mixed_scan] = [query for query in mixed_queries if "FILTER (WHERE" in query]
+        self.assertIn("row_count_2", mixed_scan)
+        self.assertNotIn("row_count_3", mixed_scan)
+        self.assertEqual(
+            [value for _name, value, _unfoldable in line_values(folded)],
+            [140.0, 100.0, 40.0, 40.0, 40.0, 0.0, -25.0, -25.0, -25.0, -25.0],
+        )
+        [folded_scan] = [query for query in queries if "FILTER (WHERE" in query]
+        self.assertIn("row_count_3", folded_scan)
+        self.assertNotIn("row_count_4", folded_scan)
+        self.assertIn("UNION ALL", folded_scan)
+        self.assertFalse(
+            [query for query in narrow_queries if "FILTER (WHERE" in query]
+        )
+        [statement] = [
+            query
+            for query in narrow_queries
+            if "AS formula_index" in query and "EXPLAIN" not in query
+        ]
+        self.assertEqual(statement.count("AS formula_index"), 5)
+
     def test_engine_account_codes(self):
         account_tags = self.env["account.account.tag"]._load_records(
             [

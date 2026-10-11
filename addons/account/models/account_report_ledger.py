@@ -2753,13 +2753,11 @@ class AccountReport(models.Model):
     def _get_fiscalyear_dates_by_company(self, options, date):
         if not self._reads_ledger():
             return super()._get_fiscalyear_dates_by_company(options, date)
-        date = fields.Date.to_date(date)
-        return {
-            company.id: company.compute_fiscalyear_dates(date)
-            for company in self.env["res.company"].browse(
-                self.get_report_company_ids(options)
-            )
-        }
+        return (
+            self.env["res.company"]
+            .browse(self.get_report_company_ids(options))
+            ._compute_fiscalyear_dates_by_company(fields.Date.to_date(date))
+        )
 
     def _get_companies_off_fiscalyear_anchor(self, options):
         periods = [options["date"], *options.get("comparison", {}).get("periods", [])]
@@ -3432,8 +3430,10 @@ class AccountReport(models.Model):
                 .root_id
             )
             period_date_from = min(
-                company.compute_fiscalyear_dates(date_to)["date_from"]
-                for company in root_companies
+                fiscal_year["date_from"]
+                for fiscal_year in root_companies._compute_fiscalyear_dates_by_company(
+                    date_to
+                ).values()
             )
             _debug.logic(
                 "date_from_earliest_fiscal_year",

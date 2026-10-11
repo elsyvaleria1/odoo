@@ -287,11 +287,29 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
             }
         )
 
-        for column_group_key, column_group_options in options_by_column_group.items():
-            query = report._get_report_query(column_group_options, "strict_range")
+        def read_rows(read_options, partition_field, with_whole):
+            query = report._get_report_query(read_options, "strict_range")
             if "account_move_line__move_id" not in query._joins:
                 query.join(
                     "account_move_line", "move_id", "account_move", "id", "move_id"
+                )
+            partition_select = partition_order = SQL()
+            if partition_field:
+                partition_column = SQL.identifier("account_move_line", partition_field)
+                partition_select = SQL(
+                    ", %s AS partition_value, GROUPING(%s) = 1 AS is_whole",
+                    partition_column,
+                    partition_column,
+                )
+                partition_order = SQL(", %s", partition_column)
+
+            def grouped_by(keys):
+                if not partition_field:
+                    return keys
+                if not with_whole:
+                    return SQL("%s, %s", keys, partition_column)
+                return SQL(
+                    "GROUPING SETS ((%s, %s), (%s))", keys, partition_column, keys
                 )
 
             self.env.cr.execute(
@@ -305,6 +323,7 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                     src_tax.id AS src_tax_id,
                     src_tax.type_tax_use AS src_tax_type_tax_use,
                     SUM(account_move_line.balance) AS base_amount
+                    %(partition_select)s
                 FROM %(table_references)s
                 JOIN account_move_line_account_tax_rel tax_rel ON account_move_line.id = tax_rel.account_move_line_id
                 JOIN account_tax tax ON tax.id = tax_rel.account_tax_id
@@ -334,16 +353,108 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                             AND tax.type_tax_use IN ('sale', 'purchase')
                         )
                     )
-                GROUP BY tax.id, src_group_tax.id, src_tax.id
-                ORDER BY src_group_tax.sequence, src_group_tax.id, src_tax.sequence, src_tax.id, tax.sequence, tax.id
+                GROUP BY %(groupby)s
+                ORDER BY src_group_tax.sequence, src_group_tax.id, src_tax.sequence, src_tax.id, tax.sequence, tax.id %(partition_order)s
                 """,
+                    partition_select=partition_select,
+                    groupby=grouped_by(SQL("tax.id, src_group_tax.id, src_tax.id")),
+                    partition_order=partition_order,
                     table_references=query.from_clause,
                     search_condition=query.where_clause,
                 )
             )
+            base_rows = self.env.cr.dictfetchall()
 
+            select_deductible = join_deductible = group_by_deductible = SQL()
+            _debug.logic(
+                "tax_deductibility_columns",
+                report=report,
+                column_group=read_options.get("owner_column_group"),
+                enabled=bool(
+                    read_options.get("account_journal_report_tax_deductibility_columns")
+                ),
+            )
+            if read_options.get("account_journal_report_tax_deductibility_columns"):
+                select_deductible = SQL(""", repartition.use_in_tax_closing AS trl_tax_closing
+                                           , SIGN(repartition.factor_percent) AS trl_factor""")
+                join_deductible = SQL("""JOIN account_tax_repartition_line repartition
+                                           ON account_move_line.tax_repartition_line_id = repartition.id""")
+                group_by_deductible = SQL(
+                    ", repartition.use_in_tax_closing, SIGN(repartition.factor_percent)"
+                )
+            self.env.cr.execute(
+                SQL(
+                    """
+                SELECT
+                    tax.id AS tax_id,
+                    tax.type_tax_use AS tax_type_tax_use,
+                    group_tax.id AS group_tax_id,
+                    group_tax.type_tax_use AS group_tax_type_tax_use,
+                    SUM(account_move_line.balance) AS tax_amount
+                    %(select_deductible)s
+                    %(partition_select)s
+                FROM %(table_references)s
+                JOIN account_tax_repartition_line tax_rep ON tax_rep.id = account_move_line.tax_repartition_line_id
+                JOIN account_tax tax ON tax.id = tax_rep.tax_id
+                %(join_deductible)s
+                LEFT JOIN account_tax group_tax ON group_tax.id = account_move_line.group_tax_id
+                WHERE %(search_condition)s
+                    AND (
+                        /* CABA */
+                        account_move_line__move_id.always_tax_exigible
+                        OR account_move_line__move_id.tax_cash_basis_rec_id IS NOT NULL
+                        OR tax.tax_exigibility != 'on_payment'
+                    )
+                    AND (
+                        (group_tax.id IS NULL AND tax.type_tax_use IN ('sale', 'purchase'))
+                        OR
+                        (group_tax.id IS NOT NULL AND group_tax.type_tax_use IN ('sale', 'purchase'))
+                    )
+                GROUP BY %(groupby)s
+                """,
+                    select_deductible=select_deductible,
+                    partition_select=partition_select,
+                    groupby=grouped_by(
+                        SQL("tax.id, group_tax.id %s", group_by_deductible)
+                    ),
+                    table_references=query.from_clause,
+                    join_deductible=join_deductible,
+                    search_condition=query.where_clause,
+                )
+            )
+            return base_rows, self.env.cr.dictfetchall()
+
+        partition = report._get_column_group_partition(options_by_column_group)
+        if partition:
+            read_options, partition_field, group_key_by_value, whole_keys = partition
+            base_rows, tax_rows = read_rows(
+                read_options, partition_field, with_whole=bool(whole_keys)
+            )
+            rows_by_group = {key: ([], []) for key in options_by_column_group}
+            for rows, slot in ((base_rows, 0), (tax_rows, 1)):
+                for row in rows:
+                    value = row.pop("partition_value")
+                    if row.pop("is_whole"):
+                        for key in whole_keys:
+                            rows_by_group[key][slot].append(row)
+                    elif (key := group_key_by_value.get(value)) is not None:
+                        rows_by_group[key][slot].append(row)
+        else:
+            rows_by_group = {
+                key: read_rows(group_options, None, with_whole=False)
+                for key, group_options in options_by_column_group.items()
+            }
+        _debug.logic(
+            "tax_amounts_read_partitioned",
+            report=report,
+            partition_field=partition and partition[1],
+            column_groups=len(options_by_column_group),
+        )
+
+        for column_group_key, column_group_options in options_by_column_group.items():
+            base_rows, tax_rows = rows_by_group[column_group_key]
             group_of_taxes_with_extra_base_amount = set()
-            for row in self.env.cr.dictfetchall():
+            for row in base_rows:
                 is_tax_line = bool(row["src_tax_id"])
                 if is_tax_line:
                     if (
@@ -395,7 +506,7 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
             _debug.perf.count(
                 "base_amount_rows_fetched",
                 column_group=column_group_key,
-                rows=self.env.cr.rowcount,
+                rows=len(base_rows),
             )
             _debug.pipeline(
                 "base_amounts_read",
@@ -404,67 +515,7 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                 tax_types=len(results),
                 groups_with_extra_base=len(group_of_taxes_with_extra_base_amount),
             )
-
-            select_deductible = join_deductible = group_by_deductible = SQL()
-            _debug.logic(
-                "tax_deductibility_columns",
-                report=report,
-                column_group=column_group_key,
-                enabled=bool(
-                    column_group_options.get(
-                        "account_journal_report_tax_deductibility_columns"
-                    )
-                ),
-            )
-            if column_group_options.get(
-                "account_journal_report_tax_deductibility_columns"
-            ):
-                select_deductible = SQL(""", repartition.use_in_tax_closing AS trl_tax_closing
-                                           , SIGN(repartition.factor_percent) AS trl_factor""")
-                join_deductible = SQL("""JOIN account_tax_repartition_line repartition
-                                           ON account_move_line.tax_repartition_line_id = repartition.id""")
-                group_by_deductible = SQL(
-                    ", repartition.use_in_tax_closing, SIGN(repartition.factor_percent)"
-                )
-
-            self.env.cr.execute(
-                SQL(
-                    """
-                SELECT
-                    tax.id AS tax_id,
-                    tax.type_tax_use AS tax_type_tax_use,
-                    group_tax.id AS group_tax_id,
-                    group_tax.type_tax_use AS group_tax_type_tax_use,
-                    SUM(account_move_line.balance) AS tax_amount
-                    %(select_deductible)s
-                FROM %(table_references)s
-                JOIN account_tax_repartition_line tax_rep ON tax_rep.id = account_move_line.tax_repartition_line_id
-                JOIN account_tax tax ON tax.id = tax_rep.tax_id
-                %(join_deductible)s
-                LEFT JOIN account_tax group_tax ON group_tax.id = account_move_line.group_tax_id
-                WHERE %(search_condition)s
-                    AND (
-                        /* CABA */
-                        account_move_line__move_id.always_tax_exigible
-                        OR account_move_line__move_id.tax_cash_basis_rec_id IS NOT NULL
-                        OR tax.tax_exigibility != 'on_payment'
-                    )
-                    AND (
-                        (group_tax.id IS NULL AND tax.type_tax_use IN ('sale', 'purchase'))
-                        OR
-                        (group_tax.id IS NOT NULL AND group_tax.type_tax_use IN ('sale', 'purchase'))
-                    )
-                GROUP BY tax.id, group_tax.id %(group_by_deductible)s
-                """,
-                    select_deductible=select_deductible,
-                    table_references=query.from_clause,
-                    join_deductible=join_deductible,
-                    search_condition=query.where_clause,
-                    group_by_deductible=group_by_deductible,
-                )
-            )
-
-            for row in self.env.cr.dictfetchall():
+            for row in tax_rows:
                 tax_id = row["tax_id"]
                 if row["group_tax_id"]:
                     tax_type_tax_use = row["group_tax_type_tax_use"]
@@ -509,7 +560,7 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
             _debug.perf.count(
                 "tax_amount_rows_fetched",
                 column_group=column_group_key,
-                rows=self.env.cr.rowcount,
+                rows=len(tax_rows),
             )
 
         if _debug.pipeline.enabled:

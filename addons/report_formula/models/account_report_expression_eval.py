@@ -1070,92 +1070,34 @@ class AccountReportExpressionEval(models.Model):
                 paginated=bool(offset or limit),
             )
 
+        folded_rows_by_formula = (
+            {}
+            if offset or limit
+            else self._fetch_folded_domain_formulas(
+                options, date_scope, current_groupby, non_batchable_domains_data
+            )
+        )
+
         rslt = {}
         for (batch_model, batch_aml_field), batch_domains in chain(
             batchable_domains_data.items(),
             (((None, None), [data]) for data in non_batchable_domains_data),
         ):
-            aml_domain = (
-                batch_domains[0][0] if not batch_model else None
-            )
-            query = self._get_report_query(options, date_scope, domain=aml_domain)
-            source_model = self._get_required_source_model()
-            source_alias = query.table
-
-            groupby_sql = (
-                source_model._field_to_sql(source_alias, current_groupby, query)
-                if current_groupby
-                else None
-            )
-            batch_groupby_sql = (
-                source_model._field_to_sql(source_alias, batch_aml_field, query)
-                if batch_aml_field
-                else None
-            )
-
-            select_count_field = source_model._field_to_sql(
-                source_alias,
-                next_groupby.split(",")[0] if next_groupby else "id",
-                query,
-            )
-
-            tail_query = self._get_engine_query_tail(offset, limit)
-            query = SQL(
-                """
-                SELECT
-                    COALESCE(SUM(%(balance_select)s), 0.0) AS sum,
-                    %(count_rows_select)s AS count_rows
-                    %(select_groupby_sql)s
-                    %(select_batch_groupby_sql)s
-                FROM %(table_references)s
-                %(currency_table_join)s
-                WHERE %(search_condition)s
-                %(groupby_sql)s
-                %(order_by_sql)s
-                %(tail_query)s
-                """,
-                count_rows_select=SQL(
-                    "COUNT(DISTINCT %(field)s) + (CASE WHEN COUNT(*) FILTER (WHERE %(field)s IS NULL) > 0 THEN 1 ELSE 0 END)",
-                    field=select_count_field,
-                ),
-                select_groupby_sql=SQL(", %s AS grouping_key", groupby_sql)
-                if groupby_sql
-                else SQL(),
-                select_batch_groupby_sql=SQL(
-                    ", %s AS batch_grouping_key", batch_groupby_sql
+            if not batch_model and batch_domains[0][1] in folded_rows_by_formula:
+                counts_rows = False
+                all_query_res = folded_rows_by_formula[batch_domains[0][1]]
+            else:
+                counts_rows, all_query_res = self._fetch_domain_batch_rows(
+                    options,
+                    date_scope,
+                    current_groupby,
+                    next_groupby,
+                    offset,
+                    limit,
+                    batch_model,
+                    batch_aml_field,
+                    batch_domains,
                 )
-                if batch_groupby_sql
-                else SQL(),
-                table_references=query.from_clause,
-                balance_select=self._currency_table_apply_rate(
-                    SQL.identifier(source_alias, self._get_source_measure_field())
-                ),
-                currency_table_join=self._currency_table_aml_join(options),
-                search_condition=query.where_clause,
-                groupby_sql=SQL(
-                    "GROUP BY %s",
-                    SQL(",").join(
-                        groupby_term
-                        for groupby_term in (groupby_sql, batch_groupby_sql)
-                        if groupby_term
-                    ),
-                )
-                if groupby_sql or batch_groupby_sql
-                else SQL(),
-                order_by_sql=SQL(" ORDER BY %s", groupby_sql) if groupby_sql else SQL(),
-                tail_query=tail_query,
-            )
-
-            self.env.cr.execute(query)
-            all_query_res = self.env.cr.dictfetchall()
-            _debug.perf.count(
-                "domain_rows_fetched",
-                report=self,
-                batch_model=batch_model,
-                batch_field=batch_aml_field,
-                domains=len(batch_domains),
-                rows=len(all_query_res),
-            )
 
             results_by_batch_grouping_key = {}
             if batch_model:
@@ -1193,9 +1135,10 @@ class AccountReportExpressionEval(models.Model):
 
                         res_sum = query_res["sum"]
                         totals["sum"] += res_sum
-                        totals["count_rows"] += query_res["count_rows"]
+                        if counts_rows:
+                            totals["count_rows"] += query_res["count_rows"]
                         totals["has_sublines"] = totals["has_sublines"] or bool(
-                            query_res["count_rows"]
+                            query_res["row_count"]
                         )
 
                         total_sum += res_sum
@@ -1265,6 +1208,348 @@ class AccountReportExpressionEval(models.Model):
             else None,
         )
         return rslt
+
+    def _fetch_domain_batch_rows(
+        self,
+        options,
+        date_scope,
+        current_groupby,
+        next_groupby,
+        offset,
+        limit,
+        batch_model,
+        batch_aml_field,
+        batch_domains,
+    ):
+        aml_domain = batch_domains[0][0] if not batch_model else None
+        query = self._get_report_query(options, date_scope, domain=aml_domain)
+        source_model = self._get_required_source_model()
+        source_alias = query.table
+
+        groupby_sql = (
+            source_model._field_to_sql(source_alias, current_groupby, query)
+            if current_groupby
+            else None
+        )
+        batch_groupby_sql = (
+            source_model._field_to_sql(source_alias, batch_aml_field, query)
+            if batch_aml_field
+            else None
+        )
+
+        counts_rows = any(
+            expression.subformula == "count_rows"
+            for _domain, _formula, expressions in batch_domains
+            for expression in expressions
+        )
+        if counts_rows:
+            count_field = source_model._field_to_sql(
+                source_alias,
+                next_groupby.split(",")[0] if next_groupby else "id",
+                query,
+            )
+            count_rows_select = SQL(
+                ", COUNT(DISTINCT %(field)s) + (CASE WHEN COUNT(*) FILTER (WHERE %(field)s IS NULL) > 0 THEN 1 ELSE 0 END) AS count_rows",
+                field=count_field,
+            )
+        else:
+            count_rows_select = SQL()
+
+        tail_query = self._get_engine_query_tail(offset, limit)
+        query = SQL(
+            """
+            SELECT
+                COALESCE(SUM(%(balance_select)s), 0.0) AS sum,
+                COUNT(*) AS row_count
+                %(count_rows_select)s
+                %(select_groupby_sql)s
+                %(select_batch_groupby_sql)s
+            FROM %(table_references)s
+            %(currency_table_join)s
+            WHERE %(search_condition)s
+            %(groupby_sql)s
+            %(order_by_sql)s
+            %(tail_query)s
+            """,
+            count_rows_select=count_rows_select,
+            select_groupby_sql=SQL(", %s AS grouping_key", groupby_sql)
+            if groupby_sql
+            else SQL(),
+            select_batch_groupby_sql=SQL(
+                ", %s AS batch_grouping_key", batch_groupby_sql
+            )
+            if batch_groupby_sql
+            else SQL(),
+            table_references=query.from_clause,
+            balance_select=self._currency_table_apply_rate(
+                SQL.identifier(source_alias, self._get_source_measure_field())
+            ),
+            currency_table_join=self._currency_table_aml_join(options),
+            search_condition=query.where_clause,
+            groupby_sql=SQL(
+                "GROUP BY %s",
+                SQL(",").join(
+                    groupby_term
+                    for groupby_term in (groupby_sql, batch_groupby_sql)
+                    if groupby_term
+                ),
+            )
+            if groupby_sql or batch_groupby_sql
+            else SQL(),
+            order_by_sql=SQL(" ORDER BY %s", groupby_sql) if groupby_sql else SQL(),
+            tail_query=tail_query,
+        )
+
+        self.env.cr.execute(query)
+        all_query_res = self.env.cr.dictfetchall()
+        _debug.perf.count(
+            "domain_rows_fetched",
+            report=self,
+            batch_model=batch_model,
+            batch_field=batch_aml_field,
+            domains=len(batch_domains),
+            rows=len(all_query_res),
+        )
+        return counts_rows, all_query_res
+
+    def _is_row_local_domain(self, model, domain, nested=False):
+        if (
+            not nested
+            and not domain.map_conditions(lambda _condition: Domain.TRUE).is_true()
+        ):
+            return False
+        for condition in domain.iter_conditions():
+            comodel = model
+            for field_name in condition.field_expr.split("."):
+                field = comodel._fields.get(field_name)
+                if field is None or field.type == "one2many":
+                    return False
+                if field.type in ("many2one", "many2many"):
+                    comodel = comodel.env[field.comodel_name]
+            if isinstance(condition.value, Domain) and not self._is_row_local_domain(
+                comodel, condition.value, nested=True
+            ):
+                return False
+        return True
+
+    def _fetch_folded_domain_formulas(
+        self, options, date_scope, current_groupby, domains_data
+    ):
+        source_model = self._with_report_query_context(
+            options
+        )._get_required_source_model()
+        formulas = []
+        foldable = []
+        for domain, formula, expressions in domains_data:
+            if any(expression.subformula == "count_rows" for expression in expressions):
+                continue
+            index = len(formulas)
+            formulas.append((domain, formula))
+            condition = self._adapt_report_query_domain(
+                options, Domain(domain)
+            ).optimize_full(source_model)
+            if not source_model._active_name and self._is_row_local_domain(
+                source_model, condition
+            ):
+                foldable.append((index, condition))
+        if len(formulas) < 2:
+            return {}
+
+        branches = {
+            index: self._domain_formula_scan_sql(
+                options, date_scope, current_groupby, index, domain
+            )
+            for index, (domain, _formula) in enumerate(formulas)
+        }
+        folded_indexes = []
+        if len(foldable) >= 2 and (
+            fold := self._folded_domain_scan_sql(
+                options, date_scope, current_groupby, foldable
+            )
+        ):
+            fold_cost, *branch_costs = self._get_statement_costs(
+                [fold, *(branches[index] for index, _condition in foldable)]
+            )
+            folded = [
+                (index, cost)
+                for (index, _condition), cost in zip(
+                    foldable, branch_costs, strict=True
+                )
+                if cost * len(foldable) >= fold_cost
+            ]
+            if len(folded) >= 2 and sum(cost for _index, cost in folded) > fold_cost:
+                folded_indexes = [index for index, _cost in folded]
+        parts = [branches[index] for index in branches if index not in folded_indexes]
+        if folded_indexes:
+            parts.insert(
+                0,
+                fold
+                if len(folded_indexes) == len(foldable)
+                else self._folded_domain_scan_sql(
+                    options,
+                    date_scope,
+                    current_groupby,
+                    [
+                        (index, condition)
+                        for index, condition in foldable
+                        if index in folded_indexes
+                    ],
+                ),
+            )
+        rows = self.env.execute_query_dict(
+            SQL(
+                "SELECT * FROM (%s) AS scans ORDER BY formula_index%s",
+                SQL(" UNION ALL ").join(SQL("(%s)", part) for part in parts),
+                SQL(", grouping_key") if current_groupby else SQL(),
+            )
+        )
+        _debug.perf.count(
+            "domain_formulas_folded",
+            report=self,
+            formulas=len(formulas),
+            shared_scan=len(folded_indexes),
+            rows=len(rows),
+        )
+        rows_by_formula = {formula: [] for _domain, formula in formulas}
+        for row in rows:
+            if current_groupby and not row["row_count"]:
+                continue
+            rows_by_formula[formulas[row["formula_index"]][1]].append(
+                {
+                    "sum": row["sum"],
+                    "row_count": row["row_count"],
+                    "grouping_key": row.get("grouping_key"),
+                }
+            )
+        return rows_by_formula
+
+    def _domain_formula_scan_sql(
+        self, options, date_scope, current_groupby, index, domain
+    ):
+        query = self._get_report_query(options, date_scope, domain=domain)
+        source_model = self._get_required_source_model()
+        groupby_sql = (
+            source_model._field_to_sql(query.table, current_groupby, query)
+            if current_groupby
+            else None
+        )
+        return SQL(
+            """
+            SELECT %(index)s AS formula_index,
+                   COALESCE(SUM(%(balance)s), 0.0) AS sum,
+                   COUNT(*) AS row_count
+                   %(select_groupby)s
+            FROM %(table_references)s
+            %(currency_table_join)s
+            WHERE %(search_condition)s
+            %(groupby)s
+            """,
+            index=SQL(str(int(index))),
+            balance=self._currency_table_apply_rate(
+                SQL.identifier(query.table, self._get_source_measure_field())
+            ),
+            select_groupby=SQL(", %s AS grouping_key", groupby_sql)
+            if groupby_sql
+            else SQL(),
+            table_references=query.from_clause,
+            currency_table_join=self._currency_table_aml_join(options),
+            search_condition=query.where_clause,
+            groupby=SQL("GROUP BY %s", groupby_sql) if groupby_sql else SQL(),
+        )
+
+    def _folded_domain_scan_sql(self, options, date_scope, current_groupby, foldable):
+        source_model = self._with_report_query_context(
+            options
+        )._get_required_source_model()
+        query = self._get_report_query(options, date_scope)
+        source_alias = query.table
+        base_joins = set(query._joins)
+        with query.per_row_conditions():
+            conditions = [
+                (
+                    index,
+                    SQL("TRUE")
+                    if condition.is_true()
+                    else SQL("FALSE")
+                    if condition.is_false()
+                    else condition._to_sql(source_model, source_alias, query),
+                )
+                for index, condition in foldable
+            ]
+        if any(
+            not kind.code.startswith("LEFT")
+            for alias, (kind, _table, _condition) in query._joins.items()
+            if alias not in base_joins
+        ):
+            return None
+        groupby_sql = (
+            source_model._field_to_sql(source_alias, current_groupby, query)
+            if current_groupby
+            else None
+        )
+        balance = self._currency_table_apply_rate(
+            SQL.identifier(source_alias, self._get_source_measure_field())
+        )
+        return SQL(
+            """
+            SELECT unfolded.formula_index, unfolded.sum, unfolded.row_count
+                   %(select_grouping_key)s
+            FROM (
+                SELECT %(aggregates)s %(select_groupby)s
+                FROM %(table_references)s
+                %(currency_table_join)s
+                WHERE %(search_condition)s
+                %(groupby)s
+            ) AS folded
+            CROSS JOIN LATERAL (VALUES %(values)s) AS unfolded(formula_index, sum, row_count)
+            """,
+            select_grouping_key=SQL(", folded.grouping_key") if groupby_sql else SQL(),
+            aggregates=SQL(", ").join(
+                SQL(
+                    "COALESCE(SUM(%(balance)s) FILTER (WHERE %(condition)s), 0.0) AS %(sum)s,"
+                    " COUNT(*) FILTER (WHERE %(condition)s) AS %(row_count)s",
+                    balance=balance,
+                    condition=condition,
+                    sum=SQL.identifier(f"sum_{index}"),
+                    row_count=SQL.identifier(f"row_count_{index}"),
+                )
+                for index, condition in conditions
+            ),
+            select_groupby=SQL(", %s AS grouping_key", groupby_sql)
+            if groupby_sql
+            else SQL(),
+            table_references=query.from_clause,
+            currency_table_join=self._currency_table_aml_join(options),
+            search_condition=query.where_clause,
+            groupby=SQL("GROUP BY %s", groupby_sql) if groupby_sql else SQL(),
+            values=SQL(", ").join(
+                SQL(
+                    "(%s, folded.%s, folded.%s)",
+                    SQL(str(int(index))),
+                    SQL.identifier(f"sum_{index}"),
+                    SQL.identifier(f"row_count_{index}"),
+                )
+                for index, _condition in conditions
+            ),
+        )
+
+    def _get_statement_costs(self, statements):
+        [[plan]] = self.env.execute_query(
+            SQL(
+                "EXPLAIN (FORMAT JSON) %s",
+                SQL(" UNION ALL ").join(
+                    SQL("(%s)", statement) for statement in statements
+                ),
+            )
+        )
+        append = plan[0]["Plan"]
+        while append["Node Type"] != "Append":
+            [append] = append["Plans"]
+        return [
+            child["Total Cost"]
+            for child in append["Plans"]
+            if child.get("Parent Relationship") == "Member"
+        ]
 
     @_debug.perf.timed
     def _get_formula_batch_with_engine_external(
@@ -1468,6 +1753,9 @@ class AccountReportExpressionEval(models.Model):
 
     def _currency_table_external_value_join(self, options) -> SQL:
         return SQL()
+
+    def _with_report_query_context(self, options):
+        return self
 
     @_debug.perf.timed
     def _get_report_query(self, options, date_scope, domain=None) -> Query:

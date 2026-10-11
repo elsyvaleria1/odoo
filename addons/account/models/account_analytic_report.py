@@ -249,11 +249,14 @@ class AccountReport(models.AbstractModel):
             ),
         )
 
-    @_debug.perf.timed
-    def _get_report_query(self, options, date_scope, domain=None) -> Query:
-        context_self = self.with_context(
+    def _with_report_query_context(self, options):
+        return self.with_context(
             account_report_analytic_groupby=options.get("analytic_groupby_option")
         )
+
+    @_debug.perf.timed
+    def _get_report_query(self, options, date_scope, domain=None) -> Query:
+        context_self = self._with_report_query_context(options)
 
         query = super(AccountReport, context_self)._get_report_query(
             options, date_scope, domain

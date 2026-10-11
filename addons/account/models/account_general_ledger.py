@@ -1,6 +1,7 @@
 import csv
 import io
 from collections import defaultdict
+from functools import partial
 from textwrap import shorten
 
 from odoo import fields, models
@@ -183,6 +184,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         offset=0,
         limit=None,
         warnings=None,
+        limit_per_account=None,
     ):
         def get_grouping_key(row, groupby):
             if groupby == "id_with_accumulated_balance":
@@ -193,7 +195,11 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             return row[groupby] if groupby else None
 
         query = self._prepare_query(
-            options, current_groupby, offset=offset, limit=limit
+            options,
+            current_groupby,
+            offset=offset,
+            limit=limit,
+            limit_per_account=limit_per_account,
         )
 
         rows_by_key = defaultdict(
@@ -275,6 +281,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         order_by_account: bool = False,
         offset: int = 0,
         limit: int | None = None,
+        limit_per_account: int | None = None,
     ) -> SQL:
         report = self.env["report.formula"].browse(options["report_id"])
         fiscalyear_start_by_company = report._get_fiscalyear_start_by_company(options)
@@ -387,7 +394,10 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 report_query._any_value_orderby = False
         else:
             order_clause = []
-        if current_groupby == "id_with_accumulated_balance":
+        ranked_per_account = bool(
+            limit_per_account and current_groupby == "id_with_accumulated_balance"
+        )
+        if current_groupby == "id_with_accumulated_balance" and not ranked_per_account:
             order_clause.append(SQL("2 NULLS FIRST, move_name, 1 NULLS FIRST"))
         _debug.logic(
             "gl_query_built",
@@ -402,9 +412,10 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             fiscalyear_start_by_company=fiscalyear_start_by_company,
             offset=offset,
             limit=limit,
+            limit_per_account=limit_per_account,
         )
 
-        return SQL(
+        query = SQL(
             """
             SELECT
                 %(additional_select)s
@@ -438,6 +449,25 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             else SQL(),
             offset_clause=SQL("OFFSET %s", offset) if offset else SQL(),
             limit=limit,
+        )
+        if not ranked_per_account:
+            return query
+        return SQL(
+            """
+            SELECT * FROM (
+                SELECT
+                    grouped.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY grouped.account_id
+                        ORDER BY grouped.date NULLS FIRST, grouped.move_name, grouped.id NULLS FIRST
+                    ) AS account_row_number
+                FROM (%(query)s) grouped
+            ) ranked
+            WHERE ranked.account_row_number <= %(limit_per_account)s
+            ORDER BY ranked.account_id, ranked.account_row_number
+            """,
+            query=query,
+            limit_per_account=limit_per_account,
         )
 
     @_debug.perf.timed
@@ -634,11 +664,17 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
     def _custom_unfold_all_batch_data_generator(
         self, report, options, lines_to_expand_by_function
     ):
+        page_size = report._get_groupby_page_size(
+            options, "id_with_accumulated_balance"
+        )
         unfold_all_batch_data = report._get_custom_engine_unfold_all_batch_data(
             options,
             lines_to_expand_by_function,
             "_report_custom_engine_general_ledger",
-            self._get_unfold_all_engine_rows,
+            partial(
+                self._get_unfold_all_engine_rows,
+                limit_per_account=page_size + 1 if page_size else None,
+            ),
         )
         aml_ids = {
             json_loads(grouping_key)[1]
@@ -653,7 +689,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         return unfold_all_batch_data
 
     def _get_unfold_all_engine_rows(
-        self, report_line, expressions, options, date_scope
+        self, report_line, expressions, options, date_scope, limit_per_account=None
     ):
         yield (
             f"[{report_line.id}]=>account_id",
@@ -667,7 +703,12 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         )
         aml_rows_by_account = defaultdict(list)
         for grouping_key, values in self._report_custom_engine_general_ledger(
-            expressions, options, date_scope, "id_with_accumulated_balance", None
+            expressions,
+            options,
+            date_scope,
+            "id_with_accumulated_balance",
+            None,
+            limit_per_account=limit_per_account,
         ):
             aml_rows_by_account[values["account_id"]].append((grouping_key, values))
         for account_id, rows in aml_rows_by_account.items():

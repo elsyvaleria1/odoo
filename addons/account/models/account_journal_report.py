@@ -1,5 +1,6 @@
 import datetime
 import io
+from collections import defaultdict
 from itertools import chain
 
 from odoo import models
@@ -64,6 +65,7 @@ class AccountJournalReportHandler(models.AbstractModel):
         offset=0,
         limit=None,
         warnings=None,
+        within_groupby=None,
     ) -> dict | list:
 
         def prepare_result_dict(current_groupby, query_line):
@@ -115,6 +117,9 @@ class AccountJournalReportHandler(models.AbstractModel):
                 "balance": None,
             }
 
+        groupby_fields = [current_groupby]
+        if within_groupby:
+            groupby_fields.insert(0, within_groupby)
         query = report._get_report_query(options, "strict_range")
         account_alias = query.join(
             lhs_alias="account_move_line",
@@ -127,10 +132,18 @@ class AccountJournalReportHandler(models.AbstractModel):
             account_alias, "code", query
         )
 
-        groupby_clause = self.env["account.move.line"]._field_to_sql(
-            "account_move_line", current_groupby, query
-        )
-        select_from_groupby = SQL("%s AS grouping_key", groupby_clause)
+        groupby_terms = [
+            self.env["account.move.line"]._field_to_sql(
+                "account_move_line", groupby_field, query
+            )
+            for groupby_field in groupby_fields
+        ]
+        groupby_clause = SQL(", ").join(groupby_terms)
+        select_from_groupby = SQL("%s AS grouping_key", groupby_terms[-1])
+        if within_groupby:
+            select_from_groupby = SQL(
+                "%s, %s AS within_key", select_from_groupby, groupby_terms[0]
+            )
 
         query = SQL(
             """
@@ -175,10 +188,61 @@ class AccountJournalReportHandler(models.AbstractModel):
             limit=limit,
         )
         self.env.cr.execute(query)
+        query_lines = self.env.cr.dictfetchall()
+        if within_groupby:
+            rows_by_within_key = defaultdict(list)
+            for query_line in query_lines:
+                rows_by_within_key[query_line["within_key"]].append(
+                    prepare_result_dict(current_groupby, query_line)
+                )
+            return rows_by_within_key
         return [
             prepare_result_dict(current_groupby, query_line)
-            for query_line in self.env.cr.dictfetchall()
+            for query_line in query_lines
         ]
+
+    @_debug.perf.timed
+    def _custom_unfold_all_batch_data_generator(
+        self, report, options, lines_to_expand_by_function
+    ):
+        return report._get_custom_engine_unfold_all_batch_data(
+            options,
+            lines_to_expand_by_function,
+            "_report_custom_engine_journal_report",
+            self._get_unfold_all_engine_rows,
+            exclusive_engine=True,
+        )
+
+    def _get_unfold_all_engine_rows(
+        self, report_line, expressions, options, date_scope
+    ):
+        groupbys = report_line._get_groupby(options).replace(" ", "").split(",")
+        if len(groupbys) != 2:
+            return
+        outer_groupby, inner_groupby = groupbys
+        yield (
+            f"[{report_line.id}]=>{outer_groupby}",
+            self._report_custom_engine_journal_report(
+                expressions, options, date_scope, outer_groupby, inner_groupby
+            ),
+        )
+        page_size = (
+            self.env["report.formula"]
+            .browse(options["report_id"])
+            ._get_groupby_page_size(options, inner_groupby)
+        )
+        for outer_key, rows in self._report_custom_engine_journal_report(
+            expressions,
+            options,
+            date_scope,
+            inner_groupby,
+            None,
+            within_groupby=outer_groupby,
+        ).items():
+            yield (
+                f"[{report_line.id}]{outer_groupby}:{outer_key}=>{inner_groupby}",
+                rows[: page_size + 1] if page_size else rows,
+            )
 
     @_debug.perf.timed
     def _custom_line_postprocessor(self, report, options, lines):

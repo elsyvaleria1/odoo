@@ -1,4 +1,5 @@
 import datetime
+import json
 from itertools import chain
 
 from dateutil.relativedelta import relativedelta
@@ -8,6 +9,8 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
 
 _debug = DebugLog(__name__)
+
+_AGED_EXPANSION_STASH = "account.aged.expansion_stash"
 
 
 class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
@@ -88,6 +91,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         }
 
     def _custom_line_postprocessor(self, report, options, lines):
+        self.env.cr.cache.pop(_AGED_EXPANSION_STASH, None)
         partner_lines_map = {}
 
         for line in lines:
@@ -132,6 +136,9 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             next_groupby,
             offset=offset,
             limit=limit,
+            expansion_groupby=self._get_aged_expansion_groupby(
+                expressions, options, current_groupby
+            ),
         )
 
     @_debug.perf.timed
@@ -153,6 +160,37 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             next_groupby,
             offset=offset,
             limit=limit,
+            expansion_groupby=self._get_aged_expansion_groupby(
+                expressions, options, current_groupby
+            ),
+        )
+
+    def _get_aged_expansion_groupby(self, expressions, options, current_groupby):
+        line = expressions.report_line_id
+        if current_groupby or len(line) != 1:
+            return None
+        groupby = (line._get_groupby(options) or "").replace(" ", "")
+        if options.get("unfold_all"):
+            if groupby and groupby == (line.groupby or "").replace(" ", ""):
+                return "id"
+            return None
+        expansion_groupby = groupby.split(",")[0]
+        report = self.env["report.formula"].browse(options["report_id"])
+        line_id = report._get_generic_line_id("report.formula.line", line.id)
+        if (
+            not expansion_groupby
+            or expansion_groupby == "id"
+            or (line.foldable and line_id not in options.get("unfolded_lines", ()))
+        ):
+            return None
+        return expansion_groupby
+
+    def _aged_expansion_stash_key(self, options, internal_type, groupby):
+        return (
+            "account.aged.expansion",
+            internal_type,
+            groupby,
+            json.dumps(options, sort_keys=True, default=str),
         )
 
     @_debug.perf.timed
@@ -164,12 +202,26 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         next_groupby,
         offset=0,
         limit=None,
+        expansion_groupby=None,
     ):
         report = self.env["report.formula"].browse(options["report_id"])
         report._check_groupby_fields(
             (next_groupby.split(",") if next_groupby else [])
             + ([current_groupby] if current_groupby else [])
         )
+        if current_groupby and not offset and not limit:
+            stashed = self.env.cr.cache.get(_AGED_EXPANSION_STASH, {}).pop(
+                self._aged_expansion_stash_key(options, internal_type, current_groupby),
+                None,
+            )
+            if stashed is not None:
+                _debug.logic(
+                    "aged_expansion_from_total_scan",
+                    report=report,
+                    groupby=current_groupby,
+                    groups=len(stashed),
+                )
+                return stashed
 
         def minus_days(date_obj, days):
             return fields.Date.to_string(date_obj - relativedelta(days=days))
@@ -200,7 +252,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             next_groupby=next_groupby,
         )
 
-        def prepare_result_dict(report, query_res_lines):
+        def prepare_result_dict(report, query_res_lines, groupby):
             rslt = {f"period{i}": 0 for i in range(len(periods))}
 
             for query_res in query_res_lines:
@@ -208,7 +260,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                     period_key = f"period{i}"
                     rslt[period_key] += query_res[period_key]
 
-            if current_groupby == "id":
+            if groupby == "id":
                 query_res = query_res_lines[
                     0
                 ]
@@ -290,9 +342,27 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             )
             select_from_groupby = SQL("%s AS grouping_key,", groupby_field_sql)
             groupby_clause = SQL("%s, %s", groupby_field_sql, always_present_groupby)
+            orderby_clause = groupby_clause
+        elif expansion_groupby:
+            groupby_field_sql = self.env["account.move.line"]._field_to_sql(
+                "account_move_line", expansion_groupby, query
+            )
+            select_from_groupby = SQL(
+                "%s AS grouping_key, GROUPING(%s) = 1 AS is_total,",
+                groupby_field_sql,
+                groupby_field_sql,
+            )
+            groupby_clause = SQL(
+                "GROUPING SETS ((%s, %s), (%s))",
+                groupby_field_sql,
+                always_present_groupby,
+                always_present_groupby,
+            )
+            orderby_clause = SQL("is_total, grouping_key, %s", always_present_groupby)
         else:
             select_from_groupby = SQL()
             groupby_clause = always_present_groupby
+            orderby_clause = groupby_clause
         multiplicator = -1 if internal_type == "liability_payable" else 1
         select_period_query = SQL(",").join(
             SQL(
@@ -377,7 +447,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                 ROUND(SUM(%(having_debit)s), %(currency_precision)s) != 0
                 OR ROUND(SUM(%(having_credit)s), %(currency_precision)s) != 0
 
-            ORDER BY %(groupby_clause)s
+            ORDER BY %(orderby_clause)s
 
             %(tail_query)s
             """,
@@ -392,6 +462,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             date_to=date_to,
             search_condition=query.where_clause,
             groupby_clause=groupby_clause,
+            orderby_clause=orderby_clause,
             having_debit=report._currency_table_apply_rate(
                 SQL(
                     "CASE WHEN account_move_line.balance > 0  THEN account_move_line.balance else 0 END - COALESCE(part_debit.amount, 0)"
@@ -419,28 +490,43 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             aggregated=not current_groupby,
         )
 
-        if not current_groupby:
-            return prepare_result_dict(report, query_res_lines)
-        else:
-            rslt = []
-
+        def group_results(query_res_lines, groupby):
             all_res_per_grouping_key = {}
             for query_res in query_res_lines:
                 grouping_key = query_res["grouping_key"]
                 all_res_per_grouping_key.setdefault(grouping_key, []).append(query_res)
+            return [
+                (grouping_key, prepare_result_dict(report, grouped_lines, groupby))
+                for grouping_key, grouped_lines in all_res_per_grouping_key.items()
+            ]
 
-            for grouping_key, query_res_lines in all_res_per_grouping_key.items():
-                rslt.append(
-                    (grouping_key, prepare_result_dict(report, query_res_lines))
-                )
+        if current_groupby:
+            rslt = group_results(query_res_lines, current_groupby)
             _debug.pipeline(
                 "aged_groups_built",
                 report=report,
                 groupby=current_groupby,
                 groups=len(rslt),
             )
-
             return rslt
+
+        if expansion_groupby:
+            self.env.cr.cache.setdefault(_AGED_EXPANSION_STASH, {})[
+                self._aged_expansion_stash_key(
+                    options, internal_type, expansion_groupby
+                )
+            ] = group_results(
+                [
+                    query_res
+                    for query_res in query_res_lines
+                    if not query_res["is_total"]
+                ],
+                expansion_groupby,
+            )
+            query_res_lines = [
+                query_res for query_res in query_res_lines if query_res["is_total"]
+            ]
+        return prepare_result_dict(report, query_res_lines, None)
 
     @_debug.perf.timed
     def open_journal_items(self, options, params):

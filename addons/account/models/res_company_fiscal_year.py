@@ -1,9 +1,8 @@
 from datetime import timedelta
 
-from odoo import models
+from odoo import fields, models
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import date_utils
-from odoo.tools.misc import DEFAULT_SERVER_DATE_FORMAT
 
 _debug = DebugLog(__name__)
 
@@ -11,23 +10,47 @@ _debug = DebugLog(__name__)
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    @_debug.perf.timed
     def compute_fiscalyear_dates(self, current_date) -> dict:
         self.check_singleton()
-        date_str = current_date.strftime(DEFAULT_SERVER_DATE_FORMAT)
+        return self._compute_fiscalyear_dates_by_company(current_date)[self.id]
 
-        fiscalyear = self.env["account.fiscal.year"].search(
-            [
-                ("company_id", "=", self.id),
-                ("date_from", "<=", date_str),
-                ("date_to", ">=", date_str),
-            ],
-            limit=1,
+    @_debug.perf.timed
+    def _compute_fiscalyear_dates_by_company(self, current_date) -> dict[int, dict]:
+        window = timedelta(days=366)
+        day = fields.Date.to_date(current_date)
+        fiscal_years_by_company = (
+            self.env["account.fiscal.year"]
+            .search_fetch(
+                [
+                    ("company_id", "in", self.ids),
+                    ("date_from", "<=", day + window),
+                    ("date_to", ">=", day - window),
+                ],
+                ["company_id", "date_from", "date_to"],
+            )
+            .grouped("company_id")
         )
+        return {
+            company.id: company._compute_fiscalyear_dates(
+                current_date,
+                fiscal_years_by_company.get(company, self.env["account.fiscal.year"]),
+            )
+            for company in self
+        }
+
+    def _compute_fiscalyear_dates(self, current_date, fiscal_years) -> dict:
+        def fiscal_year_at(moment):
+            day = fields.Date.to_date(moment)
+            return next(
+                (fy for fy in fiscal_years if fy.date_from <= day <= fy.date_to),
+                fiscal_years.browse(),
+            )
+
+        fiscalyear = fiscal_year_at(current_date)
         _debug.logic(
             "fiscalyear_record_lookup",
             company=self,
-            date=date_str,
+            date=current_date,
             fiscalyear=fiscalyear,
             found=bool(fiscalyear),
         )
@@ -44,29 +67,10 @@ class ResCompany(models.Model):
             month=int(self.account_config_id.fiscalyear_last_month),
         )
 
-        date_from_str = date_from.strftime(DEFAULT_SERVER_DATE_FORMAT)
-        date_to_str = date_to.strftime(DEFAULT_SERVER_DATE_FORMAT)
-
-        fiscalyear_from = self.env["account.fiscal.year"].search(
-            [
-                ("company_id", "=", self.id),
-                ("date_from", "<=", date_from_str),
-                ("date_to", ">=", date_from_str),
-            ],
-            limit=1,
-        )
-        if fiscalyear_from:
+        if fiscalyear_from := fiscal_year_at(date_from):
             date_from = fiscalyear_from.date_to + timedelta(days=1)
 
-        fiscalyear_to = self.env["account.fiscal.year"].search(
-            [
-                ("company_id", "=", self.id),
-                ("date_from", "<=", date_to_str),
-                ("date_to", ">=", date_to_str),
-            ],
-            limit=1,
-        )
-        if fiscalyear_to:
+        if fiscalyear_to := fiscal_year_at(date_to):
             date_to = fiscalyear_to.date_from - timedelta(days=1)
 
         _debug.logic(

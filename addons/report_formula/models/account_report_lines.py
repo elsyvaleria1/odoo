@@ -24,6 +24,26 @@ from .account_report import (
 _debug = DebugLog(__name__)
 
 
+class _CellFormat:
+    __slots__ = ("company_currency", "currencies", "env", "lang")
+
+    def __init__(self, env):
+        self.env = env
+        self.lang = get_lang(env)
+        self.company_currency = env.company.currency_id
+        self.currencies = {}
+
+    def currency(self, format_params):
+        if "currency_id" not in format_params:
+            return self.company_currency
+        currency_id = format_params["currency_id"]
+        if (currency := self.currencies.get(currency_id)) is None:
+            currency = self.currencies[currency_id] = self.env["res.currency"].browse(
+                currency_id
+            )
+        return currency
+
+
 class AccountReportLines(models.Model):
     _inherit = "report.formula"
 
@@ -372,6 +392,7 @@ class AccountReportLines(models.Model):
             raw_file_values=options.get("export_mode") == "file",
             horizontal_group_total=bool(options.get("show_horizontal_group_total")),
         )
+        cell_format = self._get_cell_format()
         for line_dict in line_dict_list:
             for column_dict in line_dict["columns"]:
                 if "name" in column_dict and not force_format:
@@ -384,11 +405,12 @@ class AccountReportLines(models.Model):
                 elif options.get("export_mode") == "file":
                     rslt = column_dict.get("no_format", "")
                 else:
-                    rslt = self.format_value(
+                    rslt = self._format_value(
                         options,
                         column_dict.get("no_format"),
                         column_dict.get("figure_type"),
-                        format_params=column_dict.get("format_params"),
+                        format_params=column_dict.get("format_params") or {},
+                        cell_format=cell_format,
                     )
 
                 column_dict["name"] = rslt
@@ -888,6 +910,11 @@ class AccountReportLines(models.Model):
 
         return self._add_totals_below_sections(rslt, options)
 
+    def _get_groupby_page_size(self, options, groupby):
+        if "," in groupby or options["export_mode"] is not None:
+            return None
+        return self.load_more_limit or None
+
     @_debug.perf.timed
     def _report_expand_unfoldable_line_with_groupby(
         self,
@@ -914,10 +941,8 @@ class AccountReportLines(models.Model):
 
         line = self.env["report.formula.line"].browse(report_line_id)
 
-        if "," not in groupby and options["export_mode"] is None:
-            limit_to_load = self.load_more_limit or None
-        else:
-            limit_to_load = None
+        limit_to_load = self._get_groupby_page_size(options, groupby)
+        if not limit_to_load:
             offset = 0
 
         _debug.logic(
@@ -1645,8 +1670,13 @@ class AccountReportLines(models.Model):
             format_params=format_params,
         )
 
+    def _get_cell_format(self):
+        return _CellFormat(self.env)
+
     @_debug.perf.timed
-    def _format_value(self, options, value, figure_type, format_params=None):
+    def _format_value(
+        self, options, value, figure_type, format_params=None, cell_format=None
+    ):
         if value is None:
             return ""
 
@@ -1655,6 +1685,13 @@ class AccountReportLines(models.Model):
 
         if isinstance(value, str) or figure_type == "string":
             return str(value)
+
+        if figure_type == "boolean":
+            return self.env._("Yes") if bool(value) else self.env._("No")
+
+        cell_format = cell_format or self._get_cell_format()
+        if figure_type in ("date", "datetime"):
+            return format_date(self.env, value, lang=cell_format.lang)
 
         if format_params is None:
             format_params = {}
@@ -1665,11 +1702,7 @@ class AccountReportLines(models.Model):
         }
 
         if figure_type == "monetary":
-            currency = (
-                self.env["res.currency"].browse(format_params["currency_id"])
-                if "currency_id" in format_params
-                else self.env.company.currency_id
-            )
+            currency = cell_format.currency(format_params)
             if options.get("multi_currency"):
                 formatLang_params["currency_obj"] = currency
             else:
@@ -1678,24 +1711,24 @@ class AccountReportLines(models.Model):
         elif figure_type == "integer":
             formatLang_params["digits"] = 0
 
-        elif figure_type == "boolean":
-            return self.env._("Yes") if bool(value) else self.env._("No")
-
-        elif figure_type in ("date", "datetime"):
-            return format_date(self.env, value)
-
         else:
             formatLang_params["digits"] = format_params.get("digits", 1)
 
         if self._is_value_zero(
-            value, figure_type, format_params, formatLang_params["rounding_unit"]
+            value,
+            figure_type,
+            format_params,
+            formatLang_params["rounding_unit"],
+            cell_format=cell_format,
         ):
             value = abs(value)
 
         if self.env.context.get("no_format"):
             return value
 
-        formatted_amount = formatLang(self.env, value, **formatLang_params)
+        formatted_amount = formatLang(
+            self.env, value, lang=cell_format.lang, **formatLang_params
+        )
 
         if figure_type == "percentage":
             return f"{formatted_amount}%"
@@ -1705,7 +1738,12 @@ class AccountReportLines(models.Model):
     @api.model
     @_debug.perf.timed
     def _is_value_zero(
-        self, amount, figure_type, format_params, rounding_unit="decimals"
+        self,
+        amount,
+        figure_type,
+        format_params,
+        rounding_unit="decimals",
+        cell_format=None,
     ):
         if amount is None:
             return True
@@ -1719,6 +1757,8 @@ class AccountReportLines(models.Model):
             )
 
         if figure_type == "monetary":
+            if cell_format is not None:
+                return cell_format.currency(format_params).is_zero(amount)
             currency = (
                 self.env["res.currency"].browse(format_params["currency_id"])
                 if "currency_id" in format_params
@@ -1897,6 +1937,95 @@ class AccountReportLines(models.Model):
             options_per_group[group_key] = group_options
 
         return options_per_group
+
+    def _get_column_group_partition(self, options_by_column_group):
+
+        def split_term(term):
+            if (
+                isinstance(term, (list, tuple))
+                and len(term) == 3
+                and term[1] == "="
+                and isinstance(term[0], str)
+                and isinstance(term[2], int)
+                and not isinstance(term[2], bool)
+            ):
+                return term[0], term[2]
+            return None
+
+        def comparable(group_options):
+            return {
+                key: value
+                for key, value in group_options.items()
+                if key not in ("forced_domain", "owner_column_group")
+            }
+
+        groups = list(options_by_column_group.items())
+        if len(groups) < 2:
+            return None
+        first_options = comparable(groups[0][1])
+        if any(
+            comparable(group_options) != first_options
+            for _key, group_options in groups[1:]
+        ):
+            return None
+        domains = {
+            key: list(group_options.get("forced_domain", []))
+            for key, group_options in groups
+        }
+        shortest = min(len(domain) for domain in domains.values())
+        common = next(
+            (domain for domain in domains.values() if len(domain) == shortest),
+            None,
+        )
+        longest = max(len(domain) for domain in domains.values())
+        if longest == shortest:
+            sample = next(iter(domains.values()))
+            common = None
+            for index, term in enumerate(sample):
+                if split_term(term):
+                    candidate = sample[:index] + sample[index + 1 :]
+                    if all(
+                        any(
+                            split_term(other_term)
+                            and domain[:other_index] + domain[other_index + 1 :]
+                            == candidate
+                            for other_index, other_term in enumerate(domain)
+                        )
+                        for domain in domains.values()
+                    ):
+                        common = candidate
+                        break
+            if common is None:
+                return None
+        elif longest != shortest + 1:
+            return None
+
+        field = None
+        group_key_by_value = {}
+        whole_keys = []
+        for key, domain in domains.items():
+            if domain == common:
+                whole_keys.append(key)
+                continue
+            for index, term in enumerate(domain):
+                split = split_term(term)
+                if split and domain[:index] + domain[index + 1 :] == common:
+                    break
+            else:
+                return None
+            term_field, value = split
+            if field not in (None, term_field) or value in group_key_by_value:
+                return None
+            field = term_field
+            group_key_by_value[value] = key
+        if field is None or field not in self._get_required_source_model()._fields:
+            return None
+        return (
+            {**groups[0][1], "forced_domain": common},
+            field,
+            group_key_by_value,
+            whole_keys,
+        )
 
     @_debug.perf.timed
     def _convert_json_friendly_column_group_totals(

@@ -15,6 +15,8 @@ from .locale_utils import babel_locale_parse, get_lang
 if typing.TYPE_CHECKING:
     from odoo.api import Environment
 
+    from odoo.addons.base.models.res_lang import LangData
+
 NON_BREAKING_SPACE = "\N{NO-BREAK SPACE}"
 NEGATIVE_SIGN_JOINER = "-\N{ZERO WIDTH NO-BREAK SPACE}"
 
@@ -80,6 +82,7 @@ def formatLang(
     rounding_unit: typing.Literal[
         "decimals", "units", "thousands", "lakhs", "millions"
     ] = "decimals",
+    lang: LangData | None = None,
 ) -> str:
     if value == "":
         return ""
@@ -110,6 +113,7 @@ def formatLang(
             currency_obj,
             grouping=grouping,
             decimal_places=decimal_places,
+            lang=lang,
         )
         return f"{pre}{amount}{post}"
 
@@ -117,7 +121,10 @@ def formatLang(
         value, precision_digits=digits, rounding_method=rounding_method or "HALF-EVEN"
     )
     return format_number(
-        f"%.{digits}f", rounded_value, get_lang(env), grouping=grouping
+        f"%.{digits}f",
+        rounded_value,
+        lang if lang is not None else get_lang(env),
+        grouping=grouping,
     )
 
 
@@ -126,6 +133,7 @@ def format_date(
     value: datetime.datetime | datetime.date | str,
     lang_code: str | None = None,
     date_format: str | typing.Literal[False] = False,
+    lang: LangData | None = None,
 ) -> str:
     if not value:
         return ""
@@ -149,7 +157,8 @@ def format_date(
     elif isinstance(value, datetime.datetime) and not value.tzinfo:
         value = Datetime.context_timestamp(res_lang, value)
 
-    lang = get_lang(env, lang_code)
+    if lang is None:
+        lang = get_lang(env, lang_code)
     locale = babel_locale_parse(lang.code)
     if not date_format:
         date_format = posix_to_ldml(lang.date_format, locale=locale)
@@ -294,8 +303,9 @@ def format_amount_parts(
     trailing_zeroes: bool = True,
     decimal_places: int | None = None,
     grouping: bool = True,
+    lang: LangData | None = None,
 ) -> tuple[str, str, str]:
-    lang = get_lang(env, lang_code)
+    lang = lang if lang is not None else get_lang(env, lang_code)
 
     if decimal_places is None:
         decimal_places = currency.decimal_places

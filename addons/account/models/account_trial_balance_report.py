@@ -282,18 +282,22 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             self.env["res.company"].browse(report.get_report_company_ids(options))
             | self.env.company
         )
-        fiscal_years = {}
+        reused = {}
         for company in companies:
             previous = (previous_fiscal_years or {}).get(company.id)
             if previous and previous[0] <= date <= previous[1]:
-                fiscal_years[company.id] = previous
-                continue
-            fiscal_year = company.compute_fiscalyear_dates(date)
-            fiscal_years[company.id] = (
-                fiscal_year["date_from"],
-                fiscal_year["date_to"],
+                reused[company.id] = previous
+        computed = companies.filtered(
+            lambda company: company.id not in reused
+        )._compute_fiscalyear_dates_by_company(date)
+        return {
+            company.id: reused.get(company.id)
+            or (
+                computed[company.id]["date_from"],
+                computed[company.id]["date_to"],
             )
-        return fiscal_years
+            for company in companies
+        }
 
     def _get_block_fiscalyear_options(self, fiscal_years) -> dict:
         return {
