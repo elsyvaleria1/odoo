@@ -24,6 +24,14 @@ class TestWebsiteFormEditor(HttpCaseWithUserPortal):
             }
         )
 
+    def _without_chatbot_popups(self):
+        # website_livechat's demo pops a chatbot open on /contactus; the form
+        # tour must not race it, with demo data or without
+        if "im_livechat.channel.rule" in self.env:
+            self.env["im_livechat.channel.rule"].search(
+                [("chatbot_script_id", "!=", False)]
+            ).unlink()
+
     def test_tour(self):
         self.start_tour(
             self.env["website"].get_client_action_url("/"),
@@ -35,6 +43,7 @@ class TestWebsiteFormEditor(HttpCaseWithUserPortal):
         self.start_tour("/", "website_form_editor_tour_results", login="admin")
 
     def test_website_form_contact_us_edition_with_email(self):
+        self._without_chatbot_popups()
         self.start_tour(
             "/odoo", "website_form_contactus_edition_with_email", login="admin"
         )
@@ -47,6 +56,7 @@ class TestWebsiteFormEditor(HttpCaseWithUserPortal):
         )
 
     def test_website_form_contact_us_edition_no_email(self):
+        self._without_chatbot_popups()
         self.env.company.email = "website_form_contactus_edition_no_email@mail.com"
         self.start_tour(
             "/odoo", "website_form_contactus_edition_no_email", login="admin"

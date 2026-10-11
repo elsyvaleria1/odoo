@@ -232,10 +232,6 @@ registry.category("web_tour.tours").add("website_form_contactus_submit", {
     url: "/contactus",
     steps: () => [
         {
-            isActive: ["body:has(.o-livechat-root)"],
-            trigger: ":shadow span:contains(select an option above)",
-        },
-        {
             content: "Fill in the subject",
             trigger: 'input[name="subject"]',
             run: "edit Test",
