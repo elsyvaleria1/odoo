@@ -77,7 +77,7 @@ export class CollaborationOdooPlugin extends Plugin {
         stripHistoryIds(this.editable);
     }
     destroy() {
-        this.collaborationStopBus && this.collaborationStopBus();
+        this.collaborationStopBus?.();
         if (this.peerToPeerLoading) {
             this.peerToPeerLoading.then(() => {
                 this.stopPeerToPeer();
@@ -90,7 +90,7 @@ export class CollaborationOdooPlugin extends Plugin {
         this.joiningPtp = false;
         this.ptpJoined = false;
         this.resetCollabRequests();
-        this.ptp && this.ptp.stop();
+        this.ptp?.stop();
     }
 
     getCurrentCollaborativeSelection() {
@@ -129,11 +129,14 @@ export class CollaborationOdooPlugin extends Plugin {
             }
         };
         const { busService } = this.config.collaboration;
-        busService.subscribe("editor_collaboration", collaborationBusListener);
-        busService.addChannel(this.collaborationChannelName);
+        const unsubscribe = busService.subscribe(
+            "editor_collaboration",
+            collaborationBusListener,
+        );
+        const releaseChannel = busService.addChannel(this.collaborationChannelName);
         this.collaborationStopBus = () => {
-            busService.unsubscribe("editor_collaboration", collaborationBusListener);
-            busService.deleteChannel(this.collaborationChannelName);
+            unsubscribe();
+            releaseChannel();
         };
 
         this.startCollaborationTime = new Date().getTime();
@@ -465,7 +468,7 @@ export class CollaborationOdooPlugin extends Plugin {
 
     resetCollabRequests() {
         this.lastCollaborationResetId++;
-        this.ptp && this.ptp.abortCurrentRequests();
+        this.ptp?.abortCurrentRequests();
     }
     async resetFromServerAndResyncWithPeers() {
         let collaborationResetId = this.lastCollaborationResetId;

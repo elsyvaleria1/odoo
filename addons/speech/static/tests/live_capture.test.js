@@ -78,10 +78,8 @@ describe("Dictation", () => {
         const texts = [];
         const sent = [];
         const bus = {
-            addChannel() {},
-            deleteChannel() {},
-            subscribe() {},
-            unsubscribe() {},
+            addChannel: () => () => {},
+            subscribe: () => () => {},
         };
         const orm = {
             call(model, method) {
@@ -95,7 +93,6 @@ describe("Dictation", () => {
             onChunkText: (index, text) => texts.push([index, text]),
         });
         dictation.id = 5;
-        dictation.channel = "speech.live/speech.dictation/5";
         return { dictation, texts, sent };
     }
 
@@ -110,7 +107,7 @@ describe("Dictation", () => {
         expect(sent).toEqual([0, 1]);
         first.resolve(11);
         second.resolve(12);
-        await Promise.all([...dictation.sending]);
+        await Promise.all(dictation.sending);
         dictation.onNotification({
             model: "speech.dictation",
             id: 5,
@@ -144,14 +141,14 @@ describe("Dictation", () => {
         });
         expect(texts).toEqual([]);
         push.resolve(21);
-        await Promise.all([...dictation.sending]);
+        await Promise.all(dictation.sending);
         expect(texts).toEqual([[0, "early"]]);
     });
 
     test("another record's words are ignored", async () => {
         const { dictation, texts } = session([Promise.resolve(31)]);
         dictation.send(chunk);
-        await Promise.all([...dictation.sending]);
+        await Promise.all(dictation.sending);
         dictation.onNotification({
             model: "conversation.conversation",
             id: 5,
@@ -166,7 +163,7 @@ describe("Dictation", () => {
         const { dictation, texts } = session([Promise.reject(new Error("refused"))]);
         dictation.onError = () => {};
         dictation.send(chunk);
-        await Promise.all([...dictation.sending]).catch(() => {});
+        await Promise.all(dictation.sending).catch(() => {});
         await Promise.resolve();
         expect(texts).toEqual([[0, ""]]);
     });

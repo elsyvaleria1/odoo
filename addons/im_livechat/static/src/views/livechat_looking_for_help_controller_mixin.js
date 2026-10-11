@@ -1,7 +1,6 @@
 /** @odoo-module native */
+import { useBusChannel, useBusSubscription } from "@bus/services/bus_service";
 import { LivechatViewControllerMixin } from "@im_livechat/views/livechat_view_controller_mixin";
-import { onWillDestroy } from "@odoo/owl";
-import { useService } from "@web/core/utils/hooks";
 import { useDebounced } from "@web/core/utils/timing";
 
 const RELOAD_DEBOUNCE_DELAY = 300;
@@ -10,33 +9,18 @@ export const LivechatLookingForHelpReloadMixin = (ViewController) =>
     class extends LivechatViewControllerMixin(ViewController) {
         setup() {
             super.setup(...arguments);
-            const busService = useService("bus_service");
             this.reloadDebounced = useDebounced(
                 () => this.model.load(),
                 RELOAD_DEBOUNCE_DELAY,
             );
             this.lookingForHelpOnUpdate = this.lookingForHelpOnUpdate.bind(this);
             this.tagsOnUpdate = this.tagsOnUpdate.bind(this);
-            busService.addChannel("im_livechat.looking_for_help");
-            busService.subscribe(
+            useBusChannel("im_livechat.looking_for_help");
+            useBusSubscription(
                 "im_livechat.looking_for_help/update",
                 this.lookingForHelpOnUpdate,
             );
-            busService.subscribe(
-                "im_livechat.looking_for_help/tags",
-                this.tagsOnUpdate,
-            );
-            onWillDestroy(() => {
-                busService.unsubscribe(
-                    "im_livechat.looking_for_help/update",
-                    this.lookingForHelpOnUpdate,
-                );
-                busService.unsubscribe(
-                    "im_livechat.looking_for_help/tags",
-                    this.tagsOnUpdate,
-                );
-                busService.deleteChannel("im_livechat.looking_for_help");
-            });
+            useBusSubscription("im_livechat.looking_for_help/tags", this.tagsOnUpdate);
         }
 
         lookingForHelpOnUpdate({ added_channel_ids, removed_channel_ids }) {

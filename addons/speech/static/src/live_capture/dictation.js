@@ -24,8 +24,8 @@ export class Dictation {
         this.onError = onError || (() => {});
         /** @type {number | null} */
         this.id = null;
-        /** @type {string | null} */
-        this.channel = null;
+        /** @type {(() => void) | null} */
+        this.stopBus = null;
         this.sequence = 0;
         /** @type {Map<number, number>} */
         this.pending = new Map();
@@ -54,9 +54,12 @@ export class Dictation {
             { res_model: resModel, res_id: resId, language, prompt },
         );
         this.id = id;
-        this.channel = channel;
-        this.bus.addChannel(channel);
-        this.bus.subscribe("speech.live", this.onNotification);
+        const releaseChannel = this.bus.addChannel(channel);
+        const unsubscribe = this.bus.subscribe("speech.live", this.onNotification);
+        this.stopBus = () => {
+            unsubscribe();
+            releaseChannel();
+        };
         try {
             await this.recorder.start();
         } catch (error) {
@@ -134,7 +137,7 @@ export class Dictation {
             return;
         }
         await this.recorder.stop();
-        await Promise.all([...this.sending]);
+        await Promise.all(this.sending);
         await this.orm.call("speech.dictation", "action_stop_live", [this.id]);
         await new Promise((resolve) => {
             this.settled = () => resolve(undefined);
@@ -148,14 +151,11 @@ export class Dictation {
     }
 
     async close() {
-        if (this.channel) {
-            this.bus.unsubscribe("speech.live", this.onNotification);
-            this.bus.deleteChannel(this.channel);
-        }
+        this.stopBus?.();
+        this.stopBus = null;
         this.pending.clear();
         this.early.clear();
         this.settled = null;
-        this.channel = null;
         this.id = null;
     }
 }

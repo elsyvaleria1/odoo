@@ -25,10 +25,12 @@ patch(MessagingMenu, {
                 store: menu.store,
             }),
             effect({ busService, store }) {
-                busService.addChannel("im_livechat.looking_for_help");
+                const releaseChannel = busService.addChannel(
+                    "im_livechat.looking_for_help",
+                );
                 store.fetchStoreData("/im_livechat/looking_for_help");
                 return () => {
-                    busService.deleteChannel("im_livechat.looking_for_help");
+                    releaseChannel();
                     Object.values(store["discuss.channel"].records)
                         .filter(
                             (channel) =>

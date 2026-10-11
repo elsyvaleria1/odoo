@@ -11,15 +11,12 @@ defineSpreadsheetModels();
 
 async function setupEnvWithMockBus({ mockRPC } = {}) {
     const _bus = new EventBus();
-    const listeners = new Map();
 
     const busService = {
         channels: [],
         addChannel(name) {
             this.channels.push(name);
-        },
-        deleteChannel(name) {
-            this.channels.splice(this.channels.indexOf(name), 1);
+            return () => this.channels.splice(this.channels.indexOf(name), 1);
         },
         subscribe: (eventName, handler) => {
             const listener = ({ detail }) => {
@@ -27,12 +24,8 @@ async function setupEnvWithMockBus({ mockRPC } = {}) {
                     handler(detail.payload, { id: detail.id });
                 }
             };
-            listeners.set(handler, listener);
             _bus.addEventListener("notif", listener);
-        },
-        unsubscribe: (eventName, handler) => {
-            _bus.removeEventListener("notif", listeners.get(handler));
-            listeners.delete(handler);
+            return () => _bus.removeEventListener("notif", listener);
         },
         notify: (message) => {
             _bus.trigger("notif", message);

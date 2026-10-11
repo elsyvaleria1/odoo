@@ -63,8 +63,15 @@ export class SpreadsheetCollaborativeChannel {
             }
             this._handleNotification(payload);
         };
-        this.busService.addChannel(this._channel);
-        this.busService.subscribe("spreadsheet", this._onBusNotification);
+        const releaseChannel = this.busService.addChannel(this._channel);
+        const unsubscribe = this.busService.subscribe(
+            "spreadsheet",
+            this._onBusNotification,
+        );
+        this._stopBus = () => {
+            unsubscribe();
+            releaseChannel();
+        };
     }
 
     /**
@@ -140,16 +147,15 @@ export class SpreadsheetCollaborativeChannel {
      * Stop listening for good: nothing can rejoin through this channel any more.
      */
     release() {
-        if (!this._onBusNotification) {
+        if (!this._stopBus) {
             return;
         }
         log.lifecycle("channel:release", () => ({
             resId: this.resId,
             droppedQueue: this._queue.length,
         }));
-        this.busService.unsubscribe("spreadsheet", this._onBusNotification);
-        this.busService.deleteChannel(this._channel);
-        this._onBusNotification = undefined;
+        this._stopBus();
+        this._stopBus = undefined;
         this._listener = undefined;
         this._queue = [];
     }

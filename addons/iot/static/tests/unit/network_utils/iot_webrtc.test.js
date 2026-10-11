@@ -72,7 +72,6 @@ const setupWebRtc = () => {
     const bus = new EventBus();
     const busCallbacks = new Map();
     const mockBusService = {
-        addChannel: () => {},
         subscribe: (type, callback) => {
             busCallbacks.set(callback, (event) => callback(event.detail));
             bus.addEventListener(type, busCallbacks.get(callback));
@@ -83,6 +82,7 @@ const setupWebRtc = () => {
     };
     const mockWebsocket = {
         iotChannel: "mockChannel",
+        claimChannel: () => {},
         sendMessage: (iotIdentifier, message, messageId, messageType) => {
             websocketMessages.push({ iotIdentifier, message, messageId, messageType });
         },

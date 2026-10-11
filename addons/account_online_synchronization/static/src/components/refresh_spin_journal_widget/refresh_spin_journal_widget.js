@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { useBusSubscription } from "@bus/services/bus_service";
 import { Component, markup, onWillStart, proxy, useProps } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
@@ -17,11 +18,10 @@ class RefreshSpin extends Component {
         });
 
         this.actionService = useService("action");
-        this.busService = useService("bus_service");
         this.orm = useService("orm");
         this.state.fetchingStatus = this.props.record.data.online_sync_fetching_status;
 
-        this.busService.subscribe("online_sync", (notification) => {
+        useBusSubscription("online_sync", (notification) => {
             if (
                 notification?.id === this.recordId &&
                 notification?.connection_state_details

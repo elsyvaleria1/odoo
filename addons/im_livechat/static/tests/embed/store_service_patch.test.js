@@ -21,11 +21,11 @@ test("clearing the guest token leaves the channel of the previous token", async 
             if (channelName.startsWith("mail.guest_")) {
                 expect.step(`addChannel - ${channelName}`);
             }
-        },
-        deleteChannel: (channelName) => {
-            if (channelName.startsWith("mail.guest_")) {
-                expect.step(`deleteChannel - ${channelName}`);
-            }
+            return () => {
+                if (channelName.startsWith("mail.guest_")) {
+                    expect.step(`releaseChannel - ${channelName}`);
+                }
+            };
         },
     });
     const store = getService("mail.store");
@@ -35,10 +35,10 @@ test("clearing the guest token leaves the channel of the previous token", async 
     store.guest_token = "second-token";
     await tick();
     await expect.waitForSteps([
-        "deleteChannel - mail.guest_first-token",
+        "releaseChannel - mail.guest_first-token",
         "addChannel - mail.guest_second-token",
     ]);
     store.guest_token = null;
     await tick();
-    await expect.waitForSteps(["deleteChannel - mail.guest_second-token"]);
+    await expect.waitForSteps(["releaseChannel - mail.guest_second-token"]);
 });

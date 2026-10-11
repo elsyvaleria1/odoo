@@ -43,12 +43,7 @@ beforeEach(() => {
                 return super.subscribe(type, callback);
             }
             listeners.add(callback);
-        },
-        unsubscribe(type, callback) {
-            if (type !== JOURNEY_NOTIFICATION) {
-                return super.unsubscribe(type, callback);
-            }
-            listeners.delete(callback);
+            return () => listeners.delete(callback);
         },
     });
     patchWithCleanup(user, { isInternalUser: true, isSystem: false });

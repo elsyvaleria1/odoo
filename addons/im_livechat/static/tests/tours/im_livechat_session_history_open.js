@@ -15,11 +15,11 @@ registry.category("web_tour.tours").add("im_livechat_session_history_open", {
                 patchWithCleanup(busService, {
                     addChannel(channel) {
                         document.body.classList.add(`o-bus-channel-${channel}`);
-                        return super.addChannel(...arguments);
-                    },
-                    deleteChannel(channel) {
-                        document.body.classList.remove(`o-bus-channel-${channel}`);
-                        return super.deleteChannel(...arguments);
+                        const release = super.addChannel(...arguments);
+                        return () => {
+                            document.body.classList.remove(`o-bus-channel-${channel}`);
+                            release();
+                        };
                     },
                 });
             },

@@ -36,8 +36,7 @@ const threadStaticPatch = {
              */
             effect(busChannel, busService) {
                 if (busService && busChannel) {
-                    busService.addChannel(busChannel);
-                    return () => busService.deleteChannel(busChannel);
+                    return busService.addChannel(busChannel);
                 }
             },
             /** @param {import("models").Thread} thread */

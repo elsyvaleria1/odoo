@@ -117,7 +117,7 @@ export class SurveyForm extends Interaction {
         this.selectedAnswers = this.options.selectedAnswers;
         this.imgZoomerEl = null;
         this.listenOnKeydown = !this.readonly;
-        this.nextScreenResult;
+        this.nextScreenResult = undefined;
         this.showBreadcrumb = false;
         this.notificationDestructors = [];
         this.background = {
@@ -173,15 +173,19 @@ export class SurveyForm extends Interaction {
         // initialize session management
         const busService = this.services.bus_service;
         if (this.options.sessionBusChannel && this.options.sessionInProgress) {
-            busService.addChannel(this.options.sessionBusChannel);
+            this.registerCleanup(busService.addChannel(this.options.sessionBusChannel));
             await this.checkIsOnMainTab();
-            busService.subscribe(
-                "next_question",
-                this.onNextQuestionNotification.bind(this),
+            this.registerCleanup(
+                busService.subscribe(
+                    "next_question",
+                    this.onNextQuestionNotification.bind(this),
+                ),
             );
-            busService.subscribe(
-                "end_session",
-                this.onEndSessionNotification.bind(this),
+            this.registerCleanup(
+                busService.subscribe(
+                    "end_session",
+                    this.onEndSessionNotification.bind(this),
+                ),
             );
         }
         this.initChoiceItems();
@@ -1550,12 +1554,14 @@ export class SurveyForm extends Interaction {
                 const answerId = targetEl.value;
 
                 if (this.options.questionsLayout !== "page_per_question") {
-                    labelEl.classList.contains("o_survey_selected")
-                        ? this.selectedAnswers.push(parseInt(answerId))
-                        : this.selectedAnswers.splice(
-                              this.selectedAnswers.indexOf(parseInt(answerId)),
-                              1,
-                          );
+                    if (labelEl.classList.contains("o_survey_selected")) {
+                        this.selectedAnswers.push(parseInt(answerId));
+                    } else {
+                        this.selectedAnswers.splice(
+                            this.selectedAnswers.indexOf(parseInt(answerId)),
+                            1,
+                        );
+                    }
                     this.applyConditionalQuestionsVisibility(
                         this.options.triggeredQuestionsByAnswer[answerId],
                     );

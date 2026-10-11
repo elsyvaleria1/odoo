@@ -98,7 +98,7 @@ class PeerTest {
     }
     async setOnline() {
         this.isOnline = true;
-        this.onlineResolver && this.onlineResolver();
+        this.onlineResolver?.();
         return this.onlineMutex.getUnlockedDef();
     }
     setOffline() {
@@ -152,12 +152,10 @@ class Wysiwygs extends Component {
     }
     getConfig({ peerId, content }) {
         const busService = {
-            subscribe() {},
-            unsubscribe() {},
+            subscribe: () => () => {},
             addEventListener: () => {},
             removeEventListener: () => {},
-            addChannel: () => {},
-            deleteChannel: () => {},
+            addChannel: () => () => {},
         };
         return {
             Plugins: [...MAIN_PLUGINS, ...COLLABORATION_PLUGINS],

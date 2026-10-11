@@ -13,11 +13,11 @@ function trackChannelClaims() {
     patchWithCleanup(getService("bus_service"), {
         addChannel(channel) {
             added.push(channel);
-            return super.addChannel(channel);
-        },
-        deleteChannel(channel) {
-            deleted.push(channel);
-            return super.deleteChannel(channel);
+            const release = super.addChannel(channel);
+            return () => {
+                deleted.push(channel);
+                release();
+            };
         },
     });
     return { added, deleted };

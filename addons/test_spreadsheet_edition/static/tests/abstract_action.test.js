@@ -64,11 +64,14 @@ test("receives collaborative messages when action is restored", async function (
     const mockBusService = {
         _bus: new EventBus(),
         subscribe(eventName, handler) {
-            this._bus.addEventListener("notif", ({ detail }) => {
+            const listener = ({ detail }) => {
                 if (detail.type === eventName) {
                     handler(detail.payload);
                 }
-            });
+            };
+            const bus = this._bus;
+            bus.addEventListener("notif", listener);
+            return () => bus.removeEventListener("notif", listener);
         },
         notify(message) {
             this._bus.trigger("notif", message);
@@ -161,19 +164,19 @@ test("the bus channel is released once nothing can bring the spreadsheet back", 
     mockService("bus_service", {
         addChannel(channel) {
             spreadsheetStep("add", channel);
-            return super.addChannel(channel);
-        },
-        deleteChannel(channel) {
-            spreadsheetStep("delete", channel);
-            return super.deleteChannel(channel);
+            const release = super.addChannel(channel);
+            return () => {
+                spreadsheetStep("delete", channel);
+                release();
+            };
         },
         subscribe(type, callback) {
             spreadsheetStep("subscribe", type);
-            return super.subscribe(type, callback);
-        },
-        unsubscribe(type, callback) {
-            spreadsheetStep("unsubscribe", type);
-            return super.unsubscribe(type, callback);
+            const unsubscribe = super.subscribe(type, callback);
+            return () => {
+                spreadsheetStep("unsubscribe", type);
+                unsubscribe();
+            };
         },
     });
     SpreadsheetTest._records = [

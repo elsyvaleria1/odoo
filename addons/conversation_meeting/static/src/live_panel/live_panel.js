@@ -56,17 +56,19 @@ export class ConversationLivePanel extends Component {
         this.unsubscribe();
         if (wanted) {
             this.channel = wanted;
-            this.bus.addChannel(this.channel);
-            this.bus.subscribe("speech.live", this.onNotification);
+            const releaseChannel = this.bus.addChannel(wanted);
+            const unsubscribe = this.bus.subscribe("speech.live", this.onNotification);
+            this.stopBus = () => {
+                unsubscribe();
+                releaseChannel();
+            };
         }
     }
 
     unsubscribe() {
-        if (this.channel) {
-            this.bus.unsubscribe("speech.live", this.onNotification);
-            this.bus.deleteChannel(this.channel);
-            this.channel = null;
-        }
+        this.stopBus?.();
+        this.stopBus = null;
+        this.channel = null;
     }
 
     /** @param {{model: string, id: number, event: string, text?: string, chunks?: number, elapsed_s?: number, at_s?: number}} payload */

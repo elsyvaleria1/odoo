@@ -13,6 +13,7 @@ import {
     makeInterval,
     RoomBookingForm,
 } from "@room/room_booking/room_booking_form/room_booking_form";
+import { useBusChannel, useBusSubscription } from "@bus/services/bus_service";
 import { RoomBookingRemainingTime } from "@room/room_booking/room_booking_remaining_time";
 import { RoomDisplayTime } from "@room/room_booking/room_display_time";
 import { useInterval } from "@room/room_booking/useInterval";
@@ -97,24 +98,21 @@ export class RoomBookingView extends Component {
                 !isDisplayStandalone() && this.pwaService.isSupportedOnBrowser,
         });
         // Show bookings updates in live
-        this.busService = useService("bus_service");
-        this.busService.addChannel(this.props.busChannel);
-        this.busService.subscribe(`room#${this.props.id}/booking/create`, (bookings) =>
+        useBusChannel(this.props.busChannel);
+        useBusSubscription(`room#${this.props.id}/booking/create`, (bookings) =>
             bookings.forEach((booking) =>
                 this.addBooking(formatServerBooking(booking)),
             ),
         );
-        this.busService.subscribe(`room#${this.props.id}/booking/delete`, (bookings) =>
+        useBusSubscription(`room#${this.props.id}/booking/delete`, (bookings) =>
             bookings.forEach((booking) => this.removeBooking(booking.id)),
         );
-        this.busService.subscribe(`room#${this.props.id}/booking/update`, (bookings) =>
+        useBusSubscription(`room#${this.props.id}/booking/update`, (bookings) =>
             bookings.forEach((booking) =>
                 this.updateBooking(formatServerBooking(booking)),
             ),
         );
-        this.busService.subscribe(`room#${this.props.id}/reload`, (url) =>
-            redirect(url),
-        );
+        useBusSubscription(`room#${this.props.id}/reload`, (url) => redirect(url));
         this.notificationService = useService("notification");
         this.dialogService = useService("dialog");
         this.ui = useService("ui");

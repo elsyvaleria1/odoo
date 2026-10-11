@@ -29,6 +29,7 @@ async function startWithBus(html) {
                 expect.step(`subscribe ${type}`);
                 subscriber = callback;
             }
+            return () => {};
         },
         unsubscribe: () => {},
         start: async () => {},

@@ -68,8 +68,8 @@ export const PresenceMixin = (Base) =>
                     : channel;
             },
         });
-        /** @type {string|undefined} */
-        previousPresencechannel;
+        /** @type {(() => void)|undefined} */
+        releasePresenceChannel;
         _triggerPresenceSubscription = fields.Attr(null, {
             /** @this {import("models").Persona} */
             compute() {
@@ -77,16 +77,12 @@ export const PresenceMixin = (Base) =>
             },
             /** @this {import("models").Persona} */
             onUpdate() {
-                const busService = this.store.env.services.bus_service;
-                if (this.previousPresencechannel) {
-                    busService.deleteChannel(this.previousPresencechannel);
-                }
-                if (this._triggerPresenceSubscription) {
-                    busService.addChannel(this.presenceChannel);
-                    this.previousPresencechannel = this.presenceChannel;
-                } else {
-                    this.previousPresencechannel = undefined;
-                }
+                this.releasePresenceChannel?.();
+                this.releasePresenceChannel = this._triggerPresenceSubscription
+                    ? this.store.env.services.bus_service.addChannel(
+                          this.presenceChannel,
+                      )
+                    : undefined;
             },
         });
         write_date = fields.Datetime();

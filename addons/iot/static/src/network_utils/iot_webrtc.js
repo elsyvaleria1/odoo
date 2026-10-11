@@ -217,7 +217,7 @@ export class IotWebRtc {
             this.busService.unsubscribe("webrtc_answer", onIotAnswer);
         };
         this.busService.subscribe("webrtc_answer", onIotAnswer);
-        this.busService.addChannel(this.websocket.iotChannel);
+        this.websocket.claimChannel();
 
         await this.websocket.sendMessage(
             iotIdentifier,

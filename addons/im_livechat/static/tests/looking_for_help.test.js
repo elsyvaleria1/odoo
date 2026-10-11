@@ -144,11 +144,11 @@ function stepLookingForHelpSubscription() {
             if (channelName === "im_livechat.looking_for_help") {
                 expect.step(`addChannel - ${channelName}`);
             }
-        },
-        deleteChannel: (channelName) => {
-            if (channelName === "im_livechat.looking_for_help") {
-                expect.step(`deleteChannel - ${channelName}`);
-            }
+            return () => {
+                if (channelName === "im_livechat.looking_for_help") {
+                    expect.step(`releaseChannel - ${channelName}`);
+                }
+            };
         },
     });
     onRpc("/mail/data", async (req) => {
@@ -186,7 +186,7 @@ test("Enable/disable looking for help when the Live Chats tab is shown/left in D
     await click(".o-mail-Discuss .o-mail-MessagingMenu-tab[data-id='chat']");
     await contains(".o-mail-Discuss .o-mail-MessagingMenu-tab[data-id='chat'].active");
     await advanceTime(LFH_UNSUBSCRIBE_DELAY + 1000);
-    await expect.waitForSteps(["deleteChannel - im_livechat.looking_for_help"]);
+    await expect.waitForSteps(["releaseChannel - im_livechat.looking_for_help"]);
     await click(LIVECHAT_TAB);
     await contains(`${LIVECHAT_TAB}.active`);
     await expect.waitForSteps([
@@ -215,7 +215,7 @@ test("Enable/disable looking for help when the systray Live Chats tab is opened/
     await contains(".o-mail-MessagingMenuInDropdown", { count: 0 });
     await expect.waitForSteps([]);
     await advanceTime(LFH_UNSUBSCRIBE_DELAY + 1000);
-    await expect.waitForSteps(["deleteChannel - im_livechat.looking_for_help"]);
+    await expect.waitForSteps(["releaseChannel - im_livechat.looking_for_help"]);
     await openMessagingMenu();
     await contains(
         ".o-mail-MessagingMenuInDropdown .o-mail-MessagingMenu-tab[data-id='livechat'].active",

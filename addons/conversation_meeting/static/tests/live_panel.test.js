@@ -15,11 +15,14 @@ function fakeRecord(data, { dirty = false } = {}) {
 function mockBus() {
     const bus = { channels: [], handlers: {} };
     mockService("bus_service", {
-        addChannel: (channel) => bus.channels.push(channel),
-        deleteChannel: (channel) =>
-            bus.channels.splice(bus.channels.indexOf(channel), 1),
-        subscribe: (type, handler) => (bus.handlers[type] = handler),
-        unsubscribe: (type) => delete bus.handlers[type],
+        addChannel: (channel) => {
+            bus.channels.push(channel);
+            return () => bus.channels.splice(bus.channels.indexOf(channel), 1);
+        },
+        subscribe: (type, handler) => {
+            bus.handlers[type] = handler;
+            return () => delete bus.handlers[type];
+        },
     });
     return bus;
 }

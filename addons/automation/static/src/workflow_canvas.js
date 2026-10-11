@@ -258,17 +258,16 @@ export class WorkflowCanvas extends Component {
         if (!ruleId || this.listening) {
             return;
         }
-        this.listening = `${CHANNEL_PREFIX}${ruleId}`;
-        this.bus.addChannel(this.listening);
-        this.bus.subscribe(UPDATE_TYPE, this.onWorkflowUpdate);
+        const releaseChannel = this.bus.addChannel(`${CHANNEL_PREFIX}${ruleId}`);
+        const unsubscribe = this.bus.subscribe(UPDATE_TYPE, this.onWorkflowUpdate);
+        this.listening = () => {
+            unsubscribe();
+            releaseChannel();
+        };
     }
 
     stopListening() {
-        if (!this.listening) {
-            return;
-        }
-        this.bus.unsubscribe(UPDATE_TYPE, this.onWorkflowUpdate);
-        this.bus.deleteChannel(this.listening);
+        this.listening?.();
         this.listening = null;
     }
 

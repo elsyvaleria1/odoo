@@ -36,10 +36,7 @@ export class LiveFragments extends Interaction {
 
     start() {
         const bus = this.services.bus_service;
-        bus.subscribe("fragment.invalidated", this.onInvalidated);
-        this.registerCleanup(() =>
-            bus.unsubscribe("fragment.invalidated", this.onInvalidated),
-        );
+        this.registerCleanup(bus.subscribe("fragment.invalidated", this.onInvalidated));
         bus.start();
     }
 

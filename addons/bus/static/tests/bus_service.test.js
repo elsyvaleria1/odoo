@@ -173,17 +173,17 @@ test("channel management from multiple tabs", async () => {
     const firstTabEnv = await makeMockEnv();
     restoreRegistry(registry);
     const secondTabEnv = await makeMockEnv(null, { makeNew: true });
-    firstTabEnv.services.bus_service.addChannel("channel1");
+    const releaseFirst = firstTabEnv.services.bus_service.addChannel("channel1");
     await waitForSteps(["subscribe - [channel1]"]);
     // Already known: no subscription.
-    secondTabEnv.services.bus_service.addChannel("channel1");
+    const releaseSecond = secondTabEnv.services.bus_service.addChannel("channel1");
     // Remove from tab1, but tab2 still listens: no subscription.
-    firstTabEnv.services.bus_service.deleteChannel("channel1");
+    releaseFirst();
     // New channel: subscription.
     secondTabEnv.services.bus_service.addChannel("channel2");
     await waitForSteps(["subscribe - [channel1,channel2]"]);
     // Removing last listener of channel1: subscription.
-    secondTabEnv.services.bus_service.deleteChannel("channel1");
+    releaseSecond();
     await waitForSteps(["subscribe - [channel2]"]);
 });
 
@@ -634,7 +634,7 @@ test("worker state is available from the bus service", async () => {
     expect(getService("bus_service").workerState).toBe(CONNECTION_STATE.CONNECTED);
 });
 
-test("channel is kept until deleted as many times as added", async () => {
+test("a channel is kept until every claim on it is released", async () => {
     onWebsocketEvent("subscribe", (data) =>
         expect.step(`subscribe - [${data.channels.toString()}]`),
     );
@@ -653,16 +653,16 @@ test("channel is kept until deleted as many times as added", async () => {
     startBusService();
     const busService = getService("bus_service");
     await expect.waitForSteps(["subscribe - []"]);
-    busService.addChannel("foo");
+    const releaseFirst = busService.addChannel("foo");
     await expect.waitForSteps(["add channel - foo", "subscribe - [foo]"]);
-    busService.addChannel("foo");
+    const releaseSecond = busService.addChannel("foo");
     await expect.waitForSteps(["add channel - foo"]);
     await runAllTimers();
-    busService.deleteChannel("foo");
+    releaseFirst();
     await expect.waitForSteps(["delete channel"]);
     await runAllTimers();
     await expect.waitForSteps([]);
-    busService.deleteChannel("foo");
+    releaseSecond();
     await expect.waitForSteps(["delete channel", "subscribe - []"]);
 });
 
@@ -676,7 +676,7 @@ test("channels are replayed after a bfcache restore", async () => {
     await waitForChannels(["lambda"]);
     const worker = getWebSocketWorker();
     // Simulate the liveness sweep having evicted this tab while frozen.
-    for (const client of [...worker.channelsByClient.keys()]) {
+    for (const client of worker.channelsByClient.keys()) {
         worker._unregisterClient(client);
     }
     await runAllTimers();
@@ -766,8 +766,8 @@ test("J2: add/delete/add racing worker init resolves via one atomic snapshot", a
     // All three run before BUS:INITIALIZED: they must NOT be sent as
     // incremental add/delete (which can reach the worker out of balance), only
     // folded into the atomic BUS:SET_CHANNELS snapshot sent on init.
-    bus.addChannel("a");
-    bus.deleteChannel("a");
+    const releaseA = bus.addChannel("a");
+    releaseA();
     bus.addChannel("b");
     await runAllTimers();
     expect(incrementalOps).toEqual([]);
@@ -775,20 +775,16 @@ test("J2: add/delete/add racing worker init resolves via one atomic snapshot", a
     await waitForChannels(["b"]);
 });
 
-test("J2: page-side over-release of a channel warns", async () => {
-    patchWithCleanup(console, {
-        warn: (message) => {
-            if (typeof message === "string" && message.includes("deleteChannel")) {
-                asyncStep(message);
-            }
-        },
-    });
+test("J2: a claim released twice releases only itself", async () => {
     await makeMockEnv();
     startBusService();
-    getService("bus_service").deleteChannel("never-added");
-    await waitForSteps([
-        `bus_service: deleteChannel("never-added") without a matching addChannel.`,
-    ]);
+    const bus = getService("bus_service");
+    const releaseFirst = bus.addChannel("shared");
+    bus.addChannel("shared");
+    releaseFirst();
+    releaseFirst();
+    await runAllTimers();
+    await waitForChannels(["shared"]);
 });
 
 test("J7: non-BUS:* worker broadcasts never reach the public bus; unknown BUS:* rebroadcasts", async () => {

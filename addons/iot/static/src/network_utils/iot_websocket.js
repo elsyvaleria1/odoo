@@ -116,7 +116,15 @@ export class IotWebsocket {
             this.busService.unsubscribe(messageType, messageCallback);
         };
 
-        this.busService.addChannel(this.iotChannel);
+        this.claimChannel();
         this.busService.subscribe(messageType, messageCallback);
+    }
+
+    /**
+     * Claims the IoT channel once, for the life of the service: a claim per
+     * message would add one the service never gives back on every message.
+     */
+    claimChannel() {
+        this.releaseChannel ??= this.busService.addChannel(this.iotChannel);
     }
 }

@@ -13,6 +13,7 @@ const StorePatch = {
             inverse: "storeAsActiveLivechats",
         });
         this._subscribedGuestToken = null;
+        this._releaseGuestChannel = null;
         expirableStorage.onChange(
             GUEST_TOKEN_STORAGE_KEY,
             (value) => (this.guest_token = value),
@@ -22,15 +23,17 @@ const StorePatch = {
                 return expirableStorage.getItem(GUEST_TOKEN_STORAGE_KEY);
             },
             onUpdate() {
-                const busService = this.store.env.services.bus_service;
-                const previousToken = this._subscribedGuestToken;
-                if (previousToken && previousToken !== this.guest_token) {
-                    busService.deleteChannel(`mail.guest_${previousToken}`);
+                if (this._subscribedGuestToken !== this.guest_token) {
+                    this._releaseGuestChannel?.();
+                    this._releaseGuestChannel =
+                        this.guest_token &&
+                        this.store.env.services.bus_service.addChannel(
+                            `mail.guest_${this.guest_token}`,
+                        );
+                    this._subscribedGuestToken = this.guest_token;
                 }
-                this._subscribedGuestToken = this.guest_token;
                 if (this.guest_token) {
                     expirableStorage.setItem(GUEST_TOKEN_STORAGE_KEY, this.guest_token);
-                    busService.addChannel(`mail.guest_${this.guest_token}`);
                     return;
                 }
                 expirableStorage.removeItem(GUEST_TOKEN_STORAGE_KEY);

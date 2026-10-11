@@ -1,11 +1,12 @@
 /** @odoo-module native */
 import { WORKER_STATE } from "@bus/services/worker_service";
-import { EventBus, proxy } from "@odoo/owl";
+import { EventBus, onWillDestroy, proxy } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 import { now, startOf } from "@web/core/l10n/dates";
 import { registry } from "@web/core/registry";
 import { user } from "@web/core/user";
 import { Deferred } from "@web/core/utils/concurrency";
+import { useService } from "@web/core/utils/hooks";
 import { session } from "@web/session";
 
 // Worker events consumed internally by this service and NOT re-triggered on
@@ -53,6 +54,24 @@ export function lastNotificationIdKey() {
  *  @emits BUS:WATERMARK_RESET
  *  @emits BUS:WORKER_STATE_UPDATED
  */
+/**
+ * Claims `channel` for as long as the component lives.
+ * @param {string} channel
+ */
+export function useBusChannel(channel) {
+    onWillDestroy(useService("bus_service").addChannel(channel));
+}
+
+/**
+ * Subscribes `callback` to `notificationType` for as long as the component
+ * lives.
+ * @param {string} notificationType
+ * @param {function} callback
+ */
+export function useBusSubscription(notificationType, callback) {
+    onWillDestroy(useService("bus_service").subscribe(notificationType, callback));
+}
+
 export const busService = {
     dependencies: [
         "bus.parameters",
@@ -170,7 +189,7 @@ export const busService = {
                 }
                 case "BUS:INITIALIZED": {
                     // Channels claimed while the worker was initializing were
-                    // NOT sent incrementally (see addChannel/deleteChannel):
+                    // NOT sent incrementally (see claimChannel/releaseChannel):
                     // interleaved adds/deletes racing the init handshake can
                     // reach the worker out of balance. One atomic snapshot of
                     // the final map — sent before the pending calls resume
@@ -364,68 +383,78 @@ export const busService = {
                 capture: true,
             },
         );
-        const state = proxy({
-            addEventListener: bus.addEventListener.bind(bus),
-            addChannel: async (channel) => {
-                tabChannels.set(channel, (tabChannels.get(channel) ?? 0) + 1);
-                if (workerInitialized) {
-                    if (hasLeftWorker) {
-                        // First channel activity after a stop(): the worker
-                        // dropped this client on BUS:LEAVE, so replay the
-                        // whole map, not just this claim.
-                        sendChannelsSnapshot();
-                        hasLeftWorker = false;
-                    } else {
-                        workerService.send("BUS:ADD_CHANNEL", channel);
-                    }
-                    workerService.send("BUS:START");
-                    state.isActive = true;
-                    return;
-                }
-                // Worker (still) initializing: do NOT send an incremental add
-                // — interleaved adds/deletes racing the init handshake could
-                // reach the worker out of balance. The claim is included in
-                // the atomic BUS:SET_CHANNELS snapshot sent on
-                // BUS:INITIALIZED; only the connection wake-up remains to do
-                // here.
-                await ensureWorkerStarted();
-                if (!(tabChannels.get(channel) > 0)) {
-                    // Every claim on this channel was released (deleteChannel)
-                    // while the worker was initializing: don't activate the
-                    // bus on behalf of a dead claim.
-                    return;
+        async function claimChannel(channel) {
+            tabChannels.set(channel, (tabChannels.get(channel) ?? 0) + 1);
+            if (workerInitialized) {
+                if (hasLeftWorker) {
+                    // First channel activity after a stop(): the worker
+                    // dropped this client on BUS:LEAVE, so replay the
+                    // whole map, not just this claim.
+                    sendChannelsSnapshot();
+                    hasLeftWorker = false;
+                } else {
+                    workerService.send("BUS:ADD_CHANNEL", channel);
                 }
                 workerService.send("BUS:START");
                 state.isActive = true;
-            },
-            deleteChannel: (channel) => {
-                const count = tabChannels.get(channel) ?? 0;
-                if (count <= 0) {
-                    // Refcount must never go negative: an extra delete from
-                    // one consumer would otherwise steal a later legitimate
-                    // claim of another one.
-                    console.warn(
-                        `bus_service: deleteChannel("${channel}") without a matching addChannel.`,
-                    );
-                    return;
-                }
-                if (count === 1) {
-                    tabChannels.delete(channel);
-                } else {
-                    tabChannels.set(channel, count - 1);
-                }
-                if (!workerInitialized || hasLeftWorker) {
-                    // Released before/during worker init: the release is
-                    // already reflected in the BUS:SET_CHANNELS snapshot the
-                    // init handshake sends (or nothing was ever sent for this
-                    // channel if the worker never starts). Also skip after a
-                    // stop() (hasLeftWorker): the worker dropped this client's
-                    // whole map, so there is nothing to release worker-side, and
-                    // the local decrement above already keeps the next replay
-                    // snapshot correct.
-                    return;
-                }
-                workerService.send("BUS:DELETE_CHANNEL", channel);
+                return;
+            }
+            // Worker (still) initializing: do NOT send an incremental add
+            // — interleaved adds/deletes racing the init handshake could
+            // reach the worker out of balance. The claim is included in
+            // the atomic BUS:SET_CHANNELS snapshot sent on
+            // BUS:INITIALIZED; only the connection wake-up remains to do
+            // here.
+            await ensureWorkerStarted();
+            if (!(tabChannels.get(channel) > 0)) {
+                // Every claim on this channel was released
+                // while the worker was initializing: don't activate the
+                // bus on behalf of a dead claim.
+                return;
+            }
+            workerService.send("BUS:START");
+            state.isActive = true;
+        }
+
+        function releaseChannel(channel) {
+            const count = tabChannels.get(channel);
+            if (count === 1) {
+                tabChannels.delete(channel);
+            } else {
+                tabChannels.set(channel, count - 1);
+            }
+            if (!workerInitialized || hasLeftWorker) {
+                // Released before/during worker init: the release is
+                // already reflected in the BUS:SET_CHANNELS snapshot the
+                // init handshake sends (or nothing was ever sent for this
+                // channel if the worker never starts). Also skip after a
+                // stop() (hasLeftWorker): the worker dropped this client's
+                // whole map, so there is nothing to release worker-side, and
+                // the local decrement above already keeps the next replay
+                // snapshot correct.
+                return;
+            }
+            workerService.send("BUS:DELETE_CHANNEL", channel);
+        }
+
+        const state = proxy({
+            addEventListener: bus.addEventListener.bind(bus),
+            /**
+             * Claims `channel` for this tab until the returned function is
+             * called; calling it again does nothing, so one claim can never
+             * release another's.
+             * @param {string} channel
+             * @returns {() => void}
+             */
+            addChannel: (channel) => {
+                claimChannel(channel);
+                let released = false;
+                return () => {
+                    if (!released) {
+                        released = true;
+                        releaseChannel(channel);
+                    }
+                };
             },
             setLoggingEnabled: (isEnabled) =>
                 workerService.send("BUS:SET_LOGGING_ENABLED", isEnabled),
@@ -464,8 +493,10 @@ export const busService = {
              *
              * @param {string} notificationType
              * @param {function} callback
+             * @returns {() => void} unsubscribes
              */
             subscribe(notificationType, callback) {
+                const unsubscribe = () => state.unsubscribe(notificationType, callback);
                 // Key by (callback, notificationType): a single callback may be
                 // subscribed to several types, so one wrapper per type must be
                 // kept, otherwise unsubscribe would remove the wrong listener
@@ -475,7 +506,7 @@ export const busService = {
                 }
                 const wrappersByType = subscribeFnToWrapper.get(callback);
                 if (wrappersByType.has(notificationType)) {
-                    return;
+                    return unsubscribe;
                 }
                 const wrapper = ({ detail }) => {
                     const { id, payload } = detail;
@@ -491,6 +522,7 @@ export const busService = {
                 };
                 wrappersByType.set(notificationType, wrapper);
                 notificationBus.addEventListener(notificationType, wrapper);
+                return unsubscribe;
             },
             /**
              * Unsubscribe from a single notification type.
@@ -518,6 +550,6 @@ export const busService = {
         return state;
     },
     /** Overriden to provide logs in tests. Use subscribe() in production. */
-    _onMessage(env, id, type, payload) {},
+    _onMessage(_env, _id, _type, _payload) {},
 };
 registry.category("services").add("bus_service", busService);

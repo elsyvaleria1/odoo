@@ -41,8 +41,7 @@ export const JOURNEY_NOTIFICATION = "error_incident/journey";
 
 /**
  * @typedef {Object} BusService
- * @property {(type: string, callback: (payload: any) => void) => void} subscribe
- * @property {(type: string, callback: (payload: any) => void) => void} unsubscribe
+ * @property {(type: string, callback: (payload: any) => void) => () => void} subscribe
  */
 
 /* The incident of the error one dialog shows, named exactly by the occurrence
@@ -71,6 +70,8 @@ export class IncidentJourney {
         });
         this.alive = true;
         this.timer = null;
+        /** @type {(() => void) | null} */
+        this.stopListening = null;
         this.onNotification = (/** @type {Journey} */ journey) => this.receive(journey);
     }
 
@@ -79,7 +80,7 @@ export class IncidentJourney {
             return;
         }
         this.state.stage = "waiting";
-        this.bus.subscribe(JOURNEY_NOTIFICATION, this.onNotification);
+        this.listen();
         this.ask(0);
     }
 
@@ -125,7 +126,7 @@ export class IncidentJourney {
      * @param {string} stack */
     async report(stack) {
         this.state.stage = "waiting";
-        this.bus.subscribe(JOURNEY_NOTIFICATION, this.onNotification);
+        this.listen();
         let answer = null;
         try {
             answer = await rpc(
@@ -173,10 +174,17 @@ export class IncidentJourney {
         });
     }
 
+    listen() {
+        this.stopListening ??= this.bus.subscribe(
+            JOURNEY_NOTIFICATION,
+            this.onNotification,
+        );
+    }
+
     destroy() {
         this.alive = false;
         clearTimeout(this.timer);
-        this.bus.unsubscribe(JOURNEY_NOTIFICATION, this.onNotification);
+        this.stopListening?.();
     }
 
     get following() {
