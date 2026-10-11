@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL
+from odoo.tools import SQL, TransactionMemo
 from odoo.tools.authority_keys import declare_authority_keys
 
 from .credit_policy_rule import PROFILE_STATES
@@ -18,6 +18,10 @@ declare_authority_keys(
 )
 
 _debug = DebugLog(__name__)
+
+POLICY_RULE_IDS = TransactionMemo(
+    "account_credit.policy_rule_ids", invalidated_by=("credit.policy.rule",)
+)
 
 EXPOSURE_FIELDS = (
     "exposure_open",
@@ -674,10 +678,7 @@ class CreditProfile(models.Model):
         company = company or self.env.company
         if not partner:
             return self.browse()
-        profile = self.sudo().search(
-            [("partner_id", "=", partner.id), ("company_id", "=", company.id)],
-            limit=1,
-        )
+        profile = self._for_partners(partner, company).get(partner.id, self.browse())
         if profile or not create:
             return profile.with_env(self.env)
         config = self.env["credit.config"].sudo()._for(company)
@@ -692,6 +693,18 @@ class CreditProfile(models.Model):
             )
             .with_env(self.env)
         )
+
+    @api.model
+    def _for_partners(self, partners, company) -> dict:
+        if not (commercial := partners.commercial_partner_id):
+            return {}
+        profiles = self.sudo().search(
+            [("partner_id", "in", commercial.ids), ("company_id", "=", company.id)]
+        )
+        by_partner = {}
+        for profile in profiles.with_env(self.env):
+            by_partner.setdefault(profile.partner_id.id, profile)
+        return by_partner
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -872,21 +885,20 @@ class CreditProfile(models.Model):
         self.invalidate_recordset(EXPOSURE_FIELDS)
         return self
 
-    def _evaluate(self, kind, amount=0.0, immediate=False, term_days=None):
+    def _evaluate(
+        self, kind, amount=0.0, immediate=False, term_days=None, *, refresh=True
+    ):
         if not self:
             _debug.logic("credit_no_standing", kind=kind)
             return CreditVerdict()
         self.check_singleton()
-        self._invalidate_exposure()
+        if refresh:
+            self._invalidate_exposure()
         facts = self.sudo()._facts(kind, amount, immediate, term_days)
         verdict = CreditVerdict(
             exposure=facts["exposure"], limit=facts["limit"], excess=facts["excess"]
         )
-        rules = (
-            self.env["credit.policy.rule"]
-            .sudo()
-            .search([("company_id", "in", [False, self.company_id.id])])
-        )
+        rules = self._policy_rules()
         profile = self.sudo()
         for rule in rules:
             if not rule._applies(profile, facts):
@@ -907,6 +919,17 @@ class CreditProfile(models.Model):
         )
         return verdict
 
+    def _policy_rules(self):
+        rule_ids_by_company = POLICY_RULE_IDS(self.env)
+        company_id = self.company_id.id
+        Rule = self.env["credit.policy.rule"].sudo()
+        key = (company_id, self.env.context.get("active_test", True))
+        if (rule_ids := rule_ids_by_company.get(key)) is None:
+            rule_ids = rule_ids_by_company[key] = Rule.search(
+                [("company_id", "in", [False, company_id])]
+            ).ids
+        return Rule.browse(rule_ids)
+
     def _credit_override(self) -> bool:
         context = self.env.context
         return bool(
@@ -915,11 +938,18 @@ class CreditProfile(models.Model):
         )
 
     def _check_credit(
-        self, kind, amount=0.0, immediate=False, term_days=None, approval_exempt=()
+        self,
+        kind,
+        amount=0.0,
+        immediate=False,
+        term_days=None,
+        approval_exempt=(),
+        *,
+        refresh=True,
     ):
         if self.env.context.get("install_module"):
             return CreditVerdict()
-        verdict = self._evaluate(kind, amount, immediate, term_days)
+        verdict = self._evaluate(kind, amount, immediate, term_days, refresh=refresh)
         if verdict.blocked:
             raise CreditRefused(
                 self.env._(

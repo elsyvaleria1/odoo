@@ -30,12 +30,14 @@ class AccountMove(models.Model):
             .search([("auto_invoice_id", "in", candidates.ids)])
             .auto_invoice_id
         )
-        for invoice in candidates - already_mirrored:
-            company_sudo = (
-                self.env["res.company"]
-                .sudo()
-                ._find_company_from_partner(invoice.partner_id.id)
-            )
+        to_mirror = candidates - already_mirrored
+        company_by_partner = (
+            self.env["res.company"]
+            .sudo()
+            ._find_companies_from_partners(to_mirror.partner_id)
+        )
+        for invoice in to_mirror:
+            company_sudo = company_by_partner.get(invoice.partner_id.id)
             if (
                 company_sudo
                 and company_sudo != invoice.company_id

@@ -1586,22 +1586,46 @@ class AccountMove(models.Model):
     @api.depends("partner_id", "partner_shipping_id", "company_id", "move_type")
     @_debug.perf.timed
     def _compute_fiscal_position_id(self) -> None:
+        deliveries = self.filtered(
+            lambda move: not move.partner_shipping_id
+        ).partner_id._address_get_multi(["delivery"])
+        delivery_ids = {
+            delivery["delivery"] for delivery in deliveries.values() if delivery
+        } | set(self.partner_shipping_id.ids)
+        auto_apply_by_company = {}
+        resolved = {}
         for move in self:
+            company = move.company_id
             receipt_fiscal_position = {
-                "in_receipt": move.company_id.account_config_id.account_purchase_receipt_fiscal_position_id,
+                "in_receipt": company.account_config_id.account_purchase_receipt_fiscal_position_id,
             }.get(move.move_type)
             if receipt_fiscal_position:
                 move.fiscal_position_id = receipt_fiscal_position
                 continue
-            delivery_partner = self.env["res.partner"].browse(
-                move.partner_shipping_id.id
-                or move.partner_id.address_get(["delivery"])["delivery"]
+            partner = move.partner_id
+            delivery_partner = (
+                self.env["res.partner"]
+                .browse(
+                    move.partner_shipping_id.id
+                    or deliveries.get(partner.id, {}).get("delivery")
+                )
+                .with_prefetch(delivery_ids)
             )
-            move.fiscal_position_id = (
-                self.env["account.fiscal.position"]
-                .with_company(move.company_id)
-                ._get_fiscal_position(move.partner_id, delivery=delivery_partner)
-            )
+            key = (company, partner, delivery_partner)
+            if key not in resolved:
+                FiscalPosition = self.env["account.fiscal.position"].with_company(
+                    company
+                )
+                if partner and company not in auto_apply_by_company:
+                    auto_apply_by_company[company] = (
+                        FiscalPosition._get_auto_apply_fiscal_positions(company)
+                    )
+                resolved[key] = FiscalPosition._get_fiscal_position(
+                    partner,
+                    delivery=delivery_partner,
+                    auto_apply_fpos=auto_apply_by_company.get(company),
+                )
+            move.fiscal_position_id = resolved[key]
 
     @api.depends("bank_partner_id", "currency_id", "preferred_payment_channel_id")
     @_debug.perf.timed
@@ -2912,17 +2936,23 @@ class AccountMove(models.Model):
         "fiscal_position_id.foreign_vat",
     )
     def _compute_tax_country_id(self) -> None:
-        self._update_tax_country_id()
+        for (fiscal_position, company), moves in groupby(
+            self, key=lambda move: (move.fiscal_position_id, move.company_id)
+        ):
+            self.browse(
+                [move.id for move in moves]
+            ).tax_country_id = fiscal_position._get_tax_country(company)
 
     def _update_tax_country_id(self) -> None:
-        self.fetch(["fiscal_position_id", "company_id"])
+        self.fetch(["fiscal_position_id", "company_id", "tax_country_id"])
+        stale = defaultdict(list)
+        for move in self:
+            country = move.fiscal_position_id._get_tax_country(move.company_id)
+            if move.tax_country_id != country:
+                stale[country].append(move.id)
         records = self.with_context(skip_is_manually_modified=True)
-        for (fiscal_position, company), record_group in groupby(
-            records, key=lambda r: (r.fiscal_position_id, r.company_id)
-        ):
-            records.browse(
-                [record.id for record in record_group]
-            ).tax_country_id = fiscal_position._get_tax_country(company)
+        for country, move_ids in stale.items():
+            records.browse(move_ids).tax_country_id = country
 
     @api.depends("tax_country_id")
     def _compute_tax_country_code(self) -> None:
@@ -4147,7 +4177,7 @@ class AccountMove(models.Model):
             raise UserError(error_msg)
 
     def _get_unbalanced_moves(self, container):
-        moves = container["records"].filtered(lambda move: move.line_ids)
+        moves = container["records"].filtered("id")
         if not moves:
             return None
 
@@ -4387,11 +4417,16 @@ class AccountMove(models.Model):
     @api.constrains("line_ids", "fiscal_position_id", "company_id")
     @_debug.perf.timed
     def _check_taxes_country(self) -> None:
-        self._update_tax_country_id()
-        for record in self:
-            amls = record.line_ids
-            impacted_countries = amls.tax_ids.country_id | amls.tax_line_id.country_id
-            if impacted_countries and impacted_countries != record.tax_country_id:
+        impacted_by_move = {
+            move: move.line_ids.tax_ids.country_id
+            | move.line_ids.tax_line_id.country_id
+            for move in self
+        }
+        taxed = self.filtered(lambda move: impacted_by_move[move])
+        taxed._update_tax_country_id()
+        for record in taxed:
+            impacted_countries = impacted_by_move[record]
+            if impacted_countries != record.tax_country_id:
                 if (
                     record.fiscal_position_id
                     and impacted_countries != record.fiscal_position_id.country_id

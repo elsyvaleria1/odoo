@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from odoo import fields, models
 
 
@@ -26,12 +28,13 @@ class AccountMove(models.Model):
     def _credit_profile(self):
         self.check_singleton()
         return (
-            self.env["credit.profile"]
-            .sudo()
-            .with_company(self.company_id)
+            self._credit_profiles_of(self.company_id)
             ._for_partner(self.partner_id, company=self.company_id)
             .with_context(credit_exclude_move_ids=tuple(self._origin.ids))
         )
+
+    def _credit_profiles_of(self, company):
+        return self.env["credit.profile"].sudo().with_company(company)
 
     def _prepare_credit_warning_message(self, record, current_amount=0.0):
         record = record.with_privilege(
@@ -55,20 +58,54 @@ class AccountMove(models.Model):
         )
 
     def _check_posting_advisories(self) -> None:
-        for move in self.filtered(lambda m: m.is_sale_document()):
-            if move.env.context.get("install_module"):
-                continue
-            profile = move._credit_profile()
+        if self.env.context.get("install_module"):
+            return super()._check_posting_advisories()
+        for company, moves in (
+            self.filtered(lambda m: m.is_sale_document()).grouped("company_id").items()
+        ):
+            moves._check_credit_on_posting(company)
+        return super()._check_posting_advisories()
+
+    def _check_credit_on_posting(self, company) -> None:
+        Profile = self._credit_profiles_of(company)
+        profile_by_partner = Profile._for_partners(self.partner_id, company)
+        if not profile_by_partner:
+            return
+        profiles = (
+            Profile.browse({profile.id for profile in profile_by_partner.values()})
+            .with_context(credit_exclude_move_ids=tuple(self._origin.ids))
+            ._invalidate_exposure()
+        )
+        profile_by_id = {profile.id: profile for profile in profiles}
+        drafts = defaultdict(float)
+        for move in self:
+            if move._counts_as_draft_exposure():
+                drafts[move.partner_id.commercial_partner_id.id] += (
+                    move.amount_total_signed
+                )
+        extra_exposure = self.env.context.get("credit_extra_exposure", 0.0)
+        for move in self:
+            partner_id = move.partner_id.commercial_partner_id.id
+            profile = profile_by_partner.get(partner_id)
             if not profile:
                 continue
+            others = drafts[partner_id] - (
+                move.amount_total_signed if move._counts_as_draft_exposure() else 0.0
+            )
+            profile = profile_by_id[profile.id].with_context(
+                credit_extra_exposure=extra_exposure + others
+            )
             if move.move_type == "out_refund":
                 if profile.hold_active:
-                    profile._check_credit("invoice", immediate=True)
+                    profile._check_credit("invoice", immediate=True, refresh=False)
                 continue
             profile._check_credit(
                 "invoice",
                 amount=abs(move.amount_total_signed),
                 immediate=move._is_immediate_payment(),
                 term_days=move._credit_term_days(),
+                refresh=False,
             )
-        return super()._check_posting_advisories()
+
+    def _counts_as_draft_exposure(self) -> bool:
+        return self.state == "draft" and self.move_type in ("out_invoice", "out_refund")

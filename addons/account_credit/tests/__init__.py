@@ -14,3 +14,4 @@ from . import (
     test_credit_warning_exposure,
     test_home_tile_credit,
 )
+from . import test_credit_posting_batch

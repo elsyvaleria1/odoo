@@ -563,50 +563,67 @@ class TestInterCompanyInvoice(TestInterCompanyRulesCommon):
             "ref is set explicitly from the source and must win over a default",
         )
 
-    def test_target_company_is_resolved_once_per_move(self):
-        customer_invoice = (
+    def test_target_companies_are_resolved_once_per_batch(self):
+        customer_invoices = (
             self.env["account.move"]
             .with_user(self.res_users_company_a)
             .create(
-                {
-                    "move_type": "out_invoice",
-                    "invoice_date": "2024-05-01",
-                    "partner_id": self.company_b.partner_id.id,
-                    "invoice_line_ids": [
-                        Command.create(
-                            {
-                                "product_id": self.product_a.id,
-                                "price_unit": 100.0,
-                                "quantity": 1.0,
-                                "tax_ids": False,
-                            }
-                        )
-                        for _i in range(3)
-                    ],
-                }
+                [
+                    {
+                        "move_type": "out_invoice",
+                        "invoice_date": "2024-05-01",
+                        "partner_id": self.company_b.partner_id.id,
+                        "invoice_line_ids": [
+                            Command.create(
+                                {
+                                    "product_id": self.product_a.id,
+                                    "price_unit": 100.0,
+                                    "quantity": 1.0,
+                                    "tax_ids": False,
+                                }
+                            )
+                            for _i in range(3)
+                        ],
+                    }
+                    for _j in range(3)
+                ]
             )
         )
         company_model = self.env.registry["res.company"]
-        original = company_model._find_company_from_partner
+        original = company_model._find_companies_from_partners
         calls = []
 
-        def spy(records, partner_id):
-            calls.append(partner_id)
-            return original(records, partner_id)
+        def spy(records, partners):
+            calls.append(partners)
+            return original(records, partners)
 
-        with patch.object(company_model, "_find_company_from_partner", spy):
-            customer_invoice.with_user(self.res_users_company_a).action_post()
+        with patch.object(company_model, "_find_companies_from_partners", spy):
+            customer_invoices.with_user(self.res_users_company_a).action_post()
 
-        self.assertEqual(len(customer_invoice.invoice_line_ids), 3)
         self.assertEqual(
-            len(calls), 1, "the target company is constant per move: resolve it once"
+            len(calls), 1, "the target companies are resolved once for the batch"
         )
-        bill = (
+        bills = (
             self.env["account.move"]
             .sudo()
-            .search([("auto_invoice_id", "=", customer_invoice.id)])
+            .search([("auto_invoice_id", "in", customer_invoices.ids)])
         )
-        self.assertEqual(len(bill.invoice_line_ids), 3)
+        self.assertEqual(bills.auto_invoice_id, customer_invoices)
+        self.assertEqual(bills.company_id, self.company_b)
+        self.assertEqual(len(bills.invoice_line_ids), 9)
+
+    def test_a_contact_resolves_to_the_company_of_its_parent(self):
+        contact = self.env["res.partner"].create(
+            {"name": "Contact at B", "parent_id": self.company_b.partner_id.id}
+        )
+        stranger = self.env["res.partner"].create({"name": "Not a company"})
+        partners = contact | stranger | self.company_b.partner_id
+
+        companies = self.env["res.company"]._find_companies_from_partners(partners)
+
+        self.assertEqual(companies[contact.id], self.company_b)
+        self.assertEqual(companies[self.company_b.partner_id.id], self.company_b)
+        self.assertFalse(companies[stranger.id])
 
     def test_prepared_values_are_writable(self):
         customer_invoice = self.env["account.move"].create(

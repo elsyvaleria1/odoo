@@ -34,6 +34,8 @@ _logger = logging.getLogger(__name__)
 
 _debug = DebugLog(__name__)
 
+_ANALYTIC_ACCOUNTS_OF_BATCH = "account.move.line.analytic_accounts_of_batch"
+
 _NON_ACCOUNTABLE_SQL_TUPLE = "({})".format(
     ", ".join(f"'{display_type}'" for display_type in NON_ACCOUNTABLE_DISPLAY_TYPES)
 )
@@ -3969,9 +3971,29 @@ class AccountMoveLine(models.Model):
     @_debug.perf.timed
     def _create_analytic_lines(self) -> None:
         self._check_analytic_distribution()
-        analytic_line_vals = []
-        for line in self:
-            analytic_line_vals.extend(line._prepare_analytic_lines())
+        account_ids = {
+            int(account_id)
+            for line in self
+            for key in line.analytic_distribution or ()
+            for account_id in key.split(",")
+        }
+        cache = self.env.cr.cache
+        outer = cache.get(_ANALYTIC_ACCOUNTS_OF_BATCH)
+        cache[_ANALYTIC_ACCOUNTS_OF_BATCH] = (
+            account_ids,
+            frozenset(
+                self.env["account.analytic.account"].browse(account_ids).exists().ids
+            ),
+        )
+        try:
+            analytic_line_vals = []
+            for line in self:
+                analytic_line_vals.extend(line._prepare_analytic_lines())
+        finally:
+            if outer is None:
+                cache.pop(_ANALYTIC_ACCOUNTS_OF_BATCH, None)
+            else:
+                cache[_ANALYTIC_ACCOUNTS_OF_BATCH] = outer
         _debug.pipeline(
             "_create_analytic_lines_line",
             analytic_line_vals_count=len(analytic_line_vals),
@@ -4001,6 +4023,15 @@ class AccountMoveLine(models.Model):
             self._round_analytic_distribution_line(analytic_line_vals)
         return analytic_line_vals
 
+    def _existing_analytic_accounts(self, key: str):
+        accounts = self.env["account.analytic.account"].browse(map(int, key.split(",")))
+        checked, existing = self.env.cr.cache.get(_ANALYTIC_ACCOUNTS_OF_BATCH, ((), ()))
+        if checked and checked.issuperset(accounts.ids):
+            return accounts.filtered(
+                lambda account: account.id in existing
+            ).with_prefetch(existing)
+        return accounts.exists()
+
     @_debug.perf.timed
     def _prepare_analytic_distribution_line(
         self, distribution, account_ids, distribution_on_each_plan
@@ -4011,11 +4042,7 @@ class AccountMoveLine(models.Model):
             "Percentage Analytic"
         )
         amount = 0
-        for account in (
-            self.env["account.analytic.account"]
-            .browse(map(int, account_ids.split(",")))
-            .exists()
-        ):
+        for account in self._existing_analytic_accounts(account_ids):
             distribution_plan = (
                 distribution_on_each_plan.get(account.root_plan_id, 0) + distribution
             )

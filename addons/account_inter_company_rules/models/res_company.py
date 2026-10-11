@@ -38,7 +38,28 @@ class ResCompany(models.Model):
     def _find_company_from_partner(self, partner_id) -> Self:
         if not partner_id:
             return self.sudo().browse()
-        return self.sudo().search([("partner_id", "parent_of", partner_id)], limit=1)
+        return self._find_companies_from_partners(
+            self.env["res.partner"].browse(partner_id)
+        )[partner_id]
+
+    @api.model
+    def _find_companies_from_partners(self, partners) -> dict[int, Self]:
+        if not partners:
+            return {}
+        companies = self.sudo().search([("partner_id", "parent_of", partners.ids)])
+        none = companies.browse()
+        by_partner = {}
+        for partner in partners.with_env(companies.env).with_context(active_test=False):
+            lineage = set()
+            ancestor = partner
+            while ancestor and ancestor.id not in lineage:
+                lineage.add(ancestor.id)
+                ancestor = ancestor.parent_id
+            by_partner[partner.id] = next(
+                (company for company in companies if company.partner_id.id in lineage),
+                none,
+            )
+        return by_partner
 
     @api.depends("account_config_id.chart_template")
     def _compute_intercompany_purchase_journal_id(self) -> None:
