@@ -748,13 +748,6 @@ class SaleOrder(models.Model):
         if request:
             request.session["website_sale_cart_quantity"] = self.cart_quantity
 
-    def _remove_invalid_cart_lines(self) -> None:
-        self.check_singleton()
-
-        self.line_ids.filtered(
-            lambda sol: sol.product_id and not sol.product_id.active
-        ).unlink()
-
     def _get_cart_accessories_of_line(self, line, excluded_product_ids):
         accessory_products = (
             line.product_id.product_tmpl_id._get_website_accessory_product()

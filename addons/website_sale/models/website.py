@@ -735,8 +735,14 @@ class Website(models.Model):
                 return pricelist_sudo.sudo()
 
         if cart_sudo := request.cart:
-            if not request.env.cr.readonly:
-                cart_sudo._compute_pricelist_id()
+            if request.env.cr.readonly:
+                # Left out of the session: cached, the cart's unrecomputed
+                # pricelist would outlive every later writable request.
+                _debug.logic(
+                    "pricelist_uncached", reason="readonly_cursor", order=cart_sudo.id
+                )
+                return cart_sudo.pricelist_id
+            cart_sudo._compute_pricelist_id()
             pricelist_sudo = cart_sudo.pricelist_id
         else:
             pricelist_sudo = self.env.user.partner_id.property_product_pricelist
@@ -853,12 +859,14 @@ class Website(models.Model):
                     website=self.id,
                     order=abandonned_cart_sudo.id,
                     partner=partner_sudo.id,
+                    readonly=request.env.cr.readonly,
                 )
-                if not request.env.cr.readonly:
-                    abandonned_cart_sudo._update_address(
-                        partner_sudo.id, ["partner_id"]
-                    )
-                    abandonned_cart_sudo._remove_invalid_cart_lines()
+                if request.env.cr.readonly:
+                    # Left out of the session, so the first writable request
+                    # resumes it again and refreshes its pricelist and fiscal
+                    # position; once cached, the cart is never resumed again.
+                    return abandonned_cart_sudo
+                abandonned_cart_sudo._update_address(partner_sudo.id, ["partner_id"])
                 sale_order_sudo = abandonned_cart_sudo
 
         if (

@@ -22,6 +22,7 @@ from . import test_website_sale_checkout_steps
 from . import test_website_sale_cart_abandoned
 from . import test_website_sale_cart_notification
 from . import test_website_sale_cart_payment
+from . import test_website_sale_cart_readonly
 from . import test_website_sale_cart_recovery
 from . import test_website_sale_combo_configurator
 from . import test_website_sale_gmc
