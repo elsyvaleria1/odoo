@@ -65,3 +65,67 @@ class TestAgedPendingMatch(TestAccountReportsCommon):
         self.assertEqual(values["total"], ledger)
         self.assertEqual(values["total"], -1000.0)
         self.assertEqual(values["pending_match"], -1000.0)
+
+    def test_aged_payable_is_the_trade_payable_ledger(self):
+        payable = self.company_data["default_account_payable"]
+        non_trade = payable.copy({"code": "211NT", "non_trade": True})
+        expense = self.company_data["default_account_expense"]
+
+        def entry(account, amount, partner=None):
+            move = self.env["account.move"].create(
+                {
+                    "move_type": "entry",
+                    "date": "2019-01-10",
+                    "line_ids": [
+                        Command.create(
+                            {
+                                "account_id": account.id,
+                                "partner_id": partner and partner.id,
+                                "balance": -amount,
+                            }
+                        ),
+                        Command.create({"account_id": expense.id, "balance": amount}),
+                    ],
+                }
+            )
+            move.action_post()
+            return move
+
+        entry(payable, 1000.0, self.partner_a)
+        entry(payable, 300.0)
+        entry(non_trade, 500.0, self.partner_a)
+        report = self.env.ref("account.aged_payable_report")
+        options = self._generate_options(
+            report,
+            fields.Date.from_string("2019-01-31"),
+            fields.Date.from_string("2019-01-31"),
+        )
+        options["unfold_all"] = True
+        columns = [column["expression_label"] for column in options["columns"]]
+        totals = {
+            line["name"]: dict(
+                zip(
+                    columns,
+                    [column["no_format"] for column in line["columns"]],
+                    strict=True,
+                )
+            )["total"]
+            for line in report._get_lines(options)
+        }
+
+        trade_ledger = -sum(
+            self.env["account.move.line"]
+            .search(
+                [
+                    ("company_id", "=", self.env.company.id),
+                    ("parent_state", "=", "posted"),
+                    ("account_id.account_type", "=", "liability_payable"),
+                    ("account_id.non_trade", "=", False),
+                ]
+            )
+            .mapped("amount_residual")
+        )
+        self.assertEqual(totals["Total Aged Payable"], trade_ledger)
+        self.assertEqual(totals["Total Aged Payable"], 1300.0)
+        self.assertEqual(totals[self.partner_a.display_name], 1000.0)
+        self.assertEqual(totals["Unknown"], 300.0, "a partner-less line counts")
