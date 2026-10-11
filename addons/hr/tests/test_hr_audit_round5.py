@@ -81,6 +81,17 @@ class TestDepartureWizardForAnHrOfficer(TestHrCommon):
         )
         self.assertFalse(self.leaving.sudo().contract_date_end)
 
+    def test_an_officer_cannot_end_the_contract_through_the_departure(self):
+        wizard = self._wizard(self.res_users_hr_officer).create(
+            {
+                "departure_reason_id": self.env.ref("hr.departure_resigned").id,
+                "set_date_end": True,
+            }
+        )
+        with self.assertRaises(AccessError):
+            wizard.action_register_departure()
+        self.assertFalse(self.leaving.sudo().contract_date_end)
+
     def test_a_manager_still_closes_the_contract_by_default(self):
         wizard = self._wizard(self.res_users_hr_manager).create(
             {"departure_reason_id": self.env.ref("hr.departure_resigned").id}
