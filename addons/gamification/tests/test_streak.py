@@ -12,7 +12,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestStreakCommon(common.TransactionCase):
-    """Common setup for streak tests."""
 
     @classmethod
     def setUpClass(cls):
@@ -50,7 +49,6 @@ class TestStreakCommon(common.TransactionCase):
 
 
 class TestStreak(TestStreakCommon):
-    """Tests for the gamification streak system."""
 
     def setUp(self):
         super().setUp()

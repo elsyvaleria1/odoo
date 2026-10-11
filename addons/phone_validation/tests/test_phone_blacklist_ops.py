@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPhoneBlacklistOps(TransactionCase):
-    """phone.blacklist add / remove / reactivate / search behaviour."""
 
     NUMBER = "+33612345678"
 
@@ -55,15 +54,6 @@ class TestPhoneBlacklistOps(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPhoneBlacklistDoesNotDeriveFromActingUser(TransactionCase):
-    """A falsy/unparseable number must never resolve to env.user's own.
-
-    ``_phone_format``'s "no number given" fallback is meant for a record
-    looking up its own field; ``phone.blacklist`` misuses it by sanitizing
-    through ``self.env.user._phone_format(...)``, where ``self`` (the
-    acting user) is unrelated to the entry being created/searched/removed.
-    Every method must reject a falsy/unparseable number outright instead of
-    silently substituting the acting user's own phone/mobile.
-    """
 
     @property
     def Blacklist(self):
@@ -102,7 +92,6 @@ class TestPhoneBlacklistDoesNotDeriveFromActingUser(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPortalUserBlacklistOnDeactivate(TransactionCase):
-    """Deactivating a portal user optionally blacklists their phone."""
 
     def test_deactivation_with_request_blacklists_phone(self):
         user = self.env["res.users"].create(

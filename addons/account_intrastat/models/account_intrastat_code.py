@@ -33,12 +33,6 @@ SUPPLEMENTARY_UNITS = [
 
 
 class AccountIntrastatCode(models.Model):
-    """
-    Codes used for the intrastat reporting.
-
-    The list of commodity codes is available on:
-    https://www.cbs.nl/en-gb/deelnemers%20enquetes/overzicht/bedrijven/onderzoek/lopend/international-trade-in-goods/idep-code-lists
-    """
 
     _name = "account.intrastat.code"
     _description = "Intrastat Code"

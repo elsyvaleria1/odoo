@@ -16,8 +16,6 @@ _AWAITING_PRODUCTION = ("merged", "hotfixing")
 
 
 class ErrorIncident(models.Model):
-    """From a pushed fix to production: the pull request's checks, the merge or
-    the hotfix a person approves, and the revision production reports."""
 
     _name = "error.incident"
     _inherit = ["error.incident", "mixin.approval.gate"]

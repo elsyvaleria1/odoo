@@ -3,8 +3,6 @@ from odoo.tools import email_normalize
 
 
 class MailTestTicket(models.Model):
-    """This model can be used in tests when complex chatter features are
-    required like modeling tasks or tickets."""
 
     _description = "Ticket-like model"
     _name = "mail.test.ticket"
@@ -105,9 +103,6 @@ class MailTestTicket(models.Model):
 
 
 class MailTestTicketEl(models.Model):
-    """Just mail.test.ticket, but exclusion-list enabled. Kept as different
-    model to avoid messing with existing tests, notably performance, and ease
-    backward comparison."""
 
     _description = "Ticket-like model with exclusion list"
     _name = "mail.test.ticket.el"
@@ -131,9 +126,6 @@ class MailTestTicketEl(models.Model):
 
 
 class MailTestTicketMc(models.Model):
-    """Just mail.test.ticket, but multi company. Kept as different model to
-    avoid messing with existing tests, notably performance, and ease backward
-    comparison."""
 
     _description = "Ticket-like model"
     _name = "mail.test.ticket.mc"
@@ -191,8 +183,6 @@ class MailTestTicketMc(models.Model):
 
 
 class MailTestTicketPartner(models.Model):
-    """Mail.test.ticket.mc, with complete partner support. More functional
-    and therefore done in a separate model to avoid breaking other tests."""
 
     _description = "MC ticket-like model with partner support"
     _name = "mail.test.ticket.partner"
@@ -264,8 +254,6 @@ class MailTestTicketPartner(models.Model):
 
 
 class MailTestContainer(models.Model):
-    """This model can be used in tests when container records like projects
-    or teams are required."""
 
     _description = "Project-like model with alias"
     _name = "mail.test.container"
@@ -301,9 +289,6 @@ class MailTestContainer(models.Model):
 
 
 class MailTestContainerMc(models.Model):
-    """Just mail.test.container, but multi company. Kept as different model to
-    avoid messing with existing tests, notably performance, and ease backward
-    comparison."""
 
     _description = "Project-like model with alias (MC)"
     _name = "mail.test.container.mc"

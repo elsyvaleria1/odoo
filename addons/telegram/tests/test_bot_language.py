@@ -2,8 +2,6 @@ from .common import TelegramBotTestCase
 
 
 class TestBotLanguage(TelegramBotTestCase):
-    """A bot answers in the language the person's Telegram app uses, else in
-    their linked contact's, unless it is set to always answer in its own."""
 
     @classmethod
     def setUpClass(cls):

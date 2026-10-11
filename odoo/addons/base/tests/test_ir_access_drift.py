@@ -3,8 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestAccessDrift(TransactionCase):
-    """The rows a module's files ship are the desired state: the nightly scan
-    names every row that parts from them, and changes nothing."""
 
     @classmethod
     def setUpClass(cls):

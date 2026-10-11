@@ -4,13 +4,6 @@ from odoo import api
 
 
 class OdooReader:
-    """Open read-only environments as the reader user, over every company.
-
-    Each environment lives on its own PostgreSQL READ ONLY transaction on the
-    primary, so nothing a report runs can write. The reader acts as superuser
-    on purpose: the owner sees everything, and the read-only transaction is
-    what keeps that safe.
-    """
 
     STATEMENT_TIMEOUT_MS = 20000
 

@@ -6,7 +6,6 @@ from odoo.addons.mail_microsoft.models.mixin_mail_microsoft import OUTLOOK
 
 
 class FetchmailServer(models.Model):
-    """Add the Outlook OAuth authentication on the incoming mail servers."""
 
     _name = "fetchmail.server"
     _inherit = ["fetchmail.server", "mixin.mail.microsoft"]

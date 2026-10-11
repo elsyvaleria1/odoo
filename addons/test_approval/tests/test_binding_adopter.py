@@ -5,12 +5,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestBindingOnAnAdopter(ApprovalCommon):
-    """A Request-mode binding on a document that implements mixin.approval.
-
-    The document asks through its own `action_create_approval_request`, so its
-    category matching and hooks still run; the binding only records which
-    operation to run once the document is approved.
-    """
 
     def setUp(self):
         super().setUp()

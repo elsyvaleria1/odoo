@@ -12,8 +12,6 @@ from odoo.db.cursor import Cursor
 
 
 class StatementCounter:
-    """Count driver submissions, with executemany treated as one submission,
-    and how long the thread waited for a CPU inside them (`sql_wait`)."""
 
     def __init__(self) -> None:
         self.count = 0

@@ -29,7 +29,6 @@ def _pinned_ids(domain):
 
 
 class AccountCodeMapping(models.Model):
-    """Per-company code override for an account, keyed by a packed virtual id."""
 
     _name = "account.code.mapping"
     _description = "Mapping of account codes per company"

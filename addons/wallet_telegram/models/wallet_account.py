@@ -3,7 +3,6 @@ from odoo.tools import frozendict
 
 
 class WalletAccount(models.Model):
-    """Route cardholder top-up requests through an approval category."""
 
     _inherit = "wallet.account"
     _access_anchors = frozendict({"partner": "card_ids.holder_id"})

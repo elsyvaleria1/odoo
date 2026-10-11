@@ -17,11 +17,10 @@ IN_LOOKBACK = timedelta(days=30)
 
 
 class SheetRefused(Exception):
-    """The sheet goes on no transfer: the message says why, to the chat."""
+    pass
 
 
 class TelegramShipmentSheet(models.Model):
-    """A carrier's shipping order sent through Telegram with /embarque."""
 
     _name = "telegram.shipment.sheet"
     _description = "Telegram Shipping Order"

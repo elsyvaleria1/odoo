@@ -22,8 +22,6 @@ def _git(cwd, *args):
 
 @tagged("post_install", "-at_install")
 class TestRepositoryOfAModule(TransactionCase):
-    """A checkout is known by what its origin fetches from, as git resolves
-    it, wherever it is cloned."""
 
     def setUp(self):
         super().setUp()

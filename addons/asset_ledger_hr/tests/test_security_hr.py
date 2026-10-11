@@ -9,12 +9,6 @@ from odoo.addons.asset_ledger.tests.common import (
 
 
 class TestSecurityHR(TransactionCase):
-    """The HR access rows must not widen what `asset_ledger` narrows.
-
-    `ir.access` ORs the permissions of every group a user holds and only guards
-    narrow them, so an HR group whose permission on these models carries no
-    domain is left with the multi-company guard alone and reads the whole table.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -156,13 +150,6 @@ class TestSecurityHR(TransactionCase):
 
 
 class TestOperatorSubtypeVisibility(TransactionCase):
-    """Who operates an asset is internal HR and fleet information.
-
-    mail.message.subtype.internal gates a subtype to employees. Both operator
-    subtypes are default=True, so without it every follower of a product.trace --
-    including a contact with no user account -- is subscribed to them and
-    notified of the assignment.
-    """
 
     @classmethod
     def setUpClass(cls):

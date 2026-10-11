@@ -9,8 +9,6 @@ OPEN_SESSION = "im_livechat.privilege_open_session"
 
 @odoo.tests.tagged("-at_install", "post_install")
 class TestOpenSession(TransactionCase):
-    """A session opened without a web request: a messaging bridge brings a
-    partner, and the environment is a service user, never the visitor."""
 
     def setUp(self):
         super().setUp()
@@ -81,8 +79,6 @@ class TestOpenSession(TransactionCase):
 
 @odoo.tests.tagged("-at_install", "post_install")
 class TestOpenSessionPrivilege(TestOpenSession):
-    """A caller that is neither the superuser nor a live chat user -- a
-    bridge's public webhook user -- opens a session on the privilege alone."""
 
     def setUp(self):
         super().setUp()

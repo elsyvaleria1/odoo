@@ -125,18 +125,6 @@ class TestMailPerformance(FullBaseMailPerformance):
 
 @tagged("mail_performance", "post_install", "-at_install")
 class TestPortalFormatPerformance(FullBaseMailPerformance):
-    """Test performance of `portal_message_format` with multiple messages
-    with multiple attachments, with ratings.
-
-    Those messages might not make sense functionally but they are crafted to
-    cover as much of the code as possible in regard to number of queries.
-
-    Setup :
-      * 5 records (self.containers -> 5 mail.test.rating records, with
-        a different customer_id each)
-      * 2 messages / record
-      * 2 attachments / message
-    """
 
     @classmethod
     def setUpClass(cls):

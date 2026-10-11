@@ -13,9 +13,6 @@ FAILING = frozenset(
 
 
 class IntegrationGithubCheck(models.Model):
-    """One verdict GitHub holds on a commit: a check run, a workflow run or a
-    commit status. A check suite is not one: a suite GitHub requests for every
-    installed app stays queued forever for an app that never runs."""
 
     _name = "integration.github.check"
     _description = "GitHub Check"

@@ -14,18 +14,6 @@ COMPANY_MODES = ("any", "choose")
 
 @dataclass(frozen=True)
 class TelegramCommand:
-    """A command a handler answers: the method, who may use it, whether it
-    opens a multi-step flow (refused while another flow is open), and whether
-    every bot running the handler answers it without the command being linked
-    to the bot.
-
-    Who may use it is declared, so that running it, /ayuda and the command
-    menu Telegram shows each person ask the same question: the tier, then for
-    an internal user the `access` (model, operation) they have in Odoo -- the
-    ir.access rows, not a group test -- then the handler's `_command_allowed`.
-    `description` is the menu's line for it; a command without one is not in
-    the menu, and still runs. `company` says which company it acts in
-    (COMPANY_MODES)."""
 
     method: str
     tier: str = "internal"

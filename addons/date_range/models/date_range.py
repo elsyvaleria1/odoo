@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class DateRange(models.Model):
-    """Named period of time, optionally nested inside a parent period."""
 
     _name = "date.range"
     _description = "Date Range"

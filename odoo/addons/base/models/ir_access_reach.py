@@ -70,7 +70,6 @@ PRINCIPAL_NAMES = (
 
 @dataclass(frozen=True, slots=True)
 class Part:
-    """One row a domain becomes: a rung read through an anchor, and a fixed filter."""
 
     reach: str
     kind: str = ""

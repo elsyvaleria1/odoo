@@ -6,11 +6,6 @@ from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 
 class MixinAccountExternalTax(models.AbstractModel):
-    """Main class to add support for external tax integration on a model.
-
-    This mixin can be inherited on models that should support external tax integration. Certain methods
-    will need to be overridden, they are indicated below.
-    """
 
     _name = "mixin.account.external.tax"
     _description = "Mixin to manage common parts of external tax calculation"

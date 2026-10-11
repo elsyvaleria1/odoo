@@ -42,7 +42,6 @@ _logger = logging.getLogger(__name__)
 
 
 class Orientation(Enum):
-    """xrandr/wlr-randr screen orientation for kiosk mode"""
 
     NORMAL = "normal"
     INVERTED = "180"
@@ -51,9 +50,6 @@ class Orientation(Enum):
 
 
 class IoTRestart(Thread):
-    """
-    Thread to restart odoo server in IoT Box when we must return a answer before
-    """
 
     def __init__(self, delay) -> None:
         super().__init__(daemon=True)

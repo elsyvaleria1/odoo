@@ -3,7 +3,6 @@ from odoo.tools.translate import html_translate
 
 
 class DigestTip(models.Model):
-    """Rotating usage tip shown in the digest email."""
 
     _name = "digest.tip"
     _description = "Digest Tips"

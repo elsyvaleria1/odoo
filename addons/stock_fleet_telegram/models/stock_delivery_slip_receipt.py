@@ -5,11 +5,6 @@ OPEN_STATES = ("draft", "submitted")
 
 
 class StockDeliverySlipReceipt(models.Model):
-    """One handover of signed delivery slips from whoever delivered the goods to
-    administration, as the Telegram chat recorded them.
-
-    Persistent, not a wizard: the printed receipt is reprinted and audited.
-    """
 
     _name = "stock.delivery.slip.receipt"
     _description = "Signed Delivery Slip Receipt"

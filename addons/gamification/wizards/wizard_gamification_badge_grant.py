@@ -2,7 +2,6 @@ from odoo import exceptions, fields, models
 
 
 class WizardGamificationBadgeGrant(models.TransientModel):
-    """Wizard for granting a badge to a user."""
 
     _name = "wizard.gamification.badge.grant"
     _description = "Gamification User Badge Wizard"

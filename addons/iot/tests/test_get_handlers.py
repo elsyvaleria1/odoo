@@ -10,11 +10,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestHandlerShipping(HttpCase):
-    """``/iot/get_handlers`` decides which driver files reach a box.
-
-    Which module ships a driver is a manifest property since the driver split,
-    so these pin the two keys rather than a list of module names.
-    """
 
     token = ""
 
@@ -212,14 +207,6 @@ class TestHandlerNamespace(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestHandlerDependencies(HttpCase):
-    """A handler that imports another handler needs both in the same zip.
-
-    Before the driver split one module shipped the payment terminals and their
-    shared base together, so the question could not arise. Nine modules ship
-    them now and the edges cross module boundaries, while the import path is
-    ``odoo.addons.iot_drivers.iot_handlers.*`` whoever shipped the file -- so
-    the import reads as internal and is not.
-    """
 
     _IMPORT = re.compile(r"odoo\.addons\.iot_drivers\.iot_handlers\.(\w+)\.(\w+)")
 

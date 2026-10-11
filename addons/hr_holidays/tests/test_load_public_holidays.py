@@ -7,7 +7,6 @@ from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install")
 class TestLoadPublicHolidays(TestHrHolidaysCommon):
-    """Loading the official Mexican holidays instead of typing them yearly."""
 
     @classmethod
     def setUpClass(cls):

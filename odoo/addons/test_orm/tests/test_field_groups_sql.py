@@ -148,9 +148,6 @@ class TestFieldGroupsInSql(TransactionCase):
 
 
 class TestFieldGroupsInPredicates(TransactionCase):
-    """filtered_domain builds Python predicates; a pattern predicate has a
-    fast path over the shared cache and must still refuse a field the user
-    may not read, as the SQL side does."""
 
     @classmethod
     def setUpClass(cls):

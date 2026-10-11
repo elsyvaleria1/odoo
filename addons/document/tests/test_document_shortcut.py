@@ -265,15 +265,6 @@ class TestDocumentsShortcutAsParent(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsShortcutDestinationAmbiguity(TransactionCaseDocuments):
-    """A shortcut with no destination may only inherit ONE unambiguous one.
-
-    `action_create_shortcut` refuses a destination-less call when the selection
-    spans several folders, and it decided that by counting `self.folder_id.ids`
-    -- the id list of a recordset, which cannot hold the root's absent folder.
-    So a selection of one root document and one document inside a folder read
-    as "one folder", the refusal never fired, and `location` became that one
-    folder: the root document's shortcut was filed somewhere nobody named.
-    """
 
     @users("documents@example.com")
     def test_a_selection_spanning_root_and_a_folder_is_ambiguous(self):

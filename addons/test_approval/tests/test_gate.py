@@ -8,12 +8,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalGate(ApprovalCommon):
-    """A document holds its own verbs on its approval, one grant per verb.
-
-    `approval.test.gated` declares `ship` (door `action_ship`, checkpoint
-    `_check_ship`) and `bill` (door `action_bill`); test_approval ships an
-    obligation on each, in Request mode.
-    """
 
     def setUp(self):
         super().setUp()

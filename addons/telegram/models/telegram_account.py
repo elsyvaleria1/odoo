@@ -14,12 +14,6 @@ TIERS = ("contact", "portal", "internal")
 
 
 class TelegramAccount(models.Model):
-    """A Telegram person, the same across every bot of the database.
-
-    Telegram gives a user one immutable id; the username and names are the
-    owner's to change and only describe them. Who the person is in Odoo is
-    decided by an active binding and nothing else.
-    """
 
     _name = "telegram.account"
     _description = "Telegram Account"

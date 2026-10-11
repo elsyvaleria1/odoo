@@ -10,15 +10,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialAccount(models.Model):
-    """A social.account represents an actual account on the related social.media.
-    Ex: A Facebook Page or a Twitter Account.
-
-    These social.accounts will then be used to send generic social.posts to multiple social.accounts.
-    They are also used to display a 'dashboard' of statistics on the 'Feed' view.
-
-    Account statistic fields are 'computed' manually through the _update_statistics method
-    that is overridden by each actual social module implementations (social_facebook, social_twitter, ...).
-    The statistics computation is run manually when visualizing the Feed."""
 
     _name = "social.account"
     _inherit = ["mixin.credential.holder"]

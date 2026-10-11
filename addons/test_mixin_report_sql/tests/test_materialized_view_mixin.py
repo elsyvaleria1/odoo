@@ -12,7 +12,6 @@ from odoo.addons.mixin_report_sql.models import mixin_materialized_view
 
 
 class MaterializedCase(TransactionCase):
-    """Shared fixture: a real materialized report over a real source table."""
 
     @classmethod
     def setUpClass(cls):
@@ -53,7 +52,6 @@ class MaterializedCase(TransactionCase):
 
 
 class TestIntrospection(MaterializedCase):
-    """Schema-scoped pg_class lookups."""
 
     def setUp(self):
         super().setUp()
@@ -98,7 +96,6 @@ class TestIntrospection(MaterializedCase):
 
 
 class TestIndexPlan(MaterializedCase):
-    """``id`` is always indexed, whatever the unique key is."""
 
     def test_unique_index_is_on_the_declared_column(self):
         self.assertEqual(self.report._relation_index_field, "grain")
@@ -152,7 +149,6 @@ class TestIndexPlan(MaterializedCase):
 
 
 class TestRefresh(MaterializedCase):
-    """``refresh()``: contents, self-healing, and transaction hygiene."""
 
     def test_refresh_picks_up_new_source_rows(self):
         self._seed("a", 1.0)
@@ -252,7 +248,6 @@ class TestRefresh(MaterializedCase):
 
 
 class TestCreation(MaterializedCase):
-    """``_create_relation``, its guards and its hooks."""
 
     def test_query_must_return_sql(self):
         with patch.object(type(self.report), "_query", lambda self: "SELECT 1"):
@@ -315,12 +310,6 @@ class TestCreation(MaterializedCase):
 
 @tagged("post_install", "-at_install")
 class TestRebuildSkipAndDeferral(MaterializedCase):
-    """``init()`` rebuild policy: hash-based skip and end-of-load deferral.
-
-    post_install because ``init()`` branches on ``registry.loaded``: at_install
-    runs inside module loading, where it is still False and every call takes the
-    deferral branch. Testing the ready path at_install measures the deferral.
-    """
 
     def test_init_skips_rebuild_when_definition_unchanged(self):
         self.report.init()
@@ -393,7 +382,6 @@ class TestRebuildSkipAndDeferral(MaterializedCase):
 
 
 class TestQueryResolution(MaterializedCase):
-    """``_query()`` resolves through the mixins in either ``_inherit`` order."""
 
     def test_composed_model_resolves_to_the_registry_builder(self):
         self.assertIsInstance(self.report._query(), SQL)

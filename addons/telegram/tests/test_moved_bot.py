@@ -9,8 +9,6 @@ from odoo.addons.telegram.models.telegram_bot import TelegramBot
 
 @tagged("post_install", "-at_install")
 class TestMovedBot(TelegramBotTestCase):
-    """A bot its people moved away from points them to the one they moved to,
-    and does nothing else for them any more."""
 
     @classmethod
     def setUpClass(cls):

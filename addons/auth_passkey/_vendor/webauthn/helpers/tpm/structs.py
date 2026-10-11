@@ -78,9 +78,6 @@ class TPM_ECC_CURVE(str, Enum):
 
 
 class TPMCertInfoClockInfo:
-    """
-    10.11.1 TPMS_CLOCK_INFO
-    """
 
     clock: bytes
     reset_count: int
@@ -95,9 +92,6 @@ class TPMCertInfoClockInfo:
 
 
 class TPMCertInfoAttested:
-    """
-    10.12.3 TPMS_CERTIFY_INFO
-    """
 
     name_alg: TPM_ALG
     name_alg_bytes: bytes
@@ -113,9 +107,6 @@ class TPMCertInfoAttested:
 
 @dataclass
 class TPMCertInfo:
-    """
-    10.12.8 TPMS_ATTEST
-    """
 
     magic: bytes
     type: TPM_ST
@@ -127,9 +118,6 @@ class TPMCertInfo:
 
 
 class TPMPubAreaParametersRSA:
-    """
-    12.2.3.5 TPMS_RSA_PARMS
-    """
 
     symmetric: TPM_ALG
     scheme: TPM_ALG
@@ -144,9 +132,6 @@ class TPMPubAreaParametersRSA:
 
 
 class TPMPubAreaParametersECC:
-    """
-    12.2.3.6 TPMS_ECC_PARMS
-    """
 
     symmetric: TPM_ALG
     scheme: TPM_ALG
@@ -161,9 +146,6 @@ class TPMPubAreaParametersECC:
 
 
 class TPMPubAreaObjectAttributes:
-    """
-    8.3 TPMA_OBJECT (Object Attributes)
-    """
 
     fixed_tpm: bool
     st_clear: bool
@@ -193,9 +175,6 @@ class TPMPubAreaObjectAttributes:
 
 
 class TPMPubAreaUnique:
-    """
-    12.2.3.2 TPMU_PUBLIC_ID
-    """
 
     value: bytes
 
@@ -250,9 +229,6 @@ class TPMPubAreaUnique:
 
 @dataclass
 class TPMPubArea:
-    """
-    12.2.4 TPMT_PUBLIC
-    """
 
     type: TPM_ALG
     name_alg: TPM_ALG

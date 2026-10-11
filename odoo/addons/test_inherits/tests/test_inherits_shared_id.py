@@ -5,7 +5,6 @@ from odoo.tools import mute_logger
 
 
 class TestInheritsSharedId(common.TransactionCase):
-    """A crate is its unit's row extended: it is keyed by the unit's id."""
 
     def test_a_new_record_takes_its_new_parent_id(self):
         crate = self.env["test.crate"].create({"name": "Crate", "label": "fragile"})

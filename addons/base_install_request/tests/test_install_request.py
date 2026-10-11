@@ -61,8 +61,6 @@ class TestBaseModuleInstallRequest(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestInstallRequestRecord(TransactionCase):
-    """Without the approval engine the request is still a record, and the
-    administrators are told by e-mail."""
 
     def test_sending_records_the_request_and_mails_every_administrator(self):
         if "approval_request_id" in self.env["base.module.install.request"]._fields:

@@ -13,7 +13,6 @@ def is_ai_chat_channel(channel) -> bool:
 
 
 class DiscussChannel(models.Model):
-    """Conversation between users, extended for usage with an AI assistant."""
 
     _name = "discuss.channel"
     _inherit = ["discuss.channel"]

@@ -4,13 +4,6 @@ from odoo.tools import mute_logger
 
 
 class TestVerbs(TransactionCase):
-    """A verb is an operation the policy grants like create, read, write, unlink.
-
-    `test_ir_access.document` declares `post`: its door is `action_post`, its
-    checkpoints `_check_postable` and `_post_entries`, and it is the move of
-    `state` into `posted`.
-    Every internal user may write a document; only administrators may post one.
-    """
 
     @classmethod
     def setUpClass(cls):

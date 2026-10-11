@@ -3,8 +3,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestVehicleMaintenanceMenu(TransactionCase):
-    """Vehicle maintenance sits in the Assets app beside Equipment Maintenance,
-    behind the vehicle family's enable-group."""
 
     def test_vehicle_maintenance_is_in_the_assets_app(self):
         menu = self.env.ref("asset_ledger_maintenance.menu_fleet_maintenance")

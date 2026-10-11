@@ -15,7 +15,6 @@ MINIMAL_PDF = base64.b64encode(
 
 
 class SignTemplateFixture:
-    """Build sign templates with N responsibles for wizard tests."""
 
     def _template(self, name, role_count):
         attachment = self.env["ir.attachment"].create(

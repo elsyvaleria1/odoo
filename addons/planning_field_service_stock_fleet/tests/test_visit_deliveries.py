@@ -8,7 +8,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class VisitDeliveriesSetup:
-    """A seller with a trip under way, and customers to visit."""
 
     @classmethod
     def setUpClass(cls):

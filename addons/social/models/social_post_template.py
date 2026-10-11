@@ -8,18 +8,6 @@ from odoo.tools import OrderedSet, format_datetime
 
 
 class SocialPostTemplate(models.Model):
-    """
-    Models the abstraction of social post content.
-    It can generate multiple 'social.post' records to be sent on social medias
-
-    This model contains all information related to the post content (message, images) but
-    also some common methods. They can be used to prepare a social post without creating
-    one (that can be useful in other application, like `social_event` e.g.).
-
-    'social.post.template' is therefore a template model used to generate `social.post`.
-    It is inherited by `social.post` to extract common fields declaration and post
-    management methods.
-    """
 
     _name = "social.post.template"
     _description = "Social Post Template"

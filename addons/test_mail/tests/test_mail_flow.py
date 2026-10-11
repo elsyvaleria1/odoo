@@ -9,7 +9,6 @@ from odoo.addons.test_mail.tests.common import TestRecipients
 
 @tagged("mail_gateway", "mail_flow", "post_install", "-at_install")
 class TestMailFlow(MailCommon, TestRecipients):
-    """Test flows matching business cases with incoming / outgoing emails."""
 
     @classmethod
     def setUpClass(cls):

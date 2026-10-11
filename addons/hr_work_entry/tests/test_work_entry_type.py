@@ -2,8 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestWorkEntryTypeTracking(TransactionCase):
-    """A work entry type is payroll configuration: its code names the salary
-    rule and its rate weights it. Changing either has to leave a trace."""
 
     @classmethod
     def setUpClass(cls):

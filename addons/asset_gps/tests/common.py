@@ -4,12 +4,6 @@ from odoo.addons.asset_ledger.tests.common import create_test_product
 
 
 class ProductAssetRemoteCommon(TransactionCase):
-    """The fixture every test in this module starts from.
-
-    A company, the km unit the odometer is measured in, a serial-tracked
-    vehicle product, and a remote config to hang devices off. The two base
-    classes below add what they each need on top.
-    """
 
     @classmethod
     def setUpClass(cls):

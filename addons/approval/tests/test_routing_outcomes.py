@@ -110,13 +110,6 @@ class _Probe(Exception):
 
 
 class RoutingOutcomesCase(ApprovalCommon):
-    """What a category's routing does, stated in terms no implementation owns.
-
-    After every decision a script records the request's state, who could approve it
-    at that moment (tried inside a savepoint that is rolled back), and who holds an
-    approval activity. A category configured by an approver list and one configured
-    by steps are each given the same scripts.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -201,7 +194,6 @@ class RoutingOutcomesCase(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestStepRoutingOutcomes(RoutingOutcomesCase):
-    """The same scripts on categories built from steps, the flat list left empty."""
 
     def _stepped(self, steps, **vals):
         category = self._make_category(

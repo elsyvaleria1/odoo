@@ -10,13 +10,6 @@ _CUSTOMER_FILES = ("photo", "document", "voice", "audio", "video")
 
 
 class TelegramHandlerLivechat(models.AbstractModel):
-    """Customers of a bot linked to a Live Chat channel.
-
-    A private message from anyone who is not an Odoo user goes to their open
-    session, or opens one -- even with nobody online, looking for help --
-    posted as the customer's contact, created on first contact. The session's
-    chatbot is driven here, since no browser drives it.
-    """
 
     _name = "telegram.handler.livechat"
     _inherit = "mixin.telegram.handler"

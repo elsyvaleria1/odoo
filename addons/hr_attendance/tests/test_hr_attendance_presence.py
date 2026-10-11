@@ -6,15 +6,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestAttendanceDrivenPresence(TransactionCase):
-    """Who `hr_attendance` decides the presence state for, and on what evidence.
-
-    The module holds two halves of one question. Being checked in is EVIDENCE
-    that somebody is there, and it counts for every company. Being checked out
-    during working hours is an INFERENCE from the absence of evidence, and it
-    is only sound where the company asked for attendance to be its presence
-    control -- `hr_presence_control_attendance`, the flag
-    `_compute_presence_icon` has consulted all along.
-    """
 
     @classmethod
     def setUpClass(cls):

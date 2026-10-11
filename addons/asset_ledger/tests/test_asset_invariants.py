@@ -310,10 +310,6 @@ class TestAssetInvariants(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestAssetUserCannotEditTheCatalogue(TransactionCase):
-    """`access_product_template_user` grants write on every product.template,
-    which core gates behind `product.group_product_manager`. The rules added
-    beside that ACL must narrow the write to asset models without taking away
-    the reads the log forms need."""
 
     @classmethod
     def setUpClass(cls):
@@ -393,9 +389,6 @@ class TestAssetUserCannotEditTheCatalogue(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestOneAssetOneCompanyLedger(TransactionCase):
-    """A company-less asset used to accept logs from every company at once,
-    which mixed currencies in one balance and let the odometer check refuse a
-    reading against a neighbour the writer could not see."""
 
     @classmethod
     def setUpClass(cls):
@@ -488,8 +481,6 @@ class TestOneAssetOneCompanyLedger(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLicensePlateIsActuallyUnique(TransactionCase):
-    """`UNIQUE(license_plate, company_id)` never fired for a lot with no
-    company, and a company-less lot is the ordinary case."""
 
     @classmethod
     def setUpClass(cls):
@@ -536,9 +527,6 @@ class TestLicensePlateIsActuallyUnique(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
-    """`service_activity` is stored but derives from a today-relative,
-    non-stored compute. The passage of time writes no record, so nothing
-    triggers the recompute and the column keeps yesterday's answer."""
 
     @classmethod
     def setUpClass(cls):
@@ -647,15 +635,6 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
 
 
 class TestOneNameForTheAsset(TransactionCase):
-    """Six spellings for one relation is what hides duplicates between modules.
-
-    Scoped to modules that depend on ``asset_ledger``, because that dependency
-    is what makes a serial an *asset*. The asset is ``resource.resource``; a
-    relation to it, or the legacy one to the lot that carries it, is spelled
-    ``asset_id``. A module referencing ``product.trace`` as an inventory identifier
-    -- an RMA's returned unit, a lot rule's subject, the serial behind an asset
-    -- is naming a lot, and ``trace_id`` is what core calls it.
-    """
 
     QUALIFIED = {
         ("device.device", "own_asset_id"),

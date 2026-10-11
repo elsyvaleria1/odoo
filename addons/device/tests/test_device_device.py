@@ -705,7 +705,6 @@ class TestRemoteDeviceCronCheckHealth(InlineStateRetryMixin, DeviceTransactionCa
 
 
 class TestRemoteDeviceRegisterHook(InlineStateRetryMixin, DeviceTransactionCase):
-    """The startup reset belongs to the base, whatever transport is installed."""
 
     @classmethod
     def setUpClass(cls):
@@ -772,7 +771,6 @@ class TestRemoteDeviceRegisterHook(InlineStateRetryMixin, DeviceTransactionCase)
 
 @tagged("post_install", "-at_install")
 class TestTransportContract(DeviceTransactionCase):
-    """Every protocol on offer must supply every verb the dispatcher calls."""
 
     @classmethod
     def setUpClass(cls):
@@ -863,7 +861,6 @@ class TestTransportContract(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDeviceKindContract(DeviceTransactionCase):
-    """A device is a kind because a module declares it, not by field shape."""
 
     @classmethod
     def setUpClass(cls):

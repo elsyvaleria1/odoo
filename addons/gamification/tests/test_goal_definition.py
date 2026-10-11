@@ -5,7 +5,6 @@ from odoo.tests import common
 
 
 class TestGoalDefinition(common.TransactionCase):
-    """Test gamification.goal.definition validation methods."""
 
     @classmethod
     def setUpClass(cls):

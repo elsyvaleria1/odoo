@@ -144,14 +144,6 @@ class TestSegmentOwnership(SpeechCase):
 
 
 class TestTheMixinDoesNotSquatAConsumersFieldNames(SpeechCase):
-    """`mixin.media.timeline` is applied to models it does not own.
-
-    A generic mixin that claims a generic field name takes over whatever the
-    consumer already declared under it, and the merge is order-independent: once
-    `compute` is in the merged attrs nothing removes it, and `store` then
-    defaults to False. The consumer's column survives, orphaned, while every
-    write to it is silently discarded.
-    """
 
     def _owner_with_its_own_transcript(self):
         return self.env["speech.test.call.with.own.transcript"].create({})

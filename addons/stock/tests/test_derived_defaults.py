@@ -11,13 +11,6 @@ RECOMPUTE_DRIFT_ALLOWED = {
 
 @tagged("post_install", "-at_install")
 class TestDerivedDefaults(TestStockCommon):
-    """The stored fields this module derives rather than stores outright.
-
-    Each one is a compute with `store=True, readonly=False`: the compute is a
-    default, and the stored value is the truth once anything has set it. The
-    two ways that contract breaks are a compute that assigns when it should
-    have kept, and a depends that omits an input the compute reads.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -365,22 +358,6 @@ class TestDerivedDefaults(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestConstraintTriggers(TestStockCommon):
-    """Each of these refuses one invalid state through one write path.
-
-    A constraint declares the fields that re-run it, and every one of these
-    reads a field it did not declare -- so the same invalid pair was refused
-    when written from one side and accepted when written from the other.
-
-    `stock.warehouse._check_sub_locations_are_inside_the_warehouse` has the
-    same gap and is deliberately NOT closed here: it refuses
-    `warehouse.lot_stock_id = <outside the view>` but accepts the same state
-    reached by `warehouse.view_location_id = <a foreign subtree>`, and
-    `write` does not repoint the sub-locations after such a write.
-    `test_a_warehouse_adopting_a_view_repoints_the_whole_subtree` and
-    `test_repointing_a_warehouse_view_repoints_the_whole_subtree` pin that as
-    supported. Whether a warehouse may have its stock location outside its own
-    view is a decision about the model, not a missing trigger.
-    """
 
     def _assert_refused(self, message, write):
         with self.assertRaises(ValidationError, msg=message):
@@ -464,12 +441,6 @@ class TestConstraintTriggers(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestCategoryRouteInheritance(TestStockCommon):
-    """`product.category.total_route_ids`, which decides a product's routes.
-
-    It is read through `product.template.route_from_categ_ids` on the product
-    form and by route resolution in `stock_rule_selection`, `stock_orderpoint`,
-    `stock_replenishment_report`, `sale_stock` and `stock_dropshipping`.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -570,12 +541,6 @@ class TestCategoryRouteInheritance(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestLotCompanyIsNotDecidedByTheReader(TestStockCommon):
-    """`stock.lot.company_id` is stored and its compute reads `self.env`.
-
-    That makes the stored value a function of who last recomputed it, and
-    `company_id` drives the company guard's visibility and `check_company` on the lot's
-    quants and move lines.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -662,12 +627,6 @@ class TestLotCompanyIsNotDecidedByTheReader(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestEditableDefaultsSurviveANoOpTrigger(TestStockCommon):
-    """`store=True, readonly=False, precompute=True` is an editable default.
-
-    `modified()` fires on the key a write carries, not on a change, so a
-    compute that assigns unconditionally resets whatever the user chose on any
-    write that merely mentions its trigger.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -747,9 +706,6 @@ class TestEditableDefaultsSurviveANoOpTrigger(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestARerateDoesNotRewriteHistory(TestStockCommon):
-    """`product_uom_id.factor` is read by `_compute_product_qty` and must NOT
-    be declared. The pin exists because a detector will flag the omission as a
-    missing dependency, and adding it is the defect."""
 
     def test_a_done_move_keeps_the_quantity_it_recorded(self):
         unit = self.env.ref("base.product_uom_unit")
@@ -843,10 +799,6 @@ class TestARerateDoesNotRewriteHistory(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestBatchIsCompanyScoped(TransactionCase):
-    """`stock.picking.batch` carries a required `company_id` and was the only
-    company-scoped model in this module with no company guard -- the guard was
-    left behind when the model moved in from `stock_picking_batch`.
-    """
 
     def test_a_user_of_one_company_cannot_see_anothers_batches(self):
         env = self.env
@@ -915,10 +867,6 @@ class TestBatchIsCompanyScoped(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestGatherPathsAgree(TestStockCommon):
-    """`_gather` answers from `quants_cache` when it covers the request and
-    searches otherwise. Two implementations of one question, and reservation
-    correctness rests on them agreeing.
-    """
 
     def test_the_cached_and_searched_paths_return_the_same_quants(self):
         Quant = self.StockQuantObj
@@ -1000,9 +948,6 @@ class TestGatherPathsAgree(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestANoOpWriteOfQuantityMovesNoStock(TransactionCase):
-    """`stock.move.quantity` is stored at 'Product Unit' precision and derived
-    from move lines that are not. `_inverse_quantity` subtracts the second from
-    the first, so the storage rounding used to read as a deliberate increase."""
 
     @classmethod
     def setUpClass(cls):
@@ -1092,10 +1037,6 @@ class TestANoOpWriteOfQuantityMovesNoStock(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestApplyingACountLandsOnIt(TransactionCase):
-    """`stock.quant.quantity` is stored at full precision, while
-    `inventory_diff_quantity` and the `stock.move` carrying it are stored at
-    display precision. A quant with more decimals than the display can show
-    therefore cannot be counted onto an exact figure."""
 
     @classmethod
     def setUpClass(cls):
@@ -1144,20 +1085,6 @@ class TestApplyingACountLandsOnIt(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSplittingAMoveCannotAlwaysConserve(TransactionCase):
-    """`_split` keeps the remainder in the move's own unit, so when the
-    remainder is not representable there the split does not conserve demand.
-    Eight units of a move denominated in dozens is 0.6667, stored 0.67, which
-    reads back as 8.04.
-
-    THIS RECORDS AN OPEN DECISION, not a desired outcome. The three quantities
-    involved -- what went in, what is split off, and what remains -- cannot all
-    be exact while the move stays in the unit the order was placed in, and the
-    only fix that conserves changes a move's unit of measure underneath the
-    user. `stock_picking_batch`'s `test_wave_split_move_uom` pins the current
-    behaviour explicitly (0.58 dozen where 7 units remain), so this is a
-    contract to change deliberately or not at all. Until then the residual must
-    not be silent.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1225,16 +1152,6 @@ class TestSplittingAMoveCannotAlwaysConserve(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestReservationAgreesWithTheQuant(TransactionCase):
-    """`stock.quant.reserved_quantity` and the move lines holding that quant are
-    two records of one fact, and drift between them is what produces "not enough
-    stock" on stock that is free.
-
-    This is the counterpart to the two precision findings in this file: it holds
-    because reservation works in `quantity_product_uom`, which is declared
-    `min_display_digits` and therefore stored at FULL precision. The fields that
-    drifted -- `stock.move.quantity` and `inventory_diff_quantity` -- are the
-    ones declared `digits`.
-    """
 
     @classmethod
     def setUpClass(cls):

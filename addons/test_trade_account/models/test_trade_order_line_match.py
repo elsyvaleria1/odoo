@@ -5,14 +5,6 @@ from odoo.addons.trade.tools import SALE
 
 
 class TestTradeOrderLineMatch(models.Model):
-    """Concrete `mixin.order.line.match`, so its matching algorithm is testable.
-
-    The mixin builds a SQL view unioning open order lines with unlinked
-    invoice lines, and `action_match_lines` writes the links between them.
-    Every shipping model that carries it lives in `sale` or `purchase`, so
-    until this existed the algorithm ran in production and was asserted by
-    nothing.
-    """
 
     _name = "test_trade.order.line.match"
     _inherit = ["mixin.order.line.match"]

@@ -3,11 +3,6 @@ from odoo.exceptions import ValidationError
 
 
 class LazadaOrderItem(models.Model):
-    """Lazada Order Item - Represents individual product items in Lazada orders.
-
-    Each order item represents a single product unit. Multiple units of the same
-    product create multiple order items.
-    """
 
     _name = "lazada.order.item"
     _description = "Lazada Order Item"

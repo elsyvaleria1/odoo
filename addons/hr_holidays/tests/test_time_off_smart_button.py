@@ -5,13 +5,6 @@ from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install")
 class TestTimeOffSmartButton(TestHrHolidaysCommon):
-    """The Time Off smart button on an employee form.
-
-    It is the officer's way into one employee's time off, so what it opens has
-    to be about *that* employee: the record it prepares when the officer hits
-    New, and the group-wide affordances that make no sense once the action is
-    already scoped to a single person.
-    """
 
     def test_smart_button_prefills_the_employee_of_the_form(self):
         action = self.employee_emp.action_time_off_dashboard()

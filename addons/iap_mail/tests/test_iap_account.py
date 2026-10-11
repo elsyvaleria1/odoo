@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestIapAccountNotifications(TransactionCase):
-    """Bus payload shape of iap.account's IAP -> mail notification helpers."""
 
     @classmethod
     def setUpClass(cls):

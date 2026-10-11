@@ -10,7 +10,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestHrAppraisal(TransactionCase):
-    """Tests around appraisal creation (cron generation and the manual workflow)."""
 
     @classmethod
     def setUpClass(cls):

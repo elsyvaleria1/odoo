@@ -16,11 +16,6 @@ NEGATIVE_OPERATORS = {
 
 
 class ResourceIdentifier(fields.Char):
-    """One identifier of a resource as a column: the value of the identifier
-    row whose type carries `identifier_code`. Declared on resource.resource,
-    or on any model that reaches one through `through` (a path of many2ones);
-    the row is what is stored, and the column is read and written through it.
-    """
 
     identifier_code: str = ""
     through: str = ""

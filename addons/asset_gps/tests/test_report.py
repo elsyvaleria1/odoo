@@ -73,13 +73,6 @@ class TestGpsLogReportQueryExtension(TransactionCase):
 
 
 class TestGpsLogReportRows(TransactionCase):
-    """The registry hooks above assert that the code says what the code says.
-
-    These run the query instead: a wrong column, a join naming a column that
-    does not exist or a GROUP BY that misses one only shows up here. The report
-    is a materialized relation, so each test refreshes it after building its
-    fixture -- rows written in this transaction are invisible until it does.
-    """
 
     @classmethod
     def setUpClass(cls):

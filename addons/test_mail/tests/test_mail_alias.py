@@ -44,7 +44,6 @@ class TestMailAliasCommon(MailCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAlias(TestMailAliasCommon):
-    """Test alias model features, constraints and behavior."""
 
     @users("admin")
     def test_alias_domain_allowed_validation(self):
@@ -652,7 +651,6 @@ class TestMailAlias(TestMailAliasCommon):
 
 @tagged("mail_alias", "multi_company")
 class TestAliasCompany(TestMailAliasCommon):
-    """Test company / alias domain and configuration synchronization"""
 
     def test_alias_domain_setup_archived_company(self):
 
@@ -914,7 +912,6 @@ class TestAliasCompany(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasBounce(TestMailAliasCommon):
-    """Both bounce bodies leave the server addressed to an outside sender."""
 
     @users("admin")
     def test_bounce_bodies_speak_the_author_language(self):
@@ -1194,7 +1191,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
 
 @tagged("mail_alias", "multi_company")
 class TestMailAliasDomainLocalParts(TestMailAliasCommon):
-    """`mail.alias.domain` composes addresses out of its three local parts."""
 
     @users("admin")
     def test_local_parts_are_never_stored_malformed(self):
@@ -1280,8 +1276,6 @@ class TestMailAliasDomainLocalParts(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "mail_alias_mixin", "multi_company")
 class TestMailAliasMixin(TestMailAliasCommon):
-    """Test alias mixin implementation, synchronization of alias records
-    based on owner records."""
 
     @users("employee")
     @mute_logger("odoo.addons.base.models.ir_model")
@@ -1582,7 +1576,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasAddressInput(TestMailAliasCommon):
-    """An address has two halves; the form has two fields. Typing both in one."""
 
     @users("admin")
     def test_a_full_address_resolves_its_domain(self):
@@ -1680,15 +1673,6 @@ class TestMailAliasMixinModelOverride(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasDanglingDocument(TestMailAliasCommon):
-    """`alias_*_thread_id` is an integer, not a foreign key.
-
-    Nothing deletes the alias when the document it names goes away, nothing stops a
-    module from being uninstalled under one, and the field is editable in the form
-    view, so any integer can end up in it. Every read of the pair therefore has to
-    survive an id that names nothing -- and the two places that did not were both
-    code whose entire job was to *explain* a problem, so the dangling id replaced a
-    diagnostic with a bare `MissingError`.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1920,14 +1904,6 @@ class TestMailAliasDefaultsValidation(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainConfigCache(TestMailAliasCommon):
-    """`_get_config` is what the gateway matches against; pin its contract.
-
-    Restores the five cases `e803ea6dd1f` wrote for the cache and `e4df7f5569b`
-    dropped when it deleted the round-numbered hardening suites. Their absence was
-    measured, not assumed: with all three `clear_cache("mail")` calls removed,
-    `/mail,/test_mail` produced a failure set identical to the control -- the whole
-    invalidation mechanism could be deleted and nothing noticed.
-    """
 
     def _live_config(self):
         domains = self.env["mail.alias.domain"].sudo().search([])
@@ -2057,7 +2033,6 @@ class TestMailAliasDomainConfigCache(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainName(TestMailAliasCommon):
-    """`name` is the field every composed address ends with."""
 
     @users("admin")
     def test_the_domain_name_is_normalised_like_every_other_address_part(self):
@@ -2116,7 +2091,6 @@ class TestMailAliasDomainName(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainReservedAddresses(TestMailAliasCommon):
-    """Bounce and catchall are one address space, not two."""
 
     @users("admin")
     def test_one_domain_cannot_use_one_local_part_for_both_roles(self):
@@ -2158,7 +2132,6 @@ class TestMailAliasDomainReservedAddresses(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainPersonalServers(TestMailAliasCommon):
-    """A personal mail server may veto a `default_from`, but only its own."""
 
     @classmethod
     def setUpClass(cls):
@@ -2214,7 +2187,6 @@ class TestMailAliasDomainPersonalServers(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainLifecycle(TestMailAliasCommon):
-    """Creating the first domain, and deleting one that is in use."""
 
     @users("admin")
     def test_the_first_batch_hands_companies_the_sequence_first_domain(self):
@@ -2280,7 +2252,6 @@ class TestMailAliasDomainLifecycle(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainFindAliases(TestMailAliasCommon):
-    """`_get_alias_emails` answers "is this address ours", not "can we route it"."""
 
     @classmethod
     def setUpClass(cls):
@@ -2404,7 +2375,6 @@ class TestMailAliasDomainFindAliases(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias")
 class TestMailAliasDomainAllowedParameter(TestMailAliasCommon):
-    """`mail.catchall.domain.allowed` is a list of domain names."""
 
     @users("admin")
     def test_entries_are_held_to_the_domain_rule(self):
@@ -2425,7 +2395,6 @@ class TestMailAliasDomainAllowedParameter(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "mail_init")
 class TestMailAliasDomainIcpMigration(TestMailAliasCommon):
-    """`_migrate_icp_to_domain` is `mail`'s post-install hook."""
 
     @users("admin")
     def test_an_unusable_icp_is_skipped_not_raised(self):
@@ -2456,7 +2425,6 @@ class TestMailAliasDomainIcpMigration(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasNameAuthority(TestMailAliasCommon):
-    """One predicate decides what an `alias_name` may be, so two cannot drift."""
 
     @users("admin")
     def test_the_constraint_is_the_sanitizer_s_own_fixpoint(self):
@@ -2514,7 +2482,6 @@ class TestMailAliasNameAuthority(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasModelTarget(TestMailAliasCommon):
-    """An alias may only name a model that can do something with the mail."""
 
     def _make(self, model_name, suffix=""):
         return self.env["mail.alias"].create(
@@ -2556,7 +2523,6 @@ class TestMailAliasModelTarget(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasStatusInputs(TestMailAliasCommon):
-    """`alias_status` is a verdict; anything that changes its inputs drops it."""
 
     @users("admin")
     def test_the_owner_pair_repairs_the_fault_and_clears_the_verdict(self):
@@ -2634,7 +2600,6 @@ class TestMailAliasStatusInputs(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasStatusRights(TestMailAliasCommon):
-    """The gateway records a verdict; it does not need write access to do it."""
 
     @users("admin")
     def test_marking_an_alias_does_not_need_group_system(self):
@@ -2661,7 +2626,6 @@ class TestMailAliasStatusRights(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasAddressAvailability(TestMailAliasCommon):
-    """One question -- is this set of addresses free -- over one complete set."""
 
     def _make(self, name):
         return self.env["mail.alias"].create(
@@ -2767,8 +2731,6 @@ class TestMailAliasAddressAvailability(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasIncomingLocalReservations(TestMailAliasCommon):
-    """`alias_incoming_local` matches a local part on every domain, so it must
-    respect every domain's reservations."""
 
     @classmethod
     def setUpClass(cls):
@@ -2827,7 +2789,6 @@ class TestMailAliasIncomingLocalReservations(TestMailAliasCommon):
 
 @tagged("mail_alias", "multi_company")
 class TestMailAliasBounceCompany(TestMailAliasCommon):
-    """A bounce goes to an outside sender; it must name the company they wrote to."""
 
     @users("admin")
     def test_the_bounce_names_the_alias_s_company_not_the_gateway_s(self):
@@ -2886,7 +2847,6 @@ class TestMailAliasBounceCompany(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasMixinDomainPrecedence(TestMailAliasCommon):
-    """A domain typed into the address means the same thing on every path in."""
 
     @classmethod
     def setUpClass(cls):
@@ -2968,7 +2928,6 @@ class TestMailAliasMixinDomainPrecedence(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasDefaultsShape(TestMailAliasCommon):
-    """`_prepare_alias_defaults` owns the whole shape, not half of it."""
 
     def _make(self, defaults):
         return self.env["mail.alias"].create(
@@ -3011,7 +2970,6 @@ class TestMailAliasDefaultsShape(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestAliasDomainNameRule(TestMailAliasCommon):
-    """A domain name is LDH, not the local part's alphabet."""
 
     @users("admin")
     def test_a_bare_hyphen_is_not_a_domain_name(self):

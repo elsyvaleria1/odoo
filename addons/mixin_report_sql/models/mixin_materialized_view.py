@@ -27,7 +27,6 @@ _TRANSIENT_REFRESH_ERRORS = (
 
 
 class MixinMaterializedView(models.AbstractModel):
-    """Abstract mixin for models backed by a PostgreSQL relation this mixin owns."""
 
     _name = "mixin.materialized.view"
     _description = "Materialized View Mixin"

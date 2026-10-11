@@ -5,12 +5,6 @@ from .common import TestPayslipBase
 
 @tagged("post_install", "-at_install")
 class TestPayslipListHeader(TestPayslipBase, HttpCase):
-    """The header buttons of the payslip list on a selection of mixed states.
-
-    `action_validate` filters to `state == "draft"` and `action_payslip_paid`
-    raises unless every payslip is confirmed, so the two buttons must not be
-    governed by the same rule.
-    """
 
     def test_header_buttons_follow_what_each_action_tolerates(self):
         self.user_admin = self.env.ref("base.user_admin")

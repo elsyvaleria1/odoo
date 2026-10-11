@@ -38,8 +38,6 @@ class TestEmployeeIdsPattern(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPrintedCvAccess(HttpCase):
-    """The controller renders as superuser, so the check it does beforehand is
-    the only access control the printed CV has."""
 
     @classmethod
     def setUpClass(cls):

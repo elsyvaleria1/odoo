@@ -34,9 +34,6 @@ class VoicePayload(NamedTuple):
 
 
 class Heard(NamedTuple):
-    """What a voice message said, or why it was not heard: `no_audio` (the
-    message carries none), `unheard` (nothing may hear it here), `too_long`,
-    or `failed` (the download or the engine gave nothing)."""
 
     text: str | None = None
     failure: str | None = None

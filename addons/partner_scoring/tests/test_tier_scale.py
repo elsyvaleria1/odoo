@@ -221,14 +221,6 @@ class TestTierScale(TransactionCase):
 
 @tagged("post_install", "-at_install", "partner_scoring")
 class TestAScaleClassifiesItsPartners(TransactionCase):
-    """A scale nobody can be measured against is the failure mode that hides.
-
-    Odoo partners carry no company unless someone sets one -- 4,233 of the 4,245
-    in the production dump this was measured against, 746 of them customers --
-    while every band created through the UI used to default into the acting
-    user's company. The two can never meet, so a complete, gapless, correct
-    scale classified nobody and every downstream factor silently read 1.0.
-    """
 
     @classmethod
     def setUpClass(cls):

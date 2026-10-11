@@ -4,15 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestAccrualReadGroup(TransactionCase):
-    """`purchase.order.line._read_group` routes every grouping through the accrual mixin.
-
-    The override is unconditional, so the shapes below are not exotic -- they are what
-    the list view produces when a user groups by two fields, and what any plain
-    aggregate read produces with no grouping at all.
-
-    The accrual scope and the non-stored field's own value are pinned, because the
-    question under test is which records each group sums over.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -7,16 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 @tagged("post_install", "-at_install")
 class TestStepWithoutApprovers(ApprovalCommon):
-    """A company that staffs no step blocks the request, never the document.
-
-    Confirming a request whose step can never reach its quorum is refused on
-    purpose: it would sit pending forever. But a document raises its request as it
-    is created, and whoever creates one rarely governs who may approve it -- an
-    employee asking for time off in a company that has named no officer cannot
-    appoint one. Letting that refusal out of the automatic create refused the
-    employee's record for a configuration they cannot see. The document is kept and
-    says why it carries no request.
-    """
 
     @classmethod
     def setUpClass(cls):

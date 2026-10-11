@@ -5,10 +5,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestIrActionsReach(TransactionCase):
-    """Every button and menu that can reach an action admits only users the
-    action admits, so `_get_load_refusal` never refuses a user the interface
-    invited. Read off the installed registry: the set grows with the modules
-    installed, and a row here is fixed on the trigger or on the action."""
 
     @classmethod
     def setUpClass(cls):

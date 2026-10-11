@@ -17,10 +17,6 @@ IOT_LOG_TO_SERVER_CONFIG_NAME = "iot_log_to_server"
 
 
 class AsyncHTTPHandler(logging.Handler):
-    """
-    Custom logging handler which send IoT logs using asynchronous requests.
-    To avoid spamming the server, we send logs by batch each X seconds
-    """
 
     _MAX_QUEUE_SIZE = 1000
     """Maximum queue size. If a log record is received but the queue if full it will be discarded"""

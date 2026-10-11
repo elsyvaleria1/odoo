@@ -3,10 +3,6 @@ from odoo.fields import Domain
 
 
 class MailTestAccess(models.Model):
-    """Test access on mail models without depending on real models like channel
-    or partner which have their own set of ACLs. Public, portal and internal
-    have access to this model depending on 'access' field, allowing to check
-    ir.access usage."""
 
     _description = "Mail Access Test"
     _name = "mail.test.access"
@@ -39,8 +35,6 @@ class MailTestAccess(models.Model):
 
 
 class MailTestAccessCusto(models.Model):
-    """Test access on mail models without depending on real models like channel
-    or partner which have their own set of ACLs."""
 
     _description = "Mail Access Test with Custo"
     _name = "mail.test.access.custo"
@@ -73,8 +67,6 @@ class MailTestAccessCusto(models.Model):
 
 
 class MailTestAccessPublic(models.Model):
-    """A model inheriting from mixin.mail.thread with public read and write access
-    to test some public and guest interactions."""
 
     _description = "Access Test Public"
     _name = "mail.test.access.public"

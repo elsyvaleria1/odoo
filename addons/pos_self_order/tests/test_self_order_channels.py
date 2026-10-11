@@ -13,9 +13,6 @@ from odoo.addons.pos_self_order.tests.self_order_common_test import SelfOrderCom
 
 @tagged("post_install", "-at_install")
 class TestSelfOrderChannels(SelfOrderCommonTest):
-    """The QR code's token is public: it opens the self order and names the
-    channel every holder of a QR code may listen on. The till's channel and
-    what concerns one order are never sent there."""
 
     def setUp(self):
         super().setUp()

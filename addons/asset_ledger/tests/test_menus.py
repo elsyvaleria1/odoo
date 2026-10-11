@@ -3,8 +3,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestVehicleMenus(TransactionCase):
-    """Vehicles are one more family of the Assets app, behind their own
-    enable-group like Equipment or Machinery."""
 
     @classmethod
     def setUpClass(cls):

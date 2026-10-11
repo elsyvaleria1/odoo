@@ -10,13 +10,6 @@ from odoo.addons.event.tests.common import EventCase
 
 @tagged("event_mail", "post_install", "-at_install")
 class TestSchedulerBatching(EventCase):
-    """Batch-scale scheduler behaviour.
-
-    The rest of the mail suite runs a handful of registrations, below both the
-    500-row generation chunk and the cron limit, so it cannot see either the
-    duplicate-generation or the slot-drop defect. These assert the marginal
-    behaviour instead of an absolute at N=1.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -6,8 +6,6 @@ from .common import ApprovalCommon, pool_step
 
 @tagged("post_install", "-at_install")
 class TestPoolQueue(ApprovalCommon):
-    """A security group is a pool any member may decide from, not a to-do per
-    member."""
 
     @classmethod
     def setUpClass(cls):

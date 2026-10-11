@@ -11,9 +11,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestConsentOnFinancialVerbs(AccountApprovalCommon):
-    """A silence never posts or pays: consent approval is refused on a category
-    whose approval posts a journal entry or releases a payment, by the form and
-    by the cron."""
 
     def _category(self, name, **values):
         category = self.env["approval.category"].create(

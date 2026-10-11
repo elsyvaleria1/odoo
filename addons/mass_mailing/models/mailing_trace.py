@@ -4,52 +4,6 @@ from odoo.addons.mail.tools.failure_type import DELIVERY_FAILURE_TYPES
 
 
 class MailingTrace(models.Model):
-    """MailingTrace models the statistics collected about emails. Those statistics
-    are stored in a separated model and table to avoid bloating the mail_mail table
-    with statistics values. This also allows to delete emails send with mass mailing
-    without loosing the statistics about them.
-
-    Note:: State management / Error codes / Failure types summary
-
-      * trace_status
-        'outgoing', 'process', 'pending', 'sent', 'opened', 'replied',
-        'error', 'bounce', 'cancel'
-      * failure_type
-        # generic
-        'unknown',
-        # mass_mailing
-        "mail_email_invalid", "mail_smtp", "mail_email_missing",
-        "mail_from_invalid", "mail_from_missing",
-        # mass mailing mass mode specific codes
-        "mail_bl", "mail_optout", "mail_dup"
-        # mass_mailing_sms
-        'sms_number_missing', 'sms_number_format', 'sms_credit', 'sms_server',
-        'sms_acc', 'sms_country_not_supported', 'sms_registration_needed',
-        # mass_mailing_sms mass mode specific codes
-        'sms_blacklist', 'sms_duplicate', 'sms_optout',
-      * cancel:
-        * mail: set in _prepare_mail_values in composer, if email is blacklisted
-          (mail) or in opt_out / seen list (mass_mailing) or email_to is void
-          or incorrectly formatted (mass_mailing) - based on mail cancel state
-        * sms: set in _prepare_mass_sms_trace_values in composer if sms is
-          in cancel state; either blacklisted (sms) or in opt_out / seen list
-          (sms);
-        * void mail / void sms number -> error (mail_missing, sms_number_missing)
-        * invalid mail / invalid sms number -> error (RECIPIENT, sms_number_format)
-      * exception: set in  _postprocess_sent_message (_postprocess_iap_sent_sms)
-        if mail (sms) not sent with failure type, reset if sent;
-      * process: (used in sms): set in SmsTracker._update_sms_traces when held back
-        (at IAP) before actual sending to the sms_service.
-      * pending: (used in sms): default value for sent sms.
-      * sent: set in
-        * _postprocess_sent_message if mail
-        * SmsTracker._update_sms_traces if sms, when delivery report is received.
-      * clicked: triggered by add_click
-      * opened: triggered by add_click + blank gif (mail) + gateway reply (mail)
-      * replied: triggered by gateway reply (mail)
-      * bounced: triggered by gateway bounce (mail) or in _prepare_mass_sms_trace_values
-        if sms_number_format error when sending sms (sms)
-    """
 
     _name = "mailing.trace"
     _description = "Mailing Statistics"

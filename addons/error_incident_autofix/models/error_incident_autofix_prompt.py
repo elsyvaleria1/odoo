@@ -3,9 +3,6 @@ from odoo.tools import frozendict
 
 
 class ErrorIncidentAutofixPrompt(models.Model):
-    """What the agent is told, versioned: a run records the version it was
-    given, so a verdict can be read against the instructions that produced
-    it."""
 
     _name = "error.incident.autofix.prompt"
     _description = "Autofix Prompt"

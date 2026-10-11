@@ -6,10 +6,6 @@ logger = logging.getLogger(__name__)
 
 
 class MixinAccountAvataxUniqueCode(models.AbstractModel):
-    """Enables unique Avatax references. These are based on the database ID because
-    they cannot change. They're made searchable so customers can easily cross-reference
-    between Odoo and Avalara.
-    """
 
     _name = "mixin.account.avatax.unique.code"
     _description = "Mixin to generate unique ids for Avatax"

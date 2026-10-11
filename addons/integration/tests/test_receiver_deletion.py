@@ -7,8 +7,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install", "integration")
 class TestReceiverDeletion(TransactionCase):
-    """Deleting an endpoint takes its exchanges with it, but a refusal is the
-    record of who was turned away: it stays until the retention sweep."""
 
     @classmethod
     def setUpClass(cls):

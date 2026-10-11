@@ -8,13 +8,6 @@ from odoo.addons.test_mail_sms.tests.common import TestSMSRecipients
 
 @tagged("post_install", "-at_install", "sms_composer")
 class TestSMSComposerComment(SMSCommon, TestSMSRecipients):
-    """TODO LIST
-
-    * add test for default_res_model / default_res_id and stuff like that;
-    * add test for comment put in queue;
-    * add test for language support (set template lang context);
-    * add test for sanitized / wrong numbers;
-    """
 
     @classmethod
     def setUpClass(cls):

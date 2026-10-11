@@ -11,14 +11,6 @@ _logger = get_payment_logger(__name__)
 
 
 class AuthorizeAPI:
-    """Authorize.net Gateway API integration.
-
-    This class allows contacting the Authorize.net API with simple operation
-    requests. It implements a *very limited* subset of the complete API
-    (http://developer.authorize.net/api/reference); namely:
-        - Customer Profile/Payment Profile creation
-        - Transaction authorization/capture/voiding
-    """
 
     AUTH_ERROR_STATUS = "3"
 

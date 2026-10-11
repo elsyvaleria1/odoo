@@ -7,9 +7,6 @@ from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
 
 
 class TestMicrosoftEvent(TestCommon):
-    """How the items of an Outlook calendar find their Odoo records: by this
-    calendar's id, else by the iCalendar UID another calendar's link holds,
-    whereupon this calendar gets a link of its own."""
 
     def setUp(self):
         super().setUp()

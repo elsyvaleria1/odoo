@@ -19,7 +19,6 @@ STREAK_MILESTONES = {
 
 
 class GamificationStreakType(models.Model):
-    """Configurable streak type defining what activity sustains the streak."""
 
     _name = "gamification.streak.type"
     _description = "Gamification Streak Type"
@@ -154,7 +153,6 @@ class GamificationStreakType(models.Model):
 
 
 class GamificationStreak(models.Model):
-    """Per-user streak instance tracking consecutive daily activity."""
 
     _name = "gamification.streak"
     _description = "User Activity Streak"

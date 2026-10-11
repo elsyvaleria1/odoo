@@ -9,8 +9,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestPostingObligation(AccountApprovalCommon, HttpCase):
-    """Approval holds every posting of a move that needs it, whichever path
-    posts it; only a path that declares a named exemption posts without it."""
 
     @classmethod
     def setUpClass(cls):

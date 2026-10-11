@@ -6,14 +6,6 @@ from odoo.tools.misc import OrderedSet
 
 @tagged("post_install", "-at_install")
 class TestPartnerPhoneNameSearch(TransactionCase):
-    """Resolving a contact from a phone number typed into a Many2one.
-
-    The search panel already finds a number: ``phone_validation`` swaps the
-    ``phone`` field of the contact search view for ``phone_mobile_search``,
-    which normalises digits on both sides and is index-backed. ``name_search``
-    is the other path -- every Many2one autocomplete in the system -- and it
-    reads ``_rec_names_search``, which named no phone field at all.
-    """
 
     @classmethod
     def setUpClass(cls):

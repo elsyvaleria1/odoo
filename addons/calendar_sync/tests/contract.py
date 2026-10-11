@@ -13,10 +13,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class FakeCalendarServer:
-    """A provider's calendars, kept in memory and spoken to in its own API.
-
-    The scenarios read and drive it through this interface alone; ids are
-    the ones the provider gives, in the calendar of the user they belong to."""
 
     def __init__(self, env) -> None:
         self.env = env
@@ -60,7 +56,6 @@ class FakeCalendarServer:
 
 
 class CalendarSyncContract:
-    """Scenarios every adapter answers the same."""
 
     allow_inherited_tests_method = True
     code = None

@@ -1104,12 +1104,6 @@ class TestHrEmployeeWebJson(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestPublicBirthdayLanguage(TestHrCommon):
-    """The public birthday showed an English month to every reader.
-
-    `datetime.strftime("%d %B")` takes the month name from the locale of the
-    server PROCESS, not from whoever is looking at the screen, so a Spanish user
-    saw "15 March".
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1146,13 +1140,6 @@ class TestPublicBirthdayLanguage(TestHrCommon):
 
 @tagged("post_install", "-at_install")
 class TestPresenceOutOfContract(TestHrCommon):
-    """Somebody whose contract has ended is neither Present nor Absent.
-
-    Under login-based presence control the state was decided purely by whether
-    the user's session was online, so a leaver whose account is still open --
-    notice period, handover, an account nobody has closed yet -- kept showing up
-    as Present on the employee list.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1205,11 +1192,6 @@ class TestPresenceOutOfContract(TestHrCommon):
 
 @tagged("post_install", "-at_install")
 class TestEmployeeKanbanLaunchPlan(TestHrCommon):
-    """The employee list offers Launch Plan from its header; the kanban did not.
-
-    Same records, same permission, same action -- switching to the kanban simply
-    lost the button.
-    """
 
     def _kanban_arch(self):
         return etree.fromstring(self.env.ref("hr.hr_kanban_view_employees").arch)

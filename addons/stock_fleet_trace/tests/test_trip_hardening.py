@@ -9,7 +9,6 @@ from .common import TripFixtureMixin
 
 @tagged("post_install", "-at_install")
 class TestTripHardening(TripFixtureMixin, TransactionCase):
-    """What the review before production found, each pinned by a test."""
 
     @classmethod
     def setUpClass(cls):

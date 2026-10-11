@@ -9,9 +9,6 @@ _logger = logging.getLogger(__name__)
 
 
 class DevicePhoneCallController(http.Controller):
-    """What a company handset and a phone system report of their calls, on
-    the companion app's wire contract: a reply names its service, and a batch
-    answers what it stored, what it already had and what it could not use."""
 
     @http.route(
         [

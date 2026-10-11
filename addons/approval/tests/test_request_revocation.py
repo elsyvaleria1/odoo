@@ -6,13 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestRequestRevocation(ApprovalCommon):
-    """An approved request revoked by an authority outside its decisions.
-
-    Time off lets an officer refuse a leave that was already validated. The engine's
-    decisions only reach a pending request, and forcing a terminal state skips one that
-    is already approved, so a revocation is its own fact on the request: the decisions
-    it overturns stay as they were given.
-    """
 
     def _approved_request(self):
         category = self._make_category(

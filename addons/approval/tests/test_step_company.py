@@ -6,13 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestStepCompany(ApprovalCommon):
-    """A step's approvers are the users who work in the request's company.
-
-    Members, a group and a user field on the document name a step's approvers
-    without knowing which company the request is raised in, while an approver row
-    belongs to its request's company. Time off raised in a second company must not
-    route to the officers of the first.
-    """
 
     @classmethod
     def setUpClass(cls):

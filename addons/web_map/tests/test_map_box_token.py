@@ -9,7 +9,6 @@ REQUEST_MODULE = "odoo.addons.web_map.models.res_config_settings.request"
 
 
 class TestCheckMapBoxToken(TransactionCase):
-    """Cover the extracted MapBox HTTP probe in isolation, no network involved."""
 
     def test_returns_the_response_status_code(self):
         settings = self.env["res.config.settings"].new()
@@ -39,13 +38,6 @@ class TestCheckMapBoxToken(TransactionCase):
 
 
 class TestMapBoxTokenOnchange(TransactionCase):
-    """Cover _onchange_map_box_token's warning/reset behavior, MapBox mocked out.
-
-    `request` (werkzeug's context-local proxy) can't be auto-mocked by
-    @patch's default decorator form outside an HTTP request context (its own
-    introspection touches the unbound proxy), so every patch below passes an
-    explicit `new=` Mock instead of relying on autospec.
-    """
 
     def _settings_with_token(self, token):
         return self.env["res.config.settings"].new({"map_box_token": token})

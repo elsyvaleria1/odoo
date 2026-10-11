@@ -9,10 +9,6 @@ MOVING_MIN_KMH = 5.0
 
 
 class DeviceGpsSpeedDay(models.Model):
-    """One row per vehicle and day: the speed profile of the whole day's
-    route, with the operator who drove it. Days are the resource timezone's,
-    and the current one is live because a SQL view reads the positions at
-    query time -- nothing is materialised and nothing has to be refreshed."""
 
     _name = "device.gps.speed.day"
     _description = "Daily Speed per Vehicle"

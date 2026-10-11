@@ -79,7 +79,6 @@ class FakeCalendars:
 
 
 class FakeAdapter:
-    """The adapter interface of calendar.sync.adapter, over FakeCalendars."""
 
     def __init__(self, server: FakeCalendars) -> None:
         self.server = server

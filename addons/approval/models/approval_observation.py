@@ -2,16 +2,6 @@ from odoo import fields, models
 
 
 class ApprovalObservation(models.Model):
-    """One row per gated call let through while its gate is only watching.
-
-    Written by an `approval.binding` in Observe mode and by a document gate whose
-    checkpoint is not enforcing yet. Append-only on purpose.
-
-    Append-only on purpose. A counter on the binding would have been smaller,
-    but every gated call would then contend for the same row's lock, and the
-    question this table exists to answer -- who is reaching this operation,
-    and how many of them arrive elevated -- needs the breakdown, not a total.
-    """
 
     _name = "approval.observation"
     _description = "Approval Observation"

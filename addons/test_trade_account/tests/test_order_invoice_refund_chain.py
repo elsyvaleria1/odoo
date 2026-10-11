@@ -3,8 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestOrderInvoiceRefundChain(TransactionCase):
-    """`_compute_invoices` must attribute an orphan refund of an orphan
-    refund back to the order, not just a single level of reversal."""
 
     @classmethod
     def setUpClass(cls):

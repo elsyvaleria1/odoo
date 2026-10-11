@@ -9,7 +9,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardDocumentDocumentPlaceFolder(models.TransientModel):
-    """Wizard to move, copy, shortcut or attach documents to a destination folder."""
 
     _name = "wizard.document.document.place.folder"
     _description = "Documents Operation"

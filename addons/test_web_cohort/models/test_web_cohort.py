@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class WebCohortSimpleModel(models.Model):
-    """A very simple model with date_start, date_stop and measure."""
 
     _name = "web.cohort.simple.model"
     _description = "Simple Cohort Model"

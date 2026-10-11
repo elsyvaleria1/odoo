@@ -6,8 +6,7 @@ import requests
 
 
 class InvalidSyncToken(Exception):
-    """The provider no longer knows the sync token: the next listing reads
-    everything."""
+    pass
 
 
 def requires_connection(func):

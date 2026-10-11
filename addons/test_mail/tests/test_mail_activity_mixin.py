@@ -24,16 +24,6 @@ def _is_set_and(compare, bound, value):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestActivityScheduleUsesTheAssigneeDay(TestActivityCommon):
-    """`activity_schedule` must pick the deadline the same way `create` does.
-
-    "Today" for an activity is the assignee's, not the server's, and the
-    assignee can arrive two ways: named in the values, or carried in the context
-    as `default_user_id` -- which is how the form action and several callers
-    pass it. `_activity_create` read the values alone, so an activity scheduled
-    for somebody whose day is already tomorrow got the server's today and was
-    born `overdue` in their list, while the identical `mail.activity.create`
-    got it right. Every addon in the tree schedules through this method.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -836,7 +826,6 @@ class TestActivityMixin(TestActivityCommon):
 
 @tests.tagged("mail_activity", "mail_activity_mixin")
 class TestORM(TestActivityCommon):
-    """Test for read_progress_bar"""
 
     def test_groupby_activity_state_progress_bar_behavior(self):
         lead_timedelta_setup = [0, 0, -2, -2, -2, 2]
@@ -957,9 +946,6 @@ class TestORM(TestActivityCommon):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestActivityMixinProjection(TestActivityCommon):
-    """The mixin's fields project the record's activities two different ways,
-    and every one of these tests pins a case where the projection and the
-    filter used to disagree, or where the value went stale."""
 
     @classmethod
     def setUpClass(cls):
@@ -1620,11 +1606,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestNextActivityProjectionAgreement(TestActivityCommon):
-    """The mixin resolves "the next activity" twice -- in Python for the five
-    projected fields, in SQL for the searches, the groupby and the ordering.
-    These pin the two against each other, and against the ORM contracts the SQL
-    side has to honour.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2009,10 +1990,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestNextActivityProjectionProperties(TestActivityCommon):
-    """Every projected field and every search operator against a ground truth
-    computed in Python, over a dataset built to hit the awkward shapes: records
-    with no activity, ties on the deadline, completed activities, unset
-    summaries, several assignees."""
 
     def test_search_and_compute_agree_on_a_randomised_population(self):
         Model = self.env["mail.test.activity"]
@@ -2241,7 +2218,6 @@ class TestNextActivityProjectionProperties(TestActivityCommon):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestNextActivityInvariants(TestActivityCommon):
-    """Assumptions the activity projection rests on and nothing else asserts."""
 
     def test_activity_state_ordering_agrees_with_the_compute(self):
         zones = ("UTC", "Pacific/Kiritimati", "Asia/Kathmandu", "Pacific/Midway")

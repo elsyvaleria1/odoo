@@ -68,10 +68,6 @@ class TestDescriptionProbesAreBestEffort(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestFieldDescriptionMemo(TransactionCaseWithUserDemo):
-    """`fields_get` composes each description from a half memoised per
-    (model, attributes, field names, lang, su) and a half evaluated on every
-    call. The composition must be indistinguishable from evaluating every
-    attribute on every call."""
 
     @staticmethod
     def _uncached(model, attributes=None):

@@ -12,7 +12,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationGoal(models.Model):
-    """Individual goal instance for a user on a specific time period."""
 
     _name = "gamification.goal"
     _access_anchors = frozendict(

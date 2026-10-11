@@ -47,7 +47,6 @@ class TestPhoneFormatTools(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPhoneParseRecoveryBranches(TransactionCase):
-    """TOO_LONG recovery ladder and invalid-prefix taxonomy of phone_parse."""
 
     def test_unparseable_plus_number_rejected(self):
         with self.assertRaises(UserError) as cm:
@@ -79,7 +78,6 @@ class TestPhoneParseRecoveryBranches(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPhoneBlacklistRemoveWizard(TransactionCase):
-    """The unblacklist wizard delegates to phone.blacklist._remove."""
 
     def test_wizard_unblacklists_number_with_reason(self):
         Blacklist = self.env["phone.blacklist"]

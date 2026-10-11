@@ -9,8 +9,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestDecisionLedgerKept(ApprovalCommon):
-    """What was decided about a request stays on file: no caller deletes a request
-    that holds decisions, and deleting its document keeps it, cancelled."""
 
     def setUp(self):
         super().setUp()

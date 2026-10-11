@@ -18,9 +18,6 @@ REMINDER_DELAY = timedelta(days=1)
 
 
 class MixinProofConfirmation(models.AbstractModel):
-    """A record its contact confirms: what they gave or received, stated to them
-    on their own channel, answered there with Confirm or Not right; or, with the
-    contact at the counter, proven with a code they received."""
 
     _name = "mixin.proof.confirmation"
     _description = "Contact Confirmation"

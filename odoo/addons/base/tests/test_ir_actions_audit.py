@@ -2346,11 +2346,6 @@ class TestEmbeddedActionsLoadForPortal(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestIrActionsTargetModelWriteInvalidatesBindings(TransactionCase):
-    """A binding is shown only to a user who can read the model it opens, and
-    the cache that answers get_bindings holds that model. Measured 2026-09-17:
-    writing a report's ``model`` or a server action's ``model_id`` cleared the
-    menu cache and left the bindings cache answering for the old model.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2418,10 +2413,6 @@ class TestIrActionsTargetModelWriteInvalidatesBindings(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestIrActionsWriteThroughTheRoot(TransactionCase):
-    """ir.actions.actions is a PostgreSQL inheritance root: a write through it
-    lands in the subtype's table. Measured 2026-09-17: it bypassed the
-    subtype's write override and left the subtype's cache stale.
-    """
 
     def test_a_name_given_through_the_root_is_the_subtype_s_custom_name(self):
         action = self.env["ir.actions.server"].create(

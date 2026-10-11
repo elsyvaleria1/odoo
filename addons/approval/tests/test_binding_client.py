@@ -7,7 +7,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestApprovalBindingClient(common.TransactionCase):
-    """What the approval button asks `approval.binding`, and what it is told."""
 
     @classmethod
     def setUpClass(cls):

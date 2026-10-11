@@ -2,7 +2,6 @@ from odoo.tests import TransactionCase
 
 
 class TestSalaryBenefit(TransactionCase):
-    """Cover `_compute_field`, which decides where a benefit reads and writes."""
 
     @classmethod
     def setUpClass(cls):
@@ -47,7 +46,6 @@ class TestSalaryBenefit(TransactionCase):
 
 
 class TestSimulationOfferCleanup(TransactionCase):
-    """Characterise the cron: it is the only method here that deletes."""
 
     def _offer(self, is_simulation, months_old=0):
         offer = self.env["hr.contract.salary.offer"].create(

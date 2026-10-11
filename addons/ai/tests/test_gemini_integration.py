@@ -12,7 +12,6 @@ from odoo.addons.ai.utils.llm_providers import (
 
 @tagged("-at_install", "post_install")
 class TestGeminiIntegration(TransactionCase):
-    """Gemini provider detection, embeddings and RAG completions."""
 
     def setUp(self):
         super().setUp()

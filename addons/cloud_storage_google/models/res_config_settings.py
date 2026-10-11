@@ -11,7 +11,6 @@ from .ir_attachment import get_cloud_storage_google_credential
 
 
 class ResConfigSettings(models.TransientModel):
-    """Google Cloud Storage configuration for attachments."""
 
     _inherit = "res.config.settings"
 

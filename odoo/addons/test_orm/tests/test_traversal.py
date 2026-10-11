@@ -271,8 +271,6 @@ class TestFilteredDomain(TransactionCase):
 
 
 class TestFilteredDomainAsksTheSearchLast(TransactionCase):
-    """An OR (AND) builds a searching child's predicate only for the records
-    the in-memory children leave unadmitted (unrefused)."""
 
     @classmethod
     def setUpClass(cls):

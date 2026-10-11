@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class StockTripStop(models.Model):
-    """One delivery on one trip: what it weighed when it boarded and what was lost."""
 
     _name = "stock.trip.stop"
     _description = "Trip Delivery Weight"

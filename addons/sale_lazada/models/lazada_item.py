@@ -8,10 +8,6 @@ from odoo.addons.sale_lazada import const, utils
 
 
 class LazadaItem(models.Model):
-    """Lazada Item - Mapping between Odoo products and Lazada items.
-
-    Used for inventory synchronization from Odoo to Lazada.
-    """
 
     _name = "lazada.item"
     _description = "Lazada Item"

@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class WizardDocumentDocumentShareLine(models.TransientModel):
-    """Per-partner access line displayed inside the documents sharing wizard."""
 
     _name = "wizard.document.document.share.line"
     _description = "Documents share access"

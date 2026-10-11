@@ -7,13 +7,6 @@ from odoo.addons.test_trade.tests.common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestLineMatch(TestTradeOrderCase):
-    """`mixin.order.line.match.action_match_lines`.
-
-    A SQL view unions open order lines with invoice lines that are not linked
-    to any, and this writes the links between them. Every shipping model
-    carrying the mixin lives in `sale` or `purchase`, so the algorithm ran in
-    production and was asserted by nothing.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -2,23 +2,6 @@ from enum import Enum
 
 
 class COSEAlgorithmIdentifier(int, Enum):
-    """Various registered values indicating cryptographic algorithms that may be used in credential responses
-
-    Members:
-        `ECDSA_SHA_256`
-        `EDDSA`
-        `ECDSA_SHA_512`
-        `RSASSA_PSS_SHA_256`
-        `RSASSA_PSS_SHA_384`
-        `RSASSA_PSS_SHA_512`
-        `RSASSA_PKCS1_v1_5_SHA_256`
-        `RSASSA_PKCS1_v1_5_SHA_384`
-        `RSASSA_PKCS1_v1_5_SHA_512`
-        `RSASSA_PKCS1_v1_5_SHA_1`
-
-    https://www.w3.org/TR/webauthn-2/#sctn-alg-identifier
-    https://www.iana.org/assignments/cose/cose.xhtml#algorithms
-    """
 
     ECDSA_SHA_256 = -7
     EDDSA = -8
@@ -33,12 +16,6 @@ class COSEAlgorithmIdentifier(int, Enum):
 
 
 class COSEKTY(int, Enum):
-    """
-    Possible values for COSEKey.KTY representing a public key's key type
-
-    https://tools.ietf.org/html/rfc8152#section-13
-    https://www.iana.org/assignments/cose/cose.xhtml#table-key-type
-    """
 
     OKP = 1
     EC2 = 2
@@ -46,11 +23,6 @@ class COSEKTY(int, Enum):
 
 
 class COSECRV(int, Enum):
-    """Possible values for COSEKey.CRV representing an EC2 public key's curve
-
-    https://tools.ietf.org/html/rfc8152#section-13.1
-    https://www.iana.org/assignments/cose/cose.xhtml#table-elliptic-curves
-    """
 
     P256 = 1
     P384 = 2
@@ -59,13 +31,6 @@ class COSECRV(int, Enum):
 
 
 class COSEKey(int, Enum):
-    """
-    COSE keys for public keys
-
-    https://tools.ietf.org/html/rfc8152
-    https://www.iana.org/assignments/cose/cose.xhtml#table-key-common-parameters
-    https://www.iana.org/assignments/cose/cose.xhtml#table-key-type-parameters
-    """
 
     KTY = 1
     ALG = 3

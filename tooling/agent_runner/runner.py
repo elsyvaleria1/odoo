@@ -50,12 +50,11 @@ class LeaseLost(Exception):
 
 
 class Permanent(Exception):
-    """A failure another attempt cannot fix."""
+    pass
 
 
 class Stopped(Permanent):
-    """The run was stopped: cancelled in Odoo, its lease lost, or this runner
-    shutting down -- the one case where another runner should try again."""
+    pass
 
 
 class TransportError(Exception):
@@ -248,9 +247,6 @@ class Client:
 
 
 class Reporter:
-    """What an executor sees of the lease: where to report, and whether to
-    stop -- the run was cancelled in Odoo, or the lease went to another
-    runner."""
 
     def __init__(self, client: Client, lease: dict[str, Any]) -> None:
         self._client = client

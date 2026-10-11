@@ -5,14 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyDescription(TransactionCase):
-    """`loyalty.reward.description` is generated *and* translated.
-
-    Writing a translated field under the session's language also writes the source
-    term when the record has no source yet, so building the string with `_()` under
-    a Spanish session stored Spanish as `en_US` — making every reward's English
-    description Spanish, and every language without its own translation fall back
-    to it.
-    """
 
     @classmethod
     def setUpClass(cls):

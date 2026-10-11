@@ -3578,17 +3578,6 @@ class TestMessagePostGlobal(TestMessagePostCommon):
 
 @tagged("mail_post")
 class TestMessageNotifyBatchRecipients(TestMessagePostCommon):
-    """`_message_notify_batch` must accept per-record recipients on their own.
-
-    `partner_ids` defaults to `False` and `partner_ids_per_record` to `None`, and
-    the method's own guard explicitly lets a call through when only the second is
-    filled -- it returns early *unless* `any(partner_ids_per_record.values())`.
-    The validator downstream then demanded a list and rejected the `False` the
-    signature had just supplied, so the documented per-record call raised
-    `ValueError` and the only way to reach it was to also pass a redundant
-    `partner_ids=[]`. `_message_auto_subscribe_notify_batch` is in-tree precisely
-    because it passes that redundant empty list.
-    """
 
     def test_per_record_recipients_need_no_redundant_empty_list(self):
         records = self.env["mail.test.simple"].create(
@@ -3636,15 +3625,6 @@ class TestMessageNotifyBatchRecipients(TestMessagePostCommon):
 
 @tagged("mail_post")
 class TestMessageNotifyBatchCost(TestMessagePostCommon):
-    """`_message_notify_batch` is a batch method and must cost like one.
-
-    It creates its messages in one go but used to notify record by record, so
-    every record paid its own outgoing-mail write and its own References and
-    tracking reads. Measured as a marginal cost at N > 1 -- an absolute count at
-    N = 1 cannot separate a fixed cost from a per-record one -- and paired with
-    an assertion on what the batch produces, because a query budget on its own
-    cannot tell a saving from skipped work.
-    """
 
     def _notify_batch_of(self, count):
         records = self.env["mail.test.simple"].create(
@@ -3744,8 +3724,6 @@ class TestNotifyBatchEmailPrefetch(TestMessagePostCommon):
 
 @tagged("mail_post")
 class TestMessagePostBatchPaths(TestMessagePostCommon):
-    """The batch post path must honour what `message_post` honours: the
-    per-record preparation hook, the author, and per-call grouping."""
 
     def _records(self, count=3):
         return self.env["mail.test.simple"].create(

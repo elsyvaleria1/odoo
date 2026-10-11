@@ -138,12 +138,6 @@ class TestBarcodeHardening(common.TransactionCase):
 
 
 class TestBarcodeSessionInfo(common.TransactionCase):
-    """`session_info` is on the critical path of every backend page load.
-
-    An administrator who cleared the parameter in the UI stored an empty
-    string -- which `get_param`'s default does not cover -- and every internal
-    user got an HTTP 500 on /odoo until someone guessed why.
-    """
 
     def _max_time(self, raw):
         self.env["ir.config_parameter"].sudo().set_param(

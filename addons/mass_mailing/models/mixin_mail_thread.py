@@ -8,7 +8,6 @@ BLACKLIST_MAX_BOUNCED_LIMIT = 5
 
 
 class MixinMailThread(models.AbstractModel):
-    """Update MixinMailThread to add the support of bounce management in mass mailing traces."""
 
     _inherit = "mixin.mail.thread"
 

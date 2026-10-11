@@ -8,14 +8,6 @@ from odoo.tests.common import HttpCase, TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestKioskPinThrottle(TransactionCase):
-    """A four-digit PIN behind a public route needs a server-side cost per guess.
-
-    The keypad's back-off lives in `pin_code.js`, which runs in the caller's
-    browser. `/hr_attendance/manual_selection` is `auth="public"`, so a request
-    that never loads the keypad never pays it, and the route answers with the
-    employee's data on success and `{}` on failure -- a clean oracle over ten
-    thousand possibilities.
-    """
 
     @classmethod
     def setUpClass(cls):

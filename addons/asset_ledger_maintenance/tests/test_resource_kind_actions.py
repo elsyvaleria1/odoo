@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestResourceKindMaintenanceOrder(TransactionCase):
-    """A vehicle runs the maintenance order button of the asset form."""
 
     @classmethod
     def setUpClass(cls):

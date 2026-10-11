@@ -8,9 +8,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestSubjectIntegrity(ApprovalCommon):
-    """An approval covers the document as it was approved. Changing what was
-    approved sends the approval back to draft and says why; writing the same
-    values back, or changing a field nobody approved, leaves it alone."""
 
     @classmethod
     def setUpClass(cls):

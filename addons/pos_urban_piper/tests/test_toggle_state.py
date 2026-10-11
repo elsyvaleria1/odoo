@@ -4,11 +4,6 @@ from odoo.tests import TransactionCase
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestUrbanPiperToggleState(TransactionCase):
-    """`pos_urban_piper.toggle_state` is planted as an empty string by the module's
-    own post-init hook, and `get_param(key, default)` returns the default only when
-    the key is ABSENT. Every reader must therefore treat empty as empty, or closing
-    a session raises -- and the write that would repair the parameter sits after the
-    raise, so it never happens."""
 
     def setUp(self):
         super().setUp()

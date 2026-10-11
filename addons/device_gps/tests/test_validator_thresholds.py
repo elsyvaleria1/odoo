@@ -3,8 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestValidatorThresholds(TransactionCase):
-    """`_threshold` is called by name from the checks, so a key that does not
-    resolve is a typo nothing else would catch until a tracker pushed."""
 
     def setUp(self):
         super().setUp()

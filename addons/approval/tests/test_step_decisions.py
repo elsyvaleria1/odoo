@@ -10,12 +10,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalStepDecisions(ApprovalCommon):
-    """A decision is given for steps: the ones it names, or every step of the row.
-
-    One row stands for a user on a request, however many step pools they are in, and
-    the approval button draws a decide control under each step. Approving under the
-    second step must not also approve the first.
-    """
 
     @classmethod
     def setUpClass(cls):

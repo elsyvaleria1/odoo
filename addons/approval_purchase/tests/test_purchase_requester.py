@@ -11,13 +11,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestPurchaseDeclaredRequester(TransactionCase):
-    """The buyer an order names does not approve it, whoever sends it.
-
-    On production, nine orders a purchasing assistant sent for approval were
-    approved by their own buyer: the engine excluded only whoever pressed
-    Confirm. The order's buyer is its declared requester now, and only an access
-    exception lets them decide it.
-    """
 
     @classmethod
     def setUpClass(cls):

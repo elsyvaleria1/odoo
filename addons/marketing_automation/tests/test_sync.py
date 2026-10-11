@@ -38,8 +38,6 @@ class SyncingCase(MarketingAutomationCommon):
 
 @tagged("marketing_automation", "ma_sync")
 class TestDuplicate(SyncingCase):
-    """Test workflow when having duplicate participants or traces. This may
-    happen in several occasions, and we should be defensive with duplicates."""
 
     @classmethod
     def setUpClass(cls):
@@ -122,8 +120,6 @@ class TestDuplicate(SyncingCase):
 
 @tagged("marketing_automation", "ma_sync")
 class TestSyncing(SyncingCase):
-    """Test various cases of synchronization, notably to avoid creating
-    duplicate traces."""
 
     @users("user_marketing_automation")
     def test_activity_require_sync(self):

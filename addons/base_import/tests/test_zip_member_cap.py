@@ -31,15 +31,6 @@ def _archive_of(size):
 
 
 class TestZipMemberCap(TransactionCase):
-    """The oversized-member guard writes for the person who uploaded the file.
-
-    Twice now the message has been read as a developer diagnostic -- it raises
-    from a helper, out of a module whose other errors are internal -- and the
-    gettext call stripped off it on the way past. It is neither: both callers
-    are import readers, and `_get_preview_error` reports it verbatim into the
-    import UI. These tests say so from the outside, where the next reader of
-    `gettext-developer-error` will trip over them.
-    """
 
     def _import_record(self, data):
         return self.env["base_import.import"].create(

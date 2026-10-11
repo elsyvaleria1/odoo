@@ -9,11 +9,6 @@ MODULE = "test_inherited_label"
 
 @tagged("post_install", "-at_install")
 class TestInheritedFieldTranslation(TransactionCase):
-    """A field a mixin gives every model that inherits it has one label, and a
-    module's catalogue can only name the models of its own dependency closure:
-    calendar cannot list account.move, whose activity_calendar_event_id it
-    injects. The label read untranslated on every model the template could not
-    name."""
 
     def _field(self, model, name):
         return self.env["ir.model.fields"]._get(model, name)

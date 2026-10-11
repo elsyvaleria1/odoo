@@ -24,8 +24,6 @@ MAX_MATCHES = 20
 
 @dataclass(frozen=True)
 class Query:
-    """A business question the bot answers exactly: what it reads, and the
-    words the classifier is given to recognise it."""
 
     key: str
     description: str
@@ -38,7 +36,6 @@ class Query:
 
 @dataclass
 class Ask:
-    """One interpreted question, run against a read-only environment."""
 
     env: object
     tz: str
@@ -155,8 +152,7 @@ def find(env, model, value, fields_=("name",), extra=None, limit=MAX_MATCHES):
 
 
 class NotFound(Exception):
-    """A filter named something that does not exist: the message is the
-    answer."""
+    pass
 
 
 

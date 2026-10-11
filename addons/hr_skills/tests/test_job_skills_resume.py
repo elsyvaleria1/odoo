@@ -113,7 +113,6 @@ class TestInternalResumeLines(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestInternalResumeLineShapes(TransactionCase):
-    """The internal resume is one line per run of versions sharing a title."""
 
     @classmethod
     def setUpClass(cls):

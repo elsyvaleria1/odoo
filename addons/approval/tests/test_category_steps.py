@@ -12,12 +12,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestCategorySteps(ApprovalCommon):
-    """A category that declares steps: each a pool with its own quorum.
-
-    The flat model -- one approver list and one request-wide minimum -- cannot
-    tell two steps that each need one of two people from one step that needs two.
-    These pin what steps add, and that a category without steps is untouched.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -273,8 +267,6 @@ class TestCategorySteps(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestStepReadingTheRequest(ApprovalCommon):
-    """A step whose source model is approval.request reads the request itself, so a
-    request raised with no document can still have its approvers named for it."""
 
     def _category_with_request_step(self, **step_vals):
         category = self._make_category("Request subject")

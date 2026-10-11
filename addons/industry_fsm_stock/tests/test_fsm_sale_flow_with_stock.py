@@ -8,10 +8,6 @@ from odoo.addons.industry_fsm_sale.tests.common import TestFsmFlowSaleCommon
 
 @tagged("-at_install", "post_install")
 class TestFsmFlowSaleWithStock(TestFsmFlowSaleCommon):
-    """
-    The sale flow is tested here because when the stock module is installed, its behavior is modified. To ensure the behavior still works without the stock module, a test is run
-    at-install on the industry_fsm_sale module
-    """
 
     def test_fsm_flow(self):
         self.assertFalse(

@@ -60,7 +60,6 @@ errors = {
 
 
 class BlackBoxDriver(SerialDriver):
-    """Driver for the blackbox fiscal data module."""
 
     _protocol = BlackboxProtocol
     priority = 1

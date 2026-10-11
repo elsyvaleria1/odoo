@@ -5,8 +5,6 @@ from odoo.addons.calendar_google.tests.common import authorize_google_calendar
 
 @tagged("post_install", "-at_install")
 class TestGoogleSyncCandidates(TransactionCase):
-    """Who the synchronisation cron picks up: the users whose Google connection
-    is authorized, found in SQL on the connections, less the stopped ones."""
 
     @classmethod
     def setUpClass(cls):

@@ -35,10 +35,6 @@ RUNNING_BOARD = ("open", "paused")
 
 
 class AccountDepreciationBoard(models.Model):
-    """The depreciation of one asset: a facet of the thing's `resource.resource`,
-    reached from it through `board_id`. The board reads and writes the thing's own facts
-    (name, company, value, dates) through delegation, and owns everything the
-    accounting knows about depreciating it."""
 
     _name = "account.depreciation.board"
     _description = "Depreciation Board"

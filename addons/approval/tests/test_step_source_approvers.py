@@ -6,11 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestStepSourceApprovers(ApprovalCommon):
-    """A step may name its approvers through a user field on the source document.
-
-    "The employee's time off manager" is neither a listed member nor a group: it is a
-    user read off the record being approved, and a different one on every record.
-    """
 
     @classmethod
     def setUpClass(cls):

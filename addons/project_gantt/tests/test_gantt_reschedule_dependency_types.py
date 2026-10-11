@@ -8,9 +8,6 @@ from .gantt_reschedule_dates_common import ProjectGanttRescheduleCommon, fake_no
 @tagged("gantt_reschedule", "post_install", "-at_install")
 @freeze_time(fake_now)
 class TestGanttRescheduleDependencyTypes(ProjectGanttRescheduleCommon):
-    """Calendar 40h (UTC), Mon-Fri 8-12 and 13-17. 2021-06-04 is a Friday,
-    2021-06-07 a Monday. The predecessor and the successor have different
-    assignees, so neither one's planning hides working time from the other."""
 
     @classmethod
     def setUpClass(cls):

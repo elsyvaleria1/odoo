@@ -8,14 +8,6 @@ from odoo.addons.base_import.models.base_import import ImportValidationError
 
 
 class ImportHardeningCase(TransactionCase):
-    """Regression tests for the t24068 correctness/security audit of
-    `base_import` (see the campaign ledger, findings F1/F2/F4/F11/F19). Each
-    test reproduces a case that crashed with an unhandled, non-
-    `ImportValidationError` exception (or leaked memory unboundedly) instead
-    of failing cleanly, reachable when `execute_import`/engine internals are
-    called directly (RPC, automation, or any caller that skips the UI's
-    `parse_preview` step, which happens to mask some of these cases).
-    """
 
     def _make_import(self, res_model="import.char", **vals):
         vals.setdefault("res_model", res_model)
@@ -73,26 +65,6 @@ class ImportHardeningCase(TransactionCase):
 
 @unittest.skipUnless(can_import("odf"), "odfpy not installed")
 class TestODSReaderHardening(BaseCase):
-    """F1: `numbercolumnsrepeated`/`numbercolumnsspanned` are ODS XML
-    attributes fully controlled by the uploaded file's author. Without a cap,
-    `ODSReader._read_sheet` builds `[textContent] * repeat` unbounded — a
-    crafted cell declaring a huge repeat count OOM-crashes the worker.
-
-    `BaseCase`, not a bare `unittest.TestCase`. No DB is needed here, which is
-    why this class reached for plain unittest — but Odoo's loader selects by
-    test tag, an untagged `unittest.TestCase` in an addon carries none, and so
-    this class was collected by nothing: `--test-tags
-    '/test_import_export:TestODSReaderHardening'` answered "matched no test at
-    all". It could not have passed either, since it called `getSheet`, a
-    method this reader has never had. The DoS cap it guards was, for its whole
-    life, asserted by nothing. `BaseCase` supplies the tags without supplying
-    a cursor.
-
-    Guarded by `can_import("odf")`: odfpy is an optional dependency (not
-    listed in requirements.txt — see the t24068 ledger's F20-adjacent gap) and
-    is not installed in every dev/CI environment; this test runs for real
-    wherever it is.
-    """
 
     def _build_doc_with_repeat(self, repeat_value):
         from odf.opendocument import OpenDocumentSpreadsheet

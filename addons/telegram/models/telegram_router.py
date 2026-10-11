@@ -33,8 +33,6 @@ HANDLER_PREFIX = "telegram.handler."
 
 
 class ForeignSender(Exception):
-    """A linked internal user who is no member of the company the bot speaks
-    for: nothing runs on their behalf."""
 
     def __init__(self, chat):
         super().__init__(chat)
@@ -42,22 +40,6 @@ class ForeignSender(Exception):
 
 
 class TelegramRouter(models.AbstractModel):
-    """Every Telegram update goes through here, in one documented order.
-
-    1. Rate limit, then the inbound log.
-    2. A button press goes to the handler whose declared prefix its data
-       carries (the flow-busy buttons are the router's own). It is always
-       answered, so the client's spinner stops.
-    3. A command goes to the handler declaring it, if the bot enables it, the
-       sender's tier and Odoo grants allow it, the handler agrees, and no
-       other flow is open when it starts one. The same checks make /ayuda and
-       the command menu each person sees (`_available_commands`).
-    4. Any other message goes to the handler owning the chat's flow; else to
-       a handler claiming it (a reply to something it sent); else to the idle
-       intake for its kind -- the one the bot names, else the one taking it
-       from this person, whom the bot asks when several do; else to a
-       handler answering what nothing took.
-    """
 
     _name = "telegram.router"
     _description = "Telegram Update Router"

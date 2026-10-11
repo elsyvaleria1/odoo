@@ -195,10 +195,6 @@ class TestResourceAssetStock(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestReceivingAnEnforcedAsset(TransactionCase):
-    """A goods receipt must not be blocked by paperwork that arrives later.
-    `_create_production_lots` builds a bare lot from name, product and company;
-    enforcing the kind's identifiers there would make receiving a vehicle
-    impossible until its registration came through."""
 
     @classmethod
     def setUpClass(cls):

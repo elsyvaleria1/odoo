@@ -63,7 +63,6 @@ what the assistant asked (a yes, a name, a choice, a quantity), answer \
 
 
 class InsightAssistant(BotAssistant):
-    """Route an owner's question to the report that answers it."""
 
     PURPOSE = PURPOSE
     TRANSCRIBE_CONTEXT = TRANSCRIBE_CONTEXT

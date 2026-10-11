@@ -6,14 +6,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install", "hr_attendance_schedule_refresh")
 class TestTheStoredFieldsFollowTheSchedule(TransactionCase):
-    """`worked_hours` and `date` are stored and computed from the schedule.
-
-    Neither can declare that dependency -- the schedule is resolved as a fixed
-    point over the employee's versions, not by a field path -- so editing a
-    calendar used to leave both fields on a value nothing would ever refresh.
-    Worse than stale: the next unrelated write to one attendance retriggered
-    the compute, so two identical days could end up stored differently.
-    """
 
     @classmethod
     def setUpClass(cls):

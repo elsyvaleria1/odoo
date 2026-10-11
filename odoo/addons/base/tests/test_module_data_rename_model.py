@@ -394,7 +394,6 @@ class TestRenameModelOverAForerunner(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameModelOverlongRelation(TransactionCase):
-    """A join table whose moved automatic name outgrows PostgreSQL's limit stays put."""
 
     LONG = "probe.short.renamed.with.a.name.long.enough.to.overflow"
 
@@ -493,7 +492,6 @@ class TestRenameModelOverlongRelation(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameModelLongJoinTable(TransactionCase):
-    """A join table whose name plus ``_id_seq`` outgrows the limit still moves."""
 
     OLD = "probe.join.table.with.a.rather.long.name.xy"
 
@@ -539,8 +537,6 @@ class TestRenameModelLongJoinTable(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameModelJoinTableWithAnActionComodel(TransactionCase):
-    """An action model's table is not its name with dots for underscores: the
-    join table the ORM derives sorts ir_act_server, not ir_actions_server."""
 
     @classmethod
     def setUpClass(cls):

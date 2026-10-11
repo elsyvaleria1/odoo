@@ -3,8 +3,6 @@ from odoo.tools.module_data import rekey_property_values
 
 
 class TestRekeyPropertyValues(common.TransactionCase):
-    """A box's properties keep badge ids under the names its unit defines;
-    re-keyed badges are followed there, and nothing else moves."""
 
     def test_a_relational_property_follows_its_records(self):
         spare, extra = self.env["test.unit.badge"].create(

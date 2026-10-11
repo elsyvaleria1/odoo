@@ -22,17 +22,6 @@ RANK = {"view": 1, "edit": 2, "manage": 3}
 
 
 class LiveFormula:
-    """The live inheritance formula over stored records, in Python.
-
-    role(P, d) = max over the live grants of P (its partner, its groups within
-    the node's companies) on the nodes of d's scope, a grant on a file reaching
-    that file only, and the top role where P owns d or a folder of its scope;
-    the scope is d and its folders up to the nearest boundary, inclusive. The
-    document then composes it: members in any company but disabled ones, the
-    internal audience in the companies in use, managers' edit wherever the
-    audience reaches, shortcuts through their target, an edit link, and a
-    link-shared document found through its folder.
-    """
 
     def __init__(self, env, subject):
         self.subject = subject.sudo()

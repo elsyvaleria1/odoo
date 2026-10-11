@@ -7,9 +7,6 @@ from .test_barcode_client_action import TestBarcodeClientAction
 
 @tagged("post_install", "-at_install")
 class TestBarcodeDraftPicking(HttpCase):
-    """Opening an operation type in the barcode app used to create its picking at once: every
-    open that was left without a scan stayed behind as an empty draft and consumed a number
-    of the type's sequence."""
 
     @classmethod
     def setUpClass(cls):

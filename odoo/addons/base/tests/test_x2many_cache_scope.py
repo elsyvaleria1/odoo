@@ -185,10 +185,6 @@ class TestX2manyScopeKey(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestX2manyScopeInvariant(TransactionCase):
-    """Against PostgreSQL: after every step of a random sequence of reads and
-    writes by a user and the superuser, every scope's x2many slot equals what
-    that scope's search returns, or is absent. A user never writes the field
-    the rule tests (`name`), the one stated exception of the invariant."""
 
     @classmethod
     def setUpClass(cls):

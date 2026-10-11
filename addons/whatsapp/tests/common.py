@@ -25,8 +25,6 @@ from odoo.addons.whatsapp.tools.whatsapp_exception import WhatsAppError
 
 
 class MockOutgoingWhatsApp(common.BaseCase):
-    """Mock calls to WhatsApp API, provide tools and patch to know what happens
-    when contacting it."""
 
     @contextmanager
     def mockWhatsappGateway(self, exp_json_data=None):
@@ -241,7 +239,6 @@ class MockOutgoingWhatsApp(common.BaseCase):
 
 
 class MockIncomingWhatsApp(common.HttpCase):
-    """Mock and provide tools on incoming WhatsApp calls."""
 
 
     def _get_message_signature(self, account, message_data):
@@ -424,7 +421,6 @@ class MockIncomingWhatsApp(common.HttpCase):
 
 
 class WhatsAppCase(MockOutgoingWhatsApp):
-    """Common class with tools and asserts"""
 
 
     def _add_button_to_template(
@@ -928,7 +924,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
 
 
 class WhatsAppCommon(MailCommon, WhatsAppCase):
-    """Bootstrap data for tests"""
 
     @classmethod
     def setUpClass(cls):

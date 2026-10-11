@@ -1323,7 +1323,6 @@ class TestMessageSubModelAccess(MessageAccessCommon):
 
 @tagged("mail_message", "security", "post_install", "-at_install")
 class TestMailMessageAccessBoundaries(MessageAccessCommon):
-    """The rule's neighbours: what surrounds the forward/backward spellings."""
 
     @classmethod
     def setUpClass(cls):

@@ -14,11 +14,10 @@ _logger = logging.getLogger(__name__)
 
 
 class SlipRefused(Exception):
-    """The file records no delivery: the message says why, to the chat."""
+    pass
 
 
 class TelegramDeliverySlip(models.Model):
-    """A delivery slip signed by the customer, sent through Telegram with /entrega."""
 
     _name = "telegram.delivery.slip"
     _description = "Telegram Delivery Slip"

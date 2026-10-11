@@ -21,9 +21,6 @@ CALLS = {
 
 @tagged("post_install", "-at_install")
 class TestBoxCalls(HttpCase):
-    """The calls a box makes naming itself in the body. An upstream box sends
-    no token on them, so they are heard without one; a token, when sent, must
-    be the box's."""
 
     def _new_box(self, identifier):
         return (

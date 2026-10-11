@@ -5,13 +5,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestStatementBalances(TransactionCase):
-    """`opening + transactions == closing`, and the cases where it must not run.
-
-    The rule catches a truncated or partially-parsed statement, which nothing
-    checked before. It is conditional because the identity is one: it holds for
-    *booked* balances and not for available ones, and a parser that cannot tell
-    them apart must stay silent rather than reject a consistent file.
-    """
 
     def _statement(self, transactions, **values):
         return {

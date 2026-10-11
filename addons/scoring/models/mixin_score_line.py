@@ -4,12 +4,6 @@ from odoo import api, fields, models
 
 
 class MixinScoreLine(models.AbstractModel):
-    """One audit row of a subject's score.
-
-    The concrete model declares ``subject_id``, a Many2one to its host with
-    ``ondelete="cascade"``, so foreign keys, cascades and access domains stay
-    where a polymorphic reference would lose them.
-    """
 
     _name = "mixin.score.line"
     _description = "Score Line Mixin"

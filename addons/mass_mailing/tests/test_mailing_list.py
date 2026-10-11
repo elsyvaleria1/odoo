@@ -354,7 +354,6 @@ class TestMailingListMerge(MassMailCommon):
 
 @tagged("mailing_list")
 class TestMailingContactImport(MassMailCommon):
-    """Test the transient <wizard.mailing.contact.import>."""
 
     @users("user_marketing")
     def test_mailing_contact_import(self):

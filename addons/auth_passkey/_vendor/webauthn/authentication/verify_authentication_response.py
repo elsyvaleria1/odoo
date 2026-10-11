@@ -27,9 +27,6 @@ from ...webauthn.helpers.structs import (
 
 @dataclass
 class VerifiedAuthentication:
-    """
-    Information about a verified authentication of which an RP can make use
-    """
 
     credential_id: bytes
     new_sign_count: int

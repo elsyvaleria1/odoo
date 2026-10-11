@@ -5,25 +5,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestPrivateAddressAccess(TransactionCase):
-    """The employee path that produces the row, and how HR still reaches it.
-
-    `base` withdraws every private address from everyone but its subject, with
-    one GLOBAL rule scoped to `perm_read`. `hr` adds no rule of its own, and
-    that is a decision rather than an omission: a group rule cannot lift a
-    global one -- group domains OR among themselves and are then ANDed with the
-    globals -- so an `hr.group_hr_user` rule granting everything would have
-    granted the officer nothing, while being permissive enough to OR away any
-    other group-scoped restriction on res.partner.
-
-    An HR officer reaches the address the way the product intends instead:
-    through `hr.employee.private_*`, which are `related` onto the row and carry
-    `groups="hr.group_hr_user"`. Related traversal is sudo by default, so the
-    column ACL is the gate and the row rule never has to make an exception.
-
-    Every read goes through `with_user` -- `TransactionCase` runs as superuser,
-    where `env.su` skips access domains and every assertion below would pass
-    against no rule at all.
-    """
 
     @classmethod
     def setUpClass(cls):

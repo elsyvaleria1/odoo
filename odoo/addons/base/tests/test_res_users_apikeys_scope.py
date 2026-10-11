@@ -11,8 +11,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class ScopeCase(TransactionCase):
-    """A scope over `res.partner` hiding `vat` and `email`, enforced through
-    `call_kw` as every API door enforces it."""
 
     @classmethod
     def setUpClass(cls):
@@ -179,9 +177,6 @@ class TestHiddenColumns(ScopeCase):
 
 @tagged("post_install", "-at_install")
 class TestHiddenColumnOracles(ScopeCase):
-    """`res.partner` searches `vat` and `email` by name, so a hidden column
-    was a value oracle through `name_search`, a `display_name` condition and
-    a string operator on any many2one pointing at the model."""
 
     def test_name_search_no_longer_matches_the_hidden_column(self):
         self.assertEqual(self._call("name_search", "LEAKED-ORACLE"), [])

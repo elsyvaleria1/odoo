@@ -10,9 +10,6 @@ from .common import ApprovalCommon, pool_step, record_approval
 
 
 class MultiCompanyCase(common.TransactionCase):
-    """Two companies, each with its own manager, category, rules and one approved
-    request. Shared with `approval_analytics`, whose SQL views are scoped by the
-    same ir.access rows and must be tested against the same fixture."""
 
     @classmethod
     def setUpClass(cls):

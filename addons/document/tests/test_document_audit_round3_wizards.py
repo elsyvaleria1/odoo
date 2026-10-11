@@ -19,14 +19,6 @@ SHARED_CONTENT = b"legitimately link-shared content"
 
 @tagged("post_install", "-at_install")
 class TestDocumentsZipShortcutLeak(HttpCase):
-    """A shortcut must never widen access to its target through ``_get_zip_response``.
-
-    ``ShareRoute._get_folder_children`` searches in ``sudo``, so its permission
-    clauses only constrain the *shortcut* record. Dereferencing
-    ``shortcut_document_id`` in ``_get_zip_response`` therefore used to serve the
-    target's real filename and full plaintext to anybody holding the enclosing
-    folder's share link.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -153,7 +145,6 @@ class TestDocumentsZipShortcutLeak(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsActivityExpirationSync(TransactionCaseDocuments):
-    """``mail.activity.write`` must not re-date a *permanent* access grant."""
 
     def _prepare_request(self):
         wizard = self.env["wizard.document.document.request"].create(
@@ -218,7 +209,6 @@ class TestDocumentsActivityExpirationSync(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsRequestWizardSelfRequest(TransactionCaseDocuments):
-    """Requesting a document from yourself must keep the permanent grant."""
 
     def test_self_request_keeps_permanent_grant(self):
         document = (
@@ -250,7 +240,6 @@ class TestDocumentsRequestWizardSelfRequest(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsOperationBatch(TransactionCaseDocuments):
-    """``_compute_destination_children_ids`` must pair wizards to folders by id."""
 
     def test_destination_children_are_not_shifted_in_batch(self):
         Doc = self.env["document.document"]
@@ -282,7 +271,6 @@ class TestDocumentsOperationBatch(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsLinkToRecordWizard(TransactionCaseDocuments):
-    """Small hardening fixes of the link-to-record wizard."""
 
     def test_link_to_without_record_raises_user_error(self):
         wizard = self.env["wizard.document.document.link.record"].create({})
@@ -310,7 +298,6 @@ class TestDocumentsLinkToRecordWizard(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsInboxAlias(TransactionCase):
-    """The seeded Inbox alias must expose its parent document."""
 
     def test_inbox_alias_has_a_parent_model(self):
         alias = self.env.ref(
@@ -327,12 +314,6 @@ class TestDocumentsInboxAlias(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsOperationWizard(TransactionCaseDocuments):
-    """`document.operation.action_confirm`, which nothing reached.
-
-    Coverage over `document` and nine bridge modules -- 691 tests -- executed
-    none of this method's four branches. It is what the Documents UI runs for
-    Move, Duplicate to, Create shortcuts and Add attachment to Documents.
-    """
 
     @classmethod
     def setUpClass(cls):

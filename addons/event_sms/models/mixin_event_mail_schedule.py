@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class MixinEventMailSchedule(models.AbstractModel):
-    """Add SMS as a channel for event communications."""
 
     _inherit = "mixin.event.mail.schedule"
 

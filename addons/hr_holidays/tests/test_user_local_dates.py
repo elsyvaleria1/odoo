@@ -12,12 +12,6 @@ LOCAL_DAY = date(2026, 9, 14)
 
 @tagged("post_install", "-at_install")
 class TestUserLocalDates(TestHrHolidaysCommon):
-    """Date-only values belong to the user's calendar, not to UTC.
-
-    Our deployment sits at UTC-6, so between 18:00 and midnight every single
-    day the server's date is already tomorrow. Anything that asks "what day is
-    it" on the user's behalf has to ask in the user's timezone.
-    """
 
     @classmethod
     def setUpClass(cls):

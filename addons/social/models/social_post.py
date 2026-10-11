@@ -11,16 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialPost(models.Model):
-    """A social.post represents a post that will be published on multiple social.accounts at once.
-    It doesn't do anything on its own except storing the global post configuration (message, images, ...).
-
-    This model inherits from `social.post.template` which contains the common part of both
-    (all fields related to the post content like the message, the images...). So we do not
-    duplicate the code by inheriting from it. We can generate a `social.post` from a
-    `social.post.template` with `action_generate_post`.
-
-    When posted, it actually creates several instances of social.live.posts (one per social.account)
-    that will publish their content through the third party API of the social.account."""
 
     _name = "social.post"
     _inherit = [

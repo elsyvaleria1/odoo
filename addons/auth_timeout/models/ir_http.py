@@ -11,7 +11,6 @@ _debug = DebugLog(__name__)
 
 
 class CheckIdentityException(SessionExpiredException):
-    """Exception raised when a user is requested to re-authenticate."""
 
     loglevel = logging.DEBUG
 

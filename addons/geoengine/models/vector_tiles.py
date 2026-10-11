@@ -32,9 +32,6 @@ MAX_HEAT_CELLS = 40_000
 
 @dataclass(frozen=True)
 class HeatView:
-    """The part of the world a heatmap shows, in Web Mercator, and the cell
-    its points are summed into: about HEAT_CELL_PX pixels at the view's zoom,
-    coarser when the view would hold more than MAX_HEAT_CELLS of them."""
 
     minx: float
     miny: float
@@ -86,8 +83,6 @@ def cell_size(z: int) -> float:
 
 @dataclass(frozen=True)
 class Cell:
-    """One square of a zoom's point grid, addressed as ``z/i/j`` by the
-    Web Mercator coordinates its records floor to."""
 
     z: int
     i: int

@@ -73,30 +73,6 @@ def _copy_option_outputs(outputs) -> dict:
 
 
 class _ParsedFileCache:
-    """Rows keyed by file content, so a batched import parses its file once.
-
-    ``execute_import`` re-reads the upload from scratch on every batch -- the
-    batches are separate RPC calls, and nothing carried the parse between them.
-    That is O(batches x file) and the readers are not cheap: measured on a
-    5,000-row xlsx imported at limit 500, **18% of the entire import** (1.97 s
-    of 10.7 s) went on parsing the same workbook eleven times, and a
-    20,000-row .ods costs 1.4 s per read, so ten batches burn 12.5 s producing
-    eleven identical lists.
-
-    Keyed on a digest of the file rather than on the import record, for a
-    reason that is easy to get wrong: ``write_date`` is the *transaction*
-    timestamp, so two writes to ``file`` inside one transaction share it and a
-    record-keyed entry would serve the old rows for the new file. Content is
-    also the honest key -- the same bytes parse to the same rows whichever
-    record they arrived on.
-
-    Safe to hand the same rows to several callers because nothing downstream
-    mutates them: ``_convert_import_data`` copies each row it keeps
-    (``list(mapper(row))``) and every in-place stage from ``_parse_import_data``
-    on works on those copies. The outer list is copied per caller anyway, so a
-    caller that pops from it -- ``parse_preview`` does -- cannot reach the
-    entry.
-    """
 
     def __init__(self, entries, max_cells) -> None:
         self._entries = entries
@@ -138,12 +114,6 @@ CONCAT_SEPARATOR_IMPORT = {
 
 
 class _StoredCurrencySymbols:
-    """The symbols this database knows, asked one at a time.
-
-    A ``Container`` rather than a set because the caller that reaches here has
-    no symbol table to hand and wants exactly one query, for the one symbol the
-    value turned out to carry.
-    """
 
     def __init__(self, env) -> None:
         self.env = env
@@ -155,17 +125,6 @@ class _StoredCurrencySymbols:
 
 
 class ImportValidationError(Exception):
-    """
-    This class is made to correctly format all the different error types that
-    can occur during the pre-validation of the import that is made before
-    calling the data loading itself. The Error data structure is meant to copy
-    the one of the errors raised during the data loading. It simplifies the
-    error management at client side as all errors can be treated the same way.
-
-    This exception is typically raised when there is an error during data
-    parsing (image, int, dates, etc..) or if the user did not select at least
-    one field to map with a column.
-    """
 
     def __init__(self, message, **kwargs) -> None:
         super().__init__(message)
@@ -280,22 +239,6 @@ def read_xlsx_rows(data, options):
 
 
 class _SpreadsheetReader(BaseReader):
-    """A workbook read as `rows`, for every consumer of the format layer.
-
-    These live here rather than in `libs/documents` because xlrd,
-    openpyxl and odfpy are optional and this module is where they are declared.
-
-    The document's own options are handed to the reader, not an empty dict. The
-    readers write the workbook's sheet names back into what they are given, so
-    passing `{}` discarded them: a consumer of `Document.rows` got the first
-    sheet with no way to learn there had been others, or to ask for one. The
-    default is unchanged -- no `sheet` still means the first -- and a caller
-    that does know which it wants can now say so.
-
-    One document is one sheet, because `_derive` caches. Reading a second sheet
-    means a second `Document`, which is what `base_import.import` already does:
-    `sheet` is part of its parsed-file cache key.
-    """
 
     module = "base_import"
 
@@ -338,7 +281,6 @@ class Base(models.AbstractModel):
 
 
 class Base_ImportMapping(models.Model):
-    """Remembers column-to-field mappings from a previous import for reuse."""
 
     _name = "base_import.mapping"
     _description = "Base Import Mapping"
@@ -365,7 +307,6 @@ class ResUsers(models.Model):
 
 
 class Base_ImportImport(models.TransientModel):
-    """Prepares and executes the import of a user-uploaded file into an Odoo model."""
 
     _name = "base_import.import"
     _description = "Base Import"

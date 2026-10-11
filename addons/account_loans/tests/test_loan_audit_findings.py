@@ -10,11 +10,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 @tagged("post_install", "-at_install", "loan_audit")
 class TestLoanAuditFindings(AccountTestInvoicingCommon):
-    """Each test asserts the CORRECT behaviour and therefore fails at HEAD.
-
-    Written 2026-08-23 alongside
-    agromarin-knowledge/research/2026-08-23-account-loans-audit.md.
-    """
 
     @classmethod
     def setUpClass(cls):

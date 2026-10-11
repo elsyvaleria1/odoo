@@ -47,7 +47,6 @@ class TestPayslipRecomputeOnWrite(TestPayslipContractBase):
 
 
 class TestPayslipRecomputeOnInputChange(TestPayslipContractBase):
-    """Writing the Salary Inputs tab of a draft payslip that already has lines."""
 
     @classmethod
     def setUpClass(cls):

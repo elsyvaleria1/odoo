@@ -91,11 +91,11 @@ SERVER_FIELDS = frozenset(
 
 
 class LinkRefused(Exception):
-    """A presented token opens nothing: every cause answers the same 404."""
+    pass
 
 
 class LinkLoginRequired(Exception):
-    """The link is for signed-in people and the visitor is not one."""
+    pass
 
 
 @dataclass(frozen=True, slots=True)

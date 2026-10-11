@@ -46,7 +46,6 @@ class TestRefuseOfferWizard(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestUnlinkArchivedVersions(TransactionCase):
-    """`unlink_archived_versions` must not delete a still-employed employee."""
 
     def test_employee_with_a_live_version_survives(self):
         applicant = self.env["hr.applicant"].create({"partner_name": "Internal"})

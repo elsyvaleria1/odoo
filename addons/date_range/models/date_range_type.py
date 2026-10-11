@@ -15,7 +15,6 @@ UNIT_SELECTION = time_unit_selection("day", "week", "month", "year")
 
 
 class DateRangeType(models.Model):
-    """Categorizes date ranges and holds their autogeneration and naming defaults."""
 
     _name = "date.range.type"
     _description = "Date Range Type"

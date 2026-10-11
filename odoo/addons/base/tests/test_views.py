@@ -8475,9 +8475,6 @@ class TestCombineBatching(ViewCase):
 
 @tagged("post_install", "-at_install")
 class TestSiblingPrimaryCheck(ViewCase):
-    """While loading, the check keeps only loaded siblings; these trees
-    carry no xmlid, so they are what the check sees once the registry is
-    ready."""
 
     def _tree(self, depth, extensions_per_level=1, primaries=2):
         root = self.assertValid(
@@ -9039,9 +9036,6 @@ class TestCombineIsBatched(ViewCase):
 
 
 class TestStaleSiblingWhileLoading(ViewCase):
-    """An upgrade rewrites a module's views file by file: a primary view
-    built on a parent still holds an older version's arch until its own
-    record is reached, and checking the parent against it fails the upgrade."""
 
     def _stale_tree(self):
         parent = self.View.create(
@@ -9092,9 +9086,6 @@ class TestStaleSiblingWhileLoading(ViewCase):
 
 
 class TestSweptExtensionWhileLoading(ViewCase):
-    """An upgrade loads a module whose new version no longer declares one of
-    its views: the record stays until `_process_end` deletes it, and a later
-    module's view combined with it meanwhile met an older version's arch."""
 
     def _tree(self, owner):
         parent = self.View.create(
@@ -9674,13 +9665,6 @@ class TestXmlIdFollowsTheFirstDeclaration(ViewCase):
 
 
 class TestViewModeScrub(ViewCase):
-    """Deleting a model's last view of a type it generates no default arch for
-    takes that type out of the model's window actions. base itself registers
-    no such window type -- qweb has no default but is no window mode, and every
-    window mode base has is generated -- so the two halves are pinned apart:
-    which (model, type) pairs qualify, and what the scrub does to the actions.
-    web_grid's tests drive the whole path with a real type.
-    """
 
     def _action(self, view_mode):
         return self.env["ir.actions.act_window"].create(

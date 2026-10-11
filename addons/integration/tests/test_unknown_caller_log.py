@@ -5,8 +5,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install", "integration")
 class TestUnknownCallerLog(TransactionCase):
-    """A call for a subject no channel answers for is a refused row with no
-    channel, naming what the caller asked for; one row per caller per window."""
 
     def _rows(self, model="probe.receiver"):
         return self.env["integration.exchange"].search(

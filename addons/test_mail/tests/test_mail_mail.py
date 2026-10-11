@@ -1911,15 +1911,6 @@ class TestMailMailRace(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailQueueResilience(MailCommon):
-    """The queue must survive its own configuration.
-
-    Every number the send path reads from ``ir.config_parameter`` is typed by
-    whoever last edited a Settings > Technical > System Parameters row. Three of
-    the four are handed straight to code that has a domain: an SQL ``LIMIT``, an
-    ``itertools.batched`` size, a per-minute quota. A single ``-1`` there is not a
-    degraded send, it is no send at all -- and the two that raise take the whole
-    cron run with them, not just the mail that tripped over them.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2027,7 +2018,6 @@ class TestMailMailQueueResilience(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailOutcomeReporting(MailCommon):
-    """What the record says about a send must reach the person reading it."""
 
     @classmethod
     def setUpClass(cls):
@@ -2117,8 +2107,6 @@ class TestMailMailOutcomeReporting(MailCommon):
 
 @tagged("mail_mail", "mail_server")
 class TestMailMailPersonalServerQuota(MailCommon):
-    """The per-minute quota of a personal server counts messages, so it has to
-    count *every* message the mail will produce."""
 
     def test_personal_server_cost_counts_the_raw_address_message(self):
         partners = self.env["res.partner"].create(
@@ -2170,7 +2158,6 @@ class TestMailMailPersonalServerQuota(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailRecipientDeduplication(MailCommon):
-    """An address named both raw and through a partner gets one copy."""
 
     def test_a_raw_address_a_partner_also_holds_is_sent_once(self):
         partner = self.env["res.partner"].create(
@@ -2208,7 +2195,6 @@ class TestMailMailRecipientDeduplication(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSchedule(MailCommon):
-    """Every sender applies the queue's due filter; Send Now overrides it."""
 
     def _scheduled_mail(self):
         return self.env["mail.mail"].create(
@@ -2241,12 +2227,6 @@ class TestMailMailSchedule(MailCommon):
 
 @tagged("mail_mail", "mail_server")
 class TestMailMailSendGuarantees(MailCommon):
-    """The properties the send path is *for*, asserted directly.
-
-    Each of these was written to try to refute a fix, not to confirm one. They
-    are kept because the thing they pin is the reason the fix exists, and
-    because two of them guard against mistakes already made once here.
-    """
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_another_users_mail_is_still_refused_on_a_personal_server(self):
@@ -2539,8 +2519,6 @@ class TestMailMailSendGuarantees(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailChatterPush(MailCommon):
-    """The chatter update has to reach a client, and cost nothing when it should
-    not happen at all."""
 
     @classmethod
     def setUpClass(cls):
@@ -2658,15 +2636,6 @@ class TestMailMailChatterPush(MailCommon):
 
 @tagged("mail_mail")
 class TestFailureTypeCoherence(MailCommon):
-    """The delivery-failure vocabulary is shared; nothing may hold a private copy.
-
-    It was held four times -- `mail.mail`, `mail.notification`, `mailing.trace`
-    and the JS that renders the label -- and had drifted twice before anything
-    noticed, because a restated selection has nothing to disagree with. The
-    Python copies are now one list; this is what stops the fourth from going its
-    own way, and what makes adding a code fail loudly until the client can
-    render it.
-    """
 
     def _js_handled_codes(self):
         source = Path(
@@ -2729,7 +2698,6 @@ class TestFailureTypeCoherence(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailDurableMarker(MailCommon):
-    """The placeholder must be durable before anything is handed to SMTP."""
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_the_marker_is_committed_before_the_first_message_leaves(self):
@@ -2799,8 +2767,6 @@ class TestMailMailDurableMarker(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailUnfollowBlock(MailCommon):
-    """One predicate decides whether a body carries a personalisable unfollow
-    block; a body with half of one is not personalised and does not ship."""
 
     @classmethod
     def setUpClass(cls):
@@ -2871,7 +2837,6 @@ class TestMailMailUnfollowBlock(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailHeaders(MailCommon):
-    """`headers` is a mapping in a jsonb column, not a repr in a text one."""
 
     def test_headers_round_trip_as_a_mapping(self):
         mail = self.env["mail.mail"].create(
@@ -2937,17 +2902,6 @@ class TestMailMailHeaders(MailCommon):
 
 @tagged("mail_mail")
 class TestNumericParameterGuards(MailCommon):
-    """Every count read from a System Parameter that reaches something with a
-    domain goes through the guarded helper.
-
-    `mail.mail` had four of these and one was guarded; the rest reached an SQL
-    `LIMIT`, an `itertools.batched` size or a per-minute quota unfiltered, and a
-    single `-1` typed into Settings took the whole outgoing queue down. The same
-    class of read exists in `sms.sms`, `mail_group`, `mail.message.schedule` and
-    the activity systray -- one of them on the very parameter `mail.mail` had
-    just guarded. This is the table of them, so the next one added is added
-    guarded.
-    """
 
     def _accessors(self):
         icp = self.env["ir.config_parameter"]
@@ -3014,7 +2968,6 @@ class TestNumericParameterGuards(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailFailureClassification(MailCommon):
-    """A failure is classified on its own merits, not on the previous one's."""
 
     @classmethod
     def setUpClass(cls):
@@ -3082,15 +3035,6 @@ class TestMailMailFailureClassification(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailFailureRanking(MailCommon):
-    """A mail with several recipients can produce several kinds of failure.
-
-    Which one it ends up carrying is not bookkeeping: `_AUTO_DELETE_FAILURE_TYPES`
-    reads it to decide whether `auto_delete` may unlink the record, so the wrong
-    one destroys the only evidence a real delivery failure ever happened.
-    `TestMailMailFailureClassification` pins the case where the address failure
-    comes first. This is the other order, which `_deliver_one` cannot fix on its
-    own because it is `_SendOutcome.absorb` that resolves it.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3160,13 +3104,6 @@ class TestMailMailFailureRanking(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailNotificationTruth(MailCommon):
-    """A notification says what happened to *its* recipient, or it says nothing.
-
-    `_postprocess_sent_message` consulted the reached set only when something had
-    already failed. On the branch where nothing failed it wrote every pending
-    notification of the mail to `sent` -- including ones naming a recipient the
-    mail had not carried, which is the one outcome nobody can notice afterwards.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3299,7 +3236,6 @@ class TestMailMailNotificationTruth(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSplitNotifications(MailCommon):
-    """What the split copy carries, it answers for."""
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_the_copy_takes_the_notifications_for_what_it_carries(self):
@@ -3379,7 +3315,6 @@ class TestMailMailSplitNotifications(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailQueueNarrowing(MailCommon):
-    """`send()` decides what it is sending before it starts paying for it."""
 
     def _one_mail(self, state):
         return self.env["mail.mail"].create(
@@ -3459,12 +3394,6 @@ class TestMailMailQueueNarrowing(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailUnfollowScope(MailCommon):
-    """The unfollow block is rewritten. The rest of the body is not.
-
-    Both halves used to work on the whole document: the tokenising half by
-    `str.replace` over every occurrence of the path, the stripping half by a
-    regex over every anchor whose href merely contained it.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3555,7 +3484,6 @@ class TestMailMailUnfollowScope(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailOutcomeWrites(MailCommon):
-    """Recording a send writes what changed, and nothing else."""
 
     @classmethod
     def setUpClass(cls):
@@ -3649,7 +3577,6 @@ class TestMailMailOutcomeWrites(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailQueueProgress(MailCommon):
-    """The queue reports progress in chunks, and commits once per mail."""
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_progress_is_reported_in_chunks(self):
@@ -3695,18 +3622,6 @@ class TestMailMailQueueProgress(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSelfClosingUnfollowSpan(MailCommon):
-    """A self-closing unfollow span ends the block; it does not open one.
-
-    `_SPAN_TAG_REGEX` skips self-closing tags when it looks for the closing
-    `</span>`, but `_UNFOLLOW_SPAN_OPEN_REGEX` matched `/>` as an ordinary
-    opening tag. `<span id="mail_unfollow"/>` therefore opened a block nothing
-    closed, `_resolve_unfollow_span` fell back to the end of the document, and
-    everything after the span was deleted from the outgoing mail.
-
-    The form is not hypothetical: `mail.tools.html_body.render_body_fragments`
-    serialises with `etree.tostring`, which writes empty elements self-closed,
-    and it is what the gateway and attachment-url rewriting run bodies through.
-    """
 
     def test_a_self_closing_span_keeps_the_rest_of_the_body(self):
         body = '<p>Important</p><span id="mail_unfollow"/><p>Content after the span</p>'
@@ -3769,13 +3684,6 @@ class TestMailMailSelfClosingUnfollowSpan(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailBodyIsBuiltOncePerMail(MailCommon):
-    """The unfollow rewrite is per-body work, not per-recipient work.
-
-    The per-recipient step scanned the whole document for the block on every
-    recipient, and `_strip_unfollow_block` scanned it again -- two full
-    regex passes per recipient over a body that is identical for all of them,
-    for a notification mail that carries up to `mail.batch_size` (50) of them.
-    """
 
     def test_the_document_is_scanned_a_fixed_number_of_times(self):
         partners = self.env["res.partner"].create(
@@ -3822,18 +3730,6 @@ class TestMailMailBodyIsBuiltOncePerMail(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSettlingIsNotDelivery(MailCommon):
-    """Recording what a send did must not be able to undo it.
-
-    `_send_one` ran `_record_send_success` inside the same `try` as
-    `_deliver_all`, so anything raising after SMTP had accepted the message was
-    caught by the handler that writes `state = 'exception'` -- and a human, or
-    the queue, then retried a mail that had already gone out.
-
-    `_log_sent` was moved out of that `try` for exactly this reason; the
-    settling of notifications is the larger half of the same problem, because
-    `_postprocess_sent_message` is a documented override point (`mass_mailing`
-    extends it) and its failures are therefore third-party failures.
-    """
 
     def _notification_mail(self):
         partner = self.env["res.partner"].create(
@@ -3916,7 +3812,6 @@ class TestMailMailSettlingIsNotDelivery(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailReturnPath(MailCommon):
-    """An absent bounce address is absent, not an empty header."""
 
     def test_no_bounce_address_leaves_the_header_unset(self):
         self.env.company.bounce_email = False
@@ -3954,21 +3849,6 @@ class TestMailMailReturnPath(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailScheduledDateBounds(MailCommon):
-    """A scheduled date that cannot be converted to UTC is dropped, not raised.
-
-    `_parse_scheduled_datetime` guards `astimezone(UTC)` with
-    `except ValueError, OverflowError, OSError`, and nothing exercised it. The
-    path is reachable from user data: `mail.template.scheduled_date` is a Char
-    rendered per record, so the string reaching `create` is whatever the
-    template produced. Converting an aware datetime to UTC shifts it by the
-    offset, so a value at either end of `datetime`'s range with an offset
-    pointing outward leaves it -- and `datetime.astimezone` raises
-    `OverflowError` rather than saturating.
-
-    Without the guard that exception surfaces out of `mail.mail.create`, which
-    is called while posting; with it, the mail simply goes out as soon as
-    possible.
-    """
 
     def _fixed_offset(self, hours):
         return datetime_timezone(timedelta(hours=hours))
@@ -4033,13 +3913,6 @@ class TestMailMailScheduledDateBounds(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSizeEstimate(MailCommon):
-    """`_estimate_email_size` decides whether attachments become links.
-
-    It is the only thing standing between a mail and an SMTP size rejection, and
-    it is arithmetic with no caller that would notice it drifting: too low and
-    the message is refused by the server, too high and attachments are replaced
-    by links nobody asked for.
-    """
 
     def test_attachments_are_counted_at_their_base64_size(self):
         MailMail = self.env["mail.mail"]
@@ -4074,12 +3947,6 @@ class TestMailMailSizeEstimate(MailCommon):
 
 
 class _DroppingSMTPSession:
-    """An SMTP session whose server drops the connection on one message.
-
-    ``send`` is where smtplib hands every command (text) and the DATA payload
-    (bytes) to the socket, so the drop can be placed before or after the
-    payload, which is the difference between "not delivered" and "maybe".
-    """
 
     def __init__(self, drop_on, after_payload=False):
         self.drop_on = drop_on
@@ -4111,13 +3978,6 @@ class _DroppingSMTPSession:
 
 
 class MailQueueCronCase(MailCommon):
-    """Runs the queue the way production does: from the cron, committing.
-
-    `process_email_queue` only commits (and only reports cron progress) when no
-    test is running; running it through `_run_job` on a test cursor, with that
-    switch flipped for the duration of the call alone, makes every commit a real
-    commit point and every job failure a real rollback to the last one.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -4171,15 +4031,6 @@ class MailQueueCronCase(MailCommon):
 
 @tagged("mail_mail", "mail_server")
 class TestMailMailSessionLoss(MailQueueCronCase):
-    """A lost SMTP session ends the pass; it does not fail the cron.
-
-    `process_email_queue` re-raised `SMTPServerDisconnected` so the job would
-    roll back and leave the interrupted mail retryable. Under auto-commit the
-    rollback reaches only the last commit, which already holds the in-flight
-    mail as `exception / unknown / "Placeholder recorded before sending"`: the
-    mail was never retried, and the re-raise only counted a cron failure --
-    five of them over seven days deactivate the Email Queue Manager.
-    """
 
     def _notified_mail(self, partner):
         message = self.env["mail.message"].create(
@@ -4293,7 +4144,6 @@ class TestMailMailSessionLoss(MailQueueCronCase):
 
 @tagged("mail_mail")
 class TestMailMailQueueTimeBudget(MailQueueCronCase):
-    """`_commit_progress` answers how long the job may still run; it was ignored."""
 
     def test_the_queue_stops_when_the_budget_is_spent(self):
         self._outgoing(3)
@@ -4329,7 +4179,6 @@ class TestMailMailQueueTimeBudget(MailQueueCronCase):
 
 @tagged("mail_mail")
 class TestMailMailQueueTriggers(MailCommon):
-    """The queue runs hourly; a mail due earlier has to say when."""
 
     def _triggers(self):
         cron = self.env.ref("mail.ir_cron_mail_scheduler_action")
@@ -4382,7 +4231,6 @@ class TestMailMailQueueTriggers(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMessageScheduleCron(MailQueueCronCase):
-    """Due notifications are sent in chunks, and a transient failure retries."""
 
     def _schedules(self, count):
         partner = self.env["res.partner"].create(
@@ -4455,15 +4303,6 @@ class TestMailMessageScheduleCron(MailQueueCronCase):
 
 @tagged("mail_mail")
 class TestMailMailSettlingDatabaseError(MailQueueCronCase):
-    """A failing statement aborts the transaction, not just the settling.
-
-    The `except Exception` around `_postprocess_sent_message` took no
-    savepoint. Under auto-commit the placeholder is already committed, so after
-    an SQL error the next statement failed with "current transaction is
-    aborted", the job rolled back to that placeholder, and the mail -- which
-    SMTP had accepted -- read `exception / unknown` and was retried by hand:
-    sent twice.
-    """
 
     def _failing_on(self, mail):
         MailMail = self.registry["mail.mail"]

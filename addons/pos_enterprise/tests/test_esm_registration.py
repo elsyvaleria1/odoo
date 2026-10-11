@@ -5,7 +5,6 @@ from odoo.tools.assets.esm_registry import esm_registry
 
 @tagged("post_install", "-at_install")
 class TestEsmRegistration(TransactionCase):
-    """Preparation-display bundles are declared ESM by this module."""
 
     PRIMARY = "pos_preparation_display.assets"
     TOURS = "pos_preparation_display.assets_tour_tests"

@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class AutomationRule(models.Model):
-    """Add a resource field to derive the delay calendar from the employee's work schedule."""
 
     _inherit = "automation.rule"
 

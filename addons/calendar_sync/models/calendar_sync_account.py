@@ -24,8 +24,6 @@ PUSH_BUDGET = 200
 
 
 class CalendarSyncAccount(models.Model):
-    """One user's synchronization with one provider: where it stands, beside
-    the user's own connection to the provider, which holds the tokens."""
 
     _name = "calendar.sync.account"
     _description = "Calendar Synchronization Account"
@@ -783,8 +781,6 @@ class CalendarSyncAccount(models.Model):
 
 
 class _Actives:
-    """Whether users synchronize with one provider, and their accounts, each
-    asked once of a user."""
 
     def __init__(self, Account, code: str) -> None:
         self.Account, self.code = Account, code

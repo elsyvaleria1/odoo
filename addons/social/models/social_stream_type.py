@@ -2,8 +2,6 @@ from odoo import fields, models
 
 
 class SocialStreamType(models.Model):
-    """Technical model that allows social module implementations ('social_facebook', 'social_twitter', ...)
-    to introduce their own social stream types (eg: 'Page Posts' for Facebook, 'Keyword' for Twitter, ...)"""
 
     _name = "social.stream.type"
     _description = "Social Stream Post"

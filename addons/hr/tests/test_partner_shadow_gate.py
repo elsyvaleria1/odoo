@@ -60,14 +60,6 @@ EXPECTED = (KEEP_SHADOWED | SEPARATE_DESTINATION | WRONG_PARENT) | set(CONDITION
 
 @tagged("post_install", "-at_install")
 class TestPartnerShadowGate(TransactionCase):
-    """A field hr.employee declares itself is NOT delegated.
-
-    `_add_inherited_fields` skips any name the child already declares and logs
-    nothing, so once hr.employee delegates to res.partner every name in this set
-    silently keeps reading the employee's own column. res.users already shipped
-    that failure: it declares `active` itself and needed `active_partner` to
-    reach the value delegation was meant to provide.
-    """
 
     @classmethod
     def _shadowed(cls):

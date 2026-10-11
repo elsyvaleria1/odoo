@@ -10,18 +10,6 @@ _logger = getLogger(__name__)
 
 
 class AiLlmTransport(models.AbstractModel):
-    """How ``LLMApiService`` puts a request on the wire.
-
-    Split out of ``LLMApiService._request`` for the same reason as
-    ``ai.llm.credential``: that class is instantiated directly and offers no
-    extension point, so a deployment wanting its LLM traffic to go through a
-    shared HTTP client -- for retry, rate limiting, response caching or an audit
-    log -- has nothing to override. An AbstractModel does.
-
-    The default is exactly what was inline before: one ``requests.request``, no
-    retry, and the provider-shaped error unwrapping that turns a failure into a
-    readable ``UserError``.
-    """
 
     _name = "ai.llm.transport"
     _description = "AI Provider Transport"

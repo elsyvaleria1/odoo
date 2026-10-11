@@ -7,8 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class DefaultEventMixin:
-    """Shared factory for the begin+1d/end+15d event window this test
-    suite standardizes on, to avoid re-typing it in every test method."""
 
     def _create_default_event(self, **vals):
         vals = {

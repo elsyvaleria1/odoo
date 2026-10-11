@@ -43,8 +43,6 @@ class MailPerformanceTracking(models.Model):
 
 
 class MailTestFieldType(models.Model):
-    """Test default values, notably type, messing through models during gateway
-    processing (i.e. lead.type versus attachment.type)."""
 
     _description = "Test Field Type"
     _name = "mail.test.field.type"
@@ -66,8 +64,6 @@ class MailTestFieldType(models.Model):
 
 
 class MailTestLang(models.Model):
-    """A simple chatter model with lang-based capabilities, allowing to
-    test translations."""
 
     _description = "Lang Chatter Model"
     _name = "mail.test.lang"
@@ -207,7 +203,6 @@ class MailTestTrackMonetary(models.Model):
 
 
 class MailTestTrackSelection(models.Model):
-    """Test tracking for selection fields"""
 
     _description = "Test Selection Tracking"
     _name = "mail.test.track.selection"
@@ -222,8 +217,6 @@ class MailTestTrackSelection(models.Model):
 
 
 class MailTestMultiCompany(models.Model):
-    """This model can be used in multi company tests, with attachments support
-    for checking record update in MC"""
 
     _description = "Test Multi Company Mail"
     _name = "mail.test.multi.company"
@@ -234,8 +227,6 @@ class MailTestMultiCompany(models.Model):
 
 
 class MailTestMultiCompanyRead(models.Model):
-    """Just mail.test.simple, but multi company and supporting posting
-    even if the user has no write access."""
 
     _description = "Simple Chatter Model "
     _name = "mail.test.multi.company.read"
@@ -244,7 +235,6 @@ class MailTestMultiCompanyRead(models.Model):
 
 
 class MailTestMultiCompanyWithActivity(models.Model):
-    """This model can be used in multi company tests with activity"""
 
     _description = "Test Multi Company Mail With Activity"
     _name = "mail.test.multi.company.with.activity"
@@ -255,8 +245,6 @@ class MailTestMultiCompanyWithActivity(models.Model):
 
 
 class MailTestNothread(models.Model):
-    """Models not inheriting from mixin.mail.thread but using some cross models
-    capabilities of mail."""
 
     _description = "NoThread Model"
     _name = "mail.test.nothread"

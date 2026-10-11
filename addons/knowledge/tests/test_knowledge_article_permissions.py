@@ -171,8 +171,6 @@ class TestKnowledgeArticlePermissions(KnowledgeArticlePermissionsCase):
 
 @tagged("knowledge_internals", "knowledge_management")
 class KnowledgeArticlePermissionsInitialValues(KnowledgeArticlePermissionsCase):
-    """Test initial values or our test data once so that other tests do not have
-    to do it."""
 
     def test_initial_values(self):
         article_roots = self.article_roots.with_env(self.env)
@@ -519,11 +517,6 @@ class TestKnowledgeArticlePermissionsTools(KnowledgeArticlePermissionsCase):
 
 @tagged("knowledge_acl", "knowledge_portal")
 class TestKnowledgeArticlePortal(KnowledgeArticlePermissionsCase):
-    """Portal users should have limited usage, they can read/write depending on permissions but can't:
-    - Modify the article hierarchy (move an article from a parent to another)
-    - Modify the article internal_permission
-    - Modify the article visibility ('is_article_visible_by_everyone')
-    - Create root articles (can only create UNDER articles to which they have write access)"""
 
     @classmethod
     def setUpClass(cls):

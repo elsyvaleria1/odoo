@@ -21,14 +21,6 @@ if typing.TYPE_CHECKING:
 
 
 class One2one(One2many):
-    """The one record of `comodel_name` whose `inverse_name` names this one.
-
-    The many2one on the comodel is the stored fact and must carry
-    `index="unique"`, so the database holds the cardinality. Read as a
-    singleton recordset. Writing a record points its inverse here; the record
-    that held the seat before is released when its inverse is optional and
-    refused when it is required, because a one2one moves nothing silently.
-    """
 
     is_one2one = True
 

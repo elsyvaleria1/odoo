@@ -7,7 +7,6 @@ _debug = DebugLog(__name__)
 
 
 class MicrosoftEvent(ProviderEvents):
-    """Outlook events, as Graph lists them."""
 
     @property
     def uids(self):

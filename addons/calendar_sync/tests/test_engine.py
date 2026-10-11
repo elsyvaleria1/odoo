@@ -18,9 +18,6 @@ LATER = datetime(2100, 1, 1)
 
 @tagged("post_install", "-at_install")
 class TestCalendarSyncEngine(TransactionCase):
-    """The engine against two fake providers: "fake_outlook" gives an item an id
-    per calendar, "fake_google" one id in every calendar and takes the insert id
-    as the item's."""
 
     @classmethod
     def setUpClass(cls):

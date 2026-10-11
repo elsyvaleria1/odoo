@@ -3,8 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLegacyFieldNames(TransactionCase):
-    """A field this fork renamed is named in the error a caller written for
-    upstream Odoo gets for its old name."""
 
     HINT = "it is named 'repeat_interval' here"
 

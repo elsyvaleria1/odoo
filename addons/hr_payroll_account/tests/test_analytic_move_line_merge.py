@@ -7,13 +7,6 @@ from odoo.addons.hr_payroll_account.tests.test_hr_payroll_account import (
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestAnalyticMoveLineMerge(TestHrPayrollAccountCommon):
-    """Two payslip lines sharing a name and an account become one journal item.
-
-    Nothing covered this before, which is how `_get_existing_lines` came to
-    compare `account.analytic.account` records against the string keys of an
-    analytic distribution -- a test that can never be true -- and keep merging
-    switched off for every analytic-tagged rule through five audit rounds.
-    """
 
     def setUp(self):
         super().setUp()

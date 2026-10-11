@@ -10,8 +10,6 @@ _THRESHOLD = "smart_approval.confidence_threshold"
 
 @tagged("post_install", "-at_install")
 class TestRequestIntakeAuthority(SmartApprovalTestBase):
-    """A request raised over Telegram is its sender's own: created,
-    attached and submitted with their rights, never the superuser's."""
 
     def _send(self, call):
         response = self.mock_telegram_response(success=True, result={"message_id": 1})

@@ -26,9 +26,6 @@ def _resource_action(name):
 
 
 class MixinResourceKind(models.AbstractModel):
-    """What a resource of one kind adds, in a table of its own, under its
-    resource's id. The resource keeps everything every thing has; this model
-    keeps what only its kind has, and its form extends the asset form."""
 
     _name = "mixin.resource.kind"
     _description = "Resource Kind Extension"

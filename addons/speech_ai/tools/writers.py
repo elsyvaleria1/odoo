@@ -39,7 +39,6 @@ def _vendors(env: Any) -> frozenset[str]:
 
 
 class AiSpeech(BaseWriter):
-    """Words as audio, spoken by whichever engine a key is held for."""
 
     name = "ai_speech"
     mimetype = ""

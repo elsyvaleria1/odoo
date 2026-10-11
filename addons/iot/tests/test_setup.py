@@ -7,7 +7,6 @@ from odoo.addons.iot.models.iot_channel import BOX_CHANNEL
 
 @tagged("post_install", "-at_install")
 class TestBoxEnrolment(HttpCase):
-    """``/iot/setup`` is the only route a box calls before it is known."""
 
     def _setup(self, iot_box, devices):
         response = self.url_open(

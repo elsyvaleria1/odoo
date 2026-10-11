@@ -7,7 +7,6 @@ STATES = ("overdue", "today", "planned", False)
 
 @tagged("mail_activity")
 class TestActivityStateRollup(TransactionCase):
-    """A parent summarising its children's activity_state."""
 
     def _combinations(self):
         for size in range(len(STATES) + 1):

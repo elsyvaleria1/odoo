@@ -2,8 +2,6 @@ from odoo import fields, models
 
 
 class MailTestActivityBlSmsVoip(models.Model):
-    """A model inheriting from most phone- and mail- related mixin in order
-    to test activities with a full setup."""
 
     _name = "mail.test.activity.bl.sms.voip"
     _description = "VOIP SMS Mailing Blacklist Enabled with activities"

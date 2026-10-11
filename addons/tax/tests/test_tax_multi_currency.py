@@ -5,9 +5,6 @@ from .common import BaseTaxCommon
 
 @tagged("post_install", "-at_install")
 class TestTaxMultiCurrency(BaseTaxCommon):
-    """F013: no test in this suite ever used a currency other than the
-    company's own, so nothing here would catch a regression that conflates
-    `*_currency` (line-currency) and non-suffixed (company-currency) fields."""
 
     def _foreign_currency(self):
         foreign = self.env.ref("base.EUR")

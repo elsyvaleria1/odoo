@@ -248,12 +248,6 @@ class TestRemoteIndexValidity(DeviceTransactionCase):
 
 
 class TestOwnRemoteLockOverLoopback(DeviceTransactionCase):
-    """A postgres_fdw server pointing back at this database.
-
-    Its connection is a second backend that sees only committed rows, which
-    suffices: it reads the committed ``res_lang`` and holds the lock that
-    read took until this test's transaction ends.
-    """
 
     SERVER = "device_loopback_srv"
 
@@ -337,12 +331,6 @@ class TestNeutralizedCopyReachesNoForeignServer(DeviceTransactionCase):
 
 
 class TestFdwGuardsOnARegularTable(DeviceTransactionCase):
-    """The triggers behave like the foreign keys they replace.
-
-    Installed here on the regular ``device_data_log`` table, inside the test
-    transaction, so what is verified is the trigger logic itself and not the
-    FK Postgres still enforces on this table.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -455,11 +443,6 @@ class TestFdwGuardsOnARegularTable(DeviceTransactionCase):
 
 
 class TestGcOrdersLocalWritesFirst(DeviceTransactionCase):
-    """Pointers are cleared before the rows go, never after.
-
-    On a foreign table the two writes commit in different databases, so the
-    order is what keeps a crash in between from leaving a dangling pointer.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -9,10 +9,6 @@ SDD_FIRST_MIN_PRENOT_PERIOD = 5
 
 
 class SddMandate(models.Model):
-    """A class containing the data of a mandate sent by a customer to give its
-    consent to a company to collect the payments associated to his invoices
-    using SEPA Direct Debit.
-    """
 
     _name = "sdd.mandate"
     _inherit = ["mixin.mail.thread.main.attachment", "mixin.mail.activity"]

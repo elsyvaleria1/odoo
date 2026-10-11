@@ -23,7 +23,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestTimeBasedTriggers(common.TransactionCase):
-    """Test time-based triggers (on_time, on_time_created, on_time_updated)."""
 
     def _run_cron(self):
         IrCron = type(self.env["ir.cron"])

@@ -241,13 +241,6 @@ class TestEndpointRateLimiterStrictMode(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRateLimitBucketContention(TransactionCase):
-    """A row conflict is not a verdict on the caller's quota.
-
-    Every cursor here is REPEATABLE READ and the strict path takes `FOR UPDATE`
-    on one hot row under a `lock_timeout`, so concurrency produces exactly the
-    three errors the framework calls retryable. Swallowing one into a refusal
-    made the stricter setting fail harder the more load it saw.
-    """
 
     def setUp(self):
         super().setUp()

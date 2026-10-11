@@ -2,7 +2,6 @@ from odoo import Command
 
 
 class TripFixtureMixin:
-    """A CDG-like delivery flow, a traced trip type, a driver and vehicles."""
 
     @classmethod
     def setUpClass(cls):
@@ -129,7 +128,6 @@ class TripFixtureMixin:
 
 
 class OfflineEventsMixin:
-    """What the driver's phone sends: events chained as it chains them."""
 
     def _chain(self, trip, events):
         Event = self.env["stock.trip.offline.event"]

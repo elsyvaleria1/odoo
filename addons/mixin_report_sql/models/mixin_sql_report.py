@@ -5,7 +5,6 @@ from odoo.libs.sql import SQL
 
 
 class MixinSqlReport(models.AbstractModel):
-    """Registry-driven SQL construction for ``_auto = False`` analytical reports."""
 
     _name = "mixin.sql.report"
     _description = "SQL Report Construction Helper"

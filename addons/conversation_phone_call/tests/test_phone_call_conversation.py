@@ -320,9 +320,6 @@ class TestCallConversationIsQuiet(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCallFiledByWhoMayNotOpenConversations(TransactionCase):
-    """A phone's receiver files the calls it reports: an internal user who
-    reads them and holds no conversation right. Its recording is heard and
-    analysed on the call's conversation all the same, without su."""
 
     def setUp(self):
         super().setUp()

@@ -156,14 +156,6 @@ class TestDocumentSource(BaseCase):
 
 @tagged("post_install", "-at_install")
 class TestReadingPagesCostsMore(BaseCase):
-    """What a reader registered above the default ceiling can and cannot do.
-
-    The engine itself ships in `extract_ocr`, which is a separate
-    module and need not be installed. What is pinned here is the contract every
-    such reader answers to, with a stub standing in for the engine: it is not
-    run uninvited, it is not run on a document that already has text, and it is
-    what a scan falls through to.
-    """
 
     def setUp(self):
         super().setUp()

@@ -49,8 +49,6 @@ class InotifyError(OSError):
 
 
 class QueueOverflow(Exception):
-    """The kernel dropped events: every watch has to be re-derived. `events`
-    are the ones it delivered before the drop, still to be acted on."""
 
     def __init__(self, events: list[Event]) -> None:
         super().__init__(f"inotify queue overflowed after {len(events)} event(s)")
@@ -115,8 +113,6 @@ def _errno_error(what: str) -> InotifyError:
 
 
 class Inotify:
-    """One inotify instance: watches by path, events read in one non-blocking
-    sweep per `read`, both descriptors close-on-exec from birth."""
 
     def __init__(self) -> None:
         if not AVAILABLE:

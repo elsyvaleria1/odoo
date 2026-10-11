@@ -10,9 +10,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestTOTPortal(HttpCaseWithUserPortal, TestTOTPMixin):
-    """
-    Largely replicates TestTOTP
-    """
 
     def test_totp(self):
         self.install_totphook()

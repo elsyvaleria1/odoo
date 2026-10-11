@@ -13,13 +13,6 @@ from .common_report_engine import TestAccountReportsCommon
 
 @tagged("post_install", "-at_install")
 class TestReportValueFormatting(TestAccountReportsCommon):
-    """A value must be called zero exactly when it is displayed as zero.
-
-    formatLang divides by the rounding unit and drops every decimal, so at any unit
-    other than "decimals" it displays as 0 long before the currency calls it zero.
-    _is_value_zero has to be told the unit, or a report shown in millions renders
-    -400,000 as "-0" and hide_0_lines keeps rows whose every cell reads 0.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -106,7 +99,6 @@ class TestReportValueFormatting(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestReportAggregationGuards(TestAccountReportsCommon):
-    """Malformed report configuration must be reported, never crash or hang."""
 
     def _build_report(self, lines):
         report = self.env["report.formula"].create(
@@ -235,7 +227,6 @@ class TestReportAggregationGuards(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestReportSortLinesInput(TestAccountReportsCommon):
-    """sort_lines is called straight from the client, so its options are reachable input."""
 
     @classmethod
     def setUpClass(cls):
@@ -269,11 +260,6 @@ class TestReportSortLinesInput(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAuditAccountStatusAccess(TestAccountReportsCommon):
-    """account.audit.account.status is an accountant's sign-off on an audited account.
-
-    It used to be readable, writable and creatable by every internal user, and carried
-    no multi-company rule while every sibling in the same feature has one.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -368,11 +354,6 @@ class TestAuditAccountStatusAccess(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestMultiCompanyScoping(TestAccountReportsCommon):
-    """A record with no company of its own is scoped by the record that owns it.
-
-    Budget items and tax units carried no rule at all, so they stayed visible from
-    companies that could not see the budget -- or any member of the tax unit.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -449,11 +430,6 @@ class TestMultiCompanyScoping(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestPaymentWizardBankExposure(TestAccountReportsCommon):
-    """A related field is privileged by default (coding_guidelines.rst 10.5).
-
-    bank_account_id is a plain many2one the user sets, so a privileged read of
-    acc_number hands back the IBAN of any bank account in the database.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -534,15 +510,6 @@ class TestPaymentWizardBankExposure(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestEveryReportRenders(TestAccountReportsCommon):
-    """A crash net over the whole module.
-
-    Every shipped report, under each filter toggle and each pair of toggles, then
-    every unfoldable line of the plain render expanded. It asserts nothing about the
-    figures -- the per-report suites do that -- only that no combination raises. The
-    engines, the expansion path and the option initialisers have many more
-    combinations than the per-report tests exercise, and this module's suite only
-    started running in CI recently.
-    """
 
     EXPECTED = (
         "activate more than one currency",
@@ -664,12 +631,6 @@ class TestEveryReportRenders(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestExportTestFlagIsNotClientSettable(TestAccountReportsCommon):
-    """`_running_export_test` reaches get_options through client-supplied options.
-
-    Three l10n modules branch on it and two use it to skip a check -- l10n_es waives
-    the BOE date validation, l10n_ar deselects the purchase book "to avoid raising".
-    A user must not be able to ask for that waiver from a browser.
-    """
 
     def test_the_flag_is_honoured_while_a_test_runs(self):
         report = self.env.ref("account.balance_sheet")
@@ -688,13 +649,6 @@ class TestExportTestFlagIsNotClientSettable(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAccountsCoverageReportCodelessAccounts(TestAccountReportsCommon):
-    """account.account.code is computed per company and reads False for an account
-    that belongs to another one.
-
-    The coverage report's domain-engine branch searches accounts with no company
-    filter, so those Falses reach the code sets and used to make sorted() compare
-    str against bool.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -752,12 +706,6 @@ class TestAccountsCoverageReportCodelessAccounts(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestSortLinesKeepsEveryLine(TestAccountReportsCommon):
-    """sort_lines walks a tree rooted on the lines whose parent is not in the list.
-
-    It used to root the walk on the None sentinel alone, so a list whose lines all
-    carry a parent -- what the hierarchy produces, since its root is referenced but
-    never emitted -- walked an empty branch and came back empty.
-    """
 
     def test_a_hierarchy_keeps_every_line_through_the_sort(self):
         report = self.env.ref("account.trial_balance_report")
@@ -799,12 +747,6 @@ class TestSortLinesKeepsEveryLine(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestSortLinesShortLines(TestAccountReportsCommon):
-    """A report line may carry fewer cells than options["columns"] declares.
-
-    The journal report's tax summary section headings carry none at all, and
-    sort_lines indexed straight into the list, so any client-supplied order_column
-    raised IndexError instead of sorting.
-    """
 
     def test_a_line_with_no_columns_does_not_break_the_sort(self):
         invoice = self.init_invoice(
@@ -843,13 +785,6 @@ class TestSortLinesShortLines(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestNewCompanyGetsDeadlineDefaults(TestAccountReportsCommon):
-    """res.company.create used to pre-filter the return types needing defaults with
-    a domain on deadline_periodicity / deadline_start_date.
-
-    Both are company_dependent, so the domain resolved against the creating user's
-    company. Once a type was configured there -- the steady state -- it was excluded
-    and the new company got no deadline configuration at all.
-    """
 
     def test_a_new_company_picks_up_every_deadline_default(self):
         return_type = self.env["account.return.type"].search([], limit=1)
@@ -881,13 +816,6 @@ class TestNewCompanyGetsDeadlineDefaults(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAuditReturnPreviousPeriodScoping(TestAccountReportsCommon):
-    """Creating an audit return carries the previous period's account statuses
-    forward.
-
-    The lookup used to compute its boundaries from self.env.company -- the active
-    company, not the return's -- and then search for the previous return with no
-    company and no tax-unit scoping at all.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1009,11 +937,6 @@ class TestAuditReturnPreviousPeriodScoping(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestBudgetItemAccess(TestAccountReportsCommon):
-    """A Basic accounting user could read a budget but not its items.
-
-    group_account_basic implies only group_account_invoice, so this gap does not
-    close when accountant is installed.
-    """
 
     def test_a_basic_user_reads_a_budget_and_its_items_alike(self):
         basic = self.env["res.users"].create(
@@ -1037,13 +960,6 @@ class TestBudgetItemAccess(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestManagerReachesTheModulesAcls(TestAccountReportsCommon):
-    """group_account_manager does not imply group_account_user.
-
-    That implication is added by accountant, which depends on account_reports, so
-    in any install that pulls this module without it -- around 25 l10n_*_reports
-    do -- an Accounting Administrator was denied everything the module grants only
-    to group_account_user.
-    """
 
     def test_a_manager_reaches_what_the_module_grants(self):
         manager = self.env["res.users"].create(
@@ -1078,10 +994,6 @@ class TestManagerReachesTheModulesAcls(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestBudgetFilterIsMultiCompany(TestAccountReportsCommon):
-    """The budget filter listed the active company's budgets only, while the
-    entries it builds carry a company_id -- a key that only means something if
-    budgets from several companies can appear.
-    """
 
     def test_the_filter_lists_every_selected_companys_budgets(self):
         report = self.env["report.formula"].search(
@@ -1111,10 +1023,6 @@ class TestBudgetFilterIsMultiCompany(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestLineIdIsClientInput(TestAccountReportsCommon):
-    """Line ids arrive from the client on every caret, audit, unfold and sort
-    action, and the parser used to let a malformed one out as a bare ValueError,
-    i.e. a 500 rather than a message.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1156,11 +1064,6 @@ class TestLineIdIsClientInput(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestLineIdDelimitersAreRejected(TestAccountReportsCommon):
-    """The generic line id joins markup~model~value and escapes nothing.
-
-    A segment carrying either delimiter used to build an id that could not be
-    parsed back, and the failure only surfaced later, wherever something tried.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1184,12 +1087,6 @@ class TestLineIdDelimitersAreRejected(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestDispatchOnSectionsSource(TestAccountReportsCommon):
-    """on_sections_source and sections_source_id both come from the client.
-
-    The sections branch browsed the source with no relationship check and assigned
-    report_id into the caller's own options, which made the compatibility guard
-    below it unreachable on that path.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1254,12 +1151,6 @@ class TestDispatchOnSectionsSource(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestCoverageReportDomainRewrite(TestAccountReportsCommon):
-    """The coverage report rewrites a domain-engine formula from account.move.line
-    terms to account.account ones.
-
-    It used to do it by list surgery, popping the operator only when the skipped
-    term followed it directly, which left a dangling operator with one operand.
-    """
 
     def _rewrite(self, domain):
         report = self.env.ref("account.balance_sheet")
@@ -1312,11 +1203,6 @@ class TestCoverageReportDomainRewrite(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAnnotationChatterLoad(TestAccountReportsCommon):
-    """The chatter map behind annotations needs one number per line: the move id of
-    each annotatable move line. Reading `move_id` the ordinary way makes the ORM
-    resolve every one of those moves to a display name as well, and nothing ever
-    displays them -- the map is consumed as `{"model": "account.move", "id": <id>}`.
-    """
 
     def _annotatable_line(self):
         move = self.env["account.move"].create(

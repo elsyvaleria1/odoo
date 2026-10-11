@@ -9,7 +9,6 @@ from .common import SkillsCase
 
 @tagged("post_install", "-at_install")
 class TestPrintedCv(SkillsCase):
-    """The CV prints what the employee holds, not everything ever recorded."""
 
     @classmethod
     def setUpClass(cls):

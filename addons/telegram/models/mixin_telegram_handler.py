@@ -18,31 +18,6 @@ _FILES = (
 
 
 class MixinTelegramHandler(models.AbstractModel):
-    """What a feature answers on a Telegram bot.
-
-    A handler is an abstract model named `telegram.handler.<feature>`; the
-    router finds every installed one in the database's registry, so what a
-    bot answers depends on the database's modules and never on which Python
-    classes a process happened to import. A handler declares -- it never
-    decides the order it is asked in:
-
-      - its commands (`_telegram_commands`), with who may run them: the
-        tier, the Odoo groups and access, then `_command_allowed`, which
-        only answers -- `_explain_command_refusal` tells the person;
-      - the callback-data prefixes of its buttons: two handlers claiming one
-        prefix fail the registry load;
-      - what its multi-step flows are called (`_telegram_flow_label`): a
-        flow it opens on a chat is its own, gets that chat's free text and
-        nobody else's, and ends by its own step, by expiring, or by /cancelar;
-      - the message kinds it takes from an idle chat (text, voice, photo,
-        document, contact, location): when several take a person's message,
-        the one the bot names for its kind does, else the bot asks the person
-        which (`_telegram_intake_label`); one standing for a command
-        (`_telegram_intake_command`) follows that command's permissions and
-        company.
-
-    Extending a handler is Odoo inheritance: `_inherit` it and call super().
-    """
 
     _name = "mixin.telegram.handler"
     _description = "Telegram Handler"

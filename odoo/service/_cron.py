@@ -85,22 +85,6 @@ def _stream_process() -> typing.Callable[[str], object]:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class ListenerKind:
-    """One notify-driven sweep loop, declared once for both server flavours.
-
-    A threaded server runs each kind as a thread and a prefork server runs it
-    as a worker process, and the two mechanisms have little in common -- but
-    *which* channel a kind listens on, how many of it a server runs, when its
-    PostgreSQL connection is recycled and whose `_process_jobs` it calls are
-    the same four facts either way.  They used to be stated twice, as keyword
-    arguments in `_threaded` and as class attributes in `_worker`, with
-    nothing comparing the two: a third kind, or a change to which setting
-    bounds the job connection's age, was two edits that no gate paired.
-
-    `name` is the key the rest of the process already sorts these by -- the
-    worker thread's `type`, and the argument `ServerSettings
-    .get_real_time_budget` dispatches on -- so the real-time budget is
-    derived here rather than restated.
-    """
 
     name: str
     channel: str

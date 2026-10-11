@@ -80,9 +80,6 @@ def rebinding(name, checked, rebound):
 
 
 class FakedDialCase:
-    """For tests that replace smtplib/imaplib themselves: the dial is faked,
-    so the address check that precedes it is too -- the test hosts are names
-    that do not resolve."""
 
     def setUp(self):
         super().setUp()

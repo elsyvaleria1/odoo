@@ -11,8 +11,7 @@ _logger = logging.getLogger(__name__)
 
 
 class MissingIAPAccountTokenError(Exception):
-    """Raised by `_contact_iap` when the partner_autocomplete IAP account has
-    no `account_token` configured yet."""
+    pass
 
 
 class IapAutocompleteApi(models.AbstractModel):

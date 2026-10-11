@@ -799,10 +799,6 @@ class TestEditView(TestStudioController):
 
 @tagged("post_install", "-at_install")
 class TestStudioViewSpecs(TransactionCase):
-    """A studio view applies spec by spec: outside studio mode a spec that
-    no longer locates is skipped and the others still land, in studio mode
-    it is reported — whether the combine hands the specs over one at a time
-    (the IR path) or as one tree (branding)."""
 
     def setUp(self):
         super().setUp()

@@ -20,9 +20,6 @@ _RECEIVER = {
 
 
 class TelegramInboxController(http.Controller):
-    """The inbox Mini App: Discuss-lite inside Telegram, on the Mini App gate.
-    The page is static; every call names the bot and carries what Telegram
-    signed, and runs as the internal user the caller is bound to."""
 
     @http.route(
         "/telegram/inbox/<int:bot_id>", type="http", auth="public", methods=["GET"]

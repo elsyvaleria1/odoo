@@ -2,8 +2,6 @@ from .common import AttendanceTelegramTestCase
 
 
 class TestEmployeeDepartures(AttendanceTelegramTestCase):
-    """An employee who leaves keeps no Telegram account acting as them; one
-    who stays keeps theirs, with an Odoo user or without."""
 
     def _hand(self, tg_user_id, name):
         hand = self._create_partner({"name": name})

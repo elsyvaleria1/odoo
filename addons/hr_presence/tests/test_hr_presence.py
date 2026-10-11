@@ -276,14 +276,6 @@ class TestDayBoundary(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestComputeDeclaresWhatItReads(HrPresenceCase):
-    """Asserted against the registry, not through behaviour.
-
-    hr_presence_state is not stored and is reached through `user_id.im_status`,
-    which is invalidated often enough that a behavioural test can pass with a
-    dependency missing. Removing all eleven declarations this module adds fails
-    only two tests; removing most of them individually fails none. The registry
-    is the only thing that answers "is this declared".
-    """
 
     REQUIRED = frozenset(
         {
@@ -347,10 +339,6 @@ class TestComputeDeclaresWhatItReads(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestAbstainsWhereItHasNoInstrument(HrPresenceCase):
-    """An employee with no user account can produce neither kind of evidence --
-    the websocket finds employees by user_id and the message count needs their
-    partner -- so concluding an absence from its absence is the instrument
-    having been pointed somewhere else."""
 
     def _employee_without_a_login(self, name, company=None, calendar=None):
         company = company or self.company
@@ -414,14 +402,6 @@ class TestAbstainsWhereItHasNoInstrument(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestObservationOutranksInference(HrPresenceCase):
-    """This module may infer an absence; it may not overwrite somebody else's
-    observation with a conclusion drawn from that observation's absence.
-
-    hr_presence assigns last in the chain, so before this its `absent` branch
-    discarded an hr_attendance check-in and an hr online session alike -- an
-    employee standing at the kiosk read Absent because the IP they had not
-    connected from proved nothing.
-    """
 
     def _verdict_with(self, employee, observed):
         today = self._today_for(employee)
@@ -521,14 +501,6 @@ class TestObservationOutranksInference(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestDayWindowsTile(HrPresenceCase):
-    """Consecutive day windows must meet exactly: no hour in two of them, and no
-    hour in none of them.
-
-    Built from `time.max` they did not. On a day whose local midnight is
-    ambiguous, `fold=0` picks the earlier 23:59:59 and the day ends an hour
-    early, leaving that hour in no window -- measured over every day of 2026 in
-    twelve zones, America/Santiago 2026-04-04 and Asia/Beirut 2026-10-25.
-    """
 
     ZONES = (
         "UTC",
@@ -626,10 +598,6 @@ class TestDayWindowsTile(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestTheMirrorIsRightFromBirth(HrPresenceCase):
-    """The mirror feeds the Absent and Off-Hours filters and the group-by. A new
-    employee used to carry its field default until the next hourly sweep, so the
-    icon in their own row said Absent while the filter that selects the rows
-    could not see them."""
 
     def test_a_new_employee_is_mirrored_at_once(self):
         employee = self._make_employee("newborn")
@@ -748,8 +716,6 @@ class TestSweep(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestTheCronEntryPoint(HrPresenceCase):
-    """Every other test calls _check_presence() directly. The thing that
-    actually runs in production is an ir.cron whose code is a string."""
 
     def test_the_cron_record_still_points_at_a_method_that_exists(self):
         cron = self.env.ref("hr_presence.ir_cron_presence_control")
@@ -788,10 +754,6 @@ class TestTheCronEntryPoint(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestSettingsTriggerTheSweep(HrPresenceCase):
-    """Turning a control on sweeps immediately, rather than leaving the list
-    wrong until the next hour. The hook used to sit on create(), where
-    res.config.settings has already written the related field through, so a
-    before/after comparison there always read equal."""
 
     def _save_settings(self, company, **values):
         settings = (
@@ -852,8 +814,6 @@ class TestSettingsTriggerTheSweep(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestOneUserTwoEmployees(HrPresenceCase):
-    """One res.users can hold an hr.employee in each company, so one partner's
-    messages are read against two companies' thresholds."""
 
     def test_each_employee_is_judged_against_its_own_company_threshold(self):
         lenient = self.env["res.company"].create({"name": "Lenient Co"})
@@ -984,11 +944,6 @@ class TestActions(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestTheWebsocketRecordsTheEvidence(HrPresenceCase):
-    """The IP half of this module rests entirely on this override, and it had no
-    test at all -- because the stamp used to be written on a cursor of its own,
-    which a TransactionCase cannot see and which raised MissingError against a
-    record the outer transaction had not committed.
-    """
 
     def _presence(self, employee, remote_addr):
         from odoo.addons.mail.models.ir_websocket import IrWebsocket as MailWebsocket
@@ -1075,9 +1030,6 @@ class TestTheWebsocketRecordsTheEvidence(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestWebsocketGate(HrPresenceCase):
-    """Recording a connection IP used to cost a res.users.log search on every
-    presence heartbeat of every internal user, whether or not any company had
-    asked for IP control."""
 
     def test_the_gate_follows_the_setting(self):
         Company = self.env["res.company"]
@@ -1103,12 +1055,6 @@ class TestWebsocketGate(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestGearMenuBindings(HrPresenceCase):
-    """The gear menu identifies a presence action by a field that means it.
-
-    It used to smuggle the section through ir.actions.server.value -- a field
-    documented as "what to write" for an Update Record action -- and fetch it
-    with one ORM call on every gear mount.
-    """
 
     def _presence_actions(self):
         return self.env["ir.actions.server"].search(

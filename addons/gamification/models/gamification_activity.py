@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class GamificationActivity(models.Model):
-    """Centralized social activity feed for gamification events."""
 
     _name = "gamification.activity"
     _description = "Gamification Activity Feed"

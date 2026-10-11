@@ -2,8 +2,6 @@ from odoo import fields, models
 
 
 class MixinMaintenanceTarget(models.AbstractModel):
-    """A record maintained through its resource: the facts are the resource's,
-    read and written through it."""
 
     _name = "mixin.maintenance.target"
     _description = "Maintained Resource"

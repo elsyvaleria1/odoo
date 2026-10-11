@@ -115,7 +115,6 @@ class TestInputStep(RunCompletionCase):
 
 
 class TestStepInputs(RunCompletionCase):
-    """A step that needs fields of its own run step filled before it runs."""
 
     def setUp(self):
         super().setUp()

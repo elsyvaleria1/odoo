@@ -5,7 +5,6 @@ LOSS_TYPES = ("spill", "damage", "theft")
 
 
 class StockTripIncident(models.Model):
-    """Something that happened on the route, between stops or at one."""
 
     _name = "stock.trip.incident"
     _description = "Trip Incident"
@@ -227,7 +226,6 @@ class StockTripIncident(models.Model):
 
 
 class StockTripIncidentLine(models.Model):
-    """A product and quantity an incident took off the vehicle."""
 
     _name = "stock.trip.incident.line"
     _description = "Trip Incident Line"

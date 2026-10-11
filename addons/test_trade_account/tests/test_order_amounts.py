@@ -5,12 +5,6 @@ from odoo.addons.test_trade.tests.common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestOrderAmounts(TestTradeOrderCase):
-    """`mixin.order.amount`: the order-level rollup and the credit warning.
-
-    `trade`'s own amount tests build a `sale.order`, so they assert
-    sale's behaviour; these run against the mixin through the model that
-    carries nothing else.
-    """
 
     def _line(self, order, qty=1.0, price=100.0, invoiced=0.0, drafted=0.0):
         return self._make_line(

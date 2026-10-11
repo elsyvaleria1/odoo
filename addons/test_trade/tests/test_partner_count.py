@@ -3,12 +3,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPartnerOrderCount(TransactionCase):
-    """Cover ``trade``'s res.partner helpers.
-
-    sale and purchase both delegate to these and neither tests them, so the
-    behaviour they rely on — counts rolling up from child contacts, archived
-    children still counting, the group gate — is pinned here.
-    """
 
     @classmethod
     def setUpClass(cls):

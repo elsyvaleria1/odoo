@@ -9,13 +9,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPartnerOrderActivity(TransactionCase):
-    """Cover ``trade``'s order-activity figures on the test order type.
-
-    ``recent_orders_count`` and ``days_since_last_order`` used to be sale-only
-    fields living in a downstream instance module. They are generic here, so
-    the behaviour every order type inherits — the company-configured cycle,
-    the never-ordered sentinel, the partner and source hooks — is pinned once.
-    """
 
     @classmethod
     def setUpClass(cls):

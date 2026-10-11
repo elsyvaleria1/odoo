@@ -6,14 +6,6 @@ from odoo.addons.hr.tests.common import TestHrCommon
 
 @tagged("post_install", "-at_install")
 class TestFirstContractDate(TestHrCommon):
-    """The kanban used to show `contract_date_start`, which is the start of the
-    contract in force -- so a renewal made a ten-year employee look like a new
-    hire. What a manager wants there is when the person joined.
-
-    "Joined" stops at a break: `_get_first_version_date` treats a gap of four
-    days or more between two versions as a new occupation, so an earlier stint
-    does not count towards the current one.
-    """
 
     @classmethod
     def setUpClass(cls):

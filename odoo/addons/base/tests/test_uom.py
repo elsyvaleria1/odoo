@@ -437,14 +437,6 @@ class TestUom(UomCommon):
 
 
 class TestUomConversionScale(UomCommon):
-    """The conversion result is quantised at the destination unit's precision,
-    with no reference to how fine the source unit is.
-
-    None of this was covered: the only large-ratio test converts 1020000 g into
-    1.02 Ton, comfortably above the floor, so it passes whatever the floor does.
-    These are characterisation tests -- they pin today's behaviour so that any
-    change to the rounding rule has to state its intent rather than discover it.
-    """
 
     def test_conversion_floor_is_the_destination_unit(self):
         self.assertEqual(self.uom_kgm._get_quantity_in_unit(1, self.uom_ton), 0.01)
@@ -505,8 +497,6 @@ class TestUomConversionScale(UomCommon):
 
 
 class TestUomPriceDegradeWrappers(UomCommon):
-    """The price wrappers had no coverage at all, while the quantity ones had
-    four tests -- including the vendor-bill call site named in their docstring."""
 
     def test_price_wrappers_degrade_on_incompatible_units(self):
         self.assertFalse(self.uom_gram._has_common_reference(self.uom_hour))

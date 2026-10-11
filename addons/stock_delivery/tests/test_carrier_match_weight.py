@@ -4,7 +4,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestCarrierMatchWeightOnPicking(TransactionCase):
-    """The carrier limits weigh a transfer in the product's reference unit."""
 
     @classmethod
     def setUpClass(cls):

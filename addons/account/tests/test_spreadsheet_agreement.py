@@ -6,14 +6,6 @@ from .common_report_engine import TestAccountReportsCommon
 
 @tagged("post_install", "-at_install")
 class TestSpreadsheetAgreesWithTheAccountCodesEngine(TestAccountReportsCommon):
-    """`spreadsheet_account` answers the same question as the `account_codes` engine.
-
-    Two independent implementations of one accounting rule, and they resolve the date
-    scope from different places: the spreadsheet per ACCOUNT, from
-    `include_initial_balance`; the report per EXPRESSION, from `date_scope` read against
-    the report's date filter mode. They agree on every shipped report measured on
-    2026-09-09, and nothing but this file asserts that they keep agreeing.
-    """
 
     @classmethod
     def setUpClass(cls):

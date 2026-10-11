@@ -149,7 +149,6 @@ def _driver_version():
 
 
 class StockFleetTraceOffline(http.Controller):
-    """The driver's phone: download a trip, send back what it captured offline."""
 
     def _trip(self, batch_id):
         batch = request.env["stock.picking.batch"].browse(batch_id).exists()

@@ -7,8 +7,6 @@ from odoo.tools import format_date, format_time
 
 
 class CalendarBooking(models.Model):
-    """Store appointment information for bookings requiring a payment. Once the booking
-    is considered paid, the calendar event is created and the GC removes the booking."""
 
     _name = "calendar.booking"
     _description = "Meeting Booking"

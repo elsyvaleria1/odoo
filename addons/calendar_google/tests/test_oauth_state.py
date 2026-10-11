@@ -12,8 +12,6 @@ from odoo.addons.integration_google.models.integration_service import (
 
 @tagged("post_install", "-at_install")
 class TestGoogleCalendarAuthorization(HttpCase):
-    """A calendar authorizes the user's own connection to Google through the
-    one OAuth flow, answering at the path Google consoles already list."""
 
     @classmethod
     def setUpClass(cls):

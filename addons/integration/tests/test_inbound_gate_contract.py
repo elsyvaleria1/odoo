@@ -7,8 +7,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install", "integration")
 class TestInboundGateContract(TransactionCase):
-    """What a caller must send is on the gate's own form, derived from the
-    gate rather than written twice."""
 
     @classmethod
     def setUpClass(cls):

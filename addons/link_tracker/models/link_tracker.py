@@ -24,10 +24,6 @@ LINK_TRACKER_CLICK_ROUTE_FIELDS = ("ip", "country_id", "link_id")
 
 
 class LinkTracker(models.Model):
-    """Wrap any URL into a short URL whose clicks are counted and which is
-    linked to UTMs, allowing to analyze marketing actions. Also used by
-    mass_mailing, which converts every link of an html body into such a
-    tracked short link."""
 
     _name = "link.tracker"
     _rec_name = "short_url"

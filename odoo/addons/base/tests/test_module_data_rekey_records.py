@@ -12,9 +12,6 @@ from odoo.tools.module_data import (
 
 @tagged("post_install", "-at_install")
 class TestRekeyRecords(TransactionCase):
-    """A box and the crate built on its table take new ids, and every stored
-    reference to them follows, through the fields; a foreign key into the
-    crate's own table is set aside meanwhile and comes back as it was."""
 
     @classmethod
     def setUpClass(cls):
@@ -238,8 +235,6 @@ class TestRekeyRecordsReadsEveryModelColumn(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRehomeReferences(TransactionCase):
-    """A crate became its box's row extended: what was filed under the crate
-    is the box's, while its external id still names the crate."""
 
     def test_the_references_move_to_the_parent_model(self):
         cr = self.env.cr
@@ -278,8 +273,6 @@ class TestRehomeReferences(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestClearDanglingReferences(TransactionCase):
-    """A slot naming a box that is gone loses the value; a view counting the
-    slots per box reads the cleared value and is left alone."""
 
     def test_the_value_goes_and_a_view_reading_it_stays(self):
         cr = self.env.cr
@@ -308,7 +301,6 @@ class TestClearDanglingReferences(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLiftColumns(TransactionCase):
-    """A box's columns become its shelf's, on the same id; a crate is a box."""
 
     def setUp(self):
         super().setUp()
@@ -384,9 +376,6 @@ class TestLiftColumns(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestMergeModel(TransactionCase):
-    """A model folded into one that exists already: its fields join, its
-    registry rows lose the xmlids the end of the upgrade would delete them by,
-    and what named it names the other."""
 
     def _insert(self, query, args=()):
         self.env.cr.execute(query + " RETURNING id", args)

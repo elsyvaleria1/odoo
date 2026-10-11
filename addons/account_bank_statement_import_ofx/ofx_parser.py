@@ -5,9 +5,6 @@ import ofxparse
 
 
 class OfxParser(ofxparse.OfxParser):
-    """This class monkey-patches the ofxparse library in order to fix the following known bug: ',' is a valid
-    decimal separator for amounts, as we can encounter in ofx files made by european banks.
-    """
 
     @classmethod
     def decimal_separator_cleanup(cls, tag) -> None:

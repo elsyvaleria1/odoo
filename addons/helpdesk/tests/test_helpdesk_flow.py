@@ -12,13 +12,6 @@ from .common import HelpdeskCommon
 
 
 class TestHelpdeskFlow(HelpdeskCommon):
-    """Test used to check that the base functionalities of Helpdesk function as expected.
-    - test_access_rights: tests a few access rights constraints
-    - test_assign_close_dates: tests the assignation and closing time get computed correctly
-    - test_ticket_partners: tests the number of tickets of a partner is computed correctly
-    - test_team_assignation_[method]: tests the team assignation method work as expected
-    - test_automatic_ticket_closing: tests automatic ticket closing after set number of days
-    """
 
     def test_access_rights(self):
         def test_write_and_unlink(record):

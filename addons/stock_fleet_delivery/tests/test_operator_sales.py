@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestOperatorSales(TransactionCase):
-    """A salesperson's trip is built from the orders he sold."""
 
     @classmethod
     def setUpClass(cls):

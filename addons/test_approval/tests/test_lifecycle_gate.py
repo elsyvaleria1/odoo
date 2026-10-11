@@ -6,8 +6,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestLifecycleGate(ApprovalCommon):
-    """Confirming is one operation whichever door it comes through: the button,
-    a write of the confirmed state, a create or an import that starts there."""
 
     def setUp(self):
         super().setUp()

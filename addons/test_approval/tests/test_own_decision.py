@@ -9,14 +9,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestOwnDecision(ApprovalCommon):
-    """Nobody decides a request made by them or for them, bar a named exception.
-
-    Whoever asked, and whom the document names as its requester, are left off the
-    request's steps and refused a decision -- also one a delegate takes for their
-    own row -- unless the category allows self-approval or an access exception
-    names them. An exception is used where it lets a decision through, and a
-    lapsed one lets nothing through.
-    """
 
     def setUp(self):
         super().setUp()

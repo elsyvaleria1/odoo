@@ -3,8 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestResumeLineSiteName(TransactionCase):
-    """The name guessed from an external URL is the site, not whatever precedes
-    the last dot of the whole URL."""
 
     def test_the_site_is_read_from_the_host(self):
         line = self.env["hr.resume.line"]

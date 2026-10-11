@@ -3,7 +3,6 @@ from odoo.tools import frozendict
 
 
 class AccountAssetGroup(models.Model):
-    """Groups related assets for reporting and bulk actions."""
 
     _name = "account.asset.group"
     _description = "Asset Group"

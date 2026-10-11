@@ -6,9 +6,6 @@ from .common import TelegramBotTestCase
 
 @tagged("post_install", "-at_install")
 class TestBotCompany(TelegramBotTestCase):
-    """A bot speaks for one company: its receivers and secrets live there,
-    an internal user acts through it only as a member of it, and an
-    administrator keeps it whichever of their companies is active."""
 
     OTHER_TOKEN = "223456789:XYZ-DEF1234ghIkl-zyx57W2v1u123ew22"
 

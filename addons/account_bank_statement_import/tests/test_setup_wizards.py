@@ -5,8 +5,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 @tagged("post_install", "-at_install")
 class TestSetupBankManualConfigWizard(AccountTestInvoicingCommon):
-    """Unit tests for wizard.res.partner.bank.account.create's action_finish_bank_setup() override,
-    which defaults bank_statements_source on the linked journal."""
 
     def _neutralize_other_bank_journal_candidates(self):
         wiz_new = self.env["wizard.res.partner.bank.account.create"].new({})

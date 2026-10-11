@@ -4499,11 +4499,6 @@ class TestPageBundleExportSurface(TransactionCase):
 
 @tagged("-at_install", "post_install", "web_assets")
 class TestLogicalParentExportSurface(TransactionCase):
-    """`web.assets_frontend` is a logical parent: pages load its members as
-    `web.assets_frontend_minimal` plus `web.assets_frontend_lazy`, while
-    consumers (survey's secondary bundles, web.assets_tests) are declared under
-    the logical name. What a consumer imports from the physical bundle must be
-    registered by that physical bundle."""
 
     PARENT = "web.assets_frontend"
     PHYSICAL = ("web.assets_frontend_minimal", "web.assets_frontend_lazy")

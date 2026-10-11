@@ -5,10 +5,6 @@ from odoo.tools import frozendict
 
 
 class ResUsersApikeysScope(models.Model):
-    """What a door lets an API key do: the models it reaches, the operations
-    on each, the fields it never sees, the depth a path may cross. A route
-    names one (`auth="bearer", scope="mcp"`), a key may be bound to one, and
-    `service.model.call_kw` enforces it on every door alike."""
 
     _name = "res.users.apikeys.scope"
     _access_anchors = frozendict({"company": ""})

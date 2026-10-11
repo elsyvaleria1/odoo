@@ -357,7 +357,6 @@ class test_challenge(TestGamificationCommon):
 
 
 class TestChallengeRewardNobodyBadge(TestGamificationCommon):
-    """Regression test: challenge rewards with rule_auth='nobody' badges."""
 
     def test_reward_nobody_badge_as_erp_manager(self):
         manager = (
@@ -434,7 +433,6 @@ class TestChallengeRewardNobodyBadge(TestGamificationCommon):
 
 
 class TestCompletionCap(TestGamificationCommon):
-    """Tests for completion percentage capping in challenge rankings."""
 
     def test_topN_caps_completion_at_100(self):
         goal_def = self.env["gamification.goal.definition"].create(
@@ -486,12 +484,6 @@ class TestCompletionCap(TestGamificationCommon):
 
 
 class TestChallengeStartRefreshButtonAccess(TestGamificationCommon):
-    """A plain gamification employee has no write access on challenges
-    (`challenge_employee` ACL, `perm_write=0`), and `action_start`/
-    `action_check` write directly (no `sudo()`) -- so the form's "Start
-    Challenge"/"Refresh Challenge" header buttons must be restricted to
-    managers, or a clicking employee hits an AccessError.
-    """
 
     def setUp(self):
         super().setUp()

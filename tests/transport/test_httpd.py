@@ -1200,7 +1200,6 @@ def test_the_application_failing_on_a_head_request_gets_a_bodiless_500(server):
 
 
 class TestDrain:
-    """`drain()` waits for the busy pool threads `shutdown()` leaves running."""
 
     def _slow_request(self, srv):
         _SLOW_GATE.clear()
@@ -1255,10 +1254,6 @@ class TestDrain:
 
 
 class TestTheEnvironIsWsgiCompliant:
-    """`wsgiref.validate` is the reference checker for PEP 3333: every CGI
-    variable a str, the input/errors streams with the required methods, the
-    start_response protocol honoured.  `REMOTE_PORT` was an int until
-    2026-09-15 and nothing said so."""
 
     def test_a_validated_app_serves_a_get_and_a_post(self):
         from wsgiref.validate import validator

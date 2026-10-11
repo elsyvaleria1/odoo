@@ -36,7 +36,6 @@ class TestTripGpsOdometer(GpsBridgeCase):
 
 
 class TestTripGpsLegs(GpsBridgeCase):
-    """Each delivery gets the kilometres of its leg, in the order it was delivered."""
 
     @classmethod
     def setUpClass(cls):

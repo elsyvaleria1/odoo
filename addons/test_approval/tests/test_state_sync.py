@@ -11,12 +11,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalStateSync(ApprovalCommon):
-    """A document whose own state drives its approval request.
-
-    The document keeps its lifecycle and the request records who decided which step:
-    a state change on the document brings the request in line, and a decision taken
-    on the request reaches the document through the document's own policy.
-    """
 
     def _category(self, approvers=None, **vals):
         return self._make_category(

@@ -440,8 +440,6 @@ class TestCommissionsSetup(TestSaleCommon):
 
 
 class Spec:
-    """Simple data structure to hold the user-flow's input data.
-    Attribute `commission` holds the expected resulting commission amount."""
 
     def __init__(self, grade, lines, pricelist=None, commission=0):
         self.grade = grade

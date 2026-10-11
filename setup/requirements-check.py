@@ -102,7 +102,6 @@ def cleanup_debian_version(s: str) -> str:
 
 
 class PipPackage:
-    """Wrapper around PyPI JSON API data for a single package."""
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -195,7 +194,6 @@ class PipPackage:
 
 
 class Distribution(ABC):
-    """Abstract base for distribution package checkers."""
 
     def __init__(self, release: str) -> None:
         self._release = release
@@ -216,7 +214,6 @@ class Distribution(ABC):
 
 
 class Debian(Distribution):
-    """Checker for Debian distribution package versions via sources.debian.org API."""
 
     def get_version(self, package: str) -> Version | str | None:
         package = SPECIAL.get(package, package)
@@ -247,7 +244,6 @@ class Debian(Distribution):
 
 
 class Ubuntu(Distribution):
-    """Ubuntu doesn't have an API, instead it has a huge text file"""
 
     def __init__(self, release: str) -> None:
         super().__init__(release)

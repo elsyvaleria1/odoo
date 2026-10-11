@@ -6,7 +6,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class TestAppraisalCampaign(TransactionCase):
-    """Cover the appraisal campaign wizard and the department counters."""
 
     @classmethod
     def setUpClass(cls):

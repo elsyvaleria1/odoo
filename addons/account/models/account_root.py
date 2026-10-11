@@ -7,7 +7,6 @@ from odoo.tools import SQL, Query
 
 
 class AccountRoot(models.Model):
-    """Virtual model for the first two characters of an account code."""
 
     _name = "account.root"
     _description = "Account codes first 2 digits"

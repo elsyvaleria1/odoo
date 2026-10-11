@@ -14,9 +14,6 @@ _ALERT = "Telegram is not delivering your notifications"
 
 @tagged("post_install", "-at_install")
 class TestExecutionContexts(MailTelegramCase):
-    """Delivery is decided the same whoever triggers it: a poster of another
-    company, the outbox job that runs as that poster, or the webhook's public
-    user."""
 
     @classmethod
     def setUpClass(cls):

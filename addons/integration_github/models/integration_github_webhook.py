@@ -22,9 +22,6 @@ EVENT_HEADER = "X-GitHub-Event"
 
 
 class IntegrationGithubWebhook(models.Model):
-    """Where GitHub delivers a repository's or an App's events. Each delivery is
-    signed with the secret issued here (`X-Hub-Signature-256`) and claimed by
-    its delivery id, so a redelivery is refused as the duplicate it is."""
 
     _name = "integration.github.webhook"
     _description = "GitHub Webhook"

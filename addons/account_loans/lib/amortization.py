@@ -38,7 +38,7 @@ DAY_COUNT_CONVENTIONS = (
 
 
 class ScheduleError(ValueError):
-    """Input that cannot be turned into an amortization schedule."""
+    pass
 
 
 @dataclass(frozen=True)

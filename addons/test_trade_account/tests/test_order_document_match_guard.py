@@ -5,9 +5,6 @@ from odoo.addons.trade.tools import direction_of
 
 @tagged("post_install", "-at_install")
 class TestOrderDocumentMatchGuard(TransactionCase):
-    """`mixin.order.document.match` ships unusable defaults for
-    `_order_table`/`_direction` -- a concrete model that forgets to
-    override either must fail loudly, not silently build a broken query."""
 
     def test_missing_direction_raises(self):
         mixin = self.env["mixin.order.document.match"]

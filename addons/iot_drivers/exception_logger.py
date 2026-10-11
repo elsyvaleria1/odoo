@@ -8,9 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class ExceptionLogger:
-    """
-    Redirect any unhandled python exception to the logger to keep track of them in the log file.
-    """
 
     def __init__(self) -> None:
         self._buffer = StringIO()

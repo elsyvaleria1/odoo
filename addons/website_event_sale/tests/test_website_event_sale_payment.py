@@ -8,7 +8,6 @@ from odoo.addons.website_event_sale.tests.common import TestWebsiteEventSaleComm
 
 @tagged("post_install", "-at_install")
 class TestWebsiteEventSalePayment(TestWebsiteEventSaleCommon):
-    """Seat availability check run before a cart payment is accepted."""
 
     def _make_registrations(self, order):
         editor = Form(

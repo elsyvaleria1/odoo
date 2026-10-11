@@ -24,7 +24,6 @@ class _Symbol:
 
 
 class _TwoPages:
-    """A document already rendered, so the reader is tested and not the renderer."""
 
     name = "two_pages.pdf"
     images = (QR_PNG, QR_PNG)
@@ -32,12 +31,6 @@ class _TwoPages:
 
 @tagged("post_install", "-at_install")
 class TestZxingReader(BaseCase):
-    """What the reader does with whatever the decoder hands back.
-
-    The decoder is a hard requirement, so these stand a fake in for it only to
-    reach pages a real fixture cannot produce -- a page that decodes twice to
-    the same payload, and a page whose decoding raises.
-    """
 
     @contextlib.contextmanager
     def _decoder(self, decode):

@@ -8,8 +8,6 @@ from odoo.addons.point_of_sale.tests.common import CommonPosTest
 
 @tagged("post_install", "-at_install")
 class TestPosLoyaltyProductPayload(CommonPosTest):
-    """A reward product reaches the terminal through an append after super(), so it
-    has to come out of the loader shaped like every other row."""
 
     def setUp(self):
         super().setUp()

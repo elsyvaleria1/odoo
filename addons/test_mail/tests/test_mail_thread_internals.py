@@ -1491,18 +1491,6 @@ class TestAPI(ThreadRecipients):
 
 @tagged("mail_thread")
 class TestEmptyListHelp(MailCommon):
-    """`get_empty_list_help` had no coverage at all before this class.
-
-    It is ~60 lines of alias resolution reading three context keys, and it runs
-    on every empty list view of a thread model, so a failure in it is a broken
-    view rather than a missing sentence.
-
-    The help *record* must be a model carrying `alias_id` -- the method's first
-    guard is `"alias_id" in record`, so a model without the alias mixin
-    short-circuits before anything interesting happens and a test written
-    against one proves nothing. `mail.test.container` has the mixin;
-    `mail.test.simple` does not.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2137,7 +2125,6 @@ class TestNotification(MailCommon):
 
 @tagged("mail_thread", "mail_nothread")
 class TestNoThread(MailCommon, TestRecipients):
-    """Specific tests for cross models thread features"""
 
     @classmethod
     def setUpClass(cls):
@@ -2416,15 +2403,6 @@ class TestNoThread(MailCommon, TestRecipients):
 
 @tagged("mail_thread", "mail_tools")
 class TestBaseFieldRendering(MailCommon):
-    """`_mail_get_field_path_value` and the helpers under it.
-
-    That cluster -- the path walk, the per-type formatter and the timezone
-    lookup -- is 54 lines of community code with no community caller: only
-    `addons/whatsapp` reads it, through `whatsapp.template.variable`. A
-    tracer over the whole `/mail,/test_mail` run executed **none** of it, so
-    every one of its branches could change meaning without anything here
-    noticing. These tests exist to make that false.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2575,7 +2553,6 @@ class TestBaseFieldRendering(MailCommon):
 
 @tagged("mail_thread", "mail_tools")
 class TestBaseMailHooks(MailCommon):
-    """The remaining `base` hooks that no `/mail,/test_mail` test reached."""
 
     def test_mail_get_message_subtypes(self):
         subtypes = self.env["mail.test.simple"]._mail_get_message_subtypes()
@@ -2678,8 +2655,6 @@ class TestBaseMailHooks(MailCommon):
 
 @tagged("mail_thread", "post_install", "-at_install")
 class TestNotificationStateCache(MailCommon):
-    """`message_needaction*` and `message_has_error*` are computed from
-    notifications and must follow them within the transaction."""
 
     @classmethod
     def setUpClass(cls):

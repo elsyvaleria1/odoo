@@ -73,14 +73,6 @@ class ResourceSchedulingTest(models.Model):
 
 
 class ResourceSchedulingManualTest(models.Model):
-    """A consumer that projects into the ledger on its own schedule.
-
-    Prototype inheritance: same columns and same contract as the model above,
-    with ``_reservation_sync_manual`` set.  It stands in for a consumer whose
-    ``write`` keeps working after ``super()`` returns -- ``planning.slot`` is
-    the real one -- for which projecting from inside the CRUD hooks reads
-    half-settled state.
-    """
 
     _name = "resource.scheduling.manual.test"
     _description = "Manual-Sync Scheduling Test Model"

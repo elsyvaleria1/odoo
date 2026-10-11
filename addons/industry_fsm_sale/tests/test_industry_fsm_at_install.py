@@ -7,14 +7,6 @@ from odoo.addons.industry_fsm_sale.tests.common import TestFsmFlowCommon
 
 
 class TestFsmFlowSaleAtInstall(TestFsmFlowCommon):
-    """
-    When the 'industry_fsm_stock' module is installed, it updates the behavior
-    of the SO linked to fsm tasks by forcing those SO to be in a confirmed state.
-    Since service product can be removed from a fsm task only if the SO linked is in
-    a draft state, the stock module prevent this behavior. Therefore, the tag 'at_install' is
-    not removed from this class in order to ensure adding/removing product from a task
-    works both when the stock module is installed and when it is not.
-    """
 
     def test_fsm_flow(self):
         self.env["res.config.settings"].create(

@@ -114,15 +114,6 @@ class TestDocumentsLastAccessGrouping(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsClientFieldLists(TransactionCase):
-    """Field names the client spells out, checked against the model.
-
-    Two lists in `static/` name server fields as strings, and a string does not
-    break when the field it names moves. Both had already drifted: the mock's
-    search-panel list had lost four fields the route sends, which made every
-    client surface fed from a folder's search-panel data render empty in tests
-    while working against the server -- a mock that disagrees quietly rather
-    than failing.
-    """
 
     def _read_js(self, relative_path):
         path = pathlib.Path(__file__).resolve().parent.parent / relative_path

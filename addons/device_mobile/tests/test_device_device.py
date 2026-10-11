@@ -150,8 +150,6 @@ class TestAPhoneIsNeverDialled(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPhoneNumber(DeviceTransactionCase):
-    """A company phone records its SIM's number, keyed as calls and Telegram
-    accounts are matched to it, and no two active phones share one."""
 
     @classmethod
     def setUpClass(cls):

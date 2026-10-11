@@ -33,12 +33,6 @@ def _stop_after_init(tmp_path, *args):
 @requires_pg
 @requires_posix
 class TestTheProcessExitCodeIsRead:
-    """No process test read `returncode` before this one.
-
-    Every lane in integration_tests.yml trusts it -- "odoo-bin exits non-zero
-    when any test fails" -- and a status nothing asserts on is a status that
-    can silently stop meaning that.
-    """
 
     def test_a_plain_boot_that_stops_after_init_exits_zero(self, tmp_path):
         proc = _stop_after_init(tmp_path)

@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyRule(TransactionCase):
-    """loyalty.rule code/mode interplay, code uniqueness and product domain."""
 
     @classmethod
     def setUpClass(cls):

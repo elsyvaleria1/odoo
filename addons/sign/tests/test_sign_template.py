@@ -736,7 +736,6 @@ class TestSignTemplate(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSignDocumentBinSize(TransactionCase):
-    """`num_pages` must not depend on the ambient `bin_size` context."""
 
     def test_num_pages_survives_bin_size_recompute(self):
         with file_open("sign/static/demo/sample_contract.pdf", "rb") as f:

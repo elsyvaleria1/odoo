@@ -4,9 +4,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestInstallRequestApproval(TransactionCase):
-    """An activation request is an approval request: who asked, who decided, and
-    what they said are recorded, where an e-mail to each administrator recorded
-    nothing."""
 
     @classmethod
     def setUpClass(cls):

@@ -97,12 +97,6 @@ class TestNodeSize(TestWorkflowCanvasState):
 
 
 class TestStepRemoval(TestWorkflowCanvasState):
-    """The canvas offers to remove a step, so the payload has to say which.
-
-    `automation.runtime.line.action_id` is `ondelete="restrict"`, and nothing on
-    the step itself records that a run once reached it, so the client cannot
-    work this out for itself.
-    """
 
     def _record_a_run_over(self, action):
         runtime = self.env["automation.runtime"].create(
@@ -244,11 +238,6 @@ class TestStepRemoval(TestWorkflowCanvasState):
 
 
 class TestStepDetail(TestWorkflowCanvasState):
-    """A typed step carries the parameter that gives its type meaning.
-
-    Without these the canvas draws "Wait" with no duration, "Approval" with
-    nobody named and "Subflow" without saying which automation it runs.
-    """
 
     def _nodes(self):
         return {

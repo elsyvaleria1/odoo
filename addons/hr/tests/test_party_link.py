@@ -3,8 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPartyLink(TransactionCase):
-    """Linking a login re-points the employee at the user's party; everything
-    that is the person's follows, and the shell it leaves is archived."""
 
     def _badged_employee(self):
         tag = self.env["res.partner.tag"].create({"name": "Forklift"})

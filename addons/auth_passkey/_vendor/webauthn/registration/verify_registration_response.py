@@ -33,18 +33,6 @@ from .generate_registration_options import default_supported_pub_key_algs
 
 @dataclass
 class VerifiedRegistration:
-    """Information about a verified attestation of which an RP can make use.
-
-    Attributes:
-        `credential_id`: The generated credential's ID
-        `credential_public_key`: The generated credential's public key
-        `sign_count`: How many times the authenticator says the credential was used
-        `aaguid`: A 128-bit identifier indicating the type and vendor of the authenticator
-        `fmt`: The attestation format
-        `credential_type`: The literal string "public-key"
-        `user_verified`: Whether the user was verified by the authenticator
-        `attestation_object`: The raw attestation object for later scrutiny
-    """
 
     credential_id: bytes
     credential_public_key: bytes

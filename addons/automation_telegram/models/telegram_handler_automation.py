@@ -9,14 +9,6 @@ _logger = logging.getLogger(__name__)
 
 
 class TelegramHandlerAutomation(models.AbstractModel):
-    """Answers to the questions workflow steps asked on Telegram.
-
-    A message is taken only while a question is open in its chat and only
-    when it can answer it: of a kind the question accepts, or a reply to the
-    question itself. Anything else reaches the bot's other features exactly as
-    if no question were open, so a question never blocks the chat the way a
-    flow does. The answer is only recorded here; the dispatcher delivers it.
-    """
 
     _name = "telegram.handler.automation"
     _inherit = "mixin.telegram.handler"

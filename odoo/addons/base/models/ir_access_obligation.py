@@ -4,13 +4,6 @@ from odoo import models
 
 
 class IrAccessObligation(models.AbstractModel):
-    """What a verb obliges beyond the capability to perform it.
-
-    The kernel asks this model at every door, checkpoint and transition of a
-    declared verb, and tells it once a transition has landed; the default
-    obliges nothing. A module that attaches an
-    obligation to verbs (approval) extends it.
-    """
 
     _name = "ir.access.obligation"
     _description = "Access Obligation"

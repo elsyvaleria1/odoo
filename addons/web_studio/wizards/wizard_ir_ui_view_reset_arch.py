@@ -7,7 +7,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardIrUiViewResetArch(models.TransientModel):
-    """A wizard to compare and reset views architecture."""
 
     _inherit = "wizard.ir.ui.view.reset.arch"
 

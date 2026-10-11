@@ -8,14 +8,6 @@ from .common import archive_maintenance_approval_categories
 
 @tagged("post_install", "-at_install")
 class TestMaintenanceAccess(TransactionCase):
-    """Who may reach a maintenance plan, and through which flow.
-
-    The ACLs here once granted base.group_user read/write/create on product.trace
-    and write on product.template, so any employee could rewrite an asset's
-    value. Narrowing them is easy to get wrong in the other direction: the
-    plan appears on the *vanilla* lot form, and closing a maintenance return
-    rearms the plan.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -3,9 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestViewProvenance(TransactionCase):
-    """`get_provenance` says which view put each node of a combined arch
-    where it is — the primary for its own nodes, the overlay that inserted
-    the others; an overlay that only edits attributes owns no node."""
 
     def setUp(self):
         super().setUp()

@@ -20,7 +20,6 @@ TWO_WAY_SYNCS = frozenset(
 
 @tagged("post_install", "-at_install")
 class TestPartyStoredMirrors(TransactionCase):
-    """One fact, one writer -- measured from the registry rather than asserted."""
 
     def _mirrors(self):
         found = {}

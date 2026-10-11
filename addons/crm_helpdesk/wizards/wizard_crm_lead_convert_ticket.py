@@ -2,7 +2,6 @@ from odoo import Command, api, fields, models
 
 
 class WizardCrmLeadConvertTicket(models.TransientModel):
-    """wizard to convert a Lead into a Helpdesk ticket and move the Mail Thread"""
 
     _name = "wizard.crm.lead.convert.ticket"
     _description = "Lead convert to Ticket"

@@ -30,12 +30,6 @@ HOURS_PER_DAY = 8
 
 
 class SlotIntervals(dict):
-    """An identity-hashable snapshot usable in an ORM context.
-
-    Keys identify both the resource and its calendar; entries contain the
-    queried bounds, working intervals and anonymous occupancy intervals.
-    Snapshots are local to a planning operation, not persistent caches.
-    """
 
     __slots__ = ()
     __hash__ = object.__hash__

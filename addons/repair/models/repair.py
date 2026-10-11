@@ -19,7 +19,6 @@ _debug = DebugLog(__name__)
 
 
 class RepairOrder(models.Model):
-    """Repair Orders"""
 
     _name = "repair.order"
     _description = "Repair Order"
@@ -1090,7 +1089,6 @@ class RepairOrder(models.Model):
 
 
 class RepairTags(models.Model):
-    """Tags of Repair's tasks"""
 
     _name = "repair.tags"
     _description = "Repair Tags"

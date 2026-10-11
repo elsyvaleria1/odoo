@@ -23,7 +23,6 @@ def _get_scanning(original, scanned):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestEncapsulateContext(common.MailCommon):
-    """`_render_encapsulate_context` is the notification layouts' contract."""
 
     @classmethod
     def setUpClass(cls):
@@ -86,7 +85,6 @@ class TestEncapsulateContext(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRenderLangContract(common.MailCommon):
-    """`_render_lang` answers a language for every id it is given."""
 
     def test_a_template_with_no_model_answers_rather_than_raising(self):
         template = self.env["mail.template"].create({"name": "no model"})
@@ -113,7 +111,6 @@ class TestRenderLangContract(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestDynamicFieldNames(common.MailCommon):
-    """A model says which of its fields are templates; the type does not."""
 
     def test_a_declaring_model_is_taken_at_its_word(self):
         from odoo.addons.mail.models.mail_template import DYNAMIC_FIELD_NAMES
@@ -136,14 +133,6 @@ class TestDynamicFieldNames(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRendererSerialisationAgrees(common.MailCommon):
-    """One template, one set of bytes, whichever renderer produced them.
-
-    Which renderer runs turns on whether *some* placeholder in the body needs an
-    evaluator, so a body could be serialised two ways for a reason its author
-    never wrote. The evaluation-free path used lxml's HTML serialisation and QWeb
-    writes XHTML, so they disagreed on every void element, on a valueless
-    attribute, and on a boolean one.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -227,14 +216,6 @@ class TestRendererSerialisationAgrees(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestStaticMarkerIntegrity(common.MailCommon):
-    """The renderer's own scratch marks are not something a body may contain.
-
-    The evaluation-free renderer replaces each `t-out` element's text with
-    `U+E000<index>U+E001`, serialises the tree, and splits the string back on
-    that pattern. U+E000 is the first Private Use codepoint -- where icon fonts
-    put their first glyph -- so it reaches a mail body by ordinary copy-paste,
-    and the split then read the body's own text as a placeholder slot.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -268,16 +249,6 @@ class TestStaticMarkerIntegrity(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestEmptyRelationRendersTheDefault(common.MailCommon):
-    """`<p t-out="object.user_id">nobody</p>` says the same thing everywhere.
-
-    An unset many2one has no display name, so it has no text form, and the
-    element body is the author's answer for that. `_compile_out_emit` writes the
-    default body only for None and False, and an empty recordset is neither, so
-    the evaluated QWeb path emitted the empty string instead -- while the inline
-    and evaluation-free engines both answered the default. Which of the three
-    runs is decided by whether some *other* placeholder in the same body needs an
-    evaluator, so an edit in an unrelated paragraph changed this one's output.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -333,15 +304,6 @@ class TestEmptyRelationRendersTheDefault(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestStaticExpressionRoots(common.MailCommon):
-    """`mail_allowed_qweb_expressions` is a hook; widening it is not a crash.
-
-    The allow-list is a list of strings and says nothing about which *root* the
-    evaluation-free renderer can resolve -- it knows `object` and `user`. An
-    allow-listed expression rooted anywhere else passed the compile check and
-    then raised a bare `SyntaxError` out of `_get_static_value`, which no caller
-    catches. The root is now part of what the renderer checks before accepting a
-    template, so an unknown one falls back to QWeb, which can resolve it.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -376,13 +338,6 @@ class TestStaticExpressionRoots(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRenderOptionsStayInMail(common.MailCommon):
-    """`_render_template`'s options are this module's vocabulary, not QWeb's.
-
-    Every option was forwarded to `_render_batch` as a keyword, and
-    `_render_prepare` turns its keywords into context keys -- so `post_process`,
-    a step this module runs *after* QWeb returns, travelled through the whole
-    render and every ORM call it made.
-    """
 
     def test_a_mail_only_option_does_not_reach_the_qweb_context(self):
         record = self.env["mail.test.track"].create(
@@ -413,13 +368,6 @@ class TestRenderOptionsStayInMail(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestStaticProgramIsCompiledOnce(common.MailCommon):
-    """Which renderer a template needs is a property of the template.
-
-    Deciding it meant running QWeb's whole code generator over the body to see
-    whether it raised, then deep-copying, re-walking and re-serialising the tree
-    -- on every render. On a 92 KB body that was 8.9 ms of a 13.2 ms single-record
-    render.
-    """
 
     def test_the_decision_survives_across_renders(self):
         model = "mail.test.track"
@@ -445,17 +393,6 @@ class TestStaticProgramIsCompiledOnce(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestTheTwoRenderersAgreeOnAllowListedPlaceholders(common.MailCommon):
-    """The allow-list is exactly the set both `t-out` renderers must agree on.
-
-    `mail` picks its renderer per *template*: one expression no allow-list holds,
-    anywhere in a body, sends every other placeholder in that body down
-    `ir.qweb` instead of the evaluation-free renderer. Every way the two
-    disagreed was therefore action at a distance — an edit in one paragraph
-    changing what another paragraph rendered. `object.contact_name` on a model
-    without that field is the sharp case: it rendered the author's default on one
-    path and raised `UserError` on the other, and the stock allow-list is written
-    for a `crm.lead`-shaped model, so most models have most of it missing.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -539,7 +476,6 @@ class TestTheTwoRenderersAgreeOnAllowListedPlaceholders(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRenderModelIsChecked(common.MailCommon):
-    """A render model that is not a model is a domain error, not a `KeyError`."""
 
     def test_a_template_without_a_model_says_so(self):
         template = self.env["mail.template"].create(
@@ -561,7 +497,6 @@ class TestRenderModelIsChecked(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestUnsafeExpressionScanScope(common.MailCommon):
-    """What the placeholder scan reads, and what it has no business reading."""
 
     def test_a_qweb_view_field_is_not_scanned_as_a_template_body(self):
         template = self.env["mail.template"].create(

@@ -252,8 +252,6 @@ class TestResumeLineColour(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestCurrentEmployeeSkillSearch(SkillsCase):
-    """current_employee_skill_ids is searchable, like hr.job's counterpart, so
-    a related field elsewhere (project.task.user_skill_ids) can be searched."""
 
     @classmethod
     def setUpClass(cls):

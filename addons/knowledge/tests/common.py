@@ -115,9 +115,6 @@ class KnowledgeCommon(MailCommon):
 
 
 class KnowledgeCommonWData(KnowledgeCommon):
-    """Light setup of articles for knowledge tests. It holds data for the
-    three main categories: workspace, shared and private articles. Some
-    children exist to have some permission tweaks."""
 
     @classmethod
     def setUpClass(cls):
@@ -268,10 +265,6 @@ class KnowledgeCommonWData(KnowledgeCommon):
 
 
 class KnowledgeArticlePermissionsCase(KnowledgeCommon):
-    """Specific test class to test permission management, inheritance and
-    computation on article model, based on both article and member permissions.
-    This does not really test ACLs, more the internals of permissions that
-    are used afterwards in ACLs and in various business methods / flows."""
 
     @classmethod
     def setUpClass(cls):

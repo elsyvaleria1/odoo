@@ -6,16 +6,6 @@ from odoo.tests import common, tagged
 
 @tagged("post_install", "-at_install")
 class TestGeofenceSchedule(common.TransactionCase):
-    """Which clock a geofence's schedule is read against.
-
-    The alert loop runs from a cron every five minutes, so `env.company` is
-    OdooBot's -- company 1, the unconfigured placeholder, whose partner carries
-    no timezone. Reading the window against that company fell back to UTC on
-    every run and shifted every `business_hours` fence over a UTC-6 fleet by
-    six hours, silently: alerts came at the wrong times rather than not at all.
-    Every test alongside this one uses `schedule_type = "always"`, so none of
-    them ever looked at a clock.
-    """
 
     @classmethod
     def setUpClass(cls):

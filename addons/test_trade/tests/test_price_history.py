@@ -7,15 +7,6 @@ from odoo.addons.trade.tools import direction_of
 
 @tagged("post_install", "-at_install")
 class TestPriceHistory(TestTradeOrderCase):
-    """`mixin.order.line.price.history`: the statistics behind the widget.
-
-    A quantity-weighted average, the period extremes, the partner-versus-market
-    divergence, and the sample cap. Two paths reach them -- one grouped query
-    when every matching line is already in the target currency, and a row-by-
-    row pass when it is not, because each row converts at its own document
-    date. Both shipping wizards live in `sale` and `purchase`, so neither path
-    was asserted anywhere.
-    """
 
     @classmethod
     def setUpClass(cls):

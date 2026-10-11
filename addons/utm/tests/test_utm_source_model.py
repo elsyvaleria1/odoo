@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestUtmSourceModel(TransactionCase):
-    """utm.source name auto-dedup, name generation and the referral guard."""
 
     @property
     def Source(self):

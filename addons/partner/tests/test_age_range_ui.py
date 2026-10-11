@@ -6,13 +6,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestPartnerAgeRangeUi(TransactionCase):
-    """The age range model has to be reachable, not merely present.
-
-    ``partner`` grants ``base.group_partner_manager`` create/write/unlink on
-    ``res.partner.age.range``. Until these views existed the model had no
-    action and no menu anywhere in the workspace, so that right could not be
-    exercised and the cohorts could only be seeded from a data file.
-    """
 
     @classmethod
     def setUpClass(cls):

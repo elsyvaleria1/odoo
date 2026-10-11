@@ -15,14 +15,6 @@ class PostProcessingRetryError(Exception):
 
 
 class PaymentPostProcessing(http.Controller):
-    """
-    This controller is responsible for the monitoring and finalization of the post-processing of
-    transactions.
-
-    It exposes the route `/payment/status`: All payment flows must go through this route at some
-    point to allow the user checking on the transactions' status, and to trigger the finalization of
-    their post-processing.
-    """
 
     MONITORED_TX_ID_KEY = "__payment_monitored_tx_id__"
 

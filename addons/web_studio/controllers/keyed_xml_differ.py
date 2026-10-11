@@ -226,14 +226,6 @@ DIFF_ATTRIBUTE = "o-diff-key"
 
 
 class DiffAnalyzer:
-    """Class that parses both trees and determines what has changed between the two.
-    For each pair, it computes the differences in the attributes and in content.
-    Changes are understood as a mapping from node_id to the things (added, removed, moving nodes)
-    at that spot precisely.
-    It uses a NodeTracker to globally register what happens in terms of nodes moving around.
-    The two sets of data are necessary to ensure we do things with a global perspective, but also
-    be able to put the relevant changes around a node grouped together.
-    """
 
     def __init__(
         self,
@@ -382,26 +374,6 @@ class DiffAnalyzer:
 
 
 class KeyedXmlDiffer:
-    """A class that allows to compute the difference between two trees, of which we know one is a modification of the other.
-    Namely, both trees have nodes that have a unique ID, each node in the new tree is compared to its
-    counterpart in the old one.
-    Hence the recommended flow:
-    - assign ids on the original tree
-    - ids must be convertible to int, and increasing with the tree's order (depth first)
-    - do some operation on that modified tree
-    - compare the original tree with the modified one
-
-    It supports moving, removing nodes, altering texts, altering the order of a node's children, modifying attributes of a node
-    It doesn't support changing the tag name of a node
-    It doesn't support anything else than Elements, in particular, comments and their tail will be ignored
-
-    The `diff` method returns an abstraction describing what happened for a node with a given id
-    The `diff_xpath` method computes the Odoo's xpath notation to be used as an inherited view
-
-    The expected complexity is O(n log n), because of the use of bisect.
-    It could be higher when we compute the xpath for each touched nodes.
-    We still have to browse several times the trees.
-    """
 
     @classmethod
     def update_node_ids_for_diff(cls, tree):

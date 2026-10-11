@@ -149,12 +149,6 @@ class TestOpenAPIContract(common.TransactionCase):
 
 @common.tagged("post_install", "-at_install")
 class TestGeneratedClient(common.TransactionCase):
-    """The document is enough to write a client from, and stays enough.
-
-    A contract nobody compiles against is prose. The client beside it is
-    generated from the checked-in document alone, and the compiler is what
-    says the document named every parameter, every body and every door.
-    """
 
     maxDiff = None
 

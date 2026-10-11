@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class TelegramInsightLog(models.Model):
-    """One question asked to a Telegram questions bot, and what it answered."""
 
     _name = "telegram.insight.log"
     _description = "Telegram Question"

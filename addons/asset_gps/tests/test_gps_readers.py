@@ -8,7 +8,6 @@ from .test_product_trace import StockLotGpsTestBase
 
 @tagged("post_install", "-at_install")
 class TestGpsReaders(StockLotGpsTestBase):
-    """The one reader of a vehicle's odometer at a moment and of its position."""
 
     @classmethod
     def setUpClass(cls):

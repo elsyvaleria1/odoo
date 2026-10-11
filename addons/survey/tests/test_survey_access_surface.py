@@ -8,7 +8,6 @@ from odoo.addons.survey.tests import common
 
 @tagged("post_install", "-at_install", "functional")
 class TestSurveyAccessSurface(common.TestSurveyCommon, HttpCase):
-    """The public entry points, and the guards that were missing from three of them."""
 
     @classmethod
     def setUpClass(cls):
@@ -193,7 +192,6 @@ class TestSurveyAccessSurface(common.TestSurveyCommon, HttpCase):
 
 @tagged("post_install", "-at_install", "functional")
 class TestConversationalNavigation(common.TestSurveyCommon):
-    """questions_layout_effective maps conversational; one template did not use it."""
 
     def test_conversational_can_go_forward(self):
         for layout, expected in (
@@ -246,7 +244,6 @@ class TestConversationalNavigation(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestQualityIndicators(common.TestSurveyCommon):
-    """is_speeder compares a response against its siblings, so it cannot be stored."""
 
     @classmethod
     def setUpClass(cls):
@@ -326,7 +323,6 @@ class TestQualityIndicators(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestQuotaReservation(common.TestSurveyCommon):
-    """A quota reserves a place, but an abandoned response has to give it back."""
 
     @classmethod
     def setUpClass(cls):

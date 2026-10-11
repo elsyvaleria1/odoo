@@ -9,7 +9,6 @@ _debug = DebugLog(__name__)
 
 
 class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
-    """Manage Unrealized Gains/Losses."""
 
     _name = "account.multicurrency.revaluation.report.handler"
     _inherit = ["report.formula.custom.handler"]

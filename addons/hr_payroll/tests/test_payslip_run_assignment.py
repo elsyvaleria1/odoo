@@ -7,7 +7,6 @@ from .common import TestPayslipBase
 
 @tagged("post_install", "-at_install")
 class TestPayslipRunAssignment(TestPayslipBase):
-    """A payslip can be moved to another pay run, and says so when it misfits."""
 
     @classmethod
     def setUpClass(cls):

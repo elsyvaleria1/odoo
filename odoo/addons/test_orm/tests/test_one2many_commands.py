@@ -46,8 +46,6 @@ class TestOne2manyCommandsOnTheDatabase(TransactionCase):
 
 
 class TestComputedOne2manyCommandList(TransactionCase):
-    """A command list assigned by the compute of a non-stored one2many is the
-    field's value, even when no command changes anything"""
 
     @classmethod
     def setUpClass(cls):

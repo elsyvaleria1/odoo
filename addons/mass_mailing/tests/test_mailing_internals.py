@@ -1146,7 +1146,6 @@ Email: <a id="url5" href="mailto:test@odoo.com">test@odoo.com</a></div>""",
 
 @tagged("mail_mail")
 class TestMailingHeaders(MassMailCommon, HttpCase):
-    """Test headers + linked controllers"""
 
     @classmethod
     def setUpClass(cls):

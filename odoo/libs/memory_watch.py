@@ -52,9 +52,6 @@ def _thread_stacks(skip: int | None) -> str:
 
 
 class MemoryWatch:
-    """Reports where the process is each time its RSS grows by `step` bytes,
-    and aborts it with every thread's stack once it passes `limit`. A runaway
-    allocation logs nothing on its own, and the OOM killer leaves no stack."""
 
     def __init__(
         self,

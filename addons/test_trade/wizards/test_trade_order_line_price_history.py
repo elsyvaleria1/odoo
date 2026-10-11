@@ -2,14 +2,6 @@ from odoo import fields, models
 
 
 class TestTradeOrderLinePriceHistory(models.TransientModel):
-    """Concrete `mixin.order.line.price.history`, so its statistics are testable.
-
-    The mixin computes a quantity-weighted average, the extremes and the
-    partner-versus-market divergence, over one grouped query when every
-    matching line is already in the target currency and row by row when it is
-    not. Both shipping wizards live in `sale` and `purchase`, so until this
-    existed neither path was asserted anywhere.
-    """
 
     _name = "test_trade.order.line.price.history"
     _inherit = ["mixin.order.line.price.history"]

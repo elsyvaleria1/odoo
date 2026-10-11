@@ -11,8 +11,6 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 @tagged("post_install", "-at_install")
 @patch.object(CalendarSyncAccount, "_has_client", lambda account, code: True)
 class TestAppointmentConnectors(TransactionCase):
-    """An appointment type offers every provider a staff member may connect
-    their calendar to, one engine for all of them."""
 
     def setUp(self):
         super().setUp()

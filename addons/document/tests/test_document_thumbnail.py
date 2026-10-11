@@ -206,14 +206,6 @@ def _oversized_png(side):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
-    """A thumbnail render degrades; it never takes the transaction with it.
-
-    An image is rendered before the transaction that carried it commits, so one
-    PIL refuses to decode must land as `thumbnail_status = "error"`. Anything
-    that escapes it aborts the write that carried the file -- including an
-    upload arriving on the public `/documents/upload` route through an edit
-    link.
-    """
 
     def _create_with_content(self, name, raw, mimetype):
         attachment = (
@@ -259,14 +251,6 @@ class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsThumbnailPublicUpload(HttpCase):
-    """The bomb reaches the compute through the PUBLIC upload route.
-
-    The unit test above proves the render degrades; this one proves
-    the input is reachable without an account. Together they are the claim:
-    an unauthenticated visitor holding an edit link -- the shape
-    `wizard.document.document.request` creates for a requestee with no user -- can send
-    a payload that used to answer 500 and lose the upload.
-    """
 
     def _request_document(self):
         return self.env["document.document"].create(
@@ -326,18 +310,6 @@ class TestDocumentsThumbnailPublicUpload(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsThumbnailResolutionBound(TransactionCaseDocuments):
-    """The preview decode is bounded by pixels, not only by bytes.
-
-    `ir.attachment` normally downscales an uploaded image to 1920px before
-    anything else sees it -- but `_documents_upload` builds its attachments
-    `with_context(image_no_postprocess=True)`, so on the Documents upload route
-    the full-size image reaches the render. Pillow refuses only above twice
-    its own `MAX_IMAGE_PIXELS`; below that it decodes, so a 410 KB PNG declaring
-    12000x12000 used to decode in full and SUCCEED -- measured at +552 MB and
-    0.80s for one request, against +0 MB and 0.04s once bounded. A request that
-    succeeds is a better denial primitive than one that raises, because it can
-    be repeated and logs nothing.
-    """
 
     def _upload_shaped_attachment(self, name, side, mode="RGB"):
         buffer = io.BytesIO()
@@ -383,7 +355,6 @@ class TestDocumentsThumbnailResolutionBound(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsThumbnailStore(TransactionCaseDocuments):
-    """One rendering per content, reached only through a document holding it."""
 
     def _create(self, name, raw, mimetype, **values):
         return self.env["document.document"].create(

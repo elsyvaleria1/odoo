@@ -10,8 +10,6 @@ from odoo.addons.telegram.models.telegram_bot import TelegramBot
 
 @tagged("post_install", "-at_install")
 class TestDecisionAuthority(ApprovalRequestTestBase):
-    """A decision taken in Telegram is its approver's own: the approval
-    module's doors ask it of them, never of the superuser."""
 
     @classmethod
     def setUpClass(cls):

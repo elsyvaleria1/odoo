@@ -7,8 +7,6 @@ from odoo.tests import Form, TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestResourceParty(TransactionCase):
-    """A human resource follows its party's name; its time zone is its own work
-    zone, which the party's display preference neither sets nor follows."""
 
     def test_a_resource_with_a_party_reads_the_party(self):
         partner = self.env["res.partner"].create(

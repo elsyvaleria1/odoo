@@ -5,12 +5,6 @@ from odoo.exceptions import UserError
 
 
 class WizardTelegramInvite(models.TransientModel):
-    """An administrator's invitation for a contact to connect Telegram.
-
-    The link proves nothing by being issued: it proves the contact once it
-    reaches them through a channel only they hold -- their email, a printed
-    QR handed over in person -- and they open it in their own Telegram.
-    """
 
     _name = "wizard.telegram.invite"
     _description = "Invite a Contact to Telegram"

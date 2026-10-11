@@ -62,15 +62,6 @@ def _read_summary(tmp_path):
 
 @requires_pg
 class TestAHollowPostInstallPhaseFailsTheProcess:
-    """`-u base --test-enable --no-http` with an at_install class and an
-    HttpCase-only post_install selection.
-
-    The at_install class runs during loading, so the report holds tests and
-    the narrowed-spec guard is silent; the HttpCase skips itself at setUpClass,
-    so the post_install phase prepared N and started none. Until 2026-09-01
-    that run exited 0 -- the shape every `--no-http` lane reports as green
-    when its selection turns out to be HttpCase-only.
-    """
 
     def test_a_prepared_but_unstarted_phase_exits_non_zero(self, base_db, tmp_path):
         proc = _update_base_with_tests(

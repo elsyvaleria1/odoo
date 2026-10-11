@@ -10,7 +10,6 @@ def schema_map_view(arch):
 
 
 class TestMapDefaultView(TransactionCase):
-    """Cover the map view derived for models without an explicit one."""
 
     def test_default_view_points_at_the_contact_field(self):
         view = self.env["res.users"]._get_default_map_view()
@@ -24,7 +23,6 @@ class TestMapDefaultView(TransactionCase):
 
 
 class TestMapViewRegistration(TransactionCase):
-    """Cover how the map type registers itself against ir.ui.view."""
 
     def test_map_declares_its_client_icon(self):
         info = self.env["ir.ui.view"]._get_view_info()
@@ -33,13 +31,6 @@ class TestMapViewRegistration(TransactionCase):
 
 
 class TestMapArchValidation(TransactionCase):
-    """Cover the RelaxNG schema guarding the map arch.
-
-    The schema is declared to `view_validation` beside the type's
-    `selection_add`, as cohort's and grid's are; `web_map/validation.py` and
-    its hand-rolled loader are gone. The two declaration tests pin what a
-    copied function could not lose and a one-line declaration can.
-    """
 
     def test_the_map_schema_is_declared(self):
         self.assertEqual(

@@ -14,12 +14,6 @@ from odoo.addons.mail.tests.common_activity import ActivityScheduleCase
 
 @tagged("mail_activity", "mail_activity_plan")
 class TestActivitySchedule(ActivityScheduleCase):
-    """Test plan and activity schedule
-
-    - activity scheduling on a single record and in batch
-    - plan scheduling on a single record and in batch
-    - plan creation and consistency
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -548,12 +542,6 @@ class TestActivitySchedule(ActivityScheduleCase):
 
 @tagged("mail_activity", "mail_activity_plan")
 class TestPlanScheduleShape(ActivityScheduleCase):
-    """What launching a plan costs, and who may be offered a model to launch on.
-
-    Every other pin in this file asserts the activities a plan produces. These
-    assert the shape of the work that produces them, which is invisible to a
-    result comparison and was linear in records x templates.
-    """
 
     @classmethod
     def setUpClass(cls):

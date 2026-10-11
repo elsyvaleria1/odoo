@@ -2,9 +2,6 @@ from odoo import api, fields, models
 
 
 class WizardCalendarSyncReset(models.TransientModel):
-    """Start a user's synchronization with a provider over: the user may come
-    back with another account, so their calendar's links are forgotten, and
-    the events they organize are kept or deleted."""
 
     _name = "wizard.calendar.sync.reset"
     _description = "Calendar Synchronization Reset"

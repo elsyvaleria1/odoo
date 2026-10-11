@@ -23,7 +23,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestWebhookIntegration(common.TransactionCase):
-    """Test webhook trigger functionality with test models."""
 
     @classmethod
     def setUpClass(cls):

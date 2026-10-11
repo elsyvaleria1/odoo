@@ -6,7 +6,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestAchievement(common.TransactionCase):
-    """Tests for the hidden/discovery achievement system."""
 
     @classmethod
     def setUpClass(cls):

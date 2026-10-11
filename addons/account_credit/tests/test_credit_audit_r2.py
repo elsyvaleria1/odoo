@@ -7,10 +7,6 @@ from .common import CreditAuthorizationCase
 
 @tagged("post_install", "-at_install")
 class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
-    """Regression cover for the round-2 audit fixes (parent task 30598).
-
-    Every test below failed on the tree these fixes landed on.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -405,9 +401,6 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCreditMultiCompanyScoping(TestCreditAuditR2):
-    """Round-3 regression cover (parent task 32433): the credit gate and the
-    authorization wizard must judge and book against the ORDER's company, not
-    the environment's active one."""
 
     def _order_under_company_a(self, partner, price):
         order = self._order(partner, price, company=self.company_b)

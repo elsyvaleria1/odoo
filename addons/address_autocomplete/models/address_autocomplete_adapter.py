@@ -2,12 +2,6 @@ from odoo import api, models
 
 
 class AddressAutocompleteAdapter(models.AbstractModel):
-    """An address provider's lookups. A provider's adapter inherits this model
-    under its own name.
-
-    A lookup is a session: suggestions for what the user typed, then the
-    details of the one they chose. The session token the client sends lets a
-    provider bill the whole lookup as one."""
 
     _name = "address.autocomplete.adapter"
     _description = "Address Autocomplete Provider Adapter"

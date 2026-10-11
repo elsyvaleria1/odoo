@@ -8,21 +8,6 @@ _REFRESH_BATCH_SIZE = 200
 
 
 class MixinScored(models.AbstractModel):
-    """A subject scored by a scorecard.
-
-    The host names its concrete audit line in ``_score_line_model`` and declares
-    ``score_line_ids`` (One2many to it through ``subject_id``); the fields
-    written here read that line. ``_score_trigger_fields()`` names the host's
-    own fields whose write rescores the record; a module extends it with super.
-
-    A dimension of code ``x`` is answered on the host by ``_score_observe_x``
-    (the observation: a number for a measured dimension, the attribute lines
-    for a catalog one), and optionally by ``_score_ceiling_x`` (the catalog's
-    ceiling, computed once per refresh), ``_score_bands_x`` (the bands a
-    measured observation falls into, ``dimension.band_ids`` by default),
-    ``_score_rows_x`` (the rows themselves, when neither shape fits) and
-    ``_score_labels_x`` (reader-language labels for the rows' source keys).
-    """
 
     _name = "mixin.scored"
     _description = "Scored Subject Mixin"

@@ -26,7 +26,6 @@ from ....webauthn.helpers.structs import AttestationStatement
 
 @dataclass
 class SafetyNetJWSHeader:
-    """Properties in the Header of a SafetyNet JWS"""
 
     alg: str
     x5c: List[str]
@@ -34,11 +33,6 @@ class SafetyNetJWSHeader:
 
 @dataclass
 class SafetyNetJWSPayload:
-    """Properties in the Payload of a SafetyNet JWS
-
-    Values below correspond to camelCased properties in the JWS itself. This class
-    handles converting the properties to Pythonic snake_case.
-    """
 
     nonce: str
     timestamp_ms: int

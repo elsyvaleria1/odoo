@@ -381,12 +381,6 @@ class TestActivitySchedule(ActivityScheduleHRCase):
 
 @tagged("post_install", "-at_install")
 class TestPlanResponsibleWithoutOrgChart(ActivityScheduleHRCase):
-    """An onboarding plan is exactly what you run for an employee who is still
-    being set up -- so a blank org chart must not be what stops it. When nobody
-    up the chain has a user the walk already falls back to the current user and
-    downgrades the complaint to a warning; it just was not reached when the
-    coach or the manager was missing outright.
-    """
 
     @classmethod
     def setUpClass(cls):

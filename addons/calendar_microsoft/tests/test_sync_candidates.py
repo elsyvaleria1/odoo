@@ -5,8 +5,6 @@ from odoo.addons.calendar_microsoft.tests.common import authorize_microsoft_cale
 
 @tagged("post_install", "-at_install")
 class TestMicrosoftSyncCandidates(TransactionCase):
-    """Who the synchronisation cron picks up: the users whose Microsoft connection
-    is authorized, found in SQL on the connections, less the stopped ones."""
 
     @classmethod
     def setUpClass(cls):

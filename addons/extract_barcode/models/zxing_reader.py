@@ -20,7 +20,6 @@ def read_page(image: bytes) -> list[str]:
 
 
 class Barcodes(BaseReader):
-    """What a document's pages carry printed as codes, decoded once each."""
 
     name = "zxing_barcodes"
     mimetypes = PAGED

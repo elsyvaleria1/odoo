@@ -151,8 +151,6 @@ class TestPortalControllers(TestPortal):
 
 @tagged("-at_install", "post_install", "portal", "mail_controller")
 class TestPortalFlow(MailCommon, HttpCase):
-    """Test shared links, mail/view links and redirection (backend, customer
-    portal or frontend for specific addons)."""
 
     @classmethod
     def setUpClass(cls):

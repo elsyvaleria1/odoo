@@ -26,7 +26,6 @@ class RuleRuntimeError(RuntimeError):
 
 
 class RuleBudget:
-    """What one evaluation may still spend, shared by the rules it calls."""
 
     __slots__ = ("calls", "steps")
 
@@ -51,7 +50,6 @@ _BUDGET = contextvars.ContextVar("rule_budget", default=None)
 
 
 class RuleInputs:
-    """The inputs of one evaluation, read as attributes, frozen."""
 
     __slots__ = ("_values",)
 
@@ -156,9 +154,6 @@ def compile_rule(module, filename):
 
 
 class RuleContext:
-    """What a rule reaches beyond its inputs: other rules, at its date or at
-    another (call_at), and calendar and rounding helpers. No clock, no
-    records, no I/O."""
 
     def __init__(self, on_date, resolve, depth=0, trace=None) -> None:
         self.on_date = on_date

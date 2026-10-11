@@ -14,9 +14,6 @@ from odoo.addons.mail.tools.discuss import Store
 
 @tagged("mail_message", "mail_controller", "post_install", "-at_install")
 class TestMessageHelpersRobustness(MailCommon, HttpCase):
-    """Test message helpers robustness, currently mainly linked to records
-    being removed from DB due to cascading deletion, which let side records
-    alive in DB."""
 
     @classmethod
     def setUpClass(cls):

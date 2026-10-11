@@ -4,17 +4,6 @@ from .common import TestPlanningContractCommon
 
 
 class TestPlanningGanttResourceEmployeeWorkingPeriods(TestPlanningContractCommon):
-    """
-    Currently gantt_resource_employees_working_periods method supplies data to Gantt Model.
-    The goal is check if the method correctly filters contracts.
-    Test Goals -
-    1). Contract in State "draft" is only chosen if its kanban_state is in "done"
-    2). Contracts in States "open" and "close" are chosen regardless of the kanban_state
-    3). Any other type of combination is not accepted and takes its working period as default scale time
-    Here the context dates refer to dates we from gantt view through the RPC request sent. These refer to
-    start date and end dates of the scale. If the scale is week, the starting date of week is default_start_datetime
-    and end date if weeek is default_end_datetime.
-    """
 
     @classmethod
     def setUpClass(cls):

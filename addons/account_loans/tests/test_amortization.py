@@ -10,7 +10,6 @@ START = datetime.date(2024, 1, 1)
 
 
 class TestAmortization(BaseCase):
-    """The schedule generator, exercised without a database."""
 
     def test_repays_the_loan_exactly_across_the_grid(self):
         amounts = [1000.0, 9999.99, 12345.67, 100000.0, 250000.0, 777.77]

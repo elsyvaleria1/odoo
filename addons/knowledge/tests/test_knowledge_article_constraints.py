@@ -9,9 +9,6 @@ from odoo.addons.knowledge.tests.common import KnowledgeCommon
 
 @tagged("knowledge_internals")
 class TestKnowledgeArticleConstraints(KnowledgeCommon):
-    """This test suite has the responsibility to test the different constraints
-    defined on the `knowledge.article`, `knowledge.article.member` and
-    `knowledge.article.favorite` models."""
 
     @classmethod
     def setUpClass(cls):

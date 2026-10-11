@@ -96,7 +96,6 @@ class DocumentsAccountTestCommon(
 
 
 class DocumentsAccountActionsServerCommon(DocumentsAccountTestCommon):
-    """Specialized class for testing Server Actions"""
 
     @classmethod
     def setUpClass(cls):

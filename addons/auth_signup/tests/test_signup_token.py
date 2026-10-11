@@ -59,7 +59,6 @@ class TestSignupToken(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSignupWithToken(TransactionCase):
-    """User creation and password change through res.users.signup tokens."""
 
     def test_signup_token_creates_user_for_partner(self):
         partner = self.env["res.partner"].create(
@@ -145,7 +144,6 @@ class TestSignupWithToken(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSignupUrl(TransactionCase):
-    """Signup URL building and partner auth parameters."""
 
     @classmethod
     def setUpClass(cls):
@@ -212,7 +210,6 @@ class TestSignupUrl(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSignupUserLifecycle(TransactionCase):
-    """Signup cancellation and re-invitation over the user lifecycle."""
 
     @classmethod
     def setUpClass(cls):

@@ -8,12 +8,6 @@ from odoo.addons.account_online_synchronization.tests.common import (
 
 @tagged("post_install", "-at_install")
 class TestOdooFinCredentials(AccountOnlineSynchronizationCommon):
-    """The OdooFin tokens rest in the vault and the fields are doors (ADR-0081).
-
-    The two fields do NOT carry the same groups, and that asymmetry is the point
-    of most of these: the refresh token signs requests and is system-only, while
-    the access token is readable by any accountant.
-    """
 
     def test_the_fixture_tokens_landed_in_one_credential(self):
         credential = self.account_online_link.credential_id.sudo()

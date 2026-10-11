@@ -316,7 +316,6 @@ class TestKioskUrlGeneration(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestFrontdeskGroupReferences(TransactionCase):
-    """The check-out route gates on a group; a name nothing defines denies everyone."""
 
     def _referenced_groups(self):
         source = (

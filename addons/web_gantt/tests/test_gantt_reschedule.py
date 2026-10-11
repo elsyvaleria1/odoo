@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase
 
 
 class TestGanttReschedule(TransactionCase):
-    """Cover the drag-and-drop undo helpers and the reschedule messages."""
 
     @classmethod
     def setUpClass(cls):

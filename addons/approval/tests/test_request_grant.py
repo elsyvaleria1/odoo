@@ -6,12 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestRequestGrant(ApprovalCommon):
-    """A pending request approved by an authority outside its decisions.
-
-    Time off lets the system validate a leave whose request is still pending. A
-    decision needs an approver row, and recording one for a row nobody decided would
-    name a decider who never acted, so the approval is its own fact on the request.
-    """
 
     def _pending_request(self, minimum=2):
         category = self._make_category(

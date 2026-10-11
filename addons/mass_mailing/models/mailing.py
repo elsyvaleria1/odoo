@@ -59,7 +59,6 @@ _LOCAL_ATTACHMENT_RE = re.compile(
 
 
 class MailingMailing(models.Model):
-    """Mass Mailing models the sending of emails to a list of recipients for a mass mailing campaign."""
 
     _name = "mailing.mailing"
     _description = "Mass Mailing"

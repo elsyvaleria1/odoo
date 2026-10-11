@@ -10,10 +10,6 @@ from odoo.addons.payment.models import payment_provider
 
 
 class OnboardingStateCases:
-    """The onboarding round trip of a provider whose return route exchanges an
-    authorization code for credentials: mixed into a provider's
-    `PaymentHttpCommon` test class, which sets `provider` and implements the
-    hooks below."""
 
     allow_inherited_tests_method = True
 

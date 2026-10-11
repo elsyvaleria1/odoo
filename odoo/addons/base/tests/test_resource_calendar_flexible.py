@@ -428,9 +428,6 @@ class TestFlexibleWeekKeyIsDeterministic(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestAFlexibleScheduleIsNeverSilentlyEmpty(TransactionCase):
-    """``hours_per_day`` gates the weekly budget and is never computed for a
-    flexible calendar, so a schedule born flexible allocates zero hours however
-    large its weekly total says it is."""
 
     @classmethod
     def setUpClass(cls):

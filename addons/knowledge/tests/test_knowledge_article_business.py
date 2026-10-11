@@ -78,7 +78,6 @@ class KnowledgeCommonBusinessCase(KnowledgeCommonWData):
 
 @tagged("knowledge_internals", "knowledge_management")
 class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
-    """Test business API and main tools or helpers methods."""
 
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
@@ -1074,7 +1073,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
 
 @tagged("knowledge_internals", "knowledge_management")
 class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
-    """Test copy and duplication of articles"""
 
     @mute_logger(
         "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
@@ -1326,7 +1324,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
 
 @tagged("knowledge_internals", "knowledge_management")
 class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
-    """Test unlink / archive management of articles"""
 
     @classmethod
     def setUpClass(cls):
@@ -1755,7 +1752,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
 
 @tagged("post_install", "-at_install", "knowledge_internals", "knowledge_management")
 class TestKnowledgeShare(KnowledgeCommonWData):
-    """Test share feature."""
 
     def test_article_can_invite_members_with_wizard(self):
         article = self.env["knowledge.article"].create(
@@ -1914,7 +1910,6 @@ class TestKnowledgeShare(KnowledgeCommonWData):
 
 @tagged("post_install", "-at_install", "knowledge_internals", "knowledge_management")
 class TestKnowledgeArticleCovers(KnowledgeCommonWData):
-    """Test article covers management"""
 
     @users("employee")
     def test_article_cover_management(self):
@@ -1955,12 +1950,6 @@ class TestKnowledgeArticleCovers(KnowledgeCommonWData):
     "knowledge_visibility",
 )
 class TestKnowledgeArticleVisibility(KnowledgeCommon):
-    """Test suite checking that the articles can be marked as hidden.
-    This test suite should ensure that:
-    1. Users can search for articles that are visible or hidden using the custom
-       search method on the `is_article_visible` computed field.
-    2. The shared and private articles are always visible.
-    """
 
     @classmethod
     def setUpClass(cls):

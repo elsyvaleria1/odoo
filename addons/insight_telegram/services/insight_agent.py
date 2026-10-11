@@ -118,8 +118,6 @@ key figure. No tables, no headings, no Markdown other than **bold**.
 
 
 class InsightAgent(BotAssistant):
-    """Answer a question no catalogued report answers by letting a chat model
-    read Odoo through read-only tools."""
 
     PURPOSE = PURPOSE
     SETTINGS = (

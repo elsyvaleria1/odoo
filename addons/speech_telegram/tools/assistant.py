@@ -3,14 +3,6 @@ from odoo.addons.integration_machine_learning.tools import get_router
 
 
 class BotAssistant:
-    """The AI a bot runs for one feature: the chat model the bot's settings
-    pick for `PURPOSE`, and the voice notes it takes, heard under the
-    company's policy for `TRANSCRIPTION_PURPOSE` -- the bot's own purpose
-    when a subclass names none -- and read as `TRANSCRIBE_CONTEXT`.
-
-    A subclass names the purpose and the bot's three settings fields
-    (enabled, provider, preferred model) in `SETTINGS`.
-    """
 
     PURPOSE = None
     TRANSCRIBE_CONTEXT = ""

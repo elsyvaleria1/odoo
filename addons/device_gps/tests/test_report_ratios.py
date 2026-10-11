@@ -7,12 +7,6 @@ from odoo.addons.device.tests.common import DeviceTransactionCase
 
 @tagged("post_install", "-at_install")
 class TestGpsReportRatios(DeviceTransactionCase):
-    """The eight ratio measures share one compute.
-
-    They are also `aggregator="avg"` fields whose real aggregation happens in
-    `_read_group_select`, so both surfaces are pinned here: a row read on its
-    own, and the same numbers read through a group.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -7,14 +7,6 @@ from odoo.tools import replace_exceptions
 
 
 class SpeechController(http.Controller):
-    """Serve what a recording says, to whoever may already hear it.
-
-    Access is delegated to `ir.binary._get_record`, the same resolver
-    `/web/content` uses, so a caption track is readable exactly when the audio
-    it captions is: the access domain, the access token and the public-content
-    hook all answer once, for both, and a subtitle cannot become a way to read
-    a recording one cannot fetch.
-    """
 
     def _speech_attachment(self, attachment_id: int, access_token: str | None):
         with replace_exceptions(UserError, by=request.prepare_not_found_error()):

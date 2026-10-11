@@ -42,14 +42,6 @@ def _lost_to_concurrency(error) -> bool:
 
 
 class AutomationTelegramWait(models.Model):
-    """A question a workflow step asked on Telegram, and its answer.
-
-    The step that asks settles at once; what waits is its On Event edge. This
-    record is what ties a message arriving in the chat to that edge: it names
-    the chat, the kinds of message that answer, and the event the answer
-    delivers. The webhook only records the answer; the dispatcher delivers it,
-    so no step ever runs as the person who answered.
-    """
 
     _name = "automation.telegram.wait"
     _access_anchors = frozendict(

@@ -21,7 +21,6 @@ _NEGATIVE_OPERATORS = frozenset(
 
 
 class MixinDateRangeSearch(models.AbstractModel):
-    """Adds a virtual period field that filters a model by predefined date ranges."""
 
     _name = "mixin.date.range.search"
     _description = "Mixin class to add a Many2one style period search field"

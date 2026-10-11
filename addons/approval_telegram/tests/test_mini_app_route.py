@@ -11,8 +11,6 @@ from odoo.addons.telegram.tests.test_web_app_init_data import signed_init_data
 
 @tagged("post_install", "-at_install")
 class TestApprovalMiniAppRoute(TelegramBotHttpCase):
-    """The Mini App's calls are admitted by the bot's Mini App receiver, and
-    a refusal is answered in the app's own shape."""
 
     def _post(self, path, **data):
         self.env.flush_all()
@@ -129,8 +127,6 @@ class TestApprovalMiniAppRoute(TelegramBotHttpCase):
 
 @tagged("post_install", "-at_install")
 class TestApprovalMiniAppDecision(TelegramBotHttpCase):
-    """What the Mini App decides and shows, it decides and reads as the
-    approver behind the call, never as the route's own user."""
 
     @classmethod
     def setUpClass(cls):

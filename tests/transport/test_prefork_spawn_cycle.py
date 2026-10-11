@@ -15,15 +15,6 @@ from .conftest import prefork_server
 
 
 class TestTheWorkerCensusCrossesTheFork:
-    """`/web/metrics` is an HTTP route, so under prefork a CHILD always serves it.
-
-    A child cannot count its siblings, so `get_metrics()` short-circuited there and
-    the four metrics that exist to describe prefork -- `odoo_workers`,
-    `odoo_worker_population`, `odoo_worker_generation`,
-    `odoo_long_polling_alive` -- were declared by `render_prometheus_exposition` and could
-    never be emitted by the only flavour that has them.  Measured before the
-    census: threaded exposed four flavour metrics, prefork exposed none.
-    """
 
     @pytest.fixture
     def master(self, tmp_path):
@@ -438,7 +429,6 @@ class TestProcessSpawnChecksSignallingOncePerCycle:
 
 
 class TestTheWatchdogSelectorIsReused:
-    """`sleep()` runs once per beat, and graceful stop drops the beat to 0.1s."""
 
     @pytest.fixture
     def master(self, prefork):
@@ -516,21 +506,6 @@ class TestTheWatchdogSelectorIsReused:
 
 
 class TestARecycledFdIsRegisteredForItsNewOwner:
-    """`remove_worker` closes the pipe; `open_pipe` hands the same number straight back.
-
-    This is the whole reason the watchdog set is diffed by owner rather than by
-    descriptor number.  A master that diffs numbers sees no change across a
-    worker replacement, skips the re-register, and keeps a map entry for a
-    descriptor epoll dropped when it was closed -- so the replacement is never
-    selected on, its `watchdog_time` never advances, and `kill_timed_out_workers`
-    SIGKILLs it one `limit_time_real` after it started.  Measured end to end
-    before the fix: every replacement worker killed at its timeout while idle,
-    respawned, and killed again, indefinitely.
-
-    `TestTheWatchdogSelectorIsReused` cannot see this: it retires a worker with
-    `del prefork.workers[pid]`, which leaves the descriptors open, so no number
-    is ever recycled.
-    """
 
     @pytest.fixture
     def master(self, prefork):

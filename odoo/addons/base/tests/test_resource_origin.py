@@ -6,8 +6,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestResourceOrigin(TransactionCase):
-    """Where and when a resource came to be, and the countries it belongs to:
-    a thing's are its own, a person's are their party's private facts."""
 
     @classmethod
     def setUpClass(cls):

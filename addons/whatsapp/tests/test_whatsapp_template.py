@@ -702,8 +702,6 @@ Welcome to {{3}} office""",
 
 @tagged("wa_template", "wip")
 class WhatsAppTemplateForm(WhatsAppTemplateCommon):
-    """Form tool based unit tests, to check notably computed fields, live
-    ACLs, ..."""
 
     @classmethod
     def setUpClass(cls):
@@ -918,7 +916,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
 
 @tagged("wa_template")
 class WhatsAppTemplateInternals(WhatsAppTemplateCommon):
-    """Internals: copy, computed fields behavior, ..."""
 
     @users("user_wa_admin")
     def test_copy_attachments(self):

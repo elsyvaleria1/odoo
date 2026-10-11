@@ -19,13 +19,6 @@ def _pdf_of(page_labels):
 
 
 class TestCoverPage(TransactionCase):
-    """What _add_cover_page does to the page order.
-
-    Nothing covered this before, which is how the method kept a name stating
-    the wrong end of it: it was ``_append_cover_page`` while the cover it adds
-    goes FIRST. The name is fixed; these pin the behaviour the name now claims,
-    so the next reader does not have to take either on trust.
-    """
 
     @classmethod
     def setUpClass(cls):

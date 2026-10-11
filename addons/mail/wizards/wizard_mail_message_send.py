@@ -62,8 +62,6 @@ MASS_MAIL_SELECTION_CONTEXT_KEYS = frozenset(
 
 
 class MassMailProgress:
-    """Handed down by a caller that resumes what a mass mail left unsent: the
-    composer then stops on a spent cron budget and says so here."""
 
     __slots__ = ("stopped",)
 
@@ -72,9 +70,6 @@ class MassMailProgress:
 
 
 class SentEmails:
-    """Hashed by identity: an environment key hashes its context, and the
-    subjects and bodies this collects across a mass mailing would otherwise be
-    walked on every environment created while rendering it."""
 
     __slots__ = ("by_email",)
 

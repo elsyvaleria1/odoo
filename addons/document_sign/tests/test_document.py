@@ -12,7 +12,6 @@ GIF = b"R0lGODdhAQABAIAAAP///////ywAAAAAAQABAAACAkQBADs="
 
 
 class TestCaseDocumentsBridgeSign(SignRequestCommon):
-    """ """
 
     def setUp(self):
         super().setUp()

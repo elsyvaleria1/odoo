@@ -10,10 +10,6 @@ from odoo.addons.test_mail_sms.tests.common import TestSMSRecipients
 
 @tagged("sms_post")
 class TestSMSPost(SMSCommon, TestSMSRecipients, CronMixinCase):
-    """TODO
-
-    * add tests for new mail.message and mixin.mail.thread fields;
-    """
 
     @classmethod
     def setUpClass(cls):

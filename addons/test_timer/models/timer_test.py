@@ -2,8 +2,6 @@ from odoo import fields, models
 
 
 class TimerTest(models.Model):
-    """A very simple model only inheriting from mixin.timer to test
-    timer features"""
 
     _name = "timer.test"
     _description = "Timer Model"
@@ -13,8 +11,6 @@ class TimerTest(models.Model):
 
 
 class InterruptionTimerTest(models.Model):
-    """A very simple model inheriting from mixin.timer and
-    overriding _action_interrupt_user_timers()"""
 
     _name = "interruption.timer.test"
     _description = "Interruption Timer Model"

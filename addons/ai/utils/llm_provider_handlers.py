@@ -16,12 +16,6 @@ from odoo.exceptions import UserError
 
 
 class LlmProviderHandler:
-    """The provider-shaped half of an LLM call.
-
-    Subclasses set :attr:`name` and :attr:`base_url` and implement
-    :meth:`request_llm` and :meth:`tool_call_response`. The rest have defaults
-    that suit a provider speaking OpenAI's dialect.
-    """
 
     name = None
     base_url = None

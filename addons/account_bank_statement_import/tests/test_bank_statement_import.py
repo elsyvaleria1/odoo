@@ -8,8 +8,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 @tagged("post_install", "-at_install")
 class TestBankStatementImportHub(AccountTestInvoicingCommon):
-    """Unit tests for the account_bank_statement_import hub logic itself,
-    independent of any real file format submodule (ofx/qif/camt/csv/coda)."""
 
     def test_find_additional_data_multi_match_raises_user_error(self):
         company_2 = self.env["res.company"].create({"name": "Other Co"})

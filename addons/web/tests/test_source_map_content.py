@@ -4,9 +4,6 @@ from odoo.tests import HttpCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install", "web_assets")
 class TestSourceMapContent(HttpCase):
-    """A generated asset is a public attachment; its source map, which carries
-    every bundled source, is the server's and its administrators' alone unless
-    the maps are linked."""
 
     @classmethod
     def setUpClass(cls):

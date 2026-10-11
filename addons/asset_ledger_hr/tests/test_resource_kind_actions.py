@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestResourceKindAssignationLog(TransactionCase):
-    """A vehicle runs the assignation log button of the asset form."""
 
     @classmethod
     def setUpClass(cls):

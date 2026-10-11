@@ -25,12 +25,6 @@ CENSUS_MAX_AGE_S = 60.0
 
 
 class WorkerCensus:
-    """The master's worker counts, published as a file its children can read.
-
-    `/web/metrics` is served by a child, which cannot count its siblings; the
-    file is the child's only route to the master's numbers.  Reads and writes
-    raise on I/O trouble -- the caller decides how much it cares.
-    """
 
     def __init__(self, pid: int) -> None:
         self.pid = pid

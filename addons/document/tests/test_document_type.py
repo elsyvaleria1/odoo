@@ -555,16 +555,6 @@ class TestRenewalState(DocumentTypeCase):
 
 @tagged("post_install", "-at_install")
 class TestExpirationRefreshCronIsUserIndependent(DocumentTypeCase):
-    """The refresh sweep must not be scoped to whoever runs the cron.
-
-    `expiration_state` is stored and its value is a function of today's date,
-    so a daily sweep is the only thing keeping it true. That sweep used to run
-    a plain `self.search()`, gated by the `user_permission != 'none'` record
-    rule. The shipped `ir.cron` runs as `__system__` -- SUPERUSER_ID, which
-    bypasses every rule -- so the dependency was invisible. Point it at an
-    ordinary account, which `ir_cron.user_id` exists to allow, and the sweep
-    silently refreshed nothing and still returned True.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -655,7 +645,6 @@ class TestExpirationRefreshCronIsUserIndependent(DocumentTypeCase):
 
 
 class TestTypeTags(DocumentTypeCase):
-    """A tag that stands for a type keeps the document's type in step."""
 
     @classmethod
     def setUpClass(cls):

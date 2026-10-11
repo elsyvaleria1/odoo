@@ -218,15 +218,6 @@ class TestCampaignRefusalCensus(ApprovalCommon):
 
 
 class TestCampaignSwallowedFailures(ApprovalCommon):
-    """The class no refusal census can see: a failure the engine swallows.
-
-    A peer campaign on another repo found fourteen of these -- paths that raise
-    something the reporting macro never covered, two of them reachable on its read
-    path and silent on every target. They are not refusals (nothing was turned away)
-    and not questions (nothing was asked): the engine gave up on something and
-    carried on, which is the shape a session debugging "why did nothing happen?"
-    cannot find. So they are enumerated rather than measured.
-    """
 
     ALLOWED_TO_STAY_SILENT = {
         "approval_trace.py": "the renderer degrades to <unrenderable>, which IS the report",
@@ -256,13 +247,6 @@ class TestCampaignSwallowedFailures(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestCampaignMeasurement(ApprovalCommon):
-    """The performance switch, which is deliberately NOT one of the printing ones.
-
-    A run with every target at DEBUG is not the run whose timings anybody wants:
-    the logging dominates. So `APPROVAL_TRACE_SLOW_MS` and `APPROVAL_TRACE_NPLUSONE`
-    turn measurement on while the targets stay quiet, and these tests pin that the
-    two switches are independent in both directions.
-    """
 
     def setUp(self):
         super().setUp()

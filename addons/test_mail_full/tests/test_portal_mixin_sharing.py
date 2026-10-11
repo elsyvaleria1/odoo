@@ -7,7 +7,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 @tagged("post_install", "-at_install")
 class TestPortalMixinSharing(TransactionCase):
-    """Access token lifecycle and _get_share_url parameter matrix."""
 
     @classmethod
     def setUpClass(cls):

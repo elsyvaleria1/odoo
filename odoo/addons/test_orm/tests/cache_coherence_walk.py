@@ -191,10 +191,6 @@ def generate(seed, steps):
 
 
 class _Draw:
-    """Swarm testing with locality: each seed leaves some kinds of operation
-    out, watches its profile's models and a few fields of each, and an
-    invalidation or a read often comes back to what was just read, so a walk
-    goes deep into a few interactions instead of grazing all of them."""
 
     def __init__(self, rng, profile):
         self.rng = rng
@@ -356,15 +352,6 @@ class Failure:
 
 
 class Walk:
-    """Runs operations through `harness.env` and its viewers.
-
-    `harness` provides `env` (the superuser environment the walk runs in),
-    `viewers` (environments of every principal and context the walk reads
-    and writes through), `alive_ids(model_name)` (the ids the rows hold,
-    read without the ORM) and `fresh()` (a context manager yielding a
-    function that maps a viewer to the same principal and context in a
-    transaction that shares nothing with the walk's).
-    """
 
     def __init__(self, harness):
         self.harness = harness

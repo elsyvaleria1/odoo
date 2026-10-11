@@ -492,7 +492,6 @@ class TestPosMrp(CommonPosMrpTest):
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosMrpAngloSaxonPriceUnit(CommonPosMrpTest):
-    """The anglo-saxon cost of a kit is the sum of its components' costs."""
 
     def _make_delivered_order(self, product):
         (

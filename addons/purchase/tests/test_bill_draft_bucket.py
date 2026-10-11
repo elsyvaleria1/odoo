@@ -8,10 +8,6 @@ from odoo.addons.purchase.tests.test_purchase_invoice import (
 
 @tagged("-at_install", "post_install")
 class TestBillDraftBucket(TestPurchaseToInvoiceCommon):
-    """What an order line can be billed for stands in one of three places:
-    on a posted bill, on a draft bill, or on none. A draft claims its share
-    without billing it, so the order does not read "Fully invoiced" on a bill
-    nobody posted, and the line cannot be billed twice either."""
 
     @classmethod
     def setUpClass(cls):

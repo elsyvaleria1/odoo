@@ -10,8 +10,6 @@ from .common import DeviceFixtureMixin
 
 @tagged("post_install", "-at_install")
 class TestDeviceParts(TransactionCase, DeviceFixtureMixin):
-    """A device that carries others is one registry entry carrying others,
-    not a second registry."""
 
     @classmethod
     def setUpClass(cls):

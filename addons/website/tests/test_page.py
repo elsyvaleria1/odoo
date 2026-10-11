@@ -1144,12 +1144,6 @@ class TestCachedPageFollowsThePublicUsersGroups(HttpCase):
 
 @tagged("-at_install", "post_install")
 class TestMostSpecificPagesScan(common.TransactionCase):
-    """`_get_most_specific_pages` counts keys, and only the keys it will read.
-
-    It sits behind site search, the sitemap, `is_page_existing` and the backend
-    page list, where the candidate set is a handful of rows and the table is the
-    whole site. Counting every page's key there made each of those O(site).
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1281,8 +1275,6 @@ class TestMostSpecificPagesScan(common.TransactionCase):
 
 @tagged("-at_install", "post_install")
 class TestShadowedPageIsReachable(common.TransactionCase):
-    """A url carrying both a generic page and this website's override must not
-    lose both to a SQL limit applied before the dedup."""
 
     @classmethod
     def setUpClass(cls):
@@ -1333,14 +1325,6 @@ class TestShadowedPageIsReachable(common.TransactionCase):
 
 @tagged("-at_install", "post_install")
 class TestSearchFetchScalesWithMatches(common.TransactionCase):
-    """A public search must cost what it matches, not what the site contains.
-
-    `_search_get_results` used to fetch every page the base domain admits and filter
-    it with `filtered_domain`, which reads `arch_db` -- the whole stored html of
-    every page -- for a search matching a handful. This pins the property rather
-    than a timing: the candidate set the dedup is handed must not grow with the
-    table.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1424,9 +1408,6 @@ class TestSearchFetchScalesWithMatches(common.TransactionCase):
 
 @tagged("-at_install", "post_install")
 class TestPageRenameRedirects(common.TransactionCase):
-    """A page that moves leaves a redirect behind. Moving it back left that
-    redirect active, pointing away from where the page now lives -- which made
-    the reverse redirect a cycle and the rename impossible to undo."""
 
     @classmethod
     def setUpClass(cls):

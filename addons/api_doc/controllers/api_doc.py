@@ -5,7 +5,6 @@ from odoo.addons.rpc.controllers.doc import DocController
 
 
 class DocClientController(DocController):
-    """The playground: one page over the contract documents `rpc` serves."""
 
     @http.route(
         ["/doc", "/doc/<model_name>", "/doc/index.html"], type="http", auth="user"

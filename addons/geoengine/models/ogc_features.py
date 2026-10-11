@@ -47,11 +47,11 @@ PROPERTY_TYPES = frozenset(
 
 
 class OgcRequestError(UserError):
-    """A request the API cannot answer as asked (HTTP 400)."""
+    pass
 
 
 class TooDense(Exception):
-    """The query did not finish within geoengine.tile_timeout_ms (HTTP 503)."""
+    pass
 
 
 @dataclass(frozen=True)

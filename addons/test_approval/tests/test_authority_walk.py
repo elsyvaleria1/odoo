@@ -10,12 +10,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestAuthorityWalk(ApprovalCommon):
-    """A step walks to the one approver whose authority limit covers the amount.
-
-    A limit qualifies a grant (P2's res.users.grant) for a verb the document
-    declares with an amount: approval.test.gated's `ship`, read on
-    `amount_total`.
-    """
 
     @classmethod
     def setUpClass(cls):

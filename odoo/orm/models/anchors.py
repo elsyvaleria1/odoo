@@ -24,20 +24,6 @@ HIERARCHIES = frozenset({"parent_of", "child_of"})
 
 @dataclass(frozen=True, slots=True)
 class Anchor:
-    """Where a model's records meet a principal, for the reach an access row names.
-
-    `path` leads from the record to a record of the kind's model (a user, a
-    company, a team...); `kind` is the key's own name unless the key is a
-    second anchor of a known kind (`"approver": Anchor("approver_ids.user_id",
-    kind="owner")`). `shared` lets the rung admit the records where the anchor
-    is unset; `hierarchy` reads a company anchor up (`parent_of`) or down
-    (`child_of`) the company tree, `""` reading neither; `usage` limits a team
-    anchor to the teams of one usage (`sale`, `purchase`...).
-
-    Left unset, a company anchor's `shared` and `hierarchy` are read from the
-    registry (`infer_company_variant`); declare them only where a model breaks
-    that convention.
-    """
 
     path: str
     kind: str | None = None

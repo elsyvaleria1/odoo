@@ -1116,10 +1116,6 @@ class HandshakeUserAgent:
 
 
 class HandshakeFacts:
-    """What a connection keeps of its handshake request, read while the request
-    is alive: serving a message reads the cookies, and the session's device
-    trace the address and the user agent. A handler wanting another field of
-    the handshake adds it here."""
 
     __slots__ = ("cookies", "remote_addr", "user_agent")
 
@@ -1139,10 +1135,6 @@ class HandshakeFacts:
 
 
 class SessionView:
-    """What a connection keeps of its session between two loads of it: the
-    session itself -- its data and the serialized baseline it diffs against --
-    is loaded by sid where it is needed, when a message is served and when the
-    session is checked again."""
 
     __slots__ = ("context", "sid", "uid")
 

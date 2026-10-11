@@ -13,7 +13,6 @@ TRACK_POINT_COLORS = {
 
 
 class WizardStockTripTrackPoint(models.TransientModel):
-    """A place marked on a trip's GPS track: a stop, an event or an alert."""
 
     _name = "wizard.stock.trip.track.point"
     _description = "Trip Track Point"

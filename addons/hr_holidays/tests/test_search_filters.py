@@ -10,9 +10,6 @@ from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
 @tagged("search_filters")
 class TestLeaveSearchFilters(TestHrHolidaysCommon):
-    """The search view is the only place a filter can be reached from, so each
-    test resolves the filter's domain out of the arch by name rather than
-    restating it: a filter that is renamed or dropped fails here."""
 
     def _filter_domain(self, view_xmlid, filter_name):
         arch = etree.fromstring(self.env.ref(view_xmlid).arch)

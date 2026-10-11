@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class MailMessage(models.Model):
-    """mail.message extended with an SMS notification type."""
 
     _inherit = "mail.message"
 

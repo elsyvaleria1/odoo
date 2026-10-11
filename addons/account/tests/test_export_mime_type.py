@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestExportMimeType(TransactionCase):
-    """What a report export's file type means, now that one table answers it."""
 
     @classmethod
     def setUpClass(cls):

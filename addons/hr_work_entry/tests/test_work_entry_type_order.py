@@ -2,8 +2,6 @@ from odoo.tests import TransactionCase, new_test_user
 
 
 class TestWorkEntryTypeOrder(TransactionCase):
-    """``_order`` is "sequence, id", so ``sequence`` decides which types lead
-    every work_entry_type_id dropdown. A manager has to be able to set it."""
 
     @classmethod
     def setUpClass(cls):

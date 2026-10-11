@@ -7,13 +7,6 @@ from .test_common import TestPlmCommon
 
 @tagged("post_install", "-at_install")
 class TestEcoApprovalEngine(TestPlmCommon):
-    """An engineering change's stage approvals are approval requests.
-
-    A stage's role templates are steps of the Engineering Change category; a mandatory
-    role blocks, an optional or comment role advises. Entering a stage raises that
-    stage's request (mixin.approval.subjects, key stage:<id>), and the ECO's kanban
-    state, stage gating and Approve / Reject follow it.
-    """
 
     @classmethod
     def setUpClass(cls):

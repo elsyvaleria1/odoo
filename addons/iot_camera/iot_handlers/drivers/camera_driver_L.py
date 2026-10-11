@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 
 class CameraCaptureError(Exception):
-    """`fswebcam` did not return an image."""
+    pass
 
 
 class CameraDriver(Driver):

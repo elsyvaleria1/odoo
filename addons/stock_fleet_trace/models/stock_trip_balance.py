@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class StockTripBalance(models.Model):
-    """What a trip loaded, delivered, lost, handed over and brought back, per lot."""
 
     _name = "stock.trip.balance"
     _description = "Trip Balance Line"

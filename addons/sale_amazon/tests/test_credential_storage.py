@@ -6,12 +6,6 @@ from odoo.addons.sale_amazon.tests.common import TestAmazonCommon
 
 @tagged("post_install", "-at_install")
 class TestAmazonCredentials(TestAmazonCommon):
-    """The LWA refresh token rests in the vault and the field is a door (ADR-0081).
-
-    `access_token` and `restricted_data_token` are `store=False` and are not
-    part of this: they live for one request and are refreshed by an API call, so
-    there is no column and nothing to move.
-    """
 
     def test_writing_the_token_creates_a_credential_and_stores_it_there(self):
         self.account.refresh_token = "Atzr|a-refresh-token"

@@ -7,17 +7,6 @@ from odoo.addons.knowledge.tests.common import KnowledgeCommon
 
 
 class TestKnowledgeArticleFullTextSearch(KnowledgeCommon):
-    """Test suite dedicated to the search feature of the command palette.
-    This test suite should ensure that:
-    1. The search feature enables users to find an article containing the
-       given search terms or having the given title name.
-    2. The search feature only returns articles the user has access to.
-    3. The search feature filters out hidden articles from the results
-       unless the "hidden_mode" option is enable.
-    4. The search feature ranks first:
-        - Articles matching with the title and the body
-        - Then, articles matching with the title only
-        - Then, articles matching with the body only"""
 
     @classmethod
     def setUpClass(cls):

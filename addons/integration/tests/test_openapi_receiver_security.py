@@ -16,8 +16,6 @@ def route(receiver=None, auth="receiver"):
 
 @tagged("post_install", "-at_install", "integration")
 class TestOpenAPIReceiverSecurity(TransactionCase):
-    """What a gated door asks of its caller is on the rows that answer for
-    it, so the document reads them instead of stating an open door."""
 
     @classmethod
     def setUpClass(cls):

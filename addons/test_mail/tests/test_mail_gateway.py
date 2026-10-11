@@ -3470,14 +3470,6 @@ class TestMailGatewayLoops(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayHelpers(MailGatewayCommon):
-    """The routing helpers exercised as functions, not through a whole email.
-
-    Everything else in this file reaches them by building a message and running
-    `message_process` -- 135 times over. That is the right test for routing *as
-    a whole* and the wrong one for a rule inside it: a broken threshold fails
-    somewhere far from its cause, and some of these rules cannot be reached that
-    way at all without twenty round-trips per assertion.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3905,14 +3897,6 @@ class TestMailGatewayHelpers(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayBounceSender(MailGatewayCommon):
-    """A bounce must never be sent `From:` an address we do not own.
-
-    The middle rung of `_routing_get_bounce_from` used to take the inbound `To`
-    header verbatim, guarded by a case-sensitive substring test against the
-    catchall addresses. A message reaches us with a third party in `To` whenever
-    it was Bcc'd or forwarded, and `_is_loop_sender` bounces such messages,
-    so the guard being wrong meant sending mail as somebody else's domain.
-    """
 
     def _bounce_from_for(self, email_to):
         message = email.message_from_string(
@@ -4029,7 +4013,6 @@ class TestMailGatewayRecipients(MailGatewayCommon):
 
 @tagged("mail_gateway", "mail_loop", "mail_reply")
 class TestMailGatewayReplies(MailGatewayCommon):
-    """Check routing of replies, using headers, references, ..."""
 
     @classmethod
     def setUpClass(cls):
@@ -4516,11 +4499,6 @@ class TestMailThreadCC(MailCommon):
 
 
 class TestMailgatewayDedup(MailGatewayCommon):
-    """C1a — duplicate Message-Id dedup (upstream d1e8df4a advisory lock).
-
-    Processing the same Message-Id twice must yield a single record: the
-    second processing detects the existing mail.message and bails out.
-    """
 
     def test_message_process_duplicate_message_id(self):
         mail = self.format(
@@ -4555,7 +4533,6 @@ class TestMailgatewayDedup(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayRegressions(MailGatewayCommon):
-    """Three defects the suite could not see, each reached through a whole email."""
 
     def test_a_pinged_parent_author_stays_in_partner_ids(self):
         author = self.env["res.partner"].create(
@@ -4996,8 +4973,6 @@ class TestMailGatewayRegressions(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayNonThreadTarget(MailGatewayCommon):
-    """An alias owner that implements the two gateway hooks takes mail whether
-    or not it is a thread: the alias constraint and the router ask one question."""
 
     def test_an_alias_owner_without_a_thread_still_receives_mail(self):
         owner = self.env["mail.test.gateway.nothread"].create(
@@ -5028,8 +5003,6 @@ class TestMailGatewayNonThreadTarget(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayParsedMessageContract(MailGatewayCommon):
-    """The parsed message is a contract: what `message_parse` promises, every
-    route check downstream may index without a `.get`."""
 
     def _mails_on(self, record, count, email_from=False):
         self.env["mail.message"].sudo().create(
@@ -5165,8 +5138,6 @@ class TestMailGatewayParsedMessageContract(MailGatewayCommon):
 
 @tagged("mail_gateway", "multi_company")
 class TestMailGatewayBounceCompany(MailGatewayCommon):
-    """A bounce answers for the company that was written to, not for whoever
-    happens to be `env.company` when the gateway runs."""
 
     @classmethod
     def setUpClass(cls):

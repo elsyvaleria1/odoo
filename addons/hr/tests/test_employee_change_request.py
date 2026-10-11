@@ -4,8 +4,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestEmployeeChangeRequest(TransactionCase):
-    """A person asks; an HR user decides through the approval engine. Nobody
-    edits their own HR data, and nobody reviews their own request."""
 
     @classmethod
     def setUpClass(cls):

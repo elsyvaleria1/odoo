@@ -129,7 +129,6 @@ class TestCertificationTypeLookup(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestSkillDefaults(SkillsCase):
-    """The defaults read row zero, so the order must be deterministic."""
 
     def test_the_level_default_survives_two_levels_marked_default(self):
         self.env.cr.execute(
@@ -175,7 +174,6 @@ class TestSkillDefaults(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestCommandShape(SkillsCase):
-    """The transformation emits Command tuples, not raw magic numbers."""
 
     def test_the_emitted_commands_are_command_values(self):
         employee = self.env["hr.employee"].create({"name": "Command employee"})

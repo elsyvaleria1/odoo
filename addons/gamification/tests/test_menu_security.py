@@ -5,10 +5,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestMenuSecurity(common.TransactionCase):
-    """The app surface: one root tile, management branches closed to employees.
-
-    Every assertion runs against ``load_menus()``, the tree the web client draws.
-    """
 
     MANAGER_ONLY_LEAVES = (
         "gamification.gamification_activity_feed_menu",

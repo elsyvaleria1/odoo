@@ -1713,11 +1713,6 @@ class TestLeadTeamIsAlive(TestCrmCommon):
 
 @tagged("post_install", "-at_install")
 class TestLeadEmptyListHelp(TestCrmCommon):
-    """The pipeline's empty-list help is built for whoever opened the view, and
-    it looks the team alias up by the model that alias creates. Reaching that
-    model through `alias_model_id.model` makes the ORM resolve the condition
-    with an access-checked search on `ir.model`, which no salesman may read.
-    """
 
     @users("user_sales_salesman")
     def test_empty_list_help_names_the_team_alias(self):

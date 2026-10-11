@@ -6,7 +6,6 @@ _debug = DebugLog(__name__)
 
 
 class KnowledgeArticleThread(models.Model):
-    """Comment thread attached to a knowledge.article's body."""
 
     _name = "knowledge.article.thread"
     _description = "Article Discussion Thread"

@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class WizardGamificationGoalUpdateCurrent(models.TransientModel):
-    """Wizard to update a manual goal"""
 
     _name = "wizard.gamification.goal.update.current"
     _description = "Gamification Goal Wizard"

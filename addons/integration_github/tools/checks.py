@@ -1,6 +1,4 @@
 class ChecksMixin:
-    """What GitHub knows about a commit: its check runs, its statuses, the
-    workflow runs that built it, and how it compares with another."""
 
     def list_check_runs(self, owner, repo, ref, max_pages=10):
         runs = []

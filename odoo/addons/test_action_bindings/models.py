@@ -55,7 +55,6 @@ class TabActionComputed(models.Model):
 
 
 class TabActionView(models.Model):
-    """A SQL view over the holders: it derives its rows, so none can dangle."""
 
     _name = "tab.action.view"
     _description = "tab.action.view"
@@ -81,7 +80,6 @@ class TabActionView(models.Model):
 
 
 class TabReferenceView(models.Model):
-    """A SQL view carrying a res_model/res_id pair, like ir.attachment.report."""
 
     _name = "tab.reference.view"
     _description = "tab.reference.view"

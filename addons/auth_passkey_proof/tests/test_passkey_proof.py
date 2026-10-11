@@ -25,8 +25,6 @@ def b64url(data: bytes) -> str:
 
 
 class SoftwarePasskey:
-    """A platform authenticator in memory: a P-256 key that signs WebAuthn
-    assertions the way a phone or a laptop's fingerprint reader does."""
 
     def __init__(self, env, user):
         self.key = ec.generate_private_key(ec.SECP256R1())

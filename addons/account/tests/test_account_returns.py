@@ -3624,10 +3624,6 @@ class TestAccountReturn(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAuditAccountSeeding(TestAccountReportsCommon):
-    """Creating an audit return seeds one `account.audit.account.status` per account,
-    marked `todo` when the account was touched during the period. Which accounts were
-    touched is a set of yes/no questions, not a census.
-    """
 
     @classmethod
     def setUpClass(cls):

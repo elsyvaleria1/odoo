@@ -536,7 +536,6 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
 
 @tagged("mail_template")
 class TestMailTemplateSaveGate(MailCommon):
-    """Saving a template judges the template, not the first row of its table."""
 
     @classmethod
     def setUpClass(cls):
@@ -636,7 +635,6 @@ class TestMailTemplateSaveGate(MailCommon):
 
 @tagged("mail_template")
 class TestMailTemplateFieldLists(MailCommon):
-    """The hand-maintained field lists agree on what a template renders."""
 
     def test_the_lists_hold_their_invariants(self):
         template_fields = self.env["mail.template"]._fields

@@ -4,13 +4,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestGpsKanbanAnchors(TransactionCase):
-    """Where the GPS blocks land in the parent cards.
-
-    Every xpath this module uses to reach into asset_ledger's kanbans matches
-    by class shape, not by a named node, so a class added or reordered upstream
-    would relocate a block with no error. Each expression resolves to exactly
-    one node today; these tests turn a future collision into a red suite.
-    """
 
     def _card(self, xml_id):
         return etree.fromstring(self.env.ref(xml_id).get_combined_arch())
@@ -199,7 +192,6 @@ class TestGpsKanbanAnchors(TransactionCase):
 
 
 class TestGpsDeviceKanbanAsset(TransactionCase):
-    """The asset line on the GPS device dashboard card."""
 
     def _card(self):
         return etree.fromstring(

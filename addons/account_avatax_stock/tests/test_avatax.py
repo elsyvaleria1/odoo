@@ -6,7 +6,6 @@ from odoo.addons.account_avatax_sale.tests.common import TestAccountAvataxSaleCo
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
-    """https://developer.avalara.com/certification/avatax/sales-tax-badge/"""
 
     @classmethod
     def setUpClass(cls):

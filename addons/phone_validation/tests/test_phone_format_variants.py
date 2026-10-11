@@ -8,12 +8,6 @@ from odoo.addons.phone_validation.tools.phone_validation import (
 
 @tagged("post_install", "-at_install")
 class TestPhoneFormatVariants(TransactionCase):
-    """Output formats of ``phone_format`` beyond the international default.
-
-    The existing suite pins E164, the international format and the recovery
-    of numbers typed without a ``+``. What is left is the national format
-    and the guard that decides when it may be used at all.
-    """
 
     BE_LOCAL = "0485112233"
     FR_NUMBER = "+33485112233"

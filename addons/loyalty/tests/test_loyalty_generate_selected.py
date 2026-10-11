@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyGenerateSelected(TransactionCase):
-    """Coupon generation for explicitly selected customers."""
 
     @classmethod
     def setUpClass(cls):

@@ -5,12 +5,6 @@ from odoo.tests import HttpCase, TransactionCase, new_test_user, tagged
 
 
 class CalendarPrivacyCommon:
-    """Three employees: the organizer, an invitee, and an uninvited bystander.
-
-    A plain mixin, not a base test case: only the route tests need an HTTP
-    server, and making everything an `HttpCase` meant every one of these was
-    silently skipped in any lane running `--no-http`.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -53,7 +47,6 @@ class CalendarPrivacyCommon:
 
 @tagged("post_install", "-at_install")
 class TestAttendeePrivacy(CalendarPrivacyCommon, TransactionCase):
-    """`calendar.attendee` used to expose every private event's participants."""
 
     def test_attendees_of_a_private_event_are_not_searchable(self):
         event = self._make_event("private")
@@ -132,7 +125,6 @@ class TestAttendeePrivacy(CalendarPrivacyCommon, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRecurrencePrivacy(CalendarPrivacyCommon, TransactionCase):
-    """`calendar.recurrence` used to be readable and writable by anyone."""
 
     def _make_recurrence(self, privacy):
         return self._make_event(
@@ -175,7 +167,6 @@ class TestRecurrencePrivacy(CalendarPrivacyCommon, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarFiltersPrivacy(CalendarPrivacyCommon, TransactionCase):
-    """`calendar.filters` had no owner guard and a public unlink-everything RPC."""
 
     def test_filters_are_private_to_their_user(self):
         own = (
@@ -210,7 +201,6 @@ class TestCalendarFiltersPrivacy(CalendarPrivacyCommon, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestInvitationTokenRoutes(CalendarPrivacyCommon, HttpCase):
-    """An empty token is not a token."""
 
     def test_empty_token_does_not_authenticate(self):
         event = self._make_event("public")
@@ -250,7 +240,6 @@ class TestInvitationTokenRoutes(CalendarPrivacyCommon, HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestPrivacyDomainFallback(CalendarPrivacyCommon, TransactionCase):
-    """The domain and the predicate must agree about a user with no settings row."""
 
     def test_owner_without_settings_row_is_not_treated_as_private(self):
         owner = new_test_user(self.env, "no_settings_owner", groups="base.group_user")

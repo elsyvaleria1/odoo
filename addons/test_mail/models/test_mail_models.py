@@ -2,8 +2,6 @@ from odoo import api, fields, models
 
 
 class MailTestSimple(models.Model):
-    """A very simple model only inheriting from mixin.mail.thread when only
-    communication history is necessary."""
 
     _description = "Simple Chatter Model"
     _name = "mail.test.simple"
@@ -25,8 +23,6 @@ class MailTestSimple(models.Model):
 
 
 class MailTestSimpleUnnamed(models.Model):
-    """A very simple model only inheriting from mixin.mail.thread when only
-    communication history is necessary, and has no 'name' field"""
 
     _description = 'Simple Chatter Model without "name" field'
     _name = "mail.test.simple.unnamed"
@@ -43,9 +39,6 @@ class MailTestSimpleMainAttachment(models.Model):
 
 
 class MailTestSimpleUnfollow(models.Model):
-    """A very simple model only inheriting from mixin.mail.thread when only
-    communication history is necessary with unfollow link enabled in
-    notification emails even for non-internal user."""
 
     _description = "Simple Chatter Model"
     _name = "mail.test.simple.unfollow"
@@ -58,15 +51,6 @@ class MailTestSimpleUnfollow(models.Model):
 
 
 class MailTestAliasOptional(models.Model):
-    """A chatter model inheriting from the alias mixin using optional alias_id
-    field, hence no inherits.
-
-    It aliases *itself*, so it has to be able to hold the mail that address
-    receives -- `mail.alias._check_alias_model_stores_messages` refuses the
-    configuration otherwise, and so does the router, one message at a time. What
-    this fixture is for is the mixin without `_inherits`, which `document.document`
-    also combines with a chatter; that is untouched.
-    """
 
     _description = "Chatter Model using Optional Alias Mixin"
     _name = "mail.test.alias.optional"
@@ -88,8 +72,6 @@ class MailTestAliasOptional(models.Model):
 
 
 class MailTestGateway(models.Model):
-    """A very simple model only inheriting from mixin.mail.thread to test pure mass
-    mailing features and base performances."""
 
     _description = "Simple Chatter Model for Mail Gateway"
     _name = "mail.test.gateway"
@@ -111,8 +93,6 @@ class MailTestGateway(models.Model):
 
 
 class MailTestGatewayCompany(models.Model):
-    """A very simple model only inheriting from mixin.mail.thread to test pure mass
-    mailing features and base performances, with a company field."""
 
     _description = "Simple Chatter Model for Mail Gateway with company"
     _name = "mail.test.gateway.company"
@@ -122,9 +102,6 @@ class MailTestGatewayCompany(models.Model):
 
 
 class MailTestGatewayMainAttachment(models.Model):
-    """A very simple model only inheriting from mixin.mail.thread to test pure mass
-    mailing features and base performances, with a company field and main
-    attachment management."""
 
     _description = "Simple Chatter Model for Mail Gateway with company"
     _name = "mail.test.gateway.main.attachment"
@@ -134,8 +111,6 @@ class MailTestGatewayMainAttachment(models.Model):
 
 
 class MailTestGatewayGroups(models.Model):
-    """A model looking like discussion channels / groups (flat thread and
-    alias). Used notably for advanced gatewxay tests."""
 
     _description = "Channel/Group-like Chatter Model for Mail Gateway"
     _name = "mail.test.gateway.groups"
@@ -161,8 +136,6 @@ class MailTestGatewayGroups(models.Model):
 
 
 class MailTestTrack(models.Model):
-    """This model can be used in tests when automatic subscription and simple
-    tracking is necessary. Most features are present in a simple way."""
 
     _description = "Standard Chatter Model"
     _name = "mail.test.track"
@@ -197,8 +170,6 @@ class MailTestTrack(models.Model):
 
 
 class MailTestActivity(models.Model):
-    """This model can be used to test activities in addition to simple chatter
-    features."""
 
     _description = "Activity Model"
     _name = "mail.test.activity"
@@ -226,10 +197,6 @@ class MailTestActivity(models.Model):
 
 
 class MailTestComposerMixin(models.Model):
-    """A simple invite-like wizard using the composer mixin, rendering on
-    composer source test model. Purpose is to have a minimal composer which
-    runs on other records and check notably dynamic template support and
-    translations."""
 
     _description = "Invite-like Wizard"
     _name = "mail.test.composer.mixin"
@@ -250,7 +217,6 @@ class MailTestComposerMixin(models.Model):
 
 
 class MailTestComposerSource(models.Model):
-    """A simple model on which invites are sent."""
 
     _description = "Invite-like Source"
     _name = "mail.test.composer.source"

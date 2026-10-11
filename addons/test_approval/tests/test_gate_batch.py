@@ -7,16 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 @tagged("post_install", "-at_install")
 class TestGateBatchSurvivesAnUnstaffedStep(ApprovalCommon):
-    """A batch is one transaction, so who gets to end it matters.
-
-    Validating five documents at once raises a request for each that needs one. A
-    refusal from any of them rolls back the whole transaction, including documents
-    that needed no approval and were already done. A document's own refusal earns
-    that -- something about that document is wrong, and the person asked for it by
-    acting on it. A company that has staffed no approver does not: nobody in the
-    batch caused it and nobody in the batch can fix it, so that one document is
-    reported and the rest stand.
-    """
 
     def setUp(self):
         super().setUp()
@@ -108,8 +98,6 @@ class TestGateBatchSurvivesAnUnstaffedStep(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestGateBatchRaisesTogether(ApprovalCommon):
-    """A batch raises its requests in one go: what one more document costs is its
-    own rows, not another round of category searches and per-request triggers."""
 
     def setUp(self):
         super().setUp()

@@ -6,13 +6,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestOvertimeDeferral(TransactionCase):
-    """`_deferring_overtime` prices one period once instead of once per change.
-
-    Its one constraint: inside the block the fields the regeneration produces
-    hold whatever they held before it. A caller that reads them between two
-    deferred operations reads stale values -- which is why the absence cron
-    does not use it, and is the defect these tests exist to keep out.
-    """
 
     @classmethod
     def setUpClass(cls):

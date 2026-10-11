@@ -3,7 +3,6 @@ from odoo.tools import frozendict
 
 
 class GamificationQuest(models.Model):
-    """Multi-step narrative journey wrapping goal definitions."""
 
     _name = "gamification.quest"
     _description = "Gamification Quest"
@@ -101,7 +100,6 @@ class GamificationQuest(models.Model):
 
 
 class GamificationQuestStep(models.Model):
-    """Individual step within a quest."""
 
     _name = "gamification.quest.step"
     _description = "Quest Step"
@@ -172,7 +170,6 @@ class GamificationQuestStep(models.Model):
 
 
 class GamificationQuestEnrollment(models.Model):
-    """Tracks a user's progress through a quest."""
 
     _name = "gamification.quest.enrollment"
     _description = "Quest Enrollment"
@@ -341,7 +338,6 @@ class GamificationQuestEnrollment(models.Model):
 
 
 class GamificationQuestStepCompletion(models.Model):
-    """Record of completing a single quest step."""
 
     _name = "gamification.quest.step.completion"
     _description = "Quest Step Completion"

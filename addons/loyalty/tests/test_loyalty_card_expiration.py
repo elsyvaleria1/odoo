@@ -6,7 +6,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyCardExpiration(TransactionCase):
-    """A loyalty card carries no expiration date, however it is written."""
 
     @classmethod
     def setUpClass(cls):

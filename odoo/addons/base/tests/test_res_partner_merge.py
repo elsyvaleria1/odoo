@@ -285,15 +285,6 @@ class TestMergePartner(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestMergePartnerForeignKeyClash(TransactionCase):
-    """What a merge does with two sources, one of which repeats an account.
-
-    This asserts the outcome rather than the mechanism on purpose. It used to
-    call `_update_foreign_keys_generic` directly and rely on that pass dropping
-    the redundant row, which worked only while `partner_id` sat in the account
-    number's unique key. It no longer does -- the number is unique per company
-    -- so `_merge_bank_accounts` is what resolves a repeat, and the merge is
-    what has to be exercised for the answer to mean anything.
-    """
 
     def test_a_repeated_account_is_dropped_and_the_others_are_carried_over(self):
         Partner = self.env["res.partner"]

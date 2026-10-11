@@ -26,21 +26,6 @@ from odoo.addons.test_orm.models import test_domain_semantics as semantics
 
 @tagged("post_install", "-at_install")
 class TestDomainSemanticsFuzz(TransactionCase):
-    """The domain differential of `odoo.tests.domain_fuzz` on PostgreSQL.
-
-    Each seed draws a dataset over the `test_orm.domain.*` models and a
-    viewpoint: `en_US` or `fr_FR` (the translated fields hold a value in
-    each), a time zone the date parts read, and, in the user campaigns, a user
-    whose group holds random `ir.access` permissions and guards. Every domain
-    is answered by the SQL search, by `filtered_domain` over the records the
-    evaluator reads, by its conditions searched alone and combined as sets,
-    by the in-memory backend (superuser viewpoints) and, for a user's domain
-    reading no ruled model but the root, by the superuser's search among the
-    user's records.
-
-    `ODOO_DOMAIN_FUZZ_ROUNDS=<n>` runs n seeds from `ODOO_DOMAIN_FUZZ_SEED`
-    (0 by default); `ODOO_DOMAIN_FUZZ_DEPTH` nests the domains deeper.
-    """
 
     @classmethod
     def setUpClass(cls):

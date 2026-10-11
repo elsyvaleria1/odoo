@@ -57,7 +57,6 @@ def make_gps_device(env, vehicle, receiver_key, tank_litres=55.0):
 
 
 class RouteSimulator:
-    """Drive, stop and refuel a tracked vehicle, one reading every ``step``."""
 
     def __init__(
         self,

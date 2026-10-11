@@ -46,8 +46,6 @@ class DestinationCase(MailTelegramCase):
 
 
 class TestOneDestination(DestinationCase):
-    """A user with several Telegram accounts gets each notification once, in
-    the chat they chose, else in the one they used last."""
 
     def test_the_last_used_chat_gets_it_when_none_is_chosen(self):
         self.test_chat.last_message_time = fields.Datetime.now() - timedelta(days=2)
@@ -124,8 +122,6 @@ class TestOneDestination(DestinationCase):
 
 
 class TestConnecting(DestinationCase):
-    """Connecting goes through the bot that delivers the notifications, and
-    the chat it opens is where they go from then on."""
 
     @classmethod
     def setUpClass(cls):
@@ -184,8 +180,6 @@ class TestConnecting(DestinationCase):
 
 
 class TestUnreachable(DestinationCase):
-    """When Telegram stops taking someone's notifications, Odoo tells them
-    once, in Odoo, and never through Telegram."""
 
     def setUp(self):
         super().setUp()
@@ -254,8 +248,6 @@ class TestUnreachable(DestinationCase):
 
 
 class TestStatus(DestinationCase):
-    """My Preferences says whether notifications reach Telegram, and why
-    not."""
 
     def _state(self):
         return self.test_user.with_user(self.test_user).telegram_notify_state

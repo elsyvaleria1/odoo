@@ -7,7 +7,6 @@ from odoo.addons.test_mail_sms.tests.common import TestSMSRecipients
 
 @tagged("mail_thread")
 class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
-    """Test mixin.mail.thread.phone mixin, its tools and API"""
 
     @classmethod
     def setUpClass(cls):

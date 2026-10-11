@@ -2,11 +2,6 @@ from odoo import api, models
 
 
 class ResConfigSettings(models.TransientModel):
-    """Settings fields declared with ``secret_parameter="<key>"``.
-
-    They read and write an encrypted setting credential instead of an
-    ``ir.config_parameter`` row, which every backup carries in clear.
-    """
 
     _inherit = "res.config.settings"
 

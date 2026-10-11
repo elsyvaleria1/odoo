@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GeocoderProvider(models.Model):
-    """Configured geolocation provider (technical name + label) selectable in settings."""
 
     _name = "geocoder.provider"
     _description = "Geocoding Provider"
@@ -18,7 +17,6 @@ class GeocoderProvider(models.Model):
 
 
 class Geocoder(models.AbstractModel):
-    """Call a geocoding API and convert addresses into GPS coordinates."""
 
     _name = "geocoder"
     _description = "Geocoder"

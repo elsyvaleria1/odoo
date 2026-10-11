@@ -10,7 +10,6 @@ from odoo.addons.payment_custom.tests.common import PaymentCustomCommon
 
 @tagged("-at_install", "post_install")
 class TestCustomProviderFlows(PaymentCustomCommon):
-    """Provider defaults, domain scoping and the custom transaction flow."""
 
     @classmethod
     def setUpClass(cls):

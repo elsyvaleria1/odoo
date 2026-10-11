@@ -3,7 +3,6 @@ from odoo.tests import Form, TransactionCase
 
 
 class TestMapPartnerAddress(TransactionCase):
-    """Cover the flattened address the map panel displays."""
 
     @classmethod
     def setUpClass(cls):
@@ -82,13 +81,6 @@ class TestMapPartnerAddress(TransactionCase):
 
 
 class TestMapPartnerGeolocation(TransactionCase):
-    """Cover what web_map adds on top of base's coordinate invariant.
-
-    Whether a write invalidates the pair is base's, and tested there
-    (TestPartnerGeolocationInvalidation). What is web_map's is that the pair
-    travels with the address to child contacts, which its `_address_fields`
-    override is what buys, and the form-level onchange.
-    """
 
     def test_coordinates_follow_the_address_to_a_child_contact(self):
         parent = self.env["res.partner"].create(
@@ -186,7 +178,6 @@ class TestMapPartnerGeolocation(TransactionCase):
 
 
 class TestMapPartnerStoredAddress(TransactionCase):
-    """Cover the stored address the map searches on."""
 
     def test_complete_address_follows_a_renamed_country(self):
         country = self.env["res.country"].create({"name": "Oldland", "code": "ZY"})
@@ -201,7 +192,6 @@ class TestMapPartnerStoredAddress(TransactionCase):
 
 
 class TestMapPartnerCoordinatesRpc(TransactionCase):
-    """Cover `update_latitude_longitude`, which the map view calls over RPC."""
 
     @classmethod
     def setUpClass(cls):

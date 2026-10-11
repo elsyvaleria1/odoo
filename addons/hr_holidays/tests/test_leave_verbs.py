@@ -36,9 +36,6 @@ ROW_CELLS = [
 
 @tagged("post_install", "-at_install")
 class TestLeaveVerbs(TransactionCase):
-    """Approving, validating, refusing and resetting a leave or an allocation are
-    verbs of hr.leave and hr.leave.allocation, granted by security/ir_access.xml
-    exactly as _get_next_states_by_state granted them before."""
 
     @classmethod
     def setUpClass(cls):

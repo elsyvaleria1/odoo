@@ -315,13 +315,6 @@ class TestPartnerAgeRange(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPartnerAgeRangeScale(TransactionCase):
-    """What the configuration screen has to be able to answer.
-
-    A scale is not only a set of bands: it is a claim to classify every
-    contact. The bands enforce that they do not overlap, and nothing enforced
-    -- or even showed -- that together they leave no year uncovered, or that a
-    band was reaching anyone at all.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -494,14 +487,6 @@ class TestPartnerAgeRangeScale(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPartnerAgeRangeClassificationRights(TransactionCase):
-    """Classifying a contact must not need the writer to see the cohorts.
-
-    ``age_range_id`` is a stored compute, so it runs as whoever wrote the
-    contact. The cohorts are reference data whose ACL admits internal users
-    only, which couples the right to save a contact to the right to read a
-    configuration model the user never asked about. The sibling sweep in
-    ``_add_partners_to_compute`` already spells ``sudo()`` for the same reason.
-    """
 
     @classmethod
     def setUpClass(cls):

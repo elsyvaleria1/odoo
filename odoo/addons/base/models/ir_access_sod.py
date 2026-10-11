@@ -89,7 +89,6 @@ class IrAccess(models.Model):
 
 
 class IrAccessSodFunction(models.Model):
-    """A business duty, held by whoever holds one of its groups or verbs."""
 
     _name = "ir.access.sod.function"
     _description = "Business Duty"
@@ -263,12 +262,6 @@ class IrAccessSodFunctionVerb(models.Model):
 
 
 class IrAccessSodRule(models.Model):
-    """Two duties one person must not hold together.
-
-    Checked whenever a grant starts, changes scope or a module says a duty's
-    holders changed. A conflict is logged; a blocking rule also refuses the change
-    unless the person holds a live exception for the rule.
-    """
 
     _name = "ir.access.sod.rule"
     _description = "Separation of Duties Rule"

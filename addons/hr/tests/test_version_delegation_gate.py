@@ -5,13 +5,6 @@ RESTATABLE = frozenset({"related", "inherited", "readonly", "groups", "string", 
 
 @tagged("post_install", "-at_install")
 class TestVersionDelegationGate(TransactionCase):
-    """A field hr.employee declares as ``related="version_id.x"`` must add something.
-
-    ``_inherits`` already hands the employee every version field with the
-    version's readonly, groups and inverse; a declaration that repeats those is a
-    second copy of the parent's policy that drifts on its own. It is legitimate
-    only when it changes an attribute the inherited field would not carry.
-    """
 
     def _restatements(self):
         Employee = self.env["hr.employee"]

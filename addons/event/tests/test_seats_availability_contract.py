@@ -9,12 +9,6 @@ from odoo.addons.event.tests.common import EventCase
 
 @tagged("event_internals", "post_install", "-at_install")
 class TestSeatsAvailabilityContract(EventCase):
-    """`_get_seats_availability` distinguishes "no limit" from "sold out".
-
-    It returns None for the first and 0 for the second, and every caller has to
-    keep them apart -- `_get_current_limit_per_order` collapsed both with a
-    falsiness test and handed a sold-out ticket the full per-order allowance.
-    """
 
     @classmethod
     def setUpClass(cls):

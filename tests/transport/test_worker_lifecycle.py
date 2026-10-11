@@ -246,9 +246,6 @@ class TestWorkerHttpAcceptErrors:
 
 
 class TestAcceptWaitsForTheListenerToBeReadable:
-    """A beat that merely timed out, or a signal on the wakeup pipe, is not a
-    connection.  Before the gate every idle worker called `accept()` once per
-    beat and logged the EAGAIN as a lost race."""
 
     def _worker(self, multi, ready_fds):
         worker = build_worker(_worker.WorkerHTTP, multi, wakeup_pipe=(40, 41))
@@ -290,27 +287,6 @@ class TestAcceptWaitsForTheListenerToBeReadable:
 
 
 class TestTheCursorIsReleasedAndTheConnectionIsLeftAlone:
-    """Close the cursor.  Do not touch the connection under it.
-
-    Two defects sat here, and the first fix for the first one carried the
-    second along:
-
-      1. The connection was closed FIRST.  `BaseCursor._close` rolls back
-         before releasing, so on a closed connection that rollback raises and
-         the cursor logs "Failed to roll back on cursor close; discarding
-         connection" at ERROR with a traceback -- before re-raising, so the
-         `suppress(Exception)` at the call site hid the exception and not the
-         log.  A real prefork SIGTERM printed two, one per cron/job worker;
-         with the cursor closed first, none.
-      2. There should be no second close at all.  `_close` ends in
-         `pool.give_back(self._cnx, ...)`.  Measured: for `postgres` -- a
-         maintenance database, which is what both cron loops connect to --
-         `give_back` takes its direct branch and closes the connection itself,
-         so `connection.closed` is already True and a second close is dead.
-         For a pooled DSN the connection comes back with `closed` False
-         because the pool is holding it open for the next borrower, and
-         closing it there destroys a live connection.
-    """
 
     @staticmethod
     def _recording_cursor():
@@ -396,8 +372,6 @@ class TestTheListeningSocketIsWatchedExclusively:
 
 
 class TestTheWorkerCancelsItsOwnOverrun:
-    """The main thread only waited on the work thread; now it is the budget
-    monitor the master used to be, with SIGKILL as the fallback."""
 
     def _worker(self, multi, budget):
         worker = build_worker(_worker.WorkerHTTP, multi, pid=4242)

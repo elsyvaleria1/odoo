@@ -8,11 +8,6 @@ LINE_MODEL = "test_ir_access.document_line"
 
 
 class TestVerbButtons(TransactionCase):
-    """A button that runs a verb's door is offered as the user holds the verb.
-
-    `post` is held by administrators on every document, by posters on the
-    documents named "mine" only, and by a clerk on none.
-    """
 
     @classmethod
     def setUpClass(cls):

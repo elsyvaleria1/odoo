@@ -6,9 +6,6 @@ _debug = DebugLog(__name__)
 
 
 class StockBarcodeDraftMixin(models.AbstractModel):
-    """A barcode operation opened before it exists: the client works on its draft values,
-    and the first save that has something to write creates it. Opening and leaving one
-    therefore writes nothing and consumes no sequence number."""
 
     _name = "stock.barcode.draft.mixin"
     _description = "Barcode operation created by its first save"

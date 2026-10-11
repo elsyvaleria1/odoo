@@ -129,8 +129,6 @@ Welcome to {{4}} office""",
 class WhatsAppComposerRendering(
     WhatsAppComposerCase, WhatsAppFullCase, CronMixinCase, MockIncomingWhatsApp
 ):
-    """Test rendering based on various templates, notably using static or
-    dynamic content, headers, ..."""
 
     def test_assert_initial_data(self):
         self.assertEqual(self.company_admin.country_id, self.env.ref("base.us"))

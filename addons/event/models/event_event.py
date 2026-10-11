@@ -37,7 +37,6 @@ except ImportError:
 
 
 class EventEvent(models.Model):
-    """Event"""
 
     _name = "event.event"
     _description = "Event"

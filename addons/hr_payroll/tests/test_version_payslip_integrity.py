@@ -8,7 +8,6 @@ from .common import TestPayslipBase
 
 @tagged("post_install", "-at_install")
 class TestVersionPayslipIntegrity(TestPayslipBase):
-    """A validated payslip pins the employee record it was computed from."""
 
     @classmethod
     def setUpClass(cls):

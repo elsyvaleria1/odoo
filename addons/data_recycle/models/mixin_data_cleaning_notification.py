@@ -3,7 +3,6 @@ from odoo.tools.date_utils import get_timedelta, time_unit_selection
 
 
 class MixinDataCleaningNotification(models.AbstractModel):
-    """Tell a rule's watchers, on a period, what it is proposing."""
 
     _name = "mixin.data.cleaning.notification"
     _description = "Data Cleaning Notification"

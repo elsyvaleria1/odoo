@@ -18,8 +18,6 @@ def is_whatsapp_channel(channel) -> bool:
 
 
 class DiscussChannel(models.Model):
-    """Support WhatsApp Channels, used for discussion with a specific
-    whasapp number"""
 
     _inherit = "discuss.channel"
 

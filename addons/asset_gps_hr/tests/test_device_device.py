@@ -212,12 +212,6 @@ class TestRemoteDeviceHrSearch(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRemoteDeviceSearchViewDefault(TransactionCase):
-    """One Enter in the search bar has to find a truck.
-
-    Operations types a plate or a model, not a GPS serial. The domain is read
-    out of the view itself rather than copied here, so this fails when the
-    arch changes and not when a copy of it drifts.
-    """
 
     @classmethod
     def setUpClass(cls):

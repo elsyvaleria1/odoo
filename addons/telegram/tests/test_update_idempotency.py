@@ -95,9 +95,6 @@ class TestReplayGuard(TelegramBotTestCase):
 
 
 class TestUpdateReceipt(TelegramBotTestCase):
-    """An update's id is claimed by the exchange row the bot's receiver opens
-    at admission (integration's `_inbound_event_id`): the receiver names it,
-    and integration's TestExternalEventIds pins the claim itself."""
 
     def _admission(self, data):
         receiver = self.test_bot._get_or_create_webhook_receiver()

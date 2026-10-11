@@ -8,7 +8,6 @@ FROZEN_TODAY = "2026-06-15"
 
 @tagged("post_install", "-at_install")
 class TestCohortData(TransactionCase):
-    """Cover the cohort aggregation modes, timelines and intervals."""
 
     @classmethod
     def setUpClass(cls):

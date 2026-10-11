@@ -62,9 +62,6 @@ def get_watchdog_interval() -> float | None:
 
 
 class Watchdog:
-    """Sends WATCHDOG=1 at half the unit's WatchdogSec=, from a loop that
-    already wakes on its own schedule; `bound()` shortens a sleep so the
-    next beat is not missed."""
 
     __slots__ = ("_interval", "_last")
 

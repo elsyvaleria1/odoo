@@ -13,7 +13,6 @@ _logger = logging.getLogger(__name__)
 
 
 class RoutedStep(NamedTuple):
-    """A step's parameters as the request was routed under them."""
 
     minimum: int
     exclusive: bool

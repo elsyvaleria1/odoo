@@ -5,14 +5,6 @@ from odoo.tests.common import HttpCase
 
 @tagged("post_install", "-at_install")
 class TestSubtitleRoutes(HttpCase):
-    """What a recording says, served to whoever may already hear it.
-
-    `_transcript_vtt` produced valid WebVTT from the day it was written and no route
-    served it, so no player could ever show a caption track. These pin the two
-    routes that close that, and their access, which is delegated to the same
-    resolver `/web/content` uses so a transcript cannot become a way to read a
-    recording one cannot fetch.
-    """
 
     def setUp(self):
         super().setUp()

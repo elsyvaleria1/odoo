@@ -798,11 +798,6 @@ class IrModuleStableCacheCase(TransactionCase):
 
 
 class IrModuleUpgradeCascadeOverrideCase(TransactionCase):
-    """The unchanged-module skip must not drop a dependent whose data
-    overrides a record of a module being upgraded — website_sale
-    re-activating sale_team.salesteam_website_sales is the shape: sale_team
-    reloads and archives it, website_sale is byte-identical and skipped, the
-    website's sales team is gone."""
 
     def _cascade(self, requested, stamped, data_files):
         Module = self.env["ir.module.module"]

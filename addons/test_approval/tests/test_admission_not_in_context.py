@@ -5,11 +5,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestAdmissionNotInContext(ApprovalCommon):
-    """What the engine let through is held on the transaction, not in a context.
-
-    Each test sends, in the context, the key the engine once used to carry that
-    fact, and checks that the server does what it would have done without it.
-    """
 
     def setUp(self):
         super().setUp()

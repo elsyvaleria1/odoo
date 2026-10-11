@@ -11,13 +11,6 @@ NEARBY_CLIENT_M = 3000
 
 
 class DeviceGpsSpeedEvent(models.Model):
-    """One row per burst of positions above the device's warning limit.
-
-    A SQL view over device_data_log_gps: sessionized by device with a gap of
-    EVENT_GAP, graded by the highest speed reached against the device
-    config's warning / alert / critical limits, and placed with the nearest
-    client parcel and the state of the first position.
-    """
 
     _name = "device.gps.speed.event"
     _description = "Speeding Event"

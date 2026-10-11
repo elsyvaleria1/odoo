@@ -8,11 +8,6 @@ from odoo.addons.whatsapp.tests.common import WhatsAppCommon
 
 @tagged("post_install", "-at_install")
 class TestWhatsAppCredentials(WhatsAppCommon):
-    """The three secrets rest in the vault and the fields are doors (ADR-0081).
-
-    The fields keep their names, so every reader, every view and the webhook
-    controller are unchanged. What changed is where the bytes rest.
-    """
 
     def test_writing_a_secret_creates_a_credential_and_stores_it_there(self):
         account = self.env["whatsapp.account"].create(

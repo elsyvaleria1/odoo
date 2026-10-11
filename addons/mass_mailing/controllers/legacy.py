@@ -5,7 +5,6 @@ from odoo.http import request
 
 
 class MailingLegacy(http.Controller):
-    """Retro compatibility layer for legacy endpoint"""
 
     @http.route(
         ["/mail/mailing/<int:mailing_id>/unsubscribe"],

@@ -10,11 +10,6 @@ from odoo.tools import mute_logger
 
 @tagged("post_install", "-at_install")
 class TestSeparationOfDuties(TransactionCase):
-    """Two duties one person must not hold together.
-
-    `pay` is holding the Payers group, `approve` holding the Approvers group or
-    the `post` verb of test_ir_access.document (granted to Settings).
-    """
 
     @classmethod
     def setUpClass(cls):

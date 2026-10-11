@@ -6,14 +6,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestCreditLimitsViewGroups(TransactionCase):
-    """The partner form must not reach a credit user with fields it cannot read.
-
-    `account_credit` regates account's `credit_limits` group on the credit
-    groups but keeps its `invisible="not show_credit_limit"`. When the flag is
-    unreadable the server still injects an `<field name="show_credit_limit"
-    invisible="True"/>` node it cannot prune, and the web client raises
-    `"res.partner"."show_credit_limit" field is undefined` on the contact form.
-    """
 
     @classmethod
     def setUpClass(cls):

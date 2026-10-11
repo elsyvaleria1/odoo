@@ -15,7 +15,6 @@ ALERT_TYPES = [
 
 
 class StockTripAlert(models.Model):
-    """Something the GPS track says that the trip does not."""
 
     _name = "stock.trip.alert"
     _description = "Trip Alert"

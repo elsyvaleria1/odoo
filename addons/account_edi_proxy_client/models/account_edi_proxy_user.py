@@ -25,7 +25,6 @@ class AccountEdiProxyError(Exception):
 
 
 class Account_Edi_Proxy_ClientUser(models.Model):
-    """A user of the proxy for one electronic-invoicing format, identified by a per-format key."""
 
     _name = "account_edi_proxy_client.user"
     _inherit = ["mixin.credential.holder"]

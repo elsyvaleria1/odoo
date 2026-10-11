@@ -6,7 +6,6 @@ from .test_common import TestQualityMrpCommon
 
 
 class TestQualityMrpFlows(TestQualityMrpCommon):
-    """Cover the MO-side quality check and alert flows."""
 
     @classmethod
     def setUpClass(cls):

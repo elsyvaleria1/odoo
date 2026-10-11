@@ -3,14 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestMailingDynamicFields(TransactionCase):
-    """`mailing.mailing` declares which of its fields hold a template.
-
-    Inferring the set from the field type also named `mailing_domain` — a
-    recipient filter no engine renders — so a domain whose literal happened to
-    contain `{{ }}` was refused to a non-editor with "Only members of Mail
-    Template Editor group are allowed to edit templates containing sensible
-    placeholders".
-    """
 
     def test_the_recipient_filter_is_not_a_template(self):
         scanned = self.env["mailing.mailing"]._get_dynamic_field_names()

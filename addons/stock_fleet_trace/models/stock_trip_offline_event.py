@@ -27,7 +27,6 @@ BLOCKING_STATES = ("pending", "review")
 
 
 class StockTripOfflineEvent(models.Model):
-    """A stop result captured on the driver's phone without connection."""
 
     _name = "stock.trip.offline.event"
     _description = "Trip Offline Event"

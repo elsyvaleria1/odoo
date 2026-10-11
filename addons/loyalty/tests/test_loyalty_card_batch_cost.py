@@ -5,13 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyCardBatchCost(TransactionCase):
-    """What issuing N cards costs, measured as a marginal cost rather than a total.
-
-    An absolute `assertQueryCount` at N=1 cannot see an N+1 in a batch path at all,
-    and one at a single larger N cannot tell a per-record cost from a fixed setup
-    cost. Both sizes are measured here so a warm cache cannot make the comparison
-    vacuous.
-    """
 
     @classmethod
     def setUpClass(cls):

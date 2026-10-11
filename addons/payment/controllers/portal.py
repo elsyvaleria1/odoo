@@ -13,25 +13,6 @@ from odoo.addons.web.controllers.utils import fragments_or_redirect
 
 
 class PaymentPortal(portal.CustomerPortal):
-    """This controller contains the foundations for online payments through the portal.
-
-    It allows to complete a full payment flow without the need of going through a document-based
-    flow made available by another module's controller.
-
-    Such controllers should extend this one to gain access to the `_create_transaction` method
-    that implements the creation of a transaction before its processing, or to override specific
-    routes and change their behavior globally (e.g. make the /pay route handle sale orders).
-
-    The following routes are exposed:
-    - `/payment/pay` allows for arbitrary payments.
-    - `/my/payment_method` allows the user to create and delete tokens. It's its own `landing_route`
-    - `/payment/transaction` is the `transaction_route` for the standard payment flow. It creates a
-      draft transaction, and return the processing values necessary for the completion of the
-      transaction.
-    - `/payment/confirmation` is the `landing_route` for the standard payment flow. It displays the
-      payment confirmation page to the user when the transaction is validated.
-    - `/payment/archive_token` lets the user archive one of their own tokens.
-    """
 
     @http.route(
         "/payment/pay",

@@ -4,13 +4,6 @@ from odoo.tests import common, tagged
 
 @tagged("link_tracker", "post_install", "-at_install")
 class TestLinkTrackerCost(common.TransactionCase):
-    """Marginal-cost tests.
-
-    An absolute ``assertQueryCount`` at N=1 cannot see an N+1 at all, and a
-    warm-cache measurement cannot see one either -- inside one transaction only
-    the first record of a batch pays. Every test here compares a small N against
-    a large one, with the cache dropped in between, and asserts on the *slope*.
-    """
 
     def setUp(self):
         super().setUp()

@@ -710,7 +710,6 @@ class TestDashboardConsumesLeavesOnce(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestAllocationDescription(TestHrHolidaysCommon):
-    """A description somebody wrote is theirs; a generated one keeps following."""
 
     @classmethod
     def setUpClass(cls):
@@ -776,7 +775,6 @@ class TestAllocationDescription(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestLeaveTypeBalanceSearch(TestHrHolidaysCommon):
-    """A search on a balance must select what the compute would report."""
 
     @classmethod
     def setUpClass(cls):
@@ -846,7 +844,6 @@ class TestLeaveTypeBalanceSearch(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestBackToWorkDate(TestHrHolidaysCommon):
-    """`leave_date_to` is the first moment the employee works again."""
 
     @classmethod
     def setUpClass(cls):
@@ -1082,7 +1079,6 @@ class TestRequestDatesGoTogether(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestPresenceFollowsTheLeave(TestHrHolidaysCommon):
-    """Approving a leave changes the presence the same request reads back."""
 
     @classmethod
     def setUpClass(cls):
@@ -1144,7 +1140,6 @@ class TestPresenceFollowsTheLeave(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestOverlapWarning(TestHrHolidaysCommon):
-    """The text the form shows when a period is already taken."""
 
     @classmethod
     def setUpClass(cls):
@@ -1215,7 +1210,6 @@ class TestOverlapWarning(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestFlexibleRequestDuration(TestHrHolidaysCommon):
-    """A resource with no timetable still has a morning and an afternoon."""
 
     @classmethod
     def setUpClass(cls):
@@ -1341,7 +1335,6 @@ class TestFlexibleRequestDuration(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestRefusalIsNotAnApproval(TestHrHolidaysCommon):
-    """The two approver fields hold whoever validated, and a refuser did not."""
 
     @classmethod
     def setUpClass(cls):
@@ -1425,7 +1418,6 @@ class TestRefusalIsNotAnApproval(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestCreatingManyRequests(TestHrHolidaysCommon):
-    """A wizard generating a company's leaves creates hundreds in one call."""
 
     @classmethod
     def setUpClass(cls):
@@ -1510,7 +1502,6 @@ class TestCreatingManyRequests(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestContextualEmployee(TestHrHolidaysCommon):
-    """One key, two shapes, and everything downstream wants one employee."""
 
     @classmethod
     def setUpClass(cls):
@@ -1578,14 +1569,6 @@ class TestContextualEmployee(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestLeaveStatusesTravelWithTheMemberList(TestHrHolidaysCommon):
-    """Wherever a client sorts members into online and offline, it must know
-    what a leave status means.
-
-    `res.partner._compute_presence` decorates `im_status` for every client, so
-    a bundle that renders the member list without this module's
-    `onlineMemberStatuses` patch puts an employee who is online but on leave
-    under Offline.
-    """
 
     PARTITIONING_PATH = "mail/static/src/discuss/core/common/thread_model_patch.js"
     VOCABULARY_PATH = "hr_holidays/static/src/store_service_patch.js"
@@ -1631,7 +1614,6 @@ class TestLeaveStatusesTravelWithTheMemberList(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestReportDoesNotLeakTheDescription(TestHrHolidaysCommon):
-    """A leave's description is private, and a report is a second way in."""
 
     SECRET = "Chemotherapy session"
 
@@ -1710,7 +1692,6 @@ class TestReportDoesNotLeakTheDescription(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestGeneratedTimeOffWaitsForApproval(TestHrHolidaysCommon):
-    """Generating time off in bulk must not book what nobody approved."""
 
     @classmethod
     def setUpClass(cls):
@@ -1793,8 +1774,6 @@ class TestGeneratedTimeOffWaitsForApproval(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestScheduleChangeRepricesFutureLeave(TestHrHolidaysCommon):
-    """Changing an employee's working schedule re-prices the leave they have
-    already been granted for after it, and books it exactly once."""
 
     @classmethod
     def setUpClass(cls):
@@ -1962,8 +1941,6 @@ class TestALeaveCoversItsOwnDays(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestFlexibleDurationOverAPublicHoliday(TestHrHolidaysCommon):
-    """A public holiday inside a request costs nobody a day, on either kind of
-    schedule."""
 
     @classmethod
     def setUpClass(cls):
@@ -2039,12 +2016,6 @@ class TestFlexibleDurationOverAPublicHoliday(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestLeaveResourceCalendar(TestHrHolidaysCommon):
-    """`_compute_resource_calendar_id` used to re-derive the employee's working
-    schedule after `_get_calendars` had already answered, from a second
-    `_read_group` over `hr.version` filtered on **version validity** dates while
-    the rest of the module -- `_is_in_contract`, `_get_overlapping_contracts` --
-    reads **contract** dates, and it took `[:1]` of an id-ordered recordset.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2106,14 +2077,6 @@ class TestLeaveResourceCalendar(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestBalanceSearchOperators(TestHrHolidaysCommon):
-    """`_search_balance` answers `not in` itself rather than leaving the ORM to
-    negate its `in` answer.
-
-    The two are not the same when `always_matches` is passed. A type needing no
-    allocation has no balance, so it matches any condition on one -- including a
-    negated condition. Answered through the negated inverse it was excluded from
-    every one of them.
-    """
 
     @classmethod
     def setUpClass(cls):

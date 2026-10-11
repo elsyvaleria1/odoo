@@ -32,7 +32,6 @@ _debug = DebugLog(__name__)
 
 
 class _ReadGroupSQLMixin(_ModelStubs):
-    """SQL for read_group's groupby and aggregate specs."""
 
     def _parse_aggregate_spec(
         self, aggregate_spec: str

@@ -24,7 +24,6 @@ class _FakeRequest:
 
 @tagged("post_install", "-at_install")
 class TestWarnEndpointIsDeprecated(TransactionCase):
-    """F001: a full `_WARNED_CLIENTS` cache must not go permanently silent."""
 
     def setUp(self):
         super().setUp()

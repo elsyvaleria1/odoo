@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationBadge(models.Model):
-    """Badge object that users can send and receive"""
 
     CAN_GRANT = 1
     NOBODY_CAN_GRANT = 2

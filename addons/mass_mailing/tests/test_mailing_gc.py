@@ -9,13 +9,6 @@ from odoo.addons.mass_mailing.tests.common import MassMailCommon
 
 @tagged("mail_mail", "post_install", "-at_install")
 class TestGcCanceledMailMail(MassMailCommon):
-    """``mass_mailing.cancelled_mails_months_limit`` is read as an integer.
-
-    ``get_param`` answers with the stored *string* as soon as the parameter is set, so
-    ``months_limit <= 0`` raised ``TypeError: '<=' not supported between instances of
-    'str' and 'int'``. The method is an ``@api.autovacuum``, so that took the whole
-    vacuum down for any database that had configured the retention.
-    """
 
     def setUp(self):
         super().setUp()

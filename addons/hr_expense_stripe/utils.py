@@ -383,7 +383,6 @@ STRIPE_REQUEST_REFUSED_REASONS = {
 
 
 class StripeIssuingDatabaseError:
-    """Enum class to handle errors, returning the error status"""
 
     DB_WRONG_SIGNATURE = 462
     DB_ERROR = 550

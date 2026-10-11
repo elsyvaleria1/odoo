@@ -10,8 +10,6 @@ from odoo.addons.integration.tests.common import revealed
 
 @tagged("post_install", "-at_install")
 class TestGoogleCredentials(TransactionCase):
-    """A user's Google tokens rest on their personal connection to Google, in a
-    credential they own; the calendar keeps no token of its own."""
 
     @classmethod
     def setUpClass(cls):

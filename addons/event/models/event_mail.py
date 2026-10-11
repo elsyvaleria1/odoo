@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class EventMail(models.Model):
-    """Automated mailing scheduled on an event."""
 
     _name = "event.mail"
     _inherit = ["mixin.event.mail.schedule"]

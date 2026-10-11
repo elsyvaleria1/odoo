@@ -91,10 +91,6 @@ class TestAPIClient(APITransportTestCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestRetryBackoffShape(APITransportTestCase):
-    """`retry_backoff_type` must change the shape of the HTTP-level retry,
-    not just the queue-level one (`get_retry_delay`): a `fixed` or
-    `linear` endpoint used to get the same exponential curve as an
-    `exponential` one because `urllib3.Retry` only knows exponential."""
 
     class _FakeHistoryEntry:
         redirect_location = None

@@ -16,7 +16,6 @@ from odoo.addons.test_mail.tests.common import TestRecipients
 
 @tagged("mail_scheduled_message")
 class TestScheduledMessage(MailCommon, TestRecipients):
-    """Test Scheduled Message internals"""
 
     @classmethod
     def setUpClass(cls):

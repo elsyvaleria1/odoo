@@ -12,14 +12,6 @@ _MIRRORED_FILES = ("photo", "document", "voice", "audio", "video")
 
 
 class TelegramHandlerMirror(models.AbstractModel):
-    """Telegram groups mirrored on Odoo threads.
-
-    A group is connected with a link made in Odoo; from then on what its
-    people write is posted on the thread as their contacts (made on first
-    contact), who join the channel without a word. Its forum topics become
-    sub-channels as they appear, renamed and closed with them; a group
-    that becomes a supergroup keeps its mirror.
-    """
 
     _name = "telegram.handler.mirror"
     _inherit = "mixin.telegram.handler"

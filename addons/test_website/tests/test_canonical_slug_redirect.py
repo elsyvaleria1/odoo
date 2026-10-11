@@ -4,22 +4,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("-at_install", "post_install")
 class TestCanonicalSlugRedirect(HttpCase):
-    """``ir.http._pre_dispatch`` 301s a frontend URL to its canonical form
-    (``/foo/1`` -> ``/foo/egg-1``) by rebuilding the matched rule and comparing
-    the result with the URL being served.
-
-    Both sides of that comparison have to be in the same encoding.
-    ``rule.build`` percent-quotes; ``request.httprequest.path`` is what werkzeug
-    has already decoded. Decoding the current path a *second* time (the old
-    ``unquote_plus`` on both sides) turned a literal "%20" inside a converter
-    value back into a space, so the comparison could never match and the
-    canonical URL was the URL already being served: an infinite 301 loop, cached
-    by the browser, on any frontend route carrying a percent-escape-looking
-    segment -- a coupon code, a blog tag, a model-page record slug.
-
-    ``/ignore_args/converteronly/<string:a>`` is the plain ``website=True``
-    string-converter route this module ships, which is exactly that shape.
-    """
 
     EP = "/ignore_args/converteronly/"
 

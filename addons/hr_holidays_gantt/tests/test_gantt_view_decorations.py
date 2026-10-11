@@ -8,16 +8,6 @@ from odoo.addons.hr_holidays.tests.common import TestHolidayContract
 
 
 class TestGanttViewDecorations(TestHolidayContract):
-    """Pill decorations of the Time Off Overview gantt.
-
-    web_gantt evaluates the ``decoration-*`` expressions of the <gantt> node
-    client-side, once per pill, against that record's own values (see
-    ``evaluateBooleanExpr`` in web_gantt/static/src/gantt_renderer.js). Those
-    expressions spell out state values by hand, so nothing but a test keeps
-    them in step with the selection ``hr.leave.report.calendar.state``
-    actually declares: a value that is not in the selection costs no error
-    anywhere, it just yields a decoration that can never fire.
-    """
 
     def _evaluate_decoration(self, decoration, report_row):
         view = self.env.ref("hr_holidays_gantt.hr_leave_report_calendar_view_gantt")

@@ -44,17 +44,6 @@ register_url_secret = redact.register_pattern
 
 
 class _ShapedRetry(Retry):
-    """`Retry` with a `fixed` and a `linear` backoff, neither of which
-    `urllib3` has: its own `get_backoff_time()` is hardcoded to exponential
-    (`backoff_factor * 2 ** (n - 1)`), so `retry_backoff_type="fixed"` and
-    `"linear"` used to fall back to that same formula and be indistinguishable
-    from `"exponential"`.
-
-    `backoff_type` lives outside `Retry.__init__`'s own fields because
-    `Retry.new()` clones a retry object with `type(self)(**params)` using only
-    those fields; it is instead carried as a plain attribute and copied across
-    by the `new()` override below, so a clone made mid-retry keeps its shape.
-    """
 
     backoff_type = "exponential"
 

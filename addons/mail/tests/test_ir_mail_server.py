@@ -1026,13 +1026,6 @@ class _ScriptedSocket:
 
 @tagged("mail_server")
 class TestIrMailServerSessionLoss(MailCommon):
-    """A lost session says whether the server may already hold the message.
-
-    smtplib raises the same `SMTPServerDisconnected` whether the connection
-    dropped on `MAIL FROM` -- nothing was handed over, a retry is safe -- or
-    while waiting for the verdict on a complete DATA payload, when the server
-    may have queued it and a retry can deliver it twice.
-    """
 
     def _session(self, *replies):
         session = smtplib.SMTP(local_hostname="localhost")

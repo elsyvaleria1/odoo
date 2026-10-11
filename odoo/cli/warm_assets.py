@@ -11,7 +11,6 @@ _debug = DebugLog(__name__)
 
 
 class WarmAssets(DatabaseCommand):
-    """Build a database's asset bundles before it takes traffic."""
 
     name = "warm_assets"
     description = "Build the asset bundles of a database before it takes traffic"

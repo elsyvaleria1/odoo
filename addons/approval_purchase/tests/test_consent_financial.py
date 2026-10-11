@@ -5,8 +5,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestConsentOnPurchases(TransactionCase):
-    """A silence never confirms a purchase: consent approval is refused on a
-    category that confirms or creates a purchase order."""
 
     def _category(self, name, **values):
         return self.env["approval.category"].create(

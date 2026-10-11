@@ -9,7 +9,6 @@ from odoo.exceptions import RedirectWarning
 
 
 class WizardAccountMoveImportSaft(models.TransientModel):
-    """SAF-T import wizard is the main class to import SAF-T files."""
 
     _name = "wizard.account.move.import.saft"
     _description = "Account SAF-T import wizard"

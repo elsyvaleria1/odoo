@@ -568,7 +568,6 @@ class TestReportLogAudit(PartnerLedgerTelegramTestCase):
 
 
 class TestManagerRole(PartnerLedgerTelegramTestCase):
-    """A chat manages when its internal user is an accounting manager."""
 
     @classmethod
     def setUpClass(cls):
@@ -592,8 +591,6 @@ class TestManagerRole(PartnerLedgerTelegramTestCase):
 
 
 class TestCustomerReach(PartnerLedgerTelegramTestCase):
-    """A linked user reads any customer's statement in Telegram exactly when
-    they read the partner ledger in Odoo; anyone else only their own."""
 
     @classmethod
     def setUpClass(cls):
@@ -699,8 +696,6 @@ class TestValuesArriveAsText(PartnerLedgerTelegramTestCase):
 
 
 class TestRequesterClock(PartnerLedgerTelegramTestCase):
-    """The host runs on UTC and the webhook as a user with no timezone, so a
-    period is computed on the requester's clock, never on the server's."""
 
     @classmethod
     def setUpClass(cls):
@@ -760,8 +755,6 @@ class TestRequesterClock(PartnerLedgerTelegramTestCase):
 
 
 class TestStatementPartnerSearch(PartnerLedgerTelegramTestCase):
-    """/edocliente offers every customer with statement lines: the line filter
-    is part of the search, not applied to its first page of names."""
 
     @classmethod
     def setUpClass(cls):
@@ -808,8 +801,6 @@ class TestStatementPartnerSearch(PartnerLedgerTelegramTestCase):
 
 
 class TestReceivableOnly(PartnerLedgerTelegramTestCase):
-    """A statement is what the customer owes, the partner's Due: receivable
-    accounts only, never a supplier's payables."""
 
     @classmethod
     def setUpClass(cls):

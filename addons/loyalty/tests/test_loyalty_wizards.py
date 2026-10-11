@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyWizards(TransactionCase):
-    """Loyalty card balance-update and coupon-generation wizards."""
 
     @classmethod
     def setUpClass(cls):

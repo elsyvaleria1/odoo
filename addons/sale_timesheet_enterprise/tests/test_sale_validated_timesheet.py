@@ -11,13 +11,6 @@ from odoo.addons.sale_timesheet.tests.common import TestCommonSaleTimesheet
 
 @tagged("-at_install", "post_install")
 class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
-    """Test timesheet invoicing of "Approved Timesheets Only" with 2 service products that create a task in a new project.
-    1. Create SO, add two SO line ordered service and delivered service and confirm it
-    2. log some timesheet on task and validate it.
-    3. create invoice
-    4. log other timesheets
-    5. create a second invoice
-    """
 
     @classmethod
     def setUpClass(cls):

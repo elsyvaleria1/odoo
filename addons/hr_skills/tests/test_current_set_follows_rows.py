@@ -11,13 +11,6 @@ from .common import SkillsCase
 
 @tagged("post_install", "-at_install")
 class TestCurrentSetFollowsTheRows(SkillsCase):
-    """current_* and skill_ids are derived from the rows' dates and types.
-
-    They depended on the one2many alone, so editing a row's ``valid_to`` or
-    ``skill_type_id`` in the same transaction left every derived field serving
-    the value cached before the edit. Nothing here calls ``invalidate_all``;
-    that is the point.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -100,9 +93,6 @@ class TestCurrentSetFollowsTheRows(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestEveryX2ManyCommandIsAnswered(SkillsCase):
-    """The transformation used to recognise CREATE, UPDATE and DELETE and drop
-    everything else on the floor, so a CLEAR left the list untouched and
-    reported success."""
 
     @classmethod
     def setUpClass(cls):
@@ -229,10 +219,6 @@ class TestEveryX2ManyCommandIsAnswered(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestOneCommandPerRow(SkillsCase):
-    """Closing a skill and creating its successor in one batch closed the old
-    row twice: once for the DELETE or CLEAR, once more when the CREATE found it
-    still live. The ORM tolerated the duplicate, so nothing failed; the batch
-    simply did the same work twice."""
 
     def _commands_for(self, *client_commands):
         employee = self.env["hr.employee"].create({"name": "One command employee"})
@@ -324,11 +310,6 @@ class TestOneCommandPerRow(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestCreatingAnOwnerFromCopiedLines(SkillsCase):
-    """copy_data() emits the lines with the old owner's id still in them; the
-    ORM overwrites it on the new owner, but the transformation ran the
-    collision check against it and closed the copied record's live skills.
-    hr.applicant copies its skills, so duplicating an applicant into a talent
-    pool emptied the applicant."""
 
     def test_the_source_of_a_copy_keeps_its_skills(self):
         source = self.env["hr.employee"].create({"name": "Copy source"})

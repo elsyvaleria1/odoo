@@ -5,10 +5,6 @@ from odoo import api, fields, models
 
 
 class WizardIrModuleModuleExportCustomizationLine(models.TransientModel):
-    """The wizard data resembles the ir.model.data model.
-    It is used to store the export data for the wizard,
-    even for data that do not have an xmlid (an ir.model.data record).
-    """
 
     _name = "wizard.ir.module.module.export.customization.line"
     _description = "Studio Export Data"

@@ -8,12 +8,6 @@ from odoo.tests.common import TransactionCase
 
 
 class RollingCase(TransactionCase):
-    """A real rolling report over a real, date-grained source table.
-
-    The consumer suite in ``agromarin/remote_gps`` covers the same semantics
-    against production shapes, but it lives in another repository that this
-    one's CI never checks out — so the mixin needs its own fence here.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -208,12 +202,6 @@ class TestStaleness(RollingCase):
 
 
 class TestConcurrency(RollingCase):
-    """A slow refresh must cost one tick, never a connection per tick.
-
-    Every cron-running instance ticks the same refresh; the GPS daily report
-    once queued ninety of them behind a five-hour statement and exhausted
-    max_connections.
-    """
 
     registry_test_mode = False
 

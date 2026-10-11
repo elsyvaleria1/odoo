@@ -7,17 +7,6 @@ from odoo.addons.hr.tests.common import TestHrCommon
 
 @tagged("post_install", "-at_install")
 class TestSelfPersonalInformation(TestHrCommon):
-    """An employee could not see their own personal data anywhere.
-
-    They have no access to `hr.employee` at all -- `base.group_user` gets no row
-    on it -- and `hr.employee.public` mirrors none of these fields, so My
-    Preferences is the only surface they have.
-
-    Reading only. Our fork routes employee-maintained data through
-    `hr.employee.change.request` (contact and emergency details today), so
-    whether these identity fields become directly writable is an HR policy
-    call, not a backport: see the commit message.
-    """
 
     PERSONAL_FIELDS = (
         "marital",

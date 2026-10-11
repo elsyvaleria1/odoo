@@ -6,7 +6,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class TestHrAppraisalMulticompany(TransactionCase):
-    """Test used to check that appraisal works in multicompany."""
 
     @classmethod
     def setUpClass(cls):

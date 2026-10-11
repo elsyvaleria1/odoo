@@ -6,13 +6,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestApprovalBinding(common.TransactionCase):
-    """Gating a method rather than waiting for a document to ask.
-
-    The binding wraps the method at registry load, so the gate holds for every
-    caller. These cover the wrapping itself, the three modes, and the two
-    defects the incumbent implementation in `web_studio` has: an unconditional
-    `sudo()` bypass, and patches that do not compose.
-    """
 
     @classmethod
     def setUpClass(cls):

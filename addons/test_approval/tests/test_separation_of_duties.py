@@ -8,7 +8,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalDuties(ApprovalCommon):
-    """Being in an approval step's pool is a duty separation of duties can name."""
 
     @classmethod
     def setUpClass(cls):

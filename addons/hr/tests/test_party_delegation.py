@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPartyDelegation(TransactionCase):
-    """hr.employee _inherits res.partner: the work contact is the person."""
 
     def test_an_employee_created_bare_gets_a_party_carrying_its_name(self):
         employee = self.env["hr.employee"].create(

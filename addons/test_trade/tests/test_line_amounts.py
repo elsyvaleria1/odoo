@@ -5,14 +5,6 @@ from .common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestLineAmounts(TestTradeOrderCase):
-    """Assertions on `mixin.order.line.amount._compute_amounts` itself.
-
-    The module's other amount tests build a `sale.order.line`, so until this
-    file existed the mixin's own computation could be changed arbitrarily --
-    doubling every subtotal, zeroing every tax -- without a single test
-    failing. Everything here runs against the mixin, through the concrete test
-    model that carries nothing but it.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -5,9 +5,6 @@ from .common import ApprovalCommon, record_approval
 
 @tagged("post_install", "-at_install")
 class TestRequestVerbs(ApprovalCommon):
-    """Who may submit, re-submit, cancel, reset and decide a request is its
-    rows: the owner, the request's approvers and delegates, an approval
-    manager. State, separation of duties and step order stay the request's."""
 
     @classmethod
     def setUpClass(cls):

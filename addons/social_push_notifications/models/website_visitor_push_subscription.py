@@ -2,14 +2,6 @@ from odoo import api, fields, models
 
 
 class WebsiteVisitorPushSubscription(models.Model):
-    """Contains the char push_token of a website.visitor's push subscription.
-    Push subscriptions are created when a visitor accepts to receive 'Web Push Notifications' on its
-    browser.
-    This token is used by the firebase service to send notifications to that browser.
-
-    A visitor can have multiple push subscriptions if they use several devices / browsers.
-    (push_subscriptions are 'merged' onto the main visitor, see website.visitor#_merge_visitor for
-    more information.)"""
 
     _name = "website.visitor.push.subscription"
     _description = "Push Subscription for a Website Visitor"

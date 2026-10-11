@@ -4,11 +4,6 @@ from odoo.tests.common import TransactionCase
 
 @tests.tagged("post_install", "-at_install")
 class TestContractTemplateWhitelist(TransactionCase):
-    """The contract template only copies the fields hr.version whitelists.
-
-    Mirrors the per-country checks in l10n_*_hr_payroll/tests, for the field
-    hr_payroll_account puts on the contract template form.
-    """
 
     @classmethod
     def setUpClass(cls):

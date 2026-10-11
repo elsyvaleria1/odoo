@@ -9,8 +9,6 @@ from .common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install")
 class TestLeaveResourceState(TestHrHolidaysCommon):
-    """Time off is a person's maintenance: approved leave covering now puts
-    them on leave, and its end returns them where they were."""
 
     @classmethod
     def setUpClass(cls):

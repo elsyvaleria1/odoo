@@ -11,15 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class CloudStorageStream(Stream):
-    """A redirect to a signed blob URL that names the file it serves.
-
-    The response is the provider's, not ours, so a ``Content-Disposition`` set
-    here would be lost across the redirect and the browser would save the blob
-    as ``download``. The name and the attachment/inline choice are only final
-    once `ir.binary` has filled the stream and the controller calls
-    `prepare_response`, so the URL is signed again at that point, asking the
-    provider to answer with that header itself.
-    """
 
     def __init__(self, attachment, **kwargs) -> None:
         super().__init__(**kwargs)

@@ -9,13 +9,6 @@ from .common import TestCommonPlanning
 
 @tagged("post_install", "-at_install")
 class TestPlanningPrintReport(HttpCase, TestCommonPlanning):
-    """How tall a printed shift block is.
-
-    The printed planning draws one ``div.shift-block`` per shift, and that block
-    reserves its ``min-height`` however short the title is. Nothing in Python can
-    answer how tall the result ends up, so the measurement happens in a browser,
-    against the HTML flavour of the very same report the PDF is paginated from.
-    """
 
     @classmethod
     def setUpClass(cls):

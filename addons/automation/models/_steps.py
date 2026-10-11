@@ -127,7 +127,6 @@ class StepReferenceError(LookupError):
 
 
 class StepView:
-    """One step of a run as another step sees it: read-only, output copied."""
 
     __slots__ = ("input", "key", "name", "output", "record", "state", "summary")
 
@@ -145,7 +144,6 @@ class StepView:
 
 
 class StepScope(Mapping):
-    """Steps by key, with a refusal that names what was in reach."""
 
     __slots__ = ("_owner", "_views")
 
@@ -183,8 +181,6 @@ class StepScope(Mapping):
 
 
 class NoPrevious:
-    """`previous` of a step that has no single predecessor: falsy, and any
-    read of it explains which steps to name instead."""
 
     __slots__ = ("_message",)
 

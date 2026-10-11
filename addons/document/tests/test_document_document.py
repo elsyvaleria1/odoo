@@ -1930,13 +1930,6 @@ class TestDocumentsCopy(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsCreateBatching(TransactionCaseDocuments):
-    """Creating N documents that carry content costs one attachment insert.
-
-    `assertQueryCount` only fails ABOVE its budget, so the guard that matters
-    here is the SHAPE: the same budget has to hold for one document and for
-    twenty, which is what a per-document insert cannot do. A budget alone would
-    pass at N=1 and go on passing while the cost grew.
-    """
 
     def _create_with_content(self, count, tag):
         return self.env["document.document"].create(
@@ -2007,13 +2000,6 @@ class TestDocumentsCreateBatching(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsResModelConstraint(TransactionCaseDocuments):
-    """A document is never linked to a document, archived or not.
-
-    The rule used to be enforced with `search_count`, which goes through
-    `_search` and therefore applies `active_test`: it simply did not exist for
-    an archived record. Archive, link, restore, and the forbidden state was
-    live -- including `res_id == id`, a document linked to itself.
-    """
 
     def _link_to(self, document, target):
         document.write({"res_model": "document.document", "res_id": target.id})

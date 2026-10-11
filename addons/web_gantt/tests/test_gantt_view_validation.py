@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase
 
 
 class TestGanttViewValidation(TransactionCase):
-    """Cover the arch validation of the gantt view type."""
 
     def _create_gantt_view(self, arch):
         return self.env["ir.ui.view"].create(
@@ -123,7 +122,6 @@ class TestGanttViewValidation(TransactionCase):
 
 
 class TestGanttViewRegistration(TransactionCase):
-    """Cover how the gantt type registers itself against ir.ui.view."""
 
     def test_gantt_declares_its_client_icon_and_its_date_range(self):
         view = self.env["ir.ui.view"]

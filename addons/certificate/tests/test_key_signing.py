@@ -189,9 +189,6 @@ class TestKeyCryptoOperations(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestKeyDerLoading(TransactionCase):
-    """_get_pem_key_and_metadata's DER branches had zero test coverage: PEM- and
-    PKCS12-shaped fixtures exercised the loader everywhere else, but
-    never a raw DER private or public key."""
 
     @classmethod
     def setUpClass(cls):

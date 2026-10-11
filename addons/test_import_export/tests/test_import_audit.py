@@ -137,10 +137,6 @@ class TestCleanErrors(ImportAuditCommon):
 
 @unittest.skipUnless(can_import("openpyxl"), "openpyxl not available")
 class TestSpreadsheetDateCells(ImportAuditCommon):
-    """The xls/xlsx readers hand back native date/datetime objects. Landing one
-    in a column that expects a string raised a bare AttributeError/TypeError
-    that escaped execute_import as an HTTP 500.
-    """
 
     def test_date_cell_in_a_float_column(self):
         wizard = self._wizard(
@@ -457,12 +453,6 @@ class TestFieldsTree(ImportAuditCommon):
 
 
 class TestIsolation(ImportAuditCommon):
-    """`base_import.import` holds raw uploaded bytes and its ACL grants
-    read+write to every internal user. Being a TransientModel confers no
-    isolation -- the ORM has no transient-specific access check -- and no record
-    rule shipped, so any internal user could read another user's uploaded file
-    or overwrite their import by guessing the sequential id.
-    """
 
     def test_a_user_cannot_read_another_users_import(self):
         alice = new_test_user(self.env, login="audit_alice", groups="base.group_user")

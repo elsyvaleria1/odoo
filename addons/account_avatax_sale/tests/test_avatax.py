@@ -274,7 +274,6 @@ class TestSaleAvalara(TestTaxCommonSale, TestAccountAvataxSaleCommon):
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraSalesTaxItemsIntegration(TestAccountAvataxSaleCommon):
-    """https://developer.avalara.com/certification/avatax/sales-tax-badge/"""
 
     @classmethod
     def setUpClass(cls):

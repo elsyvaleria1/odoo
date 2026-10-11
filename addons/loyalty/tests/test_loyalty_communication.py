@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyCommunication(TransactionCase):
-    """The mails a program sends, and what sending them costs."""
 
     @classmethod
     def setUpClass(cls):

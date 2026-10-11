@@ -8,10 +8,6 @@ from odoo.tools import view_ir
 
 @tagged("post_install", "-at_install")
 class TestViewPayloadConsistency(TransactionCase):
-    """A view payload carries its arch as a string and as the IR; the client
-    reads the IR first. Every model that rewrites `get_view`/`get_views`
-    must leave the two agreeing — or the client renders a tree the override
-    never touched."""
 
     def _overriding_models(self):
         for name, model in self.env.registry.items():

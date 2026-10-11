@@ -41,8 +41,6 @@ def _decode_vlq(segment: str) -> list[int]:
 
 
 class Segment(NamedTuple):
-    """One mapping, absolute and 0-based; ``source`` is ``None`` for a
-    generated position that maps to no source."""
 
     line: int
     column: int
@@ -77,8 +75,6 @@ def iter_segments(mappings: str, *, until_line: int | None = None) -> Iterator[S
 
 
 class Original(NamedTuple):
-    """A generated position, located in the source it was built from; 0-based.
-    ``text`` is that source line, when the map carries the sources."""
 
     source: str
     line: int

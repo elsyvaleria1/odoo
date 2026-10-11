@@ -930,7 +930,6 @@ class TestControllerChallenge(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDynamicSnippetTemplates(HttpCase):
-    """`/website/snippet/filter_templates` is public, and answers per website."""
 
     @classmethod
     def setUpClass(cls):

@@ -5,8 +5,6 @@ from ..tools.telegram_client import TelegramClient
 
 
 class TelegramController(http.Controller):
-    """The webhook: admission, then telegram.router. What an update does is
-    the router's and its handlers', which live in the database's registry."""
 
     @http.route(
         "/telegram/webhook/<string:token>",

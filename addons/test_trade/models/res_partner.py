@@ -2,12 +2,6 @@ from odoo import api, fields, models
 
 
 class ResPartner(models.Model):
-    """Exercises ``trade``'s shared partner helpers on the test order type.
-
-    sale and purchase both drive ``_compute_order_count`` /
-    ``_add_order_statistics``, but neither carries a test for them, so the
-    shared implementation is covered here instead of twice downstream.
-    """
 
     _inherit = "res.partner"
 

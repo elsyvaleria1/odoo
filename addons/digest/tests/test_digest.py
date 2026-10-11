@@ -559,11 +559,6 @@ class TestUnsubscribe(MailCommon, HttpCaseWithUserDemo):
 
 @tagged("digest")
 class TestDigestDefects(TestDigestCommon):
-    """One test per defect the 2026-08 audit of this module fixed.
-
-    Each was written against the code before the fix and observed to fail
-    there; a regression test that passes on the broken code is worth nothing.
-    """
 
     @classmethod
     def setUpClass(cls):

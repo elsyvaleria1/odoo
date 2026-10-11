@@ -21,8 +21,6 @@ def _split_repository(repository: str) -> tuple[str, str]:
 
 
 class IntegrationGithubPull(models.Model):
-    """A pull request as GitHub last told us: by webhook, or read on demand.
-    Modules that care about one react in `_github_updated`."""
 
     _name = "integration.github.pull"
     _description = "GitHub Pull Request"

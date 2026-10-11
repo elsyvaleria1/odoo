@@ -6,8 +6,6 @@ from odoo.addons.calendar_sync.provider_events import ProviderEvents
 
 
 class GoogleEvent(ProviderEvents):
-    """Google Calendar events, as the API lists them:
-    https://developers.google.com/calendar/v3/reference/events#resource"""
 
     @property
     def rrule(self):

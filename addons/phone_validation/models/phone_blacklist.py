@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class PhoneBlacklist(models.Model):
-    """Blacklist of phone numbers. Used to avoid sending unwanted messages to people."""
 
     _name = "phone.blacklist"
     _inherit = ["mixin.mail.thread"]

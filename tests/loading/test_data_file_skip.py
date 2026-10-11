@@ -280,15 +280,6 @@ class TestWhatGetsRecorded:
 
 
 class TestAFileWhoseRecordsWereAlreadyRewritten:
-    """The skip is only sound while two files do not contend for one record.
-
-    A module can ship a menu `active="0"` and a dependent module re-activate
-    it. Both files declare the same xmlid and the later one is meant to win.
-    If only the first file's bytes change, skipping the second because it is
-    "unchanged" leaves the first write standing and reverses the intended
-    order -- the failure that archived `hr.menu_view_hr_contract_type` on
-    2026-09-07, with both modules upgraded, in order, in one run.
-    """
 
     def _prepare_store(self, files):
         return {"v": loading._DATA_FILE_CHECKSUM_VERSION, "files": files}
@@ -350,17 +341,6 @@ class TestAFileWhoseRecordsWereAlreadyRewritten:
 
 
 class TestAFileThatOverridesAnotherModule:
-    """A file writing another module's records is never skipped.
-
-    `approval_hr` re-points `approval.approvals_menu_root` at its own
-    department dashboard. On 2026-09-07 `approval` reloaded and reset the menu
-    to its own action; `approval_hr`'s bytes had not moved, so its file was
-    skipped and the override was lost. The contention check above catches that
-    within one run, but not across runs: once the clobber has happened, both
-    files are unchanged forever and no later upgrade repairs the record. An
-    override's meaning is its position in the load order, and the stored digest
-    describes only the bytes, so it can never witness that position.
-    """
 
     def _prepare_store(self, files):
         return {"v": loading._DATA_FILE_CHECKSUM_VERSION, "files": files}

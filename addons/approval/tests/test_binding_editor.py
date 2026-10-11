@@ -8,7 +8,6 @@ from odoo.tests import common, tagged
 
 @tagged("post_install", "-at_install")
 class TestApprovalBindingEditor(common.TransactionCase):
-    """What Studio's editor asks the engine when an approval step is added to a button."""
 
     @classmethod
     def setUpClass(cls):

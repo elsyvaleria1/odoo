@@ -17,7 +17,6 @@ HOOK = "odoo.addons.captcha.models.ir_http"
 
 @tagged("post_install", "-at_install")
 class TestCaptcha(TransactionCase):
-    """The forms ask one provider, chosen in the settings, through one hook."""
 
     def setUp(self):
         super().setUp()
@@ -104,7 +103,6 @@ class TestCaptcha(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSiteverify(TransactionCase):
-    """The siteverify protocol reCAPTCHA and Turnstile share."""
 
     def _verdict(self, *, answer=None, raises=None, token="a-token", action="login"):
         response = MagicMock(**{"json.return_value": answer})

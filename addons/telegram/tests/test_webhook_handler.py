@@ -9,8 +9,6 @@ from .common import TelegramBotHttpCase, TelegramBotTestCase
 
 @tagged("post_install", "-at_install")
 class WebhookRouteCase(TelegramBotHttpCase):
-    """The webhook is admitted by the bot's receiver before the handler runs:
-    what these tests read is whether the update reached `_handle_update`."""
 
     def _post(self, token=None, data=None, headers=None, body=None):
         self.env.flush_all()

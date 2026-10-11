@@ -55,9 +55,6 @@ NCAwIFIKL1NpemUgOAo+PgpzdGFydHhyZWYKOTc4CiUlRU9GCg==
 
 @tagged("post_install", "-at_install", "documents_account_multicompany_mail")
 class TestMultiCompanyDocumentsAccountMail(MailCommon, DocumentsAccountHelpersCommon):
-    """
-    Tests incoming email processing for documents_account in a multi-company setup
-    """
 
     @classmethod
     def setUpClass(cls):

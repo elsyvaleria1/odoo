@@ -606,16 +606,6 @@ class TestComputeRankCommon(common.TransactionCase):
 
 
 class TestKarmaRankTieBreak(common.TransactionCase):
-    """A tied ``karma_min`` must not leave rank assignment order-dependent.
-
-    Both ``ORDER BY karma_min DESC`` sites (``write()``'s reorder detection
-    and ``_recompute_rank``) had no id tiebreak, so nothing prevented two
-    ranks from sharing the same ``karma_min`` threshold, and which one users
-    at that threshold landed on was left to the database's tie-breaking --
-    not guaranteed stable, and could repeatedly re-fire the "Level Up!"
-    notification for an unchanged karma value. ``ORDER BY karma_min DESC,
-    id`` makes the choice explicit: on a tie, the lowest id wins.
-    """
 
     @classmethod
     def setUpClass(cls):

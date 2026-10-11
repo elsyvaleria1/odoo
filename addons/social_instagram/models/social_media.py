@@ -6,10 +6,6 @@ from odoo.libs.web import urljoin as url_join
 
 
 class SocialMedia(models.Model):
-    """The Instagram social media implementation is a bit special because it goes through
-    the Facebook API to fetch information (as Facebook owns Instagram).
-
-    That also means we can only add Instagram accounts through Facebook."""
 
     _inherit = "social.media"
 

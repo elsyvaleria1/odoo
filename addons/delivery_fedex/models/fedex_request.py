@@ -38,7 +38,6 @@ FEDEX_CURR_MATCH = {
 
 
 class LogPlugin(Plugin):
-    """Small plugin for zeep that catches out/ingoing XML requests and logs them"""
 
     def __init__(self, debug_logger) -> None:
         self.debug_logger = debug_logger
@@ -56,8 +55,6 @@ class LogPlugin(Plugin):
 
 
 class FedexRequest:
-    """Low-level object intended to interface Odoo recordsets with FedEx,
-    through appropriate SOAP requests"""
 
     def __init__(
         self,

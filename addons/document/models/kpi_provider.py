@@ -11,7 +11,6 @@ INBOX_KPI_LABEL = _lt("Inbox")
 
 
 class KpiProvider(models.AbstractModel):
-    """Extend the KPI provider with document metrics."""
 
     _inherit = "kpi.provider"
 

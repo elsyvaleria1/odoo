@@ -5,13 +5,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestProjectManagerWrittenAsUser(TransactionCase):
-    """A project manager is an employee (decided 2026-09-20).
-
-    The manager is composed from `employee_id.user_id`. A `user_id` handed to
-    create or write is routed to that user's employee, the project's company
-    first, and a user who holds no employee record is refused rather than dropped.
-    Whichever way they were named, the manager follows the project.
-    """
 
     @classmethod
     def setUpClass(cls):

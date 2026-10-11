@@ -37,7 +37,6 @@ def _cue_of(span: dict) -> Cue:
 
 
 class AiTranscription(BaseReader):
-    """The words a recording holds, read by whichever engine a key is held for."""
 
     name = "ai_transcription"
     mimetypes = RECORDING_MIMETYPES

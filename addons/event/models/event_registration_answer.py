@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class EventRegistrationAnswer(models.Model):
-    """Represents the user input answer for a single event.question"""
 
     _name = "event.registration.answer"
     _description = "Event Registration Answer"

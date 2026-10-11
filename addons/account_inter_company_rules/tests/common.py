@@ -2,7 +2,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 
 class TestInterCompanyRulesCommon(AccountTestInvoicingCommon):
-    """Shared setup for inter-company invoice tests."""
 
     @classmethod
     def setUpClass(cls):

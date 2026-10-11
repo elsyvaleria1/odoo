@@ -268,7 +268,6 @@ class TestCreditStatusComputation(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCreditFileOutsideCreditFolder(TransactionCase):
-    """A document a credit grade requires counts wherever it is filed."""
 
     @classmethod
     def setUpClass(cls):
@@ -1394,13 +1393,6 @@ class TestCreditDocumentVisibility(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCreditDocumentFile(TransactionCase):
-    """A partner's credit file is the documents that name it under the credit folder.
-
-    There is no folder per partner and no link table: which partner a document
-    belongs to is its ``partner_id``, and being in the file is being filed
-    under the company's credit folder. Filing one recomputes what depends on
-    the file without touching the partner itself.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -4,19 +4,6 @@ from odoo.tools.misc import format_datetime
 
 
 class WizardSocialStreamPostCreateLead(models.TransientModel):
-    """Simple wizard allowing to convert a social.stream.post or a comment/reply to a post into
-    a lead.
-
-    This wizard is typically used from the "Feed" social view, when the end user can interact with
-    its community through their posts or view other people's posts.
-    For more information about the 2 'sources' of conversion ('comment' and 'stream_post'), see
-    #action_convert_to_lead.
-
-    Please note that for obvious privacy reasons, the social media platforms will not provide us
-    with people's email, phone or address information, we only have the author name and the content
-    of their post/comment.
-    For that reason, end users will probably often only convert to leads based on existing clients,
-    since otherwise they will not have any mean to contact the created lead."""
 
     _name = "wizard.social.stream.post.create.lead"
     _description = "Convert Social Post to Lead"

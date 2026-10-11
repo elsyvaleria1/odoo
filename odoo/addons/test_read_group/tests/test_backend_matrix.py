@@ -426,10 +426,6 @@ class TestReadGroupBackendMatrix(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestReadGroupBackendWalk(TestReadGroupBackendMatrix):
-    """The four scripts above are hand-written; this one is drawn. Random rows,
-    then random `_read_group` calls over the groupbys, aggregates, orders,
-    domains, havings, limits and offsets both tiers claim to answer, compared
-    row for row. An emulation shortcut nobody wrote a case for fails here."""
 
     SCALAR_GROUPBYS = ([], ["key"], ["key", "partner_id"], ["partner_id"], ["value"])
     SCALAR_AGGREGATES = (

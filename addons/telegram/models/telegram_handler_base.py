@@ -12,9 +12,6 @@ _lt = LazyTranslate(__name__)
 
 
 class TelegramHandlerBase(models.AbstractModel):
-    """What every bot answers: the welcome, help, who-am-I, connecting and
-    disconnecting, cancelling whatever flow is open, and a shared contact
-    card."""
 
     _name = "telegram.handler.base"
     _inherit = "mixin.telegram.handler"

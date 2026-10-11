@@ -5,7 +5,6 @@ from odoo.fields import Domain
 
 
 class MixinCalendarPrivacy(models.AbstractModel):
-    """Delegate record visibility to the ``calendar.event`` a record hangs off."""
 
     _name = "mixin.calendar.privacy"
     _description = "Calendar Privacy Delegation"

@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestCreateReachesTheParty(TransactionCase):
-    """A value given to hr.employee.create is held by the party, not beside it."""
 
     GIVEN = {
         "name": "Created Person",

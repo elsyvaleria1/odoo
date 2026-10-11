@@ -2,7 +2,6 @@ from odoo import Command, fields, models
 
 
 class WizardSaleOrderUpdateAttendeeLine(models.TransientModel):
-    """Event Registration"""
 
     _name = "wizard.sale.order.update.attendee.line"
     _description = "Edit Attendee Line on Sales Confirmation"

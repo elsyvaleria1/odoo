@@ -4,7 +4,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestResourceKindForms(TransactionCase):
-    """A kind's form runs every button it inherits from the asset form."""
 
     def test_every_object_button_on_a_kind_form_is_a_method_of_the_kind(self):
         asset_form = self.env.ref("base.resource_asset_view_form")

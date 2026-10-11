@@ -17,12 +17,6 @@ VERDICTS = [
 
 
 class ApprovalDecisionLog(models.Model):
-    """What was decided about a request, by whom, as whom, and under what elevation.
-
-    The approver rows and the request carry the current decision and are
-    rewritten by withdrawal, reset and revocation; this model is what they used
-    to be. Rows are created only by the engine's funnels and never change.
-    """
 
     _name = "approval.decision.log"
     _description = "Approval Decision"

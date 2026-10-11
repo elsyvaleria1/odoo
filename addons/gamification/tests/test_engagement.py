@@ -6,7 +6,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestEngagementSnapshot(common.TransactionCase):
-    """Tests for the engagement analytics snapshot system."""
 
     @classmethod
     def setUpClass(cls):
@@ -137,7 +136,6 @@ class TestEngagementSnapshot(common.TransactionCase):
 
 
 class TestDashboardEnhancements(common.TransactionCase):
-    """Tests for dashboard leaderboard and send-kudos RPC."""
 
     @classmethod
     def setUpClass(cls):
@@ -231,7 +229,6 @@ class TestDashboardEnhancements(common.TransactionCase):
 
 
 class TestProfileEnhancements(common.TransactionCase):
-    """Tests for profile fields (featured badges, visibility)."""
 
     @classmethod
     def setUpClass(cls):

@@ -34,9 +34,6 @@ class TestPosPricer(ProductCommon, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPosPricerLabelPrice(AccountTestInvoicingCommon):
-    """`product.taxes_id` carries every company's default sale tax on purpose, so
-    a label price has to be computed from the active company's subset alone.
-    """
 
     @classmethod
     def setUpClass(cls):

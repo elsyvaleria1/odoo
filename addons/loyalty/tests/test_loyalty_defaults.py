@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyDefaults(TransactionCase):
-    """The per-program-type defaults shared by the program, its rules and its rewards."""
 
     def test_child_default_values_reads_the_create_command(self):
         Program = self.env["loyalty.program"]

@@ -80,12 +80,6 @@ def test_an_escaping_exception_still_restores():
 
 
 class TestForgettingARequest:
-    """Two places answer "that request is over" and each kept its own list.
-
-    The transport's was the shorter one, and it runs on the path where a
-    malformed head means no application will ever run -- so the 400 it then
-    logged carried the *previous* request's database and user.
-    """
 
     def _thread_mid_request(self, monkeypatch):
         thread = as_worker_thread(threading.current_thread())

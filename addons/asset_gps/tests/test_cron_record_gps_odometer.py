@@ -9,10 +9,6 @@ from .test_product_trace import StockLotGpsTestBase
 
 
 class CronGpsOdometerBase(StockLotGpsTestBase):
-    """Fixture and helpers shared by this cron's suites.
-
-    Carries no tests of its own, the way `StockLotGpsTestBase` does not.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -192,16 +188,6 @@ class TestCronRecordGpsOdometer(CronGpsOdometerBase):
 
 @tagged("post_install", "-at_install")
 class TestCronRecordGpsOdometerAcrossCompanies(CronGpsOdometerBase):
-    """The shape production actually ran in.
-
-    The cron fires as OdooBot, and OdooBot sits in company 1 -- the
-    unconfigured placeholder, not the operating company that owns the fleet.
-    Every test above builds its asset in ``env.company``, so none of them could
-    show what that divergence does, and the suite stayed green for as long as
-    the nightly run had never once succeeded: the log took the acting company,
-    the ledger constraint refused the whole batch, and the snapshot day fell
-    back to UTC because the placeholder's partner carries no timezone.
-    """
 
     @classmethod
     def setUpClass(cls):

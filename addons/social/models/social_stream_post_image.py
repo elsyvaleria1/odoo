@@ -2,8 +2,6 @@ from odoo import fields, models
 
 
 class SocialStreamPostImage(models.Model):
-    """A social.stream.post.image represents an image that was shared with a social.stream.post.
-    It only contains the URL of the image on the related social.media."""
 
     _name = "social.stream.post.image"
     _description = "Social Stream Post Image Attachment"

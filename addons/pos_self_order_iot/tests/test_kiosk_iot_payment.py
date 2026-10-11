@@ -120,8 +120,6 @@ class TestKioskIoTPayment(IotCommonTest, SelfOrderCommonTest):
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestKioskIoTRelay(TestKioskIoTPayment):
-    """The IoT channel is the whole database's: only a kiosk reaches it, and
-    only for the boxes of the devices its point of sale uses."""
 
     def setUp(self):
         super().setUp()

@@ -14,9 +14,6 @@ from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 
 @tagged("-at_install", "post_install")
 class MobileRoutesTest(HttpCaseWithUserDemo):
-    """
-    This test suite is used to request the routes used by the mobile applications (Android & iOS)
-    """
 
     def setUp(self):
         super().setUp()

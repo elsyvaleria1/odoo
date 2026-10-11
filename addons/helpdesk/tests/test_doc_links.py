@@ -7,10 +7,6 @@ from odoo.tests.common import HttpCase, tagged
     "-standard", "external", "post_install", "-at_install"
 )
 class TestDocLinks(HttpCase):
-    """
-    Parse the 'team.team' view to extract all documentation links and
-    check that every links are still valid.
-    """
 
     def setUp(self):
         super().setUp()

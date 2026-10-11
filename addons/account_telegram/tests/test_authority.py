@@ -12,9 +12,6 @@ RENDER = "odoo.addons.web.models.ir_actions_report.IrActionsReport._render_html_
 
 @tagged("post_install", "-at_install")
 class TestStatementAuthority(PartnerLedgerTelegramTestCase):
-    """A statement asked for in Telegram is printed as its sender, never as
-    the superuser: a contact's own on the own-statement privilege, an
-    accounting reader's customer's on their own rights, as in Odoo."""
 
     @classmethod
     def setUpClass(cls):

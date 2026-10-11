@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class UtmTestSourceMixin(models.Model):
-    """Test mixin.utm.source"""
 
     _name = "utm.test.source.mixin"
     _description = "UTM Source Mixin Test Model"
@@ -17,8 +16,6 @@ class UtmTestSourceMixin(models.Model):
 
 
 class UtmTestSourceMixinOther(models.Model):
-    """Test mixin.utm.source, similar to the other one, allowing also to test
-    cross model uniqueness check"""
 
     _name = "utm.test.source.mixin.other"
     _description = "UTM Source Mixin Test Model (another)"

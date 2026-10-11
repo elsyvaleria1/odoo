@@ -559,23 +559,6 @@ class Query:
 
 
 class SharedOnce:
-    """The once-expressions of the queries composed into one statement,
-    stated one time at its head.
-
-    `Query.statement` states a query's own expressions. A statement built of
-    several queries -- a search per opened group, a count around a grouped
-    select -- embeds each with `select()`, which puts every expression back
-    inline: the same grant subqueries, planned and run once per part and per
-    alias. Rendered through one scope, the parts read them from a single
-    WITH::
-
-        shared = SharedOnce(model._table)
-        parts = [shared.select(query) for query in queries]
-        env.execute_query(shared.statement(SQL(" UNION ALL ").join(parts)))
-
-    The queries are over one table: a reference names its table, and the
-    parts share it.
-    """
 
     __slots__ = ("_expressions", "_sets", "_table")
 

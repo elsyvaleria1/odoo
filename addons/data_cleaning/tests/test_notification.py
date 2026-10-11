@@ -6,11 +6,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install", "data_cleaning")
 class TestCleaningNotification(TransactionCase):
-    """`mixin.data.cleaning.notification`, through both of its enterprise consumers.
-
-    The three copies of this machinery it replaces each carried the same two
-    defects, and one of them had drifted into a third.
-    """
 
     @classmethod
     def setUpClass(cls):

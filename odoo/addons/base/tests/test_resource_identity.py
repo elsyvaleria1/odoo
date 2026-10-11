@@ -7,8 +7,6 @@ from odoo.tools import mute_logger
 
 @tagged("post_install", "-at_install")
 class TestResourceIdentity(TransactionCase):
-    """Identifiers, meters and the acquisition record belong to the resource,
-    whatever represents it."""
 
     @classmethod
     def setUpClass(cls):

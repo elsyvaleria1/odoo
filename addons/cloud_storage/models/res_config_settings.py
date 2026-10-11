@@ -5,7 +5,6 @@ DEFAULT_CLOUD_STORAGE_MIN_FILE_SIZE = 20_000_000
 
 
 class ResConfigSettings(models.TransientModel):
-    """Cloud storage settings for web client attachments."""
 
     _inherit = "res.config.settings"
 

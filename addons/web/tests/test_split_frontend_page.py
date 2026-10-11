@@ -23,9 +23,6 @@ _MODULE_SCRIPT_RE = re.compile(
 
 @tagged("-at_install", "post_install", "web_assets")
 class TestSplitFrontendPage(HttpCase):
-    """`web.assets_frontend_minimal` and `web.assets_frontend_lazy` are one
-    page cut in two: each module of the minimal half is evaluated by that half
-    alone, and the page carries one import map holding both halves' entries."""
 
     def _pages(self):
         installed = self.env["ir.asset"]._get_addons_installed()

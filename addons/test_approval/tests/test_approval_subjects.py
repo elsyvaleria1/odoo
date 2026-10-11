@@ -6,12 +6,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalSubjects(ApprovalCommon):
-    """A record holding one approval request per subject.
-
-    A course holds a request for each partner asking to join it, an engineering change
-    one for each stage it passes: several requests live on one record, each told apart
-    by its subject_key, and a decision tells the record which subject it decided.
-    """
 
     def _category(self, approvers=None, suffix=""):
         return self._make_category(

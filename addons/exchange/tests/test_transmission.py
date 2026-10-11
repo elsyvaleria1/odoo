@@ -391,7 +391,6 @@ class TestExchangeBatch(ExchangeCase):
 
 
 class TestExchangeClaim(ExchangeCase):
-    """A send has an effect no rollback undoes, so two senders must not both make it."""
 
     def _held_elsewhere(self):
         self.patch(

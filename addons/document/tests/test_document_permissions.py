@@ -709,7 +709,6 @@ class TestDocumentsLock(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsLockHandsOff(TransactionCaseDocuments):
-    """A lock stops everyone but its taker and a Documents manager, whole."""
 
     @classmethod
     def setUpClass(cls):
@@ -809,7 +808,6 @@ class TestDocumentsLockHandsOff(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsDrivePlacement(TransactionCaseDocuments):
-    """Another user's My Drive is filled by them, a manager, or a privileged flow."""
 
     def _refused(self, change):
         with self.assertRaises(AccessError):

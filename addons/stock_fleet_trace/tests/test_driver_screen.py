@@ -33,7 +33,6 @@ def _sample(uuid, **vals):
 
 @tagged("post_install", "-at_install")
 class TestDriverHash(TransactionCase):
-    """The phone's JavaScript hash equals the server's, byte for byte."""
 
     def test_the_phone_hash_matches_the_server_hash(self):
         node = shutil.which("node")

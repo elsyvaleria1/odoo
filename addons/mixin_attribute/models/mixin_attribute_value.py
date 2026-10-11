@@ -7,7 +7,6 @@ from odoo.addons.base.models.mixin_catalog import name_uniq_index
 
 
 class MixinAttributeValue(models.AbstractModel):
-    """Reusable base for an EAV attribute value."""
 
     _name = "mixin.attribute.value"
     _inherit = ["mixin.catalog", "mixin.color"]

@@ -5,7 +5,6 @@ from .common import TestAccountAvataxCommon
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraRefunds(TestAccountAvataxCommon):
-    """https://developer.avalara.com/certification/avatax/refunds-credit-memos-badge/"""
 
     @classmethod
     def setUpClass(cls):

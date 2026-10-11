@@ -21,7 +21,6 @@ _debug = DebugLog(__name__)
 
 
 class DeliveryCarrier(models.Model):
-    """Shipping carrier: rate computation and delivery-method configuration."""
 
     _name = "delivery.carrier"
     _inherit = ["mixin.credential.holder", "mixin.integration.connected"]

@@ -24,7 +24,6 @@ AUTHORIZATION_SCOPE = register_signed_scope(
 
 
 class LazadaApiError(Exception):
-    """Raised when the Lazada API returns an error."""
 
     def __init__(self, shop, operation, request_id, error_code, error_message) -> None:
         super().__init__(
@@ -42,7 +41,6 @@ class LazadaApiError(Exception):
 
 
 class LazadaRateLimitError(Exception):
-    """Raised when the Lazada API rate limit is reached."""
 
     def __init__(self, operation) -> None:
         self.operation = operation

@@ -6,11 +6,6 @@ from odoo.addons.point_of_sale.tests.test_res_config_settings import TestConfigu
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestConfigureShopsEnterprise(TestConfigureShops):
-    """Shops are now configured from the general settings.
-    This test suite ensures that changes made in the general settings
-    should reflect to the pos.config record pointed by the
-    pos_config_id field.
-    """
 
     def _remove_on_payment_taxes(self):
         self.env["account.tax"].search(

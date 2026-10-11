@@ -22,15 +22,6 @@ def read_page(image: bytes) -> str:
 
 
 class OcrText(BaseReader):
-    """The text a document has no characters for, recognised off its pages.
-
-    Registered at `METERED`, which is the whole of how it stays off the
-    common path. Two things follow from the cost alone, and neither is written
-    here: a document is derived only up to the ceiling its caller set, so
-    recognition waits to be asked for; and a costlier reader runs only where
-    every cheaper one answered nothing, so a PDF carrying a text layer never
-    renders a page and one carrying none does.
-    """
 
     name = "rapidocr_text"
     mimetypes = PAGED

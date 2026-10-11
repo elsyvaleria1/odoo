@@ -40,14 +40,6 @@ class IrAccessLog(models.Model):
 
 
 class IrAccessException(models.Model):
-    """A named person let past one strict rule, for a reason, until a date.
-
-    Every rule that refuses by default -- two duties that must not meet, deciding
-    one's own request, approving what one asked for oneself -- stays strict for
-    everyone. An exception is the only way through it: it names the person, the
-    rule and what the rule is about, a reason and a reviewer who is not that
-    person, and it lapses at its date. Each use is logged.
-    """
 
     _name = "ir.access.exception"
     _description = "Access Exception"

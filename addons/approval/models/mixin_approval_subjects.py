@@ -10,12 +10,6 @@ LIVE_REQUEST_STATES = ("new", "pending")
 
 
 class MixinApprovalSubjects(models.AbstractModel):
-    """A record holding one approval request per subject, rather than one in all.
-
-    A course holds a request for each partner asking to join it; an engineering change
-    holds a request for each stage it passes. A request carries its subject in
-    ``subject_key``, and only one request per subject is waiting at a time.
-    """
 
     _name = "mixin.approval.subjects"
     _inherit = ["mixin.approval.source"]

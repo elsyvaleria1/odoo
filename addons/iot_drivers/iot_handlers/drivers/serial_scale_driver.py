@@ -48,7 +48,6 @@ class ScaleReadHardwareProxy(http.Controller):
 
 
 class ScaleDriver(SerialDriver):
-    """Abstract base class for scale drivers."""
 
     last_sent_value = None
 
@@ -128,7 +127,6 @@ class ScaleDriver(SerialDriver):
 
 
 class Toledo8217Driver(ScaleDriver):
-    """Driver for the Toldedo 8217 serial scale."""
 
     _protocol = Toledo8217Protocol
 

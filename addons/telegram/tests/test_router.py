@@ -4,7 +4,6 @@ from .common import TelegramBotTestCase
 
 
 class FakeHandler:
-    """What the router asks a handler, and a record of what it was told."""
 
     def __init__(
         self, name, *, flow=(), intakes=(), claims=False, prefixes=(), priority=100

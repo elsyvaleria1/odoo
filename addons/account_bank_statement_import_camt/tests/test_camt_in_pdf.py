@@ -10,12 +10,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 @tagged("post_install", "-at_install")
 class TestCamtInsidePdf(AccountTestInvoicingCommon):
-    """A statement delivered as a PDF that carries its own CAMT.
-
-    The same shape as a Factur-X invoice, which the bill importer has read
-    since it existed: a human-readable document with the machine-readable one
-    embedded in it. Banks deliver statements this way.
-    """
 
     @classmethod
     def setUpClass(cls):

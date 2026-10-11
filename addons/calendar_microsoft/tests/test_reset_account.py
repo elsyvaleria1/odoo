@@ -14,8 +14,6 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 @patch.object(IrCron, "_commit_progress", lambda self, *a, **kw: None)
 @patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestResetAccount(TestCommon):
-    """A reset forgets what the user's Outlook calendar held: the user may
-    come back with another account."""
 
     def setUp(self):
         super().setUp()

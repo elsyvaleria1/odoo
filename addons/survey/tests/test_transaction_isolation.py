@@ -6,12 +6,6 @@ from odoo.addons.survey.tests import common
 
 @tagged("post_install", "-at_install", "functional")
 class TestTransactionIsolation(common.TestSurveyCommon, HttpCase):
-    """A swallowed database error must not poison the rest of the request.
-
-    Swallowing the Python exception does not un-abort a PostgreSQL transaction,
-    so every broad handler around ORM work needs a savepoint or the next query
-    dies on InFailedSqlTransaction.
-    """
 
     @classmethod
     def setUpClass(cls):

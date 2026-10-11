@@ -5,12 +5,6 @@ from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install", "accruals")
 class TestAccrualYearlyGain(TestHrHolidaysCommon):
-    """How much a level actually grants over a year.
-
-    The form asks for an amount and a frequency, but the number the HR officer
-    is actually deciding -- days per year -- was left for them to work out in
-    their head, differently for each of the seven frequencies.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -7,7 +7,6 @@ from .test_common import TestCommon
 
 @freeze_time("2020-01-01")
 class TestSlotAbsenceSearch(TestCommon):
-    """Cover the is_absent searcher on planning slots."""
 
     def test_search_is_absent(self):
         leave = (

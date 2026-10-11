@@ -3,13 +3,6 @@ from odoo.tools import frozendict
 
 
 class TelegramBusinessConnection(models.Model):
-    """A Telegram Business account whose chats the bot manages.
-
-    Its owner connects the bot in Telegram's own settings and chooses there
-    which chats it sees. Odoo honours the connection only while the owner's
-    Telegram account is bound to an internal user: that user answers those
-    chats, and what Odoo sends there goes out as the owner.
-    """
 
     _name = "telegram.business.connection"
     _description = "Telegram Business Connection"

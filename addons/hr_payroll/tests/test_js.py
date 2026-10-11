@@ -5,7 +5,6 @@ from odoo.addons.web.tests.test_js import HOOTCommon
 
 @odoo.tests.tagged("post_install", "-at_install", "web_js")
 class HrPayrollSuite(HOOTCommon):
-    """Runs this module's hoot suites, which no runner selected before."""
 
     @odoo.tests.no_retry
     def test_hr_payroll(self):

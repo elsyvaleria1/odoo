@@ -6,7 +6,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardDocumentDocumentSetupAiSort(models.TransientModel):
-    """Wizard responsible to create the Automation Rule and the server action to auto sort files."""
 
     _name = "wizard.document.document.setup.ai.sort"
     _description = "Ai Documents Sort"

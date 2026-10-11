@@ -17,8 +17,6 @@ def fixture(name: str) -> dict:
 
 
 class WebhookDelivery:
-    """Deliver a payload as GitHub does: signed with the hook's secret, named by
-    its event and a delivery id."""
 
     @classmethod
     def _create_hook(cls):

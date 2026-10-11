@@ -5,8 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestBoxesAreDevices(TransactionCase):
-    """A box and the things it carries are rows of the one device registry,
-    so custody, maintenance and an asset see them as they see any device."""
 
     @classmethod
     def setUpClass(cls):

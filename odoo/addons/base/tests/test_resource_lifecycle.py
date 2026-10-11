@@ -6,7 +6,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestResourceLifecycle(TransactionCase):
-    """Any resource lives through the same states, whatever represents it."""
 
     @classmethod
     def setUpClass(cls):

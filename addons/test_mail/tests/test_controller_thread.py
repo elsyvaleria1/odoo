@@ -197,7 +197,6 @@ class TestMessageController(MailControllerThreadCommon):
 
 @tagged("-at_install", "post_install", "mail_controller")
 class TestMessagePostEnvelope(MailControllerThreadCommon):
-    """The route, not the client, decides the envelope of a share user's post."""
 
     @classmethod
     def setUpClass(cls):

@@ -132,10 +132,6 @@ def _install(demo_db, tmp_path, module, *, tests, require_demo=None):
 
 @requires_pg
 class TestADemoFailureUnderTestsFailsTheRun:
-    """A module's demo data that fails to load is a WARNING to an install, so
-    `-i <module>` exits 0 without it; account_depreciation's demo was broken
-    from ce5a16f77db0 and hr_fleet's from 5807b4388a16 while every per-module
-    run looked clean. A run with tests is where that must turn red."""
 
     def test_a_run_with_tests_exits_non_zero_and_names_the_module(
         self, demo_db, tmp_path

@@ -44,7 +44,6 @@ provide_test_run_key()
 
 
 class MixinEncryption(models.AbstractModel):
-    """Fernet-at-rest encryption for a model's fields, keyed from the environment."""
 
     _name = "mixin.encryption"
     _description = "Encrypted Field Mixin"

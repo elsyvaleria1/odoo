@@ -4,10 +4,6 @@ from odoo.fields import Domain
 
 
 class MailingContact(models.Model):
-    """Model of a contact. This model is different from the partner model
-    because it holds only some basic information: name, email. The purpose is to
-    be able to deal with large contact list to email without bloating the partner
-    base."""
 
     _name = "mailing.contact"
     _inherit = ["mixin.mail.thread.blacklist", "mixin.properties.base.definition"]

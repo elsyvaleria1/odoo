@@ -6,12 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestActivityTarget(ApprovalCommon):
-    """A category chooses where its approvers are asked, and a step with which activity.
-
-    Time off asks its approvers on the leave, with its own activity types, and its
-    dashboards read those. Asked on the request instead, every approver would get a
-    second activity for the same decision.
-    """
 
     def _category(self, **vals):
         return self._make_category(

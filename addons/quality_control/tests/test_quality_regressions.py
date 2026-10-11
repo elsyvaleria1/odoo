@@ -422,8 +422,6 @@ class TestAlertMailGateway(TestQualityCommon):
 
 @tagged("post_install", "-at_install")
 class TestCheckCreationCost(TestQualityCommon):
-    """The check-creation path runs once per move line, so anything it does
-    per line is multiplied by the size of the transfer."""
 
     def _point(self, **extra):
         return self.env["quality.point"].create(

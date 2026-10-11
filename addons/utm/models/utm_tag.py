@@ -4,7 +4,6 @@ from odoo.addons.base.models.mixin_catalog import name_uniq_index
 
 
 class UtmTag(models.Model):
-    """Model of categories of utm campaigns, i.e. marketing, newsletter, ..."""
 
     _name = "utm.tag"
     _inherit = ["mixin.color"]

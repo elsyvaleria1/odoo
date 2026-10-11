@@ -930,11 +930,6 @@ class TestS3CredentialSlots(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCloudStorageS3DownloadName(HttpCase):
-    """A download redirected to S3 must still arrive under its own name.
-
-    The response the browser saves is S3's, so the name has to be signed into
-    the redirect: without it every cloud-stored file was saved as ``download``.
-    """
 
     def setUp(self):
         super().setUp()

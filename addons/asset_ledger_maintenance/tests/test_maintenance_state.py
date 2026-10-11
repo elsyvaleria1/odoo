@@ -114,7 +114,6 @@ class TestOperationalState(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestWarehousePickingTypes(TransactionCase):
-    """Core calls _create_or_update_picking_types() on warehouses we never saw."""
 
     @classmethod
     def setUpClass(cls):

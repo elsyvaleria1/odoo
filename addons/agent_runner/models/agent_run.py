@@ -27,15 +27,11 @@ MAX_CREDENTIAL_FAILURES = 30
 
 
 class CredentialsRefused(Exception):
-    """The run may not have its credentials -- its data policy keeps its
-    purpose from the model, its repository is not the App's -- and no other
-    attempt will change that."""
+    pass
 
 
 class LeaseLost(Exception):
-    """The caller does not hold the run's current lease: it expired and went to
-    another runner, the run was cancelled, or the token is not the one handed
-    out."""
+    pass
 
 
 def _digest(token: str) -> str:

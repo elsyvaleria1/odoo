@@ -87,8 +87,6 @@ class TestRenameFieldCarriesNamedObjects(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameFieldIntoAColumnAlreadyThere(TransactionCase):
-    """A model moved into a module installed before the rename ran: the new
-    field's column and row are there already, holding defaults."""
 
     @classmethod
     def setUpClass(cls):
@@ -170,8 +168,6 @@ def _insert_probe_model(cr, model, fields, ttype="char"):
 
 @tagged("post_install", "-at_install")
 class TestRenameFieldMergeKeepsWhatOnlyTheOldFieldHad(TransactionCase):
-    """The merge branch repoints every reference to the old field row: a row
-    that collides with one the new field already has is the only redundant one."""
 
     @classmethod
     def setUpClass(cls):

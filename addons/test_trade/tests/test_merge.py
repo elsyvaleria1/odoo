@@ -5,13 +5,6 @@ from .common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestMerge(TestTradeOrderCase):
-    """t24068 (Loop A audit, HIGH): `_merge_get_line_key` used to match
-    lines by (product, UoM, analytic distribution, discount) only, NOT
-    `price_unit`/`tax_ids`. Two lines sharing product/UoM/discount but
-    priced or taxed differently were silently consolidated into one line
-    worth neither source amount, with a tax obligation vanishing entirely
-    (`_merge_order_line` sums quantity but takes `min(price_unit)` and keeps
-    only the target's own `tax_ids`)."""
 
     def _order_with_line(self, **line_kw):
         order = self._make_order()

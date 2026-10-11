@@ -113,8 +113,6 @@ def find_totals(text: str) -> dict[str, float]:
 
 
 class ShippingOrderBarcode(BaseExtractor):
-    """The tracking number from the sheet's barcode, when a configured carrier's
-    pattern recognises it."""
 
     name = "shipping_order_barcode"
     doc_types = (DOC_TYPE,)
@@ -132,8 +130,6 @@ class ShippingOrderBarcode(BaseExtractor):
 
 
 class ShippingOrderText(BaseExtractor):
-    """Route, service, date and amounts from the sheet's text, and the tracking
-    number when the barcode could not be read."""
 
     name = "shipping_order_text"
     doc_types = (DOC_TYPE,)

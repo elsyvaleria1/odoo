@@ -6,9 +6,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestCoverageIntegrity(ApprovalCommon):
-    """What a document says about its approval can come only from a decision on a
-    request about that document. Every gate downstream -- posting an invoice,
-    confirming an order, applying an adjustment -- reads the document."""
 
     @classmethod
     def setUpClass(cls):

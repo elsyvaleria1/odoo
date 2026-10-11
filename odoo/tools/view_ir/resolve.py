@@ -86,7 +86,6 @@ SIMPLE_XPATH = re.compile(
 
 
 class _Working:
-    """The tree as the specs so far leave it, materialised on demand for xpath."""
 
     def __init__(self, state: Applied) -> None:
         self.state = state

@@ -33,8 +33,6 @@ class IdentityCase(TelegramBotTestCase):
 
 
 class TestWhoAnUpdateActsAs(IdentityCase):
-    """Who an update may act as is decided by its sender's Telegram user id
-    and that account's active binding, and by nothing a sender can choose."""
 
     def test_the_bound_sender_acts_as_its_user(self):
         chat, partner, user = self._resolve(_update("12345", "private", 12345))

@@ -6,9 +6,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestCoverProperties(TransactionCase):
-    """`mixin.website.cover_properties` parses its STORED value on both read
-    paths. A row can hold NULL -- a model gains the mixin on upgrade with no
-    migration filling it -- and both paths raised TypeError out of json."""
 
     @classmethod
     def setUpClass(cls):

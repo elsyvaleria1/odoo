@@ -68,7 +68,7 @@ MANY2MANY_COMMANDS = (0, 1, 3, 4, 6)
 
 
 class OperationError(Exception):
-    """An operation the bot refuses: the message says why."""
+    pass
 
 
 def is_business_model(model_name) -> bool:

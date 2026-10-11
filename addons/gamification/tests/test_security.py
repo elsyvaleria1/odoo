@@ -8,7 +8,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestSecurityRules(common.TransactionCase):
-    """Tests for the ir.access rows on gamification models."""
 
     @classmethod
     def setUpClass(cls):
@@ -93,7 +92,6 @@ class TestSecurityRules(common.TransactionCase):
 
 
 class TestGroupMigration(common.TransactionCase):
-    """Tests for the app's own access tiers and how they are populated."""
 
     def test_group_user_implies_gamification_user(self):
         group_user = self.env.ref("base.group_user")
@@ -132,7 +130,6 @@ class TestGroupMigration(common.TransactionCase):
 
 
 class TestAclParity(common.TransactionCase):
-    """The app tiers must grant exactly what base.group_user/erp_manager did."""
 
     USER_GRANTS = {
         "gamification.achievement": (1, 0, 0, 0),

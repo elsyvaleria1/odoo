@@ -6,14 +6,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestATimingWindowThatWrapsMidnight(TransactionCase):
-    """A night premium is `timing_start` 22:00, `timing_stop` 06:00 -- a window
-    whose end is before its start.
-
-    `get_day_rule_intervals` cannot build that directly, so it builds the
-    complement, [06:00, 22:00], and inverts it inside the day. Nothing covered
-    that branch: no test in the suite set `timing_start > timing_stop`, so the
-    inversion could have been deleted and every one of them stayed green.
-    """
 
     @classmethod
     def setUpClass(cls):

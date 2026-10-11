@@ -33,7 +33,6 @@ ADAMEquipmentProtocol = SerialProtocol(
 
 
 class AdamEquipmentDriver(ScaleDriver):
-    """Driver for the Adam Equipment serial scale."""
 
     _protocol = ADAMEquipmentProtocol
     priority = (

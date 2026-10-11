@@ -124,12 +124,6 @@ class TestWebsiteEventBoothSale(HttpCaseWithUserPortal, TestWebsiteEventSaleComm
 
 @tagged("post_install", "-at_install")
 class TestBoothCartLineRegistrations(TestWebsiteEventSaleCommon):
-    """A cart line that already holds one booth must adopt the newly picked ones.
-
-    `_cart_find_product_line` matches a line sharing ANY pending booth, so the
-    second `_cart_add` is an UPDATE of the existing line rather than a new one,
-    and `_prepare_order_line_update_values` is what carries the registrations.
-    """
 
     @classmethod
     def setUpClass(cls):

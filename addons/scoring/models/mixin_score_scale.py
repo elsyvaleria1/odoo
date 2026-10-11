@@ -4,12 +4,6 @@ from odoo import api, fields, models
 
 
 class MixinScoreScale(models.AbstractModel):
-    """A band of a classification scale: a tier, a grade.
-
-    The concrete model names its host in ``_score_host_model`` and keeps its own
-    consequences (a factor, a limit, a term). A band that moves reclassifies the
-    host's subjects without a rescore.
-    """
 
     _name = "mixin.score.scale"
     _inherit = ["mixin.catalog", "mixin.band"]

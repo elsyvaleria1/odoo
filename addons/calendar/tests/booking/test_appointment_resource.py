@@ -2138,7 +2138,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
 @tagged("appointment_resources", "post_install", "-at_install")
 class AppointmentResourceLedgerTest(AppointmentCommon):
-    """A booked resource is a claim in resource.reservation, like a booked person."""
 
     @classmethod
     def setUpClass(cls):

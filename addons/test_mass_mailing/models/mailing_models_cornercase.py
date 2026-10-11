@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class MailingTestPartnerUnstored(models.Model):
-    """Check mailing with unstored fields"""
 
     _name = "mailing.test.partner.unstored"
     _description = "Mailing Model without stored partner_id"

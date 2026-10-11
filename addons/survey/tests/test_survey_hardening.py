@@ -16,7 +16,6 @@ from odoo.addons.survey.tests import common
 
 @tagged("post_install", "-at_install", "functional")
 class TestWebhookTargetRule(common.TestSurveyCommon):
-    """One rule, applied at write time and again when the request is actually made."""
 
     def test_private_and_local_targets_are_refused(self):
         survey = self.env["survey.survey"]
@@ -104,7 +103,6 @@ class TestWebhookTargetRule(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestSkipActionPrecedence(common.TestSurveyCommon):
-    """A multiple-choice answer set can carry several skip actions at once."""
 
     def test_the_most_terminal_action_wins(self):
         controller_precedence = __import__(
@@ -174,7 +172,6 @@ class TestSkipActionPrecedence(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestUploadLimits(common.TestSurveyCommon, HttpCase):
-    """/survey/upload is auth='public' and creates a record per POST."""
 
     @classmethod
     def setUpClass(cls):
@@ -292,7 +289,6 @@ class TestRetentionSweep(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestConcurrentSubmit(common.TestSurveyCommon, HttpCase):
-    """Two requests carrying one answer token must not both run to completion."""
 
     def test_a_second_submit_after_completion_is_refused(self):
         survey = self.env["survey.survey"].create(
@@ -347,7 +343,6 @@ class TestConcurrentSubmit(common.TestSurveyCommon, HttpCase):
 
 @tagged("post_install", "-at_install", "functional")
 class TestCertificationDownload(common.TestSurveyCommon, HttpCase):
-    """A test run must not produce a real certificate."""
 
     @classmethod
     def setUpClass(cls):
@@ -445,12 +440,6 @@ class TestCertificationDownload(common.TestSurveyCommon, HttpCase):
 
 @tagged("post_install", "-at_install", "functional")
 class TestAnswerPayloadShapes(common.TestSurveyCommon):
-    """/survey/submit is public jsonrpc: the payload is whatever JSON arrived.
-
-    Every validator used to assume the shape its question type expects. A crafted
-    payload therefore raised TypeError or AttributeError out of the request -- an
-    unauthenticated 500, one per combination, measured at 39 of them.
-    """
 
     QUESTION_TYPES = (
         "char_box",

@@ -6,13 +6,6 @@ from odoo.addons.website_slides.tests.common import SlidesCase
 
 @tagged("post_install", "-at_install")
 class TestCourseAccessRequest(SlidesCase):
-    """Asking to join a course on invitation is an approval request.
-
-    The course holds one request per partner asking (mixin.approval.subjects). The
-    course responsible is asked through an activity that still carries the requesting
-    partner, so the Grant / Refuse buttons keep working; an approval enrolls the
-    partner, and the request records who decided.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -146,7 +146,6 @@ def _line(event: str, fields: Mapping[str, Any]) -> str:
 
 
 class _OffSpan(dict):
-    """The span mapping handed out when the target is off: writes go nowhere."""
 
     def __setitem__(self, key: Any, value: Any) -> None:
         pass
@@ -156,7 +155,6 @@ _OFF_SPAN = _OffSpan()
 
 
 class Target:
-    """One campaign log target, ``odoo.approval.<name>``."""
 
     __slots__ = ("_items_logger", "_logger", "name")
 
@@ -351,12 +349,6 @@ def _report_outliers(
 
 
 class LedgerRow(NamedTuple):
-    """One wrapped entry point's cost, summed over a run.
-
-    ``sql`` and ``rows`` are sums over calls, and a parent span's ``sql`` INCLUDES
-    its children's -- so compare siblings, or read the deepest events first, rather
-    than adding the column up.
-    """
 
     call: str
     calls: int

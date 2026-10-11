@@ -6,13 +6,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestStepDocumentPolicy(ApprovalCommon):
-    """A document narrows its steps to the users its own policy lets decide it.
-
-    A step names its approvers by members, a group and a user field, none of which
-    knows the document's policy: an expense is never approved by its own employee,
-    and a team approver outside the employee's hierarchy is refused. Such a user
-    holding a row is asked, listed and offered a decision the document then vetoes.
-    """
 
     @classmethod
     def setUpClass(cls):

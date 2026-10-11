@@ -76,9 +76,6 @@ def _employee(env, company, calendar, ruleset, name="Audited", **extra):
 
 @tagged("post_install", "-at_install")
 class TestPlainUserSystray(TransactionCase):
-    """The systray and the session info run as the employee, who holds none of
-    the attendance groups. Every field they need is officer-only, and the
-    fork checks field groups on Python reads."""
 
     @classmethod
     def setUpClass(cls):
@@ -182,14 +179,6 @@ class TestOwnAttendanceForm(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRegenerationWindow(TransactionCase):
-    """The lines regenerated with an attendance are those of the calendar
-    days -- or weeks -- it shares, in the employee's own zone.
-
-    Bounding the window by the UTC dates of `check_in`/`check_out` left an
-    Auckland morning (Sunday evening in UTC) outside the day its afternoon
-    was on: the afternoon's line survived the morning's regeneration, and a
-    fresh line was added beside it on every save.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -457,8 +446,6 @@ class TestRuleConstraints(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestOvertimeLineForeignKey(TransactionCase):
-    """The overtime line is joined to its attendance by a real `attendance_id`,
-    not by matching `time_start` against `check_in`."""
 
     @classmethod
     def setUpClass(cls):
@@ -520,10 +507,6 @@ class TestOvertimeLineForeignKey(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestApprovalSurvivesRegeneration(TransactionCase):
-    """A manager's approval and manual correction survive a regeneration that
-    leaves the line otherwise identical -- the compounding payoff of the real
-    `attendance_id`: an unchanged line can be recognised across a delete and
-    recreate."""
 
     @classmethod
     def setUpClass(cls):

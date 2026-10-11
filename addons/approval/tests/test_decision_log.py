@@ -8,13 +8,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestDecisionLog(ApprovalCommon):
-    """What was decided survives what the request later becomes.
-
-    The approver rows hold the current decision and are rewritten by a
-    withdrawal, a reset or a revocation. The log holds every decision ever
-    taken, who took it, on whose behalf and under what elevation, and it cannot
-    be changed.
-    """
 
     @classmethod
     def setUpClass(cls):

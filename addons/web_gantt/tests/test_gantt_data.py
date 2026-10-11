@@ -2,7 +2,6 @@ from odoo.tests import TransactionCase
 
 
 class TestGanttData(TransactionCase):
-    """Cover the get_gantt_data payload contract on a plain model."""
 
     @classmethod
     def setUpClass(cls):

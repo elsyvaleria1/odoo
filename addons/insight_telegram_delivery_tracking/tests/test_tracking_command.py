@@ -10,7 +10,6 @@ from odoo.addons.telegram.tests.common import TelegramBotTestCase
 
 @tagged("post_install", "-at_install")
 class TestTrackingCommand(TelegramBotTestCase):
-    """Route shipment lookups with the sender's permissions and companies."""
 
     @classmethod
     def setUpClass(cls):

@@ -11,8 +11,6 @@ PNG = (
 
 @tagged("post_install", "-at_install")
 class TestTripDeliveryProof(TripFixtureMixin, TransactionCase):
-    """Where the signed slip is required, the customer's signature on the driver's
-    phone counts as its evidence; one that is not the customer's does not."""
 
     @classmethod
     def setUpClass(cls):

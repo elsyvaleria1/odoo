@@ -7,11 +7,6 @@ from .common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install")
 class TestAllocationApprovalEngine(TestHrHolidaysCommon):
-    """Allocations are approved through approval.request, and still behave as allocations.
-
-    employee_emp's leave manager is user_responsible; user_hruser is a Time Off
-    Officer and user_hrmanager a Time Off Manager.
-    """
 
     @classmethod
     def setUpClass(cls):

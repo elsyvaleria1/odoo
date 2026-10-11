@@ -10,7 +10,6 @@ _RETRY_AFTER = re.compile(r"retry after (\d+)", re.IGNORECASE)
 
 
 class TelegramApiError(Exception):
-    """A failure Telegram answered: its code and description."""
 
     retryable = False
 
@@ -22,7 +21,6 @@ class TelegramApiError(Exception):
 
 
 class TelegramRetryAfter(TelegramApiError):
-    """Flood control: try again after `seconds`."""
 
     retryable = True
 
@@ -35,15 +33,14 @@ class TelegramRetryAfter(TelegramApiError):
 
 
 class TelegramForbidden(TelegramApiError):
-    """The bot may not write there any more: blocked, kicked, deactivated."""
+    pass
 
 
 class TelegramParseError(TelegramApiError):
-    """The formatted text did not parse; the same text sent plain would."""
+    pass
 
 
 class TelegramChatMigrated(TelegramApiError):
-    """The group became a supergroup under a new chat id."""
 
     @property
     def new_chat_id(self) -> str:
@@ -51,15 +48,14 @@ class TelegramChatMigrated(TelegramApiError):
 
 
 class TelegramNotFound(TelegramApiError):
-    """The chat or the message the call names does not exist (any more)."""
+    pass
 
 
 class TelegramBadRequest(TelegramApiError):
-    """Any other refusal: the request itself is wrong and resending it is not."""
+    pass
 
 
 class TelegramUnavailable(TelegramApiError):
-    """Telegram failed on its side (5xx) or could not be reached."""
 
     retryable = True
 

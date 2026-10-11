@@ -5,10 +5,6 @@ from .common import TestHrCommon
 
 @tagged("post_install", "-at_install")
 class TestEmployeeNationality(TestHrCommon):
-    """An employee may hold several nationalities: nationality_country_id is the
-    first they hold, writing it moves a held one first, corrects the first to a
-    new one or ends them all, and a rule about a country's citizens reads every
-    one they hold."""
 
     @classmethod
     def setUpClass(cls):

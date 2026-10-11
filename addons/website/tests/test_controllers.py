@@ -277,12 +277,6 @@ class TestControllers(tests.HttpCase):
 
 @tests.tagged("post_install", "-at_install")
 class TestAutocompleteInputBounds(tests.HttpCase):
-    """`/website/snippet/autocomplete` is open to anyone, so its numbers are clamped.
-
-    `limit` was clamped and `max_nb_chars` was not, although the latter reaches
-    `textwrap.shorten`, which refuses a width smaller than its placeholder. A
-    visitor could turn a search box into a 500 with a JSON field.
-    """
 
     def setUp(self):
         super().setUp()

@@ -5,14 +5,6 @@ from odoo.addons.telegram.tools import keyboard as kb
 
 
 class TelegramSaleConfirmNotifier(models.AbstractModel):
-    """Ask the category's confirmers to confirm an approved sale order.
-
-    The approver side lives in ``telegram.approval.notifier``; this is the step
-    after it. Once a sale order's approval request is approved and the company
-    does not confirm it automatically, every user in the category's
-    ``telegram_confirm_user_ids`` gets the order summary and a
-    Confirm button. Chat resolution and language are the approval notifier's.
-    """
 
     _name = "telegram.sale.confirm.notifier"
     _description = "Telegram Sale Order Confirmation Notifier"

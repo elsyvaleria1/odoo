@@ -11,7 +11,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardAccountDepreciationBoardUpdate(models.TransientModel):
-    """Pauses, resumes, disposes of, sells or reduces an asset, generating the corresponding depreciation adjustment."""
 
     _name = "wizard.account.depreciation.board.update"
     _description = "Modify Asset"

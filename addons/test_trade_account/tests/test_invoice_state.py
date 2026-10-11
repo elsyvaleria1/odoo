@@ -5,15 +5,6 @@ from odoo.addons.test_trade.tests.common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestInvoiceState(TestTradeOrderCase):
-    """The invoicing state machine, line level and order level.
-
-    `mixin.order.line.invoice._compute_invoice_state` and
-    `mixin.order.invoice._resolve_invoice_state` decide what a document
-    reports as its billing status. Both were shadowed on every concrete model
-    that ships, so the branches below -- over-invoiced, partially invoiced,
-    the ordered/delivered policy split -- were reachable in production and
-    asserted nowhere.
-    """
 
     @classmethod
     def setUpClass(cls):

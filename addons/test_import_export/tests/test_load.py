@@ -1792,10 +1792,6 @@ class test_unique(ImporterCase):
 
 
 class test_inherits(ImporterCase):
-    """The import process should only assign a new xid (derived from the
-    childs') if the child is being created and triggers the creation of the
-    parent
-    """
 
     model_name = "export.inherits.child"
 

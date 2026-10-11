@@ -12,7 +12,6 @@ from odoo.addons.device.tests.common import DeviceTransactionCase
 
 @tagged("post_install", "-at_install")
 class TestResourceTracking(DeviceTransactionCase):
-    """Tracking works without an asset, stock lot, employee or fleet model."""
 
     @classmethod
     @freeze_time("2026-09-01")

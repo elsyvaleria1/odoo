@@ -126,7 +126,6 @@ class TestWebhookLetsConcurrencyRetry(TelegramBotHttpCase):
 
 
 class TestCommandLogLetsConcurrencyRetry(BaseCase):
-    """No database: only what `log_command_execution` writes to the log."""
 
     def _decorated(self, error):
         @log_command_execution

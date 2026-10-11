@@ -45,7 +45,6 @@ class TestMailDomainSearch(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestIapJsonrpcContract(TransactionCase):
-    """The in-test guard is lifted with requests mocked: no real call can occur."""
 
     def _call(self, response=None, side_effect=None):
         mock_response = MagicMock()

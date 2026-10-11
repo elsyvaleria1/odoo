@@ -8,8 +8,7 @@ from odoo.tools import config
 
 
 class GenProxyToken(Command):
-    """Generate and (re)set proxy access token in config file"""
-
+    description = "Generate and (re)set proxy access token in config file"
     def generate_token(self, length=16):
         token = secrets.token_hex(int(length / 2))
         split_size = int(length / 4)

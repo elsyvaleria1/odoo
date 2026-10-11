@@ -85,21 +85,6 @@ class TestServerActionsValidation(TestServerActionsBase):
 
 
 class TestOnUnlinkWarnsForActionsNeedingTheirRecord(TestServerActionsBase):
-    """`on_unlink` must warn for every action that acts on the record itself.
-
-    The set used to be a tuple written out in `automation`, and it named
-    three of the states that mind: it omitted `remove_followers` and predated
-    both `sms` and `whatsapp`, so an automation deleting records with any of
-    those actions attached was set up in silence and then did nothing. The set
-    now comes from the actions, so a module contributing a state contributes its
-    warning with it -- and this test walks whatever the registry answers rather
-    than a second list of its own.
-
-    The state is a necessary condition, not a sufficient one: `object_create`
-    and `object_copy` reach for the record only to hang the new one off a
-    `link_field_id`, so the question is asked of the ACTION through
-    `_is_live_record_required()`. Each state is configured here so that it does.
-    """
 
     def _configured(self, state, model):
         values = {"name": f"Act {state}", "model_id": model.id, "state": state}
@@ -190,30 +175,6 @@ class TestOnUnlinkWarnsForActionsNeedingTheirRecord(TestServerActionsBase):
 
 @tagged("post_install", "-at_install")
 class TestAutomationBatchesWhatItCan(TransactionCase):
-    """An automation rule used to fire every action once per record.
-
-    Three of `mail`'s four runners and both of its post methods are written to
-    take `active_ids` as a set -- one composer, one `message_subscribe`, one
-    `activity_schedule` for the batch -- and none of that could ever run: the
-    rule handed them one record at a time. Measured over a 20-record write with
-    one rule attached, and the outcome is unchanged in every case:
-
-        mail_post/comment   608 -> 394 queries
-        mail_post/email     126 ->  37
-        next_activity        36 ->  21
-        followers           139 ->  29
-
-    An `object_write` action setting a *static* value batches for the same
-    reason: one `write` over the whole set is the same write. It is
-    `evaluation_type` that decides -- a `sequence` owes each record its own
-    number and an `equation` is evaluated against each `record`, so both stay
-    per-record, and `_is_batchable` says so.
-
-    What must *not* batch is the `record` a user writes in a `code` action:
-    batching it would run the block once and silently skip the rest of the set.
-    `post_install` because the rule only takes effect once the registry has
-    re-registered its hooks.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -294,17 +255,6 @@ class TestAutomationBatchesWhatItCan(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestAvailableModelsNeverWiden(TransactionCase):
-    """`available_model_ids` is base's list, narrowed -- never a fresh one.
-
-    Base computes the models the reader may access and every module above it
-    removes from that. `sms` used to assign its own search result for `sms`
-    actions instead, which is the shape `test_every_override_of_our_hooks_calls_super`
-    was written to forbid -- and it passed that check, because the source does
-    contain a `super()` call, just not one covering the actions it had claimed.
-
-    `post_install`, because the invariant is only worth measuring once every
-    module that contributes a state has had its say.
-    """
 
     def test_no_state_offers_a_model_base_would_not(self):
         Action = self.env["ir.actions.server"]
@@ -325,13 +275,6 @@ class TestAvailableModelsNeverWiden(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestMultiActionTakesTheBatchWhenItsChildrenCan(TransactionCase):
-    """A `multi` action does nothing itself -- it hands its context to each child.
-
-    So it can take the whole write exactly when every child can, and must fall
-    back to one record at a time as soon as one of them cannot. Without this a
-    rule wrapping its mail actions in a `multi` -- which is how more than one
-    action gets attached in the UI -- loses the batching entirely.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -381,22 +324,6 @@ class TestMultiActionTakesTheBatchWhenItsChildrenCan(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestConfigurationIsSeededNotImposed(TransactionCase):
-    """No compute may re-impose its default over a value the user chose.
-
-    Three fields on this model did: `mail_post_method`, `mail_post_autofollow`
-    and `sms_method` assigned their default on every pass rather than only when
-    there was nothing to keep. The ORM marks a dependent modified on any write
-    naming a dependency -- a write of the very same value included -- so an
-    export and re-import of the record, which is how a server action is moved
-    between databases and which resends every column, silently reconfigured it:
-    a plain email became a message notifying every follower, and an SMS action
-    set to only log a note started sending the message for real.
-
-    Walks whatever the registry answers rather than a list of its own, so a
-    module contributing a state contributes it to this check too. Selections
-    only: on a boolean, "the user cleared it" and "nobody set it" are the same
-    value, and no compute can tell them apart.
-    """
 
     def test_no_compute_reimposes_its_default_over_a_chosen_value(self):
         Action = self.env["ir.actions.server"]

@@ -3,12 +3,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install", "data_cleaning")
 class TestQueueRetarget(TransactionCase):
-    """A queued row holds a bare `res_id`; its model comes from the rule.
-
-    Both queues reach their target model through a stored related on the rule,
-    so repointing the rule leaves rows holding one table's ids while claiming
-    another's. `data_recycle` had the same shape and destroyed records with it.
-    """
 
     @classmethod
     def setUpClass(cls):

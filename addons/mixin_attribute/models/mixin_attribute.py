@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class MixinAttribute(models.AbstractModel):
-    """Reusable base for an EAV attribute (the dimension being profiled)."""
 
     _name = "mixin.attribute"
     _inherit = ["mixin.catalog"]

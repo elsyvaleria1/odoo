@@ -6,12 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestActivityLink(ApprovalCommon):
-    """An approval activity knows its approver row by a stored link.
-
-    The row was inferred from the activity's model and type, which only an activity
-    on the request itself satisfies. Time off asks its approvers on the leave, and an
-    activity there must still approve when done and still be cleaned up.
-    """
 
     def _pending_request_on_partner(self):
         category = self._make_category(

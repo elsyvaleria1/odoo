@@ -2,8 +2,6 @@ from odoo import api, fields, models
 
 
 class MailingTestCustomer(models.Model):
-    """A model inheriting from mixin.mail.thread with a partner field, to test
-    mass mailing flows involving checking partner email."""
 
     _name = "mailing.test.customer"
     _description = "Mailing with partner"
@@ -31,8 +29,6 @@ class MailingTestCustomer(models.Model):
 
 
 class MailingTestSimple(models.Model):
-    """Model only inheriting from mixin.mail.thread to test base mailing features and
-    performances."""
 
     _name = "mailing.test.simple"
     _description = "Simple Mailing"
@@ -44,8 +40,6 @@ class MailingTestSimple(models.Model):
 
 
 class MailingTestUtm(models.Model):
-    """Model inheriting from mixin.mail.thread and mixin.utm for checking utm of mailing
-    is caught and set on reply"""
 
     _name = "mailing.test.utm"
     _description = "Mailing: UTM enabled to test UTM sync with mailing"
@@ -55,7 +49,6 @@ class MailingTestUtm(models.Model):
 
 
 class MailingTestBlacklist(models.Model):
-    """Model using blacklist mechanism for mass mailing features."""
 
     _name = "mailing.test.blacklist"
     _description = "Mailing Blacklist Enabled"
@@ -79,8 +72,6 @@ class MailingTestBlacklist(models.Model):
 
 
 class MailingTestOptout(models.Model):
-    """Model using blacklist mechanism and a hijacked opt-out mechanism for
-    mass mailing features."""
 
     _name = "mailing.test.optout"
     _description = "Mailing Blacklist / Optout Enabled"
@@ -126,8 +117,6 @@ class MailingTestPartner(models.Model):
 
 
 class MailingPerformance(models.Model):
-    """A very simple model only inheriting from mixin.mail.thread to test pure mass
-    mailing performances."""
 
     _name = "mailing.performance"
     _description = "Mailing: base performance"
@@ -138,7 +127,6 @@ class MailingPerformance(models.Model):
 
 
 class MailingPerformanceBlacklist(models.Model):
-    """Model using blacklist mechanism for mass mailing performance."""
 
     _name = "mailing.performance.blacklist"
     _description = "Mailing: blacklist performance"

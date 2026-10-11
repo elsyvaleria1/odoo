@@ -81,11 +81,6 @@ def fix_import_export_id_paths(fieldname: str) -> tuple[str, ...]:
 
 
 class OrderTerm(typing.NamedTuple):
-    """One comma-separated term of an ORDER BY string, already decided.
-
-    `nulls_first` carries the default the three readers agreed on before this
-    existed: absent a NULLS clause, a descending term puts them first.
-    """
 
     field: str
     property: str | None

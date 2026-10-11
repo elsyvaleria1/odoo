@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class StockTripScan(models.Model):
-    """A code read with a scanner during a trip: its sheet, a delivery or a lot."""
 
     _name = "stock.trip.scan"
     _description = "Trip Scan"

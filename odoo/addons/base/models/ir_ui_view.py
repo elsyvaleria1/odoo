@@ -104,7 +104,6 @@ _COMBINATION_ERRORS = (ValidationError, ValueError, etree.ParseError, TypeError)
 
 
 class _ValidationScope:
-    """The views an operation wrote, validated once when it ends."""
 
     __slots__ = ("full", "partial")
 

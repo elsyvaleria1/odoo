@@ -48,13 +48,6 @@ def _api_response(status_code, json_data=None):
 
 
 class OAuthOnceCase(HttpCase):
-    """One OAuth 2.0 flow for every connection a service may have.
-
-    integration authorized only a company credential, as a credential
-    administrator, and returned to the credential form; a Google calendar is
-    one user's, a Gmail server one record's, and each carried its own copy of
-    the authorize URL, the state, the callback and the code exchange.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -377,8 +370,6 @@ class TestTokenUse(OAuthOnceCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestOneFlowEndToEnd(OAuthOnceCase):
-    """authorize -> callback -> call -> forced expiry -> refresh -> 401 -> refresh,
-    for a personal connection and for one bound to a record."""
 
     @mute_logger("odoo.addons.integration.controllers.oauth")
     def _run(self, connection):

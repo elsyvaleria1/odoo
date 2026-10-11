@@ -11,7 +11,6 @@ OPERATIONAL_MODELS = (
 
 
 class TrainingNeutralityCase(TransactionCase):
-    """Base for simulator tests: prove a session leaves production data untouched."""
 
     operational_models = OPERATIONAL_MODELS
 

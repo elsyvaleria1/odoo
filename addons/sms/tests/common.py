@@ -188,8 +188,6 @@ class MockSMS(common.HttpCase):
 
 
 class SMSCase(MockSMS):
-    """Main test class to use when testing SMS integrations. Contains helpers and tools related
-    to notification sent by SMS."""
 
     @classmethod
     def setUpClass(cls):

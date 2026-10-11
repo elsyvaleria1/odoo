@@ -13,7 +13,6 @@ class ReportTestSource(models.Model):
 
 
 class ReportTestPlain(models.Model):
-    """`mixin.sql.report` alone: the ORM inlines the query as a subquery."""
 
     _name = "mixin.report.sql.test.plain"
     _inherit = ["mixin.sql.report"]
@@ -45,11 +44,6 @@ class ReportTestPlain(models.Model):
 
 
 class ReportTestMv(models.Model):
-    """Materialized, with the unique index deliberately NOT on ``id``.
-
-    That is the shape `invoice.line.in.report` ships, and the one that used to
-    leave `id` with no index at all.
-    """
 
     _name = "mixin.report.sql.test.mv"
     _inherit = ["mixin.sql.report", "mixin.materialized.view"]

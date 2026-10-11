@@ -778,14 +778,6 @@ class BaseFollowersTest(MailCommon):
 @tagged("mail_followers")
 @tagged("mail_followers", "security")
 class FollowerAccessTest(MailCommon):
-    """Who follows a document is part of the document.
-
-    `mail.followers` grants `read` to every internal user and carries no record
-    rule, so the follower rows of a record the caller is denied were legible
-    while the record and its messages were not. Three entry points reached them
-    and not one of them checked: the ORM directly, `message_get_followers`
-    (`@api.readonly`, so `call_kw` on any id), and `_thread_to_store`.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1491,9 +1483,6 @@ class AdvancedResponsibleNotifiedTest(MailCommon):
 
 @tagged("mail_followers", "post_install", "-at_install")
 class RecipientsNotificationTest(MailCommon):
-    """Test advanced and complex recipients computation / notification, such
-    as multiple users, batch computation, ... Post install because we need the
-    registry to be ready to send notifications."""
 
     @classmethod
     def setUpClass(cls):
@@ -1983,7 +1972,6 @@ class RecipientsNotificationTest(MailCommon):
 
 @tagged("mail_followers", "post_install", "-at_install")
 class UnfollowLinkTest(MailCommon, HttpCase):
-    """Test unfollow links, notably used in notification emails"""
 
     @classmethod
     def setUpClass(cls):

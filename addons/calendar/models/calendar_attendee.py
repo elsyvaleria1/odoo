@@ -24,7 +24,6 @@ def invitation_link_end(event):
 
 
 class CalendarAttendee(models.Model):
-    """Calendar Attendee Information"""
 
     _name = "calendar.attendee"
     _inherit = ["mixin.calendar.privacy"]

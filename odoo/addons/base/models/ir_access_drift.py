@@ -43,7 +43,7 @@ class IrAccessLog(models.Model):
 
 
 class _Replayed(Exception):
-    """Rolls the replay's savepoint back once the rows it wrote are read."""
+    pass
 
 
 class IrAccessDrift(models.Model):

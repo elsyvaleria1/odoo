@@ -34,11 +34,6 @@ _NODE_WHITELIST = (
 
 
 class ProductUomFieldRewriter(ast.NodeTransformer):
-    """
-    - Rewrites  product.foo -> product['foo']
-    - Collects every field name accessed (through product.foo or product['foo'])
-    (Same logic for 'uom')
-    """
 
     SUB_ENTITIES = (("product.product", "product"), ("uom.uom", "uom"))
 
@@ -76,12 +71,6 @@ class ProductUomFieldRewriter(ast.NodeTransformer):
 
 
 class TaxFormulaValidator(ast.NodeVisitor):
-    """
-    Walks AST and rejects anything that is not needed or not reproducible in pyjs.
-
-    The ast must be transformed by ProductUomFieldRewriter before being passed to this validator as
-    this visitor does not whitelist Attribute nodes
-    """
 
     def __init__(self, env) -> None:
         self.env = env

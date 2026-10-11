@@ -6,10 +6,6 @@ from odoo.addons.calendar_sync.remote import RemoteKind
 
 
 class CalendarSyncLink(models.Model):
-    """An event or a recurrence as one account's remote calendar knows it.
-
-    A link to neither is a tombstone: the record is gone from Odoo and its
-    remote copy is still to be deleted."""
 
     _name = "calendar.sync.link"
     _description = "Calendar Synchronization Link"

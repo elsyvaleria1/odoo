@@ -4,17 +4,6 @@ from odoo.addons.voip.models.utils import extract_country_code
 
 
 class MixinVoipCountryCode(models.AbstractModel):
-    """Mixin to link phone number to a res.country record.
-
-    This mixin extracts the country ISO code (e.g. "be" for Belgium) from the
-    international dialing prefix of the phone number (e.g. "+32"), and then link
-    to a res.country record. This is useful for displaying country flags or
-    identifying the origin of a phone number.
-
-    Models inheriting this mixin either hold a phone.number many2many (found
-    through `_get_phone_number_fields()`) or name their Char number fields in
-    `_voip_get_phone_char_fields()`.
-    """
 
     _name = "mixin.voip.country.code"
     _description = "Phone Country Mixin"

@@ -10,10 +10,6 @@ from odoo.libs.json import dumps as json_dumps
 
 
 class ProviderEvents(abc.Set):
-    """One or several of a provider's events, by id, as an immutable set:
-    the usual set operations apply, and a single event reads its payload's
-    keys as attributes. A provider's adapter subclasses it with what its
-    payloads mean."""
 
     def __init__(self, iterable: Iterable[Self | Mapping[str, Any]] = ()) -> None:
         events = {}

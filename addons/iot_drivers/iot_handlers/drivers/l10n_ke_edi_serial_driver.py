@@ -76,7 +76,6 @@ COMMAND_ERRORS = {
 
 
 class TremolG03Driver(SerialDriver):
-    """Driver for the Kenyan Tremol G03 fiscal device."""
 
     _protocol = TremolG03Protocol
 

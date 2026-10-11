@@ -8,9 +8,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 @tagged("knowledge_acl")
 class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
-    """Tests ACLs and low level access on models. Do not test the internals
-    of permission computation as those are done in another test suite. Here
-    we rely on them to check the create/read/write/unlink access checks."""
 
     @classmethod
     def setUpClass(cls):

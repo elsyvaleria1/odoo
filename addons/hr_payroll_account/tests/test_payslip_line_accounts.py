@@ -8,12 +8,6 @@ from odoo.addons.hr_payroll_account.tests.test_hr_payroll_account import (
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPayslipLineAccounts(TestHrPayrollAccountCommon):
-    """The debit/credit accounts of a rule must be readable from the payslip line.
-
-    The only other way to reach them from the payslip form is the salary rule
-    link, and `hr_payroll/views/hr_payslip_views.xml` keeps it behind
-    `base.group_no_one`, so an accountant without developer mode has none.
-    """
 
     def setUp(self):
         super().setUp()

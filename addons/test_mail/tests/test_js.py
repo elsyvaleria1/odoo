@@ -76,14 +76,6 @@ class TestMailSuite(web_test_js.HOOTCommon):
 
 @odoo.tests.tagged("post_install", "-at_install", "test_mail_js")
 class MobileTestMailSuite(web_test_js.HOOTCommon):
-    """The mobile half of the same selection.
-
-    One method rather than two: the mobile-tagged population is a single
-    test today, and naming every prefix means a ``describe.current.tags(
-    "mobile")`` added to any test_mail file is executed the moment it
-    lands, instead of waiting for someone to notice a method list that
-    does not mention it.
-    """
 
     browser_size = "375x667"
     touch_enabled = True

@@ -219,8 +219,6 @@ class ImportAuditChallenge(TransactionCase):
 
 
 class ImportAuditChallengePerf(TransactionCase):
-    """Performance claims. Asserted as loose bounds so they fail only on the
-    order of magnitude the audit actually claimed, not on machine noise."""
 
     def test_p1_encoding_detection_is_not_linear_in_file_size(self):
         import chardet
@@ -264,10 +262,6 @@ class ImportAuditChallengePerf(TransactionCase):
 
 @unittest.skipUnless(can_import("odf"), "odfpy not installed")
 class ODSReaderChallenge(TransactionCase):
-    """C1/C2. Both files are built by rewriting content.xml of a real
-    LibreOffice-produced spreadsheet, so they are spec-legal ODF rather than
-    synthetic odfpy documents.
-    """
 
     _CSV = b"name,note,qty\nAlice,plain text,1\nBob,dup row,2\nCarol,cafe deja,3\n"
 
@@ -378,11 +372,6 @@ class ODSReaderChallenge(TransactionCase):
 
 
 class BinaryFilenameAlignment(TransactionCase):
-    """B1. `execute_import` reports local-file cells back to the client, which
-    pairs them with the ids `load` returned by index. That pairing only holds
-    if both lists count the same things -- and one counted rows while the other
-    counted records.
-    """
 
     _OPTS = {"has_headers": True, "quoting": '"', "separator": ","}
 
@@ -481,9 +470,6 @@ class BinaryFilenameAlignment(TransactionCase):
 
 
 class LoadFieldPathValidation(TransactionCase):
-    """`load` validated field paths asymmetrically: a bad subpath under a
-    relation was refused, while one under a scalar was silently truncated to
-    its first segment and imported there."""
 
     def test_load_rejects_subpath_on_scalar_field(self):
         for path in ("name/foo", "name/id", "name/foo/bar"):
@@ -518,9 +504,6 @@ class LoadFieldPathValidation(TransactionCase):
 
 
 class SelectionLabelLanguage(TransactionCase):
-    """Importing a selection column must accept the label in the source
-    language as well as the user's, because exported files routinely carry
-    English labels while the session is in another language."""
 
     def test_source_labels_are_indexed_alongside_translated_ones(self):
         from odoo.tools.translate import code_translations

@@ -20,9 +20,6 @@ class ImportCase(common.TransactionCase):
 
 
 class TestEncoding(ImportCase):
-    """
-    create + parse_preview -> check result options
-    """
 
     def _check_text(self, text, encodings, **options):
         options.setdefault("quoting", '"')

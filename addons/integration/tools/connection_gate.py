@@ -13,19 +13,15 @@ _BREAKERS_ATTRIBUTE = "_integration_connection_breakers"
 
 
 class ConnectionUnavailable(requests.ConnectionError):
-    """No call leaves: the connection's breaker is open or its budget is spent.
-
-    A `requests.ConnectionError`, so every caller's existing handling of an
-    unreachable provider applies unchanged.
-    """
+    pass
 
 
 class CircuitOpen(ConnectionUnavailable):
-    """The connection is paused after repeated failures."""
+    pass
 
 
 class BudgetSpent(ConnectionUnavailable):
-    """The service's rate limit or the connection's call budget is used up."""
+    pass
 
 
 class _BreakerRegistry:

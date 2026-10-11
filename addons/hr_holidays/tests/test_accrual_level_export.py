@@ -3,14 +3,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("post_install", "-at_install", "accruals")
 class TestAccrualLevelExport(HttpCase):
-    """The import-compatible export drops every field the ORM reports readonly.
-
-    ``addons/web/controllers/export.py`` skips them so that the resulting file
-    can be fed back through the importer, and ``odoo/orm/fields/base.py`` marks
-    any computed field without an inverse readonly by default.  A computed field
-    the user *does* edit therefore has to say ``readonly=False`` or it silently
-    disappears from the export, and re-importing an accrual plan loses it.
-    """
 
     def _import_compatible_field_names(self, model):
         self.authenticate("admin", "admin")

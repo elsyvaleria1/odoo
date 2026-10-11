@@ -5,12 +5,6 @@ from odoo.tests import TransactionCase, new_test_user
 
 
 class TestResourceCalendarLeaveTypedLine(TransactionCase):
-    """A schedule line typed as time off is not work time.
-
-    ``_get_global_attendances`` already says so -- it is what makes
-    ``hours_per_week`` drop -- but the interval side had never been told, so
-    the same calendar answered "32 hours a week" and "Friday is a working day".
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -21,7 +21,6 @@ MAX_VISIBILITY_RANKING = 3
 
 
 class GamificationChallenge(models.Model):
-    """Set of predefined objectives assigned to people with recurrence rules and rewards."""
 
     _name = "gamification.challenge"
     _description = "Gamification Challenge"

@@ -189,14 +189,6 @@ class TestViews(ViewCase):
 
 
 class TestCohortSchemaDeclaration(ViewCase):
-    """The cohort view type declares its RelaxNG schema to `view_validation`.
-
-    `web_cohort/validation.py` used to hand-roll the load/cache/log block that
-    `relaxng()` could not be asked for, because it resolved `base/rng/` and
-    nothing else. The block is gone; what replaces it is one `register_schema`
-    call, and a declaration can go missing in a way a copied function could not.
-    So these pin the declaration itself, not only its effect.
-    """
 
     def test_the_cohort_schema_is_declared(self):
         self.assertEqual(

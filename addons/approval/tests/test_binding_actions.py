@@ -6,13 +6,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestApprovalBindingActions(common.TransactionCase):
-    """Gating actions on the server, where web_studio gated them only in the browser.
-
-    A web_studio approval rule on a server action was checked by the client before
-    executing, so an RPC caller running the action directly ran it unchecked --
-    demonstrated on a disposable database. These pin that a binding on a server
-    action or a report refuses on the server, and say which actions cannot be.
-    """
 
     @classmethod
     def setUpClass(cls):

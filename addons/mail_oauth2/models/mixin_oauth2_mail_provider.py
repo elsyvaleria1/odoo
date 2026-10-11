@@ -19,9 +19,6 @@ def _id_token_claims(id_token) -> dict:
 
 
 class MixinOauth2MailProvider(models.AbstractModel):
-    """A mail server authorized through its own connection to a vendor's
-    OAuth service: the connection holds the tokens, the server the XOAUTH2
-    login. A vendor's model answers `_oauth2_provider` for its server type."""
 
     _name = "mixin.oauth2.mail.provider"
     _description = "OAuth2 Mail Provider Mixin"

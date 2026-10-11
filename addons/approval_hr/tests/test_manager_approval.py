@@ -444,8 +444,6 @@ class _Probe(Exception):
 
 
 class TestManagerRoutingConvertedToSteps(TransactionCase):
-    """A manager-approval category routes the same once converted to steps: the
-    manager is named through a step reading the request, which needs no document."""
 
     @classmethod
     def setUpClass(cls):

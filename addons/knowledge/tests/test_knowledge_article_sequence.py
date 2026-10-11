@@ -6,7 +6,6 @@ from odoo.addons.knowledge.tests.common import KnowledgeCommon
 
 @tagged("knowledge_sequence")
 class TestKnowledgeArticleSequence(KnowledgeCommon):
-    """Test sequencing and auto-resequence of articles."""
 
     @classmethod
     def setUpClass(cls):

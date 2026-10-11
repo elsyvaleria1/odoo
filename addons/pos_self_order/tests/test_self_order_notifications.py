@@ -6,8 +6,6 @@ from odoo.addons.point_of_sale.tests.common import CommonPosTest
 
 @tagged("post_install", "-at_install")
 class TestSelfOrderNotifications(CommonPosTest):
-    """point_of_sale owns SYNCHRONISATION for the transitions it performs;
-    pos_self_order's override must add its own message, not repeat that one."""
 
     def setUp(self):
         super().setUp()

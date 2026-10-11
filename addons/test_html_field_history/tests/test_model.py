@@ -151,7 +151,6 @@ class TestModel(TransactionCase):
 
 @tagged("-at_install", "post_install")
 class TestHistoryRpcGuards(TransactionCase):
-    """RPC-reachable guards and revision retrieval of the history mixin."""
 
     @classmethod
     def setUpClass(cls):

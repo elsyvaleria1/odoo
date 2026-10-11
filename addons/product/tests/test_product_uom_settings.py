@@ -15,13 +15,6 @@ class UomSettingsCommon(BaseCommon):
 
 
 class TestLengthIsResolvedOffTheVolumeSetting(UomSettingsCommon):
-    """Length has no setting of its own and must not grow one.
-
-    An override that swaps both the config key and the returned unit is a
-    1000x error rather than a relabel: core hardcodes millimetres elsewhere,
-    and `stock_picking_batch` divides `packaging_length * width * height` by
-    `1000 ** 3`.
-    """
 
     def test_length_uom_defaults_to_millimeter(self):
         self._set("product.volume_in_cubic_feet", "0")
@@ -46,13 +39,6 @@ class TestLengthIsResolvedOffTheVolumeSetting(UomSettingsCommon):
 
 
 class TestResolvedUnitsAreSelectable(UomSettingsCommon):
-    """Every unit a resolver can return has to be active.
-
-    uom archives the imperial units and `base.product_uom_km` with them, so a
-    resolver handing one out as a `default=` puts a value on a Many2one that
-    the user can read but never re-select. `data/product_uom_activate.xml` is
-    what keeps this true.
-    """
 
     def _resolved(self, kind):
         key = UOM_SETTINGS[kind][0]
@@ -83,11 +69,6 @@ class TestResolvedUnitsAreSelectable(UomSettingsCommon):
 
 
 class TestTheUomSettingTable(UomSettingsCommon):
-    """Only the exact value "1" selects the alternative unit.
-
-    Every branch a reader forgets is held: the key absent, empty, or set to
-    something truthy that is not "1".
-    """
 
     KEY_STATES = {"0": False, "1": True, None: False, "": False, "true": False}
 
@@ -107,12 +88,6 @@ class TestTheUomSettingTable(UomSettingsCommon):
 
 
 class TestTheSettingsBlockCarriesEveryUnit(UomSettingsCommon):
-    """The six unit settings are one block declared by one module.
-
-    They used to arrive from two views at equal priority on the same parent,
-    where the xpath resolved on an id ordering rather than on the inheritance
-    tree and any reordering raised "cannot be located in parent view".
-    """
 
     FIELDS = (
         "product_weight_in_lbs",

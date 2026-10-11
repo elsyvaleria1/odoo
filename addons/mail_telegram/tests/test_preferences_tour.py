@@ -6,8 +6,6 @@ from odoo.addons.telegram.tests.common import TelegramBotHttpCase
 
 @tagged("post_install", "-at_install")
 class TestPreferencesTour(TelegramBotHttpCase):
-    """My Preferences, in a browser: the delivery status reads, and a user
-    with two Telegram accounts picks the one their notifications go to."""
 
     def test_the_user_chooses_their_work_phone(self):
         self.test_bot.write({"bot_username": "notify_bot", "notify_mail": True})

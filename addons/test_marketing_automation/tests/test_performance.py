@@ -235,7 +235,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
 
 @tagged("mail_performance", "post_install", "-at_install")
 class TestMAPerformance(MAPerformanceCommon):
-    """Simpler tests that do not require an heavy campaign in data"""
 
     @classmethod
     def setUpClass(cls):

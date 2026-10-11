@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestResourceKindWalletCards(TransactionCase):
-    """A vehicle runs the wallet cards button of the asset form."""
 
     @classmethod
     def setUpClass(cls):

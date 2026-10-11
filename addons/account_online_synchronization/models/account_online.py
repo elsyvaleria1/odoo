@@ -33,7 +33,6 @@ runbot_pattern = re.compile(r"^https:\/\/[a-z0-9-_]+\.[a-z0-9-_]+\.odoo\.com$")
 
 
 class OdooFinRedirectException(UserError):
-    """When we need to open the iframe in a given mode."""
 
     def __init__(self, message=None, mode="link") -> None:
         self.mode = mode

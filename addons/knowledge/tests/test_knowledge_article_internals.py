@@ -11,7 +11,6 @@ from odoo.addons.knowledge.tests.common import KnowledgeCommonWData
 
 @tagged("knowledge_internals")
 class TestKnowledgeArticleFields(KnowledgeCommonWData):
-    """Test fields and their management."""
 
     @users("employee")
     def test_favorites(self):
@@ -174,7 +173,6 @@ class TestKnowledgeArticleFields(KnowledgeCommonWData):
 
 @tagged("knowledge_internals")
 class TestKnowledgeArticleInternals(KnowledgeCommonWData):
-    """Testing model/ORM overrides"""
 
     def test_notify_member_invitation_groups(self):
         article = self.env["knowledge.article"].create(
@@ -294,7 +292,6 @@ class TestKnowledgeArticleInternals(KnowledgeCommonWData):
 
 @tagged("knowledge_internals")
 class TestKnowledgeArticleUtilities(KnowledgeCommonWData):
-    """Test data oriented utilities and tools for articles."""
 
     @classmethod
     def setUpClass(cls):
@@ -377,8 +374,6 @@ class TestKnowledgeArticleUtilities(KnowledgeCommonWData):
 
 @tagged("knowledge_internals", "knowledge_management")
 class TestKnowledgeCommonWDataInitialValue(KnowledgeCommonWData):
-    """Test initial values or our test data once so that other tests do not have
-    to do it."""
 
     def test_initial_values(self):
         article_workspace = self.article_workspace

@@ -7,13 +7,6 @@ from odoo.addons.test_mail.tests.common import TestRecipients
 
 @tagged("odoobot")
 class TestOdoobot(MailCommon, TestRecipients):
-    """OdooBot seen from outside a discuss channel.
-
-    The onboarding tour itself is `mail_bot/tests`, which drives every step and
-    every retry branch directly. What is left here is the part that needs a
-    non-channel thread: odoobot must stay silent on an ordinary record even when
-    it is pinged, and must not become a follower of one.
-    """
 
     @classmethod
     def setUpClass(cls):

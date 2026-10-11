@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestObligationInData(TransactionCase):
-    """A code gate is data now: a verb the model declares, and a binding a module ships."""
 
     def test_every_shipped_obligation_is_noupdate_module_data(self):
         obligations = (

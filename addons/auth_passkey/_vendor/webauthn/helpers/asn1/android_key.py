@@ -84,14 +84,6 @@ class AuthorizationList(Sequence):
 
 
 class KeyDescription(Sequence):
-    """Attestation extension content as ASN.1 schema (DER-encoded)
-
-    Corresponds to X.509 certificate extension with the following OID:
-
-    `1.3.6.1.4.1.11129.2.1.17`
-
-    See https://source.android.com/security/keystore/attestation#schema
-    """
 
     _fields = [
         ("attestationVersion", Integer),
@@ -106,10 +98,6 @@ class KeyDescription(Sequence):
 
 
 class KeyOrigin(int, Enum):
-    """`Tag::ORIGIN`
-
-    See https://source.android.com/security/keystore/tags#origin
-    """
 
     GENERATED = 0
     DERIVED = 1
@@ -118,10 +106,6 @@ class KeyOrigin(int, Enum):
 
 
 class KeyPurpose(int, Enum):
-    """`Tag::PURPOSE`
-
-    See https://source.android.com/security/keystore/tags#purpose
-    """
 
     ENCRYPT = 0
     DECRYPT = 1

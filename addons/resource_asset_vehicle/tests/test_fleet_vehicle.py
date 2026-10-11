@@ -234,9 +234,6 @@ class TestFleetVehicle(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestVehicleIsItsOwnModel(TransactionCase):
-    """A vehicle is its resource's row extended: `resource.asset.vehicle` shares
-    its resource's id and holds what only vehicles have, and the resource holds
-    everything every thing has."""
 
     @classmethod
     def setUpClass(cls):
@@ -342,9 +339,6 @@ class TestVehicleIsItsOwnModel(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestVehicleInheritsWhatBindsAnAsset(TransactionCase):
-    """A missing access right denies and is noticed at once; a missing record
-    rule permits and is noticed by nobody. So a subtype answers to its root's
-    rules, while its access rights stay its own."""
 
     @classmethod
     def setUpClass(cls):
@@ -382,10 +376,6 @@ class TestVehicleInheritsWhatBindsAnAsset(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestFleetActionContexts(TransactionCase):
-    """An action's context is stored as source and evaluated without `ref`, and
-    a broken expression is defaulted to {} rather than raised. So a context that
-    calls `ref` is not an error anyone sees: it is a menu whose New button
-    quietly makes the wrong record."""
 
     def test_every_fleet_action_context_survives_evaluation(self):
         data = self.env["ir.model.data"].search(

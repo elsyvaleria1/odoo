@@ -4,7 +4,6 @@ from .gamification_utils import start_end_date_for_period
 
 
 class GamificationTeam(models.Model):
-    """Team for collaborative gamification challenges."""
 
     _name = "gamification.team"
     _description = "Gamification Team"

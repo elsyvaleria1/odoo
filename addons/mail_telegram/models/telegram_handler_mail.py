@@ -29,14 +29,6 @@ _FOCUS_KINDS = frozenset({"text", "photo", "document", "voice"})
 
 
 class TelegramHandlerMail(models.AbstractModel):
-    """Replies from Telegram to the Odoo messages the bot delivered.
-
-    A reply to a delivered message is posted on its record or conversation
-    as the person's user, under that user's access rights. A reply to an
-    internal note stays a note; a reply to a public message that would email
-    external followers asks first. Text sent without replying offers the
-    person's recent conversations to post it to.
-    """
 
     _name = "telegram.handler.mail"
     _inherit = "mixin.telegram.handler"

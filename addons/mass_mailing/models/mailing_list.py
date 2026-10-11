@@ -5,7 +5,6 @@ from odoo.exceptions import UserError
 
 
 class MailingList(models.Model):
-    """Model of a contact list."""
 
     _name = "mailing.list"
     _description = "Mailing List"

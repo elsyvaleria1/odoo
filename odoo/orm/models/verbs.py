@@ -15,16 +15,6 @@ _Value = str | typing.Literal[False]
 
 @dataclass(frozen=True, slots=True)
 class Verb:
-    """A business operation the access policy grants like a CRUD operation.
-
-    `requires` is the CRUD operation the verb implies: its records are those of
-    the verb's rows within those of that operation, so a verb never outruns it.
-    `methods` are the doors that perform it; `checkpoints` the funnels every door
-    passes, checked unless a door already admitted the call; `transition` the
-    `(field, from, to)` move a write, create or import makes it by. A verb with
-    `at_create` off is a move of an existing record only: a create or import
-    that lands in its target is not the verb.
-    """
 
     requires: str = "write"
     methods: tuple[str, ...] = ()

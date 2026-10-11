@@ -11,8 +11,6 @@ _logger = logging.getLogger(__name__)
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestSingleEmployeeSalesReport(TestPoSCommon):
-    """The per-employee block is printed beside the session block on one page,
-    so it must answer the same question over the same period."""
 
     def setUp(self):
         super().setUp()

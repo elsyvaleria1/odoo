@@ -5,7 +5,6 @@ from odoo.exceptions import UserError
 
 
 class WizardStockTripScan(models.TransientModel):
-    """Scan the trip sheet at the warehouse, and the slip and lots at a stop."""
 
     _name = "wizard.stock.trip.scan"
     _description = "Trip Scan"

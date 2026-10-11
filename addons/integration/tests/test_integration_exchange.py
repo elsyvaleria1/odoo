@@ -368,7 +368,6 @@ class TestIntegrationExchangeRetention(TransactionCase):
 
 
 class TestInboundEventEnqueue(TestIntegrationExchange):
-    """One event, one job, however many callers ask for it."""
 
     def _jobs_for(self, event):
         return self.env["ir.job"].search(

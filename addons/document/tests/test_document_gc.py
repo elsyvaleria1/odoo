@@ -252,14 +252,6 @@ class TestDocumentsVacuumProgress(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsTrashExpiry(TransactionCaseDocuments):
-    """The purge runs on the date the trash promised, and on no other.
-
-    `_get_domain_gc_clear_bin` used to re-derive the date as
-    `write_date <= now - document.deletion_delay`, which is a different
-    quantity from the one `action_archive` writes into the chatter. It now
-    reads the `deletion_date` that archiving stamps, so the promise the user
-    was given and the rule the cron applies are one value.
-    """
 
     def _trashed(self, name="trash.txt"):
         doc = self.env["document.document"].create(
@@ -371,15 +363,6 @@ class TestDocumentsTrashExpiry(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsTrashInvariant(TransactionCaseDocuments):
-    """Not active implies a deletion date, whatever route put it there.
-
-    The purge reads `deletion_date`, so a document that reaches the trash
-    without one is a document the purge can never reach. `active` can take the
-    value False in exactly two places -- `create` and the write transition --
-    and both are covered here, because the interesting routes use the first:
-    `message_new` creates every mail-gateway document with `active=False`, and
-    `document_sign` creates its signed copies the same way.
-    """
 
     def _dated(self, document):
         return document.deletion_date == fields.Date.today() + relativedelta(

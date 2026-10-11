@@ -30,7 +30,6 @@ def _get_constant_hook(value):
 
 
 class TestRegistryComposition(TransactionCase):
-    """Core registry-assembly behaviour, on a real report model."""
 
     @classmethod
     def setUpClass(cls):
@@ -135,7 +134,6 @@ class TestRegistryComposition(TransactionCase):
 
 
 class TestFromEntryShapes(TransactionCase):
-    """``_prepare_from_entry`` renders each entry kind, and refuses the broken one."""
 
     @classmethod
     def setUpClass(cls):
@@ -198,7 +196,6 @@ class TestFromEntryShapes(TransactionCase):
 
 
 class TestPercentEscaping(TransactionCase):
-    """Registry strings must escape ``%`` as ``%%``; enforce with a clear error."""
 
     @classmethod
     def setUpClass(cls):
@@ -241,11 +238,6 @@ class TestPercentEscaping(TransactionCase):
 
 
 class TestMaterializedMarkerInteraction(TransactionCase):
-    """The ``_materialized`` marker decides what the ORM reads.
-
-    Regression fence: without it, models inheriting both mixins have a physical
-    relation the ORM never reads.
-    """
 
     def test_non_materialized_model_is_inlined(self):
         report = self.env["mixin.report.sql.test.plain"]

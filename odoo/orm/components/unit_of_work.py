@@ -20,9 +20,6 @@ _debug = DebugLog(__name__)
 
 
 class _StallDetector:
-    """Counts how often a pending/dirty snapshot recurs. A compute cycle of
-    period two never shows the same snapshot twice in a row, so the detector
-    keys on the snapshot itself, not on the previous iteration."""
 
     __slots__ = ("_seen",)
 

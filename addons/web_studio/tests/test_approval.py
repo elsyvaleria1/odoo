@@ -7,7 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class StudioApprovalCase(TransactionCase):
-    """Studio's approval rules, as the steps and bindings its editor now writes."""
 
     MODEL = "res.partner"
     METHOD = "address_get"

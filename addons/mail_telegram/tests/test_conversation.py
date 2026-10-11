@@ -6,9 +6,6 @@ from .test_mail_telegram import MailTelegramCase
 
 
 class TestConversationFromTelegram(MailTelegramCase):
-    """/escribir chooses where what is written in the bot's chat goes: a
-    colleague or a recent conversation of Discuss. From then on what the
-    person sends there goes to it, as in a chat."""
 
     def _send(self, text=None, **extra):
         message = self.mock_telegram_message(

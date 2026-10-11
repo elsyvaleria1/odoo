@@ -70,11 +70,6 @@ def _parse_column_order(
 
 
 class _InMemoryQuery(Query):
-    """A query the in-memory backend answered: it holds every matching id,
-    in the order the search sorted them, so a later ORDER BY, LIMIT or
-    OFFSET is applied to the whole match as the SQL query applies it. What
-    narrows it in SQL (a WHERE, a join, a GROUP BY) cannot be evaluated
-    here, and from then on the query refuses to answer."""
 
     __slots__ = ("_matched", "_model", "_storage", "_unanswerable")
 

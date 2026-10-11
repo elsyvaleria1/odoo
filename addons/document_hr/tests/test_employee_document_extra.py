@@ -6,7 +6,6 @@ from .test_document_hr_common import TransactionCaseDocumentsHr
 
 
 class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
-    """Cover employee document counters, action branches, and share links."""
 
     @classmethod
     def setUpClass(cls):

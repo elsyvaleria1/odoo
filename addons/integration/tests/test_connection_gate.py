@@ -315,9 +315,6 @@ class TestConnectionGate(TransactionCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestClientPassesTheConnectionGate(TransactionCase):
-    """`get_api_client` used to open its own egress session and never touch the
-    connection it had resolved, so a service's client ran without the breaker,
-    the budget and the response cap that `_egress_request` callers had."""
 
     def setUp(self):
         super().setUp()

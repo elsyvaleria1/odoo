@@ -3,7 +3,6 @@ from odoo.exceptions import ValidationError
 
 
 class MixinAttributeLine(models.AbstractModel):
-    """Reusable base for an attribute line (one attribute + its chosen values)."""
 
     _name = "mixin.attribute.line"
     _description = "Attribute Line Mixin"

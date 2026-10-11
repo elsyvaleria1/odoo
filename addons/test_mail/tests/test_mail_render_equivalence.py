@@ -20,22 +20,6 @@ from odoo.addons.mail.tests import common
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRendererEquivalence(common.MailCommon):
-    """Where the two `t-out` renderers agree, and where they differ on purpose.
-
-    `_render_template_qweb` picks between an evaluation-free renderer and QWeb
-    on whether the template needs an evaluator. It used to decide that on
-    whether *any* `t-out` element carried an extra attribute -- a property of
-    the template's presentation, not of its expressions -- so this class forced
-    the QWeb path by adding `style="color:red"`. Presentational attributes no
-    longer force anything (see `TestPresentationalAttributes`), and the
-    discriminator is now the expression: an allow-listed path renders without
-    an evaluator, anything else with one.
-
-    `TestRegexRendering.test_qweb_regex_rendering` in `mail` specifies the
-    evaluation-free renderer's semantics case by case, including two that differ
-    from QWeb by design (a valueless `t-out` keeps its empty element; a default
-    body is stripped). Those are the contract, not drift.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -138,11 +122,6 @@ class TestRendererEquivalence(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRenderErrorPolicy(common.MailCommon):
-    """One error policy, not one per code path.
-
-    `_check_render_error` classifies `AccessError` carefully. It is reachable
-    from one of the five render paths.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -231,7 +210,6 @@ class TestRenderErrorPolicy(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestDynamicTemplateWriteScope(common.MailCommon):
-    """Writing one placeholder field must not re-validate the others."""
 
     @classmethod
     def setUpClass(cls):
@@ -325,7 +303,6 @@ class TestDynamicTemplateWriteScope(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestLocalLinkReplacement(common.MailCommon):
-    """`/[^/][^"]+` is a hand-rolled 'not //', and it is wrong at the edges."""
 
     @classmethod
     def setUpClass(cls):
@@ -355,7 +332,6 @@ class TestLocalLinkReplacement(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestEncapsulateContract(common.MailCommon):
-    """`_render_encapsulate` and the notify pipeline build the same context."""
 
     def test_missing_layout_does_not_produce_an_empty_body(self):
         body = Markup("<p>the actual content</p>")
@@ -367,14 +343,6 @@ class TestEncapsulateContract(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestPlaceholderValueTypes(common.MailCommon):
-    """Every engine answers the same thing for a value with no text form.
-
-    The three renderers reach the question by different routes -- the inline
-    engine through `renders_as_no_value`, the evaluation-free one through
-    `_get_static_value`, the evaluated QWeb one through
-    `ir_qweb._mail_normalize_out` -- so the property is asserted on all three
-    rather than on whichever happens to run.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -429,16 +397,6 @@ class TestPlaceholderValueTypes(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestPresentationalAttributes(common.MailCommon):
-    """Formatting a placeholder is not writing code.
-
-    Restricted rendering refused every attribute on a `t-out` element, so
-    `<p style="color:red" t-out="object.name"/>` -- what the editor produces the
-    moment anyone colours a placeholder -- revoked a non-editor's save and sent
-    the template down the evaluating renderer. The rule protected nothing: the
-    same user may write `<p style="color:red">` with no `t-out` on it in the
-    same field, and the dangerous attributes are removed by the html field's
-    sanitizer.
-    """
 
     @classmethod
     def setUpClass(cls):

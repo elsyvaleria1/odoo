@@ -4,7 +4,6 @@ from odoo import api, exceptions, fields, models
 
 
 class GamificationSkillTree(models.Model):
-    """Branching skill progression tree (e.g., Sales, Technical, Leadership)."""
 
     _name = "gamification.skill.tree"
     _description = "Gamification Skill Tree"
@@ -39,7 +38,6 @@ class GamificationSkillTree(models.Model):
 
 
 class GamificationSkillNode(models.Model):
-    """Individual competency node within a skill tree."""
 
     _name = "gamification.skill.node"
     _description = "Skill Tree Node"
@@ -243,7 +241,6 @@ class GamificationSkillNode(models.Model):
 
 
 class GamificationSkillNodeUnlock(models.Model):
-    """Record of a user unlocking a skill tree node."""
 
     _name = "gamification.skill.node.unlock"
     _description = "Skill Node Unlock"

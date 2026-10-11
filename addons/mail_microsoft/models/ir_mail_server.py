@@ -7,7 +7,6 @@ from odoo.addons.mail_microsoft.models.mixin_mail_microsoft import OUTLOOK
 
 
 class IrMail_Server(models.Model):
-    """Add the Outlook OAuth authentication on the outgoing mail servers."""
 
     _name = "ir.mail_server"
     _inherit = ["ir.mail_server", "mixin.mail.microsoft"]

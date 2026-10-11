@@ -10,17 +10,6 @@ PROVIDER_KEY_SOURCES = {
 
 
 class AiLlmCredential(models.AbstractModel):
-    """Where ``LLMApiService`` gets an API key from.
-
-    Split out of ``LLMApiService._get_api_token`` so that the lookup is an
-    override point. ``LLMApiService`` is a plain class instantiated directly, so
-    a module wanting to source keys differently -- from a credential vault, per
-    company, per user -- has nothing to extend; an AbstractModel does, through
-    the ordinary ``_inherit``.
-
-    The default keeps the historical behaviour exactly: a system parameter, then
-    an environment variable, for OpenAI and Google.
-    """
 
     _name = "ai.llm.credential"
     _description = "AI Provider Credentials"

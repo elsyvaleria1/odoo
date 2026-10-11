@@ -33,7 +33,6 @@ SylvacSCalProProtocol = SerialProtocol(
 
 
 class SylvacSCalProDriver(SerialDriver):
-    """Driver For Sylvac's USB calipers."""
 
     _protocol = SylvacSCalProProtocol
 

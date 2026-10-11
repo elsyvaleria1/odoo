@@ -70,7 +70,6 @@ class TestGeocoder(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestGeocoderEdges(TransactionCase):
-    """Provider-specific query building, error paths and localisation."""
 
     @classmethod
     def setUpClass(cls):
@@ -189,7 +188,6 @@ class TestGeocoderEdges(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPartnerCoordinatesReset(TransactionCase):
-    """Address edits invalidate stale partner coordinates."""
 
     def test_address_change_resets_coordinates(self):
         partner = self.env["res.partner"].create(

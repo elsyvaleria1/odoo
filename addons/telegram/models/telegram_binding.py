@@ -23,14 +23,6 @@ _REVOKE_REASONS = [
 
 
 class TelegramBinding(models.Model):
-    """Who a Telegram account is in Odoo, as both sides proved it.
-
-    An active binding is the only thing that lets an update act as someone.
-    It is created by consuming a link token -- an Odoo session minted it, or an
-    administrator's invitation reached the contact -- and Telegram delivering
-    the sender's id; revoking it is terminal. Every transition is journaled in
-    telegram.binding.event, and in auth.event when a user is bound.
-    """
 
     _name = "telegram.binding"
     _description = "Telegram Binding"

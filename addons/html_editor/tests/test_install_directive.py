@@ -2,17 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestInstallDirectiveIsDecidedPerUser(TransactionCase):
-    """`t-install` must decide who sees it at render time, not at compile time.
-
-    `_generate_code_cached` is an ormcache keyed on
-    `(ref, _get_template_cache_signature())`, and that signature carries no uid.
-    Reading `self.env.user.has_group('base.group_system')` while compiling
-    therefore let whichever user warmed the cache decide for everyone: with an
-    administrator first a plain internal user was served the module's name, id
-    and display name; with a plain user first the administrator never saw the
-    placeholder. Both orders are asserted, because a fix that only reorders the
-    compile would pass one of them.
-    """
 
     @classmethod
     def setUpClass(cls):

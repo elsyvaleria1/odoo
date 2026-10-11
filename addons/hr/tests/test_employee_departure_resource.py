@@ -9,8 +9,6 @@ from .common import TestHrCommon
 
 @tagged("post_install", "-at_install")
 class TestDepartureDisposesTheResource(TestHrCommon):
-    """A departure is the person's disposal: on its date their resource is
-    disposed, which archives it and ends what they held."""
 
     @classmethod
     def setUpClass(cls):

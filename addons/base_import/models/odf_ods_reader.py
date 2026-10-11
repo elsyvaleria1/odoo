@@ -34,12 +34,6 @@ def _node_text(node) -> str:
 
 
 class ODSReader:
-    """Minimal ODS reader: each sheet becomes a list of rows, each row a list
-    of cell strings.
-
-    :param file: a file-like object holding the .ods archive
-    :param content: an already-parsed ``OpenDocument``, used instead of ``file``
-    """
 
     def __init__(self, file=None, content=None) -> None:
         if content is None:

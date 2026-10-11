@@ -8,7 +8,6 @@ from odoo.tools import frozendict
 
 
 class GamificationKudosCategory(models.Model):
-    """Category for peer recognition kudos (e.g. Teamwork, Innovation, Quality)."""
 
     _name = "gamification.kudos.category"
     _description = "Kudos Category"
@@ -52,7 +51,6 @@ KUDOS_VALUE_FIELDS = frozenset(
 
 
 class GamificationKudos(models.Model):
-    """Peer-to-peer recognition message."""
 
     _name = "gamification.kudos"
     _description = "Peer Recognition"

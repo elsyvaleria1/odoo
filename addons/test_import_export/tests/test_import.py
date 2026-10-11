@@ -830,9 +830,6 @@ class TestPreview(TransactionCase):
 
 
 class test_convert_import_data(TransactionCase):
-    """Tests conversion of base_import.import input into data which
-    can be fed to Model.load
-    """
 
     def test_all(self):
         import_wizard = self.env["base_import.import"].create(

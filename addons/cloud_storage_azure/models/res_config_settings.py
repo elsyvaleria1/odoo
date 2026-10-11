@@ -5,7 +5,6 @@ from odoo.exceptions import UserError, ValidationError
 
 
 class ResConfigSettings(models.TransientModel):
-    """Azure configuration for cloud storage attachments."""
 
     _inherit = "res.config.settings"
 

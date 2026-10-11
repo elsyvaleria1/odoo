@@ -3,7 +3,6 @@ from odoo.api import ValuesType
 
 
 class AppointmentType(models.Model):
-    """Template-driven setup helpers for appointment.type, used by onboarding and the kanban helper."""
 
     _inherit = "appointment.type"
 

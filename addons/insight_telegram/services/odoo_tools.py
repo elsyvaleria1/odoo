@@ -151,16 +151,10 @@ PDF_TOOLS = [
 
 
 class ReaderError(Exception):
-    """A tool call the model can correct: the message goes back to it."""
+    pass
 
 
 class OdooTools:
-    """Run the agent's read tools through an `OdooReader`.
-
-    Each call reads on its own read-only transaction, so no tool can write
-    whatever it is asked, and none sits idle while the model thinks. What the
-    instance keeps secret stays out, also as a filter, an order or a grouping.
-    """
 
     def __init__(
         self, reader, queries=None, *, tz="UTC", today=None, writable=False

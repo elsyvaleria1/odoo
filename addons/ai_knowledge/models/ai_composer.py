@@ -2,9 +2,6 @@ from odoo import fields, models
 
 
 class AIComposer(models.Model):
-    """AI Composer Model Configurations
-    It extends the base usage with AI assistant for knowledge functionality
-    """
 
     _name = "ai.composer"
     _inherit = ["ai.composer"]

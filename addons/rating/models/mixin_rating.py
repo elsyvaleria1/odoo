@@ -9,7 +9,6 @@ from odoo.addons.rating.models import rating_data
 
 
 class MixinRating(models.AbstractModel):
-    """This mixin adds rating statistics to mixin.mail.thread that already support ratings."""
 
     _name = "mixin.rating"
     _description = "Rating Mixin"

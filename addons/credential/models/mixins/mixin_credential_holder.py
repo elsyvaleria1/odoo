@@ -7,21 +7,6 @@ NATIVE_CREDENTIAL_FIELDS = frozenset({"api_key", "api_secret", "username", "pass
 
 
 class MixinCredentialHolder(models.AbstractModel):
-    """A record whose own secret fields are doors onto one credential.
-
-    The concrete model declares the Many2one named by `_credential_holder_field`,
-    maps each door to a vault key in `_CREDENTIAL_FIELDS`, and declares every door
-    as ``fields.Char(compute="_compute_credential_doors",
-    inverse="_inverse_credential_doors")``, with ``copy=True`` when a copy of the
-    record should carry the secret. A key in `NATIVE_CREDENTIAL_FIELDS`
-    lands in that credential field; any other key is a member of
-    `credential_data`.
-
-    Secrets written through `create` and `write` are routed out of the values
-    before the ORM sees them. The ORM protects every field computed by one
-    method during a write, so an inverse shared by all doors would read the
-    doors not being written as empty and clear them.
-    """
 
     _name = "mixin.credential.holder"
     _description = "Credential Holder"

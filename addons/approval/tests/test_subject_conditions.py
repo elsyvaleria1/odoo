@@ -7,13 +7,6 @@ from .common import add_category_approver, add_rule_step, new_trip_category
 
 @tagged("post_install", "-at_install")
 class TestSubjectConditions(common.TransactionCase):
-    """Conditions that read the source document rather than the request.
-
-    `approval.rule` historically compared only the four normalised figures the
-    request carries (amount, quantity, date range, priority). These cover the
-    two condition types that reach through `res_model`/`res_id` to the document
-    the request was raised for.
-    """
 
     @classmethod
     def setUpClass(cls):

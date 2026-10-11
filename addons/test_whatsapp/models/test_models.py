@@ -4,8 +4,6 @@ from odoo.addons.base.models.res_partner import _selection_timezones
 
 
 class WhatsappTestBase(models.Model):
-    """Base test model for whatsapp implementation, with mail thread support
-    and number / partner."""
 
     _name = "whatsapp.test.base"
     _description = "WhatsApp Base Test"
@@ -51,7 +49,6 @@ class WhatsappTestBase(models.Model):
 
 
 class WhatsappTestNothread(models.Model):
-    """Same as base test model but with no way to get a responsible."""
 
     _name = "whatsapp.test.nothread"
     _description = "WhatsApp NoThread / NoResponsible"
@@ -75,8 +72,6 @@ class WhatsappTestNothread(models.Model):
 
 
 class WhatsappTestNothreadNoname(models.Model):
-    """Same as base test model but with no way to get a responsible and that
-    does not have a name."""
 
     _name = "whatsapp.test.nothread.noname"
     _description = "WhatsApp NoThread / NoResponsible /NoName"
@@ -100,7 +95,6 @@ class WhatsappTestNothreadNoname(models.Model):
 
 
 class WhatsappTestResponsible(models.Model):
-    """Same as base test model but with responsible fields"""
 
     _name = "whatsapp.test.responsible"
     _description = "WhatsApp Responsible Test"
@@ -112,7 +106,6 @@ class WhatsappTestResponsible(models.Model):
 
 
 class WhatsappTestSelection(models.Model):
-    """Selection test model to test Selection fields using chain"""
 
     _name = "whatsapp.test.selection"
     _description = "WhatsApp Selection Test"
@@ -129,7 +122,6 @@ class WhatsappTestSelection(models.Model):
 
 
 class WhatsappTestTimezone(models.Model):
-    """Same as base test model but with timezone fields"""
 
     _name = "whatsapp.test.timezone"
     _description = "WhatsApp Timezone Test"

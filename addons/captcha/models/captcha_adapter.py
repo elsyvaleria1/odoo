@@ -10,9 +10,6 @@ TOKEN_LOG_PREFIX = 12
 
 
 class CaptchaAdapter(models.AbstractModel):
-    """A captcha provider's verification. A provider's adapter inherits this
-    model under its own name; one answering the common siteverify protocol
-    (reCAPTCHA, Turnstile) supplies its site key, its secret and the request."""
 
     _name = "captcha.adapter"
     _description = "Captcha Provider Adapter"

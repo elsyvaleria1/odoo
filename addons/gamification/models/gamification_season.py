@@ -7,7 +7,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationSeason(models.Model):
-    """Time-limited themed gamification event with exclusive rewards."""
 
     _name = "gamification.season"
     _description = "Gamification Season"

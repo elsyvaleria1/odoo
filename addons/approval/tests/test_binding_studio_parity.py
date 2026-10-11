@@ -5,10 +5,6 @@ from odoo.tests import common, tagged
 
 @tagged("post_install", "-at_install")
 class TestApprovalStudioParity(common.TransactionCase):
-    """What a Studio approval rule did, held by the steps and bindings that replace it.
-
-    Each test names the Studio test whose behaviour it keeps.
-    """
 
     @classmethod
     def setUpClass(cls):

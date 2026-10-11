@@ -10,11 +10,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialLivePost(models.Model):
-    """A social 'live' post, as opposed to a social.post, represents a post that is
-    actually on a social.account instance.
-
-    Basically, a social.post that is posted on 4 social.accounts will create 4 instances
-    of the social.live.post."""
 
     _name = "social.live.post"
     _description = "Social Live Post"

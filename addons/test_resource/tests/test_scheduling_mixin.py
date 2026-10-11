@@ -10,17 +10,6 @@ from odoo.addons.base.tests.common import ResourceCase
 
 @tagged("post_install", "-at_install")
 class TestSchedulingMixin(TransactionCase):
-    """Test the resource scheduling mixin fields and methods.
-
-    Uses a standard 40h/week calendar (Mon-Fri, 8:00-12:00 + 13:00-17:00 UTC)
-    and various resource configurations to validate the consolidated scheduling
-    logic.
-
-    Reference dates (2025):
-        Mon 2025-01-06  |  Tue 2025-01-07  |  Wed 2025-01-08
-        Thu 2025-01-09  |  Fri 2025-01-10  |  Sat 2025-01-11
-        Sun 2025-01-12  |  Mon 2025-01-13
-    """
 
     MODEL_NAME = "resource.scheduling.test"
 
@@ -590,14 +579,6 @@ class TestSchedulingMixin(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSchedulingMixinAllocationBounds(TransactionCase):
-    """The mixin rejects an out-of-range allocation share on the consumer.
-
-    ``resource.reservation`` carries the same rule, but the value originates on
-    the consumer: without a check here the user got a constraint violation on a
-    mirror row they never see, instead of an error on the field they edited.
-    A negative share is the dangerous one — the cumulative overlap sweep sums
-    these numbers, so it cancels real bookings out of conflict detection.
-    """
 
     def _record(self, **vals):
         return self.env["resource.scheduling.test"].create({"name": "bounds", **vals})
@@ -622,17 +603,6 @@ class TestSchedulingMixinAllocationBounds(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSchedulingMixinSurplusRelease(TransactionCase):
-    """Releasing a surplus reservation must not need the user's own rights.
-
-    ``base.group_user`` holds *read-only* access to ``resource.reservation`` --
-    the rows are engine-owned mirrors, written only by the projection. Creating
-    one has always gone through ``sudo``; deleting a surplus one did not,
-    because the recordset collecting them is built from ``self.browse()`` and
-    ``union`` answers in the environment of its left operand, discarding the
-    ``sudo`` the rows were fetched with. So an ordinary user who moved a
-    booking from one resource to another got an AccessError from a sync that
-    was only tidying up after them.
-    """
 
     @classmethod
     def setUpClass(cls):

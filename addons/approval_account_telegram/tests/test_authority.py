@@ -8,8 +8,6 @@ _LOG_PRIVILEGE = "approval_account_telegram.privilege_log_payment_request"
 
 @tagged("post_install", "-at_install")
 class TestPaymentRequestAuthority(PaymentApprovalTelegramTestCase):
-    """A payment request filed over Telegram is its sender's own: created,
-    attached and submitted with their rights, never the superuser's."""
 
     def setUp(self):
         super().setUp()

@@ -5,7 +5,6 @@ from odoo.tools import frozendict
 
 
 class GamificationMentorship(models.Model):
-    """Mentor-mentee pairing for guided gamification progression."""
 
     _name = "gamification.mentorship"
     _description = "Gamification Mentorship"

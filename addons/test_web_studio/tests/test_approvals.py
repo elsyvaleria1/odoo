@@ -6,7 +6,6 @@ from odoo.addons.web_studio.tests.test_ui import setup_view_editor_data
 
 
 class TestStudioApprovalsCommon(TransactionCase):
-    """Studio's approval rules, as the steps and bindings its editor now writes."""
 
     MODEL = "test.studio.model_action"
 

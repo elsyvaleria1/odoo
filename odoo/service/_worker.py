@@ -690,24 +690,11 @@ class WorkerCron(Worker):
 
 
 class WorkerJob(WorkerCron):
-    """The same loop on the other channel.
-
-    Everything that differs between the two is `kind`: the channel it
-    listens on, when its connection is recycled, whose `_process_jobs` it
-    calls and the real-time budget its master's watchdog allows it.
-    """
 
     kind: ListenerKind = JOB_LISTENER
 
 
 class WorkerStream(WorkerCron):
-    """The sweep that reconciles a database's held-open connections.
-
-    The connections live in this process between sweeps, so the loop wakes
-    on the stream channel and on a fixed heartbeat rather than the cron
-    schedule, sweeps every served database each time, and closes what it
-    holds when it stops; the next leader reopens it within one heartbeat.
-    """
 
     kind: ListenerKind = STREAM_LISTENER
 

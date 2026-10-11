@@ -4,8 +4,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestChatbotServerDriven(TransactionCase):
-    """The chatbot runs where no browser drives it: a messaging bridge posts
-    the visitor's answers and asks the channel to go on."""
 
     @classmethod
     def setUpClass(cls):

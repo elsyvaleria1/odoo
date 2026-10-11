@@ -7,12 +7,6 @@ if typing.TYPE_CHECKING:
 
 
 class SystemSettings:
-    """Read-only settings port for trusted server code.
-
-    Returns scalar values, never an elevated recordset. The owning model keeps
-    parameter caching and secret unsealing; writes still require its normal ACL.
-    Do not expose arbitrary client-selected keys through an RPC method.
-    """
 
     __slots__ = ()
 

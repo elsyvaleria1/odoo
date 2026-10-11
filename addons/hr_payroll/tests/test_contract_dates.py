@@ -8,8 +8,6 @@ from odoo.addons.hr_payroll.tests.common import TestPayslipBase
 
 @tagged("post_install", "-at_install")
 class TestContractDates(TestPayslipBase):
-    """The contract window of a version cannot be moved over a payslip that
-    has already been validated and not refunded."""
 
     @classmethod
     def setUpClass(cls):

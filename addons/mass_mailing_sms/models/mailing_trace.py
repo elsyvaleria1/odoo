@@ -5,8 +5,6 @@ from odoo import api, fields, models
 
 
 class MailingTrace(models.Model):
-    """Improve statistics model to add SMS support. Main attributes of
-    statistics model are used, only some specific data is required."""
 
     _inherit = "mailing.trace"
     CODE_SIZE = 3

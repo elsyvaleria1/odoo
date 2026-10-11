@@ -186,8 +186,6 @@ class TestChatbot(LivechatTelegramCase):
 
 
 class TestBusinessAccount(LivechatTelegramCase):
-    """The operator's own Telegram Business account: its customers' chats are
-    sessions the operator answers, from Odoo or from their phone."""
 
     OWNER_ID = 880001
     CUSTOMER_ID = 880002

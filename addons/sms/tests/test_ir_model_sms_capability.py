@@ -3,13 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestIrModelSmsCapability(TransactionCase):
-    """Which models are offered as SMS targets.
-
-    ``is_mail_thread_sms`` drives the model picker of SMS server actions and
-    mailings. Offering a model that cannot actually be texted produces a
-    send that fails later; hiding one that can makes the feature look
-    unavailable.
-    """
 
     @classmethod
     def setUpClass(cls):

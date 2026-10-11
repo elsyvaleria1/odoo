@@ -6,7 +6,6 @@ from odoo.addons.base.models.mixin_bearer_token import hash_bearer_token
 
 @tagged("post_install", "-at_install")
 class TestSealedSurveyTokens(TransactionCase):
-    """A survey's token and an answer's session token, kept sealed."""
 
     @classmethod
     def setUpClass(cls):

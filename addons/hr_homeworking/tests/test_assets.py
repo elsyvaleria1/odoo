@@ -8,14 +8,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestLocatedStatusesTravelWithTheClient(TransactionCase):
-    """Wherever a client reads a decorated `im_status`, it must know what a
-    located one means.
-
-    `res.partner._compute_presence` decorates `im_status` for every client, not
-    only for the backend, so a bundle that renders the member list or the status
-    icon without this module's patches puts an employee who is online at their
-    desk under Offline, or draws no icon at all for them.
-    """
 
     PARTITIONING_PATH = "mail/static/src/discuss/core/common/thread_model_patch.js"
     STATUS_ICON_PATH = "mail/static/src/core/common/im_status.xml"

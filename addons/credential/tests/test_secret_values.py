@@ -127,9 +127,6 @@ class TestSecretValues(TransactionCase):
 
 
 class TestSecretValueAlternatives(TransactionCase):
-    """A bearer token is kept either as the credential's Secret Value or under
-    the bearer_token key of a JSON payload, never both: the form offers the
-    key only to a credential that already keeps JSON."""
 
     def _credential(self, **values):
         return self.env["credential.credential"].create(

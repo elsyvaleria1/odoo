@@ -52,7 +52,6 @@ HASHED_FIELDS = (
 
 
 class StockTripCheckpoint(models.Model):
-    """One event of a delivery trip, sealed to the one before it."""
 
     _name = "stock.trip.checkpoint"
     _description = "Trip Checkpoint"

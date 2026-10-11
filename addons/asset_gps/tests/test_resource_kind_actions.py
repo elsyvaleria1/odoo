@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestResourceKindGpsActions(TransactionCase):
-    """A vehicle runs the GPS buttons its form inherits from the asset form."""
 
     @classmethod
     def setUpClass(cls):

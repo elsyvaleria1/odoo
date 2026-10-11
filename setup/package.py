@@ -213,7 +213,6 @@ def _update_build_dir(
 
 
 class Docker:
-    """Base Docker class. Must be inherited by specific Docker builder class"""
 
     arch = None
 
@@ -321,7 +320,6 @@ class Docker:
 
 
 class DockerTgz(Docker):
-    """Docker class to build python src package"""
 
     arch = "tgz"
 
@@ -369,7 +367,6 @@ class DockerTgz(Docker):
 
 
 class DockerDeb(Docker):
-    """Docker class to build debian package"""
 
     arch = "deb"
 
@@ -408,7 +405,6 @@ class DockerDeb(Docker):
 
 
 class DockerRpm(Docker):
-    """Docker class to build rpm package"""
 
     arch = "rpm"
 
@@ -472,7 +468,6 @@ class DockerRpm(Docker):
 
 
 class DockerWine(Docker):
-    """Docker class to build Windows package"""
 
     arch = "win"
 
@@ -496,7 +491,6 @@ class DockerWine(Docker):
 
 
 class DockerIot(DockerWine):
-    """Docker class to build windows IoT package"""
 
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__(args)

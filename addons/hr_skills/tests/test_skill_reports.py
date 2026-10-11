@@ -382,13 +382,6 @@ class TestSkillHistoryReport(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestSkillDataMultiCompany(SkillsCase):
-    """Skills and resume lines follow the employee's company.
-
-    hr.employee has carried a multi-company rule for as long as it has existed;
-    the rows hanging off it did not, so an HR user in one company could
-    enumerate another company's skill and resume rows -- the employee behind
-    them was already unreadable, but their existence and level were not.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -485,10 +478,6 @@ class TestSkillDataMultiCompany(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestReportRowIdentity(SkillsCase):
-    """A row of the skill or certification report *is* one hr.employee.skill
-    row, so it carries that row's id. row_number() gave every read a fresh
-    numbering, so the same row answered to a different id from one query to
-    the next and nothing could be opened, followed or compared across reads."""
 
     def test_the_skill_report_row_is_the_skill_row(self):
         employee = self.env["hr.employee"].create({"name": "Identity employee"})

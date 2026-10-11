@@ -116,7 +116,6 @@ UPS_ERROR_MAP = {
 
 
 class LogPlugin(Plugin):
-    """Small plugin for zeep that catches out/ingoing XML requests and logs them"""
 
     def __init__(self, debug_logger) -> None:
         self.debug_logger = debug_logger

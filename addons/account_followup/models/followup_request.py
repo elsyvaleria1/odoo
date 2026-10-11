@@ -8,26 +8,6 @@ from typing import Any, Self
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class FollowupRequest:
-    """One reminder, for one customer, resolved once.
-
-    Every field is settled by :meth:`prepare` before any of it is read, so no
-    consumer resolves a fallback of its own. That is not a style preference:
-    each of the three faults below was a fallback resolved late, in the wrong
-    place, and each is unrepresentable here.
-
-    - ``partner`` is a record, so it cannot arrive as an id in one caller and a
-      recordset in the next.
-    - ``followup_line`` and ``mail_template`` are read off the customer once,
-      rather than off whichever recordset happened to be in scope -- a billing
-      contact carries no receivables, so resolving there silently produced an
-      empty template.
-    - one name per concept, so a wizard cannot write ``template_id`` while the
-      renderer reads ``mail_template``.
-
-    Frozen, because the dict this replaces was mutated in place inside a loop
-    over the recipients, which made the caller's value depend on how far the
-    loop had got. Derive a changed copy with :meth:`replace`.
-    """
 
     partner: Any
     followup_line: Any

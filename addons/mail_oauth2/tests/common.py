@@ -19,8 +19,6 @@ def id_token(**claims) -> str:
 
 
 class OAuthMailServerCase(HttpCase):
-    """A vendor's mail server, authorized through its own connection to the
-    vendor's OAuth service; a vendor's suite sets the class attributes."""
 
     allow_inherited_tests_method = True
     service_xmlid = None

@@ -288,11 +288,6 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
 
 @tagged("ir_actions")
 class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
-    """What the configuration computes seed, and what the warnings catch.
-
-    Every one of these covers a compute that read a field it did not depend on,
-    or a misconfiguration that used to reach `run()` and do nothing.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -452,19 +447,6 @@ class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
 
 @tagged("-at_install", "post_install", "ir_actions")
 class TestServerActionsMailRegistryContract(MailCommon):
-    """What `mail` contributes to `ir.actions.server` once everything has loaded.
-
-    `post_install` is the whole point of this class, not decoration. `at_install`
-    tests run inside the module-loading loop (`odoo/modules/loading.py`), and a
-    module named `test_*` is pinned to the *depth of its heaviest dependency*
-    rather than that depth plus one (`odoo/modules/module_graph.py`), so
-    `test_mail` sorts immediately after `mail` and runs before anything layered
-    on top of it exists. An `at_install` test therefore cannot see a downstream
-    override at all -- which is how `addons/ai` reassigning `allowed_states`
-    without calling `super()` stayed invisible while shipping in every
-    enterprise deployment: `ai_auto_install` pulls `ai` in from a bare
-    `-i mail`, and mail's narrowing had not run since.
-    """
 
     def test_a_model_is_only_offered_the_states_it_supports(self):
         no_thread = self.env["ir.model"]._get("mail.test.nothread")
@@ -521,13 +503,6 @@ class TestServerActionsMailRegistryContract(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailBatch(MailCommon):
-    """The runners at N > 1.
-
-    Every test the mail server actions had ran on a single `active_id`, so the
-    batch path of all four runners was uncovered and a query per record was
-    invisible. These measure the *marginal* cost, at two sizes, so a warm cache
-    cannot make the assertion vacuous.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -926,12 +901,6 @@ class TestServerActionsMailBatch(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailDefaults(MailCommon):
-    """What the configuration seeds when the user has not chosen yet.
-
-    The seeds used to come from `ir.model.fields.search(..., limit=1)`, whose
-    `_order` is `name, id` -- the alphabetically first relation to the comodel,
-    which is a coin flip that always lands the same way.
-    """
 
     def test_the_followers_field_comes_from_mail_s_own_convention(self):
         for model_name, expected in (
@@ -1146,18 +1115,6 @@ class TestServerActionsMailDefaults(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailConfigurationSurvives(MailCommon):
-    """A retrigger of a seeding compute must not overwrite what the user chose.
-
-    Five of these fields were seeded by a compute that assigned its default on
-    *every* pass, not only when there was nothing to keep. The ORM marks a
-    dependent modified on any write naming a dependency -- a write of the very
-    same value included -- so the seed ran again and silently replaced the
-    configuration. `Form` is used where the web client is the reachable
-    trigger, because it drives the same onchange protocol the client does;
-    `load()` is used where the reachable trigger is an export/re-import, which
-    is how a server action is moved between databases and which resends every
-    column whether or not it changed.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1299,7 +1256,6 @@ class TestServerActionsMailConfigurationSurvives(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailActivityDeadline(MailCommon):
-    """`Due Date In` counts from the assignee's today, not the server's."""
 
     @freeze_time("2026-08-18 23:30:00")
     def test_the_deadline_counts_from_the_assignee_s_timezone(self):
@@ -1386,13 +1342,6 @@ class TestServerActionsMailActivityDeadline(MailCommon):
 
 @tagged("ir_actions")
 class TestMailPostBatch(MailCommon):
-    """The `comment`/`note` branch of `mail_post` over more than one record.
-
-    It went through `message_post_with_source`, which builds a
-    `wizard.mail.message.send` per record and re-renders the whole template inside
-    each: 31.4 queries per record, against the 0.05 of the `email` branch of the
-    very same runner.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1542,14 +1491,6 @@ class TestMailPostBatch(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailPostContext(MailCommon):
-    """The action must send what it was configured to send.
-
-    `/web/action/run` merges a client-supplied context with no allowlist, and an
-    `act_window` or an automation rule carries one by accident. Everything a
-    `wizard.mail.message.send` has a field for -- fifty of them -- used to override
-    the configured template, because only `default_type` and
-    `default_parent_id` were removed.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1611,14 +1552,6 @@ class TestServerActionsMailPostContext(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsRunContext(MailCommon):
-    """The same client-supplied context reaches the other two runners.
-
-    `mail_post` strips the caller's `default_*` before building its composer.
-    The activity and follower runners did not, and everything they create is a
-    record like any other: `default_user_id` in the context reassigned the
-    activity the action was configured to give the record's own salesperson,
-    and every field of a `mail.followers` row was settable the same way.
-    """
 
     @classmethod
     def setUpClass(cls):

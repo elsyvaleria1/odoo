@@ -16,14 +16,6 @@ ORDER_DECLARATIONS = [
 
 @tagged("post_install", "-at_install")
 class TestOrderTypeDeclarations(TransactionCase):
-    """The contract that replaced the order-type switches.
-
-    `mixin.order` used to answer these by branching on `_get_order_type()`,
-    which meant a third order type silently received the purchase answer for
-    every one of them. They are declarations now, and this asserts that each
-    concrete model actually makes them -- an omission is a class attribute
-    left empty, which no other test would notice.
-    """
 
     def test_every_order_model_declares_what_the_mixin_reads(self):
         for model_name in ORDER_MODELS:

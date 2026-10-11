@@ -9,9 +9,6 @@ from odoo.addons.calendar_sync.remote import (
 
 
 class CalendarSyncAdapter(models.AbstractModel):
-    """What the engine asks of a provider: its transport and the conversion
-    of its items. A provider's adapter inherits this model under its own
-    name and answers every method; the engine does the rest."""
 
     _name = "calendar.sync.adapter"
     _description = "Calendar Synchronization Adapter"

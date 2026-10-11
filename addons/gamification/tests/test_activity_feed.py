@@ -6,7 +6,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestActivityFeed(common.TransactionCase):
-    """Tests for the unified gamification activity feed."""
 
     @classmethod
     def setUpClass(cls):

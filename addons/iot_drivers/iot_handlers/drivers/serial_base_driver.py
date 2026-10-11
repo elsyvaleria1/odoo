@@ -55,7 +55,6 @@ def serial_connection(path, protocol, is_probing=False):
 
 
 class SerialDriver(Driver):
-    """Abstract base class for serial drivers."""
 
     _protocol = None
     connection_type = "serial"

@@ -931,7 +931,6 @@ class TestDelegationScopeIsLiveRequestsOnly(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestDelegatedActivityHolder(ApprovalCommon):
-    """The approval activity is held by whoever may decide the row that day."""
 
     @classmethod
     def setUpClass(cls):

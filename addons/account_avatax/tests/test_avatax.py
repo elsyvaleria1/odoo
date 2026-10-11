@@ -758,7 +758,6 @@ class TestAccountAvalaraInternalIntegration(TestAccountAvalaraInternalCommon):
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraSalesTaxAdministration(TestAccountAvataxCommon):
-    """https://developer.avalara.com/certification/avatax/sales-tax-badge/"""
 
     @classmethod
     def setUpClass(cls):

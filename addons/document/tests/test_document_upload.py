@@ -88,7 +88,6 @@ def _pdf(pages=1):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsPdfSplitPlacement(HttpCase, TransactionCaseDocuments):
-    """The server places a split's outputs; the client names only its view."""
 
     @classmethod
     def setUpClass(cls):
@@ -405,13 +404,6 @@ class TestDocumentsPdfSplitInput(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsMultiFileUpload(HttpCase):
-    """Dropping several files into a folder in ONE request.
-
-    Nothing covered this path before, and it is the one the Documents kanban
-    uses for a drag-and-drop of more than one file. Its documents are now
-    created in a single `create()` rather than one per file, so the thing worth
-    pinning is that batching keeps each file paired with its own values.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -514,16 +506,6 @@ class TestDocumentsMultiFileUpload(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsMultiFileUploadCost(HttpCase):
-    """Uploading N files must not cost N times uploading one.
-
-    A budget would be the wrong guard here: it only fails ABOVE itself, so it
-    passes both when the code improves and, at a loose enough value, when it
-    regresses. What is asserted instead is the SHAPE -- the marginal cost of
-    one extra file in the same request. Per-file document creation measured
-    13.1 queries per extra file through this route; batching the creates
-    measured 4.0, the remainder being the attachment insert and its res_model
-    write, which are per-file by construction.
-    """
 
     @classmethod
     def setUpClass(cls):

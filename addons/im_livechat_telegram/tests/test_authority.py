@@ -8,8 +8,6 @@ SERVE = "im_livechat_telegram.privilege_serve_customers"
 
 
 class LivechatWebhookCase(LivechatTelegramCase):
-    """A customer's updates as the webhook delivers them: a superuser bot of
-    the request's public user, in a transaction whose real user is it."""
 
     @classmethod
     def setUpClass(cls):
@@ -90,8 +88,6 @@ class LivechatWebhookCase(LivechatTelegramCase):
 
 @tagged("post_install", "-at_install")
 class TestCustomerAuthority(LivechatWebhookCase):
-    """A customer is answered as the webhook's own user, never as the
-    superuser, on the privilege that serves Telegram sessions alone."""
 
     @classmethod
     def setUpClass(cls):
@@ -195,8 +191,6 @@ class TestChatbotAuthority(LivechatWebhookCase):
 
 @tagged("post_install", "-at_install")
 class TestForwardAuthority(LivechatWebhookCase):
-    """A customer who asks the chatbot for a person is handed to an operator
-    as the webhook's own user, and the session is named after them."""
 
     @classmethod
     def setUpClass(cls):
@@ -249,8 +243,6 @@ class TestForwardAuthority(LivechatWebhookCase):
 
 @tagged("post_install", "-at_install")
 class TestBusinessAuthority(LivechatWebhookCase):
-    """A business account's customer is served as the webhook's own user,
-    their messages and their edits alike."""
 
     OWNER_ID = 588201
     CUSTOMER_ID = 588202

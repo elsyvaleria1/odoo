@@ -8,12 +8,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestPurchaseApproverReach(TransactionCase):
-    """An approver reads the order they are asked about, and only while asked.
-
-    The approver of a purchase need not be a buyer: before, the request named an
-    order they could not open ("Access Denied") and the engine read it in sudo to
-    record their decision.
-    """
 
     @classmethod
     def setUpClass(cls):

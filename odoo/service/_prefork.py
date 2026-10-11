@@ -90,7 +90,6 @@ def _get_exit_outcome(
 
 
 class RespawnHold:
-    """How long one population's respawn waits after consecutive early deaths."""
 
     __slots__ = ("fast_deaths", "not_before")
 

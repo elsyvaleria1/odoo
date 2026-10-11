@@ -34,12 +34,6 @@ from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE
 
 @tagged("mail_push")
 class TestWebPushPayloadBudget(TransactionCase):
-    """The payload budget, without a browser.
-
-    `TestWebPushNotification` needs a running HTTP server and is skipped under
-    `--no-http`; `_web_push_truncate_payload` is a pure function over a dict and
-    has no business paying for one.
-    """
 
     def _truncated(self, title, body, icon="/i.png"):
         payload = {
@@ -98,28 +92,6 @@ class TestWebPushPayloadBudget(TransactionCase):
 @tagged("post_install", "-at_install", "mail_push")
 @tagged("mail_push")
 class TestWebPushRecipientLanguage(TransactionCase):
-    """A push notification is rendered in the recipient's language, not the sender's.
-
-    `_notify_thread_by_web_push` built ONE payload and handed the same bytes to
-    every device. The email path for the same message already groups recipients
-    per language (`_notify_get_classified_recipients_iterator`), and
-    `discuss_channel_member.py` already supplied `payload_by_lang` to
-    `_web_push_send_notification` -- the parameter existed with exactly one
-    caller. The thread path did neither.
-
-    What is actually translatable in a push payload is narrow, and the tests
-    below say so rather than implying the whole body is: a message whose body is
-    empty falls back to its attachment names joined by a *translated* connector
-    ("%(file1)s and %(file2)s", plus the "Voice Message" label), and that string
-    is what a French recipient used to receive in English. A plain comment
-    carries the author's own HTML and has nothing to translate, so it is
-    unaffected either way -- asserted here so the fix's scope is pinned and not
-    overstated later.
-
-    A `TransactionCase`, not `TestWebPushNotification`'s base: that class skips
-    itself when its environment is unavailable, and language selection is decided
-    long before any endpoint is contacted.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -230,20 +202,6 @@ class TestWebPushRecipientLanguage(TransactionCase):
 
 @tagged("mail_push")
 class TestWebPushAuthorSuppression(TransactionCase):
-    """Push must suppress the same author the inbox/email path suppressed.
-
-    `_notify_get_recipients` has already applied the author policy -- including
-    the `notify_author` / `notify_author_mention` flags -- before
-    `_notify_thread_by_web_push` ever sees `recipients_data`. The push path then
-    subtracted an author *again*, and resolved it differently: the inbox/email
-    side skips the REAL author (`_message_compute_real_author`, i.e. whoever is
-    acting), while the push side subtracted the DECLARED `msg_vals["author_id"]`.
-
-    Those coincide for an ordinary post and diverge exactly when a message is
-    posted on someone else's behalf -- out-of-office auto-replies, gateway-created
-    messages, `_track_set_author`. There the declared author is a legitimate
-    recipient: they were notified, and their device was silently skipped.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -321,9 +279,6 @@ class TestWebPushAuthorSuppression(TransactionCase):
 
 
 class TestWebPushMessageTypes(TransactionCase):
-    """Which recipients a push reaches is decided by the message type through
-    two hooks, so a module adding a type (`whatsapp`) extends a set instead of
-    core naming it."""
 
     @classmethod
     def setUpClass(cls):

@@ -6,7 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalActivityDone(ApprovalCommon):
-    """Marking an approval activity done, which is how Studio's approvals are granted."""
 
     def _activity_for(self, request, user):
         activity_type = self.env.ref("approval.mail_activity_data_approval")

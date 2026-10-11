@@ -17,12 +17,6 @@ UNCARRIED_STATE_SESSION_KEY = "social_oauth_uncarried_state"
 
 
 class SocialMedia(models.Model):
-    """A social.media represents the actual Media, ex: Facebook, Twitter, etc...
-    As opposed to social.account that represents an existing account on this media.
-    Ex: Odoo Social Facebook Page, Mitchell Admin Twitter Account, ...
-
-    The social.media is used to store global media configuration (API keys, ...).
-    It's also used to install the modules related to that social media (social_facebook, social_twitter, ...)."""
 
     _name = "social.media"
     _description = "Social Media"

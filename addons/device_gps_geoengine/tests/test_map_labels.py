@@ -4,13 +4,6 @@ from odoo.tests import common
 
 
 class TestMapLabels(common.TransactionCase):
-    """What the live map writes on a marker when nothing knows better.
-
-    This layer draws devices, points and parcels; it has never heard of a
-    vehicle or a driver. A bridge that has overrides these -- see
-    asset_gps_geoengine. Everything below is the floor that
-    override falls back to, and the reason the marker is never blank.
-    """
 
     @classmethod
     def setUpClass(cls):

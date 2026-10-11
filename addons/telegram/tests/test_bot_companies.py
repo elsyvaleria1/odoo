@@ -12,7 +12,6 @@ from odoo.addons.telegram.tools.dispatch import TelegramCommand
 
 
 class BotCompaniesCase(TelegramBotTestCase):
-    """A bot serving the main company and another, and a user of both."""
 
     @classmethod
     def setUpClass(cls):
@@ -84,9 +83,6 @@ class BotCompaniesCase(TelegramBotTestCase):
 
 @tagged("post_install", "-at_install")
 class TestBotCompanies(BotCompaniesCase):
-    """A bot serves several companies: its people act through it in those of
-    theirs, a command that starts something asks which one when they have
-    several, and its flow and its buttons stay in the one chosen."""
 
     def test_a_bot_always_serves_its_own_company(self):
         bot = self._bot_of_another_company("Owned Bot")
@@ -240,8 +236,6 @@ class TestBotCompanies(BotCompaniesCase):
 
 @tagged("post_install", "-at_install")
 class TestIdleIntake(BotCompaniesCase):
-    """A message without a command that a feature takes as one of its commands
-    follows that command: who may send it, and the company it is chosen in."""
 
     CONTACT = {"message_id": 7, "contact": {"phone_number": "+5215550000"}}
 

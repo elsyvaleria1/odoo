@@ -3,9 +3,6 @@ from odoo.tests import common
 
 
 class TestNonStoredAggregates(common.TransactionCase):
-    """A non-stored compute aggregates through the group's records: the SELECT
-    carries the ids and the fold happens in Python, which is what a model used
-    to spell as its own `_read_group_select` override."""
 
     @classmethod
     def setUpClass(cls):

@@ -7,11 +7,6 @@ from .common import HrPresenceCase
 
 @tagged("post_install", "-at_install")
 class TestMultiCompany(HrPresenceCase):
-    """The sweep used to read self.env.company and search that company alone, so
-    every other company was never computed -- and never reset either. The
-    compute read self.env.company too, which put one cache entry in front of two
-    readers who disagreed about the answer.
-    """
 
     @classmethod
     def setUpClass(cls):

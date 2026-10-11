@@ -127,9 +127,6 @@ class TestDocumentsDownloadBlocked(TransactionCase):
 
 
 class TestDocumentsDownloadBlockedOverRpc(TransactionCase):
-    """read, search_read, web_read and export hand a file's bytes over RPC as
-    a download route does; attribute access (business code parsing a file)
-    and bin_size reads (the web client's sizes) do not."""
 
     @classmethod
     def setUpClass(cls):
@@ -209,9 +206,6 @@ class TestDocumentsDownloadBlockedOverRpc(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsDownloadBlockedGenericRoutes(HttpCase):
-    """/web/content and /web/image stream a document's file, and the mail
-    file viewer's own download button uses them: they take the gate
-    /documents/content takes."""
 
     @classmethod
     def setUpClass(cls):
@@ -814,15 +808,6 @@ class TestDocumentsVisitLog(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsDownloadBlockedLinkEditor(HttpCase):
-    """`is_download_blocked` withholds content from viewers, not from editors.
-
-    The field's own help says editors are unaffected because they can replace
-    the content anyway, so withholding it from them means nothing. An `edit`
-    link makes *every* reader of that document an editor -- including the
-    unauthenticated visitor the document-request flow is built around, whose
-    `user_permission` is structurally "none" because
-    `_search_user_permission` short-circuits to FALSE for the public user.
-    """
 
     def test_a_public_link_editor_may_download_a_blocked_document(self):
         document = self.env["document.document"].create(
@@ -887,15 +872,6 @@ class TestDocumentsDownloadBlockedLinkEditor(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsLinkEditPermissionInvariant(TransactionCase):
-    """Where `access_via_link` is "edit", `user_permission` is never "view".
-
-    `_is_download_allowed` leans on this: it may answer from `access_via_link`
-    alone only because no principal can hold a *viewer* permission on such a
-    document. Every branch of `_direct_user_permission_domain` that yields
-    "view" also requires `access_via_link in ("none", "view")`, so the value is
-    "edit" or "none" and nothing between. Should that stop being true, the
-    download gate silently starts exempting genuine viewers.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1006,19 +982,6 @@ class TestDocumentsLinkEditPermissionInvariant(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsDownloadBlockedInlineBypass(HttpCase):
-    """`is_download_blocked` must not key on a parameter the caller chooses.
-
-    The gate used to sit inside `if download:`, and `download` is a query
-    parameter. `GET /documents/content/<token>?download=0` answered 200 with the
-    whole file, its real `Content-Type: application/zip` and
-    `Content-Disposition: inline; filename=payroll.zip` -- a download with one
-    header changed -- and, because `_log_download` sits in the same skipped
-    branch, `document.access.log` held no row for it either. The block neither
-    blocked nor recorded that it had not.
-
-    Serving inline differs from handing over only for content the browser
-    renders in place; that is the line these tests pin.
-    """
 
     def _blocked(self, name, raw, mimetype):
         document = self.env["document.document"].create(

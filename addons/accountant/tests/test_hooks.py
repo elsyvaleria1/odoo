@@ -7,8 +7,6 @@ from odoo.addons.accountant import _accounting_post_init, uninstall_hook
 
 @tagged("post_install", "-at_install")
 class TestAccountantHooks(AccountTestInvoicingCommon):
-    """The module's install and uninstall hooks had no coverage at all, which is
-    how both of the defects exercised below reached production."""
 
     def _general_journal(self, code):
         return self.env["account.journal"].create(

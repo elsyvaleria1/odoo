@@ -8,9 +8,6 @@ from odoo.addons.sms.tests.common import SMSCase, SMSCommon
 
 @tagged("at_install")
 class TestSMSComposerComment(SMSCommon, SMSCase):
-    """Test behaviors that are overridden when other modules
-    are installed (e.g., mass_mailing). In these cases,
-    test_mail_sms or test_mail_full should be used."""
 
     def test_message_post_sms_vs_notification(self):
         cases = [

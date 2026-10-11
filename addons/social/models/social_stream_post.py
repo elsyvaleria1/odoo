@@ -7,15 +7,6 @@ from odoo.tools.misc import _format_time_ago, format_date
 
 
 class SocialStreamPost(models.Model):
-    """A 'stream' post, as opposed to a regular social.post, references a post that
-    actually exists on a social.media external database (a Facebook post, a Tweet, ...).
-
-    Stream posts are created by fetching data from the related social media third party API.
-    They should not be directly created/modified.
-
-    social.stream.posts are used to fill the 'Feed' view that allows users to follow the social.media activity
-    based on their interest (a Facebook Page, a Twitter hashtag, ...).
-    They are directly created by their related social.stream."""
 
     _name = "social.stream.post"
     _description = "Social Stream Post"

@@ -44,12 +44,6 @@ OFFICE_ZONE = "Europe/Brussels"
 
 
 class ScheduleZoneCase(TransactionCase):
-    """Employees who work the office's schedule in another time zone.
-
-    Every calendar here is written in the office's zone and every employee is
-    deployed in the zone under test, so a reader that interprets the schedule in
-    the calendar's zone instead of the employee's work zone is caught.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -244,15 +238,6 @@ class TestScheduledHoursExcludeTheBreak(ScheduleZoneCase):
 
 @tagged("post_install", "-at_install")
 class TestFlexibleResourceKeepsItsHours(ScheduleZoneCase):
-    """A flexible employee keeps no scheduled break, so nothing is deducted.
-
-    `resource.calendar._attendance_intervals_batch` answers per resource, and
-    for a FLEXIBLE resource its answer is the whole span -- that resource may
-    work at any time. Read as "the lunch break" it removes every worked hour
-    the attendance has. The company's calendar is not a fallback here either:
-    an employee with no schedule of their own does not take the company's
-    lunch.
-    """
 
     def _worked(self, setup, flexible, calendar_tz="Asia/Tokyo"):
         employee = self._employee(self._calendar(calendar_tz))
@@ -318,22 +303,6 @@ class TestFlexibleResourceKeepsItsHours(ScheduleZoneCase):
 
 @tagged("post_install", "-at_install")
 class TestADayIsNotAlwaysTwentyFourHours(ScheduleZoneCase):
-    """The day window `_scheduled_hours_on` asks about reaches the next local
-    midnight, so it tiles a day that is not 24 hours long.
-
-    Where the clocks go back at midnight the local day has 25 hours and its
-    last hour repeats; `datetime.combine(day, time.max)` resolves to the first
-    of the two. Measured over twelve zones and every day of 2026, a window
-    ending there leaves 3600s of America/Santiago 2026-04-04 and of
-    Asia/Beirut 2026-10-24 outside it, and a window ending at the next local
-    midnight leaves nothing anywhere.
-
-    The assertion is on the WINDOW and not on the hours returned, because the
-    hours do not move: `_attendance_intervals_batch` materialises each calendar
-    line once per calendar day and does not model the repeated hour from either
-    window. Asserting the hours would be asserting a difference that does not
-    exist -- 0.983h comes back from both.
-    """
 
     LONG_DAY = date(2026, 4, 4)
     ZONE = "America/Santiago"
@@ -386,14 +355,6 @@ class TestADayIsNotAlwaysTwentyFourHours(ScheduleZoneCase):
 
 @tagged("post_install", "-at_install")
 class TestTheVersionIsChosenByTheLocalDay(ScheduleZoneCase):
-    """Which version prices an attendance is circular: the local day needs the
-    zone, and the zone comes from the version.
-
-    Broken in favour of the UTC date it picked the wrong side of a schedule
-    change, in both directions -- an evening attendance is already tomorrow for
-    an employee far enough east, and an early-morning one is still yesterday for
-    one far enough west.
-    """
 
     def _moved(self, before_tz, after_tz, check_in, from_hour=7, to_hour=9):
         before = self._calendar(before_tz, with_lunch=False)

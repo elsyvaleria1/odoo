@@ -12,12 +12,6 @@ from odoo.libs.json import loads as json_loads
 
 
 class OdooEdiProxyAuth(requests.auth.AuthBase):
-    """For routes that needs to be authenticated and verified for access.
-    Allows:
-    1) to preserve the integrity of the message between the endpoints.
-    2) to check user access rights and account validity
-    3) to avoid that multiple database use the same credentials, via a refresh_token that expire after 24h.
-    """
 
     def __init__(
         self, user=False, auth_type: Literal["hmac", "asymmetric"] = "hmac"

@@ -2,17 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestHrAttendanceScenario(TransactionCase):
-    """`_load_demo_data` builds the sample dataset the Attendances app offers on
-    an otherwise empty database.
-
-    It is guarded by `has_demo_data`, and so is the `hr` scenario it chains to.
-    The two guards agree in production -- neither fires unless the database
-    carries no sample data at all -- so the scenario can only be exercised
-    where that is true. The test used to call it unconditionally and then
-    assert against employees the guard had just declined to create, so on every
-    database installed with demo data it errored on `hr.employee_sj` and said
-    nothing about the scenario either way.
-    """
 
     def test_the_guard_declines_on_a_database_that_already_has_sample_data(self):
         attendance = self.env["hr.attendance"]

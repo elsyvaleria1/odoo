@@ -2765,12 +2765,6 @@ class TestPartnerCategory(TransactionCase):
 
 
 class TestPartnerGeolocationInvalidation(TransactionCase):
-    """Cover when a partner's stored coordinates survive a write, and when not.
-
-    `partner_latitude` / `partner_longitude` describe where the address on the
-    same record is, so the two have to move together. This lived twice in
-    addons, in `geocoding` and in `web_map`, before it came here.
-    """
 
     def test_moving_the_address_clears_the_coordinates(self):
         partner = self.env["res.partner"].create(

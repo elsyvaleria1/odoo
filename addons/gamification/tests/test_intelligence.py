@@ -7,7 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestAdaptiveDifficulty(common.TransactionCase):
-    """Tests for adaptive difficulty in challenges."""
 
     @classmethod
     def setUpClass(cls):
@@ -238,7 +237,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
 
 
 class TestEngagementNudges(common.TransactionCase):
-    """Tests for the engagement nudge system."""
 
     @classmethod
     def setUpClass(cls):
@@ -374,7 +372,6 @@ class TestEngagementNudges(common.TransactionCase):
 
 
 class TestVisibilityControls(common.TransactionCase):
-    """Tests for opt-out visibility in feeds and leaderboards."""
 
     @classmethod
     def setUpClass(cls):
@@ -447,7 +444,6 @@ class TestVisibilityControls(common.TransactionCase):
 
 
 class TestGoalFieldIndexes(common.TransactionCase):
-    """Verify that frequently-filtered goal fields have database indexes."""
 
     def test_goal_state_is_indexed(self):
         field = self.env["gamification.goal"]._fields["state"]

@@ -71,13 +71,6 @@ def get_weekday_occurence(date):
 
 
 class RecurrencePolicy(NamedTuple):
-    """Which occurrences of a recurrence a `calendar.event.write` is to touch.
-
-    The four flags used to be four locals threaded through a 146-line `write`,
-    recomputed from `recurrence_update` at three different points. Named
-    together because they are one decision: `setting` is the raw UI selection,
-    the rest are what it means for this particular recordset.
-    """
 
     setting: str | None
     update: bool

@@ -12,7 +12,6 @@ SHA = "a" * 40
 
 @tagged("post_install", "-at_install")
 class TestDeliveryOrder(TransactionCase):
-    """GitHub redelivers and reorders: an older word never undoes a newer one."""
 
     def _pull(self, updated_at, **pr):
         return self.env["integration.github.pull"]._upsert_from_github(

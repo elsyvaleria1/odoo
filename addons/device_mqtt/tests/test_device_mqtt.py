@@ -41,9 +41,6 @@ class TestRemoteDeviceMqttEndpoint(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRemoteDeviceMqttStream(DeviceTransactionCase):
-    """An MQTT device's connection is a stream row the worker holds: the
-    device describes it, starting and stopping toggle it, a frame is a data
-    point and the row's state is the device's."""
 
     @classmethod
     def setUpClass(cls):

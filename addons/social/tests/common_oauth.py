@@ -13,13 +13,6 @@ from odoo.addons.social.models.social_media import (
 
 
 class SocialOAuthStateMixin:
-    """The account callback of one media flow accepts the state the session it
-    started in issued, once; mixed into an HttpCase per flow.
-
-    A flow sets ``MEDIA_XMLID``, ``CALLBACK``, ``CARRIED`` (whether the provider
-    brings the state back) and ``OWN_APP`` (whether the database has its own
-    app credentials, else IAP), and implements ``_callback_params`` and
-    ``_patch_accounts_creation``."""
 
     allow_inherited_tests_method = True
     MEDIA_XMLID = None

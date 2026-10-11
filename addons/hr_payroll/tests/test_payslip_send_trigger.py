@@ -7,18 +7,6 @@ from .common import TestPayslipBase
 
 @tests.tagged("post_install", "-at_install")
 class TestPayslipSendTrigger(TestPayslipBase):
-    """When a validated payslip gets queued for the PDF cron.
-
-    The cron is what mails the payslip: `_generate_pdf` creates the attachment and
-    then sends the payslip template to every employee in the batch. So the trigger
-    stored under `hr_payroll.payslip_generate_and_send_trigger` decides when
-    employees receive their payslip, not merely when a PDF exists.
-
-    `on_confirmed` queues on validation, `on_paid` queues when the payslip is marked
-    as paid, and `never` queues at neither point -- printing stays manual through the
-    Print menu. An absent parameter must behave exactly like `on_confirmed`, which is
-    what the module did before the setting existed.
-    """
 
     @classmethod
     def setUpClass(cls):

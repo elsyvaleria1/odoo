@@ -7,12 +7,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestSchedulingCalendarResolution(TransactionCase):
-    """Which working calendar governs a record being scheduled.
-
-    ``_scheduling_resolve_calendar`` walks a three-step fallback: the record's
-    own calendar, its company's, then the current company's. Everything scheduled on the record -- when work may start,
-    which hours count -- follows from the answer.
-    """
 
     MODEL_NAME = "resource.scheduling.test"
 

@@ -435,7 +435,6 @@ class TestRawPayloadRetention(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLogMixinApiIsGeneric(DeviceTransactionCase):
-    """The mixin's public surface must run on every model that inherits it."""
 
     def _models_inheriting_the_log_mixin(self):
         return sorted(
@@ -464,7 +463,6 @@ class TestLogMixinApiIsGeneric(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLogIndexes(DeviceTransactionCase):
-    """The composite is what serves device lookups; a second btree is not."""
 
     def _indexes(self, table):
         self.env.cr.execute(

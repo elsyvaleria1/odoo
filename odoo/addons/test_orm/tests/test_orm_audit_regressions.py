@@ -5,8 +5,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestCheckAccessOverRpc(TransactionCase):
-    """check_access binds to the records it is asked about: over call_kw the
-    ids travel like has_access's, not as a model-level call that drops them."""
 
     @classmethod
     def setUpClass(cls):
@@ -32,9 +30,6 @@ class TestCheckAccessOverRpc(TransactionCase):
 
 
 class TestCompanyDependentRestrictGuard(TransactionCase):
-    """A company-dependent many2one with ondelete=restrict refuses the delete
-    of the record it references, and names that record -- not whichever
-    company's value comes first in the stored object."""
 
     @classmethod
     def setUpClass(cls):
@@ -69,9 +64,6 @@ class TestCompanyDependentRestrictGuard(TransactionCase):
 
 
 class TestOne2oneAgainstTheRealIndex(TransactionCase):
-    """A One2one is held by a unique index in the database, and the DB-free
-    tier does not enforce `index="unique"` -- so the release must be pinned
-    where the index exists."""
 
     @classmethod
     def setUpClass(cls):
@@ -127,9 +119,6 @@ class TestOne2oneAgainstTheRealIndex(TransactionCase):
 
 
 class TestMany2oneSortMatchesSql(TransactionCase):
-    """`sorted()` and `search()` must order a many2one the same way. The cache
-    scan may only do it when the comodel is ordered by id, because SQL sorts a
-    many2one through the comodel's own `_order`."""
 
     @classmethod
     def setUpClass(cls):
@@ -174,10 +163,6 @@ class TestMany2oneSortMatchesSql(TransactionCase):
 
 
 class TestAQueryInADomainIsNotMutated(TransactionCase):
-    """`("field", "in", query)` hands the field a Query the caller still owns.
-    A field with its own `domain=` has to narrow it, and used to narrow the
-    caller's object -- so every later use of that Query carried the field's
-    domain."""
 
     @classmethod
     def setUpClass(cls):

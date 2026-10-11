@@ -20,7 +20,6 @@ CHROMIUM_ARGS = [
 
 
 class BrowserState(Enum):
-    """Enum to represent the state of the browser"""
 
     NORMAL = "normal"
     KIOSK = "kiosk"
@@ -28,7 +27,6 @@ class BrowserState(Enum):
 
 
 class Browser:
-    """Methods to interact with a browser"""
 
     def __init__(self, url, _x_screen, env) -> None:
         self.url = url

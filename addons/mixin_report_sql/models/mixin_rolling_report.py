@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class MixinRollingReport(models.AbstractModel):
-    """A report whose oldest rows never change, refreshed one window at a time."""
 
     _name = "mixin.rolling.report"
     _inherit = ["mixin.materialized.view"]

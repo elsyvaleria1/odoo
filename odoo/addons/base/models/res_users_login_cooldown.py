@@ -34,9 +34,6 @@ class ResUsersLoginCooldown(models.Model):
 
 
 class LoginCooldown:
-    """The login-failure ledger, read on the caller's cursor and written on a
-    cursor of its own: a failed login rolls its transaction back, and the
-    failure has to outlive it."""
 
     __slots__ = ("registry",)
 

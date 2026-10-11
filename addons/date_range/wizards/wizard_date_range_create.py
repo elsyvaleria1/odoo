@@ -15,7 +15,6 @@ _logger = logging.getLogger(__name__)
 
 
 class WizardDateRangeCreate(models.TransientModel):
-    """Wizard that bulk-creates consecutive date ranges from generation parameters."""
 
     _name = "wizard.date.range.create"
     _description = "Date Range Generator"

@@ -29,15 +29,6 @@ MAX_PLACE_LOOKUPS = 30
 
 
 class DeviceGpsStop(models.Model):
-    """One row per stop of a vehicle, anywhere -- not only on a client's
-    parcel -- plus one row per vehicle and day without a single position.
-
-    Stored rather than a SQL view: the position log is a postgres_fdw
-    foreign table in production, and sessionizing it with window functions
-    at query time would ship the whole history on every read. The cron
-    rewrites a trailing window (yesterday and today) instead; older days are
-    settled and only change through the rebuild wizard.
-    """
 
     _name = "device.gps.stop"
     _description = "Vehicle Stop"

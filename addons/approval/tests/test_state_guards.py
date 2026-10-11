@@ -311,7 +311,6 @@ class TestLockedFields(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestEngineOwnedFields(ApprovalCommon):
-    """Who may decide a request writes none of what records its course or its subject."""
 
     FORGED = {
         "granted_by_user_id": None,

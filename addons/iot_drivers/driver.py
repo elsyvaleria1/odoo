@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class Driver(Thread):
-    """Hook to register the driver into the drivers list"""
 
     connection_type = ""
     priority = 0

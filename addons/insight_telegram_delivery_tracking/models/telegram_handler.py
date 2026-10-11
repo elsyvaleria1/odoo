@@ -14,7 +14,6 @@ REFERENCE = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{5,63}")
 
 
 class TelegramHandlerDeliveryTracking(models.AbstractModel):
-    """Let linked employees read their accessible shipments by tracking number."""
 
     _name = "telegram.handler.delivery_tracking"
     _inherit = "mixin.telegram.handler"

@@ -377,9 +377,6 @@ class _BodyValidator(ast.NodeVisitor):
 
 
 class _RuntimeGuard(ast.NodeTransformer):
-    """Rewrites value.name into _rule_attribute(value, "name"), except the
-    rules.<helper> a call names, and a * b into _rule_multiply(a, b), so the
-    runtime decides what a read returns and how long a repeated sequence gets."""
 
     GUARDED_OPERATORS = {ast.Mult: GUARDED_MULTIPLY, ast.Pow: GUARDED_POWER}
 

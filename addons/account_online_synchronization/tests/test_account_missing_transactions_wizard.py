@@ -10,7 +10,6 @@ from odoo.addons.account_online_synchronization.tests.common import (
 
 @tagged("post_install", "-at_install")
 class TestAccountMissingTransactionsWizard(AccountOnlineSynchronizationCommon):
-    """Tests the account journal missing transactions wizard."""
 
     @patch(
         "odoo.addons.account_online_synchronization.models.account_online.AccountOnlineLink._get_odoo_fin"

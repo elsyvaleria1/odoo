@@ -3,13 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestSmsTemplateDynamicFields(TransactionCase):
-    """`sms.template` declares which of its fields hold a template.
-
-    Inferring the set from the field type named three more: `model` (a related
-    model name), `template_fs` (a filesystem path) and `name` (a label). Each was
-    then parsed as an inline template on every create and gated behind the
-    template-editor group, for fields no engine ever renders.
-    """
 
     def test_the_declared_set_is_the_one_that_is_rendered(self):
         self.assertEqual(

@@ -17,8 +17,6 @@ ROW_CELLS = [
 
 @tagged("post_install", "-at_install")
 class TestExpenseVerbs(TransactionCase):
-    """Approving and refusing an expense are verbs of hr.expense, granted by
-    security/ir_access.xml exactly as _get_cannot_approve_reason grants them."""
 
     @classmethod
     def setUpClass(cls):

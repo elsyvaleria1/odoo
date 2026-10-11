@@ -102,9 +102,6 @@ class TestTokenRotation(TelegramBotTestCase):
 
 
 class TestArchivedCredential(TelegramBotTestCase):
-    """Archiving the credential is the only non-destructive off switch there
-    is: telegram.bot has no active field and credential_id is required with
-    ondelete=restrict, so the credential cannot be deleted either."""
 
     def setUp(self):
         super().setUp()
@@ -135,8 +132,6 @@ class TestArchivedCredential(TelegramBotTestCase):
 
 
 class TestWebhookSecretEnforcement(TelegramBotTestCase):
-    """The webhook receiver's verdict on an update, asked of the gate the
-    route admits through, in the mode the bot itself declares."""
 
     def _admitted(self, headers=None):
         receiver = self.test_bot._get_or_create_webhook_receiver()

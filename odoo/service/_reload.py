@@ -34,17 +34,6 @@ deployment whose preload genuinely needs longer raises `ODOO_RELOAD_TIMEOUT`.
 
 
 class GenerationHandoff:
-    """The prefork master's other generation, across a SIGHUP reload.
-
-    The process systemd started stays the supervisor for its whole life: on
-    SIGHUP it spawns a candidate on the inherited listening socket, keeps
-    its own workers serving while the candidate preloads, promotes it only
-    once every worker of the candidate is ready, and from then on merely
-    watches the replacement.  A replacement that receives a SIGHUP asks the
-    supervisor to reload, so the chain never grows.  The candidate reports
-    readiness through one pipe end it inherits; this object owns that end
-    on both sides.
-    """
 
     __slots__ = (
         "candidate",

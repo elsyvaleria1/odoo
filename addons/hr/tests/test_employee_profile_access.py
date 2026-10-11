@@ -5,8 +5,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestEmployeeProfileAccess(TestHrCommon):
-    """Every internal user reads hr.employee; what they read is decided by
-    field groups on that one model, not by a second one."""
 
     @classmethod
     def setUpClass(cls):

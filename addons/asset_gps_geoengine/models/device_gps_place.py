@@ -49,13 +49,6 @@ PLACE_TYPE_LABELS = {
 
 
 class DeviceGpsPlace(models.Model):
-    """A place a vehicle stopped at outside every geofence, as OpenStreetMap
-    names it: a fonda, a gas station, a street corner.
-
-    A cache, not a catalog: the stops are rewritten every ten minutes, and
-    looking the same corner up again on each rewrite would break Nominatim's
-    one-request-per-second policy within the hour.
-    """
 
     _name = "device.gps.place"
     _description = "Place Outside Geofences"

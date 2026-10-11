@@ -5,7 +5,6 @@ from odoo.tests.common import new_test_user
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyPartner(TransactionCase):
-    """res.partner active loyalty-card count and the cards smart action."""
 
     @classmethod
     def setUpClass(cls):

@@ -8,9 +8,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestForgedAdmission(AccountApprovalCommon, HttpCase):
-    """The Post entries wizard reaches the posting checkpoint without passing
-    `action_post`'s own gate, so the checkpoint alone stands between a bill that
-    needs approval and its posting. Nothing a client sends may lift it."""
 
     @classmethod
     def setUpClass(cls):

@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyNominative(TransactionCase):
-    """ "Nominative" as one statement, and the partner merge that reads it."""
 
     @classmethod
     def setUpClass(cls):
@@ -57,7 +56,6 @@ class TestLoyaltyNominative(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyMerge(TransactionCase):
-    """Merging the nominative cards of partners that are merged together."""
 
     @classmethod
     def setUpClass(cls):

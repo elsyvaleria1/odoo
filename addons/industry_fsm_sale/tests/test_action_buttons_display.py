@@ -8,9 +8,6 @@ from odoo.tests import TransactionCase
 
 
 class TestActionButtons(TransactionCase):
-    """Test visibility of the following buttons:
-    - Send/Sign Report
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -42,14 +42,6 @@ class PostgresHarness:
 
 @tagged("post_install", "-at_install")
 class TestCacheCoherenceWalk(TransactionCase):
-    """The walk of `cache_coherence_walk` on PostgreSQL: after random
-    sequences of operations the cache agrees with a fresh transaction and
-    every stored compute with its recomputation. A failing seed reports its
-    walk shrunk to the operations that still fail alike.
-    `ODOO_CACHE_COHERENCE_SEEDS=<first>:<count>` and
-    `ODOO_CACHE_COHERENCE_STEPS=<n>` run a longer campaign; the walk's own
-    knobs and what a run must compare (`KINDS_COMPARED`) are in
-    `cache_coherence_walk`."""
 
     @classmethod
     def setUpClass(cls):

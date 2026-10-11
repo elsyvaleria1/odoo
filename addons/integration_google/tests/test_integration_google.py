@@ -7,9 +7,6 @@ from odoo.addons.integration_google.models.integration_service import (
 
 @tagged("post_install", "-at_install")
 class TestIntegrationGoogle(HttpCase):
-    """Google is one OAuth service: users authorize their own connection to it,
-    with the company's client, at a callback its consoles may still list under
-    the module's old name."""
 
     @classmethod
     def setUpClass(cls):

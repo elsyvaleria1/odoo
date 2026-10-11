@@ -2,8 +2,6 @@ from odoo import api, fields, models
 
 
 class MailTestPortal(models.Model):
-    """A model inheriting from mixin.mail.thread and mixin.portal with some fields
-    used for portal sharing, like a partner, ..."""
 
     _name = "mail.test.portal"
     _description = "Chatter Model for Portal"
@@ -23,7 +21,6 @@ class MailTestPortal(models.Model):
 
 
 class MailTestPortalNoPartner(models.Model):
-    """A model inheriting from portal, but without any partner field"""
 
     _name = "mail.test.portal.no.partner"
     _description = "Chatter Model for Portal (no partner field)"
@@ -41,7 +38,6 @@ class MailTestPortalNoPartner(models.Model):
 
 
 class MailTestPortalPublicAccessAction(models.Model):
-    """Test 'public' target_type access action"""
 
     _description = "Portal Public Access Action"
     _name = "mail.test.portal.public.access.action"
@@ -67,8 +63,6 @@ class MailTestPortalPublicAccessAction(models.Model):
 
 
 class MailTestRating(models.Model):
-    """A model inheriting from mixin.rating (which inherits from mixin.mail.thread) with some fields used for SMS
-    gateway, like a partner, a specific mobile phone, ..."""
 
     _name = "mail.test.rating"
     _description = "Rating Model (ticket-like)"
@@ -143,12 +137,6 @@ class MailTestRating(models.Model):
 
 
 class MailTestRatingThread(models.Model):
-    """A model inheriting from mixin.mail.thread with minimal fields for testing
-    rating submission without the rating mixin but with the same test code:
-
-    - partner_id: value returned by the base _rating_get_partner method
-    - user_id: value returned by the base _rating_get_operator method
-    """
 
     _name = "mail.test.rating.thread"
     _description = "Model for testing rating without the rating mixin"
@@ -165,7 +153,6 @@ class MailTestRatingThread(models.Model):
 
 
 class MailTestRatingThreadRead(models.Model):
-    """Same as MailTestRatingThread but post accessible on read by portal users."""
 
     _name = "mail.test.rating.thread.read"
     _description = "Read-post rating model"

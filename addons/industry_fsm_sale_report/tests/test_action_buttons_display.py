@@ -11,11 +11,6 @@ from odoo.addons.industry_fsm_sale.tests.common import TestFsmFlowSaleCommon
 
 @tagged("post_install", "-at_install")
 class TestTimerButtons(TestFsmFlowSaleCommon):
-    """Test visibility of the following buttons:
-    - START/STOP/PAUSE/RESUME
-    - Send/Sign Report
-    - Preview
-    """
 
     @classmethod
     def setUpClass(cls):

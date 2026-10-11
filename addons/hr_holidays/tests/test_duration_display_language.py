@@ -6,13 +6,6 @@ from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install")
 class TestDurationDisplayLanguage(TestHrHolidaysCommon):
-    """`duration_display` is built with translated unit words.
-
-    While it was stored, the string kept the language of whoever last triggered
-    the compute -- and models/resource.py re-queues that compute from a public
-    holiday write, so the person who fixes the company calendar decides what
-    language every affected employee reads their own request in.
-    """
 
     @classmethod
     def setUpClass(cls):

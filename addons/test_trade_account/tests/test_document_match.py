@@ -6,12 +6,6 @@ from odoo.addons.test_trade.tests.common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestDocumentMatch(TestTradeOrderCase):
-    """`mixin.order.document.match`: orders and invoices in one list.
-
-    A SQL view putting posted invoices beside confirmed orders that still owe
-    an invoice, so whoever reconciles the two sees both without switching
-    screens. Both shipping models live in `sale` and `purchase`.
-    """
 
     def _rows(self, orders=None, moves=None):
         self.env.flush_all()

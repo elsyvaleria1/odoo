@@ -12,8 +12,6 @@ from odoo.addons.integration_microsoft.models.integration_service import (
 
 @tagged("post_install", "-at_install")
 class TestMicrosoftCalendarAuthorization(HttpCase):
-    """A calendar authorizes the user's own connection to Microsoft through the
-    one OAuth flow, answering at the path Entra registrations already list."""
 
     @classmethod
     def setUpClass(cls):

@@ -192,8 +192,6 @@ def _drop_cache_additions(env: Environment, snapshot: _CacheSnapshot) -> None:
 
 
 class _InMemoryReadGroup:
-    """read_group over the dict storage: one row per group, raw values shaped as
-    the SQL rows are (a many2one is its id, a date is truncated, text NULLIF'd)."""
 
     def __init__(
         self,

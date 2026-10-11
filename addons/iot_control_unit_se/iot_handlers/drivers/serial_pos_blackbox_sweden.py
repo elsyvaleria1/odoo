@@ -72,7 +72,6 @@ StorageStatus = {
 
 
 class SwedishBlackBoxDriver(SerialDriver):
-    """Driver for the Swedish blackbox fiscal data module."""
 
     _protocol = SwedishBlackboxProtocol
 

@@ -14,7 +14,6 @@ _logger = logging.getLogger(__name__)
 
 
 class ShopeeRateLimitError(Exception):
-    """When the API rate limit of Shopee is reached."""
 
     def __init__(self, operation) -> None:
         self.operation = operation

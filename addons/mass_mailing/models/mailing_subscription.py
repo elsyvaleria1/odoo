@@ -2,9 +2,6 @@ from odoo import api, fields, models
 
 
 class MailingSubscription(models.Model):
-    """Intermediate model between mass mailing list and mass mailing contact
-    Indicates if a contact is opted out for a particular list
-    """
 
     _name = "mailing.subscription"
     _description = "Mailing List Subscription"

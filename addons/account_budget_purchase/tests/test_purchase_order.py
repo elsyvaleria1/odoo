@@ -257,12 +257,6 @@ class TestPurchaseOrder(TestAccountBudgetPurchaseCommon):
 
 @tagged("post_install", "-at_install")
 class TestPurchaseOrderBudgetContamination(TestAccountBudgetCommon):
-    """Regression coverage for F2 (round-2 audit). Deliberately does NOT
-    extend `TestAccountBudgetPurchaseCommon`: its `setUpClass` confirms a
-    purchase order against every analytic account this suite would reuse,
-    which pollutes `budget.line.committed_amount` for any budget whose own
-    plan columns are otherwise unset (the report's join treats an unset
-    budget-line column as a wildcard) -- these tests need a clean baseline."""
 
     def test_uncommitted_amount_uses_discounted_price(self):
         budget = self.env["budget.analytic"].create(

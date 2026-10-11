@@ -50,10 +50,6 @@ def create_ctypes_string_buffer():
 
 
 class CtypesTerminalDriver(Driver):
-    """
-    This class is the parent class of all the terminal drivers using ctypes.
-    Worldline and Six drivers are inheriting from this class.
-    """
 
     DELAY_TIME_BETWEEN_TRANSACTIONS = 5
 

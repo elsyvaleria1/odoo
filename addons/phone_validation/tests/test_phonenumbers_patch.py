@@ -11,32 +11,6 @@ from odoo.tests.common import BaseCase
 
 class TestPhonenumbersPatch(BaseCase):
     class PhoneInputOutputLine(NamedTuple):
-        """Datastructure to store data for phone number parsing tests. Consist of single set of:
-        - input phone data to be parsed
-        - (optionally) ground-truths, i.e expected results
-
-        Input phone data can be one of the following:
-            - international phone number like: "+23057654321"
-            - national phone number + region code, like: "57654321" + "MU"
-
-        :param number: The input phone number to be parsed.
-        :param region: (optional) The two-letter ISO country code, used when parsing national number without country prefix eg. "SN"
-        :param gt_national_number: (optional) ground-truth to compare parsed national number with
-        :param gt_country_code: (optional) ground-truth to compare country calling code eg. 221
-        :param gt_italian_leading_zero: (optional) ground-truth for italian_leading_zero, True if expected to find 1 leading zero after parsing
-        :param gt_number_of_leading_zeros: (optional) ground-truth to compare number_of_leading_zeros to code, Set if expected more then one leading zero
-
-                     ┌────────┐
-            INPUT ─►│ PARSER ├─► OUTPUT          (EXPECTED ground-truth)
-                     └────────┘           compare
-             number              number ◄───────► (number)
-            (region)              code               (code)
-
-        Placeholders in parenthesis () are optional, why are they optional? The idea is that in the most basic parse check
-        we would only parse number and check if it's valid (according to implicit phonenumbers implementation). However, we
-        might want to perform additional validation on the parsed number, then we'd use optional expected fields that should
-        trigger additional checks.
-        """
 
         number: str
         region: str = ""

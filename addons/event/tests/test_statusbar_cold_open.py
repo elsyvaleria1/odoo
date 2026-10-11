@@ -3,20 +3,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestStatusBarColdOpen(HttpCase):
-    """Guards web's `useSpecialData` against the cold-cache hang.
-
-    `event.event` is a real form carrying a **many2one** statusbar, which
-    is the only shape that reaches `StatusBarField.setupRelationData`. The hook it
-    calls asks the ORM disk cache with `update: "always"`, which hands the fresh
-    value to a callback and settles the promise it returns from the cache -- so on
-    a cold cache the promise never settled and the form never rendered. The second
-    open, against a now-warm cache, was instant, which is what made this look like
-    a calendar or a tour problem for as long as it did.
-
-    `web` owns the defect but owns no model with a many2one statusbar, so the
-    guard lives here. If this module's statusbar ever stops being a many2one, this
-    test stops covering anything -- assert the field's type so that says so.
-    """
 
     def test_a_cold_form_open_renders_and_fills_its_statusbar(self):
         self.assertEqual(

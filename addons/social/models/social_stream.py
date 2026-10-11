@@ -8,11 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialStream(models.Model):
-    """ "social.streams are used to fill the 'Feed' view that allows users to follow the social.media activity
-    based on their interest (a Facebook Page, a Twitter hashtag, ...).
-
-    They use the social.media third party API to fetch the stream data and create social.stream.posts
-    that are displayed on the Feed kanban view."""
 
     _name = "social.stream"
     _description = "Social Stream"

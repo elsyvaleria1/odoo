@@ -3,7 +3,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestBatchBarcodeActions(TransactionCase):
-    """Cover the batch barcode actions and the batch/picking bridges."""
 
     @classmethod
     def setUpClass(cls):

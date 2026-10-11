@@ -11,7 +11,6 @@ from odoo.libs.json import loads as json_loads
 
 
 class OdooFinAuth(requests.auth.AuthBase):
-    """Signature helper adding the OdooFin authentication headers to a request."""
 
     def __init__(self, record=None) -> None:
         self.access_token = (record and record.access_token) or False

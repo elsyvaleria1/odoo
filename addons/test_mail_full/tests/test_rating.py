@@ -207,14 +207,6 @@ class TestRatingAvgSearch(TransactionCase):
 
 @tagged("rating")
 class TestRatingResName(TransactionCase):
-    """rating.res_name is a stored copy of the rated record's display_name, so
-    something has to push a rename into it. mixin.rating watched _rec_name,
-    which only answers for the default compute: mail.test.rating, like
-    product.template, builds its display_name from a second field too.
-
-    On TransactionCase and not TestRatingCommon, which reaches HttpCase: every
-    other class in this file skips under --no-http, and this one needs no server.
-    """
 
     def test_res_name_follows_display_name_not_just_rec_name(self):
         record = self.env["mail.test.rating"].create({"name": "ONE"})

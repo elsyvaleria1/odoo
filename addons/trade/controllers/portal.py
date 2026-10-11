@@ -9,14 +9,6 @@ _debug = DebugLog(__name__)
 
 
 class OrderPortalMixin:
-    """Shared portal behavior for order-like models (sale/purchase quotes).
-
-    Expects to be mixed in alongside a host controller that provides
-    `_items_per_page`, `_prepare_portal_layout_values()`, and
-    `_resolve_searchbar_option()` -- as `portal.controllers.portal.
-    CustomerPortal` does. A host missing one of these fails with a runtime
-    `AttributeError`, not at class-definition time.
-    """
 
     def _order_portal_default_sortings(self):
         return {

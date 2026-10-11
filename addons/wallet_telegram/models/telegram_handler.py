@@ -21,7 +21,6 @@ AMOUNT = re.compile(r"[0-9]{1,12}(?:[.,][0-9]{1,6})?")
 
 
 class TelegramHandlerWallet(models.AbstractModel):
-    """Let verified cardholders consult balances and request approval of top-ups."""
 
     _name = "telegram.handler.wallet"
     _inherit = "mixin.telegram.handler"

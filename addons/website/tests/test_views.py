@@ -2414,9 +2414,6 @@ class TestFirstPageIdBatchCost(common.TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSpecificViewResolution(common.TransactionCase):
-    """A website-specific view is combined in its own website when the
-    context names none: outside one, the generic domain dropped it from its
-    own tree, so it resolved without itself and was written unvalidated."""
 
     def setUp(self):
         super().setUp()

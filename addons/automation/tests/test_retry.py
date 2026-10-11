@@ -241,8 +241,6 @@ class TestFailedRun(RunCompletionCase):
 
 
 class TestLostTransaction(RunCompletionCase):
-    """A step whose transaction lost to a concurrent one did not fail: the
-    error reaches whoever owns the transaction, which runs it again."""
 
     def _ready_line(self):
         step = self._action("step", "record.write({'ref': 'ran'})")

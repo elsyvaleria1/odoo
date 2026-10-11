@@ -21,7 +21,7 @@ _GITHUB_REMOTE = re.compile(
 
 
 class OriginUnreadable(Exception):
-    """git could not say what a working tree's origin is."""
+    pass
 
 
 def _checkout_root(module: str) -> Path | None:

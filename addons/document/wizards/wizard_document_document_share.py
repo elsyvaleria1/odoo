@@ -5,7 +5,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardDocumentDocumentShare(models.TransientModel):
-    """Wizard to review and edit sharing rights of one or more documents."""
 
     _name = "wizard.document.document.share"
     _description = "Documents Sharing"

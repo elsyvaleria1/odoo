@@ -3,7 +3,6 @@ from odoo.http import request
 
 
 class PortalTest(http.Controller):
-    """Implements some test portal routes (ex.: for viewing a record)."""
 
     @http.route(
         "/my/test_portal/<int:res_id>", type="http", auth="public", methods=["GET"]

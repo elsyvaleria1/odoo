@@ -4,12 +4,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestViewAnchors(TransactionCase):
-    """The inherited overrides must land where they land today.
-
-    Both anchors used to match by shape: a bare `<separator>` and a
-    `hasclass()` path whose `[last()]` predicate is applied per parent
-    context, so it matched three divs and Odoo silently took the first.
-    """
 
     def _combined(self, xml_id):
         return etree.fromstring(self.env.ref(xml_id).get_combined_arch())

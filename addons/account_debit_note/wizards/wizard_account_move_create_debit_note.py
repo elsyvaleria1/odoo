@@ -3,11 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardAccountMoveCreateDebitNote(models.TransientModel):
-    """
-    Add Debit Note wizard: when you want to correct an invoice with a positive amount.
-    Opposite of a Credit Note, but different from a regular invoice as you need the link to the original invoice.
-    In some cases, also used to cancel Credit Notes
-    """
 
     _name = "wizard.account.move.create.debit.note"
     _description = "Add Debit Note wizard"

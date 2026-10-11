@@ -232,13 +232,6 @@ class TestGpsTrackingToggle(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDeviceWithHistoryIsNotDeletable(DeviceTransactionCase):
-    """A device holding tracking points is archived, never deleted.
-
-    In production the log table is a postgres_fdw foreign table, so the
-    cascade that used to erase its rows is gone and a trigger refuses the
-    delete. The guard under test states that rule in Odoo, where the message
-    can name the device.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -3,8 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPlanningFieldServiceSearch(TransactionCase):
-    """The customer of a visit is searched in the shift searches, never in the
-    base search that the analysis report shares."""
 
     def _search_arch(self, xmlid, model):
         return self.env[model].get_view(self.env.ref(xmlid).id, "search")["arch"]

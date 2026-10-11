@@ -6,11 +6,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestStepProgress(ApprovalCommon):
-    """A document hears a step being met while its request is still pending.
-
-    A double-validation leave moves to its intermediate state when the manager step
-    is met; nothing told a document about a step until the request ended.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyGenerateScope(TransactionCase):
-    """Who the coupon-generation wizard issues to, and what it records."""
 
     @classmethod
     def setUpClass(cls):

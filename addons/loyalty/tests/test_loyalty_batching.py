@@ -5,12 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyBatching(TransactionCase):
-    """Work that used to cost one query per record.
-
-    Every case is measured as a marginal cost at two sizes: an absolute count at
-    one size cannot tell a per-record cost from a fixed setup cost, and cannot see
-    an N+1 at all.
-    """
 
     @classmethod
     def setUpClass(cls):

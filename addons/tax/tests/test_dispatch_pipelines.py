@@ -5,10 +5,6 @@ from .common import BaseTaxCommon
 
 @tagged("post_install", "-at_install")
 class TestGlobalDiscount(BaseTaxCommon):
-    """F012: `_prepare_global_discount_lines`/`_dispatch_global_discount_lines`/
-    `_squash_global_discount_lines` had zero coverage in this suite (they are
-    exercised indirectly by `account`/`sale`'s own test suites, but nothing
-    here would catch a regression when auditing tax in isolation)."""
 
     def test_percent_discount_reduces_totals(self):
         tax = self._tax(21.0)
@@ -54,8 +50,6 @@ class TestGlobalDiscount(BaseTaxCommon):
 
 @tagged("post_install", "-at_install")
 class TestDownPayment(BaseTaxCommon):
-    """F012: `_prepare_down_payment_lines`/`_prepare_base_lines_for_down_payment`
-    had zero coverage in this suite."""
 
     def test_percent_down_payment_happy_path(self):
         tax = self._tax(21.0)
@@ -99,9 +93,6 @@ class TestDownPayment(BaseTaxCommon):
 
 @tagged("post_install", "-at_install")
 class TestReturnOfMerchandise(BaseTaxCommon):
-    """F012: the return-of-merchandise matching/dispatch/squash trio
-    (`_dispatch_return_of_merchandise_lines`, `_match_returns_to_positive_lines`,
-    `_squash_return_of_merchandise_lines`) had zero coverage in this suite."""
 
     def _product(self, name):
         return self.env["product.product"].create({"name": name})
@@ -148,9 +139,6 @@ class TestReturnOfMerchandise(BaseTaxCommon):
 
 @tagged("post_install", "-at_install")
 class TestGrossTotalTolerance(BaseTaxCommon):
-    """F012: the ~450-line gross-total tolerance/rounding family
-    (`_round_raw_total_excluded` and friends) had zero direct coverage in this
-    suite — only exercised implicitly through the plain rounding pipeline."""
 
     def test_strict_tolerance_keeps_the_group_total_exact(self):
         tax = self._tax(21.0)

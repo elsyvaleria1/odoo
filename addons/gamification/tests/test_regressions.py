@@ -21,7 +21,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestKarmaIntegrity(common.TransactionCase):
-    """karma == sum of every recorded gain, under all insertion orders."""
 
     @classmethod
     def setUpClass(cls):
@@ -101,7 +100,6 @@ class TestKarmaIntegrity(common.TransactionCase):
 
 
 class TestGoalStateMachine(common.TransactionCase):
-    """State transitions must not depend on the measured value changing."""
 
     @classmethod
     def setUpClass(cls):
@@ -194,7 +192,6 @@ class TestGoalStateMachine(common.TransactionCase):
 
 
 class TestMentorshipSecurity(common.TransactionCase):
-    """A mentor must not be able to mint karma for themselves."""
 
     @classmethod
     def setUpClass(cls):
@@ -350,12 +347,6 @@ class TestStreakCronIdempotency(common.TransactionCase):
 
 
 class TestStreakTimezone(common.TransactionCase):
-    """A streak day is the user's calendar day, not a UTC day.
-
-    Storage stays UTC; only the day *window* is resolved in the user's
-    timezone, following the ``lunch.supplier`` / ``hr.employee._get_schedule_tz``
-    pattern used elsewhere in core for calendar-day business logic.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -435,7 +426,6 @@ class TestStreakTimezone(common.TransactionCase):
 
 
 class TestCronErrorIsolation(common.TransactionCase):
-    """One broken record must not abort a whole cron run."""
 
     def _user(self, login):
         return (
@@ -603,7 +593,6 @@ class TestCronErrorIsolation(common.TransactionCase):
 
 
 class TestSkillTreeWiring(common.TransactionCase):
-    """The skill tree must actually unlock when its quest completes."""
 
     @classmethod
     def setUpClass(cls):
@@ -849,14 +838,6 @@ class TestProfilePrivacy(common.TransactionCase):
 
 
 class TestGoalOutcomeFields(common.TransactionCase):
-    """A participant must not be able to decide their own goal's outcome.
-
-    ``write`` used to guard only ``current`` and ``state``.  Every field in
-    ``OUTCOME_FIELDS`` feeds the reached/failed decision, so lowering your own
-    ``target_goal`` was exactly as good as writing your own ``current`` -- and
-    it collected the challenge's reward badge on the next cron run, including a
-    ``rule_auth='nobody'`` badge that exists so users cannot grant it.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -927,10 +908,6 @@ class TestGoalOutcomeFields(common.TransactionCase):
 
 
 class TestQuestOwnership(common.TransactionCase):
-    """Quest enrolments and step completions were the only employee-writable
-    models in this module with no access domain, so anyone could rewrite another
-    user's progress and skip the prerequisite check `complete_step` performs.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -995,11 +972,6 @@ class TestQuestOwnership(common.TransactionCase):
 
 
 class TestChallengeRetargeting(common.TransactionCase):
-    """`user_domain` says who takes part, so narrowing it must narrow the
-    challenge.  It used to be unioned into `user_ids` and never subtracted, so
-    moving a challenge from one team to another silently ran it for both, and
-    `default_get` seeded the domain with *every* internal user.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1063,12 +1035,6 @@ class TestChallengeRetargeting(common.TransactionCase):
 
 
 class TestConsolidationPreservesGain(common.TransactionCase):
-    """Consolidation used to telescope: it kept the oldest `old_value` and the
-    newest `new_value` and assumed every row in between chained.  Nothing
-    declares or checks that, and an administrator editing or deleting a row in
-    the technical view breaks it -- after which consolidation moved karma, in
-    whichever direction the break went, up to two months later and silently.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1147,10 +1113,6 @@ class TestConsolidationPreservesGain(common.TransactionCase):
 
 
 class TestActivityFeedRendersAtReadTime(common.TransactionCase):
-    """`summary` is written once, in the writer's language and with the names
-    of that day. The feed re-renders it for the reader instead of serving the
-    frozen string.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1191,13 +1153,6 @@ class TestActivityFeedRendersAtReadTime(common.TransactionCase):
 
 
 class TestClosedGoalCurrentFrozen(common.TransactionCase):
-    """A closed goal's ``current`` must not move on an automatic update.
-
-    ``update_goal()`` is reachable by the goal's own (non-manager) owner
-    through the always-visible "refresh" button, which writes via ``sudo()``
-    to bypass the ``OUTCOME_FIELDS`` guard -- that bypass must not extend to
-    re-measuring a goal that is already closed.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1255,7 +1210,6 @@ class TestClosedGoalCurrentFrozen(common.TransactionCase):
 
 
 class TestQuestStepCrossQuestGuard(common.TransactionCase):
-    """``complete_step`` must reject a step from a different quest."""
 
     @classmethod
     def setUpClass(cls):
@@ -1324,9 +1278,6 @@ class TestQuestStepCrossQuestGuard(common.TransactionCase):
 
 
 class TestQuestEnrollmentStateNotDirectlyWritable(common.TransactionCase):
-    """An employee must not be able to bypass complete_step/_complete_quest
-    by writing `state` on their own enrollment directly.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1379,7 +1330,6 @@ class TestQuestEnrollmentStateNotDirectlyWritable(common.TransactionCase):
 
 
 class TestKudosImmutableAfterSend(common.TransactionCase):
-    """A sent kudos' recognition-defining fields must not be editable."""
 
     @classmethod
     def setUpClass(cls):
@@ -1460,7 +1410,6 @@ class TestKudosImmutableAfterSend(common.TransactionCase):
 
 
 class TestStreakConcurrentFirstVisit(common.TransactionCase):
-    """Two interleaved first-visit calls must not raise on the unique index."""
 
     @classmethod
     def setUpClass(cls):
@@ -1531,13 +1480,6 @@ class TestStreakConcurrentFirstVisit(common.TransactionCase):
 
 
 class TestXpProgressFollowsRankThresholds(common.TransactionCase):
-    """The XP bar tracks a rank threshold move that leaves the rank alone.
-
-    ``gamification.karma.rank.write`` already re-ranks whoever changes rank, so
-    the gap was the residue: a user whose rank is unchanged but whose distance
-    to the next one moved got no recompute, because the depends named the
-    many2one and not the threshold on it.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1583,12 +1525,6 @@ class TestXpProgressFollowsRankThresholds(common.TransactionCase):
 
 
 class TestXpProgressBatchesRankLookup(common.TransactionCase):
-    """Computing the XP bar reads the rank ladder once, not once per user.
-
-    ``_get_next_rank()`` issues its own search, so calling it inside the
-    per-user loop cost one query each. The batched pick must agree with it for
-    every rank state, including a user with no rank at all.
-    """
 
     @classmethod
     def setUpClass(cls):

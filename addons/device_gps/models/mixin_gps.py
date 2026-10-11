@@ -19,7 +19,6 @@ def _utc_instant(moment):
 
 
 class MixinGps(models.AbstractModel):
-    """GPS observations through a device; hosts supply their device relation."""
 
     _name = "mixin.gps"
     _description = "GPS Observation Mixin"

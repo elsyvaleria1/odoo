@@ -12,12 +12,6 @@ _debug = DebugLog(__name__)
 
 
 class FixedWindowLimiter:
-    """At most ``limit`` hits per key in each ``window`` seconds.
-
-    Per process: under prefork each worker counts on its own, so it bounds
-    abuse, not an exact rate. Past ``max_keys`` keys, windows that ended are
-    dropped first, then the oldest, down to nine tenths of the bound.
-    """
 
     __slots__ = ("_lock", "_state", "limit", "max_keys", "window")
 

@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class IrActionsServer(models.Model):
-    """Add SMS option in server actions."""
 
     _inherit = "ir.actions.server"
 

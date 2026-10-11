@@ -6,7 +6,6 @@ from odoo.addons.hr_work_entry_attendance.tests.common import (
 
 
 class TestAttendanceActions(HrWorkEntryAttendanceCommon):
-    """Cover payslip attendance counters and the overtime half-day rule."""
 
     @classmethod
     def setUpClass(cls):

@@ -4,7 +4,6 @@ from odoo.addons.helpdesk.tests import common
 
 
 class TestHelpdeskSaleCoupon(common.HelpdeskCommon):
-    """Test used to check that the functionalities of After sale in Helpdesk (sale_coupon)."""
 
     def test_helpdesk_sale_loyalty(self):
         self.test_team.helpdesk_use_coupons = True

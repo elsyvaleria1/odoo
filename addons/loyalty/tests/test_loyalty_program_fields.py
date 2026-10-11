@@ -6,7 +6,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyProgramFields(TransactionCase):
-    """Program-level fields whose value a write must not decide by accident."""
 
     @classmethod
     def setUpClass(cls):

@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class SmsTracker(models.Model):
-    """Links a sent SMS to its mail.notification or mailing.trace tracking record."""
 
     _name = "sms.tracker"
     _description = "Link SMS to mailing/sms tracking models"

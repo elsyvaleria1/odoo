@@ -35,10 +35,6 @@ DOC_ETAG_SCOPE = register_signed_scope(
 
 
 class DocController(http.Controller):
-    """The registry's own contract: every model this reader may reach, its
-    fields and its public methods, as JSON documents a client reads before it
-    calls `/json/2`. The playground that renders them is `api_doc`.
-    """
 
 
     @http.route("/doc-bearer/index.json", type="json2", auth="bearer", typed=True)

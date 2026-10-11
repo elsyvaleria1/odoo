@@ -8,9 +8,6 @@ from .common import TelegramBotTestCase
 
 @tagged("post_install", "-at_install")
 class TestUpdateAuthority(TelegramBotTestCase):
-    """Whatever an update is -- a command, a button, a message -- what it
-    reaches runs as its sender, holding the bot's privilege, and never as
-    the superuser."""
 
     @classmethod
     def setUpClass(cls):

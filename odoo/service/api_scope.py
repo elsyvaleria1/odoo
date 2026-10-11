@@ -78,9 +78,6 @@ class ModelRule:
 
 @dataclass(frozen=True)
 class ScopeRules:
-    """A scope as the guard reads it. `models` is None for a scope that names
-    no model: every model the user may reach, every operation, nothing
-    hidden -- the shape of a key generated with no scope in mind."""
 
     key: str
     models: Mapping[str, ModelRule] | None = None

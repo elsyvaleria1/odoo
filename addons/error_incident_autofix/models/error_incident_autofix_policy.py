@@ -9,8 +9,6 @@ DELIVERY_KINDS = (REVISION, HOTFIX)
 
 
 class ErrorIncidentAutofixPolicy(models.Model):
-    """When an incident is handed to the agents, and what they may do with it.
-    One active policy; its company pays."""
 
     _name = "error.incident.autofix.policy"
     _description = "Autofix Policy"

@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestDeliveryFedexInternal(TransactionCase):
-    """Unit tests for the delivery_fedex module that don't require external access"""
 
     def setUp(self):
         super().setUp()

@@ -5,7 +5,6 @@ from odoo.tests import common
 
 
 class TestGeoengineKnowsNothingOfAssets(common.TransactionCase):
-    """The layer this bridge sits on must stay asset-free, or the split rots."""
 
     def test_the_geospatial_layer_names_no_asset_or_hr_model(self):
         root = pathlib.Path(__file__).resolve().parents[2] / "device_gps_geoengine"

@@ -13,12 +13,6 @@ from odoo.addons.certificate.tools import CertificateAdapter
 
 @tagged("post_install", "-at_install")
 class TestCertificateAdapter(TransactionCase):
-    """`CertificateAdapter.get_connection_with_tls_context` patches
-    `ssl_context.load_cert_chain` to pull the certificate and its private
-    key straight out of a `certificate.certificate` record; it must be able
-    to unlock a password-protected private key the same way `certificate.key`
-    itself does everywhere else (`_sign`, `_decrypt`, `_get_unencrypted_pem_key`).
-    """
 
     @classmethod
     def setUpClass(cls):

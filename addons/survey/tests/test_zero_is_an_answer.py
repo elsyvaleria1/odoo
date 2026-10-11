@@ -8,12 +8,6 @@ from odoo.addons.survey.tests import common
 
 @tagged("post_install", "-at_install", "functional")
 class TestZeroIsAnAnswer(common.TestSurveyCommon, HttpCase):
-    """A submitted 0 is an answer on every type whose range admits it.
-
-    Four layers used to decide this independently -- the QWeb attribute, the JS
-    guard, ``_extract_comment_from_answers`` and ``_prepare_line_answer_vals`` --
-    and only ``_is_unanswered`` got it right. These pin the survivors.
-    """
 
     ZERO_IS_VALID = ("numerical_box", "scale", "nps", "slider")
 

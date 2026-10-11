@@ -6,10 +6,7 @@ from odoo.addons.sale.tests.common import SaleCommon, TestSaleCommon
 
 
 class UncatchableException(BaseException):
-    """New type of exception to interrupt _create_recurring_invoice
-    without being catch by except Exception
-    It needs to inherit from the parent of Exception
-    """
+    pass
 
 
 class SaleSubscriptionCommon(SaleCommon):

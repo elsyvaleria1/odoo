@@ -8,9 +8,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestPurchaseApprovalDoors(TransactionCase):
-    """An order that needs approval is confirmed by its grant and by nothing else:
-    not by a write of the confirmed state, not by a create that starts there, and
-    the grant confirms it as the buyer who asked, whoever decided."""
 
     @classmethod
     def setUpClass(cls):

@@ -8,12 +8,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestGiftCardStatus(TransactionCase):
-    """Whether a scanned gift-card code may be used at the register.
-
-    The cashier scans a code and this decides what happens next, so both
-    answers cost money: accepting a spent or already-owned card gives goods
-    away, refusing a good one turns a paying customer away.
-    """
 
     @classmethod
     def setUpClass(cls):

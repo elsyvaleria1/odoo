@@ -2,7 +2,6 @@ from odoo import api, models
 
 
 class MixinStudio(models.AbstractModel):
-    """Mixin that stamps studio-flagged ir.model.data on create/write."""
 
     _name = "mixin.studio"
     _description = "Studio Mixin"

@@ -516,7 +516,6 @@ class TestActivityDoneBatch(TestActivityCommon):
 
 
 class TestActivitySystray(TestActivityCommon, HttpCase):
-    """Test for systray_get_activities"""
 
     @classmethod
     def setUpClass(cls):
@@ -1523,13 +1522,6 @@ class TestTours(HttpCase):
 
 @tests.tagged("post_install", "-at_install")
 class TestActivityResName(ActivityScheduleCase):
-    """``res_name`` resolves the linked document without probing for it.
-
-    The probe (``exists()``) used to run on every read -- including every
-    notification template that renders ``res_name`` -- to guard a state that
-    only arises when a record is cascade-deleted in the database, skipping the
-    unlink override that would have removed its activities.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1587,7 +1579,6 @@ class TestActivityResName(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityAccessAndState(ActivityScheduleCase):
-    """Access, cache and idempotence properties of mail.activity."""
 
     @classmethod
     def setUpClass(cls):
@@ -1875,7 +1866,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivitySearchPaging(ActivityScheduleCase):
-    """``_search`` filters access in Python; pagination must survive that."""
 
     @classmethod
     def setUpClass(cls):
@@ -2073,19 +2063,6 @@ class TestActivityGarbageCollect(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityStrandedModel(ActivityScheduleCase):
-    """An activity whose ``res_model`` names a model the registry does not have.
-
-    ``res_model_id`` is a plain m2o to ``ir.model``, and an addon installed in
-    the database but absent from ``addons_path`` leaves exactly that: the
-    ``ir.model`` row and the stored ``res_model`` string survive, the model does
-    not. Reproduced end to end by installing ``knowledge`` and re-booting
-    without ``enterprise/`` on the path; ``UPDATE`` is the cheap stand-in.
-
-    Every reader must carry such an activity like a document-less one. Before,
-    each site below raised a bare ``KeyError`` -- and ``_search`` is on the read
-    path of every user who is not the assignee, so one row took the whole list
-    down.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2172,16 +2149,6 @@ class TestActivityStrandedModel(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityOnAnActivity(TestActivityCommon):
-    """``_todo_key`` spells two shapes the same way, and the decode must too.
-
-    A document-less activity is keyed ``('mail.activity', its own id)``; an
-    activity filed *against* a ``mail.activity`` record is keyed
-    ``('mail.activity', that record's id)``. Both name the same record and both
-    must count once -- which is what ``_get_activity_groups`` does. But
-    ``_todo_keys_elsewhere`` used to decode the key only as the document-less
-    shape, so it never saw the other activity holding it, and the badge was
-    decremented twice for one record going quiet.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2261,12 +2228,6 @@ class TestActivityOnAnActivity(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityNotifyCost(TestActivityCommon):
-    """``action_notify`` must not work for activities it will not notify.
-
-    Every query-count pin in this file exercises a single activity, so a per
-    record cost in a batch path is invisible to all of them; these assert the
-    shape at N > 1.
-    """
 
     def _schedule(self, count, user):
         records = self.env["mail.test.activity"].create(
@@ -2489,7 +2450,6 @@ class TestActivityNotifyCost(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityUnlinkBookkeeping(ActivityScheduleCase):
-    """Unlinking activities that owe nothing must not go looking for keys."""
 
     @classmethod
     def setUpClass(cls):
@@ -2534,14 +2494,6 @@ class TestActivityUnlinkBookkeeping(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityDeadlineClock(ActivityScheduleCase):
-    """A deadline names a day in the *assignee's* timezone, everywhere.
-
-    ``action_reschedule_today`` has always resolved "today" that way -- it
-    groups by ``user_tz``. Creation did not: it used ``context_today``, the
-    actor's day. The two disagreed whenever the pair sat either side of a date
-    line, so an activity scheduled for "today" was born ``overdue`` and pressing
-    the very same word on it moved it a day and turned it green.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2749,14 +2701,6 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityNotificationLanguage(ActivityScheduleCase):
-    """The whole notification is the assignee's, label included.
-
-    ``action_notify`` builds ``localized`` for the assignee and used it for the
-    body and the date format, then called the bare ``_()`` for the subject and
-    the subtitles. That helper reads the language off the calling frame's
-    ``self``, which is the *actor's* recordset -- so a French assignee got a
-    Spanish label wrapped around a French value.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2825,12 +2769,6 @@ class TestActivityNotificationLanguage(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityResNameFollowsRenames(ActivityScheduleCase):
-    """``res_name`` is stored and no ``depends`` can reach the document's name.
-
-    ``res_id`` is a ``Many2oneReference``, so the document has to push the
-    recompute. Without it the activity list keeps the old name forever and the
-    view's own ``res_name ilike`` filter matches a name nothing has.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -2925,7 +2863,6 @@ class TestActivityResNameFollowsRenames(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityIntegrityGuards(ActivityScheduleCase):
-    """Guards over the two shapes that used to corrupt data silently."""
 
     @classmethod
     def setUpClass(cls):
@@ -3086,14 +3023,6 @@ class TestActivityIntegrityGuards(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityDocumentModelIntegrity(ActivityScheduleCase):
-    """`res_model` is a stored related on `res_model_id.model`.
-
-    `readonly` does not stop a programmatic write and the field is stored, so a
-    write landed in the column without ever touching `res_model_id` -- and
-    nothing recomputed it afterwards. Every reader (`_filtered_document_backed`,
-    `_thread_backed`, `_check_access`, `_search`) then worked off a model the
-    activity is not actually filed on.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3155,13 +3084,6 @@ class TestActivityDocumentModelIntegrity(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityFeedbackAttachments(ActivityScheduleCase):
-    """A completion message must own the attachments it shows.
-
-    `message_post` re-parents the attachments it is handed onto the document, so
-    one attachment record handed to several messages ends up owned by exactly
-    one of them -- and deleting that one document took the file out of all the
-    others' chatter.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3247,7 +3169,6 @@ class TestActivityFeedbackAttachments(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityViewDataLimit(ActivityScheduleCase):
-    """`get_activity_data` is RPC-reachable; an absent limit is not "no limit"."""
 
     def test_limit_is_capped_even_when_none_is_asked_for(self):
         Activity = self.env["mail.activity"]
@@ -3291,14 +3212,6 @@ class TestActivityViewDataLimit(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityPager(TestActivityCommon):
-    """`_search` filters in Python, so the page is not the match set.
-
-    A Query built from an id list counts its own rows.
-    For every Query the ORM builds that is right; for the one `_search` returns
-    here the id list *is* the page, so the list view read its page size as the
-    total and disabled its own next-page control -- the rows past the first page
-    were unreachable.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3387,14 +3300,6 @@ class TestActivityPager(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityNotifyAccess(TestActivityCommon):
-    """`mail_activity_rule_user` grants write to the creator and the assignee.
-
-    security/mail_security.xml says why: so they can manage an activity on a
-    document they cannot write. Reassigning one then notified the new assignee
-    through an unsudoed `_message_notify_batch`, which derives the document's
-    alias domain and company from the recordset -- and raised AccessError for
-    exactly the callers the rule exists to admit.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3474,13 +3379,6 @@ class TestActivityNotifyAccess(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityChaining(TestActivityCommon):
-    """Chaining is a property of the activity type, not of the document.
-
-    The trigger branch lived inside `_action_done`'s walk over thread-backed
-    documents, so a document-less activity -- the shape the systray To-Do
-    creates, and the only shape a `res_model = False` type can take -- archived
-    without ever creating its follow-up. Silently: no error, no log line.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3577,7 +3475,6 @@ class TestActivityOpenDocument(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityGarbageCollection(TestActivityCommon):
-    """Collecting garbage is not a question about the runner's access."""
 
     @classmethod
     def setUpClass(cls):
@@ -3632,7 +3529,6 @@ class TestActivityGarbageCollection(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityStateSearch(TestActivityCommon):
-    """`state` is legible in the Store payload; it must be searchable too."""
 
     @classmethod
     def setUpClass(cls):
@@ -3715,12 +3611,6 @@ class TestActivityStateSearch(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivitySearchOrderIsStable(TestActivityCommon):
-    """Every branch of `_search` breaks ties the same way.
-
-    The access scan and the "mine" shortcut appended `id` to the order; the
-    superuser branch did not, so two admins paging the same list could see a
-    row twice and another not at all whenever deadlines tied.
-    """
 
     def test_every_branch_breaks_ties_by_id(self):
         Activity = self.env["mail.activity"]
@@ -3751,14 +3641,6 @@ class TestActivityModelSelection(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityOneTodayPerAnswer(TestActivityCommon):
-    """Every batch classification reads the clock once, not once per record.
-
-    `_now` reads the exact instant, so a loop that reads it per record can
-    straddle a local midnight and answer two different "todays" inside one
-    result. `_today_by_tz` exists to make that unrepresentable; these pin the
-    callers to it, because the defect is invisible for all but a few seconds a
-    day and no ordinary test would ever catch it.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3837,14 +3719,6 @@ class TestActivityOneTodayPerAnswer(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityAccessIsOneRule(TestActivityCommon):
-    """`_check_access` and `_search` must answer the same question.
-
-    Both say "mine, or the document permits it". They used to say it twice, in
-    different shapes, each with its own handling of a `res_model` naming an
-    uninstalled model. A security rule spelled twice is a security rule that
-    drifts, so this asserts the two agree over a population built to make them
-    disagree if they ever do.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -3941,16 +3815,6 @@ class TestActivityAccessIsOneRule(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
-    """Self-assignment reaches an activity; it must not authorise filing one.
-
-    `_accessible_ids` accepted `user_id == uid` for every operation, `create`
-    included, so any employee could name any record and file an activity on it.
-    That was not a cosmetic hole: `create` subscribes the assignee to the
-    document, and a follower may post there
-    (`mail.message._discard_followed_documents`) and read what is posted
-    afterwards. Measured end to end -- `message_post` raised AccessError before
-    the activity and succeeded after it.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -4166,13 +4030,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityChainingWithoutDocumentAccess(TestActivityCommon):
-    """Completing is the assignee's right; the chained follow-up rides on it.
-
-    `_action_done` created the follow-up unsudoed, so once `create` started
-    asking the document (see `_accessible_ids`) an assignee who may finish an
-    activity on a document they cannot write would have the chain die under
-    them -- with an AccessError naming the activity, not anything they did.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -4288,14 +4145,6 @@ class TestActivityChainingWithoutDocumentAccess(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityFeedbackAttachmentsVanishedDocument(ActivityScheduleCase):
-    """A vanished document gets no message, so it must get no attachment copy.
-
-    `_post_done_messages` copies the caller's attachments once per document past
-    the first, because `message_post` re-parents the originals. It made the copy
-    before asking whether the document was still there, so completing a batch
-    over a cascade-deleted document left one orphaned `ir.attachment` behind per
-    deleted document -- on the *surviving* document it was copied from.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -4348,14 +4197,6 @@ class TestActivityFeedbackAttachmentsVanishedDocument(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityStateSearchSpansTheArchived(TestActivityCommon):
-    """`active` is the archive flag *and* the "done" half of `state`.
-
-    The ORM decides its implicit `active = True` on the raw domain, where the
-    only leaf it can read says `state`, so it ANDed itself onto every state
-    query: `search([("state", "=", "done")])` matched nothing at all, and
-    `("state", "not in", ["overdue"])` answered with two of its three remaining
-    states. The field advertises four values; three were reachable.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -4419,21 +4260,6 @@ class TestActivityStateSearchSpansTheArchived(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityCreatorCanUseWhatTheRuleGrants(TestActivityCommon):
-    """`has_access` must not promise an operation the model then refuses.
-
-    `mail_activity_rule_user` grants write and unlink on
-    `['|', ('user_id','=',uid), ('create_uid','=',uid)]`, while `_accessible_ids`
-    knows only the assignee. For an activity somebody created and assigned to a
-    colleague, on a document the creator can no longer reach, the two disagreed:
-    `has_access("write")` answered True and the write raised AccessError about
-    *read* -- because `write`'s own systray bookkeeping reads `_todo_key` before
-    it delegates. Which field you wrote decided whether it raised:
-    `{"summary": ...}` touches none of that bookkeeping and went through,
-    `{"date_deadline": ...}` is in `moves_count` and did not.
-
-    Read stays denied here, deliberately: this is about honouring the access
-    already advertised, not about widening who sees what.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -4514,16 +4340,6 @@ class TestActivityCreatorCanUseWhatTheRuleGrants(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityStateDomainReadsOneClock(TestActivityCommon):
-    """Every branch of a state domain must count from the same day.
-
-    `_search_state` built all four branches eagerly, each calling
-    `datetime.now(UTC)` for itself, then discarded the ones not asked for. Two
-    costs. `search([("state", "=", "overdue")])` read the clock **three** times
-    and threw away two ~218-timezone domains; and the three reads can straddle a
-    local midnight -- forced across one, the branches came back
-    `[20th, 19th, 19th]`, so an activity due the 19th matched `overdue` and
-    `today` at once.
-    """
 
     def test_one_state_search_reads_the_clock_once(self):
         module = mail_activity_module
@@ -4578,16 +4394,6 @@ class TestActivityStateDomainReadsOneClock(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityDeadlineDomainInMemory(TestActivityCommon):
-    """`_domain_deadline_today` renders SQL; it must also answer in memory.
-
-    It is a `Domain.custom` now, whose predicate `DomainCustom` stores and hands
-    **single records** -- `_as_predicate` returns it as-is. Written as a factory
-    over the recordset it is still truthy for every record, so the domain
-    matched everything, and silently: every other test drives the SQL path.
-    `mixin.mail.activity._activity_state_domains` wraps this in
-    `Domain("activity_ids", "any", ...)`, which `filtered_domain` on a document
-    reaches, so the predicate is on a real path and not a formality.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -4649,13 +4455,6 @@ class TestActivityDeadlineDomainInMemory(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityPinnedSearch(TestActivityCommon):
-    """A domain pinned to the reader answers through the same guard as any other.
-
-    The read guard is `user_id = uid OR <document branches>`; pinned to the
-    reader, the first arm holds for every candidate row, so the document
-    branches are never evaluated. These pin that the pinned search stays
-    exact and that an unpinned one still hides what it must.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -4726,15 +4525,6 @@ class TestActivityPinnedSearch(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityClockIsReproducible(ActivityScheduleCase):
-    """The SQL these queries render must be the same text every run.
-
-    `_sql_today` renders one `= ANY(ARRAY[...])` branch per calendar day in
-    play, each holding the ~486 timezone names on that day. They come from
-    `all_timezones()`, a frozenset, so unsorted they land in a different order
-    in every process and the SQL text of every deadline and state query differs
-    run to run. Not wrong, but unreproducible: a query log cannot be diffed
-    against another run's and a server-side prepared statement is keyed on text.
-    """
 
     def test_the_timezone_catalogue_comes_out_sorted(self):
         moment = datetime(2026, 8, 31, 6, 0, tzinfo=UTC)
@@ -4841,15 +4631,6 @@ class TestActivityClockIsReproducible(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityViewRowOrderIsStable(ActivityScheduleCase):
-    """The activity view's row order must not depend on set iteration.
-
-    `_get_activity_data_cells` unioned two dict key views into a set, and
-    `_get_activity_data_order` sorts a dict built by iterating it. Python's sort
-    is stable, so every tie in the sort key fell back to that set's order --
-    which varies per process. Two documents due the same day came back in a
-    different order in every worker, so the view reshuffled its rows between
-    reloads with no data having changed.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -4920,16 +4701,6 @@ class TestActivityViewRowOrderIsStable(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityCompletionKeepsItsAttachments(ActivityScheduleCase):
-    """The completion message must carry every attachment it was handed.
-
-    An activity can own attachments of its own (``ir.attachment`` rows pointing
-    at ``mail.activity``, which is what a ``many2many_binary`` widget on the
-    activity form creates), and `_action_done` re-homes those onto the message
-    it posts. It also posts the feedback attachments the caller passed. The
-    re-homing used to *assign* the message's ``attachment_ids`` rather than add
-    to it, so an activity holding both lost the feedback file from the chatter
-    and left it parented to the document with no message showing it.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -5070,14 +4841,6 @@ class TestActivityCompletionKeepsItsAttachments(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityDeadlineDefaultsToTheAssigneeDay(ActivityScheduleCase):
-    """`create` and `default_get` must pick the same day for the same assignee.
-
-    "Today" is the assignee's, not the server's. `default_get` reads the
-    assignee out of ``default_user_id``, which is how the form action carries
-    it; `create` used to read it out of the values alone, so an API create that
-    let the context supply the assignee got the server's day -- filing an
-    activity the assignee sees as "planned" tomorrow instead of due now.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -12,8 +12,6 @@ from . import runner as agent
 
 
 class FakeClient:
-    """Odoo's side of the protocol, in memory, with the failures a network
-    and a busy server cause."""
 
     def __init__(self, leases=(), *, cancel_after=None, lose_on=None, flaky=0):
         self.leases = list(leases)

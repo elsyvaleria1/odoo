@@ -3,7 +3,6 @@ from odoo.tests import common
 
 
 class TestGoal(common.TransactionCase):
-    """Tests for gamification.goal model methods."""
 
     @classmethod
     def setUpClass(cls):

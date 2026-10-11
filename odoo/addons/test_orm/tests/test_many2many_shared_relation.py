@@ -3,10 +3,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestTwoFieldsOverOneRelation(TransactionCase):
-    """product.product reads `product_variant_combination` twice: every attribute
-    value, and the ones that tell variants apart (a domain). A write through the
-    first changes what the second reads, and `create` has cached the second as
-    empty: the POS was handed a new variant with no variant values."""
 
     @classmethod
     def setUpClass(cls):

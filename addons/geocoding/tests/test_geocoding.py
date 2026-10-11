@@ -21,7 +21,6 @@ class TestGeoLocalize(TransactionCase):
 
 @odoo.tests.tagged("-at_install", "post_install")
 class TestGeoLocalizeNoApiKey(TransactionCase):
-    """No network call: the missing-API-key check raises before any request."""
 
     def test_googlemap_without_api_key(self):
         test_partner = self.env["res.partner"].create(
@@ -79,7 +78,6 @@ class TestPartnerGeoLocalization(TransactionCase):
 
 
 class TestGeocoderRequestsTimeout(TransactionCase):
-    """Outbound geocoding HTTP calls must bind an explicit timeout."""
 
     def test_call_openstreetmap_sets_timeout(self):
         geocoder = self.env["geocoder"]

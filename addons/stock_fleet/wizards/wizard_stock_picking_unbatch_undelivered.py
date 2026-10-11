@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardStockPickingUnbatchUndelivered(models.TransientModel):
-    """Reason given by the driver when a stop could not be delivered."""
 
     _name = "wizard.stock.picking.unbatch.undelivered"
     _description = "Undelivered Transfer"

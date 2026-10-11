@@ -3,7 +3,6 @@ import dataclasses
 
 @dataclasses.dataclass(frozen=True)
 class CalendarSyncCapabilities:
-    """What a provider's calendar does that the engine must know of."""
 
     shared_ids: bool = False
     client_insert_id: bool = False
@@ -14,7 +13,6 @@ class CalendarSyncCapabilities:
 
 @dataclasses.dataclass(frozen=True)
 class CalendarSyncProvider:
-    """What the engine knows of a provider; its adapter knows the rest."""
 
     code: str
     label: str

@@ -29,10 +29,6 @@ from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestCalendarPrivacyLeaks(TransactionCase):
-    """`_fetch_query` masks private events field-by-field, but a domain is
-    evaluated in SQL against the raw columns. Everything the fetch path hides
-    is therefore recoverable through `search`/`search_count`/`order`.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -122,11 +118,6 @@ class TestCalendarPrivacyLeaks(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarCreateOrdering(TransactionCase):
-    """`create()` splits vals_list into non-recurring then recurring and
-    `super().create()`s them separately, so the returned recordset no longer
-    matches the caller's order -- yet two `zip(events, vals_list)` loops in the
-    same method assume it does.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -175,9 +166,6 @@ class TestCalendarCreateOrdering(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarRecurrenceUpdateOnPlainEvent(TransactionCase):
-    """Turning a plain event into a recurring one must either build the
-    recurrence or refuse; it must not drop the rrule parameters silently.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -224,7 +212,6 @@ class TestCalendarRecurrenceUpdateOnPlainEvent(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarRecurrenceForever(TransactionCase):
-    """`repeat_type='forever'` must survive being stored."""
 
     def test_forever_survives_a_flush(self):
         recurrence = self.env["calendar.recurrence"].create(
@@ -247,9 +234,6 @@ class TestCalendarRecurrenceForever(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarNotificationAttachments(TransactionCase):
-    """`_notify_attendees` copies the template attachments once per attendee in
-    `self`, but only attendees that are actually mailed consume a copy.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -316,10 +300,6 @@ class TestCalendarNotificationAttachments(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarRangeCalculation(TransactionCase):
-    """`_range_calculation` inflates the occurrence count when start-of-period
-    falls before the base event, but it must do so without mutating the stored
-    `count` column (it used to write an inflated value and write it back).
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -372,12 +352,6 @@ class TestCalendarRangeCalculation(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarPopoverDeleteWizard(TransactionCase):
-    """The delete wizard's action_delete must honour the recurrence_update
-    vocabulary ('this'/'subsequent'/'all') that the calendar form
-    passes through action_unlink_event, not only the popover's own
-    'one'/'next'/'all'. It used to no-op on the former, so deleting "this and
-    following"/"all events" from the form silently deleted nothing.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -455,15 +429,6 @@ class TestCalendarPopoverDeleteWizard(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarAttendeeCounts(TransactionCase):
-    """The five counts must come from one source, so they always add up.
-
-    `awaiting_count` used to be ``guests - accepted - declined - tentative``
-    and could go negative; it is now a count of the unanswered. The headline
-    `attendees_count` used to be `len(partner_ids)` while the four answer
-    counts came from `attendee_ids` -- two sources, and a many2many read drops
-    archived records while the attendee rows survive, so deactivating a contact
-    made an event report fewer guests than answers.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -548,14 +513,6 @@ class TestCalendarAttendeeCounts(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestAlarmNotifyResponsible(TransactionCase):
-    """ "Notify Responsible" is only meaningful for channels that honour it.
-
-    The base module used to force the flag off for `alarm_type in ('email',
-    'notification')` -- a hardcoded list of its own two types, negated. It read
-    as "not for these two" but meant "for anything that is not these two", so
-    every alarm type added later was opted in by default without anybody
-    deciding so.
-    """
 
     def test_the_base_channels_never_offer_it(self):
         responsible_aware = self.env[
@@ -581,15 +538,6 @@ class TestAlarmNotifyResponsible(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarOrganizerAnswerReset(TransactionCase):
-    """Moving somebody else's event un-accepts its organizer.
-
-    `_write_reset_organizer_answer` compared every candidate attendee against
-    `self.user_id.partner_id` -- a many2one read off the whole recordset, which
-    is the *union* of the organizers' partners. A union never equals the single
-    partner on the left, so a write touching two events with different
-    organizers reset neither, silently. The single-event case passed only
-    because a one-element union is that one element.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -655,15 +603,6 @@ class TestCalendarOrganizerAnswerReset(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
-    """Moving a whole series must tell its attendees.
-
-    `_write_notify_attendees` read "start" out of `write`'s own `vals`, which
-    the recurrence branches empty into `time_values` before it runs -- so the
-    "all events" and "this and following" paths reached the test with no
-    "start" left and returned early. Only a single-occurrence move notified
-    anybody, and the caller passing `update_recurrence` down purely to *unset*
-    `calendar_template_ignore_recurrence` shows the branch was meant to run.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -824,14 +763,6 @@ class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarMassDeletionTrimsTheRule(TransactionCase):
-    """`action_mass_deletion('subsequent')` must trim the recurrence too.
-
-    It selected the occurrences from this one onward and unlinked the rows,
-    leaving the rule still claiming its original `count` with no `until`. The
-    next `_apply_recurrence` -- any later edit of the series reaches one --
-    recreated every occurrence that had just been deleted.
-    `action_mass_archive`, the sibling it mirrors, already trims via `_stop_at`.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -919,14 +850,6 @@ class TestCalendarMassDeletionTrimsTheRule(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarIcsRecurrence(TransactionCase):
-    """The .ics of a recurring event must carry one well-formed RRULE.
-
-    `calendar.recurrence.rrule` stores dateutil's whole rendering,
-    ``DTSTART:...\\nRRULE:...``, whose DTSTART is `now()` at compute time and
-    means nothing. Assigning that block to an RRULE property emitted two RRULE
-    lines, the first ``RRULE:DTSTART:<timestamp>``, and a client reading the
-    invitation took a bare DTSTART as the rule.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -1087,12 +1010,6 @@ class TestCalendarIcsRecurrence(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarUnavailableAttendees(TransactionCase):
-    """`unavailable_partner_ids` must cost the same for one event and for many.
-
-    `interval_from_events` groups the recordset into contiguous clusters, and
-    the compute searched once per cluster -- so a calendar view of back-to-back
-    meetings, which is one cluster per meeting, issued a query per event.
-    """
 
     @classmethod
     def setUpClass(cls):

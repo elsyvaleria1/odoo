@@ -4,13 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPartyConvergence(TransactionCase):
-    """Party convergence reports before it writes.
-
-    An employee can carry two partner rows for one person -- the work contact,
-    and the partner behind their login user. Converging them is a
-    deduplication, so the report has to separate what a migration could merge
-    from what needs a human, and it must never write.
-    """
 
     @classmethod
     def _diverge(cls, employee, contact):

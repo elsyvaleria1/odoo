@@ -8,12 +8,6 @@ from odoo.addons.hr_homeworking.models.hr_homeworking import DAYS
 
 @tagged("post_install", "-at_install")
 class TestTodayIsTheEmployeesOwn(HomeworkingCase):
-    """A weekday work location is keyed to the employee's day, not the host's.
-
-    2026-09-14 20:36 UTC is Monday in Mexico City, where this host runs, and
-    already Tuesday in Tokyo. Resolving "today" from the server's clock gives a
-    Tokyo employee their Monday location for the last nine hours of every day.
-    """
 
     @classmethod
     def setUpClass(cls):

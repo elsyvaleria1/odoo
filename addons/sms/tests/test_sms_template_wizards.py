@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestSmsTemplateWizards(TransactionCase):
-    """sms.template copy, template preview rendering and sender-name validation."""
 
     @classmethod
     def setUpClass(cls):

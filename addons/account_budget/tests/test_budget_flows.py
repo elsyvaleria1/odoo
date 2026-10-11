@@ -12,7 +12,6 @@ from odoo.addons.base.models.res_currency import ResCurrency
 
 @tagged("post_install", "-at_install")
 class TestBudgetFlows(TestAccountBudgetCommon):
-    """Cover the budget report pipeline and the budget lifecycle actions."""
 
     @classmethod
     def setUpClass(cls):

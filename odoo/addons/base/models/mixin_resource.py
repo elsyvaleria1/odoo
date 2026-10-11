@@ -12,14 +12,6 @@ if TYPE_CHECKING:
 
 
 class MixinResource(models.AbstractModel):
-    """One record of the host model is one resource.
-
-    `_resource_type` says what kind of slot the host is. `_resource_owns` says
-    whether the host owns its resource: an owner creates it, copies it and
-    carries its identity; a host that does not own references a resource
-    somebody else answers for, gets a bare one only when given none, and takes
-    a fresh one when copied.
-    """
 
     _name = "mixin.resource"
     _description = "Resource Mixin"

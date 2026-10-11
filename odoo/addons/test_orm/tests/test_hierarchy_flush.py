@@ -2,10 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestHierarchyOperatorsSeePendingWrites(TransactionCase):
-    """`child_of` over a stored parent without `parent_path` is a recursive query
-    on the parent column, embedded in the search that asked for it. The column
-    has to declare itself to the flush, or a parent written a moment ago is
-    invisible: a manager set in the same transaction manages nobody yet."""
 
     def setUp(self):
         super().setUp()

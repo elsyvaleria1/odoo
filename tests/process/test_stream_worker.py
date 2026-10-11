@@ -78,8 +78,6 @@ def stream_db():
 
 
 class HandshakeServer(threading.Thread):
-    """Answers the websocket upgrade and then holds the socket open; every
-    accepted connection is recorded, and a closed one is noticed."""
 
     def __init__(self):
         super().__init__(daemon=True)

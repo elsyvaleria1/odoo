@@ -7,7 +7,6 @@ from odoo.addons.document_account.tests.common import (
 
 @tagged("post_install", "-at_install", "test_document_bridge_full")
 class TestIrActionsServerFull(DocumentsAccountActionsServerCommon):
-    """Testing server actions linked to documents_account that need extra dependencies"""
 
     def test_documents_account_record_create_bank(self):
         expected_journal = self.journals_by_type["bank"]

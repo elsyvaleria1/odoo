@@ -426,21 +426,6 @@ def log_incorrect_accounts_detailed(report_setup_data, amls, totals, is_first_ca
 
 @tagged("post_install_l10n", "post_install", "-at_install")
 class TestBalanceSheetBalanced(TestAccountReportsCommon):
-    """Diagnose unbalanced Balance Sheets.
-
-    We do this by creating two journal entries, so that each tested account ends up
-    with one debit and one credit (each balanced by a counterpart in the Accounts
-    Receivable account). We then generate the Balance Sheet report, and check
-    whether the Assets line is equal to the sum of the Liabilities and Equity lines.
-
-    Some accounts are not checked:
-    - those starting with '99' (automatically created in order to enable some
-      functionalities to work, but the user is expected to change their code)
-    - those included in the NON_TESTED_ACCOUNTS dict.
-
-    The test can optionally identify guilty accounts using binary search; this can
-    be toggled on by setting IDENTIFY_INCORRECT_ACCOUNTS = True.
-    """
 
     @classmethod
     def setup_independent_user(cls):

@@ -7,10 +7,6 @@ DATA_FILE = ("hr_payroll", ["data/hr_salary_rule_data.xml"])
 
 @tests.tagged("post_install", "-at_install")
 class TestSalaryRuleReset(tests.TransactionCase):
-    """`hr_payroll.ir_cron_update_payroll_data` re-converts the salary data of every
-    installed localization once a week, so a rule a customer edits in the form has to
-    be released from its data file or the edit does not survive seven days.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -6,8 +6,6 @@ from odoo.addons.asset_ledger.tests.common import create_test_template
 
 @tagged("post_install", "-at_install")
 class TestCardLedger(TransactionCase):
-    """Until the issuer reports a balance, a card's balance is its opening
-    balance less what the asset's ledger books on it."""
 
     @classmethod
     def setUpClass(cls):

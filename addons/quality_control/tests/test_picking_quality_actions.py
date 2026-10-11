@@ -5,7 +5,6 @@ from .test_common import TestQualityCommon
 
 
 class TestPickingQualityActions(TestQualityCommon):
-    """Cover the picking-side and lot-side quality actions."""
 
     def _create_confirmed_picking(self):
         picking = self.env["stock.picking"].create(

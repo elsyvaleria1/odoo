@@ -20,12 +20,6 @@ class TestResPartner(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSearchAge(TransactionCase):
-    """`age` is computed, not stored, and must still be answerable in SQL.
-
-    The mapping runs backwards -- an older contact was born earlier -- so every
-    operator inverts, and the strict forms shift a year because "older than 30"
-    means "has completed 31".
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -117,14 +111,6 @@ class TestSearchAge(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestBirthdayFilters(TransactionCase):
-    """The birthday filters are answered in SQL by the field's date parts.
-
-    ``birthdate.month_number`` and ``birthdate.day_of_month`` are resolved by
-    the ORM into ``date_part()``, so the filters need no stored field and
-    nothing to recompute. The assertions run the domain the search view really
-    carries rather than a copy of it: a filter that stops matching is the
-    failure worth catching, and a restated domain cannot see it.
-    """
 
     @classmethod
     def setUpClass(cls):

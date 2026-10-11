@@ -262,7 +262,6 @@ def read_opendoc(data, max_entry_bytes=MAX_ENTRY_BYTES):
 
 
 class _OfficeText(BaseReader):
-    """One office container's text, for whoever holds the bytes."""
 
     yields = (TEXT,)
     module = "attachment_indexation"

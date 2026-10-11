@@ -7,14 +7,6 @@ from odoo.addons.sale.tests.common import TestSaleCommon
 
 @tagged("-at_install", "post_install")
 class TestInvoiceDraftBucket(TestSaleCommon):
-    """What an order line can be invoiced for stands in one of three places:
-    on a posted invoice, on a draft invoice, or on none.
-
-    The fork read a draft both ways before. Counted as invoiced, the order
-    said "Fully invoiced" while nothing was posted; left uncounted, the same
-    line could be invoiced twice. A draft now claims its share without
-    invoicing it.
-    """
 
     @classmethod
     def setUpClass(cls):

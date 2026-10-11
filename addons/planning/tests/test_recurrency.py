@@ -1785,15 +1785,6 @@ class TestPlanningContract(TestPlanningContractCommon):
 
 
 class TestRecurrencyUntilTimezone(TestCommonPlanning):
-    """`repeat_until` must survive a round-trip through the recurrency.
-
-    The shift exposes a Date; `planning.recurrency` stores a Datetime. The
-    write path puts the end of the chosen day, in the company calendar's
-    timezone, into UTC. Reading it back by truncating that UTC datetime was
-    only correct east of Greenwich: anywhere behind UTC the instant falls on
-    the next calendar day, so reopening the form showed an end date one day
-    later than the user picked -- and every American deployment saw it.
-    """
 
     @classmethod
     def setUpClass(cls):

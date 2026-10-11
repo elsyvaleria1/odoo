@@ -5,14 +5,6 @@ from .common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestDuplicateOrders(TestTradeOrderCase):
-    """`mixin.order._get_duplicate_orders` matches on two keys, not one.
-
-    The query has always matched `origin = name` OR `<ref> = <ref>`, but the
-    filter in front of it admitted only orders carrying a reference, so the
-    origin half could never fire. An order created from another one -- which
-    is exactly what `origin` records -- was invisible to the check unless
-    somebody had independently typed a partner reference.
-    """
 
     def test_an_order_naming_another_in_its_origin_is_a_duplicate(self):
         first = self._make_order()

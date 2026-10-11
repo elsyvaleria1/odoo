@@ -212,9 +212,6 @@ class TestInboundExchangeRecording(TransactionCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestGateRow(TransactionCase):
-    """What every gate does with the row it opens, receiver or not: names the
-    event from the body, withholds a poll, keeps a withheld call's failure,
-    takes the handler's annotations and stamps the duration."""
 
     @classmethod
     def setUpClass(cls):
@@ -303,9 +300,6 @@ class TestGateRow(TransactionCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestExternalEventIds(TransactionCase):
-    """A sender's own event id is claimed by the row: a redelivery is refused
-    while the first is processing or once it succeeded, and admitted again
-    after the first failed."""
 
     @classmethod
     def setUpClass(cls):

@@ -11,9 +11,6 @@ from .common import DeviceHttpCase
 
 @tagged("post_install", "-at_install")
 class TestPushRouteAdmission(DeviceHttpCase):
-    """The push route is admitted by the device's gate: the exchange row is
-    the call's record, a copy inside the window is refused on that row, and
-    a call the handler could not finish still leaves one."""
 
     @classmethod
     def setUpClass(cls):

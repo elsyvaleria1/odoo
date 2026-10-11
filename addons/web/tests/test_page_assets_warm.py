@@ -6,8 +6,6 @@ from odoo.tools.assets.esm_registry import esm_registry
 
 @tagged("-at_install", "post_install", "web_assets")
 class TestPageAssetsWarm(HttpCase):
-    """What the master computes before it forks must be what a page reads: an
-    entry under another key is warmed for nobody."""
 
     def _warmed_bundles(self):
         registry = esm_registry()

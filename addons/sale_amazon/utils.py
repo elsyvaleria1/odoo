@@ -23,7 +23,6 @@ _logger = logging.getLogger(__name__)
 
 
 class AmazonRateLimitError(Exception):
-    """When the API rate limit of Amazon is reached."""
 
     def __init__(self, operation) -> None:
         self.operation = operation

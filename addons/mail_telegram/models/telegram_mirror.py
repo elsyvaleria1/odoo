@@ -9,16 +9,6 @@ _TYPING_SECONDS = 4
 
 
 class TelegramMirror(models.Model):
-    """A Telegram group, one forum topic of it, or a Telegram channel,
-    mirrored on an Odoo thread.
-
-    What its people write there is posted on the thread as their contacts;
-    what is posted on the thread goes to the group from the bot, under its
-    author's name. A group is mirrored on a Telegram channel of Discuss, and
-    each of its forum topics on a sub-channel of that channel. A Telegram
-    channel only receives: the thread's posts are published there as they
-    are.
-    """
 
     _name = "telegram.mirror"
     _description = "Telegram Mirror"

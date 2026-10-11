@@ -26,7 +26,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestRuntimeWorkflows(common.TransactionCase):
-    """Test runtime-based workflow execution with context."""
 
     @classmethod
     def setUpClass(cls):

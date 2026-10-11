@@ -7,9 +7,6 @@ _PREVIEW = 300
 
 
 class TelegramInbox(models.AbstractModel):
-    """What the inbox Mini App shows and does, as the user it serves: its
-    environment is that user's, so Odoo's access rules decide what is read
-    and every post is theirs."""
 
     _name = "telegram.inbox"
     _description = "Telegram Inbox"

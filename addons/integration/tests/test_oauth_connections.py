@@ -4,9 +4,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestOAuthConnections(TransactionCase):
-    """What a feature asks of a vendor's OAuth service: a user's own connection
-    to it, the client every connection authorizes with, kept in the vault, and
-    tokens authorized before connections existed carried over."""
 
     @classmethod
     def setUpClass(cls):

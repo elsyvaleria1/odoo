@@ -5,12 +5,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestStepAdvisory(ApprovalCommon):
-    """An advisory step asks and records, but decides nothing.
-
-    An engineering change's optional reviewers and commenters are asked with everyone
-    else, and what they say is kept; the change goes ahead on its required approvals
-    alone, and an optional reviewer saying no stops nothing.
-    """
 
     def _category(self, **vals):
         return self._make_category(

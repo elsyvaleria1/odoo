@@ -136,16 +136,6 @@ class ImportOptionValidation(TransactionCase):
 
 @unittest.skipUnless(can_import("odf"), "odfpy not installed")
 class ODSCellFidelity(BaseCase):
-    """The ODS reader must hand back the cells the sheet holds.
-
-    ``BaseCase``, not a bare ``unittest.TestCase``: Odoo's loader filters by
-    test tags, and an untagged ``unittest.TestCase`` in an addon matches no tag
-    and is therefore never collected -- ``--test-tags
-    '/test_import_export:TestODSReaderHardening'`` answers "matched no test at
-    all". No database is needed, which is the whole reason the sibling class
-    reached for plain unittest in the first place; ``BaseCase`` gives the tags
-    without giving a cursor.
-    """
 
     def _sheet(self, rows):
         import io
@@ -212,12 +202,6 @@ class ODSCellFidelity(BaseCase):
 
 
 class ParsedFileCache(TransactionCase):
-    """`execute_import` re-reads the uploaded file on every batch -- the
-    batches are separate RPC calls, and nothing carried the parse between them.
-    Measured on a 5,000-row xlsx at limit 500, that is 8.2-8.8 s of import
-    against 6.3-6.5 s once the parse is shared: a quarter of the wall time
-    spent producing eleven identical row lists.
-    """
 
     _OPTS = {"has_headers": True, "quoting": '"', "separator": ",", "encoding": "utf-8"}
 
@@ -343,13 +327,6 @@ class ParsedFileCache(TransactionCase):
 
 
 class SpreadsheetDateColumnTyping(TransactionCase):
-    """A column the reader already resolved to native `datetime.date` objects.
-
-    `get_matching_pattern` skips date instances, so every candidate pattern matches
-    vacuously over such a column and the first one is returned as if confirmed
-    -- then written into `options["date_format"]` and shown to the user as the
-    format their file is in.
-    """
 
     def test_native_dates_do_not_invent_a_date_format(self):
         import datetime

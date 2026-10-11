@@ -7,7 +7,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyRewardDomain(TransactionCase):
-    """The two representations of a reward's discounted products."""
 
     @classmethod
     def setUpClass(cls):

@@ -6,7 +6,6 @@ from .common import TestAccountAvataxCommon, TestAvataxCommon
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraUseTaxVendorManagement(TestAvataxCommon):
-    """https://developer.avalara.com/certification/avatax/use-tax-badge/"""
 
     @classmethod
     def setUpClass(cls):
@@ -27,7 +26,6 @@ class TestAccountAvalaraUseTaxVendorManagement(TestAvataxCommon):
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraUseTaxProductManagement(TestAccountAvataxCommon):
-    """https://developer.avalara.com/certification/avatax/use-tax-badge/"""
 
     def test_item_code(self):
         self.env.company.avalara_use_upc = False

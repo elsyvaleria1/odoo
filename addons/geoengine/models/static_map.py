@@ -57,8 +57,6 @@ class MapItem:
 
 @dataclass(frozen=True)
 class Frame:
-    """The part of Web Mercator a map of ``width`` x ``height`` CSS pixels
-    shows, at the zoom where its items fit inside the padding."""
 
     minx: float
     maxy: float
@@ -116,8 +114,6 @@ def frame_for(
 
 
 class TileFetcher:
-    """Basemap tiles for one map: from the disk cache, else from the tile
-    server within MAP_TILE_BUDGET_S."""
 
     def __init__(self, env):
         self._env = env

@@ -18,11 +18,6 @@ _debug = DebugLog(__name__)
 
 
 class PageCannotBeCached(Exception):
-    """Raised with the response that was rendered but must not be cached.
-
-    `rendered_response` is what the caller returns; it is None when the page
-    produced no response at all.
-    """
 
     def __init__(self, rendered_response) -> None:
         super().__init__(rendered_response)

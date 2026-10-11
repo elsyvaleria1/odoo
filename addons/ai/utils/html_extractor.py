@@ -13,10 +13,6 @@ _logger = logging.getLogger(__name__)
 
 
 class HTMLExtractor:
-    """
-    Extracts text content from HTML sources (URLs or HTML strings) as a series of paragraphs,
-    simplifying the hierarchical structure into a clean text format.
-    """
 
     def __init__(self, env, internal_domains=None) -> None:
         self.env = env

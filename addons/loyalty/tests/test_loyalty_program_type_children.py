@@ -6,14 +6,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyProgramTypeChildren(TransactionCase):
-    """What a program is given when it is created with a `program_type`.
-
-    `default_get` supplies the rules, rewards and communication plans of a type --
-    but it is only asked for `program_type` when the caller left it out, so
-    `create` with an explicit type used to produce a program with none of the
-    three, and the "at least one reward" constraint did not fire because
-    `reward_ids` was never in the values.
-    """
 
     def test_an_explicit_type_still_gets_its_children(self):
         program = self.env["loyalty.program"].create(

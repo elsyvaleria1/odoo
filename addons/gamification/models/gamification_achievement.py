@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationAchievement(models.Model):
-    """Hidden/discovery achievement that users unlock through normal work."""
 
     _name = "gamification.achievement"
     _description = "Gamification Achievement"
@@ -171,7 +170,6 @@ class GamificationAchievement(models.Model):
 
 
 class GamificationAchievementUnlock(models.Model):
-    """Record of a user unlocking an achievement."""
 
     _name = "gamification.achievement.unlock"
     _description = "Achievement Unlock"

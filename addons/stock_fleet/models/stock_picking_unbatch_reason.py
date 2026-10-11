@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class StockPickingUnbatchReason(models.Model):
-    """Why a transfer comes off a trip, from a catalogue the leaders extend."""
 
     _name = "stock.picking.unbatch.reason"
     _description = "Trip Removal Reason"

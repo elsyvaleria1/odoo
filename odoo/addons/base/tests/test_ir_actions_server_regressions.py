@@ -834,10 +834,6 @@ class TestASequenceValueNeedsASequence(ServerActionCase):
 
 @tagged("post_install", "-at_install")
 class TestCrudTargetsAreCheckedWithoutGroups(ServerActionCase):
-    """Measured 2026-09-17: with no group on the action, a user who could
-    write the action's model created and copied records of a model they
-    could not create, because only the group-gated branch checked the target.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -934,11 +930,6 @@ class TestACopysNameIsKept(ServerActionCase):
 
 @tagged("post_install", "-at_install")
 class TestADelegatingCreatorsNameIsCustom(ServerActionCase):
-    """ir.cron creates its server action through _inherits, and a delegating
-    create hands every parent field a default, name_is_custom included; a
-    default of False there read as "not custom" and the cron's name went back
-    to the automated one on the next type change.
-    """
 
     def test_a_cron_s_name_survives_a_type_change(self):
         cron = self.env["ir.cron"].create(

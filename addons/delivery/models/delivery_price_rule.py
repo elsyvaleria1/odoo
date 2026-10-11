@@ -11,7 +11,6 @@ VARIABLE_SELECTION = [
 
 
 class DeliveryPriceRule(models.Model):
-    """Pricing rule a carrier applies based on order weight, volume, or price."""
 
     _name = "delivery.price.rule"
     _description = "Delivery Price Rules"

@@ -25,7 +25,6 @@ from odoo.addons.web.models.ir_actions_report import RenderedDocument
 
 @tagged("mail_composer")
 class TestMailComposer(MailCommon, TestRecipients):
-    """Test Composer internals"""
 
     @classmethod
     def setUpClass(cls):
@@ -2057,8 +2056,6 @@ class TestComposerInternals(TestMailComposer):
 
 @tagged("mail_composer", "multi_lang", "multi_company")
 class TestComposerResultsComment(TestMailComposer, CronMixinCase):
-    """Test global output of composer used in comment mode. Test notably
-    notification and emails generated during this process."""
 
     def test_assert_initial_data(self):
         self.assertTrue(self.template.auto_delete)
@@ -3591,8 +3588,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
 
 @tagged("mail_composer", "mail_blacklist")
 class TestComposerResultsCommentStatus(TestMailComposer):
-    """Test cases involving blacklist, opt-out, state management, ... specific
-    class to avoid bloating the base comment-based composer tests."""
 
     @classmethod
     def setUpClass(cls):
@@ -5238,8 +5233,6 @@ class TestComposerResultsMass(TestMailComposer):
 
 @tagged("mail_composer", "mail_blacklist")
 class TestComposerResultsMassStatus(TestMailComposer):
-    """Test cases involving blacklist, opt-out, state management, ... specific
-    class to avoid bloating the base mailing-based composer tests."""
 
     @classmethod
     def setUpClass(cls):
@@ -5376,7 +5369,6 @@ class TestComposerResultsMassStatus(TestMailComposer):
 
 @tagged("mail_composer")
 class TestComposerMassMailEnvironment(TestMailComposer):
-    """What a mass mailing carries into every environment it opens."""
 
     def _mass_composer(self):
         return (

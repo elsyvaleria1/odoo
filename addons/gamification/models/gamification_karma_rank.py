@@ -6,7 +6,6 @@ from odoo.tools.translate import html_translate
 
 
 class GamificationKarmaRank(models.Model):
-    """Karma-based rank (level) in the gamification progression system."""
 
     _name = "gamification.karma.rank"
     _description = "Gamification Rank / Level"

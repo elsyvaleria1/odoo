@@ -3010,8 +3010,6 @@ class TestRefusedFieldRename(BaseCase):
 
 @tagged("-at_install", "post_install")
 class TestDropRetiredModel(TransactionCase):
-    """A model no module defines any more leaves its table only when the
-    migration retiring it did not drop it; that is the one case worth saying."""
 
     def test_a_retired_model_whose_table_is_gone_drops_quietly(self):
         retired = self.env["ir.model"].new({"model": "x.retired.gone"})

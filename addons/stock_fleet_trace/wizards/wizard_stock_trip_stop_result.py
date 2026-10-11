@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardStockTripStopResult(models.TransientModel):
-    """What the customer took at a stop, product by product and lot by lot."""
 
     _name = "wizard.stock.trip.stop.result"
     _description = "Trip Stop Result"

@@ -10,27 +10,6 @@ else:
 
 
 class FieldKey(Protocol):
-    """What this package requires of a field: that it can key a dict.
-
-    The generic parameter of `FieldCache`, `ComputeEngine` and `UnitOfWork` is
-    bound to this and nothing more, which is what lets a test drive them with
-    a two-field NamedTuple. Several methods read more than a key, though, and
-    they do it through `getattr(field, name, default)` rather than by widening
-    the bound -- so the attribute is optional at runtime and invisible to the
-    checker. Those reads are listed here so the contract is at least written
-    down:
-
-    | Read | Where | Default |
-    |---|---|---|
-    | `model_name` | `FieldCache.pop_dirty_for_model`, `UnitOfWork.get_dirty_model_names` | `None` |
-    | `tree_siblings` | `ComputeEngine._keys` | `()` |
-    | `name` | `RecomputeScheduler`'s debug events, `ModelGraph`'s string interning | the field itself |
-    | `inverse_name`, `comodel_name` | `ModelGraph`'s string interning | `None` |
-
-    A field missing one of those behaves as the default says: a key with no
-    `model_name` is never popped for a model, a field with no `tree_siblings`
-    stands alone, and a nameless one prints as itself.
-    """
 
     def __hash__(self) -> int: ...
 

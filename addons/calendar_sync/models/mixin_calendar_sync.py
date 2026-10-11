@@ -2,8 +2,6 @@ from odoo import api, models
 
 
 class MixinCalendarSync(models.AbstractModel):
-    """What the engine hears of an event's or a recurrence's life: a change
-    to send, a record to insert, a deletion to pass on."""
 
     _name = "mixin.calendar.sync"
     _description = "Synchronized with external calendars"

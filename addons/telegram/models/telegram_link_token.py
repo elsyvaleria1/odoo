@@ -14,14 +14,6 @@ TOKEN_SHAPE = re.compile(r"^[A-Za-z0-9_-]{32}$")
 
 
 class TelegramLinkToken(models.Model):
-    """A single-use proof that the bearer may bind a Telegram account.
-
-    Minted for a user by that user's own Odoo session, or for a contact by an
-    administrator's invitation that reaches the contact out of band. Only its
-    hash is stored; the token travels once, as `/start <token>`, and is
-    consumed by a single atomic update, so two chats racing with the same
-    token bind at most one account.
-    """
 
     _name = "telegram.link.token"
     _description = "Telegram Link Token"

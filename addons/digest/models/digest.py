@@ -32,22 +32,6 @@ KPI_PREFIXES = ("kpi_", "x_kpi_", "x_studio_kpi_")
 
 
 class Periodicity(NamedTuple):
-    """Everything a periodicity decides, in one place.
-
-    Three separate ``if periodicity ==`` chains used to live in this file --
-    one picking the next mailing date, one picking how long a recipient may be
-    away before the digest slows down, one picking what it slows down *to*.
-    They agreed by hand: the weekly chain spelled its idle window ``days=7``
-    while its run delta was ``weeks=1``, and the run chain had no ``quarterly``
-    branch at all, only a bare ``else``. A table makes a disagreement between
-    the three a visible edit rather than a silent one.
-
-    The ``periodicity`` selection is built from this table
-    (``PERIODICITY_SELECTION``) rather than written beside it, so the two cannot
-    disagree at all; ``test_periodicity_table_is_the_selection`` holds the
-    remaining invariants -- that every fallback is itself a key, and that
-    ``quarterly`` is the floor.
-    """
 
     run: relativedelta
     idle: relativedelta
@@ -74,7 +58,6 @@ PERIODICITY_SELECTION = [(key, p.label) for key, p in PERIODICITIES.items()]
 
 
 class DigestDigest(models.Model):
-    """Periodic KPI email digest sent to a set of recipients."""
 
     _name = "digest.digest"
     _description = "Digest"

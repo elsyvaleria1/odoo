@@ -6,7 +6,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyProgramWrite(TransactionCase):
-    """`loyalty.program.write` over more than one program at a time."""
 
     @classmethod
     def setUpClass(cls):

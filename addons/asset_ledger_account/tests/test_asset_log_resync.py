@@ -6,7 +6,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 @tagged("post_install", "-at_install")
 class TestAssetLogResync(AccountTestInvoicingCommon):
-    """A log mirrors its bill line, so correcting the bill must move the log."""
 
     @classmethod
     def setUpClass(cls):

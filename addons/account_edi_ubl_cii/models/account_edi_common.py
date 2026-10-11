@@ -206,9 +206,6 @@ SUPPORTED_FILE_TYPES = {
 
 
 class FloatFmt(float):
-    """A float with a given precision.
-    The precision is used when formatting the float.
-    """
 
     def __new__(cls, value, min_dp=2, max_dp=None):
         return super().__new__(cls, value)

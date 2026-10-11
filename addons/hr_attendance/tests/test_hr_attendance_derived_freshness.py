@@ -9,12 +9,6 @@ from odoo.tests.common import TransactionCase, tagged
 @freeze_time("2025-06-17 12:00:00")
 @tagged("post_install", "-at_install")
 class TestTheHourTotalsFollowTheAttendances(TransactionCase):
-    """`hours_today` and `hours_this_month` are not stored.
-
-    A non-stored compute with no `@api.depends` is computed once and then held
-    until something else happens to invalidate the cache, so an attendance
-    created after the first read did not move it.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -90,12 +84,6 @@ class TestTheHourTotalsFollowTheAttendances(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestExpectedHoursIgnoresAManagersCorrection(TransactionCase):
-    """`expected_hours` is how many of the worked hours were not extra.
-
-    It is measured against `duration`, what the rules computed, and not against
-    `manual_duration`, which a manager edits. A correction is a statement about
-    the overtime, never about what the schedule expected.
-    """
 
     @classmethod
     def setUpClass(cls):

@@ -6,7 +6,6 @@ from odoo.tools import mute_logger
 
 @tagged("post_install", "-at_install")
 class TestAddressExtendedOnchanges(TransactionCase):
-    """res.city display name and res.partner city/country onchanges."""
 
     @classmethod
     def setUpClass(cls):

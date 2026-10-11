@@ -7,7 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestMentorship(common.TransactionCase):
-    """Tests for the gamification mentorship system."""
 
     @classmethod
     def setUpClass(cls):

@@ -9,10 +9,6 @@ from ..validation import valid_field_types
 
 @tagged("post_install", "-at_install")
 class TestGridViewValidation(TransactionCase):
-    """The grid arch is described in three places -- the RelaxNG schema,
-    valid_field_types and GridArchParser -- and nothing compares the three.
-    These pin the two that run server-side against each other.
-    """
 
     def _arch(self, body):
         return etree.fromstring(f'<grid string="Test">{body}</grid>')
@@ -105,11 +101,6 @@ class TestGridViewValidation(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestGridViewModeScrub(TransactionCase):
-    """Deleting a model's last grid view takes ``grid`` out of its window
-    actions, rows included. This used to be web_grid's own ``unlink`` and is
-    base's for every view type without a default arch now; the grid is the
-    type that exercises the act_window.view rows.
-    """
 
     def _grid_view(self, name):
         return self.env["ir.ui.view"].create(

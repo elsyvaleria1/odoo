@@ -5,8 +5,6 @@ from odoo.addons.point_of_sale.tests.common import CommonPosTest
 
 @tagged("post_install", "-at_install")
 class TestPosDiscountProductPayload(CommonPosTest):
-    """The discount product reaches the terminal through pos.config's special
-    products, not through a second lookup keyed on the wrong model's id."""
 
     def setUp(self):
         super().setUp()

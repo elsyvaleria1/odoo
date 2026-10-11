@@ -11,11 +11,6 @@ ALERT_LOOKBACK = timedelta(hours=24)
 
 
 class DeviceGpsSpeedAlert(models.Model):
-    """One alert per critical speeding burst, raised once.
-
-    device.gps.speed.event is a view with no memory; this table is what
-    remembers which bursts were already reported, and who was told.
-    """
 
     _name = "device.gps.speed.alert"
     _description = "Critical Speed Alert"

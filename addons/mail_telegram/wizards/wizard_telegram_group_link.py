@@ -3,16 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardTelegramGroupLink(models.TransientModel):
-    """A link that connects Telegram to a Discuss channel, or to the chatter
-    of a record the user may write: a group, mirrored both ways, or a
-    Telegram channel the Odoo side publishes to.
-
-    A group link, opened in Telegram, asks which group to add the bot to;
-    the bot connects that group when the person adding it is the user who
-    made the link, from their connected Telegram account, and administers
-    the group. A channel gets the bot as an administrator, then the user
-    posts the link's command there; the bot checks the same.
-    """
 
     _name = "wizard.telegram.group.link"
     _description = "Connect a Telegram Group"

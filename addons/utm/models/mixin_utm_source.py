@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class MixinUtmSource(models.AbstractModel):
-    """Mixin generating a source's name from its `_rec_name` content."""
 
     _name = "mixin.utm.source"
     _description = "UTM Source Mixin"

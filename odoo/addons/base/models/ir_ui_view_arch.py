@@ -49,10 +49,6 @@ def _option_currency_field(node: _Element) -> str | None:
 
 
 class ElementHandler:
-    """What one arch element kind knows: how it validates itself, how it is
-    prepared for the client, whether it makes its subtree editable and whether
-    the view it roots runs onchanges. Registered per tag with ``register``; an
-    addon that adds a view type registers a handler for its root tag."""
 
     __slots__ = ()
     tag: str = ""

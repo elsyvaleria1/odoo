@@ -17,7 +17,6 @@ register_url_secret(
 
 
 class StockFleetRouteTomtom(models.AbstractModel):
-    """Client of TomTom's Routing API, for trucks with live traffic."""
 
     _name = "stock.fleet.route.tomtom"
     _description = "TomTom Routing"

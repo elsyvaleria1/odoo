@@ -248,15 +248,6 @@ class TestFuzzy(TransactionCase):
 
 @odoo.tests.tagged("-at_install", "post_install")
 class TestFuzzyWordSource(TransactionCase):
-    """The fuzzy dictionary is the text a visitor reads, not the markup around it.
-
-    Two enumerators answer the same question -- `_trigram_enumerate_words` on a
-    pg_trgm database, `_basic_enumerate_words` everywhere else -- so they must
-    return the same words. They did not: only the basic one reduced a page's
-    `arch_db` to its text, so on every real deployment a typo was "corrected"
-    to a CSS class or a tag name, and the correction then matched no page,
-    because the result filter reads the text.
-    """
 
     @classmethod
     def setUpClass(cls):

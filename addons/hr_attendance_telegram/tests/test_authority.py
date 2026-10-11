@@ -10,10 +10,6 @@ OWN_ATTENDANCE = "hr_attendance_telegram.privilege_record_own_attendance"
 
 @tagged("post_install", "-at_install")
 class TestAttendanceAuthority(AttendanceTelegramTestCase):
-    """An attendance command records its sender's own attendance as the
-    sender, never as the superuser: a linked user's as that user, an
-    employee with no user's as the webhook's own user, both on the
-    own-attendance privilege, which reaches no other user's employee."""
 
     @classmethod
     def setUpClass(cls):

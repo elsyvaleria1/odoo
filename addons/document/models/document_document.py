@@ -63,15 +63,6 @@ def _normalize_file_extension(extension: str) -> str:
 
 
 class DocumentMovePlan(NamedTuple):
-    """What a `folder_id` change decided, carried across `super().write`.
-
-    The move is validated before the ORM write and acted on after it, and
-    everything it needs -- which documents actually change folder, and which
-    folder each one came from -- stops being readable the moment the write
-    lands. `resolved_vals` is the one non-empty case: the destination was a
-    shortcut, so nothing was planned and the caller restarts against the
-    target.
-    """
 
     new_parent_folder: Any
     documents_to_move: Any

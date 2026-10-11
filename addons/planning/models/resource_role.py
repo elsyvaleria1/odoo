@@ -3,7 +3,6 @@ from odoo.libs.colors import PLANNING_COLORS
 
 
 class ResourceRole(models.Model):
-    """Planning's additions to the shared `resource.role`: shift properties and Gantt presentation."""
 
     _inherit = "resource.role"
 

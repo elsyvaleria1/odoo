@@ -7,7 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 @freeze_time("2020-01-01")
 class TestTaskAbsences(common.TransactionCase):
-    """Cover the is_absent searcher and the multi-employee leave warning."""
 
     @classmethod
     def setUpClass(cls):

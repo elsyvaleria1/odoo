@@ -5,12 +5,6 @@ from odoo.addons.trade.tools import SALE
 
 
 class TestTradeOrderDocumentMatch(models.Model):
-    """Concrete `mixin.order.document.match`, so the union is testable.
-
-    The mixin builds a SQL view putting posted invoices and confirmed,
-    not-yet-fully-invoiced orders side by side, so somebody reconciling the two
-    sees one list. Both shipping models live in `sale` and `purchase`.
-    """
 
     _name = "test_trade.order.document.match"
     _inherit = ["mixin.order.document.match"]

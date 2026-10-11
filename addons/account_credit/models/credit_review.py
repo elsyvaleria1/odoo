@@ -267,11 +267,6 @@ class CreditReview(models.Model):
 
 
 class CreditReviewLine(models.Model):
-    """The score rows as they read when the review was taken.
-
-    One shape with the live line, so a snapshot carries labels and notes and
-    can be read beside the profile's current rows.
-    """
 
     _name = "credit.review.line"
     _inherit = ["mixin.score.line"]

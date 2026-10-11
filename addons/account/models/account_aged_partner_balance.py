@@ -665,7 +665,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
 
 
 class AccountAgedSideReportHandler(models.AbstractModel):
-    """Shared behaviour for the payable and receivable aged-report handlers."""
 
     _name = "account.aged.side.report.handler"
     _inherit = ["account.aged.partner.balance.report.handler"]

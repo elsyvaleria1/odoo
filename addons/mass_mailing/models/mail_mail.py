@@ -13,7 +13,6 @@ OPEN_SCOPE = tools.register_signed_scope(
 
 
 class MailMail(models.Model):
-    """Add the mass mailing campaign data to mail"""
 
     _inherit = "mail.mail"
 

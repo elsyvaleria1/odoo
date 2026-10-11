@@ -234,7 +234,6 @@ class TestTourHelperIsReachable(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestStockBarcodeRegressions20260928(TransactionCase):
-    """Defects found in the 2026-09-28 audit."""
 
     @classmethod
     def setUpClass(cls):

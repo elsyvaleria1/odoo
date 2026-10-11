@@ -135,7 +135,6 @@ class TestRatingStats(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRatingExternalRoutes(HttpCase):
-    """Public token routes to open and submit a rating."""
 
     @classmethod
     def setUpClass(cls):
@@ -232,7 +231,6 @@ class TestRatingExternalRoutes(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestRatingMailMessage(TransactionCase):
-    """Rating fields exposed on mail.message."""
 
     @classmethod
     def setUpClass(cls):

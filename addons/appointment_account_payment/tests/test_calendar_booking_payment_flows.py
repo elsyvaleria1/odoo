@@ -41,8 +41,6 @@ class AppointmentAccountPaymentFlowsCommon(
 
 @tagged("-at_install", "post_install")
 class AppointmentAccountPaymentFlowsTest(AppointmentAccountPaymentFlowsCommon):
-    """Code is inspired from TestFlows and (Http)Common classes in payment module,
-    as well as TestFlows in account_payment module."""
 
     def test_cancellation_cannot_orphan_a_delayed_payment(self):
         self.authenticate("apt_manager", "apt_manager")

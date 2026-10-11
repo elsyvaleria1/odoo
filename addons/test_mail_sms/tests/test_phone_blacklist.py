@@ -5,7 +5,6 @@ from odoo.addons.test_mail_sms.tests.common import TestSMSRecipients
 
 
 class TestPhoneBlacklist(SMSCommon, TestSMSRecipients):
-    """Test phone blacklist management"""
 
     @classmethod
     def setUpClass(cls):

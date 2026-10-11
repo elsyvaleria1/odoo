@@ -352,6 +352,4 @@ class TelegramBotTestCase(TransactionCase):
 
 
 class TelegramBotHttpCase(TelegramBotTestCase, HttpCase):
-    """The fixtures above, served over HTTP: what a route does before its
-    handler runs -- the gate, the resolver, the refusal -- is only reachable
-    through the route."""
+    pass

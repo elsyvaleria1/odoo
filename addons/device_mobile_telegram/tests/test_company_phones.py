@@ -8,8 +8,6 @@ from odoo.addons.mail_telegram.tests.test_mail_telegram import MailTelegramCase
 
 @tagged("post_install", "-at_install")
 class TestCompanyPhonesOnly(MailTelegramCase):
-    """A bot set to company phones delivers a user's Odoo mail only to the
-    Telegram account whose shared number is a company phone of theirs."""
 
     @classmethod
     def setUpClass(cls):
@@ -172,8 +170,6 @@ class TestCompanyPhonesOnly(MailTelegramCase):
 
 @tagged("post_install", "-at_install")
 class TestCompanyPhonesWhoeverAsks(TestCompanyPhonesOnly):
-    """The company phones a user carries are read in the bot's company, as
-    the user: a poster of another company decides nothing."""
 
     @classmethod
     def setUpClass(cls):

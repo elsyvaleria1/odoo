@@ -10,7 +10,6 @@ from odoo.addons.whatsapp.tests.common import WhatsAppCommon
 
 @tagged("marketing_automation")
 class TestWhatsAppStatistics(MarketingAutomationCommon, WhatsAppCommon):
-    """Test that WhatsApp statistics are correctly aggregated with email statistics."""
 
     @classmethod
     def setUpClass(cls):

@@ -7,15 +7,6 @@ from odoo.tools import mute_logger
 
 @tagged("post_install", "-at_install")
 class TestAssetLedgerCompany(TransactionCase):
-    """Where a log's company comes from, and what happens when it disagrees.
-
-    The ledger invariant is one asset, one company. It used to be guarded only
-    at the end, by a constraint, while the company itself was seeded from
-    ``env.company`` -- the acting user's, which has nothing to do with the
-    asset's. Anything running outside the fleet's own company therefore built
-    rows the constraint then refused: an import booked 32 of them, repaired by
-    the 19.0.1.20.0 migration, and the nightly GPS cron never once succeeded.
-    """
 
     @classmethod
     def setUpClass(cls):
