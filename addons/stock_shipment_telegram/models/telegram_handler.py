@@ -247,7 +247,11 @@ class TelegramHandlerShipment(models.AbstractModel):
 
     def _offer(self, bot, chat, sheet, candidates, incoming=False, digits=None) -> None:
         tr = self._tr(bot, chat)
-        sheet.candidate_ids = candidates[:LIST_LIMIT]
+        if digits:
+            # the buttons offered before the digits stay valid
+            sheet.candidate_ids |= candidates[:LIST_LIMIT]
+        else:
+            sheet.candidate_ids = candidates[:LIST_LIMIT]
         trailing = []
         if not incoming:
             trailing.append(

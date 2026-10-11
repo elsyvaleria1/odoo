@@ -220,6 +220,12 @@ class TestShipmentFlow(TelegramBotTestCase):
         self.assertEqual(sheet.state, "error")
         self.assertFalse(self.out.carrier_tracking_ref)
 
+    def _transfer_buttons(self):
+        """The transfers the last keyboard offered, without its other buttons."""
+        return [
+            data for data in self._offered() if data.startswith(("emb:p:", "emb:m:"))
+        ]
+
     @staticmethod
     def _tail(picking):
         """What the sender types: the digits closing the transfer's name."""
@@ -233,10 +239,22 @@ class TestShipmentFlow(TelegramBotTestCase):
         reply = self._say(self._tail(self.other_out))
 
         self.assertIn("ending in", reply)
-        self.assertEqual(sheet.candidate_ids, self.other_out)
+        self.assertEqual(
+            self._transfer_buttons(), [f"emb:p:{sheet.id}:{self.other_out.id}"]
+        )
         self._press(f"emb:p:{sheet.id}:{self.other_out.id}")
         self.assertEqual(self.other_out.carrier_tracking_ref, "TOL01584640")
         self.assertFalse(self.out.carrier_tracking_ref)
+
+    def test_a_button_offered_before_the_digits_still_assigns(self):
+        self._say("/embarque")
+        self._sheet_photo()
+        sheet = self._last_sheet()
+        self._say(self._tail(self.other_out))
+
+        self._press(f"emb:p:{sheet.id}:{self.out.id}")
+
+        self.assertEqual(self.out.carrier_tracking_ref, "TOL01584640")
 
     def test_digits_no_open_delivery_ends_in_offer_none(self):
         self._say("/embarque")
@@ -246,7 +264,7 @@ class TestShipmentFlow(TelegramBotTestCase):
         reply = self._say("999999")
 
         self.assertIn("ends in", reply)
-        self.assertFalse(sheet.candidate_ids)
+        self.assertFalse(self._transfer_buttons())
         self.assertEqual(sheet.state, "pending", "the sheet still waits")
 
     def test_digits_before_any_sheet_ask_for_the_sheet(self):
