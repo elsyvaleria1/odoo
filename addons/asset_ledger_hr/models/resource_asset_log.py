@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime, time
 from zoneinfo import ZoneInfo
 
@@ -38,7 +39,23 @@ class ProductAssetLog(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         vals_list = [dict(vals) for vals in vals_list]
-        timelines = {}
+        timelines = self._get_employee_timelines(
+            {
+                (vals["asset_id"], lot_field)
+                for vals in vals_list
+                if vals.get("asset_id")
+                for lot_field in ROLE_BY_LOG_FIELD
+                if lot_field not in vals
+            }
+        )
+        for lot_field, holder_field in EMPLOYEE_FIELD_BY_LOG_FIELD.items():
+            self.env["resource.resource"].browse(
+                {
+                    asset_id
+                    for (asset_id, field), timeline in timelines.items()
+                    if field == lot_field and not timeline
+                }
+            ).mapped(holder_field)
         for vals in vals_list:
             asset_id = vals.get("asset_id")
             if not asset_id:
@@ -88,23 +105,45 @@ class ProductAssetLog(models.Model):
 
     @api.model
     def _get_employee_timeline(self, asset_id, lot_field):
-        role = ROLE_BY_LOG_FIELD.get(lot_field)
-        asset = self.env["resource.resource"].browse(asset_id).sudo()
-        if not role or not asset:
-            return []
-        self.env.flush_all()
+        key = (asset_id, lot_field)
+        return self._get_employee_timelines({key})[key]
+
+    @api.model
+    def _get_employee_timelines(self, keys) -> dict:
+        timelines = {key: [] for key in keys}
+        wanted = {
+            (asset_id, ROLE_BY_LOG_FIELD[lot_field])
+            for asset_id, lot_field in keys
+            if asset_id and lot_field in ROLE_BY_LOG_FIELD
+        }
+        if not wanted:
+            return timelines
         rows = (
             self.env["resource.assignment"]
             .sudo()
             .search(
                 [
-                    ("resource_id", "=", asset.id),
-                    ("custody_role", "=", role),
+                    ("resource_id", "in", list({asset_id for asset_id, _r in wanted})),
+                    ("custody_role", "in", list({role for _a, role in wanted})),
                 ],
                 order="date_start asc, id asc",
             )
         )
-        employee_by_resource = asset._employee_by_resource(rows.assignee_id)
+        employee_by_resource = (
+            self.env["resource.resource"].sudo()._employee_by_resource(rows.assignee_id)
+        )
+        rows_by_key = defaultdict(list)
+        for row in rows:
+            rows_by_key[row.resource_id.id, row.custody_role].append(row)
+        for key in timelines:
+            if role := ROLE_BY_LOG_FIELD.get(key[1]):
+                timelines[key] = self._timeline_from_rows(
+                    rows_by_key[key[0], role], employee_by_resource
+                )
+        return timelines
+
+    @api.model
+    def _timeline_from_rows(self, rows, employee_by_resource) -> list:
         timeline = []
         current = 0
         for index, row in enumerate(rows):

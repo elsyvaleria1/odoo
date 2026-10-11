@@ -72,6 +72,18 @@ _SEEK_FOR_LINES_DEPENDS = (
 )
 
 
+def _may_hold_payments(move) -> bool:
+    if move._cache.get("matched_payment_ids", None) != ():
+        return True
+    if "line_ids" not in move._cache:
+        return True
+    return any(
+        line._cache.get(fname, None) != ()
+        for line in move.line_ids
+        for fname in ("matched_debit_ids", "matched_credit_ids")
+    )
+
+
 class AccountPayment(models.Model):
     _name = "account.payment"
     _inherit = [
@@ -1120,7 +1132,7 @@ class AccountPayment(models.Model):
         def payment_ids(moves):
             if move_filter is not None:
                 moves = moves.filtered(move_filter)
-            return moves.reconciled_payment_ids.ids
+            return moves.filtered(_may_hold_payments).reconciled_payment_ids.ids
 
         moves = self.env["account.move"].browse(value)
         try:

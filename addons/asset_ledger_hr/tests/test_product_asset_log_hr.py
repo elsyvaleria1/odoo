@@ -1,3 +1,4 @@
+import contextlib
 from datetime import date
 
 from odoo.tests.common import TransactionCase
@@ -562,3 +563,47 @@ class TestOperatorTimeline(TransactionCase):
 
         self.assertEqual(log.log_type, "operator")
         self.assertEqual(log.operator_id, self.driver_2026)
+
+    def test_a_batch_of_logs_reads_the_hand_overs_once(self):
+        drivers = [
+            self.driver_2024,
+            self.driver_2025,
+            self.driver_2026,
+            self.driver_2024,
+        ]
+        assets = [
+            self.env["product.trace"].create(
+                {
+                    "name": f"TIMELINE-BATCH-{index}",
+                    "product_id": self.product.id,
+                    "operator_id": driver.id,
+                    "company_id": self.env.company.id,
+                },
+            )
+            for index, driver in enumerate(drivers)
+        ]
+
+        def create_logs(size):
+            return self.Log.create(
+                [
+                    {
+                        "asset_id": asset.asset_id.id,
+                        "product_id": self.assignment_product.id,
+                    }
+                    for asset in assets[:size]
+                ]
+            )
+
+        def hand_over_reads(size):
+            with contextlib.closing(self.cr.savepoint(flush=True)):
+                self.env.invalidate_all()
+                with self.capturedQueries() as queries:
+                    create_logs(size)
+            return [
+                sum(1 for query in queries if table in query)
+                for table in ('FROM "resource_assignment"', 'FROM "hr_employee"')
+            ]
+
+        hand_over_reads(1)
+        self.assertEqual(hand_over_reads(2), hand_over_reads(4))
+        self.assertEqual([log.operator_id for log in create_logs(4)], drivers)

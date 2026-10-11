@@ -69,6 +69,49 @@ class TestFlowBatching(AccountTestInvoicingCommon):
 
         self.assertEqual(line.analytic_line_ids[kept.plan_id._column_name()], kept)
 
+    def test_a_line_follow_up_flag_reaches_its_move_once_whatever_its_lines(self):
+        Move = type(self.env["account.move"])
+        original = Move.write
+
+        def move_writes(line_count):
+            invoice = self.init_invoice(
+                "out_invoice", invoice_date="2026-01-15", amounts=[10.0] * line_count
+            )
+            writes = []
+
+            def counted(records, vals):
+                if "no_followup" in vals:
+                    writes.append(records.ids)
+                return original(records, vals)
+
+            with patch.object(Move, "write", counted):
+                invoice.invoice_line_ids.no_followup = True
+            self.assertTrue(invoice.no_followup)
+            self.assertEqual({tuple(ids) for ids in writes}, {tuple(invoice.ids)})
+            return len(writes)
+
+        self.assertEqual(move_writes(2), move_writes(6))
+
+    def test_a_new_draft_asks_for_no_reconciled_payment(self):
+        def create_and_copy():
+            self.env["account.move"].create(
+                {
+                    "move_type": "in_invoice",
+                    "partner_id": self.partner_a.id,
+                    "invoice_date": "2026-01-15",
+                    "invoice_line_ids": [
+                        Command.create({"name": "line", "price_unit": amount})
+                        for amount in (50.0, 70.0)
+                    ],
+                }
+            ).copy()
+
+        asked = self._count_matching(
+            r"ARRAY_AGG\(DISTINCT payment_id\)", create_and_copy
+        )
+
+        self.assertEqual(asked, 0)
+
     def test_registering_payments_links_entries_and_invoices_once(self):
         self.invoices.action_post()
 

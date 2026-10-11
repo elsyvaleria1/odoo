@@ -1671,10 +1671,18 @@ class AccountMoveLine(models.Model):
             aml.no_followup = aml.journal_id.type == "general"
 
     def _inverse_no_followup(self) -> None:
-        for aml in self:
-            move = aml.move_id
-            if move.is_invoice():
-                move.no_followup = aml.no_followup
+        value_by_move = {
+            aml.move_id: aml.no_followup for aml in self if aml.move_id.is_invoice()
+        }
+        for value in (True, False):
+            if moves := self.env["account.move"].concat(
+                *(
+                    move
+                    for move, move_value in value_by_move.items()
+                    if bool(move_value) is value
+                )
+            ):
+                moves.write({"no_followup": value})
 
     @_debug.perf.timed
     def _search_payment_date(self, operator, value):
