@@ -1224,13 +1224,17 @@ class HrPayslip(models.Model):
     def action_move_to_off_cycle(self) -> None:
         self.payslip_run_id = False
 
+    def _get_day_rounding(self, work_entry_type) -> tuple[str, str]:
+        return work_entry_type.round_days, work_entry_type.round_days_type
+
     def _round_days(self, work_entry_type, days):
-        if work_entry_type.round_days != "NO":
-            precision_rounding = 0.5 if work_entry_type.round_days == "HALF" else 1
+        round_days, round_days_type = self._get_day_rounding(work_entry_type)
+        if round_days != "NO":
+            precision_rounding = 0.5 if round_days == "HALF" else 1
             return float_round(
                 days,
                 precision_rounding=precision_rounding,
-                rounding_method=work_entry_type.round_days_type,
+                rounding_method=round_days_type,
             )
         return days
 
