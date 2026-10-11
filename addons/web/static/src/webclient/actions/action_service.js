@@ -22,7 +22,7 @@ import {
     standardActionServiceProps,
 } from "./action_constants.js";
 import { ActionDialog } from "./action_dialog.js";
-import { ActionDispatch } from "./action_dispatch.js";
+import { ActionDispatch, endUnreachable } from "./action_dispatch.js";
 import {
     executeActURLAction,
     openActionInNewWindow,
@@ -132,7 +132,7 @@ actionHandlersRegistry.addValidation((entry) => typeof entry === "function");
  * @property {BaseView[]} [views]
  * @property {Record<string, any>} [state]
  * @property {Record<string, any>} [currentState]
- * @property {Record<string, any>} [exportedState]
+ * @property {Record<PropertyKey, any>} [exportedState]
  * @property {Record<string, any>} [__info__]
  * @property {() => any} [getGlobalState]
  * @property {() => any} [getLocalState]
@@ -686,14 +686,18 @@ export class ActionManager {
     async _dispatchInline(dispatch, options) {
         const { controller, action } = dispatch;
         this._warnDroppedOnClose(action, options);
-        const currentController = this.currentController;
-        if (currentController?.getLocalState) {
-            currentController.exportedState = currentController.getLocalState();
+        // The controller leaving the screen, not the tip of a pending
+        // dispatch's stack: only a mounted one has state to export.
+        const displayed = this.controllerStack.at(-1);
+        const outgoing = displayed?.isMounted ? displayed : null;
+        if (outgoing?.getLocalState) {
+            outgoing.exportedState = outgoing.getLocalState();
         }
         if (controller.exportedState) {
             controller.props.state = controller.exportedState;
         }
 
+        const currentController = this.currentController;
         if (currentController?.getGlobalState) {
             const globalState = Object.assign(
                 {},
@@ -937,6 +941,7 @@ export class ActionManager {
 
     destroy() {
         log.lifecycle("destroy");
+        endUnreachable(this.controllerStack, []);
         this.uninstallActionCacheInvalidation();
         this.uninstallActionCacheInvalidation = () => {};
     }

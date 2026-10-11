@@ -240,6 +240,7 @@ export const viewProps = {
     __getLocalState__: t.object().optional(),
     __getContext__: t.object().optional(),
     __getOrderBy__: t.object().optional(),
+    __lifetime__: t.object().optional(),
 };
 
 /** @type {string[]} */
@@ -438,11 +439,12 @@ export class View extends Component {
         this.config = { ...getDefaultConfig(), ...useViewConfig() };
         provideViewConfig(this.config);
         provideViewKeepLast(new KeepLast());
-        provideActionCallbackRecorders(
-            Object.fromEntries(
+        provideActionCallbackRecorders({
+            ...Object.fromEntries(
                 CALLBACK_RECORDER_NAMES.map((name) => [name, this.props[name] || null]),
             ),
-        );
+            __lifetime__: this.props.__lifetime__ || null,
+        });
 
         this.handleActionLinks = useActionLinks({ resModel });
 

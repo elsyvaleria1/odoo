@@ -1,7 +1,7 @@
 // @ts-check
 /** @odoo-module native */
 
-import { releaseSymbol } from "@web/core/action_hook";
+import { ControllerLifetime } from "@web/core/action_hook";
 import { reportUncaught } from "@web/core/errors/error_utils";
 import { AppEvent } from "@web/core/events";
 import { registry } from "@web/core/registry";
@@ -16,27 +16,53 @@ const actionRegistry = registry.category("actions");
 
 /** @import { Action, ActionManager, Controller } from "./action_service.js" */
 
+/** @type {WeakMap<Controller, ControllerLifetime>} */
+const lifetimes = new WeakMap();
+
+/** @param {Controller} controller */
+export function lifetimeOf(controller) {
+    let lifetime = lifetimes.get(controller);
+    if (!lifetime) {
+        lifetime = new ControllerLifetime();
+        lifetimes.set(controller, lifetime);
+    }
+    return lifetime;
+}
+
 /**
- * A controller off the stack still comes back while its action is on it:
- * switchView reuses the action's controllers.
+ * Ends each controller of `controllers` that `stack` cannot bring back. One
+ * off the stack still comes back while its action is on it: switchView reuses
+ * the action's controllers.
+ * @param {Controller[]} controllers
  * @param {Controller[]} stack
- * @param {Controller[]} nextStack
  */
-function releaseDroppedStates(stack, nextStack) {
-    const keptActions = new Set(nextStack.map((ct) => ct.action));
-    const dropped = new Set();
-    for (const ct of stack) {
+export function endUnreachable(controllers, stack) {
+    const keptActions = new Set(stack.map((ct) => ct.action));
+    const ended = new Set();
+    for (const ct of controllers) {
         if (!keptActions.has(ct.action)) {
-            dropped.add(ct);
+            ended.add(ct);
             for (const viewController of Object.values(ct.action.controllers ?? {})) {
-                dropped.add(viewController);
+                ended.add(viewController);
             }
         }
     }
-    for (const ct of dropped) {
-        ct.exportedState?.[releaseSymbol]?.();
+    for (const ct of ended) {
+        lifetimeOf(ct).end();
     }
 }
+
+/**
+ * The one write of the manager's stack: whatever it drops for good ends.
+ * @param {ActionManager} am
+ * @param {Controller[]} nextStack
+ */
+function replaceStack(am, nextStack) {
+    const previous = am.controllerStack;
+    am.controllerStack = nextStack;
+    endUnreachable(previous, nextStack);
+}
+
 export class ActionDispatch {
     /**
      * @param {ActionManager} am
@@ -75,8 +101,7 @@ export class ActionDispatch {
         } else {
             controller.getGlobalState = getGlobalState;
             controller.getLocalState = getLocalState;
-            releaseDroppedStates(am.controllerStack, nextStack);
-            am.controllerStack = nextStack;
+            replaceStack(am, nextStack);
             am.settlePendingDispatch(this);
             am.pushState();
 
@@ -114,6 +139,7 @@ export class ActionDispatch {
     discard({ componentStatus }) {
         if (!this.controller.isMounted && componentStatus !== "mounted") {
             this._reject(new SupersededError());
+            endUnreachable([this.controller], this.am.controllerStack);
         }
     }
 
@@ -139,13 +165,16 @@ export class ActionDispatch {
                 },
             });
             reportUncaught(error);
+            endUnreachable([controller], am.controllerStack);
             return;
         }
         this._reject(error);
-        if (action.target === "new") {
-            return this._releasePendingDialog();
-        }
-        return this._restoreStack();
+        const settled =
+            action.target === "new"
+                ? this._releasePendingDialog()
+                : this._restoreStack();
+        endUnreachable([controller], am.controllerStack);
+        return settled;
     }
 
     _releasePendingDialog() {
@@ -154,26 +183,20 @@ export class ActionDispatch {
 
     /** @returns {any} */
     _restoreStack() {
-        const { am, controller, baseStack } = this;
-        if (am.controllerStack !== baseStack) {
-            am.controllerStack = baseStack;
+        const { am, controller, baseStack, restoreStackOnError } = this;
+        const index = baseStack.findIndex((ct) => ct.jsId === controller.jsId);
+        if (index >= 0) {
+            replaceStack(am, baseStack);
+            return index > 0 ? am.restore(baseStack[index - 1].jsId) : undefined;
         }
-        const index = am.controllerStack.findIndex((ct) => ct.jsId === controller.jsId);
-        if (index > 0) {
-            return am.restore(am.controllerStack[index - 1].jsId);
-        }
-        if (index === 0) {
-            return;
-        }
-        const { restoreStackOnError } = this;
-        if (
+        const stack =
             restoreStackOnError?.length &&
             restoreStackOnError.at(-1)?.isMounted &&
-            am.controllerStack !== restoreStackOnError
-        ) {
-            am.controllerStack = restoreStackOnError;
-        }
-        const lastController = am.controllerStack.at(-1);
+            baseStack !== restoreStackOnError
+                ? restoreStackOnError
+                : baseStack;
+        replaceStack(am, stack);
+        const lastController = stack.at(-1);
         if (!lastController) {
             am.env.bus.trigger(AppEvent.ACTION_MANAGER_UPDATE, {});
             return;

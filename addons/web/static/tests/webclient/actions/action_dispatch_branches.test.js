@@ -3,11 +3,10 @@
 import { describe, expect, test } from "@odoo/hoot";
 import { EventBus } from "@odoo/owl";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
-import { releaseSymbol } from "@web/core/action_hook";
 import { browser } from "@web/core/browser/browser";
 import { AppEvent } from "@web/core/events";
 import { SupersededError } from "@web/core/utils/concurrency";
-import { ActionDispatch } from "@web/webclient/actions/action_dispatch";
+import { ActionDispatch, lifetimeOf } from "@web/webclient/actions/action_dispatch";
 import { NavigationTracker } from "@web/webclient/actions/navigation_token";
 
 describe.current.tags("desktop");
@@ -54,16 +53,17 @@ function makeFakeAm(overrides = {}) {
  * @param {Object} [params]
  */
 function makeDispatch(am, params = {}) {
-    const controller = {
-        jsId: "controller_1",
-        isMounted: false,
-        displayName: "Some Action",
-        ...params.controller,
-    };
     const action = {
         type: "ir.actions.act_window",
         _originalAction: '{"id":7}',
         ...params.action,
+    };
+    const controller = {
+        jsId: "controller_1",
+        isMounted: false,
+        displayName: "Some Action",
+        action,
+        ...params.controller,
     };
     const dispatch = new ActionDispatch(am, {
         controller,
@@ -102,42 +102,94 @@ test("commit (inline) wires the component's state exporters onto the controller"
 
 /**
  * @param {string} name
- * @param {any} action
+ * @param {any} [action]
  */
-function makeStatefulController(name, action) {
-    return {
-        jsId: name,
-        action,
-        exportedState: { [releaseSymbol]: () => expect.step(`release ${name}`) },
-    };
+function makeLivingController(name, action = {}) {
+    const controller = { jsId: name, action, isMounted: false, props: {}, config: {} };
+    lifetimeOf(controller).onEnd(() => expect.step(`end ${name}`));
+    return controller;
 }
 
-test("commit releases the state of a controller whose action left the stack", async () => {
+test("commit ends a controller whose action left the stack", async () => {
     const am = makeFakeAm();
-    const dropped = makeStatefulController("dropped", {});
-    const kept = makeStatefulController("kept", {});
+    const dropped = makeLivingController("dropped");
+    const kept = makeLivingController("kept");
     am.controllerStack = [dropped, kept];
-    const dispatch = makeDispatch(am, {
-        controller: { action: {} },
-        nextStack: [kept],
-    });
-    dispatch.nextStack.push(dispatch.controller);
-    dispatch.commit(EXPORTERS);
-    expect.verifySteps(["release dropped"]);
+    const next = makeLivingController("next");
+    makeDispatch(am, { controller: next, nextStack: [kept, next] }).commit(EXPORTERS);
+    expect.verifySteps(["end dropped"]);
 });
 
-test("commit keeps the state of a view its action can switch back to", async () => {
+test("commit keeps a view its action can switch back to", async () => {
     const am = makeFakeAm();
     const action = { controllers: {} };
-    const list = makeStatefulController("list", action);
-    const form = makeStatefulController("form", action);
+    const list = makeLivingController("list", action);
+    const form = makeLivingController("form", action);
     action.controllers = { list, form };
     am.controllerStack = [list];
     makeDispatch(am, { controller: form, nextStack: [form] }).commit(EXPORTERS);
     expect.verifySteps([]);
 
-    makeDispatch(am, { controller: { action: {} } }).commit(EXPORTERS);
-    expect.verifySteps(["release form", "release list"]);
+    makeDispatch(am, { controller: makeLivingController("other") }).commit(EXPORTERS);
+    expect.verifySteps(["end form", "end list"]);
+});
+
+test("a release that throws is reported and the stack still commits", async () => {
+    expect.errors(1);
+    const am = makeFakeAm();
+    const failing = makeLivingController("failing");
+    lifetimeOf(failing).onEnd(() => {
+        throw new Error("release failed");
+    });
+    lifetimeOf(failing).onEnd(() => expect.step("after the failure"));
+    am.controllerStack = [failing];
+    const dispatch = makeDispatch(am);
+    dispatch.commit(EXPORTERS);
+    expect(am.controllerStack).toBe(dispatch.nextStack);
+    expect.verifySteps(["end failing", "after the failure"]);
+    await expect.waitForErrors([/release failed/]);
+});
+
+test("a superseded controller that never committed ends", async () => {
+    const am = makeFakeAm();
+    const displayed = makeLivingController("displayed");
+    am.controllerStack = [displayed];
+    const superseded = makeDispatch(am);
+    lifetimeOf(superseded.controller).onEnd(() => expect.step("end new"));
+    superseded.discard({ componentStatus: "destroyed" });
+    await expect(superseded.promise).rejects.toThrow(SupersededError);
+    expect.verifySteps(["end new"]);
+});
+
+test("a superseded restore of a controller on the stack does not end it", async () => {
+    const am = makeFakeAm();
+    const below = makeLivingController("below");
+    const displayed = makeLivingController("displayed");
+    am.controllerStack = [below, displayed];
+    const restore = makeDispatch(am, { controller: below, nextStack: [below] });
+    restore.discard({ componentStatus: "destroyed" });
+    await expect(restore.promise).rejects.toThrow(SupersededError);
+    expect.verifySteps([]);
+});
+
+test("a failed breadcrumb restore ends nothing the displayed stack keeps", async () => {
+    const am = makeFakeAm();
+    const root = makeLivingController("root");
+    const tip = makeLivingController("tip");
+    tip.isMounted = true;
+    const displayed = [root, tip];
+    am.controllerStack = displayed;
+    const dispatch = new ActionDispatch(am, {
+        controller: makeLivingController("never_committed"),
+        action: { type: "ir.actions.client" },
+        nextStack: [root],
+        baseStack: [root],
+        restoreStackOnError: displayed,
+    });
+    dispatch.promise.catch(() => {});
+    dispatch.fail(new Error("boom"), { componentStatus: "destroyed" });
+    expect(am.controllerStack).toBe(displayed);
+    expect.verifySteps(["end never_committed"]);
 });
 
 test("commit (inline) records the action and lang in the restore cache", async () => {

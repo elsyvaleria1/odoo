@@ -22,22 +22,26 @@ import { useBus } from "@web/core/utils/hooks";
 import { provideChildViewConfig } from "@web/core/view_config_hooks";
 import { View } from "@web/views/view";
 
+import { lifetimeOf } from "./action_dispatch.js";
+
 const ControllerComponentTemplate = xml`<t t-component="this.Component" t-props="this.componentProps"/>`;
 
-/** @import { ActionManager } from "./action_service.js" */
+/** @import { ActionManager, Controller } from "./action_service.js" */
 
 /**
  * @param {any} component
+ * @param {Controller} controller
  * @param {any} action
  * @param {ActionManager} am
  */
-function useControllerStateRecorders(component, action, am) {
+function useControllerStateRecorders(component, controller, action, am) {
     if (action.target === "new") {
         return;
     }
     component.__beforeLeave__ = new CallbackRecorder();
     component.__getGlobalState__ = new CallbackRecorder();
     component.__getLocalState__ = new CallbackRecorder();
+    component.__lifetime__ = lifetimeOf(controller);
     useBus(am.env.bus, AppEvent.CLEAR_UNCOMMITTED_CHANGES, (ev) => {
         ev.detail.push(...component.__beforeLeave__.callbacks);
     });
@@ -46,6 +50,7 @@ function useControllerStateRecorders(component, action, am) {
             __beforeLeave__: component.__beforeLeave__,
             __getGlobalState__: component.__getGlobalState__,
             __getLocalState__: component.__getLocalState__,
+            __lifetime__: component.__lifetime__,
         });
     }
 }
@@ -68,7 +73,7 @@ export function makeControllerComponent(am) {
                 }
                 am.pushState(nextStack, { sync: true });
             });
-            useControllerStateRecorders(this, action, am);
+            useControllerStateRecorders(this, controller, action, am);
             onMounted(this.onMounted);
             onWillUnmount(this.onWillUnmount);
             onWillDestroy(this.onWillDestroy);
@@ -120,6 +125,7 @@ export function makeControllerComponent(am) {
                 componentProps.__beforeLeave__ = this.__beforeLeave__;
                 componentProps.__getGlobalState__ = this.__getGlobalState__;
                 componentProps.__getLocalState__ = this.__getLocalState__;
+                componentProps.__lifetime__ = this.__lifetime__;
             }
             return componentProps;
         }

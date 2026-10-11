@@ -3,7 +3,7 @@
 import { beforeEach, expect, test } from "@odoo/hoot";
 import { queryFirst } from "@odoo/hoot-dom";
 import { animationFrame, Deferred, runAllTimers } from "@odoo/hoot-mock";
-import { Component, onMounted, useProps, xml } from "@odoo/owl";
+import { Component, onMounted, onWillStart, useProps, xml } from "@odoo/owl";
 import {
     contains,
     defineActions,
@@ -18,6 +18,7 @@ import {
     toggleMenuItem,
     webModels,
 } from "@web/../tests/web_test_helpers";
+import { useControllerLifetime, useSetupAction } from "@web/core/action_hook";
 import { appContextOf } from "@web/core/app_context";
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
@@ -40,6 +41,20 @@ class TestClientAction extends Component {
         onMounted(() =>
             viewConfigOf(this).setDisplayName(`Client action ${this.props.action.id}`),
         );
+    }
+}
+
+class StatefulClientAction extends Component {
+    static template = xml`<div class="o_stateful_client_action"/>`;
+    static props = null;
+    props = useProps(this.constructor.props);
+    setup() {
+        const { name, ready } = this.props.action.params;
+        useSetupAction({ getLocalState: () => ({ restored: true }) });
+        if (!this.props.state?.restored) {
+            useControllerLifetime().onEnd(() => expect.step(`end ${name}`));
+        }
+        onWillStart(() => ready);
     }
 }
 
@@ -102,6 +117,52 @@ beforeEach(() => {
     actionRegistry.add("__test__client__action__", TestClientAction, {
         force: true,
     });
+    actionRegistry.add("__test__stateful__action__", StatefulClientAction, {
+        force: true,
+    });
+});
+
+test("an action left for good ends its controller", async () => {
+    await mountWebClient();
+    await getService("action").doAction({
+        type: "ir.actions.client",
+        tag: "__test__stateful__action__",
+        params: { name: "A" },
+    });
+    await getService("action").doAction(1);
+    await contains(".o_back_button").click();
+    expect.verifySteps([]);
+
+    await getService("action").doAction(3, { clearBreadcrumbs: true });
+    expect.verifySteps(["end A"]);
+});
+
+test("an action superseded before it mounts ends", async () => {
+    const ready = new Deferred();
+    await mountWebClient();
+    getService("action").doAction({
+        type: "ir.actions.client",
+        tag: "__test__stateful__action__",
+        params: { name: "A", ready },
+    });
+    await animationFrame();
+    await getService("action").doAction(3);
+    expect(".o_list_view").toHaveCount(1);
+    expect.verifySteps(["end A"]);
+    ready.resolve();
+});
+
+test("an action on screen when the history replaces the stack ends", async () => {
+    await mountWebClient();
+    await getService("action").doAction({
+        type: "ir.actions.client",
+        tag: "__test__stateful__action__",
+        params: { name: "A" },
+    });
+    await getService("action").loadState({ action: 1 });
+    await animationFrame();
+    expect(".o_kanban_view").toHaveCount(1);
+    expect.verifySteps(["end A"]);
 });
 
 test("can display client actions in Dialog", async () => {

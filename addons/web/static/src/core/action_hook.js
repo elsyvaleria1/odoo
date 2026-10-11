@@ -1,7 +1,8 @@
 // @ts-check
 /** @odoo-module native */
 
-import { onMounted, useListener, useProps } from "@odoo/owl";
+import { onMounted, onWillDestroy, useListener, useProps } from "@odoo/owl";
+import { reportUncaught } from "@web/core/errors/error_utils";
 import { defineScope } from "@web/core/scope";
 import { useService } from "@web/core/utils/hooks";
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
@@ -9,11 +10,6 @@ import { useLayoutEffect } from "@web/core/utils/layout_effect";
 const envScope = defineScope("web/core/action_hook");
 
 export const scrollSymbol = Symbol("scroll");
-/**
- * Key of a function in an exported local state that frees what the state
- * holds open, called once nothing can restore the state any more.
- */
-export const releaseSymbol = Symbol("release");
 
 const CONTENT_SELECTOR =
     ".o_component_with_search_panel > .o_renderer_with_searchpanel," +
@@ -40,6 +36,56 @@ export class CallbackRecorder {
     remove(owner) {
         this._callbacks = this._callbacks.filter((s) => s.owner !== owner);
     }
+}
+
+/**
+ * What an action controller holds beyond its component: a controller in the
+ * breadcrumbs outlives every component it mounts, and ends only once nothing
+ * can restore it.
+ */
+export class ControllerLifetime {
+    /** @type {(() => void)[]} */
+    _releases = [];
+    _ended = false;
+
+    /** @param {() => void} release */
+    onEnd(release) {
+        if (this._ended) {
+            release();
+            return;
+        }
+        this._releases.push(release);
+    }
+
+    end() {
+        if (this._ended) {
+            return;
+        }
+        this._ended = true;
+        const releases = this._releases;
+        this._releases = [];
+        for (const release of releases) {
+            try {
+                release();
+            } catch (error) {
+                reportUncaught(error);
+            }
+        }
+    }
+}
+
+/**
+ * @returns {ControllerLifetime} the lifetime of the action controller the
+ * component belongs to; outside one, the component's own
+ */
+export function useControllerLifetime() {
+    const { __lifetime__ } = useActionCallbackRecorders();
+    if (__lifetime__) {
+        return __lifetime__;
+    }
+    const lifetime = new ControllerLifetime();
+    onWillDestroy(() => lifetime.end());
+    return lifetime;
 }
 
 /** @param {Record<string, any>} recorders */
