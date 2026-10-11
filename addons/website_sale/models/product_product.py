@@ -123,9 +123,12 @@ class ProductProduct(models.Model):
 
     def _is_add_to_cart_allowed(self) -> bool:
         self.check_singleton()
+        if not self.active:
+            _debug.logic("add_to_cart_denied", reason="archived", product=self.id)
+            return False
         if self.env.user.has_group("base.group_system"):
             return True
-        if not self.active or not self.website_published:
+        if not self.website_published:
             _debug.logic("add_to_cart_denied", reason="unpublished", product=self.id)
             return False
         if not self.filtered_domain(self.env["website"]._product_domain()):

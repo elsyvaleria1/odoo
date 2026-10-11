@@ -45,13 +45,15 @@ class TestCartOnReadonlyPage(HttpCase, WebsiteSaleCommon):
         _logger.debug("%s -> cart pricelist %s", response.url, pricelist.name)
         return pricelist
 
-    def test_a_cart_resumed_on_a_readonly_page_is_refreshed_by_the_next_writable_request(
+    def test_a_cart_resumed_on_a_readonly_page_is_cached_and_refreshed_by_the_next_writable_request(
         self,
     ):
         self.authenticate(self.customer.login, self.customer.login)
 
         page = self.url_open(self.page_url)
         self.assertEqual(self._cart_pricelist_after(page), self.stale_pricelist)
+        session = root.session_store.get(self.opener.cookies["session_id"])
+        self.assertEqual(session[CART_SESSION_CACHE_KEY], self.customer_cart.id)
 
         cart = self.url_open("/shop/cart")
         self.assertEqual(self._cart_pricelist_after(cart), self.current_pricelist)

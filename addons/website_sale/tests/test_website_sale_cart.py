@@ -83,6 +83,15 @@ class TestWebsiteSaleCart(ProductVariantsCommon, WebsiteSaleCommon):
                 quantity=1,
             )
 
+    def test_an_admin_cannot_add_an_archived_product_either(self):
+        self.product.active = False
+        admin = self.quick_ref("base.user_admin")
+        website = self.website.with_user(admin)
+
+        with MockRequest(website.env, website=website):
+            self.assertTrue(admin.has_group("base.group_system"))
+            self.assertFalse(self.product.with_user(admin)._is_add_to_cart_allowed())
+
     def test_zero_price_product_rule(self):
         website_prevent_zero_price = self.env["website"].create(
             {

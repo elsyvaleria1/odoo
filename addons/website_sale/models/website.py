@@ -25,6 +25,7 @@ _lt = LazyTranslate(__name__)
 
 
 CART_SESSION_CACHE_KEY = "sale_order_id"
+CART_REFRESH_PENDING_SESSION_KEY = "website_sale_cart_refresh_pending"
 FISCAL_POSITION_SESSION_CACHE_KEY = "fiscal_position_id"
 PRICELIST_SESSION_CACHE_KEY = "website_sale_current_pl"
 PRICELIST_SELECTED_SESSION_CACHE_KEY = "website_sale_selected_pl_id"
@@ -826,14 +827,18 @@ class Website(models.Model):
             if (
                 sale_order_sudo
                 and not self.env.user._is_public()
-                and self.env.user.partner_id.id != sale_order_sudo.partner_id.id
                 and not request.env.cr.readonly
+                and (
+                    self.env.user.partner_id.id != sale_order_sudo.partner_id.id
+                    or request.session.get(CART_REFRESH_PENDING_SESSION_KEY)
+                )
             ):
                 _debug.lifecycle(
-                    "cart_partner_reassigned",
+                    "cart_refreshed",
                     order=sale_order_sudo.id,
                     partner=self.env.user.partner_id.id,
                 )
+                request.session.pop(CART_REFRESH_PENDING_SESSION_KEY, None)
                 sale_order_sudo._update_address(
                     self.env.user.partner_id.id, ["partner_id"]
                 )
@@ -862,11 +867,14 @@ class Website(models.Model):
                     readonly=request.env.cr.readonly,
                 )
                 if request.env.cr.readonly:
-                    # Left out of the session, so the first writable request
-                    # resumes it again and refreshes its pricelist and fiscal
-                    # position; once cached, the cart is never resumed again.
-                    return abandonned_cart_sudo
-                abandonned_cart_sudo._update_address(partner_sudo.id, ["partner_id"])
+                    # Cached, the cart is never resumed again: the first
+                    # writable request refreshes its pricelist and fiscal
+                    # position in the cached branch above.
+                    request.session[CART_REFRESH_PENDING_SESSION_KEY] = True
+                else:
+                    abandonned_cart_sudo._update_address(
+                        partner_sudo.id, ["partner_id"]
+                    )
                 sale_order_sudo = abandonned_cart_sudo
 
         if (
@@ -884,6 +892,7 @@ class Website(models.Model):
             "sale_session_reset", order=request.session.get(CART_SESSION_CACHE_KEY)
         )
         request.session.pop(CART_SESSION_CACHE_KEY, None)
+        request.session.pop(CART_REFRESH_PENDING_SESSION_KEY, None)
         request.session.pop("website_sale_cart_quantity", None)
         request.session.pop(PRICELIST_SESSION_CACHE_KEY, None)
         request.session.pop(FISCAL_POSITION_SESSION_CACHE_KEY, None)
