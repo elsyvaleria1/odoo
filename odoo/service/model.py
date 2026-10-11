@@ -92,7 +92,7 @@ def get_public_method(model: BaseModel, name: str) -> Callable:
     if not callable(method):
         _debug.logic("rpc.method_missing", model=model._name, method=name)
         error = AttributeError(f"The method '{model._name}.{name}' does not exist")
-        error.loglevel = logging.WARNING  # type: ignore[attr-defined]
+        setattr(error, "loglevel", logging.WARNING)  # noqa: B010 - exception metadata read by the RPC error handler
         raise error
 
     if method == getattr(model, name, None):
@@ -139,13 +139,13 @@ def call_kw(model: BaseModel, name: str, args: Sequence, kwargs: Mapping) -> typ
     rules = _scope_rules(model)
     if rules is None:
         return _call_kw(model, name, args, kwargs)
-    api_scope.check_call(model.env, rules, model._name, name, args, kwargs)
+    api_scope.check_call(model.env, rules, model._get_model_name(), name, args, kwargs)
     kwargs = dict(kwargs)
     kwargs["context"] = api_scope.safe_context(model.env, kwargs.get("context"))
     with api_scope.enforcing(rules):
         result = _call_kw(model, name, args, kwargs)
     return api_scope.filter_result(
-        model.env, rules, model._name, name, args, kwargs, result
+        model.env, rules, model._get_model_name(), name, args, kwargs, result
     )
 
 
@@ -204,7 +204,7 @@ def _call_kw(
         api_model=api_model,
         context_keys=len(context),
     ):
-        with calling(recs._name):
+        with calling(recs._get_model_name()):
             result = method(recs, *args, **kwargs)
 
     if name == "create":
@@ -334,9 +334,7 @@ def execute_cr(
     recs = env.get(obj)
     if recs is None:
         _debug.logic("rpc.execute_cr.model_missing", model=obj, method=method)
-        raise UserError(  # noqa: E8505 -- the RPC named a model that does not exist
-            f"Object {obj} doesn't exist"
-        )
+        raise UserError(f"Object {obj} doesn't exist")  # noqa: E8505 -- the RPC named a model that does not exist
     thread = current_worker_thread()
     thread.rpc_model_method = f"{obj}.{method}"
     _debug.pipeline("rpc.execute_cr", model=obj, method=method, uid=uid)
@@ -401,8 +399,8 @@ def _force_lazy_in_mapping(val: Mapping, memo: _LazyMemo, active: set[int]) -> M
 
 
 def _force_lazy_in_sequence(
-    val: Sequence, memo: _LazyMemo, active: set[int]
-) -> Sequence:
+    val: Sequence[typing.Any], memo: _LazyMemo, active: set[int]
+) -> Sequence[typing.Any]:
     if isinstance(val, MutableSequence):
         for index, item in enumerate(val):
             if item.__class__ not in _SCALAR_LEAF_TYPES:
@@ -410,7 +408,7 @@ def _force_lazy_in_sequence(
                 if forced is not item:
                     val[index] = forced
         return val
-    items: list | None = None
+    items: list[typing.Any] | None = None
     for index, item in enumerate(val):
         if item.__class__ in _SCALAR_LEAF_TYPES:
             continue
@@ -421,7 +419,12 @@ def _force_lazy_in_sequence(
             items[index] = forced
     if items is None:
         return val
-    return tuple(items) if type(val) is tuple else type(val)(items)  # type: ignore[call-arg]
+    if type(val) is tuple:
+        return tuple(items)
+    # Sequence declares no constructor parameters. Subclasses own the dynamic
+    # reconstruction signature, but still construct their sequence type.
+    constructor: Callable[..., Sequence[typing.Any]] = type(val)
+    return constructor(items)
 
 
 def _force_lazy_in_place(val: Iterable, memo: _LazyMemo, active: set[int]) -> None:

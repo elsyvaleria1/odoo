@@ -285,7 +285,7 @@ class Field[T](
     tree_siblings: tuple[Field[typing.Any], ...] = ()
     inherited_field: typing.Any = None
 
-    comodel_name: str = None  # type: ignore[assignment]
+    comodel_name: str | None = None
     context: ContextType = frozendict({})
 
     delegate: bool = False
@@ -412,6 +412,12 @@ class Field[T](
             {key: val for key, val in kwargs.items() if val is not SENTINEL}
         )
 
+    def _get_comodel_name(self) -> str:
+        """Return the relation target once field setup has supplied it."""
+        if self.comodel_name is None:
+            raise TypeError(f"{self} has no comodel_name")
+        return self.comodel_name
+
     def __str__(self) -> str:
         if not self.name:
             return f"<{__name__}.{type(self).__name__}>"
@@ -462,7 +468,9 @@ class Field[T](
 
     def __set_name__(self, owner: ModelClass, name: str) -> None:
         assert get_base_model() is None or is_model_class(owner)
-        self.model_name = owner._name
+        # Unregistered framework prototypes have no model name yet; registry
+        # setup clones/binds these declarations before exposing model fields.
+        self.model_name = owner._name  # type: ignore[assignment]
         self.name = name
         if getattr(owner, "pool", None) is None:
             self._module = owner._module

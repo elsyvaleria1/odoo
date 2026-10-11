@@ -290,7 +290,11 @@ def _tree_members(model: Model) -> list[Model]:
     names = model.env.registry.model_names_by_inheritance_root.get(root, ())
     members = [typing.cast("Model", model.env[name]) for name in names]
     for member in sorted(
-        members, key=lambda m: (m._table != m._name.replace(".", "_"), m._name)
+        members,
+        key=lambda m: (
+            m._table != m._get_model_name().replace(".", "_"),
+            m._get_model_name(),
+        ),
     ):
         if member._auto and member._is_an_ordinary_table():
             by_table.setdefault(member._table, member)
@@ -327,7 +331,7 @@ def populate_field(
         )
 
     def copy_many2one(field_: Field) -> SQL:
-        comodel = typing.cast("Model", model.env[field_.comodel_name])
+        comodel = typing.cast("Model", model.env[field_._get_comodel_name()])
         if comodel in populated:
             comodel_max_id = populated[comodel]
             return SQL(
@@ -601,7 +605,7 @@ def populate_models(model_factors: dict[Any, int], separator_code: int) -> None:
                     match field.type:
                         case "one2many":
                             comodel = typing.cast(
-                                "Model", member.env[field.comodel_name]
+                                "Model", member.env[field._get_comodel_name()]
                             )
                             if comodel != member:
                                 model_factors.setdefault(comodel, model_factors[member])

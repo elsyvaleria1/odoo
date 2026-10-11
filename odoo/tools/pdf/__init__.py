@@ -14,7 +14,7 @@ from PIL import Image, PdfImagePlugin
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.text import reshape
 from odoo.libs.parse_version import parse_version
-from odoo.libs.iteration import SENTINEL
+from odoo.libs.iteration import SENTINEL, Sentinel
 from odoo.tools.files import file_open
 
 from . import _pypdf as pypdf
@@ -173,16 +173,20 @@ def add_banner(
     pdf_stream: io.BytesIO,
     text: str | None = None,
     logo: bool = False,
-    thickness: float = SENTINEL,  # type: ignore[assignment]
+    thickness: float | Sentinel = SENTINEL,
 ) -> io.BytesIO:
     from reportlab.lib import colors
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfgen import canvas
 
-    if thickness is SENTINEL:  # type: ignore[comparison-overlap]
+    if isinstance(thickness, Sentinel):
+        if thickness is not SENTINEL:
+            raise TypeError("thickness must be a number or SENTINEL")
         from reportlab.lib.units import cm
 
-        thickness = 2 * cm
+        thickness_value: float = 2 * cm
+    else:
+        thickness_value = thickness
 
     old_pdf = PdfReader(pdf_stream, strict=False)
     packet = io.BytesIO()
@@ -202,20 +206,20 @@ def add_banner(
         can.rotate(-45)
 
         path = can.beginPath()
-        path.moveTo(-width, -thickness)
-        path.lineTo(-width, -2 * thickness)
-        path.lineTo(width, -2 * thickness)
-        path.lineTo(width, -thickness)
+        path.moveTo(-width, -thickness_value)
+        path.lineTo(-width, -2 * thickness_value)
+        path.lineTo(width, -2 * thickness_value)
+        path.lineTo(width, -thickness_value)
         can.setFillColor(odoo_color)
         can.drawPath(path, fill=1, stroke=False)
 
         can.setFontSize(10)
         can.setFillColor(colors.white)
-        can.drawRightString(0.75 * thickness, -1.45 * thickness, text)
+        can.drawRightString(0.75 * thickness_value, -1.45 * thickness_value, text)
         logo and can.drawImage(
             ImageReader(odoo_logo),
-            0.25 * thickness,
-            -2.05 * thickness,
+            0.25 * thickness_value,
+            -2.05 * thickness_value,
             40,
             40,
             mask="auto",

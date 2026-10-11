@@ -190,7 +190,7 @@ def _encoding(image: PILImage, output_format: str) -> Iterator[None]:
         raise ImageEncodeError(msg) from error
 
 
-def image_apply_opt(image: PILImage, output_format: str, **params) -> bytes:
+def image_apply_opt(image: PILImage, output_format: str, **params: Any) -> bytes:
     writers = Image.SAVE_ALL if params.get("save_all") else Image.SAVE
     format_name = output_format.upper()
     if format_name not in writers:
@@ -212,7 +212,7 @@ def image_apply_opt(image: PILImage, output_format: str, **params) -> bytes:
     return stream.getvalue()
 
 
-def image_to_base64(image: PILImage, output_format: str, **params) -> bytes:
+def image_to_base64(image: PILImage, output_format: str, **params: Any) -> bytes:
     stream = image_apply_opt(image, output_format, **params)
     return base64.b64encode(stream)
 

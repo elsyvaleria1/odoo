@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import functools
@@ -255,7 +254,7 @@ class _OwnerReach:
     def self_chain(self, at: str, at_query: Query) -> SQL | None:
         host = self.host
         assert self.itself is not None
-        row_sql = self.row_condition(host._name, at, at_query)
+        row_sql = self.row_condition(host._get_model_name(), at, at_query)
         if row_sql is None:
             return None
         env = host.env
@@ -281,7 +280,9 @@ class _OwnerReach:
             if name and name in env
         )
         step = Query.get_table_alias(at, "owner_chain")
-        rules = env.registry.access_policy.record_domain(env, host._name, "read")
+        rules = env.registry.access_policy.record_domain(
+            env, host._get_model_name(), "read"
+        )
         sudo_host = host.sudo().with_context(active_test=False)
         rules = rules.optimize_full(sudo_host)
         base_query = Query(env, step, table)
@@ -297,7 +298,7 @@ class _OwnerReach:
         climb_query = Query(env, step, table)
         if not rules.is_true():
             climb_query.add_where(rules._to_sql(sudo_host, step, climb_query))
-        climb_sql = self.row_condition(host._name, step, climb_query)
+        climb_sql = self.row_condition(host._get_model_name(), step, climb_query)
         reached_name = f"{step}__reached"
         reached = SQL.identifier(reached_name)
         climb_query.add_join(

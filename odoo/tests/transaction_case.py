@@ -16,8 +16,9 @@ import warnings
 from contextlib import ExitStack, contextmanager
 from datetime import date, datetime
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, ClassVar, cast
-from unittest import TestResult, mock
+from typing import TYPE_CHECKING, Any, ClassVar, cast, overload, override
+from unittest import mock
+from unittest.case import _AssertRaisesContext
 from unittest.mock import Mock, _patch, patch
 from urllib.parse import urlsplit
 
@@ -57,6 +58,7 @@ from .utils import HOST, env_int, get_db_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Iterator
+    from contextlib import AbstractContextManager
 
     from .result import OdooTestResult
 
@@ -68,6 +70,7 @@ _debug = DebugLog(__name__)
 TEST_CURSOR_COOKIE_NAME = "test_request_key"
 
 
+# CPython's Python implementation is subclassable; typeshed aliases the final C lock.
 class RegistryRLock(threading._RLock):  # type: ignore[misc]
     _owner: int | None
 
@@ -451,9 +454,9 @@ def _normalise_records(
 
 
 class BaseCase(TestCase):
-    registry: Registry = None  # type: ignore[assignment]
-    env: api.Environment = None  # type: ignore[assignment]
-    cr: Cursor = None  # type: ignore[assignment]
+    registry: Registry | None = None
+    env: api.Environment | None = None
+    cr: Cursor | None = None
     registry_patches: ClassVar[list]
 
     test_tags: set[str] | None = None
@@ -461,6 +464,21 @@ class BaseCase(TestCase):
     _starts_freeze_time_itself = False
 
     test_module: str = ""
+
+    def _get_env(self) -> api.Environment:
+        if self.env is None:
+            raise RuntimeError("This test requires a database environment")
+        return self.env
+
+    def _get_registry(self) -> Registry:
+        if self.registry is None:
+            raise RuntimeError("This test requires a database registry")
+        return self.registry
+
+    def _get_cr(self) -> Cursor:
+        if self.cr is None:
+            raise RuntimeError("This test requires a database cursor")
+        return self.cr
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -540,6 +558,8 @@ class BaseCase(TestCase):
         )
         raise BlockedRequest(f"External requests verboten (was {r.method} {r.url})")
 
+    # Odoo's required result adds retry state absent from unittest.TestResult.
+    @override
     def run(self, result: OdooTestResult) -> None:  # type: ignore[override]
         testMethod = getattr(self, self._testMethodName)
 
@@ -567,7 +587,7 @@ class BaseCase(TestCase):
                     attempt.enter_context(result.retry())
 
                 if final:
-                    super().run(cast("TestResult", result))
+                    super().run(result)
                     if not result.wasSuccessful() and type(self)._tests_run_count != 1:
                         _debug.lifecycle(
                             "test.case.retries_disabled_globally",
@@ -581,7 +601,7 @@ class BaseCase(TestCase):
                 attempt.enter_context(warnings.catch_warnings())
                 attempt.enter_context(result.soft_fail())
                 quiet_log = attempt.enter_context(lower_logging(25, logging.INFO))
-                super().run(cast("TestResult", result))
+                super().run(result)
                 _debug.logic(
                     "test.case.soft_attempt",
                     test=self.canonical_tag,
@@ -619,8 +639,12 @@ class BaseCase(TestCase):
         cls.addClassCleanup(check_remaining_processes)
 
         def check_remaining_patchers():
-            for patcher in list(_patch._active_patches):  # type: ignore[attr-defined]
-                if hasattr(patcher, "target"):
+            # unittest exposes the live patcher list only through its private API.
+            active_patchers: Iterable[_patch | mock._patch_dict] = getattr(  # noqa: B009 -- typed boundary for runtime attributes
+                _patch, "_active_patches"
+            )
+            for patcher in list(active_patchers):
+                if isinstance(patcher, _patch) and hasattr(patcher, "target"):
                     description = f"{patcher.target}.{patcher.attribute}"
                 else:
                     description = f"dict {getattr(patcher, 'in_dict', patcher)!r}"
@@ -666,7 +690,7 @@ class BaseCase(TestCase):
             patcher = patch.object(
                 requests.sessions.Session,
                 "send",
-                lambda s, r, **kw: cls._request_handler(s, r, **kw),  # noqa: PLW0108 -- A function descriptor binds the patched Session instance.
+                lambda s, r, **kw: cls._request_handler(s, r, **kw),  # noqa: PLW0108 -- keep the class hook late-bound
             )
             patcher.start()
             cls.addClassCleanup(patcher.stop)
@@ -701,10 +725,11 @@ class BaseCase(TestCase):
 
     def cursor(self) -> Cursor:
         _debug.lifecycle("test.case.extra_cursor", test=self.canonical_tag)
-        return cast("Cursor", self.registry.cursor())
+        return cast("Cursor", self._get_registry().cursor())
 
     @classmethod
     def _open_class_cursor(cls) -> None:
+        assert cls.registry is not None, "No registry"
         cls.cr = cast("Cursor", cls.registry.cursor())
         cls.addClassCleanup(cls.cr.close)
         cls.cr.execute(
@@ -718,7 +743,7 @@ class BaseCase(TestCase):
 
     @property
     def uid(self):
-        return self.env.uid
+        return self._get_env().uid
 
     @uid.setter
     def uid(self, user):
@@ -726,10 +751,10 @@ class BaseCase(TestCase):
             "test.env.uid",
             test=self.canonical_tag,
             uid=getattr(user, "id", user),
-            was=self.env.uid,
+            was=self._get_env().uid,
         )
-        self.env = self.env(user=user)
-        self.env.transaction.default_env = self.env
+        self.env = self._get_env()(user=user)
+        self._get_env().transaction.default_env = self._get_env()
 
     def ref(self, xid: str) -> int:
         return self.browse_ref(xid).id
@@ -738,7 +763,7 @@ class BaseCase(TestCase):
         assert "." in xid, (
             "this method requires a fully qualified parameter, in the following form: 'module.identifier'"
         )
-        return self.env.ref(xid)
+        return self._get_env().ref(xid)
 
     def _distrust_test_caches(self, *groups: str) -> None:
         for scope in _cache_scope:
@@ -794,9 +819,9 @@ class BaseCase(TestCase):
     @contextmanager
     def with_user(self, login: str) -> Generator[None]:
         old_uid = self.uid
-        old_env = self.env
+        old_env = self._get_env()
         try:
-            user = self.env["res.users"].sudo().search([("login", "=", login)])
+            user = self._get_env()["res.users"].sudo().search([("login", "=", login)])
             assert user, f"Login {login} not found"
             self.uid = user.id
             _debug.lifecycle(
@@ -811,18 +836,18 @@ class BaseCase(TestCase):
     def debug_mode(self) -> Generator[None]:
         request = Mock(
             httprequest=Mock(host="localhost"),
-            db=self.env.cr.dbname,
-            env=self.env,
+            db=self._get_env().cr.dbname,
+            env=self._get_env(),
             session=DotDict(odoo.http.prepare_default_session(), debug="1"),
         )
         try:
-            self.env.flush_all()
-            self.env.invalidate_all()
+            self._get_env().flush_all()
+            self._get_env().invalidate_all()
             odoo.http._request_stack.push(request)
             _debug.lifecycle("test.env.debug_mode", test=self.canonical_tag)
             yield
-            self.env.flush_all()
-            self.env.invalidate_all()
+            self._get_env().flush_all()
+            self._get_env().invalidate_all()
         finally:
             popped_request = odoo.http._request_stack.pop()
             if popped_request is not request:
@@ -835,12 +860,12 @@ class BaseCase(TestCase):
                 raise Exception("Wrong request stack cleanup.")
 
     @contextmanager
-    def _assertRaises(
+    def _assertRaises[E: BaseException](
         self,
-        exception: type[BaseException] | tuple[type[BaseException], ...],
+        exception: type[E] | tuple[type[E], ...],
         *,
         msg: str | None = None,
-    ) -> Generator[Any]:
+    ) -> Generator[_AssertRaisesContext[E]]:
         with ExitStack() as init:
             if self.env:
                 init.enter_context(self.env.cr.savepoint())
@@ -863,19 +888,39 @@ class BaseCase(TestCase):
 
                 yield cm
 
-    def assertRaises(  # type: ignore[override]
+    # Odoo returns a savepoint context manager and preserves its legacy
+    # parameter names; unittest promises its own nominal context class.
+    @overload  # type: ignore[override]
+    def assertRaises(
         self,
-        exception: type[BaseException],
-        func: Callable | None = None,
+        exception: type[BaseException] | tuple[type[BaseException], ...],
+        func: Callable[..., object],
         *args: Any,
         **kwargs: Any,
-    ) -> Any:
-        if func:
+    ) -> None: ...
+
+    @overload
+    def assertRaises[E: BaseException](
+        self,
+        exception: type[E] | tuple[type[E], ...],
+        func: None = None,
+        *,
+        msg: Any = None,
+    ) -> AbstractContextManager[_AssertRaisesContext[E]]: ...
+
+    @override
+    def assertRaises[E: BaseException](
+        self,
+        exception: type[E] | tuple[type[E], ...],
+        func: Callable[..., object] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> AbstractContextManager[_AssertRaisesContext[E]] | None:
+        if func is not None:
             with self._assertRaises(exception):
                 func(*args, **kwargs)
-        else:
-            return self._assertRaises(exception, **kwargs)
-        return None
+            return None
+        return self._assertRaises(exception, **kwargs)
 
     def _patchExecute(self, actual_queries, flush=True):
 
@@ -889,8 +934,8 @@ class BaseCase(TestCase):
             return patch.object(Cursor, name, wrapper)
 
         if flush:
-            self.env.flush_all()
-            self.env.cr.flush()
+            self._get_env().flush_all()
+            self._get_env().cr.flush()
 
         _debug.pipeline(
             "test.assert.queries_recording", test=self.canonical_tag, flush=flush
@@ -900,12 +945,12 @@ class BaseCase(TestCase):
             for name, describe in _STATEMENT_RECORDERS.items():
                 patches.enter_context(recorded(name, describe))
             patches.enter_context(
-                patch.object(self.env.registry, "unaccent", lambda x: x)
+                patch.object(self._get_env().registry, "unaccent", lambda x: x)
             )
             yield actual_queries
             if flush:
-                self.env.flush_all()
-                self.env.cr.flush()
+                self._get_env().flush_all()
+                self._get_env().cr.flush()
         _debug.perf.count(
             "test.assert.queries_recorded",
             test=self.canonical_tag,
@@ -999,17 +1044,19 @@ class BaseCase(TestCase):
     ) -> Generator[None]:
         if self.warm and not self._counts_no_statements():
             with patch("random.random", lambda: 1), observing_statements():
-                login = self.env.user.login  # type: ignore[attr-defined]
-                expected = counters.get(login, default)
+                login = self._get_env().user.login
+                expected = (
+                    counters.get(login, default) if isinstance(login, str) else default
+                )
                 if flush:
-                    self.env.flush_all()
-                    self.env.cr.flush()
-                count0 = self.cr.sql_statement_count
+                    self._get_env().flush_all()
+                    self._get_env().cr.flush()
+                count0 = self._get_cr().sql_statement_count
                 yield
                 if flush:
-                    self.env.flush_all()
-                    self.env.cr.flush()
-                count = self.cr.sql_statement_count - count0
+                    self._get_env().flush_all()
+                    self._get_env().cr.flush()
+                count = self._get_cr().sql_statement_count - count0
                 _debug.logic(
                     "test.assert.query_count",
                     test=self.canonical_tag,
@@ -1060,12 +1107,12 @@ class BaseCase(TestCase):
                 graded=not self._counts_no_statements(),
             )
             if flush:
-                self.env.flush_all()
-                self.env.cr.flush()
+                self._get_env().flush_all()
+                self._get_env().cr.flush()
             yield
             if flush:
-                self.env.flush_all()
-                self.env.cr.flush()
+                self._get_env().flush_all()
+                self._get_env().cr.flush()
 
     def assertQueriesConstant(
         self, run: Callable[[int], object], small: int = 2, large: int = 10
@@ -1079,18 +1126,18 @@ class BaseCase(TestCase):
         counts = {}
         for index, size in enumerate((small, small, large)):
             with (
-                contextlib.closing(self.cr.savepoint(flush=True)),
+                contextlib.closing(self._get_cr().savepoint(flush=True)),
                 patch("random.random", lambda: 1),
                 observing_statements(),
             ):
-                self.env.flush_all()
-                self.env.invalidate_all()
-                count0 = self.cr.sql_statement_count
+                self._get_env().flush_all()
+                self._get_env().invalidate_all()
+                count0 = self._get_cr().sql_statement_count
                 run(size)
-                self.env.flush_all()
-                self.env.cr.flush()
+                self._get_env().flush_all()
+                self._get_env().cr.flush()
                 if index:
-                    counts[size] = self.cr.sql_statement_count - count0
+                    counts[size] = self._get_cr().sql_statement_count - count0
         _debug.logic(
             "test.assert.queries_constant",
             test=self.canonical_tag,
@@ -1491,7 +1538,7 @@ class BaseCase(TestCase):
         if not hasattr(self, "profile_session"):
             self.profile_session = profiler.get_session_name(test_method)
         if "db" not in kwargs:
-            kwargs["db"] = self.env.cr.dbname
+            kwargs["db"] = self._get_env().cr.dbname
         _debug.lifecycle(
             "test.profile.start",
             test=self.canonical_tag,
@@ -1503,7 +1550,7 @@ class BaseCase(TestCase):
             description="%s uid:%s %s %s"
             % (
                 test_method,
-                self.env.user.id,
+                self._get_env().user.id,
                 "warm" if self.warm else "cold",
                 description,
             ),
@@ -1582,11 +1629,12 @@ class BaseCase(TestCase):
 
     @classmethod
     def registry_enter_test_mode_cls(cls) -> None:
+        assert cls.cr is not None, "No cursor"
         cls._registry_enter_test_mode(cr=cls.cr)
         cls.addClassCleanup(cls.registry_leave_test_mode)
 
     def registry_enter_test_mode(self) -> None:
-        type(self)._registry_enter_test_mode(cr=self.cr)
+        type(self)._registry_enter_test_mode(cr=self._get_cr())
         self.addCleanup(self.registry_leave_test_mode)
 
     @classmethod
@@ -2010,7 +2058,7 @@ def _watch_cache_feeding_patches() -> None:
     if getattr(mock._patch, "_clears_caches_it_feeds", False):
         return
     enter = mock._patch.__enter__
-    patch_dict = mock._patch_dict._patch_dict  # type: ignore[attr-defined]
+    patch_dict: Callable[[Any], None] = getattr(mock._patch_dict, "_patch_dict")  # noqa: B009 -- private unittest hook absent from typeshed
 
     def watched_enter(self: Any) -> Any:
         result = enter(self)
@@ -2018,13 +2066,17 @@ def _watch_cache_feeding_patches() -> None:
         return result
 
     def watched_patch_dict(self: Any) -> Any:
-        result = patch_dict(self)
+        patch_dict(self)
         _note_patch(self.in_dict)
-        return result
+        return None
 
-    mock._patch.__enter__ = watched_enter  # type: ignore[method-assign]
-    mock._patch_dict._patch_dict = watched_patch_dict  # type: ignore[attr-defined]
-    mock._patch._clears_caches_it_feeds = True  # type: ignore[attr-defined]
+    # These hooks are installed once on unittest's patcher classes.
+    for cls, name, callback in (
+        (mock._patch, "__enter__", watched_enter),
+        (mock._patch_dict, "_patch_dict", watched_patch_dict),
+    ):
+        setattr(cls, name, callback)
+    setattr(mock._patch, "_clears_caches_it_feeds", True)  # noqa: B010 -- marker on a third-party class
 
 
 def _get_ormcache_marks(registry: Any) -> dict[str, tuple[int, int]]:
@@ -2050,6 +2102,10 @@ def _get_ormcaches_touched(
 
 
 class TransactionCase(BaseCase):
+    registry: Registry
+    env: api.Environment
+    cr: Cursor
+
     muted_registry_logger = _muted_registry_logger
     _registry_guard: ClassVar[_RegistryGuard]
     _signal_changes_patcher: ClassVar[Any]
@@ -2256,6 +2312,10 @@ class TransactionCase(BaseCase):
 
 
 class SingleTransactionCase(BaseCase):
+    registry: Registry
+    env: api.Environment
+    cr: Cursor
+
     _registry_guard: ClassVar[_RegistryGuard]
     _signal_changes_patcher: ClassVar[Any]
     _starts_freeze_time_itself = True

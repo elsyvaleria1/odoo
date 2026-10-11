@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from dataclasses import replace
-from typing import Any, Protocol
+from dataclasses import Field, replace
+from typing import Any, ClassVar, Protocol
 
 __all__ = ["OptionSource", "SettingsSlot"]
 
@@ -12,7 +12,11 @@ class OptionSource(Protocol):
     def __getitem__(self, key: str, /) -> Any: ...
 
 
-class SettingsSlot[T]:
+class _Dataclass(Protocol):
+    __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
+
+
+class SettingsSlot[T: _Dataclass]:
     __slots__ = ("_installed", "_memo", "_name", "_source", "_version")
 
     def __init__(
@@ -71,5 +75,5 @@ class SettingsSlot[T]:
 
     @contextmanager
     def override(self, **changes: Any) -> Iterator[T]:
-        with self.installed(replace(self.current(), **changes)) as settings:  # type: ignore[type-var]
+        with self.installed(replace(self.current(), **changes)) as settings:
             yield settings

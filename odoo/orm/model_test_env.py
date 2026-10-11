@@ -5,7 +5,7 @@ from collections.abc import Callable, Collection, Iterable, Mapping
 from contextlib import contextmanager, suppress
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 
 from odoo.db import BaseCursor, FunctionStatus
 from odoo.db.savepoint import (
@@ -357,7 +357,7 @@ class InMemoryCursor(BaseCursor):
 class ModelRegistry(
     _RegistryFieldsMixin, _RegistryModelsMixin, Mapping[str, type["BaseModel"]]
 ):
-    _lock: threading.RLock = threading.RLock()
+    _lock: ClassVar[threading.RLock] = threading.RLock()
     metaschema = META_SCHEMA
     access_policy = ACCESS_POLICY
     xmlids = XMLIDS
@@ -821,7 +821,7 @@ def _reflect_models(
             )
         ) or ["base"]
         original = getattr(model_cls, "_original_module", None) or modules[0]
-        slug = model_cls._name.replace(".", "_")
+        slug = model_cls._get_model_name().replace(".", "_")
         model_id = storage.allocate_next_id("ir_model")
         row = stored(registry["ir.model"], IrModel._prepare_model_vals(model))
         row["id"] = model_id

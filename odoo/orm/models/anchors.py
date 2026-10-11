@@ -8,6 +8,7 @@ from ..helpers import check_companies_domain_parent_of, check_company_domain_par
 if typing.TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from ..fields.base import Field
     from .base import BaseModel
 
 ANCHOR_KINDS: Mapping[str, str] = {
@@ -24,7 +25,6 @@ HIERARCHIES = frozenset({"parent_of", "child_of"})
 
 @dataclass(frozen=True, slots=True)
 class Anchor:
-
     path: str
     kind: str | None = None
     shared: bool | None = None
@@ -86,7 +86,7 @@ def collect_anchors(model_cls: type[BaseModel]) -> dict[str, Anchor]:
 
 
 def infer_company_variant(
-    model_cls: type[BaseModel], anchor: Anchor, models: Mapping[str, type]
+    model_cls: type[BaseModel], anchor: Anchor, models: Mapping[str, type[BaseModel]]
 ) -> Anchor:
     if anchor.kind != "company":
         return Anchor(
@@ -110,12 +110,12 @@ def infer_company_variant(
 
 
 def path_fields(
-    model_cls: type[BaseModel], path: str, models: Mapping[str, type]
-) -> list[typing.Any]:
+    model_cls: type[BaseModel], path: str, models: Mapping[str, type[BaseModel]]
+) -> list[Field[typing.Any]]:
     if path == "id":
         return []
-    fields = []
-    current: typing.Any = model_cls
+    fields: list[Field[typing.Any]] = []
+    current = model_cls
     for name in path.split("."):
         field = current._fields.get(name)
         if field is None:
@@ -123,31 +123,34 @@ def path_fields(
         fields.append(field)
         if not field.comodel_name or field.comodel_name not in models:
             break
-        current = models[field.comodel_name]
+        current = models[field._get_comodel_name()]
     return fields
 
 
 def anchor_path_error(
-    model_cls: type[BaseModel], key: str, anchor: Anchor, models: Mapping[str, type]
+    model_cls: type[BaseModel],
+    key: str,
+    anchor: Anchor,
+    models: Mapping[str, type[BaseModel]],
 ) -> str | None:
     target = ANCHOR_KINDS[anchor.kind or key]
     if anchor.path == "id":
         if model_cls._name != target:
             return f"its path 'id' is a {model_cls._name}, not a {target}"
         return None
-    current: type = model_cls
+    current = model_cls
     for name in anchor.path.split("."):
-        field = current._fields.get(name)  # type: ignore[attr-defined]
+        field = current._fields.get(name)
         if field is None:
-            return f"{current._name}.{name} does not exist"  # type: ignore[attr-defined]
+            return f"{current._name}.{name} does not exist"
         if not (field.store or field.related or field.search):
             return f"{field} is neither stored nor searchable"
         if not field.relational:
             return f"{field} is not relational"
-        if field.comodel_name not in models:
+        if field.comodel_name is None or field.comodel_name not in models:
             return f"{field} leads to {field.comodel_name}, which is not loaded"
         current = models[field.comodel_name]
-    reached = current._name  # type: ignore[attr-defined]
+    reached = current._name
     if reached != target:
         return f"its path leads to {reached}, not to {target}"
     return None

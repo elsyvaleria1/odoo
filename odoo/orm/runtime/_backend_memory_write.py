@@ -164,7 +164,9 @@ class _InMemoryWriteMixin:
         plan = _ForeignKeyPlan(self, env.registry)
         plan.add_removal(model, wanted)
 
-        many2one_fields = env.registry.many2one_company_dependents[model._name]
+        many2one_fields = env.registry.many2one_company_dependents[
+            model._get_model_name()
+        ]
         uninstalling = env.context.get(MODULE_UNINSTALL_FLAG)
         if many2one_fields and not uninstalling:
             PostgresBackend._unlink_default_guard(model, sub_ids, many2one_fields)

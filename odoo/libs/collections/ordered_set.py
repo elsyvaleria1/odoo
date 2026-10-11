@@ -13,7 +13,7 @@ from collections.abc import (
 )
 from functools import reduce
 from types import MappingProxyType
-from typing import Self, override
+from typing import TYPE_CHECKING, Self, override
 
 
 class _OrderedSetBase[T](AbstractSet[T]):
@@ -33,7 +33,7 @@ class _OrderedSetBase[T](AbstractSet[T]):
     def __len__(self) -> int:
         return len(self._map)
 
-    def __and__(self, other: Iterable[T]) -> Self:
+    def __and__(self, other: Iterable[object]) -> Self:
         if not isinstance(other, Iterable):
             return NotImplemented
         members = other if isinstance(other, (AbstractSet, Mapping)) else set(other)
@@ -41,12 +41,22 @@ class _OrderedSetBase[T](AbstractSet[T]):
 
     __rand__ = __and__
 
+    if TYPE_CHECKING:
+
+        def __sub__(self, other: AbstractSet[object]) -> Self: ...
+
     def __repr__(self) -> str:
         return f"{type(self).__name__}({list(self)!r})"
 
 
 class FrozenOrderedSet[T](_OrderedSetBase[T]):
     __slots__ = ("_map",)
+
+    if TYPE_CHECKING:
+        # Set's implementations construct type(self); preserve the concrete type
+        # while allowing unions and symmetric differences to widen element types.
+        def __or__[U](self, other: AbstractSet[U]) -> FrozenOrderedSet[T | U]: ...
+        def __xor__[U](self, other: AbstractSet[U]) -> FrozenOrderedSet[T | U]: ...
 
     def __init__(self, elems: Iterable[T] = ()) -> None:
         object.__setattr__(self, "_map", MappingProxyType(dict.fromkeys(elems)))
@@ -66,6 +76,11 @@ class FrozenOrderedSet[T](_OrderedSetBase[T]):
 
 class OrderedSet[T](_OrderedSetBase[T], MutableSet[T]):
     __slots__ = ["_map"]
+
+    if TYPE_CHECKING:
+
+        def __or__[U](self, other: AbstractSet[U]) -> OrderedSet[T | U]: ...
+        def __xor__[U](self, other: AbstractSet[U]) -> OrderedSet[T | U]: ...
 
     def __init__(self, elems: Iterable[T] = ()) -> None:
         self._map: dict[T, None] = dict.fromkeys(elems)

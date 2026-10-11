@@ -339,7 +339,7 @@ class ExportMixin(_ModelStubs):
         )
         for model, ids in bymodels.items():
             for record, xid in self.env[model].browse(ids)._get_or_create_xml_ids():
-                for i, j in xidmap.pop((record._name, record.id)):
+                for i, j in xidmap.pop((record._get_model_name(), record.id)):
                     lines[i][j] = xid
         if xidmap:
             raise RuntimeError(

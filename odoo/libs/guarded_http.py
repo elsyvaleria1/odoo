@@ -81,7 +81,7 @@ _debug = DebugLog(__name__)
 
 
 def configure_egress_proxy(url: str | None) -> None:
-    global _egress_proxy  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
+    global _egress_proxy  # noqa: PLW0603 - the process-wide proxy is configured at server startup
     if url:
         parts = parse_url(url)
         if parts.scheme not in SCHEMES or not parts.host:
@@ -581,7 +581,8 @@ def _retry_within(retry: Retry, deadline: float) -> Retry:
 _passing_over = threading.local()
 
 
-class _WatchedPool:
+class _WatchedPool(HTTPConnectionPool):
+    @typing.override
     def urlopen(
         self,
         method: str,
@@ -611,10 +612,9 @@ class _WatchedPool:
                 retries, _RetryWithinDeadline
             ):
                 retries = _retry_within(retries, timeout.deadline)
-        return super().urlopen(  # type: ignore[misc]
-            method, url, body, headers, retries, *args, **kwargs
-        )
+        return super().urlopen(method, url, body, headers, retries, *args, **kwargs)
 
+    @typing.override
     def _make_request(
         self,
         conn: typing.Any,
@@ -624,7 +624,7 @@ class _WatchedPool:
         **kwargs: typing.Any,
     ) -> typing.Any:
         timeout = kwargs.get("timeout")
-        make_request = super()._make_request  # type: ignore[misc]
+        make_request = super()._make_request
         if not isinstance(timeout, _Deadline):
             return make_request(conn, method, url, *args, **kwargs)
 
@@ -884,18 +884,23 @@ class GuardedXmlRpcTransport(xmlrpc.client.Transport):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
 
+    @typing.override
     def request(
         self,
         host: str | tuple[str, dict[str, str]],
         handler: str,
         request_body: Buffer,
         verbose: bool = False,
-    ) -> typing.Any:
+    ) -> tuple[typing.Any, ...]:
         _, auth_headers, _ = self.get_host_info(host)
         url = f"{self._base_url}{handler}"
         response = self._session.post(
             url,
-            data=request_body,
+            # Requests measures len(memoryview) in elements and does not
+            # recognize every PEP 688 buffer object as an HTTP body.
+            data=request_body
+            if isinstance(request_body, bytes)
+            else memoryview(request_body).tobytes(),
             headers={"Content-Type": "text/xml", **dict(auth_headers or ())},
             timeout=self._timeout,
             allow_redirects=False,

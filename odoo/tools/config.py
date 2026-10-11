@@ -4,7 +4,7 @@ import contextlib
 import functools
 import io
 import logging
-import optparse  # noqa: TID251 -- The existing option API relies on optparse parser and option subclasses.
+import optparse  # noqa: TID251 -- Odoo's option subclasses extend this parser's public API
 import os
 import re
 import sys
@@ -37,7 +37,7 @@ crypt_context = CryptContext(
 _dangerous_logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-optparse._ = str  # type: ignore[attr-defined]
+setattr(optparse, "_", str)  # noqa: B010 - optparse's translation hook is absent from typeshed
 
 ALL_DEV_MODE = ("access", "assets", "qweb", "reload", "xml")
 _MODULE_MAP_OPTIONS = frozenset({"init", "update"})
@@ -168,6 +168,17 @@ class _OdooOption(optparse.Option):
         if self.file_loadable and self.dest:
             out.append(self.dest)
         return "/".join(out)
+
+
+def _add_optional_option(
+    group: optparse.OptionGroup, *names: str, **attrs: Any
+) -> _OdooOption:
+    option_class = group.parser.option_class
+    if not issubclass(option_class, _OdooOption):
+        raise TypeError("Optional arguments require Odoo's option class")
+    option = option_class(*names, nargs="?", **attrs)
+    group.add_option(option)
+    return option
 
 
 class _FileOnlyOption(_OdooOption):
@@ -315,10 +326,15 @@ class _CountingDict(dict[str, Any]):
         self._bump()
         return result
 
-    def __ior__(self, other: Any) -> Self:  # type: ignore[misc, override]
-        super().__ior__(other)
-        self._bump()
-        return self
+    if not TYPE_CHECKING:
+        # Retain dict's inherited overloads, including its exact key contract.
+        # Mypy cannot reconcile a subclass's in-place override with widening
+        # forward unions, although this wrapper leaves dict's behavior intact.
+        @override
+        def __ior__(self, other: Any) -> Self:
+            super().__ior__(other)
+            self._bump()
+            return self
 
 
 class configmanager:
@@ -589,12 +605,12 @@ class configmanager:
             my_default=False,
             help="install demo data in new databases",
         )
-        group.add_option(  # type: ignore[call-overload]
+        _add_optional_option(
+            group,
             "--without-demo",
             dest="with_demo",
             type="without_demo",
             metavar="BOOL",
-            nargs="?",
             const=True,
             help="don't install demo data in new databases (default)",
         )
@@ -915,12 +931,12 @@ class configmanager:
             help="specify the SMTP port",
             type="int",
         )
-        group.add_option(  # type: ignore[call-overload]
+        _add_optional_option(
+            group,
             "--smtp-ssl",
             dest="smtp_ssl",
             type="smtp_ssl",
             metavar="MODE",
-            nargs="?",
             const=True,
             my_default=False,
             help="encrypt SMTP connections; MODE is one of "
@@ -1644,13 +1660,15 @@ class configmanager:
         for loglevel, message, args, kwargs in cls._log_entries:
             _dangerous_logger.log(loglevel, message, *args, **kwargs)
         cls._log_entries.clear()
-        cls._log = _dangerous_logger.log  # type: ignore[assignment, method-assign]
+        # Switch to the native callbacks: another wrapper changes caller
+        # locations and warnings' skip_file_prefixes/stacklevel behavior.
+        setattr(cls, "_log", _dangerous_logger.log)  # noqa: B010 -- phase-specific callback installation
 
         for message, args, kwargs in cls._warn_entries:
             kwargs.setdefault("stacklevel", 1)
             warnings.warn(message, *args, **kwargs)
         cls._warn_entries.clear()
-        cls._warn = warnings.warn  # type: ignore[method-assign]
+        setattr(cls, "_warn", warnings.warn)  # noqa: B010 -- phase-specific callback installation
 
     def parse_config(
         self,

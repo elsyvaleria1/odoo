@@ -9,7 +9,7 @@ class _MagicFieldsMixin(_ModelMetadataMixin, metaclass=MetaModel):
 
     _register = False
 
-    id = Id()
+    id: Id = Id()
     display_name = Char(
         compute="_compute_display_name",
         search="_search_display_name",

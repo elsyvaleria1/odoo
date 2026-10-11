@@ -87,7 +87,7 @@ class Like:
             [re.escape(part.strip()) for part in self.pattern.split("...")]
         )
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None  # type: ignore[assignment]  # object stubs cannot express the unhashable sentinel
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, str):
@@ -138,4 +138,4 @@ class Approx:
             return NotImplemented
         return self.cmp(self.value, other) == 0
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None  # type: ignore[assignment]  # object stubs cannot express the unhashable sentinel

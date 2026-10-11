@@ -15,7 +15,6 @@ _Value = str | typing.Literal[False]
 
 @dataclass(frozen=True, slots=True)
 class Verb:
-
     requires: str = "write"
     methods: tuple[str, ...] = ()
     checkpoints: tuple[str, ...] = ()
@@ -132,7 +131,9 @@ def _checkpoint(
         checked = records._verb_checkpoint(verb_name)
         if not checked:
             return defined(records, *args, **kwargs)
-        with records.env.transaction.admitting(records._name, verb_name, checked):
+        with records.env.transaction.admitting(
+            records._get_model_name(), verb_name, checked
+        ):
             return defined(records, *args, **kwargs)
 
     return checkpoint

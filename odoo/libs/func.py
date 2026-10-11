@@ -1,7 +1,8 @@
 import functools
 import operator
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Concatenate
+from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING, Any, Concatenate, Protocol
 
 if TYPE_CHECKING:
     import types
@@ -23,18 +24,23 @@ def reset_cached_properties(obj: object) -> None:
             del obj_dict[name]
 
 
-def conditional[T](condition: Any, decorator: Callable[[T], T]) -> Callable[[T], T]:
+def conditional[T](condition: object, decorator: Callable[[T], T]) -> Callable[[T], T]:
     if condition:
         return decorator
     else:
         return lambda fn: fn
 
 
-def locked[**P, R](
-    func: Callable[Concatenate[Any, P], R], /
-) -> Callable[Concatenate[Any, P], R]:
+class _HasLock(Protocol):
+    @property
+    def _lock(self) -> AbstractContextManager[object]: ...
+
+
+def locked[S: _HasLock, **P, R](
+    func: Callable[Concatenate[S, P], R], /
+) -> Callable[Concatenate[S, P], R]:
     @functools.wraps(func)
-    def holding_lock(inst: Any, *args: P.args, **kwargs: P.kwargs) -> R:
+    def holding_lock(inst: S, /, *args: P.args, **kwargs: P.kwargs) -> R:
         with inst._lock:
             return func(inst, *args, **kwargs)
 
@@ -49,7 +55,7 @@ class classproperty[T]:
         return self.fget.__get__(None, owner)()
 
     @property
-    def __doc__(self) -> str | None:  # type: ignore[override]
+    def __doc__(self) -> str | None:  # type: ignore[override]  # Computed descriptor documentation.
         return self.fget.__doc__
 
 
@@ -257,7 +263,7 @@ class lazy:
     def __imod__(self, other: Any) -> Any:
         return operator.imod(self._value, other)
 
-    def __ipow__(self, other: Any) -> Any:  # type: ignore[misc]
+    def __ipow__(self, other: Any) -> Any:  # type: ignore[misc]  # In-place power is binary; __pow__ also supports a modulus.
         return operator.ipow(self._value, other)
 
     def __ilshift__(self, other: Any) -> Any:
@@ -297,7 +303,7 @@ class lazy:
         return float(self._value)
 
     def __index__(self) -> int:
-        return self._value.__index__()
+        return operator.index(self._value)
 
     def __round__(self, ndigits: Any = None) -> Any:
         return round(self._value, ndigits)

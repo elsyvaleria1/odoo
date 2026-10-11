@@ -8,7 +8,7 @@ import re
 import sys
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
     import types
@@ -162,7 +162,7 @@ def _format_field(value: Any) -> str:
         return f"<unformattable:{type(error).__name__}>"
 
 
-class _Channel:
+class _ChannelBase:
     __slots__ = ("logger",)
 
     def __init__(self, name: str) -> None:
@@ -171,6 +171,10 @@ class _Channel:
     @property
     def enabled(self) -> bool:
         return self.logger.isEnabledFor(logging.DEBUG)
+
+
+class _Channel(_ChannelBase):
+    __slots__ = ()
 
     def __call__(self, event: str, /, **fields: Any) -> None:
         if self.logger.isEnabledFor(logging.DEBUG):
@@ -257,26 +261,26 @@ def _receiver_cursor(receiver: Any, fields: dict[str, Any]) -> Any:
         return None
 
 
-class _PerfChannel(_Channel):
+class _PerfChannel(_ChannelBase):
     __slots__ = ()
 
     def count(self, event: str, /, **fields: Any) -> None:
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug("%s", format_event(event, fields))
 
-    def __call__(  # type: ignore[override]
+    def __call__(
         self, event: str, /, cr: Any = None, **fields: Any
     ) -> _Span | _DisabledSpan:
         if not self.logger.isEnabledFor(logging.DEBUG):
             return _DISABLED_SPAN
         return _Span(self.logger, event, cr, fields)
 
-    def timed[F: Callable[..., Any]](self, func: F) -> F:
+    def timed[**P, R](self, func: Callable[P, R]) -> Callable[P, R]:
         logger = self.logger
         event = func.__name__
 
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             if not logger.isEnabledFor(logging.DEBUG):
                 return func(*args, **kwargs)
             fields: dict[str, Any] = {}
@@ -284,7 +288,7 @@ class _PerfChannel(_Channel):
             with _Span(logger, event, cr, fields):
                 return func(*args, **kwargs)
 
-        return cast("F", wrapper)
+        return wrapper
 
 
 class DebugLog:

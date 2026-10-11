@@ -141,7 +141,7 @@ def _run_post_install_tests(registry: Registry, update_module: bool) -> int:
         with _debug.perf("service.post_install_tests.assets_pregenerated"):
             with registry.cursor() as cr:
                 env = api.Environment(cr, api.SUPERUSER_ID, {})
-                env["ir.qweb"]._pregenerate_assets_bundles()  # type: ignore[attr-defined]
+                env["ir.qweb"]._pregenerate_assets_bundles()
 
     result = loader.run_suite(
         post_install_suite,
@@ -309,7 +309,7 @@ def _warm_web_pages(registry: Registry) -> None:
     try:
         with registry.cursor() as cr:
             env = api.Environment(cr, api.SUPERUSER_ID, {})
-            env["ir.qweb"]._warm_page_assets()  # type: ignore[attr-defined]
+            env["ir.qweb"]._warm_page_assets()
     except Exception:
         _logger.warning(
             "Page assets of %s were not preloaded; each worker will compute them "

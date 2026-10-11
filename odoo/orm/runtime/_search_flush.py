@@ -26,12 +26,12 @@ class _DependencyCollector:
     def collect_field(self, records: BaseModel, expression: str) -> Field[typing.Any]:
         name, prop = parse_field_expr(expression)
         field = records._fields[name]
-        key = (records._name, expression)
+        key = (records._get_model_name(), expression)
         if key in self.seen:
             return field
         self.seen.add(key)
         if field.store:
-            self.fields_by_model[records._name].add(name)
+            self.fields_by_model[records._get_model_name()].add(name)
             if records._table_inheritance_root:
                 self._collect_inheritance_tree(records, name)
         elif field.related:
@@ -39,16 +39,18 @@ class _DependencyCollector:
             for part in field.related.split("."):
                 related = self.collect_field(target, part)
                 if related.relational:
-                    target = records.env[related.comodel_name]
+                    target = records.env[related._get_comodel_name()]
         if field.is_one2many and field.inverse_name:
-            self.collect_field(records.env[field.comodel_name], field.inverse_name)
+            self.collect_field(
+                records.env[field._get_comodel_name()], field.inverse_name
+            )
         if prop and field.relational:
-            self.collect_field(records.env[field.comodel_name], prop)
+            self.collect_field(records.env[field._get_comodel_name()], prop)
         return field
 
     def _collect_inheritance_tree(self, records: BaseModel, name: str) -> None:
         env = records.env
-        for model_name in env._table_inheritance_tree(records._name):
+        for model_name in env._table_inheritance_tree(records._get_model_name()):
             if name in env[model_name]._fields:
                 self.fields_by_model[model_name].add(name)
 
@@ -70,7 +72,9 @@ class _DependencyCollector:
     def _collect_condition(self, records: BaseModel, node: DomainCondition) -> None:
         field = self.collect_field(records, node.field_expr)
         if isinstance(node.value, Domain):
-            target = records.env[field.comodel_name] if field.relational else records
+            target = (
+                records.env[field._get_comodel_name()] if field.relational else records
+            )
             self.collect_domain(target, node.value)
 
     def collect_order(
@@ -94,7 +98,7 @@ class _DependencyCollector:
     ) -> None:
         field = self.collect_field(records, match["field"])
         if field.is_many2one and not match["property"] and field not in ordered_fields:
-            target = records.env[field.comodel_name]
+            target = records.env[field._get_comodel_name()]
             if target._order:
                 self.collect_order(target, target._order, ordered_fields | {field})
 

@@ -45,7 +45,8 @@ class Integer(Field[int]):
         __get__ = _prepare_inline_get(0)
 
     @property
-    def _column_type(self) -> tuple[str, str]:  # type: ignore[override]
+    @override
+    def _column_type(self) -> tuple[str, str]:
         return ("int8", "int8") if self.bigint else ("int4", "int4")
 
     _related_bigint = property(attrgetter("bigint"))
@@ -158,7 +159,8 @@ class Float(Field[float]):
         )
 
     @property
-    def _column_type(self) -> tuple[str, str]:  # type: ignore[override]
+    @override
+    def _column_type(self) -> tuple[str, str]:
         return (
             ("numeric", "numeric")
             if self._digits is not None
@@ -253,7 +255,7 @@ class Float(Field[float]):
 
     @override
     def convert_to_export(self, value: typing.Any, record: ModelLike) -> typing.Any:
-        if value or value == 0.0:  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
+        if value or value == 0:
             return value
         return ""
 
@@ -412,7 +414,7 @@ class Monetary(Field[float]):
             if isinstance(currency_id, int):
                 currency = typing.cast(
                     "ResCurrencyProtocol",
-                    record.env[currency_field.comodel_name].browse(currency_id),
+                    record.env[currency_field._get_comodel_name()].browse(currency_id),
                 )
             else:
                 dummy = record.new({currency_field_name: currency_id})
@@ -431,7 +433,9 @@ class Monetary(Field[float]):
                     if currency_field.compute_sudo
                     else record.env
                 )
-                target = root_env[record._fields[path[0]].comodel_name].browse(root_id)
+                target = root_env[record._fields[path[0]]._get_comodel_name()].browse(
+                    root_id
+                )
                 for name in path[1:]:
                     target = target[name]
                 currency = typing.cast(
@@ -514,7 +518,7 @@ class Monetary(Field[float]):
 
     @override
     def convert_to_export(self, value: typing.Any, record: ModelLike) -> typing.Any:
-        if value or value == 0.0:  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
+        if value or value == 0:
             return value
         return ""
 

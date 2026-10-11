@@ -310,11 +310,11 @@ class _RegistryModelsMixin(_RegistryStubs):
 
     def depends_flush_fields(self, model: BaseModel) -> tuple[Field[typing.Any], ...]:
         try:
-            return self._depends_flush_fields_by_model[model._name]
+            return self._depends_flush_fields_by_model[model._get_model_name()]
         except KeyError:
             seen, closure = model._get_depends_closure()
             fields = tuple(closure)
-            self._depends_flush_fields_by_model[model._name] = fields
+            self._depends_flush_fields_by_model[model._get_model_name()] = fields
             _debug.logic(
                 "registry.depends_flush_fields_built",
                 model=model._name,
@@ -357,7 +357,7 @@ class _RegistryModelsMixin(_RegistryStubs):
             model = self.models.get(queue.popleft())
             if model is None or model._name in models:
                 continue
-            models.add(model._name)
+            models.add(model._get_model_name())
             for func in funcs:
                 queue.extend(func(model))
         return models

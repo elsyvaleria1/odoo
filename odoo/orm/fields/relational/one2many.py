@@ -41,7 +41,7 @@ class One2many(_RelationalMulti):
     type = "one2many"
     is_one2many = True
 
-    inverse_name: str = None  # type: ignore[assignment]
+    inverse_name: str | None = None
     copy: bool = False
     _inverse_is_computed: bool = False
 
@@ -71,7 +71,7 @@ class One2many(_RelationalMulti):
     def setup_nonrelated(self, model: BaseModel) -> None:
         super().setup_nonrelated(model)
         if self.inverse_name:
-            comodel = model.env[self.comodel_name]
+            comodel = model.env[self._get_comodel_name()]
             try:
                 field = comodel._fields[self.inverse_name]
                 field.setup(comodel)
@@ -105,10 +105,10 @@ class One2many(_RelationalMulti):
             inverses.add(invf, self)
 
     def _comodel_names_in_tree(self, registry: Registry) -> tuple[str, ...]:
-        comodel = registry[self.comodel_name]
+        comodel = registry[self._get_comodel_name()]
         root = getattr(comodel, "_table_inheritance_root", "")
         if not root or comodel._table != root:
-            return (self.comodel_name,)
+            return (self._get_comodel_name(),)
         names = tuple(registry.model_names_by_inheritance_root.get(root, ()))
         if _debug.logic.enabled and len(names) > 1:
             _debug.logic(
@@ -116,7 +116,7 @@ class One2many(_RelationalMulti):
                 field=f"{self.model_name}.{self.name}",
                 comodels=names,
             )
-        return names or (self.comodel_name,)
+        return names or (self._get_comodel_name(),)
 
     _description_relation_field = property(attrgetter("inverse_name"))
 
@@ -125,7 +125,7 @@ class One2many(_RelationalMulti):
         self, model: ModelLike, columns: dict[str, dict[str, typing.Any]]
     ) -> bool:
         if self.comodel_name in model.env:
-            comodel = model.env[self.comodel_name]
+            comodel = model.env[self._get_comodel_name()]
             if self.inverse_name not in comodel._fields:
                 raise UserError(
                     model.env._(
@@ -176,7 +176,7 @@ class One2many(_RelationalMulti):
         self, records: typing.Any, owner: typing.Any = None
     ) -> BaseModel | typing.Self:
         if records is not None and self._inverse_is_computed:
-            records.env[self.comodel_name]._recompute_model([self.inverse_name])
+            records.env[self.comodel_name]._recompute_model([self._get_inverse_name()])
         value: BaseModel | typing.Self = super().__get__(records, owner)
         return value
 
@@ -185,10 +185,10 @@ class One2many(_RelationalMulti):
         records = self._records_to_read(records)
         if not records:
             return
-        comodel = records.env[self.comodel_name].with_context(
+        comodel = records.env[self._get_comodel_name()].with_context(
             **self._prepare_read_context()
         )
-        inverse = self.inverse_name
+        inverse = self._get_inverse_name()
         inverse_field = comodel._fields[inverse]
 
         domain = self.get_comodel_domain(records) & Domain(inverse, "in", records.ids)
@@ -318,9 +318,7 @@ class One2many(_RelationalMulti):
             & Domain(inverse, "in", recs.ids)
             & Domain("id", "not in", lines.ids)
         )
-        orphans = comodel.with_context(active_test=False).search(  # noqa: E8507 -- see above
-            domain
-        )
+        orphans = comodel.with_context(active_test=False).search(domain)  # noqa: E8507 -- see above
         _debug.logic(
             "field.one2many.orphans_found",
             model=self.model_name,
@@ -333,17 +331,16 @@ class One2many(_RelationalMulti):
     def _attach_lines(
         self, lines: BaseModel, record: BaseModel, reference_model_field: str | None
     ) -> None:
+        inverse = self._get_inverse_name()
         if not reference_model_field:
-            lines[self.inverse_name] = record
+            lines[inverse] = record
             return
         model_name = record._get_reference_model_name()
         moved = lines.filtered(lambda line: line[reference_model_field] != model_name)
         if stay := lines - moved:
-            stay[self.inverse_name] = record
+            stay[inverse] = record
         if moved:
-            moved.write(
-                {self.inverse_name: record.id, reference_model_field: model_name}
-            )
+            moved.write({inverse: record.id, reference_model_field: model_name})
 
     def _write_real_stored(
         self,
@@ -352,7 +349,7 @@ class One2many(_RelationalMulti):
         comodel: BaseModel,
         create: bool,
     ) -> None:
-        inverse = self.inverse_name
+        inverse = self._get_inverse_name()
         inverse_field = comodel._fields[inverse]
         reference_model_field = (
             inverse_field.model_field if inverse_field.is_many2one_reference else None
@@ -621,8 +618,8 @@ class One2many(_RelationalMulti):
             )
             return Domain(not exists)._to_sql(model, alias, query)
 
-        comodel = model.env[self.comodel_name].sudo()
-        inverse_field = comodel._fields[self.inverse_name]
+        comodel = model.env[self._get_comodel_name()].sudo()
+        inverse_field = comodel._fields[self._get_inverse_name()]
         _debug.logic(
             "field.one2many.condition_strategy",
             model=model._name,

@@ -224,16 +224,12 @@ def get_dict_asts(expr: str | ast.AST) -> dict[str, ast.AST]:
     if not isinstance(expr, ast.Dict):
         msg = "Non-dict expression"
         raise ValueError(msg)
-    if not all(
-        (isinstance(key, ast.Constant) and isinstance(key.value, str))
-        for key in expr.keys
-    ):
-        msg = "Non-string literal dict key"
-        raise ValueError(msg)
-    return {
-        key.value: val  # type: ignore[union-attr]
-        for key, val in zip(expr.keys, expr.values, strict=False)
-    }
+    result: dict[str, ast.AST] = {}
+    for key, value in zip(expr.keys, expr.values, strict=True):
+        if not isinstance(key, ast.Constant) or not isinstance(key.value, str):
+            raise ValueError("Non-string literal dict key")
+        result[key.value] = value
+    return result
 
 
 def valid_view(arch: etree._Element, **kwargs: object) -> bool:

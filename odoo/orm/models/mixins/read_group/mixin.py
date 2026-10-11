@@ -315,7 +315,7 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
                     f"only supported for many2one, got {field.type!r}"
                 )
             return model._can_groupby_spec_duplicate_rows(
-                model.env[field.comodel_name], property_name
+                model.env[field._get_comodel_name()], property_name
             )
 
         return field.is_many2many
@@ -538,7 +538,7 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
                             f"Only many2one path is accepted for the {spec!r} groupby spec"
                         )
                     model._check_spec_field_read_access(field)
-                    model = model.env[field.comodel_name]
+                    model = model.env[field._get_comodel_name()]
                     sub_spec = (
                         f"{seq_fnames}:{granularity}" if granularity else seq_fnames
                     )
@@ -571,7 +571,7 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
             for path_fname in path_fnames:
                 path_field = model._fields[path_fname]
                 model._check_field_access(path_field, "read")
-                model = model.env[path_field.comodel_name]
+                model = model.env[path_field._get_comodel_name()]
             model._check_spec_field_read_access(model._fields[last_fname])
             return
         self._check_field_access(field, "read")

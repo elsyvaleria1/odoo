@@ -32,38 +32,39 @@ if typing.TYPE_CHECKING:
 
     from odoo.libs.collections import Collector
 
-    from .._protocols import (
-        AuthUserClientProtocol,
-        DecimalPrecisionProtocol,
-        IrAccessLogProtocol,
-        IrAccessObligationProtocol,
-        IrAccessProtocol,
-        IrAttachmentProtocol,
-        IrConfigParameterProtocol,
-        IrCronProtocol,
-        IrDefaultProtocol,
-        IrFieldsConverterProtocol,
-        IrHttpProtocol,
-        IrModelConstraintProtocol,
-        IrModelDataProtocol,
-        IrModelFieldsProtocol,
-        IrModelFieldsSelectionProtocol,
-        IrModelInheritProtocol,
-        IrModelProtocol,
-        IrModelRelationProtocol,
-        IrModuleModuleProtocol,
-        IrUiViewProtocol,
-        ResCompanyProtocol,
-        ResCountryProtocol,
-        ResCurrencyProtocol,
-        ResGroupsProtocol,
-        ResLangProtocol,
-        ResUsersApikeysScopeProtocol,
-        ResUsersProtocol,
-    )
     from .._typing import BaseModel, Field, ModelLike
     from ..components.core import OrmCore
     from ..primitives import IdType
+    from ._model_types import (
+        AuthUserClientModel,
+        DecimalPrecisionModel,
+        IrAccessLogModel,
+        IrAccessModel,
+        IrAccessObligationModel,
+        IrAttachmentModel,
+        IrConfigParameterModel,
+        IrCronModel,
+        IrDefaultModel,
+        IrFieldsConverterModel,
+        IrHttpModel,
+        IrModelConstraintModel,
+        IrModelDataModel,
+        IrModelFieldsModel,
+        IrModelFieldsSelectionModel,
+        IrModelInheritModel,
+        IrModelModel,
+        IrModelRelationModel,
+        IrModuleModuleModel,
+        IrQWebModel,
+        IrUiViewModel,
+        ResCompanyModel,
+        ResCountryModel,
+        ResCurrencyModel,
+        ResGroupsModel,
+        ResLangModel,
+        ResUsersApikeysScopeModel,
+        ResUsersModel,
+    )
     from .backend import StorageBackend
 
     M = typing.TypeVar("M", bound=BaseModel)
@@ -126,7 +127,7 @@ class Environment(Mapping[str, "BaseModel"]):
     privileges: frozenset[int]
     transaction: Transaction
 
-    def __new__(  # noqa: PYI034 -- Factory may return an interned instance or a different concrete subtype.
+    def __new__(  # noqa: PYI034 - the transaction cache can return a different Environment subclass
         cls,
         cr: BaseCursor,
         uid: int | None,
@@ -179,144 +180,135 @@ class Environment(Mapping[str, "BaseModel"]):
         return model_name in self.registry
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["decimal.precision"]
-    ) -> DecimalPrecisionProtocol: ...
+    ) -> DecimalPrecisionModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.attachment"]
-    ) -> IrAttachmentProtocol: ...
+    ) -> IrAttachmentModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.config_parameter"]
-    ) -> IrConfigParameterProtocol: ...
+    ) -> IrConfigParameterModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
-        self, model_name: typing.Literal["ir.cron"]
-    ) -> IrCronProtocol: ...
+    def __getitem__(self, model_name: typing.Literal["ir.cron"]) -> IrCronModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
-        self, model_name: typing.Literal["ir.http"]
-    ) -> IrHttpProtocol: ...
+    def __getitem__(self, model_name: typing.Literal["ir.http"]) -> IrHttpModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.default"]
-    ) -> IrDefaultProtocol: ...
+    ) -> IrDefaultModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
-        self, model_name: typing.Literal["ir.model"]
-    ) -> IrModelProtocol: ...
+    def __getitem__(self, model_name: typing.Literal["ir.model"]) -> IrModelModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
-        self, model_name: typing.Literal["ir.access"]
-    ) -> IrAccessProtocol: ...
+    def __getitem__(self, model_name: typing.Literal["ir.access"]) -> IrAccessModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.constraint"]
-    ) -> IrModelConstraintProtocol: ...
+    ) -> IrModelConstraintModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.data"]
-    ) -> IrModelDataProtocol: ...
+    ) -> IrModelDataModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.fields"]
-    ) -> IrModelFieldsProtocol: ...
+    ) -> IrModelFieldsModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.fields.selection"]
-    ) -> IrModelFieldsSelectionProtocol: ...
+    ) -> IrModelFieldsSelectionModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.inherit"]
-    ) -> IrModelInheritProtocol: ...
+    ) -> IrModelInheritModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.relation"]
-    ) -> IrModelRelationProtocol: ...
+    ) -> IrModelRelationModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.module.module"]
-    ) -> IrModuleModuleProtocol: ...
+    ) -> IrModuleModuleModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(self, model_name: typing.Literal["ir.qweb"]) -> IrQWebModel: ...
+
+    @typing.overload
+    def __getitem__(
         self, model_name: typing.Literal["ir.ui.view"]
-    ) -> IrUiViewProtocol: ...
+    ) -> IrUiViewModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.fields.converter"]
-    ) -> IrFieldsConverterProtocol: ...
+    ) -> IrFieldsConverterModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.company"]
-    ) -> ResCompanyProtocol: ...
+    ) -> ResCompanyModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.country"]
-    ) -> ResCountryProtocol: ...
+    ) -> ResCountryModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.currency"]
-    ) -> ResCurrencyProtocol: ...
+    ) -> ResCurrencyModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
-        self, model_name: typing.Literal["res.lang"]
-    ) -> ResLangProtocol: ...
+    def __getitem__(self, model_name: typing.Literal["res.lang"]) -> ResLangModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
-        self, model_name: typing.Literal["res.users"]
-    ) -> ResUsersProtocol: ...
+    def __getitem__(self, model_name: typing.Literal["res.users"]) -> ResUsersModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["auth.user.client"]
-    ) -> AuthUserClientProtocol: ...
+    ) -> AuthUserClientModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.users.apikeys.scope"]
-    ) -> ResUsersApikeysScopeProtocol: ...
+    ) -> ResUsersApikeysScopeModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.groups"]
-    ) -> ResGroupsProtocol: ...
+    ) -> ResGroupsModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.access.log"]
-    ) -> IrAccessLogProtocol: ...
+    ) -> IrAccessLogModel: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.access.obligation"]
-    ) -> IrAccessObligationProtocol: ...
+    ) -> IrAccessObligationModel: ...
 
     @typing.overload
     def __getitem__(self, model_name: str) -> BaseModel: ...
 
-    def __getitem__(self, model_name: str) -> typing.Any:
+    def __getitem__(self, model_name: str) -> BaseModel:
         registry = self.registry
         try:
             cls = registry.models[model_name]
@@ -430,7 +422,7 @@ class Environment(Mapping[str, "BaseModel"]):
         return self.transaction.backend
 
     @functools.cached_property
-    def user(self) -> ResUsersProtocol:
+    def user(self) -> ResUsersModel:
         return self(su=True)["res.users"].browse(self.uid)
 
     def _get_allowed_company_ids(self) -> list[int]:
@@ -449,20 +441,20 @@ class Environment(Mapping[str, "BaseModel"]):
         return company_ids
 
     @functools.cached_property
-    def company(self) -> ResCompanyProtocol:
+    def company(self) -> ResCompanyModel:
         if company_ids := self._get_allowed_company_ids():
             return self["res.company"].browse(company_ids[0])
         _debug.logic("environment.company.fallback_to_user", uid=self.uid)
         return self.user.company_id.with_env(self)
 
     @functools.cached_property
-    def companies(self) -> ResCompanyProtocol:
+    def companies(self) -> ResCompanyModel:
         if company_ids := self._get_allowed_company_ids():
             return self["res.company"].browse(company_ids)
         _debug.logic("environment.companies.fallback_to_user", uid=self.uid)
         user_company_ids = list(self.user._get_company_ids())
         current = self.user.company_id.id
-        if current in user_company_ids:
+        if isinstance(current, int) and current in user_company_ids:
             user_company_ids.remove(current)
             user_company_ids.insert(0, current)
         return self["res.company"].browse(user_company_ids)
@@ -542,9 +534,7 @@ class Environment(Mapping[str, "BaseModel"]):
             and lang != "en_US"
             and not self.registry.locale.is_lang_installed(self, lang)
         ):
-            raise UserError(  # noqa: E8505 -- see above: this one cannot be translated
-                f"Invalid language code: {lang}"
-            )
+            raise UserError(f"Invalid language code: {lang}")  # noqa: E8505 -- see above: this one cannot be translated
         return lang or None
 
     @functools.cached_property

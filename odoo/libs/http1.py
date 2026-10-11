@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import re
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Buffer, Callable, Iterator
 from dataclasses import dataclass
 from email.utils import formatdate
 from enum import Enum
@@ -407,7 +407,7 @@ class _BodyReader(io.RawIOBase):
             self.error = exc
             raise
 
-    def readinto(self, buffer: memoryview | bytearray) -> int:  # type: ignore[override]
+    def readinto(self, buffer: Buffer) -> int:
         view = memoryview(buffer).cast("B")
         data = self.read(len(view))
         view[: len(data)] = data

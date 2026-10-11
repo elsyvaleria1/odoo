@@ -95,6 +95,8 @@ class Secret:
             raise TypeError("a Secret is compared with .matches(), never ==")
         return NotImplemented
 
+    # Python disables hashing for value equality; object.__hash__'s callable
+    # annotation cannot express this supported class-level sentinel.
     __hash__ = None  # type: ignore[assignment]
 
     def __reduce_ex__(self, protocol: typing.SupportsIndex) -> typing.NoReturn:

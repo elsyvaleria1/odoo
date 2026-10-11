@@ -15,7 +15,7 @@ from urllib.request import url2pathname
 from google.protobuf.message import DecodeError
 
 import odoo
-from odoo.libs._vendor.embedded_sass_pb2 import (  # type: ignore[attr-defined]
+from odoo.libs._vendor.embedded_sass_pb2 import (
     COMPRESSED,
     CSS,
     EXPANDED,

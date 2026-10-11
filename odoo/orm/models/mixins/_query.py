@@ -160,7 +160,7 @@ class _QueryMixin(_ModelStubs):
                 return SQL.EMPTY
             self = self.with_context(__m2o_order_seen=frozenset((field, *seen)))
 
-            comodel = self.env[field.comodel_name]
+            comodel = self.env[field._get_comodel_name()]
             if property_name == "id":
                 coorder = "id"
                 sql_field = self._field_to_sql(alias, fname, query)

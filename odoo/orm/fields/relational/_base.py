@@ -89,7 +89,6 @@ if typing.TYPE_CHECKING:
 
 class _Relational(Field["BaseModel"]):
     relational: typing.Literal[True] = True
-    comodel_name: str
     domain: DomainType = []
     bypass_search_access: bool = False
     check_company: bool = False
@@ -287,20 +286,20 @@ class _Relational(Field["BaseModel"]):
                     )
                 )
                 return domain
-            company_domain = env[self.comodel_name]._check_company_domain(
+            company_domain = env[self._get_comodel_name()]._check_company_domain(
                 companies=unquote(cids)
             )
             if not field_to_check:
                 return f"{company_domain} + {domain or []}"
             else:
-                no_company_domain = env[self.comodel_name]._check_company_domain(
+                no_company_domain = env[self._get_comodel_name()]._check_company_domain(
                     companies=""
                 )
                 return f"({field_to_check} and {company_domain} or {no_company_domain}) + ({domain or []})"
         return domain
 
     def _description_allow_hierarchy_operators(self, env: Environment) -> bool:
-        comodel = env[self.comodel_name]
+        comodel = env[self._get_comodel_name()]
         return comodel._parent_name in comodel._fields
 
     def _internal_description_domain_raw(
@@ -318,7 +317,7 @@ class _Relational(Field["BaseModel"]):
     ) -> bool:
         if operator == "in":
             return isinstance(value, COLLECTION_TYPES)
-        comodel = env[self.comodel_name]
+        comodel = env[self._get_comodel_name()]
         active_name = comodel._active_name
         if not (active_name and operator in ("any", "any!")):
             return False
@@ -567,7 +566,7 @@ class _RelationalMulti(_Relational):
         if (
             env.su
             or callable(self.domain)
-            or is_search_overridden(type(env[self.comodel_name]))
+            or is_search_overridden(type(env[self._get_comodel_name()]))
         ):
             return records
         sudo_slot = env.core.get_context_data_or_none(
@@ -701,17 +700,19 @@ class _RelationalMulti(_Relational):
         return key[index] is True or key[index] is None
 
     def _reads_as_superuser(self, env: Environment) -> bool:
-        comodel = env[self.comodel_name]
+        comodel = env[self._get_comodel_name()]
         callable_domain = callable(self.domain)
         search_overridden = is_search_overridden(type(comodel))
         policy = env.registry.access_policy
         model_allowed = rule = no_policy = None
         if not (callable_domain or search_overridden):
             try:
-                model_allowed = policy.model_allowed(env, self.comodel_name, "read")
+                model_allowed = policy.model_allowed(
+                    env, self._get_comodel_name(), "read"
+                )
                 rule = bool(
                     model_allowed
-                    and policy.record_domain(env, self.comodel_name, "read")
+                    and policy.record_domain(env, self._get_comodel_name(), "read")
                 )
             except NotImplementedError:
                 no_policy = True
@@ -755,13 +756,13 @@ class _RelationalMulti(_Relational):
     ) -> bool:
         if fnames is None:
             return True
-        comodel_cls = type(env[self.comodel_name])
+        comodel_cls = type(env[self._get_comodel_name()])
         memo = env.transaction.access_memo
         if is_search_overridden(comodel_cls):
             visibility = comodel_cls._search_visibility_fields
             if visibility is None:
                 return True
-            observed = memo.observed_facts(self.comodel_name)
+            observed = memo.observed_facts(self._get_comodel_name())
             if model_name == self.comodel_name:
                 if not set(visibility).isdisjoint(fnames) or any(
                     (model_name, fname) in observed for fname in fnames
@@ -770,7 +771,7 @@ class _RelationalMulti(_Relational):
             elif (model_name, "id") in observed:
                 return True
         try:
-            facts = memo.read_facts(self._scope_env(env, key), self.comodel_name)
+            facts = memo.read_facts(self._scope_env(env, key), self._get_comodel_name())
         except NotImplementedError:
             return False
         except AccessError:
@@ -800,7 +801,8 @@ class _RelationalMulti(_Relational):
         evicted = 0
         computing = env.core.get_protected_ids(self)
         narrows_superuser = not (
-            callable(self.domain) or is_search_overridden(type(env[self.comodel_name]))
+            callable(self.domain)
+            or is_search_overridden(type(env[self._get_comodel_name()]))
         )
         for key, slot in user_scopes:
             if not self._scope_reads_through(env, key, fnames, model_name):
@@ -837,12 +839,12 @@ class _RelationalMulti(_Relational):
         env = comodel.env
         if env.su or not is_search_overridden(type(comodel)):
             return contextlib.nullcontext()
-        return env.transaction.access_memo.observing(self.comodel_name)
+        return env.transaction.access_memo.observing(self._get_comodel_name())
 
     def _watch_user_scope(self, env: Environment) -> None:
         if env.su or (self.compute and self.compute_sudo and not self.store):
             return
-        comodel_cls = type(env[self.comodel_name])
+        comodel_cls = type(env[self._get_comodel_name()])
         everything = (
             is_search_overridden(comodel_cls)
             and comodel_cls._search_visibility_fields is None
@@ -939,7 +941,7 @@ class _RelationalMulti(_Relational):
         if not additions:
             return
         own = env.get_cache_key(self)
-        comodel = env[self.comodel_name]
+        comodel = env[self._get_comodel_name()]
         synced = evicted = 0
         for key, slot in list(env.core.iter_context_caches(self)):
             if key in (own, PENDING_SCOPE_KEY):
@@ -1074,7 +1076,7 @@ class _RelationalMulti(_Relational):
             return ids
 
         elif isinstance(value, (list, tuple)):
-            comodel = record.env[self.comodel_name]
+            comodel = record.env[self._get_comodel_name()]
             browse: typing.Callable[[typing.Any], BaseModel]
             if record and not record.id:
 
@@ -1135,7 +1137,7 @@ class _RelationalMulti(_Relational):
 
     @override
     def _get_origin_value(self, origin: BaseModel) -> BaseModel:
-        return origin.env[self.comodel_name].browse(self._get_raw_ids(origin))
+        return origin.env[self._get_comodel_name()].browse(self._get_raw_ids(origin))
 
     def _prepare_read_context(self) -> dict[str, typing.Any]:
         context = {
@@ -1147,7 +1149,7 @@ class _RelationalMulti(_Relational):
     def _prepare_corecords(
         self, env: Environment, ids: tuple[int | NewId, ...], prefetch_ids: typing.Any
     ) -> BaseModel:
-        Comodel = env.registry[self.comodel_name]
+        Comodel = env.registry[self._get_comodel_name()]
         corecords = object.__new__(Comodel)
         corecords.env = env
         corecords._ids = ids
@@ -1187,7 +1189,7 @@ class _RelationalMulti(_Relational):
         self, value: typing.Any, record: ModelLike
     ) -> list[CommandValue] | typing.Literal[False]:
         if isinstance(value, tuple):
-            value = record.env[self.comodel_name].browse(value)
+            value = record.env[self._get_comodel_name()].browse(value)
 
         if is_recordset(value) and value._name == self.comodel_name:
 
@@ -1333,7 +1335,7 @@ class _RelationalMulti(_Relational):
         self, records_commands_list: Sequence[tuple[BaseModel, list[CommandValue]]]
     ) -> tuple[BaseModel, BaseModel]:
         model = records_commands_list[0][0].browse()
-        comodel = model.env[self.comodel_name].with_context(**self.context)
+        comodel = model.env[self._get_comodel_name()].with_context(**self.context)
         if not self.store and not any(
             command[0] in _COMODEL_WRITING_COMMANDS
             for _recs, commands in records_commands_list
@@ -1376,7 +1378,7 @@ class _RelationalMulti(_Relational):
         query: Query,
     ) -> SQL:
         assert field_expr == self.name, "Supporting condition only to field"
-        comodel = model.env[self.comodel_name]
+        comodel = model.env[self._get_comodel_name()]
         if not self.store:
             raise ValueError(f"Cannot convert {self} to SQL because it is not stored")
 

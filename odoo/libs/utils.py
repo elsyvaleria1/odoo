@@ -1,7 +1,7 @@
 import copy
 import re
 from contextlib import ContextDecorator, suppress
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, TypeGuard, overload
 
 if TYPE_CHECKING:
     import types
@@ -22,7 +22,27 @@ def discardattr(obj: object, key: str) -> None:
         delattr(obj, key)
 
 
-def is_list_of(values: object, type_: type | tuple[type, ...]) -> bool:
+@overload
+def is_list_of[T, V](
+    values: list[V], type_: type[T] | tuple[type[T], ...]
+) -> TypeGuard[list[T]]: ...
+
+
+@overload
+def is_list_of[T](
+    values: tuple[object, ...], type_: type[T] | tuple[type[T], ...]
+) -> TypeGuard[tuple[T, ...]]: ...
+
+
+@overload
+def is_list_of[T](
+    values: object, type_: type[T] | tuple[type[T], ...]
+) -> TypeGuard[list[T] | tuple[T, ...]]: ...
+
+
+def is_list_of(
+    values: object, type_: type[object] | tuple[type[object], ...]
+) -> TypeGuard[list[object] | tuple[object, ...]]:
     return isinstance(values, (list, tuple)) and all(
         isinstance(item, type_) for item in values
     )

@@ -79,7 +79,7 @@ class _ReadGroupFormatMixin(_ReadGroupEmptyMixin):
                 groupby_seq = (
                     f"{chain_fnames}:{granularity}" if granularity else chain_fnames
                 )
-                model = self.env[field.comodel_name]
+                model = self.env[field._get_comodel_name()]
                 _debug.logic(
                     "read_group.postprocess.chained_groupby",
                     model=self._name,
@@ -91,7 +91,7 @@ class _ReadGroupFormatMixin(_ReadGroupEmptyMixin):
 
             registry = self.env.registry
             Model = (
-                registry[field.comodel_name]
+                registry[field._get_comodel_name()]
                 if field.relational
                 else registry[self._name]
             )
@@ -135,7 +135,7 @@ class _ReadGroupFormatMixin(_ReadGroupEmptyMixin):
             )
             registry = self.env.registry
             Model = (
-                registry[field.comodel_name]
+                registry[field._get_comodel_name()]
                 if field.relational
                 else registry[self._name]
             )

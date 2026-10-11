@@ -3,18 +3,62 @@ __all__ = ["Collector", "ReversedIterable", "StackMap"]
 import itertools
 import typing
 from collections.abc import Iterable, Iterator, MutableMapping, Reversible
-from typing import Any
+from typing import Any, Protocol
+
+
+class _SupportsKeysAndGetItem[K, V](Protocol):
+    def keys(self) -> Iterable[K]: ...
+    def __getitem__(self, key: K, /) -> V: ...
+
+
+class _SupportsItems[K, V](Protocol):
+    def items(self) -> Iterable[tuple[K, V]]: ...
+
+
+type _CollectorInput[K, T] = (
+    _SupportsKeysAndGetItem[K, Iterable[T]]
+    | _SupportsItems[K, Iterable[T]]
+    | Iterable[tuple[K, Iterable[T]]]
+)
 
 
 class Collector[K, T](dict[K, tuple[T, ...]]):
     __slots__ = ()
 
+    @typing.overload
+    def __init__(self, mapping: _CollectorInput[K, T] = (), /) -> None: ...
+
+    @typing.overload
+    def __init__(
+        self: Collector[str, T],
+        mapping: _CollectorInput[str, T] = (),
+        /,
+        **kwargs: Iterable[T],
+    ) -> None: ...
+
     def __init__(self, mapping: Any = (), /, **kwargs: Iterable[T]) -> None:
         super().__init__()
         self.update(mapping, **kwargs)
 
+    @typing.overload
+    def update(self, mapping: _CollectorInput[K, T] = (), /) -> None: ...
+
+    @typing.overload
+    def update(
+        self: Collector[str, T],
+        mapping: _CollectorInput[str, T] = (),
+        /,
+        **kwargs: Iterable[T],
+    ) -> None: ...
+
     def update(self, mapping: Any = (), /, **kwargs: Iterable[T]) -> None:
-        items = mapping.items() if hasattr(mapping, "items") else mapping
+        if hasattr(mapping, "items"):
+            items = mapping.items()
+        elif hasattr(mapping, "keys"):
+            keys = mapping.keys()
+            items = ((key, mapping[key]) for key in keys)
+        else:
+            items = mapping
         for key, val in itertools.chain(items, kwargs.items()):
             self[key] = val
 
@@ -26,8 +70,10 @@ class Collector[K, T](dict[K, tuple[T, ...]]):
     def __getitem__(self, key: K) -> tuple[T, ...]:
         return dict.get(self, key, ())
 
-    @typing.overload  # type: ignore[override]
+    @typing.overload  # type: ignore[override]  # Missing keys default to an empty tuple, rather than None.
     def get(self, key: K, /) -> tuple[T, ...]: ...
+    @typing.overload
+    def get(self, key: K, /, default: tuple[T, ...]) -> tuple[T, ...]: ...
     @typing.overload
     def get[D](self, key: K, /, default: D) -> tuple[T, ...] | D: ...
 
@@ -36,6 +82,8 @@ class Collector[K, T](dict[K, tuple[T, ...]]):
 
     @typing.overload
     def pop(self, key: K, /) -> tuple[T, ...]: ...
+    @typing.overload
+    def pop(self, key: K, /, default: tuple[T, ...]) -> tuple[T, ...]: ...
     @typing.overload
     def pop[D](self, key: K, /, default: D) -> tuple[T, ...] | D: ...
 

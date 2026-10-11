@@ -11,6 +11,7 @@ if typing.TYPE_CHECKING:
 
 class _RegistryStubs:
     if typing.TYPE_CHECKING:
+        _lock: typing.ClassVar[AbstractContextManager[object]]
         db_name: str
         models: dict[str, type[BaseModel]]
         ready: bool

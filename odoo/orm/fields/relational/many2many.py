@@ -90,7 +90,7 @@ class Many2many(_RelationalMulti):
             if not (self.relation and self.column1 and self.column2):
                 if not self.relation:
                     self._explicit = False
-                comodel = model.env[self.comodel_name]
+                comodel = model.env[self._get_comodel_name()]
                 if not self.relation:
                     tables = sorted([model._table, comodel._table])
                     assert tables[0] != tables[1], (
@@ -206,7 +206,7 @@ class Many2many(_RelationalMulti):
         records = self._records_to_read(records)
         if not records:
             return
-        comodel = records.env[self.comodel_name].with_context(
+        comodel = records.env[self._get_comodel_name()].with_context(
             **self._prepare_read_context()
         )
 
@@ -231,7 +231,7 @@ class Many2many(_RelationalMulti):
             and not self._superuser_holds_links(records)
             and not (
                 records.env.registry.access_policy.record_domain(
-                    comodel.env, comodel._name, "read"
+                    comodel.env, comodel._get_model_name(), "read"
                 ).is_true()
             )
         )

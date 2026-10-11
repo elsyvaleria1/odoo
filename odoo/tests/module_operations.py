@@ -204,7 +204,7 @@ def test_cycle(args: argparse.Namespace) -> None:
                 {module.id: module.dependencies_id.linked_id.ids for module in modules}
             )
         )
-        modules_todo = [(module.id, module.name) for module in modules]
+        modules_todo = [(int(module), module.name) for module in modules]
 
     resume = args.resume_at
     if resume and resume not in {name for _, name in modules_todo}:
@@ -247,7 +247,7 @@ def test_uninstall(args: argparse.Namespace) -> None:
         with Registry(args.database).cursor() as cr:
             env = odoo.api.Environment(cr, odoo.api.SUPERUSER_ID, {})
             module = env["ir.module.module"].search([("name", "=", module_name)])
-            module_id, module_state = module.id, module.state
+            module_id, module_state = int(module), module.state
 
         _debug.logic(
             "test.modules.uninstall_state",

@@ -11,6 +11,8 @@ from odoo.libs.worker_thread import current_worker_thread
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from odoo.orm.runtime.environment import Environment
+
 OUTLIER_PERCENTILE = 5
 
 _benchmark_logger = logging.getLogger(__name__)
@@ -430,16 +432,20 @@ def compare_results(baseline: list[dict], current: list[dict]) -> str:
 
 
 class BenchmarkCase:
+    """Cooperative mixin for database test cases."""
+
     benchmark_log_prefix = "BENCHMARK"
     benchmark_iterations = 30
     benchmark_warmup = 5
 
     all_results: ClassVar[list[BenchmarkStats]]
-    env: Any
+    env: Environment
 
     @classmethod
     def setUpClass(cls) -> None:
-        super().setUpClass()  # type: ignore[misc]
+        # The next base in the host test class's MRO supplies unittest setup.
+        setup_class: Callable[[], None] = getattr(super(), "setUpClass")  # noqa: B009 -- cooperative mixin boundary
+        setup_class()
         cls.all_results = []
 
     def _run_benchmark(

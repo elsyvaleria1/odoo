@@ -82,13 +82,17 @@ class UndoLog:
     def span(self) -> tuple[HookMark | None, int]:
         return (self._marks[-1] if self._marks else None, self._rewinds)
 
-    def record(self, undo: Callable[..., object], *args: Any) -> None:
+    def record[*Args](self, undo: Callable[[*Args], object], *args: *Args) -> None:
         self._entries.append((undo, args, _TRANSACTIONAL))
 
-    def record_durable(self, undo: Callable[..., object], *args: Any) -> None:
+    def record_durable[*Args](
+        self, undo: Callable[[*Args], object], *args: *Args
+    ) -> None:
         self._entries.append((undo, args, _DURABLE))
 
-    def record_strict(self, undo: Callable[..., object], *args: Any) -> None:
+    def record_strict[*Args](
+        self, undo: Callable[[*Args], object], *args: *Args
+    ) -> None:
         self._entries.append((undo, args, _STRICT))
 
     def mark(self, full: bool, strict: bool = False) -> HookMark:
@@ -245,7 +249,7 @@ class JournaledList(list[Any]):
             self._log.record(_truncate_list, self, len(self))
         list.extend(self, values)
 
-    def __iadd__(self, values: Iterable[Any], /) -> Self:  # type: ignore[misc]
+    def __iadd__(self, values: Iterable[Any], /) -> Self:  # type: ignore[misc]  # Mutation preserves the journaled container's identity.
         self.extend(values)
         return self
 
@@ -468,7 +472,7 @@ class JournaledDict(dict[Any, Any]):
         for key, value in kwargs.items():
             self[key] = value
 
-    def __ior__(self, other: Any, /) -> Self:  # type: ignore[misc]
+    def __ior__(self, other: Any, /) -> Self:  # type: ignore[misc]  # Mutation preserves the journaled container's identity.
         self.update(other)
         return self
 

@@ -304,7 +304,7 @@ class Cloc:
             if (m := odoo.modules.Manifest.for_addon(name, display_warning=False))
         }
 
-        domain: list[tuple[str, str, Any]] = [("state", "=", "installed")]
+        domain: list[str | tuple[str, str, Any]] = [("state", "=", "installed")]
         if env["ir.module.module"]._fields.get("imported"):
             domain.append(("imported", "=", False))
         module_list = env["ir.module.module"].search(domain).mapped("name")

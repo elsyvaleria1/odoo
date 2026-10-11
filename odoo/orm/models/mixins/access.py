@@ -788,12 +788,16 @@ class AccessMixin(_ModelStubs):
         prefetch: defaultdict[str, dict[IdType, None]] = defaultdict(dict)
         for entries in groups.values():
             for entry in entries:
-                prefetch[entry[2]._name].update(dict.fromkeys(entry[2]._ids))
+                prefetch[entry[2]._get_model_name()].update(
+                    dict.fromkeys(entry[2]._ids)
+                )
         for (name, _companies_ids), entries in groups.items():
             companies = entries[0][3]
             comodel = entries[0][2].browse()
             all_corecords = comodel.union(*(entry[2] for entry in entries))
-            all_corecords = all_corecords.with_prefetch(tuple(prefetch[comodel._name]))
+            all_corecords = all_corecords.with_prefetch(
+                tuple(prefetch[comodel._get_model_name()])
+            )
             domain = all_corecords._check_company_domain(companies)
             if not domain:
                 continue

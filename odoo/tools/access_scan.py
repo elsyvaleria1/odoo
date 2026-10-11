@@ -70,7 +70,7 @@ def get_accessible_ids(
     chunk_max: int,
     tiebreak: str = "id ASC",
     keyset: bool = False,
-    **kwargs,
+    **kwargs: Any,
 ) -> list[int]:
     scan_order = stable_order(order or model._order, tiebreak)
     seek = _seek_operator(scan_order) if keyset else None

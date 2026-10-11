@@ -42,6 +42,10 @@ class _ModelStubs:
         pool: Registry
         _fields: Mapping[str, Field[typing.Any]]
         _name: str
+
+        @classmethod
+        def _get_model_name(cls) -> str: ...
+
         _table: str
         _transient: bool
         id: int

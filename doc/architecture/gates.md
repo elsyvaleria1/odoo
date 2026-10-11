@@ -59,14 +59,17 @@ uv venv --python python3 ~/.cache/odoo-mypy/<pin> && uv pip install --python ~/.
 ~/.cache/odoo-mypy/<pin>/bin/mypy --no-incremental --config-file mypy.ini \
     -p odoo.orm -p odoo.db -p odoo.libs -p odoo.http -p odoo.service -p odoo.modules
 ~/.cache/odoo-mypy/<pin>/bin/mypy --no-incremental --config-file mypy.ini \
-    -p odoo.tools -p odoo.cli -p odoo.tests
+    -p odoo.tools -p odoo.cli -p odoo.tests -p tooling.typing
 ```
 
 `<pin>` is the `mypy==` line of `requirements-dev.txt`. `mypy.ini`
-holds `odoo.orm` to `disallow_untyped_defs` and `disallow_incomplete_defs`
-outside its test trees (0 on 2026-09-22, from 384 that morning): a function
-added to the ORM without a complete signature fails the core lane. It holds
-`warn_return_any` there too (0 on 2026-10-03, from 82): a function that
+holds the eight production packages (`odoo.orm`, `odoo.db`, `odoo.libs`,
+`odoo.http`, `odoo.service`, `odoo.modules`, `odoo.tools`, `odoo.cli`) to
+`disallow_untyped_defs` and `disallow_incomplete_defs`: a function added there
+without a complete signature fails its package's lane. It holds
+`warn_unused_ignores` globally, so stale local suppressions fail their lane.
+It holds
+`warn_return_any` in `odoo.orm` too (0 on 2026-10-03, from 82): a function that
 declares a type and returns an `Any` fails it; a value from untyped territory
 (a psycopg row, the context, a memo dict, a field read by a runtime name) is
 declared on a local, not cast. And it holds `disallow_any_generics` (0 on
@@ -103,6 +106,82 @@ where an `OrderedSet` was declared, `with_company` given `Any | BaseModel`).
 The `with_company` diagnostic was a declaration defect: a company record need
 not have the receiver's model. Its input now accepts model records and the
 environment's company protocol, while its result retains the receiver's type.
+
+The foundational packages `odoo.libs.collections`, `odoo.libs.iteration` and
+the modules `func`, `lru`, `callbacks`, `settings`, `utils`, `debug_log`, `http1` also require
+parameterized generics, reject `Any` returned where a concrete type is declared,
+reject untyped decorators and implicit re-exports, and check for unused local
+suppressions. Suppressions on immutable containers document deliberately restored hashing or refused
+mutation. `tooling/typing/contracts.py` pins the public inference with
+`assert_type`, and pins rejected calls with specific ignored diagnostics:
+`warn_unused_ignores` fails if an invalid call becomes accepted. It covers lock
+decorators' receiver and parameter binding, sequence narrowing, collector inputs
+and defaults, cache defaults, frozen mapping factories, ordered set operations,
+grouping views, callback arity, document reader/writer signatures, timing
+decorators and settings dataclasses. Run it with the checked
+implementations, in the same bare environment:
+
+```bash
+~/.cache/odoo-mypy/<pin>/bin/mypy --no-incremental --config-file mypy.ini \
+    -p odoo.libs.collections -p odoo.libs.iteration \
+    -m odoo.libs.func -m odoo.libs.lru -m odoo.libs.callbacks \
+    -m odoo.libs.settings -m odoo.libs.utils \
+    -m odoo.libs.debug_log -m odoo.libs.http1 \
+    -m tooling.typing.contracts -m tooling.typing.test_collector
+python -m unittest discover -s tooling/typing -p 'test_*.py'
+```
+
+The runtime tests cover the collector's duck-typed `keys`/`__getitem__` input,
+the same input shape `dict.update` accepts, along with keyword precedence,
+empty values and omitted versus explicit defaults. They also cover enabled and
+disabled timing decorators, ordered weak environment membership, index updates
+through set operations, XML-RPC host and buffer inputs, and cooperative HTTP
+and HTTPS pool dispatch. Configuration tests preserve generation invalidation,
+one-time buffered logging, and warning caller locations. Test-support contracts
+preserve typed assertion exceptions and nullable database state before setup;
+database-backed case classes expose their initialized environment, registry,
+and cursor. `tooling/typing/support_contracts.py` also pins recordset slices,
+AST root types, and generated protobuf scalar fields.
+
+The Sass protobuf stub is generated from the descriptor already embedded in
+the vendored Python module. Regenerate it in an isolated environment with
+grpcio-tools==1.84.0 installed, using
+`python tooling/typing/generate_sass_stub.py`. The checker environment remains
+the bare mypy environment described above.
+
+`tooling/typing/runtime_contracts.py` checks nullable field metadata and module
+loading state alongside their checked accessors. It also checks the environment
+collection's invariant mutable-set interface and rejects secrets where a
+`Hashable` is required.
+Framework prototypes retain their absent `None` model name; registered models
+require a nonempty name. `BaseModel._name` reflects that nullable state and
+`_get_model_name()` checks the registration precondition for APIs needing a
+string. The lifecycle mixin stubs describe initialized models; the prototype
+declaration documents that one initialization exception. Field column types expose a read-only interface because
+subclasses may implement them as computed properties. Windows directory helpers
+are checked inside their platform guard; validate that branch explicitly with:
+
+```bash
+~/.cache/odoo-mypy/<pin>/bin/mypy --no-incremental --config-file mypy.ini \
+    --platform win32 -m odoo.libs.filesystem.appdirs
+~/.cache/odoo-mypy/<pin>/bin/mypy --no-incremental --config-file mypy.ini \
+    -m tooling.typing.runtime_contracts \
+    -m tooling.typing.test_environment_set -m tooling.typing.test_http_contracts
+```
+
+Literal framework model lookups combine the common `BaseModel` interface with
+the corresponding addon protocol in annotation-only classes in
+`odoo/orm/runtime/_model_types.py`. They keep the concrete model through
+recordset operations without registering any classes at runtime. The string
+fallback remains `BaseModel`; the environment's user and company properties
+also retain their model contracts. `tooling/typing/orm_contracts.py` checks every
+declared lookup, recordset operations and rejected arguments:
+
+```bash
+~/.cache/odoo-mypy/<pin>/bin/mypy --no-incremental --config-file mypy.ini \
+    -p odoo.orm -m tooling.typing.orm_contracts
+```
+
 `doc/architecture/factcheck.sh` derives the figures these pages state (mixin
 composition, `tools` re-exports, signalling tables, loader phases, service
 defaults) from the code, and fails when a page stops citing one.

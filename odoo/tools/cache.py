@@ -23,7 +23,7 @@ if typing.TYPE_CHECKING:
     from odoo.libs.lru import LRU
     from odoo.models import BaseModel
 
-unsafe_eval = eval  # noqa: S307 -- Evaluates cache-key expressions declared by Python decorators in trusted server code.
+unsafe_eval = eval  # noqa: S307 -- compiled cache keys intentionally allow expressions
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -364,7 +364,7 @@ class ormcache:
                 )
             return value
 
-        get_cached_result.__cache__ = self  # type: ignore[attr-defined]
+        setattr(get_cached_result, "__cache__", self)  # noqa: B010 - attach decorator metadata to the generated function
         return typing.cast("C", get_cached_result)
 
     def add_value(
@@ -576,7 +576,7 @@ def _format_ormcache_stats(
 
 
 def _log_ormcache_stats(show_size: bool) -> None:
-    global _logger_state  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
+    global _logger_state  # noqa: PLW0603 -- state shared with the signal handler under _logger_lock
     try:
         collected = _get_ormcache_stats(show_size)
         if collected is None:
@@ -601,7 +601,7 @@ def log_ormcache_stats(
     if sig not in (None, signal.SIGUSR1, signal.SIGUSR2):
         return
 
-    global _logger_state  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
+    global _logger_state  # noqa: PLW0603 -- state shared with the logging thread under _logger_lock
     with _logger_lock:
         if _logger_state != "wait":
             _logger_state = "abort"

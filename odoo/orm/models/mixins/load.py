@@ -347,7 +347,7 @@ class LoadMixin(_ModelStubs):
                         }
                     )
                     break
-                model = self.env[field.comodel_name]
+                model = self.env[field._get_comodel_name()]
         return messages
 
     def _collect_load_batch(
@@ -381,7 +381,7 @@ class LoadMixin(_ModelStubs):
             if isinstance(value, str):
                 tokens[self._name].add(value)
             elif field.is_x2many and isinstance(value, list):
-                comodel = self.env[field.comodel_name]
+                comodel = self.env[field._get_comodel_name()]
                 for command in value:
                     if (
                         isinstance(command, (list, tuple))
@@ -447,7 +447,7 @@ class LoadMixin(_ModelStubs):
         log: ImportLog,
     ) -> list[ExtractedRecord]:
         if relfield not in property_definitions:
-            comodel = self.env[self._fields[relfield].comodel_name]
+            comodel = self.env[self._fields[relfield]._get_comodel_name()]
         else:
             comodel = self.env[property_definitions[relfield]["comodel"]]
 

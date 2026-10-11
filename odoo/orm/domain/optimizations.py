@@ -14,6 +14,7 @@ from odoo.libs.sql import SQL
 from odoo.libs.text import str2bool
 from odoo.tools import Query
 
+from ..decorators import stamp
 from ..primitives import COLLECTION_TYPES
 from .ast import (
     _FALSE_DOMAIN,
@@ -161,7 +162,7 @@ def nary_condition_optimization(
                 )
             return result if merged_any else domains
 
-        optimizer._match_operators = frozenset(operators)  # type: ignore[attr-defined]
+        stamp(optimizer, _match_operators=frozenset(operators))
         nary_optimization(optimizer)
 
         return optimization
@@ -396,8 +397,12 @@ def _optimize_any_domain_at_level(
         raise condition._prepare_condition_error(
             "Cannot use 'any' with non-relational fields"
         )
+    if field.comodel_name is None:
+        raise condition._prepare_condition_error(
+            "Cannot determine the comodel relation"
+        )
     try:
-        comodel = model.env[field.comodel_name]
+        comodel = model.env[field._get_comodel_name()]
     except KeyError:
         raise condition._prepare_condition_error(
             "Cannot determine the comodel relation"
@@ -815,9 +820,9 @@ def _get_hierarchy_comodel(
     condition: DomainCondition, model: BaseModel, field: Field[typing.Any]
 ) -> BaseModel:
     if field.is_many2one:
-        return model.env[field.comodel_name].with_context(active_test=False)
+        return model.env[field._get_comodel_name()].with_context(active_test=False)
     if field.is_x2many:
-        return model.env[field.comodel_name].with_context(**field.context)
+        return model.env[field._get_comodel_name()].with_context(**field.context)
     if field.name == "id":
         return model
     raise condition._prepare_condition_error(
@@ -952,7 +957,7 @@ def access_condition_target(
             "The 'access' operator takes a field of the model, not a path"
         )
     if field.name == "id":
-        comodel_name = model._name
+        comodel_name = model._get_model_name()
     elif (field.is_many2one or field.is_one2one) and field.comodel_name:
         comodel_name = field.comodel_name
     else:
@@ -1111,7 +1116,7 @@ def _decides_archived(condition: DomainCondition, model: BaseModel) -> bool:
     field = condition._get_field(model)
     if not field.is_x2many:
         return False
-    active_name = model.env[field.comodel_name]._active_name
+    active_name = model.env[field._get_comodel_name()]._active_name
     return bool(active_name) and any(
         sub.field_expr == active_name for sub in condition.value.iter_conditions()
     )

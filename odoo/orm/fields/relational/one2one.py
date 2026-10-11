@@ -21,7 +21,6 @@ if typing.TYPE_CHECKING:
 
 
 class One2one(One2many):
-
     is_one2one = True
 
     def __init__(
@@ -43,7 +42,7 @@ class One2one(One2many):
         super().setup_nonrelated(model)
         if not self.inverse_name or model._abstract:
             return
-        comodel = model.env[self.comodel_name]
+        comodel = model.env[self._get_comodel_name()]
         inverse = comodel._fields[self.inverse_name]
         if not isinstance(inverse, Many2one):
             raise TypeError(
@@ -57,8 +56,9 @@ class One2one(One2many):
             )
 
     def join(self, model: ModelLike, alias: str, query: Query) -> tuple[BaseModel, str]:
-        comodel = model.env[self.comodel_name]
-        inverse = comodel._fields[self.inverse_name]
+        comodel = model.env[self._get_comodel_name()]
+        inverse_name = self._get_inverse_name()
+        inverse = comodel._fields[inverse_name]
         if not inverse.store:
             raise ValueError(
                 f"Cannot convert {self} to SQL because its inverse {inverse} is not stored"
@@ -78,7 +78,7 @@ class One2one(One2many):
             comodel._table,
             SQL(
                 "%s = %s",
-                comodel._field_to_sql(coalias, self.inverse_name, query),
+                comodel._field_to_sql(coalias, inverse_name, query),
                 SQL.identifier(alias, "id"),
             ),
         )

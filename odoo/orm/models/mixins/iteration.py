@@ -47,7 +47,7 @@ class IterationMixin(_ModelStubs):
         return record
 
     @api.private
-    def browse(self, ids: int | typing.Iterable[IdType] = ()) -> Self:
+    def browse(self, ids: int | typing.Iterable[IdType] | None = ()) -> Self:
         id_tuple: tuple[IdType, ...]
         if not ids:
             id_tuple = ()

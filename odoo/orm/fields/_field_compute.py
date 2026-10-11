@@ -121,7 +121,10 @@ def _iter_recursive_reads(
         return
     inverse = (
         probe._fields.get(first.inverse_name)
-        if through_parent and len(prefix) == 1 and first.is_one2many
+        if through_parent
+        and len(prefix) == 1
+        and first.is_one2many
+        and first.inverse_name is not None
         else None
     )
     if (

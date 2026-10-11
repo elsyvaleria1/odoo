@@ -369,7 +369,7 @@ class Headers(Proxy):
     add = ProxyFunc(None)
     add_header = ProxyFunc(None)
     clear = ProxyFunc(None)
-    copy = ProxyFunc(lambda v: Headers(v))  # noqa: PLW0108 -- Headers is defined after this class body.
+    copy = ProxyFunc(lambda v: Headers(v))  # noqa: PLW0108 - Headers is bound after the class body completes
     extend = ProxyFunc(None)
     get = ProxyFunc()
     get_all = ProxyFunc()
@@ -390,6 +390,7 @@ class Headers(Proxy):
     def __eq__(self, other: object) -> bool:
         return self._wrapped__ == _unwrap_proxy(other)
 
+    # A mutable value proxy is unhashable; object.__hash__ is typed as callable.
     __hash__ = None  # type: ignore[assignment]
 
 
@@ -420,6 +421,7 @@ class ResponseCacheControl(Proxy):
     def __eq__(self, other: object) -> bool:
         return self._wrapped__ == _unwrap_proxy(other)
 
+    # A mutable value proxy is unhashable; object.__hash__ is typed as callable.
     __hash__ = None  # type: ignore[assignment]
 
 
@@ -432,7 +434,6 @@ class ResponseStream(Proxy):
 
 
 class Response(Proxy):
-
     _wrapped__ = _Response
 
     __call__ = ProxyFunc()
@@ -452,7 +453,7 @@ class Response(Proxy):
     delete_cookie = ProxyFunc(None)
     direct_passthrough = ProxyAttr(bool)
     expires = ProxyAttr()
-    force_type = ProxyFunc(lambda v: Response(v))  # noqa: PLW0108 -- Response is defined after this class body.
+    force_type = ProxyFunc(lambda v: Response(v))  # noqa: PLW0108 - Response is bound after the class body completes
     freeze = ProxyFunc(None)
     get_data = ProxyFunc()
     get_etag = ProxyFunc()
@@ -465,7 +466,7 @@ class Response(Proxy):
     json = ProxyAttr()
     last_modified = ProxyAttr()
     location = ProxyAttr(str)
-    make_conditional = ProxyFunc(lambda v: Response(v))  # noqa: PLW0108 -- Response is defined after this class body.
+    make_conditional = ProxyFunc(lambda v: Response(v))  # noqa: PLW0108 - Response is bound after the class body completes
     make_sequence = ProxyFunc(None)
     max_cookie_size = ProxyAttr(int)
     mimetype = ProxyAttr(str)

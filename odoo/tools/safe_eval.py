@@ -1,3 +1,4 @@
+import _string
 import ast
 import collections
 import dis
@@ -22,7 +23,7 @@ from odoo.libs.debug_log import DebugLog
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
 
-unsafe_eval = eval  # noqa: S307 -- Evaluator entry point; callers validate code and restrict the namespace.
+unsafe_eval = eval  # noqa: S307 -- executes code checked by the AST and opcode guards
 
 __all__ = ["const_eval", "expr_eval", "safe_eval"]
 
@@ -31,8 +32,8 @@ _ALLOWED_MODULES = ["_strptime", "math", "time"]
 
 def _import(
     name: str,
-    globals: dict | None = None,  # noqa: A002 -- Matches the builtin __import__ signature.
-    locals: dict | None = None,  # noqa: A002 -- Matches the builtin __import__ signature.
+    globals: dict | None = None,  # noqa: A002 -- match the __import__ callback signature
+    locals: dict | None = None,  # noqa: A002 -- match the __import__ callback signature
     fromlist: list[str] | None = None,
     level: int = -1,
 ) -> None:
@@ -342,7 +343,7 @@ def assert_format_guard_not_bound(code_obj: CodeType, expr: str) -> None:
     raise NameError("Binding the format guard is not allowed (%r)" % (expr,))
 
 
-_field_name_split = string._string.formatter_field_name_split  # type: ignore[attr-defined]
+_field_name_split = _string.formatter_field_name_split
 
 
 def _reject_attribute_fields(field_name: str) -> None:
@@ -447,7 +448,7 @@ def _may_call_format(expr: str) -> bool:
     return "format" in expr or not expr.isascii()
 
 
-def _guard_format_tree(tree: ast.AST) -> ast.AST:
+def _guard_format_tree[T: ast.AST](tree: T) -> T:
     _FormatGuardTransform().visit(tree)
     return ast.fix_missing_locations(tree)
 
@@ -542,8 +543,13 @@ def compile_codeobj(
         if mode == "eval":
             expr = expr.strip()
         if guard_format and _may_call_format(expr):
-            tree = _guard_format_tree(ast.parse(expr, filename or "", mode))
-            code_obj = compile(tree, filename or "", mode)  # type: ignore[call-overload]
+            parsed = (
+                ast.parse(expr, filename or "", "eval")
+                if mode == "eval"
+                else ast.parse(expr, filename or "", "exec")
+            )
+            tree = _guard_format_tree(parsed)
+            code_obj = compile(tree, filename or "", mode)
         else:
             code_obj = compile(expr, filename or "", mode)
     except SyntaxError, TypeError, ValueError:
@@ -848,4 +854,4 @@ time = wrap_module(__import__("time"), ["time", "strptime", "strftime"])
 
 pytz: typing.Any = wrap_module(_tz_module, ["utc", "timezone"])
 pytz.UTC = pytz.utc
-dateutil.tz.gettz = pytz.timezone  # type: ignore[attr-defined]
+setattr(getattr(dateutil, "tz"), "gettz", pytz.timezone)  # noqa: B009, B010 -- wrapper attributes are created from the runtime whitelist

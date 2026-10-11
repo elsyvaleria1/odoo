@@ -2,7 +2,7 @@ __all__ = ["FrozenList", "frozendict"]
 
 from collections.abc import Iterable, Mapping
 from collections.abc import Set as AbstractSet
-from typing import Any, NoReturn, Self, override
+from typing import Any, NoReturn, Self, overload, override
 
 
 class FrozenList[T](list[T]):
@@ -16,7 +16,7 @@ class FrozenList[T](list[T]):
     def __init__(self, iterable: Iterable[T] = (), /) -> None:
         pass
 
-    def __hash__(self) -> int:  # type: ignore[override]
+    def __hash__(self) -> int:  # type: ignore[override]  # Immutable list deliberately restores hashing.
         return hash(tuple(self))
 
     def __reduce__(self) -> tuple[type[Self], tuple[list[T]]]:
@@ -35,7 +35,7 @@ class FrozenList[T](list[T]):
         self._refuse("item deletion")
 
     @override
-    def __iadd__(self, value: Iterable[T], /) -> NoReturn:  # type: ignore[override]
+    def __iadd__(self, value: Iterable[T], /) -> NoReturn:  # type: ignore[override]  # Mutation is always refused, including widened lists.
         self._refuse("+=")
 
     @override
@@ -168,7 +168,7 @@ class frozendict[K, T](dict[K, T]):
         msg = "'clear' not supported on frozendict"
         raise NotImplementedError(msg)
 
-    def pop(self, key: K, default: T | None = None) -> NoReturn:  # type: ignore[override]
+    def pop(self, key: K, default: object = None) -> NoReturn:
         msg = "'pop' not supported on frozendict"
         raise NotImplementedError(msg)
 
@@ -184,25 +184,41 @@ class frozendict[K, T](dict[K, T]):
         msg = "'update' not supported on frozendict"
         raise NotImplementedError(msg)
 
-    def __ior__(self, other: Any) -> NoReturn:  # type: ignore[misc]
+    def __ior__(self, other: Any) -> NoReturn:  # type: ignore[misc]  # Mutation is always refused, including widened dictionaries.
         msg = "'|=' not supported on frozendict"
         raise NotImplementedError(msg)
 
     @classmethod
-    def fromkeys(cls, iterable: Iterable[Any], value: Any = None, /) -> Any:
+    @overload
+    def fromkeys[Key](
+        cls, iterable: Iterable[Key], value: None = None, /
+    ) -> frozendict[Key, None]: ...
+
+    @classmethod
+    @overload
+    def fromkeys[Key, Value](
+        cls, iterable: Iterable[Key], value: Value, /
+    ) -> frozendict[Key, Value]: ...
+
+    @classmethod
+    def fromkeys(
+        cls, iterable: Iterable[Any], value: Any = None, /
+    ) -> frozendict[Any, Any]:
         return cls(dict.fromkeys(iterable, value))
 
-    def __reduce__(self) -> tuple[Any, tuple[type, dict[K, T]]]:
+    def __reduce__(self) -> tuple[object, tuple[type[Self], dict[K, T]]]:
         return (_rebuild_frozendict, (type(self), dict(self)))
 
-    def __hash__(self) -> int:  # type: ignore[override]
+    def __hash__(self) -> int:  # type: ignore[override]  # Immutable dictionary deliberately restores hashing.
         try:
             return self._hash
         except AttributeError:
             return hash(_freeze(self, set(), [False]))
 
 
-def _rebuild_frozendict[K, T](cls: type, items: dict[K, T]) -> Any:
-    obj: dict[K, T] = dict.__new__(cls)
+def _rebuild_frozendict[K, T](
+    cls: type[frozendict[K, T]], items: dict[K, T]
+) -> frozendict[K, T]:
+    obj: frozendict[K, T] = dict.__new__(cls)
     dict.update(obj, items)
     return obj

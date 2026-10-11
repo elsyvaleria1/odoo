@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Buffer
 from dataclasses import dataclass
-from typing import Any, Self
+from typing import Any, Self, SupportsIndex, SupportsInt
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.settings import OptionSource, SettingsSlot
@@ -27,10 +28,12 @@ REPLICA_OVERRIDABLE: tuple[tuple[str, str], ...] = (
 )
 
 
-def _coerce_optional_int(value: object) -> int | None:
+def _coerce_optional_int(
+    value: str | Buffer | SupportsInt | SupportsIndex | None,
+) -> int | None:
     if value is None or value == "" or value is False:
         return None
-    return int(value)  # type: ignore[call-overload]
+    return int(value)
 
 
 @dataclass(frozen=True, slots=True)

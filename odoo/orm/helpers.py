@@ -40,10 +40,10 @@ def get_fields_by_name(
 
 
 def get_class_memos(cls: type) -> dict[str, typing.Any]:
-    memos = cls.__dict__.get("_class_memos__")
+    memos: dict[str, typing.Any] | None = cls.__dict__.get("_class_memos__")
     if memos is None:
         memos = {}
-        cls._class_memos__ = memos  # type: ignore[attr-defined]
+        setattr(cls, "_class_memos__", memos)  # noqa: B010 - attach storage to an arbitrary class
     return memos
 
 

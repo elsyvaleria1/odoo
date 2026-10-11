@@ -221,7 +221,7 @@ def format_datetime(
 
 def format_time(
     env: Environment,
-    value: datetime.time | datetime.datetime | str,
+    value: datetime.time | datetime.datetime | str | typing.Literal[False] | None,
     tz: str | typing.Literal[False] = False,
     time_format: str = "medium",
     lang_code: str | None = None,
@@ -236,7 +236,7 @@ def format_time(
             from odoo.fields import Datetime
 
             try:
-                value = Datetime.from_string(value)  # type: ignore[assignment]
+                value = Datetime.from_string(value)
             except ValueError:
                 return ""
         if not isinstance(value, datetime.datetime):

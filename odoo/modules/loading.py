@@ -676,12 +676,22 @@ class _PackageLoader:
         self.operation: UpdateOperation | None = None
         self.log_level = logging.DEBUG
         self.model_names: OrderedSet[str] = OrderedSet()
-        self.module: IrModuleModuleProtocol = None  # type: ignore[assignment]
-        self.py_module: types.ModuleType = None  # type: ignore[assignment]
+        self.module: IrModuleModuleProtocol | None = None
+        self.py_module: types.ModuleType | None = None
         self.recreated_ids: dict[str, int] = {}
         self.test_time = 0.0
         self.test_queries = 0
         self.test_results: OdooTestResult | None = None
+
+    def _get_module(self) -> IrModuleModuleProtocol:
+        if self.module is None:
+            raise RuntimeError(f"{self.name}: module metadata has not been loaded")
+        return self.module
+
+    def _get_py_module(self) -> types.ModuleType:
+        if self.py_module is None:
+            raise RuntimeError(f"{self.name}: Python module has not been imported")
+        return self.py_module
 
     @property
     def name(self) -> str:
@@ -766,7 +776,7 @@ class _PackageLoader:
             with _debug.perf(
                 "modules.hook", cr=self.cr, module=self.name, hook=pre_init
             ):
-                getattr(self.py_module, pre_init)(self.env)
+                getattr(self._get_py_module(), pre_init)(self.env)
 
     def load_models(self) -> None:
         registry, package = self.registry, self.package
@@ -1008,7 +1018,7 @@ class _PackageLoader:
             module=self.name,
             overwrite=overwrite,
         ):
-            self.module._update_translations(overwrite=overwrite)
+            self._get_module()._update_translations(overwrite=overwrite)
 
     def mark_module_loaded(self) -> None:
         self.registry.loaded_modules.add(self.name)
@@ -1026,7 +1036,7 @@ class _PackageLoader:
                 with _debug.perf(
                     "modules.hook", cr=self.cr, module=self.name, hook=post_init
                 ):
-                    getattr(self.py_module, post_init)(self.env)
+                    getattr(self._get_py_module(), post_init)(self.env)
         elif self.operation == "upgrade":
             with _debug.perf(
                 "modules.package.check_views", cr=self.cr, module=self.name
@@ -1051,7 +1061,7 @@ class _PackageLoader:
         if schema.column_exists(env.cr, "ir_module_module", "content_checksum"):
             values["content_checksum"] = get_module_content_checksum(self.name)
         self.migrations.record_pending_end_migrations(self.package)
-        self.module.write(values)
+        self._get_module().write(values)
 
         self.package.state = "installed"
         with _debug.perf("modules.package.commit", cr=self.cr, module=self.name):
@@ -1526,10 +1536,25 @@ class _ModuleLoader:
         self.reinit_modules = reinit_modules
         self.new_db_demo = new_db_demo
         self.models_to_check = models_to_check
-        self.graph: ModuleGraph = None  # type: ignore[assignment]
-        self.env: Environment = None  # type: ignore[assignment]
+        self.graph: ModuleGraph | None = None
+        self.env: Environment | None = None
         self.report: OdooTestResult | None = None
-        self.migrations: MigrationManager = None  # type: ignore[assignment]
+        self.migrations: MigrationManager | None = None
+
+    def _get_graph(self) -> ModuleGraph:
+        if self.graph is None:
+            raise RuntimeError("Module graph has not been initialized")
+        return self.graph
+
+    def _get_env(self) -> Environment:
+        if self.env is None:
+            raise RuntimeError("Module loading environment has not been opened")
+        return self.env
+
+    def _get_migrations(self) -> MigrationManager:
+        if self.migrations is None:
+            raise RuntimeError("Module migrations have not been initialized")
+        return self.migrations
 
     def bootstrap(self) -> bool:
         cr = self.cr
@@ -1607,14 +1632,15 @@ class _ModuleLoader:
         if not (self.update_module and self.upgrade_modules):
             return
         scripts = tools.config["pre_upgrade_scripts"]
+        graph = self._get_graph()
         _debug.pipeline(
             "modules.pre_upgrade_scripts",
             scripts=len(scripts),
-            base_version=self.graph["base"].db_version,
+            base_version=graph["base"].db_version,
         )
         for pyfile in scripts:
             odoo.modules.migration.run_migration_script(
-                self.cr, self.graph["base"].db_version or "", pyfile, "base", "pre"
+                self.cr, graph["base"].db_version or "", pyfile, "base", "pre"
             )
 
     def capture_database_field_metadata(self) -> None:
@@ -1631,9 +1657,10 @@ class _ModuleLoader:
             self.report = assertion_report(self.registry.db_name)
         self.env = api.Environment(self.cr, api.SUPERUSER_ID, {})
         self.env.transaction.default_env = self.env
+        graph = self._get_graph()
         self.migrations = MigrationManager(
             self.cr,
-            self.graph,
+            graph,
             pending_end=read_pending_end_migrations(self.cr),
         )
         _debug.lifecycle(
@@ -1644,7 +1671,7 @@ class _ModuleLoader:
         )
         load_module_graph(
             self.env,
-            self.graph,
+            graph,
             update_module=self.update_module,
             report=self.report,
             models_to_check=self.models_to_check,
@@ -1674,7 +1701,7 @@ class _ModuleLoader:
     def apply_module_requests(self) -> None:
         if not self.update_module:
             return
-        env = self.env
+        env = self._get_env()
         cr = self.cr
         Module = env["ir.module.module"]
         _logger.info("updating modules list")
@@ -1740,7 +1767,7 @@ class _ModuleLoader:
             self.registry.loading.reinit_modules.update(
                 m
                 for m in reinit_records.mapped("name")
-                if m not in self.graph._imported_modules
+                if m not in self._get_graph()._imported_modules
             )
             _debug.logic(
                 "modules.request",
@@ -1765,8 +1792,10 @@ class _ModuleLoader:
         )
 
     def converge_module_graph(self) -> None:
-        env = self.env
+        env = self._get_env()
         iteration = 0
+        graph = self._get_graph()
+        migrations = self._get_migrations()
         while True:
             iteration += 1
             states: tuple[str, ...] = ("installed", "to upgrade", "to remove")
@@ -1776,14 +1805,12 @@ class _ModuleLoader:
                 "SELECT name from ir_module_module WHERE state = ANY(%s)",
                 [list(states)],
             )
-            module_list = [
-                name for (name,) in env.cr.fetchall() if name not in self.graph
-            ]
+            module_list = [name for (name,) in env.cr.fetchall() if name not in graph]
             _debug.pipeline(
                 "modules.converge",
                 iteration=iteration,
                 new=len(module_list),
-                graph=len(self.graph),
+                graph=len(graph),
                 updated=len(self.registry.updated_modules),
             )
             if not module_list:
@@ -1791,30 +1818,30 @@ class _ModuleLoader:
                     "modules.converge.stop",
                     iteration=iteration,
                     reason="no_new_modules",
-                    graph=len(self.graph),
+                    graph=len(graph),
                 )
                 break
-            self.graph.extend(module_list)
+            graph.extend(module_list)
             _logger.debug("Updating graph with %d more modules", len(module_list))
             updated_modules_count = len(self.registry.updated_modules)
-            self.migrations.index_migration_scripts()
+            migrations.index_migration_scripts()
             load_module_graph(
                 env,
-                self.graph,
+                graph,
                 update_module=self.update_module,
                 report=self.report,
                 models_to_check=self.models_to_check,
                 run_tests=self.run_tests,
-                migrations=self.migrations,
+                migrations=migrations,
             )
             if len(self.registry.updated_modules) == updated_modules_count:
                 _debug.logic(
                     "modules.converge.stop",
                     iteration=iteration,
                     reason="no_progress",
-                    graph=len(self.graph),
+                    graph=len(graph),
                     requested=len(module_list),
-                    kept=sum(1 for name in module_list if name in self.graph),
+                    kept=sum(1 for name in module_list if name in graph),
                 )
                 break
 
@@ -1849,18 +1876,21 @@ class _ModuleLoader:
             self.registry.setup_models(self.cr)
 
     def run_deferred_at_install_tests(self) -> None:
-        _run_deferred_at_install_tests(self.registry, self.cr, self.env, self.report)
+        _run_deferred_at_install_tests(
+            self.registry, self.cr, self._get_env(), self.report
+        )
 
     def log_modules_that_never_loaded(self) -> None:
-        Module = self.env["ir.module.module"]
+        Module = self._get_env()["ir.module.module"]
         modules = Module.search_fetch(
             Module._get_domain_modules_to_load(), ["name"], order="name"
         )
-        missing = [name for name in modules.mapped("name") if name not in self.graph]
+        graph = self._get_graph()
+        missing = [name for name in modules.mapped("name") if name not in graph]
         _debug.logic(
             "modules.never_loaded",
             to_load=len(modules),
-            graph=len(self.graph),
+            graph=len(graph),
             missing=len(missing),
         )
         if missing:
@@ -1872,18 +1902,18 @@ class _ModuleLoader:
     def run_end_migrations(self) -> None:
         if not self.update_module:
             return
-        with _debug.perf("modules.end_migrations", cr=self.cr, modules=len(self.graph)):
-            for package in self.graph:
-                self.migrations.migrate_module(package, "end")
-            self.migrations.clear_pending_end_migrations(
-                package.name for package in self.graph
-            )
+        graph = self._get_graph()
+        migrations = self._get_migrations()
+        with _debug.perf("modules.end_migrations", cr=self.cr, modules=len(graph)):
+            for package in graph:
+                migrations.migrate_module(package, "end")
+            migrations.clear_pending_end_migrations(package.name for package in graph)
 
     def restore_relations_dropped_by_migrations(self) -> None:
         if not self.registry.updated_modules:
             return
         self.registry.check_tables_exist(self.cr)
-        env = self.env
+        env = self._get_env()
         queried = {
             model._table: name
             for name, model in self.registry.items()
@@ -1903,7 +1933,7 @@ class _ModuleLoader:
                 package.db_version,
                 adapt_version(package.manifest["version"]),
             )
-            for package in self.graph
+            for package in self._get_graph()
             if package.state == "installed"
             and package.db_version
             and package.manifest.get("version")
@@ -1975,12 +2005,12 @@ class _ModuleLoader:
             self.registry.finalize_constraints(self.cr)
 
     def _check_removed_columns(self, models: list[str]) -> None:
-        _drop_not_null_on_removed_columns(self.env, self.cr, models)
+        _drop_not_null_on_removed_columns(self._get_env(), self.cr, models)
 
     def run_post_update_model_checks(self) -> None:
         if not self.registry.updated_modules:
             return
-        env = self.env
+        env = self._get_env()
         cr = self.cr
         cr.execute("SELECT model from ir_model")
         checked_models = []
@@ -2036,13 +2066,13 @@ class _ModuleLoader:
             self.registry.init_models_window(install=False),
         ):
             self.registry.metaschema.reflect_inherits(
-                self.env, list(self.registry.models)
+                self._get_env(), list(self.registry.models)
             )
 
     def uninstall_removed_modules(self) -> None:
         if not self.update_module:
             return
-        env = self.env
+        env = self._get_env()
         cr = self.cr
         cr.execute(
             "SELECT name, id FROM ir_module_module WHERE state=%s",
@@ -2057,7 +2087,7 @@ class _ModuleLoader:
             names=",".join(sorted(modules_to_remove)[:8]),
         )
 
-        pkgs = reversed([p for p in self.graph if p.name in modules_to_remove])
+        pkgs = reversed([p for p in self._get_graph() if p.name in modules_to_remove])
         for pkg in pkgs:
             uninstall_hook = pkg.manifest.get("uninstall_hook")
             if uninstall_hook:
@@ -2144,12 +2174,12 @@ class _ModuleLoader:
         if not self.update_module:
             return
         with _debug.perf("modules.check_templates", cr=self.cr):
-            self.env["ir.ui.view"]._check_loaded_qweb_templates()
+            self._get_env()["ir.ui.view"]._check_loaded_qweb_templates()
 
     def warn_invalid_custom_views(self) -> None:
         if not self.update_module:
             return
-        View = self.env["ir.ui.view"].with_context(load_all_views=True)
+        View = self._get_env()["ir.ui.view"].with_context(load_all_views=True)
         with _debug.perf(
             "modules.custom_views_check", cr=self.cr, models=len(self.registry)
         ) as span:
@@ -2169,7 +2199,7 @@ class _ModuleLoader:
         if not self.update_module or "ir.access" not in self.registry:
             return
         with _debug.perf("modules.access_domains_check", cr=self.cr):
-            self.env["ir.access"]._log_unresolved_domains()
+            self._get_env()["ir.access"]._log_unresolved_domains()
 
     def log_assertion_report(self) -> None:
         report = self.report
@@ -2182,19 +2212,20 @@ class _ModuleLoader:
             db=self.registry.db_name,
             update_module=self.update_module,
             updated_modules=len(self.registry.updated_modules),
-            graph=len(self.graph),
+            graph=len(self._get_graph()),
             tests=report.testsRun if report else 0,
             failures=report.failures_count if report else 0,
             errors=report.errors_count if report else 0,
         )
 
     def register_model_hooks(self) -> None:
+        env = self._get_env()
         with _debug.perf(
             "modules.register_hooks", cr=self.cr, models=len(self.registry)
         ):
-            for model in self.env.values():
+            for model in env.values():
                 model._register_hook()
-            self.env.flush_all()
+            env.flush_all()
 
     def check_null_constraints(self) -> None:
         with _debug.perf("modules.check_null_constraints", cr=self.cr):
@@ -2339,6 +2370,9 @@ def load_modules(
             span.set(outcome="not_initialized")
             return
 
+        graph = loader.graph
+        assert graph is not None, "Bootstrap succeeded without a module graph"
+
         loader.run_pre_upgrade_scripts()
         loader.capture_database_field_metadata()
         loader.open_environment_and_load_base()
@@ -2378,7 +2412,7 @@ def load_modules(
         loader.register_model_hooks()
         loader.check_null_constraints()
         loader.mark_database_partially_updated()
-        span.set(outcome="loaded", modules=len(loader.graph))
+        span.set(outcome="loaded", modules=len(graph))
 
 
 def reset_modules_state(db_name: str) -> None:

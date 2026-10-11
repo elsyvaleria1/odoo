@@ -271,7 +271,7 @@ class CreateMixin(_ModelStubs):
             bypass_access_fields=len(bypass_access_ids),
         )
         for field, co_ids in bypass_access_ids.items():
-            self.env[field.comodel_name].browse(co_ids).check_access("read")
+            self.env[field._get_comodel_name()].browse(co_ids).check_access("read")
         return data_list, inverses_by_hook
 
     def _create_parent_records(self, data_list: list[dict[str, typing.Any]]) -> None:
@@ -714,7 +714,7 @@ class CreateMixin(_ModelStubs):
             )
         scratch[self._name].update(typing.cast("Collection[NewId]", records._ids))
         for invf, drafts_linked in linked.items():
-            if scratch_ids := scratch.get(invf.comodel_name):
+            if scratch_ids := scratch.get(invf._get_comodel_name()):
                 invf._forget_draft_links(env, drafts_linked, scratch_ids)
         if env.core.has_pending():
             for field in env.core.get_pending_fields():

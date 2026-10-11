@@ -188,7 +188,7 @@ class _InMemoryReadMixin:
             for key in keys:
                 parent_id = parent_row.get(key.name) if parent_row else None
                 parent_row = (
-                    self.storage.get_row(env[key.comodel_name]._table, parent_id)
+                    self.storage.get_row(env[key._get_comodel_name()]._table, parent_id)
                     if parent_id
                     else None
                 )

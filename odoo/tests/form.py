@@ -3,7 +3,7 @@ import collections.abc
 import itertools
 import logging
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, SupportsIndex, override
 
 from lxml import etree
 
@@ -17,10 +17,45 @@ if TYPE_CHECKING:
     import types
     from collections.abc import Callable, Generator, Iterator
 
+    from odoo.orm.primitives import NewId
+
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 MODIFIER_ALIASES = {"1": "True", "0": "False"}
+
+
+def _get_views(record: BaseModel, view_id: int | str | NewId) -> dict[str, Any]:
+    # Installed addons supply these methods; importing them would register models.
+    get_views: Callable[[list[tuple[int | str | NewId, str]]], dict[str, Any]] = (
+        getattr(record, "get_views")  # noqa: B009 -- typed boundary for runtime attributes
+    )
+    return get_views([(view_id, "form")])
+
+
+def _get_onchange_spec(record: BaseModel, arch: bytes) -> dict[str, str | None]:
+    get_spec: Callable[[dict[str, Any]], dict[str, str | None]] = getattr(  # noqa: B009 -- typed boundary for runtime attributes
+        record, "_get_onchange_spec"
+    )
+    return get_spec({"arch": arch})
+
+
+def _web_read(
+    record: BaseModel, specification: dict[str, dict[str, Any]]
+) -> list[dict[str, Any]]:
+    web_read: Callable[[dict[str, dict[str, Any]]], list[dict[str, Any]]] = getattr(  # noqa: B009 -- typed boundary for runtime attributes
+        record, "web_read"
+    )
+    return web_read(specification)
+
+
+def _web_save(
+    record: BaseModel, values: dict[str, Any], specification: dict[str, dict[str, Any]]
+) -> list[dict[str, Any]]:
+    web_save: Callable[
+        [dict[str, Any], dict[str, dict[str, Any]]], list[dict[str, Any]]
+    ] = getattr(record, "web_save")  # noqa: B009 -- typed boundary for runtime attributes
+    return web_save(values, specification)
 
 
 class FieldNotInView(AssertionError, AttributeError):
@@ -91,9 +126,7 @@ class Form:
         with _debug.perf(
             "test.form.get_views", cr=record.env.cr, model=record._name
         ) as span:
-            views = record.get_views(  # type: ignore[attr-defined]
-                [(view_id, "form")]
-            )
+            views = _get_views(record, view_id)
             span.set(models=len(views["models"]))
         self._models_info = views["models"]
         tree = etree.fromstring(views["views"]["form"]["arch"])
@@ -241,9 +274,7 @@ class Form:
             "fields_spec": fields_spec,
             "modifiers": modifiers,
             "contexts": contexts,
-            "onchange": model._get_onchange_spec(  # type: ignore[attr-defined]
-                {"arch": etree.tostring(tree)}
-            ),
+            "onchange": _get_onchange_spec(model, etree.tostring(tree)),
         }
 
     def _get_one2many_edition_view(
@@ -312,9 +343,7 @@ class Form:
             record=self._record.id,
             fields=len(self._view["fields_spec"]),
         ):
-            [record_values] = self._record.web_read(  # type: ignore[attr-defined]
-                self._view["fields_spec"]
-            )
+            [record_values] = _web_read(self._record, self._view["fields_spec"])
         self._env.flush_all()
         self._env.clear()
 
@@ -480,8 +509,8 @@ class Form:
                 record=self._record.id or None,
                 fields=sorted(values),
             ) as span:
-                [record_values] = self._record.web_save(  # type: ignore[attr-defined]
-                    values, self._view["fields_spec"]
+                [record_values] = _web_save(
+                    self._record, values, self._view["fields_spec"]
                 )
                 self._env.flush_all()
                 self._env.clear()
@@ -873,7 +902,7 @@ class UpdateDict(dict):
 class X2MValue(collections.abc.Sequence):
     _virtual_seq = itertools.count()
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None  # type: ignore[assignment]  # object stubs cannot express the unhashable sentinel
 
     def __init__(self, iterable_of_vals: Any = ()) -> None:
         self._data: dict[Any, UpdateDict] = {
@@ -1052,20 +1081,25 @@ class O2MProxy(X2MProxy):
         self._form._perform_onchange(self._field)
 
 
-class M2MProxy(X2MProxy, collections.abc.Sequence):
-    def __getitem__(self, index: Any) -> BaseModel:  # type: ignore[override]
+class M2MProxy(X2MProxy, collections.abc.Sequence[BaseModel]):
+    # Slices deliberately return an ORM recordset, which is not a nominal Sequence.
+    @override
+    def __getitem__(self, index: SupportsIndex | slice) -> BaseModel:  # type: ignore[override]
         comodel_name = self._field_info["relation"]
         return self._form._env[comodel_name].browse(self._field_value[index])
 
+    @override
     def __len__(self) -> int:
         return len(self._field_value)
 
+    @override
     def __iter__(self) -> Iterator[BaseModel]:
         comodel_name = self._field_info["relation"]
         records = self._form._env[comodel_name].browse(self._field_value)
         return iter(records)
 
-    def __contains__(self, record: Any) -> bool:
+    @override
+    def __contains__(self, record: object) -> bool:
         comodel_name = self._field_info["relation"]
         assert isinstance(record, BaseModel) and record._name == comodel_name
         return record.id in self._field_value

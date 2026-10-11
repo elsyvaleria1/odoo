@@ -666,7 +666,7 @@ class HttpCase(TransactionCase):
         Users = self.registry["res.users"]
 
         def setup(_):
-            Users.tour_enabled = False  # type: ignore[attr-defined]
+            setattr(Users, "tour_enabled", False)  # noqa: B010 -- optional web addon hook
 
         with (
             patch.object(Users, "tour_enabled", False),

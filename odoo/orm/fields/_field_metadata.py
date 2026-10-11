@@ -21,7 +21,14 @@ class _FieldMetadataMixin(_FieldStubs):
     translate: bool | TranslateDialect = False
     company_dependent: bool = False
 
-    _column_type: tuple[str, str] | None = None
+    if typing.TYPE_CHECKING:
+        # Subclasses expose either a constant or a computed property. Callers
+        # read the column type; neither form promises an instance setter.
+        @property
+        @typing.override
+        def _column_type(self) -> tuple[str, str] | None: ...
+    else:
+        _column_type = None
 
     @functools.cached_property
     def column_type(self) -> tuple[str, str] | None:
@@ -41,5 +48,5 @@ class _FieldMetadataMixin(_FieldStubs):
     def _get_company_dependent_fallback_raw(self, records: ModelLike) -> typing.Any:
         env = records.env
         return env.registry.metaschema.company_dependent_fallbacks(
-            env, records._name
+            env, records._get_model_name()
         ).get(self.name)

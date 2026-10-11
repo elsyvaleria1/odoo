@@ -1,6 +1,7 @@
 import logging
 import typing
 from collections import deque
+from collections.abc import MutableSet
 from contextlib import contextmanager
 from weakref import WeakSet, WeakValueDictionary
 from weakref import ref as weakref_ref
@@ -23,7 +24,7 @@ from .recordset_cache import Cache
 from .registry import Registry
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable, Iterator, Mapping
 
     from odoo.db import BaseCursor
 
@@ -45,32 +46,64 @@ def _is_new_id(record_id: object) -> bool:
 
 NO_PRIVILEGES: frozenset[int] = frozenset()
 
+type _EnvironmentKey = tuple[
+    int | None, bool, frozendict[str, typing.Any], frozenset[int]
+]
 
-class _EnvironmentSet(WeakSet["Environment"]):
-    __slots__ = ("_index",)
 
+class _OrderedWeakSet[T](WeakSet[T]):
+    @typing.override
     def __init__(self) -> None:
         super().__init__()
-        self.data: OrderedSet[weakref_ref[Environment]] = OrderedSet()
-        self._index: WeakValueDictionary[tuple[typing.Any, ...], Environment] = (
+        self.data: OrderedSet[weakref_ref[T]] = OrderedSet()
+
+
+class _EnvironmentSet(MutableSet["Environment"]):
+    """An ordered weak set whose mutations keep the environment index in sync."""
+
+    __slots__ = ("_envs", "_index")
+
+    def __init__(self, environments: Iterable[Environment] = ()) -> None:
+        self._envs: _OrderedWeakSet[Environment] = _OrderedWeakSet()
+        self._index: WeakValueDictionary[_EnvironmentKey, Environment] = (
             WeakValueDictionary()
         )
+        self.update(environments)
+
+    @classmethod
+    @typing.override
+    def _from_iterable[T](cls, values: Iterable[T]) -> set[T]:
+        # Forward set operations may widen the element type. Their results
+        # have no environment index; only mutations of this set maintain it.
+        return set(values)
+
+    @typing.override
+    def __contains__(self, env: object) -> bool:
+        return env in self._envs
+
+    @typing.override
+    def __iter__(self) -> Iterator[Environment]:
+        return iter(self._envs)
+
+    @typing.override
+    def __len__(self) -> int:
+        return len(self._envs)
 
     @staticmethod
     def key(
-        uid: typing.Any,
+        uid: int | None,
         su: bool,
-        context: typing.Any,
+        context: frozendict[str, typing.Any],
         privileges: frozenset[int] = NO_PRIVILEGES,
-    ) -> tuple[typing.Any, bool, typing.Any, frozenset[int]]:
+    ) -> _EnvironmentKey:
         return (uid, su, context, privileges)
 
     @staticmethod
     def matches(
         env: Environment,
-        uid: typing.Any,
+        uid: int | None,
         su: bool,
-        context: typing.Any,
+        context: Mapping[str, typing.Any],
         privileges: frozenset[int] = NO_PRIVILEGES,
     ) -> bool:
         return (
@@ -82,17 +115,17 @@ class _EnvironmentSet(WeakSet["Environment"]):
 
     @typing.override
     def add(self, env: Environment) -> None:
-        super().add(env)
+        self._envs.add(env)
         self._index[self.key(env.uid, env.su, env.context, env.privileges)] = env
 
     @typing.override
     def clear(self) -> None:
-        super().clear()
+        self._envs.clear()
         self._index.clear()
 
     @typing.override
     def discard(self, env: Environment) -> None:
-        super().discard(env)
+        self._envs.discard(env)
         key = self.key(env.uid, env.su, env.context, env.privileges)
         if self._index.get(key) is env:
             del self._index[key]
@@ -105,29 +138,26 @@ class _EnvironmentSet(WeakSet["Environment"]):
 
     @typing.override
     def pop(self) -> Environment:
-        env = super().pop()
+        env = self._envs.pop()
         key = self.key(env.uid, env.su, env.context, env.privileges)
         if self._index.get(key) is env:
             del self._index[key]
         return env
 
-    @typing.override
     def update(self, other: Iterable[Environment]) -> None:
         for env in list(other):
             self.add(env)
 
-    @typing.override
-    def difference_update(self, other: Iterable[Environment]) -> None:
-        for env in list(other):
+    def difference_update(self, other: Iterable[object]) -> None:
+        remove = set(other)
+        for env in [env for env in self if env in remove]:
             self.discard(env)
 
-    @typing.override
-    def intersection_update(self, other: Iterable[Environment]) -> None:
+    def intersection_update(self, other: Iterable[object]) -> None:
         keep = set(other)
         for env in [env for env in self if env not in keep]:
             self.discard(env)
 
-    @typing.override
     def symmetric_difference_update(self, other: Iterable[Environment]) -> None:
         for env in set(other):
             if env in self:
@@ -135,23 +165,33 @@ class _EnvironmentSet(WeakSet["Environment"]):
             else:
                 self.add(env)
 
-    def __ior__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[misc, override]
+    @typing.override
+    def __ior__(
+        self,
+        other: Iterable[Environment],  # type: ignore[override]  # Indexed in-place operations cannot widen their element type.
+    ) -> typing.Self:
         self.update(other)
         return self
 
-    def __isub__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[misc]
-        self.difference_update(other)
-        return self
-
-    def __iand__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[misc]
+    @typing.override
+    def __iand__(self, other: Iterable[object]) -> typing.Self:
         self.intersection_update(other)
         return self
 
-    def __ixor__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[misc, override]
+    @typing.override
+    def __isub__(self, other: Iterable[object]) -> typing.Self:
+        self.difference_update(other)
+        return self
+
+    @typing.override
+    def __ixor__(
+        self,
+        other: Iterable[Environment],  # type: ignore[override]  # Indexed in-place operations cannot widen their element type.
+    ) -> typing.Self:
         self.symmetric_difference_update(other)
         return self
 
-    def get_environment(self, key: tuple[typing.Any, ...]) -> Environment | None:
+    def get_environment(self, key: _EnvironmentKey) -> Environment | None:
         return self._index.get(key)
 
 

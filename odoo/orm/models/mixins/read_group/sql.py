@@ -32,7 +32,6 @@ _debug = DebugLog(__name__)
 
 
 class _ReadGroupSQLMixin(_ModelStubs):
-
     def _parse_aggregate_spec(
         self, aggregate_spec: str
     ) -> tuple[str, str, Field[typing.Any]]:
@@ -182,7 +181,7 @@ class _ReadGroupSQLMixin(_ModelStubs):
                 f"Only many2one path is accepted for the {groupby_spec!r} groupby spec"
             )
 
-        comodel = self.env[field.comodel_name]
+        comodel = self.env[field._get_comodel_name()]
         coquery = comodel.with_context(active_test=False)._search([])
         if self.env.su or not coquery.where_clause:
             coalias = query.get_table_alias(alias, fname)
@@ -227,7 +226,7 @@ class _ReadGroupSQLMixin(_ModelStubs):
             and field.column2 is not None
         )
         codomain = field.get_comodel_domain(self)
-        comodel = self.env[field.comodel_name].with_context(**field.context)
+        comodel = self.env[field._get_comodel_name()].with_context(**field.context)
         coquery = comodel._search(codomain, bypass_access=field.bypass_search_access)
         rel_alias = query.get_table_alias(alias, field.name)
         condition = SQL(
@@ -530,7 +529,7 @@ class _ReadGroupSQLMixin(_ModelStubs):
                 traverse_many2one
                 and field
                 and field.is_many2one
-                and self.env[field.comodel_name]._order != "id"
+                and self.env[field._get_comodel_name()]._order != "id"
             ):
                 self._read_group_orderby_many2one(
                     term,

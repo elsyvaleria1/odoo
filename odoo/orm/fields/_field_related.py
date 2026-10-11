@@ -133,7 +133,7 @@ def compute_related(field: Field[typing.Any], records: BaseModel) -> None:
             values = [next(iter(val := value[name]), val) for value in values]
         except AccessError as e:
             description = records.env.registry.metaschema.model_description(
-                records.env, records._name
+                records.env, records._get_model_name()
             )
             env = records.env
             _debug.logic(
@@ -187,7 +187,7 @@ def inverse_related(field: Field[typing.Any], records: BaseModel) -> None:
     for record in records:
         target, target_field = field.traverse_related(record)
         if target and bool(target.id) == bool(record.id):
-            latest[target._name, target.id, target_field.name] = (
+            latest[target._get_model_name(), target.id, target_field.name] = (
                 target,
                 target_field,
                 record_value[record],
@@ -200,7 +200,7 @@ def inverse_related(field: Field[typing.Any], records: BaseModel) -> None:
     ungrouped: list[tuple[BaseModel, Field[typing.Any], typing.Any]] = []
     for target, target_field, value in latest.values():
         key = (
-            target._name,
+            target._get_model_name(),
             target_field.name,
             type(value).__name__,
             value._ids if is_recordset(value) else value,

@@ -113,7 +113,7 @@ def add_model_to_registry(
 
     _warn_removed_model_attributes(model_def)
 
-    name = model_def._name
+    name = model_def._get_model_name()
     inherit = model_def._inherit
     parent_names = [inherit] if isinstance(inherit, str) else list(inherit or ())
     if name != "base":
@@ -247,7 +247,7 @@ def _init_model_class_attributes(
 def _init_model_class_attributes_once(
     model_cls: type[BaseModel], in_progress: set[type]
 ) -> None:
-    name = model_cls._name
+    name = model_cls._get_model_name()
     description = name
     table = name.replace(".", "_")
     log_access = model_cls._auto
@@ -785,7 +785,7 @@ def _add_manual_models(env: Environment) -> None:
 
 def _add_manual_fields(model_cls: type[BaseModel], env: Environment) -> None:
     metaschema = env.registry.metaschema
-    fields_data = metaschema.manual_field_data(env, model_cls._name)
+    fields_data = metaschema.manual_field_data(env, model_cls._get_model_name())
     if _debug.pipeline.enabled and fields_data:
         _debug.pipeline(
             "registration.manual_fields",

@@ -46,20 +46,21 @@ class FileStore:
         return {
             att.res_id: (human_size(att.file_size) if bin_size else att.datas)
             for att in attachments.search_fetch(
-                _field_domain(records._name, field_name, records.ids)
+                _field_domain(records._get_model_name(), field_name, records.ids)
             )
         }
 
     def of_field(self, records: ModelLike, field_name: str) -> IrAttachmentProtocol:
         return self._attachments(records.env).search(
-            _field_domain(records._name, field_name, records.ids)
+            _field_domain(records._get_model_name(), field_name, records.ids)
         )
 
     def ids_with_field(self, records: ModelLike, field_name: str) -> set[int]:
         if "ir.attachment" not in records.env.registry:
             return set()
         attachments = self._attachments(records.env).search_fetch(
-            _field_domain(records._name, field_name, records.ids), ["res_id"]
+            _field_domain(records._get_model_name(), field_name, records.ids),
+            ["res_id"],
         )
         return set(attachments.mapped("res_id"))
 

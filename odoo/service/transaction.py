@@ -46,7 +46,7 @@ def _integrity_error_to_validation_error(
 ) -> ValidationError:
     table_name = exc.diag.table_name
     rclass = env.registry.models_by_table.get(table_name) if table_name else None
-    model = env[rclass._name] if rclass is not None else env["base"]
+    model = env[rclass._get_model_name()] if rclass is not None else env["base"]
     _debug.logic(
         "retrying.integrity_error.model_resolved",
         table=table_name,

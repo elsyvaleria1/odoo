@@ -37,9 +37,11 @@ class _FieldStubs:
         classification: str | None
         write_classification: str | None
         access_classes: typing.Any
-        inverse_name: str
+        inverse_name: str | None
         domain: typing.Any
-        _column_type: tuple[str, str] | None
+
+        @property
+        def _column_type(self) -> tuple[str, str] | None: ...
 
         @property
         def column_type(self) -> tuple[str, str] | None:

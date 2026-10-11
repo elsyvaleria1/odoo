@@ -1105,7 +1105,7 @@ class Loaded:
             return
         records = Model.create([vals for _index, vals in pending])
         for (index, _vals), id_ in zip(pending, records._ids, strict=True):
-            self.ids[Ref(Model._name, index)] = id_
+            self.ids[Ref(Model._get_model_name(), index)] = id_
 
     def _translate(self, dataset: Dataset) -> None:
         for model_name, rows in dataset.items():

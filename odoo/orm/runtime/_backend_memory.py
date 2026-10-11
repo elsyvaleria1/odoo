@@ -166,11 +166,11 @@ def _scope_to_reader(model: ModelLike, domain: Domain) -> Domain:
             and isinstance(value, Domain)
         ):
             return condition
-        comodel = env[field.comodel_name]
+        comodel = env[field._get_comodel_name()]
         scoped = _scope_to_reader(comodel, value)
         if condition.operator in ("any", "not any") and not field.bypass_search_access:
             comodel.check_access("read")
-            rule = policy.record_domain(env, comodel._name, "read")
+            rule = policy.record_domain(env, comodel._get_model_name(), "read")
             if not rule.is_true():
                 readable = comodel.sudo().with_context(active_test=False)
                 scoped &= Domain("id", "in", readable.search(rule).ids)
@@ -192,7 +192,6 @@ def _drop_cache_additions(env: Environment, snapshot: _CacheSnapshot) -> None:
 
 
 class _InMemoryReadGroup:
-
     def __init__(
         self,
         model: ModelLike,
@@ -288,7 +287,7 @@ class _InMemoryReadGroup:
     ) -> typing.Callable[[BaseModel], typing.Any]:
         if not field.store:
             raise ValueError(f"Group by non-stored many2many field: {spec!r}")
-        comodel = model.env[field.comodel_name].with_context(**field.context)
+        comodel = model.env[field._get_comodel_name()].with_context(**field.context)
         allowed = set(
             comodel._search(
                 field.get_comodel_domain(model),
@@ -361,6 +360,7 @@ class _InMemoryReadGroup:
         )
 
         if property_type in ("tags", "many2many"):
+
             def read_collection(record: ModelLike) -> typing.Any:
                 values = record[field.name]
                 raw = (values._values or {}).get(property_name)
@@ -420,11 +420,11 @@ class _InMemoryReadGroup:
                 f"Only many2one path is accepted for the {spec!r} groupby spec"
             )
         env = model.env
-        comodel = env[field.comodel_name]
+        comodel = env[field._get_comodel_name()]
         rules = None
         if not env.su:
             sec_domain = env.registry.access_policy.record_domain(
-                env, comodel._name, "read"
+                env, comodel._get_model_name(), "read"
             )
             if not sec_domain.is_true():
                 rules = sec_domain
@@ -454,6 +454,7 @@ class _InMemoryReadGroup:
             raise ValueError(f"Cannot convert {field} to SQL because it is not stored")
 
         if self.model._aggregates_through_records(field, func or ""):
+
             def group_ids(records: ModelLike) -> typing.Any:
                 return list(records.ids) or None
 
@@ -486,6 +487,7 @@ class _InMemoryReadGroup:
         total: typing.Callable[[list[typing.Any]], typing.Any]
         mean: typing.Callable[[list[typing.Any]], typing.Any]
         if field.column_type and field.column_type[0] == "numeric":
+
             def total(present_values: list[typing.Any]) -> typing.Any:
                 return float(sum(Decimal(repr(v)) for v in present_values))
 
@@ -761,7 +763,7 @@ class _InMemoryReadGroup:
                 rank = self._day_of_week_rank(term)
                 field = self.model._fields[fname]
                 if field.is_many2one and not seq_fnames:
-                    comodel = self.model.env[field.comodel_name]
+                    comodel = self.model.env[field._get_comodel_name()]
                     if comodel._order != "id":
                         ids = [row[index] for row in rows if row[index] is not None]
                         ordered = comodel.browse(ids).sorted(key=comodel._order)
@@ -857,7 +859,7 @@ class InMemoryBackend(
         )
         sec_domain = (
             model.env.registry.access_policy.record_domain(
-                model.env, model._name, "read"
+                model.env, model._get_model_name(), "read"
             )
             if check_access
             else Domain.TRUE
@@ -874,7 +876,7 @@ class InMemoryBackend(
             all_ids,
             [
                 field
-                for fname in searched_fnames.get(model._name, ())
+                for fname in searched_fnames.get(model._get_model_name(), ())
                 if (field := fields[fname]).column_type
             ],
             all_records,

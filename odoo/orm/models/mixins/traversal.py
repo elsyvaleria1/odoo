@@ -67,6 +67,7 @@ class ReversibleComparator:
             return NotImplemented
         return not self < other and not other < self
 
+    # Value equality disables hashing; object.__hash__ is typed as callable.
     __hash__ = None  # type: ignore[assignment]
 
     def __repr__(self) -> str:
@@ -168,9 +169,7 @@ class TraversalMixin(_ModelStubs):
             return typing.cast("Self", single) if is_recordset(single) else []
 
     @api.private
-    def filtered(
-        self, func: str | Callable[..., typing.Any] | Domain
-    ) -> Self:
+    def filtered(self, func: str | Callable[..., typing.Any] | Domain) -> Self:
         if not func:
             return self
         if not self:
@@ -383,7 +382,7 @@ class TraversalMixin(_ModelStubs):
                 refused = "unknown_field"
             elif not can_scan_sorted(field):
                 refused = "field_not_scannable"
-            elif field.is_many2one and env[field.comodel_name]._order != "id":
+            elif field.is_many2one and env[field._get_comodel_name()]._order != "id":
                 refused = "comodel_order_not_id"
             else:
                 cache = None if term.field == "id" else field._get_cache(env)
@@ -448,7 +447,7 @@ class TraversalMixin(_ModelStubs):
                         depth=len(seen),
                     )
                     return lambda _: None
-                comodel = _env[field.comodel_name].with_context(
+                comodel = _env[field._get_comodel_name()].with_context(
                     __m2o_order_seen_sorted=frozenset((field, *seen))
                 )
                 func_comodel = comodel._sorted_order_to_function(
@@ -590,7 +589,9 @@ class TraversalMixin(_ModelStubs):
         if field.comodel_name == self._name:
             return True
         root = self._table_inheritance_root
-        return bool(root) and self.env.registry[field.comodel_name]._table == root
+        return (
+            bool(root) and self.env.registry[field._get_comodel_name()]._table == root
+        )
 
     def _get_hierarchy_table(self, field_name: str) -> str:
         root = self._table_inheritance_root

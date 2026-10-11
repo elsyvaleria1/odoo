@@ -498,7 +498,7 @@ class EsbuildCompiler:
 
     @classmethod
     def _get_esbuild_addon_flags(cls, odoo_root: Path) -> tuple[list[str], list[str]]:
-        from odoo.addons import __path__ as _addon_paths  # type: ignore[attr-defined]
+        from odoo.addons import __path__ as _addon_paths
 
         addon_paths = tuple(Path(path).absolute() for path in _addon_paths)
         cache_key = (odoo_root.absolute(), addon_paths)

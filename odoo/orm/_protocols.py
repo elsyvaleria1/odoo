@@ -290,6 +290,12 @@ class IrHttpProtocol(RecordsetProtocol, Protocol):
     ) -> str: ...
 
 
+class IrQWebProtocol(RecordsetProtocol, Protocol):
+    def _pregenerate_assets_bundles(self) -> list[str]: ...
+
+    def _warm_page_assets(self) -> None: ...
+
+
 class IrCronProtocol(RecordsetProtocol, Protocol):
     def _trigger(self, at: Any = None, *, coalesce: int = 0) -> Any: ...
 
@@ -331,7 +337,7 @@ class IrModuleModuleProtocol(RecordsetProtocol, Protocol):
         self, module: Any, lang: Any
     ) -> Any: ...
 
-    def _get_domain_modules_to_load(self) -> list[tuple[str, str, str]]: ...
+    def _get_domain_modules_to_load(self) -> list[str | tuple[str, str, Any]]: ...
 
     def _import_zipfile(
         self, module_file: Any, force: bool = False, with_demo: bool = False
@@ -414,6 +420,7 @@ class AuthUserClientProtocol(RecordsetProtocol, Protocol):
 class ResUsersProtocol(RecordsetProtocol, Protocol):
     company_id: ResCompanyProtocol
     company_ids: ResCompanyProtocol
+    login: str | Literal[False]
     lang: Any
     tz: Any
 
@@ -462,6 +469,7 @@ FRAMEWORK_MODEL_PROTOCOLS: dict[str, type] = {
     "ir.model.inherit": IrModelInheritProtocol,
     "ir.model.relation": IrModelRelationProtocol,
     "ir.module.module": IrModuleModuleProtocol,
+    "ir.qweb": IrQWebProtocol,
     "ir.ui.view": IrUiViewProtocol,
     "res.company": ResCompanyProtocol,
     "res.country": ResCountryProtocol,

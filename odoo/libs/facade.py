@@ -59,7 +59,8 @@ class ProxyFunc[T = Any]:
 
         if cast is None:
 
-            def finish(result: Any) -> Any:  # noqa: ARG001 -- Mutator proxies discard the result with the same callback signature.
+            def finish(result: Any) -> Any:
+                del result
                 return None
 
         elif cast:
@@ -121,6 +122,8 @@ class Proxy(metaclass=ProxyMeta):
     def __init__(self, instance: Any) -> None:
         object.__setattr__(self, "_wrapped__", instance)
 
+    # The proxy exposes its wrapped class while intentionally preventing
+    # reassignment, unlike object's writable __class__ attribute.
     @property  # type: ignore[misc]
     def __class__(self) -> type:
         return type(self)._wrapped__

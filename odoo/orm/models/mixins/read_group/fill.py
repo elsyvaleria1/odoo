@@ -73,7 +73,9 @@ class _ReadGroupFillMixin(_ReadGroupEmptyMixin):
         values = [line[groupby] for line in read_group_result if line[groupby]]
 
         if field.relational:
-            groups = self.env[field.comodel_name].browse(value.id for value in values)
+            groups = self.env[field._get_comodel_name()].browse(
+                value.id for value in values
+            )
             values = group_expand(self, groups, domain).sudo()
             if _orders_descending_by(read_group_order, groupby):
                 values = values.browse(reversed(values._ids))

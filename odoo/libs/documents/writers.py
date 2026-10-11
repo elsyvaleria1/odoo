@@ -3,8 +3,8 @@ from __future__ import annotations
 import csv
 import io
 import json
-from collections.abc import Callable, Mapping
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, Protocol
 
 from .availability import is_available
 from .format import from_value
@@ -39,6 +39,10 @@ class BaseWriter:
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {self.name}>"
+
+
+class _WriteCallback(Protocol):
+    def __call__(self, value: Any, **options: Any) -> bytes: ...
 
 
 _WRITERS: dict[str, list[BaseWriter]] = {name: [] for name in REPRESENTATIONS}
@@ -105,13 +109,13 @@ def _prepare_writer(
     name: str,
     mimetype: str,
     consumes: str,
-    write: Callable[..., bytes],
+    write: _WriteCallback,
 ) -> BaseWriter:
     writer = BaseWriter()
     writer.name = name
     writer.mimetype = mimetype
     writer.consumes = consumes
-    writer.write = write  # type: ignore[method-assign]
+    setattr(writer, "write", write)  # noqa: B010 - install a callback with the BaseWriter.write signature on this instance
     return writer
 
 

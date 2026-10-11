@@ -3,7 +3,7 @@ import inspect
 import logging
 import sys
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec
+from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, override
 from unittest import SkipTest
 from unittest import TestCase as _TestCase
 
@@ -14,6 +14,8 @@ from .utils import InfrastructureUnavailable, addon_relative_path
 if TYPE_CHECKING:
     import types
     from collections.abc import Callable, Generator
+
+    from .result import OdooTestResult
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -228,7 +230,9 @@ class TestCase(_TestCase):
     def _callCleanup(self, function: Any, *args: Any, **kwargs: Any) -> None:
         function(*args, **kwargs)
 
-    def run(self, result: Any) -> Any:  # type: ignore[override]
+    # Odoo's runner requires its own result, including infrastructure skips.
+    @override
+    def run(self, result: OdooTestResult) -> OdooTestResult | None:  # type: ignore[override]
         result.startTest(self)
 
         testMethod = getattr(self, self._testMethodName)

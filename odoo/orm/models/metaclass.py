@@ -29,7 +29,7 @@ class MetaModel(type):
 
     _field_definitions: list[Field[typing.Any]]
     _table_object_definitions: list[TableObject]
-    _name: str
+    _name: str | None
     _register: bool
     _log_access: bool
     _module: str | None

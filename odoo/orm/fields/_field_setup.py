@@ -198,8 +198,12 @@ def get_depends(
             depends_context = field._depends_context
         else:
             depends_context = []
-            step_model_name = model._name
+            step_model_name: str | None = model._name
             for step_name in field.related.split("."):
+                if step_model_name is None:
+                    raise TypeError(
+                        f"{field}: related path traverses a non-relational field"
+                    )
                 step_model = model.env[step_model_name]
                 step = step_model._fields[step_name]
                 depends_context.extend(step.get_depends(step_model)[1])

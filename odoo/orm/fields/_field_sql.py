@@ -376,7 +376,7 @@ class _FieldSqlMixin(_FieldStubs):
             and self.index == "btree_not_null"
             and not (self.is_temporal and field_expr != self.name)
             and model.env.registry.metaschema.evaluate_default_condition(
-                model.env, model._name, field_expr, operator, value
+                model.env, model._get_model_name(), field_expr, operator, value
             )
             is False
         ):

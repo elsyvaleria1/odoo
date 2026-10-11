@@ -1,4 +1,5 @@
 import time
+from array import array
 
 import pytest
 
@@ -52,6 +53,15 @@ def test_length_reader_readinto_is_what_werkzeug_limitedstream_calls():
     buf = bytearray(4)
     assert reader.readinto(buf) == 4
     assert bytes(buf) == b"abcd"
+
+
+def test_length_reader_readinto_accepts_non_byte_buffer_storage():
+    reader = LengthReader(source(b"abcdNEXT"), 4)
+    buf = array("I", [0])
+    assert reader.readinto(buf) == 4
+    assert buf.tobytes() == b"abcd"
+    assert reader.exhausted
+    assert bytes(reader._source.buffer) == b"NEXT"
 
 
 def test_first_read_callback_fires_once_and_only_when_the_body_is_read():

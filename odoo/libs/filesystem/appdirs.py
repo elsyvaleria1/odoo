@@ -35,57 +35,56 @@ def site_data_dir(appname: str, appauthor: str | None = None) -> str:
     return str(path / appname)
 
 
-def _get_win_folder_with_pywin32(csidl_name: str) -> str:
-    from win32com.shell import shell, shellcon
+if sys.platform == "win32":
 
-    folder = shell.SHGetFolderPath(0, getattr(shellcon, csidl_name), 0, 0)
-    try:
-        folder = str(folder)
+    def _get_win_folder_with_pywin32(csidl_name: str) -> str:
+        from win32com.shell import shell, shellcon
+
+        folder = shell.SHGetFolderPath(0, getattr(shellcon, csidl_name), 0, 0)
+        try:
+            folder = str(folder)
+
+            has_high_char = False
+            for c in folder:
+                if ord(c) > 255:
+                    has_high_char = True
+                    break
+            if has_high_char:
+                try:
+                    import win32api
+
+                    folder = win32api.GetShortPathName(folder)
+                except ImportError:
+                    pass
+        except UnicodeError:
+            pass
+        return folder
+
+    def _get_win_folder_with_ctypes(csidl_name: str) -> str:
+        import ctypes
+
+        csidl_const = {
+            "CSIDL_COMMON_APPDATA": 35,
+            "CSIDL_LOCAL_APPDATA": 28,
+        }[csidl_name]
+
+        buf = ctypes.create_unicode_buffer(1024)
+        ctypes.windll.shell32.SHGetFolderPathW(None, csidl_const, None, 0, buf)
 
         has_high_char = False
-        for c in folder:
+        for c in buf:
             if ord(c) > 255:
                 has_high_char = True
                 break
         if has_high_char:
-            try:
-                import win32api
+            buf2 = ctypes.create_unicode_buffer(1024)
+            if ctypes.windll.kernel32.GetShortPathNameW(buf.value, buf2, 1024):
+                buf = buf2
 
-                folder = win32api.GetShortPathName(folder)
-            except ImportError:
-                pass
-    except UnicodeError:
-        pass
-    return folder
+        return buf.value
 
-
-def _get_win_folder_with_ctypes(csidl_name: str) -> str:
-    import ctypes
-
-    csidl_const = {
-        "CSIDL_COMMON_APPDATA": 35,
-        "CSIDL_LOCAL_APPDATA": 28,
-    }[csidl_name]
-
-    buf = ctypes.create_unicode_buffer(1024)
-    ctypes.windll.shell32.SHGetFolderPathW(None, csidl_const, None, 0, buf)  # type: ignore[attr-defined]
-
-    has_high_char = False
-    for c in buf:
-        if ord(c) > 255:
-            has_high_char = True
-            break
-    if has_high_char:
-        buf2 = ctypes.create_unicode_buffer(1024)
-        if ctypes.windll.kernel32.GetShortPathNameW(buf.value, buf2, 1024):  # type: ignore[attr-defined]
-            buf = buf2
-
-    return buf.value
-
-
-if sys.platform == "win32":
     try:
-        import win32com.shell  # noqa: F401 -- Probe the optional pywin32 implementation before selecting it.
+        import win32com.shell  # noqa: F401 - import success selects the native Windows implementation
 
         _get_win_folder = _get_win_folder_with_pywin32
     except ImportError:

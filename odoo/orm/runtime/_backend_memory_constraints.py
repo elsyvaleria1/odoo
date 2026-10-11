@@ -38,7 +38,7 @@ def _foreign_key_targets(model: ModelLike) -> list[tuple[str, str]]:
             continue
         if field.company_dependent or field.comodel_name not in model.env.registry:
             continue
-        comodel = model.env[field.comodel_name]
+        comodel = model.env[field._get_comodel_name()]
         if not comodel._is_an_ordinary_table() or not comodel._auto:
             continue
         if comodel._is_table_inheritance_root():
@@ -92,7 +92,7 @@ def _check_m2m_foreign_keys(
     )
     if field is None or field.comodel_name not in model.env.registry:
         return
-    comodel = model.env[field.comodel_name]
+    comodel = model.env[field._get_comodel_name()]
     if not comodel._is_an_ordinary_table() or comodel._is_table_inheritance_root():
         return
     wanted = {pair[1] for pair in pairs if type(pair[1]) is int}

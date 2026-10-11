@@ -249,7 +249,7 @@ class _PostgresWriteMixin:
                 )
             if field.company_dependent:
                 fallbacks = model.env.registry.metaschema.field_column_fallbacks(
-                    model.env, model._name, fname
+                    model.env, model._get_model_name(), fname
                 )
                 _debug.logic(
                     "backend.update_rows.company_dependent_merge",
@@ -421,7 +421,9 @@ class _PostgresWriteMixin:
             )
         )
 
-        many2one_fields = env.registry.many2one_company_dependents[model._name]
+        many2one_fields = env.registry.many2one_company_dependents[
+            model._get_model_name()
+        ]
         uninstalling = env.context.get(MODULE_UNINSTALL_FLAG)
         _debug.pipeline(
             "backend.unlink_rows",

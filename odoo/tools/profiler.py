@@ -55,7 +55,8 @@ def _get_stack_trace(
         stack.append(_format_frame(frame))
         frame = frame.f_back
     if frame is None and limit_frame:
-        _logger.runbot("Limit frame was not found")  # type: ignore[attr-defined]
+        runbot: Callable[[str], None] = getattr(_logger, "runbot")  # noqa: B009 - logutils installs this logger extension at runtime
+        runbot("Limit frame was not found")
     return list(reversed(stack))
 
 

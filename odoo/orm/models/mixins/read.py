@@ -150,7 +150,7 @@ class ReadMixin(_ModelStubs):
         return (
             self.env.su
             or not field.is_x2many
-            or self.env[field.comodel_name].has_access("read")
+            or self.env[field._get_comodel_name()].has_access("read")
         )
 
     @api.model

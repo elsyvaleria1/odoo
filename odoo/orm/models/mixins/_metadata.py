@@ -29,10 +29,18 @@ class _ModelMetadataMixin(_ModelStubs):
     _transient: bool = False
     _is_registry_metadata: bool = False
 
-    _name: str = None  # type: ignore[assignment]
+    # Framework base classes are unnamed; registered classes supply a name.
+    _name: str | None = None  # type: ignore[assignment]  # Lifecycle stubs describe initialized registry models, not unnamed prototypes.
     _description: str | None = None
     _module: str | None = None
     _custom: bool = False
+
+    @classmethod
+    @typing.override
+    def _get_model_name(cls) -> str:
+        if cls._name is None:
+            raise TypeError(f"{cls.__name__} is not a named registry model")
+        return cls._name
 
     _inherit: str | list[str] | tuple[str, ...] = ()
     _inherits: dict[str, str] = frozendict()
@@ -104,7 +112,7 @@ class _ModelMetadataMixin(_ModelStubs):
 
     def _get_depends_closure(self) -> tuple[set[str], OrderedSet[Field[typing.Any]]]:
         fields_to_flush: OrderedSet[Field[typing.Any]] = OrderedSet()
-        seen: set[str] = {self._name}
+        seen: set[str] = {self._get_model_name()}
         models = [self]
         while models:
             current_model = models.pop()
@@ -127,12 +135,12 @@ class _ModelMetadataMixin(_ModelStubs):
         for name in self.pool.model_names_by_inheritance_root.get(root_table, ()):
             if self.pool[name]._table == root_table:
                 return name
-        return self._name
+        return self._get_model_name()
 
     def _get_reference_model_name(self) -> str:
         if parent := self._get_inherits_shared_parent():
             return self.env[parent]._get_reference_model_name()
-        return self._name
+        return self._get_model_name()
 
     def _get_inherits_shared_parent(self) -> str:
         for parent, field_name in self._inherits.items():

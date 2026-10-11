@@ -408,7 +408,7 @@ def update_db_foreign_key(
 ) -> None:
     if field.company_dependent:
         return
-    comodel = model.env[field.comodel_name]
+    comodel = model.env[field._get_comodel_name()]
     if not model._is_an_ordinary_table() or not comodel._is_an_ordinary_table():
         _debug.logic(
             "field.ddl.foreign_key_skipped",
@@ -440,10 +440,10 @@ def update_db_relation_table(field: Many2many, model: ModelLike) -> bool:
     cr = model.env.cr
     relation, column1, column2 = field._get_relation_triple()
     if not model.pool.register_relation_table(
-        model._name, relation, field._module, reflect=not field.manual
+        model._get_model_name(), relation, field._module, reflect=not field.manual
     ):
         return False
-    comodel = model.env[field.comodel_name]
+    comodel = model.env[field._get_comodel_name()]
     if not sql.table_exists(cr, relation):
         cr.execute(
             SQL(
@@ -488,7 +488,7 @@ def _relation_is_shared_with_tree(field: Many2many, model: BaseModel) -> bool:
 
 
 def update_db_foreign_keys(field: Many2many, model: BaseModel) -> None:
-    comodel = model.env[field.comodel_name]
+    comodel = model.env[field._get_comodel_name()]
     relation, column1, column2 = field._get_relation_triple()
     model_side = model._is_an_ordinary_table() and not _relation_is_shared_with_tree(
         field, model

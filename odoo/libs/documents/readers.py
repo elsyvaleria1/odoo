@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import io
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from odoo.libs.json import loads as json_loads
 
@@ -22,6 +22,9 @@ from .representations import (
     TEXT,
     TREE,
 )
+
+if TYPE_CHECKING:
+    from .document import Document
 
 __all__ = [
     "VIDEO_MIMETYPES",
@@ -53,7 +56,7 @@ class BaseReader:
         _ = document
         return self.defers
 
-    def read(self, document: Any) -> Any:
+    def read(self, document: Document) -> Any:
         raise NotImplementedError
 
     def applies_to(self, mimetype: str) -> bool:
@@ -162,7 +165,7 @@ def _prepare_reader(
     name: str,
     mimetypes: frozenset[str],
     yields: tuple[str, ...],
-    read: Callable[..., Any],
+    read: Callable[[Document], Any],
     cost: int = FREE,
     carried: bool = False,
 ) -> BaseReader:
@@ -172,7 +175,7 @@ def _prepare_reader(
     reader.yields = yields
     reader.cost = cost
     reader.carried = carried
-    reader.read = read  # type: ignore[method-assign]
+    setattr(reader, "read", read)  # noqa: B010 - install a callback with the BaseReader.read signature on this instance
     return reader
 
 

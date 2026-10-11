@@ -84,7 +84,9 @@ def _collect_condition(
         return not isinstance(value, Query | SQL)
     if field is None or not field.relational:
         return False
-    return _collect_domain(model.env[field.comodel_name], subdomain, facts, depth + 1)
+    return _collect_domain(
+        model.env[field._get_comodel_name()], subdomain, facts, depth + 1
+    )
 
 
 def _collect_hierarchy(
@@ -99,7 +101,7 @@ def _collect_hierarchy(
         return False
     owner = model.env[field.model_name]
     if field.relational:
-        comodel = owner.env[field.comodel_name]
+        comodel = owner.env[field._get_comodel_name()]
         parent = field.name if comodel._name == owner._name else comodel._parent_name
     elif field.name == "id":
         comodel, parent = owner, owner._parent_name
@@ -111,9 +113,9 @@ def _collect_hierarchy(
     ):
         return False
     if comodel._parent_store and parent == comodel._parent_name:
-        facts.add((comodel._name, "parent_path"))
+        facts.add((comodel._get_model_name(), "parent_path"))
     if field.is_many2many and comodel._active_name:
-        facts.add((comodel._name, comodel._active_name))
+        facts.add((comodel._get_model_name(), comodel._active_name))
     return True
 
 
@@ -154,14 +156,14 @@ def _collect_path(
         if index < len(names) - 1:
             if not field.relational:
                 return False
-            model = model.env[field.comodel_name]
+            model = model.env[field._get_comodel_name()]
     return field
 
 
 def _collect_field(
     model: BaseModel, field: Field[typing.Any], facts: set[Fact], depth: int
 ) -> bool:
-    facts.add((model._name, field.name))
+    facts.add((model._get_model_name(), field.name))
     if field.is_x2many and not _collect_membership(model, field, facts, depth):
         return False
     if field.store:
@@ -183,12 +185,14 @@ def _collect_membership(
     model: BaseModel, field: Field[typing.Any], facts: set[Fact], depth: int
 ) -> bool:
     if field.is_one2many:
+        if field.comodel_name is None or field.inverse_name is None:
+            return False
         facts.add((field.comodel_name, field.inverse_name))
     else:
         facts.update(_relation_siblings(model, field))
-    comodel = model.env[field.comodel_name]
+    comodel = model.env[field._get_comodel_name()]
     if comodel._active_name:
-        facts.add((comodel._name, comodel._active_name))
+        facts.add((comodel._get_model_name(), comodel._active_name))
     domain = field.domain
     if callable(domain):
         return False
@@ -442,10 +446,12 @@ class AccessMemo:
             return
         self._registered[key] = (env, everything)
         try:
-            facts = None if everything else self.read_facts(env, field.comodel_name)
+            facts = (
+                None if everything else self.read_facts(env, field._get_comodel_name())
+            )
         except AccessError:
             facts = None
-        self._watch(field, facts, self._observed_models(field.comodel_name))
+        self._watch(field, facts, self._observed_models(field._get_comodel_name()))
 
     def _observed_models(self, model_name: str) -> set[str]:
         return {name for name, _fname in self._observed.get(model_name, ())}

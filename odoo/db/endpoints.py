@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import threading
+from collections.abc import Buffer
+from typing import SupportsIndex, SupportsInt
 
 from odoo.libs.debug_log import DebugLog
 
@@ -14,9 +16,11 @@ DEFAULT_PG_PORT = 5432
 _debug = DebugLog(__name__)
 
 
-def _coerce_port(port: object) -> int:
+def _coerce_port(port: str | Buffer | SupportsInt | SupportsIndex | None) -> int:
+    if port is None:
+        return DEFAULT_PG_PORT
     try:
-        return int(port)  # type: ignore[call-overload]
+        return int(port)
     except TypeError, ValueError:
         return DEFAULT_PG_PORT
 

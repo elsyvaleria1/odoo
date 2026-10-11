@@ -125,7 +125,7 @@ class Many2one(_Relational):
     def setup_nonrelated(self, model: BaseModel) -> None:
         super().setup_nonrelated(model)
         if not self.ondelete:
-            comodel = model.env[self.comodel_name]
+            comodel = model.env[self._get_comodel_name()]
             if model.is_transient() and not comodel.is_transient():
                 self.ondelete = "cascade" if self.required else "set null"
             else:
@@ -146,7 +146,7 @@ class Many2one(_Relational):
             )
         if (
             self.ondelete == "restrict"
-            and model.env[self.comodel_name]._is_registry_metadata
+            and model.env[self._get_comodel_name()]._is_registry_metadata
         ):
             raise ValueError(
                 f"Field {self.name} of model {model._name} is defined as ondelete='restrict' "
@@ -158,7 +158,7 @@ class Many2one(_Relational):
     def update_db(
         self, model: ModelLike, columns: dict[str, dict[str, typing.Any]]
     ) -> bool:
-        comodel = model.env[self.comodel_name]
+        comodel = model.env[self._get_comodel_name()]
         if not model.is_transient() and comodel.is_transient():
             raise ValueError(
                 f"Many2one {self} from Model to TransientModel is forbidden"
@@ -207,7 +207,7 @@ class Many2one(_Relational):
                 self._reject_command_tuple(value)
             id_ = (value[0] or None) if value else None
         elif isinstance(value, dict):
-            comodel = record.env[self.comodel_name]
+            comodel = record.env[self._get_comodel_name()]
             origin = comodel.browse(value.get("id") or ())
             id_ = typing.cast(
                 "int | NewId | None", comodel.new(value, origin=origin).id
@@ -226,7 +226,7 @@ class Many2one(_Relational):
     def convert_to_record(
         self, value: int | NewId | None, record: ModelLike
     ) -> BaseModel:
-        rs = object.__new__(record.pool.models[self.comodel_name])
+        rs = object.__new__(record.pool.models[self._get_comodel_name()])
         rs.env = record.env
         rs._ids = () if value is None else (value,)
         rs._prefetch_ids = PrefetchMany2one(record, self)
@@ -235,7 +235,7 @@ class Many2one(_Relational):
     def convert_to_record_multi(
         self, values: list[int | NewId | None], records: BaseModel
     ) -> BaseModel:
-        rs = object.__new__(records.pool.models[self.comodel_name])
+        rs = object.__new__(records.pool.models[self._get_comodel_name()])
         rs.env = records.env
         rs._ids = tuple(unique(id_ for id_ in values if id_ is not None))
         rs._prefetch_ids = PrefetchMany2one(records, self)
@@ -261,7 +261,7 @@ class Many2one(_Relational):
 
         allowed_ids: set[IdType] | None = None
         if target_ids := list(unique(value.id for value in values if value)):
-            targets = records.env[self.comodel_name].browse(target_ids)
+            targets = records.env[self._get_comodel_name()].browse(target_ids)
             try:
                 allowed_ids = set(targets._filtered_display_name_access()._ids)
             except MissingError:
@@ -320,7 +320,7 @@ class Many2one(_Relational):
         if isinstance(value, dict):
             return typing.cast(
                 "int | NewId | typing.Literal[False]",
-                record.env[self.comodel_name].new(value).id,
+                record.env[self._get_comodel_name()].new(value).id,
             )
         raise ValueError(f"Wrong value for {self}: {value!r}")
 
@@ -358,7 +358,7 @@ class Many2one(_Relational):
                 uid=records.env.uid,
             )
             try:
-                records.env[self.comodel_name].browse(
+                records.env[self._get_comodel_name()].browse(
                     (cache_value,) if cache_value else ()
                 ).check_access("read")
             except AccessError as e:
@@ -395,7 +395,7 @@ class Many2one(_Relational):
         record_ids = set(records._ids)
         field_cache = self._get_cache(records.env)
         _pending = PENDING
-        corecords = records.env[self.comodel_name].browse(
+        corecords = records.env[self._get_comodel_name()].browse(
             coid if record_id else (coid and NewId(coid))
             for record_id in records._ids
             if (coid := field_cache.get(record_id)) is not None and coid is not _pending
@@ -498,7 +498,7 @@ class Many2one(_Relational):
     def to_sql(self, model: ModelLike, alias: str) -> SQL:
         sql_field = super().to_sql(model, alias)
         if self.company_dependent:
-            comodel = model.env[self.comodel_name]
+            comodel = model.env[self._get_comodel_name()]
             _debug.logic(
                 "field.many2one.company_dependent_exists_subselect",
                 model=model._name,
@@ -536,7 +536,7 @@ class Many2one(_Relational):
                 field_expr, operator, value, model, alias, query
             )
 
-        comodel = model.env[self.comodel_name]
+        comodel = model.env[self._get_comodel_name()]
         sql_field = model._field_to_sql(alias, field_expr, query)
         can_be_null = self not in model.env.registry.not_null_fields
         bypass_access = operator in ("any!", "not any!") or self.bypass_search_access
@@ -604,7 +604,7 @@ class Many2one(_Relational):
         return sql
 
     def join(self, model: ModelLike, alias: str, query: Query) -> tuple[BaseModel, str]:
-        comodel = model.env[self.comodel_name]
+        comodel = model.env[self._get_comodel_name()]
         coalias = query.get_table_alias(alias, self.name)
         _debug.pipeline(
             "field.many2one.join",

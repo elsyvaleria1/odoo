@@ -39,12 +39,12 @@ class ReadonlyDict[K, T](Mapping[K, T]):
         return iter(self._data__)
 
 
-def submap[K, T](mapping: Mapping[K, T], keys: Iterable[K]) -> Mapping[K, T]:
+def submap[K, T](mapping: Mapping[K, T], keys: Iterable[K]) -> dict[K, T]:
     keys = frozenset(keys)
     return {key: mapping[key] for key in mapping if key in keys}
 
 
-class DotDict(dict):
+class DotDict(dict[str, Any]):
     def __getattr__(self, attrib: str) -> Any:
         if attrib.startswith("__") and attrib.endswith("__"):
             raise AttributeError(attrib)

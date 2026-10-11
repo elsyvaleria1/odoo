@@ -152,7 +152,7 @@ class UnlinkMixin(_ModelStubs):
         for name in path.split("."):
             if not column_exists(self.env.cr, model._table, name):
                 return False
-            model = self.env[model._fields[name].comodel_name]
+            model = self.env[model._fields[name]._get_comodel_name()]
         known.add(key)
         return True
 

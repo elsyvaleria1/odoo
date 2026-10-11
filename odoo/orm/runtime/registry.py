@@ -72,7 +72,7 @@ class Registry(
     _RegistrySignalingMixin,
     Mapping[str, type["BaseModel"]],
 ):
-    _lock: threading.RLock | DummyRLock = threading.RLock()
+    _lock: typing.ClassVar[threading.RLock | DummyRLock] = threading.RLock()
 
     registries = LRU[str, "Registry"](42, on_evict=_thaw_evicted_registry)
 
@@ -82,7 +82,7 @@ class Registry(
 
     _replica: ReplicaRouter
 
-    def __new__(cls, db_name: str) -> Registry:  # noqa: PYI034 -- Factory may return an interned instance or a different concrete subtype.
+    def __new__(cls, db_name: str) -> Registry:  # noqa: PYI034 — The shared cache can return a different Registry subclass.
         if not db_name:
             raise ValueError("Missing database name")
         reg = cls.registries.get(db_name)
@@ -158,7 +158,9 @@ class Registry(
             cls.registries.count = lru_size
         registry: Registry = object.__new__(cls)
         registry.init(db_name)
-        registry.new = registry.init = registry.registries = None  # type: ignore[assignment, method-assign]
+        # Factory methods and the shared cache belong to the class, not instances.
+        for name in ("new", "init", "registries"):
+            setattr(registry, name, None)
         first_registry = not cls.registries
         _debug.lifecycle(
             "registry.new",
@@ -322,7 +324,7 @@ class Registry(
             model_cls = registration.add_model_to_registry(
                 self, typing.cast("type[BaseModel]", model_def)
             )
-            model_names.append(model_cls._name)
+            model_names.append(model_cls._get_model_name())
 
         _debug.pipeline(
             "registry.load_module", module=module.name, models=len(model_names)
@@ -331,7 +333,7 @@ class Registry(
 
     def get_schema_changing_models(self, module: module_graph.ModuleNode) -> list[str]:
         return [
-            model_def._name
+            typing.cast("type[BaseModel]", model_def)._get_model_name()
             for model_def in models.MetaModel._module_to_models__.get(module.name, [])
             if registration.changes_descendant_schema(
                 typing.cast("type[BaseModel]", model_def)
@@ -415,7 +417,7 @@ class Registry(
 
     def _models_relating_to_custom_models(self) -> list[str]:
         return [
-            model_cls._name
+            model_cls._get_model_name()
             for model_cls in self.models.values()
             if not model_cls._custom
             and any(

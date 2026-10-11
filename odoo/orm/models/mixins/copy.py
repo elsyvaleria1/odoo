@@ -66,7 +66,7 @@ class CopyMixin(_ModelStubs):
             name
             for name, field in fields_to_copy.items()
             if (field.is_one2many or field.is_many2many)
-            and not self.env[field.comodel_name].browse().has_access("read")
+            and not self.env[field._get_comodel_name()].browse().has_access("read")
         ]
         for name in unreadable:
             del fields_to_copy[name]

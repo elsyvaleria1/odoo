@@ -151,9 +151,9 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
         ):
             definition_record_field = typing.cast(
                 "PropertiesDefinition",
-                model.env[model._fields[self.definition_record].comodel_name]._fields[
-                    self.definition_record_field
-                ],
+                model.env[
+                    model._fields[self.definition_record]._get_comodel_name()
+                ]._fields[self.definition_record_field],
             )
             if self not in definition_record_field.properties_fields:
                 definition_record_field.properties_fields += (self,)

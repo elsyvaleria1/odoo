@@ -9,7 +9,18 @@ from opcode import opmap
 from odoo.libs.debug_log import DebugLog
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
+
+    class _ExceptionTableEntry(typing.Protocol):
+        @property
+        def start(self) -> int: ...
+        @property
+        def target(self) -> int: ...
+        @property
+        def depth(self) -> int: ...
+        @property
+        def lasti(self) -> bool: ...
+
 
 _debug = DebugLog(__name__)
 
@@ -151,7 +162,7 @@ def _scan_code(
         if value != _SAVED_LOCAL:
             stores.setdefault(name, []).append(value)
 
-    entries = bytecode.exception_entries  # type: ignore[attr-defined]
+    entries: Iterable[_ExceptionTableEntry] = getattr(bytecode, "exception_entries")  # noqa: B009 - Python exposes this table but typeshed omits it
     protected = {entry.start: entry for entry in entries}
     handlers = {entry.target: entry for entry in entries}
     entry_stacks: dict[int, list[typing.Any]] = {}

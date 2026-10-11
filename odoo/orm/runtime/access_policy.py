@@ -244,7 +244,9 @@ class AccessPolicy:
         call: typing.Callable[..., typing.Any],
     ) -> typing.Any:
         if "ir.access.obligation" not in env.registry:
-            with env.transaction.admitting(records._name, verb, records._ids):
+            with env.transaction.admitting(
+                records._get_model_name(), verb, records._ids
+            ):
                 return call(records)
         return env["ir.access.obligation"]._at_door(records, verb, call)
 

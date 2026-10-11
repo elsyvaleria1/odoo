@@ -2,7 +2,7 @@ import contextlib
 import logging
 import sys
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 from unittest import BaseTestSuite, util
 
 import odoo
@@ -27,6 +27,8 @@ class TestSuite(BaseTestSuite):
     _cleanup: bool
     _removeTestAtIndex: Callable[[int], None]
 
+    # The Odoo runner requires its result's retry and infrastructure metadata.
+    @override
     def run(  # type: ignore[override]
         self, result: OdooTestResult, debug: bool = False
     ) -> OdooTestResult:

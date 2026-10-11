@@ -567,12 +567,12 @@ FIELD_TRANSLATE["xml_translate"] = xml_translate
 _POSITIONAL_PLACEHOLDER = re.compile(r"%(?!\()")
 
 
-def _is_iterable_arg(value: object) -> bool:
+def _is_iterable_arg(value: object) -> typing.TypeGuard[Iterable[object]]:
     return not isinstance(value, (str, bytes)) and isinstance(value, Iterable)
 
 
 def _materialise(value: object) -> object:
-    return list(value) if _is_iterable_arg(value) else value  # type: ignore[call-overload]
+    return list(value) if _is_iterable_arg(value) else value
 
 
 def get_translation(module: str, lang: str, source: str, args: tuple | dict) -> str:
@@ -923,7 +923,7 @@ class LazyTranslate:
         self.module = module = get_translated_module(module or 2)
         self.default_lang = default_lang or ("en_US" if module == "base" else "")
 
-    def __call__(self, source: str, *args, **kwargs) -> LazyGettext:
+    def __call__(self, source: str, *args: Any, **kwargs: Any) -> LazyGettext:
         return LazyGettext(
             source,
             *args,

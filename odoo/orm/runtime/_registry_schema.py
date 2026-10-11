@@ -428,6 +428,8 @@ class _RegistrySchemaMixin(_RegistryStubs):
             for field in model._fields.values():
                 if not field.store or not (field.is_many2one or field.is_many2many):
                     continue
+                if field.comodel_name is None:
+                    continue
                 comodel = self.models.get(field.comodel_name)
                 if comodel is None or comodel._table not in tables:
                     continue
@@ -467,10 +469,10 @@ class _RegistrySchemaMixin(_RegistryStubs):
         for model in views:
             table_query = model._table_query
             if not table_query:
-                table_views[model._table] = model._name
+                table_views[model._table] = model._get_model_name()
                 continue
             query = table_query if isinstance(table_query, SQL) else SQL(table_query)
-            query_flushes[model._name] = query.to_flush
+            query_flushes[model._get_model_name()] = query.to_flush
             probe = "_undeclared_view_reads_probe"
             try:
                 with cr.savepoint(flush=False), mute_logger(CURSOR_LOGGER_NAME):
@@ -481,7 +483,9 @@ class _RegistrySchemaMixin(_RegistryStubs):
                             query.inlined(cr),
                         )
                     )
-                    reads[model._name] = sql.get_view_column_reads(cr, [probe])[probe]
+                    reads[model._get_model_name()] = sql.get_view_column_reads(
+                        cr, [probe]
+                    )[probe]
                     cr.execute(SQL("DROP VIEW %s", SQL.identifier(probe)))
             except psycopg.Error as exc:
                 _debug.logic(
@@ -520,7 +524,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
                     continue
                 if any(not owner._auto or owner._table_query for owner in owners):
                     if not any(owner._name in reached for owner in owners):
-                        missing.add(owners[0]._name)
+                        missing.add(owners[0]._get_model_name())
                     continue
                 fields = [
                     owner._fields[column]

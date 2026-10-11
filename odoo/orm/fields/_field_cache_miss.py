@@ -76,7 +76,7 @@ def get_cache_miss_from_storage(
             recs._fetch_field(field)
             return
         outer = transaction.prefetch_batch
-        transaction.prefetch_batch = (recs._name, recs._ids)
+        transaction.prefetch_batch = (recs._get_model_name(), recs._ids)
         try:
             recs._fetch_field(field)
         finally:
@@ -252,7 +252,7 @@ def get_cache_miss_by_delegation(
             candidate.inherited and related and related.split(".")[0] == field.name
         )
 
-    parent = record.env[field.comodel_name].new(
+    parent = record.env[field._get_comodel_name()].new(
         {
             name: value
             for name, value in record._cache.items()
