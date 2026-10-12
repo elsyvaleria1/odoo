@@ -487,6 +487,29 @@ class TestDiscussChannelInvariants(MailCommon):
 
         self.assertEqual(allowed, [poster.partner_id.id])
 
+    def test_refusing_a_nameless_recipient_names_it_in_the_validation_error(self):
+        company = self.env["res.partner"].create(
+            {"name": "Refused Corp", "is_company": True}
+        )
+        nameless = self.env["res.partner"].create(
+            {"type": "invoice", "parent_id": company.id}
+        )
+        self.assertFalse(nameless.name)
+        group = self.Channel._create_group(partners_to=[self.env.user.partner_id.id])
+
+        with self.assertRaises(ValidationError) as caught:
+            self.env["mail.message"].create(
+                {
+                    "model": "discuss.channel",
+                    "res_id": group.id,
+                    "message_type": "comment",
+                    "body": "hello",
+                    "partner_ids": [(4, nameless.id)],
+                }
+            )
+
+        self.assertIn(nameless.display_name, str(caught.exception))
+
     def test_allowed_message_partner_ids_declares_its_singleton(self):
         first = self.Channel._create_channel(name="Allowed A", group_id=None)
         second = self.Channel._create_channel(name="Allowed B", group_id=None)

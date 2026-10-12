@@ -1805,9 +1805,9 @@ class MixinMailGateway(models.AbstractModel):
         if isinstance(message, str):
             message = message.encode("utf-8")
         raw = message
-        message = email.message_from_bytes(raw, policy=email.policy.SMTP)
+        email_message = email.message_from_bytes(raw, policy=email.policy.SMTP)
 
-        msg_id = _message_id(message)
+        msg_id = _message_id(email_message)
         duplicate_of = None
         if not self.env["mail.gateway.receipt"]._claim_message_id(msg_id):
             duplicate_of = "receipt"
@@ -1827,8 +1827,8 @@ class MixinMailGateway(models.AbstractModel):
             )
             _logger.info(
                 "Ignored mail from %s to %s with Message-Id %s: found duplicated Message-Id during processing",
-                decode_message_header(message, "From", separator=","),
-                decode_message_header(message, "To", separator=","),
+                decode_message_header(email_message, "From", separator=","),
+                decode_message_header(email_message, "To", separator=","),
                 msg_id,
             )
             return False
@@ -1837,7 +1837,7 @@ class MixinMailGateway(models.AbstractModel):
             "message_parse", cr=self.env.cr, model=model, save_original=save_original
         ) as span:
             msg_dict = self.message_parse(
-                message,
+                email_message,
                 save_original=save_original,
                 original=raw if save_original else None,
             )
@@ -1860,14 +1860,16 @@ class MixinMailGateway(models.AbstractModel):
 
         with _debug.perf("message_route", cr=self.env.cr, message_id=msg_id) as span:
             routes = self.message_route(
-                message, msg_dict, model, thread_id, custom_values
+                email_message, msg_dict, model, thread_id, custom_values
             )
             span.set(routes=len(routes))
-        if self._is_loop_sender(message, msg_dict, routes):
+        if self._is_loop_sender(email_message, msg_dict, routes):
             _debug.logic("message_ignored", message_id=msg_id, reason="loop_sender")
             return False
 
-        msg_dict.update(**self._message_parse_post_process(message, msg_dict, routes))
+        msg_dict.update(
+            **self._message_parse_post_process(email_message, msg_dict, routes)
+        )
 
         with _debug.perf(
             "message_route_process",
@@ -1875,7 +1877,7 @@ class MixinMailGateway(models.AbstractModel):
             message_id=msg_id,
             routes=len(routes),
         ):
-            return self._message_route_process(message, msg_dict, routes)
+            return self._message_route_process(email_message, msg_dict, routes)
 
     def _message_receive_bounce(self, email: str, partner: ResPartner) -> None:
         pass

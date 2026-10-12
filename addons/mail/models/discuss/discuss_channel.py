@@ -1308,7 +1308,7 @@ class DiscussChannel(models.Model):
             pids = by_channel[channel.id].partner_ids.ids
             refused = set(pids) - set(channel._get_allowed_message_partner_ids(pids))
             if refused:
-                names = self.env["res.partner"].browse(refused).mapped("name")
+                names = self.env["res.partner"].browse(refused).mapped("display_name")
                 raise ValidationError(
                     self.env._(
                         "%(partners)s cannot be added as recipients of a message "
