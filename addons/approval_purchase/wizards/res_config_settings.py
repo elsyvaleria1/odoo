@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo import fields, models
 
 
@@ -41,7 +43,7 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
     )
 
-    def action_view_po_approval_categories(self) -> dict:
+    def action_view_po_approval_categories(self) -> dict[str, Any]:
         return {
             "name": self.env._("Purchase Approval Categories"),
             "type": "ir.actions.act_window",

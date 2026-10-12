@@ -90,7 +90,7 @@ class ApprovalTestDocument(models.Model):
     def _get_fields_approval_protected(self) -> list[str]:
         return (self.protected_field_names or "").split(",") if self else []
 
-    def _is_approval_invalidated_by_changes(self, fields_changed) -> bool:
+    def _is_approval_invalidated_by_changes(self, fields_changed: list[str]) -> bool:
         return not self.keeps_approval_on_change
 
     def _get_fields_approval_required(self) -> list[str]:

@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from markupsafe import Markup
 
@@ -74,7 +75,7 @@ class TelegramPaymentReportLog(models.Model):
             record.payment_details_display = self._format_payment_details_html(data)
 
     @staticmethod
-    def _format_payment_details_html(data):
+    def _format_payment_details_html(data: dict[str, Any]) -> Markup:
         field_labels = {
             "partner_fx_name": "Invoice To",
             "product_category": "Product Category",

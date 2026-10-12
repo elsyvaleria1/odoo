@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
+
+if TYPE_CHECKING:
+    from odoo.addons.sale.models.sale_order import SaleOrder
 
 _debug = DebugLog(__name__)
 
@@ -64,7 +69,7 @@ class ApprovalCategory(models.Model):
     def _onchange_so_approval_mode(self) -> None:
         self._clear_approval_mode_hidden_criteria()
 
-    def _check_customer_credit_exceeded(self, sale_order) -> bool:
+    def _check_customer_credit_exceeded(self, sale_order: SaleOrder) -> bool:
         self.check_singleton()
         partner = sale_order.partner_id.commercial_partner_id.sudo().with_company(
             sale_order.company_id,
@@ -91,7 +96,7 @@ class ApprovalCategory(models.Model):
         )
         return partner.credit + so_amount_company > partner.credit_limit
 
-    def _is_applicable_for(self, document) -> bool:
+    def _is_applicable_for(self, document: models.BaseModel) -> bool:
         self.check_singleton()
         if document._name != "sale.order":
             return super()._is_applicable_for(document)
@@ -101,7 +106,7 @@ class ApprovalCategory(models.Model):
             and self._is_matching_document(document)
         )
 
-    def _is_matching_credit_policy(self, document) -> bool:
+    def _is_matching_credit_policy(self, document: models.BaseModel) -> bool:
         if document._name != "sale.order":
             return super()._is_matching_credit_policy(document)
         if not self.check_credit_limit:

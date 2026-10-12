@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
 from markupsafe import Markup, escape
 
@@ -11,6 +11,10 @@ from odoo.addons.approval.models.mixin_approval import (
     APPROVAL_TRIGGER_CATEGORY,
     APPROVAL_TRIGGER_RULE,
 )
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.approval.models.mixin_approval import CategoryCandidates
 
 MAX_DETAIL_LINES = 5
 
@@ -121,7 +125,7 @@ class AccountMove(models.Model):
             "journal_id",
         ]
 
-    def _is_approval_invalidated_by_changes(self, fields_changed) -> bool:
+    def _is_approval_invalidated_by_changes(self, fields_changed: list[str]) -> bool:
         return bool(
             set(fields_changed) - {"currency_id", "line_ids", "invoice_line_ids"}
         )
@@ -168,7 +172,9 @@ class AccountMove(models.Model):
             ("target_model", "=", False),
         ]
 
-    def _get_approval_category_fallback(self, categories):
+    def _get_approval_category_fallback(
+        self, categories: ApprovalCategory
+    ) -> ApprovalCategory:
         self.check_singleton()
         if not self._approval_trigger_fired():
             return self.env["approval.category"].browse()
@@ -197,7 +203,9 @@ class AccountMove(models.Model):
             ),
         )
 
-    def _prepare_approval_request_values(self, category: Any) -> dict[str, Any]:
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         vals = super()._prepare_approval_request_values(category)
 
         vals.update(
@@ -300,10 +308,12 @@ class AccountMove(models.Model):
                 )
         return notes
 
-    def _get_held_for_posting_approval(self):
+    def _get_held_for_posting_approval(self) -> Self:
         return self.env["ir.access.obligation"]._get_held(self, "post")
 
-    def _check_can_request_approval(self, candidates=None):
+    def _check_can_request_approval(
+        self, candidates: CategoryCandidates | None = None
+    ) -> ApprovalCategory:
         if (
             self.approval_request_id
             and self.approval_request_id.target_model == "account.move"
@@ -393,7 +403,7 @@ class AccountMove(models.Model):
             self.move_type,
         )
 
-    def _approval_approved_message_values(self) -> dict:
+    def _approval_approved_message_values(self) -> dict[str, Any]:
         move_type_label = self._move_type_label()
 
         approver_names = self._approval_decider_names("approved")

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from werkzeug.exceptions import BadRequest
 
 from odoo import http
@@ -9,8 +11,13 @@ from odoo.addons.approval_knowledge.models.knowledge_article import (
 )
 from odoo.addons.knowledge.controllers.main import KnowledgeController
 
+if TYPE_CHECKING:
+    from odoo.addons.approval_knowledge.models.knowledge_article import (
+        KnowledgeArticle,
+    )
 
-def _requestable_article(article_id):
+
+def _requestable_article(article_id: int) -> KnowledgeArticle:
     if not request.env.user._is_internal():
         return request.env["knowledge.article"]
     article_sudo = (

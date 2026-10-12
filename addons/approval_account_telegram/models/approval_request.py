@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from markupsafe import Markup
 from psycopg import IntegrityError
@@ -7,6 +7,15 @@ from psycopg import IntegrityError
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Command
+
+if TYPE_CHECKING:
+    from odoo.addons.account.models.account_bank_statement_line import (
+        AccountBankStatementLine,
+    )
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_category_step import (
+        ApprovalCategoryStep,
+    )
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +37,9 @@ class ApprovalRequest(models.Model):
             )
 
     def action_approve(
-        self, approver: Any | None = None, steps: Any | None = None
+        self,
+        approver: ApprovalApprover | None = None,
+        steps: ApprovalCategoryStep | None = None,
     ) -> dict[str, Any] | None:
         result = super().action_approve(approver, steps)
 
@@ -96,7 +107,7 @@ class ApprovalRequest(models.Model):
 
         return result
 
-    def _claimed_statement_line(self):
+    def _claimed_statement_line(self) -> AccountBankStatementLine:
         self.check_singleton()
         return self.bank_statement_line_id.with_privilege(
             "approval_account_telegram.privilege_start_approved_workflow",

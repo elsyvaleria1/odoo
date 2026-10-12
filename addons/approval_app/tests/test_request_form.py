@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from odoo.exceptions import ValidationError
 from odoo.tests import common, tagged
 
@@ -63,6 +65,42 @@ class TestRequestFormDefaults(common.TransactionCase):
         body = " ".join(duplicate.message_ids.mapped("body"))
         self.assertIn("Duplicated from", body)
         self.assertIn(str(source.id), body)
+
+    def test_copy_data_skips_a_record_an_enclosing_copy_already_took(self):
+        category = self.env["approval.category"].create(
+            {
+                "sequence_code": "SC0015",
+                "name": "Repeated Clone Cat",
+                "has_amount": "required",
+                "approval_minimum": 1,
+                "step_ids": pool_step([(self.approver_user_1.id, True, 10)], minimum=1),
+            }
+        )
+        historical = self.env["approval.request"].create(
+            {
+                "name": "Hist",
+                "request_owner_id": self.env.user.id,
+                "category_id": category.id,
+                "amount": 300,
+            }
+        )
+        historical.action_confirm()
+        record_approval(historical.approver_ids)
+        source = self.env["approval.request"].create(
+            {
+                "name": "source",
+                "request_owner_id": self.env.user.id,
+                "category_id": category.id,
+                "amount": 1000,
+            }
+        )
+
+        fresh = source.copy_data()
+        seen = defaultdict(set, {"approval.request": {source.id}})
+        taken = source.with_context(__copy_data_seen=seen).copy_data()
+
+        self.assertEqual(fresh[0]["amount"], 300.0)
+        self.assertEqual(taken, [None])
 
     def test_onchange_category_autofill_copies_required_fields(self):
         category = self.env["approval.category"].create(

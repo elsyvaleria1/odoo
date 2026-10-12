@@ -1,9 +1,20 @@
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from odoo import api, fields, models
 
 from odoo.addons.telegram.tools import keyboard as kb
 from odoo.addons.telegram.tools.authority import operating
+
+if TYPE_CHECKING:
+    from odoo.api import Environment
+
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
+    from odoo.addons.approval.models.res_users import ResUsers
+    from odoo.addons.base.models.res_company import ResCompany
+    from odoo.addons.telegram.models.telegram_bot import TelegramBot
+    from odoo.addons.telegram.models.telegram_chat import TelegramChat
 
 _DATE_FORMATS = ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y")
 
@@ -13,7 +24,12 @@ class TelegramApprovalNotifier(models.AbstractModel):
     _description = "Telegram Approval Notifier"
 
     @api.model
-    def _notify_approver(self, approver, intro=None, resubmitted=False):
+    def _notify_approver(
+        self,
+        approver: ApprovalApprover,
+        intro: str | None = None,
+        resubmitted: bool = False,
+    ) -> None:
         if not approver._telegram_notify_enabled():
             return
         request = approver.request_id
@@ -45,14 +61,14 @@ class TelegramApprovalNotifier(models.AbstractModel):
         )
 
     @api.model
-    def _recipient_env(self, chat):
+    def _recipient_env(self, chat: TelegramChat) -> Environment:
         lang = chat.partner_id.lang
         if lang and lang != self.env.lang:
             return self.env(context={**self.env.context, "lang": lang})
         return self.env
 
     @api.model
-    def _target_chat(self, user, company):
+    def _target_chat(self, user: ResUsers, company: ResCompany) -> TelegramChat:
         if not user:
             return self.env["telegram.chat"].browse()
         bots = operating(self.env["telegram.bot"]).search(
@@ -67,7 +83,7 @@ class TelegramApprovalNotifier(models.AbstractModel):
         return self.env["telegram.chat"]._for_user(user, bots)[:1]
 
     @api.model
-    def _notify_owner_outcome(self, request):
+    def _notify_owner_outcome(self, request: ApprovalRequest) -> None:
         if not self._feature_active():
             return
         target = self._target_chat(request.request_owner_id, request.company_id)
@@ -98,7 +114,9 @@ class TelegramApprovalNotifier(models.AbstractModel):
         target.bot_id._queue_text(target, text, html=False)
 
     @api.model
-    def _notify_owner_change(self, request, field, note=None):
+    def _notify_owner_change(
+        self, request: ApprovalRequest, field: str, note: str | None = None
+    ) -> None:
         if not self._feature_active():
             return
         target = self._target_chat(request.request_owner_id, request.company_id)
@@ -128,7 +146,12 @@ class TelegramApprovalNotifier(models.AbstractModel):
         )
 
     @api.model
-    def _format_summary(self, request, intro=None, env=None) -> str:
+    def _format_summary(
+        self,
+        request: ApprovalRequest,
+        intro: str | None = None,
+        env: Environment | None = None,
+    ) -> str:
         env = env or self.env
         lines = [
             intro or env._("🔔 New approval request"),
@@ -165,11 +188,19 @@ class TelegramApprovalNotifier(models.AbstractModel):
         return "\n".join(lines)
 
     @api.model
-    def _summary_review_lines(self, request, env):
+    def _summary_review_lines(
+        self, request: ApprovalRequest, env: Environment
+    ) -> list[str]:
         return []
 
     @api.model
-    def _prepare_keyboard(self, approver, request, bot, env=None):
+    def _prepare_keyboard(
+        self,
+        approver: ApprovalApprover,
+        request: ApprovalRequest,
+        bot: TelegramBot,
+        env: Environment | None = None,
+    ) -> dict[str, Any]:
         env = env or self.env
         url = bot._mini_app_url(f"/telegram/approval/app/{bot.id}?request={request.id}")
         return kb.keyboard(
@@ -182,7 +213,7 @@ class TelegramApprovalNotifier(models.AbstractModel):
         )
 
     @api.model
-    def _mini_app_labels(self) -> dict:
+    def _mini_app_labels(self) -> dict[str, Any]:
         _ = self.env._
         return {
             "lang": (self.env.lang or "en_US").replace("_", "-"),
@@ -248,18 +279,25 @@ class TelegramApprovalNotifier(models.AbstractModel):
         }
 
     @api.model
-    def _approve(self, approver):
+    def _approve(self, approver: ApprovalApprover) -> None:
         approver.request_id.action_approve(approver=approver)
 
     @api.model
-    def _refuse(self, approver, reason_id=None, note=None):
+    def _refuse(
+        self,
+        approver: ApprovalApprover,
+        reason_id: int | None = None,
+        note: str | None = None,
+    ) -> None:
         approver.write({"refusal_reason_id": reason_id or False, "note": note or False})
         approver.request_id.with_context(skip_wizard=True).action_refuse(
             approver=approver
         )
 
     @api.model
-    def _request_change(self, approver, field, note=None):
+    def _request_change(
+        self, approver: ApprovalApprover, field: str, note: str | None = None
+    ) -> None:
         request = approver.request_id
         request.with_context(
             skip_wizard=True, requested_change_field=field, change_note=note
@@ -275,7 +313,7 @@ class TelegramApprovalNotifier(models.AbstractModel):
             )
 
     @api.model
-    def _apply_owner_fix(self, request, raw_value):
+    def _apply_owner_fix(self, request: ApprovalRequest, raw_value: str) -> bool:
         if request.pending_change_field == "date":
             parsed = self._parse_user_date(raw_value)
             if not parsed:
@@ -287,7 +325,7 @@ class TelegramApprovalNotifier(models.AbstractModel):
         return True
 
     @staticmethod
-    def _parse_user_date(text):
+    def _parse_user_date(text: str) -> str | None:
         for date_format in _DATE_FORMATS:
             try:
                 parsed = datetime.strptime((text or "").strip(), date_format)

@@ -1,4 +1,7 @@
+from typing import Literal
+
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError, ValidationError
 
 from odoo.addons.approval.models import approval_trace as trace
@@ -56,7 +59,7 @@ class IrAttachment(models.Model):
                     ),
                 )
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if "approval_requirement_id" in vals:
             requests = self._approval_attachments_in_self().mapped("res_id")
             if self._approval_terminal_parent_ids(set(requests)):

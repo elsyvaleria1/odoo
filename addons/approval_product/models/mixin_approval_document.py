@@ -1,4 +1,5 @@
-from typing import Any
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from markupsafe import Markup, escape
 
@@ -8,10 +9,17 @@ from odoo.tools.misc import format_datetime, formatLang
 
 from odoo.addons.approval.models.mixin_approval import APPROVAL_TRIGGER_RULE
 
+if TYPE_CHECKING:
+    from datetime import date
+
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.approval.models.mixin_approval import CategoryCandidates
+    from odoo.addons.base.models.res_currency import ResCurrency
+
 MAX_DETAIL_LINES = 200
 
 
-def _depends_on_approval_settings(model) -> list:
+def _depends_on_approval_settings(model: models.BaseModel) -> list[str]:
     if model._abstract:
         return []
     prefix = model._get_approval_field_prefix()
@@ -78,13 +86,13 @@ class MixinApprovalDocument(models.AbstractModel):
         ]
         return field.default(company)
 
-    def _get_approval_deadline_date(self):
-        return self.date_commitment
+    def _get_approval_deadline_date(self) -> datetime | None:
+        return self.date_commitment or None
 
-    def _get_approval_reference(self) -> str:
-        return self.origin
+    def _get_approval_reference(self) -> str | None:
+        return self.origin or None
 
-    def _get_approval_setting(self, record, suffix):
+    def _get_approval_setting(self, record: models.BaseModel, suffix: str) -> Any:
         return record[f"{self._get_approval_field_prefix()}_{suffix}"]
 
     def _is_approval_forced_by_partner(self) -> bool:
@@ -163,7 +171,9 @@ class MixinApprovalDocument(models.AbstractModel):
             return True
         return self._check_rate_limit_exceeded()
 
-    def _check_can_request_approval(self, candidates=None):
+    def _check_can_request_approval(
+        self, candidates: CategoryCandidates | None = None
+    ) -> ApprovalCategory:
         if (
             self.approval_request_id
             and self.approval_request_id.target_model == self._name
@@ -209,7 +219,9 @@ class MixinApprovalDocument(models.AbstractModel):
             ),
         )
 
-    def _get_approval_category_mismatch_report(self, categories) -> str:
+    def _get_approval_category_mismatch_report(
+        self, categories: ApprovalCategory
+    ) -> str:
         self.check_singleton()
         checks = (
             (self.env._("amount"), "_is_matching_amount"),
@@ -234,7 +246,9 @@ class MixinApprovalDocument(models.AbstractModel):
             )
         return "\n".join(lines)
 
-    def _raise_approval_category_not_matched(self, categories) -> None:
+    def _raise_approval_category_not_matched(
+        self, categories: ApprovalCategory
+    ) -> None:
         report = self._get_approval_category_mismatch_report(categories)
         raise UserError(
             self.env._(
@@ -277,7 +291,7 @@ class MixinApprovalDocument(models.AbstractModel):
             f"<p><strong>{delivery_label}:</strong> {delivery}</p>",
         ]
 
-    def _get_approval_reason_html(self):
+    def _get_approval_reason_html(self) -> str:
         self.check_singleton()
         reason_parts = self._get_approval_reason_header()
 
@@ -333,14 +347,16 @@ class MixinApprovalDocument(models.AbstractModel):
             ),
         ]
 
-    def _format_approval_amount(self, amount, currency=None) -> str:
+    def _format_approval_amount(
+        self, amount: float, currency: ResCurrency | None = None
+    ) -> str:
         return formatLang(
             self.env,
             amount,
             currency_obj=currency or self.currency_id,
         )
 
-    def _approval_approved_message_values(self) -> dict:
+    def _approval_approved_message_values(self) -> dict[str, Any]:
         label = self._get_approval_document_label()
         title = self.env._("%(document)s Approved", document=label)
 
@@ -392,7 +408,9 @@ class MixinApprovalDocument(models.AbstractModel):
             subtype_xmlid=self._get_approval_subtype("refused"),
         )
 
-    def _prepare_approval_request_values(self, category: Any) -> dict[str, Any]:
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         values = super()._prepare_approval_request_values(category)
         values.update(
             {
@@ -463,7 +481,7 @@ class MixinApprovalDocument(models.AbstractModel):
             ),
         )
 
-    def _approval_rate_limit_rate_date(self):
+    def _approval_rate_limit_rate_date(self) -> date:
         self.check_singleton()
         return self.date_order or fields.Date.context_today(self)
 

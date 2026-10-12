@@ -1,10 +1,14 @@
-from typing import Any
+from collections.abc import Hashable
+from typing import TYPE_CHECKING, Any
 
 from markupsafe import Markup
 
 from odoo import Command, models
 from odoo.exceptions import UserError
 from odoo.tools.misc import clean_context
+
+if TYPE_CHECKING:
+    from .approval_request_line import ApprovalRequestLine
 
 
 class ApprovalRequest(models.Model):
@@ -54,7 +58,9 @@ class ApprovalRequest(models.Model):
             return ""
         return self.env["approval.request.line"]._fields[link_field].comodel_name
 
-    def _get_documents_of_model(self, model, link_field, parent_field):
+    def _get_documents_of_model(
+        self, model: str, link_field: str, parent_field: str
+    ) -> models.BaseModel:
         self.check_singleton()
         documents_from_lines = self.sudo().line_ids[link_field][parent_field]
         if self._origin.id:
@@ -67,7 +73,9 @@ class ApprovalRequest(models.Model):
             documents_from_mixin = self.env[model]
         return documents_from_lines | documents_from_mixin
 
-    def _documents_of_model_by_request(self, model, link_field, parent_field) -> dict:
+    def _documents_of_model_by_request(
+        self, model: str, link_field: str, parent_field: str
+    ) -> dict[int, models.BaseModel]:
         empty = self.env[model]
         persisted = self.filtered(lambda request: request._origin.id)
         from_mixin: dict[int, Any] = {}
@@ -88,7 +96,9 @@ class ApprovalRequest(models.Model):
             for request in self.sudo()
         }
 
-    def _check_withdraw_blocked_by(self, documents, label) -> None:
+    def _check_withdraw_blocked_by(
+        self, documents: models.BaseModel, label: str
+    ) -> None:
         sources = {(request.res_model, request.res_id) for request in self.sudo()}
         active = documents.filtered(
             lambda document: (
@@ -98,7 +108,7 @@ class ApprovalRequest(models.Model):
         )
         self._raise_withdraw_blocked(active, label)
 
-    def _get_target_documents(self):
+    def _get_target_documents(self) -> models.BaseModel:
         self.check_singleton()
         if not self._is_target_configured():
             model = self._get_target_model()
@@ -109,7 +119,7 @@ class ApprovalRequest(models.Model):
             self._get_target_line_parent_field(),
         )
 
-    def _get_target_pending_lines(self):
+    def _get_target_pending_lines(self) -> ApprovalRequestLine:
         link_field = self._get_target_line_field()
         if not link_field:
             return self.line_ids.browse()
@@ -147,28 +157,38 @@ class ApprovalRequest(models.Model):
                 ),
             )
 
-    def _check_target_prerequisites(self, lines) -> None:
+    def _check_target_prerequisites(self, lines: ApprovalRequestLine) -> None:
         return None
 
-    def _get_target_group_key(self, line):
+    def _get_target_group_key(self, line: ApprovalRequestLine) -> Hashable:
         return line.partner_id.id or self.partner_id.id or False
 
-    def _prepare_target_document_values(self, key, lines) -> dict[str, Any]:
+    def _prepare_target_document_values(
+        self, key: Any, lines: ApprovalRequestLine
+    ) -> dict[str, Any]:
         raise NotImplementedError
 
-    def _prepare_target_line_values(self, line, key, document, lines) -> dict[str, Any]:
+    def _prepare_target_line_values(
+        self,
+        line: ApprovalRequestLine,
+        key: Any,
+        document: models.BaseModel,
+        lines: ApprovalRequestLine,
+    ) -> dict[str, Any]:
         raise NotImplementedError
 
-    def _post_create_target_document(self, document, key, lines) -> None:
+    def _post_create_target_document(
+        self, document: models.BaseModel, key: Any, lines: ApprovalRequestLine
+    ) -> None:
         return None
 
-    def _is_target_line_creatable(self, line) -> bool:
+    def _is_target_line_creatable(self, line: ApprovalRequestLine) -> bool:
         return True
 
     def _get_target_document_context(self) -> dict[str, Any]:
         return {}
 
-    def _create_target_documents(self):
+    def _create_target_documents(self) -> models.BaseModel:
         self.check_singleton()
         if not self.line_ids:
             raise UserError(
@@ -192,7 +212,7 @@ class ApprovalRequest(models.Model):
 
         self._check_target_prerequisites(lines_to_process)
 
-        lines_by_key = {}
+        lines_by_key: dict[Hashable, ApprovalRequestLine] = {}
         for line in lines_to_process:
             key = self._get_target_group_key(line)
             lines_by_key.setdefault(key, self.env["approval.request.line"])
@@ -203,7 +223,9 @@ class ApprovalRequest(models.Model):
             documents |= self._create_target_document(key, lines)
         return documents
 
-    def _create_target_document(self, key, lines):
+    def _create_target_document(
+        self, key: Any, lines: ApprovalRequestLine
+    ) -> models.BaseModel:
         document_values = self._prepare_target_document_values(key, lines)
         document = (
             self.env[self._get_target_model()]
@@ -237,7 +259,9 @@ class ApprovalRequest(models.Model):
         self._post_create_target_document(document, key, lines)
         return document
 
-    def _update_target_line_links(self, document, lines) -> None:
+    def _update_target_line_links(
+        self, document: models.BaseModel, lines: ApprovalRequestLine
+    ) -> None:
         link_field = self._get_target_line_field()
         document_lines = document[self._get_target_document_line_field()]
 
@@ -281,14 +305,16 @@ class ApprovalRequest(models.Model):
     def _is_target_recreation_silent(self) -> bool:
         return False
 
-    def _get_target_document_removable_lines(self, document):
+    def _get_target_document_removable_lines(
+        self, document: models.BaseModel
+    ) -> models.BaseModel:
         return document[self._get_target_document_line_field()]
 
-    def _remove_target_document(self, document) -> None:
+    def _remove_target_document(self, document: models.BaseModel) -> None:
         document.write({"state": "cancel"})
         document.unlink()
 
-    def _is_target_document_removable(self, document) -> bool:
+    def _is_target_document_removable(self, document: models.BaseModel) -> bool:
         return document.state == "draft"
 
     def _refuse_approval_request(self) -> None:
@@ -302,7 +328,10 @@ class ApprovalRequest(models.Model):
 
         sudo_self = self.sudo()
         documents = sudo_self.line_ids[link_field][parent_field]
-        refusal_data = {"removed": [], "require_manual_action": []}
+        refusal_data: dict[str, list[dict[str, Any]]] = {
+            "removed": [],
+            "require_manual_action": [],
+        }
 
         for document in documents:
             source_lines = sudo_self.line_ids.filtered(
@@ -344,7 +373,9 @@ class ApprovalRequest(models.Model):
         if refusal_data["removed"] or refusal_data["require_manual_action"]:
             self._log_target_refusal_to_chatter(refusal_data)
 
-    def _get_target_document_data(self, source_lines, include_raw_data=False):
+    def _get_target_document_data(
+        self, source_lines: ApprovalRequestLine, include_raw_data: bool = False
+    ) -> list[dict[str, Any]]:
         link_field = self._get_target_line_field()
         parent_field = self._get_target_line_parent_field()
 
@@ -382,7 +413,9 @@ class ApprovalRequest(models.Model):
             ),
         }
 
-    def _prepare_target_log_message(self, document_state, documents_data):
+    def _prepare_target_log_message(
+        self, document_state: str, documents_data: list[dict[str, Any]]
+    ) -> Markup:
         return Markup("%(log_msg_header)s<br> <br> %(document_log)s <hr>") % {
             "log_msg_header": self._get_target_log_headers().get(document_state, ""),
             "document_log": Markup().join(
@@ -406,7 +439,9 @@ class ApprovalRequest(models.Model):
             body=self._prepare_target_log_message("created", documents_data),
         )
 
-    def _log_target_refusal_to_chatter(self, refusal_data) -> None:
+    def _log_target_refusal_to_chatter(
+        self, refusal_data: dict[str, list[dict[str, Any]]]
+    ) -> None:
         refusal_log = Markup()
         for document_state in ("removed", "require_manual_action"):
             documents_data = refusal_data[document_state]
@@ -419,7 +454,9 @@ class ApprovalRequest(models.Model):
                 self._log_target_refusal_to_document_chatter(documents_data)
         self._message_log(body=refusal_log)
 
-    def _log_target_refusal_to_document_chatter(self, documents_data) -> None:
+    def _log_target_refusal_to_document_chatter(
+        self, documents_data: list[dict[str, Any]]
+    ) -> None:
         for document_data in documents_data:
             document = document_data["document"]
             source_lines = document_data["source_lines"]

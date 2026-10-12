@@ -80,6 +80,31 @@ class TestCancelPaymentCommand(PaymentApprovalTelegramTestCase):
         self.test_chat.invalidate_recordset()
         self.assertFalse(self.test_chat.flow_owner)
 
+    def test_payment_details_from_an_unlinked_account_ends_the_flow(self):
+        self.test_chat._flow_start("telegram.handler.approval_account", "payment_details")
+        message = self.mock_telegram_message(
+            chat_id=self.test_chat.chat_id,
+            text=self.get_payment_details_message(),
+        )
+        mock_response = self.mock_telegram_response(
+            success=True, result={"message_id": 1}
+        )
+
+        with self.mock_api_gateway_post(mock_response) as mock_post:
+            self.handler._on_message(
+                self.test_bot,
+                self.test_chat,
+                message,
+                self.test_partner,
+                False,
+            )
+
+            text = mock_post.call_args.kwargs.get("json", {}).get("text", "")
+            self.assertIn("not linked to an internal user", text)
+
+        self.test_chat.invalidate_recordset()
+        self.assertFalse(self.test_chat.flow_owner)
+
     def test_cancel_from_awaiting_proof(self):
         self.test_chat._flow_start(
             "telegram.handler.approval_account", "payment_proof", {"amount": 1000}

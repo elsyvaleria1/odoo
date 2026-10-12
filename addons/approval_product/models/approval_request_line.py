@@ -1,4 +1,4 @@
-from typing import Self
+from typing import TYPE_CHECKING, Literal, Self
 
 from odoo import api, fields, models
 from odoo.api import ValuesType
@@ -6,6 +6,9 @@ from odoo.exceptions import AccessError, ValidationError
 from odoo.tools import frozendict
 
 from odoo.addons.approval.models.approval_utils import is_approval_manager
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
 
 
 class ApprovalRequestLine(models.Model):
@@ -101,12 +104,12 @@ class ApprovalRequestLine(models.Model):
         self._check_business_rules_request(requests)
         return super().create(vals_list)
 
-    _LINE_SYSTEM_FIELDS = frozenset()
+    _LINE_SYSTEM_FIELDS: frozenset[str] = frozenset()
 
     def _get_fields_line_system(self) -> frozenset[str]:
         return self._LINE_SYSTEM_FIELDS
 
-    def write(self, vals: dict) -> bool:
+    def write(self, vals: ValuesType) -> Literal[True]:
         if vals and self.env.su and set(vals) <= self._get_fields_line_system():
             return super().write(vals)
         requests = self.approval_request_id
@@ -123,12 +126,12 @@ class ApprovalRequestLine(models.Model):
         self._check_business_rules_request(requests)
         return super().write(vals)
 
-    def unlink(self) -> bool:
+    def unlink(self) -> Literal[True]:
         self._check_access_request(self.approval_request_id)
         self._check_business_rules_request(self.approval_request_id)
         return super().unlink()
 
-    def _check_access_request(self, requests) -> None:
+    def _check_access_request(self, requests: ApprovalRequest) -> None:
         if self.env.su or is_approval_manager(self.env):
             return
         current_user = self.env.user
@@ -144,7 +147,7 @@ class ApprovalRequestLine(models.Model):
                     ),
                 )
 
-    def _check_business_rules_request(self, requests) -> None:
+    def _check_business_rules_request(self, requests: ApprovalRequest) -> None:
         for request in requests:
             if request.state != "new":
                 raise ValidationError(
@@ -185,7 +188,7 @@ class ApprovalRequestLine(models.Model):
                 )
 
     @api.onchange("approval_request_id")
-    def _onchange_approval_request_id(self):
+    def _onchange_approval_request_id(self) -> None:
         if self.approval_request_id and not self.partner_id:
             self.partner_id = self.approval_request_id.partner_id
 
@@ -202,7 +205,7 @@ class ApprovalRequestLine(models.Model):
             line.allowed_product_ids = line.approval_request_id.category_id.product_ids
 
     @api.depends("product_id")
-    def _compute_product_uom_id(self):
+    def _compute_product_uom_id(self) -> None:
         for line in self:
             line.product_uom_id = line.product_id.uom_id
 

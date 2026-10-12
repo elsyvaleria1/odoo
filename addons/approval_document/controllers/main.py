@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from werkzeug.exceptions import BadRequest
@@ -14,14 +15,19 @@ from odoo.addons.base.models.access_link import LinkLoginRequired, LinkRefused
 from odoo.addons.document.controllers import document as document_controller
 from odoo.addons.document.controllers import home as document_home
 
+if TYPE_CHECKING:
+    from odoo.addons.approval_document.models.document_document import (
+        DocumentsDocument,
+    )
+
 _debug = DebugLog(__name__)
 
 
-def _request_access_url(access_token):
+def _request_access_url(access_token: str) -> str:
     return f"/documents/request_access/{quote(access_token, safe='')}"
 
 
-def _requestable_document(access_token):
+def _requestable_document(access_token: str) -> DocumentsDocument:
     link_token, document_id = document_controller.ShareRoute._split_access_token(
         access_token
     )
@@ -48,7 +54,7 @@ def _requestable_document(access_token):
     return target_sudo
 
 
-def _is_requestable(access_token) -> bool:
+def _is_requestable(access_token: str) -> bool:
     return (
         not request.env.user._is_public()
         and bool(_requestable_document(access_token))

@@ -1,13 +1,19 @@
 import base64
 from datetime import datetime, time
+from typing import TYPE_CHECKING, Any
 
 import pytz
 from markupsafe import Markup
 
 from odoo import fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import AccessError, ValidationError
 
 from odoo.addons.telegram.tools import format as tg
+
+if TYPE_CHECKING:
+    from odoo.addons.account.models.account_journal import AccountJournal
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
 
 SHEET_TIMEZONE = "America/Mexico_City"
 
@@ -15,7 +21,7 @@ SHEET_TIMEZONE = "America/Mexico_City"
 class TelegramShipmentSheet(models.Model):
     _inherit = "telegram.shipment.sheet"
 
-    def _on_shipment_sheet_assigned(self, content) -> list:
+    def _on_shipment_sheet_assigned(self, content: bytes) -> list[str]:
         lines = super()._on_shipment_sheet_assigned(content)
         picking = self.picking_id
         category = self.carrier_id.freight_approval_category_id
@@ -37,7 +43,7 @@ class TelegramShipmentSheet(models.Model):
                 ),
             ]
 
-    def _prepare_freight(self, category, content) -> str:
+    def _prepare_freight(self, category: ApprovalCategory, content: bytes) -> str:
         picking = self.picking_id
         Request = self.env["approval.request"]
         existing = Request.search(
@@ -79,7 +85,7 @@ class TelegramShipmentSheet(models.Model):
             category=tg.escape(category.name),
         )
 
-    def _freight_request_values(self, category) -> dict:
+    def _freight_request_values(self, category: ApprovalCategory) -> ValuesType:
         self.check_singleton()
         picking = self.picking_id
         values = self.extracted or {}
@@ -128,7 +134,7 @@ class TelegramShipmentSheet(models.Model):
             else [],
         }
 
-    def _freight_journal(self, category):
+    def _freight_journal(self, category: ApprovalCategory) -> AccountJournal:
         if len(category.journal_ids) == 1:
             return category.journal_ids
         return (
@@ -146,7 +152,7 @@ class TelegramShipmentSheet(models.Model):
         )
 
     @staticmethod
-    def _freight_date(day):
+    def _freight_date(day: str | None) -> datetime:
         if not day:
             return fields.Datetime.now()
         noon = pytz.timezone(SHEET_TIMEZONE).localize(
@@ -154,7 +160,7 @@ class TelegramShipmentSheet(models.Model):
         )
         return noon.astimezone(pytz.UTC).replace(tzinfo=None)
 
-    def _freight_reason(self, values) -> Markup:
+    def _freight_reason(self, values: dict[str, Any]) -> Markup:
         picking = self.picking_id
         sale = picking.sale_id
         partner = self.carrier_id.freight_partner_id
@@ -189,5 +195,5 @@ class TelegramShipmentSheet(models.Model):
         return Markup("<ul>%s</ul>") % items if items else Markup("")
 
 
-def _money(amount):
+def _money(amount: float | None) -> str:
     return f"${amount:,.2f}" if amount else ""

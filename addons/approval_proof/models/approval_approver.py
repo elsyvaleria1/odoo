@@ -1,13 +1,16 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from odoo import api, models
 from odoo.exceptions import ValidationError
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.res_users import ResUsers
 
 
 class ApprovalApprover(models.Model):
     _inherit = "approval.approver"
 
-    def _may_delegate_to(self, delegate) -> bool:
+    def _may_delegate_to(self, delegate: ResUsers) -> bool:
         return (
             super()._may_delegate_to(delegate)
             and self.request_id.category_id.allow_delegation

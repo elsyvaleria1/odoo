@@ -1,4 +1,7 @@
+from typing import Self
+
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.fields import Domain
 
 
@@ -15,7 +18,7 @@ class AccountBankStatementLine(models.Model):
     )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         lines = super().create(vals_list)
         self.env["approval.request"]._claim_bank_statement_lines(lines.company_id)
         return lines

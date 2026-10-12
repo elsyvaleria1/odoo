@@ -1,5 +1,6 @@
+from collections.abc import Hashable
 from datetime import timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from markupsafe import Markup, escape
 
@@ -8,6 +9,14 @@ from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
 from odoo.tools.misc import clean_context
+
+if TYPE_CHECKING:
+    from odoo.addons.approval_product.models.approval_request_line import (
+        ApprovalRequestLine,
+    )
+    from odoo.addons.resource_asset_product.models.resource_asset_log import (
+        ResourceAssetLog,
+    )
 
 _debug = DebugLog(__name__)
 
@@ -166,7 +175,7 @@ class ApprovalRequest(models.Model):
         )
         return self._action_open_asset_log(log)
 
-    def _action_open_asset_log(self, log) -> dict[str, Any]:
+    def _action_open_asset_log(self, log: ResourceAssetLog) -> dict[str, Any]:
         return {
             "name": log.display_name,
             "type": "ir.actions.act_window",
@@ -219,7 +228,7 @@ class ApprovalRequest(models.Model):
             "domain": domain,
         }
 
-    def _get_all_pickings(self):
+    def _get_all_pickings(self) -> models.BaseModel:
         _debug.logic("approval_pickings_collect", requests=self)
         return self._get_documents_of_model(
             "stock.picking",
@@ -261,13 +270,13 @@ class ApprovalRequest(models.Model):
             return self.env._("stock picking")
         return super()._get_target_document_label()
 
-    def _check_target_prerequisites(self, lines) -> None:
+    def _check_target_prerequisites(self, lines: ApprovalRequestLine) -> None:
         super()._check_target_prerequisites(lines)
         if self._is_stock_target():
             lines._check_locations()
             lines._check_picking_type()
 
-    def _get_target_group_key(self, line):
+    def _get_target_group_key(self, line: ApprovalRequestLine) -> Hashable:
         if not self._is_stock_target():
             return super()._get_target_group_key(line)
         return (
@@ -276,7 +285,9 @@ class ApprovalRequest(models.Model):
             line.location_dest_id.id,
         )
 
-    def _prepare_target_document_values(self, key, lines) -> dict[str, Any]:
+    def _prepare_target_document_values(
+        self, key: Any, lines: ApprovalRequestLine
+    ) -> dict[str, Any]:
         if not self._is_stock_target():
             return super()._prepare_target_document_values(key, lines)
         picking_type_id, location_id, location_dest_id = key
@@ -292,7 +303,13 @@ class ApprovalRequest(models.Model):
             values["partner_id"] = self.partner_id.id
         return values
 
-    def _prepare_target_line_values(self, line, key, document, lines) -> dict[str, Any]:
+    def _prepare_target_line_values(
+        self,
+        line: ApprovalRequestLine,
+        key: Any,
+        document: models.BaseModel,
+        lines: ApprovalRequestLine,
+    ) -> dict[str, Any]:
         if not self._is_stock_target():
             return super()._prepare_target_line_values(line, key, document, lines)
         picking_type_id, location_id, location_dest_id = key

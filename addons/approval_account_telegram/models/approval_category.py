@@ -1,4 +1,9 @@
+from typing import TYPE_CHECKING, Self
+
 from odoo import api, fields, models
+
+if TYPE_CHECKING:
+    from odoo.addons.base.models.res_company import ResCompany
 
 
 class ApprovalCategory(models.Model):
@@ -23,7 +28,7 @@ class ApprovalCategory(models.Model):
     )
 
     @api.model
-    def _get_telegram_intake_category(self, intake, company):
+    def _get_telegram_intake_category(self, intake: str, company: ResCompany) -> Self:
         categories = self.search(
             [
                 ("telegram_intake", "=", intake),

@@ -1,5 +1,11 @@
+from typing import TYPE_CHECKING, Literal
+
 from odoo import fields, models
 from odoo.exceptions import UserError
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
+    from odoo.addons.base.models.res_partner import ResPartner
 
 ARTICLE_ACCESS_ROLES = ("read", "write")
 
@@ -28,7 +34,7 @@ class KnowledgeArticle(models.Model):
                 lambda user: user._is_internal()
             )
 
-    def _get_partner_permission(self, partner) -> str:
+    def _get_partner_permission(self, partner: ResPartner) -> str:
         self.check_singleton()
         permissions = {
             self.with_user(user).user_permission for user in partner.user_ids
@@ -37,16 +43,22 @@ class KnowledgeArticle(models.Model):
             return "write"
         return "read" if "read" in permissions else "none"
 
-    def _has_access(self, partner, role=False) -> bool:
+    def _has_access(
+        self, partner: ResPartner, role: str | Literal[False] = False
+    ) -> bool:
         permission = self._get_partner_permission(partner)
         return permission == "write" or (permission == "read" and role != "write")
 
-    def _request_access(self, partner, role=False):
+    def _request_access(
+        self, partner: ResPartner, role: str | Literal[False] = False
+    ) -> ApprovalRequest:
         if role not in ARTICLE_ACCESS_ROLES:
             raise UserError(self.env._("Ask to read or to edit an article."))
         return super()._request_access(partner, role)
 
-    def _get_access_request_name(self, partner, role) -> str:
+    def _get_access_request_name(
+        self, partner: ResPartner, role: str | Literal[False]
+    ) -> str:
         if role == "write":
             return self.env._(
                 "Edit access to %(article)s for %(partner)s",
@@ -59,5 +71,7 @@ class KnowledgeArticle(models.Model):
             partner=partner.name,
         )
 
-    def _grant_access(self, partner, role=False) -> None:
+    def _grant_access(
+        self, partner: ResPartner, role: str | Literal[False] = False
+    ) -> None:
         self.sudo().invite_members(partner, role)

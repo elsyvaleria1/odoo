@@ -1,7 +1,14 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from odoo import fields, models
 from odoo.exceptions import UserError
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_category_step import (
+        ApprovalCategoryStep,
+    )
+    from odoo.addons.mail.models.mail_activity_type import MailActivityType
 
 SYNC_KINDS = {
     "draft": "draft",
@@ -91,10 +98,14 @@ class ApprovalTestSyncedDocument(models.Model):
     def _can_raise_approval_request(self) -> bool:
         return super()._can_raise_approval_request() and not self.never_requests
 
-    def _get_approval_activity_type(self, approver, step_type):
+    def _get_approval_activity_type(
+        self, approver: ApprovalApprover, step_type: MailActivityType
+    ) -> MailActivityType:
         return self.asking_activity_type_id or step_type
 
-    def _filter_approval_step_user_ids(self, step, user_ids: set[int]) -> set[int]:
+    def _filter_approval_step_user_ids(
+        self, step: ApprovalCategoryStep, user_ids: set[int]
+    ) -> set[int]:
         return user_ids - set(self.blocked_user_ids.ids)
 
     def _check_approval_sync_policy(self, kind: str) -> None:

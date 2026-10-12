@@ -84,7 +84,7 @@ class ApprovalCategory(models.Model):
                     ),
                 )
 
-    def _is_matching_document(self, document) -> bool:
+    def _is_matching_document(self, document: models.BaseModel) -> bool:
         self.check_singleton()
         return (
             self._is_matching_amount(document)
@@ -94,13 +94,15 @@ class ApprovalCategory(models.Model):
             and self._is_matching_credit_policy(document)
         )
 
-    def _is_matching_amount(self, document) -> bool:
+    def _is_matching_amount(self, document: models.BaseModel) -> bool:
         minimum, maximum = self._get_order_amount_range_for(document)
         if minimum and document.amount_total < minimum:
             return False
         return not (maximum > 0 and document.amount_total > maximum)
 
-    def _get_order_amount_range_for(self, document) -> tuple:
+    def _get_order_amount_range_for(
+        self, document: models.BaseModel
+    ) -> tuple[float, float]:
         self.check_singleton()
         threshold_currency = self.order_amount_currency_id
         document_currency = document.currency_id
@@ -119,12 +121,12 @@ class ApprovalCategory(models.Model):
             convert(self.order_amount_max, document_currency, company, date),
         )
 
-    def _is_matching_partner(self, document) -> bool:
+    def _is_matching_partner(self, document: models.BaseModel) -> bool:
         return not self.order_partner_ids or document.partner_id in (
             self.order_partner_ids
         )
 
-    def _is_matching_product_category(self, document) -> bool:
+    def _is_matching_product_category(self, document: models.BaseModel) -> bool:
         if not self.product_categ_ids:
             return True
         categories = document.line_ids.mapped("product_id.categ_id")
@@ -134,13 +136,13 @@ class ApprovalCategory(models.Model):
             ),
         )
 
-    def _is_matching_product(self, document) -> bool:
+    def _is_matching_product(self, document: models.BaseModel) -> bool:
         if not self.product_ids:
             return True
         products = document.line_ids.mapped("product_id")
         return any(product in self.product_ids for product in products)
 
-    def _is_matching_credit_policy(self, document) -> bool:
+    def _is_matching_credit_policy(self, document: models.BaseModel) -> bool:
         return True
 
     def _get_approval_mode_field(self) -> str:

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from odoo import models
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
@@ -35,11 +37,11 @@ class SaleOrder(models.Model):
     def _get_approval_config_menu(self) -> str:
         return self.env._("Sales → Configuration → Approval Types")
 
-    def _get_approval_deadline_date(self):
-        return self.date_commitment or self.date_planned
+    def _get_approval_deadline_date(self) -> datetime | None:
+        return self.date_commitment or self.date_planned or None
 
-    def _get_approval_reference(self) -> str:
-        return self.client_order_ref
+    def _get_approval_reference(self) -> str | None:
+        return self.client_order_ref or None
 
     def action_cancel(self) -> bool:
         result = super().action_cancel()

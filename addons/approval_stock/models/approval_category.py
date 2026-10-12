@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
 
 from odoo.addons.approval.models.approval_category import CATEGORY_SELECTION
+
+if TYPE_CHECKING:
+    from .stock_inventory_adjustment import StockInventoryAdjustment
 
 _debug = DebugLog(__name__)
 
@@ -110,7 +115,7 @@ class ApprovalCategory(models.Model):
     def _onchange_stock_approval_mode(self) -> None:
         self._clear_approval_mode_hidden_criteria()
 
-    def _is_applicable_for(self, document) -> bool:
+    def _is_applicable_for(self, document: models.BaseModel) -> bool:
         _debug.logic("approval_applicable_check", categories=self)
         self.check_singleton()
         if document._name == "stock.inventory.adjustment":
@@ -149,7 +154,9 @@ class ApprovalCategory(models.Model):
 
         return True
 
-    def _is_applicable_for_inventory_adjustment(self, adjustment) -> bool:
+    def _is_applicable_for_inventory_adjustment(
+        self, adjustment: StockInventoryAdjustment
+    ) -> bool:
         _debug.logic("approval_applicable_inventory", categories=self)
         self.check_singleton()
         if (

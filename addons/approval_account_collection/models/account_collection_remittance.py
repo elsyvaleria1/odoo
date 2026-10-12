@@ -1,4 +1,5 @@
-from typing import Any
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Self
 
 from markupsafe import Markup, escape
 
@@ -7,6 +8,9 @@ from odoo.exceptions import UserError
 from odoo.tools import format_amount
 
 from odoo.addons.approval.models.mixin_approval import APPROVAL_TRIGGER_CATEGORY
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
 
 
 class AccountCollectionRemittance(models.Model):
@@ -67,14 +71,16 @@ class AccountCollectionRemittance(models.Model):
                     )
                 )
 
-    def _run_through_approval(self, operation: str, run: Any) -> Any:
+    def _run_through_approval(self, operation: str, run: Callable[[Self], Any]) -> Any:
         if operation == "validate":
             self.filtered(
                 lambda r: r._get_approval_trigger() and not r.approval_request_id
             ).receiver_id = self.env.user
         return super()._run_through_approval(operation, run)
 
-    def _prepare_approval_request_values(self, category: Any) -> dict[str, Any]:
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         values = super()._prepare_approval_request_values(category)
         values.update(
             {

@@ -1,11 +1,15 @@
 import json
 import logging
+from typing import TYPE_CHECKING, Any
 
 from odoo import fields
 from odoo.libs.json import loads as json_loads
 
 from odoo.addons.integration_machine_learning.tools import MlRequest, get_router
 from odoo.addons.speech_telegram.tools.assistant import BotAssistant
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
 
 _logger = logging.getLogger(__name__)
 
@@ -76,7 +80,9 @@ class ApprovalAssistant(BotAssistant):
         "smart_approval_ai_model_id",
     )
 
-    def _chat_json(self, system, user, max_tokens, temperature):
+    def _chat_json(
+        self, system: str, user: str, max_tokens: int, temperature: float
+    ) -> str | None:
         try:
             result = get_router(self._env).run(
                 "chat",
@@ -98,7 +104,9 @@ class ApprovalAssistant(BotAssistant):
             return None
         return json.dumps(result.data, ensure_ascii=False)
 
-    def classify(self, narrative, categories):
+    def classify(
+        self, narrative: str, categories: ApprovalCategory
+    ) -> dict[str, Any] | None:
         if not self.available or not narrative or not categories:
             return None
 
@@ -157,7 +165,7 @@ class ApprovalAssistant(BotAssistant):
     _PAYMENT_KEYS = _PAYMENT_KEYS
 
     @classmethod
-    def _normalize_payment(cls, value):
+    def _normalize_payment(cls, value: Any) -> dict[str, str]:
         if not isinstance(value, dict):
             return {}
         payment = {}
@@ -168,7 +176,7 @@ class ApprovalAssistant(BotAssistant):
         return payment
 
     @staticmethod
-    def _normalize_items(value):
+    def _normalize_items(value: Any) -> list[dict[str, Any]]:
         if not isinstance(value, list):
             return []
         items = []
@@ -193,7 +201,7 @@ class ApprovalAssistant(BotAssistant):
         return items
 
     @staticmethod
-    def _normalize_date(value):
+    def _normalize_date(value: Any) -> str | None:
         if not isinstance(value, str) or not value.strip():
             return None
         try:
@@ -202,7 +210,7 @@ class ApprovalAssistant(BotAssistant):
             return None
 
     @staticmethod
-    def _get_system_prompt(categories, today):
+    def _get_system_prompt(categories: ApprovalCategory, today: str) -> str:
         lines = []
         for category in categories:
             fields_label = ApprovalAssistant._required_fields(category)
@@ -289,7 +297,7 @@ class ApprovalAssistant(BotAssistant):
         )
 
     @staticmethod
-    def _products_label(category) -> str:
+    def _products_label(category: ApprovalCategory) -> str:
         if category.has_product == "no" or not category.product_ids:
             return ""
         listed = ", ".join(
@@ -298,7 +306,7 @@ class ApprovalAssistant(BotAssistant):
         return f"productos válidos: {listed}"
 
     @staticmethod
-    def _required_fields(category) -> str:
+    def _required_fields(category: ApprovalCategory) -> str:
         labels = []
         for field_name, label in _EXTRACTABLE_FIELDS:
             value = getattr(category, field_name, "no")

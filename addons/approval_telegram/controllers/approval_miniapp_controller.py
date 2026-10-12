@@ -1,5 +1,6 @@
 import base64
 import logging
+from typing import TYPE_CHECKING, Any, Literal
 
 from odoo import fields, http
 from odoo.exceptions import UserError
@@ -8,6 +9,17 @@ from odoo.libs.json import dumps as json_dumps
 
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools.dispatch import translation_env
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from odoo.http import Response
+
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
+    from odoo.addons.approval.models.res_users import ResUsers
+    from odoo.addons.telegram.models.telegram_bot import TelegramBot
 
 _logger = logging.getLogger(__name__)
 
@@ -109,7 +121,9 @@ class ApprovalMiniAppController(http.Controller):
             return self._json({"ok": False, "error": str(exc)})
         return self._json({"ok": True})
 
-    def _resolve_act_approver(self, approver_id_raw):
+    def _resolve_act_approver(
+        self, approver_id_raw: str | int | None
+    ) -> tuple[ApprovalApprover, str | None]:
         empty = request.env["approval.approver"].browse()
         _bot, user, _telegram_user_id = self._caller()
         if not user:
@@ -276,7 +290,9 @@ class ApprovalMiniAppController(http.Controller):
             )
         return self._json({"ok": True})
 
-    def _resolve_owner_request(self, bot_id, request_id, kwargs):
+    def _resolve_owner_request(
+        self, bot_id: int, request_id: int, kwargs: dict[str, Any]
+    ) -> tuple[ApprovalRequest, str | None, str | None]:
         empty = request.env["approval.request"].browse()
         bot, user, telegram_user_id = self._caller()
         if not user:
@@ -295,21 +311,21 @@ class ApprovalMiniAppController(http.Controller):
         return approval_request, bot._mint_mini_app_session(telegram_user_id), None
 
     @staticmethod
-    def _json(data):
+    def _json(data: dict[str, Any]) -> Response:
         return request.prepare_response(
             json_dumps(data),
             headers=[("Content-Type", "application/json")],
         )
 
     @staticmethod
-    def _caller():
+    def _caller() -> tuple[TelegramBot, ResUsers, str]:
         admission = request.admission
         bot = admission.subject
         telegram_user_id = admission.extra["telegram_user_id"]
         return bot, bot._mini_app_user(telegram_user_id), telegram_user_id
 
     @staticmethod
-    def _labels(bot, user):
+    def _labels(bot: TelegramBot, user: ResUsers) -> dict[str, Any]:
         return (
             request.env["telegram.approval.notifier"]
             .with_context(lang=user.lang if user else bot.get_lang())
@@ -317,7 +333,7 @@ class ApprovalMiniAppController(http.Controller):
         )
 
     @staticmethod
-    def _approver_payload(approver, user):
+    def _approver_payload(approver: ApprovalApprover, user: ResUsers) -> dict[str, Any]:
         req = approver.request_id
         can_act = bool(
             approver.state == "pending"
@@ -326,7 +342,7 @@ class ApprovalMiniAppController(http.Controller):
             and approver._get_effective_approver() == user
         )
 
-        def fmt_date(value):
+        def fmt_date(value: datetime | Literal[False]) -> str:
             return fields.Date.to_string(value.date()) if value else ""
 
         journal = ""
@@ -385,7 +401,7 @@ class ApprovalMiniAppController(http.Controller):
         return payload
 
     @staticmethod
-    def _lines_payload(req):
+    def _lines_payload(req: ApprovalRequest) -> dict[str, Any]:
         lines = [
             {
                 "product": line.product_id.display_name or "",
@@ -414,7 +430,7 @@ class ApprovalMiniAppController(http.Controller):
         }
 
     @staticmethod
-    def _reasons_payload(category):
+    def _reasons_payload(category: ApprovalCategory) -> list[dict[str, Any]]:
         reasons = category.env["approval.refusal.reason"].search(
             [
                 "|",

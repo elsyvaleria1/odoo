@@ -1,11 +1,18 @@
 import json
 import logging
+from collections.abc import Iterable, Mapping
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.json import loads as json_loads
 from odoo.tools import frozendict
+
+if TYPE_CHECKING:
+    from .ir_actions_server import IrActionsServer
+    from odoo.addons.approval.models.res_users import ResUsers
 
 _logger = logging.getLogger(__name__)
 
@@ -108,7 +115,7 @@ class AiToolCall(models.Model):
             call.tool_name = call.tool_id.sudo().name
 
     @api.depends("tool_name", "summary", "res_model", "res_id")
-    def _compute_name(self):
+    def _compute_name(self) -> None:
         for call in self:
             subject = call._subject()
             what = call.summary or call.tool_name
@@ -134,13 +141,13 @@ class AiToolCall(models.Model):
             call.arguments = arguments
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         if not self.env.su:
             for vals in vals_list:
                 self._refuse_decided(vals.keys())
         return super().create(vals_list)
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if not self.env.su:
             self._refuse_decided(vals.keys())
             if {"arguments", "arguments_text"} & vals.keys() and self.filtered(
@@ -151,7 +158,7 @@ class AiToolCall(models.Model):
                 )
         return super().write(vals)
 
-    def _refuse_decided(self, keys) -> None:
+    def _refuse_decided(self, keys: Iterable[str]) -> None:
         touched = DECIDED & set(keys)
         if touched:
             raise AccessError(
@@ -161,7 +168,7 @@ class AiToolCall(models.Model):
                 )
             )
 
-    def _subject(self):
+    def _subject(self) -> models.BaseModel | None:
         self.check_singleton()
         if not self.res_model or self.res_model not in self.env:
             return None
@@ -170,14 +177,14 @@ class AiToolCall(models.Model):
     @api.model
     def _propose(
         self,
-        tool,
-        record,
-        arguments,
-        evidence="",
-        confidence=0.0,
-        summary="",
-        assignee=None,
-    ):
+        tool: IrActionsServer,
+        record: models.BaseModel | None,
+        arguments: Mapping[str, Any] | None,
+        evidence: str = "",
+        confidence: float = 0.0,
+        summary: str = "",
+        assignee: ResUsers | None = None,
+    ) -> Self:
         values = {
             "tool_id": tool.id,
             "summary": summary or False,
@@ -216,13 +223,12 @@ class AiToolCall(models.Model):
             name=self.name,
         )
 
-    def action_apply(self):
-        return self._apply(self)
+    def action_apply(self) -> None:
+        self._apply(self)
 
-    def _apply(self, calls):
+    def _apply(self, calls: Self) -> None:
         for call in calls:
             call._apply_one()
-        return True
 
     def _apply_one(self) -> None:
         self.check_singleton()
@@ -261,11 +267,11 @@ class AiToolCall(models.Model):
             values["applied_res_id"] = result["id"]
         self.sudo().write(values)
 
-    def _get_domain_approval_category(self):
+    def _get_domain_approval_category(self) -> list[tuple[str, str, Any]]:
         category = self.tool_id.sudo().ai_approval_category_id
         return [("id", "=", category.id)] if category else []
 
-    def _get_approval_snapshot(self, operation):
+    def _get_approval_snapshot(self, operation: str) -> dict[str, Any]:
         self.check_singleton()
         return {
             "tool": self.tool_id.id,
@@ -273,7 +279,7 @@ class AiToolCall(models.Model):
             "arguments": self.arguments or {},
         }
 
-    def _get_approval_reason_html(self):
+    def _get_approval_reason_html(self) -> str:
         self.check_singleton()
         return self.env._(
             "An AI agent proposes %(name)s with %(arguments)s. %(evidence)s",

@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo import models
 from odoo.exceptions import UserError
 
@@ -6,10 +8,10 @@ class BaseModuleInstallRequest(models.Model):
     _name = "base.module.install.request"
     _inherit = ["base.module.install.request", "mixin.approval"]
 
-    def _send_request(self):
+    def _send_request(self) -> None:
         self.action_create_approval_request()
 
-    def action_open_install_review(self) -> dict:
+    def action_open_install_review(self) -> dict[str, Any]:
         self.check_singleton()
         if self.approval_state != "approved":
             raise UserError(
@@ -25,10 +27,10 @@ class BaseModuleInstallRequest(models.Model):
     def _get_approval_category_xmlid(self) -> str:
         return "approval_base_install_request.approval_category_module_activation"
 
-    def _get_fields_approval_protected(self):
+    def _get_fields_approval_protected(self) -> list[str]:
         return ["module_id", "body_html"]
 
-    def _get_approval_reason_html(self):
+    def _get_approval_reason_html(self) -> str:
         return self.body_html or ""
 
     def _is_approval_acted_on(self) -> bool:

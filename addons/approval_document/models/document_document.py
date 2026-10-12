@@ -1,6 +1,12 @@
+from typing import TYPE_CHECKING, Literal
+
 from odoo import models
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
+    from odoo.addons.base.models.res_partner import ResPartner
 
 DOCUMENT_ACCESS_ROLES = ("view", "edit")
 
@@ -12,7 +18,7 @@ class DocumentsDocument(models.Model):
     _inherit = ["document.document", "mixin.approval.access"]
     _access_approval_category = "approval_document.approval_category_document_access"
 
-    def _get_partner_permission(self, partner) -> str:
+    def _get_partner_permission(self, partner: ResPartner) -> str:
         self.check_singleton()
         roles = {self._member_roles().get(partner)} - {None}
         roles |= {self.with_user(user).user_permission for user in partner.user_ids}
@@ -27,11 +33,15 @@ class DocumentsDocument(models.Model):
             return "edit"
         return "view" if "view" in roles else "none"
 
-    def _has_access(self, partner, role=False) -> bool:
+    def _has_access(
+        self, partner: ResPartner, role: str | Literal[False] = False
+    ) -> bool:
         permission = self._get_partner_permission(partner)
         return permission == "edit" or (permission == "view" and role != "edit")
 
-    def _request_access(self, partner, role=False):
+    def _request_access(
+        self, partner: ResPartner, role: str | Literal[False] = False
+    ) -> ApprovalRequest:
         if role not in DOCUMENT_ACCESS_ROLES:
             _debug.logic("access_request_refused", reason="bad_role", role=role)
             raise UserError(self.env._("Ask to view or to edit a document."))
@@ -43,7 +53,9 @@ class DocumentsDocument(models.Model):
         _debug.lifecycle("access_requested", document=self, partner=partner, role=role)
         return super()._request_access(partner, role)
 
-    def _get_access_request_name(self, partner, role) -> str:
+    def _get_access_request_name(
+        self, partner: ResPartner, role: str | Literal[False]
+    ) -> str:
         if role == "edit":
             return self.env._(
                 "Edit access to %(document)s for %(partner)s",
@@ -56,6 +68,8 @@ class DocumentsDocument(models.Model):
             partner=partner.name,
         )
 
-    def _grant_access(self, partner, role=False) -> None:
+    def _grant_access(
+        self, partner: ResPartner, role: str | Literal[False] = False
+    ) -> None:
         _debug.lifecycle("access_granted", document=self, partner=partner, role=role)
         self.sudo().action_update_access_rights(partners={partner: (role, None)})

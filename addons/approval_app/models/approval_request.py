@@ -1,11 +1,15 @@
 from collections import Counter
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from odoo import api, fields, models
 from odoo.api import ValuesType
 from odoo.exceptions import UserError
 
 from odoo.addons.approval.models import approval_trace as trace
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.approval.models.res_users import ResUsers
 
 _FORM_LOCKED_FIELDS = frozenset(
     {"date_deadline", "date_planned", "reference", "location"}
@@ -66,7 +70,9 @@ class ApprovalRequest(models.Model):
             limit=limit,
         )[self.category_id.id]
 
-    def _recent_approved_by_category(self, categories, owner, limit: int = 10) -> dict:
+    def _recent_approved_by_category(
+        self, categories: ApprovalCategory, owner: ResUsers, limit: int = 10
+    ) -> dict[int, Self]:
         by_category: dict[int, list[int]] = {
             category_id: [] for category_id in categories.ids
         }
@@ -98,7 +104,7 @@ class ApprovalRequest(models.Model):
             category_id: self.browse(ids) for category_id, ids in by_category.items()
         }
 
-    def _smart_clone_defaults(self, recent=None) -> dict[str, Any]:
+    def _smart_clone_defaults(self, recent: Self | None = None) -> dict[str, Any]:
         self.check_singleton()
         category = self.category_id
         smart: dict[str, Any] = {}
@@ -127,7 +133,7 @@ class ApprovalRequest(models.Model):
             )
         return smart
 
-    def copy_data(self, default: ValuesType | None = None) -> list[dict[str, Any]]:
+    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType | None]:
         explicit = dict(default or {})
         vals_list = super().copy_data(default=explicit)
         recent_by_owner = {
@@ -138,6 +144,8 @@ class ApprovalRequest(models.Model):
         applied = 0
         suppressed = 0
         for source, vals in zip(self, vals_list, strict=True):
+            if vals is None:
+                continue
             recent = recent_by_owner.get(source.request_owner_id.id, {}).get(
                 source.category_id.id, self.browse()
             )

@@ -92,7 +92,7 @@ class ApprovalTemplate(models.Model):
 
     def action_create_request(self) -> dict[str, Any]:
         self.check_singleton()
-        context = {
+        context: dict[str, Any] = {
             "default_category_id": self.category_id.id,
             "default_template_id": self.id,
             "default_priority": self.default_priority,

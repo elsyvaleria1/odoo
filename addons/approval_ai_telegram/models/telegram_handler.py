@@ -2,11 +2,14 @@ import base64
 import calendar
 import re
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, Literal
 
 from markupsafe import escape
 
 from odoo import Command, _lt, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError
+from odoo.fields import CommandCreate
 from odoo.tools import remove_accents
 
 from ..services.approval_assistant import ApprovalAssistant
@@ -17,6 +20,19 @@ from odoo.addons.telegram.tools.dispatch import (
     log_command_execution,
     translation_env,
 )
+
+if TYPE_CHECKING:
+    from odoo.api import Environment
+    from odoo.tools.translate import LazyGettext
+
+    from odoo.addons.account.models.account_journal import AccountJournal
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
+    from odoo.addons.approval.models.res_users import ResUsers
+    from odoo.addons.base.models.res_partner import ResPartner
+    from odoo.addons.product.models.product_product import ProductProduct
+    from odoo.addons.telegram.models.telegram_bot import TelegramBot
+    from odoo.addons.telegram.models.telegram_chat import TelegramChat
 
 _DEFAULT_CONFIDENCE_THRESHOLD = 0.75
 _MONTHS_ES = (
@@ -60,7 +76,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
     _description = "Telegram: Smart Approval Requests"
     _telegram_intake_priority = 90
 
-    def _telegram_commands(self) -> dict:
+    def _telegram_commands(self) -> dict[str, TelegramCommand]:
         return {
             "/solicitar": TelegramCommand(
                 "_handle_solicitar_command",
@@ -72,22 +88,34 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             ),
         }
 
-    def _telegram_callback_prefixes(self):
+    def _telegram_callback_prefixes(self) -> tuple[str, ...]:
         return _CALLBACK_PREFIXES
 
-    def _telegram_flow_label(self, bot, chat):
+    def _telegram_flow_label(self, bot: TelegramBot, chat: TelegramChat) -> str:
         return self._tr(bot, chat)._("an approval request")
 
-    def _telegram_intakes(self):
+    def _telegram_intakes(self) -> frozenset[str]:
         return frozenset({"voice"})
 
-    def _telegram_intake_command(self, bot, chat, kind):
+    def _telegram_intake_command(
+        self, bot: TelegramBot, chat: TelegramChat, kind: str
+    ) -> str | None:
         return "/solicitar" if kind == "voice" else None
 
-    def _telegram_intake_label(self, bot, chat, kind):
+    def _telegram_intake_label(
+        self, bot: TelegramBot, chat: TelegramChat, kind: str
+    ) -> str:
         return self._tr(bot, chat)._("Approval request")
 
-    def _accepts_idle(self, bot, chat, kind, message, partner, internal_user):
+    def _accepts_idle(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        kind: str,
+        message: dict[str, Any],
+        partner: ResPartner,
+        internal_user: ResUsers | Literal[False],
+    ) -> bool:
         return bool(
             kind == "voice"
             and bot._voice_payload(message)
@@ -97,7 +125,12 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
 
     @log_command_execution
     def _handle_solicitar_command(
-        self, bot, chat, args, partner=False, internal_user=False
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        args: list[str],
+        partner: ResPartner | Literal[False] = False,
+        internal_user: ResUsers | Literal[False] = False,
     ) -> None:
         if not internal_user:
             bot.send_message(
@@ -119,7 +152,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             ),
         )
 
-    def _get_help_sections(self, bot, partner, internal_user, chat=None):
+    def _get_help_sections(
+        self,
+        bot: TelegramBot,
+        partner: ResPartner | Literal[False],
+        internal_user: ResUsers | Literal[False],
+        chat: TelegramChat | None = None,
+    ) -> list[tuple[str, list[str]]]:
         if not self._offers_command(bot, chat, "/solicitar", partner, internal_user):
             return []
         tr_env = translation_env(bot, chat)
@@ -158,7 +197,14 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         ]
         return [(tr_env._("Approval Request Commands"), commands)]
 
-    def _on_message(self, bot, chat, message, partner, internal_user):
+    def _on_message(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        message: dict[str, Any],
+        partner: ResPartner,
+        internal_user: ResUsers | Literal[False],
+    ) -> bool:
         step = self._flow_step(chat)
         if not step:
             if not self._accepts_idle(
@@ -202,7 +248,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         self._run_classification(bot, chat, internal_user, text)
         return True
 
-    def _end_unlinked_intake(self, bot, chat):
+    def _end_unlinked_intake(self, bot: TelegramBot, chat: TelegramChat) -> None:
         self._flow_end(chat)
         bot.send_message(
             chat.chat_id,
@@ -212,7 +258,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             ),
         )
 
-    def _resend_pending_summary(self, bot, chat) -> bool:
+    def _resend_pending_summary(self, bot: TelegramBot, chat: TelegramChat) -> bool:
         if self._flow_step(chat) != "classification_confirm":
             return False
         data = self._flow_data(chat)
@@ -228,7 +274,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         self._send_classification_summary(bot, chat, data)
         return True
 
-    def _handle_voice_intake(self, bot, chat, internal_user, message) -> None:
+    def _handle_voice_intake(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        message: dict[str, Any],
+    ) -> None:
         heard = ApprovalAssistant(bot).hear(chat, message)
         if heard.failure in ("no_audio", "unheard"):
             bot.send_message(
@@ -255,7 +307,14 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         chat._flow_advance(data=data)
         self._run_classification(bot, chat, internal_user, transcript)
 
-    def _on_callback(self, bot, chat, callback_query, partner, internal_user):
+    def _on_callback(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        partner: ResPartner,
+        internal_user: ResUsers | Literal[False],
+    ) -> bool:
         data = callback_query.get("data") or ""
         state = self._flow_step(chat)
         handled = True
@@ -293,7 +352,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             handled = False
         return handled
 
-    def _on_confirm_callback(self, bot, chat, internal_user, data) -> bool:
+    def _on_confirm_callback(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        data: str,
+    ) -> bool:
         if data == "sa_confirm":
             self._on_confirm(bot, chat, internal_user)
         elif data == "sa_changecat":
@@ -307,7 +372,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             return False
         return True
 
-    def _run_classification(self, bot, chat, internal_user, narrative) -> None:
+    def _run_classification(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        narrative: str,
+    ) -> None:
         categories = self._candidate_categories(bot)
         if not categories:
             self._flow_end(chat)
@@ -347,7 +418,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         chat._flow_advance(data=data)
         self._prompt_category_pick(bot, chat, categories)
 
-    def _pick_category(self, bot, chat, internal_user, callback_data) -> None:
+    def _pick_category(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        callback_data: str,
+    ) -> None:
         try:
             category_id = int(callback_data.split(":", 1)[1])
         except ValueError:
@@ -359,7 +436,12 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         chat._flow_advance("classification_confirm", data)
         self._send_classification_summary(bot, chat, data)
 
-    def _on_confirm(self, bot, chat, internal_user) -> None:
+    def _on_confirm(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+    ) -> None:
         if not internal_user:
             self._flow_end(chat)
             bot.send_message(
@@ -405,7 +487,9 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         self._advance_intake(bot, chat, internal_user)
 
     @staticmethod
-    def _unsupported_required_fields(category, data, env):
+    def _unsupported_required_fields(
+        category: ApprovalCategory, data: dict[str, Any], env: Environment
+    ) -> list[str]:
         unsupported = {
             "has_payment_method": env._("Payment method"),
             "has_date_deadline": env._("Deadline"),
@@ -431,7 +515,12 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             problems.append(env._("Amount"))
         return problems
 
-    def _advance_intake(self, bot, chat, internal_user) -> None:
+    def _advance_intake(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+    ) -> None:
         data = self._flow_data(chat)
         category = bot.env["approval.category"].browse(data.get("category_id"))
 
@@ -454,7 +543,9 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
 
         self._create_request(bot, chat, internal_user)
 
-    def _prompt_date(self, bot, chat, data) -> None:
+    def _prompt_date(
+        self, bot: TelegramBot, chat: TelegramChat, data: dict[str, Any]
+    ) -> None:
         keyboard = []
         if data.get("ai_date"):
             keyboard.append(
@@ -487,7 +578,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             reply_markup={"inline_keyboard": keyboard},
         )
 
-    def _on_date_choice(self, bot, chat, internal_user, callback_data) -> None:
+    def _on_date_choice(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        callback_data: str,
+    ) -> None:
         choice = callback_data.split(":", 1)[1]
         data = self._flow_data(chat)
         if choice == "today":
@@ -508,7 +605,9 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         chat._flow_advance(data=data)
         self._advance_intake(bot, chat, internal_user)
 
-    def _send_calendar(self, bot, chat, year, month) -> None:
+    def _send_calendar(
+        self, bot: TelegramBot, chat: TelegramChat, year: int, month: int
+    ) -> None:
         chat._flow_advance("date_calendar")
         bot.send_message(
             chat.chat_id,
@@ -516,7 +615,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             reply_markup={"inline_keyboard": self._calendar_keyboard(year, month)},
         )
 
-    def _on_calendar(self, bot, chat, internal_user, callback_query) -> None:
+    def _on_calendar(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        callback_query: dict[str, Any],
+    ) -> None:
         parts = (callback_query.get("data") or "").split(":")
         action = parts[1] if len(parts) > 1 else "x"
         message_id = (callback_query.get("message") or {}).get("message_id")
@@ -547,7 +652,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             self._advance_intake(bot, chat, internal_user)
 
     @staticmethod
-    def _parse_year_month(token):
+    def _parse_year_month(token: str | None) -> tuple[int, int] | None:
         bits = (token or "").split("-")
         if len(bits) != 2:
             return None
@@ -558,14 +663,14 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return (year, month) if 1 <= month <= 12 else None
 
     @staticmethod
-    def _parse_iso_date(token):
+    def _parse_iso_date(token: str) -> str | None:
         try:
             return fields.Date.to_string(fields.Date.to_date(token)) or None
         except ValueError, TypeError:
             return None
 
     @staticmethod
-    def _calendar_keyboard(year, month):
+    def _calendar_keyboard(year: int, month: int) -> list[list[dict[str, str]]]:
         ym = f"{year}-{month:02d}"
         keyboard = [
             [
@@ -594,12 +699,17 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return keyboard
 
     @staticmethod
-    def _shift_month(year, month, delta) -> tuple:
+    def _shift_month(year: int, month: int, delta: int) -> tuple[int, int]:
         index = year * 12 + (month - 1) + delta
         return index // 12, index % 12 + 1
 
     def _resolve_invoice_and_journal(
-        self, bot, chat, internal_user, data, category
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        data: dict[str, Any],
+        category: ApprovalCategory,
     ) -> bool:
         candidates = self._candidate_journals(bot, category)
         if not candidates:
@@ -642,12 +752,14 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return True
 
     @staticmethod
-    def _update_pending_journal(chat, data, journal) -> None:
+    def _update_pending_journal(
+        chat: TelegramChat, data: dict[str, Any], journal: AccountJournal
+    ) -> None:
         data = dict(data)
         data["journal_id"] = journal.id
         chat._flow_advance(data=data)
 
-    def _prompt_invoice_question(self, bot, chat) -> None:
+    def _prompt_invoice_question(self, bot: TelegramBot, chat: TelegramChat) -> None:
         chat._flow_advance("invoice_question")
         bot.send_message(
             chat.chat_id,
@@ -663,7 +775,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             ),
         )
 
-    def _prompt_invoice_upload(self, bot, chat) -> None:
+    def _prompt_invoice_upload(self, bot: TelegramBot, chat: TelegramChat) -> None:
         chat._flow_advance("invoice_upload")
         bot.send_message(
             chat.chat_id,
@@ -673,7 +785,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             reply_markup=kb.single(translation_env(bot, chat)._("Skip"), "sa_inv:skip"),
         )
 
-    def _on_invoice_question(self, bot, chat, internal_user, callback_data) -> None:
+    def _on_invoice_question(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        callback_data: str,
+    ) -> None:
         choice = callback_data.split(":", 1)[1]
         data = self._flow_data(chat)
         category = bot.env["approval.category"].browse(data.get("category_id"))
@@ -691,7 +809,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             )
             self._advance_intake(bot, chat, internal_user)
 
-    def _handle_invoice_upload(self, bot, chat, message, internal_user) -> None:
+    def _handle_invoice_upload(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        message: dict[str, Any],
+        internal_user: ResUsers,
+    ) -> None:
         file_id, filename, mimetype = self._extract_uploaded_file(message, "factura")
         if not file_id:
             bot.send_message(
@@ -719,7 +843,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         chat._flow_advance(data=data)
         self._advance_intake(bot, chat, internal_user)
 
-    def _prompt_evidence_question(self, bot, chat) -> None:
+    def _prompt_evidence_question(self, bot: TelegramBot, chat: TelegramChat) -> None:
         chat._flow_advance("evidence_question")
         bot.send_message(
             chat.chat_id,
@@ -741,7 +865,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             ),
         )
 
-    def _prompt_evidence_upload(self, bot, chat) -> None:
+    def _prompt_evidence_upload(self, bot: TelegramBot, chat: TelegramChat) -> None:
         chat._flow_advance("evidence_upload")
         bot.send_message(
             chat.chat_id,
@@ -754,13 +878,25 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             ),
         )
 
-    def _on_evidence_question(self, bot, chat, internal_user, callback_data) -> None:
+    def _on_evidence_question(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        callback_data: str,
+    ) -> None:
         if callback_data.split(":", 1)[1] == "yes":
             self._prompt_evidence_upload(bot, chat)
         else:
             self._finish_evidence(bot, chat, internal_user)
 
-    def _handle_evidence_upload(self, bot, chat, message, internal_user) -> None:
+    def _handle_evidence_upload(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        message: dict[str, Any],
+        internal_user: ResUsers,
+    ) -> None:
         file_id, filename, mimetype = self._extract_uploaded_file(message, "evidencia")
         if not file_id:
             bot.send_message(
@@ -801,14 +937,21 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             ),
         )
 
-    def _finish_evidence(self, bot, chat, internal_user) -> None:
+    def _finish_evidence(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+    ) -> None:
         data = self._flow_data(chat)
         data["evidence_done"] = True
         chat._flow_advance(data=data)
         self._advance_intake(bot, chat, internal_user)
 
     @staticmethod
-    def _extract_uploaded_file(message, default_name="archivo") -> tuple:
+    def _extract_uploaded_file(
+        message: dict[str, Any], default_name: str = "archivo"
+    ) -> tuple[str, str, str] | tuple[None, None, None]:
         if message.get("document"):
             document = message["document"]
             return (
@@ -825,7 +968,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return None, None, None
 
     def _prompt_journal_choice(
-        self, bot, chat, fiscal_journal, nonfiscal_journal, candidates, fiscal_hint=None
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        fiscal_journal: AccountJournal,
+        nonfiscal_journal: AccountJournal,
+        candidates: AccountJournal,
+        fiscal_hint: bool | None = None,
     ) -> None:
         tr = translation_env(bot, chat)
         if fiscal_journal or nonfiscal_journal:
@@ -869,7 +1018,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         chat._flow_advance("journal_choice")
         bot.send_message(chat.chat_id, prompt, reply_markup=keyboard)
 
-    def _on_journal_pick(self, bot, chat, internal_user, callback_data) -> None:
+    def _on_journal_pick(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        callback_data: str,
+    ) -> None:
         try:
             journal_id = int(callback_data.split(":", 1)[1])
         except ValueError:
@@ -883,7 +1038,9 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         chat._flow_advance(data=data)
         self._advance_intake(bot, chat, internal_user)
 
-    def _candidate_journals(self, bot, category):
+    def _candidate_journals(
+        self, bot: TelegramBot, category: ApprovalCategory
+    ) -> AccountJournal:
         if category.journal_ids:
             return category.journal_ids
         return bot.env["account.journal"].search(
@@ -894,7 +1051,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         )
 
     @staticmethod
-    def _match_journal(journals, tag):
+    def _match_journal(journals: AccountJournal, tag: str) -> AccountJournal:
         tag = tag.upper()
         tagged = journals.filtered(
             lambda j: (j.name or "").strip().upper().split()[-1:] == [tag]
@@ -906,7 +1063,9 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         )
         return (exact or tagged)[:1]
 
-    def _create_request(self, bot, chat, internal_user) -> None:
+    def _create_request(
+        self, bot: TelegramBot, chat: TelegramChat, internal_user: ResUsers
+    ) -> None:
         data = self._flow_data(chat)
 
         user_env = (
@@ -946,7 +1105,12 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         )
 
     @staticmethod
-    def _create_attachment(user_env, approval, file_dict, default_name):
+    def _create_attachment(
+        user_env: Environment,
+        approval: ApprovalRequest,
+        file_dict: dict[str, Any] | None,
+        default_name: str,
+    ) -> None:
         if not file_dict or not file_dict.get("data"):
             return
         user_env["ir.attachment"].create(
@@ -959,7 +1123,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             }
         )
 
-    def _prepare_approval_vals(self, bot, user_env, internal_user, data):
+    def _prepare_approval_vals(
+        self,
+        bot: TelegramBot,
+        user_env: Environment,
+        internal_user: ResUsers,
+        data: dict[str, Any],
+    ) -> ValuesType:
         vals = {
             "category_id": data["category_id"],
             "request_owner_id": internal_user.id,
@@ -1008,7 +1178,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             vals["location"] = data["ai_location"]
         return vals
 
-    def _prepare_line_commands(self, user_env, category, data, partner_id=None):
+    def _prepare_line_commands(
+        self,
+        user_env: Environment,
+        category: ApprovalCategory,
+        data: dict[str, Any],
+        partner_id: int | None = None,
+    ) -> list[CommandCreate]:
         items = data.get("items") or []
         if not items:
             return []
@@ -1032,7 +1208,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             commands.append(Command.create(line_vals))
         return commands
 
-    def _resolve_line_product(self, user_env, item, allowed, default_product):
+    def _resolve_line_product(
+        self,
+        user_env: Environment,
+        item: dict[str, Any],
+        allowed: ProductProduct,
+        default_product: ProductProduct,
+    ) -> ProductProduct:
         if allowed:
             chosen = item.get("product_id")
             if chosen in set(allowed.ids):
@@ -1042,13 +1224,17 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return self._search_catalog_product(user_env, item, None)
 
     @staticmethod
-    def _search_catalog_product(user_env, item, restrict):
+    def _search_catalog_product(
+        user_env: Environment, item: dict[str, Any], restrict: ProductProduct | None
+    ) -> ProductProduct:
         product_model = user_env["product.product"]
         name = (item.get("product_name") or item.get("description") or "").strip()
         tokens = TelegramHandlerApprovalAi._search_tokens(name)
         if not tokens:
             return product_model.browse()
-        domain = [("purchase_ok", "=", True)]
+        domain: list[str | tuple[str, str, Any] | list[Any]] = [
+            ("purchase_ok", "=", True)
+        ]
         if restrict is not None:
             domain.append(("id", "in", restrict.ids))
         domain += [("name", "ilike", token) for token in tokens]
@@ -1056,7 +1242,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return found if len(found) == 1 else product_model.browse()
 
     @staticmethod
-    def _search_tokens(name) -> list:
+    def _search_tokens(name: str) -> list[str]:
         normalized = remove_accents(name)
         stop_words = {"con", "para", "del", "los", "las", "una", "tapa", "ml"}
         return [
@@ -1066,7 +1252,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         ]
 
     @staticmethod
-    def _get_reason_html(data):
+    def _get_reason_html(data: dict[str, Any]) -> str:
         parts = []
         items = data.get("items") or []
         if items:
@@ -1104,7 +1290,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         )
 
     @staticmethod
-    def _get_payment_html(payment):
+    def _get_payment_html(payment: dict[str, str] | None) -> str:
         if not payment:
             return ""
         rows = [
@@ -1120,7 +1306,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         )
 
     @staticmethod
-    def _resolve_partner(user_env, name):
+    def _resolve_partner(user_env: Environment, name: str | None) -> int | None:
         partner_model = user_env["res.partner"]
         if name:
             partners = partner_model.search([("name", "=ilike", name)], limit=2)
@@ -1132,12 +1318,12 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return generic.id or None
 
     @staticmethod
-    def _date_to_datetime_str(iso_date):
+    def _date_to_datetime_str(iso_date: str) -> str:
         dt = datetime.strptime(iso_date, "%Y-%m-%d").replace(hour=12)
         return fields.Datetime.to_string(dt)
 
     @staticmethod
-    def _to_float(value) -> int | float | None:
+    def _to_float(value: Any) -> float | None:
         if value in (None, ""):
             return None
         try:
@@ -1145,7 +1331,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         except TypeError, ValueError:
             return None
 
-    def _candidate_categories(self, bot):
+    def _candidate_categories(self, bot: TelegramBot) -> ApprovalCategory:
         return bot.env["approval.category"].search(
             [
                 "|",
@@ -1154,7 +1340,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             ]
         )
 
-    def _confidence_threshold(self, bot):
+    def _confidence_threshold(self, bot: TelegramBot) -> float:
         param = (
             bot.env["ir.config_parameter"]
             .with_privilege(
@@ -1171,11 +1357,13 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         except TypeError, ValueError:
             return _DEFAULT_CONFIDENCE_THRESHOLD
 
-    def _send_classification_summary(self, bot, chat, data) -> None:
+    def _send_classification_summary(
+        self, bot: TelegramBot, chat: TelegramChat, data: dict[str, Any]
+    ) -> None:
         category = bot.env["approval.category"].browse(data.get("category_id"))
         tr_env = translation_env(bot, chat)
 
-        def row(label, value):
+        def row(label: str | LazyGettext, value: Any) -> str:
             return f"- {tg.bold(label)}: {tg.escape(value)}"
 
         lines = [row(tr_env._("Category"), category.name)]
@@ -1225,7 +1413,9 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
             ),
         )
 
-    def _prompt_category_pick(self, bot, chat, categories) -> None:
+    def _prompt_category_pick(
+        self, bot: TelegramBot, chat: TelegramChat, categories: ApprovalCategory
+    ) -> None:
         chat._flow_advance("category_pick")
         bot.send_message(
             chat.chat_id,

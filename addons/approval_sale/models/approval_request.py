@@ -1,8 +1,17 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_category_step import (
+        ApprovalCategoryStep,
+    )
+    from odoo.addons.approval_product.models.approval_request_line import (
+        ApprovalRequestLine,
+    )
 
 _debug = DebugLog(__name__)
 
@@ -38,7 +47,11 @@ class ApprovalRequest(models.Model):
         super()._check_confirm()
         self._check_sale_type_has_product_lines()
 
-    def action_approve(self, approver=None, steps=None):
+    def action_approve(
+        self,
+        approver: ApprovalApprover | None = None,
+        steps: ApprovalCategoryStep | None = None,
+    ) -> dict[str, Any] | None:
         self._check_sale_type_has_product_lines()
         return super().action_approve(approver, steps)
 
@@ -70,7 +83,7 @@ class ApprovalRequest(models.Model):
             return True
         return super()._is_target_rollback_enabled()
 
-    def _check_target_prerequisites(self, lines) -> None:
+    def _check_target_prerequisites(self, lines: ApprovalRequestLine) -> None:
         super()._check_target_prerequisites(lines)
         if not self._is_sale_target():
             return
@@ -90,7 +103,9 @@ class ApprovalRequest(models.Model):
                     ),
                 )
 
-    def _prepare_target_document_values(self, key, lines) -> dict[str, Any]:
+    def _prepare_target_document_values(
+        self, key: Any, lines: ApprovalRequestLine
+    ) -> dict[str, Any]:
         if not self._is_sale_target():
             return super()._prepare_target_document_values(key, lines)
         return {
@@ -99,7 +114,13 @@ class ApprovalRequest(models.Model):
             "company_id": self.company_id.id,
         }
 
-    def _prepare_target_line_values(self, line, key, document, lines) -> dict[str, Any]:
+    def _prepare_target_line_values(
+        self,
+        line: ApprovalRequestLine,
+        key: Any,
+        document: models.BaseModel,
+        lines: ApprovalRequestLine,
+    ) -> dict[str, Any]:
         if not self._is_sale_target():
             return super()._prepare_target_line_values(line, key, document, lines)
         return {
@@ -116,7 +137,7 @@ class ApprovalRequest(models.Model):
     def action_view_sale_order(self) -> dict[str, Any]:
         return self.action_view_target_documents()
 
-    def _get_all_sale_orders(self):
+    def _get_all_sale_orders(self) -> models.BaseModel:
         return self._get_documents_of_model(
             "sale.order",
             "sale_order_line_id",
@@ -130,7 +151,9 @@ class ApprovalRequest(models.Model):
             self.env._("sales order"),
         )
 
-    def _get_sale_display_lines(self, limit=None) -> tuple:
+    def _get_sale_display_lines(
+        self, limit: int | None = None
+    ) -> tuple[list[dict[str, Any]], int]:
         self.check_singleton()
         orders = self._get_all_sale_orders().sudo()
         product_lines = orders.line_ids.filtered(

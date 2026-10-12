@@ -1,9 +1,15 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from odoo import models
 from odoo.exceptions import UserError
 from odoo.tools import format_amount
 from odoo.tools.authority_keys import declare_authority_keys
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_category_step import (
+        ApprovalCategoryStep,
+    )
 
 PROOF_PURPOSE = "approval.decision"
 SUMMARY_RECORDS = 5
@@ -38,8 +44,8 @@ class ApprovalRequest(models.Model):
     def _apply_decision(
         self,
         decision: str,
-        approver: models.BaseModel | None = None,
-        steps: models.BaseModel | None = None,
+        approver: ApprovalApprover | None = None,
+        steps: ApprovalCategoryStep | None = None,
     ) -> None:
         self.check_singleton()
         if not self.category_id._is_proof_required(decision):

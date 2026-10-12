@@ -191,9 +191,9 @@ class ApprovalDashboard(models.TransientModel):
         local_midnight = datetime.combine(local_date, time.min).replace(tzinfo=tz)
         return local_midnight.astimezone(UTC).replace(tzinfo=None)
 
-    def _accessible(self, model_name: str, domain=()) -> SQL:
+    def _accessible(self, model_name: str) -> SQL:
         with trace.REPORT.span("accessible_subselect", model=model_name):
-            return self.env[model_name]._search(domain).subselect()
+            return self.env[model_name]._search([]).subselect()
 
     @api.depends_context("uid", "allowed_company_ids", "tz")
     def _compute_today_stats(self) -> None:
@@ -284,7 +284,7 @@ class ApprovalDashboard(models.TransientModel):
         def count_window(start: datetime, end: datetime) -> int:
             return sum(count for day, count in daily_counts if start <= day < end)
 
-        def get_trend(days: int) -> tuple[float, Any]:
+        def get_trend(days: int) -> tuple[float, float | str]:
             period_start = today_end - timedelta(days=days)
             prev_period_start = today_end - timedelta(days=days * 2)
 
@@ -296,7 +296,7 @@ class ApprovalDashboard(models.TransientModel):
                     ((this_period_count - last_period_count) / last_period_count) * 100,
                     1,
                 )
-                display_val = abs(trend)
+                display_val: float | str = abs(trend)
                 branch = "ratio"
             elif this_period_count > 0:
                 trend = 100.0
@@ -334,7 +334,7 @@ class ApprovalDashboard(models.TransientModel):
             dashboard.trend_30days_display = trend_30_display
 
     @staticmethod
-    def _format_trend_display(trend: float, display_val: Any) -> str:
+    def _format_trend_display(trend: float, display_val: float | str) -> str:
         arrow = "↑" if trend > 0 else "↓" if trend < 0 else "→"
         if isinstance(display_val, (int, float)):
             return f"{arrow} {display_val}%"
@@ -632,7 +632,9 @@ class ApprovalDashboard(models.TransientModel):
             dashboard.avg_response_hours_30d = avg_30d
             dashboard.median_approval_hours = median_hours
 
-    def _get_avg_response_time_sql(self, start_date: Any, end_date: Any) -> float:
+    def _get_avg_response_time_sql(
+        self, start_date: datetime, end_date: datetime
+    ) -> float:
         self.env.cr.execute(
             SQL(
                 """
@@ -673,8 +675,8 @@ class ApprovalDashboard(models.TransientModel):
 
     def _get_avg_response_time_today_sql(
         self,
-        today_start: Any,
-        today_end: Any,
+        today_start: datetime,
+        today_end: datetime,
     ) -> float:
         self.env.cr.execute(
             SQL(

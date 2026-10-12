@@ -1,9 +1,19 @@
+from typing import TYPE_CHECKING, Any, Literal
+
 from odoo import models
 from odoo.exceptions import UserError
 
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools import keyboard as kb
 from odoo.addons.telegram.tools.dispatch import translation_env
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
+    from odoo.addons.approval.models.res_users import ResUsers
+    from odoo.addons.base.models.res_partner import ResPartner
+    from odoo.addons.telegram.models.telegram_bot import TelegramBot
+    from odoo.addons.telegram.models.telegram_chat import TelegramChat
 
 _CALLBACK_PREFIX = "ar:"
 _FLOW_STARTING_ACTIONS = ("rr", "cf", "fix")
@@ -15,16 +25,23 @@ class TelegramHandlerApproval(models.AbstractModel):
     _description = "Telegram: Approval Decisions"
     _telegram_intake_priority = 100
 
-    def _telegram_callback_prefixes(self):
+    def _telegram_callback_prefixes(self) -> tuple[str, ...]:
         return (_CALLBACK_PREFIX,)
 
-    def _telegram_flow_label(self, bot, chat):
+    def _telegram_flow_label(self, bot: TelegramBot, chat: TelegramChat) -> str:
         return self._tr(bot, chat)._("an approval decision awaiting a comment")
 
-    def _feature_enabled(self, bot):
+    def _feature_enabled(self, bot: TelegramBot) -> bool:
         return True
 
-    def _on_callback(self, bot, chat, callback_query, partner, internal_user):
+    def _on_callback(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        partner: ResPartner,
+        internal_user: ResUsers | Literal[False],
+    ) -> bool:
         data = callback_query.get("data") or ""
         if not data.startswith(_CALLBACK_PREFIX):
             return False
@@ -34,7 +51,9 @@ class TelegramHandlerApproval(models.AbstractModel):
         self._handle_approval_callback(bot, chat, callback_query, internal_user, data)
         return True
 
-    def _flow_guard_blocks(self, bot, chat, data) -> bool:
+    def _flow_guard_blocks(
+        self, bot: TelegramBot, chat: TelegramChat, data: str
+    ) -> bool:
         parts = (data or "").split(":")
         action = parts[1] if len(parts) > 1 else ""
         if action not in _FLOW_STARTING_ACTIONS or self._owns_flow(chat):
@@ -45,7 +64,14 @@ class TelegramHandlerApproval(models.AbstractModel):
         self._router()._send_flow_busy_notice(bot, chat, owner)
         return True
 
-    def _on_message(self, bot, chat, message, partner, internal_user):
+    def _on_message(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        message: dict[str, Any],
+        partner: ResPartner,
+        internal_user: ResUsers | Literal[False],
+    ) -> bool:
         step = self._flow_step(chat)
         if step in ("refusal_note", "change_note"):
             note = (message.get("text") or "").strip() or None
@@ -67,7 +93,12 @@ class TelegramHandlerApproval(models.AbstractModel):
         return False
 
     def _handle_approval_callback(
-        self, bot, chat, callback_query, internal_user, data
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        internal_user: ResUsers | Literal[False],
+        data: str,
     ) -> None:
         parts = data.split(":")
         action = parts[1] if len(parts) > 1 else ""
@@ -109,7 +140,13 @@ class TelegramHandlerApproval(models.AbstractModel):
         )
 
     def _dispatch_approver_action(
-        self, bot, chat, callback_query, approver, action, parts
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        approver: ApprovalApprover,
+        action: str,
+        parts: list[str],
     ) -> None:
         if action == "a":
             self._approve_request(bot, chat, callback_query, approver)
@@ -126,13 +163,19 @@ class TelegramHandlerApproval(models.AbstractModel):
                 self._begin_change_note(bot, chat, callback_query, approver, field)
 
     @staticmethod
-    def _to_int(value):
+    def _to_int(value: str) -> int:
         try:
             return int(value)
         except TypeError, ValueError:
             return 0
 
-    def _approve_request(self, bot, chat, callback_query, approver) -> None:
+    def _approve_request(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        approver: ApprovalApprover,
+    ) -> None:
         request = approver.request_id
         try:
             with bot.env.cr.savepoint():
@@ -151,7 +194,13 @@ class TelegramHandlerApproval(models.AbstractModel):
             % {"request": tg.escape(request.name)},
         )
 
-    def _start_refuse(self, bot, chat, callback_query, approver) -> None:
+    def _start_refuse(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        approver: ApprovalApprover,
+    ) -> None:
         category = approver.request_id.category_id
         reasons = approver.env["approval.refusal.reason"].search(
             [
@@ -180,7 +229,12 @@ class TelegramHandlerApproval(models.AbstractModel):
         )
 
     def _begin_refuse_note(
-        self, bot, chat, callback_query, approver, reason_id
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        approver: ApprovalApprover,
+        reason_id: int,
     ) -> None:
         self._flow_start(
             chat, "refusal_note", {"approver_id": approver.id, "reason_id": reason_id}
@@ -195,7 +249,13 @@ class TelegramHandlerApproval(models.AbstractModel):
             kb.single(translation_env(bot, chat)._("Skip"), "ar:rn:skip"),
         )
 
-    def _finalize_refuse(self, bot, chat, internal_user, note) -> None:
+    def _finalize_refuse(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        note: str | None,
+    ) -> None:
         data = self._flow_data(chat)
         self._flow_end(chat)
         approver = self._resolve_approver(bot, internal_user, data.get("approver_id"))
@@ -224,7 +284,13 @@ class TelegramHandlerApproval(models.AbstractModel):
             % {"request": tg.escape(request.name)},
         )
 
-    def _start_change(self, bot, chat, callback_query, approver) -> None:
+    def _start_change(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        approver: ApprovalApprover,
+    ) -> None:
         tr = translation_env(bot, chat)
         self._replace_prompt(
             bot,
@@ -241,7 +307,14 @@ class TelegramHandlerApproval(models.AbstractModel):
             ),
         )
 
-    def _begin_change_note(self, bot, chat, callback_query, approver, field) -> None:
+    def _begin_change_note(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        approver: ApprovalApprover,
+        field: str,
+    ) -> None:
         self._flow_start(
             chat, "change_note", {"approver_id": approver.id, "field": field}
         )
@@ -255,7 +328,13 @@ class TelegramHandlerApproval(models.AbstractModel):
             kb.single(translation_env(bot, chat)._("Skip"), "ar:cn:skip"),
         )
 
-    def _finalize_change(self, bot, chat, internal_user, note) -> None:
+    def _finalize_change(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        note: str | None,
+    ) -> None:
         data = self._flow_data(chat)
         self._flow_end(chat)
         approver = self._resolve_approver(bot, internal_user, data.get("approver_id"))
@@ -288,7 +367,13 @@ class TelegramHandlerApproval(models.AbstractModel):
             % {"request": tg.escape(request.name)},
         )
 
-    def _on_fix_start(self, bot, chat, internal_user, request_id) -> None:
+    def _on_fix_start(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers,
+        request_id: int,
+    ) -> None:
         request = self._awaiting_owner_fix(bot, internal_user, request_id)
         if not request:
             bot.send_message(
@@ -315,7 +400,13 @@ class TelegramHandlerApproval(models.AbstractModel):
                 translation_env(bot, chat)._("Type the new description / reason:"),
             )
 
-    def _finalize_fix(self, bot, chat, internal_user, raw_value) -> None:
+    def _finalize_fix(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+        raw_value: str,
+    ) -> None:
         data = self._flow_data(chat)
         request = self._awaiting_owner_fix(bot, internal_user, data.get("request_id"))
         if not request:
@@ -360,7 +451,11 @@ class TelegramHandlerApproval(models.AbstractModel):
         )
 
     @staticmethod
-    def _awaiting_owner_fix(bot, internal_user, request_id):
+    def _awaiting_owner_fix(
+        bot: TelegramBot,
+        internal_user: ResUsers | Literal[False],
+        request_id: int | None,
+    ) -> ApprovalRequest | None:
         if not internal_user or not request_id:
             return None
         request = (
@@ -376,7 +471,11 @@ class TelegramHandlerApproval(models.AbstractModel):
         return request
 
     @staticmethod
-    def _resolve_approver(bot, internal_user, approver_id):
+    def _resolve_approver(
+        bot: TelegramBot,
+        internal_user: ResUsers | Literal[False],
+        approver_id: int | None,
+    ) -> ApprovalApprover | None:
         if not internal_user or not approver_id:
             return None
         approver = (
@@ -390,6 +489,13 @@ class TelegramHandlerApproval(models.AbstractModel):
             return None
         return approver
 
-    def _replace_prompt(self, bot, chat, callback_query, text, reply_markup) -> None:
+    def _replace_prompt(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        text: str,
+        reply_markup: dict[str, Any],
+    ) -> None:
         self._clear_keyboard(bot, chat, callback_query)
         bot.send_message(chat.chat_id, text, reply_markup=reply_markup)

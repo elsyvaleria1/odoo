@@ -1,5 +1,8 @@
+from typing import Literal, Self
+
 from odoo import api, fields, models
-from odoo.fields import Command
+from odoo.api import ValuesType
+from odoo.fields import Command, Domain
 
 SYNC_ADMISSION = "approval.binding_syncing"
 
@@ -32,19 +35,19 @@ class ApprovalBinding(models.Model):
                 binding._check_domain_against_model(model, "reset_domain")
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         bindings = super().create(vals_list)
         bindings._sync_reset_automation()
         return bindings
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         result = super().write(vals)
         syncing = self.env.transaction.admitted_ids("approval.binding", SYNC_ADMISSION)
         if unsynced := self.filtered(lambda binding: binding.id not in syncing):
             unsynced._sync_reset_automation()
         return result
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         automations = self.sudo().reset_automation_id
         result = super().unlink()
         automations.unlink()
@@ -102,7 +105,7 @@ class ApprovalBinding(models.Model):
             ):
                 binding.write({"reset_automation_id": automation.id})
 
-    def _get_reset_field_ids(self, domain) -> list[int]:
+    def _get_reset_field_ids(self, domain: Domain) -> list[int]:
         self.check_singleton()
         Fields = self.env["ir.model.fields"]
         names = {path.split(".", 1)[0] for path in self._domain_field_paths(domain)}

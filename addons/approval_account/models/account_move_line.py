@@ -1,5 +1,14 @@
+from typing import TYPE_CHECKING
+
 from odoo import fields, models
 from odoo.tools import frozendict
+
+if TYPE_CHECKING:
+    from odoo.addons.account.models.account_bank_statement_line import (
+        AccountBankStatementLine,
+    )
+    from odoo.addons.account.models.account_move import AccountMove
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
 
 
 class AccountMoveLine(models.Model):
@@ -20,18 +29,20 @@ class AccountMoveLine(models.Model):
         help="Link to the approval request line that created this account move line",
     )
 
-    def _reconcile_post_hook(self, data) -> None:
+    def _reconcile_post_hook(self, data: dict[str, AccountMove]) -> None:
         super()._reconcile_post_hook(data)
         self._mark_approval_requests_paid()
 
-    def remove_move_reconcile(self):
+    def remove_move_reconcile(self) -> None:
         statement_lines = self.statement_line_id
         res = super().remove_move_reconcile()
         if statement_lines:
             self._unmark_approval_requests_paid(statement_lines)
         return res
 
-    def _approval_requests_for_statement_lines(self, statement_lines, payment_state):
+    def _approval_requests_for_statement_lines(
+        self, statement_lines: AccountBankStatementLine, payment_state: str
+    ) -> ApprovalRequest:
         return (
             self.env["approval.request"]
             .sudo()
@@ -65,7 +76,9 @@ class AccountMoveLine(models.Model):
                 },
             )
 
-    def _unmark_approval_requests_paid(self, statement_lines) -> None:
+    def _unmark_approval_requests_paid(
+        self, statement_lines: AccountBankStatementLine
+    ) -> None:
         requests = self._approval_requests_for_statement_lines(statement_lines, "paid")
         no_longer_paid = requests.filtered(
             lambda request: (

@@ -1,7 +1,10 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import fields, models
 from odoo.exceptions import UserError
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
 
 
 class ApprovalTestGated(models.Model):
@@ -52,7 +55,7 @@ class ApprovalTestGated(models.Model):
     def action_bill(self) -> Any:
         return self._bill(self)
 
-    def _ship(self, records) -> bool:
+    def _ship(self, records: Self) -> Literal[True]:
         records._check_ship()
         for record in records:
             record.write(
@@ -64,7 +67,7 @@ class ApprovalTestGated(models.Model):
             )
         return True
 
-    def _bill(self, records) -> bool:
+    def _bill(self, records: Self) -> Literal[True]:
         for record in records:
             record.sudo().write(
                 {"bill_count": record.bill_count + 1, "state": "billed"}
@@ -97,7 +100,9 @@ class ApprovalTestGated(models.Model):
     def _get_fields_approval_required(self) -> list[str]:
         return ["name", "partner_id"]
 
-    def _prepare_approval_request_values(self, category) -> dict[str, Any]:
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         values = super()._prepare_approval_request_values(category)
         values["amount"] = self.amount_total
         return values

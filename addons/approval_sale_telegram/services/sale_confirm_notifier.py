@@ -1,7 +1,16 @@
+from typing import TYPE_CHECKING, Any
+
 from odoo import api, models
 from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.telegram.tools import keyboard as kb
+
+if TYPE_CHECKING:
+    from odoo.api import Environment
+
+    from odoo.addons.approval.models.res_users import ResUsers
+    from odoo.addons.sale.models.sale_order import SaleOrder
+    from odoo.addons.telegram.models.telegram_bot import TelegramBot
 
 
 class TelegramSaleConfirmNotifier(models.AbstractModel):
@@ -10,7 +19,7 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
     _description = "Telegram Sale Order Confirmation Notifier"
 
     @api.model
-    def _notify_ready_to_confirm(self, order):
+    def _notify_ready_to_confirm(self, order: SaleOrder) -> None:
         approval_notifier = self.env["telegram.approval.notifier"]
         if not approval_notifier._feature_active():
             return
@@ -27,7 +36,9 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
             )
 
     @api.model
-    def _confirm(self, order, user, bot):
+    def _confirm(
+        self, order: SaleOrder, user: ResUsers, bot: TelegramBot
+    ) -> str | None:
         env = self.env
         if user not in order._get_telegram_confirm_users():
             return env._("You are not set up to confirm this order.")
@@ -53,7 +64,7 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
         return None
 
     @api.model
-    def _format_message(self, order, env):
+    def _format_message(self, order: SaleOrder, env: Environment) -> str:
         request = order.approval_request_id
         lines = [
             env._("📦 Sale order approved, ready to confirm"),
@@ -77,15 +88,15 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
         return "\n".join(lines)
 
     @api.model
-    def _get_review_lines(self, order, env):
+    def _get_review_lines(self, order: SaleOrder, env: Environment) -> list[str]:
         return []
 
     @api.model
-    def _format_amount(self, order, amount):
+    def _format_amount(self, order: SaleOrder, amount: float) -> str:
         return f"{order.currency_id.symbol or ''}{amount:,.2f}"
 
     @api.model
-    def _prepare_keyboard(self, order, env):
+    def _prepare_keyboard(self, order: SaleOrder, env: Environment) -> dict[str, Any]:
         base_url = self.env.registry.settings.get(self.env, "web.base.url", False)
         open_row = []
         if base_url and base_url.startswith("https://"):

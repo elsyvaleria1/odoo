@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo import fields, models
 
 
@@ -44,7 +46,7 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
     )
 
-    def action_view_pending_so_approvals(self) -> dict:
+    def action_view_pending_so_approvals(self) -> dict[str, Any]:
         return {
             "name": self.env._("Pending Sales Approvals"),
             "type": "ir.actions.act_window",
@@ -57,7 +59,7 @@ class ResConfigSettings(models.TransientModel):
             "context": {"create": False},
         }
 
-    def action_view_so_approval_categories(self) -> dict:
+    def action_view_so_approval_categories(self) -> dict[str, Any]:
         return {
             "name": self.env._("Sales Approval Categories"),
             "type": "ir.actions.act_window",

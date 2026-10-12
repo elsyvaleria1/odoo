@@ -1,5 +1,6 @@
 import logging
-from typing import Any
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Self
 
 from markupsafe import Markup, escape
 
@@ -9,6 +10,11 @@ from odoo.tools import frozendict
 from odoo.tools.misc import format_datetime, formatLang
 
 from odoo.addons.approval.models.mixin_approval import APPROVAL_TRIGGER_CATEGORY
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.approval.models.approval_utils import ApprovalStepUnstaffed
+    from odoo.addons.approval.models.mixin_approval import CategoryCandidates
 
 _logger = logging.getLogger(__name__)
 
@@ -88,7 +94,9 @@ class StockPicking(models.Model):
             ("target_model", "=", False),
         ]
 
-    def _get_approval_category_fallback(self, categories):
+    def _get_approval_category_fallback(
+        self, categories: ApprovalCategory
+    ) -> ApprovalCategory:
         self.check_singleton()
         if not self._approval_trigger_fired():
             return self.env["approval.category"].browse()
@@ -113,7 +121,9 @@ class StockPicking(models.Model):
             )
         return catch_all
 
-    def _prepare_approval_request_values(self, category: Any) -> dict[str, Any]:
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         vals = super()._prepare_approval_request_values(category)
         vals.update(
             {
@@ -179,7 +189,7 @@ class StockPicking(models.Model):
 
         return "".join(reason_parts)
 
-    def _approval_approved_message_values(self) -> dict:
+    def _approval_approved_message_values(self) -> dict[str, Any]:
         approver_names = self._approval_decider_names("approved")
 
         return {
@@ -221,7 +231,9 @@ class StockPicking(models.Model):
                 message_type="notification",
             )
 
-    def _check_can_request_approval(self, candidates=None):
+    def _check_can_request_approval(
+        self, candidates: CategoryCandidates | None = None
+    ) -> ApprovalCategory:
         if (
             self.approval_request_id
             and self.approval_request_id.target_model == "stock.picking"
@@ -307,7 +319,12 @@ class StockPicking(models.Model):
             and self.state in ("draft", "confirmed", "assigned")
         )
 
-    def _get_approval_asked_headline(self, ready, need_approval, blocked=()) -> str:
+    def _get_approval_asked_headline(
+        self,
+        ready: Self,
+        need_approval: Self,
+        blocked: Sequence[tuple[Self, ApprovalStepUnstaffed]] = (),
+    ) -> str:
         validated = len(ready.filtered(lambda picking: picking.state == "done"))
         if blocked:
             return self.env._(

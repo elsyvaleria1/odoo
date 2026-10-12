@@ -1,8 +1,12 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from markupsafe import Markup, escape
 
 from odoo import models
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
 
 
 class MaintenanceOrder(models.Model):
@@ -12,7 +16,9 @@ class MaintenanceOrder(models.Model):
         self.check_singleton()
         return "Preventivo" if self.maintenance_type == "preventive" else "Correctivo"
 
-    def _prepare_approval_request_values(self, category) -> dict[str, Any]:
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         vals = super()._prepare_approval_request_values(category)
         vals["reason"] = self._get_maintenance_approval_reason_html()
         return vals
@@ -46,7 +52,7 @@ class MaintenanceOrder(models.Model):
     def _submits_approval_request_on_raise(self) -> bool:
         return False
 
-    def _get_approval_raised_note(self, approval) -> Markup:
+    def _get_approval_raised_note(self, approval: ApprovalRequest) -> Markup:
         return Markup(
             "<a href='#' data-oe-model='approval.request' data-oe-id='%s'>%s</a> %s"
         ) % (
@@ -55,7 +61,9 @@ class MaintenanceOrder(models.Model):
             self.env._("created. Please attach documents and submit."),
         )
 
-    def _get_approval_submitted_action(self, approval) -> dict[str, Any]:
+    def _get_approval_submitted_action(
+        self, approval: ApprovalRequest
+    ) -> dict[str, Any]:
         return {
             "type": "ir.actions.act_window",
             "res_model": "approval.request",

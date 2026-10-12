@@ -1,4 +1,7 @@
+from typing import Self
+
 from odoo import api, fields, models
+from odoo.api import ValuesType
 
 
 class ApprovalDecisionLog(models.Model):
@@ -13,7 +16,7 @@ class ApprovalDecisionLog(models.Model):
     )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         evidence_id = self.env.context.get("approval_proof_evidence_id")
         if evidence_id:
             for vals in vals_list:

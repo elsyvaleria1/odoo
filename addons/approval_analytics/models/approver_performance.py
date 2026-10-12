@@ -68,7 +68,7 @@ class ApproverPerformance(models.Model):
         help="Percentage of decisions that were approvals (vs refusals)",
     )
 
-    def _get_fields_select(self) -> dict:
+    def _get_fields_select(self) -> dict[str, str]:
         columns = {
             "id": "MIN(a.id)",
             "user_id": "COALESCE(a.decided_by_user_id, a.user_id)",
@@ -131,14 +131,14 @@ class ApproverPerformance(models.Model):
         )
         return columns
 
-    def _get_from_tables(self) -> list:
+    def _get_from_tables(self) -> list[tuple[str, str, str | None, str | None]]:
         return [
             ("approval_approver", "a", None, None),
             ("approval_request", "ar", "JOIN", "ar.id = a.request_id"),
         ]
 
-    def _get_where_conditions(self) -> list:
+    def _get_where_conditions(self) -> list[str]:
         return ["a.state != 'new'"]
 
-    def _get_fields_group_by(self) -> list:
+    def _get_fields_group_by(self) -> list[str]:
         return ["COALESCE(a.decided_by_user_id, a.user_id)", "ar.company_id"]

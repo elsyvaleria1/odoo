@@ -3,6 +3,7 @@ import logging
 import math
 import re
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, Literal
 
 from odoo import fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -18,13 +19,25 @@ from odoo.addons.telegram.tools.dispatch import (
     translation_env,
 )
 
+if TYPE_CHECKING:
+    from datetime import date, tzinfo
+
+    from odoo.api import Environment
+
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
+    from odoo.addons.approval.models.res_users import ResUsers
+    from odoo.addons.base.models.res_partner import ResPartner
+    from odoo.addons.telegram.models.telegram_bot import TelegramBot
+    from odoo.addons.telegram.models.telegram_chat import TelegramChat
+
 _logger = logging.getLogger(__name__)
 _lt = LazyTranslate(__name__)
 
 DEFAULT_TZ = "America/Mexico_City"
 
 
-def _localize_strict(naive_dt, zone):
+def _localize_strict(naive_dt: datetime, zone: tzinfo) -> datetime:
     localized = naive_dt.replace(tzinfo=zone)
     if localized.utcoffset() != localized.replace(fold=1).utcoffset():
         msg = f"Local time {naive_dt} is ambiguous or does not exist in {zone}"
@@ -42,7 +55,7 @@ _INVISIBLE_CHARS = dict.fromkeys(map(ord, "\ufeff\u200b\u200c\u200d\u2060\u180e"
 _INVISIBLE_CHARS.update(dict.fromkeys((0x00A0, 0x2007, 0x202F), " "))
 
 
-def _strip_invisible(text):
+def _strip_invisible(text: str) -> str:
     return (text or "").translate(_INVISIBLE_CHARS)
 
 
@@ -63,7 +76,7 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
     _description = "Telegram: Payment Approvals"
     _telegram_intake_priority = 100
 
-    def _telegram_commands(self) -> dict:
+    def _telegram_commands(self) -> dict[str, TelegramCommand]:
         return {
             "/pago": TelegramCommand(
                 "_handle_payment_command",
@@ -83,15 +96,22 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             ),
         }
 
-    def _telegram_callback_prefixes(self):
+    def _telegram_callback_prefixes(self) -> tuple[str, ...]:
         return _CALLBACK_DATA
 
-    def _telegram_flow_label(self, bot, chat):
+    def _telegram_flow_label(self, bot: TelegramBot, chat: TelegramChat) -> str:
         if (self._flow_step(chat) or "").startswith("especie_"):
             return self._tr(bot, chat)._("a payment in kind")
         return self._tr(bot, chat)._("a payment record")
 
-    def _on_message(self, bot, chat, message, partner, internal_user):
+    def _on_message(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        message: dict[str, Any],
+        partner: ResPartner,
+        internal_user: ResUsers | Literal[False],
+    ) -> bool:
         step = self._flow_step(chat)
         if step == "payment_details":
             self._process_payment_details(bot, chat, message, internal_user)
@@ -153,7 +173,14 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             return False
         return True
 
-    def _on_callback(self, bot, chat, callback_query, partner, internal_user):
+    def _on_callback(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        partner: ResPartner,
+        internal_user: ResUsers | Literal[False],
+    ) -> bool:
         data = callback_query.get("data")
         step = self._flow_step(chat)
         if step == "payment_confirm":
@@ -180,7 +207,13 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
                 return True
         return False
 
-    def _get_help_sections(self, bot, partner, internal_user, chat=None):
+    def _get_help_sections(
+        self,
+        bot: TelegramBot,
+        partner: ResPartner | Literal[False],
+        internal_user: ResUsers | Literal[False],
+        chat: TelegramChat | None = None,
+    ) -> list[tuple[str, list[str]]]:
         sections = []
         if self._offers_command(bot, chat, "/pago", partner, internal_user):
             tr_env = translation_env(bot, chat)
@@ -290,11 +323,11 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
     @log_command_execution
     def _handle_payment_command(
         self,
-        bot,
-        chat,
-        args,
-        partner=False,
-        internal_user=False,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        args: list[str],
+        partner: ResPartner | Literal[False] = False,
+        internal_user: ResUsers | Literal[False] = False,
     ) -> None:
         self._flow_start(chat, "payment_details")
         bot.send_message(
@@ -308,14 +341,28 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             ),
         )
 
-    def _normalize_string(self, string):
+    def _normalize_string(self, string: str) -> str:
         string = _strip_invisible(string).strip().lower()
         replacements = str.maketrans("áéíóú", "aeiou")
         return string.translate(replacements)
 
+    def _end_flow_unlinked(self, bot: TelegramBot, chat: TelegramChat) -> None:
+        bot.send_message(
+            chat.chat_id,
+            translation_env(bot, chat)._(
+                "Your Telegram account is not linked to an internal user. "
+                "Contact IT to fix it."
+            ),
+        )
+        self._flow_end(chat)
+
     def _get_partner_or_error(
-        self, internal_user, partner_name, error_prefix, env=None
-    ) -> tuple:
+        self,
+        internal_user: ResUsers,
+        partner_name: str,
+        error_prefix: str,
+        env: Environment | None = None,
+    ) -> tuple[ResPartner, None] | tuple[None, str]:
         try:
             partner_model = internal_user.env["res.partner"].with_user(internal_user)
             partners = partner_model.search([("name", "=ilike", partner_name)])
@@ -353,12 +400,14 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
                 ),
             )
 
-    def _resolve_choice_error(self, value, valid_options, error_msg):
+    def _resolve_choice_error(
+        self, value: str, valid_options: list[str], error_msg: str
+    ) -> str | None:
         if self._normalize_string(value) not in valid_options:
             return error_msg
         return None
 
-    def _resolve_cfdi_use(self, cfdi_input) -> tuple:
+    def _resolve_cfdi_use(self, cfdi_input: str) -> tuple[str, str] | tuple[None, None]:
         normalized_input = self._normalize_string(cfdi_input)
 
         if normalized_input in CFDI_MAP:
@@ -373,7 +422,9 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
 
         return None, None
 
-    def _get_date_or_error(self, date_str, env) -> tuple:
+    def _get_date_or_error(
+        self, date_str: str, env: Environment
+    ) -> tuple[date, None] | tuple[None, str]:
         try:
             return datetime.strptime(date_str, "%Y-%m-%d").date(), None
         except ValueError:
@@ -383,7 +434,9 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
                 % {"value": date_str},
             )
 
-    def _get_amount_or_error(self, amount_str, env) -> tuple:
+    def _get_amount_or_error(
+        self, amount_str: str, env: Environment
+    ) -> tuple[float, None] | tuple[None, str]:
         try:
             amount = float(amount_str)
         except ValueError:
@@ -400,7 +453,16 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             )
         return amount, None
 
-    def _process_payment_details(self, bot, chat, message, internal_user) -> None:
+    def _process_payment_details(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        message: dict[str, Any],
+        internal_user: ResUsers | Literal[False],
+    ) -> None:
+        if not internal_user:
+            self._end_flow_unlinked(bot, chat)
+            return
         lines = _strip_invisible(message.get("text", "")).strip().split("\n")
         if len(lines) != 8:
             bot.send_message(
@@ -519,7 +581,12 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
         )
 
     def _handle_payment_proof_file(
-        self, bot, chat, message, internal_user, is_photo
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        message: dict[str, Any],
+        internal_user: ResUsers | Literal[False],
+        is_photo: bool,
     ) -> None:
         if is_photo:
             file_id = message["photo"][-1]["file_id"]
@@ -591,12 +658,17 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
         )
 
     @staticmethod
-    def _intake_category(bot, intake):
+    def _intake_category(bot: TelegramBot, intake: str) -> ApprovalCategory:
         return bot.env["approval.category"]._get_telegram_intake_category(
             intake, bot._acting_company()
         )
 
-    def _confirm_payment_approval(self, bot, chat, internal_user) -> None:
+    def _confirm_payment_approval(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+    ) -> None:
         category = self._intake_category(bot, "payment")
         if not category:
             bot.send_message(
@@ -611,14 +683,7 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             return
 
         if not internal_user:
-            bot.send_message(
-                chat.chat_id,
-                translation_env(bot, chat)._(
-                    "Your Telegram account is not linked to an internal user. "
-                    "Contact IT to fix it."
-                ),
-            )
-            self._flow_end(chat)
+            self._end_flow_unlinked(bot, chat)
             return
 
         data = self._flow_data(chat)
@@ -725,11 +790,11 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
     @log_command_execution
     def _handle_especie_command(
         self,
-        bot,
-        chat,
-        args,
-        partner=False,
-        internal_user=False,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        args: list[str],
+        partner: ResPartner | Literal[False] = False,
+        internal_user: ResUsers | Literal[False] = False,
     ) -> None:
         self._flow_start(chat, "especie_details")
         bot.send_message(
@@ -743,7 +808,16 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             ),
         )
 
-    def _process_especie_details(self, bot, chat, message, internal_user) -> None:
+    def _process_especie_details(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        message: dict[str, Any],
+        internal_user: ResUsers | Literal[False],
+    ) -> None:
+        if not internal_user:
+            self._end_flow_unlinked(bot, chat)
+            return
         lines = _strip_invisible(message.get("text", "")).strip().split("\n")
         if len(lines) != 6:
             bot.send_message(
@@ -829,7 +903,12 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
         )
 
     def _handle_especie_proof_file(
-        self, bot, chat, message, internal_user, is_photo
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        message: dict[str, Any],
+        internal_user: ResUsers | Literal[False],
+        is_photo: bool,
     ) -> None:
         if is_photo:
             file_id = message["photo"][-1]["file_id"]
@@ -903,7 +982,12 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             ),
         )
 
-    def _confirm_especie_approval(self, bot, chat, internal_user) -> None:
+    def _confirm_especie_approval(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        internal_user: ResUsers | Literal[False],
+    ) -> None:
         category = self._intake_category(bot, "especie")
         if not category:
             bot.send_message(
@@ -918,14 +1002,7 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             return
 
         if not internal_user:
-            bot.send_message(
-                chat.chat_id,
-                translation_env(bot, chat)._(
-                    "Your Telegram account is not linked to an internal user. "
-                    "Contact IT to fix it."
-                ),
-            )
-            self._flow_end(chat)
+            self._end_flow_unlinked(bot, chat)
             return
 
         data = self._flow_data(chat)
@@ -1030,8 +1107,13 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             self._flow_end(chat)
 
     def _create_payment_log(
-        self, user_env, chat, internal_user, payment_data, approval
-    ):
+        self,
+        user_env: Environment,
+        chat: TelegramChat,
+        internal_user: ResUsers,
+        payment_data: dict[str, Any],
+        approval: ApprovalRequest,
+    ) -> None:
         try:
             log_data = {
                 k: v

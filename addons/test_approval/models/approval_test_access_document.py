@@ -1,4 +1,10 @@
+from typing import TYPE_CHECKING, Literal
+
 from odoo import Command, fields, models
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.base.models.res_partner import ResPartner
 
 
 class ApprovalTestAccessDocument(models.Model):
@@ -25,14 +31,18 @@ class ApprovalTestAccessDocument(models.Model):
         column2="partner_id",
     )
 
-    def _get_approval_subject_category(self, subject_key):
+    def _get_approval_subject_category(self, subject_key: str) -> ApprovalCategory:
         return self.test_category_id
 
-    def _has_access(self, partner, role=False):
+    def _has_access(
+        self, partner: ResPartner, role: str | Literal[False] = False
+    ) -> bool:
         if role == "edit":
             return partner in self.editor_partner_ids
         return partner in self.viewer_partner_ids | self.editor_partner_ids
 
-    def _grant_access(self, partner, role=False):
+    def _grant_access(
+        self, partner: ResPartner, role: str | Literal[False] = False
+    ) -> None:
         field = "editor_partner_ids" if role == "edit" else "viewer_partner_ids"
         self.sudo().write({field: [Command.link(partner.id)]})

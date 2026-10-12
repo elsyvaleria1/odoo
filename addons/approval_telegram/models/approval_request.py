@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING, Any
+
 from markupsafe import Markup
 
 from odoo import _lt, api, fields, models
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
 
 _HIDDEN_KEYS = frozenset(
     {
@@ -41,7 +46,9 @@ class ApprovalRequest(models.Model):
         "to the owner in the Telegram correction panel.",
     )
 
-    def action_request_change(self, approver=None):
+    def action_request_change(
+        self, approver: ApprovalApprover | None = None
+    ) -> dict[str, Any] | None:
         result = super().action_request_change(approver=approver)
         notifier = self.env["telegram.approval.notifier"]
         note = self.env.context.get("change_note")
@@ -54,13 +61,13 @@ class ApprovalRequest(models.Model):
             )
         return result
 
-    def _notify_if_terminal_transition(self, old_state):
+    def _notify_if_terminal_transition(self, old_state: str) -> None:
         result = super()._notify_if_terminal_transition(old_state)
         if self.state != old_state and self.state in self._TERMINAL_STATES:
             self.env["telegram.approval.notifier"]._notify_owner_outcome(self)
         return result
 
-    def action_resubmit(self):
+    def action_resubmit(self) -> None:
         result = super().action_resubmit()
         self.write({"tg_change_note": False})
         notifier = self.env["telegram.approval.notifier"]

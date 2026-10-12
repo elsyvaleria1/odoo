@@ -1,6 +1,13 @@
+from typing import TYPE_CHECKING
+
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import frozendict
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.res_users import ResUsers
+    from odoo.addons.hr.models.hr_employee import HrEmployee
 
 
 class ApprovalRequest(models.Model):
@@ -63,7 +70,7 @@ class ApprovalRequest(models.Model):
 
         super().action_confirm()
 
-    def _get_owner_employee(self):
+    def _get_owner_employee(self) -> HrEmployee:
         self.check_singleton()
         return self.env["hr.employee"].search(
             [
@@ -73,7 +80,7 @@ class ApprovalRequest(models.Model):
             limit=1,
         )
 
-    def _get_owner_manager_user(self):
+    def _get_owner_manager_user(self) -> ResUsers:
         self.check_singleton()
         manager_user = self._get_owner_employee().parent_id.user_id
         if not manager_user or not manager_user.active:
@@ -82,7 +89,7 @@ class ApprovalRequest(models.Model):
             return self.env["res.users"]
         return manager_user
 
-    def _get_escalation_manager(self, approver):
+    def _get_escalation_manager(self, approver: ApprovalApprover) -> ResUsers:
         employee = (
             self.env["hr.employee"]
             .sudo()
@@ -113,7 +120,7 @@ class ApprovalRequest(models.Model):
     def _supplies_manager_chain(self) -> bool:
         return True
 
-    def _get_manager_chain(self, user):
+    def _get_manager_chain(self, user: ResUsers) -> ResUsers:
         self.check_singleton()
         employee = (
             self.env["hr.employee"]

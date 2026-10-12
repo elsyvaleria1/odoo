@@ -1,4 +1,4 @@
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from markupsafe import Markup
 
@@ -8,6 +8,12 @@ from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.tools import frozendict
 from odoo.tools.misc import formatLang
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.stock.models.stock_quant import StockQuant
 
 
 class StockInventoryAdjustment(models.Model):
@@ -85,7 +91,7 @@ class StockInventoryAdjustment(models.Model):
     )
 
     @api.model_create_multi
-    def create(self, vals_list: list[ValuesType]):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         for vals in vals_list:
             if vals.get("name", "/") == "/":
                 vals["name"] = (
@@ -105,7 +111,12 @@ class StockInventoryAdjustment(models.Model):
             )
 
     @api.model
-    def _create_from_quants(self, quants, reason: str, date_counted) -> Self:
+    def _create_from_quants(
+        self,
+        quants: StockQuant,
+        reason: str | None,
+        date_counted: datetime | Literal[False] | None,
+    ) -> Self:
         counted = quants.filtered("inventory_quantity_set")
         if not counted:
             raise UserError(self.env._("There is no counted quantity to adjust."))
@@ -154,7 +165,7 @@ class StockInventoryAdjustment(models.Model):
             }
         )
 
-    def _can_apply_quants(self, quants) -> bool:
+    def _can_apply_quants(self, quants: StockQuant) -> bool:
         self.check_singleton()
         return (
             self.state == "draft"
@@ -195,7 +206,7 @@ class StockInventoryAdjustment(models.Model):
             message_type="notification",
         )
 
-    def _cancel_for_moved_lines(self, moved) -> None:
+    def _cancel_for_moved_lines(self, moved: StockInventoryAdjustmentLine) -> None:
         self.check_singleton()
         self.state = "cancelled"
         items = Markup("").join(
@@ -234,7 +245,9 @@ class StockInventoryAdjustment(models.Model):
             ("target_model", "=", False),
         ]
 
-    def _get_approval_category_fallback(self, categories):
+    def _get_approval_category_fallback(
+        self, categories: ApprovalCategory
+    ) -> ApprovalCategory:
         self.check_singleton()
         return categories.filtered(
             lambda category: (
@@ -244,7 +257,9 @@ class StockInventoryAdjustment(models.Model):
             )
         )[:1]
 
-    def _prepare_approval_request_values(self, category: Any) -> dict[str, Any]:
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         vals = super()._prepare_approval_request_values(category)
         vals["reference"] = self.name
         return vals
@@ -432,12 +447,12 @@ class StockInventoryAdjustmentLine(models.Model):
             )
 
     @api.model_create_multi
-    def create(self, vals_list: list[ValuesType]):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         lines = super().create(vals_list)
         lines._check_adjustment_editable()
         return lines
 
-    def write(self, vals: dict[str, Any]) -> bool:
+    def write(self, vals: ValuesType) -> Literal[True]:
         self._check_adjustment_editable()
         return super().write(vals)
 

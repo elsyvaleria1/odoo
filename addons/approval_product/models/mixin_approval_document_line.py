@@ -1,4 +1,8 @@
+from collections.abc import Collection
+from typing import Literal, Self
+
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 
@@ -31,14 +35,14 @@ class MixinApprovalDocumentLine(models.AbstractModel):
     )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         orders = self.env[self._fields["order_id"].comodel_name].browse(
             {vals["order_id"] for vals in vals_list if vals.get("order_id")},
         )
         self._check_approval_not_pending(orders)
         return super().create(vals_list)
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         touched = self._APPROVAL_PROTECTED_LINE_FIELDS & vals.keys()
         if touched:
             orders = self.order_id
@@ -51,7 +55,11 @@ class MixinApprovalDocumentLine(models.AbstractModel):
     def _unlink_except_approval_pending(self) -> None:
         self._check_approval_not_pending(self.order_id)
 
-    def _check_approval_not_pending(self, orders, touched=None) -> None:
+    def _check_approval_not_pending(
+        self,
+        orders: models.BaseModel,
+        touched: Collection[str] | None = None,
+    ) -> None:
         if self.env.su:
             return
 

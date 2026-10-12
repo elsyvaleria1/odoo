@@ -1,10 +1,21 @@
 from collections import Counter
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.tools.misc import clean_context
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_category_step import (
+        ApprovalCategoryStep,
+    )
+    from odoo.addons.approval_product.models.approval_request_line import (
+        ApprovalRequestLine,
+    )
+    from odoo.addons.base.models.res_company import ResCompany
 
 CLAIM_TRIGGERS = frozenset({"amount", "date", "category_id", "company_id"})
 
@@ -134,7 +145,7 @@ class ApprovalRequest(models.Model):
             )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         seen_line_ids: set[int] = set()
         for vals in vals_list:
             self._check_payment_fields_access(vals)
@@ -156,7 +167,7 @@ class ApprovalRequest(models.Model):
             self._claim_bank_statement_lines(pending.company_id)
         return requests
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         self._check_payment_fields_access(vals)
         line_id = vals.get("bank_statement_line_id")
         if line_id:
@@ -204,7 +215,7 @@ class ApprovalRequest(models.Model):
         return offered
 
     @api.model
-    def _claim_bank_statement_lines(self, companies) -> None:
+    def _claim_bank_statement_lines(self, companies: ResCompany) -> None:
         claimer = self.with_privilege(
             "approval_account.privilege_claim_bank_line",
             reason="a bank transaction is claimed by the one waiting request it fits",
@@ -249,7 +260,7 @@ class ApprovalRequest(models.Model):
                     message_type="notification",
                 )
 
-    def _check_payment_fields_access(self, vals: dict) -> None:
+    def _check_payment_fields_access(self, vals: ValuesType) -> None:
         if self._PAYMENT_FIELDS & set(vals) and not self.env.su:
             self.browse().check_access("mark_paid")
 
@@ -334,7 +345,7 @@ class ApprovalRequest(models.Model):
             move_ids |= set(request.sudo().account_move_ids.ids)
             request.count_account_move = len(move_ids)
 
-    def _get_all_account_moves(self):
+    def _get_all_account_moves(self) -> models.BaseModel:
         return self._get_documents_of_model(
             "account.move",
             "account_move_line_id",
@@ -364,8 +375,8 @@ class ApprovalRequest(models.Model):
 
     def action_approve(
         self,
-        approver: models.BaseModel | None = None,
-        steps: models.BaseModel | None = None,
+        approver: ApprovalApprover | None = None,
+        steps: ApprovalCategoryStep | None = None,
     ) -> dict[str, Any] | None:
         self._check_accounting_type_has_product()
         self._check_bank_statement_line_required()
@@ -533,18 +544,20 @@ class ApprovalRequest(models.Model):
             return True
         return super()._is_target_recreation_silent()
 
-    def _get_target_document_removable_lines(self, document):
+    def _get_target_document_removable_lines(
+        self, document: models.BaseModel
+    ) -> models.BaseModel:
         if self._is_account_target():
             return document.line_ids.filtered("product_id")
         return super()._get_target_document_removable_lines(document)
 
-    def _remove_target_document(self, document) -> None:
+    def _remove_target_document(self, document: models.BaseModel) -> None:
         if self._is_account_target():
             document.unlink()
             return
         super()._remove_target_document(document)
 
-    def _is_target_line_creatable(self, line) -> bool:
+    def _is_target_line_creatable(self, line: ApprovalRequestLine) -> bool:
         if self._is_account_target():
             return bool(line.product_id)
         return super()._is_target_line_creatable(line)
@@ -557,7 +570,7 @@ class ApprovalRequest(models.Model):
     def _get_target_move_type(self) -> str:
         return self.category_id.account_move_type or "in_invoice"
 
-    def _check_target_prerequisites(self, lines) -> None:
+    def _check_target_prerequisites(self, lines: ApprovalRequestLine) -> None:
         super()._check_target_prerequisites(lines)
         if self._is_account_target() and self._get_target_move_type() == "entry":
             raise UserError(
@@ -567,12 +580,14 @@ class ApprovalRequest(models.Model):
                 ),
             )
 
-    def _prepare_target_document_values(self, key, lines) -> dict[str, Any]:
+    def _prepare_target_document_values(
+        self, key: Any, lines: ApprovalRequestLine
+    ) -> dict[str, Any]:
         if not self._is_account_target():
             return super()._prepare_target_document_values(key, lines)
 
         move_type = self._get_target_move_type()
-        partner = self.env["res.partner"].browse(key) if key else False
+        partner = self.env["res.partner"].browse(key)
         move_date = fields.Date.context_today(self, self.date)
 
         values = {
@@ -600,7 +615,13 @@ class ApprovalRequest(models.Model):
             values["narration"] = self.reason
         return values
 
-    def _prepare_target_line_values(self, line, key, document, lines) -> dict[str, Any]:
+    def _prepare_target_line_values(
+        self,
+        line: ApprovalRequestLine,
+        key: Any,
+        document: models.BaseModel,
+        lines: ApprovalRequestLine,
+    ) -> dict[str, Any]:
         if not self._is_account_target():
             return super()._prepare_target_line_values(line, key, document, lines)
         return {

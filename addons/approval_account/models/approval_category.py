@@ -1,9 +1,13 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 from odoo.addons.approval.models.approval_category import CATEGORY_SELECTION
+
+if TYPE_CHECKING:
+    from odoo.addons.account.models.account_move import AccountMove
+    from odoo.addons.base.models.res_company import ResCompany
 
 
 class ApprovalCategory(models.Model):
@@ -160,7 +164,9 @@ class ApprovalCategory(models.Model):
 
         return not (self.journal_ids and document.journal_id not in self.journal_ids)
 
-    def _move_amount_range_in(self, company, document) -> tuple:
+    def _move_amount_range_in(
+        self, company: ResCompany, document: AccountMove
+    ) -> tuple[float, float]:
         self.check_singleton()
         company_currency = company.currency_id
         if not self.company_id:

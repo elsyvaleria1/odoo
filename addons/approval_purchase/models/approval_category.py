@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+
+if TYPE_CHECKING:
+    from odoo.addons.purchase.models.purchase_order import PurchaseOrder
 
 
 class ApprovalCategory(models.Model):
@@ -66,7 +71,7 @@ class ApprovalCategory(models.Model):
     def _onchange_order_approval_mode(self) -> None:
         self._clear_approval_mode_hidden_criteria()
 
-    def _is_vendor_debit_exceeded(self, purchase_order) -> bool:
+    def _is_vendor_debit_exceeded(self, purchase_order: PurchaseOrder) -> bool:
         self.check_singleton()
         partner = purchase_order.partner_id.commercial_partner_id.sudo().with_company(
             purchase_order.company_id,
@@ -89,7 +94,7 @@ class ApprovalCategory(models.Model):
             )
         return partner.debit + po_amount_company > threshold
 
-    def _is_applicable_for(self, document) -> bool:
+    def _is_applicable_for(self, document: models.BaseModel) -> bool:
         self.check_singleton()
         if document._name != "purchase.order":
             return super()._is_applicable_for(document)
@@ -104,7 +109,7 @@ class ApprovalCategory(models.Model):
             return self.env._("confirming a purchase")
         return super()._get_financial_verb()
 
-    def _is_matching_credit_policy(self, document) -> bool:
+    def _is_matching_credit_policy(self, document: models.BaseModel) -> bool:
         if document._name != "purchase.order":
             return super()._is_matching_credit_policy(document)
         if not self.check_debit_limit:

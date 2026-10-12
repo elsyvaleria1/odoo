@@ -102,7 +102,7 @@ class ApprovalMetrics(models.Model):
         "EXTRACT(EPOCH FROM (ar.date_approval_granted - ar.date_confirmed))/3600"
     )
 
-    def _get_fields_select(self) -> dict:
+    def _get_fields_select(self) -> dict[str, str]:
         sla_eligible = self._SLA_ELIGIBLE
         approval_hours = self._APPROVAL_HOURS
         decision_states = self.env["approval.request"]._decision_states_sql()
@@ -171,14 +171,14 @@ class ApprovalMetrics(models.Model):
         )
         return columns
 
-    def _get_from_tables(self) -> list:
+    def _get_from_tables(self) -> list[tuple[str, str, str | None, str | None]]:
         return [
             ("approval_request", "ar", None, None),
             ("approval_category", "ac", "JOIN", "ac.id = ar.category_id"),
         ]
 
-    def _get_where_conditions(self) -> list:
+    def _get_where_conditions(self) -> list[str]:
         return ["ar.state != 'new'"]
 
-    def _get_fields_group_by(self) -> list:
+    def _get_fields_group_by(self) -> list[str]:
         return ["ar.category_id", "ar.company_id", "ac.sla_target_hours"]

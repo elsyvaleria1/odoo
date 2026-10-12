@@ -1,7 +1,18 @@
-from typing import Any
+from collections.abc import Hashable
+from typing import TYPE_CHECKING, Any
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_category_step import (
+        ApprovalCategoryStep,
+    )
+    from odoo.addons.approval_product.models.approval_request_line import (
+        ApprovalRequestLine,
+    )
+    from odoo.addons.product.models.product_supplierinfo import ProductSupplierinfo
 
 
 class ApprovalRequest(models.Model):
@@ -45,7 +56,11 @@ class ApprovalRequest(models.Model):
                 from_lines | orders_by_request.get(request._origin.id, set()),
             )
 
-    def action_approve(self, approver=None, steps=None):
+    def action_approve(
+        self,
+        approver: ApprovalApprover | None = None,
+        steps: ApprovalCategoryStep | None = None,
+    ) -> dict[str, Any] | None:
         result = super().action_approve(approver, steps)
         self._check_purchase_type_has_product_lines()
         return result
@@ -88,12 +103,12 @@ class ApprovalRequest(models.Model):
             return True
         return super()._is_target_rollback_enabled()
 
-    def _check_target_prerequisites(self, lines) -> None:
+    def _check_target_prerequisites(self, lines: ApprovalRequestLine) -> None:
         super()._check_target_prerequisites(lines)
         if self._is_purchase_target():
             lines._check_products_vendor()
 
-    def _get_purchase_seller(self, line):
+    def _get_purchase_seller(self, line: ApprovalRequestLine) -> ProductSupplierinfo:
         return line.seller_id or line.product_id.with_company(
             line.company_id,
         )._select_seller(
@@ -101,12 +116,14 @@ class ApprovalRequest(models.Model):
             uom_id=line.product_id.uom_id,
         )
 
-    def _get_target_group_key(self, line):
+    def _get_target_group_key(self, line: ApprovalRequestLine) -> Hashable:
         if not self._is_purchase_target():
             return super()._get_target_group_key(line)
         return self._get_purchase_seller(line).partner_id.id
 
-    def _prepare_target_document_values(self, key, lines) -> dict[str, Any]:
+    def _prepare_target_document_values(
+        self, key: Any, lines: ApprovalRequestLine
+    ) -> dict[str, Any]:
         if not self._is_purchase_target():
             return super()._prepare_target_document_values(key, lines)
         if not key:
@@ -132,7 +149,13 @@ class ApprovalRequest(models.Model):
             "currency_id": seller.currency_id.id,
         }
 
-    def _prepare_target_line_values(self, line, key, document, lines) -> dict[str, Any]:
+    def _prepare_target_line_values(
+        self,
+        line: ApprovalRequestLine,
+        key: Any,
+        document: models.BaseModel,
+        lines: ApprovalRequestLine,
+    ) -> dict[str, Any]:
         if not self._is_purchase_target():
             return super()._prepare_target_line_values(line, key, document, lines)
         seller = self._get_purchase_seller(line)
@@ -166,7 +189,7 @@ class ApprovalRequest(models.Model):
             "domain": [("id", "in", self._get_all_purchase_orders().ids)],
         }
 
-    def _get_all_purchase_orders(self):
+    def _get_all_purchase_orders(self) -> models.BaseModel:
         return self._get_documents_of_model(
             "purchase.order",
             "purchase_order_line_id",

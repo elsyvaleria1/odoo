@@ -23,7 +23,7 @@ class AiToolModelAccess(models.Model):
     )
 
     @api.model
-    def _check(self, model_name, operation):
+    def _check(self, model_name: str, operation: str) -> None:
         entry = self.sudo().search([("model_name", "=", model_name)], limit=1)
         if entry and entry[f"allow_{operation}"]:
             return

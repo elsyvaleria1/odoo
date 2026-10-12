@@ -1,4 +1,7 @@
+from typing import Literal, Self
+
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.fields import Command
 
 from odoo.addons.approval.models import approval_trace as trace
@@ -43,12 +46,12 @@ class ApprovalCategory(models.Model):
     )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         categories = super().create(vals_list)
         categories.filtered("step_ids")._sync_requester_manager_steps()
         return categories
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         result = super().write(vals)
         if "manager_approval" in vals:
             self.filtered("step_ids")._sync_requester_manager_steps()
@@ -58,13 +61,13 @@ class ApprovalCategory(models.Model):
         self.check_singleton()
         return self.manager_approval != "no"
 
-    def _get_manager_step_source(self) -> dict:
+    def _get_manager_step_source(self) -> ValuesType:
         return {
             "subject_model_id": self.env["ir.model"]._get("approval.request").id,
             "subject_user_path": "requester_manager_user_id",
         }
 
-    def _prepare_manager_order_vals(self) -> dict:
+    def _prepare_manager_order_vals(self) -> ValuesType:
         return {
             "subject_user_sequence": self.env[
                 "approval.request"

@@ -1,8 +1,11 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
 from odoo import SUPERUSER_ID, api, fields, models
 from odoo.api import ValuesType
 from odoo.tools.authority_keys import declare_authority_keys
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.approval_category import ApprovalCategory
 
 declare_authority_keys("approval_res_users_deletion", "approval_skip")
 
@@ -17,7 +20,7 @@ class ResUsersDeletion(models.Model):
     )
 
     @api.model_create_multi
-    def create(self, vals_list: list[ValuesType]):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         requests = super().create(vals_list)
         if self.env.context.get("approval_skip"):
             return requests
@@ -27,7 +30,7 @@ class ResUsersDeletion(models.Model):
         return requests
 
     @api.model
-    def _get_domain_deletion_due(self) -> list:
+    def _get_domain_deletion_due(self) -> list[tuple[str, str, Any]]:
         return super()._get_domain_deletion_due() + [
             ("approval_state", "in", ("approved", False))
         ]
@@ -46,7 +49,9 @@ class ResUsersDeletion(models.Model):
             id=self.user_id_int,
         )
 
-    def _prepare_approval_request_values(self, category: Any) -> dict[str, Any]:
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         vals = super()._prepare_approval_request_values(category)
         if self.user_id.partner_id:
             vals["partner_id"] = self.user_id.partner_id.id

@@ -1,6 +1,14 @@
+from typing import TYPE_CHECKING, Any, Literal
+
 from odoo import models
 
 from odoo.addons.telegram.tools import format as tg
+
+if TYPE_CHECKING:
+    from odoo.addons.approval.models.res_users import ResUsers
+    from odoo.addons.base.models.res_partner import ResPartner
+    from odoo.addons.telegram.models.telegram_bot import TelegramBot
+    from odoo.addons.telegram.models.telegram_chat import TelegramChat
 
 _CALLBACK_PREFIX = "sc:"
 
@@ -10,10 +18,17 @@ class TelegramHandlerSaleConfirm(models.AbstractModel):
     _inherit = "mixin.telegram.handler"
     _description = "Telegram: Sale Order Confirmation"
 
-    def _telegram_callback_prefixes(self):
+    def _telegram_callback_prefixes(self) -> tuple[str, ...]:
         return (_CALLBACK_PREFIX,)
 
-    def _on_callback(self, bot, chat, callback_query, partner, internal_user):
+    def _on_callback(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        partner: ResPartner,
+        internal_user: ResUsers | Literal[False],
+    ) -> bool:
         data = callback_query.get("data") or ""
         if not data.startswith(_CALLBACK_PREFIX):
             return False
@@ -21,7 +36,14 @@ class TelegramHandlerSaleConfirm(models.AbstractModel):
         self._handle_confirm_callback(bot, chat, callback_query, internal_user, data)
         return True
 
-    def _handle_confirm_callback(self, bot, chat, callback_query, internal_user, data):
+    def _handle_confirm_callback(
+        self,
+        bot: TelegramBot,
+        chat: TelegramChat,
+        callback_query: dict[str, Any],
+        internal_user: ResUsers | Literal[False],
+        data: str,
+    ) -> None:
         env = self._tr(bot, chat)
         parts = data.split(":")
         if len(parts) != 3 or parts[1] != "c" or not parts[2].isdecimal():

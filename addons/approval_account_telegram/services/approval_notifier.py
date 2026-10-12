@@ -1,13 +1,24 @@
+from typing import TYPE_CHECKING, Any
+
 from odoo import api, models
 
 from odoo.addons.telegram.tools import keyboard as kb
+
+if TYPE_CHECKING:
+    from odoo.api import Environment
+
+    from odoo.addons.approval.models.approval_approver import ApprovalApprover
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
+    from odoo.addons.telegram.models.telegram_bot import TelegramBot
 
 
 class TelegramApprovalNotifier(models.AbstractModel):
     _inherit = "telegram.approval.notifier"
 
     @api.model
-    def _summary_review_lines(self, request, env):
+    def _summary_review_lines(
+        self, request: ApprovalRequest, env: Environment
+    ) -> list[str]:
         lines = super()._summary_review_lines(request, env)
         if self._awaits_bank_line(request):
             lines.append(
@@ -19,7 +30,13 @@ class TelegramApprovalNotifier(models.AbstractModel):
         return lines
 
     @api.model
-    def _prepare_keyboard(self, approver, request, bot, env=None):
+    def _prepare_keyboard(
+        self,
+        approver: ApprovalApprover,
+        request: ApprovalRequest,
+        bot: TelegramBot,
+        env: Environment | None = None,
+    ) -> dict[str, Any]:
         markup = super()._prepare_keyboard(approver, request, bot, env=env)
         if not self._awaits_bank_line(request):
             return markup
@@ -32,5 +49,5 @@ class TelegramApprovalNotifier(models.AbstractModel):
         )
 
     @api.model
-    def _awaits_bank_line(self, request) -> bool:
+    def _awaits_bank_line(self, request: ApprovalRequest) -> bool:
         return request.has_bsl == "required" and not request.bank_statement_line_id

@@ -32,8 +32,8 @@ class PurchaseOrder(models.Model):
     def _get_approval_config_menu(self) -> str:
         return self.env._("Purchase → Configuration → Approval Types")
 
-    def _get_approval_reference(self) -> str:
-        return self.partner_ref
+    def _get_approval_reference(self) -> str | None:
+        return self.partner_ref or None
 
     def action_cancel(self) -> bool:
         result = super().action_cancel()
