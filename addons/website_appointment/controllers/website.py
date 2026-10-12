@@ -13,9 +13,16 @@ class Website(main.Website):
         limit=5,
         max_nb_chars=999,
         options=None,
+        offset=0,
     ):
         res = super().autocomplete(
-            search_type, term, order, limit, max_nb_chars, options
+            search_type=search_type,
+            term=term,
+            order=order,
+            limit=limit,
+            max_nb_chars=max_nb_chars,
+            options=options,
+            offset=offset,
         )
         if search_type == "appointments":
             for result in res["results"]:

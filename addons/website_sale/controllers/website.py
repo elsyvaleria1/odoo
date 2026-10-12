@@ -62,12 +62,19 @@ class Website(main.Website):
         limit=5,
         max_nb_chars=999,
         options=None,
+        offset=0,
     ):
         options = options or {}
         if "display_currency" not in options:
             options["display_currency"] = request.website.currency_id
         return super().autocomplete(
-            search_type, term, order, limit, max_nb_chars, options
+            search_type=search_type,
+            term=term,
+            order=order,
+            limit=limit,
+            max_nb_chars=max_nb_chars,
+            options=options,
+            offset=offset,
         )
 
     @route()
