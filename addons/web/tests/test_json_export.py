@@ -43,6 +43,11 @@ class TestJsonExportRoute(HttpCase):
             f"{resp.text[:300]}",
         )
 
+    def test_empty_groupby_settles_instead_of_redirecting_to_itself(self):
+        resp = self._json("groupby=")
+        self.assertEqual(resp.status_code, 200, resp.text[:300])
+        self.assertLessEqual(len(resp.history), 1)
+
     def _create_server_action(self, path, code):
         return self.env["ir.actions.server"].create(
             {

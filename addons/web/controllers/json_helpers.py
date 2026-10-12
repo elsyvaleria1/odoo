@@ -139,8 +139,7 @@ def get_domain_date(start_date, end_date, view_tree):
 
 
 def get_groupby(view_tree, groupby=None, fields=None):
-    if groupby:
-        groupby = groupby.split(",")
+    groupby = groupby.split(",") if groupby else None
     if fields:
         fields = fields.split(",")
     else:
