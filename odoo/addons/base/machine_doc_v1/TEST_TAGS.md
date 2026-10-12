@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (5650 methods, 1079 classes, 207 files)
+# All base tests (5652 methods, 1079 classes, 207 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -128,7 +128,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_field_description_audit.py` | `post_install`, `-at_install` | 3 | 8 | TransactionCase, TransactionCaseWithUserDemo |
 | `test_form_create.py` | `-at_install`, `post_install` | 5 | 21 | TransactionCase |
 | `test_framework_contracts.py` | `post_install`, `-at_install` | 1 | 5 | TransactionCase |
-| `test_groups.py` | `at_install`, `groups`, `post_install`, `-at_install` | 8 | 37 | BaseCase, TransactionCase |
+| `test_groups.py` | `at_install`, `groups`, `post_install`, `-at_install` | 8 | 38 | BaseCase, TransactionCase |
 | `test_http_case.py` | `-at_install`, `post_install` | 10 | 29 | HttpCase, TestRequestRemainingCommon, TestChromeBrowser |
 | `test_import_files.py` | `post_install`, `-at_install` | 4 | 111 | TransactionCase |
 | `test_ir_access_audit.py` | `post_install`, `-at_install` | 4 | 37 | TransactionCase |
@@ -139,7 +139,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_ir_access_explain.py` | `post_install`, `-at_install` | 1 | 7 | TransactionCase |
 | `test_ir_access_fixed_records.py` | `post_install`, `-at_install` | 1 | 4 | TransactionCase |
 | `test_ir_access_flags.py` | `post_install`, `-at_install` | 1 | 5 | TransactionCase |
-| `test_ir_access_simulate.py` | `post_install`, `-at_install` | 1 | 2 | TransactionCase |
+| `test_ir_access_simulate.py` | `post_install`, `-at_install` | 1 | 3 | TransactionCase |
 | `test_ir_access_stored_domains.py` | `post_install`, `-at_install` | 1 | 7 | TransactionCase |
 | `test_ir_actions.py` | `post_install`, `-at_install` | 7 | 105 | TestServerActionsBase, TransactionCase, TestCommonCustomFields |
 | `test_ir_actions_audit.py` | `post_install`, `-at_install` | 52 | 161 | TransactionCase |
@@ -325,7 +325,7 @@ These run in **both** at_install and post_install phases by default.
 |--------|-------|
 | Total test files | 207 |
 | Total test classes | 1079 |
-| Total test methods | 5650 |
+| Total test methods | 5652 |
 | Files with @tagged | 136 (66%) |
 | Files without @tagged | 71 (34%) |
 | Classes using post_install | 434 |

@@ -78,3 +78,21 @@ class TestSimulate(TransactionCase):
         )
         with self.assertRaises(UserError):
             own.action_simulate()
+
+    def test_a_domain_cannot_probe_what_only_they_read(self):
+        counts = []
+        for probe in ("[('name', '=', 'probe secret')]", "[('name', '=', 'nothing')]"):
+            wizard = (
+                self.env["wizard.res.users.simulate.access"]
+                .with_user(self.admin)
+                .create(
+                    {
+                        "user_id": self.person.id,
+                        "model_name": "res.partner.industry",
+                        "domain": probe,
+                    }
+                )
+            )
+            wizard.action_simulate()
+            counts.append((wizard.hidden_count, wizard.reached_count))
+        self.assertEqual(counts[0], counts[1])

@@ -1,7 +1,9 @@
+from psycopg.errors import NotNullViolation
+
 from odoo import Command
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import common, counting_statements
-from odoo.tools import SetDefinitions, SetExpressionError
+from odoo.tools import SetDefinitions, SetExpressionError, mute_logger
 
 
 @common.tagged("at_install", "groups")
@@ -1708,3 +1710,9 @@ class TestNoAdministrativeSelfGainThroughImplications(common.TransactionCase):
             {"implied_ids": [Command.link(self.system.id)]}
         )
         self.assertIn(self.system, other.implied_ids)
+
+    def test_clearing_the_name_is_refused_as_a_missing_value(self):
+        group = self.env["res.groups"].create({"name": "Named once"})
+        with mute_logger("odoo.db"), self.assertRaises(NotNullViolation):
+            group.write({"name": False})
+            group.flush_recordset()

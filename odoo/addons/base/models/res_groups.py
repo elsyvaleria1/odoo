@@ -357,7 +357,7 @@ class ResGroups(models.Model):
                 self._write_implied_by(implied_by)
                 return True
         if "name" in vals:
-            if vals["name"].startswith("-"):
+            if (vals["name"] or "").startswith("-"):
                 _debug.logic("write_refused", groups=self.ids, reason="name_dash")
                 raise UserError(
                     self.env._('The name of the group can not start with "-"')

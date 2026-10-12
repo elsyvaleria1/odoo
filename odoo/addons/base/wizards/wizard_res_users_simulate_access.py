@@ -50,7 +50,8 @@ class WizardResUsersSimulateAccess(models.TransientModel):
     hidden_count = fields.Integer(
         string="Only They Reach",
         readonly=True,
-        help="Records the person reads that you do not: counted, never shown.",
+        help="Records the person reads that you do not, whatever the domain: "
+        "counted, never shown, never filtered.",
     )
     extra_count = fields.Integer(
         string="Only You Reach",
@@ -74,22 +75,21 @@ class WizardResUsersSimulateAccess(models.TransientModel):
             raise UserError(self.env._("Simulate someone else: your reach is yours."))
         domain = Domain(safe_eval(self.domain or "[]"))
         principal = self.user_id
-        theirs = set(
-            self.env(
-                user=principal,
-                context={"allowed_company_ids": principal.company_ids.ids},
-            )[self.model_name]
-            .search(domain)
-            .ids
-        )
-        mine = set(self.env[self.model_name].search(domain).ids)
-        shared = sorted(theirs & mine)
+        Theirs = self.env(
+            user=principal,
+            context={"allowed_company_ids": principal.company_ids.ids},
+        )[self.model_name]
+        Mine = self.env[self.model_name]
+        mine = set(Mine.search(domain).ids)
+        theirs = set(Theirs.search(domain & Domain("id", "in", list(mine))).ids)
+        shared = sorted(theirs)
         extra = sorted(mine - theirs)
+        hidden_count = Theirs.search_count(Domain("id", "not in", Mine._search([])))
         self.write(
             {
-                "reached_count": len(theirs),
+                "reached_count": len(shared) + hidden_count,
                 "shared_count": len(shared),
-                "hidden_count": len(theirs - mine),
+                "hidden_count": hidden_count,
                 "extra_count": len(extra),
                 "shared_ids": shared,
                 "extra_ids": extra,
@@ -102,7 +102,7 @@ class WizardResUsersSimulateAccess(models.TransientModel):
                     "subject_user_id": principal.id,
                     "model_name": self.model_name,
                     "operation": "read",
-                    "count": len(theirs),
+                    "count": len(shared) + hidden_count,
                     "reason": self.domain or False,
                 }
             ]
