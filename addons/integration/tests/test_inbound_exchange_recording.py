@@ -368,6 +368,30 @@ class TestExternalEventIds(TransactionCase):
         self.assertEqual(again.exchange.state, "processing")
         self.assertEqual(self._rows().mapped("state"), ["failed", "processing"])
 
+    def test_the_unfiltered_unique_index_of_old_databases_is_dropped(self):
+        # a database upgraded from before the partial index still had the old
+        # one, which refused the redelivery of a failed event as a duplicate
+        import importlib.util
+        from pathlib import Path
+
+        self.env.cr.execute(
+            "CREATE UNIQUE INDEX integration_exchange_event_external_unique "
+            "ON integration_exchange (channel_id, event_id_external) "
+            "WHERE event_id_external IS NOT NULL"
+        )
+        script = Path(__file__).parents[1] / "migrations" / "1.39.0" / "pre-migrate.py"
+        spec = importlib.util.spec_from_file_location("integration_1_39", script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.migrate(self.env.cr, "19.0.1.38.0")
+        self.env.cr.execute(
+            "SELECT 1 FROM pg_indexes "
+            "WHERE indexname = 'integration_exchange_event_external_unique'"
+        )
+        self.assertFalse(self.env.cr.fetchone())
+        self._admit(b'{"id": 11}').settle("the handler could not")
+        self.assertEqual(self._admit(b'{"id": 11}').exchange.state, "processing")
+
     def test_ids_are_per_channel(self):
         other = self.receiver.copy({"code": "id_probe_2", "name": "Other"})
         self._admit(b'{"id": 10}')
