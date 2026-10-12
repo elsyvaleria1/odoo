@@ -2,7 +2,7 @@ from threading import Barrier, Thread
 
 from odoo.orm.runtime.registry import CACHES_BY_KEY
 from odoo.tests.common import BaseCase, TransactionCase, get_cache_key_counter, tagged
-from odoo.tools.cache import get_cache_size
+from odoo.tools.cache import get_cache_size, ormcache
 
 
 def _cleared_by(*cache_names: str) -> str:
@@ -20,6 +20,21 @@ class TestCacheSize(BaseCase):
         holder.payload = b"x" * 1_000_000
 
         self.assertGreater(get_cache_size(holder), 1_000_000)
+
+
+class TestOrmCacheDecoration(BaseCase):
+    def test_annotation_names_a_type_checking_import(self):
+
+        class Model:
+            _name = "x.model"
+
+            @ormcache("record_id")
+            def _get(self, record_id: UndefinedRecordType) -> UndefinedResult:  # noqa: F821 - names only a type checker resolves
+                return record_id
+
+        key = Model._get.__cache__.key(Model(), 7)
+        self.assertEqual(key[0], "x.model")
+        self.assertEqual(key[-1], 7)
 
 
 @tagged("-at_install", "post_install")

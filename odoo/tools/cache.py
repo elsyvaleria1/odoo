@@ -1,3 +1,4 @@
+import annotationlib
 import functools
 import logging
 import os
@@ -228,7 +229,11 @@ _TX_STATS_ENABLED: bool = str2bool(
 def _render_signature(method: Callable) -> tuple[str, dict[str, Any]]:
     rendered: list[str] = []
     arg_globals: dict[str, Any] = {}
-    params = list(signature(method).parameters.values())
+    params = list(
+        signature(
+            method, annotation_format=annotationlib.Format.FORWARDREF
+        ).parameters.values()
+    )
     prev_kind = None
     for index, param in enumerate(params):
         if (
@@ -395,7 +400,9 @@ class ormcache:
     def set_key(self) -> None:
         assert self.method is not None
         args, arg_globals = _render_signature(self.method)
-        parameters = signature(self.method).parameters
+        parameters = signature(
+            self.method, annotation_format=annotationlib.Format.FORWARDREF
+        ).parameters
         first_param = next(iter(parameters), None)
         if first_param is None:
             msg = (

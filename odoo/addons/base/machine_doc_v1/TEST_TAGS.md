@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (5545 methods, 1062 classes, 207 files)
+# All base tests (5547 methods, 1063 classes, 207 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -102,7 +102,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 
 ## Test File Reference
 
-### Tagged Files (135 files, 690 classes)
+### Tagged Files (135 files, 691 classes)
 
 | File | Tags | Classes | Tests | Base Class |
 |------|------|---------|-------|------------|
@@ -175,11 +175,11 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_module_data_rename_field.py` | `post_install`, `-at_install` | 7 | 16 | TransactionCase |
 | `test_module_data_rename_model.py` | `post_install`, `-at_install` | 5 | 19 | TransactionCase |
 | `test_module_data_rename_module.py` | `post_install`, `-at_install` | 1 | 14 | TransactionCase |
-| `test_neutralize.py` | `post_install`, `-at_install`, `neutralize` | 2 | 2 | TransactionCase, BaseCase |
+| `test_neutralize.py` | `post_install`, `-at_install`, `neutralize` | 2 | 3 | TransactionCase, BaseCase |
 | `test_nplusone.py` | `-standard`, `nplusone` | 3 | 12 | TransactionCase, TestNplusOneDetection |
 | `test_orm.py` | `post_install`, `-at_install` | 6 | 33 | TransactionCase |
 | `test_orm_profiler.py` | `-standard`, `profiler` | 2 | 9 | TransactionCase |
-| `test_ormcache.py` | `-at_install`, `post_install` | 2 | 7 | BaseCase, TransactionCase |
+| `test_ormcache.py` | `-at_install`, `post_install` | 3 | 8 | BaseCase, TransactionCase |
 | `test_overrides.py` | `-at_install`, `post_install` | 1 | 4 | TransactionCase |
 | `test_partner_identifier_confidentiality.py` | `post_install`, `-at_install` | 3 | 13 | TransactionCase |
 | `test_partner_private_address_access.py` | `post_install`, `-at_install` | 1 | 11 | TransactionCase |
@@ -324,8 +324,8 @@ These run in **both** at_install and post_install phases by default.
 | Metric | Value |
 |--------|-------|
 | Total test files | 207 |
-| Total test classes | 1062 |
-| Total test methods | 5545 |
+| Total test classes | 1063 |
+| Total test methods | 5547 |
 | Files with @tagged | 135 (65%) |
 | Files without @tagged | 72 (35%) |
 | Classes using post_install | 423 |
