@@ -143,10 +143,27 @@ class DiscussChannel(models.Model):
             channel._broadcast(members.ids)
         return channel
 
-    def _notify_thread_by_sms(self, message, recipients_data, msg_vals=False, **kwargs):
+    def _notify_thread_by_sms(
+        self,
+        message,
+        recipients_data,
+        msg_vals=False,
+        sms_content=None,
+        sms_numbers=None,
+        sms_pid_to_number=None,
+        put_in_queue=False,
+        **kwargs,
+    ):
         if not self._is_sms_reply(message, msg_vals):
             return super()._notify_thread_by_sms(
-                message, recipients_data, msg_vals=msg_vals, **kwargs
+                message,
+                recipients_data,
+                msg_vals=msg_vals,
+                sms_content=sms_content,
+                sms_numbers=sms_numbers,
+                sms_pid_to_number=sms_pid_to_number,
+                put_in_queue=put_in_queue,
+                **kwargs,
             )
         body = html2plaintext((msg_vals or {}).get("body", message.body) or "").strip()
         if not body:
@@ -157,13 +174,15 @@ class DiscussChannel(models.Model):
                 )
             )
         number = self.twilio_number_id
-        kwargs |= {
-            "sms_content": body,
-            "sms_numbers": [self.sms_number],
-            "put_in_queue": True,
-        }
         result = super()._notify_thread_by_sms(
-            message, recipients_data, msg_vals=msg_vals, **kwargs
+            message,
+            recipients_data,
+            msg_vals=msg_vals,
+            sms_content=body,
+            sms_numbers=[self.sms_number],
+            sms_pid_to_number=sms_pid_to_number,
+            put_in_queue=True,
+            **kwargs,
         )
         replies = (
             self.env["sms.sms"]
