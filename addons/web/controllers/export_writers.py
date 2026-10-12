@@ -45,7 +45,7 @@ def allow_empty_iterable[T](
     return wrap
 
 
-OPERATOR_MAPPING = {
+OPERATOR_MAPPING: dict[str, Callable[[Iterable[Any]], Any]] = {
     "max": none_values_filtered(allow_empty_iterable(max)),
     "min": none_values_filtered(allow_empty_iterable(min)),
     "sum": sum,

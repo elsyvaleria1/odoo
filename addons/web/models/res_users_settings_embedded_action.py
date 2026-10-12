@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
@@ -83,7 +83,7 @@ class ResUsersSettingsEmbeddedAction(models.Model):
                     )
 
     @staticmethod
-    def _parse_id_list(value: str) -> list[int | bool]:
+    def _parse_id_list(value: str | Literal[False]) -> list[int | Literal[False]]:
         if not value:
             return []
         return [False if token == "false" else int(token) for token in value.split(",")]

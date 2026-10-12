@@ -1,6 +1,7 @@
-from typing import Any
+from collections.abc import Callable
+from typing import Any, Literal
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools.cache_version import versioned
@@ -15,7 +16,7 @@ SEARCH_PANEL_ERROR_MESSAGE = _lt("Too many items to display.")
 class Base(models.AbstractModel):
     _inherit = "base"
 
-    def _search_panel_get_field(self, field_name: str) -> Any:
+    def _search_panel_get_field(self, field_name: str) -> fields.Field:
         field = self._fields.get(field_name)
         if field is None:
             raise UserError(
@@ -75,15 +76,15 @@ class Base(models.AbstractModel):
     def _search_panel_range_many2one(
         self,
         field_name: str,
-        field: Any,
-        model_domain: list,
-        extra_domain: list,
+        field: fields.Field,
+        model_domain: list[Any],
+        extra_domain: list[Any],
         **kwargs: Any,
     ) -> dict[str, Any]:
         Comodel = self.env[field.comodel_name].with_context(hierarchical_naming=False)
         field_names = ["display_name"]
         hierarchize = kwargs.get("hierarchize", True)
-        parent_name = False
+        parent_name: str | Literal[False] = False
         if hierarchize and Comodel._parent_name in Comodel._fields:
             parent_name = Comodel._parent_name
             field_names.append(parent_name)
@@ -149,12 +150,12 @@ class Base(models.AbstractModel):
 
     def _search_panel_prepare_category_values(
         self,
-        comodel_records: list[dict],
+        comodel_records: list[dict[str, Any]],
         parent_name: Any,
         hierarchize: bool,
         enable_counters: Any,
-        domain_image: dict | None,
-    ) -> dict[int, dict]:
+        domain_image: dict[int, dict[str, Any]] | None,
+    ) -> dict[int, dict[str, Any]]:
         field_range = {}
         for record in comodel_records:
             record_id = record["id"]
@@ -171,12 +172,14 @@ class Base(models.AbstractModel):
             field_range[record_id] = values
         return field_range
 
-    def _search_panel_get_group_id_name(self, Comodel: Any, group_by: str) -> Any:
+    def _search_panel_get_group_id_name(
+        self, Comodel: models.BaseModel, group_by: str
+    ) -> Callable[[Any], tuple[Any, Any]]:
         group_by_field = Comodel._fields[group_by]
 
         if group_by_field.type == "many2one":
 
-            def group_id_name(value):
+            def group_id_name(value: Any) -> tuple[Any, Any]:
                 return value or (False, self.env._("Not Set"))
 
         elif group_by_field.type == "selection":
@@ -184,12 +187,12 @@ class Base(models.AbstractModel):
             group_by_selection = dict(desc["selection"])
             group_by_selection[False] = self.env._("Not Set")
 
-            def group_id_name(value):
+            def group_id_name(value: Any) -> tuple[Any, Any]:
                 return value, group_by_selection.get(value, value)
 
         else:
 
-            def group_id_name(value):
+            def group_id_name(value: Any) -> tuple[Any, Any]:
                 return (value, value) if value else (False, self.env._("Not Set"))
 
         return group_id_name
@@ -264,11 +267,11 @@ class Base(models.AbstractModel):
     def _search_panel_multi_range_many2many(
         self,
         field_name: str,
-        Comodel: Any,
+        Comodel: models.BaseModel,
         field_names: list[str],
         group_id_name: Any,
-        model_domain: list,
-        extra_domain: list,
+        model_domain: list[Any],
+        extra_domain: list[Any],
         **kwargs: Any,
     ) -> dict[str, Any]:
         group_by = kwargs.get("group_by")
@@ -344,15 +347,15 @@ class Base(models.AbstractModel):
     def _search_panel_prepare_group_count_images(
         self,
         field_name: str,
-        comodel_records: list[dict],
+        comodel_records: list[dict[str, Any]],
         group_id_name: Any,
-        model_domain: list,
-        extra_domain: list,
+        model_domain: list[Any],
+        extra_domain: list[Any],
         **kwargs: Any,
-    ) -> dict[str, dict]:
+    ) -> dict[str, dict[int, dict[str, Any]]]:
         group_by = kwargs.get("group_by")
         group_domain = kwargs.get("group_domain")
-        group_count_images: dict[str, dict] = {}
+        group_count_images: dict[str, dict[int, dict[str, Any]]] = {}
         for record in comodel_records:
             group_key = json_dumps(group_id_name(record[group_by])[0])
             if group_key not in group_count_images:
@@ -371,11 +374,11 @@ class Base(models.AbstractModel):
     def _search_panel_multi_range_many2one(
         self,
         field_name: str,
-        Comodel: Any,
+        Comodel: models.BaseModel,
         field_names: list[str],
         group_id_name: Any,
-        model_domain: list,
-        extra_domain: list,
+        model_domain: list[Any],
+        extra_domain: list[Any],
         **kwargs: Any,
     ) -> dict[str, Any]:
         group_by = kwargs.get("group_by")

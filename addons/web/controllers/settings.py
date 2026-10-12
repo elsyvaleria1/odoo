@@ -10,7 +10,7 @@ _debug = DebugLog(__name__)
 
 class BaseSetup(http.Controller):
     @http.route("/base_setup/data", type="jsonrpc", auth="user", readonly=True)
-    def base_setup_data(self, **kw) -> dict[str, Any]:
+    def base_setup_data(self, **kw: Any) -> dict[str, Any]:
         if _debug.lifecycle.enabled:
             _debug.lifecycle("base_setup_data", ignored=sorted(kw))
         if not request.env.user.has_group("base.group_erp_manager"):
@@ -39,7 +39,7 @@ class BaseSetup(http.Controller):
         }
 
     @http.route("/base_setup/demo_active", type="jsonrpc", auth="user", readonly=True)
-    def base_setup_is_demo(self, **kwargs) -> bool:
+    def base_setup_is_demo(self, **kwargs: Any) -> bool:
         demo = bool(
             request.env["ir.module.module"].search_count([("demo", "=", True)], limit=1)
         )

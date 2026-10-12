@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any
+from typing import Any, Literal
 
 from odoo import api, models
 from odoo.fields import Domain
@@ -81,7 +81,8 @@ class IrModuleModule(models.Model):
         roots = set(root_ids)
 
         def get_root_category_id(category_id: int) -> int | None:
-            node, seen = category_id, set()
+            node: int | Literal[False] | None = category_id
+            seen: set[int] = set()
             while node and node not in roots and node not in seen:
                 seen.add(node)
                 node = parent_by_id.get(node)

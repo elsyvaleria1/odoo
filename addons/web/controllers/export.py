@@ -62,7 +62,7 @@ class Export(http.Controller):
         self,
         fields: dict[str, dict[str, Any]],
         model: str,
-        domain: list | None = None,
+        domain: list[Any] | None = None,
     ) -> dict[str, dict[str, Any]]:
         property_fields = {}
         Model = get_model(request.env, model)
@@ -471,7 +471,7 @@ class ExportFormat:
 
     def _iter_export_rows(
         self, Model: Any, records: Any, field_names: list[str]
-    ) -> typing.Iterator[list]:
+    ) -> typing.Iterator[list[Any]]:
         batches = rows = 0
         for batch_ids in itertools.batched(records.ids, PREFETCH_MAX, strict=False):
             batch = Model.browse(batch_ids)
@@ -499,7 +499,7 @@ class ExportFormat:
         field_names: list[str],
         groupby: list[str],
         ids: list[int] | None,
-        domain: list,
+        domain: list[Any],
     ) -> GroupsTreeNode:
         groupby_root = [x.split(":", 1)[0].split(".", 1)[0] for x in groupby]
         unknown = [f for f in groupby_root if f not in Model._fields]

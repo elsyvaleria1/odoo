@@ -9,7 +9,7 @@ class IrUiMenu(models.Model):
     def load_web_menus(self, debug: bool) -> dict[str | int, dict[str, Any]]:
         menus = self.load_menus(debug)
 
-        web_menus = {}
+        web_menus: dict[str | int, dict[str, Any]] = {}
         for menu in menus.values():
             if not menu["id"]:
                 web_menus["root"] = {

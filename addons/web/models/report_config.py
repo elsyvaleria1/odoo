@@ -1,4 +1,4 @@
-from typing import Any, Self
+from typing import Literal, Self
 
 from odoo import api, fields, models
 from odoo.api import ValuesType
@@ -62,7 +62,7 @@ class ReportConfig(models.Model):
             self.env["res.company"]._update_asset_style()
         return configs
 
-    def write(self, vals: dict[str, Any]) -> bool:
+    def write(self, vals: ValuesType) -> Literal[True]:
         res = super().write(vals)
         if not self._REPORT_STYLE_FIELDS.isdisjoint(vals):
             self.env.registry.clear_cache("assets")

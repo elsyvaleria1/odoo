@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from typing import Any
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.api import DomainType
 from odoo.exceptions import AccessError
 from odoo.fields import Domain
@@ -37,11 +37,11 @@ class Base(models.AbstractModel):
         order: str | None = None,
         *,
         auto_unfold: bool = False,
-        opening_info: list[dict] | None = None,
-        unfold_read_specification: dict[str, dict] | None = None,
+        opening_info: list[dict[str, Any]] | None = None,
+        unfold_read_specification: dict[str, dict[str, Any]] | None = None,
         unfold_read_default_limit: (int | None) = 80,
-        groupby_read_specification: dict[str, dict] | None = None,
-    ) -> dict[str, int | list]:
+        groupby_read_specification: dict[str, dict[str, Any]] | None = None,
+    ) -> dict[str, int | list[dict[str, Any]]]:
         if not isinstance(groupby, (list, tuple)) or not groupby:
             msg = "groupby must be a non-empty list or tuple"
             raise ValueError(msg)
@@ -186,14 +186,22 @@ class Base(models.AbstractModel):
 
     _OPENED_GROUPS_SQL_CHUNK = 50
 
-    def _chunk_opened_groups(self, to_fetch: list) -> Iterator[list]:
+    def _chunk_opened_groups(
+        self, to_fetch: list[tuple[int, dict[str, Any]]]
+    ) -> Iterator[list[tuple[int, dict[str, Any]]]]:
         size = self._OPENED_GROUPS_SQL_CHUNK
         for start in range(0, len(to_fetch), size):
             yield to_fetch[start : start + size]
 
     def _get_formatted_read_group_with_length(
-        self, domain, groupby, aggregates, offset=0, limit=None, order=None
-    ) -> tuple:
+        self,
+        domain: DomainType,
+        groupby: list[str] | tuple[str, ...],
+        aggregates: Sequence[str],
+        offset: int = 0,
+        limit: int | None = None,
+        order: str | None = None,
+    ) -> tuple[list[dict[str, Any]], int]:
         groups = self.formatted_read_group(
             domain, groupby, aggregates, offset=offset, limit=limit, order=order
         )
@@ -207,7 +215,9 @@ class Base(models.AbstractModel):
 
         return groups, length
 
-    def _read_group_count(self, domain, groupby):
+    def _read_group_count(
+        self, domain: DomainType, groupby: list[str] | tuple[str, ...]
+    ) -> int:
         self.browse().check_access("read")
         query = self._search(domain)
         if query.is_empty():
@@ -227,9 +237,9 @@ class Base(models.AbstractModel):
 
     def _add_groupby_values(
         self,
-        groupby_read_specification: dict[str, dict] | None,
-        groupby: list[str],
-        current_groups: list,
+        groupby_read_specification: dict[str, dict[str, Any]] | None,
+        groupby: list[str] | tuple[str, ...],
+        current_groups: list[dict[str, Any]],
     ) -> None:
         if (
             not groupby_read_specification
@@ -335,7 +345,7 @@ class Base(models.AbstractModel):
         domain: Domain,
         groupby: list[str] | tuple[str, ...],
         dict_order: dict[str, str],
-        unfold_read_specification: dict[str, dict] | None,
+        unfold_read_specification: dict[str, dict[str, Any]] | None,
     ) -> None:
         if dict_order:
             order_specs = [
@@ -390,15 +400,15 @@ class Base(models.AbstractModel):
         self,
         *,
         records_opening_info: list[dict[str, Any]],
-        groups: list[dict],
+        groups: list[dict[str, Any]],
         domain: Domain,
-        groupby: list[str],
+        groupby: list[str] | tuple[str, ...],
         aggregates: list[str],
         dict_order: dict[str, str],
         auto_unfold: bool,
-        opening_info: list[dict] | None,
+        opening_info: list[dict[str, Any]] | None,
         unfold_read_default_limit: int | None,
-        parent_opening_info: list[dict] | None,
+        parent_opening_info: list[dict[str, Any]] | None,
         parent_group_domain: Domain,
     ) -> None:
         ctx_max = self.env.context.get("max_number_opened_groups")
@@ -464,13 +474,13 @@ class Base(models.AbstractModel):
 
     def _get_group_opening(
         self,
-        group: dict,
+        group: dict[str, Any],
         *,
         groupby_spec: str,
-        field: Any,
+        field: fields.Field,
         auto_unfold: bool,
-        opening_info: list[dict] | None,
-        parent_opening_info_dict: dict,
+        opening_info: list[dict[str, Any]] | None,
+        parent_opening_info_dict: dict[Any, dict[str, Any]],
         opened: int,
         budget: tuple[int, int],
         unfold_read_default_limit: int | None,
@@ -512,7 +522,7 @@ class Base(models.AbstractModel):
         self,
         *,
         records_opening_info: list[dict[str, Any]],
-        group: dict,
+        group: dict[str, Any],
         domain: Domain,
         aggregates: list[str],
         parent_group_domain: Domain,
@@ -543,12 +553,12 @@ class Base(models.AbstractModel):
         self,
         *,
         records_opening_info: list[dict[str, Any]],
-        group: dict,
+        group: dict[str, Any],
         domain: Domain,
-        groupby: list[str],
+        groupby: list[str] | tuple[str, ...],
         aggregates: list[str],
         dict_order: dict[str, str],
-        opening_info: list[dict] | None,
+        opening_info: list[dict[str, Any]] | None,
         unfold_read_default_limit: int | None,
         parent_group_domain: Domain,
         read_group_order: str | None,
@@ -586,7 +596,7 @@ class Base(models.AbstractModel):
 
     def _replace_progressbar_aggregates(
         self,
-        group: dict,
+        group: dict[str, Any],
         aggregates: Sequence[str],
         filtered_domain: Domain,
     ) -> None:
@@ -606,7 +616,7 @@ class Base(models.AbstractModel):
         aggregates: Sequence[str] = (),
         *,
         order: str | None = None,
-    ) -> list:
+    ) -> list[list[dict[str, Any]]]:
         grouping_sets = [tuple(groupby) for groupby in grouping_sets]
         aggregates = tuple(
             agg.replace(":recordset", ":array_agg") for agg in aggregates
@@ -662,7 +672,7 @@ class Base(models.AbstractModel):
         offset: int = 0,
         limit: int | None = None,
         order: str | None = None,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         groupby = tuple(groupby)
         aggregates = tuple(
             agg.replace(":recordset", ":array_agg") for agg in aggregates
@@ -707,11 +717,11 @@ class Base(models.AbstractModel):
 
     def _web_read_group_format(
         self,
-        groupby: tuple[str, ...],
-        aggregates: tuple[str, ...],
-        groups: list[tuple],
-    ) -> list[dict]:
-        result = [{"__extra_domains": []} for __ in groups]
+        groupby: Sequence[str],
+        aggregates: Sequence[str],
+        groups: list[tuple[Any, ...]],
+    ) -> list[dict[str, Any]]:
+        result: list[dict[str, Any]] = [{"__extra_domains": []} for __ in groups]
         if not groups:
             return result
         column_iterator = zip(*groups, strict=True)
@@ -766,13 +776,17 @@ class Base(models.AbstractModel):
 
     @api.model
     @api.readonly
-    def read_progress_bar(self, domain, group_by, progress_bar):
-        def adapt(value):
+    def read_progress_bar(
+        self, domain: DomainType, group_by: str, progress_bar: dict[str, Any]
+    ) -> dict[str, dict[str, int]]:
+        def adapt(value: Any) -> Any:
             if isinstance(value, tuple):
                 return value[0]
             return value
 
-        result = defaultdict(lambda: dict.fromkeys(progress_bar["colors"], 0))
+        result: defaultdict[str, dict[str, int]] = defaultdict(
+            lambda: dict.fromkeys(progress_bar["colors"], 0)
+        )
 
         for group in self.formatted_read_group(
             domain,

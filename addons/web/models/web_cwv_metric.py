@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from odoo import api, fields, models
 
@@ -97,7 +98,7 @@ class WebCwvMetric(models.Model):
         )
 
     @api.model
-    def _record_beacon(self, values) -> None:
+    def _record_beacon(self, values: dict[str, Any]) -> None:
         cols = (
             "url",
             "user_id",

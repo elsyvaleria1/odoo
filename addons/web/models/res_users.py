@@ -59,11 +59,11 @@ class ResUsers(models.Model):
     def web_name_search(
         self,
         name: str,
-        specification: dict[str, dict],
+        specification: dict[str, dict[str, Any]],
         domain: DomainType | None = None,
         operator: str = "ilike",
         limit: int = 100,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         domain = Domain(domain or Domain.TRUE)
         if not any(
             condition.field_expr == "principal_type"

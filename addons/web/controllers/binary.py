@@ -11,7 +11,7 @@ from typing import Any
 from werkzeug.utils import send_file
 
 import odoo
-from odoo import api, http
+from odoo import api, http, models
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, UserError
 from odoo.http import BadRequest, Response, request
@@ -50,14 +50,14 @@ def clean(name: str) -> str:
     return name.replace("<", "").replace(">", "")
 
 
-def _get_int_or_zero(value) -> int:
+def _get_int_or_zero(value: int | str) -> int:
     try:
         return int(value)
     except TypeError, ValueError:
         return 0
 
 
-def _resolve_res_id(value) -> int | None:
+def _resolve_res_id(value: int | str | None) -> int | None:
     if value is None or value is False or value == "":
         return None
     try:
@@ -71,7 +71,9 @@ def _vary_on_encoding(response: Response) -> Response:
     return response
 
 
-def _get_send_file_kwargs(unique, download, nocache) -> dict[str, Any]:
+def _get_send_file_kwargs(
+    unique: str | bool, download: str | bool, nocache: str | bool
+) -> dict[str, Any]:
     send_file_kwargs: dict[str, Any] = {"as_attachment": str2bool(download, False)}
     if unique:
         send_file_kwargs["immutable"] = True
@@ -85,7 +87,9 @@ def _get_static_image_response(name: str) -> Response:
     return http.Stream.from_path(file_path(f"web/static/img/{name}")).prepare_response()
 
 
-def _is_public_access_token_valid(record, field, access_token) -> bool:
+def _is_public_access_token_valid(
+    record: models.BaseModel, field: str, access_token: str | None
+) -> bool:
     if not access_token:
         return False
     valid = bool(

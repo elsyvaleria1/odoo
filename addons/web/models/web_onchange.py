@@ -1,10 +1,11 @@
 import itertools
 import logging
-from typing import Any
+from collections.abc import Callable
+from typing import Any, Literal
 
 from odoo import models
 from odoo.api import NewId
-from odoo.fields import Command
+from odoo.fields import Command, Field
 from odoo.tools import OrderedSet, unique
 
 from .record_snapshot import RecordSnapshot
@@ -17,7 +18,10 @@ class Base(models.AbstractModel):
     _inherit = "base"
 
     def onchange(
-        self, values: dict, field_names: list[str], fields_spec: dict
+        self,
+        values: dict[str, Any],
+        field_names: list[str],
+        fields_spec: dict[str, Any],
     ) -> dict[str, Any]:
         self.env.flush_all()
 
@@ -72,10 +76,10 @@ class Base(models.AbstractModel):
                     parent = record[field.related.split(".")[0]]
                     parent[field_name] = record[field_name]
 
-        result = {"warnings": OrderedSet()}
+        result: dict[str, Any] = {"warnings": OrderedSet()}
 
         while todo:
-            visited_onchanges = set()
+            visited_onchanges: set[Callable[..., Any]] = set()
             for field_name in todo:
                 record._apply_onchange_methods(field_name, result, visited_onchanges)
                 visited_onchanges.update(record._onchange_methods.get(field_name, ()))
@@ -99,7 +103,7 @@ class Base(models.AbstractModel):
 
         return result
 
-    def _prepare_onchange_values(self, values: dict) -> dict:
+    def _prepare_onchange_values(self, values: dict[str, Any]) -> dict[str, Any]:
         prepared = {
             name: value for name, value in values.items() if name != VERBS_FIELD
         }
@@ -125,10 +129,10 @@ class Base(models.AbstractModel):
         return prepared
 
     def _onchange_compute_default_siblings(
-        self, record: Any, field_names: list[str]
+        self, record: models.BaseModel, field_names: list[str]
     ) -> None:
         defaulted = {self._fields[fname] for fname in field_names}
-        handled = set()
+        handled: set[Field] = set()
         for field in defaulted:
             if field in handled:
                 continue
@@ -164,7 +168,7 @@ class Base(models.AbstractModel):
         return [fname for fname in field_names if fname in self._fields]
 
     def _onchange_update_default_values(
-        self, values: dict, fields_spec: dict
+        self, values: dict[str, Any], fields_spec: dict[str, Any]
     ) -> list[str]:
         stale_names = [
             fname for fname in values if fname != "id" and fname not in self._fields
@@ -190,7 +194,9 @@ class Base(models.AbstractModel):
                     values[field_name] = False
         return field_names
 
-    def _onchange_update_x2many_cache(self, values: dict, fields_spec: dict) -> None:
+    def _onchange_update_x2many_cache(
+        self, values: dict[str, Any], fields_spec: dict[str, Any]
+    ) -> None:
         self.fetch(fields_spec.keys())
         for field_name, field_spec in fields_spec.items():
             field = self._fields[field_name]
@@ -217,8 +223,11 @@ class Base(models.AbstractModel):
                     sub_field._update_cache(new_line, line_value)
 
     def _onchange_prepare_record(
-        self, values: dict, field_names: list[str], fields_spec: dict
-    ) -> tuple[Any, dict]:
+        self,
+        values: dict[str, Any],
+        field_names: list[str],
+        fields_spec: dict[str, Any],
+    ) -> tuple[models.BaseModel, dict[str, Any]]:
         initial_values = dict(values)
         changed_values = {
             fname: initial_values.pop(fname)
@@ -247,7 +256,9 @@ class Base(models.AbstractModel):
 
         return record, changed_values
 
-    def _onchange_get_warning(self, warnings: OrderedSet) -> dict[str, str] | None:
+    def _onchange_get_warning(
+        self, warnings: OrderedSet[tuple[str, str, str]]
+    ) -> dict[str, str] | None:
         if not warnings:
             return None
         if len(warnings) == 1:
@@ -269,8 +280,8 @@ class Base(models.AbstractModel):
         }
 
     def _screen_fields_spec(
-        self, fields_spec: dict, _dropped: list[str] | None = None
-    ) -> dict:
+        self, fields_spec: dict[str, Any], _dropped: list[str] | None = None
+    ) -> dict[str, Any]:
         top_call = _dropped is None
         if top_call:
             _dropped = []
@@ -308,7 +319,7 @@ class Base(models.AbstractModel):
         for field_name, value in values.items():
             field = self._fields.get(field_name)
             if field and field.translate is True:
-                translations = {
+                translations: dict[str, str | Literal[False] | dict[str, str]] = {
                     lang: False for lang, _ in self.env["res.lang"].get_installed()
                 }
                 translations["en_US"] = value

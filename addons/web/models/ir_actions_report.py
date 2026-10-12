@@ -10,11 +10,11 @@ import shutil
 import threading
 import typing
 from collections import deque
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Collection, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from time import perf_counter
-from typing import Any, NamedTuple, Self
+from typing import Any, Literal, NamedTuple, Self
 from urllib.parse import parse_qs, urlparse
 
 import cssselect2.compiler as _cs2_compiler
@@ -39,8 +39,11 @@ from odoo.tools.safe_eval import safe_eval, time
 from odoo.addons.base.models.report_paperformat import PAPER_SIZE_BY_KEY
 
 if typing.TYPE_CHECKING:
+    from fontTools.ttLib.tables.O_S_2f_2 import table_O_S_2f_2
     from weasyprint.document import Document as WeasyDocument
     from weasyprint.urls import URLFetcherResponse
+
+    from odoo.http import Session
 
 _LOOPBACK_HOSTS = frozenset(
     {
@@ -276,7 +279,7 @@ def _install_tolerant_font_guard() -> None:
     if getattr(original, "_odoo_tolerant_guard", False):
         return
 
-    def set_unicode_ranges(self, bits):
+    def set_unicode_ranges(self: table_O_S_2f_2, bits: Collection[int]) -> None:
         if not getattr(_tolerant_fonts, "active", False):
             return original(self, bits)
         sanitized = {b for b in bits if 0 <= b <= _OS2_MAX_UNICODE_RANGE_BIT}
@@ -303,8 +306,8 @@ def _tolerant_fonts_enabled() -> Iterator[None]:
 
 def _render_html_document(
     html_string: str,
-    url_fetcher: Any,
-    stylesheets: list | None,
+    url_fetcher: OdooURLFetcher,
+    stylesheets: list[Any] | None,
     font_config: Any,
     image_cache: dict[str, Any] | None,
 ) -> WeasyDocument:
@@ -320,13 +323,13 @@ def _render_html_document(
 
 
 def _write_pdf_tolerant_fonts(
-    html_string,
-    url_fetcher,
-    stylesheets,
-    pdf_options=None,
-    font_config=None,
-    image_cache=None,
-):
+    html_string: str,
+    url_fetcher: OdooURLFetcher,
+    stylesheets: list[Any] | None,
+    pdf_options: dict[str, Any] | None = None,
+    font_config: Any = None,
+    image_cache: dict[str, Any] | None = None,
+) -> bytes:
     _weasy_state.setup_process()
     with _tolerant_fonts_enabled():
         return _render_html_document(
@@ -392,7 +395,7 @@ def _path_has_route(path: str, route: str) -> bool:
 
 
 @functools.cache
-def _join_weasyprint_fetcher(cls: type) -> type:
+def _join_weasyprint_fetcher(cls: type[Any]) -> type[Any]:
     from weasyprint.urls import URLFetcher
 
     if issubclass(cls, URLFetcher):
@@ -417,8 +420,8 @@ class OdooURLFetcher:
         self._base_url = base_url or env["ir.actions.report"]._get_report_url()
         self._parsed_base = urlparse(self._base_url)
         self._addons_paths = tools.config["addons_path"]
-        self._session_cookie = None
-        self._temp_session = None
+        self._session_cookie: str | None = None
+        self._temp_session: Session | None = None
         self._asset_attachments: dict[str, Any] = {}
         self._setup_session()
 
@@ -701,7 +704,7 @@ class OdooURLFetcher:
         return None
 
     @staticmethod
-    def _parse_image_url(path: str, query: str) -> tuple:
+    def _parse_image_url(path: str, query: str) -> tuple[str, int, str, int, int]:
         width = 0
         height = 0
 
@@ -746,7 +749,7 @@ class OdooURLFetcher:
             query = f"?{parsed.query}" if parsed.query else ""
             full_url = f"{self._base_url}{path}{query}"
         try:
-            cookies = (
+            cookies: dict[str, str] = (
                 {"session_id": self._session_cookie} if self._session_cookie else {}
             )
             resp = self._get_http_response(
@@ -992,7 +995,7 @@ class WeasyPrintEngine:
         self,
         html_str: str,
         fetcher: OdooURLFetcher,
-        body_css: list,
+        body_css: list[Any],
         pdf_options: dict[str, Any] | None = None,
         db_state: _WeasyDatabaseState | None = None,
         image_cache: dict[str, Any] | None = None,
@@ -1029,10 +1032,10 @@ class WeasyPrintEngine:
         parsed_css_by_url: dict[str, Any],
         fetcher: OdooURLFetcher | None = None,
         db_state: _WeasyDatabaseState | None = None,
-    ) -> tuple[str, list]:
+    ) -> tuple[str, list[Any]]:
         html_with_css = _add_page_css(body, page_css)
-        body_css = []
-        strip_urls = set()
+        body_css: list[Any] = []
+        strip_urls: set[str] = set()
         for css_url in _RE_CSS_LINK.findall(html_with_css):
             if css_url not in parsed_css_by_url:
                 if fetcher is None:
@@ -1081,7 +1084,7 @@ class WeasyPrintEngine:
         self,
         html_str: str,
         fetcher: OdooURLFetcher,
-        body_css: list,
+        body_css: list[Any],
         db_state: _WeasyDatabaseState | None = None,
         image_cache: dict[str, Any] | None = None,
     ) -> WeasyDocument:
@@ -1116,7 +1119,7 @@ class WeasyPrintEngine:
 
     def _serialize_with_tolerant_fonts(
         self,
-        processed: list[tuple[str, list]],
+        processed: list[tuple[str, list[Any]]],
         fetcher: OdooURLFetcher,
         db_state: _WeasyDatabaseState,
         image_cache: dict[str, Any],
@@ -1201,7 +1204,7 @@ class IrActionsReport(models.Model):
         else:
             size_css = f"A4 {orientation}"
 
-        def _margin(attr, fallback):
+        def _margin(attr: str, fallback: float) -> float:
             raw = args.get(attr, fallback)
             try:
                 return float(raw)
@@ -1265,7 +1268,7 @@ class IrActionsReport(models.Model):
         )
 
     def _prepare_weasyprint_html(
-        self, html: str, report_model: str | bool = False
+        self, html: str, report_model: str | Literal[False] = False
     ) -> tuple[list[str], list[int | None], dict[str, str]]:
         layout = self._get_layout()
         if not layout:
@@ -1331,7 +1334,11 @@ class IrActionsReport(models.Model):
         }
 
     def _render_article_bodies(
-        self, layout: Any, articles: list, base_url: str, report_model: str | bool
+        self,
+        layout: Any,
+        articles: list[lxml.html.HtmlElement],
+        base_url: str,
+        report_model: str | Literal[False],
     ) -> tuple[list[str], list[int | None]]:
         titles_by_res_id = self._get_document_titles(articles, report_model)
 
@@ -1403,7 +1410,7 @@ class IrActionsReport(models.Model):
         return header_node, footer_node
 
     def _get_document_titles(
-        self, articles: list, report_model: str | bool
+        self, articles: list[lxml.html.HtmlElement], report_model: str | Literal[False]
     ) -> dict[int, str]:
         if not (self.print_report_name and report_model):
             return {}
@@ -1760,7 +1767,7 @@ class IrActionsReport(models.Model):
 
     def _collect_single_pdf_stream(
         self,
-        bodies: list,
+        bodies: list[str],
         res_ids: list[int] | None,
         res_ids_wo_stream: list[int],
         has_duplicated_ids: bool,
@@ -1790,7 +1797,7 @@ class IrActionsReport(models.Model):
 
     @staticmethod
     def _check_attachment_split_ids(
-        report_sudo: Self,
+        report_sudo: IrActionsReport,
         has_duplicated_ids: bool,
         res_ids_wo_stream: list[int],
         html_ids: list[int | None],
@@ -1833,7 +1840,7 @@ class IrActionsReport(models.Model):
 
     def _collect_split_pdf_streams(
         self,
-        bodies: list,
+        bodies: list[str],
         html_ids: list[int | None],
         res_ids_wo_stream: list[int],
         collected_streams: dict[int | bool, dict[str, Any]],
@@ -1941,7 +1948,7 @@ class IrActionsReport(models.Model):
 
     def _prepare_corrupt_records_error(
         self, report: Self, error_record_ids: list[int]
-    ) -> UserError:
+    ) -> UserError | RedirectWarning:
         record_ids = [res_id for res_id in error_record_ids if res_id]
         if not record_ids:
             return self._prepare_merge_pdfs_error()
@@ -2031,8 +2038,8 @@ class IrActionsReport(models.Model):
         documents, report_type = self._render_qweb_pdf_documents(
             report_sudo, list(dict.fromkeys(res_ids)), data=data
         )
-        rendered = {}
-        unsplit_ids = []
+        rendered: dict[int, tuple[bytes, str]] = {}
+        unsplit_ids: list[int] = []
         for document in documents:
             if len(document.res_ids) == 1:
                 rendered[document.res_ids[0]] = (document.content, report_type)

@@ -1,6 +1,9 @@
+from typing import Literal
+
 from markupsafe import Markup
 
 from odoo import fields, models
+from odoo.api import ValuesType
 
 _CSS_UNSAFE = str.maketrans("", "", "{};\n\r<>")
 
@@ -47,13 +50,13 @@ class ReportTheme(models.Model):
         {"font_body", "font_display", "row_padding", "border_radius", "rule_weight"}
     )
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         res = super().write(vals)
         if not self._STYLE_FIELDS.isdisjoint(vals):
             self.env["res.company"]._update_asset_style()
         return res
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         in_use = bool(
             self.env["report.config"]
             .sudo()

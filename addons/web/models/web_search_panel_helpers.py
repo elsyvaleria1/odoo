@@ -52,20 +52,20 @@ class Base(models.AbstractModel):
         self,
         field_name: str,
         domain: DomainType,
-        set_count: bool = False,
-        limit: int | bool = False,
+        set_count: bool | None = False,
+        limit: int | bool | None = False,
     ) -> dict[int, dict[str, Any]]:
         field = self._fields[field_name]
         if field.type in ("many2one", "many2many"):
 
-            def group_id_name(value):
+            def group_id_name(value: Any) -> tuple[Any, Any]:
                 return value
 
         else:
             desc = self.fields_get([field_name], ["selection"])[field_name]
             field_name_selection = dict(desc["selection"])
 
-            def group_id_name(value):
+            def group_id_name(value: Any) -> tuple[Any, Any]:
                 return value, field_name_selection.get(value, value)
 
         domain = AND(
@@ -117,14 +117,14 @@ class Base(models.AbstractModel):
         parent_name: str,
         ids: list[int],
     ) -> list[dict[str, Any]]:
-        def get_parent_id(record):
+        def get_parent_id(record: dict[str, Any]) -> int | None:
             value = record[parent_name]
-            return value and value[0]
+            return value[0] if value else None
 
         allowed_records = {record["id"]: record for record in records}
-        records_to_keep = {}
+        records_to_keep: dict[int, bool] = {}
         for id in ids:
-            record_id = id
+            record_id: int | None = id
             ancestor_chain = {}
             chain_is_fully_included = True
             while chain_is_fully_included and record_id:

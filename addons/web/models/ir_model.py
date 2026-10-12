@@ -1,7 +1,7 @@
 from collections.abc import Collection
 from typing import Any
 
-from odoo import api, models
+from odoo import api, fields, models
 
 
 class IrModel(models.Model):
@@ -61,7 +61,7 @@ class IrModel(models.Model):
         return self._display_name_for(accessible_models)
 
     def _get_inverse_fnames_by_model_name(
-        self, field, model_names: Collection[str]
+        self, field: fields.Field[Any], model_names: Collection[str]
     ) -> dict[str, list[str]]:
         inverse_fnames: dict[str, list[str]] = {}
         for inverse in self.pool.field_inverses[field]:

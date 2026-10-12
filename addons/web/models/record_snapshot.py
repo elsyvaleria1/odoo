@@ -11,7 +11,7 @@ class RecordSnapshot(dict):
     __hash__ = None
 
     def __init__(
-        self, record: BaseModel, fields_spec: dict, update_all: bool = True
+        self, record: BaseModel, fields_spec: dict[str, Any], update_all: bool = True
     ) -> None:
         super().__init__()
         self.record = record
@@ -48,7 +48,7 @@ class RecordSnapshot(dict):
         else:
             self[field_name] = self._value(field_name)
 
-    def has_changed(self, field_name) -> bool:
+    def has_changed(self, field_name: str) -> bool:
         if field_name not in self:
             return True
         if self.record._fields[field_name].type not in (
@@ -62,7 +62,7 @@ class RecordSnapshot(dict):
             for subname in self.fields_spec[field_name].get("fields") or {}
         )
 
-    def diff(self, other: RecordSnapshot, force: bool = False) -> dict[str, Any]:
+    def diff(self, other: dict[str, Any], force: bool = False) -> dict[str, Any]:
         simple_fields_spec = {}
         x2many_fields_spec = {}
         for field_name, field_spec in self.fields_spec.items():
@@ -81,7 +81,7 @@ class RecordSnapshot(dict):
         result.pop("id")
 
         for field_name, field_spec in x2many_fields_spec.items():
-            commands = []
+            commands: list[tuple[Command, Any, Any]] = []
 
             self_value = self[field_name]
             other_value = {} if force else other.get(field_name) or {}

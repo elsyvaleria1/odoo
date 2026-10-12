@@ -1,4 +1,5 @@
 import ast
+from collections.abc import Iterator
 from datetime import date
 from http import HTTPStatus
 from typing import Any
@@ -210,7 +211,7 @@ class WebJsonController(http.Controller):
         context: dict[str, Any],
         eval_context: dict[str, Any],
         kwargs: dict[str, str],
-    ) -> tuple[list, dict[str, str]]:
+    ) -> tuple[list[Any], dict[str, str]]:
         pinned: dict[str, str] = {}
         domains = [safe_eval(action.domain or "[]", eval_context)]
         if "domain" in kwargs:
@@ -252,7 +253,7 @@ class WebJsonController(http.Controller):
 
     def _get_domain_json_date(
         self, view_tree: etree._Element, kwargs: dict[str, str]
-    ) -> tuple[list, dict[str, str]]:
+    ) -> tuple[list[tuple[str, str, date]], dict[str, str]]:
         start_date: date | None
         end_date: date | None
         try:
@@ -351,7 +352,7 @@ class WebJsonController(http.Controller):
     def _get_action(
         self, subpath: str
     ) -> tuple[Any, dict[str, Any], dict[str, Any], int | None]:
-        def get_action_triples_():
+        def get_action_triples_() -> Iterator[tuple[int | None, Any, int | None]]:
             try:
                 yield from get_action_triples(request.env, subpath, start_pos=1)
             except ValueError as exc:

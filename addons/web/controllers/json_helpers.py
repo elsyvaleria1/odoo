@@ -1,6 +1,7 @@
 from collections import defaultdict
+from collections.abc import Iterator
 from datetime import date
-from typing import Literal
+from typing import Any, Literal
 
 from dateutil.relativedelta import relativedelta
 from lxml import etree
@@ -15,7 +16,7 @@ _debug = DebugLog(__name__)
 
 
 def get_view_id_and_type(
-    action, view_type: str | None
+    action: Any, view_type: str | None
 ) -> tuple[int | Literal[False], str]:
     if action._name != "ir.actions.act_window":
         msg = f"Expected ir.actions.act_window, got {action._name}"
@@ -51,7 +52,12 @@ def get_view_id_and_type(
     return view_id, view_type
 
 
-def get_domain_default_filter(model, action, context, eval_context):
+def get_domain_default_filter(
+    model: Any,
+    action: Any,
+    context: dict[str, Any],
+    eval_context: dict[str, Any],
+) -> Domain | list[Any]:
     for ir_filter in model.env["ir.filters"].get_filters(
         model._name, action._origin.id
     ):
@@ -75,7 +81,7 @@ def get_domain_default_filter(model, action, context, eval_context):
             break
     else:
 
-        def get_search_default_domains():
+        def get_search_default_domains() -> Iterator[str]:
             view_tree = None
             for key, value in context.items():
                 if key.startswith("search_default_") and value:
@@ -125,7 +131,9 @@ def get_domain_default_filter(model, action, context, eval_context):
     return default_domain
 
 
-def get_domain_date(start_date, end_date, view_tree):
+def get_domain_date(
+    start_date: date | None, end_date: date | None, view_tree: etree._Element
+) -> list[tuple[str, str, date]]:
     if not start_date or not end_date:
         start_date = date.today() + relativedelta(day=1)
         end_date = start_date + relativedelta(months=1)
@@ -138,33 +146,36 @@ def get_domain_date(start_date, end_date, view_tree):
     return [(date_field, ">=", start_date), (date_field, "<", end_date)]
 
 
-def get_groupby(view_tree, groupby=None, fields=None):
-    groupby = groupby.split(",") if groupby else None
-    if fields:
-        fields = fields.split(",")
-    else:
-        fields = None
-    if groupby is not None:
-        _debug.logic("groupby", source="explicit", groupby=groupby, fields=fields)
-        return groupby, fields
+def get_groupby(
+    view_tree: etree._Element, groupby: str | None = None, fields: str | None = None
+) -> tuple[list[str] | None, list[str] | None]:
+    groupby_names = groupby.split(",") if groupby else None
+    field_names = fields.split(",") if fields else None
+    if groupby_names is not None:
+        _debug.logic(
+            "groupby", source="explicit", groupby=groupby_names, fields=field_names
+        )
+        return groupby_names, field_names
 
     if view_tree.tag in ("pivot", "graph"):
-        field_by_type = defaultdict(list)
+        field_by_type: defaultdict[str, list[str]] = defaultdict(list)
         for element in view_tree.findall(r"./field"):
             field_name = element.attrib.get("name")
             if element.attrib.get("invisible", "") in ("1", "true"):
                 field_by_type["invisible"].append(field_name)
             else:
                 field_by_type[element.attrib.get("type", "normal")].append(field_name)
-        groupby = [
+        groupby_names = [
             *field_by_type.get("row", ()),
             *field_by_type.get("col", ()),
             *field_by_type.get("normal", ()),
         ]
-        if fields is None:
-            fields = field_by_type.get("measure", [])
-        _debug.logic("groupby", source=view_tree.tag, groupby=groupby, fields=fields)
-        return groupby, fields
+        if field_names is None:
+            field_names = field_by_type.get("measure", [])
+        _debug.logic(
+            "groupby", source=view_tree.tag, groupby=groupby_names, fields=field_names
+        )
+        return groupby_names, field_names
     if field := view_tree.attrib.get("default_group_by"):
         _debug.logic("groupby_default", view=view_tree.tag, field=field)
         return (None, [field])

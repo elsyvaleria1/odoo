@@ -1,6 +1,9 @@
 import logging
 import re
+from collections.abc import MutableMapping
 from typing import Any
+
+import werkzeug.routing
 
 import odoo
 from odoo import api, fields, models
@@ -60,7 +63,7 @@ class IrHttp(models.AbstractModel):
         ]
 
     @classmethod
-    def _update_cookies(cls, cookies: dict) -> None:
+    def _update_cookies(cls, cookies: MutableMapping[str, str]) -> None:
         super()._update_cookies(cookies)
         if cids := cookies.get("cids"):
             cookies["cids"] = "-".join(cids.split(","))
@@ -87,7 +90,7 @@ class IrHttp(models.AbstractModel):
                 request.future_response.set_cookie(DEBUG_ASSETS_COOKIE, max_age=0)
 
     @classmethod
-    def _pre_dispatch(cls, rule: Any, args: dict) -> None:
+    def _pre_dispatch(cls, rule: werkzeug.routing.Rule, args: dict[str, Any]) -> None:
         super()._pre_dispatch(rule, args)
         cls._handle_debug()
 

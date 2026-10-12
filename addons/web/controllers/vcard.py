@@ -2,6 +2,7 @@ import functools
 import importlib.util
 import io
 import zipfile
+from typing import Any
 
 from odoo import http
 from odoo.exceptions import UserError
@@ -19,7 +20,7 @@ def _has_vobject() -> bool:
     return importlib.util.find_spec("vobject") is not None
 
 
-def _get_vcard_label(partner) -> str:
+def _get_vcard_label(partner: Any) -> str:
     return partner.name or partner.email or f"contact_{partner.id}"
 
 
@@ -43,7 +44,7 @@ class Partner(http.Controller):
         auth="user",
         readonly=True,
     )
-    def download_vcard(self, partner_ids=None, partner=None, **kwargs):
+    def download_vcard(self, partner_ids=None, partner=None, **kwargs: Any):
         _debug.lifecycle(
             "vcard_download",
             partner=partner.id if partner else None,

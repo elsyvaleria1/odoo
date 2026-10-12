@@ -1,4 +1,5 @@
 import base64
+from typing import Any
 
 from odoo import fields, models
 
@@ -12,7 +13,9 @@ class ResCompany(models.Model):
         search="_search_web_config_id",
     )
 
-    def _search_web_config_id(self, operator, value):
+    def _search_web_config_id(
+        self, operator: str, value: Any
+    ) -> list[tuple[str, str, Any]]:
         return self._search_config_link("web.config", operator, value)
 
     def _compute_web_config_id(self) -> None:

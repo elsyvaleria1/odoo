@@ -1,4 +1,5 @@
 import base64
+from typing import Any
 
 from odoo.exceptions import UserError
 from odoo.http import (
@@ -18,7 +19,7 @@ _debug = DebugLog(__name__)
 JSON_MIMETYPE = mimetype_for("json")
 
 
-def _get_profiles(profile: str, purpose: str):
+def _get_profiles(profile: str, purpose: str) -> Any:
     try:
         profile_ids = [int(p) for p in profile.split(",")]
     except ValueError, AttributeError:
@@ -41,7 +42,7 @@ class Profiling(Controller):
         self,
         profile: str | None = None,
         collectors: str | None = None,
-        **params,
+        **params: Any,
     ) -> Response:
         collector_names = (
             collectors.split(",") if collectors is not None else ["sql", "traces_async"]
@@ -75,7 +76,7 @@ class Profiling(Controller):
         readonly=True,
     )
     def speedscope(
-        self, profile: str, action: str | bool = False, **kwargs
+        self, profile: str, action: str | bool = False, **kwargs: Any
     ) -> Response:
         if _debug.lifecycle.enabled:
             _debug.lifecycle(
@@ -138,7 +139,7 @@ class Profiling(Controller):
         readonly=True,
     )
     def profile_config(
-        self, profile: str, action: str | bool = False, **kwargs
+        self, profile: str, action: str | bool = False, **kwargs: Any
     ) -> Response:
         if _debug.lifecycle.enabled:
             _debug.lifecycle(

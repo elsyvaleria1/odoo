@@ -58,7 +58,7 @@ def parse_id_list(raw: str | None) -> list[int]:
     return ids
 
 
-def clean_action(action: dict, env: Any) -> dict:
+def clean_action(action: dict[str, Any], env: Any) -> dict[str, Any]:
     action_type = action.setdefault("type", "ir.actions.act_window_close")
     if action_type == "ir.actions.act_window" and not action.get("views"):
         _debug.logic(
@@ -154,7 +154,7 @@ def select_db(redirect: str = "/web/database/selector", db: str | None = None) -
     _debug.logic("select_db_settled", db=db)
 
 
-def update_action_views(action: dict) -> None:
+def update_action_views(action: dict[str, Any]) -> None:
     view_id = action.get("view_id") or False
     if isinstance(view_id, (list, tuple)):
         view_id = view_id[0]

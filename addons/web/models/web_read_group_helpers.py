@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from typing import Any
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.models import (
     READ_GROUP_NUMBER_GRANULARITY,
@@ -16,15 +16,15 @@ from odoo.tools import (
 )
 
 
-def AND(domains: Iterable) -> list:
+def AND(domains: Iterable[Any]) -> list[Any]:
     return list(Domain.AND(domains))
 
 
-def OR(domains: Iterable) -> list:
+def OR(domains: Iterable[Any]) -> list[Any]:
     return list(Domain.OR(domains))
 
 
-def _get_display_name_visible_ids(values: Iterable) -> set[int]:
+def _get_display_name_visible_ids(values: Iterable[Any]) -> set[int]:
     first = None
     ids: dict[int, None] = {}
     for value in values:
@@ -40,7 +40,9 @@ def _get_display_name_visible_ids(values: Iterable) -> set[int]:
 class Base(models.AbstractModel):
     _inherit = "base"
 
-    def _web_read_group_get_field_expand(self, groupby: Sequence[str]) -> Any:
+    def _web_read_group_get_field_expand(
+        self, groupby: Sequence[str]
+    ) -> fields.Field | None:
         if (
             len(groupby) == 1
             and self.env.context.get("read_group_expand")
@@ -54,11 +56,11 @@ class Base(models.AbstractModel):
     def _web_read_group_expand(
         self,
         domain: Any,
-        groups: list[tuple],
+        groups: list[tuple[Any, ...]],
         groupby_spec: str,
         aggregates: tuple[str, ...],
         order: str,
-    ) -> list[tuple]:
+    ) -> list[tuple[Any, ...]]:
         field_name = groupby_spec.split(".", maxsplit=1)[0].split(":", maxsplit=1)[0]
         field = self._fields[field_name]
 
@@ -99,13 +101,13 @@ class Base(models.AbstractModel):
     @api.model
     def _web_read_group_fill_temporal(
         self,
-        groups: list[tuple],
-        groupby: list[str],
+        groups: list[tuple[Any, ...]],
+        groupby: Sequence[str],
         aggregates: Sequence[str],
         fill_from: str | bool = False,
         fill_to: str | bool = False,
         min_groups: int | bool = False,
-    ) -> list[tuple]:
+    ) -> list[tuple[Any, ...]]:
         groupby_name = groupby[0]
         if ":" not in groupby_name:
             return groups
@@ -136,7 +138,7 @@ class Base(models.AbstractModel):
             return groups
 
         empty_item = tuple(
-            self._read_group_empty_value(spec) for spec in groupby[1:] + aggregates
+            self._read_group_empty_value(spec) for spec in (*groupby[1:], *aggregates)
         )
         required_dates = list(
             self._read_group_period_starts(fill_from, fill_to, granularity, interval)
@@ -168,7 +170,7 @@ class Base(models.AbstractModel):
         is_datetime: bool,
         granularity: str,
         days_offset: int,
-        existing: list,
+        existing: list[Any],
         fill_from: Any,
         fill_to: Any,
     ) -> tuple[Any, Any]:
@@ -195,7 +197,7 @@ class Base(models.AbstractModel):
 
     def _web_read_group_get_groupby_formatter(
         self, groupby_spec: str, values: Any
-    ) -> Callable:
+    ) -> Callable[[Any], tuple[Any, list[Any]]]:
         field_path = groupby_spec.split(":", maxsplit=1)[0]
         field_name, _dot, remaining_path = field_path.partition(".")
         field = self._fields[field_name]
@@ -206,7 +208,7 @@ class Base(models.AbstractModel):
                 groupby_spec.split(".", 1)[1], values
             )
 
-            def formatter_follow_many2one(value):
+            def formatter_follow_many2one(value: Any) -> tuple[Any, list[Any]]:
                 value, domain = sub_formatter(value)
                 if not value:
                     return value, [
@@ -221,7 +223,7 @@ class Base(models.AbstractModel):
         if field.type == "many2many":
             visible_ids = _get_display_name_visible_ids(values)
 
-            def formatter_many2many(value):
+            def formatter_many2many(value: Any) -> tuple[Any, list[Any]]:
                 if not value:
                     return False, [(field_name, "not any", [])]
                 id_ = value.id
@@ -233,7 +235,7 @@ class Base(models.AbstractModel):
         if field.type == "many2one" or field_name == "id":
             visible_ids = _get_display_name_visible_ids(values)
 
-            def formatter_many2one(value):
+            def formatter_many2one(value: Any) -> tuple[Any, list[Any]]:
                 if not value:
                     return False, [(field_name, "=", False)]
                 id_ = value.id
@@ -255,8 +257,8 @@ class Base(models.AbstractModel):
         return lambda value: (value, [(field_name, "=", value)])
 
     def _web_read_group_get_date_formatter(
-        self, field: Any, field_name: str, groupby_spec: str
-    ) -> Callable:
+        self, field: fields.Field, field_name: str, groupby_spec: str
+    ) -> Callable[[Any], tuple[Any, list[Any]]]:
         if ":" not in groupby_spec:
             raise ValueError(
                 f"Granularity is missing from date/datetime groupby: {groupby_spec!r}"
@@ -267,10 +269,10 @@ class Base(models.AbstractModel):
 
     def _web_read_group_get_temporal_formatter(
         self, field_name: str, is_datetime: bool, granularity: str
-    ) -> Callable:
+    ) -> Callable[[Any], tuple[Any, list[Any]]]:
         if granularity in READ_GROUP_NUMBER_GRANULARITY:
 
-            def formatter_date_number_granularity(value):
+            def formatter_date_number_granularity(value: Any) -> tuple[Any, list[Any]]:
                 if value is None:
                     return None, [(field_name, "=", value)]
                 return value, [(f"{field_name}.{granularity}", "=", value)]
@@ -288,7 +290,7 @@ class Base(models.AbstractModel):
         )
         interval = READ_GROUP_TIME_GRANULARITY[granularity]
 
-        def formatter_time_granularity(value):
+        def formatter_time_granularity(value: Any) -> tuple[Any, list[Any]]:
             if not value:
                 return value, [(field_name, "=", value)]
             label, start, spans = self._read_group_temporal_range(
@@ -304,7 +306,7 @@ class Base(models.AbstractModel):
         self,
         groupby_spec: str,
         values: Any,
-    ) -> Callable:
+    ) -> Callable[[Any], tuple[Any, list[Any]]]:
         if "." not in groupby_spec:
             msg = "You must choose the property you want to group by."
             raise ValueError(msg)
@@ -316,7 +318,7 @@ class Base(models.AbstractModel):
             options = definition.get("selection") or []
             options = tuple(option[0] for option in options)
 
-            def formatter_property_selection(value):
+            def formatter_property_selection(value: Any) -> tuple[Any, list[Any]]:
                 if not value:
                     return value, [
                         "|",
@@ -336,7 +338,7 @@ class Base(models.AbstractModel):
             tags = definition.get("tags") or []
             tags = {tag[0]: tuple(tag) for tag in tags}
 
-            def formatter_property_tags(value):
+            def formatter_property_tags(value: Any) -> tuple[Any, list[Any]]:
                 if not value:
                     return value, (
                         OR(
@@ -361,14 +363,14 @@ class Base(models.AbstractModel):
         return lambda value: (value, [(fullname, "=", value)])
 
     def _web_read_group_get_property_relational_formatter(
-        self, fullname: str, definition: dict, property_type: str, values: Any
-    ) -> Callable:
+        self, fullname: str, definition: dict[str, Any], property_type: str, values: Any
+    ) -> Callable[[Any], tuple[Any, list[Any]]]:
         comodel = definition["comodel"]
         all_groups = tuple(value for value in values if value)
 
         if property_type == "many2one":
 
-            def formatter_property_many2one(value):
+            def formatter_property_many2one(value: Any) -> tuple[Any, list[Any]]:
                 if not value:
                     return value, [
                         "|",
@@ -380,7 +382,7 @@ class Base(models.AbstractModel):
 
             return formatter_property_many2one
 
-        def formatter_property_many2many(value):
+        def formatter_property_many2many(value: Any) -> tuple[Any, list[Any]]:
             if not value:
                 return value, (
                     OR(
@@ -404,7 +406,7 @@ class Base(models.AbstractModel):
 
     def _web_read_group_get_property_date_formatter(
         self, fullname: str, property_type: str, func: str
-    ) -> Callable:
+    ) -> Callable[[Any], tuple[Any, list[Any]]]:
         formatter = self._web_read_group_get_temporal_formatter(
             fullname, property_type == "datetime", func
         )
@@ -414,7 +416,7 @@ class Base(models.AbstractModel):
         no_date = self._read_group_property_date_domain(fullname, has_date=False)
         has_date = self._read_group_property_date_domain(fullname, has_date=True)
 
-        def formatter_property_temporal(value):
+        def formatter_property_temporal(value: Any) -> tuple[Any, list[Any]]:
             if not value:
                 return False, list(no_date)
             group_value, domain = formatter(value)

@@ -190,7 +190,7 @@ class HomeTile(models.AbstractModel):
         return field
 
     @api.model
-    def _metric_domain(self, favourite: models.BaseModel) -> list | None:
+    def _metric_domain(self, favourite: models.BaseModel) -> list[Any] | None:
         try:
             return favourite._get_domain_evaluated()
         except ValueError:

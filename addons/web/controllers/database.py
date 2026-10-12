@@ -5,6 +5,8 @@ import os
 import pathlib
 import re
 import tempfile
+from collections.abc import Callable
+from typing import Any, Concatenate
 
 from lxml import html
 from markupsafe import Markup
@@ -33,10 +35,19 @@ _debug = DebugLog(__name__)
 REJECTED_INPUT_ERRORS = (ValueError, AccessDenied)
 
 
-def _renders_failure(operation: str):
-    def decorate(handler):
+def _renders_failure[**P](
+    operation: str,
+) -> Callable[
+    [Callable[Concatenate[Database, P], str | Response]],
+    Callable[Concatenate[Database, P], str | Response],
+]:
+    def decorate(
+        handler: Callable[Concatenate[Database, P], str | Response],
+    ) -> Callable[Concatenate[Database, P], str | Response]:
         @functools.wraps(handler)
-        def wrapper(self, *args, **kwargs):
+        def wrapper(
+            self: Database, *args: P.args, **kwargs: P.kwargs
+        ) -> str | Response:
             try:
                 return handler(self, *args, **kwargs)
             except Exception as exc:
@@ -75,7 +86,7 @@ DATABASE_MANAGER_TEMPLATES = {
 }
 
 
-def render_database_manager(values: dict) -> Markup:
+def render_database_manager(values: dict[str, Any]) -> Markup:
     templates = {}
     with _debug.perf(
         "manager_templates_read", templates=len(DATABASE_MANAGER_TEMPLATES)
@@ -84,7 +95,7 @@ def render_database_manager(values: dict) -> Markup:
             with file_open(path, "r") as fd:
                 templates[name] = fd.read()
 
-    def load(template_name):
+    def load(template_name: str) -> tuple[html.HtmlElement, str]:
         fromstring = (
             html.document_fromstring
             if template_name == "database_manager"
@@ -136,7 +147,7 @@ class Database(http.Controller):
             _debug.logic("request_db_detached_before_operation", db=name)
             request.detach_database()
 
-    def _render_template(self, **d) -> str:
+    def _render_template(self, **d: Any) -> str:
         d.setdefault("manage", True)
         d["insecure"] = config.has_default_admin_password()
         d["list_db"] = config["list_db"]
@@ -162,7 +173,7 @@ class Database(http.Controller):
         return render_database_manager(d)
 
     @http.route("/web/database/selector", type="http", auth="none")
-    def selector(self, **kw) -> str:
+    def selector(self, **kw: Any) -> str:
         _debug.lifecycle("selector")
         if request.db:
             _debug.logic("selector_detach", db=request.db)
@@ -170,7 +181,7 @@ class Database(http.Controller):
         return self._render_template(manage=False)
 
     @http.route("/web/database/manager", type="http", auth="none")
-    def manager(self, **kw) -> str:
+    def manager(self, **kw: Any) -> str:
         _debug.lifecycle("manager")
         if request.db:
             _debug.logic("manager_detach", db=request.db)
@@ -186,7 +197,7 @@ class Database(http.Controller):
     )
     @_renders_failure("Database creation error")
     def create(  # noqa: E8528 -- the database manager runs without a database and checks the master password
-        self, master_pwd: str, name: str, lang: str, password: str, **post
+        self, master_pwd: str, name: str, lang: str, password: str, **post: Any
     ) -> str | Response:
         _debug.lifecycle(
             "db_create",

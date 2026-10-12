@@ -1,8 +1,11 @@
 import io
 from collections import deque
+from typing import Any
 
 import xlsxwriter
 from werkzeug.datastructures import FileStorage
+from xlsxwriter.format import Format
+from xlsxwriter.worksheet import Worksheet
 
 from odoo import http
 from odoo.http import (
@@ -28,11 +31,11 @@ MAX_EXPORT_CELLS = 1_000_000
 MAX_CELL_CHARS = 32_767
 
 
-def _get_capped_cell(value):
+def _get_capped_cell(value: object) -> object:
     return value[:MAX_CELL_CHARS] if isinstance(value, str) else value
 
 
-def _clamp_int(value, hi):
+def _clamp_int(value: Any, hi: int) -> int:
     try:
         return max(0, min(int(value), hi))
     except TypeError, ValueError:
@@ -40,16 +43,16 @@ def _clamp_int(value, hi):
 
 
 class _CappedWorksheet:
-    def __init__(self, worksheet, cap: int, title: str) -> None:
+    def __init__(self, worksheet: Worksheet, cap: int, title: str) -> None:
         self._worksheet = worksheet
         self._cap = cap
         self._title = title
         self.cells_written = 0
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         return getattr(self._worksheet, name)
 
-    def write(self, *args, **kwargs):
+    def write(self, *args: Any, **kwargs: Any) -> int:
         self.cells_written += 1
         if self.cells_written > self._cap:
             _debug.logic("export_xlsx_cell_cap_hit", title=self._title, cap=self._cap)
@@ -65,7 +68,7 @@ class _CappedWorksheet:
 
 class TableExporter(http.Controller):
     @http.route("/web/pivot/export_xlsx", type="http", auth="user", readonly=True)
-    def export_xlsx(self, data: str | FileStorage, **kw) -> Response:
+    def export_xlsx(self, data: str | FileStorage, **kw: Any) -> Response:
         try:
             jdata = json_loads(data.read() if isinstance(data, FileStorage) else data)
         except ValueError as exc:
@@ -154,11 +157,17 @@ class TableExporter(http.Controller):
         )
 
     @_debug.perf.timed
-    def _write_pivot_col_headers(self, worksheet, jdata, header_plain, measure_count):
+    def _write_pivot_col_headers(
+        self,
+        worksheet: _CappedWorksheet,
+        jdata: dict[str, Any],
+        header_plain: Format,
+        measure_count: int,
+    ) -> int:
         x, y = 1, 0
         carry: deque[dict[str, int]] = deque()
 
-        def flush_carry(x):
+        def flush_carry(x: int) -> int:
             while carry and carry[0]["x"] == x:
                 cell = carry.popleft()
                 for j in range(measure_count):
@@ -190,8 +199,13 @@ class TableExporter(http.Controller):
 
     @_debug.perf.timed
     def _write_pivot_measure_headers(
-        self, worksheet, jdata, y, header_bold, header_plain
-    ):
+        self,
+        worksheet: _CappedWorksheet,
+        jdata: dict[str, Any],
+        y: int,
+        header_bold: Format,
+        header_plain: Format,
+    ) -> int:
         measure_headers = jdata["measure_headers"]
         if not measure_headers:
             _debug.logic("no_measure_headers_row_skipped", row=y)
@@ -203,7 +217,14 @@ class TableExporter(http.Controller):
         return y + 1
 
     @_debug.perf.timed
-    def _write_pivot_rows(self, worksheet, jdata, y, header_plain, bold):
+    def _write_pivot_rows(
+        self,
+        worksheet: _CappedWorksheet,
+        jdata: dict[str, Any],
+        y: int,
+        header_plain: Format,
+        bold: Format,
+    ) -> None:
         for row in jdata["rows"]:
             indent = _clamp_int(row.get("indent", 0), 50)
             worksheet.write(

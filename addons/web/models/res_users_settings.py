@@ -177,8 +177,8 @@ class ResUsersSettings(models.Model):
     @api.model
     def _normalize_home_tiles(self, value: Any) -> dict[str, Any]:
         tile_types = self.env["home.tile"]._get_tile_types()
-        tiles = []
-        seen = set()
+        tiles: list[dict[str, Any]] = []
+        seen: set[str] = set()
         raw = value.get("tiles") if isinstance(value, dict) else None
         for tile in raw if isinstance(raw, list) else []:
             if len(tiles) == self._HOME_TILES_MAX:

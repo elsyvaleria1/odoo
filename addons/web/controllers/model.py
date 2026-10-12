@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo.http import BadRequest, Controller, Response, request, route
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps, loads
@@ -13,7 +15,7 @@ class Model(Controller):
         auth="user",
         readonly=True,
     )
-    def get_model_definitions(self, model_names: str, **kwargs) -> Response:
+    def get_model_definitions(self, model_names: str, **kwargs: Any) -> Response:
         try:
             names = loads(model_names)
         except ValueError as exc:

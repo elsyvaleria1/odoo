@@ -74,7 +74,7 @@ class ReportController(http.Controller):
         reportname: str,
         docids: str | None = None,
         converter: str | None = None,
-        **data,
+        **data: Any,
     ) -> Response:
         if _debug.lifecycle.enabled:
             _debug.lifecycle(
@@ -145,7 +145,7 @@ class ReportController(http.Controller):
         auth="public",
         readonly=True,
     )
-    def report_barcode(self, barcode_type: str, value: str, **kwargs) -> Response:
+    def report_barcode(self, barcode_type: str, value: str, **kwargs: Any) -> Response:
         if _debug.lifecycle.enabled:
             _debug.lifecycle(
                 "report_barcode",
@@ -191,7 +191,7 @@ class ReportController(http.Controller):
 
     @http.route(["/report/download"], type="http", auth="user")
     def report_download(
-        self, data: str, context: str | None = None, **_kwargs
+        self, data: str, context: str | None = None, **_kwargs: Any
     ) -> Response:
         reportname = "???"
         try:

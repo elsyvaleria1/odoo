@@ -1,10 +1,11 @@
 from collections import defaultdict
+from collections.abc import Iterable, Sequence
 from typing import Any
 
 from odoo import api, models
 from odoo.api import DomainType, NewId
 from odoo.exceptions import AccessError, UserError
-from odoo.fields import Command
+from odoo.fields import Command, Field
 from odoo.fields import Datetime as FieldsDatetime
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import OrderedSet
@@ -31,11 +32,11 @@ class Base(models.AbstractModel):
     def web_name_search(
         self,
         name: str,
-        specification: dict[str, dict],
+        specification: dict[str, dict[str, Any]],
         domain: DomainType | None = None,
         operator: str = "ilike",
         limit: int = 100,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         id_name_pairs = self.name_search(name, domain, operator, limit)
         if len(specification) == 1 and "display_name" in specification:
             records = (
@@ -61,12 +62,12 @@ class Base(models.AbstractModel):
     def web_search_read(
         self,
         domain: DomainType,
-        specification: dict[str, dict],
+        specification: dict[str, dict[str, Any]],
         offset: int = 0,
         limit: int | None = None,
         order: str | None = None,
         count_limit: int | None = None,
-    ) -> dict[str, int | list]:
+    ) -> dict[str, int | list[dict[str, Any]]]:
         verbs = specification.get(VERBS_FIELD)
         specification = self._screen_fields_spec(specification)
         records = self.search_fetch(
@@ -82,11 +83,11 @@ class Base(models.AbstractModel):
     def _format_web_search_read_results(
         self,
         domain: DomainType,
-        records: list[dict],
+        records: list[dict[str, Any]],
         offset: int = 0,
         limit: int | None = None,
         count_limit: int | None = None,
-    ) -> dict[str, int | list]:
+    ) -> dict[str, int | list[dict[str, Any]]]:
         if not records:
             if not offset:
                 return {"length": 0, "records": []}
@@ -111,12 +112,12 @@ class Base(models.AbstractModel):
 
     def web_save(
         self,
-        vals,
-        specification: dict[str, dict],
-        next_id=None,
-        last_write_date=None,
-        known_values=None,
-    ) -> list[dict]:
+        vals: dict[str, Any],
+        specification: dict[str, dict[str, Any]],
+        next_id: int | None = None,
+        last_write_date: str | None = None,
+        known_values: dict[Any, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         self._check_web_save_vals(vals)
         if self:
             if known_values is not None or last_write_date:
@@ -166,7 +167,7 @@ class Base(models.AbstractModel):
         Command.LINK,
     )
 
-    def _check_web_save_vals(self, vals: dict) -> None:
+    def _check_web_save_vals(self, vals: dict[str, Any]) -> None:
         unknown = [name for name in vals if name not in self._fields]
         if unknown:
             raise UserError(
@@ -187,7 +188,7 @@ class Base(models.AbstractModel):
                 if not isinstance(command, (list, tuple)) or len(command) < 2:
                     continue
                 if command[0] in self._X2M_ROW_ID_COMMANDS:
-                    row_ids = (command[1],)
+                    row_ids: Sequence[Any] = (command[1],)
                 elif (
                     command[0] == Command.SET
                     and len(command) > 2
@@ -224,7 +225,7 @@ class Base(models.AbstractModel):
     def _check_concurrency_access(self) -> None:
         self.check_access("read")
 
-    def _get_fields_concurrency_checkable(self, vals) -> list:
+    def _get_fields_concurrency_checkable(self, vals: Iterable[str]) -> list[str]:
         return [
             n
             for n in vals
@@ -237,7 +238,7 @@ class Base(models.AbstractModel):
         ]
 
     def _is_field_modified_concurrently(
-        self, name, server_raw, baseline_raw, new_raw
+        self, name: str, server_raw: Any, baseline_raw: Any, new_raw: Any
     ) -> bool:
         try:
             field = self._fields[name]
@@ -251,10 +252,12 @@ class Base(models.AbstractModel):
             baseline = self._coerce_concurrency_value(field, baseline_raw)
             new = self._coerce_concurrency_value(field, new_raw)
             return current not in (baseline, new)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return False
 
-    def _check_concurrent_field_changes(self, vals, known_values) -> None:
+    def _check_concurrent_field_changes(
+        self, vals: dict[str, Any], known_values: dict[str, Any]
+    ) -> None:
         self.check_singleton()
         names = [
             n for n in self._get_fields_concurrency_checkable(vals) if n in known_values
@@ -286,19 +289,27 @@ class Base(models.AbstractModel):
                 )
             )
 
-    def _check_concurrent_field_changes_multi(self, vals, known_values) -> None:
+    def _check_concurrent_field_changes_multi(
+        self, vals: dict[str, Any], known_values: dict[str | int, dict[str, Any]]
+    ) -> None:
         self._check_concurrent_field_changes_records(
             dict.fromkeys(self.ids, vals), known_values
         )
 
     def _check_concurrent_field_changes_multi_list(
-        self, vals_list, known_values
+        self,
+        vals_list: list[dict[str, Any]],
+        known_values: dict[str | int, dict[str, Any]],
     ) -> None:
         self._check_concurrent_field_changes_records(
             dict(zip(self.ids, vals_list, strict=True)), known_values
         )
 
-    def _check_concurrent_field_changes_records(self, vals_by_id, known_values) -> None:
+    def _check_concurrent_field_changes_records(
+        self,
+        vals_by_id: dict[int, dict[str, Any]],
+        known_values: dict[str | int, dict[str, Any]],
+    ) -> None:
         if not vals_by_id:
             return
         all_keys = set().union(*(v.keys() for v in vals_by_id.values()))
@@ -347,7 +358,7 @@ class Base(models.AbstractModel):
             )
 
     @staticmethod
-    def _coerce_concurrency_value(field, value):
+    def _coerce_concurrency_value(field: Field, value: Any) -> Any:
         ftype = field.type
         if value is None or value is False:
             return {
@@ -378,10 +389,10 @@ class Base(models.AbstractModel):
 
     def web_save_multi(
         self,
-        vals_list: list[dict],
-        specification: dict[str, dict],
-        known_values=None,
-    ) -> list[dict]:
+        vals_list: list[dict[str, Any]],
+        specification: dict[str, dict[str, Any]],
+        known_values: dict[str | int, dict[str, Any]] | None = None,
+    ) -> list[dict[str, Any]]:
         if len(self) != len(vals_list):
             raise UserError(
                 self.env._("Each record must have a corresponding vals entry.")
@@ -394,8 +405,8 @@ class Base(models.AbstractModel):
             self._check_concurrency_access()
             self._check_concurrent_field_changes_multi_list(vals_list, known_values)
 
-        groups: dict[frozenset, list[int]] = {}
-        vals_by_key: dict[frozenset, dict] = {}
+        groups: dict[frozenset[tuple[str, Any]], list[int]] = {}
+        vals_by_key: dict[frozenset[tuple[str, Any]], dict[str, Any]] = {}
         for record, vals in zip(self, vals_list, strict=True):
             try:
                 key = frozenset(vals.items())
@@ -415,14 +426,18 @@ class Base(models.AbstractModel):
 
     @api.readonly
     @versioned_envelope
-    def web_read(self, specification: dict[str, dict]) -> list[dict]:
+    def web_read(
+        self, specification: dict[str, dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         if not self:
             return []
         if set(specification) <= {"id"}:
             self.check_access("read")
         return self._web_read(specification)
 
-    def _web_read(self, specification: dict[str, dict]) -> list[dict]:
+    def _web_read(
+        self, specification: dict[str, dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         with_verbs = VERBS_FIELD in specification
         if with_verbs:
             specification = {
@@ -433,12 +448,12 @@ class Base(models.AbstractModel):
         fields_to_read = list(specification) or ["id"]
 
         if set(fields_to_read) == {"id"}:
-            values_list = [
+            values_list: list[dict[str, Any]] = [
                 {"id": (id_.origin or False) if isinstance(id_, NewId) else id_}
                 for id_ in self._ids
             ]
         else:
-            values_list: list[dict] = self.read(fields_to_read, load=None)
+            values_list = self.read(fields_to_read, load=None)
 
         if not values_list:
             return values_list
@@ -478,7 +493,11 @@ class Base(models.AbstractModel):
         }
 
     def _web_read_resolve_many2one(
-        self, values_list, field, field_name, field_spec
+        self,
+        values_list: list[dict[str, Any]],
+        field: Field,
+        field_name: str,
+        field_spec: dict[str, Any],
     ) -> None:
         for values in values_list:
             if isinstance(values[field_name], NewId):
@@ -507,9 +526,9 @@ class Base(models.AbstractModel):
 
     @api.model
     def _web_read_targets(
-        self, co_records: models.BaseModel, sub_fields: dict
-    ) -> tuple[dict, set]:
-        def cleanup(vals: dict) -> dict:
+        self, co_records: models.BaseModel, sub_fields: dict[str, Any]
+    ) -> tuple[dict[Any, dict[str, Any]], set[Any]]:
+        def cleanup(vals: dict[str, Any]) -> dict[str, Any]:
             if not vals["id"]:
                 vals["id"] = vals["id"].origin or False
             return vals
@@ -549,7 +568,11 @@ class Base(models.AbstractModel):
         return data, withheld
 
     def _web_read_resolve_x2many(
-        self, values_list, field, field_name, field_spec
+        self,
+        values_list: list[dict[str, Any]],
+        field: Field,
+        field_name: str,
+        field_spec: dict[str, Any],
     ) -> None:
         if not field_spec:
             return
@@ -618,7 +641,11 @@ class Base(models.AbstractModel):
                 ]
 
     def _web_read_resolve_reference(
-        self, values_list, field, field_name, field_spec
+        self,
+        values_list: list[dict[str, Any]],
+        field: Field,
+        field_name: str,
+        field_spec: dict[str, Any],
     ) -> None:
         if not field_spec:
             return
@@ -653,7 +680,7 @@ class Base(models.AbstractModel):
                 list(dict.fromkeys(co_id for _, co_id in pairs))
             ).exists()
 
-            co_data = {}
+            co_data: dict[Any, dict[str, Any]] = {}
             if has_sub_fields:
                 sub_fields = field_spec["fields"]
                 try:
@@ -690,14 +717,19 @@ class Base(models.AbstractModel):
                             "model": model_name,
                         }
 
-    def _web_read_resolve_properties(self, values_list, field_name, field_spec) -> None:
+    def _web_read_resolve_properties(
+        self,
+        values_list: list[dict[str, Any]],
+        field_name: str,
+        field_spec: dict[str, Any],
+    ) -> None:
         if not field_spec or "fields" not in field_spec:
             return
 
         prop_ctx = strip_authority_keys(field_spec.get("context"), door="web_read")
 
         batch_ids: dict[tuple[str, str], set[int]] = defaultdict(set)
-        batch_specs: dict[str, dict] = {}
+        batch_specs: dict[str, dict[str, Any]] = {}
 
         for values in values_list:
             for property_name, spec in field_spec["fields"].items():
@@ -718,7 +750,7 @@ class Base(models.AbstractModel):
                         r[0] for r in prop["value"]
                     )
 
-        co_data: dict[tuple[str, str], dict[int, dict]] = {}
+        co_data: dict[tuple[str, str], dict[int, dict[str, Any]]] = {}
         for (comodel, prop_name), ids in batch_ids.items():
             co_records = self.env[comodel].with_context(**(prop_ctx or {})).browse(ids)
             co_data[(comodel, prop_name)] = {
@@ -752,10 +784,10 @@ class Base(models.AbstractModel):
 
     def web_resequence(
         self,
-        specification: dict[str, dict],
+        specification: dict[str, dict[str, Any]],
         field_name: str = "sequence",
         offset: int = 0,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         if field_name not in self._fields:
             return []
         if not self:

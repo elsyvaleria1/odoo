@@ -1,5 +1,6 @@
 import logging
 import math
+from typing import Any
 
 from odoo import modules
 from odoo.http import Controller, Response, request, route
@@ -42,7 +43,7 @@ _JS_ERROR_KINDS = frozenset(
 _JS_ERROR_PHASES = frozenset({"pre_boot", "post_boot", "boot_mount_failed"})
 
 
-def _get_clamped_metric(value, maximum: float) -> float | None:
+def _get_clamped_metric(value: object, maximum: float) -> float | None:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         return None
     if not math.isfinite(value) or value < 0 or value > maximum:
@@ -50,11 +51,11 @@ def _get_clamped_metric(value, maximum: float) -> float | None:
     return float(value)
 
 
-def _get_capped_str(raw, cap: int) -> str:
+def _get_capped_str(raw: object, cap: int) -> str:
     return raw[:cap] if isinstance(raw, str) else ""
 
 
-def _get_positive_int(raw) -> int:
+def _get_positive_int(raw: object) -> int:
     if not isinstance(raw, (int, float)) or isinstance(raw, bool):
         return 0
     if not 0 <= raw <= INT4_MAX:
@@ -62,7 +63,7 @@ def _get_positive_int(raw) -> int:
     return int(raw)
 
 
-def _read_beacon_payload(prefix: str) -> dict | Response:
+def _read_beacon_payload(prefix: str) -> dict[str, Any] | Response:
     _debug.lifecycle(
         "beacon_received", prefix=prefix, bytes=len(request.httprequest.data or b"")
     )
@@ -90,7 +91,7 @@ def _read_beacon_payload(prefix: str) -> dict | Response:
     return payload
 
 
-def _prepare_js_error_values(payload: dict) -> dict | None:
+def _prepare_js_error_values(payload: dict[str, Any]) -> dict[str, Any] | None:
     message = _get_capped_str(payload.get("message"), _MAX_ERROR_MSG_LEN)
     if not message:
         return None

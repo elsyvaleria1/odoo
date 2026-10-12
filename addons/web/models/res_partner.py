@@ -27,7 +27,7 @@ def _guess_image_vcard_type(data: bytes) -> str:
 
 
 @functools.cache
-def _get_vobject() -> tuple[Any, type]:
+def _get_vobject() -> tuple[Any, type[Proxy]]:
     import vobject.vcard
 
     class VBaseProxy(Proxy):
@@ -62,11 +62,11 @@ class ResPartner(models.Model):
     def web_name_search(
         self,
         name: str,
-        specification: dict[str, dict],
+        specification: dict[str, dict[str, Any]],
         domain: DomainType | None = None,
         operator: str = "ilike",
         limit: int = 100,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         domain = Domain(domain or Domain.TRUE)
         if not self.env.context.get("show_bank_partners") and not any(
             condition.field_expr == "is_bank" for condition in domain.iter_conditions()
