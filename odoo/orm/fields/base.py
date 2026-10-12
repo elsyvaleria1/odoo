@@ -71,6 +71,8 @@ else:
     Registry = typing.Any
     DomainType = typing.Any
     IdType = typing.Any
+    FieldAccessClasses = typing.Any
+    Self = typing.Any
 
 
 __all__ = ["COMPANY_DEPENDENT_FIELDS", "Field", "call_hook", "resolve_mro"]

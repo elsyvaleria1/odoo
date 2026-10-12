@@ -60,17 +60,18 @@ if typing.TYPE_CHECKING:
     from .._typing import ModelLike
     from ..models import BaseModel
     from ..runtime import Environment
-
-    type DateComparand = (
-        date | str | OrderedSet[DateComparand] | SQL | typing.Literal[False] | None
-    )
-    type DatetimeComparand = (
-        datetime | str | OrderedSet[DatetimeComparand] | SQL | typing.Literal[False]
-    )
 else:
     BaseModel = typing.Any
     ModelLike = typing.Any
     Query = typing.Any
+    Environment = typing.Any
+
+type DateComparand = (
+    date | str | OrderedSet[DateComparand] | SQL | typing.Literal[False] | None
+)
+type DatetimeComparand = (
+    datetime | str | OrderedSet[DatetimeComparand] | SQL | typing.Literal[False]
+)
 
 DATE_LENGTH = len(date.today().strftime(DATE_FORMAT))
 DATETIME_LENGTH = len(datetime.now().strftime(DATETIME_FORMAT))

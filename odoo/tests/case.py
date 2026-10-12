@@ -1,6 +1,7 @@
 import contextlib
 import inspect
 import logging
+import types
 from collections.abc import Callable, Generator
 from pathlib import PurePath
 from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, override
@@ -12,8 +13,6 @@ from ..libs.debug_log import DebugLog
 from .utils import InfrastructureUnavailable, addon_relative_path
 
 if TYPE_CHECKING:
-    import types
-
     from .result import ExcInfo, OdooTestResult
 else:
     ExcInfo = OdooTestResult = Any

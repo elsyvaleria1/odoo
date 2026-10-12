@@ -10,7 +10,7 @@ import re
 import sys
 import tempfile
 import warnings
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Generator, Iterable, Iterator
 from os.path import expandvars, normcase
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Self, override
@@ -24,9 +24,6 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.filesystem import appdirs
 from odoo.libs.password import CryptContext
 from odoo.libs.text import str2bool
-
-if TYPE_CHECKING:
-    from collections.abc import Generator
 
 crypt_context = CryptContext(
     schemes=["pbkdf2_sha512", "plaintext"],

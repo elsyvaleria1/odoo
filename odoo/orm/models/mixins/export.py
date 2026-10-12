@@ -2,7 +2,7 @@ import collections
 import logging
 import typing
 from collections import defaultdict
-from collections.abc import Collection, Iterator, Sequence
+from collections.abc import Callable, Collection, Iterator, Sequence
 from typing import Self
 
 from odoo.exceptions import UserError
@@ -10,6 +10,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import groupby, unique
 
 from ..._recordset import is_recordset
+from ..._typing import ModelLike
 from ...fields.temporal import Datetime
 from ...parsing import fix_import_export_id_paths
 from ._model_stubs import _ModelStubs
@@ -20,14 +21,13 @@ _EXPORT_CONVERTERS = "__export_converters__"
 
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
     from datetime import datetime
 
-    from ..._typing import ModelLike
     from ...fields import Field
     from ...runtime import Environment
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
+    Environment = typing.Any
 
 type ExportCache = dict[Field[typing.Any] | str, dict[typing.Any, typing.Any]]
 

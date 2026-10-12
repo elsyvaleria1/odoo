@@ -22,7 +22,7 @@ if typing.TYPE_CHECKING:
     from ...fields.relational._base import _RelationalMulti
 else:
     IdType = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
 
 type InverseHook = str | Callable[[BaseModel], None]
 

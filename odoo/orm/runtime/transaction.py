@@ -1,7 +1,7 @@
 import logging
 import typing
 from collections import deque
-from collections.abc import Mapping, MutableSet
+from collections.abc import Iterable, Iterator, Mapping, MutableSet
 from contextlib import contextmanager
 from weakref import WeakSet, WeakValueDictionary
 from weakref import ref as weakref_ref
@@ -24,8 +24,6 @@ from .recordset_cache import Cache
 from .registry import Registry
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
-
     from odoo.db import BaseCursor
 
     from ..fields.base import Field

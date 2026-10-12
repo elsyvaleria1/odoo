@@ -10,7 +10,7 @@ from ._model_stubs import _ModelStubs
 if typing.TYPE_CHECKING:
     from ...fields.base import Field
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
 
 _debug = DebugLog(__name__)
 

@@ -2,15 +2,13 @@ import contextlib
 import email.utils
 import ipaddress
 import re
-from typing import TYPE_CHECKING, Literal
+from collections.abc import Iterator
+from typing import Literal
 from urllib.parse import urlparse
 
 import idna
 
 from odoo.libs.debug_log import DebugLog
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 __all__ = [
     "email_anonymize",

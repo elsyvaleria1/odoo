@@ -6,7 +6,7 @@ from functools import partial
 
 from psycopg import sql as psycopg_sql
 
-from odoo.db import FunctionStatus, get_unaccent_status, has_trigram
+from odoo.db import BaseCursor, FunctionStatus, get_unaccent_status, has_trigram
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL
 
@@ -14,10 +14,11 @@ from ._registry_stubs import _RegistryStubs
 
 _debug = DebugLog(__name__)
 
-if typing.TYPE_CHECKING:
-    from odoo.db import BaseCursor
 
+if typing.TYPE_CHECKING:
     from .environment import Environment
+else:
+    Environment = typing.Any
 
 
 class _Unaccent(typing.Protocol):

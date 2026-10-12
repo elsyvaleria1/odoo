@@ -1,4 +1,5 @@
 import typing
+from collections.abc import Sequence
 
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
@@ -23,10 +24,11 @@ from ....primitives import SQL_OPERATORS
 from .._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from ...._typing import BaseModel
     from ....fields import Field
+else:
+    BaseModel = typing.Any
+    type Field[T] = typing.Any
 
 _debug = DebugLog(__name__)
 

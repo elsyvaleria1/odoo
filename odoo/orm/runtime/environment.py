@@ -3,13 +3,14 @@ import logging
 import typing
 from collections import defaultdict
 from collections.abc import Collection, Hashable, Mapping, MutableMapping
+from datetime import tzinfo
 
 from psycopg import ProgrammingError
 
 from odoo.db import BaseCursor
 from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.libs.accel import rows_to_dicts as _rows_to_dicts
-from odoo.libs.collections import OrderedSet, ReadonlyDict, frozendict
+from odoo.libs.collections import Collector, OrderedSet, ReadonlyDict, frozendict
 from odoo.libs.datetime import timezone as get_timezone
 from odoo.libs.datetime import utc
 from odoo.libs.debug_log import DebugLog
@@ -22,19 +23,17 @@ from odoo.tools.translate import (
     get_translation,
 )
 
+from .._typing import ModelLike
+from ..components.core import OrmCore
 from ..constants import ACTING_PARTNER_KEY
+from ..primitives import IdType
 from .access_memo import PrincipalVerdicts
+from .backend import StorageBackend
 from .registry import Registry
 from .transaction import NO_PRIVILEGES, Transaction
 
 if typing.TYPE_CHECKING:
-    from datetime import tzinfo
-
-    from odoo.libs.collections import Collector
-
-    from .._typing import BaseModel, Field, ModelLike
-    from ..components.core import OrmCore
-    from ..primitives import IdType
+    from .._typing import BaseModel, Field
     from ._model_types import (
         AuthUserClientModel,
         DecimalPrecisionModel,
@@ -65,12 +64,13 @@ if typing.TYPE_CHECKING:
         ResUsersApikeysScopeModel,
         ResUsersModel,
     )
-    from .backend import StorageBackend
 
     M = typing.TypeVar("M", bound=BaseModel)
 else:
     BaseModel = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
+    ResCompanyModel = typing.Any
+    ResUsersModel = typing.Any
 
 _logger = logging.getLogger("odoo.api")
 _debug = DebugLog(__name__)

@@ -16,7 +16,7 @@ if typing.TYPE_CHECKING:
 else:
     BaseString = typing.Any
     Char = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
     Many2many = typing.Any
     Many2one = typing.Any
     BaseModel = typing.Any

@@ -1,16 +1,14 @@
 import logging
 import time
 from collections.abc import Callable
-from typing import TYPE_CHECKING, override
+from typing import override
 
+from odoo import api
 from odoo.libs.debug_log import DebugLog
 from odoo.logutils import RUNBOT
 from odoo.tools.populate import populate_models
 
 from . import DatabaseCommand, open_environment
-
-if TYPE_CHECKING:
-    from odoo import api
 
 DEFAULT_FACTOR = "10000"
 DEFAULT_SEPARATOR = "_"

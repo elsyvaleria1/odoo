@@ -40,7 +40,7 @@ else:
     Environment = typing.Any
     ModelLike = typing.Any
     Registry = typing.Any
-    Collector = typing.Any
+    type Collector[T1, T2] = typing.Any
     CommandValue = typing.Any
 
 

@@ -39,7 +39,8 @@ class TestPEP649Annotations(BaseCase):
                         f"Move the offending import out of `if TYPE_CHECKING:`, "
                         f"or — if a runtime import would cycle — keep the "
                         f"TYPE_CHECKING import and add a ``typing.Any`` "
-                        f"fallback in an ``else:`` branch.  Failures:\n  "
-                        + "\n  ".join(fails)
+                        f"fallback in an ``else:`` branch, ``type X[T] = "
+                        f"typing.Any`` for a name annotations subscript.  "
+                        f"Failures:\n  " + "\n  ".join(fails)
                     ),
                 )

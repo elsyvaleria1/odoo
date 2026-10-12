@@ -28,7 +28,7 @@ if typing.TYPE_CHECKING:
     from ...runtime.access_memo import RecordVerdicts
     from ._model_stubs import VerbTransitions
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
     IdType = typing.Any
     ModelLike = typing.Any
     RecordVerdicts = typing.Any

@@ -4,12 +4,13 @@ from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs.debug_log import DebugLog
 
+from .compute import ComputeEngine
+
 if TYPE_CHECKING:
     from ._protocols import FieldKey
     from .cache import FieldCache
-    from .compute import ComputeEngine
 else:
-    FieldCache = Any
+    type FieldCache[T] = Any
 
 STALL_REPEATS = 16
 

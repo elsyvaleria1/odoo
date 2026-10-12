@@ -2,8 +2,8 @@ import html as htmllib
 import itertools
 import logging
 import re
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal, overload, override
+from collections.abc import Callable, Iterable, Iterator
+from typing import Any, Literal, overload, override
 
 import markupsafe
 from lxml import etree, html
@@ -20,9 +20,6 @@ from lxml.html import (
 from markupsafe import Markup, escape_silent
 
 from odoo.libs.web.urls import SAFE_LINK_SCHEMES, url_scheme, urljoin
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
 
 __all__ = [
     "HTML_TAG_URL_REGEX",

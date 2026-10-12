@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.83
+:Version: 7.84
 :Date: 2026-10-12
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -299,8 +299,9 @@ Registry and tree gates carry no code and are named by test. The full set is
    * - ``test_dunderinit`` / ``test_markers``
      - Module without ``__init__.py``; conflict markers or NUL bytes
    * - ``test_pep649``
-     - Annotations that fail to resolve under PEP 649, in every framework
-       module outside ``addons/`` and ``_vendor/``
+     - Annotations that fail to evaluate under PEP 649, in every function,
+       method and property accessor of every framework module outside
+       ``addons/`` and ``_vendor/``, private and dunder names included
 
 
 Suppressing a rule
@@ -3486,7 +3487,13 @@ outside ``addons/``)** ``[review]``; mypy gates it
 ``-> bool`` in new or changed code** (§2.4.8); elsewhere in addons, hints are
 optional, but a method whose body proves its return type may carry it, and a
 return that is a union is declared as one (§2.4.23). PEP 649: forward
-references need no quotes.
+references need no quotes, and annotations are evaluated whenever something
+introspects them (``inspect.signature``, ``ormcache``, the override checks), so
+**every name a framework signature uses exists at runtime**
+``[test_lint test_pep649]``: imported at module scope, or, where that import
+would cycle or cross a layer rule (``doc/architecture/module.md``), imported
+under ``TYPE_CHECKING`` with a fallback in the ``else:`` -- ``X = Any``, or
+``type X[T] = Any`` for a name the annotations subscript.
 
 **Parameterize every generic and return no** ``Any`` **where a type is
 declared, in framework code** ``[review]``; mypy gates it
@@ -6338,6 +6345,13 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.84
+     - 2026-10-12
+     - §2.9.11: every name a framework signature uses exists at runtime;
+       ``test_pep649`` evaluates the annotations of private and dunder
+       functions, static and class methods and property accessors too, and
+       reports any evaluation error, so a fallback for a subscripted name is
+       ``type X[T] = Any``.
    * - 7.83
      - 2026-10-12
      - §2.9.14: ``@api.job(trailing_run=True)`` -- an ``identity_key`` enqueue

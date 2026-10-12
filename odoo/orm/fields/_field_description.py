@@ -7,12 +7,16 @@ from collections.abc import (
 from odoo.exceptions import AccessError
 from odoo.libs.debug_log import DebugLog
 
+from .._typing import ValuesType
+
 if typing.TYPE_CHECKING:
-    from .._typing import BaseModel, ValuesType
+    from .._typing import BaseModel
     from ..runtime import Environment
     from .base import Field
 
     M = typing.TypeVar("M", bound=BaseModel)
+else:
+    Environment = typing.Any
 
 
 from ._field_stubs import _FieldStubs

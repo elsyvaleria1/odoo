@@ -1,6 +1,6 @@
 import logging
 import typing
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, MutableMapping
 from pprint import pformat
 
 from odoo.exceptions import CacheMiss
@@ -13,8 +13,6 @@ from odoo.tools import Query
 from ..models.field_classes import unmasked_values
 
 if typing.TYPE_CHECKING:
-    from collections.abc import MutableMapping
-
     from .._typing import BaseModel, Field
     from ..primitives import IdType
     from .environment import Environment
@@ -23,7 +21,8 @@ else:
     BaseModel = typing.Any
     Environment = typing.Any
     Transaction = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
+    IdType = typing.Any
 
 _logger = logging.getLogger("odoo.api")
 _debug = DebugLog(__name__)

@@ -1,21 +1,22 @@
 import logging
 import typing
+from types import NotImplementedType
 
 from odoo.exceptions import AccessError
 from odoo.libs.debug_log import DebugLog
 
 from .._recordset import is_recordset
+from .._typing import DomainType
 from ..domain import Domain
 from ..primitives import COLLECTION_TYPES
 from ._field_sql import PYTHON_INEQUALITY_OPERATOR
 
 if typing.TYPE_CHECKING:
-    from types import NotImplementedType
-
-    from .._typing import BaseModel, DomainType, IdType
+    from .._typing import BaseModel, IdType
     from .base import Field
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
+    BaseModel = typing.Any
 
 _logger = logging.getLogger("odoo.fields")
 _debug = DebugLog(__name__)

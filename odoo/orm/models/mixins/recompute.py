@@ -38,10 +38,10 @@ if typing.TYPE_CHECKING:
     from ...runtime.origin_reads import OriginReads
 else:
     BaseModel = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
     IdType = typing.Any
     OriginReads = typing.Any
-    TriggerTree = typing.Any
+    type TriggerTree[T] = typing.Any
 
 type ToValidate = dict[Field[typing.Any], OrderedSet[int]]
 

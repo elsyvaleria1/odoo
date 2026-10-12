@@ -4,16 +4,14 @@ import functools
 import itertools
 import logging
 import re
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable, Iterator
+from typing import Any
 
 import markupsafe
 from lxml import etree
 from lxml.builder import E
 
 from odoo.libs.debug_log import DebugLog
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
 
 
 class XPathExpressionError(ValueError):

@@ -1,8 +1,18 @@
+import annotationlib
+import functools
 import importlib
 import inspect
+from collections.abc import Iterator
 
 
 def _probe(obj: object, label: str) -> str | None:
+    target = inspect.unwrap(obj) if callable(obj) else obj
+    if inspect.isfunction(target):
+        try:
+            annotationlib.get_annotations(target)
+        except Exception as e:
+            return f"{label}: {type(e).__name__}: {e}"
+        return None
     try:
         inspect.signature(obj)
     except (NameError, AttributeError) as e:
@@ -12,6 +22,20 @@ def _probe(obj: object, label: str) -> str | None:
     return None
 
 
+def _class_callables(cls: type) -> Iterator[tuple[str, object]]:
+    for name, value in vars(cls).items():
+        if isinstance(value, staticmethod | classmethod):
+            yield name, value.__func__
+        elif isinstance(value, property):
+            for accessor in (value.fget, value.fset, value.fdel):
+                if accessor is not None:
+                    yield name, accessor
+        elif isinstance(value, functools.cached_property):
+            yield name, value.func
+        elif callable(value):
+            yield name, value
+
+
 def scan_module(modname: str) -> list[str]:
     try:
         m = importlib.import_module(modname)
@@ -19,10 +43,7 @@ def scan_module(modname: str) -> list[str]:
         return [f"{modname}: import-fail: {type(e).__name__}: {e}"]
 
     fails: list[str] = []
-    for name in dir(m):
-        if name.startswith("_"):
-            continue
-        obj = getattr(m, name)
+    for name, obj in list(vars(m).items()):
         if getattr(obj, "__module__", None) != modname:
             continue
         if callable(obj):
@@ -30,11 +51,12 @@ def scan_module(modname: str) -> list[str]:
             if err:
                 fails.append(err)
         if inspect.isclass(obj):
-            for mname, mval in vars(obj).items():
-                if callable(mval) and not mname.startswith("__"):
-                    err = _probe(mval, f"{modname}.{name}.{mname}")
-                    if err:
-                        fails.append(err)
+            for mname, mval in _class_callables(obj):
+                if getattr(mval, "__module__", modname) != modname:
+                    continue
+                err = _probe(mval, f"{modname}.{name}.{mname}")
+                if err:
+                    fails.append(err)
     return fails
 
 

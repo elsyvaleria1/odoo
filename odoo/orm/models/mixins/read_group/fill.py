@@ -1,6 +1,7 @@
 import collections
 import datetime
 import typing
+from collections.abc import Sequence
 
 from odoo.libs.datetime import date_range, start_of
 from odoo.libs.debug_log import DebugLog
@@ -15,9 +16,6 @@ from ....constants import READ_GROUP_TIME_GRANULARITY
 from ....fields.temporal import Date, Datetime
 from ....parsing import parse_read_group_spec, regex_order_part_read_group
 from ._empty import _ReadGroupEmptyMixin
-
-if typing.TYPE_CHECKING:
-    from collections.abc import Sequence
 
 _debug = DebugLog(__name__)
 

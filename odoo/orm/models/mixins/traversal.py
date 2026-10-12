@@ -37,7 +37,7 @@ if typing.TYPE_CHECKING:
     from ...fields.base import Field
 else:
     BaseModel = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
     IdType = typing.Any
     ModelLike = typing.Any
 

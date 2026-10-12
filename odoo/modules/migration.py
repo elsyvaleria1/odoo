@@ -6,6 +6,7 @@ import logging
 import re
 import typing
 from collections import defaultdict
+from collections.abc import Iterator
 from pathlib import Path
 
 import odoo.upgrade
@@ -18,8 +19,6 @@ from odoo.modules.module import Manifest, adapt_version, load_script
 from odoo.tools.files import file_path
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
-
     from odoo.db import Cursor
 
     from .module_graph import ModuleGraph, ModuleNode

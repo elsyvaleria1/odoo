@@ -29,6 +29,8 @@ if typing.TYPE_CHECKING:
     from .environment import Environment
 else:
     BaseModel = typing.Any
+    Environment = typing.Any
+    type Field[T] = typing.Any
 
 _debug = DebugLog(__name__)
 

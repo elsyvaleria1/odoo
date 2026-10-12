@@ -13,16 +13,17 @@ from odoo.libs.iteration import PENDING, SENTINEL
 from odoo.libs.sql import SQL
 from odoo.tools import Query
 
+from .._typing import ModelLike
 from ..domain import Domain
+from ..domain.ast import DomainCondition, OptimizationLevel
 from ..domain.constants import REGEX_CONDITION_OPERATORS
 from ..primitives import COLLECTION_TYPES, SQL_OPERATORS
 from ._field_stubs import _FieldStubs
 
 if typing.TYPE_CHECKING:
-    from .._typing import BaseModel, Field, ModelLike
-    from ..domain.ast import DomainCondition, OptimizationLevel
-
-    M = typing.TypeVar("M", bound=BaseModel)
+    from .._typing import BaseModel, Field
+else:
+    BaseModel = typing.Any
 
 
 PYTHON_INEQUALITY_OPERATOR: dict[str, Callable[[typing.Any, typing.Any], bool]] = {
@@ -405,7 +406,7 @@ class _FieldSqlMixin(_FieldStubs):
             return ""
         return str(cache_value)
 
-    def _get_pattern_getter(
+    def _get_pattern_getter[M: BaseModel](
         self, records: M, field_expr: str, getter: Callable[[M], typing.Any]
     ) -> Callable[[M], str]:
         pattern_text = self._get_pattern_text
@@ -442,7 +443,7 @@ class _FieldSqlMixin(_FieldStubs):
             return lambda rec: (val := getter(rec)) in value or not val
         return lambda rec: getter(rec) in value
 
-    def _filter_like(
+    def _filter_like[M: BaseModel](
         self,
         records: M,
         field_expr: str,
@@ -465,7 +466,7 @@ class _FieldSqlMixin(_FieldStubs):
         render = self._get_pattern_getter(records, field_expr, getter)
         return lambda rec: like_regex.match(unaccent(render(rec)))
 
-    def _filter_regex(
+    def _filter_regex[M: BaseModel](
         self,
         records: M,
         field_expr: str,
@@ -483,7 +484,7 @@ class _FieldSqlMixin(_FieldStubs):
 
         return matches
 
-    def _filter_inequality(
+    def _filter_inequality[M: BaseModel](
         self,
         records: M,
         getter: Callable[[BaseModel], typing.Any],
@@ -506,7 +507,7 @@ class _FieldSqlMixin(_FieldStubs):
 
         return is_inequality_satisfied
 
-    def filter_function(
+    def filter_function[M: BaseModel](
         self, records: M, field_expr: str, operator: str, value: typing.Any
     ) -> Callable[[M], bool]:
         assert operator not in Domain.NEGATIVE_OPERATORS, (

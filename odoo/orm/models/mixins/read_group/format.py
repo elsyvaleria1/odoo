@@ -1,6 +1,7 @@
 import datetime
 import logging
 import typing
+from collections.abc import Generator, Sequence
 
 import babel
 import babel.dates
@@ -27,14 +28,12 @@ from ....constants import (
     READ_GROUP_TIME_GRANULARITY,
 )
 from ....domain import Domain
+from ....fields.base import Field
 from ....parsing import parse_read_group_spec
 from ._empty import _ReadGroupEmptyMixin
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Generator, Sequence
-
     from ...._typing import IdType
-    from ....fields.base import Field
     from ...base import BaseModel
 
 _debug = DebugLog(__name__)

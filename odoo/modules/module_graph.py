@@ -1,7 +1,7 @@
 import functools
 import logging
 import typing
-from collections.abc import Collection, Iterable
+from collections.abc import Collection, Iterable, Iterator
 from typing import Literal
 
 from odoo.db.schema import column_exists
@@ -14,7 +14,7 @@ from ._protocols import GraphSqlReader
 from .module import Manifest
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Mapping
 
     STATES = Literal[
         "uninstallable",

@@ -4,11 +4,11 @@ from operator import itemgetter
 
 from odoo.libs.debug_log import DebugLog
 
+from ._protocols import ResCompanyProtocol
 from ._recordset import is_recordset
 from .domain import Domain
 
 if typing.TYPE_CHECKING:
-    from ._protocols import ResCompanyProtocol
     from ._typing import ModelLike
     from .fields.base import Field
     from .models.base import BaseModel
@@ -17,7 +17,7 @@ else:
     BaseModel = typing.Any
     Environment = typing.Any
     ModelLike = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
 
 _debug = DebugLog(__name__)
 

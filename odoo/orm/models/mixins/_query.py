@@ -9,9 +9,10 @@ from odoo.libs.sql import SQL
 from odoo.tools import Query, ormcache
 
 from ... import decorators as api
-from ..._typing import DomainType
+from ..._typing import DomainType, ModelLike
 from ...constants import SQL_ORDER_DIR, SQL_ORDER_NULLS
 from ...domain import Domain
+from ...fields.base import Field
 from ...helpers import invalid_field_message
 from ...parsing import parse_field_expr, regex_order
 from ...primitives import NewId
@@ -20,8 +21,7 @@ from ..field_classes import values_unmasked
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from ..._typing import BaseModel, ModelLike
-    from ...fields.base import Field
+    from ..._typing import BaseModel
 
 _logger = logging.getLogger("odoo.models")
 _orm_read = logging.getLogger("odoo.orm.read")

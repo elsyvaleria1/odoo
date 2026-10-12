@@ -1,7 +1,7 @@
 import math
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from collections.abc import Iterable, Iterator
 
 from lxml import etree
 from PIL import Image
@@ -15,9 +15,6 @@ from odoo.libs.image.utils import (
     binary_to_image,
     is_svg,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
 
 __all__ = ["icon_accent"]
 

@@ -1,10 +1,8 @@
 import functools
-from typing import TYPE_CHECKING, Any, NoReturn, override
+from collections.abc import Iterator
+from typing import Any, NoReturn, override
 
 from odoo.libs.debug_log import DebugLog
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 _debug = DebugLog(__name__)
 

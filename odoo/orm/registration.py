@@ -26,7 +26,7 @@ else:
     BaseModel = typing.Any
     Environment = typing.Any
     Registry = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
 
 _logger = logging.getLogger("odoo.registry")
 _debug = DebugLog(__name__)

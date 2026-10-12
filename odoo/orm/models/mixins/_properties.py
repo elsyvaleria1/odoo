@@ -3,13 +3,11 @@ import typing
 from odoo.libs.debug_log import DebugLog
 
 from ... import decorators as api
+from ...fields.base import Field
 from ...fields.properties import check_property_field_value_name
 from ...helpers import invalid_field_message
 from ...parsing import parse_field_expr
 from ._model_stubs import _ModelStubs
-
-if typing.TYPE_CHECKING:
-    from ...fields.base import Field
 
 _debug = DebugLog(__name__)
 

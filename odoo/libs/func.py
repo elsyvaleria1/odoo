@@ -1,11 +1,9 @@
 import functools
 import operator
+import types
 from collections.abc import Callable
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Concatenate, Protocol, override
-
-if TYPE_CHECKING:
-    import types
+from typing import Any, Concatenate, Protocol, override
 
 __all__ = [
     "classproperty",

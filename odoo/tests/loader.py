@@ -2,9 +2,9 @@ import importlib
 import importlib.util
 import inspect
 import sys
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from unittest import TestCase as _StdTestCase
 
 from .. import tools
@@ -15,10 +15,6 @@ from .suite import OdooSuite
 from .tag_selector import TagsSelector
 
 _debug = DebugLog(__name__)
-
-
-if TYPE_CHECKING:
-    from collections.abc import Generator
 
 
 def get_module_test_cases(module: Any) -> Iterator[_StdTestCase]:

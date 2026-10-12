@@ -3,6 +3,7 @@ import typing
 from odoo.libs.collections import OrderedSet, frozendict
 from odoo.libs.sql import SQL
 
+from ...fields.base import Field
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
@@ -10,7 +11,6 @@ if typing.TYPE_CHECKING:
     from types import MappingProxyType
 
     from ..._typing import BaseModel
-    from ...fields.base import Field
     from ...runtime import Registry
     from ..anchors import Anchor
     from ..table_objects import TableObject

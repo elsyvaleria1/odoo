@@ -17,6 +17,9 @@ if typing.TYPE_CHECKING:
     from ..fields import Field
     from ..models import BaseModel
     from .ast import Domain, DomainCondition, DomainNary
+else:
+    Domain = typing.Any
+    type Field[T] = typing.Any
 
 _debug = DebugLog("odoo.orm.domain.ast")
 

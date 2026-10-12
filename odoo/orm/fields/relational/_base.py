@@ -15,7 +15,7 @@ from operator import attrgetter
 from typing import override
 
 from odoo.exceptions import AccessError
-from odoo.libs.collections import FrozenList, OrderedSet
+from odoo.libs.collections import Collector, FrozenList, OrderedSet
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import PENDING, SENTINEL, partition, unique
 from odoo.libs.reprs import unquote
@@ -23,6 +23,7 @@ from odoo.libs.sql import SQL
 from odoo.tools import Query
 
 from ..._recordset import is_recordset, is_search_overridden
+from ..._typing import CommandValue, DomainType
 from ...constants import ACTING_PARTNER_KEY, READ_GROUP_NUMBER_GRANULARITY
 from ...domain import Domain
 from ...domain.ast import DomainCondition, OptimizationLevel
@@ -75,12 +76,13 @@ def _iter_domain_depend_paths(domain: Domain) -> Iterator[str]:
 
 
 if typing.TYPE_CHECKING:
-    from odoo.libs.collections import Collector
-
-    from ..._typing import CommandValue, DomainType, Environment, ModelLike, Registry
+    from ..._typing import Environment, ModelLike, Registry
     from ...models import BaseModel
 else:
     ModelLike = typing.Any
+    BaseModel = typing.Any
+    Environment = typing.Any
+    Registry = typing.Any
 
 
 class _Relational(Field["BaseModel"]):

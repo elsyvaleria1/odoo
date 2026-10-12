@@ -1,7 +1,7 @@
 import logging
 import typing
 from collections import deque
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from typing import Self, override
 
 from odoo.exceptions import AccessError, MissingError
@@ -21,15 +21,14 @@ from ._cache_scan import can_scan_read, is_cache_detached
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from odoo.tools import Query
 
     from ..._typing import IdType, ModelLike
     from ...fields.base import Field
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
     Query = typing.Any
+    ModelLike = typing.Any
 
 _logger = logging.getLogger("odoo.models")
 _orm_read = logging.getLogger("odoo.orm.read")

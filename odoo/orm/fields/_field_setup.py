@@ -13,7 +13,9 @@ if typing.TYPE_CHECKING:
     from .base import Field
 else:
     BaseModel = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
+    ModelClass = typing.Any
+    Registry = typing.Any
 
 _debug = DebugLog(__name__)
 

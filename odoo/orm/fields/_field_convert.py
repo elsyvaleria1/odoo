@@ -1,4 +1,5 @@
 import typing
+from collections.abc import Callable
 from datetime import date, datetime
 
 from psycopg.types.json import Json as PsycopgJson
@@ -7,14 +8,16 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import PENDING, SENTINEL
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
-if typing.TYPE_CHECKING:
-    from collections.abc import Callable
+from .._typing import IdType, ModelLike
 
-    from .._typing import BaseModel, IdType, ModelLike
+if typing.TYPE_CHECKING:
+    from .._typing import BaseModel
     from ..runtime import Environment
     from .base import Field
 
     M = typing.TypeVar("M", bound=BaseModel)
+else:
+    Environment = typing.Any
 
 
 from . import _field_ddl as _ddl

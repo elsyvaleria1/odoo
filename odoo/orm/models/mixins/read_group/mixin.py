@@ -25,7 +25,7 @@ if typing.TYPE_CHECKING:
     from ...._typing import ModelLike
     from ....fields import Field
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
     ModelLike = typing.Any
 
 _debug = DebugLog(__name__)

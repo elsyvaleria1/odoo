@@ -1,10 +1,7 @@
 __all__ = ["parse_version"]
 
 import re
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
+from collections.abc import Iterator
 
 component_re = re.compile(r"(\d+ | [a-z]+ | \.| -)", re.VERBOSE)
 replace = {

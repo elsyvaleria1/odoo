@@ -22,7 +22,7 @@ if typing.TYPE_CHECKING:
     from ..._typing import ModelLike
     from ...fields import Field
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
 
 _logger = logging.getLogger("odoo.models")
 _orm_read = logging.getLogger("odoo.orm.read")

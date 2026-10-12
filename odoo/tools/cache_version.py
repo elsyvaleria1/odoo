@@ -8,6 +8,8 @@ from odoo.libs.json import OPT_SORT_KEYS, dumps_bytes
 
 if typing.TYPE_CHECKING:
     from odoo.http import Request
+else:
+    Request = typing.Any
 
 __all__ = ["versioned", "versioned_dispatched", "versioned_envelope"]
 

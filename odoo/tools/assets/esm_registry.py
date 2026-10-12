@@ -10,6 +10,8 @@ from odoo.libs.debug_log import DebugLog
 
 if TYPE_CHECKING:
     from odoo.modules import Manifest
+else:
+    Manifest = Any
 
 __all__ = [
     "EsmRegistry",

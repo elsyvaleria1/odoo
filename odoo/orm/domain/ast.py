@@ -16,7 +16,7 @@ from odoo.tools import Query
 
 from .._recordset import is_recordset
 from ..parsing import parse_field_expr
-from ..primitives import COLLECTION_TYPES, NewId
+from ..primitives import COLLECTION_TYPES, IdType, NewId
 from ._ast_primitives import (
     _MERGE_OPTIMIZATIONS,
     _OPTIMIZATION_KEY_KIND,  # noqa: F401 -- Re-exported to domain.optimizations during its circular import.
@@ -52,10 +52,9 @@ from .constants import (
 if typing.TYPE_CHECKING:
     from ..fields import Field
     from ..models import BaseModel
-    from ..primitives import IdType
 else:
     BaseModel = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
 
 _logger = logging.getLogger("odoo.domains")
 _debug = DebugLog(__name__)

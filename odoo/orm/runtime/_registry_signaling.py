@@ -4,6 +4,7 @@ import threading
 import typing
 from collections.abc import Collection, Iterable, Mapping
 
+from odoo.db import BaseCursor
 from odoo.db import schema as sql
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.lru import LRU
@@ -12,9 +13,6 @@ from odoo.libs.utils import format_frame
 from odoo.tools.constants import CACHES_BY_KEY, REGISTRY_CACHES
 
 from ._registry_stubs import _RegistryStubs
-
-if typing.TYPE_CHECKING:
-    from odoo.db import BaseCursor
 
 _logger = logging.getLogger("odoo.registry")
 _debug = DebugLog(__name__)

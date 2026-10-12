@@ -1,6 +1,6 @@
 import typing
 import warnings
-from collections.abc import Reversible
+from collections.abc import Iterator, Reversible
 from itertools import batched
 from typing import Self, override
 
@@ -13,8 +13,6 @@ from ...primitives import PREFETCH_MAX
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
-
     from ..._typing import BaseModel, IdType
     from ...runtime import Environment
 else:

@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from ..._typing import IdType
     from ...fields.base import Field
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
     IdType = typing.Any
 
 

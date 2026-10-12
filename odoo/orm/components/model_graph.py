@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Callable, Collection, Iterator
 from typing import TYPE_CHECKING, Any, override
 
-from odoo.libs._trigger_trees import TriggerGraph
+from odoo.libs._trigger_trees import Node, TriggerGraph
 from odoo.libs.accel import get_trigger_trees as _get_trigger_trees
 from odoo.libs.collections import Collector
 from odoo.libs.debug_log import DebugLog
@@ -12,7 +12,7 @@ from odoo.libs.iteration.sorting import strongly_connected_components
 from odoo.libs.lru import LRU
 
 if TYPE_CHECKING:
-    from odoo.libs._trigger_trees import Bucket, Meta, Node
+    from odoo.libs._trigger_trees import Bucket, Meta
 
     from ._protocols import FieldLike
 

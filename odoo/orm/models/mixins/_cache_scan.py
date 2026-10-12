@@ -6,8 +6,9 @@ if typing.TYPE_CHECKING:
     from ...fields.base import Field
     from ...runtime import Environment
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
     IdType = typing.Any
+    Environment = typing.Any
 
 
 def as_scannable_cache(

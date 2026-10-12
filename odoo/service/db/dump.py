@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import threading
 import zipfile
+from collections.abc import Callable, Iterator
 from contextlib import suppress
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any
@@ -24,13 +25,12 @@ from ._dump_scanner import _PortableSqlWriter
 from .listing import check_db_exposed
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
-
     from _typeshed import SupportsWrite
 
     from odoo.db import BaseCursor
 else:
     BaseCursor = Any
+    type SupportsWrite[T] = Any
 
 _logger = logging.getLogger("odoo.service.db")
 _debug = DebugLog(__name__)

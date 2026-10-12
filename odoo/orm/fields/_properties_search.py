@@ -10,8 +10,10 @@ from odoo.libs.datetime import timezone as get_timezone
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.sql import SQL
+from odoo.tools import Query
 
 from .._recordset import is_recordset
+from .._typing import ModelLike
 from ..domain import Domain
 from ..domain.ast import DomainCondition, OptimizationLevel
 from ..parsing import parse_field_expr
@@ -40,15 +42,13 @@ from .temporal import (
 )
 
 if typing.TYPE_CHECKING:
-    from odoo.tools import Query
-
-    from .._typing import ModelLike
     from ..models import BaseModel
     from .properties import Property
 
     _PropertiesMixinBase = Field[Property]
 else:
     _PropertiesMixinBase = object
+    BaseModel = typing.Any
 
 _debug = DebugLog("odoo.orm.fields.properties")
 

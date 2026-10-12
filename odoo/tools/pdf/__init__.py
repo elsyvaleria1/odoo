@@ -21,8 +21,9 @@ from . import _pypdf as pypdf
 
 from collections.abc import Generator
 
+from collections.abc import Iterator
+
 if TYPE_CHECKING:
-    from collections.abc import Iterator
     from pypdf import PageObject
     from odoo.addons.base.models.ir_attachment import IrAttachment
 else:

@@ -9,20 +9,21 @@ import time
 import traceback
 import types
 import typing
-from collections.abc import Collection
+from collections.abc import Collection, Iterable, Mapping
 
 import psycopg
 
 import odoo.db
 from odoo import api, tools
 from odoo.api import Environment
-from odoo.db import schema
+from odoo.db import BaseCursor, Cursor, schema
 from odoo.libs.collections import OrderedSet
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.hashing import cache_hash
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.parse_version import parse_version
 from odoo.logutils import RUNBOT
+from odoo.orm._protocols import IrModuleModuleProtocol
 from odoo.tools.convert import LEGACY_ACCESS_MODULE, IdRef, convert_file
 from odoo.tools.convert import ConvertMode as LoadMode
 
@@ -47,10 +48,7 @@ LoadKind = typing.Literal["data", "demo"]
 
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
-
-    from odoo.db import BaseCursor, Cursor
-    from odoo.orm._protocols import IrCronProtocol, IrModuleModuleProtocol
+    from odoo.orm._protocols import IrCronProtocol
     from odoo.tests.result import OdooTestResult
 
     from .module_graph import ModuleNode

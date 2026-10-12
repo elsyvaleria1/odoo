@@ -1,14 +1,12 @@
 import collections
 import logging
 from collections.abc import Collection, Generator, Iterable
-from typing import TYPE_CHECKING, Any, override
+from typing import Any, override
 
+import odoo.api
 from odoo.libs.debug_log import DebugLog
 
 from .core import request
-
-if TYPE_CHECKING:
-    import odoo.api
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

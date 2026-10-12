@@ -1,7 +1,8 @@
 import logging
 import os
 import warnings
-from typing import TYPE_CHECKING, Any, Protocol
+from contextlib import AbstractContextManager
+from typing import Any, Protocol
 from urllib.parse import parse_qsl, urlsplit
 
 import psycopg
@@ -10,9 +11,6 @@ from odoo.libs.debug_log import DebugLog
 
 from .dsn import ConnInfo
 from .settings import PoolSettings, resolve
-
-if TYPE_CHECKING:
-    from contextlib import AbstractContextManager
 
 
 class _PlannerStatsCursor(Protocol):

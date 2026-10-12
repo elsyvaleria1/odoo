@@ -5,18 +5,15 @@ import logging
 import pathlib
 import sys
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, override
+from typing import Any, override
 
 import psycopg
 
-from odoo.db import db_connect, get_connection_info_for_database
+from odoo.db import Cursor, db_connect, get_connection_info_for_database
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL
 
 from . import DatabaseCommand
-
-if TYPE_CHECKING:
-    from odoo.db import Cursor
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

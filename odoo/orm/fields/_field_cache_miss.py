@@ -5,16 +5,18 @@ from odoo.exceptions import AccessError, MissingError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import SENTINEL
 
+from ..primitives import IdType
 from ._field_compute import compute_recursive_prefetch
 
 if typing.TYPE_CHECKING:
     from .._typing import BaseModel
-    from ..primitives import IdType, NewId
+    from ..primitives import NewId
     from ..runtime import Environment
     from .base import Field
 else:
     Environment = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
+    BaseModel = typing.Any
 
 _debug = DebugLog(__name__)
 

@@ -1,5 +1,6 @@
 import logging
 import typing
+from collections.abc import Iterable
 from contextlib import closing
 from itertools import batched
 
@@ -16,8 +17,6 @@ from odoo.modules.module import Manifest
 from .registry import Registry
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from odoo.db import Cursor
 else:
     Cursor = typing.Any

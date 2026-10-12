@@ -18,10 +18,12 @@ if typing.TYPE_CHECKING:
     from odoo.fields import Field
 
     from .registry import Registry
+else:
+    type Field[T] = typing.Any
 
-    type FieldTriggers = dict[
-        Field[typing.Any], dict[tuple[Field[typing.Any], ...], list[Field[typing.Any]]]
-    ]
+type FieldTriggers = dict[
+    Field[typing.Any], dict[tuple[Field[typing.Any], ...], list[Field[typing.Any]]]
+]
 
 
 _logger = logging.getLogger("odoo.registry")

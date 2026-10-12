@@ -2,9 +2,10 @@ import ast
 import collections.abc
 import itertools
 import logging
-from collections.abc import Callable, Generator
+import types
+from collections.abc import Callable, Generator, Iterator
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Any, Self, SupportsIndex, override
+from typing import Any, Self, SupportsIndex, override
 
 from lxml import etree
 
@@ -12,13 +13,8 @@ from odoo import api, fields
 from odoo.fields import Command
 from odoo.libs.debug_log import DebugLog
 from odoo.models import BaseModel
+from odoo.orm.primitives import NewId
 from odoo.tools.safe_eval import safe_eval
-
-if TYPE_CHECKING:
-    import types
-    from collections.abc import Iterator
-
-    from odoo.orm.primitives import NewId
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

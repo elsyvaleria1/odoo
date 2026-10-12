@@ -32,7 +32,7 @@ if typing.TYPE_CHECKING:
     from ...fields.relational._base import _RelationalMulti
 else:
     BaseModel = typing.Any
-    Field = typing.Any
+    type Field[T] = typing.Any
     _RelationalMulti = typing.Any
 
 _debug = DebugLog(__name__)
