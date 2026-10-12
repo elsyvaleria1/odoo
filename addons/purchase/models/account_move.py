@@ -48,9 +48,14 @@ class AccountMove(models.Model):
         help="Internal warning for the partner or the products as set by the user.",
     )
 
+    def _can_read_order_links(self) -> bool:
+        return self.env["purchase.order.line"].has_access("read")
+
     @api.model_create_multi
     def create(self, vals_list):
         moves = super().create(vals_list)
+        if not self._can_read_order_links():
+            return moves
         for move in moves:
             if move.reversed_entry_id:
                 continue
@@ -67,7 +72,10 @@ class AccountMove(models.Model):
         return moves
 
     def write(self, vals):
-        if not ({"line_ids", "invoice_line_ids"} & vals.keys()):
+        if (
+            not ({"line_ids", "invoice_line_ids"} & vals.keys())
+            or not self._can_read_order_links()
+        ):
             return super().write(vals)
         old_purchases = [
             move.mapped("line_ids.purchase_line_ids.order_id") for move in self
