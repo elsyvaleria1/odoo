@@ -56,6 +56,26 @@ class TestSendTrackedSeparatesDatabaseErrors(TelegramBotTestCase):
         self.assertIn("unreachable", message.error_message)
 
 
+class TestInboundLogLetsConcurrencyRetry(TelegramBotTestCase):
+    def test_a_conflict_logging_the_inbound_message_is_retried_not_swallowed(self):
+        # swallowed, the conflict left the transaction aborted and the request
+        # answered 500 without the request retry: the update was lost
+        message = self.mock_telegram_message(chat_id=self.test_chat.chat_id)
+        with (
+            patch.object(
+                type(self.env["telegram.message"]),
+                "create",
+                side_effect=psycopg.errors.SerializationFailure(
+                    "could not serialize access due to concurrent update"
+                ),
+            ),
+            self.assertRaises(psycopg.errors.SerializationFailure),
+        ):
+            self.env["telegram.router"]._log_inbound_message(
+                self.test_bot, self.test_chat, message, "hola"
+            )
+
+
 class TestDispatchLetsConcurrencyRetry(TelegramBotTestCase):
     def setUp(self):
         super().setUp()

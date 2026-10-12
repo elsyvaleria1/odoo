@@ -308,6 +308,11 @@ class TelegramRouter(models.AbstractModel):
         try:
             with bot.env.cr.savepoint():
                 messages.create(vals)
+        except PG_RETRY_EXCEPTIONS:
+            # a lock conflict with another transaction: the request is retried
+            # whole once that one ends, which a swallowed error would prevent,
+            # leaving the update unanswered
+            raise
         except (UserError, psycopg.Error) as e:
             _logger.warning(
                 "Failed to create message record (msg_uid=%s): %s", msg_uid, e
