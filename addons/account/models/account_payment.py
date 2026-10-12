@@ -2117,10 +2117,16 @@ class AccountMove(models.Model):
             self._check_owned_move_write(vals)
         return super().write(vals)
 
+    def _as_entry_owner_check(self):
+        return self.with_privilege(
+            "account.privilege_check_entry_owner",
+            reason="an entry is held to the payment that generated it",
+        )
+
     def _get_entry_owner(self):
         self.check_singleton()
         return (
-            self.payment_ids.filtered(
+            self._as_entry_owner_check().payment_ids.filtered(
                 lambda payment: not payment.counterpart_review_required
             )[:1]
             or super()._get_entry_owner()
@@ -2269,7 +2275,7 @@ class AccountMove(models.Model):
         )
 
     def _post(self, soft=True):
-        self.payment_ids.filtered(
+        self._as_entry_owner_check().payment_ids.filtered(
             lambda payment: (
                 payment.move_id in self and not payment.counterpart_review_required
             )

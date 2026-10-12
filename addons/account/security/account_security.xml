@@ -89,6 +89,11 @@
                 name="name">Privilege: give a bank transaction the partner of the items it was matched with</field>
             <field name="is_privilege" eval="True" />
         </record>
+        <record id="privilege_check_entry_owner" model="res.groups">
+            <field
+                name="name">Privilege: hold a journal entry to the payment that generated it, whoever posts or edits the entry</field>
+            <field name="is_privilege" eval="True" />
+        </record>
         <record id="privilege_move_return_workflow" model="res.groups">
             <field
                 name="name">Privilege: move a return along its workflow, lock, submit, pay, complete or reset it</field>

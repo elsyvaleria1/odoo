@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from odoo import Command
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import new_test_user, tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
@@ -363,6 +363,89 @@ class TestPaymentEntryOwnership(AccountTestInvoicingCommon):
             payment.move_id.action_post()
         with self.assertRaisesRegex(UserError, "no longer matches"):
             payment.action_post()
+
+    def _clerk_who_reads_no_payment(self):
+        privilege = self.env["res.groups"].create(
+            {"name": "Probe: post and edit entries", "is_privilege": True}
+        )
+        self.env["ir.model.data"].create(
+            {
+                "module": "account",
+                "name": "probe_post_entries",
+                "model": "res.groups",
+                "res_id": privilege.id,
+            }
+        )
+        self.env["ir.access"].create(
+            [
+                {
+                    "name": f"Probe: {model}",
+                    "model_id": self.env["ir.model"]._get_id(model),
+                    "group_id": privilege.id,
+                    "kind": "permission",
+                    "operation": operation,
+                }
+                for model, operation in (
+                    ("account.move", "ru"),
+                    ("account.move.line", "ru"),
+                    ("account.journal", "r"),
+                    ("account.partial.reconcile", "r"),
+                )
+            ]
+        )
+        self.env["ir.access"].create(
+            {
+                "name": "Probe: post entries",
+                "model_id": self.env["ir.model"]._get_id("account.move"),
+                "group_id": privilege.id,
+                "kind": "permission",
+                "verbs": "post",
+            }
+        )
+        clerk = new_test_user(
+            self.env,
+            login="probe_post_entries",
+            groups="base.group_user",
+            company_id=self.env.company.id,
+            company_ids=[Command.set(self.env.company.ids)],
+        )
+        self.assertFalse(
+            self.env["account.payment"].with_user(clerk).has_access("read")
+        )
+        return clerk, "account.probe_post_entries"
+
+    def test_a_clerk_who_reads_no_payment_posts_an_entry_no_payment_generated(self):
+        entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2026-08-01",
+                "line_ids": [
+                    Command.create({"account_id": self.expense.id, "debit": 10.0}),
+                    Command.create(
+                        {"account_id": self.other_receivable.id, "credit": 10.0}
+                    ),
+                ],
+            }
+        )
+        clerk, privilege = self._clerk_who_reads_no_payment()
+
+        entry.with_user(clerk).with_privilege(privilege).action_post()
+
+        self.assertEqual(entry.state, "posted")
+
+    def test_a_clerk_who_reads_no_payment_is_held_to_the_payment_all_the_same(self):
+        payment = self._payment()
+        payment.action_draft()
+        clerk, privilege = self._clerk_who_reads_no_payment()
+        entry = payment.move_id.with_user(clerk).with_privilege(privilege)
+
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            entry.date = "2026-08-02"
+        payment._seek_for_lines()[1].with_context(
+            entry_owner_sync=True
+        ).account_id = self.other_receivable
+        with self.assertRaisesRegex(UserError, "no longer matches"):
+            entry.action_post()
 
     def test_correct_accounts_rebuilds_the_entry_through_the_payment(self):
         invoice = self._invoice()
