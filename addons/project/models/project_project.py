@@ -2329,7 +2329,7 @@ class ProjectProject(models.Model):
         self,
         message: Any,
         model_description: str | Literal[False] | None,
-        msg_vals: dict | Literal[False] = False,
+        msg_vals: ValuesType | Literal[False] = False,
     ) -> list:
         groups = super()._notify_get_recipients_groups(
             message, model_description, msg_vals=msg_vals

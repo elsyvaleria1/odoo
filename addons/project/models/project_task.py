@@ -3737,7 +3737,7 @@ class ProjectTask(models.Model):
     def _notify_by_email_prepare_rendering_context(
         self,
         message: Any,
-        msg_vals: dict | Literal[False] = False,
+        msg_vals: ValuesType | Literal[False] = False,
         model_description: str | Literal[False] | None = False,
         force_email_company: Any = False,
         force_email_lang: str | Literal[False] | None = False,
@@ -3951,7 +3951,7 @@ class ProjectTask(models.Model):
         self,
         message: Any,
         model_description: str | Literal[False] | None,
-        msg_vals: dict | Literal[False] = False,
+        msg_vals: ValuesType | Literal[False] = False,
     ) -> list:
         groups = super()._notify_get_recipients_groups(
             message, model_description, msg_vals=msg_vals
@@ -4047,7 +4047,7 @@ class ProjectTask(models.Model):
     def message_new(
         self,
         msg_dict: dict,
-        custom_values: dict | None = None,
+        custom_values: ValuesType | None = None,
     ) -> Self:
         _debug.lifecycle(
             "message_new",

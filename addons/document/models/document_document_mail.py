@@ -3,6 +3,7 @@ from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
 from odoo import Command, api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.date_utils import get_timedelta
@@ -44,7 +45,7 @@ class DocumentsDocument(models.Model):
         self,
         message: models.Model,
         model_description: str | Literal[False] | None,
-        msg_vals: dict | Literal[False] = False,
+        msg_vals: ValuesType | Literal[False] = False,
     ) -> list:
         groups = super()._notify_get_recipients_groups(
             message, model_description, msg_vals=msg_vals
@@ -83,7 +84,7 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def message_new(
-        self, msg_dict: dict, custom_values: dict | None = None
+        self, msg_dict: dict, custom_values: ValuesType | None = None
     ) -> DocumentsDocument:
         custom_values = custom_values or {}
 
@@ -134,7 +135,7 @@ class DocumentsDocument(models.Model):
 
     def _process_attachments_for_post(
         self,
-        attachments: list[tuple | list] | None,
+        attachments: list[tuple[Any, ...] | list[Any]] | None,
         attachment_ids: list[int] | None,
         message_values: dict,
     ) -> dict:

@@ -1409,7 +1409,7 @@ class DiscussChannel(models.Model):
     def _create_attachments_for_post(
         self,
         values_list: list[ValuesType],
-        extra_list: list[tuple[Any, Any, Any, dict[str, Any]]],
+        extra_list: list[tuple[Any, ...]],
     ) -> IrAttachment:
         attachments = super()._create_attachments_for_post(values_list, extra_list)
         voice = attachments.env["ir.attachment"]

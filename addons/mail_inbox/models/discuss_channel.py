@@ -2,10 +2,11 @@ import typing
 from typing import Literal
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.tools.mail import formataddr
 
 from odoo.addons.mail.models.discuss.discuss_channel import ChannelTypePolicy
-from odoo.addons.mail.tools.recipients import prepare_recipient_data
+from odoo.addons.mail.tools.recipients import RecipientData, prepare_recipient_data
 
 if typing.TYPE_CHECKING:
     from .mail_inbox import MailInbox
@@ -79,7 +80,7 @@ class DiscussChannel(models.Model):
         }
 
     @api.model
-    def message_new(self, msg_dict: dict, custom_values: dict | None = None):
+    def message_new(self, msg_dict: dict, custom_values: ValuesType | None = None):
         if (custom_values or {}).get("channel_type") != "email":
             return super().message_new(msg_dict, custom_values)
         inbox = self.env["mail.inbox"].browse(custom_values.get("inbox_id")).exists()
@@ -132,7 +133,10 @@ class DiscussChannel(models.Model):
         return f"Re: {subject}"
 
     def _notify_get_recipients(
-        self, message: MailMessage, msg_vals: dict | Literal[False] = False, **kwargs
+        self,
+        message: MailMessage,
+        msg_vals: ValuesType | Literal[False] = False,
+        **kwargs,
     ) -> list:
         recipients = super()._notify_get_recipients(
             message, msg_vals=msg_vals, **kwargs
@@ -172,8 +176,8 @@ class DiscussChannel(models.Model):
     def _notify_by_email_get_base_mail_values(
         self,
         message: MailMessage,
-        recipients_data: list[dict],
-        additional_values: dict | None = None,
+        recipients_data: list[RecipientData],
+        additional_values: ValuesType | None = None,
         ancestors: MailMessage | None = None,
     ) -> dict:
         values = super()._notify_by_email_get_base_mail_values(
