@@ -1218,7 +1218,10 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         Path(self.filestore, missing.store_fname).unlink()
         legacy.invalidate_recordset(["served_charset"])
         done = []
-        with mute_logger("odoo.addons.base.models.ir_attachment"):
+        with mute_logger(
+            "odoo.addons.base.models.ir_attachment",
+            "odoo.addons.base.models.ir_attachment_storage",
+        ):
             while result := self.Attachment._gc_backfill_served_charsets(limit=3):
                 done.append(result[0])
                 if not result[1]:
@@ -1227,12 +1230,132 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         self.assertEqual(attachments.mapped("served_charset"), decided)
         self.assertFalse(missing.served_charset, "unreadable bytes decide nothing")
         self.assertFalse(image.served_charset, "an image carries no charset")
-        with mute_logger("odoo.addons.base.models.ir_attachment"):
+        with mute_logger(
+            "odoo.addons.base.models.ir_attachment",
+            "odoo.addons.base.models.ir_attachment_storage",
+        ):
             self.assertEqual(
                 self.Attachment._gc_backfill_served_charsets(limit=3),
                 (0, 0),
                 "rows it cannot decide do not requeue it",
             )
+
+    def test_the_backfill_reads_each_row_once_per_pass_and_streams_it(self):
+        self.env["ir.config_parameter"].set_param("ir_attachment.location", "file")
+        with mute_logger("odoo.addons.base.models.ir_attachment"):
+            while self.Attachment._gc_backfill_served_charsets(limit=500)[1]:
+                pass
+        text = f"nom,ville\nJosé,Zürich\n{uuid.uuid4()}\n"
+        readable = self.Attachment.create(
+            [
+                {"name": f"r{i}.csv", "raw": text.encode("latin-1") + b"%d" % i}
+                for i in range(3)
+            ]
+        )
+        missing = self.Attachment.create(
+            [
+                {"name": f"m{i}.csv", "raw": f"{uuid.uuid4()}é".encode()}
+                for i in range(5)
+            ]
+        )
+        legacy = readable | missing
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE ir_attachment SET served_charset = NULL WHERE id = ANY(%s)",
+            [legacy.ids],
+        )
+        for attachment in missing:
+            Path(self.filestore, attachment.store_fname).unlink()
+        legacy.invalidate_recordset(["served_charset"])
+        backend_for_key = IrAttachment._get_storage_backend_for_key
+        reads = []
+
+        def counting(model, key):
+            reads[-1].append(key)
+            return backend_for_key(model, key)
+
+        with (
+            patch.object(IrAttachment, "_get_storage_backend_for_key", counting),
+            patch.object(
+                type(self.Attachment._get_storage_backend()),
+                "read",
+                side_effect=AssertionError("the backfill streams the stored file"),
+            ),
+            mute_logger(
+                "odoo.addons.base.models.ir_attachment",
+                "odoo.addons.base.models.ir_attachment_storage",
+            ),
+        ):
+            while True:
+                reads.append([])
+                if not self.Attachment._gc_backfill_served_charsets(limit=2)[1]:
+                    break
+        self.assertTrue(all(len(batch) <= 2 for batch in reads), reads)
+        examined = [key for batch in reads for key in batch]
+        self.assertEqual(
+            sorted(examined), sorted(legacy.mapped("store_fname")), "each row once"
+        )
+        self.assertEqual(set(readable.mapped("served_charset")), {"iso-8859-1"})
+        self.assertFalse(any(missing.mapped("served_charset")))
+
+    def test_a_copy_declaring_another_charset_does_not_inherit_the_served_one(self):
+        text = f"nom;ville\nJosé;Zürich {uuid.uuid4()}\n"
+        for location in ("db", "file"):
+            self.env["ir.config_parameter"].set_param(
+                "ir_attachment.location", location
+            )
+            with self.subTest(location=location):
+                origin = self.Attachment.create(
+                    {
+                        "name": "rows.txt",
+                        "raw": text.encode("latin-1"),
+                        "mimetype": "text/plain",
+                    }
+                )
+                self.assertEqual(origin.served_charset, "iso-8859-1")
+                copies = (
+                    origin.copy({"charset": "iso-8859-2"})
+                    | (origin._copy_times(1, {"charset": "iso-8859-2"})[0])
+                )
+                for copied in copies:
+                    response = copied._to_http_stream().prepare_response(
+                        environ=EnvironBuilder().get_environ()
+                    )
+                    self.assertEqual(
+                        response.headers["Content-Type"],
+                        "text/plain; charset=iso-8859-2",
+                    )
+                self.assertEqual(
+                    origin.copy().served_charset, "iso-8859-1", "same declaration"
+                )
+
+    def test_a_static_url_attachment_is_served_in_its_file_charset(self):
+        path = Path(self.filestore, f"static-{uuid.uuid4()}.txt")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes("Café crème brûlée façade\n".encode("cp1252") * 50)
+        self.addCleanup(path.unlink, missing_ok=True)
+        attachment = self.Attachment.create(
+            {
+                "name": "notes.txt",
+                "type": "url",
+                "url": "/base/static/notes.txt",
+                "raw": b"",
+                "mimetype": "text/plain",
+            }
+        )
+        with (
+            patch.object(
+                IrAttachment, "_get_static_file_path", lambda _self: str(path)
+            ),
+            patch.object(Stream, "from_path", Stream._from_trusted_path),
+        ):
+            response = attachment._to_http_stream().prepare_response(
+                environ=EnvironBuilder().get_environ()
+            )
+        self.assertEqual(attachment.served_charset, "utf-8", "its own empty bytes")
+        self.assertEqual(
+            response.headers["Content-Type"], "text/plain; charset=iso-8859-1"
+        )
 
     def test_to_http_stream_ignores_bin_size(self):
         payload = b"X" * 5000

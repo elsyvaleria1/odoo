@@ -1,12 +1,18 @@
+import logging
 import re
+from collections import defaultdict
 
 from odoo import api, fields, models
 from odoo.db.schema import create_index
 from odoo.exceptions import UserError
 from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, normalize_identifier
 
 from odoo.addons.phone_validation.tools import phone_validation
+
+_logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
 
 PHONE_NOISE_SQL_PATTERN = r"[\s\\./\(\)\-]"
 PHONE_NOISE_PATTERN = re.compile(PHONE_NOISE_SQL_PATTERN)
@@ -55,9 +61,12 @@ class PhoneNumber(models.Model):
 
     @api.model
     def _e164(self, number, country=None):
+        return self._e164_in_country(number, country or self.env.company.country_id)
+
+    @api.model
+    def _e164_in_country(self, number, country):
         if not number:
             return False
-        country = country or self.env.company.country_id
         if not country and not number.lstrip().startswith(("+", "00")):
             return False
         try:
@@ -78,6 +87,160 @@ class PhoneNumber(models.Model):
     @api.model
     def _normalize_number_without_validation(self, number, country=None):
         return super()._normalize_number(number, country)
+
+    @api.model
+    def _get_rekeyed_sanitized(self, rows):
+        Country = self.env["res.country"]
+        keys, local = {}, {}
+        for phone_id, number, country_id, sanitized in rows:
+            unvalidated = self._normalize_number_without_validation(number)
+            if country_id:
+                keys[phone_id] = self._normalize_number(
+                    number, Country.browse(country_id)
+                )
+            elif unvalidated.startswith("+"):
+                keys[phone_id] = self._e164_in_country(unvalidated, None) or unvalidated
+            elif (sanitized or "").startswith("+"):
+                keys[phone_id] = sanitized
+            else:
+                local[phone_id] = (number, sanitized)
+        countries = self._get_evidenced_countries(list(local))
+        for phone_id, (number, sanitized) in local.items():
+            country = countries.get(phone_id)
+            keys[phone_id] = (
+                self._normalize_number(number, country) if country else sanitized
+            )
+        return keys
+
+    @api.model
+    def _get_rekeyed_sanitized_without_validation(self, rows):
+        Country = self.env["res.country"]
+        return {
+            phone_id: self._normalize_number_without_validation(
+                number, Country.browse(country_id)
+            )
+            for phone_id, number, country_id, _ in rows
+        }
+
+    @api.model
+    def _get_evidenced_countries(self, phone_ids):
+        if not phone_ids:
+            return {}
+        self.env.flush_all()
+        evidence = defaultdict(set)
+        for query in self._get_country_evidence_queries(phone_ids):
+            self.env.cr.execute(query)
+            for phone_id, *country_ids in self.env.cr.fetchall():
+                evidence[phone_id].update(filter(None, country_ids))
+        companies_country = self._get_companies_country()
+        countries, unresolved = {}, defaultdict(list)
+        for phone_id in phone_ids:
+            found = evidence.get(phone_id) or set(companies_country.ids)
+            if len(found) == 1:
+                countries[phone_id] = self.env["res.country"].browse(found)
+            else:
+                unresolved["ambiguous" if found else "unknown"].append(phone_id)
+        for reason, ids in unresolved.items():
+            _logger.info(
+                "%d phone numbers keep their key, their country being %s: %s",
+                len(ids),
+                reason,
+                ids[:20],
+            )
+        _debug.logic(
+            "rekey_countries_evidenced",
+            phones=len(phone_ids),
+            linked=len(evidence),
+            evidenced=len(countries),
+        )
+        return countries
+
+    @api.model
+    def _get_country_evidence_queries(self, phone_ids):
+        seen = set()
+        for model in self.env.registry.values():
+            if model._abstract or model._transient or not model._auto:
+                continue
+            country = self._get_evidence_column(model, "country_id", "res.country")
+            company = self._get_evidence_column(model, "company_id", "res.company")
+            if not (country or company):
+                continue
+            for field in model._fields.values():
+                if (
+                    field.comodel_name != self._name
+                    or not field.store
+                    or field.inherited
+                    or field.type not in ("many2one", "many2many")
+                ):
+                    continue
+                link = (
+                    (field.relation, field.column1, field.column2)
+                    if field.type == "many2many"
+                    else (model._table, "id", field.name)
+                )
+                if link in seen:
+                    continue
+                seen.add(link)
+                yield self._get_country_evidence_query(
+                    model, link, country, company, phone_ids
+                )
+
+    @api.model
+    def _get_evidence_column(self, model, fname, comodel_name):
+        field = model._fields.get(fname)
+        if (
+            field
+            and field.type == "many2one"
+            and field.comodel_name == comodel_name
+            and field.store
+            and not field.inherited
+        ):
+            return fname
+        return None
+
+    @api.model
+    def _get_country_evidence_query(self, model, link, country, company, phone_ids):
+        table, record_column, phone_column = link
+        return SQL(
+            """
+            SELECT link.%(phone)s, %(country)s, company_partner.country_id
+              FROM %(table)s AS link
+              JOIN %(records)s AS rec ON rec.id = link.%(record)s
+              LEFT JOIN res_company AS company ON company.id = %(company)s
+              LEFT JOIN res_partner AS company_partner
+                     ON company_partner.id = company.partner_id
+             WHERE link.%(phone)s = ANY(%(phone_ids)s)
+            """,
+            phone=SQL.identifier(phone_column),
+            table=SQL.identifier(table),
+            records=SQL.identifier(model._table),
+            record=SQL.identifier(record_column),
+            country=SQL.identifier("rec", country) if country else SQL("NULL::int"),
+            company=SQL.identifier("rec", company) if company else SQL("NULL::int"),
+            phone_ids=list(phone_ids),
+        )
+
+    @api.model
+    def _get_companies_country(self):
+        self.env.cr.execute(
+            SQL(
+                "SELECT DISTINCT partner.country_id FROM res_company AS company"
+                " JOIN res_partner AS partner ON partner.id = company.partner_id"
+            )
+        )
+        country_ids = [country_id for (country_id,) in self.env.cr.fetchall()]
+        if None in country_ids or len(country_ids) != 1:
+            return self.env["res.country"]
+        return self.env["res.country"].browse(country_ids)
+
+    @api.model
+    def _rekey_local_sanitized(self):
+        self._rekey_sanitized(
+            where=SQL(
+                "country_id IS NULL AND sanitized NOT LIKE %s",
+                "+%",
+            )
+        )
 
     @api.depends("number", "country_id")
     def _compute_valid(self) -> None:

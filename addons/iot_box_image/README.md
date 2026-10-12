@@ -15,8 +15,8 @@ database.
 
 That is the fact behind everything below: **the box needs the framework's own
 dependencies, not only the drivers'.** The conf naming only `iot_drivers,web`
-does not narrow this — `tools/config.py:37` defines
-`REQUIRED_SERVER_WIDE_MODULES = ["base", "web"]` and prepends whichever is
+does not narrow this — `tools/config.py:42` defines
+`REQUIRED_SERVER_WIDE_MODULES = ("base", "web")` and prepends whichever is
 missing, so `base` always loads. Measured, on this tree:
 
 ```python
@@ -43,7 +43,7 @@ than `addons/iot`.
 
 | File | Installed by | Carries |
 |---|---|---|
-| `configuration/packages.txt` | `xargs apt-get install` (`init_image.sh:160`, and `iot_drivers/tools/upgrade.py:188` on-box) | anything Debian packages |
+| `configuration/packages.txt` | `xargs apt-get install` (`init_image.sh:160`, and `iot_drivers/tools/upgrade.py:191` on-box) | anything Debian packages |
 | `configuration/requirements.txt` | `pip3 install -r … --break-system-package` | what Debian does not package, or what needs a version Debian does not carry |
 
 **`packages.txt` cannot contain comments.** It is fed to `xargs`, which would
@@ -78,10 +78,11 @@ Both lists had drifted from what the fork imports:
   `python3-weasyprint` in any Debian suite** and
   `base/models/ir_actions_report.py` imports it at module level.
 
-## Two blockers: this image cannot run the fork today
+## One blocker, one gap: this image cannot run the fork today
 
 Neither is fixable by editing a dependency list. Both are recorded here so the
-lists are not mistaken for a working configuration.
+lists are not mistaken for a working configuration: the Python floor stops the
+server, the missing native extension only slows it.
 
 **1. Python floor.** `odoo/release.py` sets `MIN_PY_VERSION = (3, 14)` and
 `odoo/init.py:9` raises `RuntimeError` below it. The base image
@@ -100,14 +101,16 @@ Python 3.14 built into the image. Note the same move fixes a second problem:
 bookworm's `python3-psycopg` is 3.1.7 and trixie's 3.2.6, both below the
 server's `psycopg[binary]>=3.3.4` floor — only sid's 3.3.4 satisfies it.
 
-**2. `odoo_rust`.** `odoo/init.py:18` imports it as a hard dependency with no
-fallback, and nothing in the image build produces or installs it. The freshness
-check below that import is *not* the obstacle — it is skipped when `crates/` is
-absent (`init.py:53`), which is exactly the box's case — so the box needs only a
+**2. `odoo_rust`.** Optional, not a blocker. `odoo/init.py:15` imports it, and
+when it is absent the server warns (`RuntimeWarning`) and runs on the pure-Python
+fallbacks behind `odoo/libs/accel.py` — slower, not wrong; its absence is fatal
+only under `ODOO_REQUIRE_NATIVE` or `CI` (`native_required()`). The freshness
+check after the import (`init.py:41`) is skipped when `crates/` is absent
+(`libs/native.py:37`), which is the box's case, so shipping one is a matter of a
 prebuilt wheel, not the crate sources.
 
-There is no armhf wheel on PyPI; it is this fork's own crate, so one has to be
-cross-compiled and shipped. The mechanism already exists in this directory:
+There is no armhf wheel on PyPI; it is this fork's own crate, so speeding the
+box up means cross-compiling and shipping one. The mechanism already exists in this directory:
 `configuration/aiortc-1.4.0-py3-none-any.whl` is vendored and referenced by
 absolute path from `requirements.txt`. An `odoo_rust` wheel would follow the same
 pattern, and must be rebuilt whenever `crates/odoo_rust` changes.

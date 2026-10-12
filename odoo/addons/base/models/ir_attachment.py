@@ -20,6 +20,7 @@ from odoo import api, fields, models
 from odoo.api import ValuesType
 from odoo.exceptions import (
     AccessError,
+    MissingError,
     UserError,
     ValidationError,
 )
@@ -102,6 +103,8 @@ BIN_SIZE_KEYS = {
 
 
 _REHASH_CURSOR_PARAM = "ir_attachment.rehash_legacy_keys_after_id"
+
+_SERVED_CHARSET_CURSOR_PARAM = "ir_attachment.served_charset_backfill_before_id"
 
 _UNLABELLED = "binary"
 
@@ -532,19 +535,22 @@ class IrAttachment(models.Model):
     def _share_stored_content(self, origins: list[Self], copies: Self) -> None:
         by_content: dict[tuple, list[int]] = defaultdict(list)
         for origin, copied in zip(origins, copies, strict=True):
+            served = origin.served_charset if copied.charset == origin.charset else None
             if origin.store_fname:
                 key = (
                     origin.store_fname,
                     origin.checksum,
                     origin.file_size,
                     origin.index_content,
-                    origin.served_charset,
+                    served,
                 )
             else:
-                key = (None, None, None, origin.index_content, origin.served_charset)
+                key = (None, None, None, origin.index_content, served)
             by_content[key].append(copied.id)
         for (fname, checksum, size, index, served), ids in by_content.items():
-            values = {"index_content": index, "served_charset": served}
+            values = {"index_content": index}
+            if served:
+                values["served_charset"] = served
             if fname:
                 values.update(store_fname=fname, checksum=checksum, file_size=size)
             super(IrAttachment, self.browse(ids).sudo()).write(values)
@@ -2046,7 +2052,9 @@ class IrAttachment(models.Model):
         elif self.url:
             if static_path := self._get_static_file_path():
                 stream = Stream.from_path(static_path, public=True)
+                stream.set_charset_from_content(self.charset or None)
                 _debug.logic("http_stream", attachment=self.id, source="static")
+                return stream
             else:
                 stream.type = "url"
                 stream.url = self.url
@@ -2255,6 +2263,8 @@ class IrAttachment(models.Model):
             _debug.logic("served_charset_backfill_skipped", reason="no_limit")
             return 0, 0
         cr = self.env.cr
+        ICP = self.env["ir.config_parameter"]
+        before = ICP.get_param_int(_SERVED_CHARSET_CURSOR_PARAM, 0)
         self.flush_model()
         undecided = SQL(
             "served_charset IS NULL AND type = 'binary' AND file_size > 0"
@@ -2262,34 +2272,22 @@ class IrAttachment(models.Model):
             " OR mimetype = ANY(%s))",
             _LABELLED_APPLICATION_MIMETYPES,
         )
-        decided: dict[str, list[int]] = defaultdict(list)
-        done = skipped = 0
-        before = None
-        while done < limit:
-            below = SQL(" AND id < %s", before) if before else SQL()
-            cr.execute(
-                SQL(
-                    "SELECT id, store_fname, file_size, mimetype, charset"
-                    " FROM ir_attachment WHERE %s%s ORDER BY id DESC LIMIT %s",
-                    undecided,
-                    below,
-                    limit,
-                )
+        cr.execute(
+            SQL(
+                "SELECT id, store_fname, mimetype, charset FROM ir_attachment"
+                " WHERE %s%s ORDER BY id DESC LIMIT %s",
+                undecided,
+                SQL(" AND id < %s", before) if before else SQL(),
+                limit,
             )
-            rows = cr.fetchall()
-            if not rows:
-                break
-            for att_id, fname, size, mimetype, declared in rows:
-                before = att_id
-                content = self._read_backfill_content(att_id, fname, size)
-                if content is None or not Stream.labels_charset(mimetype):
-                    skipped += 1
-                    continue
-                served = self._decide_served_charset(content, mimetype, declared)
+        )
+        rows = cr.fetchall()
+        decided: dict[str, list[int]] = defaultdict(list)
+        for att_id, fname, mimetype, declared in rows:
+            if served := self._decide_stored_served_charset(
+                att_id, fname, mimetype, declared
+            ):
                 decided[served].append(att_id)
-                done += 1
-                if done >= limit:
-                    break
         for served, ids in decided.items():
             cr.execute(
                 SQL(
@@ -2299,29 +2297,54 @@ class IrAttachment(models.Model):
                 )
             )
         self.invalidate_model(["served_charset"], flush=False)
-        cr.execute(SQL("SELECT count(*) FROM ir_attachment WHERE %s", undecided))
-        remaining = cr.fetchone()[0]
+        after = rows[-1][0] if len(rows) == limit else 0
+        if after != before:
+            ICP.set_param(_SERVED_CHARSET_CURSOR_PARAM, after)
+        remaining = 0
+        if after:
+            cr.execute(
+                SQL(
+                    "SELECT count(*) FROM ir_attachment WHERE %s AND id < %s",
+                    undecided,
+                    after,
+                )
+            )
+            remaining = cr.fetchone()[0]
+        done = sum(map(len, decided.values()))
         _debug.lifecycle(
             "served_charset_backfilled",
             decided=done,
-            skipped=skipped,
+            skipped=len(rows) - done,
             remaining=remaining,
         )
-        return done, remaining if done else 0
+        return done, remaining
 
-    def _read_backfill_content(
-        self, att_id: int, fname: str | None, size: int
-    ) -> bytes | None:
+    def _decide_stored_served_charset(
+        self, att_id: int, fname: str | None, mimetype: str, declared: str | None
+    ) -> str | None:
+        if not Stream.labels_charset(mimetype):
+            return None
+        stream = Stream(mimetype=mimetype)
         if fname:
-            content, unreadable = self._read_store_key(
-                fname, size, None, att_id=att_id, action="skipping served charset"
+            try:
+                stream = self._get_storage_backend_for_key(fname).to_stream(
+                    self.browse(att_id), stream
+                )
+            except MissingError:
+                return None
+        else:
+            self.env.cr.execute(
+                SQL("SELECT db_datas FROM ir_attachment WHERE id = %s", att_id)
             )
-            return None if unreadable else content
-        self.env.cr.execute(
-            SQL("SELECT db_datas FROM ir_attachment WHERE id = %s", att_id)
-        )
-        row = self.env.cr.fetchone()
-        return bytes(row[0]) if row and row[0] is not None else None
+            row = self.env.cr.fetchone()
+            stream.type = "data"
+            stream.data = bytes(row[0]) if row and row[0] is not None else b""
+            stream.size = len(stream.data)
+        if stream.type == "url" or not stream.size:
+            _debug.logic("served_charset_unreadable", attachment=att_id)
+            return None
+        stream.set_charset_from_content(declared)
+        return stream.charset or _UNLABELLED
 
     @api.autovacuum
     def _gc_stale_filestore_temps(self) -> tuple[int, int]:

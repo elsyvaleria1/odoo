@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.84
+:Version: 7.85
 :Date: 2026-10-12
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -2733,9 +2733,8 @@ The same name may be defined twice with different contracts
 (``config._check_path`` vs ``ir.actions.actions._check_path``).
 
 **Run ``ruff format`` only on changed files** ``[review]``:
-``ruff format $(git diff --name-only -- '*.py')``. ``addons/`` and the sibling
-repositories are not format-clean, and a directory-wide run rewrites files you
-did not touch in a shared checkout.
+``ruff format $(git diff --name-only -- '*.py')``. A directory-wide run in a
+shared checkout also rewrites the files another session is still editing.
 
 **Never do a whole-file write in a shared checkout** ``[review]``. No
 ``git checkout -- <file>``, no copying a file back from a worktree. Read a
@@ -6345,6 +6344,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.85
+     - 2026-10-12
+     - §2.4.20: ``ruff format`` on changed files only keeps its one remaining
+       reason, a peer session's files in a shared checkout; the checkout and
+       its sibling repositories are format-clean, so "not format-clean" goes.
    * - 7.84
      - 2026-10-12
      - §2.9.11: every name a framework signature uses exists at runtime;

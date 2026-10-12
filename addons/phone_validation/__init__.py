@@ -10,4 +10,4 @@ def post_init_hook(env) -> None:
 
 def uninstall_hook(env) -> None:
     Phone = env["phone.number"]
-    Phone._rekey_sanitized(normalize=Phone._normalize_number_without_validation)
+    Phone._rekey_sanitized(rekey=Phone._get_rekeyed_sanitized_without_validation)

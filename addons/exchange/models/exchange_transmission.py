@@ -492,16 +492,18 @@ class ExchangeTransmission(models.Model):
     @api.model
     def _cron_read_verdicts(self, limit: int = 100) -> None:
         domain = self._get_due_domain("sent")
-        if lastcall := self.env.context.get("lastcall"):
+        polled_at = self.env.cr.now().replace(microsecond=0)
+        if lastcall := fields.Datetime.to_datetime(self.env.context.get("lastcall")):
             domain += [
                 "|",
                 ("date_last_polled", "=", False),
-                ("date_last_polled", "<", lastcall),
+                ("date_last_polled", "<=", lastcall),
             ]
+            polled_at = max(polled_at, lastcall + timedelta(seconds=1))
         pending = self.search(
             domain, order="date_last_polled asc nulls first, id", limit=limit
         )
-        pending.write({"date_last_polled": fields.Datetime.now()})
+        pending.write({"date_last_polled": polled_at})
         for transmission in pending:
             try:
                 with self.env.cr.savepoint():

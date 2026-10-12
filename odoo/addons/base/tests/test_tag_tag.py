@@ -4,9 +4,11 @@ from unittest.mock import patch
 from psycopg.errors import UniqueViolation
 
 from odoo.api import Environment
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import ConcurrencyError, UserError, ValidationError
+from odoo.fields import Command
 from odoo.libs.colors import TAG_COLORS
 from odoo.modules.registry import Registry
+from odoo.service.transaction import retrying
 from odoo.tests.common import (
     ADMIN_USER_ID,
     BaseCase,
@@ -230,6 +232,73 @@ class TestTagCode(TransactionCase):
             self._tag(name="Second", code="SHARED")
             self.env.flush_all()
 
+    @mute_logger("odoo.db.cursor")
+    def test_a_pending_duplicate_code_is_refused_by_the_next_create(self):
+        first = self._tag(name="Pending One")
+        second = self._tag(name="Pending Two")
+        with self.assertRaises(UniqueViolation):
+            first.code = second.code
+            self._tag(name="Pending Three")
+
+    def test_a_derived_code_is_computed_in_the_callers_environment(self):
+        Tag = self.env["tag.tag"]
+        derive = type(Tag)._derive_codes
+        envs = []
+
+        def spy(tags, names, taken):
+            envs.append(tags.env)
+            return derive(tags, names, taken)
+
+        with patch.object(type(Tag), "_derive_codes", spy):
+            Tag.create({"name": "Same Env"})
+        self.assertTrue(envs)
+        for env in envs:
+            self.assertIs(env, Tag.env)
+
+    def test_a_derived_code_leaves_the_commit_hooks_to_the_commit(self):
+        ran = []
+        self.env.cr.precommit.add(lambda: ran.append("precommit"))
+        self._tag(name="Hook Waits")
+        self.assertEqual(ran, [])
+        self.env.cr.flush()
+        self.assertEqual(ran, ["precommit"])
+
+    def test_a_derived_code_leaves_other_pending_writes_pending(self):
+        self._tag(name="Warm Defaults")
+        partner = self.env["res.partner"].create({"name": "Pending Partner"})
+        self.env.flush_all()
+        partner.name = "Pending Rename"
+        with self.assertQueryCount(3, flush=False):
+            self._tag(name="Leaves Others Pending")
+
+    def test_the_callers_vals_keep_lacking_a_code(self):
+        vals_list = [{"name": "Untouched"}]
+        self.env["tag.tag"].create(vals_list)
+        self.assertEqual(vals_list, [{"name": "Untouched"}])
+
+    def test_a_context_default_name_gets_a_code(self):
+        tag = self.env["tag.tag"].with_context(default_name="Defaulted").create({})
+        self.assertEqual(tag.code, "DEFAULTED")
+
+    def test_a_context_default_code_is_kept(self):
+        tag = (
+            self.env["tag.tag"]
+            .with_context(default_code="FROM_CONTEXT")
+            .create({"name": "Anything"})
+        )
+        self.assertEqual(tag.code, "FROM_CONTEXT")
+
+    @mute_logger("odoo.db.cursor")
+    def test_a_given_code_clash_under_a_derived_parent_is_no_concurrency_error(self):
+        self._tag(name="Holder")
+        with self.assertRaises(UniqueViolation):
+            self.env["tag.tag"].create(
+                {
+                    "name": "Refused",
+                    "child_ids": [Command.create({"name": "Twin", "code": "HOLDER"})],
+                }
+            )
+
     def test_a_code_survives_a_batch_create(self):
         tags = self.env["tag.tag"].create(
             [{"name": "Bulk!"}, {"name": "Bulk?"}, {"name": "Bulk."}]
@@ -270,6 +339,8 @@ class TestTagCodeConcurrency(BaseCase):
     def _drop_race_tags(self):
         with self.registry.cursor() as cr:
             cr.execute("DELETE FROM tag_tag WHERE code LIKE 'RACE%%'")
+            cr.execute("DELETE FROM res_partner WHERE name LIKE 'Race %%'")
+            cr.execute("DELETE FROM res_partner_tag WHERE code LIKE 'RACE%%'")
 
     def _two_envs(self):
         stack = ExitStack()
@@ -283,24 +354,86 @@ class TestTagCodeConcurrency(BaseCase):
             envs.append(env)
         return envs
 
-    def test_a_derived_code_taken_by_a_concurrent_commit_moves_on(self):
+    @mute_logger("odoo.db.cursor")
+    def test_a_derived_code_taken_by_a_concurrent_commit_is_a_concurrency_error(
+        self,
+    ):
         env_a, env_b = self._two_envs()
         env_a["tag.tag"].create({"name": "Race Tag!"})
         env_a.cr.commit()
 
-        tags = env_b["tag.tag"].create(
-            [{"name": "Race Tag?"}, {"name": "Race Other"}, {"name": "Race Tag."}]
-        )
-        env_b.flush_all()
+        with self.assertRaises(ConcurrencyError):
+            env_b["tag.tag"].create([{"name": "Race Other"}, {"name": "Race Tag?"}])
+
+    @mute_logger("odoo.db.cursor", "odoo.service.model")
+    def test_a_retried_create_takes_the_next_free_code(self):
+        env_a, env_b = self._two_envs()
+        env_a["tag.tag"].create({"name": "Race Tag!"})
+        env_a.cr.commit()
+
+        vals_list = [
+            {"name": "Race Tag?"},
+            {"name": "Race Other"},
+            {"name": "Race Tag."},
+        ]
+        attempts = []
+
+        def create():
+            attempts.append(len(attempts) + 1)
+            return env_b["tag.tag"].create(vals_list)
+
+        tags = retrying(create, env_b)
+        self.assertEqual(attempts, [1, 2])
         self.assertEqual(
             tags.mapped("code"), ["RACE_TAG_2", "RACE_OTHER", "RACE_TAG_3"]
         )
-        env_b.cr.commit()
+
+    @mute_logger("odoo.db.cursor", "odoo.service.model")
+    def test_a_code_lost_by_an_import_retries_the_import(self):
+        env_a, env_b = self._two_envs()
+        env_a["tag.tag"].create({"name": "Race Load!"})
+        env_a.cr.commit()
+
+        result = retrying(
+            lambda: env_b["tag.tag"].load(["name"], [["Race Load?"]]), env_b
+        )
+        self.assertFalse(result["messages"])
+        self.assertEqual(env_b["tag.tag"].browse(result["ids"]).code, "RACE_LOAD_2")
+
+    @mute_logger("odoo.db.cursor", "odoo.service.model")
+    def test_a_code_lost_by_an_imported_name_retries_the_import(self):
+        env_a, env_b = self._two_envs()
+        env_a["res.partner.tag"].create({"name": "Race Named!"})
+        env_a.cr.commit()
+
+        Partner = env_b["res.partner"].with_context(
+            name_create_enabled_fields={"tag_ids": True}
+        )
+        result = retrying(
+            lambda: Partner.load(
+                ["name", "tag_ids"], [["Race Partner", "Race Named?"]]
+            ),
+            env_b,
+        )
+        self.assertFalse(result["messages"])
+        self.assertEqual(Partner.browse(result["ids"]).tag_ids.code, "RACE_NAMED_2")
+
+    @mute_logger("odoo.db.cursor")
+    def test_a_code_lost_by_a_nested_create_is_a_concurrency_error(self):
+        env_a, env_b = self._two_envs()
+        env_a["res.partner.tag"].create({"name": "Race Nested!"})
+        env_a.cr.commit()
+
+        partner = env_b["res.partner"].create({"name": "Race Partner"})
+        with self.assertRaises(ConcurrencyError):
+            partner.write({"tag_ids": [Command.create({"name": "Race Nested?"})]})
 
     def test_a_derived_code_dodges_a_given_code_in_the_same_batch(self):
-        tags = self._two_envs()[1]["tag.tag"].create(
-            [{"name": "Race Given"}, {"name": "Other", "code": "RACE_GIVEN"}]
-        )
+        Tag = self._two_envs()[1]["tag.tag"]
+        with patch.object(type(Tag), "_code_clash", side_effect=AssertionError):
+            tags = Tag.create(
+                [{"name": "Race Given"}, {"name": "Other", "code": "RACE_GIVEN"}]
+            )
         self.assertEqual(tags.mapped("code"), ["RACE_GIVEN_2", "RACE_GIVEN"])
 
     @mute_logger("odoo.db.cursor")

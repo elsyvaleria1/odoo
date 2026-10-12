@@ -1273,8 +1273,10 @@ no filestore rewrite. `_gc_rehash_legacy_keys` converges old keys only if
 - `_gc_rehash_legacy_keys(limit)` — Autovacuum: opt-in re-keying of rows
   still on a legacy digest; no-op unless `rehash_legacy_keys_limit` is set
 - `_gc_backfill_served_charsets(limit)` — Autovacuum: decides `served_charset`
-  for text rows still undecided, newest first, at most
-  `ir_attachment.served_charset_backfill_limit` (default 200) per call
+  for text rows still undecided, newest first, streaming each file; reads at
+  most `ir_attachment.served_charset_backfill_limit` (default 200) rows per
+  call, unreadable ones included, and resumes below the id kept in
+  `ir_attachment.served_charset_backfill_before_id` until a pass ends
 - `_content_checksum(bin_data)` / `_file_store_path(checksum)` — content
   digest and the tagged store key derived from it
 - `_is_content_collision_check_enabled()` — whether a dedup hit re-reads the stored
@@ -2493,18 +2495,31 @@ the `phone` and `mobile` columns on partners, users and companies.
 `_rec_name` is `number`; `_rec_names_search` also covers `sanitized` and `label`.
 **Key Fields:** `number`, `sanitized` (computed from `number` and `country_id`
 only), `type`, `country_id`, `country_inferred`, `primary`, `label`, `partner_ids`
-**Country:** set at creation from the first contact when none is given
-(`country_inferred`); choosing one on the number clears the flag. A contact's
+**Country:** set at creation from the first contact when none is given, else from
+a `default_country_id` context key (the CRM lead form passes the lead's), both
+`country_inferred`; choosing one on the number clears the flag. A contact's
 create/write touching `country_id` or `phone_ids` calls
 `_update_country_from_contact()`: an inferred number held by that contact alone
 takes its country; a re-read landing on a number another row holds is merged into
-it (`mixin.merge` repoint, then unlink) when the acting user can read the holder,
-otherwise left as it is. A shared number is never re-read.
-**Re-keying:** `_rekey_sanitized()` re-derives every stored `sanitized` with the
-normalizer now installed (`phone_validation` calls it from its post-init hook and its
-2.3 migration); rows that come to share a key merge into the row already holding it,
-else the oldest (`mixin.merge` repoint, then unlink).
-**Key Methods:** `_normalize_number(number, country)`, `_update_country_from_contact()`, `_merge_into(holder)`, `_rekey_sanitized()`
+it when the acting user can read the holder, otherwise left as it is. A shared
+number is never re-read.
+**Merging:** `_absorb(sources)` keeps the holder's values, fills its blanks from the
+merged rows (`mixin.merge._update_values_generic`, key fields excluded), joins their
+distinct notes, then repoints and unlinks the merged rows.
+**Re-keying:** `_rekey_sanitized(rekey=None, where=None)` re-derives the stored
+`sanitized` of every row (or of the rows `where` selects) through
+`_get_rekeyed_sanitized(rows)`, one batch of `(id, number, country_id, sanitized)` at
+a time (`phone_validation` calls it from its post-init hook and its 2.3 migration,
+from its uninstall hook with base's normalizer, and for country-less local rows not
+yet in E.164 whenever a company's `country_id` is written); rows that come to share
+a key merge into the row already holding it, else the oldest. A user who may not
+unlink numbers merges nothing: those rows, and any row needing a key they keep,
+stay as they are. Under `phone_validation` the running company's country is never
+used: a local number with no country already keyed in E.164 keeps its key; one keyed
+by digits is read under the one country its linked records agree on (their
+`country_id` and their `company_id`'s country, over every stored link to
+`phone.number`), else under the one country all companies share, else keeps its key.
+**Key Methods:** `_normalize_number(number, country)`, `_update_country_from_contact()`, `_merge_into(holder)`, `_absorb(sources)`, `_rekey_sanitized()`, `_get_rekeyed_sanitized()`
 
 ### models/report_paperformat.py
 

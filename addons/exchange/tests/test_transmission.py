@@ -421,6 +421,47 @@ class TestExchangeTransmission(ExchangeCase):
         )
         self.assertEqual(sorted(polled), sorted(transmissions.ids))
 
+    def test_a_transmission_asked_as_a_run_ends_is_asked_again_next_run(self):
+        transmissions = self._outstanding(2)
+        polled = self._poll_log()
+
+        self._read_verdicts()
+        progress = self._read_verdicts(lastcall=transmissions[0].date_last_polled)
+
+        self.assertEqual(
+            sorted(polled),
+            sorted(transmissions.ids * 2),
+            "lastcall is in whole seconds: what the previous run asked in the "
+            "second it ended belongs to that run, not to this one",
+        )
+        self.assertEqual(progress, [(2, 0)])
+
+    def test_a_run_that_starts_as_the_previous_one_ends_asks_each_once(self):
+        transmissions = self._outstanding(3)
+        polled = self._poll_log()
+        lastcall = self.env.cr.now().replace(microsecond=0)
+
+        progress = self._read_verdicts(limit=2, lastcall=lastcall)
+        progress += self._read_verdicts(limit=2, lastcall=lastcall)
+
+        self.assertEqual(progress, [(2, 1), (1, 0)])
+        self.assertEqual(sorted(polled), sorted(transmissions.ids))
+
+    def test_every_run_of_the_verdict_cron_asks_every_outstanding_one(self):
+        transmissions = self._outstanding(2)
+        polled = self._poll_log()
+        cron = self.env.ref("exchange.cron_read_verdicts")
+
+        cron.method_direct_trigger()
+        cron.method_direct_trigger()
+
+        self.assertEqual(
+            sorted(polled),
+            sorted(transmissions.ids * 2),
+            "a run that ends in the second it asked must not leave the next "
+            "run nothing to ask",
+        )
+
     def test_a_run_with_no_previous_call_asks_one_batch_and_stops(self):
         self._outstanding(3)
         polled = self._poll_log()

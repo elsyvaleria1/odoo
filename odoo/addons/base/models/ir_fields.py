@@ -12,7 +12,8 @@ from typing import Any, NamedTuple
 import psycopg
 
 from odoo import Command, api, fields, models
-from odoo.exceptions import UserError
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
+from odoo.exceptions import ConcurrencyError, UserError
 from odoo.fields import Domain
 from odoo.libs.datetime import localize_standard, utc
 from odoo.libs.debug_log import DebugLog
@@ -274,6 +275,8 @@ class IrFieldsConverter(models.AbstractModel):
                 )
                 log(fname, ValueError(escape_import_message(str(e))))
                 return _UNCONVERTED
+            except (ConcurrencyError, *PG_RETRY_EXCEPTIONS):
+                raise
             except Exception as e:
                 _debug.logic(
                     "convert_failed",
@@ -1096,6 +1099,8 @@ class IrFieldsConverter(models.AbstractModel):
                     id, _name = RelatedModel.name_create(name=value)
                 _debug.lifecycle("ref_name_created", model=RelatedModel._name, id=id)
                 return RefLookup(id, field_type, "", warnings)
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except (UserError, ValueError, psycopg.Error) as exc:
                 _debug.logic(
                     "ref_name_create_failed",

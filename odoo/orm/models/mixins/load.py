@@ -11,7 +11,7 @@ import psycopg
 
 from odoo.db import schema as sql
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import ConcurrencyError, UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.lru import LRU
 
@@ -23,6 +23,10 @@ from ._model_stubs import _ModelStubs
 
 _logger = logging.getLogger("odoo.models")
 _debug = DebugLog(__name__)
+_RETRYABLE_EXCEPTIONS: tuple[type[Exception], ...] = (
+    *PG_RETRY_EXCEPTIONS,
+    ConcurrencyError,
+)
 
 
 type FieldPaths = Sequence[Sequence[str | None]]
@@ -113,7 +117,7 @@ class LoadMixin(_ModelStubs):
             global_error_message = dict(
                 data_list[0]["info"], type="error", message=str(e)
             )
-        except PG_RETRY_EXCEPTIONS:
+        except _RETRYABLE_EXCEPTIONS:
             raise
         except Exception:
             _logger.debug("Batch load failed, retrying record by record", exc_info=True)
@@ -143,7 +147,7 @@ class LoadMixin(_ModelStubs):
                     rec = self._load_records([rec_data], update)
                     cr.flush()
                 ids.append(rec.id)
-            except PG_RETRY_EXCEPTIONS:
+            except _RETRYABLE_EXCEPTIONS:
                 raise
             except Exception as exc:
                 message = self._load_record_failure(rec_data, exc)

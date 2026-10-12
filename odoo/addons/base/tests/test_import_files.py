@@ -312,6 +312,21 @@ class TestFieldConverters(TransactionCase):
         ):
             converter._get_db_id(self.flds["m2o"], None, "zzz no such partner ifld16")
 
+    def test_name_create_losing_a_race_propagates(self):
+        converter = self.converter.with_context(
+            name_create_enabled_fields={"parent_id": True}
+        )
+        PartnerClass = type(self.env["res.partner"])
+        with (
+            patch.object(
+                PartnerClass,
+                "name_create",
+                side_effect=psycopg.errors.SerializationFailure("lost"),
+            ),
+            self.assertRaises(psycopg.errors.SerializationFailure),
+        ):
+            converter._get_db_id(self.flds["m2o"], None, "zzz no such partner ifld16")
+
     def test_name_create_user_error_becomes_import_message(self):
         converter = self.converter.with_context(
             name_create_enabled_fields={"parent_id": True}

@@ -13,6 +13,8 @@ _debug = DebugLog(__name__)
 
 PHONE_NOISE_PATTERN = re.compile(r"[\s\\./\(\)\-]")
 
+type RekeyRow = tuple[int, str | None, int | None, str | None]
+
 
 PHONE_TYPES = [
     ("mobile", "Mobile"),
@@ -76,6 +78,7 @@ class PhoneNumber(models.Model):
     )
 
     _REKEY_BATCH_SIZE = 1000
+    _KEY_FIELDS = ("number", "country_id", "country_inferred")
 
     _unique_sanitized = models.Constraint(
         "unique(sanitized)",
@@ -92,19 +95,22 @@ class PhoneNumber(models.Model):
 
     @api.model
     def _rekey_sanitized(
-        self, normalize: Callable[[str | None, Any], str] | None = None
+        self,
+        rekey: Callable[[list[RekeyRow]], dict[int, str | None]] | None = None,
+        where: SQL | None = None,
     ) -> None:
-        normalize = normalize or self._normalize_number
+        rekey = rekey or self._get_rekeyed_sanitized
         self.flush_model(["number", "country_id", "sanitized"])
-        Country = self.env["res.country"]
         rekeyed: dict[int, str | None] = {}
+        previous: dict[int, str] = {}
         last_id = 0
         while True:
             self.env.cr.execute(
                 SQL(
                     "SELECT id, number, country_id, sanitized FROM phone_number"
-                    " WHERE id > %s ORDER BY id LIMIT %s",
+                    " WHERE id > %s AND %s ORDER BY id LIMIT %s",
                     last_id,
+                    where or SQL("TRUE"),
                     self._REKEY_BATCH_SIZE,
                 )
             )
@@ -112,10 +118,13 @@ class PhoneNumber(models.Model):
             if not rows:
                 break
             last_id = rows[-1][0]
-            for phone_id, number, country_id, sanitized in rows:
-                key = normalize(number, Country.browse(country_id)) or None
+            keys = rekey(rows)
+            for phone_id, _, _, sanitized in rows:
+                key = keys[phone_id] or None
                 if key != (sanitized or None):
                     rekeyed[phone_id] = key
+                    if sanitized:
+                        previous[phone_id] = sanitized
         changing_by_key: dict[str, list[int]] = defaultdict(list)
         for phone_id, key in rekeyed.items():
             if key:
@@ -134,23 +143,32 @@ class PhoneNumber(models.Model):
                 (key, id_) for key, id_ in self.env.cr.fetchall() if id_ not in rekeyed
             )
         merged = 0
-        Merge = self.env["mixin.merge"]
+        may_merge = self.browse().has_access("unlink")
+        staying: set[str] = set()
         for key, members in changing_by_key.items():
             holder = self.browse(holders.get(key, members[0]))
             sources = self.browse(members) - holder
             if not sources:
                 continue
-            reactivate = not holder.active and any(sources.mapped("active"))
+            if not may_merge:
+                _debug.logic(
+                    "rekey_merge_withheld", phones=sources.ids, holder=holder.id
+                )
+                staying.update(previous[id_] for id_ in members if id_ in previous)
+                for phone_id in members:
+                    del rekeyed[phone_id]
+                continue
             _debug.lifecycle(
                 "rekey_merged", phones=sources.ids, holder=holder.id, key=key
             )
-            Merge._update_foreign_keys_generic(self._name, sources, holder)
-            if reactivate:
-                holder.active = True
-            sources.unlink()
+            holder._absorb(sources)
             merged += len(sources)
             for source in sources.ids:
                 del rekeyed[source]
+        while blocked := [id_ for id_, key in rekeyed.items() if key in staying]:
+            staying.update(previous[id_] for id_ in blocked if id_ in previous)
+            for phone_id in blocked:
+                del rekeyed[phone_id]
         _debug.lifecycle("rekeyed", phones=len(rekeyed), merged=merged)
         if not rekeyed:
             return
@@ -174,6 +192,14 @@ class PhoneNumber(models.Model):
             self.browse(ids).modified(["sanitized"])
             self.env.flush_all()
             self.env.invalidate_all()
+
+    @api.model
+    def _get_rekeyed_sanitized(self, rows: list[RekeyRow]) -> dict[int, str | None]:
+        Country = self.env["res.country"]
+        return {
+            phone_id: self._normalize_number(number, Country.browse(country_id))
+            for phone_id, number, country_id, _ in rows
+        }
 
     @api.depends("number", "country_id")
     def _compute_sanitized(self) -> None:
@@ -250,6 +276,10 @@ class PhoneNumber(models.Model):
             _debug.logic("country_from_vals", by="country_id")
             return vals
         country = self._get_contact_country_from_vals(vals)
+        default = self.env.context.get("default_country_id")
+        if not country and default and "country_id" not in vals:
+            _debug.logic("country_from_vals", by="default")
+            country = self.env["res.country"].browse(default)
         return {**vals, "country_id": country.id, "country_inferred": True}
 
     @api.model
@@ -383,8 +413,21 @@ class PhoneNumber(models.Model):
         _debug.lifecycle(
             "merged_into_holder", phone=self.id, holder=holder.id, contact=contact.id
         )
-        self.env["mixin.merge"]._update_foreign_keys_generic(self._name, self, holder)
+        holder._absorb(self)
         if not holder.active:
             holder.active = True
-        self.unlink()
         contact.modified(["phone_ids"])
+
+    def _absorb(self, sources: Self) -> None:
+        self.check_singleton()
+        notes = list(
+            dict.fromkeys(note for note in (self | sources).mapped("note") if note)
+        )
+        Merge = self.env["mixin.merge"]
+        Merge._update_values_generic(
+            sources, self, excluded_fields=[*self._KEY_FIELDS, "note"]
+        )
+        if notes and "\n\n".join(notes) != self.note:
+            self.note = "\n\n".join(notes)
+        Merge._update_foreign_keys_generic(self._name, sources, self)
+        sources.unlink()

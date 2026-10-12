@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-27 05:12+0000\n"
-"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"POT-Creation-Date: 2026-10-12 22:04+0000\n"
+"PO-Revision-Date: 2026-10-12 22:04+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -29,6 +29,14 @@ msgstr ""
 msgid ""
 "%(kind)s is a document of the %(owner)s protocol, and this transmission goes"
 " over %(protocol)s."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__oauth_authorize_params
+msgid ""
+"A JSON object added to every authorization request, e.g. {\"access_type\": "
+"\"offline\", \"prompt\": \"consent\"} for a provider that issues a refresh "
+"token only when asked."
 msgstr ""
 
 #. module: exchange
@@ -60,9 +68,6 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__state__accepted
 #: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__accepted
-#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__accepted
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__accepted
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__accepted
 msgid "Accepted"
 msgstr ""
 
@@ -127,9 +132,6 @@ msgstr ""
 
 #. module: exchange
 #: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__annulled
-#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__annulled
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__annulled
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__annulled
 msgid "Annulled"
 msgstr ""
 
@@ -274,6 +276,19 @@ msgid "Connections"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__oauth_legacy_connection_count
+msgid "Connections On Another Path"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__oauth_legacy_connection_count
+msgid ""
+"Connections last authorized through another redirect path than the "
+"service's: its console must keep listing that path until they are authorized"
+" again."
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__per_record_connections
 msgid "Connections per Record"
 msgstr ""
@@ -343,6 +358,11 @@ msgid "Date Last Inbox"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__date_last_polled
+msgid "Date Last Polled"
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__date_next_retry
 msgid "Date Next Retry"
 msgstr ""
@@ -398,6 +418,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__display_name
 #: model:ir.model.fields,field_description:exchange.field_exchange_protocol__display_name
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__display_name
+#: model:ir.model.fields,field_description:exchange.field_integration_service__display_name
 #: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__display_name
 msgid "Display Name"
 msgstr ""
@@ -529,6 +550,11 @@ msgid "Expired"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__oauth_authorize_params
+msgid "Extra Authorization Parameters"
+msgstr ""
+
+#. module: exchange
 #. odoo-python
 #: code:addons/exchange/models/exchange_transmission.py:0
 msgid "Gave up after %(attempts)s attempts. Last error: %(message)s"
@@ -595,15 +621,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__id
 #: model:ir.model.fields,field_description:exchange.field_exchange_protocol__id
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__id
+#: model:ir.model.fields,field_description:exchange.field_integration_service__id
 #: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__id
 msgid "ID"
 msgstr ""
 
 #. module: exchange
 #: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__pending
-#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__pending
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__pending
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__pending
 msgid "In flight"
 msgstr ""
 
@@ -760,10 +784,12 @@ msgstr ""
 
 #. module: exchange
 #: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__none
-#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__none
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__none
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__none
 msgid "Nothing sent"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__oauth_redirect_path
+msgid "OAuth Redirect Path"
 msgstr ""
 
 #. module: exchange
@@ -800,6 +826,11 @@ msgid ""
 msgstr ""
 
 #. module: exchange
+#: model:ir.model,name:exchange.model_integration_service
+msgid "Outbound Endpoint"
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__parent_id
 msgid "Parent"
 msgstr ""
@@ -807,6 +838,14 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__participant
 msgid "Participant"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__oauth_redirect_path
+msgid ""
+"Path of the redirect URI registered with the provider. A service registered "
+"under an older path keeps it until that provider's console lists the "
+"standard one, then switches."
 msgstr ""
 
 #. module: exchange
@@ -829,6 +868,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__protocol
 #: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
 msgid "Protocol"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__oauth_use_pkce
+msgid ""
+"Prove with a one-time verifier that the code is redeemed by the server that "
+"asked for it. Turn off only for a provider that rejects it."
 msgstr ""
 
 #. module: exchange
@@ -869,9 +915,6 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__state__rejected
 #: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__rejected
-#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__rejected
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__rejected
-#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__rejected
 #: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
 msgid "Rejected"
 msgstr ""
@@ -922,6 +965,18 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__send_version_headers
 msgid "Send Generic Version Headers"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__oauth_token_sends_scope
+msgid "Send Scope With Tokens"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__oauth_token_sends_scope
+msgid ""
+"Send the scope again with the code exchange and every refresh, for a "
+"provider that requires it there (Microsoft)."
 msgstr ""
 
 #. module: exchange
@@ -1121,6 +1176,11 @@ msgid "Unique identifier code for programmatic access"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__oauth_use_pkce
+msgid "Use PKCE"
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__verify_tls
 msgid "Verify TLS certificate"
 msgstr ""
@@ -1146,6 +1206,14 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.fields,help:exchange.field_exchange_transmission__attachment_id
 msgid "What we sent, exactly as it went."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__date_last_polled
+msgid ""
+"When the verdict cron last asked the counterparty about this transmission, "
+"whatever the answer. The cron asks the least recently asked first, so a "
+"backlog it cannot cover in one batch still rotates."
 msgstr ""
 
 #. module: exchange

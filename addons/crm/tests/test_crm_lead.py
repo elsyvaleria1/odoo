@@ -2,6 +2,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 from freezegun import freeze_time
+from lxml import etree
 
 from odoo import Command, fields
 from odoo.exceptions import UserError
@@ -1478,6 +1479,18 @@ class TestCRMLead(TestCrmCommon):
             self.test_phone_data_sanitized[1],
             "The number keeps its own country, the lead's does not re-sanitize it",
         )
+
+    def test_a_number_typed_on_a_lead_form_takes_the_leads_country(self):
+        for xmlid in ("crm.crm_lead_view_form", "crm.quick_create_opportunity_form"):
+            arch = etree.fromstring(
+                self.env["crm.lead"].get_view(self.env.ref(xmlid).id)["arch"]
+            )
+            fields = arch.xpath("//field[@name='phone_ids']")
+            self.assertTrue(fields)
+            for field in fields:
+                self.assertEqual(
+                    field.get("context"), "{'default_country_id': country_id}"
+                )
 
 
 class TestCRMLeadRotting(TestCrmCommon):

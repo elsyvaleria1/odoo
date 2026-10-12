@@ -271,7 +271,10 @@
                                     groups="base.group_user"
                                     invisible="not phone_blacklisted"
                                     class="fa-solid fa-ban text-danger" />
-                                <field name="phone_ids" widget="many2many_tags" />
+                                <field
+                                    name="phone_ids"
+                                    widget="many2many_tags"
+                                    context="{'default_country_id': country_id}" />
                                 <span
                                     class="fa-solid fa-exclamation-triangle text-warning oe_edit_only"
                                     title="By saving this change, the customer phone number will also be updated."
@@ -331,7 +334,8 @@
                                 <field
                                     name="phone_ids"
                                     id="phone_ids_group_lead_info"
-                                    widget="many2many_tags" />
+                                    widget="many2many_tags"
+                                    context="{'default_country_id': country_id}" />
                                 <span
                                     class="fa-solid fa-exclamation-triangle text-warning oe_edit_only"
                                     title="By saving this change, the customer phone number will also be updated."
@@ -676,6 +680,7 @@
                             string="Contact Phone"
                             placeholder="Contact Phone"
                             widget="many2many_tags"
+                            context="{'default_country_id': country_id}"
                             class="o_field_highlight w-100 mb-0" />
                     </div>
                     <div class="d-flex align-items-center" colspan="2">

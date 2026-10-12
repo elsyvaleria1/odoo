@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (5707 methods, 1085 classes, 208 files)
+# All base tests (5723 methods, 1085 classes, 208 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -130,7 +130,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_framework_contracts.py` | `post_install`, `-at_install` | 1 | 5 | TransactionCase |
 | `test_groups.py` | `at_install`, `groups`, `post_install`, `-at_install` | 8 | 43 | BaseCase, TransactionCase |
 | `test_http_case.py` | `-at_install`, `post_install` | 10 | 29 | HttpCase, TestRequestRemainingCommon, TestChromeBrowser |
-| `test_import_files.py` | `post_install`, `-at_install` | 4 | 111 | TransactionCase |
+| `test_import_files.py` | `post_install`, `-at_install` | 4 | 112 | TransactionCase |
 | `test_ir_access_audit.py` | `post_install`, `-at_install` | 4 | 37 | TransactionCase |
 | `test_ir_access_changeset.py` | `post_install`, `-at_install` | 1 | 22 | TransactionCase |
 | `test_ir_access_console.py` | `post_install`, `-at_install` | 1 | 8 | TransactionCase |
@@ -151,7 +151,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_ir_actions_webhook.py` | `post_install`, `-at_install` | 4 | 23 | WebhookCase, TransactionCase |
 | `test_ir_asset.py` | `-at_install`, `post_install` | 2 | 3 | TransactionCase |
 | `test_ir_asset_audit.py` | `post_install`, `-at_install` | 20 | 69 | TransactionCase |
-| `test_ir_attachment.py` | `post_install`, `-at_install`, `at_install`, `-post_install` | 12 | 211 | TransactionCaseWithUserDemo, TransactionCaseWithUserPortal, TransactionCase |
+| `test_ir_attachment.py` | `post_install`, `-at_install`, `at_install`, `-post_install` | 12 | 214 | TransactionCaseWithUserDemo, TransactionCaseWithUserPortal, TransactionCase |
 | `test_ir_attachment_reading.py` | `post_install`, `-at_install` | 2 | 18 | TransactionCase, BaseCase |
 | `test_ir_autovacuum_audit.py` | `post_install`, `-at_install` | 4 | 10 | TransactionCase, BaseCase |
 | `test_ir_binary.py` | `post_install`, `-at_install` | 9 | 21 | TransactionCase, TransactionCaseWithUserDemo |
@@ -326,7 +326,7 @@ These run in **both** at_install and post_install phases by default.
 |--------|-------|
 | Total test files | 208 |
 | Total test classes | 1085 |
-| Total test methods | 5707 |
+| Total test methods | 5723 |
 | Files with @tagged | 137 (66%) |
 | Files without @tagged | 71 (34%) |
 | Classes using post_install | 437 |

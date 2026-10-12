@@ -257,3 +257,215 @@ class TestPhoneNumberReuse(TransactionCase):
             ),
             held,
         )
+
+    def _a_local_number_stored_by_another_company(self):
+        self.env.company.country_id = self.env.ref("base.us")
+        paris = self.env["res.company"].create(
+            {"name": "Paris office", "country_id": self.env.ref("base.fr").id}
+        )
+        contact = (
+            self.env["res.partner"]
+            .with_company(paris)
+            .create(
+                {
+                    "name": "Paris desk",
+                    "phone_ids": [Command.create({"number": "06 12 34 56 78"})],
+                }
+            )
+        )
+        self.env.flush_all()
+        self.assertFalse(contact.phone_ids.country_id)
+        self.assertEqual(contact.phone_ids.sanitized, "+33612345678")
+        return contact.phone_ids
+
+    def test_rekeying_keeps_a_local_number_keyed_by_another_companys_country(self):
+        phone = self._a_local_number_stored_by_another_company()
+        self.env["phone.blacklist"].add("+33 6 12 34 56 78")
+        self.assertTrue(phone.blacklisted)
+
+        post_init_hook(self.env)
+
+        self.assertEqual(phone.sanitized, "+33612345678")
+        self.assertTrue(phone.blacklisted)
+
+    def test_uninstalling_rekeys_a_local_number_keyed_by_another_companys_country(
+        self,
+    ):
+        phone = self._a_local_number_stored_by_another_company()
+
+        uninstall_hook(self.env)
+
+        self.assertEqual(phone.sanitized, "0612345678")
+
+    def test_a_rekeyed_number_refreshes_its_contacts_sanitized_phone(self):
+        phone = self.first.phone_ids
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE phone_number SET sanitized = %s WHERE id = %s",
+            ["0212099999", phone.id],
+        )
+        self.env.cr.execute(
+            "UPDATE res_partner SET phone_sanitized = %s WHERE id = %s",
+            ["0212099999", self.first.id],
+        )
+        self.env.invalidate_all()
+
+        post_init_hook(self.env)
+
+        self.assertEqual(phone.sanitized, "+40212099999")
+        self.assertEqual(self.first.phone_sanitized, "+40212099999")
+
+    def _stored_before_validation(self, phone):
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE phone_number SET country_id = NULL, sanitized = %s WHERE id = %s",
+            [phone._normalize_number_without_validation(phone.number), phone.id],
+        )
+        self.env.invalidate_all()
+
+    def _contact_of(self, company, number):
+        contact = (
+            self.env["res.partner"]
+            .with_company(company)
+            .create(
+                {
+                    "name": f"{company.name} desk",
+                    "company_id": company.id,
+                    "phone_ids": [Command.create({"number": number})],
+                }
+            )
+        )
+        self._stored_before_validation(contact.phone_ids)
+        return contact.phone_ids
+
+    def test_rekeying_reads_a_local_number_under_its_contacts_company(self):
+        self.env.company.country_id = self.env.ref("base.us")
+        mexico = self.env["res.company"].create(
+            {"name": "Monterrey office", "country_id": self.env.ref("base.mx").id}
+        )
+        american = self.env["phone.number"].create({"number": "+1 202 555 0123"})
+        mexican = self._contact_of(mexico, "202 555 0123")
+        valid = self._contact_of(mexico, "55 1234 5678")
+        self.assertEqual(mexican.sanitized, "2025550123")
+
+        post_init_hook(self.env)
+
+        self.assertTrue(mexican.exists())
+        self.assertEqual(mexican.sanitized, "2025550123")
+        self.assertEqual(american.sanitized, "+12025550123")
+        self.assertEqual(valid.sanitized, "+525512345678")
+
+    def test_rekeying_keeps_a_local_number_whose_contacts_disagree(self):
+        self.env.company.country_id = self.env.ref("base.fr")
+        paris = self.env["res.company"].create(
+            {"name": "Paris office", "country_id": self.env.ref("base.fr").id}
+        )
+        phone = self._contact_of(paris, "06 12 34 56 79")
+        self.env["res.partner"].create(
+            {
+                "name": "Bucharest contact",
+                "country_id": self.romania.id,
+                "phone_ids": [Command.link(phone.id)],
+            }
+        )
+        self._stored_before_validation(phone)
+
+        post_init_hook(self.env)
+
+        self.assertEqual(phone.sanitized, "0612345679")
+
+    def test_rekeying_merges_a_number_without_losing_what_it_held(self):
+        held = self.first.phone_ids
+        held.note = "Reception"
+        stale = self.env["phone.number"].create(
+            {
+                "number": "+40 21 209 99 90",
+                "country_id": self.romania.id,
+                "type": "landline",
+                "label": "Switchboard",
+                "note": "Ask for Ana",
+            }
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE phone_number SET number = %s, sanitized = %s WHERE id = %s",
+            ["021 209 99 99", "0212099999", stale.id],
+        )
+        self.env.invalidate_all()
+
+        post_init_hook(self.env)
+
+        self.assertFalse(stale.exists())
+        self.assertEqual(held.type, "mobile")
+        self.assertEqual(held.label, "Switchboard")
+        self.assertEqual(held.note, "Reception\n\nAsk for Ana")
+
+    def test_a_reread_merge_keeps_what_the_merged_number_held(self):
+        held = self._brussels_number()
+        contact = self._mislabelled()
+        contact.phone_ids.write({"label": "Front desk", "note": "Desk 4"})
+
+        contact.country_id = self.env.ref("base.be")
+        self.env.flush_all()
+
+        self.assertEqual(contact.phone_ids, held)
+        self.assertEqual(held.label, "Front desk")
+        self.assertEqual(held.note, "Desk 4")
+
+    def test_a_number_typed_before_its_company_had_a_country_follows_it(self):
+        company = self.env["res.company"].create({"name": "Countryless office"})
+        typed = (
+            self.env["res.partner"]
+            .with_company(company)
+            .create(
+                {
+                    "name": "Countryless desk",
+                    "company_id": company.id,
+                    "phone_ids": [Command.create({"number": "021 209 99 77"})],
+                }
+            )
+            .phone_ids
+        )
+        self.env.flush_all()
+        self.assertEqual(typed.sanitized, "0212099977")
+
+        company.country_id = self.romania
+
+        self.assertEqual(typed.sanitized, "+40212099977")
+        self.assertEqual(
+            self.env["phone.number"]
+            .with_company(company)
+            .create({"number": "021 209 99 77"}),
+            typed,
+        )
+
+    def test_a_company_country_set_by_a_non_merger_keeps_colliding_numbers(self):
+        company = self.env["res.company"].create({"name": "Countryless office"})
+        held = self.env["phone.number"].create({"number": "+40 21 209 99 76"})
+        typed = self._contact_of(company, "021 209 99 76")
+        moving = self._contact_of(company, "021 209 99 75")
+        manager = new_test_user(
+            self.env,
+            login="company_manager",
+            groups="base.group_user,base.group_erp_manager",
+            company_ids=[Command.set([self.env.company.id, company.id])],
+        )
+        self.assertFalse(held.with_user(manager).has_access("unlink"))
+
+        company.with_user(manager).country_id = self.romania
+
+        self.assertTrue(typed.exists())
+        self.assertEqual(typed.sanitized, "0212099976")
+        self.assertEqual(moving.sanitized, "+40212099975")
+
+    def test_a_number_created_with_a_default_country_is_keyed_by_it(self):
+        self.env.company.country_id = self.env.ref("base.fr")
+        phone_id, _ = (
+            self.env["phone.number"]
+            .with_context(default_country_id=self.env.ref("base.us").id)
+            .name_create("202 555 0777")
+        )
+
+        self.assertEqual(
+            self.env["phone.number"].browse(phone_id).sanitized, "+12025550777"
+        )
