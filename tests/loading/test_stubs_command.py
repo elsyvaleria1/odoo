@@ -192,15 +192,18 @@ def test_an_inheriting_model_class_sees_its_whole_registry_model(base_db, tmp_pa
     client.write_text(
         "from typing import assert_type\n"
         "from odoo import fields, models\n"
-        "from odoo_registry_stubs import ResPartner, ResUsers\n"
+        "from odoo_registry_stubs import ResCompany, ResPartner, ResUsers\n"
         "def takes(partner: ResPartner) -> None: ...\n"
         "class Partner(models.Model):\n"
         "    _inherit = 'res.partner'\n"
         "    comment = fields.Html()\n"
+        "    parent_id = fields.Many2one('res.partner')\n"
         "    def probe(self) -> None:\n"
         "        assert_type(self.parent_id, ResPartner)\n"
+        "        assert_type(self.commercial_partner_id, ResPartner)\n"
         "        assert_type(self.mapped('parent_id'), ResPartner)\n"
         "        assert_type(self.env.user, ResUsers)\n"
+        "        assert_type(self.env.company, ResCompany)\n"
         "        self.address_get(['contact'])\n"
         "        takes(self)\n"
         "        self.adress_get(['contact'])\n"
@@ -225,3 +228,55 @@ def test_an_inheriting_model_class_sees_its_whole_registry_model(base_db, tmp_pa
     errors = [line for line in checked.stdout.splitlines() if ": error:" in line]
     assert len(errors) == 1, checked.stdout + checked.stderr
     assert 'has no attribute "adress_get"' in errors[0]
+
+
+def test_a_base_model_in_the_stubs_import_cycle_sees_its_registry_model(
+    base_db, tmp_path
+):
+    generated = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "odoo-bin"),
+            "stubs",
+            "-d",
+            base_db,
+            "--addons-path",
+            f"{REPO_ROOT / 'odoo' / 'addons'},{REPO_ROOT / 'addons'}",
+            "--output",
+            str(tmp_path),
+            "--log-level",
+            "warn",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert generated.returncode == 0, generated.stdout + generated.stderr
+    config = tmp_path / "mypy.ini"
+    config.write_text(
+        "[mypy]\npython_version = 3.14\nfollow_imports = silent\n"
+        "ignore_missing_imports = True\n"
+        f"cache_dir = {tmp_path / 'cache'}\n"
+        f"plugins = {REPO_ROOT / 'mypy_registry_plugin.py'}\n"
+    )
+    checked = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "mypy",
+            "--no-incremental",
+            "--config-file",
+            str(config),
+            "odoo/addons/base/models/ir_actions_client.py",
+        ],
+        cwd=REPO_ROOT,
+        env={**os.environ, "MYPYPATH": str(tmp_path)},
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+    assert checked.returncode in (0, 1), checked.stdout + checked.stderr
+    assert "Found" in checked.stdout or "Success" in checked.stdout, checked.stdout
+    assert 'has no attribute "name"' not in checked.stdout, checked.stdout

@@ -12,6 +12,7 @@ from mypy.nodes import (
     ListExpr,
     MypyFile,
     NameExpr,
+    PlaceholderNode,
     StrExpr,
     TupleExpr,
     TypeInfo,
@@ -244,6 +245,9 @@ class RegistryStubsPlugin(Plugin):
             f"{STUB_MODULE}.{stub_class_name(model_name)}"
         )
         stub = symbol.node if symbol is not None else None
+        if isinstance(stub, PlaceholderNode) and not ctx.api.final_iteration:
+            ctx.api.defer()
+            return
         if isinstance(stub, TypeInfo) and stub not in info.mro:
             info.mro = [info, stub, *info.mro[1:]]
 
