@@ -53,10 +53,7 @@ export class ActivityController extends Component {
                         ...(this.model.originalDomain || []),
                         ["activity_ids.active", "in", [true, false]],
                     ];
-                    await Promise.all([
-                        this.model.root.load(params),
-                        this.model.fetchActivityData(params),
-                    ]);
+                    await this.model.root.load(params);
                 },
                 updateTotal: hasLimitedCount
                     ? () => this.model.root.fetchCount()

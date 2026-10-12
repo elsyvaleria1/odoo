@@ -16,22 +16,28 @@ const setPager = (value) => [
     },
 ];
 
-const checkRows = (values) => ({
-    trigger: ".o_activity_view",
-    run: () => {
-        const dataRow = document.querySelectorAll(
-            ".o_activity_view tbody .o_data_row .o_activity_record",
-        );
-        if (dataRow.length !== values.length) {
-            throw Error(`There should be ${values.length} activities`);
-        }
-        values.forEach((value, index) => {
-            if (dataRow[index].textContent !== value) {
-                throw Error(`Record does not match ${value} != ${dataRow[index]}`);
-            }
-        });
+const RECORDS = ".o_activity_view tbody .o_data_row .o_activity_record";
+
+const checkRows = (values) => [
+    ...values.map((value) => ({ trigger: `${RECORDS}:text("${value}")` })),
+    {
+        trigger: `.o_activity_view tbody:not(:has(tr.o_data_row:nth-child(${values.length + 1})))`,
     },
-});
+    {
+        trigger: ".o_activity_view",
+        run: () => {
+            const dataRow = document.querySelectorAll(RECORDS);
+            if (dataRow.length !== values.length) {
+                throw Error(`There should be ${values.length} activities`);
+            }
+            values.forEach((value, index) => {
+                if (dataRow[index].textContent !== value) {
+                    throw Error(`Record does not match ${value} != ${dataRow[index]}`);
+                }
+            });
+        },
+    },
+];
 
 registry.category("web_tour.tours").add("mail_activity_view", {
     steps: () => [
@@ -59,10 +65,10 @@ registry.category("web_tour.tours").add("mail_activity_view", {
             trigger: `.o_data_row td:contains("Test Activity View")`,
             run: "click",
         },
-        checkRows(["Task 1", "Task 2", "Task 3"]),
+        ...checkRows(["Task 1", "Task 2", "Task 3"]),
         ...setPager("1-2"),
-        checkRows(["Task 2", "Task 3"]),
+        ...checkRows(["Task 2", "Task 3"]),
         ...setPager("3"),
-        checkRows(["Task 1"]),
+        ...checkRows(["Task 1"]),
     ],
 });

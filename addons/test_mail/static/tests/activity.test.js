@@ -14,7 +14,7 @@ import { ActivityModel } from "@mail/views/web/activity/activity_model";
 import { ActivityRenderer } from "@mail/views/web/activity/activity_renderer";
 import { beforeEach, describe, expect, test } from "@odoo/hoot";
 import { keyDown, waitFor } from "@odoo/hoot-dom";
-import { animationFrame, disableAnimations, mockDate } from "@odoo/hoot-mock";
+import { animationFrame, Deferred, disableAnimations, mockDate } from "@odoo/hoot-mock";
 import { markup, onMounted, onWillUnmount } from "@odoo/owl";
 import { MailTestActivity } from "@test_mail/../tests/mock_server/models/mail_test_activity";
 import { defineTestMailModels } from "@test_mail/../tests/test_mail_test_helpers";
@@ -27,11 +27,9 @@ import {
     serverState,
     waitForSteps,
 } from "@web/../tests/web_test_helpers";
-import { Domain } from "@web/core/domain";
 import { formatDate, now, parseISO, serializeDate } from "@web/core/l10n/dates";
-import { deepEqual, omit } from "@web/core/utils/collections/objects";
+import { omit } from "@web/core/utils/collections/objects";
 import { getOrigin } from "@web/core/utils/urls";
-import { DynamicList, RelationalModel } from "@web/model/relational_model";
 
 let pyEnv;
 const archs = {
@@ -58,40 +56,11 @@ const archs = {
     `,
 };
 
-function patchActivityDomain(load, params) {
-    if (params.domain) {
-        const domain = new Domain(params.domain);
-        const newDomain = Domain.removeDomainLeaves(domain.toList(), [
-            "activity_ids.active",
-        ]);
-        if (!deepEqual(domain.toList(), newDomain.toList())) {
-            return load({
-                ...params,
-                domain: newDomain.toList(),
-                context: params.context
-                    ? { ...params.context, active_test: false }
-                    : { active_test: false },
-            });
-        }
-    }
-    return load(params);
-}
-
 describe.current.tags("desktop");
 defineTestMailModels();
 beforeEach(async () => {
     disableAnimations();
     mockDate("2023-04-08 10:00:00", 0);
-    patchWithCleanup(DynamicList.prototype, {
-        async load(params) {
-            return patchActivityDomain(super.load.bind(this), params);
-        },
-    });
-    patchWithCleanup(RelationalModel.prototype, {
-        async load(params) {
-            return patchActivityDomain(super.load.bind(this), params);
-        },
-    });
     pyEnv = await startServer();
     const mailTemplateIds = pyEnv["mail.template"].create([
         { name: "Template1" },
@@ -521,9 +490,9 @@ test("activity view: activity_ids condition in domain", async () => {
 
     await waitForSteps([
         [["activity_ids.active", "in", [true, false]]],
-        [[1, "=", 1]],
         [["activity_ids.active", "in", [true, false]]],
-        [[1, "=", 1]],
+        [["activity_ids.active", "in", [true, false]]],
+        [["activity_ids.active", "in", [true, false]]],
     ]);
 });
 
@@ -543,6 +512,30 @@ test("activity view: paging keeps the action context", async () => {
     await contains(".o_pager_value:focus");
     await keyDown("Enter");
     await waitForSteps(["get_activity_data kept"]);
+});
+
+test("activity view: a page change shows its pager and its rows together", async () => {
+    let activityDataHeld;
+    onRpc("get_activity_data", async () => {
+        await activityDataHeld;
+    });
+    await start();
+    registerArchs(archs);
+    await openView({
+        res_model: "mail.test.activity",
+        views: [[false, "activity"]],
+    });
+    await contains(".o_activity_record", { count: 2 });
+    await contains(".o_pager_value", { text: "1-2" });
+    activityDataHeld = new Deferred();
+    await click(".o_pager_value");
+    await insertText("input.o_pager_value", "2", { replace: true });
+    await keyDown("Enter");
+    await animationFrame();
+    await contains(".o_activity_record", { count: 2 });
+    activityDataHeld.resolve();
+    await contains(".o_pager_value", { text: "2" });
+    await contains(".o_activity_record", { text: "Office planning" });
 });
 
 test("activity view: a filtered column sends its template to the filtered records only", async () => {
