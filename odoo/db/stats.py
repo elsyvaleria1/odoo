@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from bisect import bisect_left
 from time import monotonic
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from odoo.libs.debug_log import DebugLog
 
@@ -142,7 +142,7 @@ class PoolStats:
         direct_out: int = 0,
         pools: int = 0,
         checkouts: CheckoutTracker | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         with self._lock:
             buckets = list(self.borrow_wait_buckets)
             counters = {key: getattr(self, attr) for attr, key in _COUNTERS.items()}

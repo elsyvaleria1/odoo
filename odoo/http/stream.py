@@ -184,11 +184,12 @@ class Stream:
         _debug.perf.count("http.stream.read", type=self.type, size=self.size)
 
         if self.type == "data":
-            return self._get_required_attribute("data")
+            data: bytes = self._get_required_attribute("data")
+            return data
 
         return Path(self._get_required_attribute("path")).read_bytes()
 
-    def _prepare_url_redirect(self) -> Any:
+    def _prepare_url_redirect(self) -> Response:
         url = self._get_required_attribute("url")
         scheme = urlsplit(url).scheme.lower()
         if scheme not in _REDIRECT_SCHEMES:
@@ -200,7 +201,7 @@ class Stream:
         res.headers["Cache-Control"] = f"max-age={max_age}"
         return res
 
-    def _prepare_path_response(self, send_file_kwargs: dict[str, Any]) -> Any:
+    def _prepare_path_response(self, send_file_kwargs: dict[str, Any]) -> _Response:
         path = self._get_required_attribute("path")
         send_file_kwargs["use_x_sendfile"] = False
         x_accel_redirect: str | None = None
@@ -211,7 +212,7 @@ class Stream:
                 x_accel_redirect = f"/web/filestore/{fspath}"
                 send_file_kwargs["use_x_sendfile"] = True
 
-        res = _send_file(path, **send_file_kwargs)
+        res: _Response = _send_file(path, **send_file_kwargs)
         _debug.logic(
             "http.stream.sendfile",
             x_sendfile=settings.x_sendfile,
@@ -232,7 +233,7 @@ class Stream:
         content_security_policy: str | None = "default-src 'none'",
         environ: dict[str, Any] | None = None,
         **send_file_kwargs: Any,
-    ) -> Any:
+    ) -> Response:
         self._check_type()
 
         if self.type == "url":
@@ -258,6 +259,7 @@ class Stream:
             **send_file_kwargs,
         }
 
+        res: _Response
         if self.type == "data":
             res = _send_file(
                 BytesIO(self._get_required_attribute("data")), **send_file_kwargs

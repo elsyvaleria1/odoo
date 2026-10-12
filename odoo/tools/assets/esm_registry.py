@@ -3,7 +3,7 @@ import threading
 from collections import Counter
 from collections.abc import Collection, Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from odoo.libs.asset_log import get_asset_logger, log_event
 from odoo.libs.debug_log import DebugLog
@@ -41,37 +41,39 @@ _ESM_MANIFEST_KEYS = frozenset(
 
 
 class EsmRegistry(NamedTuple):
-    bundles: frozenset
-    dynamic_children: Mapping
-    import_map_includes: Mapping
-    secondary_import_map_includes: Mapping
-    dynamic_bundle_names: frozenset
-    import_map_included_bundles: frozenset
-    secondary_parents: Mapping = MappingProxyType({})
-    secondary_bundle_names: frozenset = frozenset()
-    page_secondaries: frozenset = frozenset()
-    standalone_bundles: frozenset = frozenset()
-    external_libs: Mapping = MappingProxyType({})
-    runtime_bundle_names: frozenset = frozenset()
-    exports: frozenset = frozenset()
-    bundle_owners: Mapping = MappingProxyType({})
-    classic_page_bundles: frozenset = frozenset()
+    bundles: frozenset[str]
+    dynamic_children: Mapping[str, tuple[str, ...]]
+    import_map_includes: Mapping[str, tuple[str, ...]]
+    secondary_import_map_includes: Mapping[str, tuple[str, ...]]
+    dynamic_bundle_names: frozenset[str]
+    import_map_included_bundles: frozenset[str]
+    secondary_parents: Mapping[str, tuple[str, ...]] = MappingProxyType({})
+    secondary_bundle_names: frozenset[str] = frozenset()
+    page_secondaries: frozenset[str] = frozenset()
+    standalone_bundles: frozenset[str] = frozenset()
+    external_libs: Mapping[str, str] = MappingProxyType({})
+    runtime_bundle_names: frozenset[str] = frozenset()
+    exports: frozenset[str] = frozenset()
+    bundle_owners: Mapping[str, str] = MappingProxyType({})
+    classic_page_bundles: frozenset[str] = frozenset()
 
     def bundle_addon(self, bundle: str) -> str:
         return self.bundle_owners.get(bundle) or bundle.partition(".")[0]
 
 
 _lock = threading.Lock()
-_cache: list = [None]
+_cache: list[EsmRegistry | None] = [None]
 
 
 def esm_registry() -> EsmRegistry:
-    if _cache[0] is None:
+    registry = _cache[0]
+    if registry is None:
         with _lock:
-            if _cache[0] is None:
+            registry = _cache[0]
+            if registry is None:
                 with _debug.perf("esm_registry.built"):
-                    _cache[0] = _prepare_esm_registry()
-    return _cache[0]
+                    registry = _cache[0] = _prepare_esm_registry()
+    return registry
 
 
 def invalidate_esm_registry() -> None:
@@ -83,11 +85,11 @@ def invalidate_esm_registry() -> None:
     invalidate_served_libs()
 
 
-def external_libs() -> Mapping:
+def external_libs() -> Mapping[str, str]:
     return esm_registry().external_libs
 
 
-def external_bare_specifiers() -> frozenset:
+def external_bare_specifiers() -> frozenset[str]:
     return frozenset(spec for spec in external_libs() if not spec.startswith("@odoo/"))
 
 
@@ -104,7 +106,9 @@ def external_lib_aliases() -> Mapping[str, str]:
     return MappingProxyType(aliases)
 
 
-def _merge_mapping(target: dict, declared: Mapping, *, module: str, key: str) -> None:
+def _merge_mapping(
+    target: dict[str, list[str]], declared: object, *, module: str, key: str
+) -> None:
     if not isinstance(declared, Mapping):
         raise TypeError(
             f"Module {module!r}: manifest 'esm.{key}' must be a dict "
@@ -119,7 +123,9 @@ def _merge_mapping(target: dict, declared: Mapping, *, module: str, key: str) ->
         target.setdefault(parent, []).extend(children)
 
 
-def _merge_children_from(target: dict, declared: Mapping, *, module: str) -> None:
+def _merge_children_from(
+    target: dict[str, str], declared: object, *, module: str
+) -> None:
     if not isinstance(declared, Mapping):
         raise TypeError(
             f"Module {module!r}: manifest 'esm.dynamic_children_from' must be a "
@@ -140,7 +146,9 @@ def _merge_children_from(target: dict, declared: Mapping, *, module: str) -> Non
 
 
 def _inherit_dynamic_children(
-    bundles: set, dynamic_children: dict, children_from: Mapping
+    bundles: set[str],
+    dynamic_children: dict[str, list[str]],
+    children_from: Mapping[str, str],
 ) -> None:
     for page, base in children_from.items():
         for name in (page, base):
@@ -172,7 +180,11 @@ def _inherit_dynamic_children(
 
 
 def _merge_external_libs(
-    target: dict, declared: Mapping, owner_by_spec: dict, *, module: str
+    target: dict[str, str],
+    declared: object,
+    owner_by_spec: dict[str, str],
+    *,
+    module: str,
 ) -> None:
     if not isinstance(declared, Mapping):
         raise TypeError(
@@ -196,7 +208,7 @@ def _merge_external_libs(
         owner_by_spec[spec] = module
 
 
-def _validated_esm_section(manifest: Manifest) -> Mapping | None:
+def _validated_esm_section(manifest: Manifest) -> Mapping[str, Any] | None:
     esm = manifest.get("esm")
     if not esm:
         return None
@@ -214,8 +226,8 @@ def _validated_esm_section(manifest: Manifest) -> Mapping | None:
     return esm
 
 
-def _bundle_name_list(esm: Mapping, key: str, module: str) -> Collection[str]:
-    declared = esm.get(key, ())
+def _bundle_name_list(esm: Mapping[str, Any], key: str, module: str) -> Collection[str]:
+    declared: Collection[str] = esm.get(key, ())
     if isinstance(declared, str):
         raise TypeError(
             f"Module {module!r}: 'esm.{key}' must be a list, not a bare string"
@@ -224,16 +236,16 @@ def _bundle_name_list(esm: Mapping, key: str, module: str) -> Collection[str]:
 
 
 def _freeze_registry(
-    bundles: set,
-    dynamic_children: dict,
-    import_map_includes: dict,
-    secondary_includes: dict,
-    standalone_bundles: set,
-    runtime_bundles: set,
-    external_libs: dict,
-    exports: set | None = None,
-    bundle_owners: dict | None = None,
-    classic_pages: set | None = None,
+    bundles: set[str],
+    dynamic_children: dict[str, list[str]],
+    import_map_includes: dict[str, list[str]],
+    secondary_includes: dict[str, list[str]],
+    standalone_bundles: set[str],
+    runtime_bundles: set[str],
+    external_libs: dict[str, str],
+    exports: set[str] | None = None,
+    bundle_owners: dict[str, str] | None = None,
+    classic_pages: set[str] | None = None,
 ) -> EsmRegistry:
     return EsmRegistry(
         bundles=frozenset(bundles),
@@ -286,18 +298,18 @@ def _freeze_registry(
 def _prepare_esm_registry() -> EsmRegistry:
     from odoo.modules import Manifest
 
-    bundles: set = set()
-    dynamic_children: dict = {}
-    import_map_includes: dict = {}
-    secondary_includes: dict = {}
-    standalone_bundles: set = set()
-    runtime_bundles: set = set()
-    external_libs: dict = {}
-    exports: set = set()
-    external_lib_owner: dict = {}
-    bundle_owners: dict = {}
-    children_from: dict = {}
-    classic_pages: set = set()
+    bundles: set[str] = set()
+    dynamic_children: dict[str, list[str]] = {}
+    import_map_includes: dict[str, list[str]] = {}
+    secondary_includes: dict[str, list[str]] = {}
+    standalone_bundles: set[str] = set()
+    runtime_bundles: set[str] = set()
+    external_libs: dict[str, str] = {}
+    exports: set[str] = set()
+    external_lib_owner: dict[str, str] = {}
+    bundle_owners: dict[str, str] = {}
+    children_from: dict[str, str] = {}
+    classic_pages: set[str] = set()
     declaring_modules = 0
     for manifest in Manifest.get_all_addon_manifests():
         esm = _validated_esm_section(manifest)
@@ -392,10 +404,10 @@ def _prepare_esm_registry() -> EsmRegistry:
 
 
 def check_esm_config(
-    bundles: set,
-    dynamic_children: Mapping,
-    import_map_includes: Mapping,
-    secondary_import_map_includes: Mapping,
+    bundles: Collection[str],
+    dynamic_children: Mapping[str, Collection[str]],
+    import_map_includes: Mapping[str, Collection[str]],
+    secondary_import_map_includes: Mapping[str, Collection[str]],
     *,
     standalone_bundles: Collection[str] = frozenset(),
     runtime_bundles: Collection[str] = frozenset(),

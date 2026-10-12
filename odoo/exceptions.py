@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from odoo.tools.translate import LazyGettext
@@ -30,9 +30,9 @@ class RedirectWarning(Exception):
     def __init__(
         self,
         message: str,
-        action: int | str | dict,
+        action: int | str | dict[str, Any],
         button_text: str,
-        additional_context: dict | None = None,
+        additional_context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message, action, button_text, additional_context)
 

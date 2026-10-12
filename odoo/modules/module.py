@@ -231,7 +231,7 @@ class Manifest(Mapping[str, typing.Any]):
         "static_path",
     )
 
-    def __init__(self, *, path: str, manifest_content: dict) -> None:
+    def __init__(self, *, path: str, manifest_content: dict[str, typing.Any]) -> None:
         if not Path(path).is_absolute():
             raise ValueError("path of module must be absolute")
         self.path = path
@@ -241,7 +241,7 @@ class Manifest(Mapping[str, typing.Any]):
         self.__manifest_content = manifest_content
 
     @property
-    def declared(self) -> types.MappingProxyType:
+    def declared(self) -> types.MappingProxyType[str, typing.Any]:
         return types.MappingProxyType(self.__manifest_content)
 
     @property
@@ -259,19 +259,22 @@ class Manifest(Mapping[str, typing.Any]):
 
     @functools.cached_property
     def description(self) -> str:
-        if desc := self.__manifest_cached.get("description"):
+        desc: str | None = self.__manifest_cached.get("description")
+        if desc:
             return desc
         for file_name in README:
             try:
                 with tools.file_open(str(Path(self.path, file_name))) as f:
-                    return f.read()
+                    content: str = f.read()
+                    return content
             except OSError:
                 pass
         return ""
 
     @functools.cached_property
     def version(self) -> str:
-        return self.__manifest_cached["version"]
+        version: str = self.__manifest_cached["version"]
+        return version
 
     @functools.cached_property
     def icon(self) -> str:
@@ -543,7 +546,9 @@ def get_module_icon_path(module: str) -> str:
     return _get_module_icon_path(module, declared)
 
 
-def _normalize_auto_install(module: str, manifest: dict, depends: Collection) -> None:
+def _normalize_auto_install(
+    module: str, manifest: dict[str, typing.Any], depends: Collection[str]
+) -> None:
     auto_install = manifest["auto_install"]
     if isinstance(auto_install, str):
         raise TypeError(
@@ -569,7 +574,7 @@ def _normalize_auto_install(module: str, manifest: dict, depends: Collection) ->
         )
 
 
-def _normalize_version(module: str, manifest: dict) -> None:
+def _normalize_version(module: str, manifest: dict[str, typing.Any]) -> None:
     try:
         manifest["version"] = adapt_version(str(manifest["version"]))
     except ValueError:
@@ -602,7 +607,9 @@ def _normalize_version(module: str, manifest: dict) -> None:
         manifest["installable"] = False
 
 
-def _normalize_oldest_upgradable_version(module: str, manifest: dict) -> None:
+def _normalize_oldest_upgradable_version(
+    module: str, manifest: dict[str, typing.Any]
+) -> None:
     oldest = manifest["oldest_upgradable_version"]
     if not oldest:
         return
@@ -614,7 +621,9 @@ def _normalize_oldest_upgradable_version(module: str, manifest: dict) -> None:
         ) from e
 
 
-def _normalize_manifest(module: str, manifest_content: dict) -> dict:
+def _normalize_manifest(
+    module: str, manifest_content: dict[str, typing.Any]
+) -> dict[str, typing.Any]:
 
     manifest: dict[str, typing.Any] = {
         k: (v.copy() if isinstance(v, (list, dict)) else v)

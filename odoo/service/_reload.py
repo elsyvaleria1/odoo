@@ -49,8 +49,8 @@ class GenerationHandoff:
         self.supervisor = int(os.environ.pop("ODOO_RELOAD_SUPERVISOR_PID", "0"))
         ready_fd = os.environ.pop("ODOO_RELOAD_READY_FD", None)
         self.ready_fd: int | None = int(ready_fd) if ready_fd else None
-        self.candidate: subprocess.Popen | None = None
-        self.replacement: subprocess.Popen | None = None
+        self.candidate: subprocess.Popen[bytes] | None = None
+        self.replacement: subprocess.Popen[bytes] | None = None
         self.reader: tuple[int, selectors.BaseSelector] | None = None
 
     @property
@@ -61,7 +61,7 @@ class GenerationHandoff:
     def awaits_ready(self) -> bool:
         return self.ready_fd is not None
 
-    def owns(self, pid: int) -> subprocess.Popen | None:
+    def owns(self, pid: int) -> subprocess.Popen[bytes] | None:
         for process in (self.candidate, self.replacement):
             if process is not None and process.pid == pid:
                 return process
@@ -169,7 +169,7 @@ class GenerationHandoff:
                 self.stop_generation(self.candidate, graceful=False)
                 self.candidate = None
 
-    def _spawn_candidate(self, ready_fd: int) -> subprocess.Popen:
+    def _spawn_candidate(self, ready_fd: int) -> subprocess.Popen[bytes]:
         master = self.master
         env = dict(os.environ)
         env["ODOO_RELOAD_SUPERVISOR_PID"] = str(master.pid)
@@ -190,7 +190,7 @@ class GenerationHandoff:
         )
 
     def _await_candidate(
-        self, candidate: subprocess.Popen, read_fd: int, timeout: float
+        self, candidate: subprocess.Popen[bytes], read_fd: int, timeout: float
     ) -> bool:
         master = self.master
         deadline = time.monotonic() + timeout
@@ -221,7 +221,7 @@ class GenerationHandoff:
         return False
 
     def stop_generation(
-        self, process: subprocess.Popen, *, graceful: bool = True
+        self, process: subprocess.Popen[bytes], *, graceful: bool = True
     ) -> None:
         if not graceful:
             with contextlib.suppress(ProcessLookupError):

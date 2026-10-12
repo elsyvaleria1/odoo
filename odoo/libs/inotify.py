@@ -118,7 +118,7 @@ class Inotify:
         if not AVAILABLE:
             raise InotifyError(errno.ENOSYS, "inotify is a Linux facility")
         libc = _get_libc()
-        fd = libc.inotify_init1(_IN_CLOEXEC | _IN_NONBLOCK)
+        fd: int = libc.inotify_init1(_IN_CLOEXEC | _IN_NONBLOCK)
         if fd < 0:
             raise _errno_error("inotify_init1")
         self._fd = fd
@@ -151,7 +151,7 @@ class Inotify:
 
     def add_watch(self, path: str | os.PathLike[str], mask: int) -> int:
         path = os.fspath(path)
-        wd = _get_libc().inotify_add_watch(
+        wd: int = _get_libc().inotify_add_watch(
             self._fd, os.fsencode(path), mask | IN_MOVE_SELF
         )
         if wd < 0:

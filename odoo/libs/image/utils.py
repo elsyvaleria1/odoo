@@ -131,7 +131,7 @@ def _watch_source(image: PILImage) -> _SourceStream | None:
     if load_read is not None and "load_read" not in attributes:
 
         def watched_load_read(size: int) -> bytes:
-            data = load_read(size)
+            data: bytes = load_read(size)
             if not data:
                 stream.starved = True
             return data
@@ -294,7 +294,8 @@ _HEADER_ORIENTATION_FORMATS = frozenset({"JPEG", "MPO", "WEBP", "PNG"})
 
 def _exif_orientation(image: PILImage) -> int:
     try:
-        return image.getexif().get(_EXIF_TAG_ORIENTATION, 1)
+        orientation: int = image.getexif().get(_EXIF_TAG_ORIENTATION, 1)
+        return orientation
     except SyntaxError, ValueError, TypeError, struct.error, OSError:
         return 1
 
@@ -395,7 +396,8 @@ class ImageProcess:
         if not self._image:
             return None
         if self._decoded:
-            return self._image.size
+            size: tuple[int, int] = self._image.size
+            return size
         return self._size
 
     @property

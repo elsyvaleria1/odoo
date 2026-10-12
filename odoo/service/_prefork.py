@@ -180,7 +180,7 @@ class PreforkServer(CommonServer):
         self.generation = 0
         self.queue: deque[int] = deque()
         self.long_polling_pid: int | None = None
-        self.long_polling_popen: subprocess.Popen | None = None
+        self.long_polling_popen: subprocess.Popen[bytes] | None = None
         self.long_polling_spawn_time = 0.0
         self._respawn_holds: dict[str, RespawnHold] = {}
         self._selector: selectors.BaseSelector | None = None
@@ -265,8 +265,10 @@ class PreforkServer(CommonServer):
             backoff_s=delay,
         )
 
-    def spawn_worker(self, klass: type, workers_registry: dict) -> Worker | None:
-        worker = None
+    def spawn_worker[W: Worker](
+        self, klass: type[W], workers_registry: dict[int, W]
+    ) -> W | None:
+        worker: W | None = None
         try:
             worker = klass(self)
             pid = os.fork()
@@ -474,7 +476,7 @@ class PreforkServer(CommonServer):
                 _debug.logic("prefork.unknown_child_exited", pid=pid, status=status)
                 return
             name = worker.__class__.__name__
-            lifetime = time.monotonic() - getattr(worker, "spawn_time", 0.0)
+            lifetime = time.monotonic() - worker.spawn_time
             self._read_worker_pipe(worker.watchdog_pipe[0], worker)
             recycled_for = worker.recycled_for
             policy_kill = killed_by_master and bool(worker.ready)

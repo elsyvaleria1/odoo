@@ -17,8 +17,8 @@ _debug = DebugLog(__name__)
 def _get_csrf_secret(env: Any) -> str:
     if env is None:
         raise RuntimeError("CSRF tokens need a database-bound request")
-    secret = env["ir.config_parameter"].sudo().get_param("database.secret")
-    if not secret:
+    secret: str | bool = env["ir.config_parameter"].sudo().get_param("database.secret")
+    if not isinstance(secret, str) or not secret:
         _debug.logic(
             "http.csrf.secret_missing",
             db=getattr(getattr(env, "registry", None), "db_name", None),

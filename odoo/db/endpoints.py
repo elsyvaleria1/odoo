@@ -2,18 +2,20 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Buffer
-from typing import SupportsIndex, SupportsInt
+from typing import Any, SupportsIndex, SupportsInt
 
 from odoo.libs.debug_log import DebugLog
 
 from .budget import ConnectionBudget
-from .dsn import _expand_conninfo
+from .dsn import ConnInfo, _expand_conninfo
 from .pool import ConnectionPool
 from .settings import PoolSettings, resolve
 from .utils import get_connection_info_for_database
 
 DEFAULT_PG_PORT = 5432
 _debug = DebugLog(__name__)
+
+type EndpointKey = tuple[str | None, int]
 
 
 def _coerce_port(port: str | Buffer | SupportsInt | SupportsIndex | None) -> int:
@@ -26,8 +28,8 @@ def _coerce_port(port: str | Buffer | SupportsInt | SupportsIndex | None) -> int
 
 
 def get_endpoint_key(
-    info: dict, settings: PoolSettings | None = None
-) -> tuple[str | None, int]:
+    info: ConnInfo, settings: PoolSettings | None = None
+) -> EndpointKey:
     if not info.get("dsn"):
         return (info.get("host") or None, _coerce_port(info.get("port")))
     settings = resolve(settings)
@@ -46,19 +48,19 @@ def get_endpoint_key(
 
 class EndpointRegistry:
     def __init__(self) -> None:
-        self._pools: dict[tuple, ConnectionPool] = {}
-        self._budgets: dict[tuple, ConnectionBudget] = {}
+        self._pools: dict[tuple[EndpointKey, bool], ConnectionPool] = {}
+        self._budgets: dict[EndpointKey, ConnectionBudget] = {}
         self._lock = threading.RLock()
 
     def get_endpoint_for_readonly(
         self, readonly: bool, settings: PoolSettings | None = None
-    ) -> tuple:
+    ) -> EndpointKey:
         settings = resolve(settings)
         _, info = get_connection_info_for_database("", readonly, settings)
         return get_endpoint_key(info, settings)
 
     def get_maxconn_at_endpoint(
-        self, endpoint: tuple, settings: PoolSettings | None = None
+        self, endpoint: EndpointKey, settings: PoolSettings | None = None
     ) -> int:
         settings = resolve(settings)
         base = settings.maxconn
@@ -75,7 +77,7 @@ class EndpointRegistry:
         return base
 
     def get_budget_at_endpoint(
-        self, endpoint: tuple, settings: PoolSettings | None = None
+        self, endpoint: EndpointKey, settings: PoolSettings | None = None
     ) -> ConnectionBudget:
         with self._lock:
             budget = self._budgets.get(endpoint)
@@ -100,7 +102,10 @@ class EndpointRegistry:
         )
 
     def get_pool_at_endpoint(
-        self, endpoint: tuple, readonly: bool, settings: PoolSettings | None = None
+        self,
+        endpoint: EndpointKey,
+        readonly: bool,
+        settings: PoolSettings | None = None,
     ) -> ConnectionPool:
         key = (endpoint, readonly)
         pool = self._pools.get(key)
@@ -141,13 +146,13 @@ class EndpointRegistry:
         _debug.logic("endpoints.is_pooled", db=db_name, pooled=pooled, pools=len(pools))
         return pooled
 
-    def get_health(self, settings: PoolSettings | None = None) -> dict:
+    def get_health(self, settings: PoolSettings | None = None) -> dict[str, Any]:
         settings = resolve(settings)
         configured = {
             False: self.get_endpoint_for_readonly(False, settings),
             True: self.get_endpoint_for_readonly(True, settings),
         }
-        health: dict = {"read_write": None, "read_only": None}
+        health: dict[str, Any] = {"read_write": None, "read_only": None}
         with self._lock:
             items = list(self._pools.items())
         with _debug.perf("endpoints.health", pools=len(items)):

@@ -56,13 +56,14 @@ def _canonicalize(
         node = fromstring(node)
     elif not exclusive and (inherited := _inherited_xml_attributes(node)):
         node = _with_attributes(node, inherited)
-    return etree.tostring(
+    canonical: bytes = etree.tostring(
         node,
         method="c14n",
         with_comments=False,
         exclusive=exclusive,
         inclusive_ns_prefixes=inclusive_ns_prefixes,
     )
+    return canonical
 
 
 def _inherited_xml_attributes(node: etree._Element) -> dict[str, str]:

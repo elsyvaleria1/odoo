@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from odoo.modules.registry import Registry
 
     from ._cookies import FutureResponse
+    from .application import Application
     from .dispatcher import Dispatcher
     from .geoip import GeoIP
     from .session import Session
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 if TYPE_CHECKING:
 
     class RequestState:
-        app: Any
+        app: Application
         scratch: SimpleNamespace
         attempt_scratch: SimpleNamespace
         csp_unsafe_eval: bool
@@ -116,7 +117,7 @@ class HasRouting(Protocol):
 
 class RoutedMethod(Protocol):
     original_routing: Mapping[str, Any]
-    original_endpoint: Callable
+    original_endpoint: Callable[..., Any]
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
@@ -135,10 +136,10 @@ class HttpExtension(Protocol):
     def _match(self, path_info: str) -> tuple[werkzeug.routing.Rule, dict[str, Any]]:
         pass
 
-    def _dispatch(self, endpoint: Callable) -> Any:
+    def _dispatch(self, endpoint: Callable[..., Any]) -> Any:
         pass
 
-    def _authenticate(self, endpoint: Callable) -> None:
+    def _authenticate(self, endpoint: Callable[..., Any]) -> None:
         pass
 
     def _authenticate_explicit(

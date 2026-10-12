@@ -16,7 +16,7 @@ def push_function_frame(
     function_lineno: int,
     function_name: str,
     message_lineno: int | None,
-    messages: list,
+    messages: list[str | None],
 ) -> TranslatorComments:
     cur_translator_comments = translator_comments
     if function_stack and function_stack[-1]["function_lineno"] == compare_lineno:
@@ -80,6 +80,8 @@ def handle_line_comment(
 
 
 def open_keyword_name(function_stack: list[Frame], keywords: Any) -> str:
-    if function_stack and function_stack[-1]["function_name"] in keywords:
-        return function_stack[-1]["function_name"]
+    if function_stack:
+        function_name: str = function_stack[-1]["function_name"]
+        if function_name in keywords:
+            return function_name
     return ""

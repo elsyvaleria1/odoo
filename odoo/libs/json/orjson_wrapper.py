@@ -66,13 +66,15 @@ def _orjson_key(key: Any, option: int) -> str:
         return key
     if type(key) is int:
         return str(key)
+    spelled: str
     (spelled,) = _orjson.loads(_orjson.dumps({key: None}, option=option))
     return spelled
 
 
-def _encode(obj: Any, default: Callable | None, option: int) -> bytes:
+def _encode(obj: Any, default: Callable[[Any], Any] | None, option: int) -> bytes:
     try:
-        return _orjson.dumps(obj, default=default, option=option)
+        encoded: bytes = _orjson.dumps(obj, default=default, option=option)
+        return encoded
     except TypeError as error:
         indent = 2 if option & _orjson.OPT_INDENT_2 else None
         key_option = option & ~(_orjson.OPT_INDENT_2 | _orjson.OPT_SORT_KEYS)
@@ -91,7 +93,7 @@ def _encode(obj: Any, default: Callable | None, option: int) -> bytes:
 def dumps(
     obj: Any,
     *,
-    default: Callable | None = None,
+    default: Callable[[Any], Any] | None = None,
     ensure_ascii: bool = False,
     option: int | None = None,
 ) -> str:
@@ -104,7 +106,7 @@ def dumps(
 def dumps_bytes(
     obj: Any,
     *,
-    default: Callable | None = None,
+    default: Callable[[Any], Any] | None = None,
     option: int | None = None,
 ) -> bytes:
     return _encode(obj, default, _DEFAULT_OPT | (option or 0))
@@ -221,7 +223,8 @@ _WALK_BUDGET = 10_000
 def _may_hold_wide_integer(s: str | bytes | bytearray | memoryview, value: Any) -> bool:
     kind = type(value)
     if kind is float:
-        return abs(value) >= _WIDE_FLOAT
+        magnitude: float = abs(value)
+        return magnitude >= _WIDE_FLOAT
     if kind is not dict and kind is not list:
         return False
     if len(s) <= _BYTE_SCAN_LIMIT:

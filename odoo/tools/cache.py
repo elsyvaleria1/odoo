@@ -18,7 +18,7 @@ from odoo.libs.text import str2bool
 
 from .constants import REGISTRY_CACHES
 
-C = typing.TypeVar("C", bound=Callable)
+C = typing.TypeVar("C", bound=Callable[..., Any])
 
 if typing.TYPE_CHECKING:
     from odoo.libs.lru import LRU
@@ -208,7 +208,7 @@ class ormcache_counter:
         return self.tx_hit + self.tx_miss
 
 
-_COUNTERS: defaultdict[tuple[str, Callable], ormcache_counter] = defaultdict(
+_COUNTERS: defaultdict[tuple[str, Callable[..., Any]], ormcache_counter] = defaultdict(
     ormcache_counter
 )
 
@@ -226,7 +226,7 @@ _TX_STATS_ENABLED: bool = str2bool(
 )
 
 
-def _render_signature(method: Callable) -> tuple[str, dict[str, Any]]:
+def _render_signature(method: Callable[..., Any]) -> tuple[str, dict[str, Any]]:
     rendered: list[str] = []
     arg_globals: dict[str, Any] = {}
     params = list(
@@ -265,7 +265,7 @@ def _render_signature(method: Callable) -> tuple[str, dict[str, Any]]:
 
 
 class ormcache:
-    key: Callable[..., tuple]
+    key: Callable[..., tuple[Any, ...]]
 
     def __init__(self, *args: str, cache: str = "default") -> None:
         self.args = args
@@ -380,7 +380,7 @@ class ormcache:
         **kwargs: Any,
     ) -> None:
         model: BaseModel = args[0]
-        d: LRU = model.pool.ormcache_lrus[self.cache_name]
+        d: LRU[Any, Any] = model.pool.ormcache_lrus[self.cache_name]
         key = self.key(*args, **kwargs)
         if generation is None:
             d[key] = cache_value
@@ -427,7 +427,7 @@ class ormcache:
 class _StatsLine:
     __slots__ = ["counter", "method", "nb_entries", "sz_entries_max", "sz_entries_sum"]
 
-    def __init__(self, method: Callable, counter: ormcache_counter) -> None:
+    def __init__(self, method: Callable[..., Any], counter: ormcache_counter) -> None:
         self.sz_entries_sum: int = 0
         self.sz_entries_max: int = 0
         self.nb_entries: int = 0
@@ -435,7 +435,7 @@ class _StatsLine:
         self.method = method
 
 
-type _CacheStats = defaultdict[str, dict[Callable, _StatsLine]]
+type _CacheStats = defaultdict[str, dict[Callable[..., Any], _StatsLine]]
 type _CacheUsage = defaultdict[str, list[tuple[str, int, int, int]]]
 
 

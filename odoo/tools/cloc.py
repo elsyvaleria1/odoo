@@ -157,7 +157,7 @@ class Cloc:
         return s.count("\n"), total
 
     def parse_c_like(self, s: str, regex: str) -> tuple[int, int] | tuple[int, str]:
-        def replacer(match: re.Match) -> str:
+        def replacer(match: re.Match[str]) -> str:
             s = match.group(0)
             return " " if s.startswith("/") else s
 

@@ -262,7 +262,7 @@ def _mask_nested_parentheses(sql_text: str) -> str:
     return "".join(out)
 
 
-def _match_from_clause(body: str) -> re.Match | None:
+def _match_from_clause(body: str) -> re.Match[str] | None:
     masked = _mask_nested_parentheses(body)
     match = re_from.search(masked)
     if match is not None:

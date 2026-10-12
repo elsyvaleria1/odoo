@@ -9,7 +9,7 @@ import stat
 import subprocess
 import tempfile
 import time
-from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import NamedTuple, Protocol
 
@@ -38,6 +38,12 @@ class EntryAsset(Protocol):
 
     @property
     def _filename(self) -> str | None: ...
+
+    @property
+    def raw_content(self) -> str: ...
+
+    @property
+    def parsed_header(self) -> re.Match[str] | None: ...
 
 
 def module_specifiers(asset: EntryAsset) -> tuple[str, ...]:
@@ -447,8 +453,8 @@ class EsbuildCompiler:
     def __init__(
         self,
         name: str,
-        native_modules: list,
-        javascripts: list | tuple = (),
+        native_modules: Iterable[EntryAsset],
+        javascripts: Iterable[EntryAsset] = (),
         *,
         import_map_included: bool = False,
         skip_legacy_test_imports: bool = False,
@@ -545,7 +551,7 @@ class EsbuildCompiler:
     _ESBUILD_TARGET: str = "chrome154,firefox157,safari27"
     _ESBUILD_TARGET_TOKEN_RE = re.compile(r"[a-z]+\d*(?:\.\d+)*")
     _ESBUILD_SOURCE_MAPS: str = ""
-    _ESBUILD_SOURCE_MAP_MODES: frozenset = frozenset(
+    _ESBUILD_SOURCE_MAP_MODES: frozenset[str] = frozenset(
         {
             "",
             "linked",
@@ -707,7 +713,7 @@ class EsbuildCompiler:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def _esbuild_entry_files(
-        self, entries: dict[str, list], entry_dir: Path, odoo_root: Path
+        self, entries: dict[str, list[EntryAsset]], entry_dir: Path, odoo_root: Path
     ) -> dict[str, str]:
         entry_texts = {}
         for name, modules in entries.items():
@@ -721,7 +727,7 @@ class EsbuildCompiler:
 
     def compile_group(
         self,
-        entries: dict[str, list],
+        entries: dict[str, list[EntryAsset]],
         *,
         timeout_s: int | None = None,
         target: str | None = None,
@@ -933,7 +939,10 @@ class EsbuildCompiler:
         return f"./addons{url}"
 
     def _esbuild_entry_lines(
-        self, odoo_root: Path, modules: list | None = None, bundle: str | None = None
+        self,
+        odoo_root: Path,
+        modules: list[EntryAsset] | None = None,
+        bundle: str | None = None,
     ) -> list[str]:
         entry_lines = []
         register_entries = []

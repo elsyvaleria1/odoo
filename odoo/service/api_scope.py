@@ -416,8 +416,10 @@ CALL_SHAPES: dict[str, tuple[Argument, ...]] = {
 }
 
 
-def arguments(method: str, kind: str, args: Any, kwargs: Mapping[str, Any]) -> list:
-    found = []
+def arguments(
+    method: str, kind: str, args: Any, kwargs: Mapping[str, Any]
+) -> list[Any]:
+    found: list[Any] = []
     for argument in CALL_SHAPES.get(method, ()):
         if argument.kind != kind:
             continue
@@ -526,7 +528,7 @@ def vals_paths(vals: Any, prefix: str = "") -> list[str]:
 
 def _iter_vals_dicts(
     method: str, args: Any, kwargs: Mapping[str, Any]
-) -> Iterator[dict]:
+) -> Iterator[dict[Any, Any]]:
     for vals in arguments(method, VALS, args, kwargs):
         if isinstance(vals, dict):
             yield vals
@@ -576,7 +578,7 @@ def _describe_unknown(name: Any, known: list[str]) -> str:
 
 def unknown_field_names(env: Environment, model_name: str, names: Any) -> str:
     model_fields = env[model_name]._fields
-    unknown: list = []
+    unknown: list[Any] = []
     for name in names:
         if isinstance(name, str) and (not name or name.startswith("__")):
             continue
@@ -606,7 +608,7 @@ def _refuse_unknown(
 def check_requested_fields(
     env: Environment, model_name: str, method: str, args: Any, kwargs: Mapping[str, Any]
 ) -> None:
-    names: list = []
+    names: list[Any] = []
     for kind in (FIELDS, PATHS, FIELD, SPEC):
         for container in arguments(method, kind, args, kwargs):
             if kind is FIELD:
@@ -738,7 +740,7 @@ def check_hidden_paths(
     env: Environment,
     rules: ScopeRules,
     model_name: str,
-    paths: list,
+    paths: list[str],
     where: str | None = None,
 ) -> None:
     hits: list[tuple[str, str]] = []
@@ -833,7 +835,8 @@ def strip_arch(env: Environment, rules: ScopeRules, model_name: str, arch: str) 
     except etree.XMLSyntaxError:
         return arch
     _strip_arch_node(env, rules, model_name, root)
-    return etree.tostring(root, encoding="unicode")
+    stripped: str = etree.tostring(root, encoding="unicode")
+    return stripped
 
 
 def _strip_arch_node(

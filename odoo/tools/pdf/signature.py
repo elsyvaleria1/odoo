@@ -727,9 +727,11 @@ def _issued_by(certificate: Certificate, issuer: Certificate) -> bool:
 
 def _is_ca(certificate: Certificate) -> bool:
     try:
-        return certificate.extensions.get_extension_for_class(BasicConstraints).value.ca
+        constraints = certificate.extensions.get_extension_for_class(BasicConstraints)
     except ExtensionNotFound:
         return False
+    is_ca: bool = constraints.value.ca
+    return is_ca
 
 
 def _check_usage(leaf: Certificate) -> None:

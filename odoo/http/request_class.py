@@ -5,7 +5,7 @@ import re
 import secrets
 import types
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import babel.core
 import werkzeug.datastructures
@@ -31,6 +31,11 @@ from .geoip import GeoIP
 from .session import Session
 from .wrappers import HTTPRequest, Response
 
+if TYPE_CHECKING:
+    from .application import Application
+else:
+    Application = Any
+
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
@@ -39,7 +44,7 @@ _REQUEST_ID_RE = re.compile(r"[A-Za-z0-9._:-]{1,200}")
 
 def _get_request_id(httprequest: Any) -> str:
     headers = getattr(httprequest, "headers", None)
-    offered = headers.get("X-Request-Id") if headers is not None else None
+    offered: str | None = headers.get("X-Request-Id") if headers is not None else None
     if offered and _REQUEST_ID_RE.fullmatch(offered):
         return offered
     minted = secrets.token_urlsafe(9)
@@ -59,7 +64,7 @@ class Request(
     _RequestCspMixin,
     _RequestSessionMixin,
 ):
-    def __init__(self, httprequest: HTTPRequest, app: Any) -> None:
+    def __init__(self, httprequest: HTTPRequest, app: Application) -> None:
         self.app = app
 
         self.httprequest: HTTPRequest = httprequest
@@ -140,7 +145,9 @@ class Request(
     def session_binding_verdict(self) -> bool | None:
         if self.fresh_primary_cursor is not None:
             return None
-        found = getattr(self.scratch, "session_binding", None)
+        found: tuple[str, int | None, bool] | None = getattr(
+            self.scratch, "session_binding", None
+        )
         session = self.session
         if found is None or found[:2] != (session.sid, session.uid):
             return None
@@ -215,7 +222,7 @@ class Request(
 
     @functools.cached_property
     def best_lang(self) -> str | None:
-        lang = self.httprequest.accept_languages.best
+        lang: str | None = self.httprequest.accept_languages.best
         if not lang:
             return None
 
@@ -285,7 +292,7 @@ class Request(
         self._json_memo = (self.httprequest, data)
         return data
 
-    def _profile_request(self) -> contextlib.AbstractContextManager:
+    def _profile_request(self) -> contextlib.AbstractContextManager[object]:
         if self.session.get("profile_session") and self.db:
             if self.session.get("profile_expiration", "") < str(
                 odoo.fields.Datetime.now()

@@ -1,5 +1,6 @@
 import logging
 import re
+from collections.abc import Callable
 from typing import Any
 
 from odoo.libs.collections import OrderedSet
@@ -9,6 +10,9 @@ from .utils import addon_relative_path
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
+
+type TestFilter = tuple[str | None, str | None, str | None, str | None, str | None]
+type TestParameter = tuple[str, str]
 
 
 class TagsSelector:
@@ -29,9 +33,9 @@ class TagsSelector:
     def __init__(self, spec: str) -> None:
         parts = re.split(r",(?![^\[]*\])", spec)
         filter_specs = [t.strip() for t in parts if t.strip()]
-        self.exclude: set[tuple] = set()
-        self.include: set[tuple] = set()
-        self.parameters: OrderedSet = OrderedSet()
+        self.exclude: set[TestFilter] = set()
+        self.include: set[TestFilter] = set()
+        self.parameters: OrderedSet[tuple[TestFilter, TestParameter]] = OrderedSet()
 
         for filter_spec in filter_specs:
             match = self.filter_spec_re.match(filter_spec)
@@ -98,23 +102,25 @@ class TagsSelector:
             _debug.logic("test.tags.selects", test=test.id(), selected=selected)
         return selected
 
-    def select_params(self, test: Any) -> list:
+    def select_params(self, test: Any) -> list[TestParameter]:
         matches = self._matcher(test)
+        params: list[TestParameter]
         if matches is None or not self._selects(matches):
-            test._test_params = []
+            params = []
         else:
-            test._test_params = [
+            params = [
                 parameter
                 for test_filter, parameter in self.parameters
                 if matches(test_filter)
             ]
+        test._test_params = params
         if _debug.logic.enabled:
             _debug.logic(
                 "test.tags.select_params",
                 test=test.id(),
-                params=len(test._test_params),
+                params=len(params),
             )
-        return test._test_params
+        return params
 
     def select_test(self, test: Any) -> bool:
         matches = self._matcher(test)
@@ -137,13 +143,13 @@ class TagsSelector:
             )
         return True
 
-    def _selects(self, matches: Any) -> bool:
+    def _selects(self, matches: Callable[[TestFilter], bool]) -> bool:
         if any(matches(test_filter) for test_filter in self.exclude):
             _debug.logic("test.tags.excluded")
             return False
         return any(matches(test_filter) for test_filter in self.include)
 
-    def _matcher(self, test: Any) -> Any:
+    def _matcher(self, test: Any) -> Callable[[TestFilter], bool] | None:
         if not getattr(test, "test_tags", None):
             if _debug.logic.enabled:
                 _debug.logic("test.tags.no_tags", test=test.id())
@@ -153,10 +159,10 @@ class TagsSelector:
         test_module = test.test_module
         test_class = test.__class__.__name__
         test_tags = test.test_tags | {test_module}
-        test_method = test._testMethodName
+        test_method: str | None = test._testMethodName
         test_module_path = addon_relative_path(test.__module__)
 
-        def _is_matching(test_filter: tuple) -> bool:
+        def _is_matching(test_filter: TestFilter) -> bool:
             tag, module, klass, method, file_path = test_filter
             if tag and tag not in test_tags:
                 return False

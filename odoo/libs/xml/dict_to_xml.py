@@ -1,3 +1,5 @@
+from typing import Any
+
 from lxml import etree
 
 from .utils import remove_control_characters
@@ -12,10 +14,10 @@ def _xml_characters(value: object) -> str:
 
 
 def dict_to_xml(
-    node: dict,
+    node: dict[str, Any],
     *,
-    nsmap: dict | None = None,
-    template: dict | None = None,
+    nsmap: dict[str | None, str] | None = None,
+    template: dict[str, Any] | None = None,
     render_empty_nodes: bool = False,
     tag: str | None = None,
     path: str | None = None,
@@ -27,7 +29,8 @@ def dict_to_xml(
         if ":" in tag:
             namespace, local_name = tag.split(":", 1)
             if namespace in nsmap:
-                return etree.QName(nsmap[namespace], local_name).text
+                qualified: str = etree.QName(nsmap[namespace], local_name).text
+                return qualified
         return tag
 
     if template is not None:

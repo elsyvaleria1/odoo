@@ -21,7 +21,8 @@ def mark_active(pool: ConnectionPool) -> None:
 
 def get_checked_out_count(pool: ConnectionPool) -> int:
     stats = pool.get_stats()
-    return stats.get("pool_size", 0) - stats.get("pool_available", 0)
+    checked_out: int = stats.get("pool_size", 0) - stats.get("pool_available", 0)
+    return checked_out
 
 
 def close_idle_connections(pool: ConnectionPool, count: int) -> int:
@@ -87,13 +88,13 @@ class IdlePoolReaper:
             return False
         return monotonic() - self._last_check >= self.check_interval
 
-    def get_keys_reapable(
-        self, pools: Mapping[Any, Any], exclude_key: Any = None
-    ) -> list:
+    def get_keys_reapable[K](
+        self, pools: Mapping[K, Any], exclude_key: K | None = None
+    ) -> list[K]:
         if not self.enabled:
             return []
         now = monotonic()
-        reapable = []
+        reapable: list[K] = []
         for key, pool in pools.items():
             if key == exclude_key:
                 continue

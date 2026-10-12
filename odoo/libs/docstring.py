@@ -95,7 +95,8 @@ def _html_settings() -> typing.Any:
 
 @functools.cache
 def _get_empty_root_factory() -> Callable[[], nodes.document]:
-    return docutils.core.publish_doctree("").copy
+    factory: Callable[[], nodes.document] = docutils.core.publish_doctree("").copy
+    return factory
 
 
 def _to_doctree(docstring: str) -> nodes.document:
@@ -118,7 +119,8 @@ def _render_doctree_html(tree: nodes.Node) -> str:
     docutils.core.publish_from_doctree(
         document, writer=writer, settings=_html_settings()
     )
-    return writer.parts[part].strip()
+    html: str = writer.parts[part]
+    return html.strip()
 
 
 def _render_children_html(tree: nodes.Element) -> str:

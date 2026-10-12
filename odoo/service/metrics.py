@@ -184,7 +184,9 @@ def get_service_metrics() -> dict[str, Any]:
     return out
 
 
-def _add_borrow_wait_histogram(exp: _Exposition, mode: str, stats: dict) -> None:
+def _add_borrow_wait_histogram(
+    exp: _Exposition, mode: str, stats: dict[str, Any]
+) -> None:
     label = {"pool": mode}
 
     exp.add(
@@ -289,7 +291,7 @@ _POOL_GAUGES: dict[str, tuple[str, str]] = {
 }
 
 
-def _add_pool_family(exp: _Exposition, mode: str, health: dict) -> None:
+def _add_pool_family(exp: _Exposition, mode: str, health: dict[str, Any]) -> None:
     stats = health.get("pool") or {}
     label = {"pool": mode}
     for key, (name, help_text) in _POOL_COUNTERS.items():
@@ -359,7 +361,9 @@ _REPLICA_GAUGES = {
 }
 
 
-def _add_replica_family(exp: _Exposition, database: str, health: dict) -> None:
+def _add_replica_family(
+    exp: _Exposition, database: str, health: dict[str, Any]
+) -> None:
     label = {"database": database}
     for (section, key), (name, help_text) in _REPLICA_GAUGES.items():
         value = (health.get(section) or {}).get(key)

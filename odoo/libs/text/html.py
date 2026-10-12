@@ -441,7 +441,10 @@ def _tag_quote(el: etree._Element) -> None:
 
 
 def _get_elements_by_tag(doc: etree._Element, tag: str) -> list[etree._Element]:
-    return doc.findall(tag) or doc.findall(f"{{{XHTML_NAMESPACE}}}{tag}")
+    elements: list[etree._Element] = doc.findall(tag) or doc.findall(
+        f"{{{XHTML_NAMESPACE}}}{tag}"
+    )
+    return elements
 
 
 def _merge_into_first(elements: list[etree._Element]) -> etree._Element:
@@ -1183,7 +1186,8 @@ def prepend_html_content(html_body: str, html_content: str | markupsafe.Markup) 
     if isinstance(html_body, markupsafe.Markup) and isinstance(
         html_content, markupsafe.Markup
     ):
-        return markupsafe.Markup(joined)
+        markup: str = markupsafe.Markup(joined)
+        return markup
     return joined
 
 

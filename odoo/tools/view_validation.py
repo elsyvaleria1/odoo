@@ -160,7 +160,9 @@ def _get_contextual_values_of_nodes(*nodes: ast.AST | None) -> set[str]:
     return values
 
 
-_CONTEXTUAL_CHILDREN: dict[type, Callable[[typing.Any], tuple]] = {
+_CONTEXTUAL_CHILDREN: dict[
+    type[ast.AST], Callable[[typing.Any], tuple[ast.AST | None, ...]]
+] = {
     ast.List: lambda n: tuple(n.elts),
     ast.Tuple: lambda n: tuple(n.elts),
     ast.Slice: lambda n: (n.lower, n.upper, n.step),

@@ -110,7 +110,7 @@ def _drain_pipe(pipe: IO[bytes], sink: list[bytes]) -> None:
 
 
 def _kill_pg_dump_on_stall(
-    proc: subprocess.Popen, total_timeout: float, stall_killed: list[bool]
+    proc: subprocess.Popen[bytes], total_timeout: float, stall_killed: list[bool]
 ) -> None:
     stall_killed[0] = True
     _logger.error(
@@ -136,7 +136,7 @@ def _kill_pg_dump_on_stall(
             proc.kill()
 
 
-def _reap_pg_dump(proc: subprocess.Popen) -> None:
+def _reap_pg_dump(proc: subprocess.Popen[bytes]) -> None:
     wait_timeout = get_env_float("ODOO_PG_DUMP_WAIT_TIMEOUT", 30.0, logger=_logger)
     try:
         proc.wait(timeout=wait_timeout)
@@ -162,7 +162,9 @@ def _reap_pg_dump(proc: subprocess.Popen) -> None:
             proc.wait()
 
 
-def _run_pg_dump(cmd: list[str], env: dict, stream: SupportsWrite[bytes]) -> None:
+def _run_pg_dump(
+    cmd: list[str], env: dict[str, str], stream: SupportsWrite[bytes]
+) -> None:
     proc = subprocess.Popen(
         cmd,
         env=env,
@@ -277,7 +279,7 @@ def _write_zip_dump(
     db_name: str,
     stream: IO[bytes],
     cmd: list[str],
-    env: dict,
+    env: dict[str, str],
     with_filestore: bool,
 ) -> None:
     with zipfile.ZipFile(

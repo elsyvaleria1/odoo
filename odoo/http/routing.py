@@ -6,7 +6,7 @@ import inspect
 import logging
 import re
 import warnings
-from collections.abc import Callable, Generator, Iterable
+from collections.abc import Callable, Generator, Iterable, Mapping
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
@@ -157,7 +157,7 @@ class _EndpointSignature(NamedTuple):
     bound_self_name: str
 
 
-def _get_endpoint_signature(endpoint: Callable) -> _EndpointSignature:
+def _get_endpoint_signature(endpoint: Callable[..., Any]) -> _EndpointSignature:
     accepts_var_keyword = False
     named: set[str] = set()
     required: set[str] = set()
@@ -210,7 +210,7 @@ def _check_cors(who: str, routing: Any) -> None:
 
 
 def _get_route_type_effective(declared_routing: dict[str, Any]) -> str:
-    declared = declared_routing.get("type")
+    declared: str | None = declared_routing.get("type")
     if declared is not None:
         return declared
     if request:
@@ -221,9 +221,13 @@ def _get_route_type_effective(declared_routing: dict[str, Any]) -> str:
 @functools.lru_cache(maxsize=4096)
 def _get_route_type_inherited(controller_cls: type, name: str) -> str | None:
     for cls in controller_cls.__mro__:
-        routing = getattr(cls.__dict__.get(name), "original_routing", None)
-        if routing and routing.get("type") is not None:
-            return routing["type"]
+        routing: Mapping[str, Any] | None = getattr(
+            cls.__dict__.get(name), "original_routing", None
+        )
+        if routing:
+            routing_type: str | None = routing.get("type")
+            if routing_type is not None:
+                return routing_type
     return None
 
 
@@ -238,9 +242,11 @@ def _get_route_type_called(
     return _get_route_type_effective(declared_routing)
 
 
-def route(route: str | Iterable[str] | None = None, **routing: Any) -> Callable:
+def route(
+    route: str | Iterable[str] | None = None, **routing: Any
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
 
-    def decorator(endpoint: Callable) -> Callable:
+    def decorator(endpoint: Callable[..., Any]) -> Callable[..., Any]:
         fname = f"<function {endpoint.__module__}.{endpoint.__name__}>"
 
         if routing.get("type") == "json":
@@ -535,7 +541,7 @@ def _prepare_route_fragment(
     return fragment
 
 
-def fragment_to_query_string(func: Callable) -> Callable:
+def fragment_to_query_string(func: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(func)
     def fragment_wrapper(self: Controller, *a: Any, **kw: Any) -> Any:
         if not (kw.keys() - {"debug"}):

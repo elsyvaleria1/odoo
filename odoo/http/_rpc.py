@@ -46,7 +46,7 @@ def rpc_client() -> RpcClient | None:
     return _RPC_CLIENT.get()
 
 
-def _get_rpc_dispatcher(service_name: str) -> Callable:
+def _get_rpc_dispatcher(service_name: str) -> Callable[..., Any]:
     match service_name:
         case "common":
             return odoo.service.common.dispatch

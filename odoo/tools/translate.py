@@ -59,6 +59,12 @@ __all__ = [
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
+type TranslationEntry = dict[str, Any]
+type TranslationRow = tuple[
+    str, str, str, str | int | None, str, str | None, tuple[str, ...]
+]
+type WebTranslations = Mapping[str, tuple[Mapping[str, str], ...]]
+
 PYTHON_TRANSLATION_COMMENT = "odoo-python"
 
 JAVASCRIPT_TRANSLATION_COMMENT = "odoo-javascript"
@@ -157,7 +163,7 @@ def is_translatable_attrib_value(node: etree._Element) -> bool:
 
 
 def is_translatable_attrib_text(node: etree._Element) -> bool:
-    return node.tag == "field" and node.attrib.get("widget", "") == "url"
+    return bool(node.tag == "field" and node.attrib.get("widget", "") == "url")
 
 
 OWL_TRANSLATED_ATTRS = {
@@ -348,7 +354,8 @@ def parse_xml(text: str | bytes) -> etree._Element:
 
 
 def serialize_xml(node: etree._Element) -> str:
-    return etree.tostring(node, method="xml", encoding="unicode")
+    serialized: str = etree.tostring(node, method="xml", encoding="unicode")
+    return serialized
 
 
 MODIFIER_ATTRS = {
@@ -466,7 +473,8 @@ def parse_html(text: str) -> etree._Element:
 
 
 def serialize_html(node: etree._Element) -> str:
-    return etree.tostring(node, method="html", encoding="unicode")
+    serialized: str = etree.tostring(node, method="html", encoding="unicode")
+    return serialized
 
 
 def _xml_translate(
@@ -488,7 +496,8 @@ def _xml_translate(
 def xml_term_converter(value: str) -> str:
     div = f"<div>{value}</div>"
     root = etree.fromstring(div, etree.HTMLParser())
-    return etree.tostring(root[0][0], encoding="unicode")[5:-6]
+    serialized: str = etree.tostring(root[0][0], encoding="unicode")
+    return serialized[5:-6]
 
 
 def _html_translate(
@@ -510,7 +519,8 @@ def _html_translate(
 def html_term_converter(value: str) -> str:
     div = f"<div>{value}</div>"
     root = etree.fromstring(div, etree.HTMLParser())
-    return etree.tostring(root[0][0], encoding="unicode", method="html")[5:-6]
+    serialized: str = etree.tostring(root[0][0], encoding="unicode", method="html")
+    return serialized[5:-6]
 
 
 def get_text_content(term: str) -> str:
@@ -575,7 +585,9 @@ def _materialise(value: object) -> object:
     return list(value) if _is_iterable_arg(value) else value
 
 
-def get_translation(module: str, lang: str, source: str, args: tuple | dict) -> str:
+def get_translation(
+    module: str, lang: str, source: str, args: tuple[Any, ...] | dict[str, Any]
+) -> str:
     assert lang, "missing language for translation"
     if lang == "en_US":
         translation = source
@@ -586,7 +598,7 @@ def get_translation(module: str, lang: str, source: str, args: tuple | dict) -> 
         )
     if not args:
         return translation
-    vals: Collection
+    vals: Collection[Any]
     if isinstance(args, dict):
         args = {k: _materialise(v) for k, v in args.items()}
         vals = args.values()
@@ -677,9 +689,8 @@ def get_translated_module(
             frame = arg
         if not frame:
             return "base"
-        if (module_name := frame.f_globals.get("__name__")) and module_name.startswith(
-            "odoo.addons."
-        ):
+        module_name: str | None = frame.f_globals.get("__name__")
+        if module_name and module_name.startswith("odoo.addons."):
             return module_name.split(".")[2]
         path = inspect.getfile(frame)
         from odoo.modules import get_resource_from_path
@@ -699,20 +710,25 @@ def _probe(obj: object, name: str) -> Any:
 
 def _get_cr(frame: FrameType, fallback: BaseCursor | None = None) -> BaseCursor | None:
     if "cr" in frame.f_locals:
-        return frame.f_locals["cr"]
+        local_cr: BaseCursor | None = frame.f_locals["cr"]
+        return local_cr
     if "cursor" in frame.f_locals:
-        return frame.f_locals["cursor"]
+        local_cursor: BaseCursor | None = frame.f_locals["cursor"]
+        return local_cursor
     if (local_self := frame.f_locals.get("self")) is not None:
         if (local_env := _probe(local_self, "env")) is not None:
-            return _probe(local_env, "cr")
-        if (cr := _probe(local_self, "cr")) is not None:
-            return cr
+            env_cr: BaseCursor | None = _probe(local_env, "cr")
+            return env_cr
+        self_cr: BaseCursor | None = _probe(local_self, "cr")
+        if self_cr is not None:
+            return self_cr
     return fallback
 
 
 def _get_uid(frame: FrameType) -> int | None:
     if "uid" in frame.f_locals:
-        return frame.f_locals["uid"]
+        local_uid: int | None = frame.f_locals["uid"]
+        return local_uid
     if "user" in frame.f_locals:
         try:
             return int(frame.f_locals["user"])
@@ -720,8 +736,9 @@ def _get_uid(frame: FrameType) -> int | None:
             pass
     if (local_self := frame.f_locals.get("self")) is not None:
         if (local_env := _probe(local_self, "env")) is not None:
-            if uid := _probe(local_env, "uid"):
-                return uid
+            env_uid: int | None = _probe(local_env, "uid")
+            if env_uid:
+                return env_uid
     return None
 
 
@@ -743,7 +760,7 @@ def _mapping_lang(candidate: object) -> str:
     return lang if isinstance(lang, str) else ""
 
 
-def _get_frame_context_lang(f_locals: Mapping) -> str:
+def _get_frame_context_lang(f_locals: Mapping[str, Any]) -> str:
     if lang := _mapping_lang(f_locals.get("context")):
         return lang
     if isinstance(local_kwargs := f_locals.get("kwargs"), Mapping):
@@ -777,16 +794,17 @@ def _get_lang(frame: FrameType | None, default_lang: str = "") -> str:
             _debug.logic("translate.context_lang_rejected", lang=lang[:64])
         if local_env:
             found_env = True
-            if lang := local_env.lang:
-                return lang
-    request_env = None
+            env_lang: str | None = local_env.lang
+            if env_lang:
+                return env_lang
+    request_env: Environment | None = None
     http = getattr(odoo, "http", None)
     if http and (req := http.request):
         request_env = req.bound_env
     if request_env:
         found_env = True
-        if lang := request_env.lang:
-            return lang
+        if request_lang := request_env.lang:
+            return request_lang
     request_cr = request_env.cr if request_env else None
     for candidate in frames:
         cr = _get_cr(candidate, request_cr)
@@ -796,16 +814,16 @@ def _get_lang(frame: FrameType | None, default_lang: str = "") -> str:
 
             found_env = True
             env = api.Environment(cr, uid, {})
-            lang = env["res.users"].context_get().get("lang")
+            user_lang: str | None = env["res.users"].context_get().get("lang")
             _debug.logic(
                 "translate.lang_from_user_context",
                 uid=uid,
-                lang=lang or None,
+                lang=user_lang or None,
                 frames_walked=len(frames),
                 function=candidate.f_code.co_name,
             )
-            if lang:
-                return lang
+            if user_lang:
+                return user_lang
             break
     if default_lang:
         _logger.debug("no translation language detected, fallback to %s", default_lang)
@@ -946,7 +964,7 @@ def parse_xmlid(xmlid: str, default_module: str) -> tuple[str, str]:
 
 def translation_file_reader(
     source: str | IO[bytes], fileformat: str = "po", module: str | None = None
-) -> Iterable[dict]:
+) -> Iterable[TranslationEntry]:
     if fileformat == "po":
         return PoFileReader(source)
     if isinstance(source, str):
@@ -968,7 +986,7 @@ class CSVFileReader:
         self.source = csv.DictReader(_reader(source), quotechar='"', delimiter=",")
         self.prev_code_src = ""
 
-    def __iter__(self) -> Iterator[dict]:
+    def __iter__(self) -> Iterator[TranslationEntry]:
         for entry in self.source:
             if entry["res_id"] and entry["res_id"].isnumeric():
                 entry["res_id"] = int(entry["res_id"])
@@ -1001,7 +1019,7 @@ class CSVDataFileReader:
         self.model = Path(source.name).stem.split("-")[0]
         self.source = csv.DictReader(_reader(source), quotechar='"', delimiter=",")
 
-    def __iter__(self) -> Iterator[dict]:
+    def __iter__(self) -> Iterator[TranslationEntry]:
         translated_fnames = sorted(
             [
                 fname.split("@", maxsplit=1)
@@ -1040,7 +1058,7 @@ class XMLDataFileReader:
         self.source = tree
         self.module = module
 
-    def __iter__(self) -> Iterator[dict]:
+    def __iter__(self) -> Iterator[TranslationEntry]:
         for record in self.source.xpath("//field[contains(@name, '@')]/.."):
             vals = {field.attrib["name"]: field.text for field in record.xpath("field")}
             translated_fnames = sorted(
@@ -1096,7 +1114,7 @@ class PoFileReader:
             pot_merged=bool(pot_path),
         )
 
-    def __iter__(self) -> Iterator[dict]:
+    def __iter__(self) -> Iterator[TranslationEntry]:
         for entry in self.pofile:
             if entry.obsolete:
                 continue
@@ -1177,7 +1195,7 @@ class PoFileReader:
 
 
 class _RowWriter(typing.Protocol):
-    def write_rows(self, rows: Iterable) -> None: ...
+    def write_rows(self, rows: Iterable[TranslationRow]) -> None: ...
 
 
 def TranslationFileWriter(
@@ -1216,10 +1234,11 @@ class CSVFileWriter:
             ("module", "type", "name", "res_id", "src", "value", "comments")
         )
 
-    def write_rows(self, rows: Iterable) -> None:
+    def write_rows(self, rows: Iterable[TranslationRow]) -> None:
         for module, type, name, res_id, src, trad, comments in rows:
-            comments = "\n".join(comments)
-            self.writer.writerow((module, type, name, res_id, src, trad, comments))
+            self.writer.writerow(
+                (module, type, name, res_id, src, trad, "\n".join(comments))
+            )
 
 
 def _po_header_text(text: str) -> str:
@@ -1279,9 +1298,10 @@ class _LaidOutEntry(polib.POEntry):
                     f'"{polib.escape(line)}"'
                 ]
         if plural_index or not segments:
-            return super()._str_field(
+            fallback: list[str] = super()._str_field(
                 fieldname, delflag, plural_index, field, wrapwidth
             )
+            return fallback
         return [
             f"{delflag}{fieldname} {segments[0]}",
             *(f"{delflag}{segment}" for segment in segments[1:]),
@@ -1305,7 +1325,7 @@ class PoFileWriter:
             if lang:
                 self.previous_header = _po_header_text(previous)
 
-    def write_rows(self, rows: Iterable) -> None:
+    def write_rows(self, rows: Iterable[TranslationRow]) -> None:
         grouped_rows: dict[str, dict[str, Any]] = {}
         modules = set()
         for module, type, name, res_id, src, trad, comments in rows:
@@ -1388,7 +1408,7 @@ class PoFileWriter:
     def add_entry(
         self,
         modules: list[str],
-        tnrs: list,
+        tnrs: list[tuple[str, str, str | int | None]],
         source: str,
         trad: str,
         comments: list[str] | None = None,
@@ -1430,7 +1450,7 @@ class TarFileWriter:
         self.lang = lang
         self.iso_codes = iso_codes or {}
 
-    def write_rows(self, rows: Iterable) -> None:
+    def write_rows(self, rows: Iterable[TranslationRow]) -> None:
         rows_by_module = defaultdict(list)
         for row in rows:
             module = row[0]
@@ -1572,9 +1592,12 @@ def _extract_translatable_qweb_terms(
 
 
 def babel_extract_qweb(
-    fileobj: IO[bytes], keywords: list, comment_tags: list, options: dict
-) -> list[tuple]:
-    result: list[tuple] = []
+    fileobj: IO[bytes],
+    keywords: Collection[str],
+    comment_tags: Collection[str],
+    options: dict[str, Any],
+) -> list[tuple[int, None, str, list[str]]]:
+    result: list[tuple[int, None, str, list[str]]] = []
 
     def handle_text(text: str, lineno: int) -> None:
         result.append((lineno, None, text, []))
@@ -1599,8 +1622,11 @@ def extract_formula_terms(formula: str) -> Iterator[str]:
 
 
 def extract_spreadsheet_terms(
-    fileobj: IO[bytes], keywords: list, comment_tags: list, options: dict
-) -> Iterator[tuple]:
+    fileobj: IO[bytes],
+    keywords: Collection[str],
+    comment_tags: Collection[str],
+    options: dict[str, Any],
+) -> Iterator[tuple[int, None, str, list[str]]]:
     terms: set[str] = set()
     data = json_loads(fileobj.read())
     for sheet in data.get("sheets", []):
@@ -1648,13 +1674,15 @@ class TranslationReader:
         from odoo import api
 
         self.env = api.Environment(cr, api.SUPERUSER_ID, {})
-        self._to_translate: list = []
+        self._to_translate: list[
+            tuple[str, str, str, str | int | None, str, tuple[str, ...], str | None]
+        ] = []
         self.previous: str | None = None
 
     def __bool__(self) -> bool:
         return bool(self._to_translate)
 
-    def __iter__(self) -> Iterator[tuple]:
+    def __iter__(self) -> Iterator[TranslationRow]:
         for (
             module,
             source,
@@ -1673,7 +1701,7 @@ class TranslationReader:
         name: str,
         res_id: str | int | None,
         source: str,
-        comments: list | None = None,
+        comments: list[str] | None = None,
         value: str | None = None,
     ) -> None:
         sanitized_term = (source or "").strip()
@@ -1989,7 +2017,7 @@ class TranslationModuleReader(TranslationReader):
 
     def _export_translatable_records(self) -> None:
         modules = self._selected_modules()
-        xml_defined: set[tuple] = set()
+        xml_defined: set[tuple[str, str, str]] = set()
         with _debug.perf(
             "translate.export_datafile_scan", cr=self._cr, modules=len(modules)
         ):
@@ -2020,7 +2048,7 @@ class TranslationModuleReader(TranslationReader):
             )
             self._shared = set(self._cr.fetchall())
 
-        records_per_model: defaultdict[str, dict] = defaultdict(dict)
+        records_per_model: defaultdict[str, dict[int, ImdInfo]] = defaultdict(dict)
         skipped = 0
         for imd_name, model, res_id, module in imd_rows:
             if (model, module, imd_name) in xml_defined:
@@ -2101,7 +2129,7 @@ class TranslationModuleReader(TranslationReader):
         extract_method: str = "odoo.tools.babel_extractors:extract_python",
         trans_type: str = "code",
         extra_comments: list[str] | None = None,
-        extract_keywords: dict | None = None,
+        extract_keywords: dict[str, tuple[int, ...] | None] | None = None,
     ) -> None:
         if extract_keywords is None:
             extract_keywords = {"_": None}
@@ -2140,7 +2168,7 @@ class TranslationModuleReader(TranslationReader):
         module: str,
         display_path: str,
         extract_method: str,
-        extract_keywords: dict,
+        extract_keywords: dict[str, tuple[int, ...] | None],
     ) -> list[tuple[int, str, list[str]]]:
         options = {"encoding": "UTF-8"} if "python" in extract_method else {}
         terms: list[tuple[int, str, list[str]]] = []
@@ -2278,7 +2306,7 @@ _DATA_FILE_TRANSLATED = {
 _ANY = re.compile(rb"")
 
 
-def DeepDefaultDict() -> defaultdict:
+def DeepDefaultDict() -> defaultdict[str, Any]:
     return defaultdict(DeepDefaultDict)
 
 
@@ -2316,7 +2344,7 @@ class TranslationImporter:
             return self.load(fileobj, fileformat, lang, xmlids=xmlids, module=module)
         return 0
 
-    def read_data_file(self, filepath: str, module: str) -> list[dict]:
+    def read_data_file(self, filepath: str, module: str) -> list[TranslationEntry]:
         fileformat = Path(filepath).suffix[1:].lower()
         with (
             suppress(FileNotFoundError),
@@ -2336,7 +2364,7 @@ class TranslationImporter:
                 )
         return []
 
-    def load_rows(self, rows: list[dict], lang: str) -> int:
+    def load_rows(self, rows: list[TranslationEntry], lang: str) -> int:
         if rows and self.env["res.lang"]._get_lang_cached(lang):
             return self._load(rows, lang)
         return 0
@@ -2389,7 +2417,7 @@ class TranslationImporter:
 
     def _load(
         self,
-        reader: Iterable[dict],
+        reader: Iterable[TranslationEntry],
         lang: str,
         xmlids: Collection[str] | None = None,
     ) -> int:
@@ -2465,8 +2493,8 @@ class TranslationImporter:
         model_name: str,
         field_name: str,
         sub_xmlids: tuple[str, ...],
-        field_dictionary: dict,
-    ) -> dict[int, list]:
+        field_dictionary: dict[str, dict[str, dict[str, str]]],
+    ) -> dict[int, list[Any]]:
         self.cr.execute(
             SQL(
                 """
@@ -2488,7 +2516,7 @@ class TranslationImporter:
         )
 
         order = {xmlid: index for index, xmlid in enumerate(sub_xmlids)}
-        rows_by_id: dict[int, list] = {}
+        rows_by_id: dict[int, list[Any]] = {}
         for id_, xmlid, values, noupdate in sorted(
             self.cr.fetchall(), key=lambda row: order[row[1]]
         ):
@@ -2505,12 +2533,12 @@ class TranslationImporter:
     @staticmethod
     def _merge_translation_dictionary(
         field: BaseString,
-        values: dict,
-        record_dictionary: dict,
+        values: dict[str, str],
+        record_dictionary: dict[str, dict[str, str]],
         noupdate: bool,
         overwrite: bool,
         force_overwrite: bool,
-    ) -> tuple[dict, set[str]]:
+    ) -> tuple[dict[str, dict[str, str]], set[str]]:
         _value_en = values.get("_en_US", values["en_US"])
         langs = {
             lang for translations in record_dictionary.values() for lang in translations
@@ -2539,10 +2567,10 @@ class TranslationImporter:
     def _changed_translation_values(
         translate: TranslateDialect,
         value_en: str,
-        values: dict,
+        values: dict[str, str],
         langs: set[str],
-        translation_dictionary: dict,
-    ) -> dict:
+        translation_dictionary: dict[str, dict[str, str]],
+    ) -> dict[str, str | None]:
         changed_values = {}
         for lang in langs:
             terms = {
@@ -2580,6 +2608,8 @@ class TranslationImporter:
     def _save_model_terms_translations(
         self, overwrite: bool, force_overwrite: bool
     ) -> None:
+        from odoo.orm.fields.textual import BaseString  # circular: fields -> tools
+
         env = self.env
         for model_name, model_dictionary in self.model_terms_translations.items():
             Model = env[model_name]
@@ -2587,6 +2617,8 @@ class TranslationImporter:
             fields = Model._fields
             for field_name, field_dictionary in model_dictionary.items():
                 field = fields.get(field_name)
+                assert isinstance(field, BaseString) and callable(field.translate)
+                translate = field.translate
                 for sub_xmlids in batched(
                     field_dictionary.keys(), self.cr.BATCH_SIZE, strict=False
                 ):
@@ -2617,7 +2649,7 @@ class TranslationImporter:
                             )
                         )
                         changed_values = self._changed_translation_values(
-                            field.translate,
+                            translate,
                             _value_en,
                             values,
                             langs,
@@ -2643,8 +2675,8 @@ class TranslationImporter:
         model_name: str,
         model_table: str,
         field_name: str,
-        items: Iterable[tuple[str, dict]],
-    ) -> list[tuple[str, dict]]:
+        items: Iterable[tuple[str, dict[str, str]]],
+    ) -> list[tuple[str, dict[str, str]]]:
         source_key = (
             _markup_spaced_key
             if self.env[model_name]._fields[field_name].type == "html"
@@ -2706,8 +2738,8 @@ class TranslationImporter:
         return checked
 
     def _translations_by_record(
-        self, model_name: str, checked: list[tuple[str, dict]]
-    ) -> dict[int, tuple[bool, dict]]:
+        self, model_name: str, checked: list[tuple[str, dict[str, str]]]
+    ) -> dict[int, tuple[bool, dict[str, str]]]:
         records: dict[str, tuple[int, bool]] = {}
         for sub_checked in batched(checked, self.cr.BATCH_SIZE, strict=False):
             self.cr.execute(
@@ -2731,7 +2763,7 @@ class TranslationImporter:
                 (xmlid, (res_id, bool(noupdate)))
                 for xmlid, res_id, noupdate in self.cr.fetchall()
             )
-        merged: dict[int, tuple[bool, dict]] = {}
+        merged: dict[int, tuple[bool, dict[str, str]]] = {}
         for xmlid, translations in checked:
             if xmlid not in records:
                 continue
@@ -2757,7 +2789,7 @@ class TranslationImporter:
                         overwrite=overwrite,
                         column=column,
                     )
-                checked: list[tuple[str, dict]] = []
+                checked: list[tuple[str, dict[str, str]]] = []
                 for sub_field_dictionary in batched(
                     field_dictionary.items(), self.cr.BATCH_SIZE, strict=False
                 ):
@@ -2925,7 +2957,7 @@ def read_po_translations(path: Path) -> dict[str, str]:
     return _po_translations(polib.pofile(str(path)))
 
 
-def _template_rows(template: polib.POFile) -> Iterator[tuple]:
+def _template_rows(template: polib.POFile) -> Iterator[TranslationRow]:
     for entry in template:
         if entry.obsolete:
             continue
@@ -3036,12 +3068,12 @@ def get_datafile_translation_path(module_name: str) -> Iterator[str]:
 
 class CodeTranslations:
     def __init__(self) -> None:
-        self.python_translations: dict[tuple[str, str], Mapping] = {}
-        self.web_translations: dict[tuple[str, str], Mapping] = {}
+        self.python_translations: dict[tuple[str, str], Mapping[str, str]] = {}
+        self.web_translations: dict[tuple[str, str], WebTranslations] = {}
 
     @staticmethod
     def _read_code_translations_file(
-        fileobj: IO[bytes], filter_func: Callable[[dict], bool]
+        fileobj: IO[bytes], filter_func: Callable[[TranslationEntry], bool]
     ) -> dict[str, str]:
         translations = {}
         fileobj.seek(0)
@@ -3053,7 +3085,7 @@ class CodeTranslations:
 
     @staticmethod
     def _get_code_translations(
-        module_name: str, lang: str, filter_func: Callable[[dict], bool]
+        module_name: str, lang: str, filter_func: Callable[[TranslationEntry], bool]
     ) -> dict[str, str]:
         po_paths = get_po_paths(module_name, lang)
         translations = {}
@@ -3088,7 +3120,7 @@ class CodeTranslations:
         python: dict[str, str] = {}
         web: dict[str, str] = {}
 
-        def either(row: dict) -> bool:
+        def either(row: TranslationEntry) -> bool:
             if not row.get("value"):
                 return False
             kept = False
@@ -3106,7 +3138,7 @@ class CodeTranslations:
     @staticmethod
     def _load_code_translations(
         module_name: str, lang: str
-    ) -> tuple[Mapping[str, str], Mapping]:
+    ) -> tuple[Mapping[str, str], WebTranslations]:
         python, web = CodeTranslations._split_code_translations(module_name, lang)
         return ReadonlyDict(python), ReadonlyDict(
             {
@@ -3132,7 +3164,7 @@ class CodeTranslations:
             for key in [k for k in list(cache) if k[0] == module_name]:
                 cache.pop(key, None)
 
-    def _load(self, key: tuple[str, str]) -> tuple[Mapping[str, str], Mapping]:
+    def _load(self, key: tuple[str, str]) -> tuple[Mapping[str, str], WebTranslations]:
         python, web = self._load_code_translations(*key)
         self.python_translations.setdefault(key, python)
         self.web_translations.setdefault(key, web)
@@ -3145,7 +3177,7 @@ class CodeTranslations:
         except KeyError:
             return self._load(key)[0]
 
-    def get_web_translations(self, module_name: str, lang: str) -> Mapping:
+    def get_web_translations(self, module_name: str, lang: str) -> WebTranslations:
         key = (module_name, lang)
         try:
             return self.web_translations[key]

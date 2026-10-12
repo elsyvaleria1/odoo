@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
+from typing import Any
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import loads as json_loads
@@ -27,7 +28,7 @@ class ViewTypeSpec:
 
 
 class Schema:
-    def __init__(self, data: dict) -> None:
+    def __init__(self, data: dict[str, Any]) -> None:
         self.version: int = data["version"]
         self.attr_types: dict[str, str] = data["attr_types"]
         self.common_attrs: dict[str, AttrType] = data["common_attrs"]

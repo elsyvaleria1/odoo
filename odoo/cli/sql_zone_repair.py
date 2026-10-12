@@ -2,6 +2,7 @@ import argparse
 import logging
 import sys
 from datetime import datetime
+from typing import Any
 
 import odoo.db
 from odoo.libs.debug_log import DebugLog
@@ -127,7 +128,7 @@ def _print_probe(probe: repair.ZoneProbe) -> None:
         print(f"  PGTZ={probe.pgtz} in this process's environment")
 
 
-def _print_plan(plan: repair.RepairPlan, guard: dict | None) -> None:
+def _print_plan(plan: repair.RepairPlan, guard: dict[str, Any] | None) -> None:
     print(
         f"\nZone {plan.zone}; deploy {plan.until.isoformat()} = "
         f"{plan.until_local.isoformat(sep=' ')} local wall clock; "

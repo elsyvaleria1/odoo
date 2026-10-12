@@ -137,11 +137,13 @@ class Document:
 
     @property
     def read_up_to(self) -> int:
-        return self.options.get("read_up_to", DEFAULT_READ_UP_TO)
+        read_up_to: int = self.options.get("read_up_to", DEFAULT_READ_UP_TO)
+        return read_up_to
 
     @property
     def text_max_chars(self) -> int:
-        return self.options.get("text_max_chars", TEXT_MAX_CHARS)
+        text_max_chars: int = self.options.get("text_max_chars", TEXT_MAX_CHARS)
+        return text_max_chars
 
     @classmethod
     def of(
@@ -238,8 +240,9 @@ class Document:
         return self._derive(TREE)
 
     @property
-    def data_dict(self) -> dict | list | None:
-        return self._derive(DATA)
+    def data_dict(self) -> dict[str, Any] | list[Any] | None:
+        data: dict[str, Any] | list[Any] | None = self._derive(DATA)
+        return data
 
     @property
     def images(self) -> list[bytes]:

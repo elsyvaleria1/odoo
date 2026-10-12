@@ -40,7 +40,7 @@ def exp_authenticate(
     db: str,
     login: str,
     password: str,
-    user_agent_env: dict | None = None,
+    user_agent_env: dict[str, Any] | None = None,
 ) -> int | bool:
     if not isinstance(db, str) or not db:
         _debug.logic("rpc.authenticate.rejected", reason="db_type")
@@ -107,12 +107,12 @@ def exp_version() -> dict[str, Any]:
     return _get_rpc_version_1()
 
 
-def dispatch(method: str, params: list | tuple) -> Any:
+def dispatch(method: str, params: list[Any] | tuple[Any, ...]) -> Any:
     _debug.pipeline("rpc.common.dispatch", method=method)
     return dispatch_through_table(method, params, _DISPATCH)
 
 
-_DISPATCH: dict[str, Callable] = {
+_DISPATCH: dict[str, Callable[..., Any]] = {
     "login": exp_login,
     "authenticate": exp_authenticate,
     "version": exp_version,

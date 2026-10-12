@@ -1,13 +1,6 @@
 import functools
 import mimetypes
-from typing import Any, Final, Protocol
-
-
-class _RepinningInit(Protocol):
-    _odoo_repins: bool
-
-    def __call__(self, files: Any = None) -> None: ...
-
+from typing import Any, Final
 
 WEB_TYPES: Final[tuple[tuple[str, str], ...]] = (
     ("font/woff", ".woff"),
@@ -37,6 +30,5 @@ def patch_module() -> None:
         original_init(files)
         add_web_types()
 
-    repinning: _RepinningInit = init
-    repinning._odoo_repins = True
-    mimetypes.init = repinning
+    setattr(init, "_odoo_repins", True)  # noqa: B010 -- marker read back by getattr on the wrapped function
+    mimetypes.init = init

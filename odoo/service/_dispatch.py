@@ -80,7 +80,9 @@ def is_db_exposed(db_name: object) -> bool:
 
 
 @functools.cache
-def get_positional_bounds(handler: Callable) -> tuple[int, int | None, tuple[str, ...]]:
+def get_positional_bounds(
+    handler: Callable[..., Any],
+) -> tuple[int, int | None, tuple[str, ...]]:
     required = 0
     maximum = 0
     names: list[str] = []
@@ -111,7 +113,7 @@ def get_positional_bounds(handler: Callable) -> tuple[int, int | None, tuple[str
     return required, maximum, tuple(names)
 
 
-def _check_arity(method: str, handler: Callable, count: int) -> None:
+def _check_arity(method: str, handler: Callable[..., Any], count: int) -> None:
     required, maximum, names = get_positional_bounds(handler)
     if count < required:
         expected = ", ".join(names[:required])
@@ -131,7 +133,7 @@ def _check_arity(method: str, handler: Callable, count: int) -> None:
 def dispatch_through_table(
     method: str,
     params: Sequence[Any],
-    table: dict[str, Callable],
+    table: dict[str, Callable[..., Any]],
     *,
     credentialed: frozenset[str] = frozenset(),
     check_credential: Callable[[Any], Any] | None = None,

@@ -19,8 +19,13 @@ from odoo.libs.sql import SQL
 from odoo.libs.utils import format_frame
 
 from .bulk import _BulkAccessMixin
-from .ddl import _has_schema_changing_statement, _inline_ddl_params, classify_statement
-from .dsn import _expand_conninfo, _get_dsn_key
+from .ddl import (
+    QueryParams,
+    _has_schema_changing_statement,
+    _inline_ddl_params,
+    classify_statement,
+)
+from .dsn import ConnInfo, DsnKey, _expand_conninfo, _get_dsn_key
 from .errors import (
     PG_RECOVERABLE_EXCEPTIONS,
     PG_STALE_PLAN_EXCEPTIONS,
@@ -178,7 +183,7 @@ class BaseCursor:
     def execute(
         self,
         query: str | bytes | SQL | _sql.Composable,
-        params: tuple | list | dict | None = None,
+        params: QueryParams | None = None,
         log_exceptions: bool = True,
         prepare: bool | None = None,
     ) -> None:
@@ -334,8 +339,8 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         self,
         pool: ConnectionPool,
         dbname: str,
-        dsn: dict,
-        key: frozenset | None = None,
+        dsn: ConnInfo,
+        key: DsnKey | None = None,
         *,
         borrow_timeout: float | None = None,
         fail_fast: bool = False,
@@ -403,13 +408,15 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         obj = self._obj
         if self._pipeline is not None:
             return self._wait_in_pipeline(obj.fetchall)
-        return obj.fetchall()
+        rows: list[tuple[Any, ...]] = obj.fetchall()
+        return rows
 
     def _fetchmany(self, size: int) -> list[tuple[Any, ...]]:
         obj = self._obj
         if self._pipeline is not None:
             return self._wait_in_pipeline(obj.fetchmany, size)
-        return obj.fetchmany(size)
+        rows: list[tuple[Any, ...]] = obj.fetchmany(size)
+        return rows
 
     def dictfetchone(self) -> dict[str, Any] | None:
         row = self.fetchone()
@@ -445,9 +452,12 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
 
     def fetchone(self) -> tuple[Any, ...] | None:
         obj = self._obj
+        row: tuple[Any, ...] | None
         if self._pipeline is not None:
-            return self._wait_in_pipeline(obj.fetchone)
-        return obj.fetchone()
+            row = self._wait_in_pipeline(obj.fetchone)
+        else:
+            row = obj.fetchone()
+        return row
 
     def fetchall(self) -> list[tuple[Any, ...]]:
         rows = self._fetchall()
@@ -462,22 +472,25 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
     @property
     def description(self) -> list[Any] | None:
         self._sync_pipeline_results()
-        return self._obj.description
+        description: list[Any] | None = self._obj.description
+        return description
 
     @property
     def rowcount(self) -> int:
         self._sync_pipeline_results()
-        return self._obj.rowcount
+        rowcount: int = self._obj.rowcount
+        return rowcount
 
     def nextset(self) -> bool | None:
         self._sync_pipeline_results()
-        return self._obj.nextset()
+        has_next: bool | None = self._obj.nextset()
+        return has_next
 
     @contextmanager
     def copy(
         self,
         statement: str | bytes | _sql.Composable,
-        params: tuple | list | dict | None = None,
+        params: QueryParams | None = None,
         *,
         writer: Any = None,
     ) -> Generator[Any]:
@@ -528,7 +541,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
     def __copy__(self) -> NoReturn:
         raise self._prepare_copy_refused_error()
 
-    def __deepcopy__(self, memo: dict) -> NoReturn:
+    def __deepcopy__(self, memo: dict[int, Any]) -> NoReturn:
         raise self._prepare_copy_refused_error()
 
     def __del__(self) -> None:
@@ -768,7 +781,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
     def execute(
         self,
         query: str | bytes | SQL | _sql.Composable,
-        params: tuple | list | dict | None = None,
+        params: QueryParams | None = None,
         log_exceptions: bool = True,
         prepare: bool | None = None,
     ) -> None:
@@ -845,9 +858,9 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
     def _prepare_ddl_statement(
         self,
         query: Any,
-        params: tuple | list | dict | None,
+        params: QueryParams | None,
         prepare: bool | None,
-    ) -> tuple[Any, tuple | list | dict | None, bool | None, str, str | None, bool]:
+    ) -> tuple[Any, QueryParams | None, bool | None, str, str | None, bool]:
         qs = _get_statement_text(query)
         ddl_kw, rollback_to = classify_statement(qs)
         if ddl_kw is not None:
@@ -956,7 +969,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
     def executemany(
         self,
         query: str | SQL | _sql.Composable,
-        params_seq: Iterable[tuple | list | dict],
+        params_seq: Iterable[QueryParams],
         returning: bool = False,
         log_exceptions: bool = True,
     ) -> None:
@@ -975,7 +988,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         qs = _get_statement_text(query)
         ddl_kw, rollback_to = classify_statement(qs)
 
-        rows: Collection[tuple | list | dict] = (
+        rows: Collection[QueryParams] = (
             params_seq if isinstance(params_seq, Collection) else list(params_seq)
         )
         if not rows:
@@ -1099,10 +1112,12 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             return None
 
     def _is_connection_clean(self) -> bool:
-        return self._get_transaction_status() == _TX_IDLE
+        clean: bool = self._get_transaction_status() == _TX_IDLE
+        return clean
 
     def in_failed_transaction(self) -> bool:
-        return self._get_transaction_status() == _TX_INERROR
+        failed: bool = self._get_transaction_status() == _TX_INERROR
+        return failed
 
     def enforce_readonly(self) -> None:
         if self._readonly:
@@ -1301,14 +1316,14 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
 class Connection:
     __slots__ = ("__dbname", "__dsn", "__key", "__pool")
 
-    def __init__(self, pool: ConnectionPool, dbname: str, dsn: dict) -> None:
+    def __init__(self, pool: ConnectionPool, dbname: str, dsn: ConnInfo) -> None:
         self.__dbname = dbname
         self.__dsn = dict(dsn)
         self.__pool = pool
         self.__key = _get_dsn_key(dsn)
 
     @property
-    def dsn(self) -> dict:
+    def dsn(self) -> ConnInfo:
         dsn = _expand_conninfo(self.__dsn)
         dsn.pop("password", None)
         return dsn
@@ -1342,7 +1357,7 @@ class Connection:
     def get_rows_autocommit(
         self,
         query: str | bytes | SQL | _sql.Composable,
-        params: tuple | list | dict | None = None,
+        params: QueryParams | None = None,
     ) -> list[tuple[Any, ...]]:
         if self.__pool.readonly:
             raise ValueError(

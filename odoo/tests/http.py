@@ -6,6 +6,7 @@ import json
 import logging
 import operator
 import threading
+from collections.abc import Callable, Generator
 from contextlib import ExitStack, contextmanager
 from typing import Any, ClassVar
 from unittest.mock import patch
@@ -158,7 +159,9 @@ class HttpCase(TransactionCase):
         self.opener.close()
 
     @contextmanager
-    def allow_requests(self, browser: ChromeBrowser | None = None, all_requests=False):
+    def allow_requests(
+        self, browser: ChromeBrowser | None = None, all_requests: bool = False
+    ) -> Generator[None]:
         sync_routing_with_controllers(self.registry)
         with ExitStack() as defer:
             defer.enter_context(release_test_lock())
@@ -208,7 +211,9 @@ class HttpCase(TransactionCase):
             message,
         )
 
-    def prepare_rpc_payload(self, params: dict | None = None) -> dict:
+    def prepare_rpc_payload(
+        self, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         return {
             "jsonrpc": "2.0",
             "method": "call",
@@ -222,11 +227,11 @@ class HttpCase(TransactionCase):
         data: Any = None,
         files: Any = None,
         timeout: int = 12,
-        headers: dict | None = None,
+        headers: dict[str, str] | None = None,
         json: Any = None,
-        params: dict | None = None,
+        params: dict[str, Any] | None = None,
         allow_redirects: bool = True,
-        cookies: dict | None = None,
+        cookies: dict[str, str] | None = None,
         method: str | None = None,
     ) -> Any:
         if not method and (data or files or json):
@@ -332,7 +337,7 @@ class HttpCase(TransactionCase):
         password: str | None,
         *,
         browser: ChromeBrowser | None = None,
-        session_extra: dict | None = None,
+        session_extra: dict[str, Any] | None = None,
     ) -> Any:
         if getattr(self, "session", None):
             _debug.logic("test.http.session_replaced", test=_tag(self))
@@ -351,18 +356,21 @@ class HttpCase(TransactionCase):
             db=get_db_name(),
             _trace_disable=True,
         )
-        session.context["lang"] = odoo.http.DEFAULT_LANG
+        session_context: dict[str, Any] = session["context"]
+        session_context["lang"] = odoo.http.DEFAULT_LANG
 
         if session_extra:
             if extra_ctx := session_extra.pop("context", None):
-                session.context.update(extra_ctx)
+                session_context.update(extra_ctx)
             session.update(session_extra)
 
         if user:
             self.cr.flush()
             self.cr.clear()
 
-            def patched_check_credentials(self, credential, env):
+            def patched_check_credentials(
+                self: Any, credential: dict[str, Any], env: api.Environment
+            ) -> dict[str, Any]:
                 return {
                     "uid": self.id,
                     "auth_method": "password",
@@ -384,11 +392,13 @@ class HttpCase(TransactionCase):
                 auth_info = self.env["res.users"].authenticate(
                     credential, {"interactive": False}
                 )
-            uid = auth_info["uid"]
+            uid: int = auth_info["uid"]
             env = api.Environment(self.cr, uid, {})
             session.uid = uid
             session.login = user
-            session.session_token = uid and security.get_session_token(session, env)
+            session.session_token = (
+                security.get_session_token(session, env) if uid else None
+            )
             session.context = dict(env["res.users"].context_get())
             env["auth.user.client"]._bind_session(session)
 
@@ -411,7 +421,7 @@ class HttpCase(TransactionCase):
 
         return session
 
-    def prepare_proxy_response(self, url: str) -> dict:
+    def prepare_proxy_response(self, url: str) -> dict[str, Any]:
 
         if "https://fonts.googleapis.com/css" in url:
             _debug.logic("test.http.proxy", kind="fonts", url=url)
@@ -431,7 +441,7 @@ class HttpCase(TransactionCase):
 
     def prepare_proxy_response_from_content(
         self, content: str | bytes, code: int = 200
-    ) -> dict:
+    ) -> dict[str, Any]:
         if isinstance(content, str):
             content = content.encode()
         return {
@@ -487,7 +497,9 @@ class HttpCase(TransactionCase):
         atexit.callback(_kick_all, CloseCode.KILL_NOW)
         original_send_one = BusBus._sendone
 
-        def sendone_wrapper(self, target, notification_type, message):
+        def sendone_wrapper(
+            self: Any, target: Any, notification_type: str, message: Any
+        ) -> None:
             original_send_one(self, target, notification_type, message)
             self.env.cr.precommit.run()
             self.env.cr.postcommit.drain()
@@ -514,20 +526,20 @@ class HttpCase(TransactionCase):
 
     def browser_js(
         self,
-        url_path,
-        code,
-        ready="",
-        login=None,
-        timeout=60,
-        cookies=None,
-        error_checker=None,
-        watch=False,
-        success_signal=DEFAULT_SUCCESS_SIGNAL,
-        debug=False,
-        cpu_throttling=None,
-        trace_categories=None,
-        **kw,
-    ):
+        url_path: str,
+        code: str,
+        ready: str = "",
+        login: str | None = None,
+        timeout: float = 60,
+        cookies: dict[str, str] | None = None,
+        error_checker: Callable[[str], bool] | None = None,
+        watch: bool = False,
+        success_signal: str = DEFAULT_SUCCESS_SIGNAL,
+        debug: bool | str = False,
+        cpu_throttling: int | None = None,
+        trace_categories: str | None = None,
+        **kw: Any,
+    ) -> list[dict[str, Any]] | None:
         timeout, watch = self._browser_js_budget(timeout, watch, debug)
 
         _debug.pipeline(
@@ -665,7 +677,7 @@ class HttpCase(TransactionCase):
         )
         Users = self.registry["res.users"]
 
-        def setup(_):
+        def setup(_: Any) -> None:
             setattr(Users, "tour_enabled", False)  # noqa: B010 -- optional web addon hook
 
         with (
@@ -686,7 +698,7 @@ class HttpCase(TransactionCase):
         make_profiler = super().profile
         _profiler = make_profiler(description, **kwargs)
 
-        def route_profiler(request):
+        def route_profiler(request: Any) -> Any:
             _route_profiler = make_profiler(
                 description=request.httprequest.full_path, db=_profiler.db
             )
@@ -714,9 +726,9 @@ class HttpCase(TransactionCase):
     def call_jsonrpc(
         self,
         route: str,
-        params: dict | None = None,
-        headers: dict | None = None,
-        cookies: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: dict[str, str] | None = None,
         timeout: int = 12,
     ) -> Any:
         response = self.opener.post(

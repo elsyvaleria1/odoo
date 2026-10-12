@@ -20,7 +20,7 @@ _logger = logging.getLogger("odoo.service.server")
 _debug = DebugLog(__name__)
 
 
-_on_stop_hooks: list[Callable] = []
+_on_stop_hooks: list[Callable[[], object]] = []
 """What to run when THIS PROCESS's server stops.  Process-wide, not per class.
 
 A process runs one server, and a hook registered by (say) the sass compiler has
@@ -38,7 +38,7 @@ process.
 """
 
 
-def register_on_stop_hook(func: Callable) -> None:
+def register_on_stop_hook(func: Callable[[], object]) -> None:
     if func not in _on_stop_hooks:
         _on_stop_hooks.append(func)
         _debug.lifecycle(
@@ -63,10 +63,10 @@ def run_on_stop_hooks(logger: logging.Logger) -> None:
             _debug.logic("server.stop_hook.failed", hook=name)
 
 
-_process_exit_hooks: list[tuple[int, Callable]] = []
+_process_exit_hooks: list[tuple[int, Callable[[], object]]] = []
 
 
-def register_process_exit_hook(func: Callable) -> None:
+def register_process_exit_hook(func: Callable[[], object]) -> None:
     entry = (os.getpid(), func)
     if entry in _process_exit_hooks:
         return
@@ -172,7 +172,7 @@ class CommonServer:
         _debug.lifecycle("server.ready", flavor=self.flavor, pid=self.pid)
 
     @classmethod
-    def register_on_stop_hook(cls, func: Callable) -> None:
+    def register_on_stop_hook(cls, func: Callable[[], object]) -> None:
         register_on_stop_hook(func)
 
     def stop(self) -> None:

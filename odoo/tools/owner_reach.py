@@ -394,7 +394,7 @@ def search_by_owner(
     table = SQL.identifier(model._table)
     column = SQL.identifier(model._table, model_field)
 
-    def fetch(query: Query) -> list[tuple]:
+    def fetch(query: Query) -> list[tuple[typing.Any, ...]]:
         return model.env.execute_query(query.select(SQL("%s.id", table), column))
 
     def allowed(rows: Sequence[Sequence[typing.Any]]) -> list[int]:

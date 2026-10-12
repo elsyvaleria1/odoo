@@ -90,14 +90,16 @@ _DEPRECATED_MANIFEST_KEYS = {
 }
 
 
-def get_stored_data_files(stored: object) -> dict | None:
+def get_stored_data_files(stored: object) -> dict[str, typing.Any] | None:
     if not isinstance(stored, dict) or stored.get("v") != _DATA_FILE_CHECKSUM_VERSION:
         return None
     files = stored.get("files")
     return files if isinstance(files, dict) else None
 
 
-def _read_stored_checksums(env: Environment, package: ModuleNode) -> dict:
+def _read_stored_checksums(
+    env: Environment, package: ModuleNode
+) -> dict[str, typing.Any]:
     env.cr.execute(
         "SELECT data_file_checksums FROM ir_module_module WHERE id = %s",
         [package.id],
@@ -119,7 +121,7 @@ def _read_stored_checksums(env: Environment, package: ModuleNode) -> dict:
 
 
 def _write_stored_checksums(
-    env: Environment, package: ModuleNode, new_files: dict
+    env: Environment, package: ModuleNode, new_files: dict[str, typing.Any]
 ) -> None:
     env.cr.execute(
         "UPDATE ir_module_module SET data_file_checksums = %s::jsonb WHERE id = %s",
@@ -137,7 +139,9 @@ def _write_stored_checksums(
     )
 
 
-def _is_reusable_checksum_entry(entry: object, digest: str) -> typing.TypeGuard[dict]:
+def _is_reusable_checksum_entry(
+    entry: object, digest: str
+) -> typing.TypeGuard[dict[str, typing.Any]]:
     return (
         isinstance(entry, dict)
         and entry.get("sha") == digest
@@ -146,11 +150,13 @@ def _is_reusable_checksum_entry(entry: object, digest: str) -> typing.TypeGuard[
     )
 
 
-def _has_xmlids_of_another_module(entry: dict, module: str) -> bool:
+def _has_xmlids_of_another_module(entry: dict[str, typing.Any], module: str) -> bool:
     return any(xmlid.split(".", 1)[0] != module for xmlid in entry["xmlids"])
 
 
-def _get_files_missing_records(cr: BaseCursor, stored_files: dict) -> set[str]:
+def _get_files_missing_records(
+    cr: BaseCursor, stored_files: dict[str, typing.Any]
+) -> set[str]:
     files_by_xmlid: dict[str, list[str]] = {}
     for filename, entry in stored_files.items():
         if isinstance(entry, dict) and isinstance(entry.get("xmlids"), list):
@@ -235,7 +241,9 @@ def _get_entry_ids(entry: object) -> dict[str, int]:
     return ids if isinstance(ids, dict) else {}
 
 
-def _get_recreated_ids(stored_files: dict, new_files: dict) -> dict[str, int]:
+def _get_recreated_ids(
+    stored_files: dict[str, typing.Any], new_files: dict[str, typing.Any]
+) -> dict[str, int]:
     before: dict[str, set[int]] = {}
     for entry in stored_files.values():
         for xmlid, res_id in _get_entry_ids(entry).items():
@@ -316,10 +324,10 @@ def _load_tracked_file(
     idref: IdRef,
     mode: LoadMode,
     kind: LoadKind,
-    stored_files: dict,
+    stored_files: dict[str, typing.Any],
     stale_files: set[str],
     moved_files: set[str],
-) -> dict:
+) -> dict[str, typing.Any]:
     with tools.file_open(f"{package.name}/{filename}", "rb") as fp:
         content = fp.read()
     digest, dynamic = _get_data_file_digest_and_dynamic_flag(filename, content)
@@ -428,7 +436,7 @@ def load_data(
     moved_files = (
         _get_files_with_moved_refs(env.cr, stored_files) if stored_files else set()
     )
-    new_files: dict = {}
+    new_files: dict[str, typing.Any] = {}
     _debug.pipeline(
         "modules.load_data",
         module=package.name,
@@ -839,7 +847,7 @@ class _PackageLoader:
         with _debug.perf("modules.package.check", cr=env.cr, module=self.name):
             self.module._check()
 
-        idref: dict = {}
+        idref: IdRef = {}
         with _debug.perf(
             "modules.package.data",
             cr=env.cr,

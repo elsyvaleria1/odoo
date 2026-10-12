@@ -20,7 +20,7 @@ _debug = DebugLog(__name__)
 
 
 class RecordCapturer:
-    def __init__(self, model: Any, domain: list | None = None) -> None:
+    def __init__(self, model: Any, domain: list[Any] | None = None) -> None:
         self._model = model
         self._domain = domain or []
 
@@ -77,7 +77,8 @@ def _normalize_arch_for_assert(arch_string: str, parser_method: str = "xml") -> 
         "test.matchers.normalize_arch", parser=parser_method, size=len(arch_string)
     )
     arch_string = etree.fromstring(arch_string, parser=parser)
-    return etree.tostring(arch_string, pretty_print=True, encoding="unicode")
+    normalized: str = etree.tostring(arch_string, pretty_print=True, encoding="unicode")
+    return normalized
 
 
 class Like:

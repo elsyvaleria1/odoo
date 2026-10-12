@@ -1,5 +1,5 @@
 import atexit
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     sql_counter: int
@@ -83,7 +83,7 @@ def is_pooled(db_name: str) -> bool:
     return registry.is_pooled(db_name)
 
 
-def get_pool_health() -> dict:
+def get_pool_health() -> dict[str, Any]:
     return registry.get_health()
 
 

@@ -93,8 +93,10 @@ def from_string(arch: str | bytes) -> Node:
 
 
 def to_string(node: Node) -> str:
-    return etree.tostring(to_arch(node), encoding="unicode")
+    serialized: str = etree.tostring(to_arch(node), encoding="unicode")
+    return serialized
 
 
 def canonical(element: etree._Element) -> bytes:
-    return etree.tostring(element, method="c14n", with_comments=True)
+    serialized: bytes = etree.tostring(element, method="c14n", with_comments=True)
+    return serialized

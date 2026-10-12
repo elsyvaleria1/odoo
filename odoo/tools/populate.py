@@ -26,7 +26,7 @@ MAX_DATETIME = datetime.now()
 
 
 def get_field_variation_date(
-    model: Model, field: Field, factor: int, series_alias: str
+    model: Model, field: Field[Any], factor: int, series_alias: str
 ) -> SQL:
     total_days = min((MAX_DATETIME - MIN_DATETIME).days, factor)
     assert field._column_type is not None
@@ -51,7 +51,9 @@ def get_field_variation_date(
     )
 
 
-def get_field_variation_char(field: Field, postfix: str | SQL | None = None) -> SQL:
+def get_field_variation_char(
+    field: Field[Any], postfix: str | SQL | None = None
+) -> SQL:
     if postfix is None:
         return SQL.identifier(field.name)
     if not isinstance(postfix, SQL):
@@ -84,7 +86,7 @@ class PopulateContext:
         self.has_session_replication_role: bool = True
 
     @staticmethod
-    def _restore_indexes(model: Model, indexes: list[dict]) -> None:
+    def _restore_indexes(model: Model, indexes: list[dict[str, Any]]) -> None:
         _logger.info("Adding indexes back on table %s...", model._table)
         with _debug.perf(
             "populate.indexes_restored",
@@ -229,7 +231,7 @@ def unique_indexed_columns(model: Model) -> frozenset[str]:
 
 
 def is_field_variation_required(
-    model: Model, field: Field, unique_columns: frozenset[str] | None = None
+    model: Model, field: Field[Any], unique_columns: frozenset[str] | None = None
 ) -> bool:
     in_names_search = model._rec_names_search and field.name in model._rec_names_search
     in_name = model._rec_name and field.name == model._rec_name
@@ -245,7 +247,7 @@ def is_field_variation_required(
 
 
 def get_field_variation(
-    model: Model, field: Field, factor: int, series_alias: str
+    model: Model, field: Field[Any], factor: int, series_alias: str
 ) -> SQL:
     match field.type:
         case "char" | "text":
@@ -279,7 +281,8 @@ def get_last_id(model: Model) -> int:
         "SELECT COALESCE(MAX(id), 0) FROM %s",
         SQL.identifier(_id_table(model)),
     )
-    return model.env.execute_query(query)[0][0]
+    max_id: int = model.env.execute_query(query)[0][0]
+    return max_id
 
 
 def _tree_members(model: Model) -> list[Model]:
@@ -303,7 +306,7 @@ def _tree_members(model: Model) -> list[Model]:
 
 def populate_field(
     model: Model,
-    field: Field,
+    field: Field[Any],
     populated: dict[Model, int],
     factors: dict[Model, int],
     table_alias: str = "t",
@@ -312,10 +315,10 @@ def populate_field(
     id_offset: int | None = None,
 ) -> SQL | None:
 
-    def copy_raw(field_: Field) -> SQL:
+    def copy_raw(field_: Field[Any]) -> SQL:
         return SQL.identifier(field_.name)
 
-    def copy(field_: Field) -> SQL:
+    def copy(field_: Field[Any]) -> SQL:
         if is_field_variation_required(model, field_, unique_columns):
             return get_field_variation(model, field_, factors[model], series_alias)
         else:
@@ -330,7 +333,7 @@ def populate_field(
             series_alias=SQL.identifier(series_alias),
         )
 
-    def copy_many2one(field_: Field) -> SQL:
+    def copy_many2one(field_: Field[Any]) -> SQL:
         comodel = typing.cast("Model", model.env[field_._get_comodel_name()])
         if comodel in populated:
             comodel_max_id = populated[comodel]
@@ -376,7 +379,7 @@ def populate_model(
             )
         )
 
-    def has_column(field_: Field) -> bool:
+    def has_column(field_: Field[Any]) -> bool:
         return field_.is_column
 
     assert model not in populated, (
@@ -511,7 +514,7 @@ class Many2oneFieldWrapper(Many2one):
 class Many2manyModelWrapper:
     _table_inheritance_root = ""
 
-    def __init__(self, env: Environment, field: Field) -> None:
+    def __init__(self, env: Environment, field: Field[Any]) -> None:
         self._name = field.relation
         self._table = field.relation
         self._inherits: dict[str, str] = {}
@@ -536,7 +539,7 @@ class Many2manyModelWrapper:
 
 
 def infer_many2many_model(
-    env: Environment, field: Field
+    env: Environment, field: Field[Any]
 ) -> Model | Many2manyModelWrapper:
     for model_name, model_class in env.registry.items():
         if model_class._table == field.relation:
@@ -552,7 +555,8 @@ def populate_models(model_factors: dict[Any, int], separator_code: int) -> None:
             SQL("ONLY ") if only else SQL(),
             SQL.identifier(model_._table),
         )
-        return model_.env.execute_query(query)[0][0]
+        exists: bool = model_.env.execute_query(query)[0][0]
+        return exists
 
     populated: dict[Model, int] = defaultdict(int)
     ctx: PopulateContext = PopulateContext()

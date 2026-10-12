@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
@@ -131,7 +132,7 @@ def render_dts(spec: Schema) -> str:
     return "\n".join(out) + "\n"
 
 
-def _json_value_schema(attr_type: AttrType) -> dict:
+def _json_value_schema(attr_type: AttrType) -> dict[str, Any]:
     if isinstance(attr_type, list):
         return {"enum": attr_type}
     match attr_type:
@@ -143,7 +144,7 @@ def _json_value_schema(attr_type: AttrType) -> dict:
             return {"type": "string", "x-odoo-type": attr_type}
 
 
-def _json_attrs_schema(tables: list[dict[str, AttrType]]) -> dict:
+def _json_attrs_schema(tables: list[dict[str, AttrType]]) -> dict[str, Any]:
     merged: dict[str, AttrType] = {}
     for table in reversed(tables):
         merged.update(table)
@@ -155,7 +156,7 @@ def _json_attrs_schema(tables: list[dict[str, AttrType]]) -> dict:
         for a, t in merged.items()
         if a.endswith("-*")
     }
-    out: dict = {
+    out: dict[str, Any] = {
         "type": "object",
         "properties": properties,
         "additionalProperties": False,
@@ -165,7 +166,7 @@ def _json_attrs_schema(tables: list[dict[str, AttrType]]) -> dict:
     return out
 
 
-def render_json_schema(spec: Schema) -> dict:
+def render_json_schema(spec: Schema) -> dict[str, Any]:
     node_props = {
         "kind": {"type": "string"},
         "attrs": {"type": "object", "additionalProperties": {"type": "string"}},
@@ -174,7 +175,7 @@ def render_json_schema(spec: Schema) -> dict:
         "nsmap": {"type": "object", "additionalProperties": {"type": "string"}},
         "children": {"type": "array", "items": {"$ref": "#/$defs/node"}},
     }
-    defs: dict = {
+    defs: dict[str, Any] = {
         "node": {
             "type": "object",
             "required": ["kind"],

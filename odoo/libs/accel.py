@@ -58,7 +58,9 @@ def csv_export_python(headers: list[Any], rows: list[Any]) -> bytes:
     return fp.getvalue().encode()
 
 
-def rows_to_dicts_python(names: tuple[str, ...], rows: list[tuple]) -> list[dict]:
+def rows_to_dicts_python(
+    names: tuple[str, ...], rows: list[tuple[Any, ...]]
+) -> list[dict[str, Any]]:
     _require("rows_to_dicts", "names", names, tuple)
     _require("rows_to_dicts", "rows", rows, list)
     keys = names if type(names) is tuple else tuple(tuple.__iter__(names))
@@ -102,7 +104,7 @@ def _clone[T](obj: T, depth: int) -> T:
     return obj
 
 
-def origin_ids_python(ids: Iterable) -> tuple[int, ...]:
+def origin_ids_python(ids: Iterable[Any]) -> tuple[int, ...]:
     return tuple(oid for id_ in ids if (oid := id_ or getattr(id_, "origin", None)))
 
 

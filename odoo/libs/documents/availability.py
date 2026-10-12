@@ -45,4 +45,5 @@ def remembered[T](
         memo = options[_MEMO] = {}
     if key not in memo:
         memo[key] = compute()
-    return memo[key]
+    value: T = memo[key]
+    return value

@@ -1,6 +1,7 @@
 import ast
 import operator
 import re
+from collections.abc import Callable, Iterable, Mapping, Sequence
 
 SOURCE_MARK_RE = re.compile(r"/\*\s*(/[^*]+?)\s*\*/")
 
@@ -10,6 +11,9 @@ DARK_SCOPE_RE = re.compile(r'(?:^|(?<= )):root\[data-color-scheme="?dark"?\] +')
 
 COLOR_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b|rgba?\([^()]*\)")
 
+type Colour = tuple[float, ...]
+type Declaration = tuple[str, str, str, str]
+
 _KEYWORDS = {
     "white": "#ffffff",
     "black": "#000000",
@@ -18,14 +22,14 @@ _KEYWORDS = {
 }
 
 
-def parse(css):
+def parse(css: str) -> list[Declaration]:
     return [
         (source, " ".join(stack), prop, value)
         for source, stack, prop, value in _declarations(css)
     ]
 
 
-def parse_per_selector(css):
+def parse_per_selector(css: str) -> list[Declaration]:
     return [
         (source, " ".join((*stack[:-1], part)), prop, value)
         for source, stack, prop, value in _declarations(css)
@@ -33,12 +37,13 @@ def parse_per_selector(css):
     ]
 
 
-def _declarations(css):
+def _declarations(css: str) -> list[tuple[str, tuple[str, ...], str, str]]:
     stack: list[str] = []
-    out, buf, source = [], "", "?"
+    out: list[tuple[str, tuple[str, ...], str, str]] = []
+    buf, source = "", "?"
     index, end = 0, len(css)
 
-    def flush():
+    def flush() -> None:
         nonlocal buf
         declaration, buf = buf.strip(), ""
         if ":" in declaration and stack:
@@ -77,8 +82,9 @@ def _declarations(css):
     return out
 
 
-def split_selector(selector):
-    parts, depth, current = [], 0, ""
+def split_selector(selector: str) -> list[str]:
+    parts: list[str] = []
+    depth, current = 0, ""
     for char in selector:
         if char in "([":
             depth += 1
@@ -93,11 +99,11 @@ def split_selector(selector):
     return [part.strip() for part in parts if part.strip()]
 
 
-def is_root(selector):
+def is_root(selector: str) -> bool:
     return ":root" in split_selector(selector)
 
 
-def unreachable(selector):
+def unreachable(selector: str) -> bool:
     parts = split_selector(selector)
     return bool(parts) and all("[data-bs-theme=" in part for part in parts)
 
@@ -105,8 +111,9 @@ def unreachable(selector):
 ROOT = "\x00:root"
 
 
-def settle(declarations):
-    keep, order = {}, []
+def settle(declarations: Iterable[Declaration]) -> list[Declaration]:
+    keep: dict[tuple[str, str], tuple[str, str]] = {}
+    order: list[tuple[str, str]] = []
     for source, selector, prop, value in declarations:
         key = (
             (ROOT, prop)
@@ -119,7 +126,7 @@ def settle(declarations):
     return [(keep[key][0], key[0], key[1], keep[key][1]) for key in order]
 
 
-def resolve(value, scope, depth=0):
+def resolve(value: str, scope: Mapping[str, str], depth: int = 0) -> str:
     if depth > 12:
         return value
     out, index, changed = "", 0, False
@@ -153,7 +160,7 @@ def resolve(value, scope, depth=0):
     return out if not changed else resolve(out, scope, depth + 1)
 
 
-def pick_dark(value):
+def pick_dark(value: str) -> str:
     while True:
         start = value.lower().find("light-dark(")
         if start < 0:
@@ -174,18 +181,18 @@ def pick_dark(value):
         value = value[:start] + pick_dark(halves[1]) + value[index + 1 :]
 
 
-def is_mask(prop):
+def is_mask(prop: str) -> bool:
     return bool(re.fullmatch(r"(?:-webkit-)?mask(?:-image)?", prop.strip().lower()))
 
 
-def flatten_opaque(value):
+def flatten_opaque(value: str) -> str:
     return COLOR_RE.sub(
         lambda match: "#000000" if _is_opaque(match.group(0)) else match.group(0),
         value,
     )
 
 
-def _is_opaque(literal):
+def _is_opaque(literal: str) -> bool:
     literal = norm(literal)
     if literal.startswith("#"):
         return len(literal) == 7
@@ -198,7 +205,7 @@ ROOT_FONT_SIZE_PX = 16
 _REM_RE = re.compile(r"(?<![\w.-])(-?\d*\.?\d+)rem\b")
 
 
-def norm(value):
+def norm(value: str | None) -> str:
     value = re.sub(r"\s+", " ", (value or "").strip().lower())
     value = re.sub(r"(?<![\w.])\.(\d)", r"0.\1", value)
     value = _REM_RE.sub(lambda m: f"{float(m.group(1)) * ROOT_FONT_SIZE_PX:g}px", value)
@@ -369,7 +376,7 @@ _NAMED["transparent"] = (0.0, 0.0, 0.0, 0.0)
 _HEX_RE = re.compile(r"#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})\b")
 
 
-def _closing(value, open_index):
+def _closing(value: str, open_index: int) -> int:
     depth = 0
     for index in range(open_index, len(value)):
         if value[index] == "(":
@@ -381,8 +388,9 @@ def _closing(value, open_index):
     return -1
 
 
-def _split_top(text, separators):
-    parts, depth, current = [], 0, ""
+def _split_top(text: str, separators: str) -> list[str]:
+    parts: list[str] = []
+    depth, current = 0, ""
     for char in text:
         if char == "(":
             depth += 1
@@ -397,7 +405,7 @@ def _split_top(text, separators):
     return [part for part in parts if part]
 
 
-_ARITHMETIC = {
+_ARITHMETIC: dict[type[ast.operator], Callable[[float, float], float]] = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
     ast.Mult: operator.mul,
@@ -405,7 +413,7 @@ _ARITHMETIC = {
 }
 
 
-def _arithmetic(node):
+def _arithmetic(node: ast.AST) -> float:
     if isinstance(node, ast.Expression):
         return _arithmetic(node.body)
     if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
@@ -419,7 +427,7 @@ def _arithmetic(node):
     raise ValueError(ast.dump(node))
 
 
-def _calc(expression, channels):
+def _calc(expression: str, channels: Mapping[str, float]) -> float:
     text = expression.strip()
     if text.startswith("calc(") and text.endswith(")"):
         text = text[len("calc(") : -1]
@@ -429,7 +437,7 @@ def _calc(expression, channels):
     return _arithmetic(ast.parse(text, mode="eval"))
 
 
-def _number(token, scale=1.0):
+def _number(token: str, scale: float = 1.0) -> float:
     token = token.strip()
     if token.startswith("calc("):
         return _calc(token, {})
@@ -438,10 +446,12 @@ def _number(token, scale=1.0):
     return float(token)
 
 
-def _hsl_to_rgb(hue, saturation, lightness):
+def _hsl_to_rgb(
+    hue: float, saturation: float, lightness: float
+) -> tuple[float, float, float]:
     hue, saturation, lightness = hue % 360, saturation / 100, lightness / 100
 
-    def channel(n):
+    def channel(n: int) -> float:
         k = (n + hue / 30) % 12
         a = saturation * min(lightness, 1 - lightness)
         return 255 * (lightness - a * max(-1, min(k - 3, 9 - k, 1)))
@@ -449,7 +459,7 @@ def _hsl_to_rgb(hue, saturation, lightness):
     return channel(0), channel(8), channel(4)
 
 
-def _rgb_to_hsl(red, green, blue):
+def _rgb_to_hsl(red: float, green: float, blue: float) -> tuple[float, float, float]:
     red, green, blue = red / 255, green / 255, blue / 255
     high, low = max(red, green, blue), min(red, green, blue)
     lightness = (high + low) / 2
@@ -466,7 +476,7 @@ def _rgb_to_hsl(red, green, blue):
     return hue, saturation * 100, lightness * 100
 
 
-def _parse_colour(text):
+def _parse_colour(text: str) -> Colour:
     text = text.strip()
     if text in _NAMED:
         return _NAMED[text]
@@ -476,8 +486,8 @@ def _parse_colour(text):
         if len(digits) in (3, 4):
             digits = "".join(char * 2 for char in digits)
         values = [int(digits[i : i + 2], 16) for i in range(0, len(digits), 2)]
-        alpha = values[3] / 255 if len(values) == 4 else 1.0
-        return float(values[0]), float(values[1]), float(values[2]), alpha
+        opacity = values[3] / 255 if len(values) == 4 else 1.0
+        return float(values[0]), float(values[1]), float(values[2]), opacity
     open_index = text.find("(")
     if open_index < 0 or _closing(text, open_index) != len(text) - 1:
         raise ValueError(text)
@@ -501,7 +511,7 @@ def _parse_colour(text):
     return (*_hsl_to_rgb(hue, _number(parts[1], 100), _number(parts[2], 100)), opacity)
 
 
-def _parse_relative(name, inner):
+def _parse_relative(name: str, inner: str) -> Colour:
     head, _, alpha = inner.partition("/")
     parts = _split_top(head, " ")
     origin = _parse_colour(parts[0])
@@ -525,11 +535,11 @@ def _parse_relative(name, inner):
     return (*result, opacity)
 
 
-def _parse_mix(inner):
+def _parse_mix(inner: str) -> Colour:
     parts = _split_top(inner, ",")
     if len(parts) != 3 or parts[0].replace(" ", "") != "insrgb":
         raise ValueError(inner)
-    colours = []
+    colours: list[Colour] = []
     weights: list[float | None] = []
     for part in parts[1:]:
         match = re.fullmatch(r"(.*?)(?:\s+([\d.]+)%)?", part.strip())
@@ -559,7 +569,7 @@ def _parse_mix(inner):
     return (*mixed, alpha * min(total, 100) / 100)
 
 
-def _format_colour(red, green, blue, alpha):
+def _format_colour(red: float, green: float, blue: float, alpha: float) -> str:
     if round(alpha, 2) == 0:
         return "rgb(0,0,0,0)"
     parts = [str(round(channel)) for channel in (red, green, blue)]
@@ -568,7 +578,7 @@ def _format_colour(red, green, blue, alpha):
     return "rgb(" + ",".join(parts) + ")"
 
 
-def canonical_colours(value):
+def canonical_colours(value: str) -> str:
     out, index = "", 0
     while index < len(value):
         matched = False
@@ -617,7 +627,7 @@ def canonical_colours(value):
 _CANONICAL_RE = re.compile(r"rgb\((\d+),(\d+),(\d+)((?:,[0-9.]+)?)\)")
 
 
-def same_paint(left, right):
+def same_paint(left: str, right: str) -> bool:
     if left == right:
         return True
     if _CANONICAL_RE.sub("rgb()", left) != _CANONICAL_RE.sub("rgb()", right):
@@ -632,17 +642,17 @@ def same_paint(left, right):
     )
 
 
-def unscoped(part):
+def unscoped(part: str) -> str:
     if DARK_SELECTOR_RE.fullmatch(part.strip()):
         return ":root"
     return DARK_SCOPE_RE.sub("", part)
 
 
-def parse_colour(text):
+def parse_colour(text: str) -> Colour:
     return _parse_colour(norm(text))
 
 
-def composite(foreground, background):
+def composite(foreground: Colour, background: Sequence[float]) -> Colour:
     red, green, blue, alpha = foreground
     return tuple(
         alpha * channel + (1 - alpha) * under
@@ -650,7 +660,7 @@ def composite(foreground, background):
     )
 
 
-def scheme_scopes(css):
+def scheme_scopes(css: str) -> tuple[dict[str, str], dict[str, str]]:
     declarations = settle(parse(css))
     light = {
         prop: value for _, selector, prop, value in declarations if selector == ROOT
@@ -666,12 +676,14 @@ def scheme_scopes(css):
     return light, dark
 
 
-def token_colour(name, scope, *, dark):
+def token_colour(name: str, scope: Mapping[str, str], *, dark: bool) -> Colour:
     value = resolve(scope[name], scope)
     return parse_colour(pick_dark(value) if dark else value)
 
 
-def measure(light_css, dark_css):
+def measure(
+    light_css: str, dark_css: str
+) -> tuple[list[tuple[str, str, str]], int, int, int]:
     light = settle(parse_per_selector(light_css))
     dark = settle(parse_per_selector(dark_css))
 
@@ -695,7 +707,7 @@ def measure(light_css, dark_css):
         if unscoped(selector) != selector
     }
 
-    gap = []
+    gap: list[tuple[str, str, str]] = []
     answered = 0
     for _, selector, prop, value in dark:
         key = (selector, prop)

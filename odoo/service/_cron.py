@@ -171,7 +171,7 @@ def arm_cron_listen(
 
 def drain_cron_notifies(
     connection: typing.Any, *, channel: str = CRON_TRIGGER_CHANNEL
-) -> OrderedSet:
+) -> OrderedSet[str]:
     notifies = list(connection.notifies(timeout=0))
     payloads = OrderedSet(
         notif.payload for notif in notifies if notif.channel == channel
@@ -408,7 +408,7 @@ class CronListener:
             span.set(woken=bool(ready))
         return bool(ready)
 
-    def drain(self) -> OrderedSet:
+    def drain(self) -> OrderedSet[str]:
         if self._cursor is None:
             _debug.logic("cron.listener.drain_before_connect", channel=self._channel)
             raise RuntimeError("CronListener.drain() before connect()")

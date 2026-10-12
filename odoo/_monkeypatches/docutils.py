@@ -42,7 +42,7 @@ class _AdmonitionWithLead(Note):
             self.content = StringList(
                 [""], source=self.state_machine.document["source"]
             )
-        produced = super().run()
+        produced: list[nodes.Node] = super().run()
         if self.arguments and produced:
             text = self.lead % self.arguments[0]
             produced[0].insert(0, nodes.paragraph("", "", nodes.strong(text, text)))

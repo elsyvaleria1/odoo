@@ -51,7 +51,8 @@ def _table_of(model: str, cr: Any = None) -> str:
 
         registry = Registry.registries.get(dbname)
         if registry is not None and model in registry:
-            if table := getattr(registry[model], "_table", None):
+            table: str | None = getattr(registry[model], "_table", None)
+            if table:
                 return table
     return _MODEL_TABLES.get(model) or model.replace(".", "_")
 

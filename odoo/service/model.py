@@ -48,7 +48,9 @@ _debug = DebugLog(__name__)
 
 
 class Params:
-    def __init__(self, args: Sequence, kwargs: dict) -> None:
+    def __init__(
+        self, args: Sequence[typing.Any], kwargs: dict[str, typing.Any]
+    ) -> None:
         self.args = args
         self.kwargs = kwargs
 
@@ -58,7 +60,7 @@ class Params:
         return ", ".join(params)
 
 
-def get_public_method(model: BaseModel, name: str) -> Callable:
+def get_public_method(model: BaseModel, name: str) -> Callable[..., typing.Any]:
     assert isinstance(model, BaseModel)
     if not isinstance(name, str):
         raise AttributeError(
@@ -88,7 +90,7 @@ def get_public_method(model: BaseModel, name: str) -> Callable:
                 f"cannot be called remotely."
             )
 
-    method = getattr(cls, name, None)
+    method: object = getattr(cls, name, None)
     if not callable(method):
         _debug.logic("rpc.method_missing", model=model._name, method=name)
         error = AttributeError(f"The method '{model._name}.{name}' does not exist")
@@ -126,11 +128,19 @@ def called_model() -> str | None:
 def _scope_rules(model: BaseModel) -> api_scope.ScopeRules | None:
     scope_id = model.env.context.get("api_scope_id")
     if isinstance(scope_id, int) and scope_id:
-        return model.env["res.users.apikeys.scope"].sudo().browse(scope_id)._rules()
+        rules: api_scope.ScopeRules = (
+            model.env["res.users.apikeys.scope"].sudo().browse(scope_id)._rules()
+        )
+        return rules
     return api_scope.active_rules()
 
 
-def call_kw(model: BaseModel, name: str, args: Sequence, kwargs: Mapping) -> typing.Any:
+def call_kw(
+    model: BaseModel,
+    name: str,
+    args: Sequence[typing.Any],
+    kwargs: Mapping[str, typing.Any],
+) -> typing.Any:
     if "context" in kwargs:
         kwargs = {
             **kwargs,
@@ -150,7 +160,10 @@ def call_kw(model: BaseModel, name: str, args: Sequence, kwargs: Mapping) -> typ
 
 
 def _call_kw(
-    model: BaseModel, name: str, args: Sequence, kwargs: Mapping
+    model: BaseModel,
+    name: str,
+    args: Sequence[typing.Any],
+    kwargs: Mapping[str, typing.Any],
 ) -> typing.Any:
     method = get_public_method(model, name)
     api_model = getattr(method, "_api_model", False)
@@ -229,7 +242,7 @@ def _call_kw(
     return result
 
 
-def dispatch(dispatch_method: str, params: Sequence) -> typing.Any:
+def dispatch(dispatch_method: str, params: Sequence[typing.Any]) -> typing.Any:
     if dispatch_method not in ("execute", "execute_kw"):
         _debug.logic(
             "rpc.dispatch.refused", reason="unknown_method", method=dispatch_method
@@ -323,10 +336,10 @@ def execute_cr(
     uid: int,
     obj: str,
     method: str,
-    args: list | tuple,
-    kw: dict,
+    args: list[typing.Any] | tuple[typing.Any, ...],
+    kw: dict[str, typing.Any],
     participant: RetryParticipant | None = None,
-    context: dict | None = None,
+    context: dict[str, typing.Any] | None = None,
 ) -> typing.Any:
     cr.reset()
     env = api.Environment(cr, uid, context or {})
@@ -383,8 +396,10 @@ def _is_bare_iterator(val: typing.Any) -> bool:
     return not isinstance(val, lazy) and isinstance(val, Iterator)
 
 
-def _force_lazy_in_mapping(val: Mapping, memo: _LazyMemo, active: set[int]) -> Mapping:
-    items: dict | None = None
+def _force_lazy_in_mapping(
+    val: Mapping[typing.Any, typing.Any], memo: _LazyMemo, active: set[int]
+) -> Mapping[typing.Any, typing.Any]:
+    items: dict[typing.Any, typing.Any] | None = None
     keys = list(val)
     for key in keys:
         value = val[key]
@@ -427,7 +442,9 @@ def _force_lazy_in_sequence(
     return constructor(items)
 
 
-def _force_lazy_in_place(val: Iterable, memo: _LazyMemo, active: set[int]) -> None:
+def _force_lazy_in_place(
+    val: Iterable[typing.Any], memo: _LazyMemo, active: set[int]
+) -> None:
     for item in val:
         if item.__class__ not in _SCALAR_LEAF_TYPES and not _is_bare_iterator(item):
             _force_lazy_in_value(item, memo, active)

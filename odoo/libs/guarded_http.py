@@ -129,7 +129,8 @@ def _get_retry_after_max(retry: Retry, read: float) -> float:
         return 0
     if retry.retry_after_max == Retry.DEFAULT_RETRY_AFTER_MAX:
         return read
-    return retry.retry_after_max
+    retry_after_max: float = retry.retry_after_max
+    return retry_after_max
 
 
 def _get_retry_backoffs(retry: Retry) -> list[float] | None:
@@ -308,7 +309,8 @@ class GuardedAdapter(HTTPAdapter):
             )
         if "error" in resolved:
             raise resolved["error"]
-        return resolved["addresses"]
+        addresses: tuple[IPAddress, ...] = resolved["addresses"]
+        return addresses
 
     def _check_now(self, request: PreparedRequest) -> tuple[IPAddress, ...]:
         try:
@@ -385,7 +387,8 @@ class GuardedAdapter(HTTPAdapter):
         address = getattr(request, "netguard_address", None)
         parts = parse_url(request.url or "")
         if address is None or not self.proxy or parts.scheme != "http":
-            return super().request_url(request, {})
+            url: str = super().request_url(request, {})
+            return url
         host = f"[{address}]" if ":" in str(address) else str(address)
         port = 80 if parts.port is None else parts.port
         return f"http://{host}:{port}{request.path_url}"
@@ -441,7 +444,10 @@ class GuardedAdapter(HTTPAdapter):
         ) -> Iterator[typing.Any]:
             chunks = capped_bytes(chunk_size)
             if decode_unicode:
-                return stream_decode_response_unicode(chunks, response)
+                decoded: Iterator[typing.Any] = stream_decode_response_unicode(
+                    chunks, response
+                )
+                return decoded
             return chunks
 
         response.iter_content = capped
@@ -453,7 +459,7 @@ def _too_slow(max_seconds: float, **kwargs: typing.Any) -> ResponseTooSlow:
 
 
 def _socket_of(raw: typing.Any) -> socket.socket | None:
-    sock = getattr(getattr(raw, "connection", None), "sock", None)
+    sock: socket.socket | None = getattr(getattr(raw, "connection", None), "sock", None)
     if sock is not None:
         return sock
     reader = getattr(getattr(raw, "_fp", None), "fp", None)
@@ -544,7 +550,7 @@ class _RetryWithinDeadline(Retry):
 
     @typing.override
     def new(self, **kw: typing.Any) -> typing.Self:
-        retry = super().new(**kw)
+        retry: typing.Self = super().new(**kw)
         retry.deadline = self.deadline
         return retry
 
@@ -553,7 +559,8 @@ class _RetryWithinDeadline(Retry):
 
     @typing.override
     def get_backoff_time(self) -> float:
-        return min(super().get_backoff_time(), self._remaining())
+        backoff: float = super().get_backoff_time()
+        return min(backoff, self._remaining())
 
     @typing.override
     def get_retry_after(self, response: typing.Any) -> float | None:
@@ -751,7 +758,7 @@ class GuardedSession(requests.Session):  # noqa: E8518 -- the guard itself: it m
                 or os.environ.get("CURL_CA_BUNDLE")
                 or verify
             )
-        settings = super().merge_environment_settings(
+        settings: dict[str, typing.Any] = super().merge_environment_settings(
             url, proxies, stream, verify, cert
         )
         settings["proxies"] = {}

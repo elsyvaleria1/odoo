@@ -623,7 +623,7 @@ class QwebCollector(Collector):
 class ExecutionContext:
     def __init__(self, **context: Any) -> None:
         self.context: dict[str, Any] = context
-        self.previous_context: tuple | None = None
+        self.previous_context: tuple[tuple[int, dict[str, Any]], ...] | None = None
 
     def __enter__(self) -> Self:
         current_thread: Any = threading.current_thread()
@@ -892,6 +892,9 @@ class Nested:
         traceback: types.TracebackType | None,
     ) -> bool | None:
         try:
-            return self.context_manager.__exit__(exc_type, exc_value, traceback)
+            suppressed: bool | None = self.context_manager.__exit__(
+                exc_type, exc_value, traceback
+            )
+            return suppressed
         finally:
             self._profiler__.__exit__(exc_type, exc_value, traceback)

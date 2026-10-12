@@ -37,7 +37,7 @@ def env_int(varname: str, default: int) -> int:
 
 def get_db_name() -> str:
     dbnames = odoo.tools.config["db_name"]
-    worker_dbname = getattr(current_worker_thread(), "dbname", None)
+    worker_dbname: str | None = getattr(current_worker_thread(), "dbname", None)
     if not dbnames and worker_dbname:
         _debug.logic("test.utils.db_from_worker", db=worker_dbname)
         return worker_dbname
@@ -49,7 +49,8 @@ def get_db_name() -> str:
         sys.exit(
             "-d/--database/db_name has multiple database, please provide a single one"
         )
-    return dbnames[0]
+    dbname: str = dbnames[0]
+    return dbname
 
 
 def save_test_file(

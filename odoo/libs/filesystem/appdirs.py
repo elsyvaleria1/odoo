@@ -40,9 +40,10 @@ if sys.platform == "win32":
     def _get_win_folder_with_pywin32(csidl_name: str) -> str:
         from win32com.shell import shell, shellcon
 
-        folder = shell.SHGetFolderPath(0, getattr(shellcon, csidl_name), 0, 0)
+        raw_folder = shell.SHGetFolderPath(0, getattr(shellcon, csidl_name), 0, 0)
+        folder: str = raw_folder
         try:
-            folder = str(folder)
+            folder = str(raw_folder)
 
             has_high_char = False
             for c in folder:
@@ -53,7 +54,8 @@ if sys.platform == "win32":
                 try:
                     import win32api
 
-                    folder = win32api.GetShortPathName(folder)
+                    short_folder: str = win32api.GetShortPathName(folder)
+                    folder = short_folder
                 except ImportError:
                     pass
         except UnicodeError:

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 def format_list(
     env: odoo.api.Environment | None,
-    lst: Iterable,
+    lst: Iterable[object],
     style: Literal[
         "standard",
         "standard-short",
@@ -28,7 +28,9 @@ def format_list(
         lang_code or (get_lang(env).code if env is not None else "en_US")
     )
     items = [str(el) for el in lst]
+    formatted: str
     try:
-        return lists.format_list(items, style, locale)
+        formatted = lists.format_list(items, style, locale)
     except KeyError, ValueError:
-        return lists.format_list(items, "standard", locale)
+        formatted = lists.format_list(items, "standard", locale)
+    return formatted

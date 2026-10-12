@@ -86,7 +86,6 @@ SIMPLE_XPATH = re.compile(
 
 
 class _Working:
-
     def __init__(self, state: Applied) -> None:
         self.state = state
         self._arch: etree._Element | None = None

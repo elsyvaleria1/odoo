@@ -73,7 +73,7 @@ class RouteInfo(NamedTuple):
     rule: str
     methods: frozenset[str]
     routing: typing.Mapping[str, Any]
-    handler: typing.Callable
+    handler: typing.Callable[..., typing.Any]
     param_specs: dict[str, ParamSpec] | None = None
 
 
@@ -148,7 +148,9 @@ def param_spec_to_schema(spec: ParamSpec) -> dict[str, Any]:
     return _prepare_schema_nullable(schema) if spec.allow_none else schema
 
 
-def get_response_schema(handler: typing.Callable) -> dict[str, Any] | None:
+def get_response_schema(
+    handler: typing.Callable[..., typing.Any],
+) -> dict[str, Any] | None:
     try:
         annotation = inspect.signature(
             handler, annotation_format=annotationlib.Format.FORWARDREF
@@ -197,7 +199,7 @@ _SECURITY_SCHEMES: dict[str, tuple[str, dict[str, str]]] = {
 SecurityResolver = Callable[[RouteInfo], list[tuple[str, dict[str, Any]]] | None]
 
 
-def _get_handler_summary(handler: typing.Callable) -> str | None:
+def _get_handler_summary(handler: typing.Callable[..., typing.Any]) -> str | None:
     doc = getattr(handler, "__doc__", None)
     return doc.strip().splitlines()[0] if doc and doc.strip() else None
 
@@ -469,8 +471,10 @@ def prepare_openapi_document(
     return document
 
 
-def _get_documented_handler(endpoint: Any) -> typing.Callable:
-    handler = getattr(endpoint, "original_endpoint", endpoint)
+def _get_documented_handler(endpoint: Any) -> typing.Callable[..., typing.Any]:
+    handler: typing.Callable[..., typing.Any] = getattr(
+        endpoint, "original_endpoint", endpoint
+    )
     bound = getattr(endpoint, "func", None)
     owner = getattr(bound, "__self__", None)
     name = getattr(bound, "__name__", None)
@@ -478,7 +482,9 @@ def _get_documented_handler(endpoint: Any) -> typing.Callable:
         return handler
     for cls in type(owner).__mro__:
         candidate = cls.__dict__.get(name)
-        original = getattr(candidate, "original_endpoint", None)
+        original: typing.Callable[..., typing.Any] | None = getattr(
+            candidate, "original_endpoint", None
+        )
         if original is not None and get_response_schema(original) is not None:
             return original
     return handler

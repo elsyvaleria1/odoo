@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 
 __unittest = True
 
+type ExcInfo = tuple[type[BaseException], BaseException, types.TracebackType | None]
+
 _debug = DebugLog(__name__)
 
 _max_failed = env_int("ODOO_TEST_MAX_FAILED_TESTS", 0)
@@ -199,7 +201,7 @@ class OdooTestResult:
         )
         self._checkShouldStop()
 
-    def addError(self, test: TestLike, err: tuple) -> None:
+    def addError(self, test: TestLike, err: ExcInfo) -> None:
         if _debug.lifecycle.enabled:
             _debug.lifecycle(
                 "test.result.error",
@@ -210,7 +212,7 @@ class OdooTestResult:
         self.logError("ERROR", test, err)
         self._record_failure("errors_count")
 
-    def addFailure(self, test: TestLike, err: tuple) -> None:
+    def addFailure(self, test: TestLike, err: ExcInfo) -> None:
         if _debug.lifecycle.enabled:
             _debug.lifecycle(
                 "test.result.fail",
@@ -222,7 +224,7 @@ class OdooTestResult:
         self._record_failure("failures_count")
 
     def addSubTest(
-        self, test: case.TestCase, subtest: TestLike, err: tuple | None
+        self, test: case.TestCase, subtest: TestLike, err: ExcInfo | None
     ) -> None:
         if err is not None:
             is_failure = issubclass(err[0], test.failureException)
@@ -304,7 +306,7 @@ class OdooTestResult:
         self.shouldStop = True
         _debug.lifecycle("test.result.halted_by_test", reason=reason)
 
-    def _exc_info_to_string(self, err: tuple, test: TestLike) -> str:
+    def _exc_info_to_string(self, err: ExcInfo, test: TestLike) -> str:
         exctype, value, tb = err
         while tb and self._is_relevant_tb_level(tb):
             tb = tb.tb_next
@@ -330,10 +332,10 @@ class OdooTestResult:
             tb = tb.tb_next
         return length
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__module__}.{self.__class__.__qualname__} run={self.testsRun} errors={self.errors_count} failures={self.failures_count}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         summary = (
             f"{self.failures_count} failed, {self.errors_count} error(s) "
             f"of {self.testsRun} tests"
@@ -398,9 +400,9 @@ class OdooTestResult:
         *args: Any,
         test: TestLike | None = None,
         exc_info: Any = None,
-        extra: dict | None = None,
+        extra: dict[str, Any] | None = None,
         stack_info: bool = False,
-        caller_infos: tuple | None = None,
+        caller_infos: tuple[str, int, str, str | None] | None = None,
     ) -> None:
         source: TestLike | OdooTestResult = test or self
         while isinstance(source, case._SubTest) and source.test_case:
@@ -502,7 +504,7 @@ class OdooTestResult:
                 queries=stat.queries,
             )
 
-    def logError(self, flavour: str, test: TestLike, error: tuple) -> None:
+    def logError(self, flavour: str, test: TestLike, error: ExcInfo) -> None:
         err = self._exc_info_to_string(error, test)
         caller_infos = self.getErrorCallerInfo(error, test)
         _debug.pipeline(
@@ -523,7 +525,7 @@ class OdooTestResult:
         )
 
     def getErrorCallerInfo(
-        self, error: tuple, test: TestLike
+        self, error: ExcInfo, test: TestLike
     ) -> tuple[str, int, str, None] | None:
 
         if not isinstance(test, case.TestCase):

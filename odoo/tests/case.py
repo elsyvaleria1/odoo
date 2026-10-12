@@ -1,7 +1,6 @@
 import contextlib
 import inspect
 import logging
-import sys
 from pathlib import PurePath
 from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, override
 from unittest import SkipTest
@@ -15,7 +14,9 @@ if TYPE_CHECKING:
     import types
     from collections.abc import Callable, Generator
 
-    from .result import OdooTestResult
+    from .result import ExcInfo, OdooTestResult
+else:
+    ExcInfo = OdooTestResult = Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -26,6 +27,8 @@ __unittest = True
 _subtest_msg_sentinel = object()
 
 _P = ParamSpec("_P")
+
+type Cleanup = tuple[Callable[..., object], tuple[Any, ...], dict[str, Any]]
 
 
 class _Outcome:
@@ -53,20 +56,21 @@ class _Outcome:
                 str(e),
                 infrastructure=isinstance(e, InfrastructureUnavailable),
             )
-        except BaseException:
-            exception_type, exception, tb = sys.exc_info()
+        except BaseException as exception:
+            exception_type = type(exception)
+            tb = exception.__traceback__
             self.success = False
             if _debug.logic.enabled:
                 _debug.logic(
                     "test.case.part_failed",
                     test=test_case.id(),
-                    error=exception_type.__name__ if exception_type else None,
+                    error=exception_type.__name__,
                     subtest=isinstance(test_case, _SubTest),
                 )
             if tb is not None:
                 tb = self._complete_traceback(tb)
             self.test._addError(self.result, test_case, (exception_type, exception, tb))
-            del exception_type, exception, tb
+            del exception_type, tb
 
     def _complete_traceback(
         self, initial_tb: types.TracebackType
@@ -122,8 +126,8 @@ class _Outcome:
 
 
 class TestCase(_TestCase):
-    _class_cleanups: ClassVar[list] = []
-    tearDown_exceptions: ClassVar[list] = []
+    _class_cleanups: ClassVar[list[Cleanup]] = []
+    tearDown_exceptions: ClassVar[list[ExcInfo]] = []
     _classSetupFailed: ClassVar[bool] = False
     __unittest_skip__ = False
     __unittest_skip_why__ = ""
@@ -150,7 +154,7 @@ class TestCase(_TestCase):
         self._outcome: _Outcome | None = None
         if methodName != "runTest" and not hasattr(self, methodName):
             raise ValueError(f"no such test method in {self.__class__}: {methodName}")
-        self._cleanups: list = []
+        self._cleanups: list[Cleanup] = []
         self._subtest: _SubTest | None = None
 
         self._type_equality_funcs: dict[type, str] = {
@@ -209,7 +213,7 @@ class TestCase(_TestCase):
         finally:
             self._subtest = parent
 
-    def _addError(self, result: Any, test: TestCase, exc_info: tuple | None) -> None:
+    def _addError(self, result: Any, test: TestCase, exc_info: ExcInfo | None) -> None:
         if isinstance(test, _SubTest):
             result.addSubTest(test.test_case, test, exc_info)
         elif exc_info is not None:
@@ -273,8 +277,8 @@ class TestCase(_TestCase):
                     f"runner ({self.id()}). Assert the failure explicitly, or "
                     "skip the test with a reason."
                 )
-            except TypeError:
-                result.addError(self, sys.exc_info())
+            except TypeError as exc:
+                result.addError(self, (type(exc), exc, exc.__traceback__))
             result.stopTest(self)
             return None
 
@@ -337,7 +341,7 @@ class TestCase(_TestCase):
                     function=getattr(function, "__qualname__", repr(function)),
                     error=type(exc).__name__,
                 )
-                cls.tearDown_exceptions.append(sys.exc_info())
+                cls.tearDown_exceptions.append((type(exc), exc, exc.__traceback__))
         _debug.lifecycle(
             "test.case.class_cleanups",
             cls=cls.__qualname__,

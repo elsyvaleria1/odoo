@@ -273,7 +273,9 @@ def _pdf_string_key(name: Any) -> bytes:
     return name.original_bytes if isinstance(name, TextStringObject) else bytes(name)
 
 
-def _name_tree_pairs(node: DictionaryObject, seen: set[int]) -> Iterator[tuple]:
+def _name_tree_pairs(
+    node: DictionaryObject, seen: set[int]
+) -> Iterator[tuple[Any, Any]]:
     names = node.get("/Names")
     if names is not None and isinstance(names := names.get_object(), ArrayObject):
         yield from zip(names[::2], names[1::2], strict=False)

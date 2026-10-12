@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import threading
 from time import monotonic
+from typing import Any
 
 from odoo.libs.debug_log import DebugLog
 
@@ -127,7 +128,7 @@ class ReplicaLagGate:
                 changed=was_lagging != self._lagging,
             )
 
-    def get_snapshot(self) -> dict:
+    def get_snapshot(self) -> dict[str, Any]:
         with self._lock:
             last_lag, lagging = self.last_lag, self._lagging
         return {

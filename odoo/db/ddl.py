@@ -7,6 +7,8 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
+type QueryParams = tuple[Any, ...] | list[Any] | dict[str, Any]
+
 
 def iter_sql_code_ranges(query: str) -> list[tuple[int, int]]:
     ranges = []
@@ -157,7 +159,7 @@ def _is_within_code_ranges(start: int, end: int, ranges: list[tuple[int, int]]) 
     return any(r_start <= start and end <= r_end for r_start, r_end in ranges)
 
 
-def _inline_ddl_params(qs: str, params: tuple | list | dict, ctx: Any) -> str:
+def _inline_ddl_params(qs: str, params: QueryParams, ctx: Any) -> str:
     if isinstance(params, dict):
         code_ranges = iter_sql_code_ranges(qs)
         referenced = {
@@ -180,13 +182,14 @@ def _inline_ddl_params(qs: str, params: tuple | list | dict, ctx: Any) -> str:
                 + f" have no matching key in params {sorted(params)}"
             )
 
-        def _replace_named_marker(m: _re.Match) -> str:
+        def _replace_named_marker(m: _re.Match[str]) -> str:
             name = m.group(1)
             if name is None:
                 return "%"
             if not _is_within_code_ranges(m.start(), m.end(), code_ranges):
                 return m.group(0)
-            return _sql.quote(params[name], ctx)
+            quoted: str = _sql.quote(params[name], ctx)
+            return quoted
 
         _debug.logic("ddl.params_inlined", mode="named", referenced=len(referenced))
         return _DICT_MARKER_RE.sub(_replace_named_marker, qs)

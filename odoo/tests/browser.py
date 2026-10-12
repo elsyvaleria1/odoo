@@ -15,6 +15,7 @@ import sys
 import tempfile
 import threading
 import time
+from collections.abc import Callable, Generator
 from concurrent.futures import CancelledError, Future, InvalidStateError, wait
 from datetime import datetime
 from functools import lru_cache
@@ -37,8 +38,6 @@ from . import clock
 from .utils import HOST, InfrastructureUnavailable, get_db_name, save_test_file
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
-
     from .common import HttpCase
 
 try:
@@ -81,26 +80,33 @@ class ChromeBrowserException(Exception):
     pass
 
 
-def run_coroutine(gen_func):
-    def done(f):
+type BrowserCoroutine = Generator[Future[Any] | None, Any]
+
+
+def run_coroutine(gen_func: Callable[[], BrowserCoroutine]) -> None:
+    def done(f: Future[Any]) -> None:
         try:
             try:
                 r = f.result()
             except Exception as e:
-                f = coro.throw(e)
+                following = coro.throw(e)
             else:
-                f = coro.send(r)
+                following = coro.send(r)
         except StopIteration:
             return
 
-        assert isinstance(f, Future), f"coroutine must yield futures, got {f}"
-        f.add_done_callback(done)
+        assert isinstance(following, Future), (
+            f"coroutine must yield futures, got {following}"
+        )
+        following.add_done_callback(done)
 
     coro = gen_func()
     try:
-        next(coro).add_done_callback(done)
+        first = next(coro)
     except StopIteration:
         return
+    assert isinstance(first, Future), f"coroutine must yield futures, got {first}"
+    first.add_done_callback(done)
 
 
 class ChromeBrowser:
@@ -111,9 +117,9 @@ class ChromeBrowser:
         test_case: HttpCase,
         success_signal: str = DEFAULT_SUCCESS_SIGNAL,
         headless: bool = True,
-        debug: bool = False,
-        error_checker: Callable | None = None,
-    ):
+        debug: bool | str = False,
+        error_checker: Callable[[str], bool] | None = None,
+    ) -> None:
         self.throttling_factor = 1
         self._logger = test_case._logger
         self.test_case = test_case
@@ -150,7 +156,7 @@ class ChromeBrowser:
         self._result: Future[Any] = Future()
         self.error_checker = error_checker
         self.had_failure = False
-        self._responses: dict[int, Future] = {}
+        self._responses: dict[int, Future[Any]] = {}
         self._frames: dict[str, Any] = {}
         self._trace_complete: threading.Event | None = None
         self._trace_lost_data = False
@@ -170,7 +176,7 @@ class ChromeBrowser:
 
     def _connect(self) -> None:
         self.ws = self._open_websocket()
-        self._handlers: dict[str, Callable] = {
+        self._handlers: dict[str, Callable[..., None]] = {
             "Fetch.requestPaused": self._handle_request_paused,
             "Runtime.consoleAPICalled": self._handle_console,
             "Runtime.exceptionThrown": self._handle_exception,
@@ -416,7 +422,7 @@ class ChromeBrowser:
             psutil.wait_procs(alive, 1)
 
     @property
-    def executable(self):
+    def executable(self) -> str:
         try:
             return _get_browser_executable_path()
         except Exception:
@@ -424,7 +430,7 @@ class ChromeBrowser:
             self._logger.warning("Chrome executable not found")
             raise
 
-    def _spawn_chrome(self, cmd: list[str]) -> tuple[subprocess.Popen, int]:
+    def _spawn_chrome(self, cmd: list[str]) -> tuple[subprocess.Popen[bytes], int]:
         log_path = pathlib.Path(self.user_data_dir, "err.log")
         with log_path.open("wb") as log_file:
             proc = subprocess.Popen(
@@ -488,7 +494,7 @@ class ChromeBrowser:
         touch_enabled: bool,
         headless: bool = True,
         debug: bool | str = False,
-    ) -> tuple[subprocess.Popen, int]:
+    ) -> tuple[subprocess.Popen[bytes], int]:
         headless_switches = {
             "--headless": "",
             "--disable-extensions": "",
@@ -724,7 +730,11 @@ class ChromeBrowser:
                 )
 
     def _websocket_request(
-        self, method: str, *, params: dict | None = None, timeout: float | None = None
+        self,
+        method: str,
+        *,
+        params: dict[str, Any] | None = None,
+        timeout: float | None = None,
     ) -> Any:
         assert threading.get_ident() != self._receiver.ident, (
             "_websocket_request must not be called from the consumer thread"
@@ -745,7 +755,11 @@ class ChromeBrowser:
                 raise TimeoutError(f"{method}({params or ''})") from None
 
     def _websocket_requires_result(
-        self, method: str, *, params: dict | None = None, timeout: float | None = None
+        self,
+        method: str,
+        *,
+        params: dict[str, Any] | None = None,
+        timeout: float | None = None,
     ) -> Any:
         response = self._websocket_request(method, params=params, timeout=timeout)
         if response is not None:
@@ -765,8 +779,12 @@ class ChromeBrowser:
         )
 
     def _websocket_send(
-        self, method: str, *, params: dict | None = None, with_future: bool = False
-    ) -> Future | None:
+        self,
+        method: str,
+        *,
+        params: dict[str, Any] | None = None,
+        with_future: bool = False,
+    ) -> Future[Any] | None:
         if not hasattr(self, "ws"):
             _debug.logic("test.browser.send_without_socket", method=method)
             return None
@@ -785,7 +803,9 @@ class ChromeBrowser:
         self.ws.send(json_dumps(payload))
         return result
 
-    def _handle_service_worker_error(self, errorMessage: dict, **kw: Any) -> None:
+    def _handle_service_worker_error(
+        self, errorMessage: dict[str, Any], **kw: Any
+    ) -> None:
         source = errorMessage.get("sourceURL") or ""
         if source.startswith("chrome-extension://"):
             _debug.logic("test.browser.sw_error_ignored", source=source)
@@ -829,8 +849,8 @@ class ChromeBrowser:
     def _handle_console(
         self,
         type: str,
-        args: list | None = None,
-        stackTrace: dict | None = None,
+        args: list[dict[str, Any]] | None = None,
+        stackTrace: dict[str, Any] | None = None,
         **kw: Any,
     ) -> None:
         if args:
@@ -882,7 +902,7 @@ class ChromeBrowser:
             _debug.logic("test.browser.success_signal", signal=self.success_signal)
             self._handle_success_signal(_logger)
 
-    def _handle_log_entry(self, entry: dict) -> None:
+    def _handle_log_entry(self, entry: dict[str, Any]) -> None:
         if entry.get("source") != "security" or entry.get("level") != "error":
             return
         text = entry.get("text", "")
@@ -902,13 +922,13 @@ class ChromeBrowser:
     def _handle_success_signal(self, _logger: logging.Logger) -> None:
 
         @run_coroutine
-        def _get_heap():
+        def _get_heap() -> BrowserCoroutine:
             yield self._websocket_send("HeapProfiler.collectGarbage", with_future=True)
             r = yield self._websocket_send("Runtime.getHeapUsage", with_future=True)
             _logger.info("heap %d (allocated %d)", r["usedSize"], r["totalSize"])
 
         @run_coroutine
-        def _report_dirty_form():
+        def _report_dirty_form() -> BrowserCoroutine:
             node_id = 0
 
             with contextlib.suppress(Exception):
@@ -945,7 +965,9 @@ which leads to stray network requests and inconsistencies."""
                 _debug.logic("test.browser.success_twice")
                 _logger.error("Tried to make the tour successful twice.")
 
-    def _handle_exception(self, exceptionDetails: dict, timestamp: float) -> None:
+    def _handle_exception(
+        self, exceptionDetails: dict[str, Any], timestamp: float
+    ) -> None:
         message = exceptionDetails["text"]
         exception = exceptionDetails.get("exception")
         if exception:
@@ -985,8 +1007,8 @@ which leads to stray network requests and inconsistencies."""
         "dir": RUNBOT,
     }
 
-    def take_screenshot(self, prefix: str = "sc_") -> Future[dict] | None:
-        def handler(f):
+    def take_screenshot(self, prefix: str = "sc_") -> Future[dict[str, Any]] | None:
+        def handler(f: Future[Any]) -> None:
             try:
                 base_png = f.result(timeout=0)["data"]
             except Exception as e:
@@ -1191,7 +1213,7 @@ which leads to stray network requests and inconsistencies."""
                 self._logger.info("Waiting for frame %r to stop loading", frame_id)
                 span.set(stopped=e.wait(10 * self.throttling_factor))
 
-    def _from_remoteobject(self, arg: dict) -> Any:
+    def _from_remoteobject(self, arg: dict[str, Any]) -> Any:
         objtype = arg["type"]
         subtype = arg.get("subtype")
         if objtype == "undefined":
@@ -1219,7 +1241,7 @@ which leads to stray network requests and inconsistencies."""
 
     LINE_PATTERN = "\tat %(functionName)s (%(url)s:%(lineNumber)d:%(columnNumber)d)\n"
 
-    def _format_stack(self, logrecord: dict) -> Generator[str]:
+    def _format_stack(self, logrecord: dict[str, Any]) -> Generator[str]:
         if logrecord["type"] != "trace":
             return
 
@@ -1229,11 +1251,13 @@ which leads to stray network requests and inconsistencies."""
                 yield self.LINE_PATTERN % f
             trace = trace.get("parent")
 
-    def console_formatter(self, args: list) -> Callable:
+    def console_formatter(
+        self, args: list[dict[str, Any]]
+    ) -> Callable[[re.Match[str]], str]:
         if not args:
             return lambda m: m[0]
 
-        def replacer(m):
+        def replacer(m: re.Match[str]) -> str:
             fmt = m[0][1]
             if fmt == "%":
                 return "%"
@@ -1259,7 +1283,7 @@ class NoScreencast:
     def save(self) -> None:
         pass
 
-    def __call__(self, sessionId: str, data: str, metadata: dict) -> None:
+    def __call__(self, sessionId: str, data: str, metadata: dict[str, Any]) -> None:
         pass
 
 
@@ -1279,7 +1303,7 @@ class Screencaster:
         self.frames_dir.mkdir(parents=True, exist_ok=True)
         self.browser._websocket_send("Page.startScreencast")
 
-    def __call__(self, sessionId: str, data: str, metadata: dict) -> None:
+    def __call__(self, sessionId: str, data: str, metadata: dict[str, Any]) -> None:
         self.browser._websocket_send(
             "Page.screencastFrameAck", params={"sessionId": sessionId}
         )
@@ -1376,7 +1400,7 @@ class Screencaster:
 
 
 @lru_cache(1)
-def _get_browser_executable_path():
+def _get_browser_executable_path() -> str:
     browser_bin_path = os.environ.get("ODOO_BROWSER_BIN")
     if browser_bin_path and pathlib.Path(browser_bin_path).exists():
         _debug.logic("test.browser.executable", source="env", path=browser_bin_path)

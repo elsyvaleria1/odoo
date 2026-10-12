@@ -114,7 +114,7 @@ class BenchmarkStats:
     def python_ratio(self) -> float:
         return 1 - self.db_ratio
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d.pop("raw_times_us", None)
         d["p50_us"] = d["median_us"]
@@ -295,7 +295,7 @@ class PerfTimer:
     def stop(self) -> None:
         self.samples_ns.append(time.perf_counter_ns() - self._t0)
 
-    def stats(self, name: str = "", *, warmup: int = 0) -> dict:
+    def stats(self, name: str = "", *, warmup: int = 0) -> dict[str, Any]:
         raw = self.samples_ns[warmup:]
         _debug.perf.count(
             "test.benchmark.perf_timer",
@@ -395,7 +395,9 @@ class BenchmarkTimer:
         return self.elapsed_ms - self.db_time_ms
 
 
-def compare_results(baseline: list[dict], current: list[dict]) -> str:
+def compare_results(
+    baseline: list[dict[str, Any]], current: list[dict[str, Any]]
+) -> str:
     base_map = {r["name"]: r for r in baseline if r.get("name")}
     _debug.perf.count(
         "test.benchmark.compare",

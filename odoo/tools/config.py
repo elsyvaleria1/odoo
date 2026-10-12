@@ -1644,8 +1644,8 @@ class configmanager:
             rcfile=self._default_options["config"],
         )
 
-    _log_entries: list[tuple[int, str, tuple, dict]] = []
-    _warn_entries: list[tuple[str, tuple, dict]] = []
+    _log_entries: list[tuple[int, str, tuple[Any, ...], dict[str, Any]]] = []
+    _warn_entries: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
 
     @classmethod
     def _log(cls, loglevel: int, message: str, *args: Any, **kwargs: Any) -> None:
@@ -2341,7 +2341,8 @@ class configmanager:
             format_func = option_class.TYPE_FORMATTER["bool"]
         else:
             format_func = option_class.TYPE_FORMATTER[option.type]
-        return format_func(value)
+        formatted: str = format_func(value)
+        return formatted
 
     def _server_wide_owners(self, p: configparser.RawConfigParser) -> list[str]:
         for options in (self._cli_options, self._env_options):

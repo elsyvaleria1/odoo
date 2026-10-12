@@ -6,7 +6,7 @@ import re
 import typing
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import psycopg
 
@@ -203,7 +203,7 @@ def create_model_table(
     cr: BaseCursor,
     tablename: str,
     comment: str | None = None,
-    columns: Sequence = (),
+    columns: Sequence[tuple[str, str, str | None]] = (),
     inherits: str | None = None,
 ) -> None:
     for colname, coltype, _ in columns:
@@ -254,7 +254,7 @@ def create_model_table(
     _schema.debug("Table %r: created", tablename)
 
 
-def get_table_columns(cr: BaseCursor, tablename: str) -> dict[str, dict]:
+def get_table_columns(cr: BaseCursor, tablename: str) -> dict[str, dict[str, Any]]:
     with _debug.perf("schema.table_columns", cr=cr, table=tablename) as span:
         cr.execute(
             SQL(

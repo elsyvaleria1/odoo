@@ -63,19 +63,19 @@ class FieldNotInView(AssertionError, AttributeError):
 
 
 def _combine_bool_exprs(op: str, expr1: Any, expr2: Any) -> str:
-    expr1, expr2 = str(expr1), str(expr2)
+    left, right = str(expr1), str(expr2)
     absorbing, neutral = ("True", "False") if op == "or" else ("False", "True")
-    if absorbing in (expr1, expr2):
+    if absorbing in (left, right):
         return absorbing
-    if expr1 == neutral:
-        return expr2
-    if expr2 == neutral:
-        return expr1
-    return f"({expr1}) {op} ({expr2})"
+    if left == neutral:
+        return right
+    if right == neutral:
+        return left
+    return f"({left}) {op} ({right})"
 
 
 def _field_modifiers(
-    node: Any, field_info: dict, flevel: Any, existing: dict | None
+    node: Any, field_info: dict[str, Any], flevel: Any, existing: dict[str, Any] | None
 ) -> dict[str, Any]:
     modifiers: dict[str, Any] = {}
     for attr in ("required", "readonly", "invisible", "column_invisible"):
@@ -139,7 +139,7 @@ class Form:
             self._init_from_defaults()
 
     @classmethod
-    def from_action(cls, env: api.Environment, action: dict) -> Form:
+    def from_action(cls, env: api.Environment, action: dict[str, Any]) -> Form:
         assert action["type"] == "ir.actions.act_window", (
             f"only window actions are valid, got {action['type']}"
         )
@@ -175,9 +175,11 @@ class Form:
 
         return cls(record, view_id)
 
-    def _get_view_info(self, tree: Any, model: BaseModel, level: int = 2) -> dict:
+    def _get_view_info(
+        self, tree: Any, model: BaseModel, level: int = 2
+    ) -> dict[str, Any]:
         fields = {"id": {"type": "id"}}
-        fields_spec: dict[str, dict] = {}
+        fields_spec: dict[str, dict[str, Any]] = {}
         modifiers: dict[str, dict[str, Any]] = {
             "id": {"required": "False", "readonly": "True"}
         }
@@ -278,8 +280,8 @@ class Form:
         }
 
     def _get_one2many_edition_view(
-        self, field_info: dict, node: Any, level: int
-    ) -> dict:
+        self, field_info: dict[str, Any], node: Any, level: int
+    ) -> dict[str, Any]:
         submodel = self._env[field_info["relation"]]
 
         views = {view.tag: view for view in node.xpath("./*[descendant::field]")}
@@ -427,13 +429,13 @@ class Form:
         field_name: str,
         modifier: str,
         *,
-        view: dict | None = None,
-        vals: dict | None = None,
+        view: dict[str, Any] | None = None,
+        vals: dict[str, Any] | None = None,
     ) -> bool:
         if view is None:
             view = self._view
 
-        expr = view["modifiers"][field_name].get(modifier, False)
+        expr: bool | str = view["modifiers"][field_name].get(modifier, False)
         if isinstance(expr, bool):
             return expr
         if expr in ("True", "False"):
@@ -454,16 +456,18 @@ class Form:
         )
         return result
 
-    def _get_context(self, field_name: str) -> dict:
+    def _get_context(self, field_name: str) -> dict[str, Any]:
         context_str = self._view["contexts"].get(field_name)
         if not context_str:
             return {}
         eval_context = self._prepare_eval_context()
-        context = safe_eval(context_str, eval_context)
+        context: dict[str, Any] = safe_eval(context_str, eval_context)
         _debug.logic("test.form.context", field=field_name, keys=sorted(context))
         return context
 
-    def _prepare_eval_context(self, values: dict | None = None) -> dict:
+    def _prepare_eval_context(
+        self, values: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         allowed_company_ids = self._env.companies.ids
         context = {
             "id": self._record.id,
@@ -484,7 +488,7 @@ class Form:
             **values,
         }
 
-    def _prepare_all_vals(self) -> dict:
+    def _prepare_all_vals(self) -> dict[str, Any]:
         return self._prepare_vals("all")
 
     def __enter__(self) -> Self:
@@ -537,12 +541,16 @@ class Form:
         assert not self._values._changed
         return self._record
 
-    def _prepare_save_vals(self) -> dict:
+    def _prepare_save_vals(self) -> dict[str, Any]:
         return self._prepare_vals("save")
 
     def _o2m_commands(
-        self, mode: str, value: O2MValue, field_info: dict, parent_values: UpdateDict
-    ) -> list:
+        self,
+        mode: str,
+        value: O2MValue,
+        field_info: dict[str, Any],
+        parent_values: UpdateDict,
+    ) -> list[Any]:
         subview = field_info["edition_view"]
         return value.to_commands(
             lambda vals: self._prepare_vals(
@@ -562,10 +570,10 @@ class Form:
         self,
         mode: str,
         values: UpdateDict | None = None,
-        view: dict | None = None,
-        modifiers_values: dict | None = None,
+        view: dict[str, Any] | None = None,
+        modifiers_values: dict[str, Any] | None = None,
         parent_link: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         assert mode in ("save", "onchange", "all")
 
         if values is None:
@@ -653,7 +661,7 @@ class Form:
         )
         return result
 
-    def _perform_onchange(self, field_name: str | None = None) -> dict | None:
+    def _perform_onchange(self, field_name: str | None = None) -> dict[str, Any] | None:
         assert field_name is None or isinstance(field_name, str)
 
         if field_name:
@@ -726,14 +734,17 @@ class Form:
 
         return result
 
-    def _prepare_onchange_vals(self) -> dict:
+    def _prepare_onchange_vals(self) -> dict[str, Any]:
         return self._prepare_vals("onchange")
 
-    def _apply_onchange(self, values: dict) -> None:
+    def _apply_onchange(self, values: dict[str, Any]) -> None:
         self._apply_onchange_values(self._values, self._view["fields"], values)
 
     def _apply_onchange_values(
-        self, values: UpdateDict, fields: dict, onchange_values: dict
+        self,
+        values: UpdateDict,
+        fields: dict[str, Any],
+        onchange_values: dict[str, Any],
     ) -> None:
         assert isinstance(values, UpdateDict)
         for fname, value in onchange_values.items():
@@ -811,8 +822,8 @@ class O2MForm(Form):
         field_name: str,
         modifier: str,
         *,
-        view: dict | None = None,
-        vals: dict | None = None,
+        view: dict[str, Any] | None = None,
+        vals: dict[str, Any] | None = None,
     ) -> bool:
         if modifier != "required" and self._proxy._form._get_modifier(
             self._proxy._field, modifier
@@ -820,12 +831,14 @@ class O2MForm(Form):
             return True
         return super()._get_modifier(field_name, modifier, view=view, vals=vals)
 
-    def _prepare_eval_context(self, values: dict | None = None) -> dict:
+    def _prepare_eval_context(
+        self, values: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         eval_context = super()._prepare_eval_context(values)
         eval_context["parent"] = Dotter(self._proxy._form._values)
         return eval_context
 
-    def _prepare_onchange_vals(self) -> dict:
+    def _prepare_onchange_vals(self) -> dict[str, Any]:
         values = super()._prepare_onchange_vals()
         field_info = self._proxy._field_info
         if "relation_field" in field_info:
@@ -870,8 +883,8 @@ class O2MForm(Form):
         return values
 
 
-class UpdateDict(dict):
-    _changed: set
+class UpdateDict(dict[str, Any]):
+    _changed: set[str]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -886,7 +899,7 @@ class UpdateDict(dict):
         ]
         return f"{{{', '.join(items)}}}"
 
-    def changed_items(self) -> Generator[tuple]:
+    def changed_items(self) -> Generator[tuple[str, Any]]:
         return ((k, v) for k, v in self.items() if k in self._changed)
 
     def update(self, *args: Any, **kw: Any) -> None:
@@ -899,7 +912,7 @@ class UpdateDict(dict):
         self._changed.clear()
 
 
-class X2MValue(collections.abc.Sequence):
+class X2MValue(collections.abc.Sequence[Any]):
     _virtual_seq = itertools.count()
 
     __hash__ = None  # type: ignore[assignment]  # object stubs cannot express the unhashable sentinel
@@ -908,8 +921,8 @@ class X2MValue(collections.abc.Sequence):
         self._data: dict[Any, UpdateDict] = {
             vals["id"]: UpdateDict(vals) for vals in iterable_of_vals
         }
-        self._given: list = list(self._data)
-        self._keys: list | None = None
+        self._given: list[Any] = list(self._data)
+        self._keys: list[Any] | None = None
 
     def __repr__(self) -> str:
         return repr(self._data)
@@ -934,7 +947,7 @@ class X2MValue(collections.abc.Sequence):
     def get_vals(self, id_: Any) -> UpdateDict:
         return self._data[id_]
 
-    def add(self, id_: Any, vals: dict) -> None:
+    def add(self, id_: Any, vals: dict[str, Any]) -> None:
         if id_ in self._data:
             self._data[id_].update(vals)
             return
@@ -949,14 +962,14 @@ class X2MValue(collections.abc.Sequence):
         self._data.clear()
         self._keys = None
 
-    def create(self, vals: dict) -> None:
+    def create(self, vals: dict[str, Any]) -> None:
         id_ = f"virtual_{next(self._virtual_seq)}"
         create_vals = UpdateDict(vals)
         create_vals._changed.update(vals)
         self._data[id_] = create_vals
         self._keys = None
 
-    def update(self, id_: Any, changes: dict, changed: Any = ()) -> None:
+    def update(self, id_: Any, changes: dict[str, Any], changed: Any = ()) -> None:
         vals = self._data[id_]
         vals.update(changes)
         vals._changed.update(changed)
@@ -970,16 +983,16 @@ class X2MValue(collections.abc.Sequence):
         clone._given = list(self._given)
         return clone
 
-    def to_commands(self) -> list:
+    def to_commands(self) -> list[Any]:
         raise NotImplementedError
 
     def _to_commands(
         self,
         convert_values: Callable[[UpdateDict], Any],
         removal_command: Callable[[Any], Any],
-    ) -> list:
+    ) -> list[Any]:
         given = set(self._given)
-        result: list = []
+        result: list[Any] = []
         for id_, vals in self._data.items():
             if isinstance(id_, str) and id_.startswith("virtual_"):
                 result.append((Command.CREATE, id_, convert_values(vals)))
@@ -1010,26 +1023,26 @@ class X2MValue(collections.abc.Sequence):
 class O2MValue(X2MValue):
     def to_commands(
         self, convert_values: Callable[[UpdateDict], Any] = lambda vals: vals
-    ) -> list:
+    ) -> list[Any]:
         return self._to_commands(convert_values, Command.delete)
 
 
 class M2MValue(X2MValue):
     @staticmethod
-    def _convert_changed(vals: UpdateDict) -> dict:
+    def _convert_changed(vals: UpdateDict) -> dict[str, Any]:
         return {
             key: val.to_commands() if isinstance(val, X2MValue) else val
             for key, val in vals.changed_items()
         }
 
-    def to_commands(self) -> list:
+    def to_commands(self) -> list[Any]:
         return self._to_commands(self._convert_changed, Command.unlink)
 
 
 class X2MProxy:
     _form: Form
     _field: str
-    _field_info: dict
+    _field_info: dict[str, Any]
 
     def __init__(self, form: Form, field_name: str) -> None:
         self._form = form
@@ -1038,7 +1051,7 @@ class X2MProxy:
         self._field_value: X2MValue = form._values[field_name]
 
     @property
-    def ids(self) -> list:
+    def ids(self) -> list[Any]:
         return list(self._field_value)
 
     def _assert_editable(self) -> None:
@@ -1056,7 +1069,8 @@ class O2MProxy(X2MProxy):
 
     @property
     def _model(self) -> BaseModel:
-        model = self._form._env[self._field_info["relation"]]
+        relation: str = self._field_info["relation"]
+        model = self._form._env[relation]
         context = self._form._get_context(self._field)
         if context:
             model = model.with_context(**context)
@@ -1085,7 +1099,7 @@ class M2MProxy(X2MProxy, collections.abc.Sequence[BaseModel]):
     # Slices deliberately return an ORM recordset, which is not a nominal Sequence.
     @override
     def __getitem__(self, index: SupportsIndex | slice) -> BaseModel:  # type: ignore[override]
-        comodel_name = self._field_info["relation"]
+        comodel_name: str = self._field_info["relation"]
         return self._form._env[comodel_name].browse(self._field_value[index])
 
     @override
@@ -1162,10 +1176,14 @@ class M2MProxy(X2MProxy, collections.abc.Sequence[BaseModel]):
         self._form._perform_onchange(self._field)
 
 
-def convert_read_to_form(values: dict, model_fields: dict) -> dict:
+def convert_read_to_form(
+    values: dict[str, Any], model_fields: dict[str, Any]
+) -> dict[str, Any]:
     result = {}
     for fname, value in values.items():
-        field_info: dict = {"type": "id"} if fname == "id" else model_fields[fname]
+        field_info: dict[str, Any] = (
+            {"type": "id"} if fname == "id" else model_fields[fname]
+        )
         if field_info["type"] == "one2many":
             if "edition_view" in field_info:
                 subfields = field_info["edition_view"]["fields"]
@@ -1203,7 +1221,7 @@ def _cleanup_from_default(type_: str, value: Any) -> Any:
     return value
 
 
-def get_static_context(context_str: str) -> dict:
+def get_static_context(context_str: str) -> dict[str, Any]:
     context_ast = ast.parse(context_str.strip(), mode="eval").body
     assert isinstance(context_ast, ast.Dict)
     result = {}
@@ -1222,7 +1240,7 @@ def get_static_context(context_str: str) -> dict:
 class Dotter:
     __slots__ = ["__values"]
 
-    def __init__(self, values: dict) -> None:
+    def __init__(self, values: dict[str, Any]) -> None:
         self.__values = values
 
     def __getattr__(self, key: str) -> Any:

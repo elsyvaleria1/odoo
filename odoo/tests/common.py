@@ -5,8 +5,9 @@ import logging
 import types
 import unittest
 from collections import defaultdict
+from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 from unittest.mock import patch
 
 import freezegun
@@ -21,11 +22,12 @@ from odoo.libs.collections import DotDict
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.email import single_email_re
 from odoo.libs.logging import mute_logger
+from odoo.libs.lru import LRU
 from odoo.libs.secret_key import INDEX_SIZE
 from odoo.libs.sql import SQL
 from odoo.service.api_scope import RPC_SCOPE
 from odoo.tools import config
-from odoo.tools.cache import _COUNTERS
+from odoo.tools.cache import _COUNTERS, ormcache_counter
 
 from .browser import ChromeBrowser, ChromeBrowserException
 from .case import TestCase
@@ -44,9 +46,11 @@ from .utils import HOST, get_db_name, save_test_file
 from .xsd import check_xml
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from odoo.orm.runtime._model_types import ResUsersModel
 
     from .http import HttpCase, JsonRpcException, Opener, Transport
+else:
+    ResUsersModel = Any
 
 
 __all__ = [
@@ -113,6 +117,9 @@ def request_stand_in(**attributes: Any) -> DotDict:
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
+
+_T = TypeVar("_T")
+_S = TypeVar("_S", bound="StandaloneTest")
 _debug.lifecycle(
     "test.framework.imported",
     command=odoo.cli.COMMAND,
@@ -130,7 +137,9 @@ else:
     )
 
 
-def get_cache_key_counter(bound_method, *args, **kwargs):
+def get_cache_key_counter(
+    bound_method: Any, *args: Any, **kwargs: Any
+) -> tuple[LRU[Any, Any], Any, ormcache_counter]:
     model = bound_method.__self__
     ormcache_instance = bound_method.__cache__
     cache = model.pool.ormcache_lrus[ormcache_instance.cache_name]
@@ -159,16 +168,18 @@ def skip_if_dev_mode(*flags: str) -> None:
         )
 
 
-standalone_tests: defaultdict[str, list] = defaultdict(list)
+type StandaloneTest = Callable[[api.Environment], object]
+
+standalone_tests: defaultdict[str, list[StandaloneTest]] = defaultdict(list)
 
 
 _registry_test_lock.acquire()
 _debug.lifecycle("test.lock.acquired_at_import", held=_registry_test_lock.count)
 
 
-def standalone(*tags: str) -> Callable[[Callable], Callable]:
+def standalone(*tags: str) -> Callable[[_S], _S]:
 
-    def register(func: Callable) -> Callable:
+    def register(func: _S) -> _S:
         module = None
         if func.__module__.startswith("odoo.addons."):
             module = func.__module__.split(".")[2]
@@ -188,10 +199,15 @@ def standalone(*tags: str) -> Callable[[Callable], Callable]:
     return register
 
 
-def test_xsd(url=None, path=None, skip=False, xsd_name=None):
-    def decorator(func):
+def test_xsd(
+    url: str | None = None,
+    path: str | None = None,
+    skip: bool | str = False,
+    xsd_name: str | None = None,
+) -> Callable[[Callable[..., Any]], Callable[..., None]]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., None]:
         @wraps(func)
-        def wrapped_f(self, *args, **kwargs):
+        def wrapped_f(self: Any, *args: Any, **kwargs: Any) -> None:
             if skip:
                 _debug.logic("test.xsd.skipped", func=func.__qualname__)
                 raise unittest.SkipTest(
@@ -214,7 +230,13 @@ def test_xsd(url=None, path=None, skip=False, xsd_name=None):
     return decorator
 
 
-def new_test_user(env, login="", groups="base.group_user", context=None, **kwargs):
+def new_test_user(
+    env: api.Environment,
+    login: str = "",
+    groups: str = "base.group_user",
+    context: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> ResUsersModel:
     if not login:
         raise ValueError("New users require at least a login")
     if not groups:
@@ -258,19 +280,17 @@ def new_test_user(env, login="", groups="base.group_user", context=None, **kwarg
     return user
 
 
-def new_test_api_key(user, scope: str = RPC_SCOPE) -> str:
-    return (
-        user.env["res.users.apikeys"]
-        .with_user(user)
-        ._generate(
-            scope,
-            f"test key of {user.login}",
-            datetime.datetime.now() + datetime.timedelta(days=1),
-        )
+def new_test_api_key(user: ResUsersModel, scope: str = RPC_SCOPE) -> str:
+    apikeys: Any = user.env["res.users.apikeys"].with_user(user)
+    key: str = apikeys._generate(
+        scope,
+        f"test key of {user.login}",
+        datetime.datetime.now() + datetime.timedelta(days=1),
     )
+    return key
 
 
-def new_unbound_test_api_key(user) -> str:
+def new_unbound_test_api_key(user: ResUsersModel) -> str:
     key = new_test_api_key(user)
     user.env.cr.execute(
         SQL(
@@ -295,10 +315,12 @@ def no_retry(arg: Any) -> Any:
     return arg
 
 
-def users(*logins: str) -> Callable:
+def users(
+    *logins: str,
+) -> Callable[[Callable[..., object]], Callable[..., None]]:
     assert logins, "Expecting at least one login to execute"
 
-    def users_decorator(func: Callable, /) -> Callable:
+    def users_decorator(func: Callable[..., object], /) -> Callable[..., None]:
         @wraps(func)
         def with_users(self: Any, *args: Any, **kwargs: Any) -> None:
             old_uid = self.uid
@@ -333,7 +355,7 @@ def users(*logins: str) -> Callable:
     return users_decorator
 
 
-def warmup(func: Callable, /) -> Callable:
+def warmup(func: Callable[..., object], /) -> Callable[..., None]:
 
     @wraps(func)
     def warmup(self: Any, *args: Any, **kwargs: Any) -> None:
@@ -371,11 +393,11 @@ def can_import(module: str) -> bool:
         return True
 
 
-def tagged(*tags: str) -> Callable:
+def tagged(*tags: str) -> Callable[[_T], _T]:
     include = {t for t in tags if not t.startswith("-")}
     exclude = {t[1:] for t in tags if t.startswith("-")}
 
-    def tags_decorator(target: Any) -> Any:
+    def tags_decorator(target: _T) -> _T:
         obj: Any = target
         if not isinstance(target, type):
             obj.test_tags = getattr(obj, "test_tags", set()) | include
@@ -387,7 +409,7 @@ def tagged(*tags: str) -> Callable:
                 include=sorted(include),
                 exclude=sorted(exclude),
             )
-            return obj
+            return target
 
         obj.test_tags = (getattr(obj, "test_tags", set()) | include) - exclude
         at_install = "at_install" in obj.test_tags
@@ -411,7 +433,7 @@ def tagged(*tags: str) -> Callable:
                 "A tests should be either at_install or post_install, which is not the case of %r",
                 obj,
             )
-        return obj
+        return target
 
     return tags_decorator
 

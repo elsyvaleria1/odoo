@@ -4,7 +4,7 @@ import re
 import typing
 import warnings
 from collections.abc import Iterable, Iterator
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from psycopg import sql as _sql
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from odoo.db import BaseCursor
     from odoo.fields import Field
 else:
-    Field = typing.Any
+    type Field[T] = typing.Any
     BaseCursor = typing.Any
 __all__ = ["SQL"]
 
@@ -47,15 +47,15 @@ class SQL:
     __slots__ = ("__code", "__params", "__to_flush")
 
     __code: str
-    __params: tuple
-    __to_flush: tuple[Field, ...]
+    __params: tuple[Any, ...]
+    __to_flush: tuple[Field[Any], ...]
 
     def __init__(
         self,
         code: str | SQL = "",
         /,
         *args: object,
-        to_flush: Field | Iterable[Field] | None = None,
+        to_flush: Field[Any] | Iterable[Field[Any]] | None = None,
         **kwargs: object,
     ) -> None:
         if isinstance(code, SQL):
@@ -80,8 +80,8 @@ class SQL:
             return
 
         code_list: list[str] = []
-        params_list: list = []
-        to_flush_list: list = []
+        params_list: list[object] = []
+        to_flush_list: list[Field[Any]] = []
         inserts_empty_tuple = False
         for arg in args:
             if isinstance(arg, SQL):
@@ -123,9 +123,9 @@ class SQL:
     def __adopt(
         self,
         source: SQL,
-        args: tuple,
-        kwargs: dict,
-        to_flush: Field | Iterable[Field] | None,
+        args: tuple[object, ...],
+        kwargs: dict[str, object],
+        to_flush: Field[Any] | Iterable[Field[Any]] | None,
     ) -> None:
         if args or kwargs:
             msg = "SQL() unexpected arguments when code has type SQL"
@@ -136,8 +136,8 @@ class SQL:
 
     @staticmethod
     def __normalize_to_flush(
-        to_flush: Field | Iterable[Field] | None,
-    ) -> tuple[Field, ...]:
+        to_flush: Field[Any] | Iterable[Field[Any]] | None,
+    ) -> tuple[Field[Any], ...]:
         if to_flush is None:
             return ()
         if isinstance(to_flush, Iterable) and not isinstance(to_flush, (str, bytes)):
@@ -149,14 +149,14 @@ class SQL:
         return self.__code
 
     @property
-    def params(self) -> tuple:
+    def params(self) -> tuple[Any, ...]:
         return self.__params
 
     @property
-    def to_flush(self) -> Iterable[Field]:
+    def to_flush(self) -> Iterable[Field[Any]]:
         return self.__to_flush
 
-    def with_to_flush(self, to_flush: Iterable[Field]) -> SQL:
+    def with_to_flush(self, to_flush: Iterable[Field[Any]]) -> SQL:
         sql = SQL.__new__(SQL)
         sql.__code = self.__code
         sql.__params = self.__params
@@ -176,12 +176,13 @@ class SQL:
             return self.__code
         params = iter(self.__params)
 
-        def substitute(match: re.Match) -> str:
+        def substitute(match: re.Match[str]) -> str:
             directive = match[1]
             if directive == "%":
                 return "%%"
             if directive == "s":
-                return _sql.Literal(next(params)).as_string(context).replace("%", "%%")
+                literal: str = _sql.Literal(next(params)).as_string(context)
+                return literal.replace("%", "%%")
             raise ValueError(
                 f"SQL: unsupported format directive %{directive} in {self.__code!r}"
             )
@@ -204,7 +205,7 @@ class SQL:
     def __hash__(self) -> int:
         return hash((self.__code, freehash(self.__params)))
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str | tuple[Any, ...]]:
         warnings.warn(
             "Deprecated since 19.0, use code and params properties directly",
             DeprecationWarning,
@@ -213,7 +214,7 @@ class SQL:
         yield self.code
         yield self.params
 
-    def join(self, args: Iterable) -> SQL:
+    def join(self, args: Iterable[object]) -> SQL:
         items = args if isinstance(args, list) else list(args)
         if len(items) == 0:
             return SQL.EMPTY
@@ -241,7 +242,7 @@ class SQL:
         cls,
         name: str,
         subname: str | None = None,
-        to_flush: Field | None = None,
+        to_flush: Field[Any] | None = None,
     ) -> SQL:
         _check_identifier(name)
         if subname is None:

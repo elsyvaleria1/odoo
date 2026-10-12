@@ -150,12 +150,13 @@ def _write_json(value: Any, **options: Any) -> bytes:
 def _write_tree(value: Any, **options: Any) -> bytes:
     from lxml import etree
 
-    return etree.tostring(
+    serialized: bytes = etree.tostring(
         value,
         xml_declaration=options.get("xml_declaration", True),
         encoding=options.get("encoding") or "utf-8",
         pretty_print=bool(options.get("pretty_print")),
     )
+    return serialized
 
 
 def _write_text(value: Any, **options: Any) -> bytes:

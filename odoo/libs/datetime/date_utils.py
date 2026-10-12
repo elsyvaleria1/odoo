@@ -335,11 +335,13 @@ def _gap_transition(wall: datetime) -> datetime:
 
 
 def add[D: (date, datetime)](value: D, *args: Any, **kwargs: Any) -> D:
-    return value + relativedelta(*args, **kwargs)
+    result: D = value + relativedelta(*args, **kwargs)
+    return result
 
 
 def subtract[D: (date, datetime)](value: D, *args: Any, **kwargs: Any) -> D:
-    return value - relativedelta(*args, **kwargs)
+    result: D = value - relativedelta(*args, **kwargs)
+    return result
 
 
 _UTC_KEYS = frozenset(
@@ -558,11 +560,11 @@ def _new_year_ordinal(year: int) -> int:
 
 
 def weekstart(locale: babel.Locale, date: date) -> date:
-    return date + relativedelta(weekday=_WEEKDAYS[locale.first_week_day](-1))
+    return add(date, weekday=_WEEKDAYS[locale.first_week_day](-1))
 
 
 def weekend(locale: babel.Locale, date: date) -> date:
-    return weekstart(locale, date) + relativedelta(days=6)
+    return add(weekstart(locale, date), days=6)
 
 
 real_time = _time.time
@@ -669,7 +671,8 @@ def _period_occurrences(
 
 def _month_occurrence(year: int, month: int, anchor: Anchor) -> date:
     if anchor.last_day:
-        return date(year, month, 1) + relativedelta(months=1)
+        following: date = date(year, month, 1) + relativedelta(months=1)
+        return following
     return _clamped(year, month, _require(anchor.day))
 
 

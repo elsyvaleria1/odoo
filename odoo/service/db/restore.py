@@ -105,7 +105,7 @@ def _prepare_expansion_error(budget: int) -> RuntimeError:
     )
 
 
-def _get_source_size(dump_file: str | os.PathLike | IO[bytes]) -> int:
+def _get_source_size(dump_file: str | os.PathLike[str] | IO[bytes]) -> int:
     if isinstance(dump_file, (str, os.PathLike)):
         size = Path(dump_file).stat().st_size
         _debug.logic("database.restore.source_sized", source="path", bytes=size)
@@ -120,7 +120,7 @@ def _get_source_size(dump_file: str | os.PathLike | IO[bytes]) -> int:
         dump_file.seek(pos)
 
 
-def _unpack_budget(dump_file: str | os.PathLike | IO[bytes]) -> int:
+def _unpack_budget(dump_file: str | os.PathLike[str] | IO[bytes]) -> int:
     ratio = get_env_int(
         "ODOO_RESTORE_MAX_EXPANSION_RATIO",
         _RESTORE_MAX_EXPANSION_RATIO,
@@ -165,7 +165,7 @@ def exp_restore(db_name: str, data: str, copy: bool = False) -> Literal[True]:
 
 
 def _extract_zip_dump(
-    dump_file: str | os.PathLike | IO[bytes],
+    dump_file: str | os.PathLike[str] | IO[bytes],
     dump_dir: str,
     restore_target: _RestoreTarget,
 ) -> str | None:
@@ -386,7 +386,7 @@ def _warn_unmapped_foreign_servers(cr: BaseCursor, db: str) -> None:
 
 def _restore_into(
     db: str,
-    dump_file: str | os.PathLike | IO[bytes],
+    dump_file: str | os.PathLike[str] | IO[bytes],
     dump_dir: str,
     restore_target: _RestoreTarget,
 ) -> str | None:
@@ -414,7 +414,7 @@ def _restore_into(
 @check_db_management_enabled
 def restore_db(
     db: str,
-    dump_file: str | os.PathLike | IO[bytes],
+    dump_file: str | os.PathLike[str] | IO[bytes],
     copy: bool = False,
     neutralize_database: bool = False,
 ) -> None:

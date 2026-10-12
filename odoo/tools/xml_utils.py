@@ -18,7 +18,6 @@ __all__ = [
     "dict_to_xml",
     "get_xml_value",
     "prepare_xml_signature",
-
 ]
 
 type XmlSource = etree._Element | str | bytes
@@ -103,7 +102,6 @@ def cleanup_xml_node(
     return xml_node
 
 
-
 def prepare_xml_signature(source: str | bytes) -> etree._Element:
     signature = cleanup_xml_node(source, remove_blank_nodes=False, indent_level=-1)
     etree.indent(signature, space="")
@@ -120,7 +118,7 @@ def prepare_xml_signature(source: str | bytes) -> etree._Element:
 def get_xml_value(
     xpath: str,
     xml_element: etree._Element,
-    namespaces: dict | None = None,
+    namespaces: dict[str, str] | None = None,
 ) -> str | None:
     result = xml_element.xpath(xpath, namespaces=namespaces)
     if not result:

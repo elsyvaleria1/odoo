@@ -27,7 +27,8 @@ def read_rss() -> int:
     except OSError:
         import psutil
 
-        return psutil.Process().memory_info().rss
+        rss: int = psutil.Process().memory_info().rss
+        return rss
     try:
         return int(os.read(fd, 256).split()[1]) * _PAGE
     finally:

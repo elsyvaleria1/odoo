@@ -85,7 +85,7 @@ def format_number(
             "format_number() must be given exactly one %char format specifier"
         )
 
-    formatted = spec % value
+    formatted: str = spec % value
     match = _get_conversion_match(spec)
     if match is None:
         return formatted

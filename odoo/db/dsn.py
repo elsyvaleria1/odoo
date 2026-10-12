@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from typing import Any
 
 import psycopg
 from psycopg.conninfo import conninfo_to_dict
@@ -8,6 +9,9 @@ from psycopg.conninfo import conninfo_to_dict
 from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
+
+type ConnInfo = dict[str, Any]
+type DsnKey = frozenset[tuple[str, str]]
 
 _NON_RETRYABLE_CONNECT_ERRORS: tuple[type[psycopg.Error], ...] = (
     psycopg.errors.InvalidCatalogName,
@@ -44,15 +48,16 @@ def _resolve_connect_error(exc: psycopg.OperationalError) -> psycopg.Error | Non
     return None
 
 
-def _expand_conninfo(info: dict | str) -> dict:
+def _expand_conninfo(info: ConnInfo | str) -> ConnInfo:
     if isinstance(info, str):
-        return conninfo_to_dict(info)
+        expanded: ConnInfo = conninfo_to_dict(info)
+        return expanded
     raw = info.get("dsn")
     keywords = {k: v for k, v in info.items() if k != "dsn"}
     return {**conninfo_to_dict(raw), **keywords} if raw else keywords
 
 
-def _get_dsn_key(dsn: dict | str) -> frozenset:
+def _get_dsn_key(dsn: ConnInfo | str) -> DsnKey:
     dsn = _expand_conninfo(dsn)
     password = dsn.get("password")
     if password:
@@ -71,7 +76,7 @@ def _get_dsn_key(dsn: dict | str) -> frozenset:
     return key
 
 
-def _get_key_dbname(key: frozenset) -> str:
+def _get_key_dbname(key: DsnKey) -> str:
     for name, value in key:
         if name == "dbname":
             return value

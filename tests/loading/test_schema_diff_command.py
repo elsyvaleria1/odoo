@@ -7,6 +7,9 @@ import uuid
 import psycopg
 import pytest
 
+import odoo.db
+from odoo.modules.registry import Registry
+
 from .._pg import dropdb_path
 from .conftest import REPO_ROOT, requires_pg
 
@@ -172,6 +175,8 @@ def code_ahead_of_database(base_db, tmp_path_factory):
     extra = tmp_path_factory.mktemp("schema_diff_addons")
     addons = f"{REPO_ROOT / 'odoo' / 'addons'},{REPO_ROOT / 'addons'},{extra}"
     db = f"odoo_schema_diff_{uuid.uuid4().hex[:12]}"
+    Registry.remove(base_db)
+    odoo.db.close_db(base_db)
     with psycopg.connect(dbname="postgres", autocommit=True) as connection:
         connection.execute(f'CREATE DATABASE "{db}" TEMPLATE "{base_db}"')
     try:

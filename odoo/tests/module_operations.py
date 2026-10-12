@@ -21,6 +21,8 @@ from odoo.service.db.lifecycle import _create_faketime_now_function
 from odoo.tests import standalone_tests
 from odoo.tools import config, profiler
 
+type _SubParsers = argparse._SubParsersAction[argparse.ArgumentParser]
+
 _logger = logging.getLogger("odoo.tests.module_operations")
 _debug = DebugLog(__name__)
 
@@ -103,7 +105,9 @@ def _add_global_options(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_cycle_command(cmds: argparse._SubParsersAction) -> None:
+def _add_cycle_command(
+    cmds: _SubParsers,
+) -> None:
     cycle_cmd = cmds.add_parser(
         "cycle",
         help="Full install/uninstall/reinstall cycle.",
@@ -115,7 +119,8 @@ def _add_cycle_command(cmds: argparse._SubParsersAction) -> None:
 
 
 def _add_uninstall_command(
-    cmds: argparse._SubParsersAction, fake_commands: argparse._MutuallyExclusiveGroup
+    cmds: _SubParsers,
+    fake_commands: argparse._MutuallyExclusiveGroup,
 ) -> None:
     fake_commands.add_argument(
         "--uninstall",
@@ -145,7 +150,8 @@ def _add_uninstall_command(
 
 
 def _add_standalone_command(
-    cmds: argparse._SubParsersAction, fake_commands: argparse._MutuallyExclusiveGroup
+    cmds: _SubParsers,
+    fake_commands: argparse._MutuallyExclusiveGroup,
 ) -> None:
     fake_commands.add_argument(
         "--standalone",
@@ -384,7 +390,7 @@ if __name__ == "__main__":
         data_dir=bool(args.data_dir),
         profile=bool(os.environ.get("ODOO_PROFILE_PRELOAD")),
     )
-    prof: contextlib.AbstractContextManager = contextlib.nullcontext()
+    prof: contextlib.AbstractContextManager[object] = contextlib.nullcontext()
     if os.environ.get("ODOO_PROFILE_PRELOAD"):
         interval = float(os.environ.get("ODOO_PROFILE_PRELOAD_INTERVAL", "0.1"))
         collectors: list[str | profiler.Collector] = [

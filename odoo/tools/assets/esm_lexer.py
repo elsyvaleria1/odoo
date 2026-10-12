@@ -33,7 +33,7 @@ _UNAVAILABLE_COOLDOWN_S = 600.0
 
 class _LexerWorker:
     def __init__(self) -> None:
-        self._proc: subprocess.Popen | None = None
+        self._proc: subprocess.Popen[bytes] | None = None
         self._counter = 0
         self._disabled_until = 0.0
         self._consec_failures = 0
@@ -54,7 +54,7 @@ class _LexerWorker:
         if proc is not None:
             worker_process.close_pipes(proc, flush=False)
 
-    def _spawn(self) -> tuple[subprocess.Popen | None, str]:
+    def _spawn(self) -> tuple[subprocess.Popen[bytes] | None, str]:
         node = shutil.which("node")
         if not node:
             return None, "no_node"
@@ -103,7 +103,7 @@ class _LexerWorker:
         if proc is not None:
             self._reap(proc)
 
-    def _reap(self, proc: subprocess.Popen) -> None:
+    def _reap(self, proc: subprocess.Popen[bytes]) -> None:
         worker_process.stop(proc)
         _debug.lifecycle(
             "esm_lexer.worker_killed",
@@ -112,7 +112,9 @@ class _LexerWorker:
             requests=self._counter,
         )
 
-    def _write_all(self, proc: subprocess.Popen, data: bytes, deadline: float) -> None:
+    def _write_all(
+        self, proc: subprocess.Popen[bytes], data: bytes, deadline: float
+    ) -> None:
         assert proc.stdin is not None
         fd = proc.stdin.fileno()
         view = memoryview(data)
@@ -131,7 +133,7 @@ class _LexerWorker:
                 raise EOFError("lexer worker closed stdin") from exc
             view = view[written:]
 
-    def _read_line(self, proc: subprocess.Popen, deadline: float) -> str:
+    def _read_line(self, proc: subprocess.Popen[bytes], deadline: float) -> str:
         assert proc.stdout is not None
         fd = proc.stdout.fileno()
         while True:
@@ -189,7 +191,7 @@ class _LexerWorker:
                     payload = json_dumps_bytes(message) + b"\n"
                     self._write_all(proc, payload, deadline)
                     line = self._read_line(proc, deadline)
-                    response = json_loads(line)
+                    response: dict[str, Any] = json_loads(line)
                     if response.get("id") != request_id:
                         raise ValueError("lexer worker desynchronized")
                 except Exception as exc:

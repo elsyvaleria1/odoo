@@ -316,7 +316,9 @@ class TestCursor(BaseCursor):
         super()._savepoint_closed()
         self._cursor._savepoint_closed()
 
-    def _statement(self, name: str, args: tuple, kwargs: dict) -> Any:
+    def _statement(
+        self, name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
+    ) -> Any:
         with self._connection_guard:
             self._refuse_if_revoked()
             if self._closed:
@@ -328,10 +330,10 @@ class TestCursor(BaseCursor):
             return getattr(self._cursor, name)(*args, **kwargs)
 
     def execute(self, *args: Any, **kwargs: Any) -> None:
-        return self._statement("execute", args, kwargs)
+        self._statement("execute", args, kwargs)
 
     def executemany(self, *args: Any, **kwargs: Any) -> None:
-        return self._statement("executemany", args, kwargs)
+        self._statement("executemany", args, kwargs)
 
     def execute_values(self, *args: Any, **kwargs: Any) -> Any:
         return self._statement("execute_values", args, kwargs)
@@ -423,31 +425,31 @@ class TestCursor(BaseCursor):
     def __getattr__(self, name: str) -> Any:
         return getattr(self._cursor, name)
 
-    def _results(self) -> Any:
+    def _results(self) -> Cursor:
         self._refuse_if_revoked()
         return self._cursor
 
-    def fetchone(self) -> Any:
+    def fetchone(self) -> tuple[Any, ...] | None:
         with self._connection_guard:
             return self._results().fetchone()
 
-    def fetchmany(self, size: int = 0) -> list:
+    def fetchmany(self, size: int = 0) -> list[tuple[Any, ...]]:
         with self._connection_guard:
             return self._results().fetchmany(size)
 
-    def fetchall(self) -> list:
+    def fetchall(self) -> list[tuple[Any, ...]]:
         with self._connection_guard:
             return self._results().fetchall()
 
-    def dictfetchone(self) -> dict | None:
+    def dictfetchone(self) -> dict[str, Any] | None:
         with self._connection_guard:
             return self._results().dictfetchone()
 
-    def dictfetchmany(self, size: int) -> list[dict]:
+    def dictfetchmany(self, size: int) -> list[dict[str, Any]]:
         with self._connection_guard:
             return self._results().dictfetchmany(size)
 
-    def dictfetchall(self) -> list[dict]:
+    def dictfetchall(self) -> list[dict[str, Any]]:
         with self._connection_guard:
             return self._results().dictfetchall()
 

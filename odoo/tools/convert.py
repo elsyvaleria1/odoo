@@ -159,7 +159,7 @@ def template_arch(el: etree._Element, xml_id: str) -> None:
 
 
 def _substitute_xml_ids(self: Any, s: str) -> str:
-    def repl(m: re.Match) -> str:
+    def repl(m: re.Match[str]) -> str:
         if m.group(0) == "%%":
             return "%"
         rec_id = m.group(1)
@@ -299,9 +299,9 @@ def _eval_xml_field(self: Any, node: etree._Element, env: Environment) -> Any:
 
 def _eval_xml_function_args(
     self: Any, node: etree._Element, env: Environment, model_str: str | None
-) -> tuple[list, dict]:
-    args: list = []
-    kwargs: dict = {}
+) -> tuple[list[Any], dict[str, Any]]:
+    args: list[Any] = []
+    kwargs: dict[str, Any] = {}
     if a_eval := node.get("eval"):
         context = _prepare_eval_context(self, env, model_str)
         args = list(safe_eval(a_eval, context))

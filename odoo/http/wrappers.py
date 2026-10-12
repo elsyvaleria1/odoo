@@ -9,6 +9,7 @@ import werkzeug.exceptions
 import werkzeug.http
 import werkzeug.utils
 import werkzeug.wrappers
+from markupsafe import Markup
 from werkzeug.exceptions import HTTPException
 
 from odoo.libs._vendor.useragents import UserAgent
@@ -50,7 +51,8 @@ def prepare_content_disposition_header(
         names = {"filename": simple, "filename*": f"UTF-8''{quoted}"}
     else:
         names = {"filename": filename}
-    return werkzeug.http.dump_options_header(disposition_type, names)
+    header: str = werkzeug.http.dump_options_header(disposition_type, names)
+    return header
 
 
 def check_endpoint_result(result: Any, fname: str) -> None:
@@ -102,7 +104,7 @@ class HTTPRequest(_HTTPRequestProxied):
         httprequest.max_form_parts = DEFAULT_MAX_FORM_PARTS
 
         self.__wrapped = httprequest
-        self.__environ = httprequest.environ
+        self.__environ: dict[str, Any] = httprequest.environ
         filtered = {
             key: value
             for key, value in self.__environ.items()
@@ -124,7 +126,8 @@ class HTTPRequest(_HTTPRequestProxied):
 
     @property
     def session_id(self) -> str | None:
-        return self.__wrapped.cookies.get("session_id")
+        session_id: str | None = self.__wrapped.cookies.get("session_id")
+        return session_id
 
     @property
     def raw_environ(self) -> dict[str, Any]:
@@ -287,7 +290,7 @@ class _Response(werkzeug.wrappers.Response):
     def is_qweb(self) -> bool:
         return self.template is not None
 
-    def render(self) -> bytes:
+    def render(self) -> Markup:
         if self.template is None:
             raise ValueError(
                 "Response.render() needs a template; guard the call with "
@@ -298,7 +301,9 @@ class _Response(werkzeug.wrappers.Response):
         with _debug.perf(
             "http.response.render", cr=env.cr, template=self.template
         ) as span:
-            rendered = env["ir.ui.view"]._render_template(self.template, self.qcontext)
+            rendered: Markup = env["ir.ui.view"]._render_template(
+                self.template, self.qcontext
+            )
             span.set(bytes=len(rendered))
         return rendered
 
@@ -386,7 +391,8 @@ class Headers(Proxy):
     values = ProxyFunc()
 
     def __eq__(self, other: object) -> bool:
-        return self._wrapped__ == _unwrap_proxy(other)
+        equal: bool = self._wrapped__ == _unwrap_proxy(other)
+        return equal
 
     # A mutable value proxy is unhashable; object.__hash__ is typed as callable.
     __hash__ = None  # type: ignore[assignment]
@@ -417,7 +423,8 @@ class ResponseCacheControl(Proxy):
     pop = ProxyFunc()
 
     def __eq__(self, other: object) -> bool:
-        return self._wrapped__ == _unwrap_proxy(other)
+        equal: bool = self._wrapped__ == _unwrap_proxy(other)
+        return equal
 
     # A mutable value proxy is unhashable; object.__hash__ is typed as callable.
     __hash__ = None  # type: ignore[assignment]

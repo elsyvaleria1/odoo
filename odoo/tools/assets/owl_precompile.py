@@ -34,7 +34,7 @@ _NODE_COMPILER_FILES = (
 )
 _NODE_PACKAGES = ("acorn", "jsdom", "xpath")
 
-_fingerprints: dict[tuple, str] = {}
+_fingerprints: dict[tuple[tuple[str, int | None, int | None], ...], str] = {}
 
 
 class PrecompiledTemplates(NamedTuple):

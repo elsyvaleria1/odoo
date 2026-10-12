@@ -86,7 +86,7 @@ def dispatch(method: str, params: list[Any]) -> Any:
     )
 
 
-_DISPATCH: dict[str, Callable] = {
+_DISPATCH: dict[str, Callable[..., Any]] = {
     "db_exist": _rpc_db_exist,
     "list": exp_list,
     "list_lang": exp_list_lang,

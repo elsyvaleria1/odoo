@@ -428,7 +428,7 @@ def update_sql(table: str, column: str, zone: str, until_local: datetime) -> SQL
     )
 
 
-def _one(cr: BaseCursor) -> tuple:
+def _one(cr: BaseCursor) -> tuple[typing.Any, ...]:
     row = cr.fetchone()
     assert row is not None, "an aggregate returned no row"
     return row
@@ -446,7 +446,8 @@ def local_wall_clock(cr: BaseCursor, until: datetime, zone: str) -> datetime:
     if until.tzinfo is None:
         raise ValueError("the deploy instant needs an explicit UTC offset")
     cr.execute("SELECT %s::timestamptz AT TIME ZONE %s", [until, zone])
-    return _one(cr)[0]
+    wall_clock: datetime = _one(cr)[0]
+    return wall_clock
 
 
 def create_witnesses(cr: BaseCursor) -> int:
@@ -475,7 +476,7 @@ def create_witnesses(cr: BaseCursor) -> int:
         cr.execute(witness_insert_sql(table, column))
     cr.execute(SQL("ANALYZE pg_temp.%s", SQL.identifier(WITNESS_TABLE)))
     cr.execute(SQL("SELECT count(*) FROM pg_temp.%s", SQL.identifier(WITNESS_TABLE)))
-    count = _one(cr)[0]
+    count: int = _one(cr)[0]
     _debug.perf.count("modules.sql_zone_repair.witnesses", witnesses=count)
     return count
 
@@ -589,7 +590,7 @@ def plan_repair(
     )
 
 
-def read_guard(cr: BaseCursor) -> dict | None:
+def read_guard(cr: BaseCursor) -> dict[str, typing.Any] | None:
     cr.execute("SELECT value FROM ir_config_parameter WHERE key = %s", [GUARD_KEY])
     row = cr.fetchone()
     return json_loads(row[0]) if row else None

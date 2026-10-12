@@ -128,6 +128,9 @@ class Worker:
     """The child's pid: set by the master after `fork()` and by the child in
     `start()`; None on an object no process has yet become."""
 
+    spawn_time: float = 0.0
+    """When the master forked this worker, on its monotonic clock."""
+
     recycled_for: str | None = None
     """Which policy stopped this worker, as the master read it off the pipe."""
 

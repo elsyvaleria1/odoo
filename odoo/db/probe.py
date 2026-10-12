@@ -6,7 +6,7 @@ import logging
 import math
 import threading
 from time import monotonic
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import psycopg
 
@@ -19,6 +19,7 @@ from odoo.libs.debug_log import DebugLog
 
 from .dsn import (
     _NON_RETRYABLE_CONNECT_ERRORS,
+    DsnKey,
     _expand_conninfo,
     _get_key_dbname,
     _resolve_connect_error,
@@ -51,15 +52,15 @@ class _InFlightProbe:
 class ReachabilityProbe:
     def __init__(self, stats: PoolStats) -> None:
         self._lock = threading.Lock()
-        self._proven: set[frozenset] = set()
-        self._inflight: dict[frozenset, _InFlightProbe] = {}
+        self._proven: set[DsnKey] = set()
+        self._inflight: dict[DsnKey, _InFlightProbe] = {}
         self._stats = stats
 
-    def is_proven(self, key: frozenset) -> bool:
+    def is_proven(self, key: DsnKey) -> bool:
         with self._lock:
             return key in self._proven
 
-    def mark_proven(self, key: frozenset) -> None:
+    def mark_proven(self, key: DsnKey) -> None:
         if key in self._proven:
             return
         with self._lock:
@@ -71,13 +72,13 @@ class ReachabilityProbe:
                 )
             self._proven.add(key)
 
-    def clear_key(self, key: frozenset) -> None:
+    def clear_key(self, key: DsnKey) -> None:
         with self._lock:
             if _debug.lifecycle.enabled and key in self._proven:
                 _debug.lifecycle("pool.reachability_revoked", db=_get_key_dbname(key))
             self._proven.discard(key)
 
-    def clear_keys(self, keys: Collection[frozenset]) -> None:
+    def clear_keys(self, keys: Collection[DsnKey]) -> None:
         with self._lock:
             _debug.lifecycle("pool.reachability_revoked", count=len(keys))
             self._proven.difference_update(keys)
@@ -97,9 +98,9 @@ class ReachabilityProbe:
 
     def check_connectable(
         self,
-        key: frozenset,
+        key: DsnKey,
         conninfo: str,
-        kwargs: dict,
+        kwargs: dict[str, Any],
         deadline: float | None = None,
     ) -> bool:
         with self._lock:
@@ -130,11 +131,11 @@ class ReachabilityProbe:
 
     def _probe_or_await_leader(
         self,
-        key: frozenset,
+        key: DsnKey,
         probe: _InFlightProbe,
         leader: bool,
         conninfo: str,
-        kwargs: dict,
+        kwargs: dict[str, Any],
         deadline: float | None = None,
     ) -> bool:
         if leader:
@@ -170,7 +171,7 @@ class ReachabilityProbe:
             return probe.connected if done else True
 
     def probe_connectable(
-        self, conninfo: str, kwargs: dict, deadline: float | None = None
+        self, conninfo: str, kwargs: dict[str, Any], deadline: float | None = None
     ) -> bool:
         probe_timeout = get_libpq_connect_timeout(deadline, PROBE_CONNECT_TIMEOUT)
         if not probe_timeout:
@@ -232,7 +233,7 @@ class ReachabilityProbe:
         return True
 
     def ask_maintenance_db(
-        self, conninfo: str, kwargs: dict, deadline: float | None = None
+        self, conninfo: str, kwargs: dict[str, Any], deadline: float | None = None
     ) -> str:
         maint = _expand_conninfo({"dsn": conninfo, **kwargs})
         db_name = maint.get("dbname")

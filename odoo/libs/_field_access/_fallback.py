@@ -1,4 +1,5 @@
 from operator import itemgetter as _itemgetter
+from typing import Any
 
 __all__ = [
     "batch_cache_fill",
@@ -30,10 +31,10 @@ def _as_i64(value: object) -> int | None:
 
 def to_prefetch_ids(
     record_id: object,
-    prefetch_ids: tuple,
-    field_cache: dict,
+    prefetch_ids: tuple[Any, ...],
+    field_cache: dict[Any, Any],
     prefetch_max: int,
-) -> tuple | None:
+) -> tuple[Any, ...] | None:
     require_type("to_prefetch_ids", "prefetch_ids", prefetch_ids, tuple)
     require_type("to_prefetch_ids", "field_cache", field_cache, dict)
     require_type("to_prefetch_ids", "prefetch_max", prefetch_max, int)
@@ -56,14 +57,14 @@ def to_prefetch_ids(
 
 
 def batch_cache_get(
-    field_cache: dict,
-    ids: tuple,
+    field_cache: dict[Any, Any],
+    ids: tuple[Any, ...],
     pending: object,
     none_val: object,
-) -> tuple[list, list[int]]:
+) -> tuple[list[Any], list[int]]:
     require_type("batch_cache_get", "field_cache", field_cache, dict)
     require_type("batch_cache_get", "ids", ids, tuple)
-    results: list = []
+    results: list[Any] = []
     miss_indices: list[int] = []
     _get = field_cache.get
     _MISSING = object()
@@ -84,13 +85,13 @@ def batch_cache_get(
 
 
 def batch_cache_filter(
-    field_cache: dict,
-    ids: tuple,
+    field_cache: dict[Any, Any],
+    ids: tuple[Any, ...],
     pending: object,
-) -> tuple[list, list[int]]:
+) -> tuple[list[Any], list[int]]:
     require_type("batch_cache_filter", "field_cache", field_cache, dict)
     require_type("batch_cache_filter", "ids", ids, tuple)
-    passing_ids: list = []
+    passing_ids: list[Any] = []
     miss_indices: list[int] = []
     _get = field_cache.get
     _MISSING = object()
@@ -108,9 +109,9 @@ def batch_cache_filter(
 
 
 def batch_cache_fill(
-    field_cache: dict,
-    ids: tuple,
-    results: list,
+    field_cache: dict[Any, Any],
+    ids: tuple[Any, ...],
+    results: list[dict[str, Any]],
     name: str,
     pending: object,
     none_val: object,
@@ -123,7 +124,7 @@ def batch_cache_fill(
         raise ValueError(
             "batch_cache_fill: `results` must have the same length as `ids`"
         )
-    miss_indices = []
+    miss_indices: list[int] = []
     _MISSING = object()
     _get = field_cache.get
 
@@ -142,8 +143,8 @@ def batch_cache_fill(
 
 
 def _sort_ids_by_values(
-    ids: tuple, values: list, reverse: bool, null_high: bool
-) -> tuple:
+    ids: tuple[Any, ...], values: list[Any], reverse: bool, null_high: bool
+) -> tuple[Any, ...]:
     _null_rank = 1 if null_high else 0
     _val_rank = 0 if null_high else 1
     _null_key = (_null_rank, "")
@@ -154,17 +155,17 @@ def _sort_ids_by_values(
 
 
 def sort_ids_by_cache(
-    field_cache: dict,
-    ids: tuple,
+    field_cache: dict[Any, Any],
+    ids: tuple[Any, ...],
     pending: object,
     reverse: bool,
     null_high: bool,
-) -> tuple | None:
+) -> tuple[Any, ...] | None:
     require_type("sort_ids_by_cache", "field_cache", field_cache, dict)
     require_type("sort_ids_by_cache", "ids", ids, tuple)
     require_type("sort_ids_by_cache", "reverse", reverse, bool)
     require_type("sort_ids_by_cache", "null_high", null_high, bool)
-    values: list = []
+    values: list[Any] = []
     _get = field_cache.get
     _MISSING = object()
     _append = values.append
@@ -176,12 +177,12 @@ def sort_ids_by_cache(
     return _sort_ids_by_values(ids, values, reverse, null_high)
 
 
-def batch_group_ids(ids: tuple, values: list) -> dict[object, list]:
+def batch_group_ids(ids: tuple[Any, ...], values: list[Any]) -> dict[Any, list[Any]]:
     require_type("batch_group_ids", "ids", ids, tuple)
     require_type("batch_group_ids", "values", values, list)
     if len(values) != len(ids):
         raise ValueError("batch_group_ids: `values` must have the same length as `ids`")
-    result: dict[object, list] = {}
+    result: dict[Any, list[Any]] = {}
     for id_, val in zip(ids, values, strict=True):
         group = result.get(val)
         if group is None:

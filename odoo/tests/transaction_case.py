@@ -13,10 +13,11 @@ import threading
 import traceback
 import types
 import warnings
-from contextlib import ExitStack, contextmanager
+from collections.abc import Callable, Generator, Iterable, Iterator
+from contextlib import AbstractContextManager, ExitStack, contextmanager
 from datetime import date, datetime
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, ClassVar, cast, overload, override
+from typing import TYPE_CHECKING, Any, ClassVar, NoReturn, cast, overload, override
 from unittest import mock
 from unittest.case import _AssertRaisesContext
 from unittest.mock import Mock, _patch, patch
@@ -57,11 +58,13 @@ from .matchers import Approx, _normalize_arch_for_assert
 from .utils import HOST, env_int, get_db_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterable, Iterator
-    from contextlib import AbstractContextManager
+    from socket import _GetAddrInfoResult
 
     from .result import OdooTestResult
+else:
+    _GetAddrInfoResult = Any
 
+type _Patcher = _patch[Any]
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -308,7 +311,7 @@ def _patcher_name(patcher: Any) -> str:
     return type(patcher).__qualname__
 
 
-def _enter_context(cm: Any, addcleanup: Callable) -> Any:
+def _enter_context(cm: Any, addcleanup: Callable[..., object]) -> Any:
     cls = type(cm)
     try:
         enter = cls.__enter__
@@ -332,12 +335,14 @@ def _query_text(query: Any) -> str:
     return str(query)
 
 
-def _copy_from_text(table, columns, *args, **kwargs) -> str:
+def _copy_from_text(
+    table: str, columns: Iterable[str], *args: Any, **kwargs: Any
+) -> str:
     columns_sql = ", ".join(f'"{column}"' for column in columns)
     return f'COPY "{table}" ({columns_sql}) FROM STDIN'
 
 
-_STATEMENT_RECORDERS = {
+_STATEMENT_RECORDERS: dict[str, Callable[..., str]] = {
     "execute": lambda query, *args, **kwargs: _query_text(query),
     "executemany": lambda query, *args, **kwargs: _query_text(query),
     "copy": lambda statement, *args, **kwargs: _query_text(statement),
@@ -383,7 +388,12 @@ def _resolves_for_real(name: str) -> bool:
     return True
 
 
-def _offline_getaddrinfo(host, port=None, *args, **kwargs):
+def _offline_getaddrinfo(
+    host: bytes | str | None,
+    port: bytes | str | int | None = None,
+    *args: int,
+    **kwargs: int,
+) -> _GetAddrInfoResult:
     name = (host.decode() if isinstance(host, bytes) else str(host or "")).strip("[]")
     if not name or _resolves_for_real(name):
         return _super_getaddrinfo(host, port, *args, **kwargs)
@@ -393,9 +403,15 @@ def _offline_getaddrinfo(host, port=None, *args, **kwargs):
     return _super_getaddrinfo(_EXTERNAL_TEST_ADDRESS, port, *args, **kwargs)
 
 
-def _raise_test_timeout(timeout):
+def _raise_test_timeout(
+    timeout: float | tuple[float | None, ...] | None,
+) -> float | tuple[float | None, ...] | None:
     if isinstance(timeout, tuple):
-        return tuple(_raise_test_timeout(part) for part in timeout)
+        return tuple(_raise_scalar_test_timeout(part) for part in timeout)
+    return _raise_scalar_test_timeout(timeout)
+
+
+def _raise_scalar_test_timeout(timeout: float | None) -> float | None:
     if timeout and timeout < 10:
         return 10
     return timeout
@@ -403,10 +419,10 @@ def _raise_test_timeout(timeout):
 
 def _normalise_expected(
     records: odoo.models.BaseModel,
-    expected_values: list[dict],
+    expected_values: list[dict[str, Any]],
     field_names: Iterable[str],
-) -> list[dict]:
-    rows = []
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
     for vs in expected_values:
         row: dict[str, Any] = {}
         for name in field_names:
@@ -427,8 +443,8 @@ def _normalise_expected(
 
 def _normalise_records(
     records: odoo.models.BaseModel, field_names: Iterable[str]
-) -> list[dict]:
-    rows = []
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
     for record in records:
         row: dict[str, Any] = {}
         for field_name in field_names:
@@ -457,7 +473,7 @@ class BaseCase(TestCase):
     registry: Registry | None = None
     env: api.Environment | None = None
     cr: Cursor | None = None
-    registry_patches: ClassVar[list]
+    registry_patches: ClassVar[list[_Patcher]]
 
     test_tags: set[str] | None = None
     freeze_time: ClassVar[Any] = None
@@ -528,7 +544,9 @@ class BaseCase(TestCase):
             self.test_tags = test_tags
 
     @classmethod
-    def _request_handler(cls, s: Session, r: PreparedRequest, /, **kw):
+    def _request_handler(
+        cls, s: Session, r: PreparedRequest, /, **kw: Any
+    ) -> requests.Response:
         url = urlsplit(r.url)
         timeout = kw.get("timeout")
         if (raised := _raise_test_timeout(timeout)) != timeout:
@@ -638,9 +656,9 @@ class BaseCase(TestCase):
 
         cls.addClassCleanup(check_remaining_processes)
 
-        def check_remaining_patchers():
+        def check_remaining_patchers() -> None:
             # unittest exposes the live patcher list only through its private API.
-            active_patchers: Iterable[_patch | mock._patch_dict] = getattr(  # noqa: B009 -- typed boundary for runtime attributes
+            active_patchers: Iterable[_Patcher | mock._patch_dict] = getattr(  # noqa: B009 -- typed boundary for runtime attributes
                 _patch, "_active_patches"
             )
             for patcher in list(active_patchers):
@@ -662,7 +680,7 @@ class BaseCase(TestCase):
 
         cls.addClassCleanup(check_remaining_patchers)
 
-        def close_sass():
+        def close_sass() -> None:
             try:
                 from odoo.tools.sass_embedded import close_sass_compiler
 
@@ -672,7 +690,7 @@ class BaseCase(TestCase):
 
         cls.addClassCleanup(close_sass)
 
-        def close_esm_lexer():
+        def close_esm_lexer() -> None:
             try:
                 from odoo.tools.assets.esm_lexer import close_lexer_worker
 
@@ -742,11 +760,11 @@ class BaseCase(TestCase):
             update_planner_stats(cls.cr)
 
     @property
-    def uid(self):
+    def uid(self) -> int | None:
         return self._get_env().uid
 
     @uid.setter
-    def uid(self, user):
+    def uid(self, user: int | odoo.models.BaseModel | None) -> None:
         _debug.lifecycle(
             "test.env.uid",
             test=self.canonical_tag,
@@ -757,7 +775,8 @@ class BaseCase(TestCase):
         self._get_env().transaction.default_env = self._get_env()
 
     def ref(self, xid: str) -> int:
-        return self.browse_ref(xid).id
+        record_id: int = self.browse_ref(xid).id
+        return record_id
 
     def browse_ref(self, xid: str) -> Any:
         assert "." in xid, (
@@ -823,7 +842,7 @@ class BaseCase(TestCase):
         try:
             user = self._get_env()["res.users"].sudo().search([("login", "=", login)])
             assert user, f"Login {login} not found"
-            self.uid = user.id
+            self.uid = user
             _debug.lifecycle(
                 "test.env.with_user", test=self.canonical_tag, login=login, uid=user.id
             )
@@ -923,12 +942,14 @@ class BaseCase(TestCase):
             return None
         return self._assertRaises(exception, **kwargs)
 
-    def _patchExecute(self, actual_queries, flush=True):
+    def _patchExecute(
+        self, actual_queries: list[str], flush: bool = True
+    ) -> Generator[list[str]]:
 
-        def recorded(name, describe):
+        def recorded(name: str, describe: Callable[..., str]) -> _Patcher:
             original = getattr(Cursor, name)
 
-            def wrapper(cr, *args, **kwargs):
+            def wrapper(cr: Cursor, *args: Any, **kwargs: Any) -> Any:
                 actual_queries.append(describe(*args, **kwargs))
                 return original(cr, *args, **kwargs)
 
@@ -1156,7 +1177,7 @@ class BaseCase(TestCase):
     def assertRecordValues(
         self,
         records: odoo.models.BaseModel,
-        expected_values: list[dict],
+        expected_values: list[dict[str, Any]],
         *,
         field_names: Iterable[str] | None = None,
     ) -> None:
@@ -1353,7 +1374,8 @@ class BaseCase(TestCase):
                 error=type(exc).__name__,
             )
             return []
-        return candidate.ids
+        ids: list[int] = candidate.ids
+        return ids
 
     def _depends_probe(
         self,
@@ -1491,7 +1513,7 @@ class BaseCase(TestCase):
             )
         return "\n".join(lines)
 
-    def assertSweep(self, candidates: Any, msg: str | None = None) -> list:
+    def assertSweep(self, candidates: Any, msg: str | None = None) -> list[Any]:
         found = list(candidates)
         _debug.logic("test.assert.sweep", test=self.canonical_tag, found=len(found))
         self.assertTrue(
@@ -1560,7 +1582,9 @@ class BaseCase(TestCase):
         )
 
     @classmethod
-    def _registry_test_mode_patches(cls, *, cr: Cursor, registry: Registry):
+    def _registry_test_mode_patches(
+        cls, *, cr: Cursor, registry: Registry
+    ) -> list[_Patcher]:
 
         def _patched_cursor(
             readonly: bool = False,
@@ -1568,14 +1592,14 @@ class BaseCase(TestCase):
             pin_key: object = None,
             primary: bool = False,
             before_replica: object = None,
-        ):
+        ) -> TestCursor:
             return TestCursor(
                 cr,
                 cast("Any", _registry_test_lock),
                 readonly and cls._registry_readonly_enabled,
             )
 
-        patches = [
+        patches: list[_Patcher] = [
             patch.object(registry, "cursor", _patched_cursor),
             patch.object(Registry, "_lock", DummyRLock()),
             patch.object(registry, "setup_signaling", return_value=None),
@@ -1589,12 +1613,14 @@ class BaseCase(TestCase):
         else:
             og_db_connect = bus_websocket.db_connect
 
-            def _patched_ws_db_connect(to, allow_uri=False, readonly=False):
+            def _patched_ws_db_connect(
+                to: str, allow_uri: bool = False, readonly: bool = False
+            ) -> object:
                 if to == cr.dbname:
                     _debug.logic("test.registry.ws_db_connect", db=to, patched=True)
 
                     class _TestConnection:
-                        def cursor(self):
+                        def cursor(self) -> TestCursor:
                             return _patched_cursor(readonly)
 
                     return _TestConnection()
@@ -1714,7 +1740,9 @@ class BaseCase(TestCase):
     source is read once however many of these tags are being selected.
     """
 
-    def get_method_additional_tags(self, test_method: Callable | None) -> list[str]:
+    def get_method_additional_tags(
+        self, test_method: Callable[..., object] | None
+    ) -> list[str]:
         selected = odoo.tools.config["test_tags"] or ""
         wanted = {
             tag: needle for tag, needle in self._SOURCE_TAGS.items() if tag in selected
@@ -2143,8 +2171,8 @@ class TransactionCase(BaseCase):
         if cls.freeze_time:
             cls.startClassPatcher(cls.freeze_time)
 
-        def forbid(operation):
-            def forbidden(*args, **kwargs):
+        def forbid(operation: str) -> Callable[..., NoReturn]:
+            def forbidden(*args: Any, **kwargs: Any) -> NoReturn:
                 _debug.logic(
                     "test.cursor.forbidden_call",
                     test=current_test_tag(),
@@ -2167,7 +2195,7 @@ class TransactionCase(BaseCase):
         cls.close_patcher = patch.object(cls.cr, "close", forbid("close"))
         cls.startClassPatcher(cls.close_patcher)
 
-        def _get_crypt_context(self):
+        def _get_crypt_context(self: Any) -> CryptContext:
             return CryptContext(
                 ["pbkdf2_sha512", "plaintext"],
                 pbkdf2_sha512__rounds=1,

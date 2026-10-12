@@ -166,7 +166,8 @@ def format_date(
 
     if not isinstance(value, datetime.date):
         raise TypeError(f"format_date() expects a date, got {type(value).__name__}")
-    return babel.dates.format_date(value, format=date_format, locale=locale)
+    formatted: str = babel.dates.format_date(value, format=date_format, locale=locale)
+    return formatted
 
 
 def parse_date(
@@ -175,9 +176,10 @@ def parse_date(
     lang = get_lang(env, lang_code)
     locale = babel_locale_parse(lang.code)
     try:
-        return babel.dates.parse_date(value, locale=locale)
+        parsed: datetime.date = babel.dates.parse_date(value, locale=locale)
     except Exception:
         return value
+    return parsed
 
 
 def format_datetime(
@@ -216,7 +218,10 @@ def format_datetime(
         time_format = posix_to_ldml(lang.time_format, locale=locale)
         dt_format = f"{date_format} {time_format}"
 
-    return babel.dates.format_datetime(localized_datetime, dt_format, locale=locale)
+    formatted: str = babel.dates.format_datetime(
+        localized_datetime, dt_format, locale=locale
+    )
+    return formatted
 
 
 def format_time(
@@ -259,7 +264,10 @@ def format_time(
     if not time_format or time_format == "medium":
         time_format = posix_to_ldml(lang.time_format, locale=locale)
 
-    return babel.dates.format_time(localized_time, format=time_format, locale=locale)
+    formatted: str = babel.dates.format_time(
+        localized_time, format=time_format, locale=locale
+    )
+    return formatted
 
 
 def _format_time_ago(
@@ -269,9 +277,10 @@ def _format_time_ago(
     add_direction: bool = True,
 ) -> str:
     locale = babel_locale_parse(lang_code or get_lang(env).code)
-    return babel.dates.format_timedelta(
+    formatted: str = babel.dates.format_timedelta(
         -time_delta, add_direction=add_direction, locale=locale
     )
+    return formatted
 
 
 def format_decimalized_number(number: float, decimal: int = 1) -> str:

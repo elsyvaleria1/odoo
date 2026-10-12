@@ -169,15 +169,23 @@ def _get_import_specifiers(src: str, *, dynamic: bool = False) -> set[str]:
     return specs
 
 
+class ModuleSource(typing.Protocol):
+    @property
+    def module_path(self) -> str: ...
+
+    @property
+    def raw_content(self) -> str: ...
+
+
 def get_escaping_relative_imports(
-    modules: Iterable,
+    modules: Iterable[ModuleSource],
     member_specs: Collection[str] | None = None,
 ) -> list[tuple[str, str, str]]:
-    modules = list(modules)
+    module_list = list(modules)
     if member_specs is None:
-        member_specs = {m.module_path for m in modules}
+        member_specs = {m.module_path for m in module_list}
     escapes: list[tuple[str, str, str]] = []
-    for module in modules:
+    for module in module_list:
         specs = _get_import_specifiers(module.raw_content)
         for spec in sorted(specs):
             if not spec.startswith("."):
@@ -189,7 +197,7 @@ def get_escaping_relative_imports(
                 escapes.append((module.module_path, spec, resolved))
     _debug.pipeline(
         "esm_graph.escaping_imports",
-        modules=len(modules),
+        modules=len(module_list),
         members=len(member_specs),
         escapes=len(escapes),
     )
@@ -212,7 +220,7 @@ def reachable_module_sources(
     bundle_name: str = "",
     *,
     dynamic: bool = False,
-    modules: Iterable = (),
+    modules: Iterable[ModuleSource] = (),
 ) -> dict[str, tuple[str, str]]:
     return _walk_imports(
         seed_specifiers,
@@ -231,7 +239,7 @@ def _walk_imports(
     bundle_name: str,
     *,
     dynamic: bool = False,
-    modules: Iterable = (),
+    modules: Iterable[ModuleSource] = (),
 ) -> tuple[set[str], dict[str, tuple[str, str]]]:
     resolver = _BridgeExportResolver(ext_libs, bundle_name)
     resolver.hold(modules)
@@ -285,7 +293,8 @@ def _source_map_url(source_map: object, spec: str | None) -> str | None:
     for attr in ("effective_url", "resolve_url"):
         resolve = getattr(source_map, attr, None)
         if callable(resolve):
-            return resolve(spec)
+            url: str | None = resolve(spec)
+            return url
     return None
 
 
@@ -328,10 +337,12 @@ def _resolve_export_specifier(
 class ModuleSourceMap:
     __slots__ = ("_sources", "_urls")
 
-    def __init__(self, modules: Iterable) -> None:
-        modules = list(modules)
-        self._sources = {m.module_path: m.raw_content for m in modules}
-        self._urls = {m.module_path: m.url for m in modules if getattr(m, "url", None)}
+    def __init__(self, modules: Iterable[ModuleSource]) -> None:
+        module_list = list(modules)
+        self._sources = {m.module_path: m.raw_content for m in module_list}
+        self._urls: dict[str, str] = {
+            m.module_path: url for m in module_list if (url := getattr(m, "url", None))
+        }
 
     def get(self, key: str, default: str | None = None) -> str | None:
         return self._sources.get(key, default)
@@ -557,7 +568,7 @@ class _BridgeExportResolver:
         self._star_cache: dict[str, set[str]] = {}
         self._url_cache: dict[str, str] = {}
 
-    def hold(self, modules: Iterable) -> None:
+    def hold(self, modules: Iterable[ModuleSource]) -> None:
         for module in modules:
             self._cache[module.module_path] = module.raw_content
             if url := getattr(module, "url", None):

@@ -67,6 +67,7 @@ else:
                     wsu.SmartOpenService(hscm, service_name, ws.SERVICE_ALL_ACCESS)
                 ) as hs:
                     info = ws.QueryServiceStatusEx(hs)
-                    return info["ProcessId"] == os.getppid()
+                    process_id: int = info["ProcessId"]
+                    return process_id == os.getppid()
         except Exception:
             return False

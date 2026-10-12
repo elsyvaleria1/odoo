@@ -76,7 +76,8 @@ class _RequestResponseMixin(RequestState):
         )
         if self.db and (env := self.bound_env) is not None:
             return get_ir_http(env)._redirect(location, code)
-        return werkzeug.utils.redirect(location, code, Response=Response)
+        redirect: Response = werkzeug.utils.redirect(location, code, Response=Response)
+        return redirect
 
     def redirect_query(
         self,

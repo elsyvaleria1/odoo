@@ -245,7 +245,7 @@ def _limit_resident_registries(dbnames: list[str]) -> None:
     )
 
 
-def _get_preload_profiler(dbname: str) -> contextlib.AbstractContextManager:
+def _get_preload_profiler(dbname: str) -> contextlib.AbstractContextManager[object]:
     if not os.environ.get("ODOO_PROFILE_PRELOAD"):
         return contextlib.nullcontext()
     interval = get_env_float("ODOO_PROFILE_PRELOAD_INTERVAL", 0.1, logger=_logger)

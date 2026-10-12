@@ -15,7 +15,7 @@ __all__ = ["versioned", "versioned_dispatched", "versioned_envelope"]
 _debug = DebugLog(__name__)
 
 
-def _canonical_default(value: object) -> list | str:
+def _canonical_default(value: object) -> list[object] | str:
     if isinstance(value, (set, frozenset)):
         return sorted(value, key=_canonical_bytes)
     return str(value)

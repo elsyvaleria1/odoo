@@ -15,13 +15,13 @@ from odoo.tools.xml_utils import XmlSource, check_with_xsd
 
 if typing.TYPE_CHECKING:
     from odoo.api import Environment
-    from odoo.orm._typing import BaseModel
+    from odoo.orm.runtime._model_types import IrAttachmentModel
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 
-def _find_xsd_attachment(env: Environment, name: str) -> Any:
+def _find_xsd_attachment(env: Environment, name: str) -> IrAttachmentModel:
     return env["ir.attachment"].search(
         [("name", "=", name), ("res_model", "=", False)], limit=1
     )
@@ -58,7 +58,8 @@ def _pick_xsd(xsd_attachments: Any, xsd_name: str | None, source: str) -> str:
             raise FileNotFoundError(
                 f"{source} provided no XSD named {xsd_name!r}; it has: {available}"
             )
-        return picked[0].name
+        picked_name: str = picked[0].name
+        return picked_name
     if len(xsd_attachments) > 1:
         available = ", ".join(sorted(xsd_attachments.mapped("name")))
         raise ValueError(
@@ -66,7 +67,8 @@ def _pick_xsd(xsd_attachments: Any, xsd_name: str | None, source: str) -> str:
             f"named: pass xsd_name= to say which one is the root. "
             f"Available: {available}"
         )
-    return xsd_attachments.name
+    only_name: str = xsd_attachments.name
+    return only_name
 
 
 def check_with_attachment_xsd(
@@ -76,7 +78,9 @@ def check_with_attachment_xsd(
     if not attachment:
         raise FileNotFoundError
     check_with_xsd(
-        xml_content, BytesIO(attachment.raw), resolvers=(odoo_resolver(env, prefix),)
+        xml_content,
+        BytesIO(attachment.raw or b""),
+        resolvers=(odoo_resolver(env, prefix),),
     )
 
 
@@ -118,7 +122,9 @@ def check_xml(
         owned.unlink()
 
 
-def _upsert_xsd_attachment(env: Environment, name: str, content: bytes) -> Any:
+def _upsert_xsd_attachment(
+    env: Environment, name: str, content: bytes
+) -> IrAttachmentModel:
     fetched_attachment = _find_xsd_attachment(env, name)
     _debug.lifecycle(
         "xsd.attachment_upserted",
@@ -157,11 +163,12 @@ def _get_xsd_content(url: str) -> bytes | None:
         _logger.warning("The HTTP response from %s is empty (no content)", url)
         _debug.logic("xsd.fetch_failed", url=url, error="empty")
         return None
-    return response.content
+    content: bytes = response.content
+    return content
 
 
-def _load_xsd_archive(env: Environment, archive: zipfile.ZipFile) -> BaseModel:
-    saved_attachments: Any = env["ir.attachment"]
+def _load_xsd_archive(env: Environment, archive: zipfile.ZipFile) -> IrAttachmentModel:
+    saved_attachments = env["ir.attachment"]
     for file_path in archive.namelist():
         if not file_path.endswith(".xsd"):
             continue
@@ -183,7 +190,9 @@ def _load_xsd_archive(env: Environment, archive: zipfile.ZipFile) -> BaseModel:
     return saved_attachments
 
 
-def load_xsd_files_from_url(env: Environment, url: str) -> BaseModel | Literal[False]:
+def load_xsd_files_from_url(
+    env: Environment, url: str
+) -> IrAttachmentModel | Literal[False]:
     content = _get_xsd_content(url)
     if content is None:
         return False

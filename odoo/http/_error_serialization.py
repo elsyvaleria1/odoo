@@ -59,7 +59,7 @@ def serialize_exception(
     exception: BaseException,
     *,
     message: str | None = None,
-    arguments: tuple | None = None,
+    arguments: tuple[Any, ...] | None = None,
 ) -> dict[str, Any]:
     name = type(exception).__name__
     opaque = (

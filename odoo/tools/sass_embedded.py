@@ -37,7 +37,7 @@ _SYNTAX_ENUM = {"scss": SCSS, "indented": INDENTED, "css": CSS}
 _COMPILE_TIMEOUT_S = 120.0
 
 
-def _kill_wedged_sass(proc: Popen) -> None:
+def _kill_wedged_sass(proc: Popen[bytes]) -> None:
     _logger.warning(
         "sass --embedded compile exceeded %ss; killing the wedged process",
         _COMPILE_TIMEOUT_S,
@@ -150,7 +150,7 @@ def _find_sass_binary() -> SassBinary | None:
 
 class SassEmbeddedCompiler:
     def __init__(self) -> None:
-        self._process: Popen | None = None
+        self._process: Popen[bytes] | None = None
         self._lock = threading.Lock()
         self._compilation_id = 0
         self._started = False

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import enum
 import functools
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Final, Literal, overload
 
 import psycopg
 import psycopg.errors
@@ -50,7 +51,12 @@ from .wrappers import Response, prepare_exception_response
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-_PROMOTE = object()
+
+class _Promote(enum.Enum):
+    PROMOTE = enum.auto()
+
+
+_PROMOTE: Final = _Promote.PROMOTE
 """What `_serve_transaction` answers when the handler must be replayed read/write."""
 
 
@@ -173,7 +179,7 @@ class _RequestServeMixin(RequestState):
                 db=None,
                 endpoint=getattr(rule.endpoint, "__qualname__", None),
             ) as span:
-                response = self.dispatcher.dispatch(rule.endpoint, args)
+                response: Response = self.dispatcher.dispatch(rule.endpoint, args)
                 span.set(status=getattr(response, "status_code", None))
             _debug.pipeline(
                 "http.serve.dispatched",
@@ -284,7 +290,9 @@ class _RequestServeMixin(RequestState):
             span.set(valid=valid)
         self.scratch.session_binding = (session.sid, session.uid, valid)
 
-    def _select_serve_target_and_mode(self, registry: Registry) -> tuple[Any, bool]:
+    def _select_serve_target_and_mode(
+        self, registry: Registry
+    ) -> tuple[Callable[[], Response], bool]:
         try:
             with _debug.perf("http.route.match", db=registry.db_name):
                 rule, args = get_ir_http(registry)._match(self.httprequest.path)
@@ -310,13 +318,31 @@ class _RequestServeMixin(RequestState):
         )
         return functools.partial(self._serve_ir_http, rule, args), bool(readonly)
 
+    @overload
     def _serve_transaction(
         self,
-        serve_func: Any,
+        serve_func: Callable[[], Response],
+        participant: RequestRetryParticipant,
+        *,
+        readonly: Literal[False],
+    ) -> Response: ...
+
+    @overload
+    def _serve_transaction(
+        self,
+        serve_func: Callable[[], Response],
         participant: RequestRetryParticipant,
         *,
         readonly: bool,
-    ) -> Any:
+    ) -> Response | Literal[_Promote.PROMOTE]: ...
+
+    def _serve_transaction(
+        self,
+        serve_func: Callable[[], Response],
+        participant: RequestRetryParticipant,
+        *,
+        readonly: bool,
+    ) -> Response | Literal[_Promote.PROMOTE]:
         mode = "ro" if readonly else "rw"
         env = self.env
         self._bind_session_transaction(env.cr)
@@ -391,7 +417,7 @@ class _RequestServeMixin(RequestState):
             path=self.httprequest.path,
         )
 
-    def _serve_transaction_target(self, serve_func: Any) -> Response:
+    def _serve_transaction_target(self, serve_func: Callable[[], Response]) -> Response:
         try:
             return serve_func()
         except HTTPException as exc:
@@ -594,7 +620,7 @@ class _RequestServeMixin(RequestState):
             db=registry.db_name,
             endpoint=getattr(rule.endpoint, "__qualname__", None),
         ) as span:
-            response = self.dispatcher.dispatch(rule.endpoint, args)
+            response: Response = self.dispatcher.dispatch(rule.endpoint, args)
             span.set(status=getattr(response, "status_code", None))
         _debug.pipeline(
             "http.serve.dispatched",

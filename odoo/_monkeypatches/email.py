@@ -3,7 +3,12 @@ import email.policy
 from typing import TYPE_CHECKING, Any, override
 
 if TYPE_CHECKING:
-    _EmailPolicyBase = email.policy.EmailPolicy[email.message.EmailMessage[Any, Any]]
+
+    class _EmailPolicyBase(
+        email.policy.EmailPolicy[email.message.EmailMessage[Any, Any]]
+    ):
+        def _fold(self, name: str, value: str, *args: Any, **kwargs: Any) -> str: ...
+
 else:
     _EmailPolicyBase = email.policy.EmailPolicy
 
@@ -21,13 +26,16 @@ class IdentificationFieldsNoFoldPolicy(_EmailPolicyBase):
     _max_fold_policy: Any
 
     @override
-    def _fold(self, name: str, value: str, *args, **kwargs) -> str:
+    def _fold(self, name: str, value: str, *args: Any, **kwargs: Any) -> str:
         lname = name.lower()
+        folded: str
         if lname in RFC5322_IDENTIFICATION_HEADERS:
-            return self._no_fold_policy._fold(name, value, *args, **kwargs)
-        if lname in USER_DEFINED_HEADERS:
-            return self._max_fold_policy._fold(name, value, *args, **kwargs)
-        return super()._fold(name, value, *args, **kwargs)
+            folded = self._no_fold_policy._fold(name, value, *args, **kwargs)
+        elif lname in USER_DEFINED_HEADERS:
+            folded = self._max_fold_policy._fold(name, value, *args, **kwargs)
+        else:
+            folded = super()._fold(name, value, *args, **kwargs)
+        return folded
 
 
 def patch_module() -> None:

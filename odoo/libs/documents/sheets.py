@@ -26,7 +26,7 @@ class SheetBuilder:
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.operations: list[tuple] = []
+        self.operations: list[tuple[Any, ...]] = []
 
     def column(self, first: int, last: int, width: float) -> None:
         self.operations.append(("column", first, last, width))
@@ -79,7 +79,7 @@ class XlsxSheetsWriter(BaseWriter):
         with xlsxwriter.Workbook(
             output, {"in_memory": True, "strings_to_formulas": False}
         ) as workbook:
-            formats: dict[tuple, Any] = {}
+            formats: dict[tuple[tuple[str, Any], ...], Any] = {}
 
             def get_format(props: dict[str, Any] | None) -> Any:
                 if props is None:

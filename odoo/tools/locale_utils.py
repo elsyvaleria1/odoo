@@ -89,9 +89,12 @@ def _company_lang(env: Environment) -> str | None:
     if "res.users" not in env.registry:
         return None
     try:
-        return env.user.with_context(lang="en_US").company_id.partner_id.lang
+        lang: str | None = env.user.with_context(
+            lang="en_US"
+        ).company_id.partner_id.lang
     except AttributeError:
         return None
+    return lang
 
 
 def get_lang(env: Environment, lang_code: str | None = None) -> LangData:
@@ -115,7 +118,8 @@ def get_lang(env: Environment, lang_code: str | None = None) -> LangData:
         requested=lang_code,
         installed=len(langs),
     )
-    return locale.lang_data(env, lang)
+    lang_data: LangData = locale.lang_data(env, lang)
+    return lang_data
 
 
 _CODESET_RE = re.compile(r"\.[^@]*")

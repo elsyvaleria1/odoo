@@ -8,6 +8,7 @@ import psycopg
 
 from odoo.libs.debug_log import DebugLog
 
+from .dsn import ConnInfo
 from .settings import PoolSettings, resolve
 
 if TYPE_CHECKING:
@@ -16,7 +17,10 @@ if TYPE_CHECKING:
 
 class _PlannerStatsCursor(Protocol):
     def execute(
-        self, query: str, params: tuple | None = None, log_exceptions: bool = True
+        self,
+        query: str,
+        params: tuple[Any, ...] | None = None,
+        log_exceptions: bool = True,
     ) -> None: ...
     def fetchscalar(self) -> Any: ...
     def savepoint(self, flush: bool = True) -> AbstractContextManager[object]: ...
@@ -49,7 +53,7 @@ _HEALTH_PARAMS: dict[str, str] = {
 
 def get_connection_info_for_database(
     db_or_uri: str, readonly: bool = False, settings: PoolSettings | None = None
-) -> tuple[str, dict]:
+) -> tuple[str, ConnInfo]:
     global _ODOO_PGAPPNAME_WARNED  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     settings = resolve(settings)
     app_name = settings.app_name

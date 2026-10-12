@@ -101,7 +101,7 @@ def seal(plaintext: str, environ: Mapping[str, str] | None = None) -> str:
     environ = os.environ if environ is None else environ
     if not is_configured(environ):
         raise SealError(f"{ENV_KEY} is not set: nothing can be sealed")
-    token = _fernet(environ[ENV_KEY], ENV_KEY).encrypt(plaintext.encode())
+    token: bytes = _fernet(environ[ENV_KEY], ENV_KEY).encrypt(plaintext.encode())
     return SEALED_PREFIX + token.decode()
 
 
@@ -136,11 +136,10 @@ def unseal(value: str, environ: Mapping[str, str] | None = None) -> str:
         absent = f"{ENV_KEY} is not set" + (f" and {invalid}" if invalid else "")
         raise SealError(f"{absent}: the sealed value cannot be opened")
     try:
-        return (
-            MultiFernet(keys)
-            .decrypt(value.removeprefix(SEALED_PREFIX).encode())
-            .decode()
+        plaintext: bytes = MultiFernet(keys).decrypt(
+            value.removeprefix(SEALED_PREFIX).encode()
         )
+        return plaintext.decode()
     except InvalidToken as error:
         unread = f" ({invalid})" if invalid else ""
         raise SealError(

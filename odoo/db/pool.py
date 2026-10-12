@@ -7,7 +7,7 @@ import re
 import sys
 import threading
 from time import monotonic
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import psycopg
 from psycopg_pool import ConnectionPool as _PsycopgPool
@@ -17,7 +17,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.release import MIN_PG_VERSION
 
 from .budget import ConnectionBudget
-from .dsn import _expand_conninfo, _get_dsn_key, _get_key_dbname
+from .dsn import ConnInfo, DsnKey, _expand_conninfo, _get_dsn_key, _get_key_dbname
 from .leaks import CheckoutTracker
 from .lifecycle import (
     _check_connection,
@@ -64,8 +64,8 @@ def _get_seconds_remaining(deadline: float | None) -> float:
     return float("inf") if deadline is None else deadline - monotonic()
 
 
-def _get_base_connection_options(conninfo: str, kwargs: dict) -> str:
-    options = kwargs.get("options", "")
+def _get_base_connection_options(conninfo: str, kwargs: dict[str, Any]) -> str:
+    options: str = kwargs.get("options", "")
     if not options and conninfo:
         options = _expand_conninfo(conninfo).get("options", "")
     if not options:
@@ -100,7 +100,7 @@ def _prepare_session_gucs(base_options: str, configured: str) -> str:
 
 def _prepare_connection_options(
     conninfo: str,
-    kwargs: dict,
+    kwargs: dict[str, Any],
     idle_session_ms: int,
     *,
     session_gucs: str | None,
@@ -183,7 +183,7 @@ class ConnectionPool:
             raise ValueError(
                 f"ConnectionPool minconn ({minconn}) cannot exceed maxconn ({maxconn})"
             )
-        self._pools: dict[frozenset, _PsycopgPool] = {}
+        self._pools: dict[DsnKey, _PsycopgPool] = {}
         self._maxconn = maxconn
         self._minconn = minconn
         self._readonly = readonly
@@ -236,8 +236,8 @@ class ConnectionPool:
 
     def _get_or_create_pool(
         self,
-        key: frozenset,
-        connection_info: dict,
+        key: DsnKey,
+        connection_info: ConnInfo,
         deadline: float | None = None,
         *,
         fail_fast: bool = False,
@@ -340,8 +340,8 @@ class ConnectionPool:
         return max(900, int(self._max_idle * 1.5)) * 1000
 
     def _prepare_connect_args(
-        self, key: frozenset, connection_info: dict
-    ) -> tuple[str, dict]:
+        self, key: DsnKey, connection_info: ConnInfo
+    ) -> tuple[str, dict[str, Any]]:
         kwargs = dict(connection_info)
         conninfo = kwargs.pop("dsn", "")
         kwargs["autocommit"] = False
@@ -359,9 +359,9 @@ class ConnectionPool:
 
     def _check_connectable_or_fail_fast(
         self,
-        key: frozenset,
+        key: DsnKey,
         conninfo: str,
-        kwargs: dict,
+        kwargs: dict[str, Any],
         deadline: float | None,
         *,
         fail_fast: bool,
@@ -376,10 +376,11 @@ class ConnectionPool:
                 f"wait for it (fail_fast)"
             )
 
-    def _is_pool_unproven_and_empty(self, key: frozenset, pool: _PsycopgPool) -> bool:
+    def _is_pool_unproven_and_empty(self, key: DsnKey, pool: _PsycopgPool) -> bool:
         if self._probe.is_proven(key):
             return False
-        return pool.get_stats().get("pool_available", 0) == 0
+        available: int = pool.get_stats().get("pool_available", 0)
+        return available == 0
 
     def _reap_idle_pools_if_due(self) -> None:
         if not self._reaper.is_probably_due():
@@ -417,8 +418,8 @@ class ConnectionPool:
 
     def borrow(
         self,
-        connection_info: dict,
-        key: frozenset | None = None,
+        connection_info: ConnInfo,
+        key: DsnKey | None = None,
         *,
         timeout: float | None = None,
         fail_fast: bool = False,
@@ -556,7 +557,7 @@ class ConnectionPool:
             )
 
     def _borrow_directly(
-        self, connection_info: dict, deadline: float | None = None
+        self, connection_info: ConnInfo, deadline: float | None = None
     ) -> psycopg.Connection:
         kwargs = dict(connection_info)
         conninfo = kwargs.pop("dsn", "")
@@ -642,8 +643,8 @@ class ConnectionPool:
     def _get_connection_with_retry(
         self,
         pool: _PsycopgPool,
-        key: frozenset,
-        connection_info: dict,
+        key: DsnKey,
+        connection_info: ConnInfo,
         deadline: float,
     ) -> tuple[psycopg.Connection, _PsycopgPool]:
         rebuilt = False
@@ -690,7 +691,7 @@ class ConnectionPool:
                 _logger.info("Connection to the database failed: %s", e)
                 raise
 
-    def _discard_pool(self, key: frozenset, pool: _PsycopgPool) -> None:
+    def _discard_pool(self, key: DsnKey, pool: _PsycopgPool) -> None:
         with self._lock:
             if self._pools.get(key) is pool:
                 del self._pools[key]
@@ -850,7 +851,7 @@ class ConnectionPool:
         with self._lock:
             return any(_get_key_dbname(k) == db_name for k in self._pools)
 
-    def _get_keys_for_database(self, db_name: str) -> list[frozenset]:
+    def _get_keys_for_database(self, db_name: str) -> list[DsnKey]:
         return [k for k in self._pools if _get_key_dbname(k) == db_name]
 
     def close_database(self, db_name: str) -> None:
@@ -911,7 +912,7 @@ class ConnectionPool:
                 f" for {db_name}" if db_name else "",
             )
 
-    def get_stats(self) -> dict[str, dict]:
+    def get_stats(self) -> dict[str, dict[str, int]]:
         with self._lock:
             snapshot = list(self._pools.items())
         stats = {}
@@ -920,7 +921,7 @@ class ConnectionPool:
             stats[db_name] = pool.get_stats()
         return stats
 
-    def get_health(self) -> dict:
+    def get_health(self) -> dict[str, Any]:
         per_database = self.get_stats()
         with self._lock:
             n_pools = len(self._pools)

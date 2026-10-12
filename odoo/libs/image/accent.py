@@ -97,7 +97,8 @@ def _parse_colour(value: str | None) -> Rgb | None:
 def _own_fill(element: etree._Element) -> str | None:
     if match := _STYLE_FILL_RE.search(element.get("style", "")):
         return match.group(1)
-    return element.get("fill")
+    fill: str | None = element.get("fill")
+    return fill
 
 
 def _svg_fills(data: bytes) -> Iterator[tuple[Rgb, float]]:
@@ -110,7 +111,9 @@ def _svg_fills(data: bytes) -> Iterator[tuple[Rgb, float]]:
         )
     }
 
-    def walk(element: etree._Element, inherited: str | None) -> Iterator:
+    def walk(
+        element: etree._Element, inherited: str | None
+    ) -> Iterator[tuple[Rgb, float]]:
         fill = _own_fill(element) or inherited
         tag = etree.QName(element).localname if isinstance(element.tag, str) else ""
         if tag == "defs":

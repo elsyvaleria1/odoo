@@ -38,7 +38,7 @@ def _get_origin_parts(url: str) -> tuple[str, str, int | None] | None:
 
 
 def resolve_cors_same_host(request: Any) -> str | None:
-    origin = request.httprequest.headers.get("Origin")
+    origin: str | None = request.httprequest.headers.get("Origin")
     if not origin:
         return None
     theirs = _get_origin_parts(origin)

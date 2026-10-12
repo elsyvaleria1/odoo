@@ -872,7 +872,7 @@ class DomainGenerator:
         return held
 
 
-def to_list(node: Node, resolve: Callable[[Ref], typing.Any]) -> list:
+def to_list(node: Node, resolve: Callable[[Ref], typing.Any]) -> list[typing.Any]:
     if isinstance(node, Nary):
         children = [to_list(child, resolve) for child in node.children]
         return [node.operator] * (len(children) - 1) + [
@@ -1082,7 +1082,7 @@ class Loaded:
         Model = self.env[model.name]
         self_referencing = any(spec.comodel == model.name for spec in model.writable())
         containers = {container.name for container in model.containers}
-        pending: list[tuple[int, dict]] = []
+        pending: list[tuple[int, dict[str, typing.Any]]] = []
         for index, row in enumerate(rows):
             if row is None:
                 continue
@@ -1100,7 +1100,9 @@ class Loaded:
                 pending = []
         self._create_batch(Model, pending)
 
-    def _create_batch(self, Model: BaseModel, pending: list[tuple[int, dict]]) -> None:
+    def _create_batch(
+        self, Model: BaseModel, pending: list[tuple[int, dict[str, typing.Any]]]
+    ) -> None:
         if not pending:
             return
         records = Model.create([vals for _index, vals in pending])
@@ -1192,7 +1194,7 @@ class Loaded:
             return 2**31 - 2
         return self.ids[ref]
 
-    def domain(self, node: Node) -> list:
+    def domain(self, node: Node) -> list[typing.Any]:
         return to_list(node, self.resolve)
 
     def outcome(self, model: str, ids: Sequence[int]) -> frozenset[Ref]:
@@ -1224,13 +1226,13 @@ class Loaded:
         records = self.env[model].browse(self.all_ids(model))
         return self.outcome(model, records.filtered(records._active_name or "id").ids)
 
-    def search(self, model: str, domain: list) -> Outcome:
+    def search(self, model: str, domain: list[typing.Any]) -> Outcome:
         return _reading(lambda: self.env[model].search(domain).ids, self, model)
 
-    def search_as_superuser(self, model: str, domain: list) -> Outcome:
+    def search_as_superuser(self, model: str, domain: list[typing.Any]) -> Outcome:
         return _reading(lambda: self.sudo_env[model].search(domain).ids, self, model)
 
-    def search_every_record(self, model: str, domain: list) -> Outcome:
+    def search_every_record(self, model: str, domain: list[typing.Any]) -> Outcome:
         Model = self.env[model]
         if self.active_test and Model._active_name:
             domain = ["&", (Model._active_name, "in", [True, False]), *domain]
@@ -1251,7 +1253,9 @@ class Loaded:
             ],
         )
 
-    def filtered(self, model: str, domain: list, *, active_only: bool) -> Outcome:
+    def filtered(
+        self, model: str, domain: list[typing.Any], *, active_only: bool
+    ) -> Outcome:
         records = self.env[model].browse(self.all_ids(model))
         if not records:
             return ABSTAINED

@@ -1,6 +1,5 @@
 import contextlib
 import logging
-import sys
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, override
 from unittest import BaseTestSuite, util
@@ -17,6 +16,10 @@ from .utils import InfrastructureUnavailable
 
 if TYPE_CHECKING:
     from contextlib import AbstractContextManager
+
+    from .result import ExcInfo
+else:
+    ExcInfo = Any
 
 __unittest = True
 
@@ -101,7 +104,7 @@ class TestSuite(BaseTestSuite):
         exception: BaseException,
         method_name: str,
         parent: str,
-        info: Any = None,
+        info: ExcInfo | None = None,
     ) -> None:
         errorName = f"{method_name} ({parent})"
         error = _ErrorHolder(errorName)
@@ -121,7 +124,9 @@ class TestSuite(BaseTestSuite):
                 infrastructure=isinstance(exception, InfrastructureUnavailable),
             )
         elif not info:
-            result.addError(error, sys.exc_info())
+            result.addError(
+                error, (type(exception), exception, exception.__traceback__)
+            )
         else:
             result.addError(error, info)
 
@@ -200,7 +205,7 @@ class OdooSuite(TestSuite):
     @staticmethod
     def _timing(
         result: OdooTestResult, measured: type | None, hook: str
-    ) -> AbstractContextManager:
+    ) -> AbstractContextManager[object]:
         if (
             measured is None
             or not hasattr(result, "stats")

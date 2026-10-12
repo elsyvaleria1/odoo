@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.79
+:Version: 7.80
 :Date: 2026-10-11
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -72,7 +72,8 @@ The floors
      - hard zero
    * - mypy
      - ``-p odoo.orm -p odoo.db -p odoo.libs -p odoo.http -p odoo.service
-       -p odoo.modules``; ``-p odoo.tools -p odoo.cli -p odoo.tests``
+       -p odoo.modules`` plus the top-level modules and façades;
+       ``-p odoo.tools -p odoo.cli -p odoo.tests``
      - hard zero, mypy alone installed (never the workspace venv)
    * - perf counts
      - ``pytest tests/perf --perf-counts-only``
@@ -3486,6 +3487,13 @@ optional, but a method whose body proves its return type may carry it, and a
 return that is a union is declared as one (§2.4.23). PEP 649: forward
 references need no quotes.
 
+**Parameterize every generic and return no** ``Any`` **where a type is
+declared, in framework code** ``[review]``; mypy gates it
+(``disallow_any_generics``, ``warn_return_any``): ``dict[str, Any]``, never
+bare ``dict``. A value from untyped territory (a psycopg row, ``json_loads``,
+lxml, ``getattr`` by a runtime name) is declared on an annotated local and
+returned, not ``cast``.
+
 **Modern generics only** ``[ruff UP006, UP007, UP035, UP045]``: ``list[X]``,
 ``dict[K, V]``, ``X | None`` -- never ``typing.Optional``/``List``/``Dict``/
 ``Tuple``/``Set``/``Union``.
@@ -6313,6 +6321,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.80
+     - 2026-10-11
+     - §2.9.11: framework code parameterizes every generic and returns no
+       ``Any`` where a type is declared; mypy holds every package outside
+       ``addons/`` to it, ``odoo.tests`` and the top-level modules included.
    * - 7.79
      - 2026-10-11
      - §2.7: a broad handler around a database write re-raises

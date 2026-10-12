@@ -149,11 +149,13 @@ class GeoIP:
 
     @property
     def country_name(self) -> str | None:
-        return _null_to_none(self.country.name or self.continent.name)
+        name: str | None = _null_to_none(self.country.name or self.continent.name)
+        return name
 
     @property
     def country_code(self) -> str | None:
-        return _null_to_none(self.country.iso_code or self.continent.code)
+        code: str | None = _null_to_none(self.country.iso_code or self.continent.code)
+        return code
 
     def __getattr__(self, attr: str) -> Any:
         if geoip2 is None:

@@ -7,7 +7,7 @@ import threading
 import time
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self, overload
 from urllib.parse import quote, urlencode, urlsplit
 
 import werkzeug.routing
@@ -69,6 +69,11 @@ from .wrappers import (
     prepare_no_content_response,
 )
 
+if TYPE_CHECKING:
+    from _typeshed.wsgi import StartResponse
+else:
+    StartResponse = Any
+
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
@@ -105,18 +110,24 @@ def _get_static_resource_path(static_path: str, resource: str) -> str:
     return resolved
 
 
-class _locked_cached_property(functools.cached_property):
-    def __init__(self, func: Callable) -> None:
+class _locked_cached_property[T](functools.cached_property[T]):
+    def __init__(self, func: Callable[[Any], T]) -> None:
         super().__init__(func)
         self.lock = threading.Lock()
 
-    def __get__(self, instance: object, owner: type | None = None) -> Any:
+    @overload
+    def __get__(self, instance: None, owner: type | None = None) -> Self: ...
+
+    @overload
+    def __get__(self, instance: object, owner: type | None = None) -> T: ...
+
+    def __get__(self, instance: object, owner: type | None = None) -> Self | T:
         if instance is None:
             return self
         if self.attrname is None:
             return super().__get__(instance, owner)
-        cache = instance.__dict__
-        val = cache.get(self.attrname, _UNSET)
+        cache: dict[str, Any] = instance.__dict__
+        val: T = cache.get(self.attrname, _UNSET)
         if val is _UNSET:
             with self.lock:
                 val = cache.get(self.attrname, _UNSET)
@@ -555,7 +566,7 @@ class Application:
         return response
 
     def __call__(
-        self, environ: dict[str, object], start_response: Callable
+        self, environ: dict[str, object], start_response: StartResponse
     ) -> Iterable[bytes]:
         self._clear_thread_state()
         self._apply_proxy_fix(environ)
@@ -642,7 +653,8 @@ class Application:
                     )
                 iterable = response(environ, start_response)
                 request_guard.pop_all()
-                return ClosingIterator(iterable, close_request)
+                closing: Iterable[bytes] = ClosingIterator(iterable, close_request)
+                return closing
 
             except Exception as exc:
                 self._log_request_exception(exc)
@@ -665,7 +677,10 @@ class Application:
                 )
                 iterable = error_response(environ, start_response)
                 request_guard.pop_all()
-                return ClosingIterator(iterable, close_request)
+                error_closing: Iterable[bytes] = ClosingIterator(
+                    iterable, close_request
+                )
+                return error_closing
 
             finally:
                 if pushed:

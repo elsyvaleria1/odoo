@@ -1,6 +1,7 @@
 import hashlib
+from collections.abc import Buffer
 from pathlib import Path
-from typing import Any
+from typing import Protocol, runtime_checkable
 
 try:
     from blake3 import blake3 as _blake3
@@ -12,6 +13,7 @@ __all__ = [
     "CONTENT_DIGEST_LEN",
     "CONTENT_DIGEST_MAX_LEN",
     "HAS_BLAKE3",
+    "Hasher",
     "cache_hash",
     "content_hash",
     "content_hash_file",
@@ -41,11 +43,23 @@ if CONTENT_DIGEST_LEN > CONTENT_DIGEST_MAX_LEN:
 _FILE_CHUNK = 1 << 20
 
 
-def _prepare_blake3_hasher() -> Any:
-    return _blake3(max_threads=1)
+class Hasher(Protocol):
+    def update(self, data: Buffer, /) -> object: ...
+
+    def hexdigest(self) -> str: ...
 
 
-def prepare_content_hasher() -> Any:
+@runtime_checkable
+class _MmapHasher(Hasher, Protocol):
+    def update_mmap(self, path: str, /) -> object: ...
+
+
+def _prepare_blake3_hasher() -> _MmapHasher:
+    hasher: _MmapHasher = _blake3(max_threads=1)
+    return hasher
+
+
+def prepare_content_hasher() -> Hasher:
     return (
         _prepare_blake3_hasher() if HAS_BLAKE3 else hashlib.sha1(usedforsecurity=False)
     )
@@ -60,8 +74,8 @@ def content_hash(data: bytes) -> str:
     return hasher.hexdigest()
 
 
-def update_from_file(hasher: Any, path: str | Path) -> None:
-    if HAS_BLAKE3:
+def update_from_file(hasher: Hasher, path: str | Path) -> None:
+    if isinstance(hasher, _MmapHasher):
         hasher.update_mmap(str(path))
         return
     with Path(path).open("rb") as fd:
@@ -75,7 +89,7 @@ def content_hash_file(path: str | Path) -> str:
     return hasher.hexdigest()
 
 
-def prepare_cache_hasher() -> Any:
+def prepare_cache_hasher() -> Hasher:
     return _prepare_blake3_hasher() if HAS_BLAKE3 else hashlib.sha256()
 
 

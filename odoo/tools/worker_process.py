@@ -3,6 +3,7 @@ import contextlib
 import logging
 import subprocess
 from collections.abc import Callable
+from typing import Any
 
 __all__ = ["close_at_shutdown", "close_pipes", "stop"]
 
@@ -26,14 +27,14 @@ def close_at_shutdown(close: Callable[[], None]) -> None:
         )
 
 
-def close_pipes(proc: subprocess.Popen, *, flush: bool = True) -> None:
+def close_pipes(proc: subprocess.Popen[Any], *, flush: bool = True) -> None:
     for pipe in (proc.stdin, proc.stdout):
         if pipe is not None:
             with contextlib.suppress(OSError):
                 (pipe if flush else getattr(pipe, "raw", pipe)).close()
 
 
-def stop(proc: subprocess.Popen, *, grace_s: float = 0) -> bool:
+def stop(proc: subprocess.Popen[Any], *, grace_s: float = 0) -> bool:
     if grace_s:
         close_pipes(proc)
         try:

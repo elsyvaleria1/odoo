@@ -1,7 +1,7 @@
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 import odoo.exceptions
 import odoo.tools
@@ -37,10 +37,10 @@ def check_db_name(name: str) -> None:
         raise ValueError(_DBNAME_ERROR_MSG.format(name=name))
 
 
-def check_db_management_enabled(func: Callable, /) -> Callable:
+def check_db_management_enabled[**P, R](func: Callable[P, R], /) -> Callable[P, R]:
 
     @functools.wraps(func)
-    def if_db_mgt_enabled(*args: Any, **kwargs: Any) -> Any:
+    def if_db_mgt_enabled(*args: P.args, **kwargs: P.kwargs) -> R:
         if not odoo.tools.config["list_db"]:
             _logger.error(
                 "Database management functions blocked, admin disabled database listing"

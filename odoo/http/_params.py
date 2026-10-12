@@ -290,7 +290,8 @@ def _get_primitive_target(annotation: Any) -> tuple[type | None, type | None]:
 
 
 def get_param_specs(
-    endpoint: typing.Callable, inherited: dict[str, ParamSpec] | None = None
+    endpoint: typing.Callable[..., typing.Any],
+    inherited: dict[str, ParamSpec] | None = None,
 ) -> dict[str, ParamSpec]:
     specs: dict[str, ParamSpec] = dict(inherited or {})
     params = list(

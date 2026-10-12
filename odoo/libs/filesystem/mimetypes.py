@@ -391,7 +391,8 @@ def _root_tag(data: bytes) -> str | Literal[False] | None:
         for chunk in _markup_text(data[:end], start, encoding):
             parser.feed(chunk)
             if (event := next(parser.read_events(), None)) is not None:
-                return event[1].tag
+                tag: str = event[1].tag
+                return tag
     except etree.XMLSyntaxError:
         event = next(parser.read_events(), None)
         return False if event is None else event[1].tag
@@ -701,7 +702,7 @@ _MAGIC_GENERIC_TEXT = frozenset({"text/plain", "text/xml", _XML_MIMETYPE})
 def _probe_mimetype(bin_data: bytes, default: str) -> str:
     if magic is None:
         return _probe_mimetype_by_signature(bin_data, default)
-    mimetype = magic.from_buffer(bin_data[:MIMETYPE_HEAD_SIZE], mime=True)
+    mimetype: str = magic.from_buffer(bin_data[:MIMETYPE_HEAD_SIZE], mime=True)
     if mimetype in _MAGIC_GENERIC_TEXT:
         mimetype = _get_markup_mimetype(bin_data) or mimetype
         if mimetype == "text/xml":

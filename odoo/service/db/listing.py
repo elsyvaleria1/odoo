@@ -343,7 +343,7 @@ def exp_list(document: bool = False) -> list[str]:
     return names
 
 
-def exp_list_lang() -> list:
+def exp_list_lang() -> list[tuple[str, str]]:
     with _debug.perf("database.list_lang_rpc") as span:
         languages = odoo.tools.locale_utils.get_languages()
         span.set(languages=len(languages))

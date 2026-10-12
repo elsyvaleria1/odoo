@@ -20,7 +20,8 @@ class _PatchingLoader(Loader):
         self._target = target
 
     def create_module(self, spec: Any) -> ModuleType | None:
-        return self._loader.create_module(spec)
+        module: ModuleType | None = self._loader.create_module(spec)
+        return module
 
     def exec_module(self, module: ModuleType) -> None:
         with _debug.perf(

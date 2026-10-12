@@ -28,10 +28,13 @@ _SESSION_JSON_PRIMITIVES = (str, int, float, bool, type(None))
 
 
 def _copy_session_data(data: dict[str, Any]) -> dict[str, Any]:
-    return _loads(_dumps_bytes(data), lone_surrogates=True)
+    copied: dict[str, Any] = _loads(_dumps_bytes(data), lone_surrogates=True)
+    return copied
 
 
-def _merge_session_data(baseline: dict, local: dict, current: dict) -> dict:
+def _merge_session_data(
+    baseline: dict[str, Any], local: dict[str, Any], current: dict[str, Any]
+) -> dict[str, Any]:
     merged = dict(current)
     for key in baseline.keys() - local.keys():
         merged.pop(key, None)
@@ -71,7 +74,7 @@ def _coerce_session_value(value: Any) -> Any:
     )
 
 
-class Session(collections.abc.MutableMapping):
+class Session(collections.abc.MutableMapping[str, Any]):
     __slots__ = (
         "_Session__baseline",
         "_Session__data",
@@ -221,11 +224,11 @@ class Session(collections.abc.MutableMapping):
         return self.sid[:STORED_SESSION_BYTES]
 
     @property
-    def session_token(self) -> str | None:
+    def session_token(self) -> str | bool | None:
         return self.get("session_token")
 
     @session_token.setter
-    def session_token(self, session_token: str | None) -> None:
+    def session_token(self, session_token: str | bool | None) -> None:
         self["session_token"] = session_token
 
     def authenticate(self, env: Any, credential: dict[str, Any]) -> dict[str, Any]:
@@ -241,7 +244,9 @@ class Session(collections.abc.MutableMapping):
             cr=getattr(env, "cr", None),
             auth_type=credential.get("type"),
         ) as span:
-            auth_info = env["res.users"].authenticate(credential, wsgienv)
+            auth_info: dict[str, Any] = env["res.users"].authenticate(
+                credential, wsgienv
+            )
             span.set(uid=auth_info["uid"])
         pre_uid = auth_info["uid"]
 
@@ -373,7 +378,8 @@ class Session(collections.abc.MutableMapping):
         browser = user_agent.browser
         ip_address = request.httprequest.remote_addr
         now = int(time.time())
-        for trace in self["_trace"]:
+        traces: list[dict[str, Any]] = self["_trace"]
+        for trace in traces:
             if (
                 trace["platform"] == platform
                 and trace["browser"] == browser
@@ -392,14 +398,14 @@ class Session(collections.abc.MutableMapping):
             "first_activity": now,
             "last_activity": now,
         }
-        self["_trace"].append(new_trace)
-        if len(self["_trace"]) > _TRACE_MAX_ENTRIES:
+        traces.append(new_trace)
+        if len(traces) > _TRACE_MAX_ENTRIES:
             oldest_idx = min(
-                range(len(self["_trace"])),
-                key=lambda i: self["_trace"][i]["last_activity"],
+                range(len(traces)),
+                key=lambda i: traces[i]["last_activity"],
             )
-            del self["_trace"][oldest_idx]
-            _debug.lifecycle("http.session.trace_evicted", traces=len(self["_trace"]))
+            del traces[oldest_idx]
+            _debug.lifecycle("http.session.trace_evicted", traces=len(traces))
         self.is_dirty = True
         _debug.lifecycle(
             "http.session.trace_added", browser=browser, traces=len(self["_trace"])

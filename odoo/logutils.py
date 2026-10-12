@@ -266,7 +266,7 @@ class JSONFormatter(logging.Formatter):
 
         return json.dumps(record_json, default=str)
 
-    def _get_record_keys_default(self, record: logging.LogRecord) -> list:
+    def _get_record_keys_default(self, record: logging.LogRecord) -> list[str]:
         return sorted(
             (record.__dict__.keys() | {"message", "test"}) - self.ignore_record_keys
         )
@@ -280,7 +280,7 @@ class LogRecord(logging.LogRecord):
         pathname: str,
         lineno: int,
         msg: object,
-        args: tuple | dict[str, object] | None,
+        args: tuple[object, ...] | dict[str, object] | None,
         exc_info: tuple[type[BaseException], BaseException, types.TracebackType | None]
         | tuple[None, None, None]
         | None,
@@ -378,11 +378,11 @@ def _silence_dependency_warnings() -> None:
     )
 
 
-def _apply_log_config_file() -> dict | None:
+def _apply_log_config_file() -> dict[str, Any] | None:
     log_config = tools.config["log_config"]
     if not log_config:
         return None
-    conf = json_loads(Path(log_config).read_bytes())
+    conf: dict[str, Any] = json_loads(Path(log_config).read_bytes())
     conf["disable_existing_loggers"] = False
     logging.config.dictConfig(conf)
     return conf
@@ -514,7 +514,7 @@ PSEUDOCONFIG_MAPPER: Final[dict[str, list[str]]] = {
 
 RUNBOT: Final[int] = 25
 
-logging.RUNBOT = RUNBOT
+setattr(logging, "RUNBOT", RUNBOT)  # noqa: B010 -- custom level, absent from typeshed
 logging.addLevelName(RUNBOT, "INFO")
 logging._nameToLevel["INFO"] = logging.INFO
 IGNORE: Final[frozenset[str]] = frozenset(
@@ -563,4 +563,4 @@ def runbot(self: logging.Logger, message: str, *args: object, **kws: Any) -> Non
     self.log(RUNBOT, message, *args, **kws)
 
 
-logging.Logger.runbot = runbot
+setattr(logging.Logger, "runbot", runbot)  # noqa: B010 -- custom level method, absent from typeshed

@@ -126,14 +126,16 @@ def _apply_unit_term(dt: datetime | date, operator: str, term: str) -> datetime 
             elapsed = timedelta(**{unit: number})
             return (dt.astimezone(UTC) + elapsed).astimezone(dt.tzinfo)
         delta: dict[str, Any] = {unit: number}
-        return dt + relativedelta(**delta)
+        shifted: datetime | date = dt + relativedelta(**delta)
+        return shifted
     number = int(term[1:-1])
     unit = unit.removesuffix("s")
     if unit not in _TRUNCATE_UNIT:
         raise ValueError(f"{term[-1]!r} cannot be set with '='; use '+' or '-'")
     if isinstance(dt, datetime):
         dt += _TRUNCATE_UNIT[unit]
-    return dt + relativedelta(dt1=None, dt2=None, **{unit: number})
+    assigned: datetime | date = dt + relativedelta(dt1=None, dt2=None, **{unit: number})
+    return assigned
 
 
 def parse_date_expression(value: str, env: Environment) -> date | datetime:
@@ -166,9 +168,7 @@ def parse_date_expression(value: str, env: Environment) -> date | datetime:
         if dayname in WEEKDAY_NUMBER or dayname == "week_start":
             if week_start is None:
                 res_lang: Any = env["res.lang"]
-                week_start = (
-                    int(res_lang._get_data(code=env.user.lang).week_start) - 1
-                )
+                week_start = int(res_lang._get_data(code=env.user.lang).week_start) - 1
             dt = _apply_weekday_term(dt, operator, dayname, week_start)
             continue
 

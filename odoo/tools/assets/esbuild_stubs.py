@@ -2,8 +2,14 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from odoo.libs.debug_log import DebugLog
+
+if TYPE_CHECKING:
+    from .esbuild import EntryAsset
+else:
+    EntryAsset = Any
 
 _debug = DebugLog(__name__)
 
@@ -115,7 +121,7 @@ def alias_into_mirror(
 
 
 def mirror_aliases(
-    native_modules: list,
+    native_modules: list[EntryAsset],
     alias_flags: list[str],
     stubs: dict[str, str],
     tmp_dir: str,

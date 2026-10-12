@@ -219,7 +219,7 @@ class Speedscope:
             constant_time=constant_time,
             aggregate_sql=aggregate_sql,
         ) as span:
-            events: list[dict] = []
+            events: list[dict[str, Any]] = []
             current_stack_ids: list[int] = []
             frames_start = entries[0]["start"]
 

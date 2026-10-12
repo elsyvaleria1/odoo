@@ -32,8 +32,8 @@ _ALLOWED_MODULES = ["_strptime", "math", "time"]
 
 def _import(
     name: str,
-    globals: dict | None = None,  # noqa: A002 -- match the __import__ callback signature
-    locals: dict | None = None,  # noqa: A002 -- match the __import__ callback signature
+    globals: dict[str, typing.Any] | None = None,  # noqa: A002 -- match the __import__ callback signature
+    locals: dict[str, typing.Any] | None = None,  # noqa: A002 -- match the __import__ callback signature
     fromlist: list[str] | None = None,
     level: int = -1,
 ) -> None:
@@ -294,7 +294,7 @@ _SAFE_OPCODES = (
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-_validated_bytecode_cache: dict[tuple, bool] = {}
+_validated_bytecode_cache: dict[tuple[object, ...], bool] = {}
 _VALIDATED_CACHE_MAX = 8192
 
 
@@ -406,7 +406,7 @@ class _GuardedFormat:
     def __init__(self, recv: str) -> None:
         self._recv = recv
 
-    def _formatter(self) -> tuple[string.Formatter, Callable[[str], typing.Any]]:
+    def _formatter(self) -> tuple[string.Formatter, Callable[[str], str]]:
         recv: typing.Any = self._recv
         if hasattr(recv, "__html__"):
             return _StrictEscapeFormatter(recv.escape), type(recv)
@@ -655,7 +655,7 @@ def _compile_checked(
 def safe_eval(
     expr: str | bytes | CodeType,
     /,
-    context: dict | None = None,
+    context: dict[str, typing.Any] | None = None,
     *,
     mode: typing.Literal["eval", "exec"] = "eval",
     filename: str | None = None,
@@ -772,7 +772,7 @@ Pre-wrapped modules are provided as attributes of `odoo.tools.safe_eval`.
                 _check_module(v, seen)
 
 
-def check_values(d: dict | None) -> dict | None:
+def check_values(d: dict[str, typing.Any] | None) -> dict[str, typing.Any] | None:
     if not d:
         return d
     seen: set[int] = set()
@@ -782,12 +782,16 @@ def check_values(d: dict | None) -> dict | None:
 
 
 class wrap_module:
-    def __init__(self, module: types.ModuleType, attributes: list | dict) -> None:
+    def __init__(
+        self, module: types.ModuleType, attributes: list[str] | dict[str, list[str]]
+    ) -> None:
         modfile = getattr(module, "__file__", "(built-in)")
         self._repr = f"<wrapped {module.__name__!r} ({modfile})>"
         for attrib in attributes:
             target = getattr(module, attrib)
             if isinstance(target, types.ModuleType):
+                if not isinstance(attributes, dict):
+                    raise TypeError(f"{module.__name__}.{attrib} needs its attributes")
                 target = wrap_module(target, attributes[attrib])
             setattr(self, attrib, target)
 

@@ -35,17 +35,17 @@ class ServedLib(NamedTuple):
     spec: str
     declared_url: str
     unique: str
-    files: Mapping
+    files: Mapping[str, Path]
 
 
 class _ServedLibs(NamedTuple):
-    by_spec: Mapping
-    by_served_url: Mapping
-    stamps: Mapping
+    by_spec: Mapping[str, ServedLib]
+    by_served_url: Mapping[str, tuple[ServedLib, str]]
+    stamps: Mapping[Path, tuple[int, int] | None]
 
 
 _lock = threading.Lock()
-_cache: list = [None]
+_cache: list[_ServedLibs | None] = [None]
 
 
 def invalidate_served_libs() -> None:
@@ -127,7 +127,9 @@ def served_lib_url(unique: str, url: str) -> str:
     return f"{ESM_LIB_URL_PREFIX}{unique}{url}"
 
 
-def _merge_overlapping(closures: Mapping[str, dict[str, Path]]) -> dict[str, dict]:
+def _merge_overlapping(
+    closures: Mapping[str, dict[str, Path]],
+) -> dict[str, dict[str, Path]]:
     groups: list[dict[str, Path]] = []
     owner: dict[str, int] = {}
     for declared_url, files in closures.items():
@@ -197,12 +199,13 @@ def _served_libs() -> _ServedLibs:
     if served is not None and not _changed_on_disk(served.stamps):
         return served
     with _lock:
-        if _cache[0] is served:
-            if served is not None:
-                _debug.lifecycle("esm_libs.changed_on_disk", files=len(served.stamps))
+        current = _cache[0]
+        if current is None or current is served:
+            if current is not None:
+                _debug.lifecycle("esm_libs.changed_on_disk", files=len(current.stamps))
                 _content_cache.clear()
-            _cache[0] = _prepare_served_libs()
-        return _cache[0]
+            current = _cache[0] = _prepare_served_libs()
+        return current
 
 
 def served_external_libs() -> Mapping[str, str]:

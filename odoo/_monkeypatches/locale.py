@@ -5,14 +5,14 @@ import time
 
 def patch_module() -> None:
     if not hasattr(locale, "D_FMT"):
-        locale.D_FMT = 1
+        setattr(locale, "D_FMT", 1)  # noqa: B010 -- Final in typeshed, absent on Windows
 
     if not hasattr(locale, "T_FMT"):
-        locale.T_FMT = 2
+        setattr(locale, "T_FMT", 2)  # noqa: B010 -- Final in typeshed, absent on Windows
 
     if not hasattr(locale, "nl_langinfo"):
 
-        def nl_langinfo(param: int) -> str | None:
+        def nl_langinfo(param: int) -> str:
             if param == locale.D_FMT:
                 val = time.strptime("30/12/2004", "%d/%m/%Y")
                 dt = datetime.datetime(*val[:6])
@@ -32,6 +32,6 @@ def patch_module() -> None:
                 for x, y in [("13", "%H"), ("24", "%M"), ("56", "%S")]:
                     format_time = format_time.replace(x, y)
                 return format_time
-            return None
+            raise ValueError("unsupported langinfo constant")
 
         locale.nl_langinfo = nl_langinfo

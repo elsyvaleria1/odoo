@@ -1,7 +1,7 @@
 import itertools
 import re
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL, normalize_identifier
@@ -53,9 +53,7 @@ def _once_set_reference(table: str, index: int) -> SQL:
     return SQL("(SELECT * FROM %s)", identifier)
 
 
-def _with_once(
-    table: str, expressions: list[SQL], sets: Sequence[SQL] = ()
-) -> SQL:
+def _with_once(table: str, expressions: list[SQL], sets: Sequence[SQL] = ()) -> SQL:
     if not expressions and not sets:
         return SQL.EMPTY
     return SQL(
@@ -88,7 +86,7 @@ def _splice_once(sql: SQL, replacements: dict[str, SQL]) -> SQL:
         return sql
     references = re.compile("|".join(map(re.escape, replacements)))
     code: list[str] = []
-    params: list = []
+    params: list[Any] = []
     pending = list(sql.params)
     position = 0
     for match in references.finditer(sql.code):
@@ -512,7 +510,7 @@ class Query:
                 sql = SQL("SELECT COUNT(*) FROM (%s) t", self.statement(""))
             else:
                 sql = self.statement("COUNT(*)")
-            count = self._env.execute_query(sql)[0][0]
+            count: int = self._env.execute_query(sql)[0][0]
             _debug.perf.count(
                 "query.len_counted",
                 table=self.table,
@@ -558,9 +556,10 @@ class Query:
                 parts.append(SQL(" HAVING %s", self.having))
             if limit is not None:
                 parts.append(SQL(" LIMIT %s", limit))
-            return self._env.execute_query(
+            limited: int = self._env.execute_query(
                 SQL("SELECT COUNT(*) FROM (%s) t", SQL("").join(parts))
             )[0][0]
+            return limited
         sql = SQL(
             "%sSELECT COUNT(*) FROM %s",
             self._with_sql(),
@@ -568,14 +567,14 @@ class Query:
         )
         if self._where_clauses:
             sql = SQL("%s WHERE %s", sql, self._inline_sets(self._where_sql()))
-        return self._env.execute_query(sql)[0][0]
+        matching: int = self._env.execute_query(sql)[0][0]
+        return matching
 
     def __iter__(self) -> Iterator[int]:
         return iter(self.get_result_ids())
 
 
 class SharedOnce:
-
     __slots__ = ("_expressions", "_sets", "_table")
 
     def __init__(self, table: str) -> None:

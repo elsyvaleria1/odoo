@@ -78,7 +78,9 @@ _MODULE_COLUMNS = (
 _MODULE_INSERT_CHUNK = 1000
 
 
-def _insert_modules(cr: SqlReader, rows: list[tuple]) -> dict[str, int]:
+def _insert_modules(
+    cr: SqlReader, rows: list[tuple[typing.Any, ...]]
+) -> dict[str, int]:
     placeholder = "(" + ", ".join(["%s"] * len(_MODULE_COLUMNS)) + ")"
     columns = ", ".join(_MODULE_COLUMNS)
     ids: dict[str, int] = {}

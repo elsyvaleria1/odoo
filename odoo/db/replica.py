@@ -74,7 +74,7 @@ def is_readonly_cursor_enabled(settings: PoolSettings | None = None) -> bool:
 _routers: weakref.WeakSet[ReplicaRouter] = weakref.WeakSet()
 
 
-def get_replica_health() -> dict[str, dict]:
+def get_replica_health() -> dict[str, dict[str, typing.Any]]:
     return {
         getattr(router.primary, "dbname", None) or "unknown": router.get_health()
         for router in list(_routers)
@@ -119,7 +119,7 @@ class ReplicaRouter:
             own_lag_gate=lag is None,
         )
 
-    def get_health(self) -> dict:
+    def get_health(self) -> dict[str, typing.Any]:
         return {
             "lag": self.lag.get_snapshot(),
             "breaker": self.breaker.get_snapshot(),

@@ -18,7 +18,7 @@ from odoo.libs.datetime import real_time
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL
 
-from .ddl import get_value_marker_positions
+from .ddl import QueryParams, get_value_marker_positions
 from .errors import CURSOR_LOGGER_NAME, has_reached_server
 
 _logger = logging.getLogger(CURSOR_LOGGER_NAME)
@@ -65,7 +65,7 @@ if TYPE_CHECKING:
         def execute(
             self,
             query: str | SQL | _sql.Composable,
-            params: tuple | list | dict | None = None,
+            params: QueryParams | None = None,
             log_exceptions: bool = True,
         ) -> None: ...
 
@@ -198,7 +198,7 @@ def _prepare_copy_statement(
     )
 
 
-def _add_binary_types_note(exc: Exception, table: str, columns: list) -> None:
+def _add_binary_types_note(exc: Exception, table: str, columns: list[str]) -> None:
     if has_reached_server(exc):
         return
     exc.add_note(
@@ -362,7 +362,8 @@ class _BulkAccessMixin:
             write_rows = _coerce_rows(rows, col_types) if col_types else rows
 
             def render_copy_statement() -> str:
-                return copy_stmt.as_string(obj)
+                statement: str = copy_stmt.as_string(obj)
+                return statement
 
             hooks = getattr(self._thread, "query_hooks", None)
             start = real_time() if hooks else 0.0
@@ -510,11 +511,12 @@ class _BulkAccessMixin:
                 raise ValueError(f"No serial sequence found for {table}.id")
             seq_name = row[0]
             via = "pg_depend"
-        cache.set_id_sequence(table, seq_name)
+        resolved: str = seq_name
+        cache.set_id_sequence(table, resolved)
         _debug.perf.count(
-            "bulk.id_sequence_resolved", table=table, sequence=seq_name, via=via
+            "bulk.id_sequence_resolved", table=table, sequence=resolved, via=via
         )
-        return seq_name
+        return resolved
 
     def _is_binary_copy_worthwhile(self: _CursorInternals, oids: list[int]) -> bool:
         if not self._can_dump_binary(oids):

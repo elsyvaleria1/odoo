@@ -23,13 +23,15 @@ def _linear(channel: float) -> float:
     channel /= 255
     if channel <= 0.04045:
         return channel / 12.92
-    return ((channel + 0.055) / 1.055) ** 2.4
+    linear: float = ((channel + 0.055) / 1.055) ** 2.4
+    return linear
 
 
 def _gamma(channel: float) -> float:
     if channel <= 0.0031308:
         return 255 * 12.92 * channel
-    return 255 * (1.055 * channel ** (1 / 2.4) - 0.055)
+    encoded: float = 255 * (1.055 * channel ** (1 / 2.4) - 0.055)
+    return encoded
 
 
 def relative_luminance(rgb: Sequence[float]) -> float:

@@ -237,7 +237,7 @@ class Obfuscate(DatabaseCommand):
         "                        AND table_type = 'BASE TABLE')"
     )
 
-    def _index_field_catalog(self, rows: list[tuple]) -> None:
+    def _index_field_catalog(self, rows: list[tuple[Any, ...]]) -> None:
         self._field_kinds = {}
         self._field_widths = {}
         for table, column, udt, max_length in rows:
@@ -476,7 +476,8 @@ class Obfuscate(DatabaseCommand):
     def _get_password(self, opt: argparse.Namespace) -> str:
         if opt.pwd:
             _debug.logic("cli.obfuscate.password_source", source="argument")
-            return opt.pwd
+            password: str = opt.pwd
+            return password
         if opt.pwd_file:
             first_line = (
                 pathlib.Path(opt.pwd_file)

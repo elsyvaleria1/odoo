@@ -36,7 +36,7 @@ class ModuleNode:
             manifest._force_parse()
         else:
             _debug.logic("module_graph.manifest_missing", module=name)
-        self.manifest: Mapping = manifest or {}
+        self.manifest: Mapping[str, typing.Any] = manifest or {}
 
         self.id: int = 0
         self.state: STATES = "uninstalled"

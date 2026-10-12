@@ -6,10 +6,11 @@ import sys
 from collections.abc import Callable, Generator
 from inspect import cleandoc
 from pathlib import Path
-from typing import Literal, NoReturn, overload
+from typing import Any, Literal, NoReturn, overload
 
 import odoo.cli
 import odoo.init  # noqa: F401 -- Import initializes the Odoo runtime before CLI dispatch.
+from odoo.api import Environment
 from odoo.db import is_maintenance_db
 from odoo.libs.debug_log import DebugLog
 from odoo.modules import initialize_sys_path, load_script
@@ -98,12 +99,11 @@ def open_environment(
     db_name: str,
     *,
     readonly: bool = False,
-    context: dict | None = None,
+    context: dict[str, Any] | None = None,
     uid: int | None = None,
     new_registry: bool = False,
-) -> Generator:
+) -> Generator[Environment]:
     from odoo import SUPERUSER_ID
-    from odoo.api import Environment
     from odoo.modules.registry import Registry
 
     if uid is None:

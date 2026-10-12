@@ -50,32 +50,45 @@ JS tools), then `git worktree remove` it.
 `mypy` is measured with mypy alone installed (`ignore_missing_imports`
 resolves `lxml`, `psycopg`, `dateutil` to `Any`), never in the shared venv,
 over `odoo.orm`, `odoo.db`, `odoo.libs`, `odoo.http`, `odoo.service`,
-`odoo.modules`, and separately `odoo.tools`, `odoo.cli`, `odoo.tests`.
+`odoo.modules` and the top-level modules and façades, and separately
+`odoo.tools`, `odoo.cli`, `odoo.tests`.
 Build that bare environment once per pin with the venv's `uv`, and run both
 halves with it:
 
 ```bash
 uv venv --python python3 ~/.cache/odoo-mypy/<pin> && uv pip install --python ~/.cache/odoo-mypy/<pin> mypy==<pin>
 ~/.cache/odoo-mypy/<pin>/bin/mypy --no-incremental --config-file mypy.ini \
-    -p odoo.orm -p odoo.db -p odoo.libs -p odoo.http -p odoo.service -p odoo.modules
+    -p odoo.orm -p odoo.db -p odoo.libs -p odoo.http -p odoo.service -p odoo.modules \
+    -m odoo -m odoo.init -m odoo.exceptions -m odoo.logutils -m odoo.release \
+    -m odoo.__main__ -p odoo._monkeypatches -p odoo.api -p odoo.fields -p odoo.models
 ~/.cache/odoo-mypy/<pin>/bin/mypy --no-incremental --config-file mypy.ini \
     -p odoo.tools -p odoo.cli -p odoo.tests -p tooling.typing
 ```
 
 `<pin>` is the `mypy==` line of `requirements-dev.txt`. `mypy.ini`
-holds the eight production packages (`odoo.orm`, `odoo.db`, `odoo.libs`,
-`odoo.http`, `odoo.service`, `odoo.modules`, `odoo.tools`, `odoo.cli`) to
+holds all framework code outside `addons/` -- the eight production packages
+(`odoo.orm`, `odoo.db`, `odoo.libs`, `odoo.http`, `odoo.service`,
+`odoo.modules`, `odoo.tools`, `odoo.cli`), `odoo.tests`, `odoo._monkeypatches`,
+the top-level modules and the `api`/`fields`/`models` façades -- to
 `disallow_untyped_defs` and `disallow_incomplete_defs`: a function added there
-without a complete signature fails its package's lane. It holds
+without a complete signature fails its lane. It holds
 `warn_unused_ignores` globally, so stale local suppressions fail their lane.
-It holds
-`warn_return_any` in `odoo.orm` too (0 on 2026-10-03, from 82): a function that
+It holds the same scope to `warn_return_any` (`odoo.orm` 0 on 2026-10-03,
+from 82; the rest 0 on 2026-10-11): a function that
 declares a type and returns an `Any` fails it; a value from untyped territory
 (a psycopg row, the context, a memo dict, a field read by a runtime name) is
-declared on a local, not cast. And it holds `disallow_any_generics` (0 on
-2026-10-03, from 869 that evening, through a ratchet retired at
-zero): a `dict`, `tuple` or `Field` written without its parameters fails the
-core lane; a field of any value type is `Field[Any]`. `BaseModel`
+declared on a local, not cast. And it holds `disallow_any_generics`
+(`odoo.orm` 0 on 2026-10-03, from 869 that evening, through a ratchet retired
+at zero; the rest 0 on 2026-10-11): a `dict`, `tuple` or `Field` written
+without its parameters fails its lane. Extending both flags past `odoo.orm`
+on 2026-10-11 measured, in diagnostics per package:
+
+```
+db 111, libs 106, http 52, service 62, modules 28, tools 241, cli 6,
+tests 238 (78 of them unannotated defs), top-level + monkeypatches 21 -> 0
+```
+
+A field of any value type is `Field[Any]`. `BaseModel`
 declares `env: Environment` (the mixins keep `Any` for their own shortcuts), so
 an addon's `self.env` is typed; `odoo-bin stubs -d <db>` writes
 `odoo_registry_stubs.pyi` from a live registry and `mypy_registry_plugin.py`
@@ -136,10 +149,8 @@ reuses one (as `credential`'s `_log_access` did, over the ORM flag) cannot
 make the stub itself fail to check.
 
 The foundational packages `odoo.libs.collections`, `odoo.libs.iteration` and
-the modules `func`, `lru`, `callbacks`, `settings`, `utils`, `debug_log`, `http1` also require
-parameterized generics, reject `Any` returned where a concrete type is declared,
-reject untyped decorators and implicit re-exports, and check for unused local
-suppressions. Suppressions on immutable containers document deliberately restored hashing or refused
+the modules `func`, `lru`, `callbacks`, `settings`, `utils`, `debug_log`, `http1` also
+reject untyped decorators and implicit re-exports. Suppressions on immutable containers document deliberately restored hashing or refused
 mutation. `tooling/typing/contracts.py` pins the public inference with
 `assert_type`, and pins rejected calls with specific ignored diagnostics:
 `warn_unused_ignores` fails if an invalid call becomes accepted. It covers lock

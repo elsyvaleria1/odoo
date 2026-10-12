@@ -206,7 +206,8 @@ class Deploy(Command):
         _debug.lifecycle(
             "cli.deploy.uploaded", url=url, status=res.status_code, reply=len(res.text)
         )
-        return res.text
+        reply: str = res.text
+        return reply
 
     def zip_module(self, path: str | Path) -> str:
         module_dir = Path(path).resolve()

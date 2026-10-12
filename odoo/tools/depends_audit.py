@@ -240,7 +240,7 @@ def _foreign_code_names(
     return names
 
 
-def accessed_attribute_names(func: Callable) -> set[str]:
+def accessed_attribute_names(func: Callable[..., typing.Any]) -> set[str]:
     names: set[str] = set()
     code = getattr(func, "__code__", None)
     if code is None:
@@ -258,7 +258,9 @@ def accessed_attribute_names(func: Callable) -> set[str]:
     return names
 
 
-def _get_functions(field: typing.Any, model_class: typing.Any) -> list[Callable]:
+def _get_functions(
+    field: typing.Any, model_class: typing.Any
+) -> list[Callable[..., typing.Any]]:
     compute = field.compute
     if not compute:
         return []

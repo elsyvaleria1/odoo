@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Collection, Iterable, Sequence
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any, NamedTuple, Protocol
+from typing import TYPE_CHECKING, Any, NamedTuple
 from urllib.parse import quote
 
 from odoo import modules
@@ -13,6 +13,7 @@ from odoo.libs.hashing import cache_hash
 from odoo.tools import config
 from odoo.tools.assets.constants import ESM_BRIDGE_REFRESH_DAYS, ESM_BRIDGE_URL_PREFIX
 from odoo.tools.assets.esm_graph import (
+    ModuleSource,
     ModuleSourceMap,
     _bridge_shim_source,
     _BridgeExportResolver,
@@ -27,7 +28,7 @@ from odoo.tools.assets.esm_registry import esm_registry, external_libs
 if TYPE_CHECKING:
     from odoo.orm._protocols import IrAttachmentProtocol
 
-__all__ = ["BridgeShimManager", "NativeModuleLike"]
+__all__ = ["BridgeShimManager"]
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -38,16 +39,6 @@ def _rw_escalation_expected() -> bool:
     return bool(modules.module.current_test) or config["test_enable"]
 
 
-class NativeModuleLike(Protocol):
-    @property
-    def module_path(self) -> str:
-        pass
-
-    @property
-    def raw_content(self) -> str:
-        pass
-
-
 class BridgeUse(NamedTuple):
     module: str
     specifier: str
@@ -56,7 +47,7 @@ class BridgeUse(NamedTuple):
 
 
 def get_evaluation_time_bridge_uses(
-    modules: Iterable[NativeModuleLike], bridged: Collection[str]
+    modules: Iterable[ModuleSource], bridged: Collection[str]
 ) -> list[BridgeUse]:
     bridged = frozenset(bridged)
     found: list[BridgeUse] = []
@@ -89,7 +80,7 @@ class BridgeShimManager:
         self,
         env: Environment,
         bundle_name: str,
-        native_modules: Sequence[NativeModuleLike],
+        native_modules: Sequence[ModuleSource],
     ) -> None:
         self.env = env
         self.bundle_name = bundle_name
@@ -209,7 +200,7 @@ class BridgeShimManager:
             for spec, url in url_by_spec.items()
         }
 
-    def _persist_bridges_via_rw_cursor(self, to_create: list[dict]) -> bool:
+    def _persist_bridges_via_rw_cursor(self, to_create: list[dict[str, Any]]) -> bool:
         try:
             with self.env.registry.cursor(readonly=False) as rw_cr:
                 rw_env = Environment(rw_cr, SUPERUSER_ID, {})
@@ -274,7 +265,7 @@ class BridgeShimManager:
         self,
         native_specifiers: set[str],
         ext_lib_names: set[str],
-        modules: Sequence[NativeModuleLike] | None = None,
+        modules: Sequence[ModuleSource] | None = None,
     ) -> tuple[dict[str, None], set[str]]:
         if modules is None:
             modules = self.native_modules
@@ -303,7 +294,7 @@ class BridgeShimManager:
         native_specifiers: set[str],
         ext_lib_names: set[str],
         provided: frozenset[str] | set[str],
-        modules: Sequence[NativeModuleLike] | None = None,
+        modules: Sequence[ModuleSource] | None = None,
         resolver: _BridgeExportResolver | None = None,
     ) -> tuple[dict[str, None], set[str]]:
         discovered, ext_seen = self._discover_bridge_specifiers(
@@ -371,7 +362,7 @@ class BridgeShimManager:
     def _prepare_native_to_legacy_bridge(
         self,
         native_specifiers: set[str],
-        modules: Sequence[NativeModuleLike] | None = None,
+        modules: Sequence[ModuleSource] | None = None,
     ) -> dict[str, str]:
         if modules is None:
             modules = self.native_modules
@@ -421,7 +412,7 @@ class BridgeShimManager:
         self,
         native_specifiers: set[str],
         provided: frozenset[str] | set[str],
-        modules: Sequence[NativeModuleLike] | None = None,
+        modules: Sequence[ModuleSource] | None = None,
     ) -> tuple[dict[str, str], set[str]]:
         if modules is None:
             modules = self.native_modules

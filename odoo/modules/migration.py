@@ -259,7 +259,7 @@ def _write_pending_end_migrations(cr: Cursor, pending: dict[str, str]) -> None:
 
 
 class MigrationManager:
-    migrations: dict[str, dict]
+    migrations: dict[str, dict[str, dict[str, list[str]]]]
     pending_end: dict[str, str]
 
     def __init__(
