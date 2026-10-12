@@ -1447,7 +1447,9 @@ QUERIES = {
             "location",
             "Where a person, vehicle or GPS unit is right now (ubicación, dónde "
             "está, GPS, rastreo): by the employee who drives it or carries it, "
-            "or every tracked unit. A map link and the place it is at.",
+            "or every tracked unit. A map link and the place it is at. Not "
+            "which vehicle someone has or had assigned, nor anything about the "
+            "past: that is no report.",
             run_location,
             (),
             ("employee",),

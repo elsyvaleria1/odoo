@@ -1813,6 +1813,58 @@ class TestSuperBotFlow(TelegramBotTestCase):
         self.assertEqual(send.call_args.args[1], TINY_PDF)
         self.assertTrue(send.call_args.args[2].endswith(".pdf"))
 
+    def test_a_record_s_own_files_are_listed_and_sent_as_stored(self):
+        partner = self.env["res.partner"].create({"name": "Ask Probe Files"})
+        other = self.env["res.partner"].create({"name": "Ask Probe Other Files"})
+        contract = self.env["ir.attachment"].create(
+            {
+                "name": "Contrato.pdf",
+                "raw": TINY_PDF,
+                "res_model": "res.partner",
+                "res_id": partner.id,
+            }
+        )
+        foreign = self.env["ir.attachment"].create(
+            {
+                "name": "Ajeno.pdf",
+                "raw": TINY_PDF,
+                "res_model": "res.partner",
+                "res_id": other.id,
+            }
+        )
+        self.env.flush_all()
+        reader = OdooReader(
+            self.registry, self.env.ref("insight_telegram.user_reader").id
+        )
+        tools = OdooTools(reader)
+        listed = json_loads(
+            tools.call("record_files", {"model": "res.partner", "id": partner.id})
+        )
+        self.assertEqual([f["name"] for f in listed["files"]], ["Contrato.pdf"])
+        refused = json_loads(
+            tools.call(
+                "send_files",
+                {
+                    "model": "res.partner",
+                    "id": partner.id,
+                    "attachment_ids": [foreign.id],
+                },
+            )
+        )
+        self.assertIn("not this record's", refused["error"])
+        tools.call(
+            "send_files",
+            {"model": "res.partner", "id": partner.id, "attachment_ids": [contract.id]},
+        )
+        with (
+            patch.object(type(self.test_bot), "send_document") as send,
+            self.mock_api_gateway_post(self.mock_ok),
+        ):
+            self.test_chat._insight_send_pdfs(
+                self.test_bot, self.test_chat, tools.pdf_requests, reader
+            )
+        self.assertEqual(send.call_args.args[1:3], (TINY_PDF, "Contrato.pdf"))
+
     def test_a_statement_offers_its_breakdown_and_pdf(self):
         from odoo.addons.insight_telegram.models.telegram_chat import (
             _statement_buttons,

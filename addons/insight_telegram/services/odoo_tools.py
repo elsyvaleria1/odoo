@@ -118,6 +118,13 @@ TOOLS = [
 MAX_PDFS = 5
 STATEMENT_ID = -1
 STATEMENT_REQUEST = "statement"
+# how a record's own files are queued for sending: attachments by id, or
+# the record's image field
+FILES_REQUEST = "files"
+IMAGE_REQUEST = "image"
+# Telegram takes uploads up to 50 MB; a file this large is named, not sent
+MAX_SENT_FILE_BYTES = 20 * 1024 * 1024
+IMAGE_FIELD = "image_1920"
 
 PDF_TOOLS = [
     {
@@ -145,6 +152,39 @@ PDF_TOOLS = [
                 "ids": {"type": "array", "items": {"type": "integer"}},
             },
             "required": ["report_id", "ids"],
+        },
+    },
+    {
+        "name": "record_files",
+        "description": (
+            "The files attached to one record (contracts, delivery notes, "
+            "photos, scans) and whether it has its own image: ids, names, "
+            "types and sizes."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "model": {"type": "string"},
+                "id": {"type": "integer"},
+            },
+            "required": ["model", "id"],
+        },
+    },
+    {
+        "name": "send_files",
+        "description": (
+            "Send the person files of one record as they are stored: "
+            "attachment ids from record_files, and/or the record's image."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "model": {"type": "string"},
+                "id": {"type": "integer"},
+                "attachment_ids": {"type": "array", "items": {"type": "integer"}},
+                "image": {"type": "boolean"},
+            },
+            "required": ["model", "id"],
         },
     },
 ]
@@ -379,6 +419,74 @@ class OdooTools:
             raise ReaderError("Too many PDFs at once.")
         self.pdf_requests.append((report.id, report.model, records.ids))
         return {"queued": report.name, "records": records.mapped("display_name")}
+
+    def _owned_record(self, env, model, record_id):
+        records = _model(env, model)
+        record = records.browse(int(record_id or 0)).exists()
+        if not record:
+            raise ReaderError(f"No {records._name} record {record_id}.")
+        return record
+
+    def _tool_record_files(self, env, model="", id=0) -> dict:
+        record = self._owned_record(env, model, id)
+        attachments = env["ir.attachment"].search(
+            [("res_model", "=", record._name), ("res_id", "=", record.id)],
+            order="id",
+        )
+        return {
+            "record": record.display_name,
+            "has_image": bool(
+                IMAGE_FIELD in record._fields and record[IMAGE_FIELD]
+            ),
+            "files": [
+                {
+                    "id": attachment.id,
+                    "name": attachment.name,
+                    "mimetype": attachment.mimetype,
+                    "bytes": attachment.file_size,
+                }
+                for attachment in attachments
+            ],
+        }
+
+    def _tool_send_files(
+        self, env, model="", id=0, attachment_ids=None, image=False
+    ) -> dict:
+        record = self._owned_record(env, model, id)
+        wanted = [int(ident) for ident in attachment_ids or []]
+        attachments = env["ir.attachment"].search(
+            [
+                ("id", "in", wanted),
+                ("res_model", "=", record._name),
+                ("res_id", "=", record.id),
+            ]
+        )
+        if len(attachments) != len(set(wanted)):
+            raise ReaderError(
+                "Some attachment ids are not this record's; call record_files."
+            )
+        large = attachments.filtered(lambda a: a.file_size > MAX_SENT_FILE_BYTES)
+        if large:
+            raise ReaderError(
+                f"Too large to send: {', '.join(large.mapped('name'))}."
+            )
+        if image and not (IMAGE_FIELD in record._fields and record[IMAGE_FIELD]):
+            raise ReaderError(f"{record.display_name} has no image.")
+        queued = []
+        if attachments:
+            self._queue_pdf((FILES_REQUEST, "ir.attachment", attachments.ids))
+            queued += attachments.mapped("name")
+        if image:
+            self._queue_pdf((IMAGE_REQUEST, record._name, record.ids))
+            queued.append(f"{record.display_name} (image)")
+        if not queued:
+            raise ReaderError("Name attachment_ids or set image.")
+        return {"queued": queued}
+
+    def _queue_pdf(self, request) -> None:
+        if len(self.pdf_requests) >= MAX_PDFS:
+            raise ReaderError("Too many files at once.")
+        self.pdf_requests.append(request)
 
     def _tool_run_report(self, env, report="", **params) -> dict:
         query = self._queries.get(report)

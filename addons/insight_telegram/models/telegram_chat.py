@@ -1,3 +1,4 @@
+import base64
 import logging
 import re
 import uuid
@@ -14,7 +15,13 @@ from ..services.catalog import NotFound, available_queries
 from ..services.insight_agent import InsightAgent
 from ..services.insight_assistant import HELP, SEND_DOCUMENT, InsightAssistant
 from ..services.odoo_reader import OdooReader
-from ..services.odoo_tools import STATEMENT_REQUEST, OdooTools
+from ..services.odoo_tools import (
+    FILES_REQUEST,
+    IMAGE_FIELD,
+    IMAGE_REQUEST,
+    STATEMENT_REQUEST,
+    OdooTools,
+)
 from .telegram_handler import (
     AUTHORIZE,
     AUTHORIZE_ACTION,
@@ -532,6 +539,22 @@ class TelegramChat(models.Model):
                             partner,
                             exc_info=True,
                         )
+            elif report_id == FILES_REQUEST:
+                files = [
+                    (attachment.name, attachment.raw)
+                    for attachment in env["ir.attachment"].browse(ids).exists()
+                    if attachment.raw
+                ]
+            elif report_id == IMAGE_REQUEST:
+                files = [
+                    (
+                        documents.filename(record, "image").removesuffix(".pdf")
+                        + ".png",
+                        base64.b64decode(record[IMAGE_FIELD]),
+                    )
+                    for record in env[model].browse(ids).exists()
+                    if record[IMAGE_FIELD]
+                ]
             else:
                 report = env["ir.actions.report"].browse(report_id)
                 files = documents.print_records(
