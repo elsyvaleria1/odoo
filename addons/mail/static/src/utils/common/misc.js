@@ -176,14 +176,27 @@ export function memoizeByItem(fn) {
 }
 
 /**
- * @template {{id: number}} T
+ * @param {number|string|undefined} id1
+ * @param {number|string|undefined} id2
+ * @returns {number}
+ */
+function compareIds(id1, id2) {
+    if (typeof id1 === "number" && typeof id2 === "number") {
+        return id1 - id2;
+    }
+    return String(id1 ?? "").localeCompare(String(id2 ?? ""));
+}
+
+/**
+ * @template {{id?: number|string}} T
  * @param {(item: T) => string} keyFn
  * @param {string} prefix
  * @returns {(a: T, b: T) => number}
  */
 export function byPrefixThenAlphaThenId(keyFn, prefix) {
     const keyOf = memoizeByItem(keyFn);
-    return (a, b) => comparePrefixThenAlpha(keyOf(a), keyOf(b), prefix) || a.id - b.id;
+    return (a, b) =>
+        comparePrefixThenAlpha(keyOf(a), keyOf(b), prefix) || compareIds(a.id, b.id);
 }
 
 /**

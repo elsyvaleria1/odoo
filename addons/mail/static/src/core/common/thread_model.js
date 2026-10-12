@@ -753,6 +753,7 @@ export class Thread extends Record {
         }
     }
 
+    /** @returns {Object<string, unknown>} */
     getFetchParams() {
         return {
             thread_id: this.id,

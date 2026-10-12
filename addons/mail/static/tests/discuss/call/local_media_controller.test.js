@@ -32,7 +32,7 @@ function makeController() {
         use_push_to_talk: true,
         voiceActivationThreshold: 0.05,
         cameraFacingMode: undefined,
-        setUseBlur: () => {},
+        setUseBlur: (/** @type {boolean} */ _useBlur) => {},
     };
     const steps = {
         setMute: [],
@@ -250,7 +250,9 @@ test("leaving while the blur loads releases the camera and builds no pipeline", 
     const { controller, state, settings } = makeController();
     settings.useBlur = true;
     const blurSettings = [];
-    settings.setUseBlur = (useBlur) => blurSettings.push(useBlur);
+    settings.setUseBlur = (useBlur) => {
+        blurSettings.push(useBlur);
+    };
     const loaded = new Deferred();
     const managers = patchBlurEffect(async (sourceStream) => {
         await loaded;
@@ -274,7 +276,9 @@ test("leaving while the blurred stream is pending keeps the blur preference", as
     const { controller, state, settings } = makeController();
     settings.useBlur = true;
     const blurSettings = [];
-    settings.setUseBlur = (useBlur) => blurSettings.push(useBlur);
+    settings.setUseBlur = (useBlur) => {
+        blurSettings.push(useBlur);
+    };
     patchBlurEffect(async (sourceStream) => {
         const manager = new MockBlurManager(sourceStream);
         const stream = new Deferred();

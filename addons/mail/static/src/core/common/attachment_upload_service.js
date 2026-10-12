@@ -91,13 +91,14 @@ export class AttachmentUploadService {
      */
     _onUploadLoaded(upload, tmpId) {
         const response = upload.response;
-        log.pipeline("upload loaded", () => ({ tmpId, ok: Boolean(response?.data) }));
-        if (!response?.data) {
+        const data = response?.data;
+        log.pipeline("upload loaded", () => ({ tmpId, ok: Boolean(data) }));
+        if (!data) {
             this._abandonUpload(tmpId, _t("Server error"));
             return;
         }
         const { thread, composer, deferred } = this.pendingUploads.get(tmpId);
-        this._processLoaded(thread, composer, response, tmpId, deferred);
+        this._processLoaded(thread, composer, { ...response, data }, tmpId, deferred);
     }
 
     /**

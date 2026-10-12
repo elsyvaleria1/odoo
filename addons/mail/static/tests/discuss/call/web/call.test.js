@@ -200,7 +200,9 @@ test("a key released in another window's realm is judged by its key", async () =
     await contains(".o-discuss-CallParticipantCard .o-isTalking");
     const frame = document.createElement("iframe");
     getFixture().append(frame);
-    const ForeignKeyboardEvent = frame.contentWindow.KeyboardEvent;
+    const ForeignKeyboardEvent = /** @type {Window & typeof globalThis} */ (
+        frame.contentWindow
+    ).KeyboardEvent;
     const otherKey = new ForeignKeyboardEvent("keyup", { key: "a" });
     expect(otherKey instanceof KeyboardEvent).toBe(false);
     env.services["discuss.rtc"].onKeyUp(otherKey);

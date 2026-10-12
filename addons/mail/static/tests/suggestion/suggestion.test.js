@@ -1505,7 +1505,9 @@ test("sorting partner suggestions cleans each name once", async () => {
         };
     });
     const sorted = getService("mail.suggestion").sortPartnerSuggestions(
-        /** @type {any} */ (partners),
+        /** @type {import("models").ResPartner[]} */ (
+            /** @type {unknown} */ (partners)
+        ),
         "Partner 1",
     );
     expect(nameReads).toBe(200);

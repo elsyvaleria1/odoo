@@ -1570,6 +1570,7 @@ test("leaving cancels the download update a received track scheduled", async () 
         type: "camera",
         track: createVideoStream().getVideoTracks()[0],
         active: true,
+        sequence: 1,
     });
     await rtc.leaveCall();
     await animationFrame();
