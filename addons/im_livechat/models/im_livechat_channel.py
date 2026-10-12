@@ -3,6 +3,7 @@ import random
 import re
 from collections import defaultdict
 from datetime import timedelta
+from typing import Any
 from urllib.parse import urlparse
 
 from odoo import Command, api, fields, models
@@ -149,7 +150,9 @@ class Im_LivechatChannel(models.Model):
         "Concurrent session number should be greater than zero.",
     )
 
-    def web_read(self, specification: dict[str, dict]) -> list[dict]:
+    def web_read(
+        self, specification: dict[str, dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         user_context = specification.get("user_ids", {}).get("context", {})
         if len(self) == 1 and user_context.pop("add_livechat_channel_ctx", None):
             user_context["im_livechat_channel_id"] = self.id

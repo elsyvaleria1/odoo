@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Any
 
 from odoo import api, fields, models
 from odoo.exceptions import RedirectWarning, UserError
@@ -126,7 +127,9 @@ class AccountAnalyticAccount(models.Model):
             new, "name", lambda record, term: record.env._("%s (copy)", term)
         )
 
-    def web_read(self, specification: dict[str, dict]) -> list[dict]:
+    def web_read(
+        self, specification: dict[str, dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         self_context = self
         if len(self) == 1:
             self_context = self.with_context(analytic_plan_id=self.plan_id.id)

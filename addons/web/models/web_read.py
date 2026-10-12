@@ -360,8 +360,7 @@ class Base(models.AbstractModel):
                 )
             )
 
-    @staticmethod
-    def _coerce_concurrency_value(field: Field, value: Any) -> Any:
+    def _coerce_concurrency_value(self, field: Field, value: Any) -> Any:
         ftype = field.type
         if value is None or value is False:
             return {

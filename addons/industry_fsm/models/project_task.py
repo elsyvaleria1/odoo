@@ -1,5 +1,6 @@
 from ast import literal_eval
 from datetime import UTC
+from typing import Any
 
 from markupsafe import Markup
 
@@ -495,7 +496,9 @@ class ProjectTask(models.Model):
             }
         return self.partner_id.action_partner_navigate()
 
-    def web_read(self, specification: dict[str, dict]) -> list[dict]:
+    def web_read(
+        self, specification: dict[str, dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         if (
             len(self) == 1
             and "partner_id" in specification
@@ -540,7 +543,6 @@ class ProjectTask(models.Model):
                 ]
             ),
         }
-
 
     def _compute_display_send_report_buttons(self) -> None:
         self.display_send_report_primary = False
@@ -620,7 +622,6 @@ class ProjectTask(models.Model):
         if self.env.context.get("fsm_mark_as_sent") and not self.fsm_is_sent:
             self.fsm_is_sent = True
         return super()._message_post_after_hook(message, msg_vals)
-
 
     def _get_domain_projects_to_make_billable(self, additional_domain=None):
         return Domain.AND(

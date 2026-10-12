@@ -1,13 +1,13 @@
 from collections import defaultdict
 from datetime import timedelta
-from typing import Self
+from typing import Any, Self
 
 from dateutil.relativedelta import relativedelta
 from dateutil.rrule import SU
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, RedirectWarning, UserError
-from odoo.fields import Domain
+from odoo.fields import Domain, Field
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import format_date
 from odoo.tools.date_utils import localized
@@ -637,7 +637,6 @@ class AccountAnalyticLine(models.Model):
         last_week += relativedelta(weekday=SU(-2))
         return grid_anchor, last_week.date()
 
-
     @api.model
     def action_start_new_timesheet_timer(self, vals):
         project = self.env["project.project"].browse(vals.get("project_id", False))
@@ -772,7 +771,7 @@ class AccountAnalyticLine(models.Model):
             "timer_start",
         ]
 
-    def _coerce_concurrency_value(self, field, value):
+    def _coerce_concurrency_value(self, field: Field, value: Any) -> Any:
         if field.name == "name" and value == "/":
             value = ""
         return super()._coerce_concurrency_value(field, value)
