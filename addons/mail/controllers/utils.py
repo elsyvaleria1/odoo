@@ -1,7 +1,7 @@
 import typing
 from typing import Any
 
-from odoo import http, models
+from odoo import http
 from odoo.http import NotFound, request
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import file_open
@@ -23,6 +23,7 @@ if typing.TYPE_CHECKING:
     from odoo.addons.mail.models.discuss.discuss_channel_member import (
         DiscussChannelMember,
     )
+    from odoo.addons.mail.models.mixin_mail_thread import MixinMailThread
 
 _debug = DebugLog(__name__)
 
@@ -51,7 +52,7 @@ def get_self_member_or_404(channel_id: Any) -> DiscussChannelMember:
 
 def message_fetch_response(
     *,
-    thread: models.Model,
+    thread: MixinMailThread,
     fetch_params: dict[str, Any] | None = None,
     mark_done: bool = False,
 ) -> dict[str, Any]:

@@ -711,7 +711,9 @@ class ResUsers(models.Model):
     def _group_activity_ids_by_record(
         self, activities: MailActivity
     ) -> defaultdict[str, defaultdict[int, list[int]]]:
-        activity_ids_by_record = defaultdict(lambda: defaultdict(list))
+        activity_ids_by_record: defaultdict[str, defaultdict[int, list[int]]] = (
+            defaultdict(lambda: defaultdict(list))
+        )
         for activity in activities:
             if activity.res_model and activity.res_model in self.env:
                 activity_ids_by_record[activity.res_model][activity.res_id].append(
@@ -757,7 +759,7 @@ class ResUsers(models.Model):
         dict[ActivityBucket, list[int]],
         dict[ActivityBucket, list[int]],
     ]:
-        counts_by_bucket = defaultdict(
+        counts_by_bucket: defaultdict[ActivityBucket, dict[str, int]] = defaultdict(
             lambda: {
                 "overdue_count": 0,
                 "today_count": 0,
@@ -834,7 +836,7 @@ class ResUsers(models.Model):
         model_ids = [
             self.env["ir.model"]._get_id(bucket[0]) for bucket in activity_ids_by_bucket
         ]
-        model_order = {}
+        model_order: dict[str, int] = {}
         for bucket in activity_ids_by_bucket:
             model_order.setdefault(bucket[0], len(model_order))
         groups = []

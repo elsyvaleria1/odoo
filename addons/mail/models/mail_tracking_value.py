@@ -126,7 +126,7 @@ class MailTrackingValue(models.Model):
             message = tracking.mail_message_id
             ids_by_thread[message.model, message.res_id].append(tracking.id)
         thread_class = env.registry["mixin.mail.thread"]
-        res_ids_by_model = defaultdict(dict)
+        res_ids_by_model: defaultdict[str, dict[int, None]] = defaultdict(dict)
         for model, res_id in ids_by_thread:
             if res_id and model in env and isinstance(env[model], thread_class):
                 res_ids_by_model[model][res_id] = None

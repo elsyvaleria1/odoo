@@ -526,7 +526,7 @@ class MailAlias(models.Model):
     def _check_alias_address_available(
         self, addresses: Iterable[tuple[str, MailAliasDomain]]
     ) -> None:
-        domain_to_names = defaultdict(list)
+        domain_to_names: defaultdict[MailAliasDomain, list[str]] = defaultdict(list)
         for alias_name, alias_domain in addresses:
             if not alias_name:
                 continue

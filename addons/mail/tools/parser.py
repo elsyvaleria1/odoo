@@ -1,5 +1,6 @@
 import ast
 import typing
+from collections.abc import Sequence
 
 from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
@@ -12,10 +13,12 @@ _debug = DebugLog(__name__)
 
 
 def parse_res_ids(
-    res_ids: str | list[int] | bool | None, env: Environment
-) -> list[int] | str | bool | None:
-    if is_list_of(res_ids, int) or not res_ids:
-        return res_ids
+    res_ids: str | Sequence[int] | bool | None, env: Environment
+) -> list[int]:
+    if not res_ids:
+        return []
+    if is_list_of(res_ids, int):
+        return list(res_ids)
     error_msg = env._(
         "Invalid res_ids %(res_ids_str)s (type %(res_ids_type)s)",
         res_ids_str=res_ids,
@@ -34,4 +37,4 @@ def parse_res_ids(
         raise ValidationError(error_msg)
 
     _debug.logic("res_ids_parsed", count=len(res_ids))
-    return res_ids
+    return list(res_ids)

@@ -1,6 +1,6 @@
 import logging
 from collections import Counter
-from typing import Any, NamedTuple, Self
+from typing import TYPE_CHECKING, Any, NamedTuple, Self
 
 from odoo import SUPERUSER_ID, api, fields, models
 from odoo.api import ValuesType
@@ -9,11 +9,13 @@ from odoo.fields import Domain
 from . import approval_trace as trace
 from .approval_utils import boolean_search_domain, is_approval_manager
 
+if TYPE_CHECKING:
+    from odoo.addons.mail.models.mail_message_subtype import MailMessageSubtype
+
 _logger = logging.getLogger(__name__)
 
 
 class RoutedStep(NamedTuple):
-
     minimum: int
     exclusive: bool
     advisory: bool
@@ -609,7 +611,7 @@ class ApprovalRequest(models.Model):
         if attachment_ids:
             attachment_ids.unlink()
 
-    def _track_subtype(self, init_values: dict[str, Any]) -> str | bool:
+    def _track_subtype(self, init_values: dict[str, Any]) -> MailMessageSubtype:
         self.check_singleton()
         if "state" in init_values:
             return self.env.ref("approval.mt_approval_state")

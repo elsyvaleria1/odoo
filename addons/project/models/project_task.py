@@ -4,7 +4,7 @@ from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from collections.abc import Collection
 from datetime import UTC, datetime, time, timedelta
-from typing import Any, Literal, Self
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from dateutil.relativedelta import relativedelta
 from lxml import html
@@ -37,6 +37,9 @@ from odoo.addons.base.models.resource_utils import filter_domain_leaf, split_at_
 from odoo.addons.html_editor.tools import handle_history_divergence
 from odoo.addons.mail.tools.discuss import Store
 from odoo.addons.rating.models import rating_data
+
+if TYPE_CHECKING:
+    from odoo.addons.mail.models.mail_message_subtype import MailMessageSubtype
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -3735,10 +3738,10 @@ class ProjectTask(models.Model):
         self,
         message: Any,
         msg_vals: dict | Literal[False] = False,
-        model_description: str | Literal[False] = False,
+        model_description: str | Literal[False] | None = False,
         force_email_company: Any = False,
-        force_email_lang: str | Literal[False] = False,
-        force_record_name: str | Literal[False] = False,
+        force_email_lang: str | Literal[False] | None = False,
+        force_record_name: str | Literal[False] | None = False,
         tracking_values: Any = None,
     ) -> dict:
         render_context = super()._notify_by_email_prepare_rendering_context(
@@ -3905,7 +3908,7 @@ class ProjectTask(models.Model):
             )
         return self.env._("A new task has been created and is not part of any project.")
 
-    def _track_subtype(self, init_values: dict[str, Any]) -> Self:
+    def _track_subtype(self, init_values: dict[str, Any]) -> MailMessageSubtype:
         self.check_singleton()
         mail_message_subtype_per_state = {
             "done": "project.mt_task_done",
@@ -3947,7 +3950,7 @@ class ProjectTask(models.Model):
     def _notify_get_recipients_groups(
         self,
         message: Any,
-        model_description: str,
+        model_description: str | Literal[False] | None,
         msg_vals: dict | Literal[False] = False,
     ) -> list:
         groups = super()._notify_get_recipients_groups(
@@ -4152,7 +4155,7 @@ class ProjectTask(models.Model):
             headers["X-Odoo-Tags"] = ",".join(self.tag_ids.mapped("name"))
         return headers
 
-    def _message_post_after_hook(self, message: Any, msg_vals: dict[str, Any]) -> bool:
+    def _message_post_after_hook(self, message: Any, msg_vals: dict[str, Any]) -> None:
         if message.attachment_ids and not self.displayed_image_id:
             image_attachments = message.attachment_ids.filtered(
                 lambda a: a.mimetype and a.mimetype.startswith("image/")

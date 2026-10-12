@@ -494,7 +494,7 @@ class MailMail(models.Model):
         in_cron = bool(self.env.context.get("ir_cron_progress_id"))
         time_left = [float("inf")]
         if not email_ids:
-            ids_done = set()
+            ids_done: set[int] = set()
             total = (
                 len(send_ids)
                 if len(send_ids) < batch_size
@@ -856,7 +856,7 @@ class MailMail(models.Model):
     def _get_already_sent_pids_batch(
         self, mail_ids: Collection[int]
     ) -> dict[int, set[int]]:
-        already_sent_pids = defaultdict(set)
+        already_sent_pids: defaultdict[int, set[int]] = defaultdict(set)
         if not mail_ids:
             return already_sent_pids
         notifications = (
@@ -881,8 +881,8 @@ class MailMail(models.Model):
     def _get_email_notifications_batch(
         self, mail_ids: Collection[int]
     ) -> tuple[dict[int, set[int]], dict[int, list[int]]]:
-        already_sent_pids = defaultdict(set)
-        pending_ids = defaultdict(list)
+        already_sent_pids: defaultdict[int, set[int]] = defaultdict(set)
+        pending_ids: defaultdict[int, list[int]] = defaultdict(list)
         if not mail_ids:
             return already_sent_pids, pending_ids
         notifications = (
@@ -1079,7 +1079,9 @@ class MailMail(models.Model):
             for partner in self.recipient_ids
             for email in tools.mail.email_normalize_all(partner.email)
         }
-        email_to, email_cc, covered = [], [], []
+        email_to: list[str] = []
+        email_cc: list[str] = []
+        covered: list[str] = []
         for fname, addresses in (("email_to", email_to), ("email_cc", email_cc)):
             for address in tools.mail.email_split_and_format_normalize(
                 self[fname] or ""

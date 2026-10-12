@@ -51,7 +51,7 @@ class IrWebsocket(models.AbstractModel):
 
     def _bus_channels_by_name(self, names: list[str]) -> dict[str, list[Any]]:
         result = super()._bus_channels_by_name(names)
-        requested = defaultdict(dict)
+        requested: defaultdict[str, dict[str, tuple[int, str]]] = defaultdict(dict)
         for name in names:
             if not name.startswith(PRESENCE_CHANNEL_PREFIX):
                 continue

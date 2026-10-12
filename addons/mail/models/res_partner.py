@@ -255,7 +255,7 @@ class ResPartner(models.Model):
             notfound_emails = emails_normalized - set(
                 partners.mapped("email_normalized")
             )
-            name_by_notfound_email = {}
+            name_by_notfound_email: dict[str, str] = {}
             for name, email_normalized in name_emails:
                 if email_normalized in notfound_emails:
                     name_by_notfound_email.setdefault(email_normalized, name)
@@ -320,7 +320,9 @@ class ResPartner(models.Model):
         partners: Self,
     ) -> list[Self]:
         empty = self.env["res.partner"]
-        by_email_normalized, by_email, by_name = {}, {}, {}
+        by_email_normalized: dict[str | Literal[False], Self] = {}
+        by_email: dict[str | Literal[False], Self] = {}
+        by_name: dict[str | Literal[False], Self] = {}
         for partner in partners:
             by_email_normalized.setdefault(partner.email_normalized, partner)
             by_email.setdefault(partner.email, partner)

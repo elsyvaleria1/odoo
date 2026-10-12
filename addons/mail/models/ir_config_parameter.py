@@ -74,7 +74,9 @@ class IrConfig_Parameter(models.Model):
         watched = "key" in vals or "value" in vals
         had_restrict_row = watched and self._has_restrict_template_rendering_row()
         if "value" in vals:
-            records_by_value = defaultdict(self.browse)
+            records_by_value: defaultdict[str, IrConfig_Parameter] = defaultdict(
+                self.browse
+            )
             for record in self:
                 key = vals.get("key", record.key)
                 records_by_value[self._normalize_param_value(key, vals["value"])] |= (

@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from markupsafe import Markup
 
-from odoo import http, models
+from odoo import http
 from odoo.exceptions import UserError
 from odoo.http import NotFound, request
 from odoo.libs.debug_log import DebugLog
@@ -25,13 +25,14 @@ _debug = DebugLog(__name__)
 
 if typing.TYPE_CHECKING:
     from odoo.addons.mail.models.mail_message import MailMessage
+    from odoo.addons.mail.models.mixin_mail_thread import MixinMailThread
 
 MAX_EMAILS_PER_REQUEST = 50
 
 RECIPIENT_RESPONSE_KEYS = ("display_name", "email", "name", "partner_id")
 
 
-def _to_thread_model(model_name: Any) -> models.Model:
+def _to_thread_model(model_name: Any) -> MixinMailThread:
     if not isinstance(model_name, str):
         raise NotFound
     if model_name not in request.env:
@@ -70,15 +71,15 @@ class ThreadController(http.Controller):
     @classmethod
     def _get_message_with_access(
         cls, message_id: int, mode: str = "read", **kwargs
-    ) -> models.Model:
+    ) -> MailMessage:
         return request.env["mail.message"]._get_with_access(
             to_record_id(message_id), mode=mode, **kwargs
         )
 
     @classmethod
     def _get_thread_with_access_for_post(
-        cls, thread_model: str, thread_id: int, **kwargs
-    ) -> models.Model:
+        cls, thread_model: str, thread_id: int | str, **kwargs
+    ) -> MixinMailThread:
         model = _to_thread_model(thread_model)
         record_id = to_record_id(thread_id)
         thread_su = model.sudo().browse(record_id)
@@ -99,20 +100,20 @@ class ThreadController(http.Controller):
 
     @classmethod
     def _get_thread_with_access(
-        cls, thread_model: str, thread_id: int, mode: str = "read", **kwargs
-    ) -> models.Model:
+        cls, thread_model: str, thread_id: int | str, mode: str = "read", **kwargs
+    ) -> MixinMailThread:
         return cls._resolve_thread(
             _to_thread_model(thread_model), to_record_id(thread_id), mode, kwargs
         )
 
     @staticmethod
     def _resolve_thread(
-        model: models.Model,
+        model: MixinMailThread,
         record_id: int,
         mode: str,
         access_params: dict[str, Any],
         message_operation: str = "read",
-    ) -> models.Model:
+    ) -> MixinMailThread:
         allowed_params = model._get_allowed_access_params()
         if dropped := set(access_params) - allowed_params:
             _debug.logic(
@@ -140,7 +141,7 @@ class ThreadController(http.Controller):
         ]
 
     @classmethod
-    def _has_post_write_access(cls, thread: models.Model) -> bool:
+    def _has_post_write_access(cls, thread: MixinMailThread) -> bool:
         return (
             thread.sudo(False).with_context(allowed_company_ids=[]).has_access("write")
         )
@@ -256,7 +257,7 @@ class ThreadController(http.Controller):
             emails=len(emails),
             partners=len(partners),
         )
-        source_by_normalized = {}
+        source_by_normalized: dict[str, str] = {}
         for email in emails:
             source_by_normalized.setdefault(
                 email_normalize(email, strict=False) or email, email
@@ -300,7 +301,7 @@ class ThreadController(http.Controller):
             ).ids,
         }
 
-    def _mentionable_partner_ids(self, thread: models.Model) -> set[int] | None:
+    def _mentionable_partner_ids(self, thread: MixinMailThread) -> set[int] | None:
         if thread._name != "discuss.channel":
             return None
         channel_sudo = thread.sudo()
@@ -311,7 +312,7 @@ class ThreadController(http.Controller):
         self,
         post_data: dict[str, Any],
         *,
-        thread: models.Model,
+        thread: MixinMailThread,
         from_create: bool = True,
         **kwargs,
     ) -> dict[str, Any]:
@@ -349,7 +350,7 @@ class ThreadController(http.Controller):
             res["subtype_xmlid"] = "mail.mt_comment"
         return res
 
-    def _may_choose_message_envelope(self, thread: models.Model) -> bool:
+    def _may_choose_message_envelope(self, thread: MixinMailThread) -> bool:
         if not request.env.user._is_internal():
             return False
         thread_su = thread.sudo()
@@ -363,7 +364,7 @@ class ThreadController(http.Controller):
         )
 
     def _get_message_partner_ids(
-        self, post_data: dict[str, Any], thread: models.Model
+        self, post_data: dict[str, Any], thread: MixinMailThread
     ) -> list[int]:
         partners = request.env["res.partner"].browse(
             to_record_ids(post_data.get("partner_ids"))

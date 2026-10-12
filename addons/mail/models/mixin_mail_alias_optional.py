@@ -1,6 +1,6 @@
 import logging
 import typing
-from collections.abc import Collection
+from collections.abc import Collection, Iterator
 from typing import Literal, Self
 
 from odoo import api, fields, models
@@ -97,7 +97,7 @@ class MixinMailAliasMixinOptional(models.AbstractModel):
                 record_vals_list.append(record_vals)
                 overrides_by_index[index] = overrides
 
-        alias_ids = []
+        alias_ids: Iterator[int] = iter(())
         if alias_vals_list:
             alias_ids = iter(self.env["mail.alias"].sudo().create(alias_vals_list).ids)
 

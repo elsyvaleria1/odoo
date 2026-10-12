@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 from odoo import api, fields, models
 from odoo.api import ValuesType
@@ -76,7 +76,7 @@ class IrConfig_Parameter(models.Model):
             ]
         )
 
-    def write(self, vals: dict[str, Any]) -> bool:
+    def write(self, vals: ValuesType) -> Literal[True]:
         if "key" in vals:
             illegal = _default_parameters.keys() & self.mapped("key")
             if illegal:

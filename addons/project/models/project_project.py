@@ -1,7 +1,7 @@
 from collections import defaultdict, deque
 from collections.abc import Collection
 from datetime import date, datetime, time, timedelta
-from typing import Any, Literal, Self
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, fields, models
 from odoo.api import ValuesType
@@ -20,6 +20,9 @@ from .project_update import STATUS_COLOR
 from odoo.addons.base.models.resource_utils import last_day_of
 from odoo.addons.mail.tools.discuss import Store, StoreFieldSpec
 from odoo.addons.rating.models import rating_data
+
+if TYPE_CHECKING:
+    from odoo.addons.mail.models.mail_message_subtype import MailMessageSubtype
 
 _debug = DebugLog(__name__)
 _lt = LazyTranslate(__name__)
@@ -2308,7 +2311,7 @@ class ProjectProject(models.Model):
             )
         return res
 
-    def _track_subtype(self, init_values: dict[str, Any]) -> Self:
+    def _track_subtype(self, init_values: dict[str, Any]) -> MailMessageSubtype:
         self.check_singleton()
         if "phase_id" in init_values:
             return self.env.ref("project.mt_project_stage_change")
@@ -2325,7 +2328,7 @@ class ProjectProject(models.Model):
     def _notify_get_recipients_groups(
         self,
         message: Any,
-        model_description: str,
+        model_description: str | Literal[False] | None,
         msg_vals: dict | Literal[False] = False,
     ) -> list:
         groups = super()._notify_get_recipients_groups(

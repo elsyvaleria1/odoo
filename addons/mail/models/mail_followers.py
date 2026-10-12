@@ -493,7 +493,9 @@ class MailFollowers(models.Model):
                     raced=len(raced),
                     policy=existing_policy,
                 )
-                raced_per_record = defaultdict(dict)
+                raced_per_record: defaultdict[int, dict[int, Collection[int]]] = (
+                    defaultdict(dict)
+                )
                 for res_id, partner_id in raced:
                     raced_per_record[res_id][partner_id] = subtypes_per_record[res_id][
                         partner_id

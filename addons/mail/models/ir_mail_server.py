@@ -13,7 +13,7 @@ from email.message import EmailMessage
 from email.parser import BytesParser
 from email.utils import getaddresses, make_msgid
 from socket import gaierror, socket
-from typing import TYPE_CHECKING, Any, NamedTuple, Self
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
 from weakref import WeakKeyDictionary
 
 import idna
@@ -26,6 +26,7 @@ from urllib3.contrib.pyopenssl import PyOpenSSLContext, get_subj_alt_name
 from urllib3.util.ssl_match_hostname import CertificateError, match_hostname
 
 from odoo import api, fields, models, modules, tools
+from odoo.api import ValuesType
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs import netguard
 from odoo.libs.debug_log import DebugLog
@@ -484,7 +485,7 @@ class IrMail_Server(models.Model):
                     )
                 )
 
-    def write(self, vals: dict[str, Any]) -> bool:
+    def write(self, vals: ValuesType) -> Literal[True]:
         _debug.lifecycle("write", servers=self.ids, fields=list(vals))
         if not vals.get("active", True):
             self._check_archivable()

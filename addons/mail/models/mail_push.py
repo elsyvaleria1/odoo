@@ -68,7 +68,7 @@ class MailPush(models.Model):
         session = get_push_session(self.env)
         devices_to_unlink = set()
         retry_delay_by_notif_id = {}
-        retry_delay_by_device_id = {}
+        retry_delay_by_device_id: dict[int, timedelta] = {}
 
         base_url = self.get_base_url()
         devices = web_push_notifications_sudo.mail_push_device_id.grouped("id")

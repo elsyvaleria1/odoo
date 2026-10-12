@@ -10,7 +10,7 @@ if typing.TYPE_CHECKING:
     from .models.mixins._model_stubs import _ModelStubs
     from .runtime import Environment, Registry
 
-type DomainType = Domain | list[str | tuple[str, str, typing.Any]]
+type DomainType = Domain | list[str | tuple[str, str, typing.Any] | list[typing.Any]]
 type ModelLike = BaseModel | _ModelStubs
 type ModelClass = type[BaseModel]
 ModelType = typing.TypeVar("ModelType", bound="BaseModel")

@@ -15,6 +15,7 @@ from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput, StoreFieldSp
 
 if typing.TYPE_CHECKING:
     from .mail_followers import MailFollowers
+    from .res_partner import ResPartner
     from odoo.addons.bus.models.res_users import ResUsers
 
 _debug = DebugLog(__name__)
@@ -368,7 +369,9 @@ class MailMessage(models.Model):
 
     def _notify_message_notification_update(self) -> None:
         record_by_message = self._record_by_message()
-        message_ids_by_partner = defaultdict(OrderedSet)
+        message_ids_by_partner: defaultdict[ResPartner, OrderedSet[int]] = defaultdict(
+            OrderedSet
+        )
         for message in self:
             if message not in record_by_message:
                 continue

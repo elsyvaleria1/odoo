@@ -83,7 +83,7 @@ class IrAttachment(models.Model):
         return super().unlink()
 
     def _invalidate_thread_attachment_count(self) -> None:
-        by_model = {}
+        by_model: dict[str, set[int]] = {}
         for attachment in self:
             if attachment.res_model and attachment.res_id:
                 by_model.setdefault(attachment.res_model, set()).add(attachment.res_id)

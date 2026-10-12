@@ -800,7 +800,7 @@ class MailActivity(models.Model):
         for model, activities in self._thread_backed().grouped("res_model").items():
             assigned = activities.filtered("user_id")
             pid_by_uid = {user.id: user.partner_id.id for user in assigned.user_id}
-            pids_per_record = defaultdict(OrderedSet)
+            pids_per_record: defaultdict[int, OrderedSet[int]] = defaultdict(OrderedSet)
             for activity in assigned:
                 pids_per_record[activity.res_id].add(pid_by_uid[activity.user_id.id])
             _debug.lifecycle(
@@ -1232,7 +1232,7 @@ class MailActivity(models.Model):
             for attachment in shared_attachments.sudo()
         ]
         attachments_to_remove = self.env["ir.attachment"]
-        message_ids = []
+        message_ids: list[int] = []
         posted = 0
 
         gone_ids = set(gone._ids)
@@ -1617,7 +1617,9 @@ class MailActivity(models.Model):
 
         today_by_tz = self._today_by_tz((all_ongoing | all_completed).mapped("user_tz"))
 
-        grouped_activities = defaultdict(dict)
+        grouped_activities: defaultdict[int, dict[int, dict[str, Any]]] = defaultdict(
+            dict
+        )
         for cell in cells:
             res_id, activity_type = cell
             ongoing = grouped_ongoing.get(cell, self.browse())
@@ -1664,8 +1666,8 @@ class MailActivity(models.Model):
     def _get_activity_data_order(
         self, grouped_activities: dict[int, dict[int, dict[str, Any]]]
     ) -> list[int]:
-        deadline_by_res_id = {}
-        done_by_res_id = {}
+        deadline_by_res_id: dict[int, date] = {}
+        done_by_res_id: dict[int, date] = {}
         for res_id, cells in grouped_activities.items():
             for cell in cells.values():
                 date = cell["reporting_date"]

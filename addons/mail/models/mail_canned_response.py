@@ -12,6 +12,7 @@ from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput
 
 if typing.TYPE_CHECKING:
     from odoo.addons.bus.models.res_groups import ResGroups
+    from odoo.addons.bus.models.res_users import ResUsers
 
 _debug = DebugLog(__name__)
 
@@ -118,7 +119,9 @@ class MailCannedResponse(models.Model):
         return super().unlink()
 
     def _broadcast(self, /, *, add_deletion: bool = False) -> None:
-        responses_by_channel = defaultdict(self.browse)
+        responses_by_channel: defaultdict[ResGroups | ResUsers, MailCannedResponse] = (
+            defaultdict(self.browse)
+        )
         for canned_response in self:
             for group in canned_response.group_ids - self._external_groups(
                 canned_response.group_ids

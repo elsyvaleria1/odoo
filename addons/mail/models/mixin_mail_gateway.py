@@ -828,7 +828,7 @@ class MixinMailGateway(models.AbstractModel):
         )
         author_id = message_dict.get("author_id")
 
-        model_res_ids = {}
+        model_res_ids: dict[str, list[int | Literal[False] | None]] = {}
         for model, thread_id, *__ in routes or []:
             model_res_ids.setdefault(model, []).append(thread_id)
         bounce_alias = next(

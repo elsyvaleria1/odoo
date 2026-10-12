@@ -742,7 +742,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
         label = (self.server_type, self.name)
         _logger.info("Start checking for new emails on %s server %s", *label)
         beyond_this_server = remaining
-        outcomes = collections.Counter()
+        outcomes: collections.Counter[_MessageOutcome] = collections.Counter()
         count = announced = batch = 0
         interrupted = False
         connection = None

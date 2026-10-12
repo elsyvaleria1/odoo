@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from odoo.exceptions import AccessError
     from odoo.libs.collections import OrderedSet
 
+    from ._typing import DomainType
     from .domain import Domain
     from .primitives import IdType
 
@@ -337,7 +338,7 @@ class IrModuleModuleProtocol(RecordsetProtocol, Protocol):
         self, module: Any, lang: Any
     ) -> Any: ...
 
-    def _get_domain_modules_to_load(self) -> list[str | tuple[str, str, Any]]: ...
+    def _get_domain_modules_to_load(self) -> DomainType: ...
 
     def _import_zipfile(
         self, module_file: Any, force: bool = False, with_demo: bool = False

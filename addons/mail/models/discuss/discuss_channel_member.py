@@ -28,6 +28,7 @@ from odoo.addons.mail.tools.web_push import (
 
 if typing.TYPE_CHECKING:
     from ..mail_message import MailMessage
+    from ..mixin_store_sync import SyncFieldSpec
     from ..res_partner import ResPartner
     from .discuss_channel import DiscussChannel
     from .discuss_channel_rtc_session import DiscussChannelRtcSession
@@ -44,7 +45,7 @@ class DiscussChannelMember(models.Model):
     _inherit = ["mixin.store.sync"]
     _description = "Channel Member"
     _rec_names_search = ["channel_id", "partner_id", "guest_id"]
-    _bypass_create_check = {}
+    _bypass_create_check: typing.ClassVar[dict[str, Any]] = {}
 
     partner_id: ResPartner = fields.Many2one(
         comodel_name="res.partner",
@@ -416,7 +417,9 @@ class DiscussChannelMember(models.Model):
                 len(channel.channel_member_ids) + added_by_channel[channel.id],
             )
         res = super().create(vals_list)
-        members_by_parent = defaultdict(self.browse)
+        members_by_parent: defaultdict[DiscussChannel, DiscussChannelMember] = (
+            defaultdict(self.browse)
+        )
         for member in res:
             if parent := member.channel_id.parent_channel_id:
                 members_by_parent[parent] |= member
@@ -462,8 +465,8 @@ class DiscussChannelMember(models.Model):
         self._notify_sync_diffs(sync_field_names, old_vals)
         return result
 
-    def _sync_field_names(self) -> defaultdict[str | None, list[StoreFieldSpec]]:
-        res = defaultdict(list)
+    def _sync_field_names(self) -> defaultdict[str | None, list[SyncFieldSpec]]:
+        res: defaultdict[str | None, list[SyncFieldSpec]] = defaultdict(list)
         res[None] += [
             "custom_channel_name",
             "custom_notifications",
@@ -504,7 +507,9 @@ class DiscussChannelMember(models.Model):
                 member.channel_id,
                 {"close_chat_window": True, "isLocallyPinned": False},
             ).bus_send()
-        members_by_channel = defaultdict(self.browse)
+        members_by_channel: defaultdict[DiscussChannel, DiscussChannelMember] = (
+            defaultdict(self.browse)
+        )
         for member in self:
             members_by_channel[member.channel_id] |= member
         self.unlink()

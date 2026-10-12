@@ -54,7 +54,7 @@ class MailBlacklist(models.Model):
             self.env.cr.execute(sql, (emails,))
             id_by_email = dict(self.env.cr.fetchall())
 
-        vals_by_new_email = {}
+        vals_by_new_email: dict[str, ValuesType] = {}
         for value, email in zip(vals_list, emails, strict=True):
             if email not in id_by_email:
                 vals_by_new_email.setdefault(email, dict(value, email=email))

@@ -32,6 +32,7 @@ from odoo.addons.mail.tools.web_push import PUSH_NOTIFICATION_TYPE
 
 if typing.TYPE_CHECKING:
     from ..mail_message import MailMessage
+    from ..mixin_store_sync import SyncFieldSpec
     from ..res_partner import ResPartner
     from .discuss_call_history import DiscussCallHistory
     from .discuss_channel_member import DiscussChannelMember
@@ -620,8 +621,8 @@ class DiscussChannel(models.Model):
                     )
                 )
 
-    def _sync_field_names(self) -> defaultdict[str | None, list[StoreFieldSpec]]:
-        res = defaultdict(list)
+    def _sync_field_names(self) -> defaultdict[str | None, list[SyncFieldSpec]]:
+        res: defaultdict[str | None, list[SyncFieldSpec]] = defaultdict(list)
         res[None] += [
             Store.Attr("avatar_cache_key", predicate=has_generated_avatar),
             "channel_type",
@@ -1297,7 +1298,9 @@ class DiscussChannel(models.Model):
         return partners.ids
 
     def _check_thread_message_partner_ids(self, messages: MailMessage) -> None:
-        by_channel = defaultdict(lambda: self.env["mail.message"])
+        by_channel: defaultdict[int, MailMessage] = defaultdict(
+            lambda: self.env["mail.message"]
+        )
         for message in messages:
             if message.partner_ids:
                 by_channel[message.res_id] += message
@@ -1683,7 +1686,9 @@ class DiscussChannel(models.Model):
         self, partners: ResPartner, guests: MailGuest
     ) -> defaultdict[DiscussChannel, DiscussChannelMember]:
         Member = self.env["discuss.channel.member"]
-        by_channel = defaultdict(lambda: Member)
+        by_channel: defaultdict[DiscussChannel, DiscussChannelMember] = defaultdict(
+            lambda: Member
+        )
         members = Member.search(
             Domain("channel_id", "in", self.ids)
             & (
@@ -1698,7 +1703,9 @@ class DiscussChannel(models.Model):
     def _get_parent_channel_personas(
         self, partners: ResPartner, guests: MailGuest
     ) -> defaultdict[int | Literal[False], set[tuple[str, int]]]:
-        admitted = defaultdict(set)
+        admitted: defaultdict[int | Literal[False], set[tuple[str, int]]] = defaultdict(
+            set
+        )
         parents = self.parent_channel_id
         if not parents or not (partners or guests):
             return admitted
@@ -1760,7 +1767,9 @@ class DiscussChannel(models.Model):
                     }
                 )
                 channels_by_sudo[as_sudo].append(channel)
-        by_channel = defaultdict(lambda: Member)
+        by_channel: defaultdict[DiscussChannel, DiscussChannelMember] = defaultdict(
+            lambda: Member
+        )
         all_created = Member
         for as_sudo, vals in vals_by_sudo.items():
             _debug.logic("members_created_as", sudo=as_sudo, count=len(vals))
@@ -1981,7 +1990,9 @@ class DiscussChannel(models.Model):
             members=len(new_members),
             by="partners" if partners is not None else "groups",
         )
-        notifications = defaultdict(lambda: self.env["discuss.channel.member"])
+        notifications: defaultdict[models.Model, DiscussChannelMember] = defaultdict(
+            lambda: self.env["discuss.channel.member"]
+        )
         for member in new_members:
             bus_channel = member._bus_channel()
             notifications[bus_channel] |= member

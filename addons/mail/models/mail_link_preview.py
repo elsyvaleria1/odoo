@@ -72,7 +72,7 @@ class MailLinkPreview(models.Model):
     def _create_from_message_and_notify(
         self, message: MailMessage, request_url: str | None = None
     ) -> None:
-        urls = []
+        urls: list[str] | OrderedSet[str] = []
         if not tools.is_html_empty(message.body):
             urls = OrderedSet(
                 html.fromstring(message.body).xpath("//a[not(@data-oe-model)]/@href")
@@ -102,7 +102,7 @@ class MailLinkPreview(models.Model):
             }
         fetches = 0
         fetch_deadline = time.monotonic() + FETCH_BUDGET_SECONDS
-        pending_by_host = {}
+        pending_by_host: dict[str, int] = {}
         for index, url in enumerate(urls):
             if message_link_preview := message_link_preview_by_url.get(url):
                 message_link_preview.sequence = index

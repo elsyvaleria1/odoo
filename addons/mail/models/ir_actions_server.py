@@ -1,7 +1,7 @@
 import typing
 from collections import defaultdict
 from collections.abc import Callable
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 from dateutil.relativedelta import relativedelta
 
@@ -539,7 +539,9 @@ class IrActionsServer(models.Model):
         prefetched = records
         for segment in path.split("."):
             prefetched = prefetched.mapped(segment)
-        per_partners = defaultdict(records.browse)
+        per_partners: defaultdict[tuple[int, ...], models.BaseModel] = defaultdict(
+            records.browse
+        )
         for record in records:
             partners = record.mapped(path)
             if partners:
@@ -676,7 +678,9 @@ class IrActionsServer(models.Model):
             return [(self.activity_user_id, records)]
         if self.activity_user_type != "generic" or not self.activity_user_field_name:
             return [(self.env["res.users"], records)]
-        by_user_id = defaultdict(records.browse)
+        by_user_id: defaultdict[int | Literal[False], models.BaseModel] = defaultdict(
+            records.browse
+        )
         for record in records:
             users = record.mapped(self.activity_user_field_name)
             by_user_id[users.ids[0] if users else False] |= record

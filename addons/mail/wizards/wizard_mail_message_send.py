@@ -453,7 +453,9 @@ class WizardMailMessageSend(models.TransientModel):
 
     @api.depends("composition_mode", "model", "res_domain", "res_ids", "template_id")
     def _compute_template_render_langs(self) -> None:
-        res_ids_by_template = defaultdict(dict)
+        res_ids_by_template: defaultdict[
+            MailTemplate, dict[WizardMailMessageSend, int]
+        ] = defaultdict(dict)
         for composer in self:
             composer.template_render_langs = False
             if (
@@ -483,7 +485,9 @@ class WizardMailMessageSend(models.TransientModel):
         self, fnames: Collection[str]
     ) -> dict[Self, dict[str, Any] | Literal[False]]:
         rendered = {}
-        res_ids_by_template = defaultdict(dict)
+        res_ids_by_template: defaultdict[MailTemplate, dict[Self, int]] = defaultdict(
+            dict
+        )
         for composer in self:
             res_ids = (
                 composer._evaluate_res_ids()
@@ -741,7 +745,9 @@ class WizardMailMessageSend(models.TransientModel):
         "template_id",
     )
     def _compute_partner_ids(self) -> None:
-        by_rendering = defaultdict(dict)
+        by_rendering: defaultdict[
+            tuple[MailTemplate, bool, bool], dict[WizardMailMessageSend, int]
+        ] = defaultdict(dict)
         for composer in self:
             template = composer.template_id
             if (
@@ -1761,11 +1767,11 @@ class WizardMailMessageSend(models.TransientModel):
         mail_values_dict: dict[int, ValuesType],
         recipients_info: dict[int, dict[str, list[str]]] | None = None,
     ) -> set[int]:
-        blacklisted_rec_ids = set()
+        blacklisted_rec_ids: set[int] = set()
         if not self.use_exclusion_list:
             return blacklisted_rec_ids
         if self.composition_mode == "mass_mail":
-            emails_by_res_id = defaultdict(set)
+            emails_by_res_id: defaultdict[int, set[str]] = defaultdict(set)
             if isinstance(
                 self.env[self.model], self.pool["mixin.mail.thread.blacklist"]
             ):
@@ -1876,7 +1882,7 @@ class WizardMailMessageSend(models.TransientModel):
 
         return domain
 
-    def _evaluate_res_ids(self) -> list[int] | str | bool | None:
+    def _evaluate_res_ids(self) -> list[int]:
         self.check_singleton()
         return (
             parse_res_ids(

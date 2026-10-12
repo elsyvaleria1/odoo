@@ -988,11 +988,9 @@ class MixinMailThread(models.AbstractModel):
         )
         return frozenset(self.fields_get(model_fields, attributes=()))
 
-    def _track_subtype(
-        self, initial_values: dict[str, Any]
-    ) -> MailMessageSubtype | Literal[False]:
+    def _track_subtype(self, initial_values: dict[str, Any]) -> MailMessageSubtype:
         self.check_singleton()
-        return False
+        return self.env["mail.message.subtype"]
 
     def _message_track(
         self,

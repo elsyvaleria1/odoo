@@ -501,7 +501,7 @@ class Store:
                 return True
             user = self.get_user(env)
             guest = self.get_guest(env)
-            return self.subchannel is None and (
+            return self.subchannel is None and bool(
                 (user and user == env.user and not env.user._is_public())
                 or (guest and guest == env["mail.guest"]._get_guest_from_context())
             )

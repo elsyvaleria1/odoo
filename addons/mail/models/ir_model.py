@@ -62,7 +62,7 @@ class IrModel(models.Model):
 
         models = list(self.mapped("model"))
         self.env["ir.attachment"].flush_model()
-        fnames = set()
+        fnames: set[str] = set()
         if not (self & mail_models):
             model_ids = list(self.ids)
 

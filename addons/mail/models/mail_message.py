@@ -718,7 +718,7 @@ class MailMessage(models.Model):
             clean_context(self.env.context)
         )
         commands: list[tuple[int, int]] = []
-        data_to_url = {}
+        data_to_url: dict[str, list[str | int]] = {}
 
         def base64_to_boundary(match: re.Match[str]) -> str:
             key = match.group(2)
@@ -763,7 +763,9 @@ class MailMessage(models.Model):
     def _check_created_attachments_access(
         self, messages: Self, vals_list: list[ValuesType]
     ) -> None:
-        doc_to_attachment_ids = defaultdict(set)
+        doc_to_attachment_ids: defaultdict[tuple[str | None, int | None], set[int]] = (
+            defaultdict(set)
+        )
         opaque_messages = self.browse()
         for message, values in zip(messages, vals_list, strict=True):
             commands = values.get("attachment_ids", ())
@@ -797,7 +799,7 @@ class MailMessage(models.Model):
         AttachmentSudo = (
             self.env["ir.attachment"].sudo().with_prefetch(list(attachment_ids_all))
         )
-        foreign_ids = OrderedSet()
+        foreign_ids: OrderedSet[int] = OrderedSet()
         for (model, res_id), doc_attachment_ids in doc_to_attachment_ids.items():
             foreign_ids.update(
                 AttachmentSudo.browse(doc_attachment_ids)
@@ -853,7 +855,7 @@ class MailMessage(models.Model):
     @api.constrains("partner_ids")
     def _check_thread_allows_partner_ids(self) -> None:
         empty = self.browse()
-        messages_by_model = defaultdict(lambda: empty)
+        messages_by_model: defaultdict[str, MailMessage] = defaultdict(lambda: empty)
         for message in self:
             if message.model and message.res_id:
                 messages_by_model[message.model] += message
@@ -927,7 +929,9 @@ class MailMessage(models.Model):
                 and (attach.res_id in own_ids or attach.res_id == 0)
             )
         ).unlink()
-        message_ids_by_partner = defaultdict(OrderedSet)
+        message_ids_by_partner: defaultdict[ResPartner, OrderedSet[int]] = defaultdict(
+            OrderedSet
+        )
         partners_with_user = self.partner_ids.filtered("user_ids")
         for elem in self:
             for partner in (
@@ -1224,7 +1228,7 @@ class MailMessage(models.Model):
         if documents is None:
             self.flush_recordset(["model", "res_id"])
             documents = [(record.model, record.res_id) for record in self]
-        ids_by_model = defaultdict(OrderedSet)
+        ids_by_model: defaultdict[str, OrderedSet[int]] = defaultdict(OrderedSet)
         for model_name, res_id in documents:
             if res_id and self._is_thread_model_name(model_name):
                 ids_by_model[model_name].add(res_id)
@@ -1271,7 +1275,7 @@ class MailMessage(models.Model):
         key = (self.env, id(prefetch_ids))
         if shared and (hit := memo.get(key)) and hit[0] is prefetch_ids:
             return hit[1]
-        ids_by_model = defaultdict(OrderedSet)
+        ids_by_model: defaultdict[str, OrderedSet[int]] = defaultdict(OrderedSet)
         for model, res_id in self._prefetch_thread_pointers():
             ids_by_model[model].add(res_id)
         result = {
@@ -1288,7 +1292,7 @@ class MailMessage(models.Model):
         return result
 
     def _records_by_model_name(self) -> dict[str, models.BaseModel]:
-        ids_by_model = defaultdict(OrderedSet)
+        ids_by_model: defaultdict[str, OrderedSet[int]] = defaultdict(OrderedSet)
         for _message, model, res_id in self._thread_pointers():
             ids_by_model[model].add(res_id)
         prefetch_by_model = self._prefetch_record_ids_by_model()

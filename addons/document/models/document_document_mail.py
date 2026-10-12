@@ -43,7 +43,7 @@ class DocumentsDocument(models.Model):
     def _notify_get_recipients_groups(
         self,
         message: models.Model,
-        model_description: str,
+        model_description: str | Literal[False] | None,
         msg_vals: dict | Literal[False] = False,
     ) -> list:
         groups = super()._notify_get_recipients_groups(
@@ -135,14 +135,14 @@ class DocumentsDocument(models.Model):
     def _process_attachments_for_post(
         self,
         attachments: list[tuple | list] | None,
-        attachment_ids: list[int],
+        attachment_ids: list[int] | None,
         message_values: dict,
     ) -> dict:
         return super(
             DocumentsDocument, self.with_context(no_document=True)
         )._process_attachments_for_post(attachments, attachment_ids, message_values)
 
-    def _message_post_after_hook(self, message: models.Model, msg_vals: dict) -> Any:
+    def _message_post_after_hook(self, message: models.Model, msg_vals: dict) -> None:
         if message.message_type != "email" or not self.env.context.get(
             "document_message_new"
         ):

@@ -238,7 +238,7 @@ class MailAliasDomain(models.Model):
                 list(self.ids),
             )
         )
-        by_name = {}
+        by_name: dict[str, list[int]] = {}
         for sibling_id, name, bounce_alias, catchall_alias in self.env.cr.fetchall():
             for alias in (bounce_alias, catchall_alias):
                 if alias:

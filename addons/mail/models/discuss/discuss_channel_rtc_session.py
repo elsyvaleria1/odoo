@@ -74,9 +74,9 @@ class DiscussChannelRtcSession(models.Model):
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
         rtc_sessions = super().create(vals_list)
-        rtc_sessions_by_channel = defaultdict(
-            lambda: self.env["discuss.channel.rtc.session"]
-        )
+        rtc_sessions_by_channel: defaultdict[
+            DiscussChannel, DiscussChannelRtcSession
+        ] = defaultdict(lambda: self.env["discuss.channel.rtc.session"])
         for rtc_session in rtc_sessions:
             rtc_sessions_by_channel[rtc_session.channel_id] += rtc_session
         for channel, channel_sessions in rtc_sessions_by_channel.items():
@@ -125,9 +125,9 @@ class DiscussChannelRtcSession(models.Model):
             channel._rtc_cancel_invitations()
             channel.sfu_channel_uuid = False
             channel.sfu_server_url = False
-        rtc_sessions_by_channel = defaultdict(
-            lambda: self.env["discuss.channel.rtc.session"]
-        )
+        rtc_sessions_by_channel: defaultdict[
+            DiscussChannel, DiscussChannelRtcSession
+        ] = defaultdict(lambda: self.env["discuss.channel.rtc.session"])
         for rtc_session in self:
             rtc_sessions_by_channel[rtc_session.channel_id] += rtc_session
         for channel, rtc_sessions in rtc_sessions_by_channel.items():
@@ -181,7 +181,9 @@ class DiscussChannelRtcSession(models.Model):
         inactive.unlink()
 
     def action_disconnect(self) -> None:
-        session_ids_by_channel_by_url = defaultdict(lambda: defaultdict(list))
+        session_ids_by_channel_by_url: defaultdict[str, defaultdict[str, list[int]]] = (
+            defaultdict(lambda: defaultdict(list))
+        )
         for rtc_session in self:
             sfu_channel_uuid = rtc_session.channel_id.sfu_channel_uuid
             url = rtc_session.channel_id.sfu_server_url
@@ -231,8 +233,8 @@ class DiscussChannelRtcSession(models.Model):
 
     def _notify_peers(self, notifications: list[tuple[list[int], Any]]) -> None:
         self.check_singleton()
-        payload_by_target = defaultdict(
-            lambda: {"sender": self.id, "notifications": []}
+        payload_by_target: defaultdict[DiscussChannelRtcSession, dict[str, Any]] = (
+            defaultdict(lambda: {"sender": self.id, "notifications": []})
         )
         targets = {
             target.id: target

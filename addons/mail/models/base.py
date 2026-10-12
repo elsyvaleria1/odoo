@@ -317,7 +317,7 @@ class Base(models.AbstractModel):
     @api.model
     @tools.ormcache()
     def _mail_declared_partner_fields(self) -> tuple[str, ...]:
-        declared = tuple(self._mail_partner_fields or ())
+        declared: tuple[str, ...] = tuple(self._mail_partner_fields or ())
         valid = tuple(fname for fname in declared if self._mail_is_partner_field(fname))
         if invalid := [fname for fname in declared if fname not in valid]:
             _logger.warning(
@@ -421,7 +421,7 @@ class Base(models.AbstractModel):
     ) -> tuple[set[str], list[list[Any]]]:
         self.check_singleton()
         updated = set()
-        tracking_value_ids = []
+        tracking_value_ids: list[list[Any]] = []
 
         fields_track_info = self._mail_track_order_fields(tracked_fields)
         for col_name, _sequence in fields_track_info:
@@ -977,7 +977,7 @@ class Base(models.AbstractModel):
         found_results = dict.fromkeys(res_ids, self.env["res.partner"])
         emails_all = []
         emails_key_all = []
-        emails_key_company_id = {}
+        emails_key_company_id: dict[str, int | Literal[False]] = {}
         emails_key_res_ids = defaultdict(list)
 
         records_company = records.sudo()._mail_get_companies()
@@ -1054,7 +1054,7 @@ class Base(models.AbstractModel):
         return found_results
 
     def _mail_get_customer_information_batch(self) -> dict[str, ValuesType]:
-        values = {}
+        values: dict[str, ValuesType] = {}
         for record in self:
             for (
                 email_key,

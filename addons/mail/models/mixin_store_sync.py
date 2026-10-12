@@ -9,8 +9,9 @@ from odoo.addons.mail.tools.discuss import Store, StoreFieldSpec
 
 _debug = DebugLog(__name__)
 
-type SyncFieldNames = dict[str | None, list[StoreFieldSpec]]
-type SyncValues = dict[str | None, dict[str, tuple[Any, StoreFieldSpec]]]
+type SyncFieldSpec = str | Store.Attr
+type SyncFieldNames = dict[str | None, list[SyncFieldSpec]]
+type SyncValues = dict[str | None, dict[str | None, tuple[Any, SyncFieldSpec]]]
 
 
 class MixinStoreSync(models.AbstractModel):
@@ -18,7 +19,7 @@ class MixinStoreSync(models.AbstractModel):
     _inherit = ["mixin.bus.listener"]
     _description = "Broadcast the store fields that a write changed"
 
-    def _sync_field_names(self) -> defaultdict[str | None, list[StoreFieldSpec]]:
+    def _sync_field_names(self) -> defaultdict[str | None, list[SyncFieldSpec]]:
         return defaultdict(list)
 
     def _sync_diff_extra_fields(
@@ -27,13 +28,13 @@ class MixinStoreSync(models.AbstractModel):
         return []
 
     @api.model
-    def _get_store_field_name(self, field_description: StoreFieldSpec) -> str:
+    def _get_store_field_name(self, field_description: SyncFieldSpec) -> str | None:
         if isinstance(field_description, Store.Attr):
             return field_description.field_name
         return field_description
 
     def _get_store_field_value(
-        self, record: models.Model, field_description: StoreFieldSpec
+        self, record: models.Model, field_description: SyncFieldSpec
     ) -> Any:
         if isinstance(field_description, Store.Attr):
             if field_description.predicate and not field_description.predicate(record):
@@ -46,7 +47,7 @@ class MixinStoreSync(models.AbstractModel):
     def _get_write_sync_field_names(self, vals: ValuesType) -> SyncFieldNames:
         vals_keys = set(vals)
 
-        def is_affected(field_description: StoreFieldSpec) -> bool:
+        def is_affected(field_description: SyncFieldSpec) -> bool:
             fname = self._get_store_field_name(field_description)
             if fname not in self._fields:
                 return True
