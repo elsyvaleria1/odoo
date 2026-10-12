@@ -661,6 +661,7 @@ class TestCRMLead(TestCrmCommon):
     @users("user_sales_manager")
     def test_crm_lead_partner_sync_email_phone_corner_cases(self):
         test_email = "amy.wong@test.example.com"
+        self.env.company.sudo().country_id = self.env.ref("base.us")
         lead = self.lead_1.with_user(self.env.user)
         lead.write({"phone_ids": [Command.clear()]})
         contact = self.env["res.partner"].create(

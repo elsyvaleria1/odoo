@@ -1,5 +1,7 @@
+import itertools
 import re
 from collections import defaultdict
+from collections.abc import Callable
 from typing import Any, Self
 
 from odoo import Command, api, fields, models
@@ -26,18 +28,7 @@ def _many2many_commands(value: Any) -> list:
         return [Command.set(value.ids)]
     if isinstance(value, tuple):
         return [Command.set(value)]
-    if not value:
-        return []
-    if not any(isinstance(item, (tuple, list, dict)) for item in value):
-        return [Command.set(value)]
-    return [
-        Command.create(item)
-        if isinstance(item, dict)
-        else item
-        if isinstance(item, (tuple, list))
-        else Command.link(item)
-        for item in value
-    ]
+    return fields.as_commands(value or [])
 
 
 class PhoneNumber(models.Model):
@@ -84,6 +75,8 @@ class PhoneNumber(models.Model):
         string="Contacts",
     )
 
+    _REKEY_BATCH_SIZE = 1000
+
     _unique_sanitized = models.Constraint(
         "unique(sanitized)",
         "This phone number already exists.",
@@ -96,6 +89,91 @@ class PhoneNumber(models.Model):
             _debug.logic("sanitize_prefix_rewritten", country=bool(country))
             number = "+" + number[2:]
         return number
+
+    @api.model
+    def _rekey_sanitized(
+        self, normalize: Callable[[str | None, Any], str] | None = None
+    ) -> None:
+        normalize = normalize or self._normalize_number
+        self.flush_model(["number", "country_id", "sanitized"])
+        Country = self.env["res.country"]
+        rekeyed: dict[int, str | None] = {}
+        last_id = 0
+        while True:
+            self.env.cr.execute(
+                SQL(
+                    "SELECT id, number, country_id, sanitized FROM phone_number"
+                    " WHERE id > %s ORDER BY id LIMIT %s",
+                    last_id,
+                    self._REKEY_BATCH_SIZE,
+                )
+            )
+            rows = self.env.cr.fetchall()
+            if not rows:
+                break
+            last_id = rows[-1][0]
+            for phone_id, number, country_id, sanitized in rows:
+                key = normalize(number, Country.browse(country_id)) or None
+                if key != (sanitized or None):
+                    rekeyed[phone_id] = key
+        changing_by_key: dict[str, list[int]] = defaultdict(list)
+        for phone_id, key in rekeyed.items():
+            if key:
+                changing_by_key[key].append(phone_id)
+        holders: dict[str, int] = {}
+        for keys in itertools.batched(
+            changing_by_key, self._REKEY_BATCH_SIZE, strict=False
+        ):
+            self.env.cr.execute(
+                SQL(
+                    "SELECT sanitized, id FROM phone_number WHERE sanitized = ANY(%s)",
+                    list(keys),
+                )
+            )
+            holders.update(
+                (key, id_) for key, id_ in self.env.cr.fetchall() if id_ not in rekeyed
+            )
+        merged = 0
+        Merge = self.env["mixin.merge"]
+        for key, members in changing_by_key.items():
+            holder = self.browse(holders.get(key, members[0]))
+            sources = self.browse(members) - holder
+            if not sources:
+                continue
+            reactivate = not holder.active and any(sources.mapped("active"))
+            _debug.lifecycle(
+                "rekey_merged", phones=sources.ids, holder=holder.id, key=key
+            )
+            Merge._update_foreign_keys_generic(self._name, sources, holder)
+            if reactivate:
+                holder.active = True
+            sources.unlink()
+            merged += len(sources)
+            for source in sources.ids:
+                del rekeyed[source]
+        _debug.lifecycle("rekeyed", phones=len(rekeyed), merged=merged)
+        if not rekeyed:
+            return
+        self.env.cr.execute(
+            SQL(
+                "UPDATE phone_number SET sanitized = NULL WHERE id = ANY(%s)",
+                list(rekeyed),
+            )
+        )
+        for ids in itertools.batched(rekeyed, self._REKEY_BATCH_SIZE, strict=False):
+            self.env.cr.execute(
+                SQL(
+                    "UPDATE phone_number AS pn SET sanitized = rekeyed.key"
+                    " FROM unnest(%s::int[], %s::varchar[]) AS rekeyed(id, key)"
+                    " WHERE pn.id = rekeyed.id",
+                    list(ids),
+                    [rekeyed[id_] for id_ in ids],
+                )
+            )
+            self.invalidate_model(["sanitized"])
+            self.browse(ids).modified(["sanitized"])
+            self.env.flush_all()
+            self.env.invalidate_all()
 
     @api.depends("number", "country_id")
     def _compute_sanitized(self) -> None:

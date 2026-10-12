@@ -1,5 +1,4 @@
 import base64
-import codecs
 import contextlib
 import mimetypes
 from collections.abc import Generator
@@ -16,7 +15,7 @@ from werkzeug.utils import get_content_type
 from werkzeug.utils import send_file as _send_file
 
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.documents import charset_candidates, charset_label, guess_encoding
+from odoo.libs.documents import sniff_charset
 from odoo.tools import file_path
 
 from .constants import STATIC_CACHE, STATIC_CACHE_LONG
@@ -27,11 +26,6 @@ from .wrappers import Response, _Response, sanitize_download_name
 _debug = DebugLog(__name__)
 
 _REDIRECT_SCHEMES = frozenset({"", "http", "https"})
-
-
-def _labels_charset(mimetype: str) -> bool:
-    labelled: str = get_content_type(mimetype, "utf-8")
-    return labelled != mimetype
 
 
 class Stream:
@@ -134,49 +128,25 @@ class Stream:
             public=record.env.user._is_public(),
         )
 
+    @staticmethod
+    def labels_charset(mimetype: str | None) -> bool:
+        if not mimetype:
+            return False
+        labelled: str = get_content_type(mimetype, "utf-8")
+        return labelled != mimetype
+
     def set_charset_from_content(self, declared: str | None = None) -> None:
-        if self.type not in ("data", "path") or self.encoding or not self.mimetype:
+        if self.type not in ("data", "path") or self.encoding:
             return
-        if not _labels_charset(self.mimetype):
+        if not self.labels_charset(self.mimetype):
             return
-        self.charset = next(
-            (
-                candidate
-                for candidate in charset_candidates(declared)
-                if self._decodes_as(candidate)
-            ),
-            None,
-        )
-        if self.charset is None:
-            guessed = guess_encoding(self._first_non_ascii_chunk())
-            self.charset = (
-                charset_label(guessed)
-                if guessed and self._decodes_as(guessed)
-                else None
-            )
+        self.charset = sniff_charset(self._iter_chunks, declared)
         _debug.logic(
             "http.stream.charset",
             mimetype=self.mimetype,
             declared=declared,
             charset=self.charset,
         )
-
-    def _decodes_as(self, encoding: str) -> bool:
-        try:
-            decoder = codecs.getincrementaldecoder(encoding)()
-            for chunk in self._iter_chunks():
-                decoder.decode(chunk)
-            decoder.decode(b"", final=True)
-        except LookupError, UnicodeDecodeError:
-            return False
-        return True
-
-    def _first_non_ascii_chunk(self) -> bytes:
-        with contextlib.closing(self._iter_chunks()) as chunks:
-            for chunk in chunks:
-                if not (sample := bytes(chunk)).isascii():
-                    return sample
-        return b""
 
     def _iter_chunks(self, size: int = 1 << 16) -> Generator[bytes | memoryview]:
         if self.type == "data":

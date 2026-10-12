@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import codecs
+import functools
 import re
+from collections.abc import Callable, Iterable, Iterator
 
 try:
     import chardet
@@ -10,10 +12,13 @@ except ImportError:
 
 
 __all__ = [
+    "CharsetSniffer",
     "charset_candidates",
     "charset_label",
+    "chunked",
     "decode",
     "guess_encoding",
+    "sniff_charset",
 ]
 _ENCODING_CHUNK = 1 << 16
 
@@ -153,6 +158,151 @@ def charset_label(encoding: str) -> str | None:
 
 def guess_encoding(data: bytes) -> str | None:
     return _guess(data, final=True)[0]
+
+
+def chunked(
+    data: bytes | memoryview, size: int = _ENCODING_CHUNK
+) -> Iterator[memoryview]:
+    view = memoryview(data)
+    for start in range(0, len(view), size):
+        yield view[start : start + size]
+
+
+def _decodes(decoder: codecs.IncrementalDecoder, data: bytes | memoryview) -> bool:
+    try:
+        decoder.decode(data)
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
+def _closes(decoder: codecs.IncrementalDecoder) -> bool:
+    try:
+        decoder.decode(b"", final=True)
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
+def _incremental_decoder(encoding: str) -> codecs.IncrementalDecoder | None:
+    try:
+        return codecs.getincrementaldecoder(encoding)()
+    except LookupError:
+        return None
+
+
+_ASCII_BYTES = bytes(range(0x80))
+
+_WIDE_WITHOUT_BOM = frozenset({"utf-16-le", "utf-16-be"})
+
+
+def _skips_ascii_prefix(encoding: str) -> bool:
+    if encoding in _WIDE_WITHOUT_BOM:
+        return True
+    try:
+        return _ASCII_BYTES.decode(encoding) == _ASCII_BYTES.decode("ascii")
+    except LookupError, UnicodeDecodeError:
+        return False
+
+
+class CharsetSniffer:
+    def __init__(self, declared: str | None = None) -> None:
+        self._candidates = [
+            (candidate, decoder)
+            for candidate in charset_candidates(declared)
+            if (decoder := _incremental_decoder(candidate))
+        ]
+        self._block = bytearray()
+        self._offset = 0
+        self._sample_offset = 0
+        self.sample = b""
+        self._guessed = False
+        self._guess: tuple[str, codecs.IncrementalDecoder] | None = None
+        self.decided = True
+
+    def feed(self, data: bytes | memoryview) -> None:
+        for piece in chunked(data):
+            self._candidates = [
+                (name, decoder)
+                for name, decoder in self._candidates
+                if _decodes(decoder, piece)
+            ]
+            if self._guess and not _decodes(self._guess[1], piece):
+                self._guess = None
+            if not self.sample:
+                rest = self._take_sample(piece)
+                if self.sample and not self._candidates:
+                    self._start_guess(rest)
+            self._offset += len(piece)
+
+    def _take_sample(self, piece: memoryview) -> memoryview:
+        offset = self._offset
+        while piece:
+            taken = piece[: _ENCODING_CHUNK - len(self._block)]
+            self._block += taken
+            piece = piece[len(taken) :]
+            offset += len(taken)
+            if len(self._block) < _ENCODING_CHUNK:
+                break
+            if not self._block.isascii():
+                self._capture_sample(offset - len(self._block))
+                break
+            self._block.clear()
+        return piece
+
+    def _capture_sample(self, offset: int) -> None:
+        self.sample = bytes(self._block)
+        self._sample_offset = offset
+        self._block = bytearray()
+
+    @functools.cached_property
+    def _guessed_encoding(self) -> str | None:
+        return guess_encoding(self.sample)
+
+    def _start_guess(self, rest: bytes | memoryview) -> None:
+        guessed = self._guessed_encoding
+        if self._sample_offset and guessed and not _skips_ascii_prefix(guessed):
+            return
+        self._guessed = True
+        decoder = _incremental_decoder(guessed) if guessed else None
+        if guessed and decoder and _decodes(decoder, self.sample):
+            if _decodes(decoder, rest):
+                self._guess = (guessed, decoder)
+
+    def close(self) -> str | None:
+        sampled_now = not self.sample and not self._block.isascii()
+        if sampled_now:
+            self._capture_sample(self._offset - len(self._block))
+        self._block = bytearray()
+        for name, decoder in self._candidates:
+            if _closes(decoder):
+                return name
+        if sampled_now:
+            self._start_guess(b"")
+        if self._guessed:
+            guess = self._guess
+            return charset_label(guess[0]) if guess and _closes(guess[1]) else None
+        self.decided = not self.sample
+        return None
+
+    def recheck(self, chunks: Iterable[bytes | memoryview]) -> str | None:
+        guessed = self._guessed_encoding
+        decoder = _incremental_decoder(guessed) if guessed else None
+        if not guessed or decoder is None:
+            return None
+        if not all(_decodes(decoder, chunk) for chunk in chunks):
+            return None
+        return charset_label(guessed) if _closes(decoder) else None
+
+
+def sniff_charset(
+    read: Callable[[], Iterable[bytes | memoryview]], declared: str | None = None
+) -> str | None:
+    sniffer = CharsetSniffer(declared)
+    for chunk in read():
+        sniffer.feed(chunk)
+    charset = sniffer.close()
+    return charset if sniffer.decided else sniffer.recheck(read())
 
 
 def decode(data: bytes, encoding: str = "", *, final: bool = True) -> str:

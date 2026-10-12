@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import tagged
 from odoo.tools import mute_logger
@@ -320,9 +323,7 @@ class TestExchangeTransmission(ExchangeCase):
         self._send(transmission, Verdict(state="sent", retry_after=3600))
         self.assertTrue(transmission.date_next_retry)
 
-        self.env["exchange.transmission"].with_context(
-            demo_poll=self._accepted("EARLY"),
-        )._cron_read_verdicts()
+        self._read_verdicts(demo_poll=self._accepted("EARLY"))
 
         self.assertEqual(transmission.state, "sent")
 
@@ -334,11 +335,132 @@ class TestExchangeTransmission(ExchangeCase):
         )
         self._send(settled, self._accepted("DONE-2"))
 
-        self.env["exchange.transmission"].with_context(
-            demo_poll=self._accepted("ACK-2"),
-        )._cron_read_verdicts()
+        self._read_verdicts(demo_poll=self._accepted("ACK-2"))
         self.assertEqual(outstanding.state, "accepted")
         self.assertEqual(settled.reference, "DONE-2")
+
+    def _outstanding(self, count, state="sent", channel=None):
+        partners = self.env["res.partner"].create(
+            [{"name": f"Outstanding {index}"} for index in range(count)]
+        )
+        return self.env["exchange.transmission"].create(
+            [
+                {
+                    "subject_id": f"res.partner,{partner.id}",
+                    "channel_id": (channel or self.channel).id,
+                    "state": state,
+                }
+                for partner in partners
+            ]
+        )
+
+    def _poll_log(self, error=None):
+        polled = []
+
+        def read_verdict(protocol, transmission):
+            polled.append(transmission.id)
+            if error:
+                raise error
+
+        self.patch(
+            type(self.env["exchange.protocol.demo"]), "_read_verdict", read_verdict
+        )
+        return polled
+
+    def _read_verdicts(self, limit=100, **context):
+        progress = []
+
+        def commit_progress(cron, processed=0, *, remaining=None, deactivate=False):
+            progress.append((processed, remaining))
+            return float("inf")
+
+        self.patch(type(self.env["ir.cron"]), "_commit_progress", commit_progress)
+        self.env["exchange.transmission"].with_context(**context)._cron_read_verdicts(
+            limit=limit
+        )
+        return progress
+
+    def test_the_verdict_cron_takes_its_turn_round_the_whole_backlog(self):
+        transmissions = self._outstanding(3)
+        polled = self._poll_log()
+
+        self._read_verdicts(limit=2)
+        self._read_verdicts(limit=2)
+
+        self.assertEqual(
+            set(polled),
+            set(transmissions.ids),
+            "a counterparty with no news yet must not keep the rest of the "
+            "backlog from ever being asked",
+        )
+
+    def test_a_poll_that_fails_still_gives_up_its_turn(self):
+        transmissions = self._outstanding(3)
+        polled = self._poll_log(error=ConnectionError("gateway down"))
+
+        with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
+            self._read_verdicts(limit=2)
+            self._read_verdicts(limit=2)
+
+        self.assertEqual(set(polled), set(transmissions.ids))
+        self.assertEqual(set(transmissions.mapped("state")), {"sent"})
+
+    def test_the_verdict_cron_drains_its_backlog_asking_each_once_per_run(self):
+        transmissions = self._outstanding(3)
+        polled = self._poll_log()
+        lastcall = fields.Datetime.now() - timedelta(hours=1)
+
+        progress = self._read_verdicts(limit=2, lastcall=lastcall)
+        progress += self._read_verdicts(limit=2, lastcall=lastcall)
+
+        self.assertEqual(
+            progress,
+            [(2, 1), (1, 0)],
+            "a backlog beyond one batch is reported, so the run goes on until "
+            "every outstanding verdict was asked for",
+        )
+        self.assertEqual(sorted(polled), sorted(transmissions.ids))
+
+    def test_a_run_with_no_previous_call_asks_one_batch_and_stops(self):
+        self._outstanding(3)
+        polled = self._poll_log()
+
+        progress = self._read_verdicts(limit=2)
+
+        self.assertEqual(progress, [(2, 0)])
+        self.assertEqual(len(polled), 2)
+
+    def test_the_verdict_cron_still_waits_for_the_counterparty_when_rotating(self):
+        waiting = self._outstanding(1)
+        waiting.date_next_retry = fields.Datetime.now() + timedelta(hours=1)
+        due = self._outstanding(2)
+        polled = self._poll_log()
+
+        self._read_verdicts(limit=2)
+        self._read_verdicts(limit=2)
+
+        self.assertEqual(set(polled), set(due.ids))
+
+    def test_the_queue_cron_reaches_every_channel_with_due_work(self):
+        other_endpoint = self.endpoint.copy({"code": "demo_waiting"})
+        other_channel = self.channel.copy(
+            {"endpoint_id": other_endpoint.id, "environment": "production"}
+        )
+        self._outstanding(1, state="queued", channel=other_channel)
+        self._outstanding(101, state="queued")
+        self.env["ir.job"].search([]).unlink()
+
+        self.env["exchange.transmission"]._cron_send_queued()
+
+        self.assertEqual(
+            set(self.env["ir.job"].search([]).mapped("identity_key")),
+            {
+                f"exchange.send:{self.channel.id}",
+                f"exchange.send:{other_channel.id}",
+            },
+            "however much one channel has queued, the sweep hands every channel "
+            "with due work to a worker",
+        )
 
     def test_a_document_kind_is_scoped_to_its_protocol(self):
         transmission = self._add_transmission(kind="invoice")

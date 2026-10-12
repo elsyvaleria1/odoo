@@ -1,6 +1,8 @@
 from odoo import Command
 from odoo.tests import TransactionCase, new_test_user, tagged
 
+from odoo.addons.phone_validation import post_init_hook, uninstall_hook
+
 
 @tagged("post_install", "-at_install")
 class TestPhoneNumberReuse(TransactionCase):
@@ -201,3 +203,57 @@ class TestPhoneNumberReuse(TransactionCase):
 
         self.assertEqual(contact.phone_ids, held)
         self.assertTrue(held.active)
+
+    def test_a_number_stored_before_validation_is_rekeyed_into_its_holder(self):
+        held = self.first.phone_ids
+        local = self.env["res.partner"].create(
+            {
+                "name": "Bucharest annex",
+                "country_id": self.romania.id,
+                "phone_ids": [Command.create({"number": "+40 21 209 99 90"})],
+            }
+        )
+        stale = local.phone_ids
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE phone_number SET number = %s, sanitized = %s WHERE id = %s",
+            ["021 209 99 99", "0212099999", stale.id],
+        )
+        self.env.invalidate_all()
+
+        post_init_hook(self.env)
+
+        self.assertFalse(stale.exists())
+        self.assertEqual(local.phone_ids, held)
+        self.assertEqual(
+            self.env["phone.number"].create(
+                {"number": "021 209 99 99", "country_id": self.romania.id}
+            ),
+            held,
+        )
+
+    def test_uninstalling_rekeys_numbers_for_the_base_normalizer(self):
+        held = self.first.phone_ids
+        international = self.env["phone.number"].create(
+            {"number": "+40 21 209 99 98", "country_id": self.romania.id}
+        )
+        self.assertEqual(held.sanitized, "+40212099999")
+
+        uninstall_hook(self.env)
+
+        self.assertEqual(held.sanitized, "0212099999")
+        self.assertEqual(international.sanitized, "+40212099998")
+        self.assertEqual(
+            self.env["phone.number"].search(
+                [
+                    (
+                        "sanitized",
+                        "=",
+                        held._normalize_number_without_validation(
+                            "021 209 99 99", self.romania
+                        ),
+                    )
+                ]
+            ),
+            held,
+        )

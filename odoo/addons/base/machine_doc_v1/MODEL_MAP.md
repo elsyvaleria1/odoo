@@ -1257,6 +1257,10 @@ no filestore rewrite. `_gc_rehash_legacy_keys` converges old keys only if
 - `file_size` (Integer), `checksum` (Char, size=64 — BLAKE3 hex; legacy
   rows keep their 40-char sha1 until re-keyed), `mimetype` (Char)
 - `index_content` (Text) — Extracted text for full-text search
+- `charset` (Char) — Declared non-UTF-8 charset, by its MIME name
+- `served_charset` (Char) — Charset the content is served in, decided when
+  the bytes are written (`binary`: none decodes them; empty: undecided, so
+  serving detects it)
 
 **Key Methods:**
 - `_get_storage_location()` — Configured location name (`file`, `db`, or custom)
@@ -1268,6 +1272,9 @@ no filestore rewrite. `_gc_rehash_legacy_keys` converges old keys only if
 - `_gc_file_store()` — Autovacuum: runs every backend's `autovacuum()`; the filestore's first puts back (`_restore_set_aside_files`) what an interrupted sweep left set aside under `gc/<store key>`
 - `_gc_rehash_legacy_keys(limit)` — Autovacuum: opt-in re-keying of rows
   still on a legacy digest; no-op unless `rehash_legacy_keys_limit` is set
+- `_gc_backfill_served_charsets(limit)` — Autovacuum: decides `served_charset`
+  for text rows still undecided, newest first, at most
+  `ir_attachment.served_charset_backfill_limit` (default 200) per call
 - `_content_checksum(bin_data)` / `_file_store_path(checksum)` — content
   digest and the tagged store key derived from it
 - `_is_content_collision_check_enabled()` — whether a dedup hit re-reads the stored
@@ -2493,7 +2500,11 @@ create/write touching `country_id` or `phone_ids` calls
 takes its country; a re-read landing on a number another row holds is merged into
 it (`mixin.merge` repoint, then unlink) when the acting user can read the holder,
 otherwise left as it is. A shared number is never re-read.
-**Key Methods:** `_normalize_number(number, country)`, `_update_country_from_contact()`, `_merge_into(holder)`
+**Re-keying:** `_rekey_sanitized()` re-derives every stored `sanitized` with the
+normalizer now installed (`phone_validation` calls it from its post-init hook and its
+2.3 migration); rows that come to share a key merge into the row already holding it,
+else the oldest (`mixin.merge` repoint, then unlink).
+**Key Methods:** `_normalize_number(number, country)`, `_update_country_from_contact()`, `_merge_into(holder)`, `_rekey_sanitized()`
 
 ### models/report_paperformat.py
 

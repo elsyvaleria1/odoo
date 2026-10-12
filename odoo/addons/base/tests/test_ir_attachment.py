@@ -1,5 +1,6 @@
 import base64
 import contextlib
+import functools
 import gzip
 import hashlib
 import io
@@ -20,6 +21,14 @@ from odoo.api import SUPERUSER_ID
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Domain
 from odoo.http import Stream
+from odoo.libs.documents import (
+    CharsetSniffer,
+    charset_candidates,
+    charset_label,
+    chunked,
+    guess_encoding,
+    sniff_charset,
+)
 from odoo.libs.hashing import ALGO_TAG
 from odoo.models import PREFETCH_MAX
 from odoo.tests.common import TransactionCase, skip_if_dev_mode, tagged
@@ -1011,6 +1020,219 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         self.assertEqual(attachment.sudo().index_content, text)
         attachment.write({"raw": text.encode("iso-8859-2"), "charset": "iso-8859-2"})
         self.assertEqual(attachment.sudo().index_content, text)
+
+    def _whole_content_charset(self, raw, declared=None):
+        def decodes(encoding):
+            try:
+                raw.decode(encoding)
+            except LookupError, UnicodeDecodeError:
+                return False
+            return True
+
+        for candidate in charset_candidates(declared):
+            if decodes(candidate):
+                return candidate
+        blocks = (raw[at : at + 1 << 16] for at in range(0, len(raw), 1 << 16))
+        sample = next((block for block in blocks if not block.isascii()), b"")
+        guessed = guess_encoding(sample)
+        return charset_label(guessed) if guessed and decodes(guessed) else None
+
+    def _charset_cases(self):
+        text = f"nom,ville\nJosé,Zürich\n{uuid.uuid4()}\n"
+        prefix = b"code,city\n" * 7000
+        late = "Zürich ünïcödé " * 6000
+        return (
+            ("utf8", text.encode(), None),
+            ("latin1", text.encode("latin-1"), None),
+            ("declared", text.encode("cp1252"), "windows-1252"),
+            ("ascii declared", prefix, "iso-8859-1"),
+            ("prefixed latin1", prefix + text.encode("latin-1"), None),
+            ("utf16", text.encode("utf-16"), None),
+            ("prefixed utf16le", (prefix.decode() + text).encode("utf-16-le"), None),
+            ("declared utf16le", text.encode("utf-16-le"), "utf-16le"),
+            ("late latin1", prefix + late.encode() + "é".encode("latin-1"), None),
+            ("cut utf8", text.encode()[:-2] + "é".encode()[:1], None),
+            ("undecodable", b"\x81\x8d\x8f\x90\x9d" * 5, None),
+        )
+
+    def test_the_charset_sniffer_agrees_with_the_whole_content(self):
+        for name, raw, declared in self._charset_cases():
+            expected = self._whole_content_charset(raw, declared)
+            for size in (1000, 4096, 1 << 16, 100_000, len(raw) or 1):
+                with self.subTest(name=name, size=size):
+                    read = functools.partial(chunked, raw, size)
+                    self.assertEqual(sniff_charset(read, declared), expected)
+        late_latin1 = b"code,city\n" * 7000 + "José".encode("cp1252")
+        sniffer = CharsetSniffer()
+        sniffer.feed(late_latin1)
+        self.assertEqual(sniffer.close(), self._whole_content_charset(late_latin1))
+        self.assertTrue(sniffer.decided, "one pass decides a late non-UTF-8 byte")
+
+    def test_a_stored_attachment_is_served_without_decoding(self):
+        environ = EnvironBuilder().get_environ()
+        for location in ("db", "file"):
+            self.env["ir.config_parameter"].set_param(
+                "ir_attachment.location", location
+            )
+            for name, raw, declared in self._charset_cases():
+                with self.subTest(location=location, name=name):
+                    vals = {"name": "notes.txt", "raw": raw, "mimetype": "text/plain"}
+                    if declared:
+                        vals["charset"] = declared
+                    attachment = self.Attachment.create(vals)
+                    if attachment.store_fname:
+                        self.addCleanup(
+                            Path(self.filestore, attachment.store_fname).unlink,
+                            missing_ok=True,
+                        )
+                    charset = self._whole_content_charset(raw, declared)
+                    self.assertEqual(attachment.served_charset, charset or "binary")
+                    with patch.object(Stream, "_iter_chunks") as read:
+                        response = attachment._to_http_stream().prepare_response(
+                            environ=environ
+                        )
+                        revalidated = attachment._to_http_stream().prepare_response(
+                            environ=EnvironBuilder(
+                                headers={"If-None-Match": f'"{attachment.checksum}"'}
+                            ).get_environ()
+                        )
+                    read.assert_not_called()
+                    self.assertEqual(
+                        response.headers["Content-Type"],
+                        f"text/plain; charset={charset}" if charset else "text/plain",
+                    )
+                    self.assertEqual(revalidated.status_code, 304)
+
+    def test_a_streamed_upload_decides_its_charset_as_it_is_written(self):
+        environ = EnvironBuilder().get_environ()
+        for name, raw, declared in self._charset_cases():
+            with self.subTest(name=name):
+                extra = {"charset": declared} if declared else {}
+                attachment = self.Attachment._create_from_stream(
+                    io.BytesIO(raw), name="notes.txt", mimetype="text/plain", **extra
+                )
+                if attachment.store_fname:
+                    self.addCleanup(
+                        Path(self.filestore, attachment.store_fname).unlink,
+                        missing_ok=True,
+                    )
+                charset = self._whole_content_charset(raw, declared)
+                if name == "late latin1":
+                    self.assertFalse(
+                        attachment.served_charset,
+                        "a charset one pass cannot decide is left to the backfill",
+                    )
+                    continue
+                self.assertEqual(attachment.served_charset, charset or "binary")
+                with patch.object(Stream, "_iter_chunks") as read:
+                    response = attachment._to_http_stream().prepare_response(
+                        environ=environ
+                    )
+                read.assert_not_called()
+                self.assertEqual(
+                    response.headers["Content-Type"],
+                    f"text/plain; charset={charset}" if charset else "text/plain",
+                )
+
+    def test_the_served_charset_follows_the_bytes_it_was_decided_on(self):
+        text = f"nom;ville\nJosé;Zürich {uuid.uuid4()}\n"
+        attachment = self.Attachment.create(
+            {
+                "name": "rows.csv",
+                "raw": text.encode("latin-1"),
+                "mimetype": "text/csv; charset=latin-1",
+            }
+        )
+        self.assertEqual(attachment.served_charset, "iso-8859-1")
+        attachment.mimetype = "text/plain"
+        self.assertEqual(attachment.served_charset, "iso-8859-1", "same bytes")
+        copied = attachment.copy()
+        self.assertEqual(copied.served_charset, "iso-8859-1", "a copy shares it")
+        self.assertEqual(
+            attachment.copy({"raw": text.encode()}).served_charset,
+            "utf-8",
+            "a copy with new bytes decides its own",
+        )
+        attachment.charset = "iso-8859-2"
+        self.assertFalse(
+            attachment.served_charset, "a new declaration reopens the decision"
+        )
+        response = attachment._to_http_stream().prepare_response(
+            environ=EnvironBuilder().get_environ()
+        )
+        self.assertEqual(
+            response.headers["Content-Type"], "text/plain; charset=iso-8859-2"
+        )
+        attachment.raw = text.encode()
+        self.assertEqual(attachment.served_charset, "utf-8", "new bytes, new decision")
+        attachment.write({"mimetype": "image/png", "raw": text.encode("latin-1")})
+        self.assertFalse(attachment.served_charset, "only text carries a charset")
+        self.assertEqual(
+            self.Attachment.create(
+                {"name": "x.csv", "raw": b"a", "served_charset": "koi8-r"}
+            ).served_charset,
+            "utf-8",
+            "the bytes decide, not the caller",
+        )
+
+    def test_the_backfill_decides_rows_written_before_the_decision_existed(self):
+        text = f"nom,ville\nJosé,Zürich\n{uuid.uuid4()}\n"
+        attachments = self.Attachment.create(
+            [
+                {"name": "a.csv", "raw": text.encode(), "mimetype": "text/csv"},
+                {
+                    "name": "b.csv",
+                    "raw": text.encode("latin-1"),
+                    "mimetype": "text/csv",
+                },
+                {
+                    "name": "c.csv",
+                    "raw": text.encode("cp1252"),
+                    "mimetype": "text/csv",
+                    "charset": "windows-1252",
+                },
+                {"name": "d.xml", "raw": b"\x81\x8d\x8f" * 3, "mimetype": "text/xml"},
+            ]
+        )
+        missing = self.Attachment.create(
+            {
+                "name": "gone.csv",
+                "raw": f"{uuid.uuid4()}é".encode(),
+                "mimetype": "text/csv",
+            }
+        )
+        image = self.Attachment.create(
+            {"name": "x.png", "raw": text.encode(), "mimetype": "image/png"}
+        )
+        decided = attachments.mapped("served_charset")
+        self.assertEqual(decided, ["utf-8", "iso-8859-1", "windows-1252", "binary"])
+        with mute_logger("odoo.addons.base.models.ir_attachment"):
+            while self.Attachment._gc_backfill_served_charsets(limit=500)[1]:
+                pass
+        legacy = attachments | missing | image
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE ir_attachment SET served_charset = NULL WHERE id = ANY(%s)",
+            [legacy.ids],
+        )
+        Path(self.filestore, missing.store_fname).unlink()
+        legacy.invalidate_recordset(["served_charset"])
+        done = []
+        with mute_logger("odoo.addons.base.models.ir_attachment"):
+            while result := self.Attachment._gc_backfill_served_charsets(limit=3):
+                done.append(result[0])
+                if not result[1]:
+                    break
+        self.assertEqual(sum(done), 4)
+        self.assertEqual(attachments.mapped("served_charset"), decided)
+        self.assertFalse(missing.served_charset, "unreadable bytes decide nothing")
+        self.assertFalse(image.served_charset, "an image carries no charset")
+        with mute_logger("odoo.addons.base.models.ir_attachment"):
+            self.assertEqual(
+                self.Attachment._gc_backfill_served_charsets(limit=3),
+                (0, 0),
+                "rows it cannot decide do not requeue it",
+            )
 
     def test_to_http_stream_ignores_bin_size(self):
         payload = b"X" * 5000

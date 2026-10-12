@@ -1,5 +1,7 @@
 import re
 
+from psycopg.errors import UniqueViolation
+
 from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, remove_accents
@@ -8,6 +10,8 @@ _debug = DebugLog(__name__)
 
 _CODE_SEPARATORS = re.compile(r"[^A-Z0-9]+")
 _CODE_PROBE_WINDOW = 16
+_CODE_CLAIM_ATTEMPTS = 5
+_CODE_CLASH_KEY = re.compile(r"\(code\)=\(([^)]*)\)")
 
 
 class MixinTag(models.AbstractModel):
@@ -24,6 +28,7 @@ class MixinTag(models.AbstractModel):
     )
     code = fields.Char(
         compute="_compute_code",
+        precompute=True,
         store=True,
         index="btree",
         copy=False,
@@ -48,7 +53,7 @@ class MixinTag(models.AbstractModel):
             return
         self.flush_model(["code"])
         bases = [self._name_to_code(tag.name) or "TAG" for tag in pending]
-        taken: set[str] = set()
+        taken = set(self.env.context.get("mixin_tag_taken_codes", ()))
         probed: dict[str, int] = {}
         self._probe_codes(taken, probed, dict.fromkeys(bases, _CODE_PROBE_WINDOW))
         suffixed = 0
@@ -73,6 +78,37 @@ class MixinTag(models.AbstractModel):
             taken=len(taken),
             suffixed=suffixed,
         )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if all(vals.get("code") for vals in vals_list):
+            return super().create(vals_list)
+        given = {vals["code"] for vals in vals_list if vals.get("code")}
+        taken = set(given)
+        for attempt in range(1, _CODE_CLAIM_ATTEMPTS):
+            try:
+                return self._create_claiming_codes(vals_list, taken)
+            except UniqueViolation as error:
+                lost = self._lost_code(error)
+                if lost is None or lost in taken:
+                    raise
+                _debug.logic(
+                    "code_claim_lost", model=self._name, code=lost, attempt=attempt
+                )
+                taken.add(lost)
+        return self._create_claiming_codes(vals_list, taken)
+
+    def _create_claiming_codes(self, vals_list, taken: set[str]):
+        claiming = self.with_context(mixin_tag_taken_codes=frozenset(taken))
+        with self.env.cr.savepoint():
+            tags = super(MixinTag, claiming).create(vals_list)
+        return tags.with_env(self.env)
+
+    def _lost_code(self, error: UniqueViolation) -> str | None:
+        if error.diag.constraint_name != self._code_uniq.get_full_name(self):
+            return None
+        clash = _CODE_CLASH_KEY.search(error.diag.message_detail or "")
+        return clash and clash[1]
 
     def _probe_codes(
         self, taken: set[str], probed: dict[str, int], upto: dict[str, int]

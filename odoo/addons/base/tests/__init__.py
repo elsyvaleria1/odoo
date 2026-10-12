@@ -112,6 +112,7 @@ from . import test_res_partner_sync
 from . import test_res_partner_bank_account
 from . import test_res_partner_main_channels
 from . import test_phone_number_country
+from . import test_phone_number_rekey
 from . import test_res_partner_identifier
 from . import test_partner_identifier_confidentiality
 from . import test_partner_private_address_access

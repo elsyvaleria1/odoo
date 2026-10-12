@@ -1,6 +1,6 @@
 {
     "name": "Phone Number Formatting and Blacklists",
-    "version": "2.2",
+    "version": "2.3",
     "oldest_upgradable_version": "2.2",
     "category": "Hidden",
     "sequence": 9999,
@@ -28,4 +28,6 @@
         "views/phone_validation_menus.xml",
     ],
     "auto_install": True,
+    "post_init_hook": "post_init_hook",
+    "uninstall_hook": "uninstall_hook",
 }

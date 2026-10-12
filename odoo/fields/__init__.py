@@ -46,6 +46,7 @@ from odoo.orm.fields import (
     Many2oneReference,
     Properties,
     PropertiesDefinition,
+    as_commands,
 )
 from odoo.orm.parsing import parse_field_expr
 
@@ -91,6 +92,7 @@ __all__ = [
     "Reference",
     "Selection",
     "Text",
+    "as_commands",
     "operator_optimization",
     "parse_field_expr",
     "register_condition_operators",

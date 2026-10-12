@@ -1,10 +1,18 @@
+from contextlib import ExitStack
 from unittest.mock import patch
 
 from psycopg.errors import UniqueViolation
 
+from odoo.api import Environment
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.colors import TAG_COLORS
-from odoo.tests.common import TransactionCase
+from odoo.modules.registry import Registry
+from odoo.tests.common import (
+    ADMIN_USER_ID,
+    BaseCase,
+    TransactionCase,
+    get_db_name,
+)
 from odoo.tools import mute_logger
 
 
@@ -251,3 +259,56 @@ class TestTagCode(TransactionCase):
             self.env["tag.tag"].search([("code", "=", "FINDABLE")]),
             tag,
         )
+
+
+class TestTagCodeConcurrency(BaseCase):
+    def setUp(self):
+        super().setUp()
+        self.registry = Registry(get_db_name())
+        self.addCleanup(self._drop_race_tags)
+
+    def _drop_race_tags(self):
+        with self.registry.cursor() as cr:
+            cr.execute("DELETE FROM tag_tag WHERE code LIKE 'RACE%%'")
+
+    def _two_envs(self):
+        stack = ExitStack()
+        self.addCleanup(stack.close)
+        envs = []
+        for _ in range(2):
+            cr = stack.enter_context(self.registry.cursor())
+            stack.callback(cr.rollback)
+            env = Environment(cr, ADMIN_USER_ID, {})
+            env["tag.tag"].search_count([("code", "like", "RACE")])
+            envs.append(env)
+        return envs
+
+    def test_a_derived_code_taken_by_a_concurrent_commit_moves_on(self):
+        env_a, env_b = self._two_envs()
+        env_a["tag.tag"].create({"name": "Race Tag!"})
+        env_a.cr.commit()
+
+        tags = env_b["tag.tag"].create(
+            [{"name": "Race Tag?"}, {"name": "Race Other"}, {"name": "Race Tag."}]
+        )
+        env_b.flush_all()
+        self.assertEqual(
+            tags.mapped("code"), ["RACE_TAG_2", "RACE_OTHER", "RACE_TAG_3"]
+        )
+        env_b.cr.commit()
+
+    def test_a_derived_code_dodges_a_given_code_in_the_same_batch(self):
+        tags = self._two_envs()[1]["tag.tag"].create(
+            [{"name": "Race Given"}, {"name": "Other", "code": "RACE_GIVEN"}]
+        )
+        self.assertEqual(tags.mapped("code"), ["RACE_GIVEN_2", "RACE_GIVEN"])
+
+    @mute_logger("odoo.db.cursor")
+    def test_a_given_code_taken_by_a_concurrent_commit_is_still_refused(self):
+        env_a, env_b = self._two_envs()
+        env_a["tag.tag"].create({"name": "Race Mine", "code": "RACE_MINE"})
+        env_a.cr.commit()
+
+        with self.assertRaises(UniqueViolation):
+            env_b["tag.tag"].create({"name": "Race Yours", "code": "RACE_MINE"})
+            env_b.flush_all()

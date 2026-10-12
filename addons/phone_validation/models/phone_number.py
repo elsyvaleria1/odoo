@@ -75,6 +75,10 @@ class PhoneNumber(models.Model):
     def _normalize_number(self, number, country=None):
         return self._e164(number, country) or super()._normalize_number(number, country)
 
+    @api.model
+    def _normalize_number_without_validation(self, number, country=None):
+        return super()._normalize_number(number, country)
+
     @api.depends("number", "country_id")
     def _compute_valid(self) -> None:
         for phone in self:

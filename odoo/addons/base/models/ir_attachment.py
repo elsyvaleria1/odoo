@@ -31,11 +31,14 @@ from odoo.libs.documents import (
     CUES,
     METERED,
     TEXT,
+    CharsetSniffer,
     Document,
     charset_candidates,
     charset_label,
+    chunked,
     cues_as_text,
     fix_filename_extension,
+    sniff_charset,
 )
 from odoo.libs.documents import (
     decode as decode_text,
@@ -99,6 +102,30 @@ BIN_SIZE_KEYS = {
 
 
 _REHASH_CURSOR_PARAM = "ir_attachment.rehash_legacy_keys_after_id"
+
+_UNLABELLED = "binary"
+
+_LABELLED_APPLICATION_MIMETYPES = [
+    "application/ecmascript",
+    "application/javascript",
+    "application/sql",
+    "application/xml",
+    "application/xml-dtd",
+    "application/xml-external-parsed-entity",
+]
+
+
+class _SniffedReader:
+    def __init__(self, fileobj: Any, sniffer: CharsetSniffer) -> None:
+        self._fileobj = fileobj
+        self._sniffer = sniffer
+
+    def read(self, size: int = -1) -> bytes:
+        chunk = self._fileobj.read(size)
+        if isinstance(chunk, str):
+            chunk = chunk.encode()
+        self._sniffer.feed(chunk)
+        return chunk
 
 
 @functools.cache
@@ -185,6 +212,12 @@ class IrAttachment(models.Model):
         readonly=True,
         help="Character encoding the text content declared, when it is not UTF-8.",
     )
+    served_charset = fields.Char(
+        copy=False,
+        readonly=True,
+        help="Charset the text content is served in, decided when it was written: "
+        "'binary' when no charset decodes it, empty when not decided yet.",
+    )
     index_content = fields.Text(
         string="Indexed Content",
         copy=False,
@@ -243,6 +276,8 @@ class IrAttachment(models.Model):
     _GC_MAX_ENTRIES = 100_000
 
     _GC_CHECKLIST_GRACE = 24 * 3600
+
+    _SERVED_CHARSET_BACKFILL_LIMIT = 200
 
     def _is_attachment_backed_field(self, field: Any) -> bool:
         return field.type == "binary" or (
@@ -349,7 +384,7 @@ class IrAttachment(models.Model):
         elif db_datas:
             has_content = True
             vals["raw"] = db_datas.encode() if isinstance(db_datas, str) else db_datas
-        for field in ("checksum", "store_fname", "index_content"):
+        for field in ("checksum", "store_fname", "index_content", "served_charset"):
             vals.pop(field, None)
         if has_content:
             vals.pop("file_size", None)
@@ -432,6 +467,8 @@ class IrAttachment(models.Model):
             vals = self._prepare_contents(vals)
             if keeps_charset and not vals["charset"]:
                 del vals["charset"]
+        if "charset" in vals and not has_content:
+            vals["served_charset"] = False
         _debug.lifecycle(
             "write", count=len(self), fields=list(vals), has_content=has_content
         )
@@ -501,12 +538,13 @@ class IrAttachment(models.Model):
                     origin.checksum,
                     origin.file_size,
                     origin.index_content,
+                    origin.served_charset,
                 )
             else:
-                key = (None, None, None, origin.index_content)
+                key = (None, None, None, origin.index_content, origin.served_charset)
             by_content[key].append(copied.id)
-        for (fname, checksum, size, index), ids in by_content.items():
-            values = {"index_content": index}
+        for (fname, checksum, size, index, served), ids in by_content.items():
+            values = {"index_content": index, "served_charset": served}
             if fname:
                 values.update(store_fname=fname, checksum=checksum, file_size=size)
             super(IrAttachment, self.browse(ids).sudo()).write(values)
@@ -943,10 +981,11 @@ class IrAttachment(models.Model):
             indexed=index,
             checksum_given=checksum is not None,
         )
+        served = self._decide_served_charset(data, mimetype, charset)
         index_vals = (
             {
                 "index_content": self._extract_index_content(
-                    data, mimetype, charset=charset
+                    data, mimetype, charset=self._index_charset(served, charset)
                 )
             }
             if index
@@ -965,9 +1004,25 @@ class IrAttachment(models.Model):
         return {
             "file_size": len(data),
             "checksum": checksum,
+            "served_charset": served,
             **index_vals,
             **stored,
         }
+
+    @api.model
+    def _decide_served_charset(
+        self, data: bytes, mimetype: str, declared: str | None
+    ) -> str | None:
+        if not Stream.labels_charset(mimetype):
+            return None
+        with _debug.perf("served_charset", size=len(data), mimetype=mimetype) as span:
+            served = sniff_charset(lambda: chunked(data), declared) or _UNLABELLED
+            span.set(charset=served)
+        return served
+
+    @api.model
+    def _index_charset(self, served: str | None, declared: str | None) -> str | None:
+        return served if served and served != _UNLABELLED else declared
 
     def _get_raw_access_token(self) -> str:
         self.check_singleton()
@@ -1909,8 +1964,21 @@ class IrAttachment(models.Model):
         record = self.create(
             {"name": name, "type": "binary", "mimetype": mimetype, **vals}
         )
+        sniffer = (
+            CharsetSniffer(record.charset or None)
+            if Stream.labels_charset(record.mimetype)
+            else None
+        )
         with _debug.perf("stream_store", attachment=record.id, mimetype=mimetype):
-            store_values = self._get_storage_backend().write_stream(fileobj)
+            store_values = self._get_storage_backend().write_stream(
+                fileobj if sniffer is None else _SniffedReader(fileobj, sniffer)
+            )
+        served = None
+        if sniffer is not None:
+            charset = sniffer.close()
+            if sniffer.decided:
+                served = charset or _UNLABELLED
+        store_values["served_charset"] = served
         read_size = self._get_index_read_size(record.mimetype)
         if not self._is_content_index_required(
             {"name": name, "type": "binary", "mimetype": mimetype, **vals}
@@ -1932,7 +2000,9 @@ class IrAttachment(models.Model):
                 content = db_datas if read_size is None else db_datas[:read_size]
             if not unreadable:
                 index_content = self._extract_index_content(
-                    content, record.mimetype, charset=record.charset or None
+                    content,
+                    record.mimetype,
+                    charset=self._index_charset(served, record.charset or None),
                 )
         store_values["index_content"] = index_content
         _debug.lifecycle(
@@ -1960,7 +2030,7 @@ class IrAttachment(models.Model):
             stream = self._get_storage_backend_for_key(self.store_fname).to_stream(
                 self, stream
             )
-            stream.set_charset_from_content(self.charset or None)
+            self._set_served_charset(stream)
             return stream
 
         inline = self._with_bin_size_disabled().db_datas
@@ -1988,8 +2058,19 @@ class IrAttachment(models.Model):
             stream.size = 0
             _debug.logic("http_stream", attachment=self.id, source="empty")
 
-        stream.set_charset_from_content(self.charset or None)
+        self._set_served_charset(stream)
         return stream
+
+    def _set_served_charset(self, stream: Stream) -> None:
+        if not self.served_charset:
+            stream.set_charset_from_content(self.charset or None)
+            return
+        stream.charset = (
+            None if self.served_charset == _UNLABELLED else self.served_charset
+        )
+        _debug.logic(
+            "served_charset_stored", attachment=self.id, charset=stream.charset
+        )
 
     def _migrate_remote_to_local(self) -> bool:
         self.check_singleton()
@@ -2161,6 +2242,86 @@ class IrAttachment(models.Model):
             remaining,
         )
         return rekeyed, remaining
+
+    @api.autovacuum
+    def _gc_backfill_served_charsets(self, limit: int | None = None) -> tuple[int, int]:
+        if limit is None:
+            limit = self.env.registry.settings.get_int(
+                self.env,
+                "ir_attachment.served_charset_backfill_limit",
+                self._SERVED_CHARSET_BACKFILL_LIMIT,
+            )
+        if limit <= 0:
+            _debug.logic("served_charset_backfill_skipped", reason="no_limit")
+            return 0, 0
+        cr = self.env.cr
+        self.flush_model()
+        undecided = SQL(
+            "served_charset IS NULL AND type = 'binary' AND file_size > 0"
+            " AND (mimetype LIKE 'text/%%' OR mimetype LIKE '%%+xml'"
+            " OR mimetype = ANY(%s))",
+            _LABELLED_APPLICATION_MIMETYPES,
+        )
+        decided: dict[str, list[int]] = defaultdict(list)
+        done = skipped = 0
+        before = None
+        while done < limit:
+            below = SQL(" AND id < %s", before) if before else SQL()
+            cr.execute(
+                SQL(
+                    "SELECT id, store_fname, file_size, mimetype, charset"
+                    " FROM ir_attachment WHERE %s%s ORDER BY id DESC LIMIT %s",
+                    undecided,
+                    below,
+                    limit,
+                )
+            )
+            rows = cr.fetchall()
+            if not rows:
+                break
+            for att_id, fname, size, mimetype, declared in rows:
+                before = att_id
+                content = self._read_backfill_content(att_id, fname, size)
+                if content is None or not Stream.labels_charset(mimetype):
+                    skipped += 1
+                    continue
+                served = self._decide_served_charset(content, mimetype, declared)
+                decided[served].append(att_id)
+                done += 1
+                if done >= limit:
+                    break
+        for served, ids in decided.items():
+            cr.execute(
+                SQL(
+                    "UPDATE ir_attachment SET served_charset = %s WHERE id = ANY(%s)",
+                    served,
+                    ids,
+                )
+            )
+        self.invalidate_model(["served_charset"], flush=False)
+        cr.execute(SQL("SELECT count(*) FROM ir_attachment WHERE %s", undecided))
+        remaining = cr.fetchone()[0]
+        _debug.lifecycle(
+            "served_charset_backfilled",
+            decided=done,
+            skipped=skipped,
+            remaining=remaining,
+        )
+        return done, remaining if done else 0
+
+    def _read_backfill_content(
+        self, att_id: int, fname: str | None, size: int
+    ) -> bytes | None:
+        if fname:
+            content, unreadable = self._read_store_key(
+                fname, size, None, att_id=att_id, action="skipping served charset"
+            )
+            return None if unreadable else content
+        self.env.cr.execute(
+            SQL("SELECT db_datas FROM ir_attachment WHERE id = %s", att_id)
+        )
+        row = self.env.cr.fetchone()
+        return bytes(row[0]) if row and row[0] is not None else None
 
     @api.autovacuum
     def _gc_stale_filestore_temps(self) -> tuple[int, int]:

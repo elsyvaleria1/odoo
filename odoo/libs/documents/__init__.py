@@ -67,7 +67,15 @@ from .formats import (
     register_extension,
     register_format,
 )
-from .guess import charset_candidates, charset_label, decode, guess_encoding
+from .guess import (
+    CharsetSniffer,
+    charset_candidates,
+    charset_label,
+    chunked,
+    decode,
+    guess_encoding,
+    sniff_charset,
+)
 from .layout import ALIGNMENTS, LEFT, RIGHT, Field, Layout
 from .media import (
     AUDIO_SAMPLE_RATE,
@@ -149,6 +157,7 @@ __all__ = [
     "VIDEO_MIMETYPES",
     "BaseReader",
     "BaseWriter",
+    "CharsetSniffer",
     "Cue",
     "Document",
     "Field",
@@ -161,6 +170,7 @@ __all__ = [
     "canonical_mimetypes",
     "charset_candidates",
     "charset_label",
+    "chunked",
     "coerce",
     "cues_as_text",
     "decode",
@@ -211,6 +221,7 @@ __all__ = [
     "render_vtt",
     "representations",
     "sheets",
+    "sniff_charset",
     "strip_currency_symbol",
     "subtitle_cues",
     "to_date",

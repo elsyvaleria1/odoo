@@ -254,7 +254,7 @@ odoo/addons/base/
 │   ├── wizard_res_users_update_password.py #   Password change, admin form (one line per user)
 │   ├── wizard_res_users_update_password_line.py #   One user and their new password
 │   └── wizard_res_users_update_password_own.py #   Password change, self-service
-├── tests/                       # 207 Python test files + test assets
+├── tests/                       # 208 Python test files + test assets
 ├── views/                       # 57 XML view definition files
 ├── data/                        # 28 data files (XML, CSV, SQL, JSON)
 ├── security/                    # ir.access.csv + groups and access-row XML
@@ -340,7 +340,7 @@ Derived by `factcheck.sh`, which re-measures every row against the tree.
 |----------|-------|
 | Python (models) | 157 |
 | Python (wizards) | 22 |
-| Python (tests) | 207 |
+| Python (tests) | 208 |
 | XML (views) | 57 |
 | Data files | 28 |
 | XML (reports) | 0 |

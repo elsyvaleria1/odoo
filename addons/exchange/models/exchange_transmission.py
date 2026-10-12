@@ -144,6 +144,12 @@ class ExchangeTransmission(models.Model):
         index=True,
         readonly=True,
     )
+    date_last_polled = fields.Datetime(
+        readonly=True,
+        help="When the verdict cron last asked the counterparty about this "
+        "transmission, whatever the answer. The cron asks the least recently "
+        "asked first, so a backlog it cannot cover in one batch still rotates.",
+    )
 
     event_log_id = fields.Many2one(
         comodel_name="integration.exchange",
@@ -473,12 +479,29 @@ class ExchangeTransmission(models.Model):
         ]
 
     @api.model
-    def _cron_send_queued(self, limit: int = 100) -> None:
-        self.search(self._get_due_domain(), limit=limit).channel_id._enqueue_send()
+    def _cron_send_queued(self) -> None:
+        self.env["exchange.channel"].union(
+            *(
+                channel
+                for [channel] in self._read_group(
+                    self._get_due_domain(), groupby=["channel_id"]
+                )
+            )
+        )._enqueue_send()
 
     @api.model
     def _cron_read_verdicts(self, limit: int = 100) -> None:
-        pending = self.search(self._get_due_domain("sent"), limit=limit)
+        domain = self._get_due_domain("sent")
+        if lastcall := self.env.context.get("lastcall"):
+            domain += [
+                "|",
+                ("date_last_polled", "=", False),
+                ("date_last_polled", "<", lastcall),
+            ]
+        pending = self.search(
+            domain, order="date_last_polled asc nulls first, id", limit=limit
+        )
+        pending.write({"date_last_polled": fields.Datetime.now()})
         for transmission in pending:
             try:
                 with self.env.cr.savepoint():
@@ -489,3 +512,9 @@ class ExchangeTransmission(models.Model):
                 _logger.exception(
                     "Reading the verdict of transmission %s failed", transmission.id
                 )
+        self.env["ir.cron"]._commit_progress(
+            len(pending),
+            remaining=(
+                self.search_count(domain) if lastcall and len(pending) == limit else 0
+            ),
+        )
