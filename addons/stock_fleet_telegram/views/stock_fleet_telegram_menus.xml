@@ -8,4 +8,11 @@
         sequence="25"
         groups="stock_fleet.group_delivery_proof_reviewer" />
 
+    <menuitem
+        id="menu_picking_delivered_slip"
+        parent="stock.menu_stock_transfers"
+        action="action_picking_delivered_slip"
+        sequence="24"
+        groups="stock_fleet.group_delivery_proof_reviewer" />
+
 </odoo>

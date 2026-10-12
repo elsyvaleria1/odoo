@@ -1,9 +1,16 @@
 import re
 
-from odoo import api, models
+from odoo import api, models, tools
 from odoo.libs.text import similarity_ratio
 from odoo.tools import remove_accents
 
+DELIVERY_SLIP_QR_PREFIX = "AGMO"
+DELIVERY_SLIP_QR_SCOPE = tools.register_signed_scope(
+    "stock_fleet_telegram_delivery_slip",
+    purpose="names the delivery order whose printed slip carries it, so that "
+    "the photo of that slip, signed by the customer, confirms it",
+    lifetime="undated: printed on the delivery slip for as long as the paper exists",
+)
 _OUT_NAME_RE = re.compile(r"\b([A-Z0-9]{1,8})\s*/\s*OUT((?:\s*/\s*\d+)+)\b")
 _CUSTOMER_MATCH_RATIO = 0.6
 
@@ -26,6 +33,31 @@ def out_names_in_text(text) -> list[str]:
 
 class StockPicking(models.Model):
     _inherit = "stock.picking"
+
+    def _get_delivery_slip_qr_value(self) -> str:
+        self.check_singleton()
+        signature = tools.hmac(self.env, DELIVERY_SLIP_QR_SCOPE, self.id)
+        return f"{DELIVERY_SLIP_QR_PREFIX}:{self.id}:{signature}"
+
+    @api.model
+    def _find_by_delivery_slip_qr(self, codes):
+        ids = []
+        for code in codes:
+            prefix, _sep, rest = (code or "").partition(":")
+            picking_id, _sep, signature = rest.partition(":")
+            if (
+                prefix == DELIVERY_SLIP_QR_PREFIX
+                and picking_id.isdecimal()
+                and tools.is_hmac_valid(
+                    self.env, DELIVERY_SLIP_QR_SCOPE, int(picking_id), signature
+                )
+            ):
+                ids.append(int(picking_id))
+        return (
+            self.browse(ids)
+            .exists()
+            .filtered(lambda picking: picking.picking_type_code == "outgoing")
+        )
 
     @api.model
     def _find_delivery_orders_by_name(self, names):
@@ -56,6 +88,18 @@ class StockPicking(models.Model):
             for line in lines
             if line
             for name in names
+        )
+
+    def _customer_matches(self, customer_name, customer_rfc) -> bool:
+        partners = self._get_customer_partners()
+        rfc = _compact(customer_rfc)
+        if rfc and rfc in {_compact(p.vat) for p in partners}:
+            return True
+        name = _normalize_name(customer_name)
+        return bool(name) and any(
+            similarity_ratio(name, _normalize_name(p.name)) >= _CUSTOMER_MATCH_RATIO
+            for p in partners
+            if p.name
         )
 
     def _telegram_delivery_blocker(self, user) -> str:

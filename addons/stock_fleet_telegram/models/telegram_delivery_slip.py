@@ -1,16 +1,46 @@
 import base64
 import hashlib
 import logging
+import mimetypes
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, RedirectWarning, UserError, ValidationError
+from odoo.libs import json
 from odoo.libs.documents import METERED
 from odoo.libs.documents.document import Document
 from odoo.tools import frozendict
 
 from .stock_picking import out_names_in_text
+from odoo.addons.ai.utils.llm_api_service import LLMApiService
+from odoo.addons.ai.utils.llm_providers import get_provider
 
 _logger = logging.getLogger(__name__)
+
+# The model that reads the slip when no code and no printed text identify it;
+# any model the ai module lists works, with the provider key set in Settings > AI.
+_LLM_MODEL_PARAM = "stock_fleet_telegram.llm_model"
+_LLM_MODEL_DEFAULT = "gpt-4.1-mini"
+_LLM_PURPOSE = "telegram.delivery_slip"
+_READ_SYSTEM_PROMPT = (
+    "You read scanned or photographed delivery slips that a customer has "
+    "signed. Extract the delivery order number, the customer's name and the "
+    "customer's RFC exactly as printed. The delivery order number is printed "
+    "as a warehouse code, OUT and numbers separated by slashes, such as "
+    "CDG/OUT/25/07/0123. The customer is who the goods are delivered to, not "
+    "the company that issued the slip. Leave a field empty when it is not "
+    "legible."
+)
+_READ_USER_PROMPT = "Read the delivery order number, customer name and customer RFC."
+_READ_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "delivery_order": {"type": "string"},
+        "customer_name": {"type": "string"},
+        "customer_rfc": {"type": "string"},
+    },
+    "required": ["delivery_order", "customer_name", "customer_rfc"],
+    "additionalProperties": False,
+}
 
 
 class SlipRefused(Exception):
@@ -18,7 +48,6 @@ class SlipRefused(Exception):
 
 
 class TelegramDeliverySlip(models.Model):
-
     _name = "telegram.delivery.slip"
     _description = "Telegram Delivery Slip"
     _order = "id desc"
@@ -56,8 +85,10 @@ class TelegramDeliverySlip(models.Model):
     )
     found_by = fields.Selection(
         selection=[
+            ("qr", "Signed QR code"),
             ("code", "Code on the slip"),
             ("text", "Number and customer printed"),
+            ("model", "Number and customer read by the model"),
             ("choice", "Chosen by the sender"),
         ],
         help="How the delivery order was found on the file.",
@@ -125,14 +156,17 @@ class TelegramDeliverySlip(models.Model):
             limit=1,
         )
 
-
     def _identify(self, content, pending):
         self.check_singleton()
         Picking = self.env["stock.picking"]
         document = Document(content, name=self.file_name or "slip")
-        found = Picking._find_delivery_orders_by_name(
-            self._read(document, "barcodes", [])
-        )
+        codes = self._read(document, "barcodes", [])
+        found = Picking._find_by_delivery_slip_qr(codes)
+        if len(found) == 1:
+            return found, "qr", Picking
+        if found:
+            return Picking, "", found
+        found = Picking._find_delivery_orders_by_name(codes)
         if len(found) == 1:
             return found, "code", Picking
         if found:
@@ -147,7 +181,54 @@ class TelegramDeliverySlip(models.Model):
         named = found.filtered(lambda picking: picking._customer_in_text(text))
         if len(named) == 1:
             return named, "text", Picking
-        return Picking, "", named or pending()
+        if named:
+            return Picking, "", named
+
+        reading = self._read_with_model(content)
+        found = Picking._find_delivery_orders_by_name(
+            out_names_in_text(reading.get("delivery_order"))
+        )
+        if len(found) == 1 and found._customer_matches(
+            reading.get("customer_name"), reading.get("customer_rfc")
+        ):
+            return found, "model", Picking
+        return Picking, "", pending()
+
+    def _read_with_model(self, content) -> dict:
+        model = (
+            self.env["ir.config_parameter"]
+            .with_privilege(
+                "stock_fleet_telegram.privilege_read_delivery_slips",
+                reason="a Telegram upload reads which model reads its slips",
+            )
+            .get_param(_LLM_MODEL_PARAM, _LLM_MODEL_DEFAULT)
+        )
+        mimetype = mimetypes.guess_type(self.file_name or "")[0] or "image/jpeg"
+        try:
+            service = LLMApiService(
+                self.env, get_provider(self.env, model), purpose=_LLM_PURPOSE
+            )
+            responses = service.request_llm(
+                model,
+                [_READ_SYSTEM_PROMPT],
+                [_READ_USER_PROMPT],
+                files=[
+                    {
+                        "mimetype": mimetype,
+                        "value": base64.b64encode(content).decode(),
+                        "file_ref": "<file_#1>",
+                    }
+                ],
+                schema=_READ_SCHEMA,
+                temperature=0,
+            )
+            reading = json.loads(responses[-1]) if responses else {}
+        except Exception:
+            _logger.warning(
+                "Could not read %s with %s", self.file_name, model, exc_info=True
+            )
+            return {}
+        return {key: (value or "").strip() for key, value in reading.items()}
 
     def _read(self, document, representation, empty):
         try:
@@ -163,7 +244,6 @@ class TelegramDeliverySlip(models.Model):
 
     def _offer(self, candidates) -> None:
         self.write({"candidate_ids": [fields.Command.set(candidates.ids)]})
-
 
     def _record(self, picking, found_by, content) -> str:
         self.check_singleton()

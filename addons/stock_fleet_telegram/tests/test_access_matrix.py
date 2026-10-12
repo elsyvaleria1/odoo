@@ -39,6 +39,13 @@ class TestStockFleetTelegramAccessMatrix(AccessMatrixCase):
             admin_a="rwcd",
         ),
         Cell(
+            "ir.config_parameter",
+            "llm_model",
+            admin_a="rwcd",
+            note="a Telegram upload reads which model reads its slips only through "
+            "stock_fleet_telegram.privilege_read_delivery_slips, which no user holds",
+        ),
+        Cell(
             "telegram.delivery.slip",
             "slip_other",
             note="another person's slips stay theirs; " + OPERATE,
@@ -99,6 +106,9 @@ class TestStockFleetTelegramAccessMatrix(AccessMatrixCase):
             )
 
         return {
+            "llm_model": env["ir.config_parameter"].create(
+                {"key": "stock_fleet_telegram.llm_model", "value": "gpt-4.1-mini"}
+            ),
             "receipt_a": receipt,
             "slip_own": slip(9501, cls.users["driver_a"]),
             "slip_other": slip(9502, env.ref("base.user_admin")),

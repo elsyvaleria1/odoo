@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 17:42+0000\n"
-"PO-Revision-Date: 2026-10-09 17:42+0000\n"
+"POT-Creation-Date: 2026-10-12 17:24+0000\n"
+"PO-Revision-Date: 2026-10-12 17:24+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -124,6 +124,14 @@ msgstr ""
 #. module: stock_fleet_telegram
 #: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
 msgid "<strong>Total:</strong>"
+msgstr ""
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.actions.act_window,help:stock_fleet_telegram.action_picking_delivered_slip
+msgid ""
+"A delivery order lands here once its slip signed by the customer is\n"
+"                sent through Telegram with /entrega, until a reviewer ticks the\n"
+"                paper as received."
 msgstr ""
 
 #. module: stock_fleet_telegram
@@ -248,8 +256,24 @@ msgid "Delivered On"
 msgstr ""
 
 #. module: stock_fleet_telegram
+#: model:ir.actions.act_window,name:stock_fleet_telegram.action_picking_delivered_slip
+#: model:ir.ui.menu,name:stock_fleet_telegram.menu_picking_delivered_slip
+msgid "Delivered Slips"
+msgstr ""
+
+#. module: stock_fleet_telegram
 #: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
 msgid "Delivered by<br/>"
+msgstr ""
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_picking_search_delivery_slip_telegram
+msgid "Delivered, Paper Received"
+msgstr ""
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_picking_search_delivery_slip_telegram
+msgid "Delivered, Paper to Receive"
 msgstr ""
 
 #. module: stock_fleet_telegram
@@ -371,6 +395,14 @@ msgid "Has Message"
 msgstr ""
 
 #. module: stock_fleet_telegram
+#: model:res.groups,comment:stock_fleet_telegram.privilege_read_delivery_slips
+msgid ""
+"Held by /entrega while it reads a file: read which model reads the slips. "
+"The delivery order itself is found, validated and given its slip with the "
+"sender's own inventory rights."
+msgstr ""
+
+#. module: stock_fleet_telegram
 #: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__found_by
 msgid "How the delivery order was found on the file."
 msgstr ""
@@ -454,6 +486,11 @@ msgid "Messages"
 msgstr ""
 
 #. module: stock_fleet_telegram
+#: model_terms:ir.actions.act_window,help:stock_fleet_telegram.action_picking_delivered_slip
+msgid "No delivered slip to receive"
+msgstr ""
+
+#. module: stock_fleet_telegram
 #: model_terms:ir.actions.act_window,help:stock_fleet_telegram.action_stock_delivery_slip_receipt
 msgid "No delivery slips to receive"
 msgstr ""
@@ -488,6 +525,11 @@ msgstr ""
 #. module: stock_fleet_telegram
 #: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__found_by__text
 msgid "Number and customer printed"
+msgstr ""
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__found_by__model
+msgid "Number and customer read by the model"
 msgstr ""
 
 #. module: stock_fleet_telegram
@@ -549,6 +591,11 @@ msgid "Paper reception reverted: batch %s cancelled."
 msgstr ""
 
 #. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_picking_search_delivery_slip_telegram
+msgid "Photo Uploaded by"
+msgstr ""
+
+#. module: stock_fleet_telegram
 #: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__website_message_ids
 msgid "Portal Messages"
 msgstr ""
@@ -561,6 +608,16 @@ msgstr ""
 #. module: stock_fleet_telegram
 #: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
 msgid "Print Receipt"
+msgstr ""
+
+#. module: stock_fleet_telegram
+#: model:res.groups,name:stock_fleet_telegram.privilege_read_delivery_slips
+msgid "Privilege: a Telegram chat reads the delivery slips it sends"
+msgstr ""
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_document_slip_qr
+msgid "QR"
 msgstr ""
 
 #. module: stock_fleet_telegram
@@ -657,6 +714,11 @@ msgstr ""
 #. module: stock_fleet_telegram
 #: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_list
 msgid "Signed Delivery Slip Receipts"
+msgstr ""
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__found_by__qr
+msgid "Signed QR code"
 msgstr ""
 
 #. module: stock_fleet_telegram

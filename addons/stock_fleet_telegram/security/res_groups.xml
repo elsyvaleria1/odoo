@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_read_delivery_slips" model="res.groups">
+        <field
+            name="name">Privilege: a Telegram chat reads the delivery slips it sends</field>
+        <field
+            name="comment">Held by /entrega while it reads a file: read which model reads the slips. The delivery order itself is found, validated and given its slip with the sender's own inventory rights.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

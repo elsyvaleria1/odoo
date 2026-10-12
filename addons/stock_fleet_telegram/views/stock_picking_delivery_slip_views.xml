@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        stock_fleet's own list reads only the types that require the slip
+        before validating; here every delivery order whose slip came through
+        Telegram, validated by it or before it
+    -->
+    <record id="view_picking_search_delivery_slip_telegram" model="ir.ui.view">
+        <field name="name">stock.picking.search.delivery.slip.telegram</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_stock_picking_search_internal" />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='backorder']" position="after">
+                <separator />
+                <filter
+                    name="delivered_paper_pending"
+                    string="Delivered, Paper to Receive"
+                    domain="[('delivery_proof_date', '!=', False), ('delivery_paper_received', '=', False)]" />
+                <filter
+                    name="delivered_paper_received"
+                    string="Delivered, Paper Received"
+                    domain="[('delivery_paper_received', '=', True)]" />
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter
+                    name="group_delivery_proof_uid"
+                    string="Photo Uploaded by"
+                    context="{'group_by': 'delivery_proof_uid'}" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_picking_delivered_slip" model="ir.actions.act_window">
+        <field name="name">Delivered Slips</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="stock_fleet.view_picking_list_delivery_proof" />
+        <field name="search_view_id" ref="stock.view_stock_picking_search_internal" />
+        <field
+            name="domain">[('picking_type_id.code', '=', 'outgoing'), ('state', '=', 'done'), ('delivery_proof_date', '!=', False)]</field>
+        <field
+            name="context">{'search_default_delivered_paper_pending': 1, 'search_default_group_delivery_proof_uid': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No delivered slip to receive</p>
+            <p>
+                A delivery order lands here once its slip signed by the customer is
+                sent through Telegram with /entrega, until a reviewer ticks the
+                paper as received.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,3 +1,4 @@
+import ast
 import base64
 import io
 from unittest.mock import patch
@@ -6,6 +7,7 @@ from PIL import Image
 
 from odoo import Command
 from odoo.exceptions import AccessError, RedirectWarning, UserError
+from odoo.libs.documents.document import Document
 from odoo.tests import tagged
 
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
@@ -145,7 +147,7 @@ class TestDeliveryFlow(TelegramBotTestCase):
         cls.Slip = cls.env["telegram.delivery.slip"]
         cls.Receipt = cls.env["stock.delivery.slip.receipt"]
 
-    def _update(self, payload, codes=(), text="", content=None):
+    def _update(self, payload, codes=(), text="", content=None, reading=None):
         type(self).update_id += 1
         self.patch(self.env.transaction, "default_env", self.env(user=self.public))
         slip_class = type(self.Slip)
@@ -163,6 +165,9 @@ class TestDeliveryFlow(TelegramBotTestCase):
                 },
             ),
             patch.object(slip_class, "_read", read),
+            patch.object(
+                slip_class, "_read_with_model", lambda slip, content: reading or {}
+            ),
             self.mock_api_gateway_post() as post,
             self.mock_rate_limiter(),
         ):
@@ -185,7 +190,9 @@ class TestDeliveryFlow(TelegramBotTestCase):
             }
         )
 
-    def _photo(self, codes=(), text="", chat=DRIVER_CHAT, seed=None, unique=None):
+    def _photo(
+        self, codes=(), text="", chat=DRIVER_CHAT, seed=None, unique=None, reading=None
+    ):
         seed = self.update_id if seed is None else seed
         message = self.mock_telegram_message(
             chat_id=chat, text="", message_id=self.update_id
@@ -194,7 +201,9 @@ class TestDeliveryFlow(TelegramBotTestCase):
         message["photo"] = [
             {"file_id": f"slip-{seed}", "file_unique_id": unique or f"u-{seed}"}
         ]
-        return self._update({"message": message}, codes=codes, text=text)
+        return self._update(
+            {"message": message}, codes=codes, text=text, reading=reading
+        )
 
     def _document(self, mimetype, content, codes=(), chat=DRIVER_CHAT):
         message = self.mock_telegram_message(
@@ -227,7 +236,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
     def _last_slip(self, chat=DRIVER_CHAT):
         return self.Slip.search([("chat_id", "=", self._chat(chat).id)], limit=1)
 
-
     def test_the_code_names_the_delivery_and_its_driver_delivers_it(self):
         first = self.pickings[0]
         self._say("/entrega")
@@ -244,6 +252,82 @@ class TestDeliveryFlow(TelegramBotTestCase):
         self.assertTrue(first.message_ids.attachment_ids, "The file is kept as sent.")
         self.assertIn("I validated it", reply)
         self.assertIn("Hand the paper in by", reply)
+
+    def test_the_signed_code_finds_its_delivery_and_a_forged_one_nothing(self):
+        first = self.pickings[0]
+        code = first._get_delivery_slip_qr_value()
+        Picking = self.env["stock.picking"]
+        self.assertEqual(Picking._find_by_delivery_slip_qr([code]), first)
+        prefix, picking_id, signature = code.split(":")
+        self.assertFalse(
+            Picking._find_by_delivery_slip_qr(
+                [f"{prefix}:{int(picking_id) + 1}:{signature}"]
+            )
+        )
+        self.assertFalse(
+            Picking._find_by_delivery_slip_qr([f"{prefix}:{picking_id}:0"])
+        )
+
+    def test_the_printed_qr_decodes_back_to_its_delivery(self):
+        first = self.pickings[0]
+        code = first._get_delivery_slip_qr_value()
+        image = self.env["ir.actions.report"].prepare_barcode(
+            "QR", code, width=400, height=400
+        )
+        self.assertIn(code, Document(image, name="slip.png").barcodes)
+
+    def test_the_signed_qr_names_the_delivery_and_its_driver_delivers_it(self):
+        first = self.pickings[0]
+        self._say("/entrega")
+        reply = self._photo(codes=[first._get_delivery_slip_qr_value()])
+
+        self.assertEqual(first.state, "done")
+        slip = self._last_slip()
+        self.assertEqual(
+            (slip.state, slip.outcome, slip.found_by), ("done", "delivered", "qr")
+        )
+        self.assertIn("I validated it", reply)
+
+    def test_the_signed_qr_wins_over_another_name_on_the_paper(self):
+        first, second = self.pickings
+        self._say("/entrega")
+        self._photo(codes=[second.name, first._get_delivery_slip_qr_value()])
+
+        self.assertEqual(self._last_slip().picking_id, first)
+        self.assertEqual(second.state, "assigned")
+
+    def test_the_model_reading_needs_the_customer_too(self):
+        first = self.pickings[0]
+        reading = {
+            "delivery_order": first.name,
+            "customer_name": "Someone Else",
+            "customer_rfc": "",
+        }
+        self._say("/entrega")
+        reply = self._photo(reading=reading)
+
+        self.assertFalse(first.delivery_proof)
+        self.assertEqual(self._last_slip().state, "pending")
+        self.assertIn("Which one?", reply)
+
+        reading["customer_name"] = "rancho  uno"
+        self._photo(reading=reading)
+
+        slip = self._last_slip()
+        self.assertEqual((slip.state, slip.found_by), ("done", "model"))
+        self.assertEqual(first.state, "done")
+
+    def test_a_delivered_slip_is_listed_until_its_paper_arrives(self):
+        first = self.pickings[0]
+        self._say("/entrega")
+        self._photo(codes=[first._get_delivery_slip_qr_value()])
+        action = self.env.ref("stock_fleet_telegram.action_picking_delivered_slip")
+        domain = ast.literal_eval(action.domain)
+
+        pending = [("delivery_paper_received", "=", False)]
+        self.assertIn(first, self.env["stock.picking"].search(domain + pending))
+        first.with_user(self.reviewer).action_receive_delivery_paper()
+        self.assertNotIn(first, self.env["stock.picking"].search(domain + pending))
 
     def test_the_number_with_its_customer_on_the_paper_identifies_it(self):
         first = self.pickings[0]
@@ -316,7 +400,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
         self.assertEqual(set(self.pickings.mapped("state")), {"done"})
         self.assertFalse(self.trip.date_return)
 
-
     def test_someone_off_the_trip_only_files_the_slip(self):
         first = self.pickings[0]
         self._say("/entrega", chat=OFFICE_CHAT)
@@ -372,7 +455,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
         self.assertTrue(first.delivery_proof)
         self.assertIn("only Odoo asks", reply)
 
-
     def test_a_delivery_with_valid_evidence_is_not_filed_again(self):
         first = self.pickings[0]
         self._say("/entrega")
@@ -405,7 +487,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
         self.assertEqual(
             self.Slip.search_count([("chat_id", "=", self._chat(OFFICE_CHAT).id)]), 1
         )
-
 
     def test_finish_hands_the_batch_to_administration(self):
         self._say("/entrega")
@@ -466,7 +547,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
         receipt.action_cancel()
         self.assertEqual(receipt.state, "cancel")
         self.assertFalse(self.pickings.filtered("delivery_paper_received"))
-
 
     def test_a_redirect_warning_keeps_the_slip_and_says_why(self):
         first = self.pickings[0]
