@@ -4,8 +4,8 @@ import hashlib
 import itertools
 import typing
 from collections import defaultdict
-from collections.abc import Collection
-from typing import Any, Literal
+from collections.abc import Collection, Mapping, Sequence
+from typing import Any, Literal, Self
 
 from odoo import Command, api, fields, models, tools
 from odoo.api import ValuesType
@@ -64,7 +64,6 @@ MASS_MAIL_SELECTION_CONTEXT_KEYS = frozenset(
 
 
 class MassMailProgress:
-
     __slots__ = ("stopped",)
 
     def __init__(self) -> None:
@@ -72,20 +71,21 @@ class MassMailProgress:
 
 
 class SentEmails:
-
     __slots__ = ("by_email",)
 
     def __init__(self) -> None:
         self.by_email: dict[str, set[tuple[str | None, bytes]]] = {}
 
     @staticmethod
-    def content_key(mail_values: dict) -> tuple[str | None, bytes]:
+    def content_key(mail_values: ValuesType) -> tuple[str | None, bytes]:
         body = str(mail_values.get("body") or "").encode()
         digest = hashlib.blake2b(body, digest_size=16).digest()
         return mail_values.get("subject"), digest
 
 
-def _reopen(self, res_id: int, model: str, context: dict | None = None) -> dict:
+def _reopen(
+    self, res_id: int, model: str, context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     context = dict(context or {}, default_model=model)
     return {
         "name": self.env._("Compose Email"),
@@ -479,7 +479,9 @@ class WizardMailMessageSend(models.TransientModel):
             langs.update(composer.template_render_langs)
         return langs
 
-    def _render_template_fields_batch(self, fnames) -> dict:
+    def _render_template_fields_batch(
+        self, fnames: Collection[str]
+    ) -> dict[Self, dict[str, Any] | Literal[False]]:
         rendered = {}
         res_ids_by_template = defaultdict(dict)
         for composer in self:
@@ -512,7 +514,9 @@ class WizardMailMessageSend(models.TransientModel):
         )
         return rendered
 
-    def _render_template_fields(self, fnames) -> dict | Literal[False]:
+    def _render_template_fields(
+        self, fnames: Collection[str]
+    ) -> dict[str, Any] | Literal[False]:
         self.check_singleton()
         if (
             not self.template_id
@@ -894,7 +898,9 @@ class WizardMailMessageSend(models.TransientModel):
         non_mass_mail.can_edit_body = True
         super(WizardMailMessageSend, self - non_mass_mail)._compute_can_edit_body()
 
-    def _compute_field_value(self, field: fields.Field, validate: bool = True) -> None:
+    def _compute_field_value(
+        self, field: fields.Field[Any], validate: bool = True
+    ) -> None:
         if field.compute_sudo:
             return super(
                 WizardMailMessageSend, self.with_context(prefetch_fields=False)
@@ -915,11 +921,13 @@ class WizardMailMessageSend(models.TransientModel):
         _debug.lifecycle("gc_lost_attachments", removed=len(lost))
         lost.unlink()
 
-    def action_schedule_message(self) -> dict:
+    def action_schedule_message(self) -> dict[str, Any]:
         self._action_schedule_message()
         return {"type": "ir.actions.act_window_close"}
 
-    def _prepare_schedule_message_post_values(self, post_values: dict) -> dict:
+    def _prepare_schedule_message_post_values(
+        self, post_values: ValuesType
+    ) -> ValuesType:
         self.check_singleton()
         return {
             "attachment_ids": post_values.pop("attachment_ids"),
@@ -970,7 +978,7 @@ class WizardMailMessageSend(models.TransientModel):
         )
         return self.env["mail.scheduled.message"].create(create_values)
 
-    def action_send_mail(self) -> dict:
+    def action_send_mail(self) -> dict[str, Any]:
         self._action_send_mail(auto_commit=False)
         res_ids = self._evaluate_res_ids()
         record_name = False
@@ -984,7 +992,9 @@ class WizardMailMessageSend(models.TransientModel):
             },
         }
 
-    def _action_send_mail(self, auto_commit: bool = False) -> tuple:
+    def _action_send_mail(
+        self, auto_commit: bool = False
+    ) -> tuple[MailMail, MailMessage]:
         result_mails_su, result_messages = (
             self.env["mail.mail"].sudo(),
             self.env["mail.message"],
@@ -1022,7 +1032,7 @@ class WizardMailMessageSend(models.TransientModel):
 
         return result_mails_su, result_messages
 
-    def _action_send_mail_comment(self, res_ids: list[int]) -> MailMessage:
+    def _action_send_mail_comment(self, res_ids: Sequence[int]) -> MailMessage:
         self.check_singleton()
         if (
             self.res_ids
@@ -1062,7 +1072,7 @@ class WizardMailMessageSend(models.TransientModel):
             return messages
         return ActiveModel._message_post_values_all(post_values_all)
 
-    def _get_comment_target_model(self) -> models.Model:
+    def _get_comment_target_model(self) -> models.BaseModel:
         self.check_singleton()
         ActiveModel = (
             self.env[self.model]
@@ -1075,12 +1085,12 @@ class WizardMailMessageSend(models.TransientModel):
             )
         return ActiveModel
 
-    def _prepare_post_values(self, res_ids: list[int]) -> dict[int, dict]:
+    def _prepare_post_values(self, res_ids: Sequence[int]) -> dict[int, ValuesType]:
         self.check_singleton()
         return self._manage_mail_values(self._prepare_mail_values(res_ids))
 
     def _action_send_mail_mass_mail(
-        self, res_ids: list[int], auto_commit: bool = False
+        self, res_ids: Sequence[int], auto_commit: bool = False
     ) -> MailMail:
         batch_size = self.env["mail.mail"]._get_send_batch_size(self._batch_size or 50)
         counter_mails_done = 0
@@ -1146,7 +1156,7 @@ class WizardMailMessageSend(models.TransientModel):
 
         return mails_sudo
 
-    def _generate_mail_notification_values(self, mails: MailMail) -> list:
+    def _generate_mail_notification_values(self, mails: MailMail) -> list[ValuesType]:
         if self.auto_delete and not self.auto_delete_keep_log:
             _debug.logic(
                 "mail_notifications_skipped", wizard=self.id, reason="auto_delete"
@@ -1177,7 +1187,7 @@ class WizardMailMessageSend(models.TransientModel):
                 )
         return create_vals_all
 
-    def open_template_creation_wizard(self) -> dict:
+    def open_template_creation_wizard(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
@@ -1192,7 +1202,7 @@ class WizardMailMessageSend(models.TransientModel):
             "res_id": self.id,
         }
 
-    def create_mail_template(self) -> dict:
+    def create_mail_template(self) -> dict[str, Any]:
         self.check_singleton()
         if not self.model or self.model not in self.env:
             raise UserError(
@@ -1238,7 +1248,7 @@ class WizardMailMessageSend(models.TransientModel):
             context={**self.env.context, "dialog_size": "large"},
         )
 
-    def cancel_save_template(self) -> dict:
+    def cancel_save_template(self) -> dict[str, Any]:
         self.check_singleton()
         return _reopen(
             self,
@@ -1254,7 +1264,7 @@ class WizardMailMessageSend(models.TransientModel):
             else "exception"
         )
 
-    def _prepare_mail_values(self, res_ids: list[int]) -> dict:
+    def _prepare_mail_values(self, res_ids: Sequence[int]) -> dict[int, ValuesType]:
         self.check_singleton()
         email_mode = self.composition_mode == "mass_mail"
         rendering_mode = email_mode or self.composition_batch
@@ -1291,10 +1301,12 @@ class WizardMailMessageSend(models.TransientModel):
                 mail_values["references"] = message_id
         return mail_values_all
 
-    def _manage_mail_values(self, mail_values_all: dict) -> dict:
+    def _manage_mail_values(
+        self, mail_values_all: dict[int, ValuesType]
+    ) -> dict[int, ValuesType]:
         return mail_values_all
 
-    def _prepare_mail_values_static(self) -> dict:
+    def _prepare_mail_values_static(self) -> ValuesType:
         self.check_singleton()
         email_mode = self.composition_mode == "mass_mail"
 
@@ -1339,7 +1351,9 @@ class WizardMailMessageSend(models.TransientModel):
                 values["notify_skip_followers"] = self.notify_skip_followers
         return values
 
-    def _prepare_mail_values_dynamic(self, res_ids: list[int]) -> dict:
+    def _prepare_mail_values_dynamic(
+        self, res_ids: Sequence[int]
+    ) -> dict[int, ValuesType]:
         self.check_singleton()
         RecordsModel = self.env[self.model].with_prefetch(res_ids)
         email_mode = self.composition_mode == "mass_mail"
@@ -1417,12 +1431,12 @@ class WizardMailMessageSend(models.TransientModel):
 
     def _prepare_mail_values_per_record(
         self,
-        records: models.Model,
-        res_ids: list[int],
-        langs: dict,
-        emails_from: dict,
+        records: models.BaseModel,
+        res_ids: Sequence[int],
+        langs: Mapping[int, str | Literal[False]],
+        emails_from: dict[int, str],
         email_mode: bool,
-    ) -> dict:
+    ) -> dict[int, ValuesType]:
         companies = records._mail_get_companies(default=self.env.company)
         alias_domains = records._mail_get_alias_domains(
             default_company=self.env.company
@@ -1467,9 +1481,9 @@ class WizardMailMessageSend(models.TransientModel):
 
     def _update_mail_values_from_template(
         self,
-        mail_values_all: dict,
-        res_ids: list[int],
-        res_ids_lang: dict[int, str] | None = None,
+        mail_values_all: dict[int, ValuesType],
+        res_ids: Sequence[int],
+        res_ids_lang: Mapping[int, str | Literal[False]] | None = None,
     ) -> None:
         template_values = self._prepare_template_vals(
             res_ids,
@@ -1506,7 +1520,7 @@ class WizardMailMessageSend(models.TransientModel):
 
     def _update_mail_values_attachments(
         self,
-        mail_values: dict,
+        mail_values: ValuesType,
         record: models.Model,
         email_mode: bool,
         attachment_copies: IrAttachment,
@@ -1537,7 +1551,7 @@ class WizardMailMessageSend(models.TransientModel):
         )["attachment_ids"]
 
     def _update_mail_values_layout_body(
-        self, mail_values: dict, record: models.Model, res_id: int, lang: str
+        self, mail_values: ValuesType, record: models.BaseModel, res_id: int, lang: str
     ) -> None:
         recipient_ids = [command[1] for command in mail_values["recipient_ids"]]
         msg_vals = {
@@ -1588,7 +1602,9 @@ class WizardMailMessageSend(models.TransientModel):
             render_values=render_values,
         )
 
-    def _prepare_mail_values_rendered(self, res_ids: list[int]) -> dict:
+    def _prepare_mail_values_rendered(
+        self, res_ids: Sequence[int]
+    ) -> dict[int, ValuesType]:
         self.check_singleton()
         email_mode = self.composition_mode == "mass_mail"
 
@@ -1633,7 +1649,9 @@ class WizardMailMessageSend(models.TransientModel):
             for res_id in res_ids
         }
 
-    def _process_mail_values_state(self, mail_values_dict: dict) -> dict:
+    def _process_mail_values_state(
+        self, mail_values_dict: dict[int, ValuesType]
+    ) -> dict[int, ValuesType]:
         recipients_info = self._get_recipients_data(mail_values_dict)
         blacklist_ids = self._get_blacklist_record_ids(
             mail_values_dict, recipients_info
@@ -1708,12 +1726,12 @@ class WizardMailMessageSend(models.TransientModel):
 
     def _prepare_template_vals(
         self,
-        res_ids: list[int],
+        res_ids: Sequence[int],
         render_fields: Collection[str],
         allow_suggested: bool = False,
         find_or_create_partners: bool = True,
-        res_ids_lang: dict[int, str] | None = None,
-    ) -> dict:
+        res_ids_lang: Mapping[int, str | Literal[False]] | None = None,
+    ) -> dict[int, dict[str, Any]]:
         self.check_singleton()
 
         template_fields = {
@@ -1739,8 +1757,10 @@ class WizardMailMessageSend(models.TransientModel):
         }
 
     def _get_blacklist_record_ids(
-        self, mail_values_dict: dict, recipients_info: dict | None = None
-    ) -> set:
+        self,
+        mail_values_dict: dict[int, ValuesType],
+        recipients_info: dict[int, dict[str, list[str]]] | None = None,
+    ) -> set[int]:
         blacklisted_rec_ids = set()
         if not self.use_exclusion_list:
             return blacklisted_rec_ids
@@ -1789,13 +1809,15 @@ class WizardMailMessageSend(models.TransientModel):
             )
         return blacklisted_rec_ids
 
-    def _get_done_emails(self, mail_values_dict: dict) -> list:
+    def _get_done_emails(self, mail_values_dict: dict[int, ValuesType]) -> list[str]:
         return []
 
-    def _get_optout_emails(self, mail_values_dict: dict) -> list:
+    def _get_optout_emails(self, mail_values_dict: dict[int, ValuesType]) -> list[str]:
         return []
 
-    def _get_recipients_data(self, mail_values_dict: dict) -> dict:
+    def _get_recipients_data(
+        self, mail_values_dict: dict[int, ValuesType]
+    ) -> dict[int, dict[str, list[str]]]:
         recipient_pids = [
             recipient_command[1]
             for mail_values in mail_values_dict.values()

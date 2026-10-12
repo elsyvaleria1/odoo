@@ -35,8 +35,8 @@ class WebclientController(ThreadController):
     @http.route("/mail/action", methods=["POST"], type="jsonrpc", auth="public")
     @add_guest_to_context
     def mail_action(
-        self, fetch_params: list[str | list], context: dict | None = None
-    ) -> dict:
+        self, fetch_params: list[str | list[Any]], context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         return self._process_request(fetch_params, context=context)
 
     @http.route(
@@ -44,14 +44,14 @@ class WebclientController(ThreadController):
     )
     @add_guest_to_context
     def mail_data(
-        self, fetch_params: list[str | list], context: dict | None = None
-    ) -> dict:
+        self, fetch_params: list[str | list[Any]], context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         return self._process_request(fetch_params, context=context)
 
     @classmethod
     def _process_request(
-        cls, fetch_params: list[str | list], context: dict | None
-    ) -> dict:
+        cls, fetch_params: list[str | list[Any]], context: dict[str, Any] | None
+    ) -> dict[str, Any]:
         cls._update_context_from_client(context)
         store = Store()
         with _debug.perf(
@@ -65,7 +65,7 @@ class WebclientController(ThreadController):
 
     @classmethod
     def _process_request_loop(
-        cls, store: Store, fetch_params: list[str | list]
+        cls, store: Store, fetch_params: list[str | list[Any]]
     ) -> None:
         if isinstance(fetch_params, str) or not isinstance(fetch_params, (list, tuple)):
             raise NotFound

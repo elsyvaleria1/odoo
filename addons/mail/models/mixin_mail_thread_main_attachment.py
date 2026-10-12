@@ -1,6 +1,7 @@
 import typing
 
 from odoo import fields, models
+from odoo.api import ValuesType
 from odoo.libs.debug_log import DebugLog
 
 from odoo.addons.mail.tools.discuss import Store, StoreFieldSpec
@@ -24,7 +25,9 @@ class MixinMailThreadMainAttachment(models.AbstractModel):
         copy=False,
     )
 
-    def _message_post_after_hook(self, message: MailMessage, msg_values: dict) -> None:
+    def _message_post_after_hook(
+        self, message: MailMessage, msg_values: ValuesType
+    ) -> None:
         super()._message_post_after_hook(message, msg_values)
         self.sudo()._message_set_main_attachment_id(
             self.env["ir.attachment"].browse(

@@ -1,4 +1,5 @@
 import typing
+from typing import Any
 
 from odoo import api, fields, models
 from odoo.db import get_or_create_row
@@ -40,7 +41,7 @@ class ResUsersSettings(models.Model):
     )
 
     @api.model
-    def _format_settings(self, fields_to_format: list[str]) -> dict:
+    def _format_settings(self, fields_to_format: list[str]) -> dict[str, Any]:
         res = super()._format_settings(fields_to_format)
         if "volume_settings_ids" in fields_to_format:
             volume_settings = (
@@ -50,7 +51,7 @@ class ResUsersSettings(models.Model):
             res["volumes"] = [("ADD", volume_settings)]
         return res
 
-    def set_res_users_settings(self, new_settings: dict) -> dict:
+    def set_res_users_settings(self, new_settings: dict[str, Any]) -> dict[str, Any]:
         formatted = super().set_res_users_settings(new_settings)
         _debug.lifecycle(
             "settings_changed", settings=self.ids, fields=sorted(new_settings)

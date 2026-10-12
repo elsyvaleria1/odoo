@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo import http
 from odoo.fields import Domain
 from odoo.http import request
@@ -24,7 +26,7 @@ class SearchController(http.Controller):
         readonly=True,
     )
     @add_guest_to_context
-    def search(self, term: str, limit: int = 10) -> dict:
+    def search(self, term: str, limit: int = 10) -> dict[str, Any]:
         limit = clamp_limit(limit, default=10)
         store = Store()
         result = self._search_results_to_store(store, search_term=term, limit=limit)

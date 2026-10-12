@@ -2,6 +2,7 @@ import logging
 from email.message import EmailMessage
 from typing import NamedTuple
 
+from lxml import etree
 from lxml.etree import LxmlError
 
 from odoo.libs.debug_log import DebugLog
@@ -20,7 +21,7 @@ _debug = DebugLog(__name__)
 class Attachment(NamedTuple):
     fname: str
     content: str | bytes | EmailMessage | None
-    info: dict
+    info: dict[str, str | None]
 
 
 class Payload(NamedTuple):
@@ -99,7 +100,9 @@ class _Fragment(NamedTuple):
     html: bool
 
 
-def _attachment_from(part: EmailMessage, filename: str | None, content) -> Attachment:
+def _attachment_from(
+    part: EmailMessage, filename: str | None, content: str | bytes | EmailMessage | None
+) -> Attachment:
     info = {"encoding": part.get_content_charset()}
     if content_id := part.get("content-id"):
         info["cid"] = content_id.strip("><")
@@ -213,7 +216,7 @@ def extract_payload(
     return Payload(body, attachments + fragment.attachments)
 
 
-def _is_notification(node) -> bool:
+def _is_notification(node: etree._Element) -> bool:
     return any(
         "o_mail_notification" in (node.get(attribute) or "")
         for attribute in ("class", "summary")

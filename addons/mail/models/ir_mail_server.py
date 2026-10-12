@@ -765,7 +765,7 @@ class IrMail_Server(models.Model):
 
     @classmethod
     def _disable_send(cls) -> bool:
-        return modules.module.current_test or not cls.pool.ready
+        return bool(modules.module.current_test) or not cls.pool.ready
 
     def _connect__(
         self,
@@ -1263,10 +1263,13 @@ class IrMail_Server(models.Model):
         return tools.config.get("email_from")
 
     @api.model
-    def _get_notifications_email(self) -> str | bool:
-        return email_normalize(
-            self.env.context.get("domain_notifications_email")
-            or self._get_default_from_address()
+    def _get_notifications_email(self) -> str | None:
+        return (
+            email_normalize(
+                self.env.context.get("domain_notifications_email")
+                or self._get_default_from_address()
+            )
+            or None
         )
 
     @api.model
@@ -1576,7 +1579,7 @@ class IrMail_Server(models.Model):
 
     @api.model
     def _get_cli_envelope_sender(
-        self, email_from: str | None, notifications_email: str | bool
+        self, email_from: str | None, notifications_email: str | None
     ) -> str | None:
         from_filter = self.env["ir.mail_server"]._get_default_from_filter()
 

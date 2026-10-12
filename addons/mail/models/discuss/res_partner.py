@@ -66,7 +66,7 @@ class ResPartner(models.Model):
     @api.model
     def search_for_channel_invite(
         self, search_term: str, channel_id: int | None = None, limit: int = 30
-    ) -> dict:
+    ) -> dict[str, Any]:
         store = Store()
         limit = clamp_limit(limit)
         channel_invites = self._search_for_channel_invite(
@@ -128,7 +128,7 @@ class ResPartner(models.Model):
         search_term: str,
         channel_id: int | None = None,
         limit: int = 30,
-    ) -> dict:
+    ) -> dict[str, Any]:
         domain = Domain.AND(
             [
                 Domain("name", "ilike", search_term)
@@ -185,7 +185,7 @@ class ResPartner(models.Model):
     @api.model
     def get_mention_suggestions_from_channel(
         self, channel_id: int, search: str, limit: int = 8
-    ) -> dict | list:
+    ) -> dict[str, Any] | list[Any]:
         channel = self.env["discuss.channel"].search([("id", "=", channel_id)])
         if not channel:
             return []

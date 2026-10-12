@@ -99,7 +99,7 @@ class MailController(http.Controller):
     @classmethod
     def _get_token_record_and_redirect(
         cls, model: str, res_id: int, token: str
-    ) -> tuple:
+    ) -> tuple[bool, models.BaseModel | None, Response]:
         comparison = cls._is_token_valid(token)
         if not comparison:
             _debug.logic("action_token_invalid", model=model, record=res_id)

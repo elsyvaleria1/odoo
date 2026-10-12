@@ -1,6 +1,6 @@
 import typing
 from datetime import date
-from typing import Literal
+from typing import Any, Literal
 
 from odoo import api, exceptions, fields, models
 from odoo.api import ValuesType
@@ -211,7 +211,7 @@ class MailActivityType(models.Model):
                 )
             )
 
-    def action_archive(self) -> bool:
+    def action_archive(self) -> None:
         if self.env.ref("mail.mail_activity_data_todo") in self:
             raise UserError(
                 self.env._(
@@ -258,7 +258,7 @@ class MailActivityType(models.Model):
         return base + self._get_delay_delta()
 
     @api.model
-    def _get_model_info_by_xmlid(self) -> dict:
+    def _get_model_info_by_xmlid(self) -> dict[str, dict[str, Any]]:
         return {
             "mail.mail_activity_data_call": {"res_model": False, "unlink": False},
             "mail.mail_activity_data_meeting": {"res_model": False, "unlink": False},

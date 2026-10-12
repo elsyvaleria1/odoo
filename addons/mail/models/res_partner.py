@@ -14,6 +14,7 @@ from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput, StoreFieldSp
 from odoo.addons.mail.tools.paging import clamp_limit
 
 if typing.TYPE_CHECKING:
+    from .discuss.mail_guest import MailGuest
     from odoo.addons.bus.models.res_users import ResUsers
 
 _debug = DebugLog(__name__)
@@ -163,13 +164,15 @@ class ResPartner(models.Model):
         )
         return self.env.cr.dictfetchall()[0].get("needaction_count")
 
-    def _mail_get_partners(self, introspect_fields: bool = False) -> dict:
+    def _mail_get_partners(
+        self, introspect_fields: bool = False
+    ) -> dict[int, ResPartner]:
         return {partner.id: partner for partner in self}
 
     @api.model
     def _get_view_cache_key(
         self, view_id: int | None = None, view_type: str = "form", **options
-    ) -> tuple:
+    ) -> tuple[Any, ...]:
         key = super()._get_view_cache_key(view_id, view_type, **options)
         return key + (self.env.context.get("force_email"),)
 
@@ -209,11 +212,11 @@ class ResPartner(models.Model):
         emails: list[str],
         ban_emails: list[str] | None = None,
         filter_found: Callable[[Self], bool] | None = None,
-        additional_values: dict | None = None,
+        additional_values: dict[str, ValuesType] | None = None,
         no_create: bool = False,
         sort_key: Callable[[Self], Any] | None = None,
         sort_reverse: bool = True,
-    ) -> list:
+    ) -> list[Self]:
         additional_values = additional_values or {}
         ban_emails = ban_emails or []
         partners, tocreate_vals_list = self.env["res.partner"], []
@@ -295,7 +298,7 @@ class ResPartner(models.Model):
         return self._get_partner_per_email(name_emails, emails, partners)
 
     @api.model
-    def _phone_vals_to_commands(self, vals: dict) -> dict:
+    def _phone_vals_to_commands(self, vals: ValuesType) -> ValuesType:
         commands = [
             Command.create({"number": number, "type": phone_type})
             for key, phone_type in (("phone", "landline"), ("mobile", "mobile"))
@@ -315,7 +318,7 @@ class ResPartner(models.Model):
         name_emails: list[tuple[str, str]],
         emails: list[str],
         partners: Self,
-    ) -> list:
+    ) -> list[Self]:
         empty = self.env["res.partner"]
         by_email_normalized, by_email, by_name = {}, {}, {}
         for partner in partners:
@@ -374,7 +377,7 @@ class ResPartner(models.Model):
     @api.model
     def get_mention_suggestions(
         self, search: str, limit: int = MENTION_SUGGESTIONS_LIMIT
-    ) -> dict:
+    ) -> dict[str, Any]:
         domain = self._get_domain_mention_suggestions(search)
         partners = self._search_mention_suggestions(domain, limit)
         store = Store().add(partners, extra_fields=partners._get_fields_store_mention())
@@ -425,7 +428,7 @@ class ResPartner(models.Model):
         return partners
 
     @api.model
-    def _get_current_persona(self) -> tuple:
+    def _get_current_persona(self) -> tuple[ResPartner, MailGuest]:
         if not self.env.user or self.env.user._is_public():
             return (
                 self.env["res.partner"],

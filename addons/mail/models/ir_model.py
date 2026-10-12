@@ -170,7 +170,7 @@ class IrModel(models.Model):
         return vals
 
     @api.model
-    def _prepare_class_attrs(self, model_data: dict) -> dict:
+    def _prepare_class_attrs(self, model_data: dict[str, Any]) -> dict[str, Any]:
         attrs = super()._prepare_class_attrs(model_data)
         if (
             model_data.get("is_mail_blacklist")
@@ -194,7 +194,7 @@ class IrModel(models.Model):
             attrs["_inherit"] = parents + ["mixin.mail.activity"]
         return attrs
 
-    def _get_definitions(self, model_names: list[str]) -> dict:
+    def _get_definitions(self, model_names: list[str]) -> dict[str, dict[str, Any]]:
         model_definitions = super()._get_definitions(model_names)
         for model_name, model_definition in model_definitions.items():
             model = self.env[model_name]

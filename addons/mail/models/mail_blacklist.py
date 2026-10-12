@@ -1,5 +1,5 @@
 from collections.abc import Collection
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from odoo import api, fields, models, tools
 from odoo.api import DomainType, ValuesType
@@ -164,7 +164,7 @@ class MailBlacklist(models.Model):
             )
         return record
 
-    def mail_action_blacklist_remove(self) -> dict:
+    def mail_action_blacklist_remove(self) -> dict[str, Any]:
         return {
             "name": self.env._(
                 "Are you sure you want to unblacklist this email address?"

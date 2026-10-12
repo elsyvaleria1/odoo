@@ -30,7 +30,9 @@ def _message(
     )
 
 
-def _envelope(message: bytes, recipients: list[str], sender: str = "") -> dict:
+def _envelope(
+    message: bytes, recipients: list[str], sender: str = ""
+) -> dict[str, str | list[str]]:
     return {
         "sender": sender,
         "recipients": recipients,

@@ -1,4 +1,4 @@
-from odoo.http import Controller, request, route
+from odoo.http import Controller, Response, request, route
 
 from ..tools.inbound_delivery import (
     InboundDelivery,
@@ -19,7 +19,7 @@ class MailInboundController(Controller):
         save_session=False,
         typed=True,
     )
-    def deliver(self, server_id: int):
+    def deliver(self, server_id: int) -> Response:
         admission = request.admission
         server = admission.subject
         try:

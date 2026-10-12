@@ -1,7 +1,7 @@
 import base64
 import typing
 from collections import defaultdict
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
 from hashlib import sha512
@@ -27,7 +27,7 @@ from odoo.addons.mail.models.ir_mail_server import MailDeliveryError
 from odoo.addons.mail.tools.channel_avatar import CHANNEL_AVATAR, GROUP_AVATAR
 from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput, StoreFieldSpec
 from odoo.addons.mail.tools.paging import clamp_limit
-from odoo.addons.mail.tools.recipients import prepare_recipient_data
+from odoo.addons.mail.tools.recipients import RecipientData, prepare_recipient_data
 from odoo.addons.mail.tools.web_push import PUSH_NOTIFICATION_TYPE
 
 if typing.TYPE_CHECKING:
@@ -797,7 +797,12 @@ class DiscussChannel(models.Model):
             channel.self_member_id = member_by_channel.get(channel)
 
     def _order_by_sql_is_favorite(
-        self, field: fields.Field, alias: str, direction: SQL, nulls: SQL, query: Any
+        self,
+        field: fields.Field[Any],
+        alias: str,
+        direction: SQL,
+        nulls: SQL,
+        query: Any,
     ) -> SQL:
         favorites = self.env["discuss.channel.member"]._search(
             Domain("is_self", "=", True) & Domain("is_favorite", "=", True)
@@ -855,7 +860,12 @@ class DiscussChannel(models.Model):
         return NotImplemented
 
     def _order_by_sql_is_meeting_over(
-        self, field: fields.Field, alias: str, direction: SQL, nulls: SQL, query: Any
+        self,
+        field: fields.Field[Any],
+        alias: str,
+        direction: SQL,
+        nulls: SQL,
+        query: Any,
     ) -> SQL:
         not_over = self._search(self._get_meeting_not_over_domain())
         return self._order_value_to_sql(
@@ -939,7 +949,7 @@ class DiscussChannel(models.Model):
 
     def _search_is_member(
         self, operator: str, operand: Any
-    ) -> list | NotImplementedType:
+    ) -> Domain | NotImplementedType:
         if operator != "in":
             return NotImplemented
         return Domain("channel_member_ids", "any", [("is_self", "=", True)])
@@ -1029,8 +1039,11 @@ class DiscussChannel(models.Model):
         )
 
     def _notify_get_recipients(
-        self, message: MailMessage, msg_vals: dict | Literal[False] = False, **kwargs
-    ) -> list:
+        self,
+        message: MailMessage,
+        msg_vals: ValuesType | Literal[False] = False,
+        **kwargs,
+    ) -> list[RecipientData]:
         self.check_singleton()
         msg_vals = msg_vals or {}
 
@@ -1078,8 +1091,11 @@ class DiscussChannel(models.Model):
         return frozenset({"comment", "email", "email_outgoing"})
 
     def _get_mentioned_recipients_data(
-        self, pids: list[int], author_id: int | Literal[False], email_from: str | None
-    ) -> list[dict]:
+        self,
+        pids: list[int],
+        author_id: int | Literal[False],
+        email_from: str | Literal[False] | None,
+    ) -> list[RecipientData]:
         if not pids:
             return []
         self.env["res.partner"].flush_model(
@@ -1152,9 +1168,9 @@ class DiscussChannel(models.Model):
     def _notify_get_recipients_groups(
         self,
         message: MailMessage,
-        model_description: str,
-        msg_vals: dict | Literal[False] = False,
-    ) -> list:
+        model_description: str | Literal[False] | None,
+        msg_vals: ValuesType | Literal[False] = False,
+    ) -> list[Sequence[Any]]:
         groups = super()._notify_get_recipients_groups(
             message, model_description, msg_vals=msg_vals
         )
@@ -1167,8 +1183,11 @@ class DiscussChannel(models.Model):
         return super()._get_notify_valid_parameters() | {"silent"}
 
     def _notify_thread(
-        self, message: MailMessage, msg_vals: dict | Literal[False] = False, **kwargs
-    ) -> list[dict]:
+        self,
+        message: MailMessage,
+        msg_vals: ValuesType | Literal[False] = False,
+        **kwargs,
+    ) -> list[RecipientData]:
         rdata = super()._notify_thread(message, msg_vals=msg_vals, **kwargs)
         if msg_vals:
             msg_vals = {
@@ -1201,9 +1220,9 @@ class DiscussChannel(models.Model):
     def _notify_by_web_push_prepare_payload(
         self,
         message: MailMessage,
-        msg_vals: dict | Literal[False] = False,
-        force_record_name: str | Literal[False] = False,
-    ) -> dict:
+        msg_vals: ValuesType | Literal[False] = False,
+        force_record_name: str | Literal[False] | None = False,
+    ) -> dict[str, Any]:
         payload = super()._notify_by_web_push_prepare_payload(
             message,
             msg_vals=msg_vals,
@@ -1226,9 +1245,9 @@ class DiscussChannel(models.Model):
     def _notify_thread_by_web_push(
         self,
         message: MailMessage,
-        recipients_data: list[dict],
-        msg_vals: dict | Literal[False] = False,
-        web_push_collector: list[dict] | None = None,
+        recipients_data: list[RecipientData],
+        msg_vals: ValuesType | Literal[False] = False,
+        web_push_collector: list[dict[str, Any]] | None = None,
         **kwargs,
     ) -> None:
         super()._notify_thread_by_web_push(
@@ -1296,7 +1315,7 @@ class DiscussChannel(models.Model):
                     )
                 )
 
-    def _message_post_prepare_values(self, post_values: dict) -> None:
+    def _message_post_prepare_values(self, post_values: ValuesType) -> None:
         super()._message_post_prepare_values(post_values)
         if post_values.get("message_type", "notification") not in [
             "notification",
@@ -1323,7 +1342,7 @@ class DiscussChannel(models.Model):
     ) -> None:
         return
 
-    def _message_post_subscribe_author(self, values_list: list[dict]) -> None:
+    def _message_post_subscribe_author(self, values_list: list[ValuesType]) -> None:
         return
 
     def _has_channel_notifications_enabled(self, partner: ResPartner) -> bool:
@@ -1332,7 +1351,9 @@ class DiscussChannel(models.Model):
             for user in partner.user_ids
         )
 
-    def _message_post_after_hook(self, message: MailMessage, msg_vals: dict) -> None:
+    def _message_post_after_hook(
+        self, message: MailMessage, msg_vals: ValuesType
+    ) -> None:
         if self.self_member_id and message.is_current_user_or_guest_author:
             self.self_member_id._mark_message_read(message, notify=False)
         if self.parent_channel_id and message.partner_ids:
@@ -1383,7 +1404,9 @@ class DiscussChannel(models.Model):
             )
 
     def _create_attachments_for_post(
-        self, values_list: list[dict], extra_list: list[tuple]
+        self,
+        values_list: list[ValuesType],
+        extra_list: list[tuple[Any, Any, Any, dict[str, Any]]],
     ) -> IrAttachment:
         attachments = super()._create_attachments_for_post(values_list, extra_list)
         voice = attachments.env["ir.attachment"]
@@ -1608,7 +1631,7 @@ class DiscussChannel(models.Model):
         guests: MailGuest | None = None,
         partners: ResPartner | None = None,
         users: ResUsers | None = None,
-        create_member_params: dict | None = None,
+        create_member_params: ValuesType | None = None,
         invite_to_rtc_call: bool = False,
         post_joined_message: bool = True,
         inviting_partner: ResPartner | None = None,
@@ -1658,7 +1681,7 @@ class DiscussChannel(models.Model):
 
     def _get_existing_members_by_channel(
         self, partners: ResPartner, guests: MailGuest
-    ) -> dict:
+    ) -> defaultdict[DiscussChannel, DiscussChannelMember]:
         Member = self.env["discuss.channel.member"]
         by_channel = defaultdict(lambda: Member)
         members = Member.search(
@@ -1704,9 +1727,9 @@ class DiscussChannel(models.Model):
         self,
         partners: ResPartner,
         guests: MailGuest,
-        existing_by_channel: dict,
-        create_member_params: dict | None,
-    ) -> tuple[DiscussChannelMember, dict]:
+        existing_by_channel: Mapping[DiscussChannel, DiscussChannelMember],
+        create_member_params: ValuesType | None,
+    ) -> tuple[DiscussChannelMember, defaultdict[DiscussChannel, DiscussChannelMember]]:
         Member = self.env["discuss.channel.member"]
         vals_by_sudo = defaultdict(list)
         channels_by_sudo = defaultdict(list)
@@ -1760,7 +1783,7 @@ class DiscussChannel(models.Model):
 
     @api.model
     def _find_members_for_values(
-        self, Member: DiscussChannelMember, vals_list: list[dict]
+        self, Member: DiscussChannelMember, vals_list: list[ValuesType]
     ) -> DiscussChannelMember:
         keys = [
             (
@@ -1788,7 +1811,9 @@ class DiscussChannel(models.Model):
             return Member.browse()
         return Member.browse(member_by_key[key] for key in keys)
 
-    def _invite_new_members_to_call(self, new_members_by_channel: dict) -> None:
+    def _invite_new_members_to_call(
+        self, new_members_by_channel: Mapping[DiscussChannel, DiscussChannelMember]
+    ) -> None:
         for channel in self:
             channel_new_members = new_members_by_channel.get(channel)
             if not channel_new_members:
@@ -1866,7 +1891,7 @@ class DiscussChannel(models.Model):
                 )
             raise UserError(error_msg) from mde
 
-    def _get_uninvited_emails(self, emails: list[str]) -> OrderedSet:
+    def _get_uninvited_emails(self, emails: list[str]) -> OrderedSet[str]:
         self.check_singleton()
         eligible_emails = OrderedSet(
             norm for email in emails if email and (norm := email_normalize(email))
@@ -1882,7 +1907,9 @@ class DiscussChannel(models.Model):
         )
         return eligible_emails
 
-    def _prepare_invitation_mail_vals(self, addresses: OrderedSet) -> list[dict]:
+    def _prepare_invitation_mail_vals(
+        self, addresses: OrderedSet[str]
+    ) -> list[ValuesType]:
         self.check_singleton()
         mail_body = (
             Markup("<p>%s</p>")
@@ -2126,12 +2153,13 @@ class DiscussChannel(models.Model):
     @api.model
     def _get_today_bounds(self) -> tuple[datetime, datetime]:
         today = fields.Date.context_today(self)
-        return tuple(
+        start, end = (
             datetime.combine(today, bound, tzinfo=self.env.tz)
             .astimezone(UTC)
             .replace(tzinfo=None)
             for bound in (time.min, time.max)
         )
+        return start, end
 
     @api.model
     def _get_meeting_domain(self) -> Domain:
@@ -2498,7 +2526,7 @@ class DiscussChannel(models.Model):
 
     @api.readonly
     @api.model
-    def get_mention_suggestions(self, search: str, limit: int = 8) -> dict:
+    def get_mention_suggestions(self, search: str, limit: int = 8) -> dict[str, Any]:
         domain = Domain(
             [
                 ("name", "ilike", search),
@@ -2591,7 +2619,7 @@ class DiscussChannel(models.Model):
             if videocalls
             else self.browse()
         )
-        res = [
+        res: list[StoreFieldSpec] = [
             Store.Attr("avatar_cache_key", predicate=has_generated_avatar),
             "channel_type",
             "create_uid",
@@ -2725,16 +2753,18 @@ class DiscussChannel(models.Model):
             case _:
                 return False
 
-    def _get_push_notification_title(self, author, record_name: str) -> str:
+    def _get_push_notification_title(
+        self, author: ResPartner | MailGuest, record_name: str | Literal[False]
+    ) -> str:
         self.check_singleton()
         name = author.name
         match self._channel_type_policy().push_title:
             case "author":
-                return name or record_name or self.display_name
+                return name or record_name or self.display_name or ""
             case "hashtag":
                 return f"#{record_name} - {name}" if name else f"#{record_name}"
             case _:
-                title = record_name or self.display_name
+                title = record_name or self.display_name or ""
                 return f"{title} - {name}" if name else title
 
     @classmethod
@@ -2860,7 +2890,7 @@ class DiscussChannel(models.Model):
 
     def _get_access_action(
         self, access_uid: int | None = None, force_website: bool = False
-    ) -> dict:
+    ) -> dict[str, Any]:
         self.check_singleton()
         if not self.env.user._is_internal() or force_website:
             return {

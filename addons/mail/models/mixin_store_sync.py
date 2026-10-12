@@ -9,6 +9,9 @@ from odoo.addons.mail.tools.discuss import Store, StoreFieldSpec
 
 _debug = DebugLog(__name__)
 
+type SyncFieldNames = dict[str | None, list[StoreFieldSpec]]
+type SyncValues = dict[str | None, dict[str, tuple[Any, StoreFieldSpec]]]
+
 
 class MixinStoreSync(models.AbstractModel):
     _name = "mixin.store.sync"
@@ -40,9 +43,7 @@ class MixinStoreSync(models.AbstractModel):
             return field_description._get_value(record)
         return record[field_description]
 
-    def _get_write_sync_field_names(
-        self, vals: ValuesType
-    ) -> dict[str | None, list[StoreFieldSpec]]:
+    def _get_write_sync_field_names(self, vals: ValuesType) -> SyncFieldNames:
         vals_keys = set(vals)
 
         def is_affected(field_description: StoreFieldSpec) -> bool:
@@ -73,8 +74,8 @@ class MixinStoreSync(models.AbstractModel):
         }
 
     def _get_sync_values(
-        self, record: models.Model, sync_field_names: dict
-    ) -> dict[str | None, dict]:
+        self, record: models.Model, sync_field_names: SyncFieldNames
+    ) -> SyncValues:
         return {
             subchannel: {
                 self._get_store_field_name(field_description): (
@@ -88,7 +89,7 @@ class MixinStoreSync(models.AbstractModel):
 
     def _prepare_sync_snapshot(
         self, vals: ValuesType, targets: models.Model | None = None
-    ) -> tuple[dict, dict]:
+    ) -> tuple[SyncFieldNames, dict[models.Model, SyncValues]]:
         targets = self if targets is None else targets
         sync_field_names = self._get_write_sync_field_names(vals)
         return sync_field_names, {
@@ -96,12 +97,19 @@ class MixinStoreSync(models.AbstractModel):
             for record in targets
         }
 
-    def _notify_sync_diffs(self, sync_field_names: dict, old_vals: dict) -> None:
+    def _notify_sync_diffs(
+        self,
+        sync_field_names: SyncFieldNames,
+        old_vals: dict[models.Model, SyncValues],
+    ) -> None:
         for record, record_old_vals in old_vals.items():
             self._notify_sync_diff(record, sync_field_names, record_old_vals)
 
     def _notify_sync_diff(
-        self, record: models.Model, sync_field_names: dict, old_vals: dict
+        self,
+        record: models.Model,
+        sync_field_names: SyncFieldNames,
+        old_vals: SyncValues,
     ) -> None:
         for subchannel, values in self._get_sync_values(
             record, sync_field_names

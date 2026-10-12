@@ -1,5 +1,6 @@
 import datetime
 import typing
+from typing import Any
 
 from odoo import fields, models
 from odoo.exceptions import UserError
@@ -94,7 +95,7 @@ class ResConfigSettings(models.TransientModel):
             )
         )
 
-    def open_email_layout(self) -> dict:
+    def open_email_layout(self) -> dict[str, Any]:
         layout = self.env.ref("mail.mail_notification_layout", raise_if_not_found=False)
         if not layout:
             raise UserError(self.env._("This layout seems to no longer exist."))
@@ -106,7 +107,7 @@ class ResConfigSettings(models.TransientModel):
             "res_model": "ir.ui.view",
         }
 
-    def open_mail_templates(self) -> dict:
+    def open_mail_templates(self) -> dict[str, Any]:
         return self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "mail.action_email_template_tree_all"
         )

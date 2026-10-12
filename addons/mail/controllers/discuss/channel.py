@@ -27,7 +27,7 @@ MAX_AVATAR_B64_BYTES = 10 * 1024 * 1024
 class DiscussChannelWebclientController(WebclientController):
     @classmethod
     def _process_request_loop(
-        cls, store: Store, fetch_params: list[str | list]
+        cls, store: Store, fetch_params: list[str | list[Any]]
     ) -> None:
         request.update_context(
             channels=request.env["discuss.channel"],
@@ -134,7 +134,7 @@ class ChannelController(http.Controller):
     @add_guest_to_context
     def discuss_channel_members(
         self, channel_id: int, known_member_ids: list[int], limit: int = 100
-    ) -> dict:
+    ) -> dict[str, Any]:
         channel = get_channel_or_404(channel_id)
         unknown_members = request.env["discuss.channel.member"].search(
             domain=[
@@ -162,8 +162,8 @@ class ChannelController(http.Controller):
     )
     @add_guest_to_context
     def discuss_channel_messages(
-        self, channel_id: int, fetch_params: dict | None = None
-    ) -> dict:
+        self, channel_id: int, fetch_params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         channel = get_channel_or_404(channel_id)
         with _debug.perf(
             "channel_messages",
@@ -183,7 +183,7 @@ class ChannelController(http.Controller):
         readonly=True,
     )
     @add_guest_to_context
-    def discuss_channel_pins(self, channel_id: int) -> dict:
+    def discuss_channel_pins(self, channel_id: int) -> dict[str, Any]:
         channel = get_channel_or_404(channel_id)
         messages = channel.pinned_message_ids.sorted(key="pinned_at", reverse=True)
         return Store().add(messages).get_result()
@@ -240,7 +240,7 @@ class ChannelController(http.Controller):
     @add_guest_to_context
     def load_attachments(
         self, channel_id: int, limit: int = 30, before: int | None = None
-    ) -> dict:
+    ) -> dict[str, Any]:
         channel = get_channel_or_404(channel_id)
         domain = [
             ["res_id", "=", channel.id],
@@ -274,7 +274,7 @@ class ChannelController(http.Controller):
         "/discuss/channel/join", methods=["POST"], type="jsonrpc", auth="public"
     )
     @add_guest_to_context
-    def discuss_channel_join(self, channel_id: int) -> dict:
+    def discuss_channel_join(self, channel_id: int) -> dict[str, Any]:
         channel = get_channel_or_404(channel_id)
         channel._get_or_create_member_for_self()
         return Store().add(channel).get_result()
@@ -290,7 +290,7 @@ class ChannelController(http.Controller):
         parent_channel_id: int,
         from_message_id: int | None = None,
         name: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         if not request.env.user._is_internal():
             raise Forbidden
         channel = get_channel_or_404(parent_channel_id)
@@ -321,7 +321,7 @@ class ChannelController(http.Controller):
         search_term: str | None = None,
         before: int | None = None,
         limit: int = 30,
-    ) -> dict:
+    ) -> dict[str, Any]:
         channel = get_channel_or_404(parent_channel_id)
         domain = [("parent_channel_id", "=", channel.id)]
         if before:

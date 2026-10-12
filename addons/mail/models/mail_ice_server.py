@@ -1,5 +1,6 @@
 import datetime
 import logging
+from typing import Any
 
 import requests
 
@@ -11,7 +12,9 @@ from odoo.addons.mail.tools.discuss import get_twilio_credentials
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-_twilio_ice_servers: dict[tuple[str, str, str], tuple[datetime.datetime, list]] = {}
+_twilio_ice_servers: dict[
+    tuple[str, str, str], tuple[datetime.datetime, list[dict[str, Any]]]
+] = {}
 
 
 class MailIceServer(models.Model):
@@ -48,7 +51,7 @@ class MailIceServer(models.Model):
         help="Holds this server's TURN credential.",
     )
 
-    def _get_local_ice_servers(self) -> list:
+    def _get_local_ice_servers(self) -> list[dict[str, Any]]:
         ice_servers = self.sudo().search([], limit=5)
         formatted_ice_servers = []
         for ice_server in ice_servers:
@@ -64,7 +67,7 @@ class MailIceServer(models.Model):
 
     _ICE_CACHE_TTL = datetime.timedelta(hours=1)
 
-    def _get_ice_servers(self) -> list:
+    def _get_ice_servers(self) -> list[dict[str, Any]]:
         (account_sid, auth_token) = get_twilio_credentials(self.env)
         if not (account_sid and auth_token):
             _debug.logic("ice_servers", by="local")
@@ -85,7 +88,9 @@ class MailIceServer(models.Model):
         _twilio_ice_servers[key] = (now + self._ICE_CACHE_TTL, servers)
         return servers
 
-    def _get_twilio_ice_servers(self, account_sid: str, auth_token: str) -> list | None:
+    def _get_twilio_ice_servers(
+        self, account_sid: str, auth_token: str
+    ) -> list[dict[str, Any]] | None:
         url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Tokens.json"
         try:
             with _debug.perf("twilio_tokens_requested") as span:

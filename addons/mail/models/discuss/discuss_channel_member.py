@@ -585,7 +585,7 @@ class DiscussChannelMember(models.Model):
 
     def _to_store_persona(
         self, field_specs: list[StoreFieldSpec] | None = None
-    ) -> list:
+    ) -> list[Store.Attr]:
         return [
             Store.Attr(
                 "partner_id",
@@ -690,7 +690,9 @@ class DiscussChannelMember(models.Model):
         if self.channel_id._is_call_invitation_required():
             self._rtc_invite_members()
 
-    def _join_sfu(self, ice_servers: list | None = None, force: bool = False) -> None:
+    def _join_sfu(
+        self, ice_servers: list[dict[str, Any]] | None = None, force: bool = False
+    ) -> None:
         if self.channel_id.sfu_channel_uuid and self.channel_id.sfu_server_url:
             return
         if len(self.channel_id.rtc_session_ids) < SFU_MODE_THRESHOLD and not force:
@@ -775,9 +777,9 @@ class DiscussChannelMember(models.Model):
     def _get_rtc_server_info(
         self,
         rtc_session: DiscussChannelRtcSession,
-        ice_servers: list | None = None,
+        ice_servers: list[dict[str, Any]] | None = None,
         key: str | None = None,
-    ) -> dict | None:
+    ) -> dict[str, str] | None:
         sfu_channel_uuid = self.channel_id.sfu_channel_uuid
         sfu_server_url = self.channel_id.sfu_server_url
         if not sfu_channel_uuid or not sfu_server_url:
@@ -821,7 +823,7 @@ class DiscussChannelMember(models.Model):
 
     def _rtc_sync_sessions(
         self, check_rtc_session_ids: list[int] | None = None
-    ) -> tuple:
+    ) -> tuple[DiscussChannelRtcSession, DiscussChannelRtcSession]:
         self.check_singleton()
         self.channel_id.rtc_session_ids._remove_inactive_rtc_sessions()
         check_rtc_sessions = self.env["discuss.channel.rtc.session"].browse(
@@ -1079,7 +1081,7 @@ class DiscussChannelMember(models.Model):
     def _get_html_link_title(self) -> str:
         return self._get_persona_name()
 
-    def _format_html_link_list(self, extra_items: tuple = ()) -> Markup:
+    def _format_html_link_list(self, extra_items: tuple[str, ...] = ()) -> Markup:
         params = [f"%(member_{member.id})s" for member in self] + list(extra_items)
         if not params:
             return Markup()

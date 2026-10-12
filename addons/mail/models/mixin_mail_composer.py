@@ -1,10 +1,10 @@
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 
 from odoo import api, fields, models, tools
 from odoo.libs.debug_log import DebugLog
 
-from .mixin_mail_render import BYPASS_RESTRICTED_RENDERING
+from .mixin_mail_render import BYPASS_RESTRICTED_RENDERING, RenderResId
 
 if typing.TYPE_CHECKING:
     from .mail_template import MailTemplate
@@ -138,7 +138,9 @@ class MixinMailComposer(models.AbstractModel):
             and not self.can_edit_body
         )
 
-    def _render_lang(self, res_ids: list[int], engine: str = "inline_template") -> dict:
+    def _render_lang(
+        self, res_ids: Sequence[RenderResId], engine: str = "inline_template"
+    ) -> Mapping[RenderResId, str | typing.Literal[False]]:
         self.check_singleton()
         record = self
         if self._is_value_from_template("lang") and not self.is_mail_template_editor:
@@ -150,14 +152,15 @@ class MixinMailComposer(models.AbstractModel):
     def _render_field(
         self,
         field_name: str,
-        res_ids: list[int],
+        res_ids: Sequence[RenderResId],
         engine: str = "inline_template",
         compute_lang: bool = False,
-        res_ids_lang: dict[int, str] | typing.Literal[False] = False,
+        res_ids_lang: Mapping[RenderResId, str | typing.Literal[False]]
+        | typing.Literal[False] = False,
         set_lang: str | typing.Literal[False] = False,
-        add_context: dict | None = None,
-        options: dict | None = None,
-    ) -> dict:
+        add_context: dict[str, typing.Any] | None = None,
+        options: dict[str, typing.Any] | None = None,
+    ) -> dict[RenderResId, str]:
         self.check_singleton()
         if not self.template_id:
             self._check_render_authoring(

@@ -169,11 +169,13 @@ class MixinMailTrackingDuration(models.AbstractModel):
                     record.is_rotting = True
                     record.rotting_days = (now - since).days
 
-    def _get_duration_from_tracking(self, trackings: list[dict]) -> dict:
+    def _get_duration_from_tracking(
+        self, trackings: list[dict[str, Any]]
+    ) -> dict[int, int]:
         self.check_singleton()
         fname = self._track_duration_field
         now = self.env.cr.now()
-        durations = defaultdict(int)
+        durations: defaultdict[int, int] = defaultdict(int)
         previous_date = self.create_date or now
 
         pending = self.env.cr.precommit.data.get(f"mail.tracking.{self._name}", {}).get(

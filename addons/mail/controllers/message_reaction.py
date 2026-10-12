@@ -20,7 +20,7 @@ class MessageReactionController(ThreadController):
     @add_guest_to_context
     def mail_message_reaction(
         self, message_id: int, content: str, action: str, **kwargs
-    ) -> dict:
+    ) -> dict[str, typing.Any]:
         if action not in ("add", "remove"):
             raise NotFound
         message = self._get_message_with_access(message_id, mode="create", **kwargs)

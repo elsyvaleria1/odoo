@@ -1,7 +1,7 @@
 import typing
 from collections import defaultdict
 from collections.abc import Collection, Mapping
-from typing import Literal, NamedTuple, Self
+from typing import Any, Literal, NamedTuple, Self
 
 from odoo import Command, api, fields, models
 from odoo.api import ValuesType
@@ -203,7 +203,9 @@ class MailFollowers(models.Model):
 
     _FOLLOWED_FNAMES = ("message_follower_ids",)
 
-    def _fields_read_by(self, reads: dict[str, tuple[str, ...]]) -> list[fields.Field]:
+    def _fields_read_by(
+        self, reads: dict[str, tuple[str, ...]]
+    ) -> list[fields.Field[Any]]:
         return [
             self.env[model]._fields[fname]
             for model, fnames in reads.items()
@@ -605,7 +607,7 @@ class MailFollowers(models.Model):
         subtypes_per_record: dict[int, dict[int, Collection[int]]],
         check_existing: bool = True,
         existing_policy: ExistingPolicy = "skip",
-    ) -> tuple[list[ValuesType], dict[int, tuple[frozenset, frozenset]]]:
+    ) -> tuple[list[ValuesType], dict[int, tuple[frozenset[int], frozenset[int]]]]:
         res_ids = list(subtypes_per_record)
         partner_ids = {
             pid for subtypes in subtypes_per_record.values() for pid in subtypes

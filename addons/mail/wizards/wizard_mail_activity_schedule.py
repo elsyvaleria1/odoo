@@ -2,6 +2,7 @@ import logging
 import typing
 from collections import defaultdict
 from datetime import date
+from typing import Any
 
 from markupsafe import Markup
 
@@ -479,7 +480,7 @@ class WizardMailActivitySchedule(models.TransientModel):
 
     @api.readonly
     @api.model
-    def get_model_options(self) -> list:
+    def get_model_options(self) -> list[str]:
         described = (
             self.env["ir.model"]
             .sudo()
@@ -497,7 +498,7 @@ class WizardMailActivitySchedule(models.TransientModel):
             if model.model in self.env and self.env[model.model].has_access("read")
         ]
 
-    def action_schedule_plan(self) -> dict:
+    def action_schedule_plan(self) -> dict[str, Any]:
         if not self.res_model:
             raise UserError(
                 self.env._("Plan-based scheduling is available only on documents.")
@@ -586,7 +587,7 @@ class WizardMailActivitySchedule(models.TransientModel):
 
     def _get_plan_template_errors_and_warnings(
         self, applied_on: models.BaseModel
-    ) -> tuple[set, set]:
+    ) -> tuple[set[str], set[str]]:
         self.check_singleton()
         errors, warnings = set(), set()
         for activity_template in self.plan_id.template_ids:
@@ -657,7 +658,7 @@ class WizardMailActivitySchedule(models.TransientModel):
         self.check_singleton()
         return parse_res_ids(self.res_ids, self.env) or []
 
-    def _get_applied_on_records(self) -> models.Model | None:
+    def _get_applied_on_records(self) -> models.BaseModel | None:
         if not self.res_model:
             return None
         return self.env[self.res_model].browse(self._evaluate_res_ids())

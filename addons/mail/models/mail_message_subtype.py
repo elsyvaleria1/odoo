@@ -75,10 +75,13 @@ class MailMessageSubtype(models.Model):
         return super().unlink()
 
     @tools.ormcache("model_name", cache="mail")
-    def _get_auto_subscription_subtypes(self, model_name: str) -> tuple:
+    def _get_auto_subscription_subtypes(
+        self, model_name: str
+    ) -> tuple[list[int], list[int], list[int], dict[int, int], dict[str, set[str]]]:
         child_ids, def_ids = [], []
         all_int_ids = []
-        parent, relation = {}, {}
+        parent: dict[int, int] = {}
+        relation: dict[str, set[str]] = {}
         subtypes = self.sudo().search(
             [
                 "|",
@@ -110,7 +113,7 @@ class MailMessageSubtype(models.Model):
         return child_ids, def_ids, all_int_ids, parent, relation
 
     @api.model
-    def default_subtypes(self, model_name: str) -> tuple:
+    def default_subtypes(self, model_name: str) -> tuple[Self, Self, Self]:
         subtype_ids, internal_ids, external_ids = self._get_subtypes(model_name)
         return (
             self.browse(subtype_ids),
@@ -119,7 +122,7 @@ class MailMessageSubtype(models.Model):
         )
 
     @tools.ormcache("self.env.su", "self.env.user.share", "model_name", cache="mail")
-    def _get_subtypes(self, model_name: str) -> tuple:
+    def _get_subtypes(self, model_name: str) -> tuple[list[int], list[int], list[int]]:
         domain = [
             ("default", "=", True),
             "|",

@@ -1,7 +1,9 @@
 import contextlib
 import typing
+from typing import Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.misc import (
@@ -62,12 +64,12 @@ class IrAttachment(models.Model):
         )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         attachments = super().create(vals_list)
         attachments._invalidate_thread_attachment_count()
         return attachments
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         invalidate = "res_model" in vals or "res_id" in vals
         if invalidate:
             self._invalidate_thread_attachment_count()
@@ -76,7 +78,7 @@ class IrAttachment(models.Model):
             self._invalidate_thread_attachment_count()
         return res
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         self._invalidate_thread_attachment_count()
         return super().unlink()
 

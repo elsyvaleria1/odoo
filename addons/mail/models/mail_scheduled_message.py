@@ -2,7 +2,7 @@ import contextlib
 import logging
 import typing
 from collections.abc import Collection, Iterator
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from markupsafe import Markup
 
@@ -191,7 +191,7 @@ class MailScheduledMessage(models.Model):
             )
         return res
 
-    def open_edit_form(self) -> dict:
+    def open_edit_form(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
@@ -371,7 +371,7 @@ class MailScheduledMessage(models.Model):
             )
 
     @api.model
-    def _notification_parameters_whitelist(self) -> set:
+    def _notification_parameters_whitelist(self) -> set[str]:
         return {
             "email_add_signature",
             "email_from",

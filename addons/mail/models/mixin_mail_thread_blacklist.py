@@ -3,6 +3,7 @@ from types import NotImplementedType
 from typing import Any, Literal
 
 from odoo import api, fields, models, tools
+from odoo.api import DomainType
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
@@ -53,7 +54,7 @@ class MixinMailThreadBlacklist(models.AbstractModel):
     @api.model
     def _search_is_blacklisted(
         self, operator: str, value: Any
-    ) -> list | NotImplementedType:
+    ) -> DomainType | NotImplementedType:
         if operator not in ("in", "not in"):
             return NotImplemented
         self.flush_model(["email_normalized"])
@@ -126,7 +127,7 @@ class MixinMailThreadBlacklist(models.AbstractModel):
         )
         self.write({"message_bounce": 0})
 
-    def mail_action_blacklist_remove(self) -> dict:
+    def mail_action_blacklist_remove(self) -> dict[str, Any]:
         can_access = self.env["mail.blacklist"].has_access("write")
         if can_access:
             return {
@@ -148,7 +149,7 @@ class MixinMailThreadBlacklist(models.AbstractModel):
     @api.model
     def _get_domain_loop_sender(
         self, email_from_normalized: str | Literal[False]
-    ) -> list[str | tuple] | None:
+    ) -> list[str | tuple[str, str, Any]] | None:
         if not email_from_normalized:
             return None
         return [("email_normalized", "=", email_from_normalized)]

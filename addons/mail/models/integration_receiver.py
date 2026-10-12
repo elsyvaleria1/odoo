@@ -1,6 +1,7 @@
 from odoo import models
 
 from ..tools.inbound_delivery import INBOUND_MAIL_MAX_BYTES, INBOUND_MAIL_PURPOSE
+from odoo.addons.integration.tools.admission import Admission
 
 
 class IntegrationReceiver(models.Model):
@@ -13,7 +14,9 @@ class IntegrationReceiver(models.Model):
             and self.res_purpose == INBOUND_MAIL_PURPOSE
         )
 
-    def _inbound_event_id(self, admission, event_type: str | None) -> str | None:
+    def _inbound_event_id(
+        self, admission: Admission, event_type: str | None
+    ) -> str | None:
         if self._is_inbound_mail_receiver():
             return admission.payload_hash
         return super()._inbound_event_id(admission, event_type)

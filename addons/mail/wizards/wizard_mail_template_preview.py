@@ -1,6 +1,7 @@
 import typing
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
 
@@ -29,7 +30,7 @@ class WizardMailTemplatePreview(models.TransientModel):
     ]
 
     @api.model
-    def _selection_target_model(self) -> list:
+    def _selection_target_model(self) -> list[tuple[str, str]]:
         return [
             (model.model, model.name)
             for model in self.env["ir.model"].sudo().search([])
@@ -160,7 +161,7 @@ class WizardMailTemplatePreview(models.TransientModel):
             res = self.env[model].search([], limit=1)  # noqa: E8507 -- the probed model varies per preview, so no one query spans them
             preview.resource_ref = f"{model},{res.id}" if res else False
 
-    def _update_mail_attributes(self, values: dict | None = None) -> None:
+    def _update_mail_attributes(self, values: ValuesType | None = None) -> None:
         _debug.logic(
             "preview_attributes",
             template=self.mail_template_id.id,

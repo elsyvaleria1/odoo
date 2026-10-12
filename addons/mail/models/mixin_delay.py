@@ -1,3 +1,5 @@
+from dateutil.relativedelta import relativedelta
+
 from odoo import fields, models
 from odoo.tools.date_utils import get_timedelta, time_unit_selection
 
@@ -21,6 +23,6 @@ class MixinDelay(models.AbstractModel):
         help="Unit of delay",
     )
 
-    def _get_delay_delta(self):
+    def _get_delay_delta(self) -> relativedelta:
         self.check_singleton()
         return get_timedelta(self.delay_count, self.delay_unit)

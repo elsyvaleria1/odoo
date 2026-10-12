@@ -72,7 +72,7 @@ class MailActivityPlan(models.Model):
                 for template in plan.template_ids
             )
 
-    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType]:
+    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType | None]:
         default = dict(default or {})
         vals_list = super().copy_data(default=default)
         if "name" not in default:

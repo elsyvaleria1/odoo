@@ -6,7 +6,7 @@ import ssl
 from collections.abc import Collection, Iterator, Sequence
 from imaplib import IMAP4, IMAP4_SSL
 from poplib import POP3, POP3_SSL
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
 
 from odoo.libs import netguard
 from odoo.libs.debug_log import DebugLog
@@ -89,7 +89,7 @@ class OdooIMAP4(IMAP4):
     def _create_socket(self, timeout: float | None) -> socket.socket:
         return netguard.dial(self.netguard_addresses, self.port, timeout=timeout)
 
-    def _check(self, typ: str, data: list, command: str) -> list:
+    def _check(self, typ: str, data: list[Any], command: str) -> list[Any]:
         if typ != "OK":
             raise IMAP4.error(f"{command} failed: {typ} {data!r}")
         return data

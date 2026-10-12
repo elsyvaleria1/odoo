@@ -10,7 +10,7 @@ from odoo.libs.debug_log import DebugLog
 _debug = DebugLog(__name__)
 
 
-def parse_body_fragments(body: str) -> list:
+def parse_body_fragments(body: str) -> list[etree._Element | str]:
     try:
         return lxml.html.fragments_fromstring(body)
     except ValueError:
@@ -18,14 +18,16 @@ def parse_body_fragments(body: str) -> list:
         return lxml.html.fragments_fromstring(body.encode("utf-8"))
 
 
-def iter_fragment_elements(fragments: list, tag: str | None = None) -> Iterator:
+def iter_fragment_elements(
+    fragments: list[etree._Element | str], tag: str | None = None
+) -> Iterator[etree._Element]:
     nodes = (f for f in fragments if not isinstance(f, str))
     if tag is None:
         return itertools.chain.from_iterable(node.iter() for node in nodes)
     return itertools.chain.from_iterable(node.iter(tag) for node in nodes)
 
 
-def render_body_fragments(fragments: list) -> Markup:
+def render_body_fragments(fragments: list[etree._Element | str]) -> Markup:
     return Markup(
         "".join(
             str(escape(fragment))

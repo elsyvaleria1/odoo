@@ -1,7 +1,7 @@
 import logging
 import typing
 from collections import defaultdict
-from collections.abc import Callable, Collection, Iterable
+from collections.abc import Callable, Collection, Iterable, Mapping
 from email.message import EmailMessage
 from typing import Any, Literal, Self, TypedDict
 
@@ -10,6 +10,7 @@ from lxml.builder import E
 from markupsafe import Markup
 
 from odoo import api, exceptions, fields, models, tools
+from odoo.api import NewId, ValuesType
 from odoo.db.schema import get_table_columns
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
@@ -63,7 +64,7 @@ class SuggestedRecipient(TypedDict, total=False):
     email: str | Literal[False]
     name: str | Literal[False]
     partner_id: int | Literal[False]
-    create_values: dict
+    create_values: ValuesType
 
 
 _MAIL_EMAIL_FIELD_TYPES = ("char", "text")
@@ -93,7 +94,7 @@ class Base(models.AbstractModel):
     _mail_default_email_cc_fields = ("email_cc", "partner_email_cc", "x_email_cc")
     _mail_default_timezone_fields = ("date_tz", "tz", "timezone")
 
-    def _is_valid_field_parameter(self, field: fields.Field, name: str) -> bool:
+    def _is_valid_field_parameter(self, field: fields.Field[Any], name: str) -> bool:
         return (
             name == "tracking" and self._abstract
         ) or super()._is_valid_field_parameter(field, name)
@@ -103,7 +104,7 @@ class Base(models.AbstractModel):
     def _display_name_field_names(self) -> frozenset[str]:
         field_depends = self.env.registry.field_depends
         roots: set[str] = set()
-        expanded: set[fields.Field] = set()
+        expanded: set[fields.Field[Any]] = set()
         todo = [self._fields["display_name"]]
         while todo:
             field = todo.pop()
@@ -193,7 +194,7 @@ class Base(models.AbstractModel):
     def _creation_subtype(self) -> MailMessageSubtype:
         return self.env["mail.message.subtype"]
 
-    def _mail_get_customer_information(self) -> dict[str, dict]:
+    def _mail_get_customer_information(self) -> dict[str, ValuesType]:
         return {}
 
     @api.model
@@ -215,8 +216,8 @@ class Base(models.AbstractModel):
 
     def _mail_get_operation_for_mail_message_operation(
         self, message_operation: str
-    ) -> dict[models.Model, str]:
-        result: dict[models.Model, str] = {}
+    ) -> dict[Self, str]:
+        result: dict[Self, str] = {}
         for operation, domain in self._mail_operation_domains(
             message_operation
         ).items():
@@ -246,7 +247,7 @@ class Base(models.AbstractModel):
 
     def _mail_group_by_operation_for_mail_message_operation(
         self, message_operation: str
-    ) -> dict[str, models.Model]:
+    ) -> dict[str, Self]:
         document_operations = self._mail_get_operation_for_mail_message_operation(
             message_operation
         )
@@ -416,8 +417,8 @@ class Base(models.AbstractModel):
         )
 
     def _mail_track(
-        self, tracked_fields: dict[str, dict], initial_values: dict[str, Any]
-    ) -> tuple[set[str], list[list]]:
+        self, tracked_fields: dict[str, dict[str, Any]], initial_values: dict[str, Any]
+    ) -> tuple[set[str], list[list[Any]]]:
         self.check_singleton()
         updated = set()
         tracking_value_ids = []
@@ -491,7 +492,7 @@ class Base(models.AbstractModel):
         return updated, tracking_value_ids
 
     def _mail_track_field_sequences(
-        self, tracked_fields: dict[str, dict]
+        self, tracked_fields: dict[str, dict[str, Any]]
     ) -> dict[str, int]:
         return {
             col_name: self._mail_track_get_field_sequence(col_name)
@@ -499,7 +500,7 @@ class Base(models.AbstractModel):
         }
 
     def _mail_track_order_fields(
-        self, tracked_fields: dict[str, dict]
+        self, tracked_fields: dict[str, dict[str, Any]]
     ) -> list[tuple[str, int]]:
         fields_track_info = list(
             self._mail_track_field_sequences(tracked_fields).items()
@@ -805,11 +806,13 @@ class Base(models.AbstractModel):
 
     def _message_suggested_recipients_emails(
         self,
-        suggested: dict[int, SuggestionSources],
-        followers_by_record: dict[int, ResPartner],
-        prefetch_ids: set,
+        suggested: Mapping[int | NewId, SuggestionSources],
+        followers_by_record: Mapping[int | NewId, ResPartner],
+        prefetch_ids: set[int],
         email_keys: dict[Any, set[str]],
-    ) -> tuple[dict[models.BaseModel, list[str]], set[str]]:
+    ) -> tuple[dict[models.BaseModel, list[str]], set[str | Literal[False]]]:
+        records_emails: dict[models.BaseModel, list[str]]
+        all_emails: set[str | Literal[False]]
         records_emails, all_emails = {}, set()
         for record in self:
             partners = suggested[record.id]["partners"]
@@ -835,8 +838,8 @@ class Base(models.AbstractModel):
         partners: ResPartner,
         followers: ResPartner,
         keep_followers: ResPartner,
-        ban_emails: set,
-        prefetch_ids: set,
+        ban_emails: set[str],
+        prefetch_ids: set[int],
     ) -> ResPartner:
         return (
             self.env["res.partner"]
@@ -885,8 +888,8 @@ class Base(models.AbstractModel):
         avoid_alias: bool = True,
         ban_emails: list[str] | None = None,
         filter_found: Callable[[ResPartner], Any] | None = None,
-        additional_values: dict[str, dict] | None = None,
-        customer_information: dict[str, dict] | None = None,
+        additional_values: dict[str, ValuesType] | None = None,
+        customer_information: dict[str, ValuesType] | None = None,
         no_create: bool = False,
     ) -> ResPartner:
         if self:
@@ -921,9 +924,9 @@ class Base(models.AbstractModel):
 
     def _partner_get_or_create_from_emails_values(
         self,
-        additional_values: dict[str, dict] | None = None,
-        customer_information: dict[str, dict] | None = None,
-    ) -> dict[str, dict]:
+        additional_values: dict[str, ValuesType] | None = None,
+        customer_information: dict[str, ValuesType] | None = None,
+    ) -> dict[str, ValuesType]:
         values = (
             self._mail_get_customer_information_batch()
             if customer_information is None
@@ -965,10 +968,10 @@ class Base(models.AbstractModel):
         avoid_alias: bool = True,
         ban_emails: list[str] | None = None,
         filter_found: Callable[[ResPartner], Any] | None = None,
-        additional_values: dict[str, dict] | None = None,
-        customer_information: dict[str, dict] | None = None,
+        additional_values: dict[str, ValuesType] | None = None,
+        customer_information: dict[str, ValuesType] | None = None,
         no_create: bool = False,
-    ) -> dict[int | Literal[False], ResPartner]:
+    ) -> dict[int | NewId | Literal[False], ResPartner]:
         records = self._partner_get_or_create_from_emails_records(records_emails)
         res_ids = list(records._ids) or [record.id for record in records_emails]
         found_results = dict.fromkeys(res_ids, self.env["res.partner"])
@@ -1050,7 +1053,7 @@ class Base(models.AbstractModel):
         )
         return found_results
 
-    def _mail_get_customer_information_batch(self) -> dict[str, dict]:
+    def _mail_get_customer_information_batch(self) -> dict[str, ValuesType]:
         values = {}
         for record in self:
             for (
@@ -1104,7 +1107,7 @@ class Base(models.AbstractModel):
         self,
         partners: ResPartner,
         email_to_lst: list[str],
-        emails_normalized_info: dict[str, dict],
+        emails_normalized_info: dict[str, ValuesType],
     ) -> list[SuggestedRecipient]:
         recipients = [
             {
@@ -1234,8 +1237,14 @@ class Base(models.AbstractModel):
             author_ids=dict.fromkeys(keys, author_id),
         )
 
-    def _notify_reply_to_scope(self) -> tuple[str | Literal[False], list, list]:
-        model = self._name if self and self._name != "mixin.mail.thread" else False
+    def _notify_reply_to_scope(
+        self,
+    ) -> tuple[
+        str | Literal[False], list[int | NewId], list[int | NewId | Literal[False]]
+    ]:
+        model: str | Literal[False] = (
+            self._name if self and self._name != "mixin.mail.thread" else False
+        )
         res_ids = list(self._ids) if model else []
         return model, res_ids, res_ids or [False]
 
@@ -1315,13 +1324,18 @@ class Base(models.AbstractModel):
 
     def _notify_get_reply_to_per_author(
         self, author_pairs: Collection[tuple[int | Literal[False], str | None]]
-    ) -> dict[tuple, dict]:
+    ) -> dict[
+        tuple[int | Literal[False], str | None],
+        dict[int | Literal[False], str | None],
+    ]:
         keys = self._notify_reply_to_scope()[2]
         reply_to_email = self._notify_get_reply_to_addresses()
         format_reply_to = self._notify_reply_to_formatter()
         result = {}
         for author_id, author_email in author_pairs:
-            formatted = dict.fromkeys(keys, author_email)
+            formatted: dict[int | Literal[False], str | None] = dict.fromkeys(
+                keys, author_email
+            )
             for res_id, record_reply_to in reply_to_email.items():
                 formatted[res_id] = format_reply_to(record_reply_to, author_id)
             result[(author_id, author_email)] = formatted
@@ -1486,7 +1500,7 @@ class Base(models.AbstractModel):
         )
 
     def _mail_format_field_value(
-        self, value: Any, field: fields.Field, record: models.Model
+        self, value: Any, field: fields.Field[Any], record: models.Model
     ) -> str:
         if field.type == "selection":
             return field.convert_to_export(value, record) or ""

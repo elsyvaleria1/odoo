@@ -50,7 +50,7 @@ class MailMessage(models.Model):
         return value if isinstance(value, bool) else None
 
     @api.model
-    def _filter_fetch_params(self, fetch_params: Any) -> dict:
+    def _filter_fetch_params(self, fetch_params: Any) -> dict[str, Any]:
         if not isinstance(fetch_params, dict):
             return {}
         return {
@@ -68,14 +68,14 @@ class MailMessage(models.Model):
         after: int | Literal[False] | None = None,
         around: int | Literal[False] | None = None,
         limit: int = FETCH_LIMIT_DEFAULT,
-    ) -> dict:
+    ) -> dict[str, Any]:
         limit = self._clamp_fetch_limit(limit)
         before = self._to_message_cursor(before)
         after = self._to_message_cursor(after)
         around = self._to_message_cursor(around)
         search_term = self._to_search_term(search_term)
         is_notification = self._to_notification_filter(is_notification)
-        res = {}
+        res: dict[str, Any] = {}
         domain = Domain(True if domain is None else domain)
         domain &= self._get_domain_scope(thread=thread, is_notification=is_notification)
         if search_term:

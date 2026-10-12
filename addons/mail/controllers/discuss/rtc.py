@@ -1,7 +1,9 @@
 import json
 from collections import defaultdict
+from typing import Any
 
 from odoo import http
+from odoo.api import DomainType
 from odoo.http import NotFound, Response, request
 from odoo.libs.debug_log import DebugLog
 
@@ -37,7 +39,7 @@ class RtcController(http.Controller):
         auth="public",
     )
     @add_guest_to_context
-    def session_call_notify(self, peer_notifications: list) -> None:
+    def session_call_notify(self, peer_notifications: list[Any]) -> None:
         guest = request.env["mail.guest"]._get_guest_from_context()
         if not isinstance(peer_notifications, (list, tuple)):
             raise NotFound
@@ -88,7 +90,9 @@ class RtcController(http.Controller):
         auth="public",
     )
     @add_guest_to_context
-    def session_update_and_broadcast(self, session_id: int, values: dict) -> None:
+    def session_update_and_broadcast(
+        self, session_id: int, values: dict[str, Any]
+    ) -> None:
         if not isinstance(values, dict):
             raise NotFound
         if request.env.user._is_public():
@@ -125,7 +129,7 @@ class RtcController(http.Controller):
         channel_id: int,
         check_rtc_session_ids: list[int] | None = None,
         camera: bool = False,
-    ) -> dict:
+    ) -> dict[str, Any]:
         channel = get_channel_or_404(channel_id)
         member = channel._get_or_create_member_for_self()
         if not member:
@@ -199,11 +203,11 @@ class RtcController(http.Controller):
         channel_id: int,
         rtc_session_id: int | None = None,
         check_rtc_session_ids: list[int] | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         member = get_self_member_or_404(channel_id)
         channel_member_sudo = member.sudo()
         if rtc_session_id:
-            domain = [
+            domain: DomainType = [
                 ("id", "=", to_record_id(rtc_session_id)),
                 ("channel_member_id", "=", member.id),
             ]

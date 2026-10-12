@@ -2,14 +2,14 @@ import logging
 import typing
 from collections import defaultdict
 from datetime import datetime
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 import requests
 from dateutil.relativedelta import relativedelta
 from markupsafe import Markup
 
 from odoo import api, fields, models
-from odoo.api import ValuesType
+from odoo.api import DomainType, ValuesType
 from odoo.libs.debug_log import DebugLog
 
 from odoo.addons.mail.models.discuss.discuss_channel_member import AVATAR_CARD_FIELDS
@@ -159,7 +159,7 @@ class DiscussChannelRtcSession(models.Model):
     def _bus_channel(self) -> models.Model:
         return self.channel_member_id._bus_channel()
 
-    def _update_and_broadcast(self, values: dict) -> None:
+    def _update_and_broadcast(self, values: dict[str, Any]) -> None:
         valid_values = {"is_screen_sharing_on", "is_camera_on", "is_muted", "is_deaf"}
         _debug.lifecycle(
             "session_updated",
@@ -229,7 +229,7 @@ class DiscussChannelRtcSession(models.Model):
     def _remove_inactive_rtc_sessions(self) -> None:
         self.filtered_domain(self._get_domain_inactive_rtc_sessions()).unlink()
 
-    def _notify_peers(self, notifications: list[tuple]) -> None:
+    def _notify_peers(self, notifications: list[tuple[list[int], Any]]) -> None:
         self.check_singleton()
         payload_by_target = defaultdict(
             lambda: {"sender": self.id, "notifications": []}
@@ -275,7 +275,7 @@ class DiscussChannelRtcSession(models.Model):
         return now - relativedelta(minutes=1, seconds=15)
 
     @api.model
-    def _get_domain_inactive_rtc_sessions(self) -> list:
+    def _get_domain_inactive_rtc_sessions(self) -> DomainType:
         return [
             (
                 "write_date",

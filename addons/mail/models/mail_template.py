@@ -6,7 +6,7 @@ import re
 import threading
 import typing
 from ast import literal_eval
-from collections.abc import Collection, Iterator
+from collections.abc import Collection, Iterator, Mapping
 from itertools import batched
 from types import NotImplementedType
 from typing import Any, Literal, Self
@@ -24,6 +24,8 @@ from odoo.tools.rendering_tools import parse_inline_template
 from odoo.tools.safe_eval import safe_eval, time
 
 if typing.TYPE_CHECKING:
+    from odoo.db import Cursor
+
     from .ir_mail_server import IrMail_Server
     from .mail_mail import MailMail
     from odoo.addons.base.models.ir_actions_act_window import IrActionsAct_Window
@@ -540,7 +542,7 @@ class MailTemplate(models.Model):
     def _check_rendering(
         self,
         fnames: Collection[str] | None = None,
-        render_options: dict | None = None,
+        render_options: dict[str, Any] | None = None,
     ) -> None:
 
         if self.env.context.get("install_mode"):
@@ -566,7 +568,7 @@ class MailTemplate(models.Model):
         self._probe_rendering_samples(checked_fnames, render_options)
 
     def _probe_rendering_samples(
-        self, fnames: Collection[str], render_options: dict | None
+        self, fnames: Collection[str], render_options: dict[str, Any] | None
     ) -> None:
         samples = self._get_rendering_samples()
         if not samples:
@@ -723,7 +725,9 @@ class MailTemplate(models.Model):
             hooks = thread.query_hooks = []
         modified = False
 
-        def watch(_cr, query, _params, _start, _delay):
+        def watch(
+            _cr: Cursor, query: Any, _params: Any, _start: float, _delay: float
+        ) -> None:
             nonlocal modified
             if not modified:
                 code = str(getattr(query, "code", query))
@@ -752,7 +756,7 @@ class MailTemplate(models.Model):
         self,
         samples: dict[str, models.BaseModel],
         fnames: Collection[str],
-        render_options: dict | None,
+        render_options: dict[str, Any] | None,
     ) -> tuple[int, str, Exception] | None:
         failures: list[tuple[int, str, Exception]] = []
         with self._probe_isolation():
@@ -827,7 +831,7 @@ class MailTemplate(models.Model):
         self.unlink_action()
         return super().unlink()
 
-    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType]:
+    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType | None]:
         vals_list = super().copy_data(default=default)
         for vals, template in zip(vals_list, self, strict=True):
             if "name" not in (default or {}) and vals.get("name") == template.name:
@@ -893,7 +897,7 @@ class MailTemplate(models.Model):
         _debug.lifecycle("actions_created", templates=self.ids, actions=actions.ids)
         return True
 
-    def action_view_mail_preview(self) -> dict:
+    def action_view_mail_preview(self) -> dict[str, Any]:
         self.check_singleton()
         action = self.env.ref("mail.mail_template_preview_action")._get_action_dict()
         action.update(
@@ -1193,7 +1197,7 @@ class MailTemplate(models.Model):
         render_fields: Collection[str],
         recipients_allow_suggested: bool = False,
         find_or_create_partners: bool = False,
-        res_ids_lang: dict[int, str] | None = None,
+        res_ids_lang: Mapping[int, str | Literal[False]] | None = None,
     ) -> RenderResults:
         self.check_singleton()
         self._check_has_model()
@@ -1263,11 +1267,11 @@ class MailTemplate(models.Model):
                 partner_ids.append(pid)
         return partner_ids
 
-    def _get_model(self) -> models.Model:
+    def _get_model(self) -> models.BaseModel:
         self._check_has_model()
         return self.env[self.model]
 
-    def _get_records(self, res_ids: Collection[int]) -> models.Model:
+    def _get_records(self, res_ids: Collection[int]) -> models.BaseModel:
         return self._get_model().browse(res_ids)
 
     def _is_thread_model(self) -> bool:
@@ -1294,7 +1298,7 @@ class MailTemplate(models.Model):
         res_id: int,
         force_send: bool = False,
         raise_exception: bool = False,
-        email_values: dict | None = None,
+        email_values: ValuesType | None = None,
         email_layout_xmlid: str | Literal[False] = False,
     ) -> int:
         self.check_singleton()
@@ -1311,7 +1315,7 @@ class MailTemplate(models.Model):
         res_ids: Collection[int],
         force_send: bool = False,
         raise_exception: bool = False,
-        email_values: dict | None = None,
+        email_values: ValuesType | None = None,
         email_layout_xmlid: str | Literal[False] = False,
     ) -> MailMail:
         self.check_singleton()
@@ -1344,7 +1348,7 @@ class MailTemplate(models.Model):
         self,
         res_ids: list[int],
         layout_xmlid: str | Literal[False],
-        email_values: dict | None,
+        email_values: ValuesType | None,
     ) -> MailMail:
         self.check_singleton()
         res_ids_lang = self._get_res_ids_lang(res_ids)
@@ -1389,7 +1393,7 @@ class MailTemplate(models.Model):
         layout_xmlid: str | Literal[False],
         lang: str | Literal[False] | None,
         company: models.BaseModel | None,
-        email_values: dict | None,
+        email_values: ValuesType | None,
     ) -> None:
         self.check_singleton()
         values["recipient_ids"] = [
@@ -1502,7 +1506,7 @@ class MailTemplate(models.Model):
         return source == self._prepare_model_template_defaults(model).get(fname)
 
     @api.model
-    def _prepare_model_template_defaults(self, model: str) -> dict:
+    def _prepare_model_template_defaults(self, model: str) -> ValuesType:
         if model not in self.env:
             return {}
         defaults = getattr(self.env[model], "_mail_template_default_values", None)

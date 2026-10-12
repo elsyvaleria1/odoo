@@ -71,12 +71,12 @@
   "raw_durations_odoo": 280,
   "return_action_bool_result_agromarin": 2,
   "return_action_bool_result_l10n": 6,
-  "return_action_bool_result_odoo": 76,
+  "return_action_bool_result_odoo": 75,
   "return_bool_or_none_l10n": 3,
   "return_bool_or_none_odoo": 16,
   "return_false_sentinel_agromarin": 1,
   "return_false_sentinel_l10n": 9,
   "return_false_sentinel_odoo": 45,
   "return_mixed_value_kinds_l10n": 7,
-  "return_mixed_value_kinds_odoo": 36
+  "return_mixed_value_kinds_odoo": 35
 }

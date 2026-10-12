@@ -44,7 +44,7 @@ class GoogleTranslateController(Controller):
         return lang.split("_")[0]
 
     @route("/mail/message/translate", methods=["POST"], type="jsonrpc", auth="user")
-    def translate(self, message_id: int) -> dict:
+    def translate(self, message_id: int) -> dict[str, typing.Any]:
         message = request.env["mail.message"].search(
             [("id", "=", to_record_id(message_id))]
         )
@@ -143,7 +143,9 @@ class GoogleTranslateController(Controller):
         )
         return response.json()["data"]["translations"][0]["translatedText"]
 
-    def _post(self, endpoint: str = "", data: dict | None = None) -> requests.Response:
+    def _post(
+        self, endpoint: str = "", data: dict[str, str] | None = None
+    ) -> requests.Response:
         api_key = request.env["credential.credential"]._get_system_secret(
             "mail.google_translate_api_key"
         )

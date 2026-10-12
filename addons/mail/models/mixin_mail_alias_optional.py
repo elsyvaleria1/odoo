@@ -188,7 +188,7 @@ class MixinMailAliasMixinOptional(models.AbstractModel):
         aliases.sudo().unlink()
         return res
 
-    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType]:
+    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType | None]:
         vals_list = super().copy_data(default=default)
         not_writable_fields = set(self.env["mail.alias"]._fields.keys()) - set(
             self.ALIAS_WRITEABLE_FIELDS
@@ -200,10 +200,10 @@ class MixinMailAliasMixinOptional(models.AbstractModel):
         return vals_list
 
     @api.model
-    def _is_new_alias_required(self, record_vals: dict) -> bool:
-        return not record_vals.get("alias_id") and record_vals.get("alias_name")
+    def _is_new_alias_required(self, record_vals: ValuesType) -> bool:
+        return not record_vals.get("alias_id") and bool(record_vals.get("alias_name"))
 
-    def _alias_get_alias_domain_id(self) -> dict:
+    def _alias_get_alias_domain_id(self) -> dict[Self, MailAliasDomain]:
         alias_domain_values = {}
         record_companies = self._mail_get_companies()
         for record in self:
@@ -215,13 +215,13 @@ class MixinMailAliasMixinOptional(models.AbstractModel):
             )
         return alias_domain_values
 
-    def _prepare_alias_defaults(self) -> dict:
+    def _prepare_alias_defaults(self) -> ValuesType:
         if not self:
             return {}
         self.check_singleton()
         return self.alias_id._prepare_alias_defaults() if self.alias_id else {}
 
-    def _alias_get_creation_values(self) -> dict:
+    def _alias_get_creation_values(self) -> ValuesType:
         values = {
             "alias_parent_thread_id": self.id or False,
             "alias_parent_model_id": self.env["ir.model"]._get_id(self._name),
@@ -231,8 +231,8 @@ class MixinMailAliasMixinOptional(models.AbstractModel):
         return values
 
     def _alias_split_values(
-        self, values: dict, filters: Collection[str] | Literal[False] = False
-    ) -> tuple:
+        self, values: ValuesType, filters: Collection[str] | Literal[False] = False
+    ) -> tuple[ValuesType, ValuesType]:
         if not filters:
             filters = self.env["mail.alias"]._fields.keys()
         alias_values, record_values = {}, {}

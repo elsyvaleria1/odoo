@@ -1,5 +1,6 @@
 import typing
 from datetime import date
+from typing import Any
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
@@ -164,7 +165,7 @@ class MailActivityPlanTemplate(models.Model):
 
     def _get_responsible_and_complaints(
         self, on_demand_responsible: ResUsers, applied_on_record: models.BaseModel
-    ) -> dict:
+    ) -> dict[str, Any]:
         self.check_singleton()
         error = False
         warning = False

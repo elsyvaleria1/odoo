@@ -1,7 +1,7 @@
 import typing
 from collections import defaultdict
 from collections.abc import Callable
-from typing import Self
+from typing import Any, Self
 
 from dateutil.relativedelta import relativedelta
 
@@ -23,6 +23,7 @@ POST_SUBTYPE_XMLIDS = {"comment": "mail.mt_comment", "note": "mail.mt_note"}
 if typing.TYPE_CHECKING:
     from .mail_activity_type import MailActivityType
     from .mail_template import MailTemplate
+    from .mixin_mail_thread import MixinMailThread
     from .res_partner import ResPartner
     from odoo.addons.base.models.ir_model import IrModel
     from odoo.addons.base.models.ir_model_fields import IrModelFields
@@ -213,7 +214,7 @@ class IrActionsServer(models.Model):
             return
         supported = {}
 
-        def supported_ids(flag):
+        def supported_ids(flag: str | None) -> set[int]:
             if flag not in supported:
                 domain = [("transient", "=", False)]
                 if flag:
@@ -496,12 +497,14 @@ class IrActionsServer(models.Model):
                     "activity_user_field_name", raise_on_error=True
                 )
 
-    def _run_action_followers_multi(self, eval_context: dict | None = None) -> bool:
+    def _run_action_followers_multi(
+        self, eval_context: dict[str, Any] | None = None
+    ) -> bool:
         self._subscribe_followers(subscribe=True)
         return False
 
     def _run_action_remove_followers_multi(
-        self, eval_context: dict | None = None
+        self, eval_context: dict[str, Any] | None = None
     ) -> bool:
         self._subscribe_followers(subscribe=False)
         return False
@@ -572,16 +575,18 @@ class IrActionsServer(models.Model):
             )
         return pending
 
-    def _get_run_context(self) -> dict:
+    def _get_run_context(self) -> dict[str, Any]:
         return clean_context(self.env.context)
 
-    def _prepare_mail_post_context(self) -> dict:
+    def _prepare_mail_post_context(self) -> dict[str, Any]:
         context = self._get_run_context()
         context["mail_post_autofollow_author_skip"] = True
         context["mail_post_autofollow"] = self.mail_post_autofollow
         return context
 
-    def _run_action_mail_post_multi(self, eval_context: dict | None = None) -> bool:
+    def _run_action_mail_post_multi(
+        self, eval_context: dict[str, Any] | None = None
+    ) -> bool:
         records = self._get_records_targeted()
         records -= self._get_recompute_pending(records)
         if not self.template_id or not records:
@@ -606,7 +611,7 @@ class IrActionsServer(models.Model):
             )
         return False
 
-    def _post_template_on(self, records, subtype_id: int) -> None:
+    def _post_template_on(self, records: MixinMailThread, subtype_id: int) -> None:
         if len(records) == 1:
             records.message_post_with_source(
                 self.template_id,
@@ -623,7 +628,9 @@ class IrActionsServer(models.Model):
             {"message_type": "auto_comment", "subtype_id": subtype_id}
         )._action_send_mail()
 
-    def _run_action_next_activity_multi(self, eval_context: dict | None = None) -> bool:
+    def _run_action_next_activity_multi(
+        self, eval_context: dict[str, Any] | None = None
+    ) -> bool:
         records = self._get_records_targeted()
         records -= self._get_recompute_pending(records)
         if not self.activity_type_id or not records:
@@ -678,7 +685,7 @@ class IrActionsServer(models.Model):
             for user_id, batch in by_user_id.items()
         ]
 
-    def _prepare_eval_context(self, action: Self) -> dict:
+    def _prepare_eval_context(self, action: Self) -> dict[str, Any]:
         return super(
             IrActionsServer, self.with_context(mail_notify_force_send=False)
         )._prepare_eval_context(action=action)

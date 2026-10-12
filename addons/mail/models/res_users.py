@@ -1,9 +1,9 @@
 import logging
 import typing
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from datetime import timedelta
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from odoo import api, fields, models, modules, tools
 from odoo.api import ValuesType
@@ -381,7 +381,7 @@ class ResUsers(models.Model):
         grants._revoke(self - inbox_users, inbox_group)
 
     @api.model
-    def action_setup_outgoing_mail_server(self, server_type: str) -> dict:
+    def action_setup_outgoing_mail_server(self, server_type: str) -> dict[str, Any]:
         user = self.env.user
         self._check_personal_mail_server_access(user)
         existing_server = (
@@ -419,7 +419,7 @@ class ResUsers(models.Model):
         return self._get_mail_server_setup_end_action(smtp_server)
 
     @api.model
-    def action_test_outgoing_mail_server(self) -> dict:
+    def action_test_outgoing_mail_server(self) -> dict[str, Any]:
         user = self.env.user
         self._check_personal_mail_server_access(user)
         server_sudo = user.outgoing_mail_server_id.sudo()
@@ -476,7 +476,7 @@ class ResUsers(models.Model):
         self,
         subject: str,
         content: str,
-        mail_values: dict | None = None,
+        mail_values: ValuesType | None = None,
         *,
         force_email: str | None = None,
         **kwargs,
@@ -508,7 +508,7 @@ class ResUsers(models.Model):
         *,
         force_email: str | None = None,
         **kwargs,
-    ) -> dict:
+    ) -> ValuesType:
         Render = self.env["mixin.mail.render"]
         body_html = Render._render_template(
             "mail.account_security_alert",
@@ -545,7 +545,7 @@ class ResUsers(models.Model):
         *,
         suggest_password_reset: bool = True,
         **kwargs,
-    ) -> dict:
+    ) -> dict[str, Any]:
         reset_password_enabled = str2bool(
             self.env.registry.settings.get(self.env, "auth_signup.reset_password", True)
         )
@@ -668,7 +668,7 @@ class ResUsers(models.Model):
         ]
 
     @api.model
-    def _get_activity_groups(self) -> list:
+    def _get_activity_groups(self) -> list[dict[str, Any]]:
         activities = self._get_systray_activities()
         activity_ids_by_record = self._group_activity_ids_by_record(activities)
         counts, activity_ids_by_bucket, res_ids_by_bucket = (
@@ -710,7 +710,7 @@ class ResUsers(models.Model):
     @api.model
     def _group_activity_ids_by_record(
         self, activities: MailActivity
-    ) -> dict[str, dict[int, list[int]]]:
+    ) -> defaultdict[str, defaultdict[int, list[int]]]:
         activity_ids_by_record = defaultdict(lambda: defaultdict(list))
         for activity in activities:
             if activity.res_model and activity.res_model in self.env:
@@ -751,7 +751,7 @@ class ResUsers(models.Model):
 
     @api.model
     def _count_activities_per_bucket(
-        self, activity_ids_by_record: dict[str, dict[int, list[int]]]
+        self, activity_ids_by_record: Mapping[str, Mapping[int, list[int]]]
     ) -> tuple[
         dict[ActivityBucket, dict[str, int]],
         dict[ActivityBucket, list[int]],
@@ -786,7 +786,7 @@ class ResUsers(models.Model):
 
     @api.model
     def _iter_activity_buckets(
-        self, activity_ids_by_record: dict[str, dict[int, list[int]]]
+        self, activity_ids_by_record: Mapping[str, Mapping[int, list[int]]]
     ) -> Iterator[tuple[ActivityBucket, int, list[int]]]:
         for model_name, activity_ids_by_res_id in activity_ids_by_record.items():
             allowed_ids, unallowed_ids = self._get_readable_activity_record_ids(
@@ -812,7 +812,7 @@ class ResUsers(models.Model):
 
     @api.model
     def _get_activity_states(
-        self, activity_ids_by_record: dict[str, dict[int, list[int]]]
+        self, activity_ids_by_record: Mapping[str, Mapping[int, list[int]]]
     ) -> dict[int, str]:
         activities = self.env["mail.activity"].browse(
             [
@@ -830,7 +830,7 @@ class ResUsers(models.Model):
         counts_by_bucket: dict[ActivityBucket, dict[str, int]],
         activity_ids_by_bucket: dict[ActivityBucket, list[int]],
         res_ids_by_bucket: dict[ActivityBucket, list[int]],
-    ) -> list:
+    ) -> list[dict[str, Any]]:
         model_ids = [
             self.env["ir.model"]._get_id(bucket[0]) for bucket in activity_ids_by_bucket
         ]
@@ -872,8 +872,8 @@ class ResUsers(models.Model):
 
     @api.model
     def _apply_activity_bucket_subkey(
-        self, group: dict, model_name: str, subkey: str, res_ids: list[int]
-    ) -> dict:
+        self, group: dict[str, Any], model_name: str, subkey: str, res_ids: list[int]
+    ) -> dict[str, Any]:
         return group
 
     @api.model
@@ -973,7 +973,9 @@ class ResUsers(models.Model):
             )
 
     @api.model
-    def _prepare_personal_mail_server_vals(self, user: Self, server_type: str) -> dict:
+    def _prepare_personal_mail_server_vals(
+        self, user: Self, server_type: str
+    ) -> ValuesType:
         return {
             "active": False,
             "name": self.env._("%s's outgoing email", user.name),
@@ -987,11 +989,13 @@ class ResUsers(models.Model):
         }
 
     @api.model
-    def _prepare_mail_server_vals(self, server_type: str) -> dict:
+    def _prepare_mail_server_vals(self, server_type: str) -> ValuesType:
         return {}
 
     @api.model
-    def _get_mail_server_setup_end_action(self, smtp_server: IrMail_Server) -> dict:
+    def _get_mail_server_setup_end_action(
+        self, smtp_server: IrMail_Server
+    ) -> dict[str, Any]:
         raise NotImplementedError
 
     @api.autovacuum

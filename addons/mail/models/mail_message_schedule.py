@@ -4,7 +4,7 @@ import logging
 import typing
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from typing import Self
+from typing import Any, Literal, Self
 
 from odoo import api, fields, models, modules
 from odoo.api import ValuesType
@@ -153,10 +153,12 @@ class MailMessageSchedule(models.Model):
                     )
         return retry_soon
 
-    def force_send(self) -> None:
+    def force_send(self) -> bool:
         return self._send_notifications()
 
-    def _send_notifications(self, default_notify_kwargs: dict | None = None) -> bool:
+    def _send_notifications(
+        self, default_notify_kwargs: dict[str, Any] | None = None
+    ) -> bool:
         for model, schedules in self._grouped_by_model().items():
             existing_ids = ()
             if model:
@@ -203,14 +205,14 @@ class MailMessageSchedule(models.Model):
         return True
 
     @api.model
-    def _serialize_notification_parameters(self, notify_kwargs: dict) -> str:
+    def _serialize_notification_parameters(self, notify_kwargs: dict[str, Any]) -> str:
         serializable = dict(notify_kwargs)
         company = serializable.get("force_email_company")
         if company is not None and not isinstance(company, (bool, int)):
             serializable["force_email_company"] = company.id
         return json_dumps(serializable)
 
-    def _deserialize_notification_parameters(self) -> dict:
+    def _deserialize_notification_parameters(self) -> dict[str, Any]:
         self.check_singleton()
         params = json_loads(self.notification_parameters or "{}")
         company_id = params.get("force_email_company")
@@ -220,7 +222,7 @@ class MailMessageSchedule(models.Model):
 
     @api.model
     def _send_message_notifications(
-        self, messages: MailMessage, default_notify_kwargs: dict | None = None
+        self, messages: MailMessage, default_notify_kwargs: dict[str, Any] | None = None
     ) -> bool:
         messages_scheduled = self.search([("mail_message_id", "in", messages.ids)])
         if not messages_scheduled:
@@ -248,7 +250,7 @@ class MailMessageSchedule(models.Model):
         )
         return True
 
-    def _grouped_by_model(self) -> dict:
+    def _grouped_by_model(self) -> dict[str | Literal[False], Self]:
         return self.grouped(
             lambda schedule: (
                 schedule.mail_message_id.model

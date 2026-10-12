@@ -2,7 +2,7 @@ import copy
 import datetime
 import logging
 import typing
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Mapping, Sequence
 from typing import Any, Literal, Self
 
 import babel
@@ -43,6 +43,8 @@ from odoo.addons.mail.models.ir_qweb import format_display_names
 
 if typing.TYPE_CHECKING:
     from odoo.api import Environment
+
+type RenderResId = int | Literal[False, ""] | None
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -152,7 +154,7 @@ class MixinMailRender(models.AbstractModel):
     def _compute_render_model(self) -> None:
         self.render_model = False
 
-    def _is_valid_field_parameter(self, field: fields.Field, name: str) -> bool:
+    def _is_valid_field_parameter(self, field: fields.Field[Any], name: str) -> bool:
         return name in [
             "render_engine",
             "render_options",
@@ -176,7 +178,7 @@ class MixinMailRender(models.AbstractModel):
     def _check_rendering(
         self,
         fnames: Collection[str] | None = None,
-        render_options: dict | None = None,
+        render_options: dict[str, Any] | None = None,
     ) -> None:
         return
 
@@ -197,7 +199,7 @@ class MixinMailRender(models.AbstractModel):
         self,
         layout_xmlid: str,
         html_content: str,
-        add_context: dict | None = None,
+        add_context: dict[str, Any] | None = None,
         context_record: models.BaseModel | None = None,
     ) -> Markup:
         template_ctx = self._render_encapsulate_context(
@@ -231,9 +233,9 @@ class MixinMailRender(models.AbstractModel):
     def _render_encapsulate_context(
         self,
         html_content: str,
-        add_context: dict,
+        add_context: dict[str, Any],
         context_record: models.BaseModel | None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         record_name = add_context.get("record_name")
         if record_name is None:
             record_name = context_record.display_name if context_record else ""
@@ -322,7 +324,7 @@ class MixinMailRender(models.AbstractModel):
             if field.type in TEMPLATE_FIELD_TYPES and field.store
         }
 
-    def _has_unsafe_expression(self, fnames: set | None = None) -> bool:
+    def _has_unsafe_expression(self, fnames: set[str] | None = None) -> bool:
         scanned = self._get_dynamic_field_names()
         if fnames is not None:
             scanned &= fnames
@@ -386,7 +388,7 @@ class MixinMailRender(models.AbstractModel):
     @api.model
     def _parse_static_inline_template(
         self, template_txt: str, model: str
-    ) -> list[tuple] | None:
+    ) -> list[tuple[str, str, str]] | None:
         template = parse_inline_template(template_txt)
         if all(
             self._is_static_expression(expression, model)
@@ -396,7 +398,9 @@ class MixinMailRender(models.AbstractModel):
             return template
         return None
 
-    def _check_access_right_dynamic_template(self, fnames: set | None = None) -> None:
+    def _check_access_right_dynamic_template(
+        self, fnames: set[str] | None = None
+    ) -> None:
         if (
             not self.env.su
             and not self.env.user.has_group("mail.group_mail_template_editor")
@@ -513,7 +517,7 @@ class MixinMailRender(models.AbstractModel):
         raise AccessError(self._prepare_template_authoring_error(unit.errors))
 
     @api.model
-    def _render_eval_context(self) -> dict:
+    def _render_eval_context(self) -> dict[str, Any]:
         render_context = dict(template_env_globals)
         render_context.update(
             {
@@ -542,7 +546,13 @@ class MixinMailRender(models.AbstractModel):
 
     @api.model
     @tools.ormcache("template_src", cache="templates.mail")
-    def _get_qweb_template_node(self, template_src: str) -> tuple:
+    def _get_qweb_template_node(
+        self, template_src: str
+    ) -> tuple[
+        html.HtmlElement,
+        RenderScopedDict,
+        dict[tuple[str, bool], tuple[list[str], list[tuple[str, str]]] | None],
+    ]:
         return (
             html.fragment_fromstring(template_src, create_parent="div"),
             RenderScopedDict(),
@@ -552,12 +562,12 @@ class MixinMailRender(models.AbstractModel):
     @api.model
     def _render_template_qweb(
         self,
-        template_src: str,
+        template_src: str | Literal[False],
         model: str,
-        res_ids: list[int],
-        add_context: dict | None = None,
-        options: dict | None = None,
-    ) -> dict:
+        res_ids: Sequence[RenderResId],
+        add_context: dict[str, Any] | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> dict[RenderResId, str]:
         results = dict.fromkeys(res_ids, Markup())
         if not template_src or not res_ids:
             return results
@@ -823,9 +833,9 @@ class MixinMailRender(models.AbstractModel):
         self,
         template_src: str,
         model: str,
-        res_ids: list[int],
-        options: dict | None = None,
-    ) -> dict:
+        res_ids: Sequence[RenderResId],
+        options: dict[str, Any] | None = None,
+    ) -> dict[RenderResId, str]:
         program = self._get_static_render_program(
             str(template_src), model, bool((options or {}).get("preserve_comments"))
         )
@@ -862,11 +872,11 @@ class MixinMailRender(models.AbstractModel):
         self,
         view_ref: models.BaseModel | str | int,
         model: str,
-        res_ids: list[int],
-        add_context: dict | None = None,
-        options: dict | None = None,
-        add_context_per_record: dict[int, dict] | None = None,
-    ) -> dict:
+        res_ids: Sequence[RenderResId],
+        add_context: dict[str, Any] | None = None,
+        options: dict[str, Any] | None = None,
+        add_context_per_record: dict[int, dict[str, Any]] | None = None,
+    ) -> dict[RenderResId, str]:
         results = dict.fromkeys(res_ids, Markup())
         if not res_ids:
             return results
@@ -913,12 +923,12 @@ class MixinMailRender(models.AbstractModel):
     @api.model
     def _render_template_inline_template(
         self,
-        template_txt: str,
+        template_txt: str | Literal[False],
         model: str,
-        res_ids: list[int],
-        add_context: dict | None = None,
-        options: dict | None = None,
-    ) -> dict:
+        res_ids: Sequence[RenderResId],
+        add_context: dict[str, Any] | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> dict[RenderResId, str]:
         results = dict.fromkeys(res_ids, "")
         if not template_txt or not res_ids:
             return results
@@ -967,8 +977,11 @@ class MixinMailRender(models.AbstractModel):
 
     @api.model
     def _render_template_inline_template_static(
-        self, template: list[tuple], model: str, res_ids: list[int]
-    ) -> dict:
+        self,
+        template: list[tuple[str, str, str]],
+        model: str,
+        res_ids: Sequence[RenderResId],
+    ) -> dict[RenderResId, str]:
         result = {}
         for record in self.env[model].browse(res_ids):
             renderer = []
@@ -985,8 +998,8 @@ class MixinMailRender(models.AbstractModel):
 
     @api.model
     def _render_template_postprocess(
-        self, model: str, rendered: dict[int, str]
-    ) -> dict:
+        self, model: str, rendered: dict[RenderResId, str]
+    ) -> dict[RenderResId, str]:
         if not model:
             return {
                 res_id: self._replace_local_links(rendered_html)
@@ -1001,11 +1014,13 @@ class MixinMailRender(models.AbstractModel):
         }
 
     @api.model
-    def _render_template_get_valid_options(self) -> set:
+    def _render_template_get_valid_options(self) -> set[str]:
         return {"post_process", "preserve_comments"}
 
     @api.model
-    def _render_template_engines(self) -> dict[str, Callable]:
+    def _render_template_engines(
+        self,
+    ) -> dict[str, Callable[..., dict[RenderResId, str]]]:
         return {
             "inline_template": type(self)._render_template_inline_template,
             "qweb": type(self)._render_template_qweb,
@@ -1015,13 +1030,13 @@ class MixinMailRender(models.AbstractModel):
     @api.model
     def _render_template(
         self,
-        template_src: str,
+        template_src: str | Literal[False],
         model: str,
-        res_ids: list[int],
+        res_ids: Sequence[RenderResId],
         engine: str = "inline_template",
-        add_context: dict | None = None,
-        options: dict | None = None,
-    ) -> dict:
+        add_context: dict[str, Any] | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> dict[RenderResId, str]:
         options = options or {}
 
         if not isinstance(res_ids, (list, tuple)):
@@ -1072,8 +1087,8 @@ class MixinMailRender(models.AbstractModel):
         return rendered
 
     def _render_lang(
-        self, res_ids: list[int], engine: str = "inline_template"
-    ) -> dict[int, str | Literal[False]]:
+        self, res_ids: Sequence[RenderResId], engine: str = "inline_template"
+    ) -> Mapping[RenderResId, str | Literal[False]]:
         self.check_singleton()
         if self.lang:
             return self._render_template(
@@ -1090,8 +1105,8 @@ class MixinMailRender(models.AbstractModel):
         }
 
     def _get_res_ids_lang(
-        self, res_ids: list[int], engine: str = "inline_template"
-    ) -> dict[int, str]:
+        self, res_ids: Sequence[RenderResId], engine: str = "inline_template"
+    ) -> Mapping[RenderResId, str | Literal[False]]:
         self.check_singleton()
         if preview_lang := self.env.context.get("template_preview_lang"):
             return dict.fromkeys(res_ids, preview_lang)
@@ -1099,16 +1114,16 @@ class MixinMailRender(models.AbstractModel):
 
     def _classify_per_lang(
         self,
-        res_ids: list[int],
+        res_ids: Sequence[RenderResId],
         engine: str = "inline_template",
-        res_ids_lang: dict[int, str] | None = None,
+        res_ids_lang: Mapping[RenderResId, str | Literal[False]] | None = None,
         default_lang: str | Literal[False] | None = None,
-    ) -> dict:
+    ) -> dict[str | Literal[False] | None, tuple[Self, list[RenderResId]]]:
         self.check_singleton()
         if res_ids_lang is None:
             res_ids_lang = self._get_res_ids_lang(res_ids, engine=engine)
 
-        lang_to_res_ids = {}
+        lang_to_res_ids: dict[str | Literal[False] | None, list[RenderResId]] = {}
         for res_id in res_ids:
             lang = res_ids_lang.get(res_id, default_lang)
             lang_to_res_ids.setdefault(lang, []).append(res_id)
@@ -1131,14 +1146,15 @@ class MixinMailRender(models.AbstractModel):
     def _render_field(
         self,
         field_name: str,
-        res_ids: list[int],
+        res_ids: Sequence[RenderResId],
         engine: str = "inline_template",
         compute_lang: bool = False,
-        res_ids_lang: dict[int, str] | Literal[False] = False,
+        res_ids_lang: Mapping[RenderResId, str | Literal[False]]
+        | Literal[False] = False,
         set_lang: str | Literal[False] = False,
-        add_context: dict | None = None,
-        options: dict | None = None,
-    ) -> dict:
+        add_context: dict[str, Any] | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> dict[RenderResId, str]:
         if field_name not in self:
             raise ValueError(
                 f"Cannot render {field_name!r}: it is not a field of {self._name}."

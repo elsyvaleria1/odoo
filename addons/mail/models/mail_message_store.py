@@ -1,8 +1,10 @@
 import typing
 from collections import defaultdict
-from typing import Literal, Self
+from datetime import datetime
+from typing import Any, Literal, Self
 
 from odoo import models, modules, tools
+from odoo.api import IdType, ValuesType
 from odoo.exceptions import MissingError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
@@ -120,7 +122,7 @@ class MailMessage(models.Model):
         fields: list[StoreFieldSpec],
         *,
         format_reply: bool = True,
-        msg_vals: dict | Literal[False] = False,
+        msg_vals: ValuesType | Literal[False] = False,
         add_followers: bool = False,
         followers: MailFollowers | None = None,
     ) -> None:
@@ -183,7 +185,9 @@ class MailMessage(models.Model):
             store.add_model_values("mail.message", {"id": message.id, **extras})
         self._extras_to_store(store, format_reply=format_reply)
 
-    def _store_scheduled_datetimes(self, msg_vals: dict | Literal[False]) -> dict:
+    def _store_scheduled_datetimes(
+        self, msg_vals: ValuesType | Literal[False]
+    ) -> dict[IdType | Literal[False], datetime | str | Literal[False] | None]:
         if msg_vals:
             self.check_singleton()
             return {self.id: msg_vals.get("scheduled_date", False)}
@@ -195,12 +199,12 @@ class MailMessage(models.Model):
     def _store_thread_fields(
         self,
         store: Store,
-        records: list,
+        records: list[models.BaseModel],
         *,
         add_followers: bool = False,
         followers: MailFollowers | None = None,
     ) -> list[StoreFieldSpec]:
-        record_fields = [
+        record_fields: list[StoreFieldSpec] = [
             Store.Attr("display_name", sudo=True),
             Store.Attr(
                 "has_mail_thread",
@@ -261,7 +265,12 @@ class MailMessage(models.Model):
         )
         return record_fields
 
-    def _store_message_extras(self, store: Store, record, scheduled_datetime) -> dict:
+    def _store_message_extras(
+        self,
+        store: Store,
+        record: models.BaseModel | None,
+        scheduled_datetime: datetime | str | Literal[False] | None,
+    ) -> dict[str, Any]:
         self.check_singleton()
         if record:
             try:
@@ -387,7 +396,7 @@ class MailMessage(models.Model):
                 store.bus_send()
 
     def _filtered_record_readable_by(
-        self, user: ResUsers, record_by_message: dict
+        self, user: ResUsers, record_by_message: dict[Self, models.BaseModel]
     ) -> Self:
         ids_by_model = defaultdict(list)
         for message in self:

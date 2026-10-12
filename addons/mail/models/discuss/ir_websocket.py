@@ -1,10 +1,15 @@
 import re
-from typing import NamedTuple
+import typing
+from collections.abc import Iterable
+from typing import Any, NamedTuple, Self
 
 from odoo import models
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
+
+if typing.TYPE_CHECKING:
+    from .discuss_channel import DiscussChannel
 
 _debug = DebugLog(__name__)
 
@@ -18,7 +23,7 @@ class DiscussReach(NamedTuple):
 class IrWebsocket(models.AbstractModel):
     _inherit = "ir.websocket"
 
-    def _bus_context(self, names: list[str]):
+    def _bus_context(self, names: list[str]) -> Self:
         websocket = super()._bus_context(names)
         for name in names:
             if name.startswith("mail.guest_"):
@@ -28,7 +33,7 @@ class IrWebsocket(models.AbstractModel):
         named = self._named_discuss_channel_ids(names).values()
         return websocket.with_context(discuss_reach=websocket._discuss_reach(named))
 
-    def _bus_channels_by_name(self, names: list[str]) -> dict[str, list]:
+    def _bus_channels_by_name(self, names: list[str]) -> dict[str, list[Any]]:
         result = super()._bus_channels_by_name(names)
         requested = self._named_discuss_channel_ids(names)
         if requested:
@@ -46,7 +51,7 @@ class IrWebsocket(models.AbstractModel):
                 requested[name] = int(match[0])
         return requested
 
-    def _discuss_reach(self, channel_ids) -> DiscussReach:
+    def _discuss_reach(self, channel_ids: Iterable[int]) -> DiscussReach:
         named = frozenset(channel_ids)
         reach = self.env.context.get("discuss_reach")
         if reach and reach.named == named:
@@ -67,7 +72,7 @@ class IrWebsocket(models.AbstractModel):
             members=tuple(row_id for row_id, is_member in rows if is_member),
         )
 
-    def _implicit_bus_channels(self) -> list:
+    def _implicit_bus_channels(self) -> list[Any]:
         channels = super()._implicit_bus_channels()
         guest = self.env["mail.guest"]._get_guest_from_context()
         if guest:
@@ -83,8 +88,12 @@ class IrWebsocket(models.AbstractModel):
         channels.extend(self._discuss_bus_channels(members))
         return channels
 
-    def _discuss_bus_channels(self, discuss_channels) -> list:
-        channels = list(discuss_channels)
+    def _discuss_bus_channels(
+        self, discuss_channels: DiscussChannel
+    ) -> list[DiscussChannel | tuple[DiscussChannel, str]]:
+        channels: list[DiscussChannel | tuple[DiscussChannel, str]] = list(
+            discuss_channels
+        )
         if not self.env.user.share:
             channels.extend((channel, "internal_users") for channel in discuss_channels)
         return channels

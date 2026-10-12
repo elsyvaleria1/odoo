@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo import models
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
@@ -10,7 +12,7 @@ _debug = DebugLog(__name__)
 class IrHttp(models.AbstractModel):
     _inherit = "ir.http"
 
-    def session_info(self) -> dict:
+    def session_info(self) -> dict[str, Any]:
         result = super().session_info()
         store = Store()
         ResUsers = self.env["res.users"]

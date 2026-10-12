@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from odoo import fields, models
 from odoo.libs.debug_log import DebugLog
@@ -15,7 +15,9 @@ class IrModelFields(models.Model):
         help="If set every modification done to this field is tracked. Value is used to order tracking values.",
     )
 
-    def _prepare_field_vals(self, field: fields.Field, model_id: int) -> dict:
+    def _prepare_field_vals(
+        self, field: fields.Field[Any], model_id: int
+    ) -> dict[str, Any]:
         vals = super()._prepare_field_vals(field, model_id)
         tracking = getattr(field, "tracking", None)
         if tracking is True:
@@ -25,7 +27,7 @@ class IrModelFields(models.Model):
         vals["tracking"] = tracking
         return vals
 
-    def _prepare_field_attrs(self, field_data: dict) -> dict:
+    def _prepare_field_attrs(self, field_data: dict[str, Any]) -> dict[str, Any]:
         attrs = super()._prepare_field_attrs(field_data)
         if field_data.get("tracking"):
             attrs["tracking"] = field_data["tracking"]

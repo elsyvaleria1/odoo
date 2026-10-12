@@ -221,7 +221,7 @@ class MailAliasDomain(models.Model):
         if not names:
             return
 
-        def addresses(domain):
+        def addresses(domain: Self) -> tuple[str, ...]:
             return tuple(
                 f"{alias}@{domain.name}" if alias else ""
                 for alias in (domain.bounce_alias, domain.catchall_alias)
@@ -454,7 +454,7 @@ class MailAliasDomain(models.Model):
                     )
 
     @api.model
-    def _update_configuration(self, config_values: dict) -> None:
+    def _update_configuration(self, config_values: ValuesType) -> None:
         Alias = self.env["mail.alias"]
         if name := config_values.get("name"):
             config_values["name"] = Alias._normalize_alias_domain_name(name) or name

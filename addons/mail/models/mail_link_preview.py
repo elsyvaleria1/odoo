@@ -1,13 +1,14 @@
 import re
 import time
 import typing
-from typing import Self
+from typing import Any, Self
 from urllib.parse import urlparse
 
 from dateutil.relativedelta import relativedelta
 from lxml import html
 
 from odoo import api, fields, models, tools
+from odoo.api import ValuesType
 from odoo.db import get_or_create_row
 from odoo.libs.debug_log import DebugLog
 from odoo.models import GC_UNLINK_LIMIT
@@ -239,14 +240,16 @@ class MailLinkPreview(models.Model):
         return call_counter > link_preview_throttle
 
     @api.model
-    def _resolve_link_preview(self, url: str, session: requests.Session) -> dict | None:
+    def _resolve_link_preview(
+        self, url: str, session: requests.Session
+    ) -> dict[str, Any] | None:
         if values := get_link_preview_from_url(url, session):
             return values
         record_failed_fetch(self.env.cr.dbname, urlparse(url).netloc)
         return None
 
     @api.model
-    def _create_from_values_race_safe(self, values_list: list[dict]) -> Self:
+    def _create_from_values_race_safe(self, values_list: list[ValuesType]) -> Self:
         previews = self.browse()
         for values in values_list:
             preview, _created = get_or_create_row(

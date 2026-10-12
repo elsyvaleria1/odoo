@@ -1,4 +1,5 @@
 import typing
+from typing import Any
 
 from odoo import api, fields, models
 from odoo.tools import frozendict
@@ -55,7 +56,7 @@ class ResUsersSettingsVolumes(models.Model):
         for rec in self:
             rec.display_name = f"{rec.user_setting_id.user_id.name} - {rec.partner_id.name or rec.guest_id.name}"
 
-    def _discuss_users_settings_volume_format(self) -> list:
+    def _discuss_users_settings_volume_format(self) -> list[dict[str, Any]]:
         return [
             {
                 "id": volume_setting.id,

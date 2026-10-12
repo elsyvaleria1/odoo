@@ -1,5 +1,5 @@
 import typing
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from odoo import api, fields, models, tools
 from odoo.api import ValuesType
@@ -18,7 +18,9 @@ class MixinMailThreadCc(models.AbstractModel):
 
     email_cc = fields.Char(string="Email cc")
 
-    def _mail_cc_sanitized_raw_dict(self, cc_string: str | Literal[False]) -> dict:
+    def _mail_cc_sanitized_raw_dict(
+        self, cc_string: str | Literal[False]
+    ) -> dict[str, str]:
         if not cc_string:
             return {}
         sanitized = {}
@@ -30,7 +32,9 @@ class MixinMailThreadCc(models.AbstractModel):
         return sanitized
 
     @api.model
-    def message_new(self, msg_dict: dict, custom_values: dict | None = None) -> Self:
+    def message_new(
+        self, msg_dict: dict[str, Any], custom_values: ValuesType | None = None
+    ) -> Self:
         if custom_values is None:
             custom_values = {}
         cc_values = {
@@ -42,7 +46,7 @@ class MixinMailThreadCc(models.AbstractModel):
         return super().message_new(msg_dict, cc_values)
 
     def message_update(
-        self, msg_dict: dict, update_vals: ValuesType | None = None
+        self, msg_dict: dict[str, Any], update_vals: ValuesType | None = None
     ) -> bool:
         if update_vals is None:
             update_vals = {}

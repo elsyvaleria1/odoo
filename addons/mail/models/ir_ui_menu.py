@@ -1,8 +1,12 @@
 import contextlib
+from typing import TYPE_CHECKING
 
 from odoo import api, models
 from odoo.exceptions import AccessError
 from odoo.libs.debug_log import DebugLog
+
+if TYPE_CHECKING:
+    from odoo.addons.base.models.ir_actions_act_window import IrActionsAct_Window
 
 _debug = DebugLog(__name__)
 
@@ -47,7 +51,9 @@ class IrUiMenu(models.Model):
             actions.fetch(["res_model", "path"])
             action_by_id = {action.id: action for action in actions}
 
-            def _menu_sort_key(candidate: tuple) -> tuple:
+            def _menu_sort_key(
+                candidate: tuple[int, str, IrActionsAct_Window],
+            ) -> tuple[int, int]:
                 menu_id, _parent_path, action = candidate
                 return 1 if action.path else 0, -menu_id
 

@@ -5,7 +5,7 @@ from collections.abc import Collection, Iterable, Iterator, Mapping
 from datetime import UTC, date, datetime, timedelta
 from operator import eq, ge, gt, le, lt
 from types import NotImplementedType
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from dateutil.relativedelta import MO, relativedelta
 
@@ -553,7 +553,7 @@ class MailActivity(models.Model):
     def _compute_document_reach(self) -> None:
         self.document_reach = False
 
-    def _search_document_reach(self, operator: str, value) -> Domain:
+    def _search_document_reach(self, operator: str, value: Collection[str]) -> Domain:
         if operator != "in" or len(value) != 1:
             return NotImplemented
         operation = next(iter(value))
@@ -667,7 +667,7 @@ class MailActivity(models.Model):
 
     @api.model
     def _note_models_to_come(
-        self, vals_list: list[ValuesType], defaults: Mapping = frozendict()
+        self, vals_list: list[ValuesType], defaults: Mapping[str, Any] = frozendict()
     ) -> None:
         cache = self.env.cr.cache
         if (known := cache.get(ACTIVITY_MODELS_KEY)) is None:
@@ -991,7 +991,12 @@ class MailActivity(models.Model):
             for batch in batches.values():
                 self._notify_assignee_batch(self.env[model].sudo(), batch, author_id)
 
-    def _notify_batches(self, model: str, existing_ids: set[int]) -> dict[tuple, dict]:
+    def _notify_batches(
+        self, model: str, existing_ids: set[int]
+    ) -> dict[
+        tuple[str | bool, MailActivityType, date | Literal[False]],
+        dict[str, Any],
+    ]:
         descriptions = {}
         batches = {}
         for activity in self:
@@ -1047,7 +1052,7 @@ class MailActivity(models.Model):
     def _notify_assignee_batch(
         self,
         documents_sudo: models.BaseModel,
-        batch: dict,
+        batch: dict[str, Any],
         author_id: int,
     ) -> None:
         entries = batch["entries"]
@@ -1081,7 +1086,7 @@ class MailActivity(models.Model):
     def action_done(self) -> int | Literal[False]:
         return self.filtered(lambda r: r.active).action_feedback()
 
-    def action_done_redirect_to_other(self) -> dict:
+    def action_done_redirect_to_other(self) -> dict[str, Any]:
         self.action_done()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "mail.mail_activity_without_access_action"
@@ -1114,7 +1119,7 @@ class MailActivity(models.Model):
         self,
         feedback: str | Literal[False] = False,
         attachment_ids: list[int] | None = None,
-    ) -> dict | Literal[False]:
+    ) -> dict[str, Any] | Literal[False]:
         self.check_singleton()
         clean = clean_context(self.env.context)
         ctx = dict(
@@ -1269,7 +1274,7 @@ class MailActivity(models.Model):
 
     def _prepare_done_post_values(
         self, activity: Self, attachment_ids: list[int] | None
-    ) -> dict:
+    ) -> ValuesType:
         return {
             "attachment_ids": attachment_ids,
             "author_id": self.env.user.partner_id.id,
@@ -1303,10 +1308,10 @@ class MailActivity(models.Model):
     def _post_done_rounds(
         self,
         records: models.BaseModel,
-        plan: list[tuple[Self, dict | None]],
-        feedback: str | Literal[False],
+        plan: list[tuple[Self, ValuesType | None]],
+        feedback: str | Literal[False] | None,
     ) -> dict[int, MailMessage]:
-        rounds: list[dict[int, tuple[Self, dict]]] = []
+        rounds: list[dict[int, tuple[Self, ValuesType]]] = []
         for activity, post_values in plan:
             if post_values is None:
                 continue
@@ -1348,7 +1353,7 @@ class MailActivity(models.Model):
         gone_ids: set[int],
         attachment_ids: list[int] | None,
         shared_attachments: IrAttachment,
-        shared_origin: list[dict],
+        shared_origin: list[ValuesType],
         posted: int,
     ) -> list[int] | None:
         if activity.id in gone_ids:
@@ -1380,11 +1385,11 @@ class MailActivity(models.Model):
         return self.env["ir.attachment"]
 
     @api.readonly
-    def action_close_dialog(self) -> dict:
+    def action_close_dialog(self) -> dict[str, Any]:
         return {"type": "ir.actions.act_window_close"}
 
     @api.readonly
-    def action_view_document(self) -> dict:
+    def action_view_document(self) -> dict[str, Any]:
         self.check_singleton()
         if not self.res_model:
             view_id = self.env.ref("mail.mail_activity_view_form_popup").id
@@ -1453,7 +1458,7 @@ class MailActivity(models.Model):
         self.filtered("active").unlink()
 
     @api.readonly
-    def activity_format(self) -> dict:
+    def activity_format(self) -> dict[str, Any]:
         return Store().add(self).get_result()
 
     def _to_store_defaults(self, target: Store.Target) -> StoreFieldsInput:
@@ -1485,11 +1490,11 @@ class MailActivity(models.Model):
     def get_activity_data(
         self,
         res_model: str,
-        domain: DomainType,
+        domain: DomainType | None,
         limit: int | None = None,
         offset: int = 0,
         fetch_done: bool = False,
-    ) -> dict:
+    ) -> dict[str, Any]:
         self._check_activity_view_model(res_model)
         limit = min(limit or self._VIEW_DATA_MAX_LIMIT, self._VIEW_DATA_MAX_LIMIT)
         with _debug.perf(
@@ -1587,7 +1592,7 @@ class MailActivity(models.Model):
         self,
         all_ongoing: MailActivity,
         all_completed: MailActivity,
-    ) -> dict:
+    ) -> dict[int, dict[int, dict[str, Any]]]:
         attachments_by_id = {}
         if attachment_ids := all_completed.attachment_ids.ids:
             attachments_by_id = {
@@ -1597,7 +1602,9 @@ class MailActivity(models.Model):
                 )
             }
 
-        def by_cell(activities: MailActivity) -> dict:
+        def by_cell(
+            activities: MailActivity,
+        ) -> dict[tuple[int, MailActivityType], MailActivity]:
             return activities.grouped(lambda a: (a.res_id, a.activity_type_id))
 
         grouped_ongoing = by_cell(all_ongoing)
@@ -1654,7 +1661,9 @@ class MailActivity(models.Model):
         return grouped_activities
 
     @api.model
-    def _get_activity_data_order(self, grouped_activities: dict) -> list[int]:
+    def _get_activity_data_order(
+        self, grouped_activities: dict[int, dict[int, dict[str, Any]]]
+    ) -> list[int]:
         deadline_by_res_id = {}
         done_by_res_id = {}
         for res_id, cells in grouped_activities.items():

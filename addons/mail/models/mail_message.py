@@ -441,7 +441,7 @@ class MailMessage(models.Model):
     @api.model
     def _search_needaction(
         self, operator: str, operand: Any
-    ) -> list | NotImplementedType:
+    ) -> DomainType | NotImplementedType:
         if operator != "in":
             return NotImplemented
         notification_ids = self.env["mail.notification"]._search(
@@ -464,7 +464,7 @@ class MailMessage(models.Model):
     @api.model
     def _search_has_error(
         self, operator: str, operand: Any
-    ) -> list | NotImplementedType:
+    ) -> DomainType | NotImplementedType:
         if operator != "in":
             return NotImplemented
         return [("notification_ids.notification_status", "in", ("bounce", "exception"))]
@@ -494,7 +494,9 @@ class MailMessage(models.Model):
                 message.starred = message.id in starred_ids
 
     @api.model
-    def _search_starred(self, operator: str, operand: Any) -> list | NotImplementedType:
+    def _search_starred(
+        self, operator: str, operand: Any
+    ) -> DomainType | NotImplementedType:
         if operator != "in":
             return NotImplemented
         return [("starred_partner_ids", "in", self.env.user.partner_id.ids)]
@@ -509,7 +511,7 @@ class MailMessage(models.Model):
             self.env.get(model_name), self.pool["mixin.mail.thread"]
         )
 
-    def _get_thread_model(self) -> models.Model:
+    def _get_thread_model(self) -> models.BaseModel:
         self.check_singleton()
         return self.env[
             self.sudo().model if self._is_thread_model() else "mixin.mail.thread"
@@ -659,8 +661,8 @@ class MailMessage(models.Model):
 
     @api.model
     def _get_thread_target(
-        self, values: dict
-    ) -> tuple[str | None, int | Literal[False]]:
+        self, values: ValuesType
+    ) -> tuple[str | Literal[False] | None, int | Literal[False]]:
         model = values.get("model", self.env.context.get("default_model"))
         res_id = values.get("res_id", self.env.context.get("default_res_id")) or False
         if model and model not in self.env:
@@ -673,8 +675,8 @@ class MailMessage(models.Model):
             res_id = False
         return model, res_id
 
-    def _get_reply_to_batch(self, vals_list: list[ValuesType]) -> list:
-        out: list = [None] * len(vals_list)
+    def _get_reply_to_batch(self, vals_list: list[ValuesType]) -> list[str | None]:
+        out: list[str | None] = [None] * len(vals_list)
         by_group = defaultdict(list)
         for index, values in enumerate(vals_list):
             if "reply_to" in values:
@@ -702,7 +704,7 @@ class MailMessage(models.Model):
                         address, author_id=values.get("author_id")
                     )
                     if address
-                    else values.get("email_from")
+                    else values.get("email_from") or None
                 )
         return out
 
@@ -718,7 +720,7 @@ class MailMessage(models.Model):
         commands: list[tuple[int, int]] = []
         data_to_url = {}
 
-        def base64_to_boundary(match: re.Match) -> str:
+        def base64_to_boundary(match: re.Match[str]) -> str:
             key = match.group(2)
             if not data_to_url.get(key):
                 name = match.group(4) or "image%s" % len(data_to_url)
@@ -815,7 +817,9 @@ class MailMessage(models.Model):
             self.env["ir.attachment"].browse(foreign_ids).check_access("read")
 
     @api.model
-    def _create_tracking_values(self, commands_per_message: dict) -> None:
+    def _create_tracking_values(
+        self, commands_per_message: dict[MailMessage, list[Sequence[Any]]]
+    ) -> None:
         vals_list = []
         for message, tracking_values_cmd in commands_per_message.items():
             vals_list += [
@@ -837,12 +841,12 @@ class MailMessage(models.Model):
             self.env["mail.tracking.value"].sudo().create(vals_list)
 
     def read(
-        self, fields: Sequence[str] | None = None, load: str = "_classic_read"
-    ) -> list[dict]:
+        self, fields: Sequence[str] | None = None, load: str | None = "_classic_read"
+    ) -> list[ValuesType]:
         self.check_access("read")
         return super().read(fields=fields, load=load)
 
-    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType]:
+    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType | None]:
         self.check_access("read")
         return super().copy_data(default=default)
 
@@ -937,7 +941,7 @@ class MailMessage(models.Model):
         )
         return super(MailMessage, self.sudo()).unlink()
 
-    def export_data(self, fields_to_export: list[str]) -> dict:
+    def export_data(self, fields_to_export: list[str]) -> dict[str, list[list[Any]]]:
         if not self.env.is_admin():
             raise AccessError(
                 self.env._("Only administrators are allowed to export mail message")
@@ -945,7 +949,7 @@ class MailMessage(models.Model):
 
         return super().export_data(fields_to_export)
 
-    def action_view_document(self) -> dict:
+    def action_view_document(self) -> dict[str, Any]:
         self.check_singleton()
         if not self._is_thread_message() or self.sudo().model not in self.env:
             raise UserError(self.env._("This message is not attached to a document."))
@@ -978,7 +982,9 @@ class MailMessage(models.Model):
             ]
         )
 
-    def _mark_notifications_read(self, domain) -> list[int]:
+    def _mark_notifications_read(
+        self, domain: Sequence[str | tuple[str, str, Any]]
+    ) -> list[int]:
         notifications = (
             self.env["mail.notification"]
             .sudo()
@@ -1024,7 +1030,7 @@ class MailMessage(models.Model):
             {"message_ids": starred_messages.ids, "starred": False},
         )
 
-    def toggle_message_starred(self) -> dict:
+    def toggle_message_starred(self) -> dict[str, Any]:
         self.check_singleton()
         self.check_access("read")
         starred = not self.starred
@@ -1150,13 +1156,13 @@ class MailMessage(models.Model):
         )
 
     @api.model
-    def _get_reply_to(self, values: dict) -> str:
+    def _get_reply_to(self, values: ValuesType) -> str | None:
         if "reply_to" in values:
-            return values["reply_to"]
+            return values["reply_to"] or None
         return self._get_reply_to_batch([values])[0]
 
     @api.model
-    def _get_message_id(self, values: dict) -> str:
+    def _get_message_id(self, values: ValuesType) -> str:
         if values.get("reply_to_force_new"):
             return tools.mail.generate_tracking_message_id("reply_to")
         model, res_id = self._get_thread_target(values)
@@ -1281,7 +1287,7 @@ class MailMessage(models.Model):
         )
         return result
 
-    def _records_by_model_name(self) -> dict:
+    def _records_by_model_name(self) -> dict[str, models.BaseModel]:
         ids_by_model = defaultdict(OrderedSet)
         for _message, model, res_id in self._thread_pointers():
             ids_by_model[model].add(res_id)
@@ -1298,7 +1304,7 @@ class MailMessage(models.Model):
             )
         return records_by_model_name
 
-    def _record_by_message(self) -> dict:
+    def _record_by_message(self) -> dict[Self, models.BaseModel]:
         records_by_model_name = self._records_by_model_name()
         return {
             message: self.env[model]

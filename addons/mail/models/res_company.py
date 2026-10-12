@@ -1,4 +1,5 @@
 import typing
+from typing import Any
 
 from odoo import api, fields, models, tools
 
@@ -47,7 +48,9 @@ class ResCompany(models.Model):
         readonly=False,
     )
 
-    def _search_mail_config_id(self, operator, value):
+    def _search_mail_config_id(
+        self, operator: str, value: Any
+    ) -> list[tuple[str, str, Any]]:
         return self._search_config_link("mail.config", operator, value)
 
     def _compute_mail_config_id(self) -> None:

@@ -39,7 +39,7 @@ class MixinTemplateReset(models.AbstractModel):
     def _get_reset_preserved_fields(self) -> set[str]:
         return {*models.MAGIC_COLUMNS, "template_fs", "shipped_digests"}
 
-    def _load_records_write(self, values: dict) -> None:
+    def _load_records_write(self, values: ValuesType) -> None:
         if self.env.context.get("reset_template"):
             fields_not_to_touch = self._get_reset_preserved_fields() | values.keys()
             fields_to_empty = {

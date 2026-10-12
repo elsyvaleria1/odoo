@@ -25,7 +25,7 @@ from odoo.tools import groupby
 from odoo.addons.bus.websocket import wsrequest
 
 if typing.TYPE_CHECKING:
-    from odoo.api import Environment
+    from odoo.api import Environment, IdType
 
 _debug = DebugLog(__name__)
 
@@ -35,9 +35,9 @@ type StoreFieldSpec = str | Store.Attr | dict[str, Any]
 type StoreFieldsInput = StoreFieldSpec | list[StoreFieldSpec] | None
 
 
-def add_guest_to_context[F: Callable](func: F) -> F:
+def add_guest_to_context[F: Callable[..., Any]](func: F) -> F:
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self, *args, **kwargs) -> Any:
         req = request or wsrequest
         token = req.cookies.get(req.env["mail.guest"]._cookie_name, "")
         guest = req.env["mail.guest"]._get_guest_from_token(token)
@@ -140,7 +140,9 @@ class Store:
         self.data: dict[str, Any] = {}
         self.data_id: int | str | None = None
         self.target = Store.Target(bus_channel, bus_subchannel)
-        self._spec_keys_added: dict[tuple, set] = {}
+        self._spec_keys_added: dict[
+            tuple[Environment, str, IdType, bool], set[Any]
+        ] = {}
         self._spec_key_memo: dict[int, tuple[Any, Any]] = {}
 
     def add(
@@ -739,7 +741,7 @@ class Store:
             if not self.only_data:
                 target[key] = self._get_id()
 
-        def _get_id(self) -> dict[str, Any] | int | Literal[False]:
+        def _get_id(self) -> dict[str, Any] | IdType | Literal[False]:
             if not self.records:
                 return False
             if self.as_thread:

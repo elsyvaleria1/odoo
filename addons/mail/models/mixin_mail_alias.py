@@ -2,6 +2,7 @@ import logging
 import typing
 
 from odoo import fields, models
+from odoo.api import ValuesType
 from odoo.libs.debug_log import DebugLog
 
 if typing.TYPE_CHECKING:
@@ -22,7 +23,7 @@ class MixinMailAlias(models.AbstractModel):
     alias_name = fields.Char(inherited=True)
     alias_defaults = fields.Text(inherited=True)
 
-    def _is_new_alias_required(self, record_vals: dict) -> bool:
+    def _is_new_alias_required(self, record_vals: ValuesType) -> bool:
         return not record_vals.get("alias_id")
 
     def _init_column(self, name: str, *, new_column: bool = False) -> None:

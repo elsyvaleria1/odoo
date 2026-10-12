@@ -8,7 +8,7 @@ import re
 import smtplib
 import typing
 from collections import defaultdict
-from collections.abc import Callable, Collection, Iterable, Iterator
+from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
 from datetime import UTC, timedelta
 from typing import Any, Literal, Self
 
@@ -16,7 +16,7 @@ import psycopg
 from dateutil.parser import parse
 
 from odoo import SUPERUSER_ID, api, fields, models, modules, tools
-from odoo.api import ValuesType
+from odoo.api import DomainType, ValuesType
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.modules.registry import Registry
@@ -300,7 +300,7 @@ class MailMail(models.Model):
                 restricted_attachments | mail.unrestricted_attachment_ids
             )
 
-    def _search_body_content(self, operator: str, value: Any) -> list:
+    def _search_body_content(self, operator: str, value: Any) -> DomainType:
         return [("body_html", operator, value)]
 
     @api.model_create_multi
@@ -392,7 +392,7 @@ class MailMail(models.Model):
     def action_retry(self) -> None:
         self.filtered(lambda mail: mail.state == "exception").mark_outgoing()
 
-    def action_view_document(self) -> dict:
+    def action_view_document(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "res_id": self.res_id,
@@ -542,7 +542,7 @@ class MailMail(models.Model):
     @api.model
     def _get_domain_pending_email_notifications(
         self, mail_ids: list[int]
-    ) -> list[tuple]:
+    ) -> DomainType:
         return [
             ("notification_type", "=", "email"),
             ("mail_mail_id", "in", mail_ids),
@@ -736,7 +736,7 @@ class MailMail(models.Model):
 
     @api.model
     def _estimate_email_size(
-        self, headers: dict | None, body: str, attachments_size: Iterable[int]
+        self, headers: dict[str, str] | None, body: str, attachments_size: Iterable[int]
     ) -> int:
         return int(
             len(json.dumps(headers or {}, ensure_ascii=False).encode(errors="ignore"))
@@ -756,10 +756,10 @@ class MailMail(models.Model):
             lambda server: server.owner_user_id in [self.env["res.users"], authors]
         )
 
-    def _get_envelope_email_from(self) -> str:
+    def _get_envelope_email_from(self) -> str | None:
         self.check_singleton()
         emails_from = tools.mail.email_split_and_format_normalize(self.email_from)
-        return emails_from[0] if emails_from else self.email_from
+        return emails_from[0] if emails_from else self.email_from or None
 
     def _prepare_outgoing_body(self) -> str:
         self.check_singleton()
@@ -796,7 +796,7 @@ class MailMail(models.Model):
     def _is_unfollow_link_required(
         self,
         partner: ResPartner | Literal[False],
-        doc_to_followers: dict | None = None,
+        doc_to_followers: dict[tuple[str, int], set[int]] | None = None,
     ) -> bool:
         self.check_singleton()
         return bool(
@@ -816,7 +816,7 @@ class MailMail(models.Model):
         body: str,
         block: tuple[int, int] | None,
         partner: ResPartner | Literal[False] = False,
-        doc_to_followers: dict | None = None,
+        doc_to_followers: dict[tuple[str, int], set[int]] | None = None,
     ) -> str:
         self.check_singleton()
         if block is None:
@@ -834,7 +834,7 @@ class MailMail(models.Model):
         return body[:start] + self._strip_unfollow_block(body[start:end]) + body[end:]
 
     @api.model
-    def _strip_unfollow_block(self, body: str | Literal[False]) -> str | Literal[False]:
+    def _strip_unfollow_block[BodyT: (str, Literal[False])](self, body: BodyT) -> BodyT:
         if not body:
             return body
         if block := self._resolve_unfollow_span(body):
@@ -920,10 +920,10 @@ class MailMail(models.Model):
     def _prepare_outgoing_attachments(
         self,
         body: str,
-        headers: dict,
+        headers: dict[str, str],
         mail_server: IrMail_Server | Literal[False] = False,
         smtp_session: smtplib.SMTP | None = None,
-    ) -> tuple[str, list[tuple]]:
+    ) -> tuple[str, list[tuple[str, bytes, str]]]:
         self.check_singleton()
         attachments = self.sudo().attachment_ids
         if body and attachments:
@@ -1015,8 +1015,8 @@ class MailMail(models.Model):
         )
 
     def _prepare_recipient_groups(
-        self, already_sent_pids: dict | None = None
-    ) -> list[dict]:
+        self, already_sent_pids: dict[int, set[int]] | None = None
+    ) -> list[dict[str, Any]]:
         self.check_singleton()
         email_list = []
         raw_group, covered = self._prepare_raw_recipient_group()
@@ -1070,7 +1070,9 @@ class MailMail(models.Model):
         )
         return email_list
 
-    def _prepare_raw_recipient_group(self) -> tuple[dict | None, list[str]]:
+    def _prepare_raw_recipient_group(
+        self,
+    ) -> tuple[dict[str, Any] | None, list[str]]:
         self.check_singleton()
         partner_emails = {
             email
@@ -1103,10 +1105,10 @@ class MailMail(models.Model):
     def _prepare_outgoing_list(
         self,
         mail_server: IrMail_Server | Literal[False] = False,
-        doc_to_followers: dict | None = None,
+        doc_to_followers: dict[tuple[str, int], set[int]] | None = None,
         smtp_session: smtplib.SMTP | None = None,
-        already_sent_pids: dict | None = None,
-    ) -> list[dict]:
+        already_sent_pids: dict[int, set[int]] | None = None,
+    ) -> list[dict[str, Any]]:
         self.check_singleton()
         body = self._prepare_outgoing_body()
 
@@ -1184,7 +1186,11 @@ class MailMail(models.Model):
         )
         return results
 
-    def _split_by_mail_configuration(self) -> Iterator[tuple]:
+    def _split_by_mail_configuration(
+        self,
+    ) -> Iterator[
+        tuple[int | Literal[False], int | Literal[False], str | None, Sequence[int]]
+    ]:
         fields_to_group = ["email_from", "mail_server_id", "record_alias_domain_id"]
         self.fetch(fields_to_group)
         all_mail_servers = (
@@ -1627,7 +1633,7 @@ class MailMail(models.Model):
             failure_type=failure_type,
         )
 
-    def action_send_and_close(self) -> dict:
+    def action_send_and_close(self) -> dict[str, Any]:
         self.filtered("scheduled_date").write({"scheduled_date": False})
         self.send()
         return {
@@ -1913,7 +1919,9 @@ class MailMail(models.Model):
             raise MailDeliveryError(". ".join(exception.args)) from exception
         raise exception
 
-    def _deliver_all(self, outcome: _SendOutcome, batch: _SendBatch) -> list[dict]:
+    def _deliver_all(
+        self, outcome: _SendOutcome, batch: _SendBatch
+    ) -> list[dict[str, Any]]:
         self.check_singleton()
         email_list = self._prepare_outgoing_list(
             mail_server=batch.mail_server or self.mail_server_id,
@@ -1935,7 +1943,7 @@ class MailMail(models.Model):
     def _record_send_success(
         self,
         outcome: _SendOutcome,
-        email_list: list[dict],
+        email_list: list[dict[str, Any]],
         batch: _SendBatch,
         mark: _SendingMark,
         pending_notification_ids: list[int],
@@ -2141,7 +2149,7 @@ class MailMail(models.Model):
 
     def _deliver_one(
         self,
-        email: dict,
+        email: dict[str, Any],
         batch: _SendBatch,
         previous_failure_type: str | None = None,
     ) -> _DeliveryResult:
@@ -2224,7 +2232,7 @@ class MailMail(models.Model):
     def _record_send_outcome(
         self,
         outcome: _SendOutcome,
-        email_list: list[dict],
+        email_list: list[dict[str, Any]],
         nothing_left_to_deliver: bool = False,
     ) -> None:
         self.check_singleton()
@@ -2269,7 +2277,9 @@ class MailMail(models.Model):
                     self.message_id,
                 )
 
-    def _log_sent(self, outcome: _SendOutcome, email_list: list[dict]) -> None:
+    def _log_sent(
+        self, outcome: _SendOutcome, email_list: list[dict[str, Any]]
+    ) -> None:
         if not _logger.isEnabledFor(logging.INFO):
             return
         _logger.info(

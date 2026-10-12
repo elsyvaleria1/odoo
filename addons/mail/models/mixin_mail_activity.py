@@ -195,7 +195,7 @@ class MixinMailActivity(models.AbstractModel):
 
     def _get_domain_open_activity(
         self,
-        subdomain: Domain | Sequence[tuple] = (),
+        subdomain: Domain | Sequence[tuple[str, str, Any]] = (),
         user_id: int | None = None,
     ) -> Domain:
         domain = Domain("active", "=", True) & Domain(subdomain)
@@ -204,7 +204,7 @@ class MixinMailActivity(models.AbstractModel):
         return Domain("activity_ids", "any", domain)
 
     def _get_domain_next_activity(
-        self, subdomain: Sequence[tuple], user_id: int | None = None
+        self, subdomain: Sequence[tuple[str, str, Any]], user_id: int | None = None
     ) -> Domain:
         return Domain(
             "activity_ids",
@@ -293,7 +293,9 @@ class MixinMailActivity(models.AbstractModel):
         if operator in Domain.NEGATIVE_OPERATORS:
             return NotImplemented
 
-        def open_activities(subdomain: Domain | Sequence[tuple] = ()) -> Domain:
+        def open_activities(
+            subdomain: Domain | Sequence[tuple[str, str, Any]] = (),
+        ) -> Domain:
             return self._get_domain_open_activity(subdomain, user_id=user_id)
 
         if operator in ("<", "<="):
@@ -428,7 +430,9 @@ class MixinMailActivity(models.AbstractModel):
     def _activity_state_join(self, alias: str, query: Query) -> SQL:
         return SQL.identifier(self._activity_aggregate_join(alias, query), "state")
 
-    def _activity_state_group_sql(self, field: Field, alias: str, query: Query) -> SQL:
+    def _activity_state_group_sql(
+        self, field: Field[Any], alias: str, query: Query
+    ) -> SQL:
         return SQL(
             """CASE %s
                     WHEN -1 THEN 'overdue'
@@ -439,7 +443,7 @@ class MixinMailActivity(models.AbstractModel):
         )
 
     def _activity_order_sql(
-        self, field: Field, alias: str, direction: SQL, nulls: SQL, query: Query
+        self, field: Field[Any], alias: str, direction: SQL, nulls: SQL, query: Query
     ) -> SQL:
         if field.name == "activity_state":
             sql_value = self._activity_state_join(alias, query)
@@ -556,7 +560,7 @@ class MixinMailActivity(models.AbstractModel):
         )
 
     def _activity_type_for_schedule(
-        self, act_type_xmlid: str, act_values: dict
+        self, act_type_xmlid: str, act_values: ValuesType
     ) -> MailActivityType:
         if act_type_xmlid:
             activity_type = self._activity_type_from_xmlid(act_type_xmlid)
@@ -603,7 +607,7 @@ class MixinMailActivity(models.AbstractModel):
         date_deadline: date | None,
         summary: str | Literal[False],
         notes: Mapping[int, str | Literal[False]],
-        act_values: dict,
+        act_values: ValuesType,
     ) -> MailActivity:
         assignee = (
             self.env["mail.activity"]._assignee_of(act_values)
@@ -653,7 +657,7 @@ class MixinMailActivity(models.AbstractModel):
         date_deadline: date | None = None,
         summary: str = "",
         views_or_xmlid: models.BaseModel | str = "",
-        render_context: dict | None = None,
+        render_context: dict[str, Any] | None = None,
         **act_values,
     ) -> MailActivity:
         if self.env.context.get("mail_activity_automation_skip"):

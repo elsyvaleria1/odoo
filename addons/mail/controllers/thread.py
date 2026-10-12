@@ -1,5 +1,6 @@
 import logging
 import typing
+from collections.abc import Mapping, Sequence
 from typing import Any, Literal
 
 from markupsafe import Markup
@@ -53,7 +54,7 @@ class ThreadController(http.Controller):
     )
 
     @classmethod
-    def _update_context_from_client(cls, context: dict | None) -> None:
+    def _update_context_from_client(cls, context: dict[str, Any] | None) -> None:
         if not context:
             return
         if not isinstance(context, dict):
@@ -109,7 +110,7 @@ class ThreadController(http.Controller):
         model: models.Model,
         record_id: int,
         mode: str,
-        access_params: dict,
+        access_params: dict[str, Any],
         message_operation: str = "read",
     ) -> models.Model:
         allowed_params = model._get_allowed_access_params()
@@ -130,8 +131,8 @@ class ThreadController(http.Controller):
 
     @staticmethod
     def _recipients_response(
-        recipients: list[dict], *, partners_only: bool = False
-    ) -> list[dict]:
+        recipients: Sequence[Mapping[str, Any]], *, partners_only: bool = False
+    ) -> list[dict[str, Any]]:
         return [
             {key: recipient[key] for key in RECIPIENT_RESPONSE_KEYS if key in recipient}
             for recipient in recipients
@@ -146,8 +147,11 @@ class ThreadController(http.Controller):
 
     @http.route("/mail/thread/messages", methods=["POST"], type="jsonrpc", auth="user")
     def mail_thread_messages(
-        self, thread_model: str, thread_id: int, fetch_params: dict | None = None
-    ) -> dict:
+        self,
+        thread_model: str,
+        thread_id: int,
+        fetch_params: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         thread = self._get_thread_with_access(thread_model, thread_id, mode="read")
         if not thread:
             raise NotFound
@@ -167,7 +171,7 @@ class ThreadController(http.Controller):
     )
     def mail_thread_recipients(
         self, thread_model: str, thread_id: int, message_id: int | None = None
-    ) -> list:
+    ) -> list[dict[str, Any]]:
         thread = self._get_thread_with_access(thread_model, thread_id, mode="read")
         if not thread:
             raise NotFound
@@ -202,7 +206,7 @@ class ThreadController(http.Controller):
         thread_id: int,
         partner_ids: list[int] | None = None,
         main_email: str | Literal[False] = False,
-    ) -> list:
+    ) -> list[dict[str, Any]]:
         thread = self._get_thread_with_access(thread_model, thread_id)
         if not thread:
             raise NotFound
@@ -231,7 +235,7 @@ class ThreadController(http.Controller):
     )
     def mail_thread_partner_from_email(
         self, thread_model: str, thread_id: int, emails: list[str]
-    ) -> list:
+    ) -> list[dict[str, Any]]:
         if isinstance(emails, str) or not isinstance(emails, (list, tuple)):
             raise NotFound
         if len(emails) > MAX_EMAILS_PER_REQUEST:
@@ -272,7 +276,7 @@ class ThreadController(http.Controller):
     @http.route(
         "/mail/read_subscription_data", methods=["POST"], type="jsonrpc", auth="user"
     )
-    def read_subscription_data(self, follower_id: int) -> dict:
+    def read_subscription_data(self, follower_id: int) -> dict[str, Any]:
         follower = request.env["mail.followers"].browse(to_record_id(follower_id))
         if not follower.exists():
             raise NotFound
@@ -305,12 +309,12 @@ class ThreadController(http.Controller):
 
     def _prepare_message_data(
         self,
-        post_data: dict,
+        post_data: dict[str, Any],
         *,
         thread: models.Model,
         from_create: bool = True,
         **kwargs,
-    ) -> dict:
+    ) -> dict[str, Any]:
         res = {
             key: value
             for key, value in post_data.items()
@@ -358,7 +362,9 @@ class ThreadController(http.Controller):
             .has_access(access_mode)
         )
 
-    def _get_message_partner_ids(self, post_data: dict, thread: models.Model) -> list:
+    def _get_message_partner_ids(
+        self, post_data: dict[str, Any], thread: models.Model
+    ) -> list[int]:
         partners = request.env["res.partner"].browse(
             to_record_ids(post_data.get("partner_ids"))
         )
@@ -421,10 +427,10 @@ class ThreadController(http.Controller):
         self,
         thread_model: str,
         thread_id: int,
-        post_data: dict,
-        context: dict | None = None,
+        post_data: dict[str, Any],
+        context: dict[str, Any] | None = None,
         **kwargs,
-    ) -> dict:
+    ) -> dict[str, Any]:
         store = Store()
         request.update_context(message_post_store=store)
         self._update_context_from_client(context)
@@ -467,8 +473,8 @@ class ThreadController(http.Controller):
     )
     @add_guest_to_context
     def mail_message_update_content(
-        self, message_id: int, update_data: dict, **kwargs
-    ) -> dict:
+        self, message_id: int, update_data: dict[str, Any], **kwargs
+    ) -> dict[str, Any]:
         message = self._get_message_with_access(message_id, mode="create", **kwargs)
         if not message or not self._can_edit_message(message, **kwargs):
             _debug.logic(
@@ -494,7 +500,7 @@ class ThreadController(http.Controller):
 
     def _follower_change_response(
         self, res_model: str, res_id: int, partner_ids: list[int], *, subscribe: bool
-    ) -> dict:
+    ) -> dict[str, Any]:
         thread = self._get_thread_with_access(res_model, res_id, mode="read")
         if not thread:
             raise NotFound
@@ -526,7 +532,7 @@ class ThreadController(http.Controller):
     )
     def mail_thread_unsubscribe(
         self, res_model: str, res_id: int, partner_ids: list[int]
-    ) -> dict:
+    ) -> dict[str, Any]:
         return self._follower_change_response(
             res_model, res_id, partner_ids, subscribe=False
         )
@@ -534,7 +540,7 @@ class ThreadController(http.Controller):
     @http.route("/mail/thread/subscribe", methods=["POST"], type="jsonrpc", auth="user")
     def mail_thread_subscribe(
         self, res_model: str, res_id: int, partner_ids: list[int]
-    ) -> dict:
+    ) -> dict[str, Any]:
         return self._follower_change_response(
             res_model, res_id, partner_ids, subscribe=True
         )

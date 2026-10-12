@@ -1,5 +1,5 @@
 import typing
-from typing import Literal
+from typing import Any, Literal
 
 from odoo import fields, models
 from odoo.libs.debug_log import DebugLog
@@ -16,7 +16,7 @@ class WizardMailTemplateReset(models.TransientModel):
 
     template_ids: MailTemplate = fields.Many2many(comodel_name="mail.template")
 
-    def reset_template(self) -> dict | Literal[False]:
+    def reset_template(self) -> dict[str, Any] | Literal[False]:
         if not self.template_ids:
             return False
         _debug.lifecycle(

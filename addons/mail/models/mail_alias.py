@@ -3,7 +3,7 @@ import re
 import typing
 from collections import defaultdict
 from collections.abc import Iterable
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from markupsafe import Markup
 
@@ -307,7 +307,7 @@ class MailAlias(models.Model):
                     )
                 )
 
-    def _prepare_alias_defaults(self) -> dict:
+    def _prepare_alias_defaults(self) -> ValuesType:
         self.check_singleton()
         defaults = ast.literal_eval(self.alias_defaults or "{}")
         if not isinstance(defaults, dict):
@@ -617,15 +617,15 @@ class MailAlias(models.Model):
             return None
         return domain_name
 
-    def open_document(self) -> dict | Literal[False]:
+    def open_document(self) -> dict[str, Any] | Literal[False]:
         return self._alias_open_document("target")
 
-    def open_parent_document(self) -> dict | Literal[False]:
+    def open_parent_document(self) -> dict[str, Any] | Literal[False]:
         return self._alias_open_document("owner")
 
     def _alias_open_document(
         self, kind: Literal["owner", "target"]
-    ) -> dict | Literal[False]:
+    ) -> dict[str, Any] | Literal[False]:
         self.check_singleton()
         model_fname, thread_fname = alias_document_fields[kind]
         if not self[model_fname] or not self[thread_fname]:
@@ -669,7 +669,7 @@ class MailAlias(models.Model):
         _debug.lifecycle("alias_status", aliases=self.ids, status="invalid")
         self.sudo().alias_status = "invalid"
 
-    def _alias_with_author_lang(self, message_dict: dict) -> Self:
+    def _alias_with_author_lang(self, message_dict: dict[str, Any]) -> Self:
         self.check_singleton()
         partner = self.env["res.partner"].sudo().browse(message_dict.get("author_id"))
         lang = partner.exists().lang
@@ -684,7 +684,9 @@ class MailAlias(models.Model):
             "regards": self.env._("Kind Regards"),
         }
 
-    def _alias_bounce_render(self, body: Markup, message_dict: dict) -> Markup:
+    def _alias_bounce_render(
+        self, body: Markup, message_dict: dict[str, Any]
+    ) -> Markup:
         return self.env["ir.qweb"]._render(
             "mail.mail_bounce_alias_security",
             {
@@ -694,7 +696,7 @@ class MailAlias(models.Model):
             minimal_qcontext=True,
         )
 
-    def _get_alias_bounced_body(self, message_dict: dict) -> Markup:
+    def _get_alias_bounced_body(self, message_dict: dict[str, Any]) -> Markup:
         self.check_singleton()
         self = self._alias_with_author_lang(message_dict)
         if is_html_empty(self.alias_bounced_content):
@@ -705,7 +707,7 @@ class MailAlias(models.Model):
             body = self.alias_bounced_content
         return self._alias_bounce_render(body, message_dict)
 
-    def _get_alias_bounced_body_fallback(self, message_dict: dict) -> Markup:
+    def _get_alias_bounced_body_fallback(self, message_dict: dict[str, Any]) -> Markup:
         company = self._alias_get_company()
         default_email = (
             company.partner_id.email_formatted
@@ -732,7 +734,7 @@ class MailAlias(models.Model):
             return self.env._("followers of the related document")
         return self.env._("some specific addresses")
 
-    def _get_alias_invalid_body(self, message_dict: dict) -> Markup:
+    def _get_alias_invalid_body(self, message_dict: dict[str, Any]) -> Markup:
         self.check_singleton()
         self = self._alias_with_author_lang(message_dict)
         content = Markup(
@@ -748,7 +750,7 @@ class MailAlias(models.Model):
         return self._alias_bounce_render(self._alias_bounce_wrap(content), message_dict)
 
     def _alias_get_bounce_body(
-        self, message_dict: dict, is_config_error: bool = True
+        self, message_dict: dict[str, Any], is_config_error: bool = True
     ) -> Markup:
         self.check_singleton()
         if is_config_error:

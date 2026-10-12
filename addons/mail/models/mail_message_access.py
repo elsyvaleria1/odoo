@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
-from collections.abc import Collection
+from collections.abc import Callable, Collection
+from typing import Any
 
 from odoo import api, models
 from odoo.api import DomainType
@@ -101,7 +102,7 @@ class MailMessage(models.Model):
 
     def _get_accessible_documents(
         self, doc_model: str, doc_res_ids: Collection[int], operation: str
-    ) -> models.Model:
+    ) -> models.BaseModel:
         documents_all = (
             self.env[doc_model].with_context(active_test=False).browse(doc_res_ids)
         )
@@ -135,8 +136,10 @@ class MailMessage(models.Model):
         return self.env[doc_model].browse(allowed_ids)
 
     @api.model
-    def _get_ids_on_readable_documents(self, model_ids: dict[str, dict]) -> set:
-        allowed_ids = set()
+    def _get_ids_on_readable_documents(
+        self, model_ids: dict[str, dict[int, set[int]]]
+    ) -> set[int]:
+        allowed_ids: set[int] = set()
         for doc_model, doc_dict in model_ids.items():
             if doc_model not in self.env or not self.env[doc_model].has_access("read"):
                 _debug.logic(
@@ -151,7 +154,9 @@ class MailMessage(models.Model):
             }
         return allowed_ids
 
-    def _check_access(self, operation: str) -> tuple | None:
+    def _check_access(
+        self, operation: str
+    ) -> tuple[api.Self, Callable[[], Exception]] | None:
         result = super()._check_access(operation)
         if not self:
             return result
@@ -216,7 +221,7 @@ class MailMessage(models.Model):
             )
         )
 
-    def _get_access_values(self, operation: str) -> dict:
+    def _get_access_values(self, operation: str) -> dict[int, dict[str, Any]]:
         if operation in ("write", "create", "unlink"):
             messages = self.sudo()
             messages.fetch(
@@ -270,7 +275,9 @@ class MailMessage(models.Model):
     def _get_author_partner_id_for_access(self) -> int | None:
         return None if self.env.user._is_public() else self.env.user.partner_id.id
 
-    def _discard_own_messages(self, remaining: dict, operation: str) -> None:
+    def _discard_own_messages(
+        self, remaining: dict[int, dict[str, Any]], operation: str
+    ) -> None:
         author_pid = self._get_author_partner_id_for_access()
         creator_uid = self._get_creator_uid_for_access()
         for mid, message in list(remaining.items()):
@@ -291,13 +298,17 @@ class MailMessage(models.Model):
             if accessible:
                 remaining.pop(mid, None)
 
-    def _discard_notified_messages(self, remaining: dict) -> None:
+    def _discard_notified_messages(self, remaining: dict[int, dict[str, Any]]) -> None:
         for mid, message in list(remaining.items()):
             if message.get("notified"):
                 remaining.pop(mid, None)
 
-    def _group_ids_by_document(self, remaining: dict) -> dict:
-        documents = defaultdict(lambda: defaultdict(list))
+    def _group_ids_by_document(
+        self, remaining: dict[int, dict[str, Any]]
+    ) -> dict[str, dict[int, list[int]]]:
+        documents: dict[str, dict[int, list[int]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
         for mid, message in remaining.items():
             if (
                 message.get("model")
@@ -309,7 +320,10 @@ class MailMessage(models.Model):
         return documents
 
     def _discard_accessible_documents(
-        self, remaining: dict, documents: dict, operation: str
+        self,
+        remaining: dict[int, dict[str, Any]],
+        documents: dict[str, dict[int, list[int]]],
+        operation: str,
     ) -> None:
         if not remaining:
             return
@@ -324,7 +338,7 @@ class MailMessage(models.Model):
                     for mid in msg_ids:
                         remaining.pop(mid, None)
 
-    def _discard_notified_parents(self, remaining: dict) -> None:
+    def _discard_notified_parents(self, remaining: dict[int, dict[str, Any]]) -> None:
         if not remaining:
             return
         parent_ids_msg_ids = defaultdict(list)
@@ -372,7 +386,11 @@ class MailMessage(models.Model):
             .mapped("res_id")
         )
 
-    def _discard_followed_documents(self, remaining: dict, documents: dict) -> None:
+    def _discard_followed_documents(
+        self,
+        remaining: dict[int, dict[str, Any]],
+        documents: dict[str, dict[int, list[int]]],
+    ) -> None:
         if not remaining:
             return
         for model, docid_msgids in documents.items():

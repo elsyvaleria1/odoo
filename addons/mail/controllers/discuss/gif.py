@@ -1,5 +1,6 @@
 import hashlib
 import logging
+from typing import Any
 from urllib.parse import urlencode
 
 import requests
@@ -18,7 +19,7 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 
-def _query_string(params: dict) -> str:
+def _query_string(params: dict[str, Any]) -> str:
     return urlencode({key: value for key, value in params.items() if value is not None})
 
 
@@ -71,7 +72,7 @@ class DiscussGifController(Controller):
         locale: str = "en",
         country: str = "US",
         position: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         query_string = _query_string(
             {
                 "q": search_term,
@@ -88,7 +89,7 @@ class DiscussGifController(Controller):
         return self._request_gifs(f"search?{query_string}").json()
 
     @route("/discuss/gif/categories", type="jsonrpc", auth="user", readonly=True)
-    def categories(self, locale: str = "en", country: str = "US") -> dict:
+    def categories(self, locale: str = "en", country: str = "US") -> dict[str, Any]:
         query_string = _query_string(
             {
                 "key": self._api_key(),
@@ -116,7 +117,7 @@ class DiscussGifController(Controller):
     def add_favorite(self, tenor_gif_id: str) -> None:
         request.env["discuss.gif.favorite"]._add_favorite(self._to_gif_id(tenor_gif_id))
 
-    def _gif_posts(self, ids: list[str]) -> list:
+    def _gif_posts(self, ids: list[str]) -> list[dict[str, Any]]:
         query_string = _query_string(
             {
                 "ids": ",".join(ids),
@@ -128,7 +129,7 @@ class DiscussGifController(Controller):
         return self._request_gifs(f"posts?{query_string}").json()["results"]
 
     @route("/discuss/gif/favorites", type="jsonrpc", auth="user", readonly=True)
-    def get_favorites(self, offset: int = 0) -> tuple:
+    def get_favorites(self, offset: int = 0) -> tuple[list[dict[str, Any]], bool]:
         favorites = request.env["discuss.gif.favorite"].search(
             [("create_uid", "=", request.env.user.id)],
             limit=GIF_FAVORITES_PAGE + 1,

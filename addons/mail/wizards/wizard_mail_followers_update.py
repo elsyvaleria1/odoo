@@ -1,4 +1,5 @@
 import typing
+from typing import Any
 
 from odoo import fields, models
 from odoo.exceptions import UserError
@@ -44,7 +45,7 @@ class WizardMailFollowersUpdate(models.TransientModel):
         default=False,
     )
 
-    def edit_followers(self) -> dict:
+    def edit_followers(self) -> dict[str, Any]:
         for wizard in self:
             if not self.env["mail.message"]._is_thread_model_name(wizard.res_model):
                 _debug.logic(
@@ -109,7 +110,7 @@ class WizardMailFollowersUpdate(models.TransientModel):
 
     def _prepare_message_values(
         self, documents: models.BaseModel, model_name: str
-    ) -> dict:
+    ) -> dict[str, Any]:
         return {
             "body": (
                 (

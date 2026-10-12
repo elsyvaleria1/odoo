@@ -2,6 +2,7 @@ import logging
 import re
 from collections import defaultdict
 from datetime import datetime, timedelta
+from typing import Any
 
 from odoo import models
 from odoo.fields import Domain
@@ -24,13 +25,13 @@ _debug = DebugLog(__name__)
 class IrWebsocket(models.AbstractModel):
     _inherit = "ir.websocket"
 
-    def _serve_ir_websocket(self, event_name: str, data: dict) -> None:
+    def _serve_ir_websocket(self, event_name: str, data: dict[str, Any]) -> None:
         super()._serve_ir_websocket(event_name, data)
         if event_name == "update_presence":
             self._update_mail_presence(**data)
 
     @add_guest_to_context
-    def _subscribe(self, og_data: dict) -> None:
+    def _subscribe(self, og_data: dict[str, Any]) -> None:
         super()._subscribe(og_data)
 
     @add_guest_to_context
@@ -48,7 +49,7 @@ class IrWebsocket(models.AbstractModel):
             self.env.user if partner else guest, inactivity_period
         )
 
-    def _bus_channels_by_name(self, names: list[str]) -> dict[str, list]:
+    def _bus_channels_by_name(self, names: list[str]) -> dict[str, list[Any]]:
         result = super()._bus_channels_by_name(names)
         requested = defaultdict(dict)
         for name in names:
@@ -78,7 +79,9 @@ class IrWebsocket(models.AbstractModel):
         )
         return result
 
-    def _presence_readable(self, model: str, ids_and_tokens: list[tuple]):
+    def _presence_readable(
+        self, model: str, ids_and_tokens: list[tuple[int, str]]
+    ) -> models.BaseModel:
         tokens = dict(ids_and_tokens)
         records = self.env[model].with_context(active_test=False).sudo()
         records = records.search([("id", "in", list(tokens))]).sudo(False)
@@ -92,7 +95,7 @@ class IrWebsocket(models.AbstractModel):
             )
         )
 
-    def _implicit_bus_channels(self) -> list:
+    def _implicit_bus_channels(self) -> list[Any]:
         channels = super()._implicit_bus_channels()
         partner, guest = self.env["res.partner"]._get_current_persona()
         channels.extend(
@@ -100,7 +103,7 @@ class IrWebsocket(models.AbstractModel):
         )
         return channels
 
-    def _prepare_subscribe_data(self, channels: list, last: int) -> dict:
+    def _prepare_subscribe_data(self, channels: list[Any], last: int) -> dict[str, Any]:
         data = super()._prepare_subscribe_data(channels, last)
         heard = defaultdict(list)
         for channel in data["channels"]:
@@ -125,7 +128,7 @@ class IrWebsocket(models.AbstractModel):
         )
         return data
 
-    def _after_subscribe_data(self, data: dict) -> None:
+    def _after_subscribe_data(self, data: dict[str, Any]) -> None:
         super()._after_subscribe_data(data)
         current_partner, current_guest = self.env["res.partner"]._get_current_persona()
         if current_partner or current_guest:
@@ -133,7 +136,7 @@ class IrWebsocket(models.AbstractModel):
                 bus_target=current_partner or current_guest
             )
 
-    def _on_websocket_closed(self, cookies: dict) -> None:
+    def _on_websocket_closed(self, cookies: dict[str, str]) -> None:
         super()._on_websocket_closed(cookies)
         if self.env.user and not self.env.user._is_public():
             _debug.lifecycle("websocket_closed", user=self.env.user.id)

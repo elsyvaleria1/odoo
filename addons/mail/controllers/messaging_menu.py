@@ -77,7 +77,9 @@ class MessagingMenuController(WebclientController):
         }
 
     @classmethod
-    def _get_menu_load_more_domain(cls, model_name: str, params: dict) -> Domain:
+    def _get_menu_load_more_domain(
+        cls, model_name: str, params: dict[str, Any]
+    ) -> Domain:
         domain = cls._get_menu_tab_full_domain(
             model_name, params.get("tab_id"), params.get("filter_ids") or ()
         )
@@ -105,7 +107,7 @@ class MessagingMenuController(WebclientController):
 
     @classmethod
     def _add_menu_tab_presence(
-        cls, store: Store, model_name: str, params: dict, tab_ids: Any
+        cls, store: Store, model_name: str, params: dict[str, Any], tab_ids: Any
     ) -> None:
         presence_tab_ids = params.get("presence_tab_ids") or []
         if not isinstance(presence_tab_ids, list) or not all(

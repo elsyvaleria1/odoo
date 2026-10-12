@@ -1,5 +1,5 @@
 import typing
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 
 from odoo import api, models
 from odoo.exceptions import AccessError
@@ -67,7 +67,9 @@ class MailFollowers(models.Model):
             **kwargs,
         )
 
-    def _check_access(self, operation: str) -> tuple | None:
+    def _check_access(
+        self, operation: str
+    ) -> tuple[api.Self, Callable[[], Exception]] | None:
         result = super()._check_access(operation)
         if not self or operation != "read" or self.env.is_superuser():
             return result
@@ -98,7 +100,9 @@ class MailFollowers(models.Model):
         )
         return self.browse([fol_id for fol_id in self._ids if fol_id in allowed])
 
-    def _get_readable_follower_ids(self, rows: Iterable[tuple]) -> set[int]:
+    def _get_readable_follower_ids(
+        self, rows: Iterable[tuple[int, str, int, int]]
+    ) -> set[int]:
         pid = self.env.user.partner_id.id
         own = set()
         model_ids: dict[str, dict[int, set[int]]] = {}

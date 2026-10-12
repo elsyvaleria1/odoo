@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any, Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import MissingError
 from odoo.libs.debug_log import DebugLog
 
@@ -22,7 +23,7 @@ _debug = DebugLog(__name__)
 
 def _tracking_sort_key(
     tracking: MailTrackingValue, fields_sequence_map: dict[str, int]
-) -> tuple:
+) -> tuple[int, bool, str, int, int]:
     field_info = tracking.field_info or {}
     field_name = tracking.field_id.name or field_info.get("name", "unknown")
     return (
@@ -157,7 +158,9 @@ class MailTrackingValue(models.Model):
             )
         return self.browse(kept_ids)
 
-    def _tracking_value_format_for_display(self, env: Environment) -> dict[int, list]:
+    def _tracking_value_format_for_display(
+        self, env: Environment
+    ) -> dict[int, list[dict[str, Any]]]:
         displayed = self._filtered_for_display(env)
         message_id_by_tracking = {
             tracking.id: tracking.mail_message_id.id for tracking in displayed
@@ -186,9 +189,9 @@ class MailTrackingValue(models.Model):
         initial_value: Any,
         new_value: Any,
         col_name: str,
-        col_info: dict,
+        col_info: dict[str, Any],
         record: models.Model,
-    ) -> dict:
+    ) -> ValuesType:
         field = self.env["ir.model.fields"]._get(record._name, col_name)
         if not field:
             _debug.logic("tracking_field_unknown", model=record._name, field=col_name)
@@ -230,7 +233,9 @@ class MailTrackingValue(models.Model):
 
         return {"field_id": field.id, **values}
 
-    def _prepare_tracking_values_date(self, initial_value: Any, new_value: Any) -> dict:
+    def _prepare_tracking_values_date(
+        self, initial_value: Any, new_value: Any
+    ) -> ValuesType:
         def as_datetime_string(value: Any) -> str | Literal[False]:
             if not value:
                 return False
@@ -244,8 +249,8 @@ class MailTrackingValue(models.Model):
         }
 
     def _prepare_tracking_values_selection(
-        self, initial_value: Any, new_value: Any, col_info: dict
-    ) -> dict:
+        self, initial_value: Any, new_value: Any, col_info: dict[str, Any]
+    ) -> ValuesType:
         labels = dict(col_info["selection"])
         return {
             "old_value_char": (
@@ -257,8 +262,8 @@ class MailTrackingValue(models.Model):
 
     def _prepare_tracking_values_many2one(
         self, initial_value: Any, new_value: Any
-    ) -> dict:
-        def as_id_and_name(value: Any) -> tuple:
+    ) -> ValuesType:
+        def as_id_and_name(value: Any) -> tuple[int, str]:
             if not value:
                 return (0, "")
             if isinstance(value, models.BaseModel):
@@ -276,7 +281,7 @@ class MailTrackingValue(models.Model):
 
     def _prepare_tracking_values_x2many(
         self, initial_value: Any, new_value: Any, field: models.Model
-    ) -> dict:
+    ) -> ValuesType:
         model_name = self.env["ir.model"]._get(field.relation).display_name
 
         def as_names(value: Any) -> str:
@@ -301,7 +306,7 @@ class MailTrackingValue(models.Model):
 
     def _tracked_display_name(self, record: models.BaseModel) -> str:
         try:
-            return record.display_name
+            return record.display_name or ""
         except MissingError:
             _logger.warning(
                 "Tracked %s record %s no longer exists, tracking it without a name",
@@ -312,12 +317,12 @@ class MailTrackingValue(models.Model):
 
     def _prepare_tracking_values_property(
         self,
-        initial_value: dict,
+        initial_value: dict[str, Any],
         col_name: str,
-        col_info: dict,
+        col_info: dict[str, Any],
         record: models.Model,
         definition_index: int = 0,
-    ) -> dict:
+    ) -> ValuesType:
         property_col_info = col_info | {
             "type": initial_value["type"],
             "selection": initial_value.get("selection"),
@@ -340,7 +345,7 @@ class MailTrackingValue(models.Model):
         )
         return {**tracking_values, "field_info": field_info}
 
-    def _tracking_value_format(self) -> list:
+    def _tracking_value_format(self) -> list[dict[str, Any]]:
         model_ids = defaultdict(list)
         for tracking in self:
             model = tracking.field_id.model or tracking.mail_message_id.model
@@ -353,7 +358,9 @@ class MailTrackingValue(models.Model):
         )
         return formatted
 
-    def _tracking_value_format_model(self, model: str | Literal[False]) -> list:
+    def _tracking_value_format_model(
+        self, model: str | Literal[False]
+    ) -> list[dict[str, Any]]:
         if not self:
             return []
 
@@ -412,7 +419,7 @@ class MailTrackingValue(models.Model):
             )
         ]
 
-    def _format_display_value(self, field_type: str, new: bool = True) -> list:
+    def _format_display_value(self, field_type: str, new: bool = True) -> list[Any]:
         field_mapping = {
             "boolean": ("old_value_integer", "new_value_integer"),
             "date": ("old_value_datetime", "new_value_datetime"),
