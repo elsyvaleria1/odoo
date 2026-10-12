@@ -687,7 +687,7 @@ class TelegramBot(models.Model):
         return app_lang or (chat and chat.partner_id.lang) or self.lang or self.env.lang
 
     @api.private
-    def get_file(self, file_id: str) -> dict[str, Any] | bool:
+    def get_file(self, file_id: str) -> dict[str, Any] | None:
         self.check_singleton()
 
         def _download():
@@ -710,13 +710,13 @@ class TelegramBot(models.Model):
 
         except Exception:
             _logger.exception("Failed to download file for bot '%s'", self.name)
-            return False
+            return None
 
     @api.private
-    def get_file_content(self, file_id: str) -> bytes | bool:
+    def get_file_content(self, file_id: str) -> bytes | None:
         self.check_singleton()
         result = self.get_file(file_id)
-        return result["content"] if result else False
+        return result["content"] if result else None
 
     @api.private
     def answer_callback_query(

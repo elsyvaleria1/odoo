@@ -265,7 +265,7 @@ class TestSendAndWait(TelegramBotTestCase):
         self._send(**self._photo())
         wait = self._wait(runtime)
 
-        with patch.object(TelegramBot, "get_file", return_value=False):
+        with patch.object(TelegramBot, "get_file", return_value=None):
             for _attempt in range(MAX_ATTEMPTS):
                 self.env["automation.telegram.wait"]._cron_deliver_answers()
 
@@ -280,7 +280,7 @@ class TestSendAndWait(TelegramBotTestCase):
         self._send(**self._photo())
         before = fields.Datetime.now()
 
-        with patch.object(TelegramBot, "get_file", return_value=False):
+        with patch.object(TelegramBot, "get_file", return_value=None):
             for _attempt in range(3):
                 self.env["automation.telegram.wait"]._cron_deliver_answers()
 
