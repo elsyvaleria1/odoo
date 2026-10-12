@@ -170,7 +170,7 @@ def _rewrite_saved_paths(cr: BaseCursor, model: str, old: str, new: str) -> None
             )
             for row_id, base, text in cr.fetchall():
 
-                def rewrite_path(match: re.Match[str], base: str = base) -> str:
+                def rewrite_path(match: re.Match[str], base: str | None = base) -> str:
                     return ".".join(
                         _rename_in_path(
                             relations, base, match.group(0).split("."), renamed, 1
