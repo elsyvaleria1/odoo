@@ -104,7 +104,7 @@ class GroupsTreeNode:
     def _get_avg_aggregate(self, field_name: str, data: Iterator[Any]) -> float | None:
         if not self.count:
             return None
-        aggregate_func = OPERATOR_MAPPING.get("sum")
+        aggregate_func = OPERATOR_MAPPING["sum"]
         if self.data:
             return aggregate_func(data) / self.count
         children_sums = (

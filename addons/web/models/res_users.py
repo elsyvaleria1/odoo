@@ -48,10 +48,10 @@ class ResUsers(models.Model):
             user_tuple = user_list.pop(index)
             user_list.insert(0, user_tuple)
         elif limit is not None and len(user_list) == limit:
-            if user_tuple := super().name_search(
+            if own_rows := super().name_search(
                 name, domain & Domain("id", "=", uid), operator, limit=1
             ):
-                user_list = [user_tuple[0], *user_list[:-1]]
+                user_list = [own_rows[0], *user_list[:-1]]
         return user_list
 
     @api.model

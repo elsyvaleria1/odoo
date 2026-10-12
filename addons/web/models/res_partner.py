@@ -35,7 +35,7 @@ def _get_vobject() -> tuple[Any, type[Proxy]]:
 
         encoding_param = ProxyAttr()
         type_param = ProxyAttr()
-        value = ProxyAttr(None)
+        value = ProxyAttr()
 
     class VCardContentsProxy(Proxy):
         _wrapped__ = dict

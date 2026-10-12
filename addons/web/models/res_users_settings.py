@@ -296,13 +296,13 @@ class ResUsersSettings(models.Model):
                 number = 1
                 while f"{change['type']}_{number}" in by_id:
                     number += 1
-                tile = {
+                new_tile = {
                     "id": f"{change['type']}_{number}",
                     "type": change["type"],
                     "size": size,
                 }
-                tiles.append(tile)
-                by_id[tile["id"]] = tile
+                tiles.append(new_tile)
+                by_id[new_tile["id"]] = new_tile
                 continue
             tile_id = change.get("id") if isinstance(change, dict) else None
             tile = by_id.get(tile_id) if isinstance(tile_id, str) else None

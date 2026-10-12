@@ -427,21 +427,21 @@ class Base(models.AbstractModel):
         field_range = []
         for record in comodel_records:
             record_id = record["id"]
-            values = {
+            entry = {
                 "id": record_id,
                 "display_name": record["display_name"],
             }
 
             if group_by:
                 group_id, group_name = group_id_name(record[group_by])
-                values["group_id"] = group_id
-                values["group_name"] = group_name
+                entry["group_id"] = group_id
+                entry["group_name"] = group_name
 
             if enable_counters:
                 image_element = domain_image.get(record_id)
-                values["__count"] = image_element["__count"] if image_element else 0
+                entry["__count"] = image_element["__count"] if image_element else 0
 
-            field_range.append(values)
+            field_range.append(entry)
 
         return {
             "values": field_range,

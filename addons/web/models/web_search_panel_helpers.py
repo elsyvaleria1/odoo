@@ -98,7 +98,9 @@ class Base(models.AbstractModel):
     def _search_panel_rollup_counters_global(
         self, values_range: dict[int, dict[str, Any]], parent_name: str
     ) -> None:
-        local_counters = lazymapping(lambda id: values_range[id]["__count"])
+        local_counters: lazymapping[int, int] = lazymapping(
+            lambda id: values_range[id]["__count"]
+        )
 
         for id, values in values_range.items():
             count = local_counters[id]
@@ -129,8 +131,8 @@ class Base(models.AbstractModel):
             chain_is_fully_included = True
             while chain_is_fully_included and record_id:
                 if record_id in ancestor_chain:
-                    record = allowed_records[record_id]
-                    allowed_records[record_id] = {**record, parent_name: False}
+                    cyclic_record = allowed_records[record_id]
+                    allowed_records[record_id] = {**cyclic_record, parent_name: False}
                     _log.logic(
                         "parent-cycle", record_id=record_id, parent_name=parent_name
                     )

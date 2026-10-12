@@ -67,9 +67,9 @@ class Base(models.AbstractModel):
         values = [group_value for group_value, *__ in groups if group_value]
 
         if field.relational:
-            values = self.env[field.comodel_name].browse(value.id for value in values)
-            expand_values = field.get_expanded_groups(self, values, domain)
-            all_record_ids = tuple(unique(expand_values._ids + values._ids))
+            records = self.env[field.comodel_name].browse(value.id for value in values)
+            expand_values = field.get_expanded_groups(self, records, domain)
+            all_record_ids = tuple(unique(expand_values._ids + records._ids))
         else:
             expand_values = field.get_expanded_groups(self, values, domain)
 
@@ -124,24 +124,26 @@ class Base(models.AbstractModel):
         existing = sorted(
             group_value for group in groups if (group_value := group[0])
         ) or [None]
-        fill_from, fill_to = self._web_read_group_get_temporal_bounds(
+        period_start, period_end = self._web_read_group_get_temporal_bounds(
             is_datetime, granularity, days_offset, existing, fill_from, fill_to
         )
-        if not fill_from and not fill_to:
+        if not period_start and not period_end:
             return groups
 
         interval = READ_GROUP_TIME_GRANULARITY[granularity]
         if min_groups > 0:
-            fill_to = max(fill_to, fill_from + (min_groups - 1) * interval)
+            period_end = max(period_end, period_start + (min_groups - 1) * interval)
 
-        if fill_from > fill_to:
+        if period_start > period_end:
             return groups
 
         empty_item = tuple(
             self._read_group_empty_value(spec) for spec in (*groupby[1:], *aggregates)
         )
         required_dates = list(
-            self._read_group_period_starts(fill_from, fill_to, granularity, interval)
+            self._read_group_period_starts(
+                period_start, period_end, granularity, interval
+            )
         )
 
         if existing[0] is None:

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from typing import Any
 
 from odoo import api, models
@@ -17,10 +17,13 @@ from odoo.addons.base.models.ir_ui_view_base import VERBS_FIELD
 _debug = DebugLog(__name__)
 
 
-class lazymapping(defaultdict):
-    def __missing__(self, key: Any) -> Any:
-        value = self.default_factory(key)
-        self[key] = value
+class lazymapping[K, V](dict[K, V]):
+    def __init__(self, factory: Callable[[K], V]) -> None:
+        super().__init__()
+        self._factory = factory
+
+    def __missing__(self, key: K) -> V:
+        value = self[key] = self._factory(key)
         return value
 
 

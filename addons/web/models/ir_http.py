@@ -77,7 +77,7 @@ class IrHttp(models.AbstractModel):
                     mode
                     if mode in ALLOWED_DEBUG_MODES
                     else "1"
-                    if str2bool(mode, mode)
+                    if str2bool(mode, bool(mode))
                     else ""
                 )
                 for mode in (debug or "").split(",")

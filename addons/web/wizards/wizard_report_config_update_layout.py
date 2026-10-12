@@ -313,7 +313,10 @@ class WizardReportConfigUpdateLayout(models.TransientModel):
         if not isinstance(logo, (str, bytes)):
             return False, False
         padding = -len(logo) % 4
-        logo += b"=" * padding if isinstance(logo, bytes) else "=" * padding
+        if isinstance(logo, bytes):
+            logo += b"=" * padding
+        else:
+            logo += "=" * padding
         try:
             image = tools.image_fix_orientation(tools.base64_to_image(logo))
         except Exception:
