@@ -239,7 +239,7 @@ class MixinCredentialStore(models.AbstractModel):
                     record.credential_value,
                 )
                 if record.id:
-                    record._log_access("write")
+                    record._log_credential_access("write")
             elif record.storage_method == "simple":
                 record.credential_value_encrypted = False
 
@@ -373,9 +373,9 @@ class MixinCredentialStore(models.AbstractModel):
             self.credential_value_encrypted = self._encrypt_value(json_str)
         else:
             self.credential_value_encrypted = False
-        self._log_access("write")
+        self._log_credential_access("write")
 
-    def _log_access(self, operation: str = "read"):
+    def _log_credential_access(self, operation: str = "read"):
         return
 
     def _log_access_guarded(self, operation: str = "read") -> None:

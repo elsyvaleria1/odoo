@@ -1422,7 +1422,7 @@ class CredentialCredential(models.Model):
     def _create_access_logs(self, vals_list: list[dict]) -> None:
         self.env["credential.access.log"].sudo().create(vals_list)
 
-    def _log_access(self, operation: str = "read"):
+    def _log_credential_access(self, operation: str = "read"):
         self.check_singleton()
         source_ip = self._get_request_source_ip()
         self._create_access_logs([self._prepare_access_log_vals(operation, source_ip)])
@@ -1520,4 +1520,4 @@ class CredentialCredential(models.Model):
     def mark_as_used(self) -> None:
         self.check_singleton()
         self._queue_usage()
-        self._log_access("use")
+        self._log_credential_access("use")

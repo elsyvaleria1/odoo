@@ -248,7 +248,7 @@ class TestCredentialAccessLog(TransactionCase):
 
         self.credential.with_context(
             **{type(self.credential)._AUDIT_FIELDS_CONTEXT_KEY: ["api_key"]}
-        )._log_access("read")
+        )._log_credential_access("read")
 
         count_after = self.env["credential.access.log"].search_count(
             [("credential_id", "=", self.credential.id)]
@@ -290,7 +290,7 @@ class TestCredentialAccessLog(TransactionCase):
             self.assertTrue(logs[0].credential_id)
 
     def test_03_access_log_fields(self):
-        self.credential._log_access("read")
+        self.credential._log_credential_access("read")
         log = self.env["credential.access.log"].search(
             [("credential_id", "=", self.credential.id)], order="id desc", limit=1
         )
@@ -306,7 +306,7 @@ class TestCredentialAccessLog(TransactionCase):
     def test_04_log_access_method(self):
         self.credential.with_context(
             **{type(self.credential)._AUDIT_FIELDS_CONTEXT_KEY: ["api_key"]}
-        )._log_access("use")
+        )._log_credential_access("use")
         log = self.env["credential.access.log"].search(
             [("credential_id", "=", self.credential.id), ("operation", "=", "use")],
             order="id desc",
@@ -334,7 +334,7 @@ class TestCredentialAccessLog(TransactionCase):
         self.assertEqual(log.credential_name, self.credential.name)
 
     def test_06_access_log_display_name(self):
-        self.credential._log_access("read")
+        self.credential._log_credential_access("read")
         log = self.env["credential.access.log"].search(
             [("credential_id", "=", self.credential.id)], order="id desc", limit=1
         )
@@ -351,8 +351,8 @@ class TestCredentialAccessLog(TransactionCase):
             [("credential_id", "=", self.credential.id)]
         )
 
-        self.credential._log_access("read")
-        self.credential._log_access("read")
+        self.credential._log_credential_access("read")
+        self.credential._log_credential_access("read")
 
         count_after = self.env["credential.access.log"].search_count(
             [("credential_id", "=", self.credential.id)]

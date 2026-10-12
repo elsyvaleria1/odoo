@@ -1345,7 +1345,7 @@ class TestBinaryWireFormatCompat(TransactionCase):
                 "credential_value": "v1",
             }
         )
-        cred._log_access("read")
+        cred._log_credential_access("read")
         self.env.cr.execute(
             "UPDATE credential_access_log SET timestamp = %s WHERE credential_id = %s",
             ["2000-01-01 00:00:00", cred.id],
