@@ -41,11 +41,15 @@ class TelegramHandlerStockFleet(models.AbstractModel):
     def _explain_command_refusal(
         self, bot, chat, command, partner, internal_user
     ) -> None:
-        self._send(
-            bot,
-            chat,
-            self._tr(bot, chat)._("Only whoever delivers sends signed slips here."),
-        )
+        tr = self._tr(bot, chat)
+        if internal_user:
+            text = tr._(
+                "Your Odoo user may not record deliveries; ask an administrator "
+                "for inventory rights."
+            )
+        else:
+            text = tr._("Only whoever delivers sends signed slips here.")
+        self._send(bot, chat, text)
 
     def _telegram_callback_prefixes(self):
         return (DELIVER,)
@@ -224,31 +228,38 @@ class TelegramHandlerStockFleet(models.AbstractModel):
                 self._finish_markup(bot, chat),
             )
             return
-        picking, found_by, candidates = slip._identify(
-            content, lambda: self._pending_deliveries(user)
-        )
+        identified = slip._identify(content, lambda: self._pending_deliveries(user))
+        picking, candidates = identified.picking, identified.candidates
         if picking:
-            self._record(bot, chat, slip, picking, found_by, content)
+            self._record(bot, chat, slip, picking, identified.found_by, content)
             return
         if not candidates:
             slip._refuse("unidentified")
-            self._send(
-                bot,
-                chat,
-                tr._(
+            if identified.doubt:
+                text = " ".join(
+                    [
+                        identified.doubt,
+                        tr._(
+                            "No delivery of yours is waiting for a slip; send it "
+                            "again with the whole slip in view."
+                        ),
+                    ]
+                )
+            else:
+                text = tr._(
                     "I could not read the QR code or the delivery number on the "
                     "slip, and no delivery of yours is waiting for one. Send it "
                     "again in focus, with the whole slip in view."
-                ),
-                self._finish_markup(bot, chat),
-            )
+                )
+            self._send(bot, chat, text, self._finish_markup(bot, chat))
             return
         slip._offer(candidates)
         several_companies = len(candidates.company_id) > 1
+        question = tr._("I could not tell which delivery this slip is. Which one?")
         self._send(
             bot,
             chat,
-            tr._("I could not tell which delivery this slip is. Which one?"),
+            f"{identified.doubt} {question}" if identified.doubt else question,
             kb.record_list(
                 candidates.sorted("name"),
                 lambda picking: " · ".join(

@@ -2,6 +2,7 @@ import base64
 import hashlib
 import logging
 import mimetypes
+from typing import NamedTuple
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, RedirectWarning, UserError, ValidationError
@@ -45,6 +46,13 @@ _READ_SCHEMA = {
 
 class SlipRefused(Exception):
     pass
+
+
+class Identification(NamedTuple):
+    picking: models.BaseModel
+    found_by: str
+    candidates: models.BaseModel
+    doubt: str | None = None
 
 
 class TelegramDeliverySlip(models.Model):
@@ -156,21 +164,21 @@ class TelegramDeliverySlip(models.Model):
             limit=1,
         )
 
-    def _identify(self, content, pending):
+    def _identify(self, content, pending) -> Identification:
         self.check_singleton()
         Picking = self.env["stock.picking"]
         document = Document(content, name=self.file_name or "slip")
         codes = self._read(document, "barcodes", [])
         found = Picking._find_by_delivery_slip_qr(codes)
         if len(found) == 1:
-            return found, "qr", Picking
+            return Identification(found, "qr", Picking)
         if found:
-            return Picking, "", found
+            return Identification(Picking, "", found, self._several_message(found))
         found = Picking._find_delivery_orders_by_name(codes)
         if len(found) == 1:
-            return found, "code", Picking
+            return Identification(found, "code", Picking)
         if found:
-            return Picking, "", found
+            return Identification(Picking, "", found, self._several_message(found))
 
         text = self._read(
             Document(content, name=self.file_name or "slip", read_up_to=METERED),
@@ -180,19 +188,35 @@ class TelegramDeliverySlip(models.Model):
         found = Picking._find_delivery_orders_by_name(out_names_in_text(text))
         named = found.filtered(lambda picking: picking._customer_in_text(text))
         if len(named) == 1:
-            return named, "text", Picking
+            return Identification(named, "text", Picking)
         if named:
-            return Picking, "", named
+            return Identification(Picking, "", named, self._several_message(named))
+        doubt = self._customer_missing_message(found) if found else None
 
         reading = self._read_with_model(content)
         found = Picking._find_delivery_orders_by_name(
             out_names_in_text(reading.get("delivery_order"))
         )
-        if len(found) == 1 and found._customer_matches(
-            reading.get("customer_name"), reading.get("customer_rfc")
-        ):
-            return found, "model", Picking
-        return Picking, "", pending()
+        if len(found) == 1:
+            if found._customer_matches(
+                reading.get("customer_name"), reading.get("customer_rfc")
+            ):
+                return Identification(found, "model", Picking)
+            doubt = doubt or self._customer_missing_message(found)
+        return Identification(Picking, "", pending(), doubt)
+
+    def _several_message(self, pickings) -> str:
+        return self.env._(
+            "The slip shows several deliveries: %(pickings)s.",
+            pickings=", ".join(pickings.sorted("name").mapped("name")),
+        )
+
+    def _customer_missing_message(self, pickings) -> str:
+        return self.env._(
+            "The slip carries %(pickings)s, but I do not see its customer's name "
+            "or RFC on it.",
+            pickings=", ".join(pickings.sorted("name").mapped("name")),
+        )
 
     def _read_with_model(self, content) -> dict:
         model = (
@@ -281,6 +305,15 @@ class TelegramDeliverySlip(models.Model):
     def _file_proof(self, picking, content) -> None:
         try:
             picking.delivery_proof = base64.b64encode(self._proof_image(content))
+        except AccessError as error:
+            _logger.info("Slip for %s refused by access: %s", picking.name, error)
+            raise SlipRefused(
+                self.env._(
+                    "Your Odoo user may not record the slip of %(picking)s; ask an "
+                    "administrator for inventory rights.",
+                    picking=picking.name,
+                )
+            ) from error
         except UserError as error:
             _logger.info("Undecodable delivery slip %s: %s", self.file_name, error)
             raise SlipRefused(

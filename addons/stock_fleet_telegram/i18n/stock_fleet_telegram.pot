@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 17:24+0000\n"
-"PO-Revision-Date: 2026-10-12 17:24+0000\n"
+"POT-Creation-Date: 2026-10-12 21:03+0000\n"
+"PO-Revision-Date: 2026-10-12 21:03+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -491,6 +491,14 @@ msgid "No delivered slip to receive"
 msgstr ""
 
 #. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid ""
+"No delivery of yours is waiting for a slip; send it again with the whole "
+"slip in view."
+msgstr ""
+
+#. module: stock_fleet_telegram
 #: model_terms:ir.actions.act_window,help:stock_fleet_telegram.action_stock_delivery_slip_receipt
 msgid "No delivery slips to receive"
 msgstr ""
@@ -851,6 +859,20 @@ msgid ""
 msgstr ""
 
 #. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid ""
+"The slip carries %(pickings)s, but I do not see its customer's name or RFC "
+"on it."
+msgstr ""
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "The slip shows several deliveries: %(pickings)s."
+msgstr ""
+
+#. module: stock_fleet_telegram
 #: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__state__pending
 msgid "To Identify"
 msgstr ""
@@ -897,6 +919,22 @@ msgstr ""
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
 msgid "You have no slip left to hand in."
+msgstr ""
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid ""
+"Your Odoo user may not record deliveries; ask an administrator for inventory"
+" rights."
+msgstr ""
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid ""
+"Your Odoo user may not record the slip of %(picking)s; ask an administrator "
+"for inventory rights."
 msgstr ""
 
 #. module: stock_fleet_telegram

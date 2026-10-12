@@ -10,6 +10,7 @@ from odoo.exceptions import AccessError, RedirectWarning, UserError
 from odoo.libs.documents.document import Document
 from odoo.tests import tagged
 
+from odoo.addons.stock_fleet_telegram.models.stock_picking import out_names_in_text
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
 
 DRIVER_CHAT = "599001"
@@ -344,7 +345,10 @@ class TestDeliveryFlow(TelegramBotTestCase):
 
         self.assertFalse(first.delivery_proof)
         self.assertEqual(self._last_slip(OFFICE_CHAT).state, "error")
-        self.assertIn("could not read", reply)
+        self.assertIn(
+            f"carries {first.name}, but I do not see its customer's name", reply
+        )
+        self.assertNotIn("could not read", reply)
 
     def test_an_unreadable_slip_is_chosen_from_the_pending_deliveries(self):
         second = self.pickings[1]
@@ -535,6 +539,9 @@ class TestDeliveryFlow(TelegramBotTestCase):
         self.assertTrue(arrived.delivery_paper_received)
         self.assertEqual(arrived.delivery_paper_received_uid, self.reviewer)
         self.assertFalse(missing.delivery_paper_received)
+        self.assertEqual(receipt.received_by_id, self.reviewer)
+        self.assertEqual(receipt.slip_ids.picking_id, arrived)
+        self.assertTrue(receipt.message_ids.attachment_ids)
 
     def test_only_a_reviewer_confirms_the_batch(self):
         receipt = self._handed_in()
@@ -658,6 +665,7 @@ class TestDeliveryFlow(TelegramBotTestCase):
         reply = self._photo(codes=self.pickings.mapped("name"), chat=OFFICE_CHAT)
 
         self.assertIn("Which one", reply)
+        self.assertIn("The slip shows several deliveries", reply)
         self.assertEqual(self._last_slip(OFFICE_CHAT).candidate_ids, self.pickings)
 
     def test_a_button_of_a_resolved_slip_is_no_longer_valid(self):
@@ -705,3 +713,108 @@ class TestDeliveryFlow(TelegramBotTestCase):
         self.assertFalse(self._last_slip().receipt_id)
         self.assertIn("already awaits its paper from Office", reply)
         self.assertIn("with the signed slip it already had", reply)
+
+    def _ready_delivery(self):
+        picking = self.env["stock.picking"].create(
+            {
+                "picking_type_id": self.out_type.id,
+                "partner_id": self.env["res.partner"]
+                .create({"name": "Rancho Tres"})
+                .id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+                "move_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 1,
+                            "location_id": self.stock_location.id,
+                            "location_dest_id": self.customer_location.id,
+                        }
+                    )
+                ],
+            }
+        )
+        picking.action_confirm()
+        picking.action_assign()
+        return picking
+
+    def test_out_names_are_read_in_any_spacing(self):
+        self.assertEqual(
+            out_names_in_text("Remision cdg / out / 25/07 / 0123\nWH/OUT/00045"),
+            ["CDG/OUT/25/07/0123", "WH/OUT/00045"],
+        )
+        self.assertEqual(out_names_in_text("CN/26/09/1068"), [])
+
+    def test_a_group_chat_is_sent_to_a_private_one(self):
+        message = self.mock_telegram_message(
+            chat_id="-100599", text="/entrega", message_id=self.update_id
+        )
+        message["chat"]["type"] = "group"
+        message["from"]["id"] = int(DRIVER_CHAT)
+        reply = self._update({"message": message})
+        self.assertIn("in a private chat with me", reply)
+
+    def test_a_user_without_inventory_rights_is_told_why(self):
+        outsider = self.env["res.users"].create(
+            {"name": "No Stock", "login": "tg_trip_no_stock"}
+        )
+        self._bound_account("599003", outsider.partner_id, user=outsider)
+        reply = self._say("/entrega", chat="599003")
+        self.assertIn("may not record deliveries", reply)
+
+    def test_a_delivery_off_any_trip_only_files_the_slip(self):
+        loose = self._ready_delivery()
+        self._say("/entrega")
+        reply = self._photo(codes=[loose._get_delivery_slip_qr_value()])
+        self.assertEqual(loose.state, "assigned")
+        self.assertTrue(loose.delivery_proof)
+        self.assertEqual(self._last_slip().outcome, "filed")
+        self.assertIn("it is not on a trip", reply)
+
+    def test_a_trip_not_departed_only_files_the_slip(self):
+        waiting = self._ready_delivery()
+        self.env["stock.picking.batch"].create(
+            {
+                "picking_type_id": self.out_type.id,
+                "picking_ids": [Command.set(waiting.ids)],
+                "vehicle_id": self.trip.vehicle_id.id,
+                "operator_id": self.trip.operator_id.id,
+                "supervisor_id": self.trip.supervisor_id.id,
+            }
+        )
+        self._say("/entrega")
+        reply = self._photo(codes=[waiting._get_delivery_slip_qr_value()])
+        self.assertEqual(waiting.state, "assigned")
+        self.assertEqual(self._last_slip().outcome, "filed")
+        self.assertIn("has not departed", reply)
+
+    def test_a_delivery_not_ready_is_refused(self):
+        unready = self._ready_delivery()
+        unready.action_unreserve()
+        self.assertEqual(unready.state, "confirmed")
+        self._say("/entrega")
+        reply = self._photo(codes=[unready._get_delivery_slip_qr_value()])
+        self.assertEqual(self._last_slip().state, "error")
+        self.assertFalse(unready.delivery_proof)
+        self.assertIn("is not ready to deliver", reply)
+
+    def test_a_delivery_validated_without_its_slip_takes_it_and_keeps_its_moves(self):
+        first = self.pickings[0]
+        self.out_type.delivery_proof_required = False
+        first.action_deliver()
+        self.out_type.delivery_proof_required = True
+        self.assertEqual(first.state, "done")
+        self.assertFalse(first.delivery_proof)
+        moves_before = first.move_ids.read(["state", "quantity"])
+        self._say("/entrega")
+        self._photo(codes=[first._get_delivery_slip_qr_value()])
+        self.assertTrue(first.delivery_proof)
+        self.assertEqual(self._last_slip().state, "done")
+        self.assertEqual(first.move_ids.read(["state", "quantity"]), moves_before)
+
+    def test_a_paper_received_elsewhere_stops_the_batch(self):
+        receipt = self._handed_in().with_user(self.reviewer)
+        self.pickings[0].with_user(self.reviewer).action_receive_delivery_paper()
+        with self.assertRaisesRegex(UserError, "was already received"):
+            receipt.action_confirm()
