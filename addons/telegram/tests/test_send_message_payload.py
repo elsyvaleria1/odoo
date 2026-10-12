@@ -1,7 +1,10 @@
 from unittest.mock import patch
 
 from .common import TelegramBotTestCase
-from odoo.addons.telegram.tools.telegram_client import TelegramClient
+from odoo.addons.telegram.tools.telegram_client import (
+    INTERACTIVE_READ_TIMEOUT,
+    TelegramClient,
+)
 
 
 class TestSendMessagePayload(TelegramBotTestCase):
@@ -30,3 +33,13 @@ class TestSendMessagePayload(TelegramBotTestCase):
     def test_an_explicit_parse_mode_still_reaches_telegram(self):
         payload = self._captured_payload(parse_mode="MarkdownV2")
         self.assertEqual(payload["parse_mode"], "MarkdownV2")
+
+    def test_a_json_call_waits_at_most_the_interactive_read_timeout(self):
+        client = TelegramClient(self.env, self.TEST_BOT_TOKEN)
+        response = {"body": {"ok": True, "result": {"message_id": 1}}}
+        with patch.object(client._client, "post", return_value=response) as post:
+            client.send_message("42", "hola")
+            client.call("answerCallbackQuery", {"callback_query_id": "1"})
+        for call in post.call_args_list:
+            _connect, read = call.kwargs["timeout"]
+            self.assertLessEqual(read, INTERACTIVE_READ_TIMEOUT)

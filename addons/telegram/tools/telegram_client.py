@@ -9,6 +9,12 @@ from odoo.addons.integration.tools import CommError, get_api_client
 _logger = logging.getLogger(__name__)
 
 _DEFAULT_MIMETYPE = "application/octet-stream"
+# a JSON call (send a text, answer a button, edit a message, read a file's
+# metadata) answers in well under a second; one that hangs is a dead route,
+# and the transaction that made it keeps its row locks while it waits, which
+# stalls every other update touching those rows. Uploads keep the service's
+# longer read timeout.
+INTERACTIVE_READ_TIMEOUT = 10
 
 
 class TelegramClient:
@@ -30,9 +36,18 @@ class TelegramClient:
     def _get_endpoint(self, method):
         return f"/bot{self.bot_token}/{method}"
 
+    def _interactive_timeout(self):
+        """The (connect, read) timeout of a JSON call: the service's, the
+        read part capped at INTERACTIVE_READ_TIMEOUT."""
+        connect, read = self._client._get_default_timeout()
+        return connect, min(read, INTERACTIVE_READ_TIMEOUT)
+
     def _post(self, method, payload):
         response = self._client.post(
-            self._get_endpoint(method), json=payload, raise_for_status=False
+            self._get_endpoint(method),
+            json=payload,
+            raise_for_status=False,
+            timeout=self._interactive_timeout(),
         )
         return response["body"]
 
@@ -47,7 +62,10 @@ class TelegramClient:
                 )
             else:
                 response = self._client.post(
-                    self._get_endpoint(method), json=payload, raise_for_status=False
+                    self._get_endpoint(method),
+                    json=payload,
+                    raise_for_status=False,
+                    timeout=self._interactive_timeout(),
                 )
         except CommError as e:
             raise TelegramUnavailable(0, str(e)) from e
