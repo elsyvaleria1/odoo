@@ -8,7 +8,7 @@ import psycopg
 
 from odoo import api, models
 from odoo.db import schema as sql_tools
-from odoo.fields import Domain, Field
+from odoo.fields import Field
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools import SQL, mute_logger
@@ -221,12 +221,20 @@ class MixinMerge(models.AbstractModel):
 
         to_recompute = []
         for model_name, columns in columns_by_model.items():
-            Other = self.env[model_name].sudo().with_context(active_test=False)
-            records = Other.search(  # noqa: E8507 -- loop variable is the model -- a different table each time
-                Domain.OR(Domain(column, "in", src_records.ids) for column in columns)
+            Other = self.env[model_name]
+            Other.flush_model(columns)
+            self.env.cr.execute(
+                SQL(
+                    "SELECT id FROM %s WHERE %s",
+                    SQL.identifier(Other._table),
+                    SQL(" OR ").join(
+                        SQL("%s = ANY(%s)", SQL.identifier(column), src_records.ids)
+                        for column in columns
+                    ),
+                )
             )
-            if records:
-                to_recompute.append((records, columns))
+            if ids := [row[0] for row in self.env.cr.fetchall()]:
+                to_recompute.append((Other.browse(ids), columns))
         for field in joins:
             self.env.cr.execute(
                 SQL(
@@ -239,7 +247,7 @@ class MixinMerge(models.AbstractModel):
             )
             if owner_ids := [row[0] for row in self.env.cr.fetchall()]:
                 to_recompute.append(
-                    (self.env[field.model_name].sudo().browse(owner_ids), [field.name])
+                    (self.env[field.model_name].browse(owner_ids), [field.name])
                 )
         _debug.logic(
             "repointed_with_dependents",
