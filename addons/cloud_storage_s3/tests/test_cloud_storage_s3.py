@@ -232,6 +232,18 @@ class TestCloudStorageS3(TestCloudStorageS3Common):
             self.env["res.config.settings"].get_values()["cloud_storage_s3_keys_set"]
         )
 
+    def test_the_storage_keys_serve_every_company(self):
+        self.assertFalse(s3.get_credential(self.env).company_id)
+        other = self.env["res.company"].create({"name": "Other storage user"})
+        admin = self.env.ref("base.user_admin")
+        admin.company_ids |= other
+        settings = (
+            self.env["res.config.settings"]
+            .with_user(admin)
+            .with_context(allowed_company_ids=[other.id])
+        )
+        self.assertTrue(settings._get_cloud_storage_configuration())
+
     def test_settings_refuse_half_a_key_pair(self):
         settings = self.env["res.config.settings"].create(
             {"cloud_storage_s3_access_key_id": "AKIANEWKEY"}

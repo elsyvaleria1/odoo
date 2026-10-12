@@ -109,6 +109,9 @@ def store_keys(env, access_key_id, secret_access_key) -> None:
                 "name": CREDENTIAL_NAME,
                 "category_id": env.ref(CREDENTIAL_CATEGORY_XMLID).id,
                 "credential_data": payload,
+                # the storage serves the whole database: a company-owned key
+                # is invisible, and storage "unconfigured", under the others
+                "company_id": False,
             }
         )
     clear_cache(env)
