@@ -25,6 +25,7 @@ from .components.model_graph import ModelGraph
 from .components.storage import DictBackend
 from .fields import Boolean, Char, Many2many, Many2one
 from .models import AbstractModel, MetaModel, Model
+from .models.base import BaseModel
 from .primitives import SUPERUSER_ID
 from .runtime._registry_fields import _RegistryFieldsMixin
 from .runtime._registry_models import _RegistryModelsMixin
@@ -33,7 +34,7 @@ from .runtime.environment import Environment
 from .runtime.filestore import FILE_STORE
 from .runtime.locale import LOCALE, Locale
 from .runtime.metaschema import META_SCHEMA
-from .runtime.registry import CACHES_BY_KEY
+from .runtime.registry import CACHES_BY_KEY, Registry
 from .runtime.savepoint import _cache_generation, _clear_invalidated_caches
 from .runtime.settings import SYSTEM_SETTINGS
 from .runtime.transaction import Transaction
@@ -41,11 +42,6 @@ from .runtime.xmlids import XMLIDS
 
 if TYPE_CHECKING:
     from .fields import Field
-    from .models.base import BaseModel
-    from .runtime.registry import Registry
-else:
-    BaseModel = Any
-    Registry = Any
 
 _logger = logging.getLogger("odoo.orm.model_test_env")
 _debug = DebugLog(__name__)

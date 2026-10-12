@@ -2,7 +2,7 @@ import contextlib
 import logging
 from collections.abc import Callable
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, override
+from typing import override
 from unittest import BaseTestSuite, util
 
 import odoo
@@ -12,13 +12,8 @@ from .. import db
 from . import case
 from .case import TestCase
 from .http import HttpCase
-from .result import OdooTestResult, stats_logger
+from .result import ExcInfo, OdooTestResult, stats_logger
 from .utils import InfrastructureUnavailable
-
-if TYPE_CHECKING:
-    from .result import ExcInfo
-else:
-    ExcInfo = Any
 
 __unittest = True
 

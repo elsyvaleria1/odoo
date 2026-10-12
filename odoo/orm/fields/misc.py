@@ -9,21 +9,18 @@ from odoo.libs.json import dumps as _fast_dumps
 from odoo.libs.json import fast_clone
 from odoo.libs.json import loads as _fast_loads
 from odoo.libs.sql import SQL
+from odoo.tools import Query
 from odoo.tools.json import json_default
 
+from .._typing import ModelLike
 from ..primitives import COLLECTION_TYPES, IdType, NewId
 from ._field_sql import PYTHON_INEQUALITY_OPERATOR
 from .base import Field, _prepare_inline_get
 
 if typing.TYPE_CHECKING:
-    from odoo.tools import Query
-
-    from .._typing import ModelLike
     from ..models import BaseModel
 else:
     BaseModel = typing.Any
-    ModelLike = typing.Any
-    Query = typing.Any
 
 _debug = DebugLog(__name__)
 

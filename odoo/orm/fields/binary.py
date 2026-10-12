@@ -13,8 +13,10 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.filesystem import guess_mimetype, is_svg, opens_on_markup
 from odoo.libs.sql import SQL
 from odoo.libs.text import human_size
+from odoo.tools import Query
 from odoo.tools.image import image_process
 
+from .._typing import ModelLike
 from ..domain.ast import Domain, DomainCondition, OptimizationLevel
 from ..primitives import COLLECTION_TYPES
 from .base import Field
@@ -22,16 +24,11 @@ from .base import Field
 _debug = DebugLog(__name__)
 
 if typing.TYPE_CHECKING:
-    from odoo.tools import Query
-
-    from .._typing import ModelLike
     from ..models import BaseModel
     from ..runtime import Environment
 else:
     BaseModel = typing.Any
     Environment = typing.Any
-    ModelLike = typing.Any
-    Query = typing.Any
 
 type ImageValue = bytes | str | typing.Literal[False] | None
 

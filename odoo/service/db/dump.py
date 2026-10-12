@@ -16,6 +16,7 @@ from typing import IO, TYPE_CHECKING, Any
 import odoo.db
 import odoo.release
 import odoo.tools
+from odoo.db import BaseCursor
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.subprocess import exec_pg_environ, get_pg_tool_path
 
@@ -26,10 +27,7 @@ from .listing import check_db_exposed
 
 if TYPE_CHECKING:
     from _typeshed import SupportsWrite
-
-    from odoo.db import BaseCursor
 else:
-    BaseCursor = Any
     type SupportsWrite[T] = Any
 
 _logger = logging.getLogger("odoo.service.db")

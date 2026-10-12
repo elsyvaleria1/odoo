@@ -55,15 +55,13 @@ from . import clock
 from .case import TestCase
 from .cursor import TestCursor, _release_foreign_acquisition, cannot_release
 from .matchers import Approx, _normalize_arch_for_assert
+from .result import OdooTestResult
 from .utils import HOST, env_int, get_db_name
 
 if TYPE_CHECKING:
     from socket import _GetAddrInfoResult
-
-    from .result import OdooTestResult
 else:
     _GetAddrInfoResult = Any
-    OdooTestResult = Any
 
 type _Patcher = _patch[Any]
 

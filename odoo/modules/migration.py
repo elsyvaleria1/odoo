@@ -11,20 +11,14 @@ from pathlib import Path
 
 import odoo.upgrade
 from odoo import release
-from odoo.db import schema
+from odoo.db import Cursor, schema
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import loads as json_loads
 from odoo.libs.parse_version import parse_version
 from odoo.modules.module import Manifest, adapt_version, load_script
 from odoo.tools.files import file_path
 
-if typing.TYPE_CHECKING:
-    from odoo.db import Cursor
-
-    from .module_graph import ModuleGraph, ModuleNode
-else:
-    ModuleGraph = ModuleNode = typing.Any
-    Cursor = typing.Any
+from .module_graph import ModuleGraph, ModuleNode
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

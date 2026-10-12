@@ -15,8 +15,9 @@ from odoo.libs.iteration import PENDING, SENTINEL
 
 from ... import decorators as api
 from ..._recordset import is_recordset
-from ..._typing import DomainType
+from ..._typing import DomainType, IdType, ModelLike
 from ...domain import Domain
+from ...fields.base import Field
 from ...parsing import parse_order
 from ...primitives import PREFETCH_MAX
 from ._cache_scan import (
@@ -33,13 +34,9 @@ _debug = DebugLog(__name__)
 
 
 if typing.TYPE_CHECKING:
-    from ..._typing import BaseModel, IdType, ModelLike
-    from ...fields.base import Field
+    from ..._typing import BaseModel
 else:
     BaseModel = typing.Any
-    type Field[T] = typing.Any
-    IdType = typing.Any
-    ModelLike = typing.Any
 
 T = typing.TypeVar("T")
 

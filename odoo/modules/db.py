@@ -8,6 +8,7 @@ from psycopg.types.json import Json
 
 import odoo.api
 import odoo.tools
+from odoo.db import Cursor
 from odoo.db import schema as _db_schema
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.email import email_split
@@ -15,11 +16,6 @@ from odoo.modules._protocols import SqlReader
 from odoo.modules.module import Manifest
 
 from .registry import Registry
-
-if typing.TYPE_CHECKING:
-    from odoo.db import Cursor
-else:
-    Cursor = typing.Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

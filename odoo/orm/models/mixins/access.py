@@ -14,8 +14,10 @@ from odoo.tools.translate import LazyTranslate
 
 from ... import decorators as api
 from ..._recordset import is_search_overridden
+from ..._typing import IdType, ModelLike
 from ...domain import Domain, DomainCondition, OptimizationLevel
 from ...domain.constants import ACCESS_OPERATIONS
+from ...fields import Field
 from ...fields.base import call_hook
 from ...helpers import invalid_field_message, to_record_ids
 from ...primitives import LOG_ACCESS_COLUMNS, NO_ACCESS, PREFETCH_MAX, SUPERUSER_ID
@@ -23,14 +25,10 @@ from ..field_classes import is_anonymous
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from ..._typing import BaseModel, IdType, ModelLike
-    from ...fields import Field
+    from ..._typing import BaseModel
     from ...runtime.access_memo import RecordVerdicts
     from ._model_stubs import VerbTransitions
 else:
-    type Field[T] = typing.Any
-    IdType = typing.Any
-    ModelLike = typing.Any
     RecordVerdicts = typing.Any
     VerbTransitions = typing.Any
     BaseModel = typing.Any

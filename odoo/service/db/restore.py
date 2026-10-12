@@ -8,13 +8,14 @@ import tempfile
 import threading
 import zipfile
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Literal, NoReturn
+from typing import IO, Literal, NoReturn
 
 import odoo.api
 import odoo.db
 import odoo.modules.neutralize
 import odoo.modules.registry
 import odoo.tools
+from odoo.db import BaseCursor
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.subprocess import exec_pg_environ, get_pg_tool_path
 
@@ -28,11 +29,6 @@ from .lifecycle import (
     create_empty_database,
 )
 from .listing import exp_db_exist
-
-if TYPE_CHECKING:
-    from odoo.db import BaseCursor
-else:
-    BaseCursor = Any
 
 _logger = logging.getLogger("odoo.service.db")
 _debug = DebugLog(__name__)

@@ -9,15 +9,14 @@ from typing import Any, Literal
 import requests
 from lxml import etree
 
+from odoo.api import Environment
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.files import file_open
 from odoo.tools.xml_utils import XmlSource, check_with_xsd
 
 if typing.TYPE_CHECKING:
-    from odoo.api import Environment
     from odoo.orm.runtime._model_types import IrAttachmentModel
 else:
-    Environment = Any
     IrAttachmentModel = Any
 
 _logger = logging.getLogger(__name__)

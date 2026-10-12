@@ -18,8 +18,10 @@ from odoo.libs.sql import (
     value_to_translated_trigram_patterns,
 )
 from odoo.libs.text import html_normalize, html_sanitize
+from odoo.tools import Query
 from odoo.tools.translate import html_translate
 
+from .._typing import IdType, ModelClass, ModelLike, ModelType
 from ..domain.ast import Domain, DomainCondition, OptimizationLevel
 from ..primitives import COLLECTION_TYPES, SQL_OPERATORS
 from . import _field_ddl as _ddl
@@ -28,20 +30,12 @@ from ._field_translation import LangProxyDict
 from .base import Field, _logger, _prepare_fast_get, _prepare_inline_get
 
 if typing.TYPE_CHECKING:
-    from odoo.tools import Query
-
-    from .._typing import IdType, ModelClass, ModelLike, ModelType
     from ..models import BaseModel
     from ..runtime import Environment
     from ._field_stubs import TranslateDialect
 else:
     BaseModel = typing.Any
     Environment = typing.Any
-    ModelClass = typing.Any
-    ModelLike = typing.Any
-    ModelType = typing.Any
-    IdType = typing.Any
-    Query = typing.Any
 
 _debug = DebugLog(__name__)
 

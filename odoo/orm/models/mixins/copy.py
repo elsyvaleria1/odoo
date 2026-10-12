@@ -8,14 +8,12 @@ from typing import Self
 from odoo.libs.debug_log import DebugLog
 
 from ..._typing import ValuesType
+from ...fields import Field
 from ...primitives import MAGIC_COLUMNS, PREFETCH_MAX, Command
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
     from ..._typing import BaseModel, IdType
-    from ...fields import Field
-else:
-    type Field[T] = typing.Any
 
 _logger = logging.getLogger("odoo.models")
 _debug = DebugLog(__name__)

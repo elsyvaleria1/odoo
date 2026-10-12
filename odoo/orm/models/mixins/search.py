@@ -14,15 +14,13 @@ from ..._typing import (
     ValuesType,
 )
 from ...domain import Domain
+from ...fields import Field
 from ...primitives import COLLECTION_TYPES
 from ...profiling import _OrmProfile
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
     from ..._typing import ModelLike
-    from ...fields import Field
-else:
-    type Field[T] = typing.Any
 
 _logger = logging.getLogger("odoo.models")
 _orm_read = logging.getLogger("odoo.orm.read")

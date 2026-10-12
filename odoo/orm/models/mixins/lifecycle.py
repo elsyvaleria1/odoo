@@ -5,12 +5,8 @@ from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 
 from ..._typing import IdType, ValuesType
+from ...fields.base import Field
 from ._model_stubs import _ModelStubs
-
-if typing.TYPE_CHECKING:
-    from ...fields.base import Field
-else:
-    type Field[T] = typing.Any
 
 _debug = DebugLog(__name__)
 

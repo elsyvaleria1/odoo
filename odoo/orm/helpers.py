@@ -6,18 +6,16 @@ from odoo.libs.debug_log import DebugLog
 
 from ._protocols import ResCompanyProtocol
 from ._recordset import is_recordset
+from ._typing import ModelLike
 from .domain import Domain
+from .fields.base import Field
 
 if typing.TYPE_CHECKING:
-    from ._typing import ModelLike
-    from .fields.base import Field
     from .models.base import BaseModel
     from .runtime.environment import Environment
 else:
     BaseModel = typing.Any
     Environment = typing.Any
-    ModelLike = typing.Any
-    type Field[T] = typing.Any
 
 _debug = DebugLog(__name__)
 

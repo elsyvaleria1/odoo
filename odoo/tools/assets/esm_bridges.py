@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Collection, Iterable, Sequence
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import Any, NamedTuple
 from urllib.parse import quote
 
 from odoo import modules
@@ -10,6 +10,7 @@ from odoo.fields import Domain
 from odoo.libs.asset_log import get_asset_logger, log_event
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.hashing import cache_hash
+from odoo.orm._protocols import IrAttachmentProtocol
 from odoo.tools import config
 from odoo.tools.assets.constants import ESM_BRIDGE_REFRESH_DAYS, ESM_BRIDGE_URL_PREFIX
 from odoo.tools.assets.esm_graph import (
@@ -24,11 +25,6 @@ from odoo.tools.assets.esm_graph import (
 )
 from odoo.tools.assets.esm_lexer import get_evaluation_uses, lex_module
 from odoo.tools.assets.esm_registry import esm_registry, external_libs
-
-if TYPE_CHECKING:
-    from odoo.orm._protocols import IrAttachmentProtocol
-else:
-    IrAttachmentProtocol = Any
 
 __all__ = ["BridgeShimManager"]
 

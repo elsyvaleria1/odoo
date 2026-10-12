@@ -11,6 +11,7 @@ from odoo.libs.collections import OrderedSet
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import SENTINEL
 
+from .._typing import IdType, ModelLike
 from ..primitives import NewId
 from .base import Field
 
@@ -20,15 +21,13 @@ _EN_US_KEY = ("en_US",)
 
 
 if typing.TYPE_CHECKING:
-    from .._typing import BaseModel, IdType, ModelLike
+    from .._typing import BaseModel
     from ..runtime import Environment
     from .textual import BaseString
 else:
     BaseString = typing.Any
-    IdType = typing.Any
     BaseModel = typing.Any
     Environment = typing.Any
-    ModelLike = typing.Any
 
 
 def _get_term_translator(

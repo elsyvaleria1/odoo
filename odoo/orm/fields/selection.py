@@ -7,16 +7,15 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import SENTINEL, Sentinel, merge_sequences
 from odoo.libs.sql import pg_varchar
 
+from .._typing import ModelClass, ModelLike
 from .base import Field, _logger, _prepare_inline_get, call_hook, resolve_mro
 
 if typing.TYPE_CHECKING:
-    from .._typing import BaseModel, ModelClass, ModelLike
+    from .._typing import BaseModel
     from ..runtime import Environment
 else:
     BaseModel = typing.Any
     Environment = typing.Any
-    ModelClass = typing.Any
-    ModelLike = typing.Any
 
 type SelectValue = tuple[str, str]
 type OnDeletePolicy = str | Callable[[BaseModel], None]

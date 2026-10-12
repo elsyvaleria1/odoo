@@ -9,19 +9,16 @@ from odoo.libs.iteration import PENDING, SENTINEL, Sentinel
 from odoo.libs.numbers import float_compare, float_round
 from odoo.libs.sql import INT4_MAX, INT4_MIN
 
+from .._protocols import ResCurrencyProtocol
+from .._typing import ModelClass, ModelLike, ModelType
 from ..primitives import SEQUENCE_FIELD
 from .base import Field, _prepare_inline_get
 
 if typing.TYPE_CHECKING:
-    from .._protocols import ResCurrencyProtocol
-    from .._typing import BaseModel, Environment, ModelClass, ModelLike, ModelType
+    from .._typing import BaseModel, Environment
 else:
     BaseModel = typing.Any
     Environment = typing.Any
-    ModelClass = typing.Any
-    ModelLike = typing.Any
-    ModelType = typing.Any
-    ResCurrencyProtocol = typing.Any
 
 
 _debug = DebugLog(__name__)

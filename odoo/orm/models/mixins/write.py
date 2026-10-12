@@ -6,7 +6,8 @@ from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.cache import TransactionMemo
 
-from ..._typing import ValuesType
+from ..._typing import IdType, ValuesType
+from ...fields import Field
 from ...profiling import _OrmProfile
 from ._crud_common import (
     _orm_crud,
@@ -17,12 +18,8 @@ from ._model_stubs import _ModelStubs
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ..._typing import BaseModel, IdType
-    from ...fields import Field
+    from ..._typing import BaseModel
     from ...fields.relational._base import _RelationalMulti
-else:
-    IdType = typing.Any
-    type Field[T] = typing.Any
 
 type InverseHook = str | Callable[[BaseModel], None]
 

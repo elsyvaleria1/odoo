@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from weakref import WeakSet, WeakValueDictionary
 from weakref import ref as weakref_ref
 
+from odoo.db import BaseCursor
 from odoo.libs.collections import FrozenList, OrderedSet, frozendict
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.func import reset_cached_properties
@@ -24,13 +25,10 @@ from .recordset_cache import Cache
 from .registry import Registry
 
 if typing.TYPE_CHECKING:
-    from odoo.db import BaseCursor
-
     from ..fields.base import Field
     from ..primitives import IdType
     from .environment import Environment
 else:
-    BaseCursor = typing.Any
     Environment = typing.Any
 
 _logger = logging.getLogger("odoo.api")

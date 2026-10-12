@@ -24,7 +24,8 @@ from odoo.libs.func import reset_cached_properties
 from odoo.libs.iteration import PENDING, SENTINEL, Sentinel
 
 from .._recordset import get_base_model, is_model_class
-from ..primitives import PREFETCH_MAX, NewId
+from .._typing import DomainType, ModelClass, ModelLike, ModelType, Self
+from ..primitives import PREFETCH_MAX, IdType, NewId
 from . import (
     _field_cache_miss as _cache_miss,
 )
@@ -48,31 +49,16 @@ from ._field_setup import COMPANY_DEPENDENT_FIELDS, resolve_mro
 from ._field_sql import _FieldSqlMixin
 
 if typing.TYPE_CHECKING:
-    from .._typing import (
-        BaseModel,
-        ContextType,
-        DomainType,
-        ModelClass,
-        ModelLike,
-        ModelType,
-        Self,
-    )
+    from .._typing import BaseModel, ContextType
     from ..models.field_classes import FieldAccessClasses
-    from ..primitives import IdType
     from ..runtime import Environment, Registry
 
     M = typing.TypeVar("M", bound=BaseModel)
 else:
     BaseModel = typing.Any
     Environment = typing.Any
-    ModelClass = typing.Any
-    ModelLike = typing.Any
-    ModelType = typing.Any
     Registry = typing.Any
-    DomainType = typing.Any
-    IdType = typing.Any
     FieldAccessClasses = typing.Any
-    Self = typing.Any
 
 
 __all__ = ["COMPANY_DEPENDENT_FIELDS", "Field", "call_hook", "resolve_mro"]

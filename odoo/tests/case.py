@@ -4,18 +4,14 @@ import logging
 import types
 from collections.abc import Callable, Generator
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, override
+from typing import Any, ClassVar, ParamSpec, override
 from unittest import SkipTest
 from unittest import TestCase as _TestCase
 
 from .. import db
 from ..libs.debug_log import DebugLog
+from .result import ExcInfo, OdooTestResult
 from .utils import InfrastructureUnavailable, addon_relative_path
-
-if TYPE_CHECKING:
-    from .result import ExcInfo, OdooTestResult
-else:
-    ExcInfo = OdooTestResult = Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

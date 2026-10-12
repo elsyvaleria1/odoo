@@ -17,6 +17,7 @@ from contextvars import ContextVar
 import psycopg
 
 from odoo import api
+from odoo.db import BaseCursor
 from odoo.exceptions import (
     AccessDenied,
     AccessError,
@@ -35,16 +36,9 @@ from ._dispatch import is_db_exposed
 from .transaction import (
     PG_CONCURRENCY_ERRORS_TO_RETRY,
     PG_CONCURRENCY_EXCEPTIONS_TO_RETRY,
+    RetryParticipant,
     retrying,
 )
-
-if typing.TYPE_CHECKING:
-    from odoo.db import BaseCursor
-
-    from .transaction import RetryParticipant
-else:
-    BaseCursor = typing.Any
-    RetryParticipant = typing.Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

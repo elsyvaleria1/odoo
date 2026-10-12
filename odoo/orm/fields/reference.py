@@ -10,21 +10,19 @@ from odoo.libs.iteration import unique
 from odoo.libs.sql import pg_varchar
 
 from .._recordset import is_recordset
+from .._typing import ModelLike
+from ..primitives import IdType
 from .base import Field
 from .numeric import Integer
 from .selection import Selection
 
 if typing.TYPE_CHECKING:
-    from .._typing import ModelLike
     from ..models import BaseModel
-    from ..primitives import IdType
     from ..runtime import Environment
     from .relational._base import _RelationalMulti
 else:
     BaseModel = typing.Any
     Environment = typing.Any
-    ModelLike = typing.Any
-    IdType = typing.Any
 
 REFERENCE_VERIFIED_CACHE_KEY = "reference.verified_pairs"
 

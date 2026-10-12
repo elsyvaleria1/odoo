@@ -18,6 +18,7 @@ from odoo.libs.text import html_sanitize
 from odoo.libs.utils import is_list_of
 
 from .._recordset import is_recordset
+from .._typing import ModelClass, ModelLike
 from ..domain import Domain
 from ._properties_json import _PropertiesJsonMixin
 from ._properties_search import _PropertiesSearchMixin
@@ -52,12 +53,9 @@ PROPERTIES_DEFINITION_PARSED_CACHE_KEY = "properties_definition.parsed"
 _PARSED_DEFINITIONS_MAX = 1024
 
 if typing.TYPE_CHECKING:
-    from .._typing import ModelClass, ModelLike
     from ..models import BaseModel
 else:
     BaseModel = typing.Any
-    ModelClass = typing.Any
-    ModelLike = typing.Any
 
 
 class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]):

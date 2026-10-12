@@ -7,6 +7,7 @@ from odoo.libs.accel import origin_ids as _origin_ids
 from odoo.libs.debug_log import DebugLog
 
 from ... import decorators as api
+from ..._protocols import ResCompanyProtocol
 from ..._typing import (
     IdType,
     ValuesType,
@@ -17,13 +18,11 @@ from ...primitives import NewId
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from ..._protocols import ResCompanyProtocol
     from ..._typing import BaseModel
     from ...runtime import Environment
 else:
     BaseModel = typing.Any
     Environment = typing.Any
-    ResCompanyProtocol = typing.Any
 
 _debug = DebugLog(__name__)
 

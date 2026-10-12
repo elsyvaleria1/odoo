@@ -5,14 +5,14 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import SENTINEL, Sentinel
 
 from .._recordset import is_recordset, is_search_overridden
+from .._typing import ModelClass
 from ..domain import Domain
 from .numeric import Integer
 
 if typing.TYPE_CHECKING:
-    from .._typing import BaseModel, ModelClass
+    from .._typing import BaseModel
 else:
     BaseModel = typing.Any
-    ModelClass = typing.Any
 
 COUNTABLE_TYPES = ("one2many", "many2many")
 

@@ -11,8 +11,9 @@ from odoo.libs.sql import SQL
 from odoo.tools import Query
 
 from .... import decorators as api
-from ...._typing import DomainType
+from ...._typing import DomainType, ModelLike
 from ....domain import Domain
+from ....fields import Field
 from ....helpers import get_tuple_itemgetter, invalid_field_message
 from ....parsing import parse_read_group_spec, regex_field_agg
 from .fill import _ReadGroupFillMixin
@@ -21,12 +22,6 @@ from .sql import _ReadGroupSQLMixin
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
-
-    from ...._typing import ModelLike
-    from ....fields import Field
-else:
-    type Field[T] = typing.Any
-    ModelLike = typing.Any
 
 _debug = DebugLog(__name__)
 

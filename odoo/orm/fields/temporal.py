@@ -21,8 +21,10 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DATE_FORMAT
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT as DATETIME_FORMAT
+from odoo.tools import Query
 from odoo.tools.date_utils import parse_date_expression
 
+from .._typing import ModelLike
 from ..constants import READ_GROUP_NUMBER_GRANULARITY
 from ..domain.ast import (
     _FALSE_DOMAIN,
@@ -55,15 +57,10 @@ def _resolve_sql_timezone_name(env: Environment, tz_name: str) -> str | None:
 
 
 if typing.TYPE_CHECKING:
-    from odoo.tools import Query
-
-    from .._typing import ModelLike
     from ..models import BaseModel
     from ..runtime import Environment
 else:
     BaseModel = typing.Any
-    ModelLike = typing.Any
-    Query = typing.Any
     Environment = typing.Any
 
 type DateComparand = (

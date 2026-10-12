@@ -8,6 +8,7 @@ from odoo.libs.iteration import SENTINEL, Sentinel
 from odoo.libs.sql import SQL
 from odoo.tools import Query
 
+from ..._typing import CommandValue, ModelLike
 from ._commands import CommandDelta
 from .many2one import Many2one
 from .one2many import One2many
@@ -16,12 +17,9 @@ _debug = DebugLog(__name__)
 
 
 if typing.TYPE_CHECKING:
-    from ..._typing import CommandValue, ModelLike
     from ...models import BaseModel
 else:
     BaseModel = typing.Any
-    ModelLike = typing.Any
-    CommandValue = typing.Any
 
 
 class One2one(One2many):

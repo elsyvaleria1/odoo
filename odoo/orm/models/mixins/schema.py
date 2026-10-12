@@ -12,13 +12,9 @@ from odoo.tools import format_list, ormcache
 
 from ... import decorators as api
 from ...domain import Domain
+from ...fields import Field
 from ...validation import check_object_name
 from ._model_stubs import _ModelStubs
-
-if typing.TYPE_CHECKING:
-    from ...fields import Field
-else:
-    type Field[T] = typing.Any
 
 _logger = logging.getLogger("odoo.models")
 _debug = DebugLog(__name__)

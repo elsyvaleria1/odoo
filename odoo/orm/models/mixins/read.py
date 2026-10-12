@@ -9,11 +9,12 @@ from odoo.libs.accel import batch_cache_fill as _batch_cache_fill
 from odoo.libs.collections import OrderedSet, frozendict
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import PENDING, SENTINEL
-from odoo.tools import ormcache
+from odoo.tools import Query, ormcache
 
 from ... import decorators as api
-from ..._typing import ValuesType
+from ..._typing import ModelLike, ValuesType
 from ...fields._field_description import description_key
+from ...fields.base import Field
 from ...helpers import invalid_field_message
 from ...primitives import LOG_ACCESS_COLUMNS
 from ...profiling import _OrmProfile
@@ -21,14 +22,7 @@ from ._cache_scan import can_scan_read, is_cache_detached
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from odoo.tools import Query
-
-    from ..._typing import IdType, ModelLike
-    from ...fields.base import Field
-else:
-    type Field[T] = typing.Any
-    Query = typing.Any
-    ModelLike = typing.Any
+    from ..._typing import IdType
 
 _logger = logging.getLogger("odoo.models")
 _orm_read = logging.getLogger("odoo.orm.read")

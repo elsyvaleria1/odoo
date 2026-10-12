@@ -16,6 +16,7 @@ from ....constants import (
     SQL_ORDER_DIR,
     SQL_ORDER_NULLS,
 )
+from ....fields import Field
 from ....fields.properties import temporal_property_sql, temporal_property_text_sql
 from ....fields.temporal import Date
 from ....helpers import invalid_field_message
@@ -25,10 +26,8 @@ from .._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
     from ...._typing import BaseModel
-    from ....fields import Field
 else:
     BaseModel = typing.Any
-    type Field[T] = typing.Any
 
 _debug = DebugLog(__name__)
 

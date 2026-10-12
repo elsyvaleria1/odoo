@@ -13,6 +13,8 @@ from odoo.tools.cache import TransactionMemo
 
 from ... import decorators as api
 from ..._typing import ValuesType
+from ...fields.base import Field
+from ...fields.relational._base import _RelationalMulti
 from ...helpers import get_or_create_class_memo, invalid_field_message
 from ...primitives import (
     Command,
@@ -28,12 +30,8 @@ from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
     from ..._typing import BaseModel, IdType
-    from ...fields.base import Field
-    from ...fields.relational._base import _RelationalMulti
 else:
     BaseModel = typing.Any
-    type Field[T] = typing.Any
-    _RelationalMulti = typing.Any
 
 _debug = DebugLog(__name__)
 

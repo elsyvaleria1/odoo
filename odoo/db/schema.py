@@ -6,17 +6,13 @@ import re
 import typing
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import psycopg
 
+from odoo.db import BaseCursor
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL, get_index_name
-
-if TYPE_CHECKING:
-    from odoo.db import BaseCursor
-else:
-    BaseCursor = typing.Any
 
 _schema = logging.getLogger("odoo.schema")
 _debug = DebugLog(__name__)

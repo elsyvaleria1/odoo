@@ -9,6 +9,7 @@ from contextlib import ExitStack, closing, nullcontext
 import psycopg
 
 from odoo import db
+from odoo.db import BaseCursor, Cursor
 from odoo.db import schema as sql
 from odoo.db.replica import ReplicaRouter, is_readonly_cursor_enabled
 from odoo.libs import gc
@@ -18,6 +19,7 @@ from odoo.libs.func import locked, reset_cached_properties
 from odoo.libs.lru import LRU
 from odoo.libs.memory_watch import read_rss
 from odoo.libs.worker_thread import current_worker_thread
+from odoo.models import BaseModel
 from odoo.tools import config
 from odoo.tools.cache import remove_counters
 from odoo.tools.constants import CACHES_BY_KEY
@@ -45,15 +47,10 @@ from .settings import SYSTEM_SETTINGS, SystemSettings
 from .xmlids import XMLIDS, Xmlids
 
 if typing.TYPE_CHECKING:
-    from odoo.db import BaseCursor, Cursor
     from odoo.fields import Field
-    from odoo.models import BaseModel
     from odoo.modules.module_graph import ModuleNode
 else:
     ModuleNode = typing.Any
-    BaseCursor = typing.Any
-    BaseModel = typing.Any
-    Cursor = typing.Any
 
 
 _logger = logging.getLogger("odoo.registry")

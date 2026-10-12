@@ -8,15 +8,14 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import SENTINEL
 
 from .._recordset import is_recordset
+from .._typing import ModelLike
 from ..primitives import PREFETCH_MAX, IdType
 from ..profiling import _OrmProfile
 
 if typing.TYPE_CHECKING:
-    from .._typing import ModelLike
     from .base import Field
 else:
     type Field[T] = typing.Any
-    ModelLike = typing.Any
 
 _orm_compute = logging.getLogger("odoo.orm.compute")
 _debug = DebugLog(__name__)

@@ -5,6 +5,7 @@ import warnings
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator
 
+from odoo.fields import Field
 from odoo.libs.collections import Collector, OrderedSet
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.func import locked
@@ -15,11 +16,7 @@ from ..parsing import regex_order
 from ._registry_stubs import _RegistryStubs
 
 if typing.TYPE_CHECKING:
-    from odoo.fields import Field
-
     from .registry import Registry
-else:
-    type Field[T] = typing.Any
 
 type FieldTriggers = dict[
     Field[typing.Any], dict[tuple[Field[typing.Any], ...], list[Field[typing.Any]]]

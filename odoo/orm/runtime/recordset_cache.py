@@ -11,10 +11,10 @@ from odoo.libs.sql import SQL, pg_size_pretty
 from odoo.tools import Query
 
 from ..models.field_classes import unmasked_values
+from ..primitives import IdType
 
 if typing.TYPE_CHECKING:
     from .._typing import BaseModel, Field
-    from ..primitives import IdType
     from .environment import Environment
     from .transaction import Transaction
 else:
@@ -22,7 +22,6 @@ else:
     Environment = typing.Any
     Transaction = typing.Any
     type Field[T] = typing.Any
-    IdType = typing.Any
 
 _logger = logging.getLogger("odoo.api")
 _debug = DebugLog(__name__)

@@ -6,7 +6,9 @@ from operator import attrgetter
 
 from odoo.libs.collections import OrderedSet
 from odoo.libs.debug_log import DebugLog
+from odoo.models import BaseModel
 
+from ..fields import Field
 from ..models.anchors import (
     Anchor,
     anchor_path_error,
@@ -23,14 +25,9 @@ from ..models.verbs import Verb, collect_verbs
 from ._registry_stubs import _RegistryStubs
 
 if typing.TYPE_CHECKING:
-    from odoo.models import BaseModel
-
-    from ..fields import Field
     from .environment import Environment
 else:
-    BaseModel = typing.Any
     Environment = typing.Any
-    type Field[T] = typing.Any
 
 _debug = DebugLog(__name__)
 

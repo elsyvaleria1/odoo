@@ -41,7 +41,7 @@ from .module import (
     initialize_sys_path,
     load_odoo_module,
 )
-from .module_graph import ModuleGraph
+from .module_graph import ModuleGraph, ModuleNode
 from .registry import Registry
 
 LoadKind = typing.Literal["data", "demo"]
@@ -50,10 +50,7 @@ LoadKind = typing.Literal["data", "demo"]
 if typing.TYPE_CHECKING:
     from odoo.orm._protocols import IrCronProtocol
     from odoo.tests.result import OdooTestResult
-
-    from .module_graph import ModuleNode
 else:
-    ModuleNode = typing.Any
     OdooTestResult = typing.Any
 
 _logger = logging.getLogger(__name__)

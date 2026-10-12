@@ -1,13 +1,12 @@
 import typing
 from collections.abc import MutableMapping
 
+from ..._typing import IdType
+from ...fields.base import Field
+
 if typing.TYPE_CHECKING:
-    from ..._typing import IdType
-    from ...fields.base import Field
     from ...runtime import Environment
 else:
-    type Field[T] = typing.Any
-    IdType = typing.Any
     Environment = typing.Any
 
 

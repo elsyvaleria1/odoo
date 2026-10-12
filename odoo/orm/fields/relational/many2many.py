@@ -9,13 +9,14 @@ from collections.abc import Set as AbstractSet
 from typing import override
 
 from odoo.exceptions import AccessError
-from odoo.libs.collections import OrderedSet
+from odoo.libs.collections import Collector, OrderedSet
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import SENTINEL, Sentinel, unique
 from odoo.libs.sql import SQL
 from odoo.tools import Query
 
 from ..._recordset import is_search_overridden
+from ..._typing import CommandValue, IdType, ModelLike, ValuesType
 from ...primitives import Command, NewId
 from ...validation import check_pg_name
 from .. import _field_ddl as _ddl
@@ -26,18 +27,11 @@ from ._commands import CommandDelta
 _debug = DebugLog(__name__)
 
 if typing.TYPE_CHECKING:
-    from odoo.libs.collections import Collector
-
-    from ..._typing import CommandValue, IdType, ModelLike, Registry, ValuesType
+    from ..._typing import Registry
     from ...models import BaseModel
 else:
     BaseModel = typing.Any
-    ModelLike = typing.Any
     Registry = typing.Any
-    type Collector[T1, T2] = typing.Any
-    CommandValue = typing.Any
-    IdType = typing.Any
-    ValuesType = typing.Any
 
 type OnDelete = typing.Literal["cascade", "set null", "restrict"]
 type Relation = dict[IdType, OrderedSet[IdType]]

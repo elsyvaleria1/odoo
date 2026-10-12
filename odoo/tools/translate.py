@@ -29,6 +29,7 @@ from psycopg.types.json import Json
 
 import odoo
 import odoo.release
+from odoo.db import BaseCursor
 from odoo.exceptions import UserError
 from odoo.libs.collections import OrderedSet, ReadonlyDict
 from odoo.libs.debug_log import DebugLog
@@ -45,11 +46,9 @@ from .locale_utils import get_iso_codes, get_languages
 
 if typing.TYPE_CHECKING:
     from odoo.api import Environment
-    from odoo.db import BaseCursor
     from odoo.orm.fields._field_stubs import TranslateDialect
     from odoo.orm.fields.textual import BaseString
 else:
-    BaseCursor = Any
     BaseString = Any
     Environment = Any
     TranslateDialect = Any

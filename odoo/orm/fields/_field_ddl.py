@@ -8,8 +8,10 @@ from odoo.db import schema as sql
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL
 
+from .._typing import ModelLike
+
 if typing.TYPE_CHECKING:
-    from .._typing import BaseModel, ModelLike
+    from .._typing import BaseModel
     from .base import Field
     from .relational import Many2many, Many2one
     from .textual import BaseString, Char
@@ -20,7 +22,6 @@ else:
     Many2many = typing.Any
     Many2one = typing.Any
     BaseModel = typing.Any
-    ModelLike = typing.Any
 
 _logger = logging.getLogger("odoo.fields")
 _debug = DebugLog(__name__)

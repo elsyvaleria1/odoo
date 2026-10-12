@@ -23,7 +23,7 @@ from odoo.libs.sql import SQL
 from odoo.tools import Query
 
 from ..._recordset import is_recordset, is_search_overridden
-from ..._typing import CommandValue, DomainType
+from ..._typing import CommandValue, DomainType, ModelLike
 from ...constants import ACTING_PARTNER_KEY, READ_GROUP_NUMBER_GRANULARITY
 from ...domain import Domain
 from ...domain.ast import DomainCondition, OptimizationLevel
@@ -76,10 +76,9 @@ def _iter_domain_depend_paths(domain: Domain) -> Iterator[str]:
 
 
 if typing.TYPE_CHECKING:
-    from ..._typing import Environment, ModelLike, Registry
+    from ..._typing import Environment, Registry
     from ...models import BaseModel
 else:
-    ModelLike = typing.Any
     BaseModel = typing.Any
     Environment = typing.Any
     Registry = typing.Any

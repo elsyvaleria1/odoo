@@ -5,16 +5,16 @@ from collections.abc import Callable, Iterable, Iterator
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import SENTINEL, unique
 
+from .._typing import ModelClass
 from ..primitives import STATE_FIELD
 
 if typing.TYPE_CHECKING:
-    from .._typing import BaseModel, ModelClass
+    from .._typing import BaseModel
     from ..runtime import Registry
     from .base import Field
 else:
     BaseModel = typing.Any
     type Field[T] = typing.Any
-    ModelClass = typing.Any
     Registry = typing.Any
 
 _debug = DebugLog(__name__)

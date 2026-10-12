@@ -9,15 +9,15 @@ from odoo.libs.collections import OrderedSet, ReversedIterable
 from odoo.libs.debug_log import DebugLog
 
 from ... import decorators as api
+from ..._typing import IdType
 from ...primitives import PREFETCH_MAX
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from ..._typing import BaseModel, IdType
+    from ..._typing import BaseModel
     from ...runtime import Environment
 else:
     Environment = typing.Any
-    IdType = typing.Any
 
 _debug = DebugLog(__name__)
 

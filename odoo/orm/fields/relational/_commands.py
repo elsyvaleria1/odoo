@@ -5,12 +5,10 @@ from collections.abc import Set as AbstractSet
 from odoo.libs.collections import OrderedSet
 from odoo.libs.debug_log import DebugLog
 
-from ...primitives import Command
+from ...primitives import Command, IdType
 
 if typing.TYPE_CHECKING:
-    from ...primitives import IdType, ValuesType
-else:
-    IdType = typing.Any
+    from ...primitives import ValuesType
 
 _debug = DebugLog(__name__)
 

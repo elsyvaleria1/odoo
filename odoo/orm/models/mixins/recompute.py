@@ -12,9 +12,11 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import PENDING, SENTINEL
 
 from ... import decorators as api
+from ..._typing import IdType
 from ...components.recompute import RecomputeScheduler
 from ...domain import Domain, ids_selected_without_query
 from ...fields._field_cache_miss import origin_read_key
+from ...fields.base import Field
 from ...helpers import (
     get_all_company_ids,
     get_fields_by_name,
@@ -32,14 +34,11 @@ _debug = DebugLog(__name__)
 _SQL_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 if typing.TYPE_CHECKING:
-    from ..._typing import BaseModel, IdType
-    from ...fields.base import Field
+    from ..._typing import BaseModel
     from ...runtime import TriggerTree
     from ...runtime.origin_reads import OriginReads
 else:
     BaseModel = typing.Any
-    type Field[T] = typing.Any
-    IdType = typing.Any
     OriginReads = typing.Any
     type TriggerTree[T] = typing.Any
 

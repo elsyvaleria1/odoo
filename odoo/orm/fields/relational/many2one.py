@@ -13,6 +13,7 @@ from odoo.libs.sql import SQL
 from odoo.tools import Query
 
 from ..._recordset import is_recordset
+from ..._typing import ModelClass, ModelLike
 from ...domain import Domain
 from ...domain.ast import DomainCondition, OptimizationLevel
 from ...domain.constants import INVERSE_OPERATOR
@@ -21,12 +22,9 @@ from .. import _field_ddl as _ddl
 from ._base import _is_cache_order_stable, _Relational, _RelationalMulti
 
 if typing.TYPE_CHECKING:
-    from ..._typing import ModelClass, ModelLike
     from ...models import BaseModel
 else:
     BaseModel = typing.Any
-    ModelClass = typing.Any
-    ModelLike = typing.Any
 
 type OnDelete = typing.Literal["cascade", "set null", "restrict"]
 type ReadValue = (

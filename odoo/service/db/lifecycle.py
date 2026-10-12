@@ -6,7 +6,7 @@ from collections.abc import Callable
 from contextlib import closing
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Literal
 
 import psycopg
 from psycopg import sql as psycopg_sql
@@ -17,17 +17,13 @@ import odoo.modules.db
 import odoo.modules.neutralize
 import odoo.modules.registry
 import odoo.tools
+from odoo.db import BaseCursor
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL
 from odoo.tools.constants import CRON_TRIGGER_CHANNEL, JOB_QUEUE_CHANNEL
 
 from ._checks import check_db_management_enabled, check_db_name
 from .listing import check_db_exposed, invalidate_catalog_caches
-
-if TYPE_CHECKING:
-    from odoo.db import BaseCursor
-else:
-    BaseCursor = Any
 
 _logger = logging.getLogger("odoo.service.db")
 _debug = DebugLog(__name__)

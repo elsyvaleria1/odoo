@@ -7,12 +7,13 @@ from operator import attrgetter
 from typing import override
 
 from odoo.exceptions import AccessError, UserError
-from odoo.libs.collections import OrderedSet
+from odoo.libs.collections import Collector, OrderedSet
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import SENTINEL, Sentinel, unique
 from odoo.libs.sql import SQL
 from odoo.tools import Query
 
+from ..._typing import CommandValue, ModelLike
 from ...domain import Domain
 from ...primitives import SQL_OPERATORS, NewId
 from ..base import Field
@@ -24,24 +25,12 @@ from .many2one import Many2one
 _debug = DebugLog(__name__)
 
 if typing.TYPE_CHECKING:
-    from odoo.libs.collections import Collector
-
-    from ..._typing import (
-        CommandValue,
-        Environment,
-        IdType,
-        ModelLike,
-        Registry,
-        ValuesType,
-    )
+    from ..._typing import Environment, IdType, Registry, ValuesType
     from ...models import BaseModel
 else:
     BaseModel = typing.Any
     Environment = typing.Any
-    ModelLike = typing.Any
     Registry = typing.Any
-    type Collector[T1, T2] = typing.Any
-    CommandValue = typing.Any
 
 
 class One2many(_RelationalMulti):

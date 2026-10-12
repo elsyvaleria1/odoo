@@ -1,19 +1,11 @@
 import logging
 import time
-from typing import TYPE_CHECKING, Any
 
+from odoo.api import Environment
+from odoo.db import BaseCursor
+from odoo.http import Request, Session
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.security import consteq
-
-if TYPE_CHECKING:
-    from odoo.api import Environment
-    from odoo.db import BaseCursor
-    from odoo.http import Request, Session
-else:
-    Session = Any
-    Environment = Any
-    Request = Any
-    BaseCursor = Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

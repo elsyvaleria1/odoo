@@ -5,18 +5,13 @@ from collections.abc import Collection, Mapping, Sequence
 from odoo.libs.debug_log import DebugLog
 
 from ... import decorators as api
+from ..._typing import IdType
+from ...fields.base import Field
 from ...helpers import get_fields_by_name
 from ._model_stubs import _ModelStubs
 
 _orm_cache = logging.getLogger("odoo.orm.cache")
 _debug = DebugLog(__name__)
-
-if typing.TYPE_CHECKING:
-    from ..._typing import IdType
-    from ...fields.base import Field
-else:
-    type Field[T] = typing.Any
-    IdType = typing.Any
 
 
 class RecordCache(Mapping[str, object]):

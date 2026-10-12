@@ -5,6 +5,7 @@ from operator import itemgetter
 from types import MappingProxyType
 
 from odoo.db import schema as sql
+from odoo.fields import Field
 from odoo.libs.collections import LastOrderedSet, OrderedSet, frozendict
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.translate import FIELD_TRANSLATE
@@ -19,14 +20,12 @@ from .validation import check_pg_name, is_manual_name
 
 if typing.TYPE_CHECKING:
     from odoo.api import Environment
-    from odoo.fields import Field
     from odoo.models import BaseModel
     from odoo.orm.runtime import Registry
 else:
     BaseModel = typing.Any
     Environment = typing.Any
     Registry = typing.Any
-    type Field[T] = typing.Any
 
 _logger = logging.getLogger("odoo.registry")
 _debug = DebugLog(__name__)

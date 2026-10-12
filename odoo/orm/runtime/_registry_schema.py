@@ -9,26 +9,24 @@ import psycopg
 from odoo.db import BaseCursor, Cursor, FunctionStatus
 from odoo.db import schema as sql
 from odoo.db.errors import CURSOR_LOGGER_NAME
+from odoo.fields import Field
 from odoo.libs.collections import OrderedSet
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.logging import mute_logger
 from odoo.libs.sql import SQL, get_index_name
+from odoo.models import BaseModel
 from odoo.orm._typing import ModelLike
 
 from ..primitives import SUPERUSER_ID
 from ._registry_stubs import _RegistryStubs
 
 if typing.TYPE_CHECKING:
-    from odoo.fields import Field
-    from odoo.models import BaseModel
     from odoo.orm.fields.relational.many2many import Many2many
     from odoo.orm.fields.relational.many2one import Many2one
 
     from .environment import Environment
 else:
-    BaseModel = typing.Any
     Environment = typing.Any
-    type Field[T] = typing.Any
 
 
 INDEX_KINDS = ("btree", "btree_not_null", "unique", "trigram", True, False, None)

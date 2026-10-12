@@ -5,6 +5,8 @@ from functools import wraps
 
 from odoo.libs.debug_log import DebugLog
 
+from ._typing import ValuesType
+
 C = typing.TypeVar("C", bound=Callable[..., typing.Any])
 
 
@@ -13,9 +15,7 @@ class Decorator(typing.Protocol):
 
 
 if typing.TYPE_CHECKING:
-    from ._typing import BaseModel, ValuesType
-else:
-    ValuesType = typing.Any
+    from ._typing import BaseModel
 
 _debug = DebugLog(__name__)
 
