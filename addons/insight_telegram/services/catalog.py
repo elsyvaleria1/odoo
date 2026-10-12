@@ -20,6 +20,8 @@ _logger = logging.getLogger(__name__)
 TOP = 10
 MAX_TOP = 30
 MAX_MATCHES = 20
+HISTORY_START = date(1900, 1, 1)
+NAMED_SUBJECTS = ("partner", "partner_id", "product")
 
 
 @dataclass(frozen=True)
@@ -54,9 +56,20 @@ class Ask:
             top = TOP
         return max(1, min(top, MAX_TOP))
 
+    @property
+    def whole_history(self) -> bool:
+        """No period was said about one partner or product: "how much did
+        Toño buy" means ever, not this month.
+        """
+        return not (self.params.get("date_from") or self.params.get("date_to")) and any(
+            self.params.get(name) for name in NAMED_SUBJECTS
+        )
+
     def period(self):
         start = _parse_date(self.params.get("date_from"))
         end = _parse_date(self.params.get("date_to"))
+        if self.whole_history:
+            return HISTORY_START, self.today
         if not start and not end:
             start, end = self.today.replace(day=1), self.today
         start = start or end.replace(day=1)
@@ -83,6 +96,8 @@ class Ask:
 
     def period_label(self) -> str:
         start, end = self.period()
+        if self.whole_history:
+            return self.env._("All history up to %(day)s", day=self.format_day(end))
         return f"{self.format_day(start)} – {self.format_day(end)}"
 
     def format_day(self, value) -> str:
@@ -94,7 +109,7 @@ class Ask:
     def matches(self, model, value, fields_=("name",), extra=None):
         found = find(self.env, model, value, fields_, extra)
         if not found:
-            raise NotFound(self.env._("I could not find «%(value)s».", value=value))
+            raise not_found(self.env, model, value, fields_, extra)
         if len(found) > 1:
             names = ", ".join(found[:5].mapped("display_name"))
             more = "…" if len(found) > 5 else ""
@@ -120,32 +135,124 @@ class Ask:
 
 
 _WORD = re.compile(r"\w{2,}")
+_SEPARATORS = re.compile(r"[\W_]+")
+SCAN_LIMIT = 200
+SUGGESTIONS = 5
+# Spanish nicknames people use for someone filed under the full first name.
+NICKNAMES = {
+    "beto": ("alberto", "roberto", "humberto"),
+    "chava": ("salvador",),
+    "chayo": ("rosario",),
+    "chela": ("graciela",),
+    "chema": ("jose maria",),
+    "chucho": ("jesus",),
+    "chuy": ("jesus",),
+    "concha": ("concepcion",),
+    "lalo": ("eduardo",),
+    "lupe": ("guadalupe",),
+    "lupita": ("guadalupe",),
+    "memo": ("guillermo",),
+    "nacho": ("ignacio",),
+    "paco": ("francisco",),
+    "pancho": ("francisco",),
+    "pepe": ("jose",),
+    "poncho": ("alfonso",),
+    "quique": ("enrique",),
+    "tere": ("teresa",),
+    "tono": ("antonio",),
+}
+
+
+def _compact(text) -> str:
+    return _SEPARATORS.sub("", remove_accents(text or "").lower())
+
+
+def _variants(word) -> set:
+    plain = remove_accents(word).lower()
+    return {word, plain, *NICKNAMES.get(plain, ())}
+
+
+def _word_domain(fields_, word):
+    return Domain.OR(
+        Domain(name, "ilike", variant)
+        for name in fields_
+        for variant in _variants(word)
+    )
+
+
+def _search_order(Model):
+    if "customer_rank" in Model._fields:
+        return "customer_rank desc, supplier_rank desc, id"
+    return None
+
+
+def _hits(record, fields_, words) -> int:
+    text = " ".join(_compact(str(record[name] or "")) for name in fields_)
+    return sum(
+        any(_compact(variant) in text for variant in _variants(word)) for word in words
+    )
 
 
 def find(env, model, value, fields_=("name",), extra=None, limit=MAX_MATCHES):
+    """Records whose fields match ``value``: as a phrase, then word by word
+    (accents and nicknames aside), then ignoring separators ("sapropel" finds
+    "SA-Propel").
+    """
     Model = env[model]
-    base = list(extra or [])
-    order = (
-        "customer_rank desc, supplier_rank desc, id"
-        if "customer_rank" in Model._fields
-        else None
-    )
+    base = Domain(list(extra or []))
+    order = _search_order(Model)
     phrase = Domain.OR(Domain(name, "ilike", value) for name in fields_)
-    found = Model.search(Domain(base) & phrase, limit=limit, order=order)
+    found = Model.search(base & phrase, limit=limit, order=order)
+    words = _WORD.findall(value or "")
+    if found or not words:
+        return found
+    by_word = Domain.AND(_word_domain(fields_, word) for word in words)
+    found = Model.search(base & by_word, limit=limit, order=order)
     if found:
         return found
-    words = _WORD.findall(value or "")
-    if not words:
-        return found
-    by_word = Domain.AND(
+    # A letter-by-letter pattern only narrows the scan; the compact
+    # comparison below decides.
+    loose = Domain.AND(
         Domain.OR(
-            Domain(name, "ilike", variant)
-            for name in fields_
-            for variant in {word, remove_accents(word)}
+            Domain(name, "=ilike", f"%{'%'.join(_compact(word))}%") for name in fields_
         )
         for word in words
     )
-    return Model.search(Domain(base) & by_word, limit=limit, order=order)
+    scanned = Model.search(base & loose, limit=SCAN_LIMIT, order=order)
+    return scanned.filtered(lambda record: _hits(record, fields_, words) == len(words))[
+        :limit
+    ]
+
+
+def near(env, model, value, fields_=("name",), extra=None):
+    """Records that match all the words of ``value`` but one, best first."""
+    words = _WORD.findall(value or "")
+    if len(words) < 2:
+        return env[model]
+    Model = env[model]
+    any_word = Domain.OR(_word_domain(fields_, word) for word in words)
+    scanned = Model.search(
+        Domain(list(extra or [])) & any_word,
+        limit=SCAN_LIMIT,
+        order=_search_order(Model),
+    )
+    scored = [(record, _hits(record, fields_, words)) for record in scanned]
+    close = [item for item in scored if item[1] >= len(words) - 1]
+    close.sort(key=lambda item: -item[1])
+    return Model.union(*(record for record, _hits_ in close[:SUGGESTIONS]))
+
+
+def not_found(env, model, value, fields_=("name",), extra=None):
+    close = near(env, model, value, fields_, extra)
+    if close:
+        return NotFound(
+            env._(
+                "I could not find «%(value)s». Did you mean: %(names)s?",
+                value=value,
+                names=", ".join(close.mapped("display_name")),
+            )
+        )
+    return NotFound(env._("I could not find «%(value)s».", value=value))
 
 
 class NotFound(Exception):
@@ -1301,8 +1408,9 @@ QUERIES = {
         Query(
             "sales",
             "Sales orders confirmed in a period: how much was sold, by branch "
-            "(warehouse), salesperson, customer, product or month. Not counter "
-            "sales.",
+            "(warehouse), salesperson, customer, product or month. Also what a "
+            'customer bought or consumed from us ("how much did X buy"). Not '
+            "counter sales.",
             run_sales,
             GROUPS,
             FILTERS,
@@ -1346,8 +1454,9 @@ QUERIES = {
         ),
         Query(
             "purchases",
-            "Purchase orders confirmed in a period, by supplier, product, "
-            "branch, buyer or month.",
+            "Purchase orders confirmed in a period: what we bought from "
+            "suppliers, by supplier, product, branch, buyer or month. Not what a "
+            "customer bought from us.",
             run_purchases,
             GROUPS,
             FILTERS,

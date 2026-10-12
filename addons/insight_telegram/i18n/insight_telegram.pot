@@ -464,6 +464,16 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "I could not find «%(value)s». Did you mean: %(names)s?"
+msgstr ""
+
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "All history up to %(day)s"
+msgstr ""
+
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 #: code:addons/insight_telegram/services/documents.py:0
 msgid "I could not find «%(value)s»."
 msgstr ""

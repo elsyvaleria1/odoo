@@ -1,6 +1,6 @@
 import logging
 
-from .catalog import NotFound, find
+from .catalog import NotFound, find, not_found
 
 _logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def _partner(env, params):
         raise NotFound(env._("Tell me whose documents you want: the name."))
     found = find(env, "res.partner", name, ("name", "vat"))
     if not found:
-        raise NotFound(env._("I could not find «%(value)s».", value=name))
+        raise not_found(env, "res.partner", name, ("name", "vat"))
     return found[:1].commercial_partner_id
 
 

@@ -350,6 +350,16 @@ msgstr "No pude aplicar los cambios, así que no se cambió nada: %(error)s"
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "I could not find «%(value)s». Did you mean: %(names)s?"
+msgstr "No encontré «%(value)s». ¿Te refieres a: %(names)s?"
+
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "All history up to %(day)s"
+msgstr "Todo el historial hasta el %(day)s"
+
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 #: code:addons/insight_telegram/services/documents.py:0
 msgid "I could not find «%(value)s»."
 msgstr "No encontré «%(value)s»."

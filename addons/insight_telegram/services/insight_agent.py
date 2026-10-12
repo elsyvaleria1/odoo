@@ -106,8 +106,11 @@ value_original, date_acquisition; vehicles also resource.asset.vehicle), \
 not products; who has or had one, and when, is resource.assignment \
 (resource_id, assignee_id, custody_role, date_start, date_end), which keeps \
 past assignments. People who left are archived: add ("active", "in", \
-[True, False]) to a search to find them. Check related models before \
-concluding something does not exist. You can read all of them: never \
+[True, False]) to a search to find them. People are often named by a \
+nickname (Toño is Antonio, Pepe José, Paco Francisco, Lupe Guadalupe) or by \
+part of their name, and products without their dashes or spaces \
+("sapropel" is "SA-Propel"): search word by word before saying a name is \
+not there. Check related models before concluding something does not exist. You can read all of them: never \
 answer that you have no access.
 - Datetimes are stored in UTC; the owner lives in {tz}. Today is {today}.
 - Records of every company are visible: {companies}. Say which company a \

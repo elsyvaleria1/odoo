@@ -531,6 +531,47 @@ class TestCatalog(TransactionCase):
             )
             self.assertFalse(catalog.find(env, "res.partner", "Victor Ramirez Probe"))
 
+    def test_a_nickname_and_a_dashed_name_are_found(self):
+        antonio = self.env["res.partner"].create({"name": "Juan Antonio Jordan Probe"})
+        dashed = self.env["product.product"].create({"name": "SA-Propel Probe 0.5L"})
+        self.env.flush_all()
+        with self.reader.env() as env:
+            self.assertEqual(
+                catalog.find(env, "res.partner", "Toño Jordan Probe").ids, antonio.ids
+            )
+            self.assertEqual(
+                catalog.find(env, "product.product", "sapropel probe").ids, dashed.ids
+            )
+            self.assertFalse(catalog.find(env, "product.product", "sapropol probe"))
+
+    def test_a_name_off_by_one_word_suggests_the_close_ones(self):
+        antonio = self.env["res.partner"].create({"name": "Juan Antonio Jordan Probe"})
+        self.env.flush_all()
+        with self.reader.env() as env:
+            self.assertFalse(catalog.find(env, "res.partner", "José Antonio Probe"))
+            error = catalog.not_found(env, "res.partner", "José Antonio Probe")
+        self.assertIn(antonio.name, str(error))
+        self.assertIn("Did you mean", str(error))
+        with self.assertRaises(catalog.NotFound) as caught:
+            documents.collect(self.env, "guarantee", {"partner": "Jose Antonio Probe"})
+        self.assertIn(antonio.name, str(caught.exception))
+
+    def test_a_named_customer_without_a_period_reads_the_whole_history(self):
+        if "sale.order" not in self.env:
+            self.skipTest("sale is not installed")
+        customer = self.env["res.partner"].create({"name": "Ask Probe Old Customer"})
+        order = self._confirmed_order(customer, 500)
+        order.date_order = fields.Datetime.now() - timedelta(days=800)
+        text = self._answer("sales", partner="Ask Probe Old Customer")
+        self.assertIn("All history up to", text)
+        self.assertIn("**$500.00", text)
+        dated = self._answer(
+            "sales",
+            partner="Ask Probe Old Customer",
+            date_from=self.today.replace(day=1).isoformat(),
+        )
+        self.assertIn("No records in that period.", dated)
+
     def test_every_report_runs_on_an_empty_period(self):
         for key in catalog.available_queries(self.env):
             with self.subTest(report=key):
