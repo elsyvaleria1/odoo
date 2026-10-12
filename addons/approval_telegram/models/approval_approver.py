@@ -12,11 +12,10 @@ class ApprovalApprover(models.Model):
             ).mapped("notify_telegram")
         )
 
-    def _create_activity(self):
-        result = super()._create_activity()
+    def _create_activity(self, unlisted: bool = False) -> None:
+        super()._create_activity(unlisted=unlisted)
         notifier = self.env["telegram.approval.notifier"]
         if not notifier._feature_active():
-            return result
+            return
         for approver in self:
             notifier._notify_approver(approver)
-        return result

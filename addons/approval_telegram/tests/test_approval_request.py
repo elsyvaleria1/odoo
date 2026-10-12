@@ -158,6 +158,24 @@ class TestApprovalNotifier(ApprovalRequestTestBase):
         self.env["telegram.approval.notifier"]._notify_approver(self.approver)
         self.assertFalse(self._queued())
 
+    def test_archiving_a_pending_approver_hands_the_row_over(self):
+        successor = self.env["res.users"].create(
+            {
+                "name": "Telegram Successor",
+                "login": "telegram_successor",
+                "company_ids": [Command.set(self.company.ids)],
+                "company_id": self.company.id,
+            }
+        )
+        self.category.write(
+            {"escalate_overdue": True, "escalation_user_id": successor.id}
+        )
+        self.test_user.write({"active": False})
+        self.assertEqual(self.approver.user_id, successor)
+        self.assertTrue(
+            self.approval_request._get_approval_activities(user=successor)
+        )
+
     def test_notify_enabled_helper(self):
         self.assertTrue(self.approver._telegram_notify_enabled())
         self.step_member.notify_telegram = False
