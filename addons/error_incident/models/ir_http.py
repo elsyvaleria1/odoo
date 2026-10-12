@@ -32,7 +32,7 @@ class IrHttp(models.AbstractModel):
             payload = capture_payload(
                 exception,
                 "request",
-                user_id=request.env.uid if request.env else None,
+                user_id=env.uid if (env := request.bound_env) else None,
                 location=f"{httprequest.method} {httprequest.path}"[:500],
                 request_ref=request.id,
             )

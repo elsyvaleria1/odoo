@@ -93,8 +93,14 @@ __all__ = [
 ]
 
 
+class _RequestStandIn(DotDict):
+    @property
+    def bound_env(self) -> Any:
+        return self.env
+
+
 def request_stand_in(**attributes: Any) -> DotDict:
-    return DotDict(
+    return _RequestStandIn(
         {
             "scratch": types.SimpleNamespace(),
             "attempt_scratch": types.SimpleNamespace(),

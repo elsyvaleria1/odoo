@@ -22,6 +22,7 @@ class TestIrHttpAuth(TransactionCase):
     def _fake_request(self, env, path="/"):
         fake = SimpleNamespace(
             env=env,
+            bound_env=env,
             session=_FakeSession(),
             httprequest=SimpleNamespace(path=path, host="localhost"),
         )

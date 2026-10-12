@@ -161,6 +161,8 @@ class BaseCursor:
 
         def in_failed_transaction(self) -> bool: ...
 
+        def set_statement_timeout(self, seconds: float | None) -> None: ...
+
     def _before_statement(self) -> None:
         pass
 

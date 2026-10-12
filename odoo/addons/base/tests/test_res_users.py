@@ -823,6 +823,7 @@ class TestUsersIdentitycheck(HttpCase):
             SimpleNamespace(
                 session=session,
                 env=self.env,
+                bound_env=self.env,
                 httprequest=SimpleNamespace(
                     remote_addr="127.0.0.1",
                     path="/web",

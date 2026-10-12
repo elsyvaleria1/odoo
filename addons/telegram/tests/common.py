@@ -329,6 +329,7 @@ class TelegramBotTestCase(TransactionCase):
         mock_request = Mock()
         mock_request.httprequest = mock_httprequest
         mock_request.env = self.env
+        type(mock_request).bound_env = property(lambda request: request.env)
 
         def make_response_side_effect(data, status=200, headers=None):
             response = WerkzeugResponse(data, status=status)

@@ -112,8 +112,8 @@ def _prepare_set_cookie_args(
 
     if (
         request
-        and request.env is not None
-        and not get_ir_http(request.env)._is_allowed_cookie(cookie_type)
+        and (env := request.bound_env) is not None
+        and not get_ir_http(env)._is_allowed_cookie(cookie_type)
     ):
         _debug.logic("http.cookie.consent_refused", cookie_type=cookie_type)
         max_age = 0

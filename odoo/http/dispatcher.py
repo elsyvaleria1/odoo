@@ -198,7 +198,7 @@ class Dispatcher(ABC):
         seconds = routing.get("statement_timeout", self.statement_timeout)
         if seconds is None:
             return
-        env = getattr(self.request, "env", None)
+        env = self.request.bound_env
         if env is None or env.cr.closed:
             return
         env.cr.set_statement_timeout(seconds)
@@ -243,7 +243,7 @@ class Dispatcher(ABC):
                 raise RuntimeError("a database-bound request has a registry")
             with _debug.perf(
                 "http.dispatch.endpoint",
-                cr=getattr(getattr(self.request, "env", None), "cr", None),
+                cr=getattr(self.request.bound_env, "cr", None),
                 endpoint=getattr(endpoint, "__qualname__", None),
                 via="ir.http",
             ):

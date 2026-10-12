@@ -143,6 +143,7 @@ def MockRequest(
         render=lambda *a, **kw: "<MockResponse>",
         nonce_scripts=lambda html: Markup(html or ""),
     )
+    type(request).bound_env = property(lambda request: request.env)
     request.prepare_response = partial(odoo.http.Request.prepare_response, request)
     request.prepare_json_response = partial(
         odoo.http.Request.prepare_json_response, request

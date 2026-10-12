@@ -23,7 +23,7 @@ def invalidate_db_catalog_cache() -> None:
 
 
 def get_dbs_served(force: bool = False, host: str | None = None) -> list[str]:
-    env = request.env if request else None
+    env = request.bound_env if request else None
     cr = env.cr if env is not None else None
     try:
         with _debug.perf("http.dbs.list", force=force) as span:

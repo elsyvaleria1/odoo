@@ -840,6 +840,7 @@ class BaseCase(TestCase):
             env=self._get_env(),
             session=DotDict(odoo.http.prepare_default_session(), debug="1"),
         )
+        type(request).bound_env = property(lambda request: request.env)
         try:
             self._get_env().flush_all()
             self._get_env().invalidate_all()

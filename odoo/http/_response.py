@@ -72,10 +72,10 @@ class _RequestResponseMixin(RequestState):
             code=code,
             local=local,
             sanitized=location != requested,
-            via="ir.http" if self.db and self.env is not None else "werkzeug",
+            via="ir.http" if self.db and self.bound_env is not None else "werkzeug",
         )
-        if self.db and self.env is not None:
-            return get_ir_http(self.env)._redirect(location, code)
+        if self.db and (env := self.bound_env) is not None:
+            return get_ir_http(env)._redirect(location, code)
         return werkzeug.utils.redirect(location, code, Response=Response)
 
     def redirect_query(

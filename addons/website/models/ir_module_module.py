@@ -66,8 +66,8 @@ class IrModuleModule(models.Model):
         if (
             request
             and request.db
-            and request.env
-            and request.env.context.get("apply_new_theme")
+            and (env := request.bound_env)
+            and env.context.get("apply_new_theme")
         ):
             self = self.with_context(apply_new_theme=True)
 

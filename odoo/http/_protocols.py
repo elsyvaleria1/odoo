@@ -29,7 +29,16 @@ if TYPE_CHECKING:
         database_detached: bool
         db: str | None
         dispatcher: Dispatcher
-        env: odoo.api.Environment | None
+
+        @property
+        def env(self) -> odoo.api.Environment: ...
+
+        @env.setter
+        def env(self, env: odoo.api.Environment | None) -> None: ...
+
+        @property
+        def bound_env(self) -> odoo.api.Environment | None: ...
+
         future_response: FutureResponse
         geoip: GeoIP
         httprequest: HTTPRequest

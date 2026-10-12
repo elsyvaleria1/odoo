@@ -15,9 +15,8 @@ PAYMENT_ACCESS_SCOPE = register_signed_scope(
 )
 
 
-
 def generate_access_token(*values, env=None):
-    env = env or (request and request.env)
+    env = env or (request and request.bound_env)
     assert isinstance(env, api.Environment), (
         "Environment required to generate access token."
     )
@@ -26,7 +25,7 @@ def generate_access_token(*values, env=None):
 
 
 def is_access_token_valid(access_token, *values) -> bool:
-    env = request and request.env
+    env = request and request.bound_env
     assert isinstance(env, api.Environment), (
         "Environment required to check an access token."
     )
@@ -34,12 +33,8 @@ def is_access_token_valid(access_token, *values) -> bool:
     return bool(is_hmac_valid(env, PAYMENT_ACCESS_SCOPE, token_str, access_token))
 
 
-
-
 def add_to_report(report, records, available=True, reason="") -> None:
-    if (
-        report is None or not records
-    ):
+    if report is None or not records:
         return
 
     category = "providers" if records._name == "payment.provider" else "payment_methods"
@@ -57,16 +52,12 @@ def add_to_report(report, records, available=True, reason="") -> None:
             ]
 
 
-
-
 def singularize_reference_prefix(prefix="tx", separator="-", max_length=None) -> str:
     if prefix is None:
         prefix = "tx"
     if max_length:
         DATETIME_LENGTH = 14
-        assert (
-            max_length >= 1 + len(separator) + DATETIME_LENGTH
-        )
+        assert max_length >= 1 + len(separator) + DATETIME_LENGTH
         prefix = prefix[: max_length - len(separator) - DATETIME_LENGTH]
     return f"{prefix}{separator}{fields.Datetime.now().strftime('%Y%m%d%H%M%S')}"
 
@@ -103,8 +94,6 @@ def major_to_minor_currency_units(
     )
 
 
-
-
 def format_partner_address(address1="", address2=""):
     address1 = address1 or ""
     address2 = address2 or ""
@@ -119,16 +108,12 @@ def split_partner_name(partner_name) -> tuple:
     return " ".join(parts[:-1]), parts[-1]
 
 
-
-
 def get_customer_ip_address():
     return (request and request.httprequest.remote_addr) or ""
 
 
 def check_rights_on_recordset(recordset) -> None:
     recordset.check_access("write")
-
-
 
 
 def generate_idempotency_key(tx, scope=None):

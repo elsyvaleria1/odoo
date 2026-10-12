@@ -20,7 +20,7 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
             mute_logger("odoo.addons.payment.models.payment_transaction"),
             patch(
                 "odoo.addons.payment.utils.request",
-                new=SimpleNamespace(env=self.env),
+                new=SimpleNamespace(env=self.env, bound_env=self.env),
             ),
         ):
             processing_values = tx._prepare_processing_values()
@@ -33,7 +33,7 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
         self.assertEqual(processing_values["converted_amount"], converted_amount)
         with patch(
             "odoo.addons.payment.utils.request",
-            new=SimpleNamespace(env=self.env),
+            new=SimpleNamespace(env=self.env, bound_env=self.env),
         ):
             self.assertTrue(
                 payment_utils.is_access_token_valid(

@@ -427,7 +427,7 @@ class WebsiteVisitor(models.Model):
         return result
 
     def _get_visitor_from_request(self, force_create=False, force_track_values=None):
-        if not (request and request.env and request.env.uid):
+        if not (request and (env := request.bound_env) and env.uid):
             _debug.logic("visitor_skipped", reason="no_request_env")
             return None
 

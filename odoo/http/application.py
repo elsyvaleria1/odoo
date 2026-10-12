@@ -309,8 +309,6 @@ class Application:
             _debug.logic("http.routing_map.selected", db=None, source="nodb")
             return self.nodb_routing_map
         router_env = env if env is not None else request.env
-        if router_env is None:
-            raise RuntimeError("a database router needs a bound environment")
         _debug.logic("http.routing_map.selected", db=db, source="ir.http")
         return get_ir_http(router_env).routing_map()
 

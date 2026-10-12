@@ -55,15 +55,9 @@ _PROMOTE = object()
 
 
 class _RequestServeMixin(RequestState):
-    def _require_env(self) -> odoo.api.Environment:
-        env = self.env
-        if env is None:
-            raise RuntimeError("a database-bound request has an environment")
-        return env
-
     @property
     def _debug_cr(self) -> Any:
-        env = self.env
+        env = self.bound_env
         return None if env is None else env.cr
 
     def _update_dispatcher(self, rule: Any) -> None:
@@ -324,7 +318,7 @@ class _RequestServeMixin(RequestState):
         readonly: bool,
     ) -> Any:
         mode = "ro" if readonly else "rw"
-        env = self._require_env()
+        env = self.env
         self._bind_session_transaction(env.cr)
         commits_before = env.cr.commit_count
         try:
@@ -406,7 +400,7 @@ class _RequestServeMixin(RequestState):
             return self._serve_aborted(exc)
 
     def _open_read_write_cursor(self, cr: Any, *, readonly: bool) -> Any:
-        env = self._require_env()
+        env = self.env
         with _debug.perf("http.serve.cursor_ready", replaced=cr.readonly):
             if cr.readonly:
                 _debug.lifecycle("http.serve.cursor_replaced", db=env.registry.db_name)
@@ -468,7 +462,7 @@ class _RequestServeMixin(RequestState):
                 if not readonly or getattr(thread, "cursor_mode", None) is None:
                     thread.cursor_mode = "rw"
 
-            env = self._require_env()
+            env = self.env
             cr = self._open_read_write_cursor(cr, readonly=readonly and not promoted)
             if promoted:
                 _debug.pipeline(
@@ -586,7 +580,7 @@ class _RequestServeMixin(RequestState):
         _debug.pipeline(
             "http.serve.authenticated",
             endpoint=getattr(rule.endpoint, "__qualname__", None),
-            uid=None if self.env is None else self.env.uid,
+            uid=self.env.uid,
         )
         with _debug.perf(
             "http.serve.pre_dispatch",

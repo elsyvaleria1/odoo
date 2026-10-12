@@ -85,8 +85,8 @@ class ResUsers(models.Model):
 
     def authenticate(self, credential, user_agent_env):
         visitor_pre_authenticate_sudo = None
-        if request and request.env:
-            visitor_pre_authenticate_sudo = request.env[
+        if request and (env := request.bound_env):
+            visitor_pre_authenticate_sudo = env[
                 "website.visitor"
             ]._get_visitor_from_request()
         auth_info = super().authenticate(credential, user_agent_env)

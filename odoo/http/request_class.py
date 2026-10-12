@@ -75,7 +75,7 @@ class Request(
         self.scratch = types.SimpleNamespace()
         self.attempt_scratch = types.SimpleNamespace()
         self.registry: Registry | None = None
-        self.env: odoo.api.Environment | None = None
+        self._env: odoo.api.Environment | None = None
         self._post_init_done: bool = False
         self.database_detached: bool = False
         self._cookies_memo: tuple[bool, Any] | None = None
@@ -88,15 +88,31 @@ class Request(
         self._session_save_pending = False
         self._after_release: list[Callable[[], object]] = []
 
+    @property
+    def env(self) -> odoo.api.Environment:
+        env = self._env
+        if env is None:
+            raise RuntimeError("the request is not bound to a database")
+        return env
+
+    @env.setter
+    def env(self, env: odoo.api.Environment | None) -> None:
+        self._env = env
+
+    @property
+    def bound_env(self) -> odoo.api.Environment | None:
+        return self._env
+
     def detach_database(self) -> None:
         self.database_detached = True
+        env = self._env
         _debug.lifecycle(
             "http.request.database_detached",
             db=self.db,
-            cursor_open=self.env is not None and not self.env.cr.closed,
+            cursor_open=env is not None and not env.cr.closed,
         )
-        if self.env is not None and not self.env.cr.closed:
-            self.env.cr.close()
+        if env is not None and not env.cr.closed:
+            env.cr.close()
 
     def call_after_release(self, func: Callable[[], object]) -> None:
         self._after_release.append(func)
@@ -115,7 +131,7 @@ class Request(
 
     @property
     def fresh_primary_cursor(self) -> BaseCursor | None:
-        env = self.env
+        env = self._env
         if env is None or env.cr.readonly_pool:
             return None
         return env.cr
@@ -176,8 +192,6 @@ class Request(
         privileges: frozenset[int] | None = None,
     ) -> None:
         env = self.env
-        if env is None:
-            raise RuntimeError("update_env() needs a database-bound request")
         if anonymous:
             if user is not None:
                 raise RuntimeError("anonymous=True and user= are exclusive")
@@ -193,8 +207,6 @@ class Request(
 
     def update_context(self, **overrides: Any) -> None:
         env = self.env
-        if env is None:
-            raise RuntimeError("update_context() needs a database-bound request")
         context = env.context | overrides
         if context == env.context and env.transaction.default_env is env:
             _debug.lifecycle("http.request.context_unchanged", keys=len(overrides))
@@ -315,7 +327,7 @@ class Request(
         _debug.lifecycle(
             "http.request.reset_for_replay",
             explicit_cursor=cr is not None,
-            has_env=self.env is not None,
+            has_env=self._env is not None,
         )
         self.future_response = FutureResponse()
         self.params = {}
@@ -323,8 +335,8 @@ class Request(
         self._json_memo = None
         self.attempt_scratch = types.SimpleNamespace()
         self._after_release = []
-        if cr is None and self.env is not None:
-            cr = self.env.cr
+        if cr is None and self._env is not None:
+            cr = self._env.cr
         if cr is not None:
             self.env = odoo.api.Environment(
                 cr, self.session.uid, self.session.context or {}

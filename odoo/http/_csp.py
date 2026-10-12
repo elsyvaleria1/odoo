@@ -86,7 +86,7 @@ class _RequestCspMixin(RequestState):
 
     @functools.cached_property
     def csp_mode(self) -> str:
-        env = self.env
+        env = self.bound_env
         if env is None or env.cr.closed:
             return CSP_ENFORCE
         mode = (

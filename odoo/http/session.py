@@ -325,9 +325,9 @@ class Session(collections.abc.MutableMapping):
         context["lang"] = request.get_default_lang() if request else DEFAULT_LANG
         self._require_hard_rotation()
 
-        if request and request.env is not None:
+        if request and (env := request.bound_env) is not None:
             _debug.lifecycle("http.session.post_logout_hook", db=request.db)
-            get_ir_http(request.env)._post_logout(retired_identifier)
+            get_ir_http(env)._post_logout(retired_identifier)
 
     def _retired_identifier(self) -> str | None:
         original = self.rotation[0] if self.rotation is not None else self

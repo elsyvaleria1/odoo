@@ -782,7 +782,7 @@ def _get_lang(frame: FrameType | None, default_lang: str = "") -> str:
     request_env = None
     http = getattr(odoo, "http", None)
     if http and (req := http.request):
-        request_env = req.env
+        request_env = req.bound_env
     if request_env:
         found_env = True
         if lang := request_env.lang:

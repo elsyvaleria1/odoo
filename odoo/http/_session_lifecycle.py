@@ -215,7 +215,7 @@ class _RequestSessionMixin(RequestState):
         if not self._session_save_pending:
             return
         self._session_save_pending = False
-        self._persist_session(self.env)
+        self._persist_session(self.bound_env)
         if self._session_response is not None:
             self._update_response_from_future(self._session_response)
 
@@ -284,7 +284,7 @@ class _RequestSessionMixin(RequestState):
     def _save_session(self, env: odoo.api.Environment | None = None) -> None:
         sess = self.session
         if env is None:
-            env = self.env
+            env = self.bound_env
 
         if not sess.can_save:
             _debug.logic("http.session.save_skipped", reason="cannot_save")
@@ -292,8 +292,8 @@ class _RequestSessionMixin(RequestState):
 
         if (
             env is not None
-            and self.env is not None
-            and env.cr is self.env.cr
+            and (bound_env := self.bound_env) is not None
+            and env.cr is bound_env.cr
             and not env.cr.closed
         ):
             self._bind_session_transaction(env.cr)

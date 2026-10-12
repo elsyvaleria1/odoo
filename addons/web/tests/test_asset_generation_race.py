@@ -23,8 +23,9 @@ class TestConcurrentAssetGeneration(TransactionCase):
 
     def _generate(self, version, outcome):
         with self.registry.cursor(readonly=True) as request_cr:
+            request_env = self.env(cr=request_cr)
             _request_stack.push(
-                SimpleNamespace(env=self.env(cr=request_cr), session={})
+                SimpleNamespace(env=request_env, bound_env=request_env, session={})
             )
             try:
                 Binary()._get_generated_asset_stream(FILENAME, version, False, {})

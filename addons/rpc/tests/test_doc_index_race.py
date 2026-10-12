@@ -25,7 +25,10 @@ class TestDocIndexConcurrentBuild(TransactionCase):
             cr.commit()
 
     def _build(self, cr):
-        _request_stack.push(SimpleNamespace(env=self.env(cr=cr), session={}))
+        request_env = self.env(cr=cr)
+        _request_stack.push(
+            SimpleNamespace(env=request_env, bound_env=request_env, session={})
+        )
         try:
             with patch.object(DocController, "_doc_index", return_value=[]):
                 return (

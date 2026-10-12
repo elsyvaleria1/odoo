@@ -49,7 +49,7 @@ class Controller:
 
     @property
     def env(self) -> odoo.api.Environment | None:
-        return request.env if request else None
+        return request.bound_env if request else None
 
 
 def _is_from_installed_addon(cls: type, modules: Collection[str]) -> bool:

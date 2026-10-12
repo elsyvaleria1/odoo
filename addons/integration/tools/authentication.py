@@ -32,12 +32,7 @@ def _get_param_with_legacy(env, suffix, default):
 def _resolve_env(env=None):
     if env is not None:
         return env
-    try:
-        if request and hasattr(request, "env") and request.env:
-            return request.env
-    except ImportError, RuntimeError:
-        pass
-    return None
+    return request.bound_env if request else None
 
 
 def _get_future_tolerance(env=None) -> int:

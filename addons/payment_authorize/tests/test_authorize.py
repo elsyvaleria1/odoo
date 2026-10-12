@@ -43,7 +43,7 @@ class AuthorizeTest(AuthorizeCommon):
             mute_logger("odoo.addons.payment.models.payment_transaction"),
             patch(
                 "odoo.addons.payment.utils.request",
-                new=SimpleNamespace(env=self.env),
+                new=SimpleNamespace(env=self.env, bound_env=self.env),
             ),
         ):
             processing_values = tx._prepare_processing_values()
