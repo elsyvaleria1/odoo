@@ -102,7 +102,7 @@ class ReadMixin(_ModelStubs):
 
     @api.readonly
     def read(
-        self, fields: Sequence[str] | None = None, load: str = "_classic_read"
+        self, fields: Sequence[str] | None = None, load: str | None = "_classic_read"
     ) -> list[ValuesType]:
         prof = _OrmProfile(_orm_read)
 
@@ -308,7 +308,7 @@ class ReadMixin(_ModelStubs):
                 vals.clear()
 
     def _read_format(
-        self, fnames: Sequence[str], load: str = "_classic_read"
+        self, fnames: Sequence[str], load: str | None = "_classic_read"
     ) -> list[ValuesType]:
         use_display_name = load == "_classic_read"
         ids = self._ids

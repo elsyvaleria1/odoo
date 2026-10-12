@@ -1,10 +1,20 @@
+from typing import NotRequired, TypedDict
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
-PAPER_SIZES = [
+
+class PaperSize(TypedDict):
+    key: str
+    description: str
+    height: NotRequired[float]
+    width: NotRequired[float]
+
+
+PAPER_SIZES: list[PaperSize] = [
     {
         "description": "A0  5   841 x 1189 mm",
         "key": "A0",
@@ -191,7 +201,7 @@ PAPER_SIZES = [
     },
 ]
 
-PAPER_SIZE_BY_KEY = {ps["key"]: ps for ps in PAPER_SIZES}
+PAPER_SIZE_BY_KEY: dict[str, PaperSize] = {ps["key"]: ps for ps in PAPER_SIZES}
 
 
 class ReportPaperformat(models.Model):

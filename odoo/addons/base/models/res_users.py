@@ -1177,7 +1177,7 @@ class ResUsers(models.Model):
     def read(
         self,
         fields: collections.abc.Sequence[str] | None = None,
-        load: str = "_classic_read",
+        load: str | None = "_classic_read",
     ) -> list[ValuesType]:
         readable, _ = self._get_self_accessible_fields()
         if fields and self == self.env.user and all(key in readable for key in fields):

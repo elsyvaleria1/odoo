@@ -413,7 +413,7 @@ class DocumentsDocument(models.Model):
         return Domain.OR(bands[level] for level in asked if level in bands)
 
     def _read_format(
-        self, fnames: typing.Sequence[str], load: str = "_classic_read"
+        self, fnames: typing.Sequence[str], load: str | None = "_classic_read"
     ) -> list:
         self._check_content_read(fnames)
         if _PERMISSION_READERS & set(fnames):

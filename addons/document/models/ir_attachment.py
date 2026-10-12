@@ -24,7 +24,7 @@ class IrAttachment(models.Model):
         export_string_translation=False,
     )
 
-    def _read_format(self, fnames: Any, load: str = "_classic_read") -> list:
+    def _read_format(self, fnames: Any, load: str | None = "_classic_read") -> list:
         if not self.env.su and {"raw", "datas", "db_datas"} & set(fnames):
             Binary = self.env["ir.binary"]
             for attachment in self:
