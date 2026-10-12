@@ -24,7 +24,6 @@ CRON_DEPENDS = {
 
 
 class LunchAlert(models.Model):
-
     _name = "lunch.alert"
     _description = "Lunch Alert"
     _order = "write_date desc, id"

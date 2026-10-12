@@ -3,7 +3,6 @@ from odoo.libs.colors import PLANNING_COLORS
 
 
 class ResourceRole(models.Model):
-
     _inherit = "resource.role"
 
     slot_properties_definition = fields.PropertiesDefinition(

@@ -217,9 +217,7 @@ class TestSaleOrder(TestCommissionsSetup):
             line.product_qty = 1
         so = form.save()
 
-        self.assertEqual(
-            so.commission, 10 + old_commission
-        )
+        self.assertEqual(so.commission, 10 + old_commission)
 
     def test_subcontracted_service_po_with_referrer(self):
         self.env["product.supplierinfo"].create(

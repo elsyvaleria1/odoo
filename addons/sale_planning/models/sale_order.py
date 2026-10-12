@@ -118,7 +118,6 @@ class SaleOrder(models.Model):
                 )
             )
 
-
     def _action_cancel(self):
         result = super()._action_cancel()
         self.sudo()._unplanned_shift_deletion()

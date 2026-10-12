@@ -9,7 +9,6 @@ _logger = logging.getLogger(__name__)
 
 
 class TelegramHandlerAutomation(models.AbstractModel):
-
     _name = "telegram.handler.automation"
     _inherit = "mixin.telegram.handler"
     _description = "Telegram: Workflow Questions"

@@ -397,7 +397,6 @@ class TelegramChat(models.Model):
         context[key] = value
         self._with_flow_privilege().write({"context_data": context})
 
-
     def _sync_command_menu(self) -> None:
         for chat in operating(self):
             if chat.chat_type != "private" or not chat.account_id or chat.bot_blocked:
@@ -446,7 +445,6 @@ class TelegramChat(models.Model):
             for command, spec in available
             if spec.description
         ]
-
 
     def _flow_is_open(self) -> bool:
         self.check_singleton()

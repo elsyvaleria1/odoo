@@ -24,14 +24,12 @@ class _Symbol:
 
 
 class _TwoPages:
-
     name = "two_pages.pdf"
     images = (QR_PNG, QR_PNG)
 
 
 @tagged("post_install", "-at_install")
 class TestZxingReader(BaseCase):
-
     @contextlib.contextmanager
     def _decoder(self, decode):
         with patch.object(zxing_reader.zxingcpp, "read_barcodes", decode):

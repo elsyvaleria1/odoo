@@ -25,7 +25,6 @@ class PaymentProvider(models.Model):
         help="Enable the use of QR-codes when paying by wire transfer.",
     )
 
-
     @api.model_create_multi
     def create(self, vals_list):
         providers = super().create(vals_list)
@@ -39,7 +38,6 @@ class PaymentProvider(models.Model):
         if self.code != "custom" or self.custom_mode != "wire_transfer":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def action_recompute_pending_msg(self) -> None:
         account_payment_module = self.env["ir.module.module"]._get(
@@ -73,7 +71,6 @@ class PaymentProvider(models.Model):
                     f"<p><br></p>"
                     f"</div>"
                 )
-
 
     @api.model
     def _get_domain_provider(self, provider_code, *, custom_mode="", **kwargs):

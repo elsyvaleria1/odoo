@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class AuthOauthProvider(models.Model):
-
     _name = "auth.oauth.provider"
     _description = "OAuth2 provider"
     _order = "sequence, name"
@@ -16,9 +15,7 @@ class AuthOauthProvider(models.Model):
         string="Authorization URL",
         required=True,
     )
-    scope = fields.Char(
-        default="openid profile email"
-    )
+    scope = fields.Char(default="openid profile email")
     validation_endpoint = fields.Char(
         string="UserInfo URL",
         required=True,

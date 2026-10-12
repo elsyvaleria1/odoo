@@ -10,7 +10,6 @@ from odoo.addons.integration.tests.common import revealed
 
 @tagged("post_install", "-at_install")
 class TestGoogleCredentials(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

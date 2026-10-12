@@ -6,13 +6,11 @@ from odoo.addons.knowledge.tests.common import KnowledgeCommon
 
 @tagged("knowledge_sequence")
 class TestKnowledgeArticleSequence(KnowledgeCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         with mute_logger("odoo.models.unlink"):
             cls.env["knowledge.article"].search([]).unlink()
-
 
         cls.article_root_noise = cls.env["knowledge.article"].create(
             [

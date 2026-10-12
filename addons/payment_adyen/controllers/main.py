@@ -85,9 +85,7 @@ class AdyenController(http.Controller):
             "merchantAccount": provider_sudo.adyen_merchant_account,
             "amount": {
                 "value": converted_amount,
-                "currency": request.env["res.currency"]
-                .browse(currency_id)
-                .name,
+                "currency": request.env["res.currency"].browse(currency_id).name,
             },
             "applicationInfo": {
                 "externalPlatform": {
@@ -143,9 +141,7 @@ class AdyenController(http.Controller):
         )
         tx_sudo._process(
             "adyen",
-            dict(
-                response_content, merchantReference=reference
-            ),
+            dict(response_content, merchantReference=reference),
         )
         return response_content
 
@@ -176,9 +172,7 @@ class AdyenController(http.Controller):
 
         request.env["payment.transaction"].sudo()._process(
             "adyen",
-            dict(
-                response_content, merchantReference=reference
-            ),
+            dict(response_content, merchantReference=reference),
         )
 
         return response_content
@@ -246,6 +240,4 @@ class AdyenController(http.Controller):
             ]._search_by_reference("adyen", payment_data)
             if tx_sudo:
                 tx_sudo._process("adyen", payment_data)
-        return request.prepare_json_response(
-            "[accepted]"
-        )
+        return request.prepare_json_response("[accepted]")

@@ -143,7 +143,9 @@ class HrJob(models.Model):
 
     def action_share_external(self) -> dict:
         self.check_singleton()
-        wizard = self.env["wizard.hr.job.share.referral.link"].create({"job_id": self.id})
+        wizard = self.env["wizard.hr.job.share.referral.link"].create(
+            {"job_id": self.id}
+        )
         return {
             "name": self.env._("Visit Webpage"),
             "type": "ir.actions.act_url",

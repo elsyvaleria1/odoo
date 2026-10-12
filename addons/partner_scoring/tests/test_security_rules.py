@@ -7,7 +7,6 @@ from odoo.tools.query import Query
 
 @tagged("post_install", "-at_install", "partner_scoring")
 class TestSecurityRules(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

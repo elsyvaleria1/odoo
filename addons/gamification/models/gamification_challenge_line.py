@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class GamificationChallengeLine(models.Model):
-
     _name = "gamification.challenge.line"
     _description = "Gamification generic goal for challenge"
     _order = "sequence, id"

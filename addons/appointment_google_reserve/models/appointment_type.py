@@ -306,9 +306,7 @@ class AppointmentType(models.Model):
                         "resource_to_bookings"
                     ),
                 ).items()
-                if isinstance(
-                    booked_resource, models.BaseModel
-                )
+                if isinstance(booked_resource, models.BaseModel)
             }
             for resource in self.resource_ids
         }
@@ -319,9 +317,7 @@ class AppointmentType(models.Model):
                 self.env, "appointment.resource_max_capacity_allowed", 12
             )
         )
-        max_capacity = min(
-            20, allowed_max_capacity, self.resource_total_capacity
-        )
+        max_capacity = min(20, allowed_max_capacity, self.resource_total_capacity)
         for capacity in range(1, max_capacity + 1):
             used_resources = self.env["resource.resource"]
             total_spots = 0

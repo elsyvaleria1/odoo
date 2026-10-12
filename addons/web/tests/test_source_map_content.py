@@ -4,7 +4,6 @@ from odoo.tests import HttpCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install", "web_assets")
 class TestSourceMapContent(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

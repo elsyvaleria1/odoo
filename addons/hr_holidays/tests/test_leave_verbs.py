@@ -36,7 +36,6 @@ ROW_CELLS = [
 
 @tagged("post_install", "-at_install")
 class TestLeaveVerbs(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -6,7 +6,6 @@ from odoo.tools.translate import html_translate
 
 
 class GamificationKarmaRank(models.Model):
-
     _name = "gamification.karma.rank"
     _description = "Gamification Rank / Level"
     _inherit = ["mixin.image"]

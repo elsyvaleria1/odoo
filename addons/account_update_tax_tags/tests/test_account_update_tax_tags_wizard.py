@@ -368,9 +368,7 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
                     move = self._create_invoice(move_type=move_type, taxes=tax_2)
                     super_type = move_type.split("_")[1]
                     if super_type == "receipt":
-                        super_type = (
-                            "invoice"
-                        )
+                        super_type = "invoice"
                     self._change_tax_tag(
                         tax_2,
                         f"{move_type}_{line_type}_tag_changed",
@@ -414,9 +412,7 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
                         )
 
     def test_update_move_type_entry(self):
-        account = self.company_data[
-            "default_account_assets"
-        ]
+        account = self.company_data["default_account_assets"]
         for tax_type in ["sale", "purchase"]:
             tax = self._create_tax(
                 f"test_{tax_type}_tax",
@@ -509,9 +505,7 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
 
     def test_update_no_tag_after(self):
         move = self._create_invoice(taxes=self.tax_1)
-        self.tax_1.invoice_repartition_line_ids.write(
-            {"tag_ids": [Command.clear()]}
-        )
+        self.tax_1.invoice_repartition_line_ids.write({"tag_ids": [Command.clear()]})
         self.wizard.update_amls_tax_tags()
 
         invoice_line, tax_line, counterpart_line = self._get_amls_by_type(move)

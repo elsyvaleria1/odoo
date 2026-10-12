@@ -224,9 +224,7 @@ class TestShopee(common.TestShopeeCommon):
             self.shop._sync_orders(auto_commit=False)
             self.assertEqual(self.env["sale.order"].search_count([]), order_count + 1)
 
-            self.shop.last_orders_sync_date = datetime.fromtimestamp(
-                1579050000
-            )
+            self.shop.last_orders_sync_date = datetime.fromtimestamp(1579050000)
 
             self.order_created = True
             self.shop._sync_orders(auto_commit=False)
@@ -254,9 +252,7 @@ class TestShopee(common.TestShopeeCommon):
             self.order_cancelled = False
             self.shop._sync_orders(auto_commit=False)
 
-            self.shop.last_orders_sync_date = datetime.fromtimestamp(
-                1579050000
-            )
+            self.shop.last_orders_sync_date = datetime.fromtimestamp(1579050000)
 
             order = self.env["sale.order"].search(
                 [("shopee_order_ref", "=", common.ORDER_SN_MOCK)]
@@ -269,7 +265,6 @@ class TestShopee(common.TestShopeeCommon):
 
             self.assertEqual(order.state, "cancel")
             self.assertEqual(picking.state, "cancel")
-
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_inventory(self):
@@ -357,7 +352,6 @@ class TestShopee(common.TestShopeeCommon):
             with self.assertRaises(SyncFailureReportedError):
                 self.shop._sync_inventory(auto_commit=False)
 
-
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_pickings(self):
         with patch(
@@ -432,7 +426,6 @@ class TestShopee(common.TestShopeeCommon):
             self.assertEqual(picking.shopee_label_status, "stored")
             self.assertEqual(len(picking.message_ids.attachment_ids), 1)
 
-
     def test_get_or_create_matching_product_search(self):
         product = self.shop._get_or_create_matching_product(
             common.ORDER_ITEM_MOCK["model_sku"], None, None, None
@@ -505,7 +498,6 @@ class TestShopee(common.TestShopeeCommon):
         self.assertEqual(product.type, "service")
         self.assertNotEqual(product.default_code, "non_existing_sku")
 
-
     def test_get_pricelist_search(self):
         currency = self.env["res.currency"].create({"name": "TEST", "symbol": "T"})
         self.env["product.pricelist"].create(
@@ -547,7 +539,6 @@ class TestShopee(common.TestShopeeCommon):
         )
         self.assertFalse(pricelist.active)
         self.assertEqual(pricelist.currency_id.id, currency.id)
-
 
     def test_get_partners_no_creation_same_partners(self):
         with patch(
@@ -779,7 +770,6 @@ class TestShopee(common.TestShopeeCommon):
         )
         self.assertEqual(delivery.type, "delivery")
         self.assertEqual(delivery.parent_id.id, contact.id)
-
 
     def test_find_or_create_item_exist(self):
         item_count = self.env["shopee.item"].search_count([])

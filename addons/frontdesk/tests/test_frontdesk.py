@@ -316,7 +316,6 @@ class TestKioskUrlGeneration(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestFrontdeskGroupReferences(TransactionCase):
-
     def _referenced_groups(self):
         source = (
             Path(Manifest.for_addon("frontdesk").path) / "controllers" / "main.py"

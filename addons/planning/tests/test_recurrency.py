@@ -255,7 +255,6 @@ class TestRecurrencySlotGeneration(TestCommonPlanning):
         self.assertEqual(generated[2].resource_id, self.resource_bert)
         self.assertEqual(generated[2].allocated_percentage, 50)
 
-
     def test_repeat_until(self):
         with freeze_time("2019-06-27 08:00:00"):
             self.configure_recurrency_span(1)
@@ -572,9 +571,7 @@ class TestRecurrencySlotGeneration(TestCommonPlanning):
             "After change unit to week generated slots should be 4",
         )
 
-        _modify_slot(
-            "month", datetime(2020, 8, 31, 8, 0, 0)
-        )
+        _modify_slot("month", datetime(2020, 8, 31, 8, 0, 0))
         self.assertEqual(
             len(self.get_by_employee(self.employee_joseph)),
             4,
@@ -1785,7 +1782,6 @@ class TestPlanningContract(TestPlanningContractCommon):
 
 
 class TestRecurrencyUntilTimezone(TestCommonPlanning):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

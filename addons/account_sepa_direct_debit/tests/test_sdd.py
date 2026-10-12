@@ -128,22 +128,16 @@ class SDDTest(SDDTestCommon):
         self.assertEqual(mandate.state, "draft")
         mandate.action_validate_mandate()
         mandate.cron_update_mandates_states()
-        self.assertEqual(
-            mandate.state, "active"
-        )
+        self.assertEqual(mandate.state, "active")
 
-        with freeze_time(
-            "2022-12-02"
-        ):
+        with freeze_time("2022-12-02"):
             mandates_per_validity = mandate._update_and_partition_state_by_validity()
             self.assertTrue(
                 mandates_per_validity["expiring"], "The mandate is expiring soon"
             )
 
             new_invoice = self.create_invoice(self.partner_agrolait)
-            payment = self.pay_with_mandate(
-                new_invoice
-            )
+            payment = self.pay_with_mandate(new_invoice)
             payment.action_validate()
             mandates_per_validity = mandate._update_and_partition_state_by_validity()
             self.assertTrue(
@@ -269,9 +263,7 @@ class SDDTest(SDDTestCommon):
             }
         )
 
-        mandate.pre_notification_period = (
-            14
-        )
+        mandate.pre_notification_period = 14
         mandate.action_validate_mandate()
 
         invoice = self.create_invoice(partner)
@@ -312,7 +304,6 @@ class SDDTest(SDDTestCommon):
         )
 
         batch_payment.confirm_batch()
-
 
         self.reconcile_payments(payment)
         self.assertTrue(payment.is_bank_matched)

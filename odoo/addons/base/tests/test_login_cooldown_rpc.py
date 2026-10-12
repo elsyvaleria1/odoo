@@ -28,7 +28,6 @@ class _WebRequest:
 
 @tagged("post_install", "-at_install")
 class TestRpcLoginCooldown(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

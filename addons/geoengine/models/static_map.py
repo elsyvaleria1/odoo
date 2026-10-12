@@ -57,7 +57,6 @@ class MapItem:
 
 @dataclass(frozen=True)
 class Frame:
-
     minx: float
     maxy: float
     zoom: int
@@ -114,7 +113,6 @@ def frame_for(
 
 
 class TileFetcher:
-
     def __init__(self, env):
         self._env = env
         settings = env.registry.settings

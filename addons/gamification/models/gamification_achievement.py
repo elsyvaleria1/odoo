@@ -9,7 +9,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationAchievement(models.Model):
-
     _name = "gamification.achievement"
     _description = "Gamification Achievement"
     _order = "sequence, name"
@@ -173,7 +172,6 @@ class GamificationAchievement(models.Model):
 
 
 class GamificationAchievementUnlock(models.Model):
-
     _name = "gamification.achievement.unlock"
     _description = "Achievement Unlock"
     _order = "unlock_date desc"

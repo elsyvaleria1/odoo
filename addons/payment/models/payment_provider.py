@@ -256,7 +256,6 @@ class PaymentProvider(models.Model):
         string="Odoo Enterprise Module",
     )
 
-
     @api.depends("code")
     def _compute_available_currency_ids(self) -> None:
         all_currencies = (
@@ -264,9 +263,7 @@ class PaymentProvider(models.Model):
         )
         for provider in self:
             supported_currencies = provider._get_supported_currencies()
-            if (
-                supported_currencies < all_currencies
-            ):
+            if supported_currencies < all_currencies:
                 provider.available_currency_ids = supported_currencies
             else:
                 provider.available_currency_ids = None
@@ -297,7 +294,6 @@ class PaymentProvider(models.Model):
                 "support_refund": "none",
             }
         )
-
 
     @api.onchange("state")
     def _onchange_state_switch_is_published(self) -> None:
@@ -336,7 +332,6 @@ class PaymentProvider(models.Model):
                 )
             )
 
-
     def _check_available_currency_ids(self) -> None:
         pass
 
@@ -362,7 +357,6 @@ class PaymentProvider(models.Model):
                         ", ".join(incompatible_pms.mapped("name")),
                     )
                 )
-
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -474,7 +468,6 @@ class PaymentProvider(models.Model):
                     )
                 )
 
-
     def button_immediate_install(self):
         if self.module_id and self.module_state != "installed":
             self.module_id.button_immediate_install()
@@ -569,7 +562,6 @@ class PaymentProvider(models.Model):
             "context": {"active_test": False, "create": False},
         }
 
-
     @api.model
     def _get_compatible_providers(
         self,
@@ -595,9 +587,7 @@ class PaymentProvider(models.Model):
             providers = providers.filtered("is_published")
 
         partner = self.env["res.partner"].browse(partner_id)
-        if (
-            partner.country_id
-        ):
+        if partner.country_id:
             unfiltered_providers = providers
             providers = providers.filtered(
                 lambda p: (
@@ -613,9 +603,7 @@ class PaymentProvider(models.Model):
             )
 
         currency = self.env["res.currency"].browse(currency_id).exists()
-        if (
-            not is_validation and currency
-        ):
+        if not is_validation and currency:
             company = self.env["res.company"].browse(company_id).exists()
             date = fields.Date.context_today(self)
             converted_amount = currency._convert(
@@ -698,16 +686,13 @@ class PaymentProvider(models.Model):
             validation_currency = provider_currencies[:1]
         elif not provider_currencies and pm_currencies:
             validation_currency = pm_currencies[:1]
-        if (
-            not validation_currency
-        ):
+        if not validation_currency:
             validation_currency = self.company_id.currency_id
         return validation_currency
 
     def _get_redirect_form_view(self, is_validation=False):
         self.check_singleton()
         return self.redirect_form_view_id
-
 
     def _integration_connection_service(self) -> tuple[str, str, str]:
         self.check_singleton()
@@ -857,7 +842,6 @@ class PaymentProvider(models.Model):
                 )
             )
         return response_content["result"]
-
 
     @api.model
     def _setup_provider(self, provider_code, **kwargs) -> None:

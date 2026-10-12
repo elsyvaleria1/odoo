@@ -132,9 +132,7 @@ class PaymentTransaction(models.Model):
             payload["authentication_id"] = auth_id
 
         if self.token_id or self.tokenize:
-            payload["is_recurring"] = (
-                True
-            )
+            payload["is_recurring"] = True
 
         try:
             charge_payment_data = self._send_api_request(
@@ -205,9 +203,7 @@ class PaymentTransaction(models.Model):
         if self.provider_code != "xendit":
             return super()._extract_token_values(payment_data)
 
-        card_info = payment_data["masked_card_number"][
-            -4:
-        ]
+        card_info = payment_data["masked_card_number"][-4:]
 
         return {
             "payment_details": card_info,

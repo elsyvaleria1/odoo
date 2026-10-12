@@ -3,9 +3,7 @@ import odoo
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 
-@odoo.tests.tagged(
-    "-at_install", "post_install"
-)
+@odoo.tests.tagged("-at_install", "post_install")
 class TestPOSCustomerAccountReconciliation(TestPoSCommon):
     def setUp(self):
         super().setUp()

@@ -45,7 +45,6 @@ class TestTemplateTrustAttacks(TransactionCase):
         self.view.write({"arch": arch})
         self.view.with_user(self.author)._check_template_authoring()
 
-
     def test_t_att_dict_spread(self):
         self._refuse(
             f'<t t-name="base.av_red_host"><p t-att="{{\'x\': {PRIV}}}"/></t>',
@@ -98,7 +97,6 @@ class TestTemplateTrustAttacks(TransactionCase):
             "the name 'env' is not available",
         )
 
-
     def test_homoglyph_directive_name_is_invalid_xml(self):
         arch = '<t t-name="base.av_red_host"><p t‑out="env.cr.dbname">x</p></t>'
         with self.assertRaises(ValidationError):
@@ -113,7 +111,6 @@ class TestTemplateTrustAttacks(TransactionCase):
         rendered = self.env["ir.qweb"]._render(etree.fromstring(arch)).strip()
         self.assertIn("y", rendered)
         self.assertNotIn(self.env.cr.dbname, rendered)
-
 
     def test_author_cannot_write_shipped_digests(self):
         with self.assertRaises(AccessError):

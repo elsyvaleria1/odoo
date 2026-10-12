@@ -41,7 +41,6 @@ class AppointmentAccountPaymentFlowsCommon(
 
 @tagged("-at_install", "post_install")
 class AppointmentAccountPaymentFlowsTest(AppointmentAccountPaymentFlowsCommon):
-
     def test_cancellation_cannot_orphan_a_delayed_payment(self):
         self.authenticate("apt_manager", "apt_manager")
         tx = self._create_transaction(

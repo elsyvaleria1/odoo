@@ -20,7 +20,6 @@ TWO_WAY_SYNCS = frozenset(
 
 @tagged("post_install", "-at_install")
 class TestPartyStoredMirrors(TransactionCase):
-
     def _mirrors(self):
         found = {}
         for model_name in sorted(PARTY_MODELS):

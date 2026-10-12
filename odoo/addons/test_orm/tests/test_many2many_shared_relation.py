@@ -3,7 +3,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestTwoFieldsOverOneRelation(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

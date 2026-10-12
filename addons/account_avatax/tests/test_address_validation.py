@@ -6,7 +6,6 @@ from .mocked_address_validation_response import response as address_validation_r
 
 
 class TestAccountAvalaraAddressValidationCommon(TestAvataxCommon):
-
     @classmethod
     def setUpClass(cls):
         res = super().setUpClass()

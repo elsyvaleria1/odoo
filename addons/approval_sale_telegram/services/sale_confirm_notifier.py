@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class TelegramSaleConfirmNotifier(models.AbstractModel):
-
     _name = "telegram.sale.confirm.notifier"
     _description = "Telegram Sale Order Confirmation Notifier"
 

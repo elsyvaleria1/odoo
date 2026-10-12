@@ -11,7 +11,6 @@ OPERATIONAL_MODELS = (
 
 
 class TrainingNeutralityCase(TransactionCase):
-
     operational_models = OPERATIONAL_MODELS
 
     def _table_fingerprint(self, models):

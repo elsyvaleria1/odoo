@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class WizardStockPickingDeliveryProof(models.TransientModel):
-
     _name = "wizard.stock.picking.delivery.proof"
     _description = "Signed Delivery Slip"
 

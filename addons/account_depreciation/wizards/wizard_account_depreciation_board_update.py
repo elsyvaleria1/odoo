@@ -11,7 +11,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardAccountDepreciationBoardUpdate(models.TransientModel):
-
     _name = "wizard.account.depreciation.board.update"
     _description = "Modify Asset"
     _check_company_auto = True

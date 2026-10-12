@@ -14,9 +14,7 @@ class TestPeriodDuplication(TestCommonPlanning):
         cls.env["planning.slot"].create(
             {
                 "resource_id": cls.resource_bert.id,
-                "start_datetime": datetime(
-                    2019, 6, 3, 8, 0
-                ),
+                "start_datetime": datetime(2019, 6, 3, 8, 0),
                 "end_datetime": datetime(2019, 6, 3, 17, 0),
             }
         )

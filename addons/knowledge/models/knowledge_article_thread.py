@@ -6,13 +6,10 @@ _debug = DebugLog(__name__)
 
 
 class KnowledgeArticleThread(models.Model):
-
     _name = "knowledge.article.thread"
     _description = "Article Discussion Thread"
     _inherit = ["mixin.mail.thread"]
-    _mail_post_access = (
-        "read"
-    )
+    _mail_post_access = "read"
     _order = "write_date desc, id desc"
     _rec_name = "display_name"
 
@@ -37,7 +34,6 @@ class KnowledgeArticleThread(models.Model):
     def _compute_display_name(self):
         for record in self:
             record.display_name = record.article_id.display_name
-
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -65,7 +61,6 @@ class KnowledgeArticleThread(models.Model):
                 else article_anchor_text
             )
         return super().write(vals)
-
 
     _PORTAL_POST_KEYS = frozenset(
         {"attachment_ids", "author_id", "body", "partner_ids"}

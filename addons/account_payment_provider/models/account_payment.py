@@ -48,7 +48,6 @@ class AccountPayment(models.Model):
         "A payment transaction can only be linked to one payment.",
     )
 
-
     @api.depends("transaction_id.source_transaction_id.payment_ids")
     def _compute_source_payment_id(self) -> None:
         for payment in self:
@@ -134,7 +133,6 @@ class AccountPayment(models.Model):
         for payment in self:
             payment.refunds_count = data.get(payment.id, 0)
 
-
     def _get_electronic_payment_method_codes(self):
         return list(
             dict(
@@ -143,7 +141,6 @@ class AccountPayment(models.Model):
                 ._description_selection(self.env)
             )
         )
-
 
     @api.onchange("partner_id", "payment_channel_id", "journal_id")
     def _onchange_set_payment_token_id(self) -> None:
@@ -171,7 +168,6 @@ class AccountPayment(models.Model):
                 limit=1,
             )
         )
-
 
     def action_post(self):
 
@@ -225,7 +221,6 @@ class AccountPayment(models.Model):
             action["domain"] = [("source_payment_id", "=", self.id)]
         return action
 
-
     def _create_payment_transaction(self, **extra_create_values):
         for payment in self:
             if payment.transaction_id:
@@ -249,9 +244,7 @@ class AccountPayment(models.Model):
             )
             transaction = self.env["payment.transaction"].create(transaction_vals)
             transactions += transaction
-            payment.transaction_id = (
-                transaction
-            )
+            payment.transaction_id = transaction
         return transactions
 
     def _prepare_payment_transaction_vals(self, **extra_create_values) -> dict:

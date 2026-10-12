@@ -5,7 +5,6 @@ from .common import TestAccountAvataxCommon
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraRefunds(TestAccountAvataxCommon):
-
     @classmethod
     def setUpClass(cls):
         res = super().setUpClass()

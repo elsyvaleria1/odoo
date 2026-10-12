@@ -73,7 +73,6 @@ class ResourceSchedulingTest(models.Model):
 
 
 class ResourceSchedulingManualTest(models.Model):
-
     _name = "resource.scheduling.manual.test"
     _description = "Manual-Sync Scheduling Test Model"
     _inherit = ["resource.scheduling.test"]

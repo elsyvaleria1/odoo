@@ -132,7 +132,6 @@ class TestAuthSignupFlow(HttpCaseWithUserPortal, HttpCaseWithUserDemo):
 
 @tagged("post_install", "-at_install")
 class TestSignupHttpRoutes(HttpCaseWithUserDemo):
-
     def _set_signup(self, scope):
         self.env["ir.config_parameter"].sudo().set_param(
             "auth_signup.invitation_scope",

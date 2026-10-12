@@ -20,7 +20,6 @@ _RECEIVER = {
 
 
 class TelegramInboxController(http.Controller):
-
     @http.route(
         "/telegram/inbox/<int:bot_id>", type="http", auth="public", methods=["GET"]
     )

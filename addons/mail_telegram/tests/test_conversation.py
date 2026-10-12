@@ -6,7 +6,6 @@ from .test_mail_telegram import MailTelegramCase
 
 
 class TestConversationFromTelegram(MailTelegramCase):
-
     def _send(self, text=None, **extra):
         message = self.mock_telegram_message(
             chat_id="12345", text=text, message_id=extra.pop("message_id", 700)

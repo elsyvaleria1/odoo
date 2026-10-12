@@ -56,7 +56,6 @@ class PaymentProvider(models.Model):
         required_if_provider="paymob",
     )
 
-
     @api.constrains("available_currency_ids")
     def _check_available_country_currency_ids(self) -> None:
         for provider in self.filtered(lambda p: p.code == "paymob"):
@@ -73,7 +72,6 @@ class PaymentProvider(models.Model):
                     self.env._("Only currencies supported by Paymob can be selected.")
                 )
 
-
     def _inverse_paymob_account_country_id(self) -> None:
         for provider in self.filtered(lambda p: p.code == "paymob"):
             if self.paymob_account_country_id.code:
@@ -89,13 +87,11 @@ class PaymentProvider(models.Model):
                 )
                 provider.available_currency_ids = [Command.set(currency.ids)]
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "paymob":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def action_sync_paymob_payment_methods(self):
         params = {
@@ -147,9 +143,7 @@ class PaymentProvider(models.Model):
         )
         matched_gateways_data = []
         for gateway_data in sorted_gateways_data:
-            if (
-                not available_payment_method_codes
-            ):
+            if not available_payment_method_codes:
                 break
             integration_name = gateway_data.get("integration_name") or ""
             is_apple_pay = "apple" in integration_name.lower()
@@ -186,7 +180,6 @@ class PaymentProvider(models.Model):
             self._send_api_request(
                 "PUT", f"/api/ecommerce/integrations/{gateway_data['id']}", json=payload
             )
-
 
     def _prepare_request_url(self, endpoint, **kwargs):
         if self.code != "paymob":

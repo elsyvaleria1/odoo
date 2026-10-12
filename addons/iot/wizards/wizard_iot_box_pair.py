@@ -63,9 +63,7 @@ class WizardIotBoxPair(models.TransientModel):
             response.raise_for_status()
             json = response.json()
 
-            error = json.get(
-                "error"
-            )
+            error = json.get("error")
             if error:
                 _logger.warning(
                     "Error when using pairing code %s. IoT Proxy responded with an error message: %s",
@@ -144,7 +142,6 @@ class WizardIotBoxPair(models.TransientModel):
             "url": "https://www.odoo.com/documentation/latest/applications/general/iot/iot_box.html",
             "target": "new",
         }
-
 
     def _start_stage(self):
         n_detected_iot_boxes = len(self.discovered_box_ids)

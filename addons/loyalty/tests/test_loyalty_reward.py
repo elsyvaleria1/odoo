@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyReward(TransactionCase):
-
     def _reward(self, applicability):
         program = self.env["loyalty.program"].create(
             {

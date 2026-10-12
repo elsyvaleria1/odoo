@@ -1096,7 +1096,6 @@ class CreditProfile(models.Model):
             result[profile] = (bought + (amount or 0.0), oldest)
         return result
 
-
     def _score_observe_dbt(self, dimension):
         self.check_singleton()
         return self.dbt_weighted if self.paid_12m else None

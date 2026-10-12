@@ -127,7 +127,6 @@ class StepReferenceError(LookupError):
 
 
 class StepView:
-
     __slots__ = ("input", "key", "name", "output", "record", "state", "summary")
 
     def __init__(self, line) -> None:
@@ -144,7 +143,6 @@ class StepView:
 
 
 class StepScope(Mapping):
-
     __slots__ = ("_owner", "_views")
 
     def __init__(self, views: dict[str, StepView], owner: str) -> None:
@@ -181,7 +179,6 @@ class StepScope(Mapping):
 
 
 class NoPrevious:
-
     __slots__ = ("_message",)
 
     def __init__(self, message: str) -> None:

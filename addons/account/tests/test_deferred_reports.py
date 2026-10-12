@@ -965,9 +965,7 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
 
         deferred_inverse_january = generated_entries_january[1]
         self.assertEqual(deferred_inverse_january.move_type, "entry")
-        self.assertEqual(
-            deferred_inverse_january.state, "posted"
-        )
+        self.assertEqual(deferred_inverse_january.state, "posted")
         self.assertEqual(
             deferred_inverse_january.date, fields.Date.from_string("2023-02-01")
         )
@@ -1055,9 +1053,7 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         deferred_move_january, deferred_inverse_january = (
             self._test_deferred_expense_partially_generate_grouped_entries_method_common()
         )
-        self.assertEqual(
-            deferred_move_january.state, "posted"
-        )
+        self.assertEqual(deferred_move_january.state, "posted")
         self.assertEqual(deferred_inverse_january.state, "posted")
 
     @freeze_time("2023-01-01")
@@ -1067,9 +1063,7 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         deferred_move_january, deferred_inverse_january = (
             self._test_deferred_expense_partially_generate_grouped_entries_method_common()
         )
-        self.assertEqual(
-            deferred_move_january.state, "draft"
-        )
+        self.assertEqual(deferred_move_january.state, "draft")
         self.assertEqual(deferred_inverse_january.state, "draft")
 
     @freeze_time("2023-01-01")
@@ -1513,9 +1507,7 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         generated_entry = self.generate_deferral_entries(
             self.get_options("2023-04-01", "2023-04-30")
         )[0]
-        self.assertEqual(
-            len(generated_entry.line_ids), 3
-        )
+        self.assertEqual(len(generated_entry.line_ids), 3)
         self.assertEqual(generated_entry.deferred_original_move_ids, move2)
 
     def test_deferred_expense_manual_generation_only_posted(self):
@@ -2110,22 +2102,14 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
             audit_lines,
             [
                 self.get_audited_line_to_assert("2023-01-01", 1000),
-                self.get_audited_line_to_assert(
-                    "2023-01-01", -1000
-                ),
+                self.get_audited_line_to_assert("2023-01-01", -1000),
                 self.get_audited_line_to_assert("2023-01-31", 250),
                 self.get_audited_line_to_assert("2023-02-28", 250),
                 self.get_audited_line_to_assert("2023-01-01", 100),
-                self.get_audited_line_to_assert(
-                    "2023-01-01", -100
-                ),
+                self.get_audited_line_to_assert("2023-01-01", -100),
                 self.get_audited_line_to_assert("2023-01-01", 1),
-                self.get_audited_line_to_assert(
-                    "2023-01-01", -10
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-01-01", -1
-                ),
+                self.get_audited_line_to_assert("2023-01-01", -10),
+                self.get_audited_line_to_assert("2023-01-01", -1),
                 self.get_audited_line_to_assert("2023-01-31", 5),
                 self.get_audited_line_to_assert("2023-02-28", 5),
                 self.get_audited_line_to_assert("2023-01-31", 0.2),
@@ -2137,19 +2121,11 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         self.assertRecordValues(
             audit_lines,
             [
-                self.get_audited_line_to_assert(
-                    "2023-03-01", 10000
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-03-01", -10000
-                ),
+                self.get_audited_line_to_assert("2023-03-01", 10000),
+                self.get_audited_line_to_assert("2023-03-01", -10000),
                 self.get_audited_line_to_assert("2023-03-31", 250),
-                self.get_audited_line_to_assert(
-                    "2023-03-31", 0.2
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-03-31", 5000
-                ),
+                self.get_audited_line_to_assert("2023-03-31", 0.2),
+                self.get_audited_line_to_assert("2023-03-31", 5000),
             ],
         )
 
@@ -2157,24 +2133,12 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         self.assertRecordValues(
             audit_lines,
             [
-                self.get_audited_line_to_assert(
-                    "2023-04-30", 250
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-04-30", 50
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-04-30", 0.2
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-04-30", 5000
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-05-31", 50
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-05-31", 0.2
-                ),
+                self.get_audited_line_to_assert("2023-04-30", 250),
+                self.get_audited_line_to_assert("2023-04-30", 50),
+                self.get_audited_line_to_assert("2023-04-30", 0.2),
+                self.get_audited_line_to_assert("2023-04-30", 5000),
+                self.get_audited_line_to_assert("2023-05-31", 50),
+                self.get_audited_line_to_assert("2023-05-31", 0.2),
             ],
         )
 
@@ -2225,7 +2189,6 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         )
         options = self.get_options("2023-03-01", "2023-03-31")
         lines = self.get_lines(options)
-
 
         audit_lines = self.audit_cell(options, lines[0], "total")
         self.assertEqual(
@@ -2303,18 +2266,12 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         self.assertRecordValues(
             audit_lines[3:],
             [
-                self.get_audited_line_to_assert(
-                    "2023-01-31", -1111
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-01-31", 255.2
-                ),
+                self.get_audited_line_to_assert("2023-01-31", -1111),
+                self.get_audited_line_to_assert("2023-01-31", 255.2),
                 self.get_audited_line_to_assert("2023-02-01", 1111),
                 self.get_audited_line_to_assert("2023-02-01", -255.2),
                 self.get_audited_line_to_assert("2023-02-28", -1111),
-                self.get_audited_line_to_assert(
-                    "2023-02-28", 510.4
-                ),
+                self.get_audited_line_to_assert("2023-02-28", 510.4),
             ],
         )
 
@@ -2322,21 +2279,11 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         self.assertRecordValues(
             audit_lines,
             [
-                self.get_audited_line_to_assert(
-                    "2023-03-01", 10000
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-03-01", 1111
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-03-01", -510.4
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-03-31", -11101
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-03-31", 5750.6
-                ),
+                self.get_audited_line_to_assert("2023-03-01", 10000),
+                self.get_audited_line_to_assert("2023-03-01", 1111),
+                self.get_audited_line_to_assert("2023-03-01", -510.4),
+                self.get_audited_line_to_assert("2023-03-31", -11101),
+                self.get_audited_line_to_assert("2023-03-31", 5750.6),
             ],
         )
 
@@ -2357,9 +2304,7 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
                 self.get_audited_line_to_assert("2023-04-01", 11101),
                 self.get_audited_line_to_assert("2023-04-01", -5750.6),
                 self.get_audited_line_to_assert("2023-04-30", -11101),
-                self.get_audited_line_to_assert(
-                    "2023-04-30", 11050.8
-                ),
+                self.get_audited_line_to_assert("2023-04-30", 11050.8),
                 self.get_audited_line_to_assert("2023-05-01", 11101),
                 self.get_audited_line_to_assert("2023-05-01", -11050.8),
             ],
@@ -2406,12 +2351,8 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         self.assertRecordValues(
             audit_lines[4:],
             [
-                self.get_audited_line_to_assert(
-                    "2023-01-31", -1111
-                ),
-                self.get_audited_line_to_assert(
-                    "2023-01-31", 255.2
-                ),
+                self.get_audited_line_to_assert("2023-01-31", -1111),
+                self.get_audited_line_to_assert("2023-01-31", 255.2),
                 self.get_audited_line_to_assert("2023-01-31", -100000),
                 self.get_audited_line_to_assert("2023-01-31", 20000),
                 self.get_audited_line_to_assert("2023-02-01", 1111),
@@ -2419,13 +2360,9 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
                 self.get_audited_line_to_assert("2023-02-01", 100000),
                 self.get_audited_line_to_assert("2023-02-01", -20000),
                 self.get_audited_line_to_assert("2023-02-28", -1111),
-                self.get_audited_line_to_assert(
-                    "2023-02-28", 510.4
-                ),
+                self.get_audited_line_to_assert("2023-02-28", 510.4),
                 self.get_audited_line_to_assert("2023-02-28", -100000),
-                self.get_audited_line_to_assert(
-                    "2023-02-28", 40000
-                ),
+                self.get_audited_line_to_assert("2023-02-28", 40000),
             ],
         )
 
@@ -2433,9 +2370,7 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         self.assertRecordValues(
             audit_lines,
             [
-                self.get_audited_line_to_assert(
-                    "2023-03-01", 10000
-                ),
+                self.get_audited_line_to_assert("2023-03-01", 10000),
                 self.get_audited_line_to_assert("2023-03-01", 1111),
                 self.get_audited_line_to_assert("2023-03-01", -510.4),
                 self.get_audited_line_to_assert("2023-03-01", 100000),
@@ -2451,9 +2386,7 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
         self.assertRecordValues(
             audit_lines,
             [
-                self.get_audited_line_to_assert(
-                    "2023-03-01", 10000
-                ),
+                self.get_audited_line_to_assert("2023-03-01", 10000),
                 self.get_audited_line_to_assert("2023-03-01", 1111),
                 self.get_audited_line_to_assert("2023-03-01", -510.4),
                 self.get_audited_line_to_assert("2023-03-01", 100000),

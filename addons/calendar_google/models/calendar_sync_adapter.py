@@ -92,7 +92,6 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
         recurrence.calendar_event_ids._google_link_instances()
         return recurrence, {}
 
-
     @api.model
     def _service(self, record=None) -> GoogleCalendarService:
         send_updates = not self.env.context.get("calendar_sync_quiet") and not (
@@ -185,7 +184,6 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
         else:
             kind = ErrorKind.TRANSIENT
         return CalendarSyncError(kind, message)
-
 
     @api.model
     def _synced_fields(self, model_name):

@@ -27,9 +27,7 @@ class MercadoPagoOnboardingController(Controller):
         provider = request.env["payment.provider"]._consume_onboarding_state(
             "mercado_pago", data.get("state"), data.get("provider_id")
         )
-        authorization_code = data.get(
-            "authorization_code"
-        )
+        authorization_code = data.get("authorization_code")
 
         action = request.env.ref("payment.action_payment_provider")
         redirect_url = f"/odoo/action-{action.id}/{provider.id}"

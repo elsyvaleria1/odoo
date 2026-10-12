@@ -10,9 +10,7 @@ from odoo.addons.payment_flutterwave.tests.common import FlutterwaveCommon
 
 @tagged("post_install", "-at_install")
 class TestPaymentTransaction(FlutterwaveCommon):
-    @freeze_time(
-        "2011-11-02 12:00:21"
-    )
+    @freeze_time("2011-11-02 12:00:21")
     def test_reference_is_singularized(self):
         reference = self.env["payment.transaction"]._get_unique_reference(
             self.flutterwave.code

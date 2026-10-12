@@ -100,9 +100,7 @@ class WizardProductProductUpdateImage(models.TransientModel):
     )
 
     def action_fetch_image(self) -> dict:
-        self.products_to_process.is_image_fetch_pending = (
-            True
-        )
+        self.products_to_process.is_image_fetch_pending = True
 
         matching_images_count = self._process_products(
             self._get_products_to_process(10)
@@ -149,9 +147,7 @@ class WizardProductProductUpdateImage(models.TransientModel):
         ].search([("is_image_fetch_pending", "=", True)], limit=limit)
         return products_to_process.filtered(
             lambda p: not p.image_1920 and p.barcode and p.is_image_fetch_pending
-        )[
-            :limit
-        ]
+        )[:limit]
 
     def _process_products(self, products_to_process) -> int:
         if not products_to_process:

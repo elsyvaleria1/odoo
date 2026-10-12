@@ -91,7 +91,6 @@ class TestAPIClient(APITransportTestCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestRetryBackoffShape(APITransportTestCase):
-
     class _FakeHistoryEntry:
         redirect_location = None
 

@@ -54,7 +54,6 @@ class TestPayslipFlow(TestPayslipBase):
             }
         )
 
-
         with self.assertRaises(UserError):
             payslip_run.generate_payslips(employee_ids=[self.richard_emp.id])
 

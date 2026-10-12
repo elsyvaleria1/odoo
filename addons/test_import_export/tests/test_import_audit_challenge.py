@@ -219,7 +219,6 @@ class ImportAuditChallenge(TransactionCase):
 
 
 class ImportAuditChallengePerf(TransactionCase):
-
     def test_p1_encoding_detection_is_not_linear_in_file_size(self):
         import chardet
 
@@ -262,7 +261,6 @@ class ImportAuditChallengePerf(TransactionCase):
 
 @unittest.skipUnless(can_import("odf"), "odfpy not installed")
 class ODSReaderChallenge(TransactionCase):
-
     _CSV = b"name,note,qty\nAlice,plain text,1\nBob,dup row,2\nCarol,cafe deja,3\n"
 
     def _ods(self, transform=None):
@@ -372,7 +370,6 @@ class ODSReaderChallenge(TransactionCase):
 
 
 class BinaryFilenameAlignment(TransactionCase):
-
     _OPTS = {"has_headers": True, "quoting": '"', "separator": ","}
 
     def _imp(self, data):
@@ -470,7 +467,6 @@ class BinaryFilenameAlignment(TransactionCase):
 
 
 class LoadFieldPathValidation(TransactionCase):
-
     def test_load_rejects_subpath_on_scalar_field(self):
         for path in ("name/foo", "name/id", "name/foo/bar"):
             result = (
@@ -504,7 +500,6 @@ class LoadFieldPathValidation(TransactionCase):
 
 
 class SelectionLabelLanguage(TransactionCase):
-
     def test_source_labels_are_indexed_alongside_translated_ones(self):
         from odoo.tools.translate import code_translations
 

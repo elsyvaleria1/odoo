@@ -791,7 +791,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         delivery_1.action_confirm()
         delivery_1.action_assign()
 
-
         delivery_form = Form(self.env["stock.picking"])
         delivery_form.picking_type_id = self.picking_type_out
         with delivery_form.move_ids.new() as move:

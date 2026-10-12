@@ -70,7 +70,6 @@ def get_weekday_occurence(date):
 
 
 class RecurrencePolicy(NamedTuple):
-
     setting: str | None
     update: bool
     breaking: bool
@@ -366,9 +365,7 @@ class CalendarEvent(models.Model):
         string="Recurrence Rule",
         index="btree_not_null",
     )
-    follow_recurrence = fields.Boolean(
-        default=False
-    )
+    follow_recurrence = fields.Boolean(default=False)
     recurrence_update = fields.Selection(
         selection=[
             ("this", "This event"),
@@ -717,9 +714,7 @@ class CalendarEvent(models.Model):
     @api.depends("recurrence_id", "recurrency", "repeat_unit_ui")
     def _compute_recurrence(self) -> None:
         recurrence_fields = self._get_fields_recurrent()
-        false_values = dict.fromkeys(
-            recurrence_fields, False
-        )
+        false_values = dict.fromkeys(recurrence_fields, False)
         defaults = self.env["calendar.recurrence"].default_get(recurrence_fields)
         default_rrule_values = self.recurrence_id.default_get(recurrence_fields)
         for event in self:
@@ -729,9 +724,7 @@ class CalendarEvent(models.Model):
                     if event.repeat_unit_ui == "custom"
                     else event.repeat_unit_ui
                 )
-                event.update(
-                    defaults
-                )
+                event.update(defaults)
                 event_values = event._get_recurrence_params()
                 rrule_values = {
                     field: event.recurrence_id[field]
@@ -843,7 +836,6 @@ class CalendarEvent(models.Model):
     def get_discuss_videocall_location(self) -> str:
         access_token = generate_calendar_token()
         return f"{self.get_base_url()}/{self.DISCUSS_ROUTE}/{access_token}"
-
 
     _CREATE_DEFAULT_FNAMES = (
         "activity_ids",
@@ -1137,7 +1129,6 @@ class CalendarEvent(models.Model):
             )
 
         return events
-
 
     def _get_fields_reservation_date(self) -> tuple:
         return ("start", "stop")
@@ -1691,9 +1682,7 @@ class CalendarEvent(models.Model):
                     ("partner_id", "in", removed_partner_ids),
                 ]
             )
-        attendee_commands += [
-            [2, attendee.id] for attendee in attendees_to_unlink
-        ]
+        attendee_commands += [[2, attendee.id] for attendee in attendees_to_unlink]
 
         attendee_commands += [
             [0, 0, {"partner_id": partner_id}] for partner_id in added_partner_ids
@@ -1798,7 +1787,6 @@ class CalendarEvent(models.Model):
             return bool(self.stop_date and self.stop_date < today)
 
         return bool(self.stop and self.stop < now)
-
 
     def set_discuss_videocall_location(self) -> bool:
         return True
@@ -1915,7 +1903,6 @@ class CalendarEvent(models.Model):
             elif self == self.recurrence_id.base_event_id:
                 self.recurrence_id._select_new_base_event()
 
-
     def _skip_send_mail_status_update(self):
         return False
 
@@ -1954,7 +1941,6 @@ class CalendarEvent(models.Model):
             deadline = deadline.replace(tzinfo=UTC)
             deadline = deadline.astimezone(timezone(user_tz))
         return deadline.date()
-
 
     def _get_trigger_alarm_types(self):
         return ["email"]
@@ -2028,7 +2014,6 @@ class CalendarEvent(models.Model):
                     minutes=sorted_alarms[0].duration_minutes
                 )
         return next_date
-
 
     def _apply_recurrence_values(self, values, future=True):
         if not values:
@@ -2228,7 +2213,6 @@ class CalendarEvent(models.Model):
             self.recurrence_id._write_events(values)
         return base_event
 
-
     def change_attendee_status(self, status, recurrence_update_setting):
         self.check_singleton()
         if recurrence_update_setting == "all":
@@ -2258,7 +2242,6 @@ class CalendarEvent(models.Model):
             ),
             self.env["res.partner"],
         )
-
 
     @api.model
     def _get_activity_excluded_models(self):
@@ -2381,9 +2364,7 @@ class CalendarEvent(models.Model):
         )[:1]
         if first_partner:
             if contact_description:
-                contact_description.append(
-                    ""
-                )
+                contact_description.append("")
             contact_description.extend(
                 self._prepare_partner_contact_details_html(
                     self.env._("Contact Details"), first_partner

@@ -35,7 +35,6 @@ _FILES = (
 
 
 class MixinTelegramHandler(models.AbstractModel):
-
     _name = "mixin.telegram.handler"
     _description = "Telegram Handler"
 
@@ -57,7 +56,6 @@ class MixinTelegramHandler(models.AbstractModel):
             return True
         linked = set(bot.command_ids.mapped("name"))
         return bool(linked & set(commands))
-
 
     def _telegram_flow_label(self, bot: TelegramBot, chat: TelegramChat) -> str:
         return self._tr(bot, chat)._("an operation")
@@ -316,7 +314,6 @@ class MixinTelegramHandler(models.AbstractModel):
 
     def _router(self) -> TelegramRouter:
         return self.env["telegram.router"]
-
 
     @staticmethod
     def _clear_keyboard(

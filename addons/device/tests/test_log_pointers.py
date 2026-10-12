@@ -94,7 +94,6 @@ class TestWindowedLogCounts(DeviceTransactionCase):
 
 
 class TestRelationCounts(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

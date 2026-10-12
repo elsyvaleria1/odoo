@@ -428,9 +428,7 @@ class PosConfig(models.Model):
                     "message": message,
                     "type": msg_type,
                     "sticky": False,
-                    "next": {
-                        "type": "ir.actions.act_window_close"
-                    },
+                    "next": {"type": "ir.actions.act_window_close"},
                 },
             }
         return None

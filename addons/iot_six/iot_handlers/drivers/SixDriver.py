@@ -101,9 +101,7 @@ class SixDriver(CtypesTerminalDriver):
                 )
             elif result == 0:
                 if error_code.value == CANCELLED_BY_POS:
-                    sleep(
-                        3
-                    )
+                    sleep(3)
                     _logger.info("Transaction #%s cancelled by PoS user", transaction)
                     self.send_status(stage="Cancel", request_data=transaction)
                     _logger.info("Transaction %s cancelled by Odoo PoS", transaction)

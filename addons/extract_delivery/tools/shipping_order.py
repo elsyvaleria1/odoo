@@ -113,7 +113,6 @@ def find_totals(text: str) -> dict[str, float]:
 
 
 class ShippingOrderBarcode(BaseExtractor):
-
     name = "shipping_order_barcode"
     doc_types = (DOC_TYPE,)
     needs = ("barcodes",)
@@ -130,7 +129,6 @@ class ShippingOrderBarcode(BaseExtractor):
 
 
 class ShippingOrderText(BaseExtractor):
-
     name = "shipping_order_text"
     doc_types = (DOC_TYPE,)
     needs = ("text",)

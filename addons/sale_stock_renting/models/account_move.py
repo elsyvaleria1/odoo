@@ -71,7 +71,6 @@ class AccountMove(models.Model):
                 ml.quantity, ml.product_id.uom_id
             )
 
-
         lot_values = res
         for trace_id, qty in qties_per_lot.items():
             if float_is_zero(

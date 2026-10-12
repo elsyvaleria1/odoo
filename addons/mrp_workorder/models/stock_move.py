@@ -216,9 +216,7 @@ class StockMove(models.Model):
             (sml for sml in self.move_line_ids if sml._is_taken_from_quant(quant)),
             False,
         )
-        if (
-            move_line
-        ):
+        if move_line:
             _debug.logic(
                 "quant_added", move=self.id, by="increased_line", qty=qty_to_take
             )

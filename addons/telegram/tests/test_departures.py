@@ -2,7 +2,6 @@ from .common import TelegramBotTestCase
 
 
 class TestDepartures(TelegramBotTestCase):
-
     def test_deactivating_a_user_revokes_their_binding(self):
         self.test_user.active = False
 

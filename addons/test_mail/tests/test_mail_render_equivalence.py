@@ -20,7 +20,6 @@ from odoo.addons.mail.tests import common
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRendererEquivalence(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -122,7 +121,6 @@ class TestRendererEquivalence(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRenderErrorPolicy(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -210,7 +208,6 @@ class TestRenderErrorPolicy(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestDynamicTemplateWriteScope(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -303,7 +300,6 @@ class TestDynamicTemplateWriteScope(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestLocalLinkReplacement(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -332,7 +328,6 @@ class TestLocalLinkReplacement(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestEncapsulateContract(common.MailCommon):
-
     def test_missing_layout_does_not_produce_an_empty_body(self):
         body = Markup("<p>the actual content</p>")
         out = self.env["mixin.mail.render"]._render_encapsulate(
@@ -343,7 +338,6 @@ class TestEncapsulateContract(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestPlaceholderValueTypes(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -397,7 +391,6 @@ class TestPlaceholderValueTypes(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestPresentationalAttributes(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

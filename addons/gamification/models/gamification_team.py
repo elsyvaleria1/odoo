@@ -4,7 +4,6 @@ from .gamification_utils import start_end_date_for_period
 
 
 class GamificationTeam(models.Model):
-
     _name = "gamification.team"
     _description = "Gamification Team"
     _inherit = ["mixin.mail.thread"]

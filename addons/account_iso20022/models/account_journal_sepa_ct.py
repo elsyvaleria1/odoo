@@ -171,8 +171,6 @@ class AccountJournal(models.Model):
         self, payment_method_code, payment
     ) -> etree._Element | None:
 
-
-
         if self.env.context.get("l10n_be_hr_payroll_sepa_salary_payment"):
             RmtInf = super()._prepare_remittance_element(payment_method_code, payment)
             if RmtInf is None:

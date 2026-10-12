@@ -22,9 +22,7 @@ class TestHrContractSalaryOffer(TransactionCase):
                 "hours_per_week": 40,
             }
         )
-        cls.version_calendar = cls.env[
-            "resource.calendar"
-        ].create(
+        cls.version_calendar = cls.env["resource.calendar"].create(
             {
                 "name": "Version Calendar",
                 "hours_per_day": 7.6,
@@ -99,9 +97,7 @@ class TestHrContractSalaryOffer(TransactionCase):
         offer._compute_salary()
         version = offer._acquire_version()
         self.assertEqual(version.resource_calendar_id, self.offer_calendar)
-        self.assertAlmostEqual(
-            offer.gross_wage, 2000.0, places=2
-        )
+        self.assertAlmostEqual(offer.gross_wage, 2000.0, places=2)
 
     def test_an_unmapped_simulation_schedule_falls_back_to_full_time(self):
         original_calendar = self.version.resource_calendar_id

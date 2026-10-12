@@ -19,9 +19,7 @@ class ResPartner(models.Model):
     _inherit = "res.partner"
 
     invoice_sending_method = fields.Selection(selection_add=[("peppol", "by Peppol")])
-    peppol_eas = fields.Selection(
-        selection_add=[("odemo", "Odoo Demo ID")]
-    )
+    peppol_eas = fields.Selection(selection_add=[("odemo", "Odoo Demo ID")])
     available_peppol_sending_methods = fields.Json(
         compute="_compute_available_peppol_sending_methods"
     )
@@ -49,7 +47,6 @@ class ResPartner(models.Model):
     def _onchange_verify_peppol_status(self) -> None:
         self.button_account_peppol_check_partner_endpoint()
 
-
     @api.depends_context("company")
     @api.depends("company_id")
     def _compute_available_peppol_sending_methods(self) -> None:
@@ -76,16 +73,13 @@ class ResPartner(models.Model):
             eas_codes.remove("odemo")
             self.available_peppol_eas = list(eas_codes)
 
-
     def _log_verification_state_update(self, company, old_value, new_value) -> None:
         if old_value == new_value:
             return
 
         peppol_verification_state_field = self._fields["peppol_verification_state"]
         selection_values = dict(peppol_verification_state_field.selection)
-        old_label = (
-            selection_values[old_value] if old_value else False
-        )
+        old_label = selection_values[old_value] if old_value else False
         new_label = selection_values[new_value] if new_value else False
 
         body = Markup("""
@@ -266,14 +260,12 @@ class ResPartner(models.Model):
             for company in all_companies:
                 partner.button_account_peppol_check_partner_endpoint(company=company)
 
-
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
         if res:
             res._update_peppol_state_per_company()
         return res
-
 
     def button_account_peppol_check_partner_endpoint(self, company=None) -> bool:
         self.check_singleton()

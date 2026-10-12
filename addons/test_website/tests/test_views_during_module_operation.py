@@ -149,7 +149,6 @@ def test_02_copy_ids_views_unlink_on_module_update(env):
 
         return view_website_1, view_website_2, theme_child_view
 
-
     view_website_1, view_website_2, theme_child_view = _simulate_xml_view()
 
     old_registry = env.registry
@@ -176,7 +175,6 @@ def test_02_copy_ids_views_unlink_on_module_update(env):
     assert not (view_website_1.exists() or view_website_2.exists()), (
         "copy_ids views did not get removed! (2)"
     )
-
 
     view_website_1, view_website_2, theme_child_view = _simulate_xml_view()
 

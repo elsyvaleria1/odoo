@@ -114,14 +114,10 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
         self.assertEqual(sale_order.line_ids.qty_transferred, 3)
-        self.assertEqual(
-            sale_order.picking_ids[0].move_ids.product_qty, 2100
-        )
+        self.assertEqual(sale_order.picking_ids[0].move_ids.product_qty, 2100)
         self.assertEqual(sale_order.picking_ids[0].move_ids.quantity, 0)
         self.assertEqual(sale_order.picking_ids[1].move_ids.product_qty, 300)
-        self.assertEqual(
-            sale_order.picking_ids[1].move_ids.quantity, 300
-        )
+        self.assertEqual(sale_order.picking_ids[1].move_ids.quantity, 300)
 
     def test_settle_order_with_incompatible_partner(self):
 

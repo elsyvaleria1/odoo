@@ -12,7 +12,6 @@ from .common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install")
 class TestLeaveApprovalEngine(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -46,7 +45,6 @@ class TestLeaveApprovalEngine(TestHrHolidaysCommon):
             }
         )
 
-
     def test_a_leave_raises_a_pending_request_in_the_time_off_category(self):
         leave = self._leave("manager")
 
@@ -61,7 +59,6 @@ class TestLeaveApprovalEngine(TestHrHolidaysCommon):
 
         self.assertEqual(leave.state, "validate")
         self.assertFalse(leave.sudo().approval_request_id)
-
 
     def test_the_leave_manager_approves_and_the_employee_cannot(self):
         leave = self._leave("manager")
@@ -80,7 +77,6 @@ class TestLeaveApprovalEngine(TestHrHolidaysCommon):
         leave.with_user(self.user_hruser_id).action_approve()
 
         self.assertEqual(leave.state, "validate")
-
 
     def test_double_validation_goes_through_the_manager_then_an_officer(self):
         leave = self._leave("both")
@@ -102,7 +98,6 @@ class TestLeaveApprovalEngine(TestHrHolidaysCommon):
 
         self.assertEqual(leave.state, "validate")
         self.assertEqual(leave.sudo().approval_request_id.state, "approved")
-
 
     def test_an_officer_refuses_a_validated_leave_and_the_decisions_stay(self):
         leave = self._leave("manager")
@@ -195,7 +190,6 @@ class TestLeaveApprovalEngine(TestHrHolidaysCommon):
             "approved",
         )
 
-
     def test_the_superuser_creates_time_off_without_a_request(self):
         leave = self._leave("both", user=SUPERUSER_ID)
 
@@ -213,7 +207,6 @@ class TestLeaveApprovalEngine(TestHrHolidaysCommon):
         self.assertEqual(request.state, "approved")
         self.assertTrue(request.granted_by_user_id)
         self.assertFalse(request.approver_ids.filtered("decision_date"))
-
 
     def test_approving_the_request_validates_the_leave(self):
         leave = self._leave("manager")
@@ -263,7 +256,6 @@ class TestLeaveApprovalEngine(TestHrHolidaysCommon):
         leave.sudo().approval_request_id._force_terminal("cancelled", "Expired")
 
         self.assertEqual(leave.state, "cancel")
-
 
     def test_the_request_is_not_moved_from_the_approvals_app(self):
         leave = self._leave("manager")
@@ -325,7 +317,6 @@ class TestLeaveApprovalEngine(TestHrHolidaysCommon):
 
         leave.with_user(self.user_responsible_id).action_approve()
         self.assertFalse(leave.sudo().activity_ids)
-
 
     def _leave_type_asking(self, validation_type, officer):
         leave_type = self._leave_type(validation_type)

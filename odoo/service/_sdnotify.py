@@ -62,7 +62,6 @@ def get_watchdog_interval() -> float | None:
 
 
 class Watchdog:
-
     __slots__ = ("_interval", "_last")
 
     def __init__(self) -> None:

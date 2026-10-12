@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class WizardIrModuleModuleImport(models.TransientModel):
-
     _name = "wizard.ir.module.module.import"
     _description = "Import Module"
 

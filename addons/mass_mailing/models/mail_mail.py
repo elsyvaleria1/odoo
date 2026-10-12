@@ -13,7 +13,6 @@ OPEN_SCOPE = tools.register_signed_scope(
 
 
 class MailMail(models.Model):
-
     _inherit = "mail.mail"
 
     mailing_id = fields.Many2one(
@@ -155,9 +154,7 @@ class MailMail(models.Model):
         )
         if months_limit <= 0:
             return 0, False
-        history_deadline = datetime.now(UTC) - relativedelta(
-            months=months_limit
-        )
+        history_deadline = datetime.now(UTC) - relativedelta(months=months_limit)
         canceled_mails = self.with_context(active_test=False).search(
             [("state", "=", "cancel"), ("write_date", "<=", history_deadline)],
             order="id asc",

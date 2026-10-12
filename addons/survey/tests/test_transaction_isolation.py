@@ -6,7 +6,6 @@ from odoo.addons.survey.tests import common
 
 @tagged("post_install", "-at_install", "functional")
 class TestTransactionIsolation(common.TestSurveyCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

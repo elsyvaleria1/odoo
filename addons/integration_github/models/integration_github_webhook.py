@@ -22,7 +22,6 @@ EVENT_HEADER = "X-GitHub-Event"
 
 
 class IntegrationGithubWebhook(models.Model):
-
     _name = "integration.github.webhook"
     _description = "GitHub Webhook"
     _inherit = ["mixin.inbound.gate", "mixin.mail.thread"]
@@ -132,7 +131,6 @@ class IntegrationGithubWebhook(models.Model):
         outcome = handler(repository, payload)
         _debug.logic("webhook.dispatched", event=event, outcome=outcome)
         return outcome
-
 
     def _github_ping(self, repository: str | None, payload: dict[str, Any]) -> str:
         return "pong"

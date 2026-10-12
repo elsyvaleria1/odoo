@@ -43,9 +43,7 @@ class DriverController(http.Controller):
                             "status": "success",
                         }
                     )
-                    time.sleep(
-                        2
-                    )
+                    time.sleep(2)
                     return helpers.odoo_restart()
                 case _:
                     return True
@@ -68,9 +66,7 @@ class DriverController(http.Controller):
             )
             return False
 
-        data["session_id"] = (
-            session_id
-        )
+        data["session_id"] = session_id
         _logger.debug(
             "Calling action %s for device %s", data.get("action", ""), device_identifier
         )

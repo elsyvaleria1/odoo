@@ -165,7 +165,6 @@ class DocumentsDocument(models.Model):
             ),
         ]
 
-
     def _folds_system_reach(self) -> bool:
         permissions, guards = self.env["ir.access"]._bound_access_infos(
             self._name, "system_reach"

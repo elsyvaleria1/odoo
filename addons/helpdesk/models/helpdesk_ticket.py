@@ -46,9 +46,7 @@ class HelpdeskTicket(models.Model):
             result["team_id"] = self._default_team_id()
         if result.get("team_id") and fields:
             team = self.env["team.team"].browse(result["team_id"])
-            if (
-                "stage_id" in fields and "stage_id" not in result
-            ):
+            if "stage_id" in fields and "stage_id" not in result:
                 result["stage_id"] = team._get_stage()[team.id].id
             if (
                 "user_id" in fields
@@ -748,7 +746,6 @@ class HelpdeskTicket(models.Model):
             "target": "self",
         }
 
-
     @api.depends("ticket_ref", "partner_name")
     @api.depends_context("with_partner")
     def _compute_display_name(self):
@@ -925,9 +922,7 @@ class HelpdeskTicket(models.Model):
                     vals["close_date"] = now
                 if "user_id" not in vals and team_id in assignees_per_team_id:
                     vals["user_id"] = assignees_per_team_id[team_id].pop()
-                if vals.get(
-                    "user_id"
-                ):
+                if vals.get("user_id"):
                     vals["assign_date"] = fields.Datetime.now()
                     vals["assign_hours"] = 0
 
@@ -1123,7 +1118,6 @@ class HelpdeskTicket(models.Model):
             values.pop("partner_email", None)
         return values
 
-
     @api.model
     def _sla_reset_trigger(self):
         return ["team_id", "priority", "tag_ids", "partner_id"]
@@ -1292,7 +1286,6 @@ class HelpdeskTicket(models.Model):
                 }
             )
         return action
-
 
     def _mail_get_governing_alias(self):
         self.check_singleton()
@@ -1489,13 +1482,11 @@ class HelpdeskTicket(models.Model):
             res.update(super(HelpdeskTicket, leftover)._notify_get_reply_to_addresses())
         return res
 
-
     def _rating_apply_get_default_subtype_id(self):
         return self.env["ir.model.data"]._xmlid_to_res_id("helpdesk.mt_ticket_rated")
 
     def _rating_get_parent_field_name(self):
         return "team_id"
-
 
     def _mail_get_message_subtypes(self):
         res = super()._mail_get_message_subtypes()

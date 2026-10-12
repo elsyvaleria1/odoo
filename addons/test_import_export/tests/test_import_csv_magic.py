@@ -20,7 +20,6 @@ class ImportCase(common.TransactionCase):
 
 
 class TestEncoding(ImportCase):
-
     def _check_text(self, text, encodings, **options):
         options.setdefault("quoting", '"')
         options.setdefault("separator", "\t")

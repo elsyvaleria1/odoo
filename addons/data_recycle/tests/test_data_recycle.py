@@ -116,7 +116,6 @@ class TestDataRecycle(TransactionCase):
             "the field is hidden for the archive action, so it must not act there either",
         )
 
-
     def test_a_tightened_rule_drops_the_records_it_no_longer_selects(self):
         self.recycle_model._recycle_records()
         self.assertEqual(len(self.recycle_model.recycle_record_ids), 5)
@@ -254,7 +253,6 @@ class TestDataRecycle(TransactionCase):
             "a discarded record must not outlive the rule that produced it",
         )
 
-
     def test_a_rule_with_no_filter_refuses_to_run(self):
         unfiltered = self.env["data_recycle.model"].create(
             {
@@ -339,7 +337,6 @@ class TestDataRecycle(TransactionCase):
         with self.assertRaises(ValueError):
             rules.action_recycle_records()
 
-
     def test_one_undeletable_record_does_not_cost_the_others(self):
         countries = self.env["res.country"].search([("code", "in", ["BE", "LU", "MC"])])
         self.assertEqual(len(countries), 3)
@@ -393,7 +390,6 @@ class TestDataRecycle(TransactionCase):
         self.assertFalse(any(server.active for server in self.old_servers))
         self.assertTrue(all(server.active for server in self.new_servers))
 
-
     def test_a_silent_run_does_not_consume_the_notification_period(self):
         self.env.ref("base.user_admin").email = "mitchell.admin@example.com"
         self.recycle_model.notify_user_ids = self.env.ref("base.user_admin")
@@ -441,7 +437,6 @@ class TestDataRecycle(TransactionCase):
             self.recycle_model._send_notification(),
             "a backlog older than the notification period is still a backlog",
         )
-
 
     def test_the_queue_carries_the_company_of_its_records(self):
         company = self.env["res.company"].create({"name": "Recycle Co"})

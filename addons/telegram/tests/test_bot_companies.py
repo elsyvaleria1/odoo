@@ -12,7 +12,6 @@ from odoo.addons.telegram.tools.dispatch import TelegramCommand
 
 
 class BotCompaniesCase(TelegramBotTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -83,7 +82,6 @@ class BotCompaniesCase(TelegramBotTestCase):
 
 @tagged("post_install", "-at_install")
 class TestBotCompanies(BotCompaniesCase):
-
     def test_a_bot_always_serves_its_own_company(self):
         bot = self._bot_of_another_company("Owned Bot")
         owner = bot.company_id
@@ -236,7 +234,6 @@ class TestBotCompanies(BotCompaniesCase):
 
 @tagged("post_install", "-at_install")
 class TestIdleIntake(BotCompaniesCase):
-
     CONTACT = {"message_id": 7, "contact": {"phone_number": "+5215550000"}}
 
     @contextmanager

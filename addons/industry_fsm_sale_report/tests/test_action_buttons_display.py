@@ -11,7 +11,6 @@ from odoo.addons.industry_fsm_sale.tests.common import TestFsmFlowSaleCommon
 
 @tagged("post_install", "-at_install")
 class TestTimerButtons(TestFsmFlowSaleCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -208,27 +207,19 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertEqual(self.task.display_satisfied_conditions_count, 3)
         self.assertTrue(self.task.display_sign_report_primary)
         self.assertFalse(self.task.display_sign_report_secondary)
-        self.assertTrue(
-            self.task.display_send_report_primary
-        )
-        self.assertFalse(
-            self.task.display_send_report_secondary
-        )
+        self.assertTrue(self.task.display_send_report_primary)
+        self.assertFalse(self.task.display_send_report_secondary)
 
         f = io.BytesIO()
         Image.new("RGB", (50, 50)).save(f, "PNG")
         f.seek(0)
         image = base64.b64encode(f.read())
         self.task.worksheet_signature = image
-        self.assertTrue(
-            self.task.display_send_report_primary
-        )
+        self.assertTrue(self.task.display_send_report_primary)
         self.assertFalse(self.task.display_send_report_secondary)
         self.task.fsm_is_sent = True
         self.assertFalse(self.task.display_send_report_primary)
-        self.assertFalse(
-            self.task.display_send_report_secondary
-        )
+        self.assertFalse(self.task.display_send_report_secondary)
 
     def test_send_sign_report_button_02(self):
         f = io.BytesIO()

@@ -168,7 +168,6 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
             ("ReportLike2", "AttContent2"),
         ]
 
-
         _original_car = MailMessage._check_access
         with patch.object(
             MailMessage, "_check_access", autospec=True, side_effect=_original_car
@@ -221,7 +220,6 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
             parent_id=initial_message.id,
             subtype_xmlid="mail.mt_comment",
         )
-
 
         attachments = self.env["ir.attachment"].create(
             self._generate_attachments_data(

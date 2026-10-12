@@ -187,9 +187,7 @@ class TestAuthTimeoutHttp(HttpCase):
         cls.classPatch(TOTP, "match", match)
 
         cls.passkey_credential_id = "foo"
-        cls.passkey_credential_id_base64url = (
-            "Zm9v"
-        )
+        cls.passkey_credential_id_base64url = "Zm9v"
         PasskeyClass = cls.env.registry["auth.passkey.key"]
         origin_passkey_verify_registration_options = (
             PasskeyClass._get_registration_credential
@@ -210,9 +208,7 @@ class TestAuthTimeoutHttp(HttpCase):
         origin_passkey_verify_auth = PasskeyClass._get_new_sign_count
 
         def _get_new_sign_count(self, auth, public_key, sign_count):
-            if (
-                auth.get("id") == cls.passkey_credential_id_base64url
-            ):
+            if auth.get("id") == cls.passkey_credential_id_base64url:
                 return 1
             return origin_passkey_verify_auth(self, auth, public_key, sign_count)
 
@@ -528,9 +524,7 @@ class TestAuthTimeoutHttp(HttpCase):
             "_get_lock_timeouts",
             return_value={
                 "lock_timeout": [],
-                "lock_timeout_inactivity": [
-                    (1, False)
-                ],
+                "lock_timeout_inactivity": [(1, False)],
             },
         ):
             self.start_tour(

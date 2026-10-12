@@ -34,7 +34,6 @@ _NODE_WHITELIST = (
 
 
 class ProductUomFieldRewriter(ast.NodeTransformer):
-
     SUB_ENTITIES = (("product.product", "product"), ("uom.uom", "uom"))
 
     def __init__(self) -> None:
@@ -71,7 +70,6 @@ class ProductUomFieldRewriter(ast.NodeTransformer):
 
 
 class TaxFormulaValidator(ast.NodeVisitor):
-
     def __init__(self, env) -> None:
         self.env = env
         super().__init__()
@@ -147,9 +145,7 @@ def normalize_formula(env, formula: str, field_predicate=None) -> tuple[str, set
 
     transformer = ProductUomFieldRewriter()
     transformed_tree = transformer.visit(tree)
-    ast.fix_missing_locations(
-        transformed_tree
-    )
+    ast.fix_missing_locations(transformed_tree)
 
     if callable(field_predicate):
         for model, fields in transformer.accessed_fields.items():

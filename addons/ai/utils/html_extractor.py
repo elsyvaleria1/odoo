@@ -13,7 +13,6 @@ _logger = logging.getLogger(__name__)
 
 
 class HTMLExtractor:
-
     def __init__(self, env, internal_domains=None) -> None:
         self.env = env
         self.exclude_xpath = [

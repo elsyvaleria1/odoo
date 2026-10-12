@@ -10,7 +10,6 @@ class PaymentTransaction(models.Model):
 
     capture_manually = fields.Boolean(related="provider_id.capture_manually")
 
-
     def action_demo_set_done(self) -> None:
         self.check_singleton()
         if self.provider_code != "demo":
@@ -34,7 +33,6 @@ class PaymentTransaction(models.Model):
 
         payment_data = {"reference": self.reference, "simulated_state": "error"}
         self._process("demo", payment_data)
-
 
     def _send_payment_request(self):
         if self.provider_code != "demo":

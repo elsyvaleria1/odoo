@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestHierarchyOperatorsSeePendingWrites(TransactionCase):
-
     def setUp(self):
         super().setUp()
         Tree = self.env["test_orm.recursive.tree"]

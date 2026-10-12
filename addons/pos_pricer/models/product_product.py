@@ -20,7 +20,6 @@ PRICER_RELATED_FIELDS = [
 
 
 class ProductProduct(models.Model):
-
     _inherit = "product.product"
 
     pricer_store_id = fields.Many2one(
@@ -103,9 +102,7 @@ class ProductProduct(models.Model):
             "itemId": str(self.id),
             "itemName": self.name,
             "price": self.pricer_display_price,
-            "presentation": "PROMO"
-            if self.pricer_sale_pricelist_id
-            else "NORMAL",
+            "presentation": "PROMO" if self.pricer_sale_pricelist_id else "NORMAL",
             "properties": {
                 "currency": self.currency_id.symbol,
                 "barcode": self.barcode or "",

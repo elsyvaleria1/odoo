@@ -544,7 +544,6 @@ class SignTemplate(models.Model):
             document.check_access("write")
         self.copy()
 
-
     def action_template_preview(self, document_id) -> dict:
         self.check_singleton()
         if document_id not in self.document_ids.ids:

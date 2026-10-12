@@ -4,7 +4,6 @@ from odoo import api, fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
-
     padding_time = fields.Float(
         string="Padding",
         compute="_compute_padding_time",

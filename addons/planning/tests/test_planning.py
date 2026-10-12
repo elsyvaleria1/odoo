@@ -2353,7 +2353,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             ),
         )
 
-
         self.assertEqual(
             action["data"]["group_by_slots_per_day_per_week"][0][1][0],
             flexEmployee.resource_id.id,

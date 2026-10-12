@@ -7,7 +7,6 @@ from odoo.addons.mail_google.models.mixin_mail_google import GMAIL
 
 
 class IrMail_Server(models.Model):
-
     _name = "ir.mail_server"
     _inherit = ["ir.mail_server", "mixin.mail.google"]
     _oauth2_type_field = "smtp_authentication"

@@ -113,7 +113,6 @@ class TestInternalResumeLines(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestInternalResumeLineShapes(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

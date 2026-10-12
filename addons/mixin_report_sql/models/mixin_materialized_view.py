@@ -27,7 +27,6 @@ _TRANSIENT_REFRESH_ERRORS = (
 
 
 class MixinMaterializedView(models.AbstractModel):
-
     _name = "mixin.materialized.view"
     _description = "Materialized View Mixin"
 
@@ -41,7 +40,6 @@ class MixinMaterializedView(models.AbstractModel):
 
     _refresh_statement_timeout = "30min"
 
-
     def _query(self) -> SQL:
         inherited = getattr(super(), "_query", None)
         if inherited is not None:
@@ -50,7 +48,6 @@ class MixinMaterializedView(models.AbstractModel):
             f"{self._name}: inherit 'mixin.sql.report' for the registry pattern, "
             "or override _query() to return a non-empty SQL object."
         )
-
 
     def _relation_exists(self, table) -> bool:
         self.env.cr.execute(
@@ -108,7 +105,6 @@ class MixinMaterializedView(models.AbstractModel):
         )
         return list(self.env.cr.fetchall())
 
-
     def refresh(self, force_rebuild=False) -> bool:
         if not self._refresh_try_lock():
             _logger.warning(
@@ -158,7 +154,6 @@ class MixinMaterializedView(models.AbstractModel):
 
     def _cron_refresh_materialized_view(self) -> bool:
         return self.refresh()
-
 
     def init(self) -> None:
         if self._abstract:

@@ -185,7 +185,6 @@ class TestX2manyScopeKey(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestX2manyScopeInvariant(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

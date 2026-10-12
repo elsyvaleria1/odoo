@@ -42,7 +42,6 @@ _logger = logging.getLogger(__name__)
 
 
 class Orientation(Enum):
-
     NORMAL = "normal"
     INVERTED = "180"
     LEFT = "90"
@@ -50,7 +49,6 @@ class Orientation(Enum):
 
 
 class IoTRestart(Thread):
-
     def __init__(self, delay) -> None:
         super().__init__(daemon=True)
         self.delay = delay
@@ -70,13 +68,9 @@ def toggleable(function):
                 _logger.warning(
                     "Refusing call to %s: longpolling is disabled by devtools", fname
                 )
-                raise Locked(
-                    "Longpolling disabled by devtools"
-                )
+                raise Locked("Longpolling disabled by devtools")
         elif function.__name__ == "action":
-            action = args[1].get(
-                "action", "default"
-            )
+            action = args[1].get("action", "default")
             disabled_actions = (get_conf("actions", section="devtools") or "").split(
                 ","
             )
@@ -225,9 +219,7 @@ def get_identifier():
         "(Get-CimInstance Win32_ComputerSystemProduct).UUID",
     ]
     p = subprocess.run(command, stdout=subprocess.PIPE, check=False)
-    identifier = get_conf(
-        "generated_identifier"
-    )
+    identifier = get_conf("generated_identifier")
     if p.returncode == 0 and p.stdout.decode().strip():
         return p.stdout.decode().strip()
 
@@ -454,9 +446,7 @@ def get_conf(key=None, section="iot.box"):
     conf = configparser.RawConfigParser()
     conf.read(path_file("odoo.conf"))
 
-    return (
-        conf.get(section, key, fallback=None) if key else conf
-    )
+    return conf.get(section, key, fallback=None) if key else conf
 
 
 def disconnect_from_server() -> None:

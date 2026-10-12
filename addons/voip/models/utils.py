@@ -26,12 +26,8 @@ def extract_country_code(phone_number):
         match = INTERNATIONAL_PHONE_NUMBER_RE.match(phone_number)
         if not match:
             return {"iso": "", "itu": ""}
-        sanitized_number = match.group(
-            "phone_number"
-        )
-        for length in range(
-            min(4, len(sanitized_number) + 1), 0, -1
-        ):
+        sanitized_number = match.group("phone_number")
+        for length in range(min(4, len(sanitized_number) + 1), 0, -1):
             country_code = int(sanitized_number[:length])
             if (
                 country_code in COUNTRY_CODE_TO_REGION_CODE

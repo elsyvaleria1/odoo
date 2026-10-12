@@ -101,9 +101,7 @@ class TestHelpdeskFsm(HelpdeskCommon):
         ticket_form = Form(ticket)
         ticket = ticket_form.save()
 
-        action = ticket.with_user(
-            self.helpdesk_user
-        ).action_generate_fsm_task()
+        action = ticket.with_user(self.helpdesk_user).action_generate_fsm_task()
         action_context = action["context"]
         self.assertEqual(
             action_context["default_project_id"], ticket.team_id.fsm_project_id.id

@@ -3,7 +3,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class TestMany2manyReadProbesRuledRelations(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

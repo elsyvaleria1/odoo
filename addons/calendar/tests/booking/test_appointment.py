@@ -169,9 +169,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         hour_fifty_float_repr_A = 1.8333333333333335
         hour_fifty_float_repr_B = 1.8333333333333333
 
-        apt_types = self.env[
-            "appointment.type"
-        ].create(
+        apt_types = self.env["appointment.type"].create(
             [
                 {
                     "category": "custom",
@@ -711,9 +709,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         url_inside_of_slot = appointment_info_url + url_encode(
             {
                 "staff_user_id": self.staff_user_bxls.id,
-                "date_time": datetime(
-                    2023, 1, 9, 9, 0
-                ),
+                "date_time": datetime(2023, 1, 9, 9, 0),
                 "duration": 1,
                 **appointment_invite._get_redirect_url_parameters(),
             }
@@ -723,9 +719,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         url_outside_of_slot = appointment_info_url + url_encode(
             {
                 "staff_user_id": self.staff_user_bxls.id,
-                "date_time": datetime(
-                    2023, 1, 9, 22, 0
-                ),
+                "date_time": datetime(2023, 1, 9, 22, 0),
                 "duration": 1,
                 **appointment_invite._get_redirect_url_parameters(),
             }
@@ -1051,9 +1045,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     13,
                 ],
                 "slots_startdate": self.reference_monday.date(),
-                "slots_weekdays_nowork": range(
-                    2, 7
-                ),
+                "slots_weekdays_nowork": range(2, 7),
             },
         )
 
@@ -1165,9 +1157,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     12,
                 ],
                 "slots_startdate": self.reference_monday.date(),
-                "slots_weekdays_nowork": range(
-                    2, 7
-                ),
+                "slots_weekdays_nowork": range(2, 7),
             },
         )
 
@@ -1210,9 +1200,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     13,
                 ],
                 "slots_startdate": self.reference_monday.date(),
-                "slots_weekdays_nowork": range(
-                    2, 7
-                ),
+                "slots_weekdays_nowork": range(2, 7),
             },
         )
 
@@ -1264,28 +1252,22 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     False,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(days=7),
+                    self.reference_monday + timedelta(days=7),
                     self.reference_monday + timedelta(days=7, hours=1),
                     True,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(days=8, hours=2),
+                    self.reference_monday + timedelta(days=8, hours=2),
                     self.reference_monday + timedelta(days=8, hours=3),
                     False,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(
-                        days=8, hours=3
-                    ),
+                    self.reference_monday + timedelta(days=8, hours=3),
                     self.reference_monday + timedelta(days=8, hours=4),
                     False,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(days=8, hours=5),
+                    self.reference_monday + timedelta(days=8, hours=5),
                     self.reference_monday + timedelta(days=8, hours=7),
                     False,
                 ),
@@ -1317,9 +1299,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                         {"end": 13, "start": 12},
                         {"end": 14, "start": 13},
                     ],
-                    (
-                        self.reference_monday + timedelta(days=7)
-                    ).date(): [],
+                    (self.reference_monday + timedelta(days=7)).date(): [],
                     (self.reference_monday + timedelta(days=8)).date(): [
                         {"end": 9, "start": 8},
                         {"end": 10, "start": 9},
@@ -1336,9 +1316,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     13,
                 ],
                 "slots_startdate": self.reference_monday.date(),
-                "slots_weekdays_nowork": range(
-                    2, 7
-                ),
+                "slots_weekdays_nowork": range(2, 7),
             },
         )
 
@@ -1410,18 +1388,14 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             "enddate": self.global_slots_enddate,
             "startdate": self.reference_now_monthweekstart,
             "slots_day_specific": {
-                self.reference_monday.date(): [
-                    {"end": 9, "start": 8}
-                ],
+                self.reference_monday.date(): [{"end": 9, "start": 8}],
                 (self.reference_monday + timedelta(days=1)).date(): [
                     {"allday": True, "end": False, "start": 8}
                 ],
             },
             "slots_start_hours": [],
             "slots_startdate": self.reference_monday.date(),
-            "slots_weekdays_nowork": range(
-                2, 7
-            ),
+            "slots_weekdays_nowork": range(2, 7),
         }
         self.assertSlots(slots, expected_months, expected_slot_data)
 
@@ -1538,8 +1512,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             self.staff_user_aust,
             [
                 (
-                    reference_monday
-                    + timedelta(days=1, hours=2),
+                    reference_monday + timedelta(days=1, hours=2),
                     reference_monday + timedelta(days=1, hours=4),
                     False,
                 )
@@ -1851,8 +1824,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             {
                 "enddate": global_slots_enddate,
                 "startdate": self.reference_now_monthweekstart,
-                "slots_enddate": self.reference_now.date()
-                + timedelta(days=15),
+                "slots_enddate": self.reference_now.date() + timedelta(days=15),
                 "slots_start_hours": [
                     15,
                     16,
@@ -1862,9 +1834,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     20,
                 ],
                 "slots_startdate": self.reference_monday.date(),
-                "slots_weekdays_nowork": range(
-                    2, 7
-                ),
+                "slots_weekdays_nowork": range(2, 7),
             },
         )
 
@@ -2108,9 +2078,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         url_inside_of_slot = appointment_info_url + url_encode(
             {
                 "staff_user_id": self.staff_user_bxls.id,
-                "date_time": datetime(
-                    2023, 1, 9, 9, 0
-                ),
+                "date_time": datetime(2023, 1, 9, 9, 0),
                 "duration": 1,
                 **appointment_invite._get_redirect_url_parameters(),
             }

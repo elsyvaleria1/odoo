@@ -12,7 +12,6 @@ from odoo.addons.integration_google.models.integration_service import (
 
 @tagged("post_install", "-at_install")
 class TestGoogleCalendarAuthorization(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

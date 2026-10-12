@@ -207,7 +207,6 @@ class TestRatingAvgSearch(TransactionCase):
 
 @tagged("rating")
 class TestRatingResName(TransactionCase):
-
     def test_res_name_follows_display_name_not_just_rec_name(self):
         record = self.env["mail.test.rating"].create({"name": "ONE"})
         rating = self.env["rating.rating"].create(
@@ -311,9 +310,7 @@ class TestRatingRoutes(TestRatingCommon):
                 response_click_two = self.url_open(f"/rate/{access_token}/1")
                 response_click_two.raise_for_status()
                 if is_rating_mixin_test:
-                    self.assertEqual(
-                        record_rating.rating_last_value, 5
-                    )
+                    self.assertEqual(record_rating.rating_last_value, 5)
 
                 forms = lxml.html.fromstring(response_click_two.content).xpath("//form")
                 matching_rate_form = next(

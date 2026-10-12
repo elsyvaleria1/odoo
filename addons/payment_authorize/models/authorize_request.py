@@ -11,7 +11,6 @@ _logger = get_payment_logger(__name__)
 
 
 class AuthorizeAPI:
-
     AUTH_ERROR_STATUS = "3"
 
     def __init__(self, provider) -> None:

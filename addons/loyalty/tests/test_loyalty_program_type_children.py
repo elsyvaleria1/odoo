@@ -1,4 +1,3 @@
-
 from odoo.exceptions import ValidationError
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
@@ -6,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyProgramTypeChildren(TransactionCase):
-
     def test_an_explicit_type_still_gets_its_children(self):
         program = self.env["loyalty.program"].create(
             {

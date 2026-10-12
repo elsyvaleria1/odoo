@@ -11,7 +11,6 @@ NEARBY_CLIENT_M = 3000
 
 
 class DeviceGpsSpeedEvent(models.Model):
-
     _name = "device.gps.speed.event"
     _description = "Speeding Event"
     _auto = False

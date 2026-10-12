@@ -129,7 +129,6 @@ class TestCertificationTypeLookup(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestSkillDefaults(SkillsCase):
-
     def test_the_level_default_survives_two_levels_marked_default(self):
         self.env.cr.execute(
             "UPDATE hr_skill_level SET default_level = TRUE WHERE skill_type_id = %s",
@@ -174,7 +173,6 @@ class TestSkillDefaults(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestCommandShape(SkillsCase):
-
     def test_the_emitted_commands_are_command_values(self):
         employee = self.env["hr.employee"].create({"name": "Command employee"})
         commands = self.env["hr.employee.skill"]._get_transformed_commands(

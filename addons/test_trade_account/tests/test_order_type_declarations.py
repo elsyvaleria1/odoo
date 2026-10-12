@@ -16,7 +16,6 @@ ORDER_DECLARATIONS = [
 
 @tagged("post_install", "-at_install")
 class TestOrderTypeDeclarations(TransactionCase):
-
     def test_every_order_model_declares_what_the_mixin_reads(self):
         for model_name in ORDER_MODELS:
             model = self.env[model_name]

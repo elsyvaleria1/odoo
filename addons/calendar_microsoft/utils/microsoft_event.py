@@ -7,7 +7,6 @@ _debug = DebugLog(__name__)
 
 
 class MicrosoftEvent(ProviderEvents):
-
     @property
     def uids(self):
         return tuple(e.iCalUId for e in self)

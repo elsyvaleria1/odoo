@@ -10,9 +10,7 @@ KIND_BY_FOLDER_XMLID = {
         "base.kind_it",
     ),
     "asset_ledger_document.document_folder_fleet": ("base.kind_vehicle",),
-    "asset_ledger_document.document_folder_machinery": (
-        "base.kind_machinery",
-    ),
+    "asset_ledger_document.document_folder_machinery": ("base.kind_machinery",),
     "asset_ledger_document.document_folder_property": ("base.kind_property",),
 }
 TAG_XMLID_BY_FOLDER_XMLID = {

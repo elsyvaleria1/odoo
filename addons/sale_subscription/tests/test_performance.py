@@ -73,7 +73,6 @@ class TestSubscriptionPerformance(TestSubscriptionCommon):
 
             sale_orders.action_confirm()
 
-
         product_tmpl = self.env["product.template"].create(
             {
                 "name": "Non recurring Product",

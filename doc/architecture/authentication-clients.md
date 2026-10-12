@@ -31,8 +31,8 @@ The migration preserves client/session/address IDs, recognition hashes, trust ha
 The probes are private, administrator-only, bounded, read-only inspections of persisted state. From an Odoo shell:
 
 ```python
-env['auth.user.client']._probe_integrity(limit=100)
-env['device.device']._probe_integrity(limit=100)
+env["auth.user.client"]._probe_integrity(limit=100)
+env["device.device"]._probe_integrity(limit=100)
 ```
 
 The client probe finds inactive clients with active associations and active clients without active associations. The device probe finds missing company scope and cross-company parent links; the resource bridge adds incompatible resource companies and non-material identities, while GPS adds duplicate receiver keys and malformed IMEIs. Several endpoints may represent the same resource. It also reports orphan connection and stream IDs whose declared device owner no longer exists. Each result indicates truncation. The probes do not establish that a device-to-asset mapping is semantically correct.

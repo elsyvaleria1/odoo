@@ -46,7 +46,6 @@ class TestRefuseOfferWizard(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestUnlinkArchivedVersions(TransactionCase):
-
     def test_employee_with_a_live_version_survives(self):
         applicant = self.env["hr.applicant"].create({"partner_name": "Internal"})
         employee = self.env["hr.employee"].create({"name": "Already Employed"})

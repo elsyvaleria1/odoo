@@ -15,7 +15,6 @@ class TestAccountBudgetCommon(AccountTestInvoicingCommon):
             {"name": "product_b", "standard_price": 100.0, "supplier_taxes_id": False}
         )
 
-
         cls.analytic_plan_projects = cls.env["account.analytic.plan"].create(
             {"name": "Projects"}
         )
@@ -54,7 +53,6 @@ class TestAccountBudgetCommon(AccountTestInvoicingCommon):
                 "plan_id": cls.analytic_plan_departments.id,
             }
         )
-
 
         cls.budget_analytic_revenue = cls.env["budget.analytic"].create(
             {

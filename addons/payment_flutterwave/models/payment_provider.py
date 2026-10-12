@@ -40,7 +40,6 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "flutterwave").update(
@@ -57,13 +56,11 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "flutterwave":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     @api.model
     def _get_compatible_providers(
@@ -84,7 +81,6 @@ class PaymentProvider(models.Model):
             )
 
         return providers
-
 
     def _prepare_request_url(self, endpoint, **kwargs):
         if self.code != "flutterwave":

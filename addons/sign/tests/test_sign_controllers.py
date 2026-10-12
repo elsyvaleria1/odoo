@@ -412,9 +412,7 @@ class TestSignController(TestSignControllerCommon):
             self.partner_1, self.env["res.partner"]
         )
 
-        self.authenticate(
-            None, None
-        )
+        self.authenticate(None, None)
         sign_item = self.sign_request.request_item_ids[0]
         response = self._json_url_open(
             "/sign/sign_request_items",

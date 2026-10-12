@@ -33,7 +33,6 @@ class CacheInvalidError(AssertionError):
 
 
 class Cache:
-
     __slots__ = ("transaction",)
 
     def __init__(self, transaction: Transaction) -> None:

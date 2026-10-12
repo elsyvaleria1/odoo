@@ -143,15 +143,9 @@ class WorldlineDriver(CtypesTerminalDriver):
         try:
             result = easyCTEP.startTransaction(
                 ctypes.cast(self.dev, ctypes.c_void_p),
-                ctypes.c_char_p(
-                    str(transaction_amount).encode("utf-8")
-                ),
-                ctypes.c_char_p(
-                    str(transaction_id).encode("utf-8")
-                ),
-                ctypes.c_ulong(
-                    transaction_action_identifier
-                ),
+                ctypes.c_char_p(str(transaction_amount).encode("utf-8")),
+                ctypes.c_char_p(str(transaction_id).encode("utf-8")),
+                ctypes.c_ulong(transaction_action_identifier),
                 merchant_receipt,
                 customer_receipt,
                 card,

@@ -116,9 +116,7 @@ class SignRequestItem(models.Model):
         whatsapp_template = self.env["whatsapp.template"].browse(int(template_id))
         for sign_request_item in self:
             sign_link, _ = self._get_sign_and_cancel_links(sign_request_item)
-            sign_request_item.sudo().sign_link = (
-                sign_link
-            )
+            sign_request_item.sudo().sign_link = sign_link
             whatsapp_composer = (
                 self.env["wizard.whatsapp.message.send"]
                 .with_context({"active_id": sign_request_item.id})

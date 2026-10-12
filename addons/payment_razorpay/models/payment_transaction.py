@@ -181,9 +181,7 @@ class PaymentTransaction(models.Model):
             ),
         }
         if self.operation in ["online_direct", "validation"]:
-            payload["customer_id"] = (
-                customer_id
-            )
+            payload["customer_id"] = customer_id
             if self.tokenize:
                 payload["token"] = {
                     "max_amount": payment_utils.major_to_minor_currency_units(
@@ -196,9 +194,7 @@ class PaymentTransaction(models.Model):
                 }
         else:
             payload["payment_capture"] = not self.provider_id.capture_manually
-        if (
-            self.provider_id.capture_manually
-        ):
+        if self.provider_id.capture_manually:
             payload.update(
                 {
                     "payment": {
@@ -419,9 +415,7 @@ class PaymentTransaction(models.Model):
         if self.provider_code != "razorpay":
             return super()._apply_updates(payment_data)
 
-        if (
-            "id" in payment_data
-        ):
+        if "id" in payment_data:
             entity_data = payment_data
         else:
             try:

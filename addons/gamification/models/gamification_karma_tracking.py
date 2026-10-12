@@ -11,7 +11,6 @@ KARMA_VALUE_FIELDS = frozenset({"gain", "new_value", "old_value", "user_id"})
 
 
 class GamificationKarmaTracking(models.Model):
-
     _name = "gamification.karma.tracking"
     _description = "Track Karma Changes"
     _rec_name = "user_id"

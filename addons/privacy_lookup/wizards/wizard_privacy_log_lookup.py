@@ -124,9 +124,7 @@ class WizardPrivacyLogLookup(models.TransientModel):
                         SQL(
                             "%s %s %s",
                             SQL.identifier(field_name),
-                            SQL("=")
-                            if is_normalized
-                            else SQL("ilike"),
+                            SQL("=") if is_normalized else SQL("ilike"),
                             email_normalized if is_normalized else email,
                         )
                     )

@@ -19,7 +19,6 @@ class ResConfigSettings(models.TransientModel):
         compute="_compute_onboarding_payment_module",
     )
 
-
     @api.depends("company_id")
     def _compute_active_provider_id(self):
         for config in self:
@@ -66,7 +65,6 @@ class ResConfigSettings(models.TransientModel):
                 config.onboarding_payment_module = "mercado_pago"
             else:
                 config.onboarding_payment_module = None
-
 
     def action_view_active_provider(self) -> dict:
         provider = self.active_provider_id.check_singleton()

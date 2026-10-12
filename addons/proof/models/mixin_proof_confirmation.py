@@ -18,7 +18,6 @@ REMINDER_DELAY = timedelta(days=1)
 
 
 class MixinProofConfirmation(models.AbstractModel):
-
     _name = "mixin.proof.confirmation"
     _description = "Contact Confirmation"
 

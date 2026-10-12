@@ -8,7 +8,6 @@ from odoo.tests.common import HttpCase, TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestKioskPinThrottle(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

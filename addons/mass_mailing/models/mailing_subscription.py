@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class MailingSubscription(models.Model):
-
     _name = "mailing.subscription"
     _description = "Mailing List Subscription"
     _table = "mailing_subscription"

@@ -68,9 +68,7 @@ class PaymentTransaction(models.Model):
         if provider_code != "worldline":
             return reference
 
-        if (
-            len(reference) <= 30
-        ):
+        if len(reference) <= 30:
             return reference
 
         prefix = payment_utils.singularize_reference_prefix(prefix="WL")

@@ -70,7 +70,6 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
         submission.action_send()
         return tax_return, submission
 
-
     def test_submitting_opens_a_draft_submission_without_submitting_yet(self):
         tax_return = self._reviewed_return()
 
@@ -295,7 +294,6 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
         self.assertRecordValues(
             tax_return, [{"state": "submitted", "is_completed": True}]
         )
-
 
     def _draft_submission(self):
         tax_return = self._reviewed_return()

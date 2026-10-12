@@ -41,13 +41,11 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "aps":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def _aps_get_api_url(self) -> str:
         if self.state == "enabled":

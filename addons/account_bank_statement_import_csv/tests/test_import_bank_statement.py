@@ -62,9 +62,7 @@ class TestAccountBankStatementImportCSV(AccountTestInvoicingCommon):
         res = import_wizard.execute_import(
             import_wizard_fields, [], import_wizard_options, dryrun=False
         )
-        while (
-            not res["messages"] and res["nextrow"] != 0
-        ):
+        while not res["messages"] and res["nextrow"] != 0:
             import_wizard_options["skip"] = res["nextrow"] + 1
             res = import_wizard.execute_import(
                 import_wizard_fields, [], import_wizard_options, dryrun=False

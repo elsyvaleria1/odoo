@@ -90,7 +90,6 @@ class IrAccess(models.Model):
 
 
 class IrAccessSodFunction(models.Model):
-
     _name = "ir.access.sod.function"
     _description = "Business Duty"
     _order = "name"
@@ -266,7 +265,6 @@ class IrAccessSodFunctionVerb(models.Model):
 
 
 class IrAccessSodRule(models.Model):
-
     _name = "ir.access.sod.rule"
     _description = "Separation of Duties Rule"
     _order = "name"

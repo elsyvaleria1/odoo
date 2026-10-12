@@ -26,7 +26,6 @@ def _resource_action(name):
 
 
 class MixinResourceKind(models.AbstractModel):
-
     _name = "mixin.resource.kind"
     _description = "Resource Kind Extension"
     _inherits = {"resource.resource": "resource_id"}

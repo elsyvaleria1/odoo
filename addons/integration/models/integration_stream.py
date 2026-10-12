@@ -155,7 +155,6 @@ class IntegrationStream(models.Model):
         for stream in self:
             stream.outbox_pending_count = pending.get(stream, 0)
 
-
     @api.model_create_multi
     def create(self, vals_list):
         streams = super().create(vals_list)
@@ -215,7 +214,6 @@ class IntegrationStream(models.Model):
 
     def action_start(self):
         self.write({"active": True, "date_next_attempt": False, "attempts": 0})
-
 
     @staticmethod
     def _worker_identity() -> str:
@@ -422,7 +420,6 @@ class IntegrationStream(models.Model):
             sent += 1
         if sent:
             self.sudo().write({"frames_out": self.frames_out + sent})
-
 
     @staticmethod
     def _record_frame(db_name, stream_id, payload, meta) -> None:

@@ -18,7 +18,6 @@ LATER = datetime(2100, 1, 1)
 
 @tagged("post_install", "-at_install")
 class TestCalendarSyncEngine(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -112,7 +111,6 @@ class TestCalendarSyncEngine(TransactionCase):
             )
         )
 
-
     def _authorize(self, user, code="fake_outlook"):
         connection = self.env["integration.connection"]._personal(
             self.providers[code][0], user, scope="calendar"
@@ -172,7 +170,6 @@ class TestCalendarSyncEngine(TransactionCase):
         self._push()
         self.servers[code].sent.clear()
         return account, event
-
 
     def test_a_remote_event_is_created_once_and_linked(self):
         account = self._authorize(self.organizer)
@@ -365,7 +362,6 @@ class TestCalendarSyncEngine(TransactionCase):
             self.env["calendar.event"].search_count([("name", "=", "Kept")]), 1
         )
         self.assertNotEqual(account.sync_token, "stale")
-
 
     def test_an_event_is_inserted_through_its_organizer(self):
         account = self._authorize(self.organizer)

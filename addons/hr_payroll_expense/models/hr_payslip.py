@@ -88,9 +88,7 @@ class HrPayslip(models.Model):
 
     def action_payslip_draft(self):
         res = super().action_payslip_draft()
-        self._link_expenses_to_payslip(
-            clear_existing=False
-        )
+        self._link_expenses_to_payslip(clear_existing=False)
         return res
 
     @api.model_create_multi
@@ -192,9 +190,7 @@ class HrPayslip(models.Model):
                     payslip.employee_id, self.env["hr.expense"]
                 )
                 if employee_expenses_sudo:
-                    del expenses_by_employee_sudo[
-                        payslip.employee_id
-                    ]
+                    del expenses_by_employee_sudo[payslip.employee_id]
                 expenses_sudo += employee_expenses_sudo
             total = sum(expenses_sudo.mapped("total_amount"))
             lines_to_remove = payslip.input_line_ids.filtered(

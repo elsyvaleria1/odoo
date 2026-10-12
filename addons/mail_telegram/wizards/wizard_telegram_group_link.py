@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardTelegramGroupLink(models.TransientModel):
-
     _name = "wizard.telegram.group.link"
     _description = "Connect a Telegram Group"
 

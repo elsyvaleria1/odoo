@@ -25,9 +25,7 @@ from odoo.addons.payment_stripe.tests.common import StripeCommon
 class StripeTest(StripeCommon, PaymentHttpCommon):
     def test_processing_values(self):
         dummy_client_secret = "pi_123456789_secret_dummy_123456789"
-        tx = self._create_transaction(
-            flow="direct"
-        )
+        tx = self._create_transaction(flow="direct")
 
         def mock_stripe_stripe_create_intent(self):
             return {"client_secret": dummy_client_secret}

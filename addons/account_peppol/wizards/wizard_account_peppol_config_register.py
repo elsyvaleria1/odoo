@@ -121,7 +121,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
     display_itsme_login = fields.Boolean(compute="_compute_peppol_can_connect_data")
     display_no_auth_buttons = fields.Boolean(compute="_compute_peppol_can_connect_data")
 
-
     @api.onchange("peppol_endpoint")
     def _onchange_peppol_endpoint(self) -> None:
         for wizard in self:
@@ -144,7 +143,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
                         parsed_phone_number,
                         phonenumbers.PhoneNumberFormat.E164,
                     )
-
 
     @api.depends("company_id")
     def _compute_parent_company_id(self) -> None:
@@ -270,9 +268,7 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
                 )
                 is_company_on_peppol = peppol_info["is_on_peppol"]
                 external_provider = peppol_info["external_provider"]
-            wizard.smp_registration = (
-                not is_company_on_peppol
-            )
+            wizard.smp_registration = not is_company_on_peppol
             wizard.peppol_external_provider = external_provider
 
     @api.depends("peppol_eas", "peppol_endpoint")
@@ -284,7 +280,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
                 connect_vals.get("available_auths", {}).get("itsme")
             )
             wizard.display_no_auth_buttons = not bool(connect_vals.get("auth_required"))
-
 
     def _branch_with_same_address(self) -> bool:
         self.check_singleton()

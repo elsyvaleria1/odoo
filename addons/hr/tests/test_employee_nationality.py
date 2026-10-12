@@ -5,7 +5,6 @@ from .common import TestHrCommon
 
 @tagged("post_install", "-at_install")
 class TestEmployeeNationality(TestHrCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

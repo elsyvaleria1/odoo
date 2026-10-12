@@ -347,7 +347,6 @@ class CarbonReportHandler(models.AbstractModel):
         elif markup.get("groupby") == "esg_emission_factor_id":
             domain += [("esg_emission_factor_id", "=", value)]
 
-
         return {
             "name": self.env._("Audit Emissions"),
             "type": "ir.actions.act_window",

@@ -3,7 +3,6 @@ from odoo.api import ValuesType
 
 
 class AppointmentType(models.Model):
-
     _inherit = "appointment.type"
 
     @api.model

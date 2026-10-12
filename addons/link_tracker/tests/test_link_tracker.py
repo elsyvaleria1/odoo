@@ -303,7 +303,6 @@ class TestLinkTracker(common.TransactionCase, MockLinkTracker):
         self.assertIn("utm_source=source%2E%2E%2E", link.redirected_url)
         self.assertIn("utm_medium=medium", link.redirected_url)
 
-
     def test_code_follows_its_code_record(self):
         tracker = self.env["link.tracker"].create({"url": "https://code.example.com"})
         first = tracker.code
@@ -384,7 +383,6 @@ class TestLinkTracker(common.TransactionCase, MockLinkTracker):
             )
             self.assertTrue(code.isalnum())
 
-
     def test_no_loop_on_our_own_short_url(self):
         tracker = self.env["link.tracker"].create({"url": "https://loop.example.com"})
         own_short_url = tracker.short_url
@@ -400,7 +398,6 @@ class TestLinkTracker(common.TransactionCase, MockLinkTracker):
             {"url": "https://elsewhere.example.com/r/abc"}
         )
         self.assertEqual(other.url, "https://elsewhere.example.com/r/abc")
-
 
     def test_redirected_url_follows_its_utms(self):
         campaign = self.env["utm.campaign"].create({"name": "First"})
@@ -424,7 +421,6 @@ class TestLinkTracker(common.TransactionCase, MockLinkTracker):
             "changing the campaign must invalidate `redirected_url`",
         )
 
-
     def test_recent_links_rejects_an_unknown_sort(self):
         self.env["link.tracker"].create({"url": "https://recent.example.com"})
         self.assertEqual(len(self.env["link.tracker"].recent_links("newest", 10)), 1)
@@ -437,7 +433,6 @@ class TestLinkTracker(common.TransactionCase, MockLinkTracker):
         self.assertNotIn("link_click_ids", row)
         self.assertNotIn("redirected_url", row)
         self.assertIn("short_url", row)
-
 
     def test_create_does_not_reach_the_network(self):
         self.env["link.tracker"]._get_title_from_url.reset_mock()
@@ -480,7 +475,6 @@ class TestLinkTracker(common.TransactionCase, MockLinkTracker):
         self.assertEqual(tracker.title, tracker.url)
         self.env["link.tracker"]._cron_update_titles()
         self.assertEqual(tracker.title, "Test_TITLE")
-
 
     def test_cron_clear_expired_ips(self):
         tracker = self.env["link.tracker"].create({"url": "https://ip.example.com"})

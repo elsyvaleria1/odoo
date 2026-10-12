@@ -6,7 +6,6 @@ from odoo.addons.point_of_sale.tests.test_res_config_settings import TestConfigu
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestConfigureShopsEnterprise(TestConfigureShops):
-
     def _remove_on_payment_taxes(self):
         self.env["account.tax"].search(
             [

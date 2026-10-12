@@ -7,7 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 @tagged("post_install", "-at_install")
 class TestGateBatchSurvivesAnUnstaffedStep(ApprovalCommon):
-
     def setUp(self):
         super().setUp()
         self.elsewhere = self.env["res.company"].create(
@@ -98,7 +97,6 @@ class TestGateBatchSurvivesAnUnstaffedStep(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestGateBatchRaisesTogether(ApprovalCommon):
-
     def setUp(self):
         super().setUp()
         self.category = self._make_category(

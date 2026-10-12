@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class GamificationActivity(models.Model):
-
     _name = "gamification.activity"
     _description = "Gamification Activity Feed"
     _inherit = ["mixin.mail.thread"]
@@ -75,7 +74,6 @@ class GamificationActivity(models.Model):
         ondelete="set null",
     )
     karma_gained = fields.Integer(readonly=True)
-
 
     ACTIVITY_KINDS = {
         "badge": "fa fa-certificate",
@@ -190,7 +188,6 @@ class GamificationActivity(models.Model):
             )
         return self.env._("%(user)s earned an achievement", user=user.name)
 
-
     @api.model
     def _log_badge(self, user, badge, sender=None):
         return self._log(
@@ -254,7 +251,6 @@ class GamificationActivity(models.Model):
             karma_gained=karma,
             summary_args={"skill": node.name},
         )
-
 
     def _get_display_summary(self) -> str:
         self.check_singleton()

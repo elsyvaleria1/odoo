@@ -6,7 +6,6 @@ _debug = DebugLog(__name__)
 
 
 class StockBarcodeDraftMixin(models.AbstractModel):
-
     _name = "stock.barcode.draft.mixin"
     _description = "Barcode operation created by its first save"
 

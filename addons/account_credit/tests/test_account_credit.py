@@ -268,7 +268,6 @@ class TestCreditStatusComputation(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCreditFileOutsideCreditFolder(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1393,7 +1392,6 @@ class TestCreditDocumentVisibility(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCreditDocumentFile(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

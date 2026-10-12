@@ -49,7 +49,6 @@ class InotifyError(OSError):
 
 
 class QueueOverflow(Exception):
-
     def __init__(self, events: list[Event]) -> None:
         super().__init__(f"inotify queue overflowed after {len(events)} event(s)")
         self.events = events
@@ -113,7 +112,6 @@ def _errno_error(what: str) -> InotifyError:
 
 
 class Inotify:
-
     def __init__(self) -> None:
         if not AVAILABLE:
             raise InotifyError(errno.ENOSYS, "inotify is a Linux facility")

@@ -8,7 +8,6 @@ _LOG_PRIVILEGE = "approval_account_telegram.privilege_log_payment_request"
 
 @tagged("post_install", "-at_install")
 class TestPaymentRequestAuthority(PaymentApprovalTelegramTestCase):
-
     def setUp(self):
         super().setUp()
         self.handler = self.env["telegram.handler.approval_account"]

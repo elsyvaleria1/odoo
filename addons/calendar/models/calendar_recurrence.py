@@ -207,7 +207,6 @@ class CalendarRecurrence(models.Model):
         )
         return bool(has_base_event and has_different_owner)
 
-
     @api.model
     def _get_domain_privacy(self):
         events = self.env["calendar.event"].with_context(active_test=False)
@@ -874,9 +873,7 @@ class CalendarRecurrence(models.Model):
         }
         if freq == "month" and self.month_by == "date":
             rrule_params["bymonthday"] = self.day
-        elif (
-            freq == "month" and self.month_by == "day"
-        ):
+        elif freq == "month" and self.month_by == "day":
             rrule_params["byweekday"] = self._get_nth_weekday()
         elif freq == "year" and self.month_by == "day":
             if dtstart:

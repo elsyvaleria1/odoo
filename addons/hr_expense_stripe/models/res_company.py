@@ -106,9 +106,7 @@ class ResCompany(models.Model):
         mcc_data = self.env["ir.model.data"]._read_group(
             [("model", "=", "product.mcc.stripe.tag")],
             groupby=["name"],
-            aggregates=[
-                "res_id:array_agg"
-            ],
+            aggregates=["res_id:array_agg"],
         )
         ref_to_mcc = {}
         mcc_prefetch_ids = []
@@ -136,9 +134,7 @@ class ResCompany(models.Model):
                 ("name", "in", tuple(products_referenced)),
             ],
             groupby=["name"],
-            aggregates=[
-                "res_id:array_agg"
-            ],
+            aggregates=["res_id:array_agg"],
         )
         ref_to_product = {}
         product_prefetch_ids = []
@@ -255,9 +251,7 @@ class ResCompany(models.Model):
         if "v1" not in signature_data_dict or "t" not in signature_data_dict:
             return False
 
-        signature = base64.b64decode(
-            signature_data_dict["v1"] + "=="
-        )
+        signature = base64.b64decode(signature_data_dict["v1"] + "==")
         timestamp = signature_data_dict["t"]
         try:
             time_since_signed = time.time() - int(timestamp)

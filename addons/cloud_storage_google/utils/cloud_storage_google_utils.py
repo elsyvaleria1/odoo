@@ -116,9 +116,7 @@ def generate_signed_url_v4(
         headers["x-goog-resumable"] = "start"
 
     canonical_headers, ordered_headers = get_canonical_headers(headers)
-    canonical_header_string = (
-        "\n".join(canonical_headers) + "\n"
-    )
+    canonical_header_string = "\n".join(canonical_headers) + "\n"
     signed_headers = ";".join([key for key, _ in ordered_headers])
 
     if query_parameters is None:

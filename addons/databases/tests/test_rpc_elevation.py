@@ -31,7 +31,9 @@ class TestSynchronizationWizardRpcElevation(TestDatabasesCommon):
         self.assertTrue(self.database.with_user(self.user_db_user).has_access("read"))
         self.assertFalse(self.database.with_user(self.user_db_user).has_access("write"))
         before = list(self._definition().properties_definition or [])
-        wizards = self.env["wizard.project.project.synchronize.database"].with_user(self.user_db_user)
+        wizards = self.env["wizard.project.project.synchronize.database"].with_user(
+            self.user_db_user
+        )
         wizard = wizards.create(
             {
                 "database_ids": [Command.set(self.database.ids)],

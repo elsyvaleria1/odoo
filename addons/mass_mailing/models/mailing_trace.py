@@ -4,7 +4,6 @@ from odoo.addons.mail.tools.failure_type import DELIVERY_FAILURE_TYPES
 
 
 class MailingTrace(models.Model):
-
     _name = "mailing.trace"
     _description = "Mailing Statistics"
     _rec_name = "id"

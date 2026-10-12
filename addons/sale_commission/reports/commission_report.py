@@ -98,7 +98,6 @@ class SaleCommissionReport(models.Model):
         readonly=True,
     )
 
-
     @api.model
     def web_search_read(
         self, domain, specification, offset=0, limit=None, order=None, count_limit=None
@@ -143,7 +142,6 @@ class SaleCommissionReport(models.Model):
         )
 
     formatted_read_grouping_sets._readonly = False
-
 
     @api.model
     def _search(self, domain, *args, **kwargs):

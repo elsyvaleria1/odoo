@@ -5,7 +5,6 @@ from odoo.addons.test_trade.tests.common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestOrderAmounts(TestTradeOrderCase):
-
     def _line(self, order, qty=1.0, price=100.0, invoiced=0.0, drafted=0.0):
         return self._make_line(
             order=order,
@@ -14,7 +13,6 @@ class TestOrderAmounts(TestTradeOrderCase):
             qty_invoiced_input=invoiced,
             qty_invoiced_draft_input=drafted,
         )
-
 
     def test_untaxed_total_sums_the_line_subtotals(self):
         order = self._make_order()
@@ -63,7 +61,6 @@ class TestOrderAmounts(TestTradeOrderCase):
 
         self.assertAlmostEqual(order.amount_untaxed, 50.0, places=2)
 
-
     def test_invoiced_and_uninvoiced_amounts_split_the_order(self):
         order = self._make_order()
         self._line(order, qty=4.0, price=100.0, invoiced=1.0)
@@ -98,7 +95,6 @@ class TestOrderAmounts(TestTradeOrderCase):
 
         self.assertAlmostEqual(order.amount_taxexc_invoiced, 0.0, places=2)
         self.assertAlmostEqual(order.amount_taxexc_to_invoice, 200.0, places=2)
-
 
     def test_a_partner_over_its_credit_limit_warns_on_a_draft_order(self):
         company = self.env.company

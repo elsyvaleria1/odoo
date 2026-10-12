@@ -7,7 +7,6 @@ from odoo.addons.industry_fsm_sale.tests.common import TestFsmFlowCommon
 
 
 class TestFsmFlowSaleAtInstall(TestFsmFlowCommon):
-
     def test_fsm_flow(self):
         self.env["res.config.settings"].create(
             {"group_product_pricelist": True}

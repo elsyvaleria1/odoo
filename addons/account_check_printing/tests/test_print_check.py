@@ -350,9 +350,7 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             self.env["account.move"]._get_invoice_in_payment_state() == "in_payment"
         )
         if not accounting_installed:
-            self.skipTest(
-                "Accounting not installed"
-            )
+            self.skipTest("Accounting not installed")
 
         self.company_data["default_journal_bank"].write(
             {
@@ -360,9 +358,7 @@ class TestPrintCheck(AccountTestInvoicingCommon):
                 "check_next_number": "00042",
             }
         )
-        self.payment_channel_check.payment_account_id = (
-            None
-        )
+        self.payment_channel_check.payment_account_id = None
 
         in_invoices = self.env["account.move"].create(
             [

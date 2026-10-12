@@ -97,7 +97,6 @@ class TestWebsiteResetViews(odoo.tests.HttpCase):
 
         self.fix_it("/test_view")
 
-
     @mute_logger("odoo.http", "odoo.addons.website.models.ir_ui_view")
     def test_06_reset_specific_view_controller_inexisting_template(self):
         called = self.View.create(

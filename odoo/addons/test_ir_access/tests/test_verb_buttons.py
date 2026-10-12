@@ -8,7 +8,6 @@ LINE_MODEL = "test_ir_access.document_line"
 
 
 class TestVerbButtons(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

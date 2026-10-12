@@ -1,8 +1,3 @@
-
-
-
-
-
 from odoo.libs.parse_version import parse_version
 
 
@@ -21,7 +16,6 @@ try:
 except ImportError:
     pass
 else:
-
     if (
         parse_version("7.6.1")
         <= parse_version(phonenumbers.__version__)

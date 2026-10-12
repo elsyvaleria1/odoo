@@ -8,7 +8,6 @@ from odoo.addons.mail_telegram.tests.test_mail_telegram import MailTelegramCase
 
 @tagged("post_install", "-at_install")
 class TestCompanyPhonesOnly(MailTelegramCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -170,7 +169,6 @@ class TestCompanyPhonesOnly(MailTelegramCase):
 
 @tagged("post_install", "-at_install")
 class TestCompanyPhonesWhoeverAsks(TestCompanyPhonesOnly):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

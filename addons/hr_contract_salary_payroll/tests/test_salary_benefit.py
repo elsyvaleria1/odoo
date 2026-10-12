@@ -2,7 +2,6 @@ from odoo.tests import TransactionCase
 
 
 class TestSalaryBenefit(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -46,7 +45,6 @@ class TestSalaryBenefit(TransactionCase):
 
 
 class TestSimulationOfferCleanup(TransactionCase):
-
     def _offer(self, is_simulation, months_old=0):
         offer = self.env["hr.contract.salary.offer"].create(
             {"is_simulation_offer": is_simulation, "final_yearly_costs": 30000.0}

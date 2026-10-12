@@ -11,7 +11,6 @@ ROUNDS = int(os.environ.get("ACCESS_PROPERTY_ROUNDS", "12"))
 
 @tagged("post_install", "-at_install")
 class TestAccessProperty(TransactionCase):
-
     def _run(self, seed):
         result = access_property.run(
             self.env,

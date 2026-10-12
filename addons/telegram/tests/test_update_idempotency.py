@@ -95,7 +95,6 @@ class TestReplayGuard(TelegramBotTestCase):
 
 
 class TestUpdateReceipt(TelegramBotTestCase):
-
     def _admission(self, data):
         receiver = self.test_bot._get_or_create_webhook_receiver()
         return open_admission(

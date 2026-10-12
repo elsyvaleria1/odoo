@@ -315,9 +315,7 @@ class EsgMetric(models.Model):
                 .search([("res_id", "=", metric.id), ("res_model", "=", "esg.metric")])
                 .ids
             )
-            message_attachment_ids = metric.mapped(
-                "message_ids.attachment_ids"
-            ).ids
+            message_attachment_ids = metric.mapped("message_ids.attachment_ids").ids
             metric.attachment_ids = [
                 Command.set(list(set(attachment_ids) - set(message_attachment_ids)))
             ]

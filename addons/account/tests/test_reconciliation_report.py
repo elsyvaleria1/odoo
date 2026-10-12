@@ -25,7 +25,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
 
-
         self.env["account.bank.statement"].create(
             {
                 "name": "statement_1",
@@ -151,7 +150,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
 
         (payment_1 + payment_2 + payment_3 + payment_4).action_post()
 
-
         st_line = statement_2.line_ids.filtered(
             lambda line: line.payment_ref == "line_1"
         )
@@ -171,7 +169,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             )
         )
         st_line.set_line_bank_statement_line(payment_line.id)
-
 
         report = self.env.ref("account.bank_reconciliation_report").with_context(
             active_id=bank_journal.id, active_model=bank_journal._name
@@ -217,7 +214,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         journal_currency = self.other_currency
         choco_currency = self.other_currency_2
 
-
         bank_journal = self.env["account.journal"].create(
             {
                 "name": "Bank",
@@ -227,7 +223,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
                 "currency_id": journal_currency.id,
             }
         )
-
 
         bank_statement = self.env["account.bank.statement"].create(
             {
@@ -346,7 +341,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
         (payment_1 + payment_2 + payment_3).action_post()
 
-
         move = self.env["account.move"].create(
             {
                 "journal_id": self.company_data["default_journal_misc"].id,
@@ -374,7 +368,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
         move.action_post()
-
 
         report = self.env.ref("account.bank_reconciliation_report").with_context(
             active_id=bank_journal.id, active_model=bank_journal._name
@@ -670,7 +663,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
                 ],
             }
         ).action_post()
-
 
         report = self.env.ref("account.bank_reconciliation_report").with_context(
             active_id=bank_journal.id, active_model="account.journal"

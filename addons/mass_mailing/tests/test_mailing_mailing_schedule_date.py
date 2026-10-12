@@ -35,9 +35,7 @@ class TestMailingScheduleDateWizard(MassMailCommon, CronMixinCase):
             self.assertIsNot(mailing.schedule_date, cron_job.nextcall)
             self.assertEqual(mailing.schedule_type, "now")
             self.assertEqual(mailing.state, "in_queue")
-            self.assertEqual(
-                capt.records.call_at, datetime(2023, 2, 17, 9, 0)
-            )
+            self.assertEqual(capt.records.call_at, datetime(2023, 2, 17, 9, 0))
 
         with freeze_time(datetime(2023, 2, 17, 9, 0)):
             with self.capture_triggers(cron_job_id) as capt:
@@ -58,9 +56,7 @@ class TestMailingScheduleDateWizard(MassMailCommon, CronMixinCase):
             self.assertEqual(mailing.next_departure, datetime(2023, 2, 17, 11, 0))
             self.assertEqual(mailing.schedule_type, "scheduled")
             self.assertEqual(mailing.state, "in_queue")
-            self.assertEqual(
-                capt.records.call_at, datetime(2023, 2, 17, 11, 0)
-            )
+            self.assertEqual(capt.records.call_at, datetime(2023, 2, 17, 11, 0))
 
         with freeze_time(datetime(2023, 2, 17, 9, 0)):
             with self.capture_triggers(cron_job_id) as capt:
@@ -81,9 +77,7 @@ class TestMailingScheduleDateWizard(MassMailCommon, CronMixinCase):
             self.assertEqual(mailing.next_departure, datetime(2024, 2, 17, 11, 0))
             self.assertEqual(mailing.schedule_type, "scheduled")
             self.assertEqual(mailing.state, "in_queue")
-            self.assertEqual(
-                capt.records.call_at, datetime(2024, 2, 17, 11, 0)
-            )
+            self.assertEqual(capt.records.call_at, datetime(2024, 2, 17, 11, 0))
 
         with freeze_time(datetime(2023, 2, 17, 9, 0)):
             with self.capture_triggers(cron_job_id) as capt:
@@ -113,9 +107,7 @@ class TestMailingScheduleDateWizard(MassMailCommon, CronMixinCase):
             self.assertEqual(mailing.next_departure, datetime(2023, 2, 17, 9, 0))
             self.assertEqual(mailing.schedule_type, "scheduled")
             self.assertEqual(mailing.state, "in_queue")
-            self.assertEqual(
-                capt.records.call_at, datetime(2022, 2, 17, 11, 0)
-            )
+            self.assertEqual(capt.records.call_at, datetime(2022, 2, 17, 11, 0))
 
     def test_mailing_schedule_date(self):
         mailing = self.env["mailing.mailing"].create(

@@ -19,7 +19,6 @@ _debug = DebugLog(__name__)
 
 
 class RepairOrder(models.Model):
-
     _name = "repair.order"
     _description = "Repair Order"
     _inherit = [
@@ -723,9 +722,7 @@ class RepairOrder(models.Model):
             )
         for repair in self:
             if repair.sale_order_id:
-                repair.sale_order_line_id.write(
-                    {"product_qty": 0.0}
-                )
+                repair.sale_order_line_id.write({"product_qty": 0.0})
         self.move_ids._action_cancel()
         return self.write({"state": "cancel"})
 
@@ -1019,7 +1016,6 @@ class RepairOrder(models.Model):
             else:
                 add_moves.sale_line_id._compute_price_and_discount()
 
-
     def action_add_from_catalog(self):
         res = super().action_add_from_catalog()
         res["search_view_id"] = [
@@ -1082,14 +1078,12 @@ class RepairOrder(models.Model):
 
         return self.env["product.product"].browse(product_id).list_price
 
-
     def _message_post_prepare_values(self, post_values) -> None:
         super()._message_post_prepare_values(post_values)
         post_values.setdefault("notify_author_mention", True)
 
 
 class RepairTags(models.Model):
-
     _name = "repair.tags"
     _description = "Repair Tags"
     _inherit = ["mixin.tag"]

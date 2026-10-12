@@ -89,9 +89,8 @@ class TestTrackerWebhook(DeviceHttpCase):
         self.env["ir.config_parameter"].sudo().set_param(TRACKER_AUTH_MODE_PARAM, mode)
 
     def _push(self, token=None, receiver_key=RECEIVER_KEY, body=None):
-        body = (
-            body
-            or json_dumps_bytes({"state": {"reported": {"14": receiver_key, "latlng": "19.4,-99.1"}}})
+        body = body or json_dumps_bytes(
+            {"state": {"reported": {"14": receiver_key, "latlng": "19.4,-99.1"}}}
         )
         headers = {"Content-Type": "application/json"}
         if token:

@@ -36,16 +36,12 @@ class ResPartnerBankAccount(models.Model):
                 "1",
                 "SCT",
                 self.bank_bic or "",
-                (self.acc_holder_name or self.partner_id.name)[
-                    :71
-                ],
+                (self.acc_holder_name or self.partner_id.name)[:71],
                 self.sanitized_acc_number,
                 currency.name + str(amount),
                 "",
                 structured_communication,
-                comment[
-                    :141
-                ],
+                comment[:141],
                 "",
             ]
         return super()._prepare_qr_payload(

@@ -91,7 +91,6 @@ class Data_MergeRecord(models.Model):
         help="List of other models referencing this record",
     )
 
-
     def _search_company_id(self, operator, value):
         if operator not in ("in", "ilike", "like", "any"):
             raise NotImplementedError
@@ -195,7 +194,6 @@ class Data_MergeRecord(models.Model):
             SQL(" OR ").join(where_queries),
         )
         return Domain("id", "in", sql)
-
 
     def _render_values(self, to_read) -> dict:
         self.check_singleton()
@@ -394,7 +392,6 @@ class Data_MergeRecord(models.Model):
         self.check_singleton()
         return self._render_values([])
 
-
     @api.model
     def _update_foreign_keys(self, destination, source) -> None:
         source_ids = source.ids
@@ -493,7 +490,6 @@ class Data_MergeRecord(models.Model):
         new_followers = source.message_follower_ids.partner_id - dest_followers
         destination.message_subscribe(new_followers.ids)
 
-
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -516,7 +512,6 @@ class Data_MergeRecord(models.Model):
             master.write({"is_master": False})
 
         return super().write(vals)
-
 
     def open_record(self) -> dict:
         return {

@@ -252,7 +252,6 @@ class TestResumeLineColour(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestCurrentEmployeeSkillSearch(SkillsCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -23,7 +23,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestWebhookIntegration(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -41,7 +40,6 @@ class TestWebhookIntegration(common.TransactionCase):
                 "name": "Webhook Test Lead",
             }
         )
-
 
     def test_webhook_trigger_creates_uuid(self):
         _logger.info("Testing webhook UUID generation")
@@ -126,7 +124,6 @@ class TestWebhookIntegration(common.TransactionCase):
 
         self.assertNotEqual(automation1.webhook_uuid, automation2.webhook_uuid)
         self.assertNotEqual(automation1.url, automation2.url)
-
 
     def test_webhook_basic_execution(self):
         _logger.info("Testing basic webhook execution")
@@ -286,7 +283,6 @@ record.write({'state': next_states.get(current, 'cancel')})
         with self.assertRaises(ValidationError):
             automation._execute_webhook(payload2)
 
-
     def test_webhook_with_multiple_actions(self):
         _logger.info("Testing webhook with multiple actions")
 
@@ -400,7 +396,6 @@ record.write({'state': next_states.get(current, 'cancel')})
         posted = thread_lead.message_ids - messages_before
         self.assertEqual(len(posted), 1)
         self.assertEqual(posted.subject, "Webhook on Mail Test Lead")
-
 
     def test_webhook_invalid_record_getter(self):
         _logger.info("Testing webhook with invalid record_getter")
@@ -539,7 +534,6 @@ record.write({'state': next_states.get(current, 'cancel')})
 
         self.assertEqual(self.test_lead.name, "Empty payload OK")
 
-
     def test_webhook_logging_enabled(self):
         _logger.info("Testing webhook logging")
 
@@ -614,7 +608,6 @@ record.write({'state': next_states.get(current, 'cancel')})
         self.assertEqual(call.state, "failed")
         self.assertIn("No record to run the automation on", call.error_message)
 
-
     def test_webhook_on_different_model(self):
         _logger.info("Testing webhook on project model")
 
@@ -673,7 +666,6 @@ record.write({'state': next_states.get(current, 'cancel')})
         automation._execute_webhook(payload)
 
         self.assertEqual(self.test_lead.name, "Found by field")
-
 
     def test_webhook_with_no_record_getter_runs_record_less(self):
         _logger.info("Testing record-less webhook")

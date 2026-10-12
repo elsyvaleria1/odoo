@@ -10,7 +10,6 @@ NON_BLOCKING_MESSAGES = ["rate_message"]
 
 
 class EasypostRequest:
-
     def __init__(self, carrier, api_key, debug_logger) -> None:
         self.carrier = carrier
         self.api_key = api_key

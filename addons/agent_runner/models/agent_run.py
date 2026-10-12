@@ -203,7 +203,6 @@ class AgentRun(models.Model):
         "A run is handed out at least once.",
     )
 
-
     def action_cancel(self) -> None:
         live = self.filtered(lambda run: run.run_state not in FINAL_STATES)
         live.write({"run_state": "cancelled", "date_finished": fields.Datetime.now()})
@@ -227,7 +226,6 @@ class AgentRun(models.Model):
                 "error": False,
             }
         )
-
 
     @api.model
     def _lease_seconds(self) -> int:
@@ -560,7 +558,6 @@ class AgentRun(models.Model):
             run._end_attempt(self.env._("The runner stopped answering."), requeue=True)
         _debug.logic("run.reaped", count=len(expired))
         return len(expired)
-
 
     def _owner(self) -> models.BaseModel | None:
         self.check_singleton()

@@ -12,7 +12,6 @@ class PaymentProvider(models.Model):
         ondelete={"demo": "set default"},
     )
 
-
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "demo").update(
@@ -24,14 +23,12 @@ class PaymentProvider(models.Model):
             }
         )
 
-
     @api.constrains("state", "code")
     def _check_provider_state(self) -> None:
         if self.filtered(
             lambda p: p.code == "demo" and p.state not in ("test", "disabled")
         ):
             raise UserError(self.env._("Demo providers should never be enabled."))
-
 
     def _get_default_payment_method_codes(self):
         self.check_singleton()

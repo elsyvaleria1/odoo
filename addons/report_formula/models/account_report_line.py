@@ -506,7 +506,6 @@ class AccountReportLine(models.Model):
             load_one_more=load_one_more,
         )
 
-
         figure_types_defaulting_to_0 = {"monetary", "percentage", "integer", "float"}
 
         default_value_per_expr_label = {

@@ -17,7 +17,6 @@ declare_authority_keys("planning_field_service", "field_service_transition")
 
 
 class PlanningSlot(models.Model):
-
     _name = "planning.slot"
     _inherit = ["planning.slot", "mixin.mail.thread"]
     _access_verbs = {"manage_visits": models.Verb()}

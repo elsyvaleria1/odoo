@@ -663,9 +663,7 @@ class AccountReportOptions(models.Model):
         allowed_country_variant_ids = {}
         all_variants = self._get_variants(options["variants_source_id"])
         for variant in all_variants._filtered_available_for(options):
-            if (
-                not self.root_report_id and variant != self and variant.active
-            ):
+            if not self.root_report_id and variant != self and variant.active:
                 allowed_variant_ids.add(variant.id)
                 if variant.country_id:
                     allowed_country_variant_ids.setdefault(
@@ -983,9 +981,7 @@ class AccountReportOptions(models.Model):
         available_scopes = dict(
             self.env["report.formula.expression"]._fields["date_scope"].selection
         )
-        if (
-            date_scope and date_scope not in available_scopes
-        ):
+        if date_scope and date_scope not in available_scopes:
             raise UserError(self.env._("Unknown date scope: %s", date_scope))
 
         return Domain.AND(

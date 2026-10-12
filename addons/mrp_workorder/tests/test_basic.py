@@ -780,7 +780,6 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
 
         self.assertEqual(len(production_table.workorder_ids), 1)
 
-
         workorder = production_table.workorder_ids[0]
         self.assertEqual(workorder.state, "ready", "workorder state should be ready.")
         production_table.action_assign()
@@ -924,7 +923,6 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
 
         production_table.button_plan()
         self.assertEqual(len(production_table.workorder_ids), 3)
-
 
         workorders = production_table.workorder_ids
         self.assertEqual(
@@ -1221,7 +1219,6 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
             }
         )
 
-
         bom_custom_laptop = self.env["mrp.bom"].create(
             {
                 "product_tmpl_id": custom_laptop.product_tmpl_id.id,
@@ -1247,7 +1244,6 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
             }
         )
 
-
         mo_custom_laptop_form = Form(self.env["mrp.production"])
         mo_custom_laptop_form.product_id = custom_laptop
         mo_custom_laptop_form.bom_id = bom_custom_laptop
@@ -1258,9 +1254,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
         mo_custom_laptop.action_confirm()
         mo_custom_laptop.action_assign()
 
-
         self.assertEqual(mo_custom_laptop.reservation_state, "confirmed")
-
 
         lot_charger = self.env["product.trace"].create(
             {"product_id": product_charger.id}
@@ -1304,7 +1298,6 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
             )
             self.assertFalse(move.picked)
 
-
         laptop_lot_001 = self.env["product.trace"].create(
             {"product_id": custom_laptop.id}
         )
@@ -1347,7 +1340,6 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
         )
         self.assertEqual(charger_done_move.product_uom_qty, 12)
         self.assertEqual(keybord_done_move.product_uom_qty, 12)
-
 
         laptop_lot_002 = self.env["product.trace"].create(
             {"product_id": custom_laptop.id}
@@ -2029,9 +2021,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
 
         self.full_availability()
         self.workcenter_1.alternative_workcenter_ids = self.wc_alt_1 | self.wc_alt_2
-        self.env["mrp.workcenter"].search([]).resource_calendar_id.write(
-            {"tz": "UTC"}
-        )
+        self.env["mrp.workcenter"].search([]).resource_calendar_id.write({"tz": "UTC"})
 
         date = datetime.now() + timedelta(days=2)
         mo_form = Form(self.env["mrp.production"])
@@ -2111,9 +2101,7 @@ class TestWorkOrderProcess(TestWorkOrderProcessCommon):
         self.assertEqual(len(mo.workorder_ids.mapped("reservation_id")), 0)
 
     def test_planning_6(self):
-        self.env["mrp.workcenter"].search([]).write(
-            {"tz": "UTC"}
-        )
+        self.env["mrp.workcenter"].search([]).write({"tz": "UTC"})
         self.full_availability()
         mrp_workcenter_3 = self.env["mrp.workcenter"].create(
             {

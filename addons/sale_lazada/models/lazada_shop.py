@@ -217,7 +217,6 @@ class LazadaShop(models.Model):
         "The same Lazada shop cannot be linked twice to the same company.",
     )
 
-
     @api.depends("country_id")
     def _compute_api_endpoint(self) -> None:
         for shop in self:
@@ -234,7 +233,6 @@ class LazadaShop(models.Model):
                         country=shop.country_id.name,
                     )
                 )
-
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -273,7 +271,6 @@ class LazadaShop(models.Model):
                 vals.update({"fbl_location_id": location.id})
 
         return super().create(vals_list)
-
 
     def action_view_orders(self):
         self.check_singleton()
@@ -339,7 +336,6 @@ class LazadaShop(models.Model):
         url = f"{auth_url}?{urlencode(params)}"
         return {"type": "ir.actions.act_url", "url": url, "target": "self"}
 
-
     def _reset_refresh_token(self) -> None:
         self.write(
             {
@@ -349,7 +345,6 @@ class LazadaShop(models.Model):
                 "access_token_expiration_date": False,
             }
         )
-
 
     def _sync_inventory(self, auto_commit=True) -> None:
         shops = self or self.search([("active", "=", True)])
@@ -440,7 +435,6 @@ class LazadaShop(models.Model):
         )
         products = response["data"]["products"] if response.get("data") else []
         return offset + 1, total_products, products
-
 
     def _sync_orders(self, auto_commit=True) -> None:
         shops = self or self.search([("active", "=", True)])
@@ -702,9 +696,7 @@ class LazadaShop(models.Model):
                 }
             )
             stock_move._update_quantity_done(order_line.product_qty)
-            stock_move.picked = (
-                True
-            )
+            stock_move.picked = True
             stock_move._action_done()
 
     def _get_shipping_carrier(self, order_data):

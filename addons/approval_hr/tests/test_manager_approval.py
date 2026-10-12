@@ -444,7 +444,6 @@ class _Probe(Exception):
 
 
 class TestManagerRoutingConvertedToSteps(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

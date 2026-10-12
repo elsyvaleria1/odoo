@@ -516,7 +516,6 @@ class TestActivityDoneBatch(TestActivityCommon):
 
 
 class TestActivitySystray(TestActivityCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -707,9 +706,7 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
             "No access to an activity linked to someone and whose record has been removed "
             "(considered as no access to record); and should not crash (no MissingError)",
         )
-        with self.assertRaises(
-            exceptions.AccessError
-        ):
+        with self.assertRaises(exceptions.AccessError):
             self.test_activities_removed.with_user(self.user_admin).read(["summary"])
 
         self.env.invalidate_all()
@@ -804,9 +801,7 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
                 self.assertEqual(group_values["today_count"], exp_today)
                 self.assertEqual(group_values["planned_count"], exp_planned)
                 self.assertEqual(group_values["overdue_count"], exp_overdue)
-                if (
-                    model_name == "mail.activity"
-                ):
+                if model_name == "mail.activity":
                     self.assertEqual(
                         sorted(group_values["activity_ids"]),
                         sorted(
@@ -846,9 +841,7 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
                 self.assertEqual(group_values["today_count"], exp_today)
                 self.assertEqual(group_values["planned_count"], exp_planned)
                 self.assertEqual(group_values["overdue_count"], exp_overdue)
-                if (
-                    model_name == "mail.activity"
-                ):
+                if model_name == "mail.activity":
                     self.assertEqual(
                         sorted(group_values["activity_ids"]),
                         sorted(
@@ -889,9 +882,7 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
                 self.assertEqual(group_values["today_count"], exp_today)
                 self.assertEqual(group_values["planned_count"], exp_planned)
                 self.assertEqual(group_values["overdue_count"], exp_overdue)
-                if (
-                    model_name == "mail.activity"
-                ):
+                if model_name == "mail.activity":
                     self.assertEqual(
                         sorted(group_values["activity_ids"]),
                         sorted(
@@ -1134,12 +1125,8 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
                 "date_deadline": datetime(2023, 12, 31, 15, 0, 0),
                 "active": True,
             },
-            {
-                "date_deadline": datetime(2024, 1, 2, 15, 0, 0)
-            },
-            {
-                "date_deadline": datetime(2023, 12, 31, 15, 0, 0)
-            },
+            {"date_deadline": datetime(2024, 1, 2, 15, 0, 0)},
+            {"date_deadline": datetime(2023, 12, 31, 15, 0, 0)},
             {"active": False},
             {"active": True},
             {},
@@ -1352,9 +1339,7 @@ class TestActivityViewHelpers(TestActivityCommon):
             record_activities.action_feedback(
                 feedback="Done", attachment_ids=self.attachment_1.ids
             )
-            self.assertEqual(
-                record_activities[2].date_done, date.today()
-            )
+            self.assertEqual(record_activities[2].date_done, date.today())
             most_recent_attachment_id = max(record_activities.attachment_ids.ids)
             activity_data = get_activity_data(
                 "mail.test.activity", None, fetch_done=True
@@ -1522,7 +1507,6 @@ class TestTours(HttpCase):
 
 @tests.tagged("post_install", "-at_install")
 class TestActivityResName(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1579,7 +1563,6 @@ class TestActivityResName(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityAccessAndState(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1866,7 +1849,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivitySearchPaging(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2063,7 +2045,6 @@ class TestActivityGarbageCollect(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityStrandedModel(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2149,7 +2130,6 @@ class TestActivityStrandedModel(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityOnAnActivity(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2228,7 +2208,6 @@ class TestActivityOnAnActivity(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityNotifyCost(TestActivityCommon):
-
     def _schedule(self, count, user):
         records = self.env["mail.test.activity"].create(
             [{"name": f"Doc {index}"} for index in range(count)]
@@ -2450,7 +2429,6 @@ class TestActivityNotifyCost(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityUnlinkBookkeeping(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2494,7 +2472,6 @@ class TestActivityUnlinkBookkeeping(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityDeadlineClock(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2701,7 +2678,6 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityNotificationLanguage(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2769,7 +2745,6 @@ class TestActivityNotificationLanguage(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityResNameFollowsRenames(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2863,7 +2838,6 @@ class TestActivityResNameFollowsRenames(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityIntegrityGuards(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3023,7 +2997,6 @@ class TestActivityIntegrityGuards(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityDocumentModelIntegrity(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3084,7 +3057,6 @@ class TestActivityDocumentModelIntegrity(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityFeedbackAttachments(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3169,7 +3141,6 @@ class TestActivityFeedbackAttachments(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityViewDataLimit(ActivityScheduleCase):
-
     def test_limit_is_capped_even_when_none_is_asked_for(self):
         Activity = self.env["mail.activity"]
         captured = {}
@@ -3212,7 +3183,6 @@ class TestActivityViewDataLimit(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityPager(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3300,7 +3270,6 @@ class TestActivityPager(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityNotifyAccess(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3379,7 +3348,6 @@ class TestActivityNotifyAccess(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityChaining(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3475,7 +3443,6 @@ class TestActivityOpenDocument(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityGarbageCollection(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3529,7 +3496,6 @@ class TestActivityGarbageCollection(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityStateSearch(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3611,7 +3577,6 @@ class TestActivityStateSearch(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivitySearchOrderIsStable(TestActivityCommon):
-
     def test_every_branch_breaks_ties_by_id(self):
         Activity = self.env["mail.activity"]
         mine = [("user_id", "=", self.user_employee.id)]
@@ -3641,7 +3606,6 @@ class TestActivityModelSelection(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityOneTodayPerAnswer(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3719,7 +3683,6 @@ class TestActivityOneTodayPerAnswer(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityAccessIsOneRule(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3815,7 +3778,6 @@ class TestActivityAccessIsOneRule(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4030,7 +3992,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityChainingWithoutDocumentAccess(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4145,7 +4106,6 @@ class TestActivityChainingWithoutDocumentAccess(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityFeedbackAttachmentsVanishedDocument(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4197,7 +4157,6 @@ class TestActivityFeedbackAttachmentsVanishedDocument(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityStateSearchSpansTheArchived(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4260,7 +4219,6 @@ class TestActivityStateSearchSpansTheArchived(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityCreatorCanUseWhatTheRuleGrants(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4340,7 +4298,6 @@ class TestActivityCreatorCanUseWhatTheRuleGrants(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityStateDomainReadsOneClock(TestActivityCommon):
-
     def test_one_state_search_reads_the_clock_once(self):
         module = mail_activity_module
         real = module.datetime
@@ -4394,7 +4351,6 @@ class TestActivityStateDomainReadsOneClock(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityDeadlineDomainInMemory(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4455,7 +4411,6 @@ class TestActivityDeadlineDomainInMemory(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityPinnedSearch(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4525,7 +4480,6 @@ class TestActivityPinnedSearch(TestActivityCommon):
 
 @tests.tagged("mail_activity")
 class TestActivityClockIsReproducible(ActivityScheduleCase):
-
     def test_the_timezone_catalogue_comes_out_sorted(self):
         moment = datetime(2026, 8, 31, 6, 0, tzinfo=UTC)
         days = activity_calendar.days_by_timezone(activity_calendar.tz_anchor(moment))
@@ -4631,7 +4585,6 @@ class TestActivityClockIsReproducible(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityViewRowOrderIsStable(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4701,7 +4654,6 @@ class TestActivityViewRowOrderIsStable(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityCompletionKeepsItsAttachments(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4841,7 +4793,6 @@ class TestActivityCompletionKeepsItsAttachments(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityDeadlineDefaultsToTheAssigneeDay(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -5132,7 +5083,6 @@ class TestActivityClockSeam(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityDoneRedirect(ActivityScheduleCase):
-
     def test_it_lists_what_the_systray_group_lists(self):
         Activity = self.env["mail.activity"]
         for record in self.env["mail.test.activity"].create(

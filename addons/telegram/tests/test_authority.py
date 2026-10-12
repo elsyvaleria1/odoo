@@ -8,7 +8,6 @@ from .common import TelegramBotTestCase
 
 @tagged("post_install", "-at_install")
 class TestUpdateAuthority(TelegramBotTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -27,7 +27,6 @@ class MockSMS(common.HttpCase):
         super().tearDown()
         self._clear_sms_sent()
 
-
     @contextmanager
     def mock_datetime_and_now(self, mock_dt):
         now_dt = (
@@ -39,7 +38,6 @@ class MockSMS(common.HttpCase):
             now_dt = now_dt.astimezone(UTC).replace(tzinfo=None)
         with freeze_time(now_dt), patch.object(self.env.cr, "now", lambda: now_dt):
             yield
-
 
     @contextmanager
     def mockSMSGateway(
@@ -188,7 +186,6 @@ class MockSMS(common.HttpCase):
 
 
 class SMSCase(MockSMS):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -19,7 +19,6 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
     lambda user, code: code == "google" and "dummy-token",
 )
 class TestSyncFailures(TestSyncGoogle):
-
     def _http_error(self, status, message):
         response = requests.Response()
         response.status_code = status

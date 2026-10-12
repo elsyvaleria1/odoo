@@ -67,7 +67,6 @@ class PaymentProvider(models.Model):
         help="The base URL for the API endpoints",
     )
 
-
     @api.model
     def _adyen_notification_items(self):
         items = request_json_object().get("notificationItems", [])
@@ -166,7 +165,6 @@ class PaymentProvider(models.Model):
                 r"(?:https://)?(\w+-\w+).*", r"\1", values["adyen_api_url_prefix"]
             )
 
-
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "adyen").update(
@@ -176,7 +174,6 @@ class PaymentProvider(models.Model):
                 "support_tokenization": True,
             }
         )
-
 
     def _adyen_get_inline_form_values(self, pm_code, amount=None, currency=None):
         self.check_singleton()
@@ -205,7 +202,6 @@ class PaymentProvider(models.Model):
     def _adyen_compute_shopper_reference(self, partner_id) -> str:
         return f"ODOO_PARTNER_{partner_id}"
 
-
     def _prepare_request_url(self, endpoint, *, endpoint_param=None, **kwargs):
         if self.code != "adyen":
             return super()._prepare_request_url(
@@ -214,9 +210,7 @@ class PaymentProvider(models.Model):
 
         version = const.API_ENDPOINT_VERSIONS[endpoint]
         endpoint = endpoint if not endpoint_param else endpoint.format(endpoint_param)
-        prefix_ = self.adyen_api_url_prefix.rstrip(
-            "/"
-        )
+        prefix_ = self.adyen_api_url_prefix.rstrip("/")
         endpoint = endpoint.lstrip("/")
         test_mode_ = self.state == "test"
         prefix_ = (

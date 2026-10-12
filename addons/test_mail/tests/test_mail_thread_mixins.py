@@ -90,9 +90,7 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
                     },
                 ]
             )
-            items.flush_recordset(
-                ["date_last_stage_update"]
-            )
+            items.flush_recordset(["date_last_stage_update"])
 
         with self.mock_datetime_and_now(jan5):
             items.invalidate_recordset(["is_rotting"])

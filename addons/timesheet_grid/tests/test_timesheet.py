@@ -158,7 +158,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         def _now(*args, **kwargs):
             return now
 
-
         patchers = [patch("odoo.fields.Datetime.now", _now)]
 
         for patcher in patchers:
@@ -251,7 +250,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         current_timesheet_uom = (
             self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
         )
-
 
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
             "base.product_uom_hour"

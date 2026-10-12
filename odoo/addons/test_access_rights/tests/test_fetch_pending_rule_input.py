@@ -7,7 +7,6 @@ DOC = "test_access_right.memo_doc"
 
 @tagged("post_install", "-at_install")
 class TestFetchPendingRuleInput(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

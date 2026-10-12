@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestUtmSourceModel(TransactionCase):
-
     @property
     def Source(self):
         return self.env["utm.source"]

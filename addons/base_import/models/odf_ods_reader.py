@@ -34,7 +34,6 @@ def _node_text(node) -> str:
 
 
 class ODSReader:
-
     def __init__(self, file=None, content=None) -> None:
         if content is None:
             check_zip_member_sizes(file)

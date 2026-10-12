@@ -34,9 +34,7 @@ class TestTaxesDownPaymentPOS(
             _expected_values,
         ) in tests_with_orders:
             so = self.convert_document_to_sale_order(document)
-            so.currency_id = (
-                self.env.company.currency_id
-            )
+            so.currency_id = self.env.company.currency_id
             so.action_confirm()
             all_so += so
         super().assert_pos_orders_and_invoices(tour, tests_with_orders)

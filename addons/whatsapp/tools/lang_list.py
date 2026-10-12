@@ -1,4 +1,3 @@
-
 Languages = [
     ("af", "Afrikaans"),
     ("sq", "Albanian"),

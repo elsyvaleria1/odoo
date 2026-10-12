@@ -118,7 +118,6 @@ class PaymentCommon(BaseCommon):
             )
             self.startPatcher(self.post_process_patcher)
 
-
     @classmethod
     def _prepare_provider(cls, code, company=None, update_values=None, **kwargs):
         assert code != "none", "Code 'none' should not be passed to _prepare_provider"

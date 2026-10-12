@@ -10,7 +10,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialLivePost(models.Model):
-
     _name = "social.live.post"
     _description = "Social Live Post"
 

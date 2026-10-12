@@ -33,12 +33,8 @@ class TestMailingStatistics(TestMassMailCommon):
         target_records = self._create_mailing_test_records(
             model="mailing.test.blacklist", count=13
         )
-        target_records[10]["email_from"] = (
-            False
-        )
-        target_records[11]["email_from"] = (
-            "raoul@example¢¡.com"
-        )
+        target_records[10]["email_from"] = False
+        target_records[11]["email_from"] = "raoul@example¢¡.com"
         mailing = self.env["mailing.mailing"].browse(self.mailing_bl.ids)
         mailing.write(
             {

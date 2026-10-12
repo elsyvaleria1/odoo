@@ -14,7 +14,6 @@ from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 
 @tagged("-at_install", "post_install")
 class MobileRoutesTest(HttpCaseWithUserDemo):
-
     def setUp(self):
         super().setUp()
         self.headers = {

@@ -15,7 +15,6 @@ class PaymentProvider(models.Model):
         selection_add=[("sepa_direct_debit", "SEPA Direct Debit")]
     )
 
-
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.custom_mode == "sepa_direct_debit").update(
@@ -31,7 +30,6 @@ class PaymentProvider(models.Model):
                 lambda c: c.name == "EUR"
             )
         return supported_currencies
-
 
     @api.constrains("state", "journal_id")
     def _check_journal_iban_is_valid(self) -> None:
@@ -69,13 +67,11 @@ class PaymentProvider(models.Model):
                     )
                 )
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.custom_mode != "sepa_direct_debit":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     @api.model
     def _get_compatible_providers(
@@ -177,7 +173,6 @@ class PaymentProvider(models.Model):
                 "sdd_mandate_id": mandate.id,
             }
         )
-
 
     def _get_code(self):
         res = super()._get_code()

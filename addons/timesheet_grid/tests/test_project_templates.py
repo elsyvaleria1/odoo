@@ -163,9 +163,7 @@ class TestProjectTemplates(TransactionCase):
             {
                 "name": "Future Task",
                 "project_id": self.template_project.id,
-                "date_start": datetime(
-                    2025, 8, 11, 9, 0
-                ),
+                "date_start": datetime(2025, 8, 11, 9, 0),
                 "date_end": datetime(2025, 8, 14, 17, 0),
                 "planned_hours": 17,
             }

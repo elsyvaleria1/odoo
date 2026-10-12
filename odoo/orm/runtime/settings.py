@@ -7,7 +7,6 @@ if typing.TYPE_CHECKING:
 
 
 class SystemSettings:
-
     __slots__ = ()
 
     @typing.overload

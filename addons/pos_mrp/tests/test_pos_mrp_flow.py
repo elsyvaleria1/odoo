@@ -492,7 +492,6 @@ class TestPosMrp(CommonPosMrpTest):
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosMrpAngloSaxonPriceUnit(CommonPosMrpTest):
-
     def _make_delivered_order(self, product):
         (
             self.product_product_kit_one | self.product_product_comp_one

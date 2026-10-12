@@ -111,7 +111,6 @@ class TelegramHandlerShipment(models.AbstractModel):
             self._finish_markup(bot, chat),
         )
 
-
     def _on_message(self, bot, chat, message, partner, internal_user):
         if self._flow_step(chat) != "sheets":
             return False
@@ -341,7 +340,6 @@ class TelegramHandlerShipment(models.AbstractModel):
         return tr._("That same sheet already went on %(picking)s.") % {
             "picking": tg.bold(earlier.picking_id.name or "")
         }
-
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""

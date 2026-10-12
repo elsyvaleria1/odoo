@@ -394,7 +394,6 @@ class TestCommissionsSetup(TestSaleCommon):
         self._make_commission_plans()
         self._make_grades()
 
-
     def purchase(self, spec):
         self.referrer.grade_id = spec.grade.id
         self.referrer._onchange_grade_id()
@@ -440,7 +439,6 @@ class TestCommissionsSetup(TestSaleCommon):
 
 
 class Spec:
-
     def __init__(self, grade, lines, pricelist=None, commission=0):
         self.grade = grade
         self.lines = lines

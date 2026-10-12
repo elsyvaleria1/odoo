@@ -18,7 +18,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialFacebookController(SocialController):
-
     @http.route(["/social_facebook/callback"], type="http", auth="user")
     @fragment_to_query_string
     def social_facebook_account_callback(  # noqa: E8539 -- inbound: a token an outside service hands over, not one of ours
@@ -64,7 +63,6 @@ class SocialFacebookController(SocialController):
                     )
 
         return request.redirect("/odoo/action-social.action_social_stream_post")
-
 
     @http.route("/social_facebook/comment", type="http", auth="user", methods=["POST"])
     def social_facebook_add_comment(
@@ -140,7 +138,6 @@ class SocialFacebookController(SocialController):
     def social_facebook_like_post(self, stream_post_id, like):
         stream_post = self._get_social_stream_post(stream_post_id, "facebook")
         stream_post._facebook_like(stream_post.facebook_post_id, like)
-
 
     @http.route(
         ["/social_facebook/deletion_callback"],

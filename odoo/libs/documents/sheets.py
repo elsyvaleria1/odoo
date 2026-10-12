@@ -23,7 +23,6 @@ _NUMBERS = (int, float, Decimal, Fraction)
 
 
 class SheetBuilder:
-
     def __init__(self, name: str) -> None:
         self.name = name
         self.operations: list[tuple[Any, ...]] = []

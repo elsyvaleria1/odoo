@@ -77,7 +77,6 @@ class Data_RecycleModel(models.Model):
         "where an already archived record has nothing left to recycle."
     )
 
-
     @api.constrains("recycle_action", "res_model_id")
     def _check_recycle_action(self) -> None:
         for recycle_model in self:

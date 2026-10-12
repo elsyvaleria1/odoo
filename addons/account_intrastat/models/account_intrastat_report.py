@@ -133,7 +133,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
             include_arrivals = include_dispatches = True
         return include_arrivals, include_dispatches
 
-
     def _show_region_code(self):
         return True
 
@@ -142,7 +141,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
 
     def _prepare_intrastat_export_row(self, result_dict, query_res):
         return result_dict
-
 
     def export_to_xlsx(self, options, response=None):
         report = self.env["report.formula"].browse(options["report_id"])
@@ -154,7 +152,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
             }
         )
         return report.export_to_xlsx(new_options, response=response)
-
 
     def _report_custom_engine_intrastat(
         self,
@@ -648,7 +645,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
             self._prepare_intrastat_custom_domain_blocks(loads(grouping_key)).values()
         )
 
-
     @api.model
     def _update_missing_values(self, vals_list):
         return vals_list
@@ -657,7 +653,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
         return SQL("""country.id, transaction.id, company_region.id, code.id, inv_incoterm.id, comp_incoterm.id,
              inv_transport.id, comp_transport.id, product_country.id, account_move_line.id, account_move.id,
              inv_line_uom.factor, prod_uom.id, partner.id, prod.id, prodt.id""")
-
 
     def action_invalid_code_moves(self, options, params) -> dict:
         return {

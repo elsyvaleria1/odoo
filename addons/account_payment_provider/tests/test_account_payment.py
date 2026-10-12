@@ -300,9 +300,7 @@ class TestAccountPayment(AccountPaymentCommon):
         invoice_1.payment_action_void()
 
     def test_no_payment_for_validations(self):
-        tx = self._create_transaction(
-            flow="dummy", operation="validation"
-        )
+        tx = self._create_transaction(flow="dummy", operation="validation")
         tx._post_process()
         payment_count = self.env["account.payment"].search_count(
             [("transaction_id", "=", tx.id)]

@@ -78,7 +78,6 @@ class ProjectProject(models.Model):
             action["res_id"] = self.ticket_ids.id
         return action
 
-
     def _get_stat_buttons(self):
         buttons = super()._get_stat_buttons()
         if self.env.user.has_group("helpdesk.group_helpdesk_user"):

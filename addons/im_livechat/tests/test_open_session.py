@@ -9,7 +9,6 @@ OPEN_SESSION = "im_livechat.privilege_open_session"
 
 @odoo.tests.tagged("-at_install", "post_install")
 class TestOpenSession(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.online = new_test_user(
@@ -79,7 +78,6 @@ class TestOpenSession(TransactionCase):
 
 @odoo.tests.tagged("-at_install", "post_install")
 class TestOpenSessionPrivilege(TestOpenSession):
-
     def setUp(self):
         super().setUp()
         self.public = self.env.ref("base.public_user")

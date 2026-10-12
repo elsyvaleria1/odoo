@@ -234,7 +234,6 @@ class SignEmsigner(SignController):
             )
         return super()._acquire_auth_method_result(request_item_sudo, **kwargs)
 
-
     @http.route(
         "/emsigner_sign/emsigner_successful",
         type="jsonrpc",
@@ -331,7 +330,6 @@ class SignEmsigner(SignController):
         request_item._post_fill_request_item()
 
         return {"success": True}
-
 
     @http.route(["/emsigner/has_emsigner_credits"], type="jsonrpc", auth="public")
     def has_emsigner_credits(self) -> bool:

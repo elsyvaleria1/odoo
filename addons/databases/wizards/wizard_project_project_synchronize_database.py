@@ -102,9 +102,7 @@ class DatabasesSynchronization(models.TransientModel):
             return
 
         Project = self.env["project.project"]
-        databases_by_url = {
-            db["url"]: db for db in databases
-        }
+        databases_by_url = {db["url"]: db for db in databases}
         existing_databases = Project.with_context(active_test=False).search(
             [
                 ("database_hosting", "!=", False),
@@ -147,9 +145,7 @@ class DatabasesSynchronization(models.TransientModel):
                 ]
             )
         )
-        for (
-            db
-        ) in dbs_to_update.try_lock_for_update():
+        for db in dbs_to_update.try_lock_for_update():
             db_info = databases_by_url[db.database_url]
             vals = {
                 "database_hosting": "saas",
@@ -415,9 +411,7 @@ class DatabasesSynchronization(models.TransientModel):
         )
 
         for db in self.database_ids:
-            if fetched_values := (self.fetched_values or {}).get(
-                str(db.id)
-            ):
+            if fetched_values := (self.fetched_values or {}).get(str(db.id)):
                 db.sudo().write(
                     {
                         "database_kpi_properties": fetched_values,
@@ -448,9 +442,7 @@ class DatabasesSynchronization(models.TransientModel):
                 )
                 continue
 
-            _family, _type, _proto, _canonname, (ip, _port, *_) = min(
-                addrinfo
-            )
+            _family, _type, _proto, _canonname, (ip, _port, *_) = min(addrinfo)
             groups[ip].append(db_api)
         return groups
 

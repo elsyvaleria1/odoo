@@ -35,7 +35,6 @@ class HelpdeskTeam(models.Model):
                 )
         (self - fsm_teams_without_project).fsm_project_id = False
 
-
     def _mail_get_message_subtypes(self):
         res = super()._mail_get_message_subtypes()
         if len(self) == 1:

@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class WizardCalendarSyncReset(models.TransientModel):
-
     _name = "wizard.calendar.sync.reset"
     _description = "Calendar Synchronization Reset"
 

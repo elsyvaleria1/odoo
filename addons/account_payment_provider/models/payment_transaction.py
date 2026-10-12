@@ -47,7 +47,6 @@ class PaymentTransaction(models.Model):
     )
     invoices_count = fields.Count(count_of="invoice_ids")
 
-
     @api.depends("payment_ids")
     def _compute_payment_id(self) -> None:
         for tx in self:
@@ -55,7 +54,6 @@ class PaymentTransaction(models.Model):
 
     def _search_payment_id(self, operator, value) -> list:
         return [("payment_ids", operator, value)]
-
 
     def action_view_invoices(self):
         self.check_singleton()
@@ -77,7 +75,6 @@ class PaymentTransaction(models.Model):
             action["domain"] = [("id", "in", invoice_ids)]
         return action
 
-
     @api.model
     def _get_reference_prefix(self, separator, **values):
         command_list = values.get("invoice_ids")
@@ -94,7 +91,6 @@ class PaymentTransaction(models.Model):
                     prefix = name
                 return prefix
         return super()._get_reference_prefix(separator, **values)
-
 
     def _post_process(self):
         super()._post_process()
@@ -133,9 +129,7 @@ class PaymentTransaction(models.Model):
             )
         )
         payment_values = {
-            "amount": abs(
-                self.amount
-            ),
+            "amount": abs(self.amount),
             "payment_type": "inbound" if self.amount > 0 else "outbound",
             "currency_id": self.currency_id.id,
             "partner_id": self.partner_id.commercial_partner_id.id,
@@ -232,7 +226,6 @@ class PaymentTransaction(models.Model):
         self._reconcile_payment(payment)
 
         return payment
-
 
     def _log_message_on_linked_documents(self, message) -> None:
         self.check_singleton()

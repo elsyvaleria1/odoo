@@ -404,7 +404,6 @@ class EventRegistration(models.Model):
         res.update({"status": status})
         return res
 
-
     @api.model_create_multi
     def create(self, vals_list):
         all_partner_ids = {
@@ -480,7 +479,6 @@ class EventRegistration(models.Model):
     def _compute_display_name(self):
         for registration in self:
             registration.display_name = registration.name or f"#{registration.id}"
-
 
     def action_set_draft(self) -> None:
         self.write({"state": "draft"})
@@ -558,7 +556,6 @@ class EventRegistration(models.Model):
                     _logger.exception("Failed to run scheduler %s", scheduler.id)
                     scheduler._warn_error(e)
 
-
     @api.model
     def _mail_template_default_values(self) -> dict:
         return {
@@ -623,7 +620,6 @@ class EventRegistration(models.Model):
                     ]
                 ).write({"partner_id": new_partner[0].id})
         return super()._message_post_after_hook(message, msg_vals)
-
 
     def _get_registration_summary(self):
         self.check_singleton()

@@ -26,7 +26,6 @@ from odoo.addons.test_orm.models import test_domain_semantics as semantics
 
 @tagged("post_install", "-at_install")
 class TestDomainSemanticsFuzz(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

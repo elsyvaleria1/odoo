@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPhoneMobileSearch(TransactionCase):
-
     def test_search_by_sanitized_form_matches_a_locally_stored_number(self):
         partner = self.env["res.partner"].create(
             {

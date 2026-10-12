@@ -50,9 +50,7 @@ class Starshipit:
             raise UserError(
                 self.env._("Starshipit API rate exceeded. Please try again later.")
             )
-        if not res.get(
-            "success"
-        ):
+        if not res.get("success"):
             message = ""
             if res.get("errors"):
                 message = res["errors"][0]["details"]
@@ -124,9 +122,7 @@ class Starshipit:
                 ]
                 continue
 
-            if (
-                len(starshipit_picking_number) > 50
-            ):
+            if len(starshipit_picking_number) > 50:
                 raise UserError(
                     self.env._(
                         "The picking %(picking_name)s sequence is too long for Starshipit. "

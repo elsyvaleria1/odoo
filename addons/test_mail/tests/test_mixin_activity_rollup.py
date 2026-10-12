@@ -7,7 +7,6 @@ STATES = ("overdue", "today", "planned", False)
 
 @tagged("mail_activity")
 class TestActivityStateRollup(TransactionCase):
-
     def _combinations(self):
         for size in range(len(STATES) + 1):
             yield from itertools.combinations_with_replacement(STATES, size)

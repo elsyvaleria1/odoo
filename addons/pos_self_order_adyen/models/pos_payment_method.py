@@ -80,9 +80,7 @@ class PosPaymentMethod(models.Model):
                         "MessageType": "Request",
                         "MessageCategory": "Payment",
                         "SaleID": f"{pos_config.display_name} (ID:{pos_config.id})",
-                        "ServiceID": str(
-                            random_number
-                        ),
+                        "ServiceID": str(random_number),
                         "POIID": self.adyen_terminal_identifier,
                     },
                     "PaymentRequest": {

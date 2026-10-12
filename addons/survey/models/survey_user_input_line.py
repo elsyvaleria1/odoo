@@ -7,7 +7,6 @@ from odoo.tools import SQL, float_is_zero, frozendict
 
 
 class SurveyUser_InputLine(models.Model):
-
     _name = "survey.user_input.line"
     _description = "Survey User Input Line"
     _rec_name = "user_input_id"

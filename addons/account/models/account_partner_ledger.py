@@ -972,9 +972,7 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         for column_group_key, group_options in report._split_options_per_column_group(
             options
         ).items():
-            group_options.pop(
-                "partner_ids", None
-            )
+            group_options.pop("partner_ids", None)
             query = report._get_report_query(group_options, "strict_range")
             account_alias = query.left_join(
                 lhs_alias="account_move_line",

@@ -63,9 +63,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             if self1.stop_count_write:
                 return picking_write_orig(self, vals)
             self1.call_count += 1
-            if (
-                self1.call_count == 1
-            ):
+            if self1.call_count == 1:
                 cmd = vals["move_line_ids"][0]
                 write_vals = cmd[2]
                 assertEqual(cmd[0], 0)
@@ -83,9 +81,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             return picking_write_orig(self, vals)
 
         def picking_button_validate_mock(self, **validate_kwargs):
-            self1.stop_count_write = (
-                True
-            )
+            self1.stop_count_write = True
             return picking_button_validate_orig(self, **validate_kwargs)
 
         with (
@@ -3344,9 +3340,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         internal_types.show_reserved_sns = True
         self.warehouse.pick_type_id.barcode_validation_full = False
         self.warehouse.pick_type_id.restrict_scan_source_location = "mandatory"
-        self.warehouse.pick_type_id.restrict_put_in_pack = (
-            "mandatory"
-        )
+        self.warehouse.pick_type_id.restrict_put_in_pack = "mandatory"
         self.warehouse.pick_type_id.restrict_scan_tracking_number = "mandatory"
         self.warehouse.pick_type_id.restrict_scan_dest_location = "no"
         self.warehouse.pick_type_id.show_reserved_sns = True
@@ -5703,9 +5697,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             }
         )
 
-        product_gtin_12 = self.env[
-            "product.product"
-        ].create(
+        product_gtin_12 = self.env["product.product"].create(
             {
                 "name": "PRO_GTIN_12",
                 "is_storable": True,
@@ -6398,9 +6390,7 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
             ]
         ).action_apply_inventory()
 
-        delivery_picking = self.env[
-            "stock.picking"
-        ].create(
+        delivery_picking = self.env["stock.picking"].create(
             {
                 "location_id": self.stock_location.id,
                 "location_dest_id": self.customer_location.id,

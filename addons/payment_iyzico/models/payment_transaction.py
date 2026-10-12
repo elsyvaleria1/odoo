@@ -50,7 +50,6 @@ class PaymentTransaction(models.Model):
             return super()._is_inbound_request_authentic(headers, body)
         return True
 
-
     def _prepare_redirect_form_values(self, *args):
         if self.provider_code != "iyzico":
             return super()._prepare_redirect_form_values(*args)
@@ -117,7 +116,6 @@ class PaymentTransaction(models.Model):
             "paymentSource": "ODOO",
             "price": self.amount,
         }
-
 
     def _extract_amount_data(self, payment_data) -> dict | None:
         if self.provider_code != "iyzico":

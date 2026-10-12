@@ -49,7 +49,6 @@ class ResPartner(models.Model):
     _name = "res.partner"
     _inherit = ["res.partner", "mixin.fiscal.country.codes"]
 
-
     fiscal_country_group_codes = fields.Json(
         compute="_compute_fiscal_country_group_codes"
     )
@@ -1175,7 +1174,6 @@ class ResPartner(models.Model):
             partner=partner,
         )
         return partner
-
 
     def _deduce_country_code(self):
         self.check_singleton()

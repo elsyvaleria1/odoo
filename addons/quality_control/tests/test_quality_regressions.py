@@ -422,7 +422,6 @@ class TestAlertMailGateway(TestQualityCommon):
 
 @tagged("post_install", "-at_install")
 class TestCheckCreationCost(TestQualityCommon):
-
     def _point(self, **extra):
         return self.env["quality.point"].create(
             {

@@ -51,8 +51,6 @@ class TestBarcodelookup(HttpCase, MockAPIBarcodelookup):
                 env.user.write({"all_group_ids": [(3, group_product_variant.id)]})
 
             new_form = Form(env["product.template"])
-            new_form.barcode = (
-                "497105359773"
-            )
+            new_form.barcode = "497105359773"
             product_wo_variant = new_form.save()
             self._verify_product_data(product_wo_variant, variant_rights=False)

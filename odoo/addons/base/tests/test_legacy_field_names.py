@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLegacyFieldNames(TransactionCase):
-
     HINT = "it is named 'repeat_interval' here"
 
     def test_reading_an_upstream_name_names_the_field_here(self):

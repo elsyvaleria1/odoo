@@ -258,7 +258,6 @@ class TestYTD(TestPayslipContractBase):
         )
         self._assert_ytd_values(payslip_after_reset, 1010 + 1020)
 
-
         self.richard_emp.company_id.ytd_reset_day = 1
         with self.assertRaises(ValidationError):
             self.richard_emp.company_id.ytd_reset_day = -20
@@ -344,7 +343,6 @@ class TestYTD(TestPayslipContractBase):
             }
         )
 
-
         payslip_lot0_classic = self._generate_payslip(
             date(2024, 1, 1), ytd_test_structure_04, 1
         )
@@ -366,7 +364,6 @@ class TestYTD(TestPayslipContractBase):
             contract=self.donkey_contract,
         )
         self._assert_ytd_values(payslip_lot0_company_3, 4)
-
 
         payslip_lot1_classic_A = self._generate_payslip(
             date(2024, 2, 1), ytd_test_structure_04, 8, no_compute=True
@@ -458,7 +455,6 @@ class TestYTD(TestPayslipContractBase):
         self._assert_ytd_values(payslip_lot1_company_3_B, 1024)
         self._assert_ytd_values(payslip_lot1_classic_B, 1 + 2048)
         self._assert_ytd_values(payslip_lot1_classic_C, 1 + 4096)
-
 
         payslip_lot2_classic = self._generate_payslip(
             date(2024, 7, 1), ytd_test_structure_04, 8192, no_compute=True

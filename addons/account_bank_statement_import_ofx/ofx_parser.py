@@ -5,7 +5,6 @@ import ofxparse
 
 
 class OfxParser(ofxparse.OfxParser):
-
     @classmethod
     def decimal_separator_cleanup(cls, tag) -> None:
         if hasattr(tag, "contents"):

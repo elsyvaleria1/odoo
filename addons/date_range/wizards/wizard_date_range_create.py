@@ -15,7 +15,6 @@ _logger = logging.getLogger(__name__)
 
 
 class WizardDateRangeCreate(models.TransientModel):
-
     _name = "wizard.date.range.create"
     _description = "Date Range Generator"
 

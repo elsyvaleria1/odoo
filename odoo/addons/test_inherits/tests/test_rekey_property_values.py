@@ -3,7 +3,6 @@ from odoo.tools.module_data import rekey_property_values
 
 
 class TestRekeyPropertyValues(common.TransactionCase):
-
     def test_a_relational_property_follows_its_records(self):
         spare, extra = self.env["test.unit.badge"].create(
             [{"name": "S"}, {"name": "E"}]

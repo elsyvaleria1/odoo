@@ -76,7 +76,6 @@ class TestMailSuite(web_test_js.HOOTCommon):
 
 @odoo.tests.tagged("post_install", "-at_install", "test_mail_js")
 class MobileTestMailSuite(web_test_js.HOOTCommon):
-
     browser_size = "375x667"
     touch_enabled = True
 

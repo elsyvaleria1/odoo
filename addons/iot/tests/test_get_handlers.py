@@ -10,7 +10,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestHandlerShipping(HttpCase):
-
     token = ""
 
     def _box(self, version="L25.07", auto_update=True):
@@ -207,7 +206,6 @@ class TestHandlerNamespace(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestHandlerDependencies(HttpCase):
-
     _IMPORT = re.compile(r"odoo\.addons\.iot_drivers\.iot_handlers\.(\w+)\.(\w+)")
 
     def _shippers(self):

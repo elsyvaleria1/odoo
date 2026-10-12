@@ -9,10 +9,8 @@ from odoo.addons.calendar_sync.remote import (
 
 
 class CalendarSyncAdapter(models.AbstractModel):
-
     _name = "calendar.sync.adapter"
     _description = "Calendar Synchronization Adapter"
-
 
     @api.model
     def _list_changes(self, account, token: str | None) -> RemoteChanges:
@@ -47,7 +45,6 @@ class CalendarSyncAdapter(models.AbstractModel):
     @api.model
     def _classify(self, error: Exception) -> CalendarSyncError:
         return CalendarSyncError(ErrorKind.TRANSIENT, str(error))
-
 
     @api.model
     def _synced_fields(self, model_name: str) -> frozenset[str]:

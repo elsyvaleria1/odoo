@@ -319,15 +319,9 @@ class TestPeppolMessage(TestAccountMoveSendCommon, MailCommon):
         wizard = self.create_send_and_print(move, default=True)
 
         self.assertEqual(wizard.invoice_edi_format, "ubl_bis3")
-        self.assertEqual(
-            self.invalid_partner.peppol_verification_state, "not_valid"
-        )
-        self.assertFalse(
-            wizard.sending_methods and "peppol" in wizard.sending_methods
-        )
-        self.assertTrue(
-            wizard.sending_method_checkboxes["peppol"]["readonly"]
-        )
+        self.assertEqual(self.invalid_partner.peppol_verification_state, "not_valid")
+        self.assertFalse(wizard.sending_methods and "peppol" in wizard.sending_methods)
+        self.assertTrue(wizard.sending_method_checkboxes["peppol"]["readonly"])
         self.assertFalse(wizard.alerts)
 
     @patch(
@@ -350,9 +344,7 @@ class TestPeppolMessage(TestAccountMoveSendCommon, MailCommon):
         move.action_post()
         self.invalid_partner.peppol_endpoint = False
         wizard = self.create_send_and_print(move, default=True)
-        self.assertFalse(
-            wizard.sending_methods and "peppol" in wizard.sending_methods
-        )
+        self.assertFalse(wizard.sending_methods and "peppol" in wizard.sending_methods)
         wizard.sending_method_checkboxes = {
             **wizard.sending_method_checkboxes,
             "peppol": {"checked": True},

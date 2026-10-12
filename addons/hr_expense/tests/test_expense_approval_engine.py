@@ -39,7 +39,6 @@ class TestExpenseApprovalEngine(TestExpenseCommon):
     def _row(self, request, user):
         return request.approver_ids.filtered(lambda row: row.user_id == user)
 
-
     def test_a_submission_raises_a_pending_request_asking_the_manager(self):
         expense = self._submitted()
 
@@ -78,7 +77,6 @@ class TestExpenseApprovalEngine(TestExpenseCommon):
 
         self.assertEqual(expense.review_state, "submitted")
         self.assertFalse(expense.approval_request_id)
-
 
     def test_only_users_the_expense_policy_lets_approve_hold_a_row(self):
         team_approver = new_test_user(
@@ -168,7 +166,6 @@ class TestExpenseApprovalEngine(TestExpenseCommon):
         self.assertEqual(expense.review_state, "submitted")
         self.assertEqual(request.state, "pending")
 
-
     def test_the_manager_approving_records_their_decision(self):
         expense = self._submitted()
 
@@ -220,7 +217,6 @@ class TestExpenseApprovalEngine(TestExpenseCommon):
         expense.with_user(self.expense_user_employee).action_submit()
         self.assertEqual(request.state, "pending")
         self.assertFalse(request.approver_ids.filtered("decision_date"))
-
 
     def test_approving_the_request_approves_the_expense(self):
         expense = self._submitted()
@@ -319,7 +315,6 @@ class TestExpenseApprovalEngine(TestExpenseCommon):
 
         self.assertEqual(expense.review_state, "refused")
 
-
     def test_deleting_a_submitted_expense_cancels_its_request(self):
         expense = self._submitted()
         request = expense.sudo().approval_request_id
@@ -327,7 +322,6 @@ class TestExpenseApprovalEngine(TestExpenseCommon):
         expense.with_user(self.expense_user_manager).unlink()
 
         self.assertEqual(request.state, "cancelled")
-
 
     def _consent_behind_the_form(self, hours):
         self.env.cr.execute(

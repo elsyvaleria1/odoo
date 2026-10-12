@@ -1223,9 +1223,7 @@ class MrpProductionSchedule(models.Model):
                             or current_node.product,
                         )
                     ][child.product] += ratio * child.ratio
-                    if (
-                        child.product in subtree_visited
-                    ):
+                    if child.product in subtree_visited:
                         continue
                     subtree_visited.add(child.product)
                     _dfs_ratio_search(

@@ -122,9 +122,7 @@ class SaleSubscriptionReport(models.Model):
         comodel_name="sale.order.close.reason",
         readonly=True,
     )
-    margin = (
-        fields.Float()
-    )
+    margin = fields.Float()
     subscription_state = fields.Selection(
         selection=SUBSCRIPTION_STATES,
         readonly=True,

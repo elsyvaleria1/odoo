@@ -154,9 +154,7 @@ class AmazonOffer(models.Model):
                 TypeError,
             ):
                 feed_data = None
-            if isinstance(
-                feed_data, dict
-            ):
+            if isinstance(feed_data, dict):
                 feed_data_by_offer[offer] = feed_data
 
         feed_data_by_offer.update(
@@ -176,9 +174,7 @@ class AmazonOffer(models.Model):
     def _sync_feed_data(self):
         feed_data_by_offer = {}
         to_fetch = self.sorted(
-            lambda o: (
-                o.amazon_sync_status in ("reset", "error")
-            )
+            lambda o: o.amazon_sync_status in ("reset", "error")
         ).grouped(lambda o: (o.account_id, o.marketplace_id))
         to_fetch = (
             (group, batch)

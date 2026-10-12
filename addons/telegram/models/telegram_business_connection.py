@@ -3,7 +3,6 @@ from odoo.tools import frozendict
 
 
 class TelegramBusinessConnection(models.Model):
-
     _name = "telegram.business.connection"
     _description = "Telegram Business Connection"
     _order = "id desc"

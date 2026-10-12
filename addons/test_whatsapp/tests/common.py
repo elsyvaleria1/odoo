@@ -39,9 +39,7 @@ class WhatsAppFullCase(WhatsAppCommon):
             cls.test_base_records
         )
 
-        cls.whatsapp_template = cls.env[
-            "whatsapp.template"
-        ].create(
+        cls.whatsapp_template = cls.env["whatsapp.template"].create(
             {
                 "body": "Hello World",
                 "model_id": cls.env["ir.model"]._get_id("whatsapp.test.base"),

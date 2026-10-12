@@ -24,7 +24,6 @@ def _is_set_and(compare, bound, value):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestActivityScheduleUsesTheAssigneeDay(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -826,7 +825,6 @@ class TestActivityMixin(TestActivityCommon):
 
 @tests.tagged("mail_activity", "mail_activity_mixin")
 class TestORM(TestActivityCommon):
-
     def test_groupby_activity_state_progress_bar_behavior(self):
         lead_timedelta_setup = [0, 0, -2, -2, -2, 2]
 
@@ -946,7 +944,6 @@ class TestORM(TestActivityCommon):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestActivityMixinProjection(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1606,7 +1603,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestNextActivityProjectionAgreement(TestActivityCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1990,7 +1986,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestNextActivityProjectionProperties(TestActivityCommon):
-
     def test_search_and_compute_agree_on_a_randomised_population(self):
         Model = self.env["mail.test.activity"]
         Activity = self.env["mail.activity"]
@@ -2218,7 +2213,6 @@ class TestNextActivityProjectionProperties(TestActivityCommon):
 
 @tagged("mail_activity", "mail_activity_mixin")
 class TestNextActivityInvariants(TestActivityCommon):
-
     def test_activity_state_ordering_agrees_with_the_compute(self):
         zones = ("UTC", "Pacific/Kiritimati", "Asia/Kathmandu", "Pacific/Midway")
         records = self.env["mail.test.activity"]

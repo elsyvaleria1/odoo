@@ -48,7 +48,6 @@ class WizardSddMandateSend(models.TransientModel):
         readonly=False,
     )
 
-
     @api.depends("mandate_id")
     def _compute_recipient_ids(self) -> None:
         for wizard in self:
@@ -96,7 +95,6 @@ class WizardSddMandateSend(models.TransientModel):
                 compute_lang=True,
                 options={"post_process": True},
             )[wizard.id]
-
 
     def _prepare_mandate_pdf(self) -> dict:
         self.check_singleton()

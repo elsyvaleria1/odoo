@@ -72,7 +72,6 @@ StorageStatus = {
 
 
 class SwedishBlackBoxDriver(SerialDriver):
-
     _protocol = SwedishBlackboxProtocol
 
     def __init__(self, identifier, device) -> None:

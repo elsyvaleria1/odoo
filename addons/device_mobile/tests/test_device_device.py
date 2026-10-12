@@ -150,7 +150,6 @@ class TestAPhoneIsNeverDialled(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPhoneNumber(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

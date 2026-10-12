@@ -13,7 +13,6 @@ class ExchangeChannel(models.Model):
     _inherits = {"integration.service": "endpoint_id"}
     _order = "sequence, name"
 
-
     endpoint_id = fields.Many2one(
         comodel_name="integration.service",
         index=True,
@@ -76,11 +75,9 @@ class ExchangeChannel(models.Model):
     count_transmission = fields.Integer(compute="_compute_transmission_counts")
     count_transmission_open = fields.Integer(compute="_compute_transmission_counts")
 
-
     @api.model
     def _selection_protocol(self) -> list[tuple[str, str]]:
         return self.env["exchange.protocol"]._selection_protocol()
-
 
     @api.constrains("protocol", "company_id", "endpoint_id", "active")
     def _check_protocol_is_unique_per_company(self) -> None:
@@ -126,7 +123,6 @@ class ExchangeChannel(models.Model):
                     self.env._("An annulment window cannot be negative."),
                 )
 
-
     def _compute_transmission_counts(self) -> None:
         totals = dict(
             self.env["exchange.transmission"]._read_group(
@@ -148,7 +144,6 @@ class ExchangeChannel(models.Model):
         for channel in self:
             channel.count_transmission = totals.get(channel, 0)
             channel.count_transmission_open = open_totals.get(channel, 0)
-
 
     def action_view_transmissions(self) -> dict:
         self.check_singleton()
@@ -172,7 +167,6 @@ class ExchangeChannel(models.Model):
                 self.env._("Channel %(name)s holds no inbox to read.", name=self.name),
             )
         self._read_inbox()
-
 
     def is_retry_required(self, attempt_number: int) -> bool:
         self.check_singleton()
@@ -203,7 +197,6 @@ class ExchangeChannel(models.Model):
     def _get_api_client(self, credential=None):
         self.check_singleton()
         return self.endpoint_id._get_api_client(credential=credential)
-
 
     def _get_protocol(self):
         self.check_singleton()

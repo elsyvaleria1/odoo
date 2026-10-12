@@ -4,7 +4,6 @@ from odoo.addons.asset_ledger.tests.common import create_test_product
 
 
 class ProductAssetRemoteCommon(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

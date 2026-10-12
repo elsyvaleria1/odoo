@@ -159,7 +159,6 @@ class PlanningSlot(models.Model):
             return sale_lines.search([("id", "in", sale_lines.ids)])
         return sale_lines
 
-
     @api.model
     def default_get(self, fields):
         res = super().default_get(fields)
@@ -262,7 +261,6 @@ class PlanningSlot(models.Model):
         slots_to_unlink.unlink()
         return slots_written - slots_to_unlink
 
-
     def action_view_sale_order(self):
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "sale.action_sale_order"
@@ -270,7 +268,6 @@ class PlanningSlot(models.Model):
         action["views"] = [(False, "form")]
         action["res_id"] = self.sale_order_id.id
         return action
-
 
     def _get_domain_template_slots(self):
         domain = super()._get_domain_template_slots()
@@ -548,7 +545,6 @@ class PlanningSlot(models.Model):
             "partner": self.partner_id.name,
         }
 
-
     @api.model
     def _get_employee_to_assign_priority_list(self) -> list:
         return ["previous_slot", "closest_so_line_slot", "default_role", "roles"]
@@ -739,7 +735,6 @@ class PlanningSlot(models.Model):
     def action_rollback_auto_plan_ids(self, shifts_data) -> None:
         self.browse(shifts_data["sale_line_planned"]).action_unschedule()
         super().action_rollback_auto_plan_ids(shifts_data)
-
 
     def _init_remaining_hours_to_plan(self, remaining_hours_to_plan):
         self.check_singleton()

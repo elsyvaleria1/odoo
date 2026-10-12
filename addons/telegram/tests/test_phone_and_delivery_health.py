@@ -25,7 +25,6 @@ def _contact_update(chat_id, from_id, contact_user_id, phone="5215512345678"):
 
 
 class TestSharedPhone(TelegramBotTestCase):
-
     def _share(self, update):
         handlers = type(self.env["mixin.telegram.handler"])
         with (
@@ -76,7 +75,6 @@ class TestSharedPhone(TelegramBotTestCase):
 
 
 class TestDeliveryHealth(TelegramBotTestCase):
-
     def setUp(self):
         super().setUp()
         for patcher in (
@@ -207,7 +205,6 @@ class TestConnectingHook(TelegramBotTestCase):
 
 @tagged("post_install", "-at_install")
 class TestConnectBot(TelegramBotTestCase):
-
     def test_a_bot_of_another_company_is_not_offered(self):
         other = self.env["res.company"].create({"name": "TG Connect Other"})
         self.test_bot.bot_username = "main_bot"
@@ -231,7 +228,6 @@ class TestConnectBot(TelegramBotTestCase):
 
 
 class TestChatSearch(TelegramBotTestCase):
-
     def test_a_chat_is_found_by_its_number_and_its_bot(self):
         self.test_bot.bot_username = "acme_bot"
         self.test_account.sudo().phone = "+525598765432"
@@ -249,7 +245,6 @@ class TestChatSearch(TelegramBotTestCase):
 
 
 class TestBotTokenStorage(TelegramBotTestCase):
-
     def test_a_token_kept_as_the_secret_value_is_read(self):
         credential = self.env["credential.credential"].create(
             {
@@ -335,7 +330,6 @@ class TestBotTokenStorage(TelegramBotTestCase):
 
 
 class TestOutboxRunner(TelegramBotTestCase):
-
     def _run(self, message):
         job = (
             self.env["ir.job"]

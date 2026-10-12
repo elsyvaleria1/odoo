@@ -7,7 +7,6 @@ from odoo.tests import Form, TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestResourceParty(TransactionCase):
-
     def test_a_resource_with_a_party_reads_the_party(self):
         partner = self.env["res.partner"].create(
             {"name": "Party One", "tz": "Asia/Tokyo"}

@@ -663,7 +663,6 @@ class TestStockLotTransportCapacity(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLotIdentityIsTheAssets(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

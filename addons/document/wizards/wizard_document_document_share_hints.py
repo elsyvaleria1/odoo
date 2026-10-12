@@ -5,7 +5,6 @@ from odoo.fields import Domain
 class WizardDocumentDocumentShare(models.TransientModel):
     _inherit = "wizard.document.document.share"
 
-
     @api.depends("access_internal", "document_ids")
     def _compute_access_internal_help(self) -> None:
         for record in self:

@@ -625,6 +625,4 @@ class TestRentalPlanning(TestSalePlanning):
             ValidationError,
             msg="Impossible to update the slot because it has a conflict with another slot and so it is impossible to update the rental order accordingly.",
         ):
-            slot.end_datetime = datetime(
-                2025, 9, 20, 9, 0
-            )
+            slot.end_datetime = datetime(2025, 9, 20, 9, 0)

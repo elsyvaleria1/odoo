@@ -55,7 +55,6 @@ class ResUsers(models.Model):
         user = self.env(user=auth_info["uid"]).user
 
         if request and user.email and user._get_mfa_type():
-
             key = request.cookies.get("td_id")
             if not key or not request.env["auth.totp.trust"]._resolve_trust_id(
                 key=key, uid=user.id

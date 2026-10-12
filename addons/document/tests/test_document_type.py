@@ -555,7 +555,6 @@ class TestRenewalState(DocumentTypeCase):
 
 @tagged("post_install", "-at_install")
 class TestExpirationRefreshCronIsUserIndependent(DocumentTypeCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -645,7 +644,6 @@ class TestExpirationRefreshCronIsUserIndependent(DocumentTypeCase):
 
 
 class TestTypeTags(DocumentTypeCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

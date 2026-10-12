@@ -80,7 +80,6 @@ class ModelRule:
 
 @dataclass(frozen=True)
 class ScopeRules:
-
     key: str
     models: Mapping[str, ModelRule] | None = None
     max_depth: int = 8
@@ -157,8 +156,6 @@ def safe_context(env: Environment, context: Any) -> dict[str, Any]:
     safe = {k: v for k, v in env.context.items() if k in SAFE_CONTEXT_KEYS}
     safe.update((k, v) for k, v in caller.items() if k in SAFE_CONTEXT_KEYS)
     return safe
-
-
 
 
 def hidden_field_names(
@@ -256,8 +253,6 @@ def visible_name_search_fields(
             )
         )
     return visible
-
-
 
 
 def _segment(token: str) -> str:
@@ -557,8 +552,6 @@ def call_paths(method: str, args: Any, kwargs: Mapping[str, Any]) -> list[str]:
     return [p for p in paths if p and not _segment(p).startswith("__")]
 
 
-
-
 def _close_field_names(name: str, known: list[str]) -> list[str]:
     tokens = frozenset(name.split("_"))
     reordered = [k for k in known if frozenset(k.split("_")) == tokens and k != name]
@@ -785,8 +778,6 @@ def check_call(
     check_model_operation(env, rules, model_name, method)
     check_field_names(env, model_name, method, args, kwargs)
     check_hidden_paths(env, rules, model_name, call_paths(method, args, kwargs))
-
-
 
 
 def strip(

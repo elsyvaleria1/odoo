@@ -11,7 +11,6 @@ _debug = DebugLog(__name__)
 class DocumentsDocument(models.Model):
     _inherit = "document.document"
 
-
     def _action_update_members(
         self, partners: dict, no_propagation: bool = False
     ) -> tuple:

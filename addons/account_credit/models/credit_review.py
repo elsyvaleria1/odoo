@@ -267,7 +267,6 @@ class CreditReview(models.Model):
 
 
 class CreditReviewLine(models.Model):
-
     _name = "credit.review.line"
     _inherit = ["mixin.score.line"]
     _description = "Credit Review Score Line"

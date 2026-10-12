@@ -11,7 +11,6 @@ from odoo.addons.knowledge.tests.common import KnowledgeCommonWData
 
 @tagged("knowledge_internals")
 class TestKnowledgeArticleFields(KnowledgeCommonWData):
-
     @users("employee")
     def test_favorites(self):
         playground_articles = (
@@ -173,7 +172,6 @@ class TestKnowledgeArticleFields(KnowledgeCommonWData):
 
 @tagged("knowledge_internals")
 class TestKnowledgeArticleInternals(KnowledgeCommonWData):
-
     def test_notify_member_invitation_groups(self):
         article = self.env["knowledge.article"].create(
             {"name": "Invitations", "internal_permission": "write"}
@@ -292,7 +290,6 @@ class TestKnowledgeArticleInternals(KnowledgeCommonWData):
 
 @tagged("knowledge_internals")
 class TestKnowledgeArticleUtilities(KnowledgeCommonWData):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -374,7 +371,6 @@ class TestKnowledgeArticleUtilities(KnowledgeCommonWData):
 
 @tagged("knowledge_internals", "knowledge_management")
 class TestKnowledgeCommonWDataInitialValue(KnowledgeCommonWData):
-
     def test_initial_values(self):
         article_workspace = self.article_workspace
         self.assertTrue(article_workspace.category, "workspace")

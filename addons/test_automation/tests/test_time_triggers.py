@@ -23,7 +23,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestTimeBasedTriggers(common.TransactionCase):
-
     def _run_cron(self):
         IrCron = type(self.env["ir.cron"])
         with patch.object(IrCron, "_commit_progress", return_value=float("inf")):
@@ -38,7 +37,6 @@ class TestTimeBasedTriggers(common.TransactionCase):
         cls.Lead = cls.env["automation.lead.test"]
 
         cls.model_lead = cls.env["ir.model"]._get("automation.lead.test")
-
 
     def test_on_time_trigger_setup(self):
         _logger.info("Testing on_time trigger setup")
@@ -145,7 +143,6 @@ class TestTimeBasedTriggers(common.TransactionCase):
             )
 
             self.assertEqual(automation.trg_date_range_type, range_type)
-
 
     def test_search_time_based_records_on_time(self):
         _logger.info("Testing time-based record search for on_time")
@@ -279,7 +276,6 @@ class TestTimeBasedTriggers(common.TransactionCase):
 
         records2 = automation._search_time_based_automation_records(until=now)
         self.assertNotIn(lead, records2)
-
 
     def test_cron_process_time_based_actions(self):
         _logger.info("Testing cron processing of time triggers")
@@ -437,7 +433,6 @@ class TestTimeBasedTriggers(common.TransactionCase):
 
         self.assertEqual(lead.name, "Test Lead")
 
-
     def test_on_time_created_uses_create_date(self):
         _logger.info("Testing on_time_created uses create_date")
 
@@ -517,7 +512,6 @@ class TestTimeBasedTriggers(common.TransactionCase):
         self._run_cron()
 
         self.assertEqual(lead.name, "Updated trigger")
-
 
     def test_time_trigger_with_missing_date_field(self):
         _logger.info("Testing time trigger with missing field")

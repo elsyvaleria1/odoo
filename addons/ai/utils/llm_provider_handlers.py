@@ -16,7 +16,6 @@ from odoo.exceptions import UserError
 
 
 class LlmProviderHandler:
-
     name = None
     base_url = None
 

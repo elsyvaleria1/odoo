@@ -26,7 +26,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 "args": self.env._(", ").join(args),
             }
 
-
     def action_fill_company_details(self, options, params) -> dict:
         return {
             "type": "ir.actions.act_window",

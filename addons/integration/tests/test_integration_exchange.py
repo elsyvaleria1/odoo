@@ -368,7 +368,6 @@ class TestIntegrationExchangeRetention(TransactionCase):
 
 
 class TestInboundEventEnqueue(TestIntegrationExchange):
-
     def _jobs_for(self, event):
         return self.env["ir.job"].search(
             [("identity_key", "=", f"integration.event:{event.id}")]

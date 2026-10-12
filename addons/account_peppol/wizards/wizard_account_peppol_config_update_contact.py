@@ -67,7 +67,6 @@ class WizardAccountPeppolConfigUpdateContact(models.TransientModel):
         readonly=False,
     )
 
-
     @api.depends("account_peppol_edi_user", "account_peppol_proxy_state")
     def _compute_service_json(self) -> None:
         for wizard in self:

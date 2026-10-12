@@ -48,7 +48,6 @@ class MixinAccessGraph(models.AbstractModel):
                 )
             self.pool.post_init(self._access_reach_install)
 
-
     def _access_reach_table(self) -> str:
         return f"{self._table}_access_reach"
 
@@ -88,7 +87,6 @@ class MixinAccessGraph(models.AbstractModel):
 
     def _access_reach_graph_vias(self) -> tuple[int, ...]:
         return (OWN,)
-
 
     def _access_reach_subquery(
         self,
@@ -233,7 +231,6 @@ class MixinAccessGraph(models.AbstractModel):
             groups=[key // 4 for key in keys if key % 4 == GROUP],
             reached=SQL(" OR ").join(reached),
         )
-
 
     def _access_reach_company_column(self) -> str | None:
         anchor = self._access_company_anchor()
@@ -669,7 +666,6 @@ class MixinAccessGraph(models.AbstractModel):
             changed=changed,
             deep_changed=deep_changed,
         )
-
 
     def _access_reach_install(self) -> None:
         cr = self.env.cr

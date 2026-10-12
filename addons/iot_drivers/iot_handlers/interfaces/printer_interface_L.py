@@ -65,9 +65,7 @@ class PrinterInterface(Interface):
 
         if self.start_time and time.time() - self.start_time > 3600:
             self._loop_delay = 120
-            self.start_time = (
-                None
-            )
+            self.start_time = None
 
         self.printer_devices.update(self.deduplicate_printers(discovered_devices))
 

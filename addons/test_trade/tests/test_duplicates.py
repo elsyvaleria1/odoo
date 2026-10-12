@@ -5,7 +5,6 @@ from .common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestDuplicateOrders(TestTradeOrderCase):
-
     def test_an_order_naming_another_in_its_origin_is_a_duplicate(self):
         first = self._make_order()
         second = self._make_order(origin=first.name)

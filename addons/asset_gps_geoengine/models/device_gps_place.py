@@ -49,7 +49,6 @@ PLACE_TYPE_LABELS = {
 
 
 class DeviceGpsPlace(models.Model):
-
     _name = "device.gps.place"
     _description = "Place Outside Geofences"
     _rec_name = "label"

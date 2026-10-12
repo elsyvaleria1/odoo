@@ -32,7 +32,6 @@ class TestVatValidators(TransactionCase):
     def test_check_vat_number_unknown_country_passes(self):
         self.assertTrue(self.Partner._check_vat_number("zz", "whatever"))
 
-
     def test_check_vat_mx_century_mapping(self):
         self.assertFalse(self.Partner.check_vat_mx("AAA990229AAA"))
         self.assertTrue(self.Partner.check_vat_mx("AAA000229AAA"))

@@ -4,7 +4,6 @@ from odoo import api, exceptions, fields, models
 
 
 class GamificationSkillTree(models.Model):
-
     _name = "gamification.skill.tree"
     _description = "Gamification Skill Tree"
     _order = "sequence, name"
@@ -38,7 +37,6 @@ class GamificationSkillTree(models.Model):
 
 
 class GamificationSkillNode(models.Model):
-
     _name = "gamification.skill.node"
     _description = "Skill Tree Node"
     _order = "tree_id, level, sequence"
@@ -241,7 +239,6 @@ class GamificationSkillNode(models.Model):
 
 
 class GamificationSkillNodeUnlock(models.Model):
-
     _name = "gamification.skill.node.unlock"
     _description = "Skill Node Unlock"
     _order = "unlock_date desc"

@@ -3,7 +3,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestSmsController(HttpCase):
-
     def test_malformed_webhook_payload_raises_user_error_not_type_error(self):
         response = self.url_open(
             "/sms/status",

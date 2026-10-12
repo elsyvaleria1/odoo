@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestResourceKindMaintenanceOrder(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

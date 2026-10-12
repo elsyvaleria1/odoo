@@ -118,7 +118,6 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
             )
         return [(tr._("Field Collections"), lines)]
 
-
     def _send(self, bot, chat, text, markup=None) -> None:
         bot.send_message(chat.chat_id, text, reply_markup=markup)
 
@@ -220,7 +219,6 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
             "image/webp": "webp",
         }.get(data.get("proof_mimetype"), "jpg")
         return [(f"{name}.{extension}", content)]
-
 
     @log_command_execution
     def _handle_collect_command(
@@ -742,7 +740,6 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
             channels.append("Telegram")
         return channels
 
-
     @log_command_execution
     def _handle_custody_command(
         self, bot, chat, args, partner=False, internal_user=False
@@ -785,7 +782,6 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
             "\n".join(lines),
             kb.single(tr._("Hand them in"), f"{REMIT}start"),
         )
-
 
     @log_command_execution
     def _handle_remit_command(
@@ -1036,7 +1032,6 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
             )
             % {"name": tg.bold(remittance.name)},
         )
-
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""

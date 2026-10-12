@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardDocumentDocumentLinkRecord(models.TransientModel):
-
     _name = "wizard.document.document.link.record"
     _description = "Documents Link to Record"
 

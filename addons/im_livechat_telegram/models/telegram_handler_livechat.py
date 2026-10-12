@@ -10,7 +10,6 @@ _CUSTOMER_FILES = ("photo", "document", "voice", "audio", "video")
 
 
 class TelegramHandlerLivechat(models.AbstractModel):
-
     _name = "telegram.handler.livechat"
     _inherit = "mixin.telegram.handler"
     _description = "Telegram: Live Chat"
@@ -55,7 +54,6 @@ class TelegramHandlerLivechat(models.AbstractModel):
             "mail.privilege_post_as_author",
             reason="a Telegram customer is answered in their live chat session",
         )
-
 
     def _customer(self, chat):
         return chat.account_id._contact()
@@ -140,7 +138,6 @@ class TelegramHandlerLivechat(models.AbstractModel):
         if session.chatbot_current_step_id and not opened:
             session._chatbot_run()
 
-
     def _on_business_message(
         self, bot, connection, chat, message, from_owner, edited
     ) -> bool:
@@ -215,7 +212,6 @@ class TelegramHandlerLivechat(models.AbstractModel):
         session.with_context(telegram_inbound=True)._message_update_content(
             posted.with_env(session.env), body=body
         )
-
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""

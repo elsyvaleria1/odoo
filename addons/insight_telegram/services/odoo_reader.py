@@ -4,7 +4,6 @@ from odoo import api
 
 
 class OdooReader:
-
     STATEMENT_TIMEOUT_MS = 20000
 
     def __init__(self, registry, reader_uid, context=None) -> None:

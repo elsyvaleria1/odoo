@@ -1925,7 +1925,6 @@ class ResourceResource(models.Model):
                 self.env._("A resource of a kind is a thing, not a person.")
             )
 
-
     @api.depends("meter_ids.kind")
     def _compute_odometer_meter_id(self) -> None:
         for resource in self:
@@ -1991,7 +1990,6 @@ class ResourceResource(models.Model):
                     assets=", ".join(with_readings.mapped("display_name")),
                 )
             )
-
 
     @api.model
     def _get_identifier_field_names(self) -> tuple[str, ...]:
@@ -2081,7 +2079,6 @@ class ResourceResource(models.Model):
             )
 
         return Domain.custom(to_sql=to_sql)
-
 
     @api.depends(
         "membership_ids.parent_id",
@@ -2202,7 +2199,6 @@ class ResourceResource(models.Model):
             resource_id,
             things.subselect(),
         )
-
 
     @api.model
     @tools.ormcache(cache="stable")
@@ -2341,7 +2337,6 @@ class ResourceResource(models.Model):
                 )
         self.with_context(active_test=False).write({"kind_id": kind.id})
         return self.browse(self.ids)
-
 
     def _compute_operator_history_count(self) -> None:
         counts = dict(

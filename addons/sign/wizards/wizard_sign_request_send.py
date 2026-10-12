@@ -298,7 +298,6 @@ class WizardSignRequestSend(models.TransientModel):
             if wiz.template_id:
                 wiz.body = wiz.template_id.message
 
-
     def _activity_done(self) -> None:
         signatories = self.signer_id.name or self.signer_ids.partner_id.mapped("name")
         feedback = self.env._(

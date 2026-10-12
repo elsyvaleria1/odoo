@@ -5,7 +5,6 @@ from odoo.exceptions import ValidationError
 
 
 class MailingFilter(models.Model):
-
     _name = "mailing.filter"
     _description = "Mailing Favorite Filters"
     _order = "create_date DESC"

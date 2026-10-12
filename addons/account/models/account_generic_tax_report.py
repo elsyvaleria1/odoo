@@ -215,7 +215,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
         )
         return lines
 
-
     @api.model
     @_debug.perf.timed
     def _read_generic_tax_report_amounts_no_tax_details(
@@ -927,7 +926,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                     }
 
                     return
-
 
     @_debug.perf.timed
     def caret_option_audit_tax(self, options, params) -> dict:

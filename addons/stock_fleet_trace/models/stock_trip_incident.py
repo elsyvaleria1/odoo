@@ -5,7 +5,6 @@ LOSS_TYPES = ("spill", "damage", "theft")
 
 
 class StockTripIncident(models.Model):
-
     _name = "stock.trip.incident"
     _description = "Trip Incident"
     _inherit = ["mixin.mail.thread"]
@@ -226,7 +225,6 @@ class StockTripIncident(models.Model):
 
 
 class StockTripIncidentLine(models.Model):
-
     _name = "stock.trip.incident.line"
     _description = "Trip Incident Line"
 

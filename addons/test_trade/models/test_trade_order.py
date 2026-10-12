@@ -12,11 +12,9 @@ class TestTradeOrder(models.Model):
     ]
     _description = "Base Order Test"
 
-
     line_ids = fields.One2many(comodel_name="test_trade.order.line")
     duplicated_order_ids = fields.Many2many(comodel_name="test_trade.order")
     partner_ref = fields.Char(copy=False)
-
 
     _direction = SALE
     _lock_setting_field = "test_trade_order_lock"
@@ -29,7 +27,6 @@ class TestTradeOrder(models.Model):
 
     def _get_duplicate_ref_field(self):
         return "partner_ref"
-
 
     def _get_display_name_suffix(self):
         if not self.env.context.get(self._get_display_name_context_key()):

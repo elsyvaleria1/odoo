@@ -244,9 +244,7 @@ class ProjectProject(models.Model):
         )
 
     def _get_sale_order_items_query(self, domain_per_model=None):
-        basic_project_domain = [
-            ("is_fsm", "=", False)
-        ]
+        basic_project_domain = [("is_fsm", "=", False)]
         employee_mapping_domain = [("project_id.is_fsm", "=", False)]
         if domain_per_model is None:
             domain_per_model = {

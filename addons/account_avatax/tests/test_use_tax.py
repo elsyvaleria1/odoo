@@ -6,7 +6,6 @@ from .common import TestAccountAvataxCommon, TestAvataxCommon
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraUseTaxVendorManagement(TestAvataxCommon):
-
     @classmethod
     def setUpClass(cls):
         res = super().setUpClass()
@@ -26,7 +25,6 @@ class TestAccountAvalaraUseTaxVendorManagement(TestAvataxCommon):
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraUseTaxProductManagement(TestAccountAvataxCommon):
-
     def test_item_code(self):
         self.env.company.avalara_use_upc = False
         with self._capture_request(

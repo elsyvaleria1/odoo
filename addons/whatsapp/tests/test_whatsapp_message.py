@@ -141,9 +141,7 @@ class WhatsAppMessage(WhatsAppCommon, MockIncomingWhatsApp):
             "state": "error",
             "wa_account_id": self.whatsapp_account.id,
         }
-        whatsapp_messages = self.env[
-            "whatsapp.message"
-        ].create(
+        whatsapp_messages = self.env["whatsapp.message"].create(
             [
                 base_whatsapp_message_vals | vals | {"mail_message_id": mail_message.id}
                 for vals, mail_message in zip(

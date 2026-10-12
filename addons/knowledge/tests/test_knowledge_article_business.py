@@ -19,7 +19,6 @@ class KnowledgeCommonBusinessCase(KnowledgeCommonWData):
     def setUpClass(cls):
         super().setUpClass()
 
-
         cls.shared_children += (
             cls.env["knowledge.article"]
             .sudo()
@@ -78,7 +77,6 @@ class KnowledgeCommonBusinessCase(KnowledgeCommonWData):
 
 @tagged("knowledge_internals", "knowledge_management")
 class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
-
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_article_create(self):
@@ -88,9 +86,7 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
 
         _title = "Fthagn"
         new = Article.article_create(title=_title, parent_id=False, is_private=False)
-        self.assertMembers(
-            new, "write", {self.env.user.partner_id: "write"}
-        )
+        self.assertMembers(new, "write", {self.env.user.partner_id: "write"})
         self.assertEqual(new.body, f"<h1>{_title}</h1>")
         self.assertEqual(new.category, "workspace")
         self.assertEqual(new.name, _title)
@@ -504,17 +500,13 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         self.assertMembers(grandchild_read_access, False, {})
         self.assertTrue(grandchild_read_access.user_has_access)
         with self.assertRaises(exceptions.AccessError):
-            grandchild_read_access.with_user(
-                self.user_employee_manager
-            ).body
+            grandchild_read_access.with_user(self.user_employee_manager).body
 
         self.assertMembers(grandchild_no_access, False, {})
         with self.assertRaises(exceptions.AccessError):
             grandchild_no_access.body
         with self.assertRaises(exceptions.AccessError):
-            grandchild_no_access.with_user(
-                self.user_employee_manager
-            ).body
+            grandchild_no_access.with_user(self.user_employee_manager).body
 
         self.assertMembers(grandchild_write_access, False, {})
         self.assertTrue(grandchild_write_access.user_has_write_access)
@@ -1073,7 +1065,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
 
 @tagged("knowledge_internals", "knowledge_management")
 class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
-
     @mute_logger(
         "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
     )
@@ -1280,7 +1271,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
         fragment = html.fragment_fromstring(new_article.body, create_parent=True)
         embedded_views = list(fragment.findall('.//*[@data-embedded="view"]'))
 
-
         self.assertEqual(len(embedded_views), 3)
         for embedded_view, expected_view_type, expected_context in zip(
             embedded_views, expected_view_types, expected_contexts, strict=False
@@ -1324,7 +1314,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
 
 @tagged("knowledge_internals", "knowledge_management")
 class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1671,7 +1660,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
 
         child_article.action_unarchive()
 
-
         self.assertTrue(child_article.active)
         self.assertFalse(child_article.to_delete)
         self.assertFalse(child_article.parent_id)
@@ -1752,7 +1740,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
 
 @tagged("post_install", "-at_install", "knowledge_internals", "knowledge_management")
 class TestKnowledgeShare(KnowledgeCommonWData):
-
     def test_article_can_invite_members_with_wizard(self):
         article = self.env["knowledge.article"].create(
             {
@@ -1910,7 +1897,6 @@ class TestKnowledgeShare(KnowledgeCommonWData):
 
 @tagged("post_install", "-at_install", "knowledge_internals", "knowledge_management")
 class TestKnowledgeArticleCovers(KnowledgeCommonWData):
-
     @users("employee")
     def test_article_cover_management(self):
         article_hidden = self.article_private_manager.with_env(self.env)
@@ -1950,7 +1936,6 @@ class TestKnowledgeArticleCovers(KnowledgeCommonWData):
     "knowledge_visibility",
 )
 class TestKnowledgeArticleVisibility(KnowledgeCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2006,7 +1991,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
         Article = self.env["knowledge.article"]
         workspace_article = self.workspace_article.with_user(self.env.user)
 
-
         self.assertEqual(workspace_article.category, "workspace")
         self.assertTrue(workspace_article.user_has_access)
         self.assertFalse(workspace_article.is_article_visible)
@@ -2036,7 +2020,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
             workspace_article, "write", {self.env.user.partner_id: "write"}
         )
 
-
         self.assertTrue(workspace_article.is_article_visible)
         self.assertFalse(workspace_article.is_article_visible_by_everyone)
 
@@ -2054,7 +2037,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
             Article.search([("is_article_visible", "!=", False)]),
             self.workspace_article + self.shared_article + self.private_article,
         )
-
 
         workspace_article.set_is_article_visible_by_everyone(True)
 
@@ -2075,7 +2057,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
             Article.search([("is_article_visible", "!=", False)]),
             self.workspace_article + self.shared_article + self.private_article,
         )
-
 
         for member in workspace_article.article_member_ids:
             workspace_article.remove_member(member.id)
@@ -2103,7 +2084,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
         Article = self.env["knowledge.article"]
         private_article = self.private_article.with_user(self.env.user)
 
-
         self.assertEqual(private_article.category, "private")
         self.assertTrue(private_article.user_has_access)
         self.assertTrue(private_article.is_article_visible)
@@ -2129,7 +2109,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
         )
 
         private_article.set_is_article_visible_by_everyone(True)
-
 
         self.assertTrue(private_article.is_article_visible)
         self.assertTrue(private_article.is_article_visible_by_everyone)
@@ -2157,7 +2136,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
     def test_is_shared_article_visible(self):
         Article = self.env["knowledge.article"]
         shared_article = self.shared_article.with_user(self.env.user)
-
 
         self.assertEqual(shared_article.category, "shared")
         self.assertTrue(shared_article.user_has_access)

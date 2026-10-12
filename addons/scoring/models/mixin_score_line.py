@@ -4,7 +4,6 @@ from odoo import api, fields, models
 
 
 class MixinScoreLine(models.AbstractModel):
-
     _name = "mixin.score.line"
     _description = "Score Line Mixin"
 

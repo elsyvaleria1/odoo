@@ -7,7 +7,6 @@ DATA_FILE = ("hr_payroll", ["data/hr_salary_rule_data.xml"])
 
 @tests.tagged("post_install", "-at_install")
 class TestSalaryRuleReset(tests.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

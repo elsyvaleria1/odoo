@@ -6,7 +6,6 @@ from odoo.addons.pos_restaurant.tests.test_frontend import TestFrontendCommon
 
 @tagged("post_install", "-at_install")
 class TestPosRestaurantDataContract(TestFrontendCommon):
-
     def test_the_order_declares_every_field_this_module_adds_to_it(self):
         owned = self.env["ir.model.data"].search(
             [("module", "=", "pos_restaurant"), ("model", "=", "ir.model.fields")]

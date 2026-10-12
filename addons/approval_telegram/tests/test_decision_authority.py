@@ -10,7 +10,6 @@ from odoo.addons.telegram.models.telegram_bot import TelegramBot
 
 @tagged("post_install", "-at_install")
 class TestDecisionAuthority(ApprovalRequestTestBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

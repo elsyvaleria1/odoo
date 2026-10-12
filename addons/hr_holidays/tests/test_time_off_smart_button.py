@@ -5,7 +5,6 @@ from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install")
 class TestTimeOffSmartButton(TestHrHolidaysCommon):
-
     def test_smart_button_prefills_the_employee_of_the_form(self):
         action = self.employee_emp.action_time_off_dashboard()
 

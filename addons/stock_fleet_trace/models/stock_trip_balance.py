@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class StockTripBalance(models.Model):
-
     _name = "stock.trip.balance"
     _description = "Trip Balance Line"
     _order = "batch_id, product_id, trace_id"

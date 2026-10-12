@@ -8,7 +8,6 @@ from odoo.addons.hr_holidays.tests.common import TestHolidayContract
 
 
 class TestGanttViewDecorations(TestHolidayContract):
-
     def _evaluate_decoration(self, decoration, report_row):
         view = self.env.ref("hr_holidays_gantt.hr_leave_report_calendar_view_gantt")
         expression = etree.fromstring(view.arch).get(decoration)

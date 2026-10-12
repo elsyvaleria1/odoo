@@ -32,7 +32,6 @@ class QualityCheck(models.Model):
 
     operation_id = fields.Many2one(related="point_id.operation_id")
 
-
     def do_measure(self):
         self.check_singleton()
         res = super().do_measure()

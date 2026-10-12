@@ -288,7 +288,6 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
 
 @tagged("ir_actions")
 class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -447,7 +446,6 @@ class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
 
 @tagged("-at_install", "post_install", "ir_actions")
 class TestServerActionsMailRegistryContract(MailCommon):
-
     def test_a_model_is_only_offered_the_states_it_supports(self):
         no_thread = self.env["ir.model"]._get("mail.test.nothread")
         action = self.env["ir.actions.server"].create(
@@ -503,7 +501,6 @@ class TestServerActionsMailRegistryContract(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailBatch(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -903,7 +900,6 @@ class TestServerActionsMailBatch(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailDefaults(MailCommon):
-
     def test_the_followers_field_comes_from_mail_s_own_convention(self):
         for model_name, expected in (
             ("mail.test.ticket", "customer_id"),
@@ -1117,7 +1113,6 @@ class TestServerActionsMailDefaults(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailConfigurationSurvives(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1258,7 +1253,6 @@ class TestServerActionsMailConfigurationSurvives(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailActivityDeadline(MailCommon):
-
     @freeze_time("2026-08-18 23:30:00")
     def test_the_deadline_counts_from_the_assignee_s_timezone(self):
         assignee = self.env["res.users"].create(
@@ -1344,7 +1338,6 @@ class TestServerActionsMailActivityDeadline(MailCommon):
 
 @tagged("ir_actions")
 class TestMailPostBatch(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1493,7 +1486,6 @@ class TestMailPostBatch(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsMailPostContext(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1554,7 +1546,6 @@ class TestServerActionsMailPostContext(MailCommon):
 
 @tagged("ir_actions")
 class TestServerActionsRunContext(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

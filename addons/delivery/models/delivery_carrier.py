@@ -21,15 +21,12 @@ _debug = DebugLog(__name__)
 
 
 class DeliveryCarrier(models.Model):
-
     _name = "delivery.carrier"
     _inherit = ["mixin.credential.holder", "mixin.integration.connected"]
     _description = "Shipping Methods"
     _order = "sequence, id"
     _credential_holder_field = "carrier_credential_id"
     _credential_purpose = "delivery:carrier"
-
-
 
     name = fields.Char(
         string="Delivery Method",
@@ -497,7 +494,6 @@ class DeliveryCarrier(models.Model):
         )
         return float(price) * (1.0 + self.margin) + fixed_margin_in_sale_currency
 
-
     def rate_shipment(self, order):
         self.check_singleton()
         _debug.pipeline(
@@ -591,7 +587,6 @@ class DeliveryCarrier(models.Model):
             except psycopg.Error:
                 pass
 
-
     fixed_price = fields.Float(
         compute="_compute_fixed_price",
         inverse="_inverse_fixed_price",
@@ -632,7 +627,6 @@ class DeliveryCarrier(models.Model):
             "error_message": False,
             "warning_message": False,
         }
-
 
     def base_on_rule_rate_shipment(self, order) -> dict:
         carrier = self._match_address(order.partner_shipping_id)

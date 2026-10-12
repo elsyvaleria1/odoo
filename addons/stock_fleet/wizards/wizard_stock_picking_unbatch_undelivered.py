@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardStockPickingUnbatchUndelivered(models.TransientModel):
-
     _name = "wizard.stock.picking.unbatch.undelivered"
     _description = "Undelivered Transfer"
 

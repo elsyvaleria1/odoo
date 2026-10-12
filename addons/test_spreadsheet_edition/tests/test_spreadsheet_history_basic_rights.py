@@ -95,14 +95,10 @@ class SpreadsheetMixinHistoryTest(SpreadsheetTestCase):
         )
         spreadsheet._dispatch_command(add_thread_command(3))
 
-        copy = spreadsheet.copy().with_context(
-            active_test=False
-        )
+        copy = spreadsheet.copy().with_context(active_test=False)
 
         copied_data = json_loads(copy.spreadsheet_data)
-        copied_snapshot = json_loads(
-            copy._get_spreadsheet_serialized_snapshot()
-        )
+        copied_snapshot = json_loads(copy._get_spreadsheet_serialized_snapshot())
         copied_revision_before = json_loads(
             copy.sudo().spreadsheet_revision_ids[0].commands
         )
@@ -149,9 +145,7 @@ class SpreadsheetMixinHistoryTest(SpreadsheetTestCase):
         )
 
         copied_data = json_loads(fork.spreadsheet_data)
-        copied_snapshot = json_loads(
-            fork._get_spreadsheet_serialized_snapshot()
-        )
+        copied_snapshot = json_loads(fork._get_spreadsheet_serialized_snapshot())
         copied_revision_before = json_loads(
             fork.sudo().spreadsheet_revision_ids[0].commands
         )

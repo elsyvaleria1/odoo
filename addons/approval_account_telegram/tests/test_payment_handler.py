@@ -81,7 +81,9 @@ class TestCancelPaymentCommand(PaymentApprovalTelegramTestCase):
         self.assertFalse(self.test_chat.flow_owner)
 
     def test_payment_details_from_an_unlinked_account_ends_the_flow(self):
-        self.test_chat._flow_start("telegram.handler.approval_account", "payment_details")
+        self.test_chat._flow_start(
+            "telegram.handler.approval_account", "payment_details"
+        )
         message = self.mock_telegram_message(
             chat_id=self.test_chat.chat_id,
             text=self.get_payment_details_message(),

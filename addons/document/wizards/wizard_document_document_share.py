@@ -5,7 +5,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardDocumentDocumentShare(models.TransientModel):
-
     _name = "wizard.document.document.share"
     _description = "Documents Sharing"
 
@@ -348,9 +347,7 @@ class WizardDocumentDocumentShare(models.TransientModel):
             }
 
         access_shares = []
-        if any(
-            d.owner_id != document0.owner_id for d in documents
-        ):
+        if any(d.owner_id != document0.owner_id for d in documents):
             all_partners |= documents.owner_id.partner_id
         for partner in all_partners:
             role0, inherited0, caused0 = access_by_partner_by_doc[documents[0]].get(

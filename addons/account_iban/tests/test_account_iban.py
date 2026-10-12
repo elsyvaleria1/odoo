@@ -14,7 +14,6 @@ VALID_IBAN = "BE68539007547034"
 
 @tagged("post_install", "-at_install")
 class TestAccountIban(TransactionCase):
-
     def test_normalize_iban_strips_separators(self):
         self.assertEqual(normalize_iban("BE68 5390-0754_7034"), VALID_IBAN)
 

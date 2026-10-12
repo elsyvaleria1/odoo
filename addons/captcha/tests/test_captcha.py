@@ -17,7 +17,6 @@ HOOK = "odoo.addons.captcha.models.ir_http"
 
 @tagged("post_install", "-at_install")
 class TestCaptcha(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.startPatcher(
@@ -103,7 +102,6 @@ class TestCaptcha(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSiteverify(TransactionCase):
-
     def _verdict(self, *, answer=None, raises=None, token="a-token", action="login"):
         response = MagicMock(**{"json.return_value": answer})
         with (

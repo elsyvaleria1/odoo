@@ -8,7 +8,6 @@ from odoo.tests.common import TransactionCase
 
 
 class RollingCase(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -202,7 +201,6 @@ class TestStaleness(RollingCase):
 
 
 class TestConcurrency(RollingCase):
-
     registry_test_mode = False
 
     def test_a_refresh_already_running_elsewhere_is_skipped(self):

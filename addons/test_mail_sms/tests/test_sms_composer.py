@@ -8,7 +8,6 @@ from odoo.addons.test_mail_sms.tests.common import TestSMSRecipients
 
 @tagged("post_install", "-at_install", "sms_composer")
 class TestSMSComposerComment(SMSCommon, TestSMSRecipients):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

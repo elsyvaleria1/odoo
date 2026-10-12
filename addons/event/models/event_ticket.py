@@ -5,7 +5,6 @@ from odoo.tools.misc import formatLang
 
 
 class EventEventTicket(models.Model):
-
     _name = "event.event.ticket"
     _access_anchors = frozendict({"company": "event_id.company_id"})
     _inherit = ["event.type.ticket"]

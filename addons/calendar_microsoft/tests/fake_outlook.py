@@ -83,7 +83,6 @@ class FakeOutlook(FakeCalendarServer):
 
         return patch.object(MicrosoftCalendarService, "_request", request)
 
-
     def request(self, user, method, path, params, body):
         if method == "GET" and path == DELTA:
             return self._delta(user, (params or {}).get("$deltatoken"))
@@ -195,7 +194,6 @@ class FakeOutlook(FakeCalendarServer):
         self._touch(uid)
         self.ops.append((user.id, "answer", copy_id))
         return 202, {}
-
 
     def _distribute(self, uid) -> dict[int, str]:
         meeting = self.meetings[uid]

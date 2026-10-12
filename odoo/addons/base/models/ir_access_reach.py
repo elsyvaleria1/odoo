@@ -71,7 +71,6 @@ PRINCIPAL_NAMES = (
 
 @dataclass(frozen=True, slots=True)
 class Part:
-
     reach: str
     kind: str = ""
     path: str = ""

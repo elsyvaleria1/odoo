@@ -257,7 +257,6 @@ class TestPurchaseOrder(TestAccountBudgetPurchaseCommon):
 
 @tagged("post_install", "-at_install")
 class TestPurchaseOrderBudgetContamination(TestAccountBudgetCommon):
-
     def test_uncommitted_amount_uses_discounted_price(self):
         budget = self.env["budget.analytic"].create(
             {

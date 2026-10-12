@@ -1,4 +1,3 @@
-
 from odoo.orm.primitives import SUPERUSER_ID as SUPERUSER_ID
 from odoo.orm.primitives import Command as Command
 from odoo.tools.translate import _ as _

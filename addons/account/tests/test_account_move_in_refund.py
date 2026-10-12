@@ -859,7 +859,9 @@ class TestAccountMoveInRefundOnchanges(AccountTestInvoicingCommon):
         move_form = Form(self.invoice)
         move_form.invoice_line_ids.remove(0)
         move_form.invoice_line_ids.remove(0)
-        move_form.invoice_source_id = self.env["account.move.match"].browse(copy_invoice.id)
+        move_form.invoice_source_id = self.env["account.move.match"].browse(
+            copy_invoice.id
+        )
         move_form.save()
 
         self.assertInvoiceValues(

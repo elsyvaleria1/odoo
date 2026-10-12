@@ -138,7 +138,6 @@ class TestUblCiiCommon(AccountTestInvoicingCommon):
             }
         )
 
-
     def subfolder(self):
         return "export"
 
@@ -153,7 +152,6 @@ class TestUblCiiCommon(AccountTestInvoicingCommon):
         self.assert_xml(
             invoice.ubl_cii_xml_id.raw, filename, subfolder=self.subfolder()
         )
-
 
     @classmethod
     def _import_as_attachment_on(cls, attachment, journal=None):

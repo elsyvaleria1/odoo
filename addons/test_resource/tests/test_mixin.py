@@ -80,7 +80,6 @@ class TestResMixin(TestResourceCommon):
         )[self.jean.id]
         self.assertEqual(data, {"days": 4.875, "hours": 39})
 
-
         data = self.john._get_work_duration_data_batch(
             self.datetime_tz(2018, 4, 2, 0, 0, 0, tzinfo=self.jean.tz),
             self.datetime_tz(2018, 4, 6, 23, 0, 0, tzinfo=self.jean.tz),

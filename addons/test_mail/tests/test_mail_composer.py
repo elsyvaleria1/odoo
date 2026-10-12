@@ -25,7 +25,6 @@ from odoo.addons.web.models.ir_actions_report import RenderedDocument
 
 @tagged("mail_composer")
 class TestMailComposer(MailCommon, TestRecipients):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1647,12 +1646,8 @@ class TestComposerInternals(TestMailComposer):
                     self.assertEqual(composer.reply_to, "info@test.example.com")
                 else:
                     self.assertEqual(composer.reply_to, self.template.reply_to)
-                self.assertTrue(
-                    composer.reply_to_force_new
-                )
-                self.assertEqual(
-                    composer.reply_to_mode, "new"
-                )
+                self.assertTrue(composer.reply_to_force_new)
+                self.assertEqual(composer.reply_to_mode, "new")
 
                 ctx.pop("default_template_id")
                 composer = (
@@ -2056,7 +2051,6 @@ class TestComposerInternals(TestMailComposer):
 
 @tagged("mail_composer", "multi_lang", "multi_company")
 class TestComposerResultsComment(TestMailComposer, CronMixinCase):
-
     def test_assert_initial_data(self):
         self.assertTrue(self.template.auto_delete)
 
@@ -2602,17 +2596,13 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 partner_id=external_partner,
             ):
                 if is_customer_subscribed:
-                    test_record.message_subscribe(
-                        partner_ids=external_partner.ids
-                    )
+                    test_record.message_subscribe(partner_ids=external_partner.ids)
                     self.assertTrue(
                         composer.notified_bcc_contains_share,
                         "The created partner is external so should be True",
                     )
                 else:
-                    test_record.message_unsubscribe(
-                        external_partner.ids
-                    )
+                    test_record.message_unsubscribe(external_partner.ids)
                     self.assertFalse(
                         composer.notified_bcc_contains_share,
                         "External follower should be unsubscribed",
@@ -2779,9 +2769,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         )
         email_to_1 = "test.to.1@test.example.com"
         email_to_2 = "test.to.2@test.example.com"
-        email_to_3 = (
-            "test.to.1@test.example.com"
-        )
+        email_to_3 = "test.to.1@test.example.com"
         email_cc_1 = "test.cc.1@test.example.com"
         self.template.write(
             {
@@ -3057,7 +3045,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
 
                 for test_record, exp_lang in zip(test_records, langs, strict=True):
                     message = test_record.message_ids[0]
-
 
                     if exp_lang == "es_ES":
                         exp_body = f"SpanishBody for {test_record.name}"
@@ -3666,7 +3653,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
 
 @tagged("mail_composer", "mail_blacklist")
 class TestComposerResultsCommentStatus(TestMailComposer):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4238,9 +4224,7 @@ class TestComposerResultsMass(TestMailComposer):
         )
         email_to_1 = "test.to.1@test.example.com"
         email_to_2 = "test.to.2@test.example.com"
-        email_to_3 = (
-            "test.to.1@test.example.com"
-        )
+        email_to_3 = "test.to.1@test.example.com"
         email_cc_1 = "test.cc.1@test.example.com"
         self.template.write(
             {
@@ -5311,7 +5295,6 @@ class TestComposerResultsMass(TestMailComposer):
 
 @tagged("mail_composer", "mail_blacklist")
 class TestComposerResultsMassStatus(TestMailComposer):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -5447,7 +5430,6 @@ class TestComposerResultsMassStatus(TestMailComposer):
 
 @tagged("mail_composer")
 class TestComposerMassMailEnvironment(TestMailComposer):
-
     def _mass_composer(self):
         return (
             self.env["wizard.mail.message.send"]

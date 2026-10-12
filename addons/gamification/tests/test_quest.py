@@ -9,7 +9,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestQuest(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -172,7 +171,6 @@ class TestQuest(common.TransactionCase):
 
 
 class TestSeason(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -247,7 +245,6 @@ class TestSeason(common.TransactionCase):
 
 
 class TestSkillTree(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

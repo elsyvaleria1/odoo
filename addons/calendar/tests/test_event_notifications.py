@@ -926,7 +926,6 @@ class TestEventNotifications(CalendarMailCommon):
 
 @tagged("mail_calendar")
 class TestInvitationTemplateAttachments(CalendarMailCommon):
-
     def test_template_attachments_reach_attendees_with_their_content(self):
         template = self.env.ref("calendar.calendar_template_meeting_invitation")
         attachment = self.env["ir.attachment"].create(

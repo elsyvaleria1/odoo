@@ -19,7 +19,6 @@ NAMES = {
 
 @tagged("post_install", "-at_install")
 class TestAccessMemoProperty(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

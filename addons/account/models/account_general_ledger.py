@@ -108,9 +108,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         action = {
             "type": "ir.actions.act_window",
             "view_mode": "form",
-            "views": [
-                (view_id, "form")
-            ],
+            "views": [(view_id, "form")],
             "res_model": target_record._name,
             "res_id": target_record.id,
             "context": self.env.context,
@@ -229,9 +227,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
 
                 if current_groupby == "id_with_accumulated_balance":
                     rows_by_key[aml_key]["has_sublines"] = False
-                    rows_by_key[aml_key]["account_id"] = row[
-                        "account_id"
-                    ]
+                    rows_by_key[aml_key]["account_id"] = row["account_id"]
 
                     if "balance_line" not in aml_key:
                         rows_by_key[aml_key]["date"] = row["date"]
@@ -267,9 +263,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             aggregated=not current_groupby,
         )
         if not current_groupby:
-            return rows_by_key[
-                None
-            ]
+            return rows_by_key[None]
 
         return [(key, entry) for key, entry in rows_by_key.items()]
 

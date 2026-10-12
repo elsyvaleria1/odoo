@@ -71,7 +71,6 @@ class AccountEdiTestCommon(AccountTestInvoicingCommon):
 
         return _decorator
 
-
     def _create_fake_edi_attachment(self):
         return self.env["ir.attachment"].create(
             {
@@ -124,9 +123,7 @@ class AccountEdiTestCommon(AccountTestInvoicingCommon):
 
     def assert_generated_file_equal(self, invoice, expected_values, applied_xpath=None):
         invoice.action_post()
-        invoice.edi_document_ids._process_documents_web_services(
-            with_commit=False
-        )
+        invoice.edi_document_ids._process_documents_web_services(with_commit=False)
         attachment = invoice._get_edi_attachment(self.edi_format)
         if not attachment:
             raise ValueError("No attachment was generated after posting EDI")

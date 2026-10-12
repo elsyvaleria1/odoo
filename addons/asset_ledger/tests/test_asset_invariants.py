@@ -310,7 +310,6 @@ class TestAssetInvariants(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestAssetUserCannotEditTheCatalogue(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -389,7 +388,6 @@ class TestAssetUserCannotEditTheCatalogue(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestOneAssetOneCompanyLedger(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -481,7 +479,6 @@ class TestOneAssetOneCompanyLedger(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLicensePlateIsActuallyUnique(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -527,7 +524,6 @@ class TestLicensePlateIsActuallyUnique(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -635,7 +631,6 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
 
 
 class TestOneNameForTheAsset(TransactionCase):
-
     QUALIFIED = {
         ("device.device", "own_asset_id"),
     }

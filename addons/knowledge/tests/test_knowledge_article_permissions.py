@@ -171,7 +171,6 @@ class TestKnowledgeArticlePermissions(KnowledgeArticlePermissionsCase):
 
 @tagged("knowledge_internals", "knowledge_management")
 class KnowledgeArticlePermissionsInitialValues(KnowledgeArticlePermissionsCase):
-
     def test_initial_values(self):
         article_roots = self.article_roots.with_env(self.env)
         article_headers = self.article_headers.with_env(self.env)
@@ -517,7 +516,6 @@ class TestKnowledgeArticlePermissionsTools(KnowledgeArticlePermissionsCase):
 
 @tagged("knowledge_acl", "knowledge_portal")
 class TestKnowledgeArticlePortal(KnowledgeArticlePermissionsCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

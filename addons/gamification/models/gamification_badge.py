@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationBadge(models.Model):
-
     CAN_GRANT = 1
     NOBODY_CAN_GRANT = 2
     USER_NOT_VIP = 3

@@ -8,7 +8,6 @@ DEMO_ENC_KEY = "account_peppol/tools/enc_key"
 DEMO_PRIVATE_KEY = "account_peppol/tools/private_key.pem"
 
 
-
 def get_demo_vendor_bill(user) -> dict:
     return {
         "direction": "incoming",
@@ -172,7 +171,6 @@ _demo_behaviour = {
     "_get_connection_options": _mock_connection_options,
     "_peppol_deregister_participant": _mock_peppol_deregister_participant,
 }
-
 
 
 def handle_demo(func, /):

@@ -28,7 +28,6 @@ class _FromAddress(requests.adapters.HTTPAdapter):
 
 @tagged("post_install", "-at_install")
 class TestLoginDevice(TestHttpBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

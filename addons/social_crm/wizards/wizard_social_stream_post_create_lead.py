@@ -4,7 +4,6 @@ from odoo.tools.misc import format_datetime
 
 
 class WizardSocialStreamPostCreateLead(models.TransientModel):
-
     _name = "wizard.social.stream.post.create.lead"
     _description = "Convert Social Post to Lead"
 
@@ -52,9 +51,7 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
         store=True,
         readonly=False,
     )
-    post_image_urls = fields.Text(
-        string="Post Images URLs"
-    )
+    post_image_urls = fields.Text(string="Post Images URLs")
     utm_source_id = fields.Many2one(
         comodel_name="utm.source",
         compute="_compute_utm_data",

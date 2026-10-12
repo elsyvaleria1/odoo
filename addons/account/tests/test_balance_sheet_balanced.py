@@ -426,7 +426,6 @@ def log_incorrect_accounts_detailed(report_setup_data, amls, totals, is_first_ca
 
 @tagged("post_install_l10n", "post_install", "-at_install")
 class TestBalanceSheetBalanced(TestAccountReportsCommon):
-
     @classmethod
     def setup_independent_user(cls):
         cls.existing_companies = cls.env["res.company"].search([])
@@ -549,9 +548,7 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             )
         else:
             self.__class__.chart_template = coa
-            company_data = self.setup_other_company(
-                name="company_3"
-            )
+            company_data = self.setup_other_company(name="company_3")
             self.env = self.env(
                 context=dict(
                     self.env.context, allowed_company_ids=company_data["company"].ids

@@ -14,7 +14,6 @@ TOKEN_SHAPE = re.compile(r"^[A-Za-z0-9_-]{32}$")
 
 
 class TelegramLinkToken(models.Model):
-
     _name = "telegram.link.token"
     _description = "Telegram Link Token"
     _order = "id desc"

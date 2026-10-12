@@ -4,10 +4,7 @@ from odoo import models
 
 
 class SocialStreamPost(models.Model):
-
     _inherit = "social.stream.post"
-
-
 
     def _facebook_get_comments(self, next_records_token=False, count=20) -> dict:
         return {"comments": self._get_demo_comments(), "summary": {"total_count": 2}}
@@ -20,7 +17,6 @@ class SocialStreamPost(models.Model):
     def _facebook_like(self, object_id, like) -> None:
         return
 
-
     def _instagram_comment_add(self, message, object_id, comment_type="comment"):
         return self._get_new_comment_demo(message)
 
@@ -28,7 +24,6 @@ class SocialStreamPost(models.Model):
         return {
             "comments": self._get_demo_comments(),
         }
-
 
     def _linkedin_comment_add(self, message, comment_urn=None, attachment=None):
         return {
@@ -64,7 +59,6 @@ class SocialStreamPost(models.Model):
 
         return {"comments": comments, "summary": {"total_count": 2}}
 
-
     def _twitter_comment_add(self, stream, comment_id, message, attachment):
         comment = self._get_new_comment_demo(message)
         comment["in_reply_to_tweet_id"] = comment_id
@@ -88,7 +82,6 @@ class SocialStreamPost(models.Model):
             return self._twitter_do_retweet()
         return True
 
-
     def _youtube_comment_add(self, comment_id, message, is_edit=False):
         return self._get_new_comment_demo(message)
 
@@ -108,7 +101,6 @@ class SocialStreamPost(models.Model):
             "message": message,
             "comments": {"data": []},
         }
-
 
     def _get_demo_comments(self) -> list:
 

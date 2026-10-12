@@ -8,7 +8,6 @@ from .common import TestPayslipBase
 
 @tagged("post_install", "-at_install")
 class TestVersionPayslipIntegrity(TestPayslipBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

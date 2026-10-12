@@ -41,9 +41,7 @@ class WizardEsgMetricSendReviewSurvey(models.TransientModel):
         metric_ids = self.env.context.get("default_metric_ids", [])
         self.metric_ids = self.env["esg.metric"].browse(metric_ids)
 
-    @api.depends(
-        "survey_template_id"
-    )
+    @api.depends("survey_template_id")
     def _compute_render_model(self) -> None:
         self.render_model = "survey.user_input"
 

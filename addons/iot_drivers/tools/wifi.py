@@ -118,9 +118,7 @@ def _connect(ssid, password):
 
 def reconnect(ssid=None, password=None, force_update=False):
     if not force_update:
-        timer = (
-            time.time() + 10
-        )
+        timer = time.time() + 10
         while time.time() < timer:
             if get_ip():
                 if is_access_point():
@@ -169,8 +167,6 @@ def _save_configuration(ssid) -> bool:
             "Failed to apply the network configuration to /root_bypass_ramdisks."
         )
         return False
-
-
 
 
 @cache

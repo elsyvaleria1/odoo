@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestTeamAccessBind(TransactionCase):
-
     def test_the_teams_are_those_the_user_fields_read(self):
         for usage in ("alpha", "beta"):
             self.env["ir.config_parameter"].set_param(

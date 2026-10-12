@@ -191,7 +191,6 @@ def generate(seed, steps):
 
 
 class _Draw:
-
     def __init__(self, rng, profile):
         self.rng = rng
         boost = profile["boost"]
@@ -352,7 +351,6 @@ class Failure:
 
 
 class Walk:
-
     def __init__(self, harness):
         self.harness = harness
         self.env = harness.env
@@ -392,7 +390,6 @@ class Walk:
 
     def _failure(self, signature, exc):
         return Failure(signature, f"{type(exc).__name__}: {exc}")
-
 
     def _viewer(self, draw):
         return self.viewers[draw % len(self.viewers)]
@@ -700,7 +697,6 @@ class Walk:
     def _op_check(self):
         pass
 
-
     def _vals(self, rng, model_name, ids, nested=False):
         vals = {}
 
@@ -853,7 +849,6 @@ class Walk:
                     )
                     commands.append(Command.set(chosen))
         return commands
-
 
     def check(self):
         try:

@@ -267,7 +267,6 @@ class TestCustodyAssignment(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCustodyReadsFromTheLedger(TestCustodyAssignment):
-
     def test_the_asset_reads_its_operator_and_manager_off_the_ledger(self):
         self.assertEqual(self.asset.operator_employee_id, self.driver)
         self.assertEqual(self.asset.manager_employee_id, self.manager)

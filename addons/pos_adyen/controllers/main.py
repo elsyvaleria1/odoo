@@ -42,9 +42,7 @@ class PosAdyenController(http.Controller):
         if pending is None:
             raise Forbidden
         adyen_pm_sudo._adyen_record_notification(data, pending)
-        return request.prepare_json_response(
-            "[accepted]"
-        )
+        return request.prepare_json_response("[accepted]")
 
     @staticmethod
     def _get_additional_data_from_unparsed(adyen_additional_response, data_key):

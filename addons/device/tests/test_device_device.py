@@ -705,7 +705,6 @@ class TestRemoteDeviceCronCheckHealth(InlineStateRetryMixin, DeviceTransactionCa
 
 
 class TestRemoteDeviceRegisterHook(InlineStateRetryMixin, DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -771,7 +770,6 @@ class TestRemoteDeviceRegisterHook(InlineStateRetryMixin, DeviceTransactionCase)
 
 @tagged("post_install", "-at_install")
 class TestTransportContract(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -861,7 +859,6 @@ class TestTransportContract(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDeviceKindContract(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -70,9 +70,7 @@ class StudioExportSerializer:
         self.website_themes = []
 
     def serialize(self):
-        depends = set(
-            self.module.mapped("dependencies_id.name")
-        )
+        depends = set(self.module.mapped("dependencies_id.name"))
         self.utils.path_counter.clear()
         self.warnings = []
 
@@ -517,12 +515,8 @@ class StudioExportUtils:
         for record in records:
             module_name = self.get_module_name(record)
 
-            module_deps.add(
-                record._original_module
-            )
-            module_deps.add(
-                record._module
-            )
+            module_deps.add(record._original_module)
+            module_deps.add(record._module)
             module_deps.add(module_name)
 
             for field in fields:

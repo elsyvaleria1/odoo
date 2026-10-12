@@ -6,7 +6,6 @@ from .test_document_hr_common import TransactionCaseDocumentsHr
 
 
 class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

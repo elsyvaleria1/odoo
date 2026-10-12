@@ -60,7 +60,6 @@ errors = {
 
 
 class BlackBoxDriver(SerialDriver):
-
     _protocol = BlackboxProtocol
     priority = 1
 

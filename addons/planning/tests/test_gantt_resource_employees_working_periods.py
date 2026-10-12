@@ -4,7 +4,6 @@ from .common import TestPlanningContractCommon
 
 
 class TestPlanningGanttResourceEmployeeWorkingPeriods(TestPlanningContractCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

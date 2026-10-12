@@ -7,7 +7,6 @@ from odoo.tools import mute_logger
 
 @tagged("post_install", "-at_install")
 class TestMailOwnerReach(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -115,7 +114,6 @@ class TestMailOwnerReach(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestActivityOwnerReach(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

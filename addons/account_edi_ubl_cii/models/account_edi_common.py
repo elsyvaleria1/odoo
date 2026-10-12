@@ -206,7 +206,6 @@ SUPPORTED_FILE_TYPES = {
 
 
 class FloatFmt(float):
-
     def __new__(cls, value, min_dp=2, max_dp=None):
         return super().__new__(cls, value)
 
@@ -251,7 +250,6 @@ class AccountEdiCommon(models.AbstractModel):
         "Common functions for EDI documents: generate the data, the constraints, etc"
     )
 
-
     def module_installed(self, module_name) -> bool:
         return self.env["ir.module.module"]._get(module_name).state == "installed"
 
@@ -280,7 +278,6 @@ class AccountEdiCommon(models.AbstractModel):
 
     def _can_export_selfbilling(self) -> bool:
         return False
-
 
     def _check_taxes(self, tax_ids) -> None:
         for tax in tax_ids:
@@ -366,7 +363,6 @@ class AccountEdiCommon(models.AbstractModel):
             "tax_exemption_reason_code": tax_exemption_reason_code,
         }
 
-
     def _check_required_fields(self, record, field_names, custom_warning_message=""):
         if not record:
             return custom_warning_message or self.env._(
@@ -409,7 +405,6 @@ class AccountEdiCommon(models.AbstractModel):
                 record=record.display_name,
             )
 
-
     def _invoice_constraints_common(self, invoice) -> dict:
         for line in invoice.invoice_line_ids.filtered(
             lambda x: (
@@ -424,7 +419,6 @@ class AccountEdiCommon(models.AbstractModel):
                     )
                 }
         return {}
-
 
     def _import_invoice_ubl_cii(self, invoice, file_data, new=False):
         invoice.check_singleton()
@@ -788,9 +782,7 @@ class AccountEdiCommon(models.AbstractModel):
             )
             logs += tax_logs
             if not line_values["product_uom_id"]:
-                line_values.pop(
-                    "product_uom_id"
-                )
+                line_values.pop("product_uom_id")
             lines_values.append(line_values)
             lines_values += self._prepare_line_charge_vals(
                 record, line_values, line_values["tax_ids"]
@@ -851,9 +843,7 @@ class AccountEdiCommon(models.AbstractModel):
         if self.env["account.move.line"]._fields.get("deferred_start_date"):
             start_date_node = tree.find(xpath_dict["deferred_start_date"])
             end_date_node = tree.find(xpath_dict["deferred_end_date"])
-            if (
-                start_date_node is not None and end_date_node is not None
-            ):
+            if start_date_node is not None and end_date_node is not None:
                 start_date = datetime.strptime(
                     start_date_node.text.strip(), xpath_dict["date_format"]
                 )

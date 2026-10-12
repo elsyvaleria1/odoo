@@ -102,7 +102,6 @@ class TestTokenRotation(TelegramBotTestCase):
 
 
 class TestArchivedCredential(TelegramBotTestCase):
-
     def setUp(self):
         super().setUp()
         self.test_credential.active = False
@@ -132,7 +131,6 @@ class TestArchivedCredential(TelegramBotTestCase):
 
 
 class TestWebhookSecretEnforcement(TelegramBotTestCase):
-
     def _admitted(self, headers=None):
         receiver = self.test_bot._get_or_create_webhook_receiver()
         allowed, _status, _reason = receiver._check_inbound_request(

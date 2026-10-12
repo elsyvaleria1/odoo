@@ -7,7 +7,6 @@ from odoo.addons.test_mail.tests.common import TestRecipients
 
 @tagged("odoobot")
 class TestOdoobot(MailCommon, TestRecipients):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

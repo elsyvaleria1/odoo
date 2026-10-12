@@ -2,7 +2,6 @@ from .common import TelegramBotTestCase
 
 
 class TestBotLanguage(TelegramBotTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

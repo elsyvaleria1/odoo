@@ -3,7 +3,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestStatusBarColdOpen(HttpCase):
-
     def test_a_cold_form_open_renders_and_fills_its_statusbar(self):
         self.assertEqual(
             self.env["event.event"]._fields["stage_id"].type,

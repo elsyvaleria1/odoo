@@ -21,7 +21,6 @@ def _split_repository(repository: str) -> tuple[str, str]:
 
 
 class IntegrationGithubPull(models.Model):
-
     _name = "integration.github.pull"
     _description = "GitHub Pull Request"
     _inherit = ["mixin.mail.thread"]

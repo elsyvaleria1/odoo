@@ -5,7 +5,6 @@ from odoo.http import request
 
 
 class MailingLegacy(http.Controller):
-
     @http.route(
         ["/mail/mailing/<int:mailing_id>/unsubscribe"],
         type="http",

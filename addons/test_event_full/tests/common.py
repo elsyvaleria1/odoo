@@ -17,10 +17,8 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
     def setUpClass(cls):
         super().setUpClass()
 
-
         cls.reference_now = datetime(2021, 12, 1, 10, 0, 0)
         cls.reference_today = datetime(2021, 12, 1)
-
 
         cls.admin_user = cls.env.ref("base.user_admin")
         cls.admin_user.write(
@@ -69,7 +67,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
                 }
             )
         )
-
 
         cls.ticket_product = cls.env["product.product"].create(
             {
@@ -305,7 +302,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
             }
         )
 
-
         cls.event_base_vals = {
             "name": "Test Event",
             "date_begin": cls.reference_now + timedelta(days=1),
@@ -332,7 +328,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
         )
         ticket_1.start_sale_datetime = cls.reference_now + timedelta(hours=1)
         ticket_2.start_sale_datetime = cls.reference_now + timedelta(hours=2)
-
 
         cls.website = cls.env["website"].search(
             [("company_id", "=", cls.company_admin.id)], limit=1
@@ -426,9 +421,7 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
                 if answer.question_type == "simple_choice":
                     self.assertIn(answer.value_answer_id.name, lead.description)
                 else:
-                    self.assertIn(
-                        answer.value_text_box, lead.description
-                    )
+                    self.assertIn(answer.value_text_box, lead.description)
 
 
 class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
@@ -550,7 +543,6 @@ class TestWEventCommon(HttpCaseWithUserDemo, HttpCaseWithUserPortal, MockVisitor
     def setUp(self):
         super().setUp()
 
-
         self.reference_now = datetime(2021, 12, 1, 10, 0, 0)
         self.reference_today = datetime(2021, 12, 1)
 
@@ -644,7 +636,6 @@ class TestWEventCommon(HttpCaseWithUserDemo, HttpCaseWithUserPortal, MockVisitor
             }
         )
 
-
         self.event_question_1 = self.env["event.question"].create(
             {
                 "title": "Which field are you working in",
@@ -666,7 +657,6 @@ class TestWEventCommon(HttpCaseWithUserDemo, HttpCaseWithUserPortal, MockVisitor
                 "once_per_order": True,
             }
         )
-
 
         self.track_0 = self.env["event.track"].create(
             {

@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class CloudStorageStream(Stream):
-
     def __init__(self, attachment, **kwargs) -> None:
         super().__init__(**kwargs)
         self._attachment = attachment

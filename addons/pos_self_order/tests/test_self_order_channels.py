@@ -13,7 +13,6 @@ from odoo.addons.pos_self_order.tests.self_order_common_test import SelfOrderCom
 
 @tagged("post_install", "-at_install")
 class TestSelfOrderChannels(SelfOrderCommonTest):
-
     def setUp(self):
         super().setUp()
         self.pos_config.write(

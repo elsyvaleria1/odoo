@@ -101,9 +101,7 @@ class TestSMSNoThread(SMSCommon, TestSMSRecipients):
                     self.assertTrue(composer.comment_single_recipient)
                     self.assertEqual(composer.composition_mode, "comment")
                     if ctx.get("default_number_field_name") == "mobile":
-                        stored_number = (
-                            ""
-                        )
+                        stored_number = ""
                         self.assertEqual(composer.recipient_valid_count, 0)
                         self.assertEqual(composer.recipient_invalid_count, 1)
                     else:

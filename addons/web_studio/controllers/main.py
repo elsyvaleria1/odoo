@@ -1143,9 +1143,7 @@ Are you sure you want to remove the selection values of those records?""",
                         "model_id": model.id,
                         "ttype": "integer",
                         "store": False,
-                        "compute": compute_function.replace(
-                            "    ", ""
-                        ),
+                        "compute": compute_function.replace("    ", ""),
                     }
                 )
             )

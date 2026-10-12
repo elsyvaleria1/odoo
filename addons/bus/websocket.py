@@ -1116,7 +1116,6 @@ class HandshakeUserAgent:
 
 
 class HandshakeFacts:
-
     __slots__ = ("cookies", "remote_addr", "user_agent")
 
     def __init__(self, cookies, remote_addr, user_agent) -> None:
@@ -1135,7 +1134,6 @@ class HandshakeFacts:
 
 
 class SessionView:
-
     __slots__ = ("context", "sid", "uid")
 
     def __init__(self, sid, uid, context) -> None:

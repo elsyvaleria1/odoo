@@ -32,7 +32,9 @@ class TestEspecieDetailsValidation(PaymentApprovalTelegramTestCase):
         self.handler = self.env["telegram.handler.approval_account"]
 
     def test_especie_details_from_an_unlinked_account_ends_the_flow(self):
-        self.test_chat._flow_start("telegram.handler.approval_account", "especie_details")
+        self.test_chat._flow_start(
+            "telegram.handler.approval_account", "especie_details"
+        )
         message = self.mock_telegram_message(
             chat_id=self.test_chat.chat_id,
             text=self.get_especie_details_message(),

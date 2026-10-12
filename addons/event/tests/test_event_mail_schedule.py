@@ -270,7 +270,6 @@ class TestMailSchedule(EventMailCommon):
             "Should have called 5 times execution (batch of 2 until 10 registrations)",
         )
 
-
         self.assertTrue(
             all(reg.state == "open" for reg in attendees[:15]),
             "Registrations: should be auto-confirmed",
@@ -347,7 +346,6 @@ class TestMailSchedule(EventMailCommon):
             "event: all subscription mails should be scheduled, not sent",
         )
 
-
         with patch.object(
             EventMailRegistration,
             "_execute_on_registrations",
@@ -390,7 +388,6 @@ class TestMailSchedule(EventMailCommon):
                 "subject": f"Confirmation for {test_event.name}",
             },
         )
-
 
         self.env["ir.config_parameter"].sudo().set_param("mail.batch_size", False)
         self.env["ir.config_parameter"].sudo().set_param(
@@ -461,7 +458,6 @@ class TestMailSchedule(EventMailCommon):
             },
         )
 
-
         self.assertFalse(event_prev_scheduler.mail_done)
         self.assertEqual(event_prev_scheduler.mail_state, "scheduled")
 
@@ -499,7 +495,6 @@ class TestMailSchedule(EventMailCommon):
                 "subject": f"Reminder for {test_event.name}: tomorrow",
             },
         )
-
 
         with self.mock_datetime_and_now(now_start), self.mock_mail_gateway():
             new_attendee = self.env["event.registration"].create(
@@ -576,7 +571,6 @@ class TestMailSchedule(EventMailCommon):
             self.assertEqual(
                 mail.email_to, formataddr((new_attendee.name, new_attendee.email))
             )
-
 
         self.assertFalse(event_next_scheduler.mail_done)
 

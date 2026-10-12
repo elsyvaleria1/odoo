@@ -12,7 +12,6 @@ from odoo.addons.ai.utils.llm_providers import (
 
 @tagged("-at_install", "post_install")
 class TestGeminiIntegration(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.env["credential.credential"]._set_system_secret(

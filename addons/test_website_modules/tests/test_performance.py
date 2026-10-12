@@ -268,7 +268,6 @@ class TestWebsiteAllPerformance(
         self.set_registry_readonly_mode(True)
         self.page.track = False
 
-
         self.assertEqual(self._get_cart_quantity(), 0)
 
         origin_allow_to_use_cache = (

@@ -9,7 +9,6 @@ MODULE = "test_inherited_label"
 
 @tagged("post_install", "-at_install")
 class TestInheritedFieldTranslation(TransactionCase):
-
     def _field(self, model, name):
         return self.env["ir.model.fields"]._get(model, name)
 

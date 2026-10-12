@@ -234,7 +234,6 @@ class TestTourHelperIsReachable(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestStockBarcodeRegressions20260928(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

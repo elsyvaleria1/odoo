@@ -51,14 +51,12 @@ class PaymentProvider(models.Model):
         help="The public client key. To generate directly from Odoo or from Authorize.Net backend.",
     )
 
-
     @api.constrains("available_currency_ids", "state")
     def _check_available_currency_ids(self) -> None:
         super()._check_available_currency_ids()
         self.filtered(lambda p: p.code == "authorize")._check_single_available_currency(
             self.env._("Only one currency can be selected by Authorize.Net account.")
         )
-
 
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
@@ -70,13 +68,11 @@ class PaymentProvider(models.Model):
             }
         )
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "authorize":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def action_update_merchant_details(self) -> None:
         self.check_singleton()
@@ -115,7 +111,6 @@ class PaymentProvider(models.Model):
         )
         self.available_currency_ids = [Command.set(currency.ids)]
         self.authorize_client_key = res_content.get("publicClientKey")
-
 
     def _get_validation_amount(self):
         res = super()._get_validation_amount()

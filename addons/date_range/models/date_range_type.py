@@ -16,7 +16,6 @@ UNIT_SELECTION = time_unit_selection("day", "week", "month", "year")
 
 
 class DateRangeType(models.Model):
-
     _name = "date.range.type"
     _description = "Date Range Type"
     _order = "name,id"

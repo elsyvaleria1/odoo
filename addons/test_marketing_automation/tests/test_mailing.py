@@ -13,9 +13,7 @@ class TestMassMailing(CronMixinCase, TestMACommon):
         super().setUpClass()
 
         cls.date_reference = Datetime.from_string("2023-11-08 08:00:00")
-        cls.test_records = cls.env[
-            "res.partner"
-        ].create(
+        cls.test_records = cls.env["res.partner"].create(
             [
                 {
                     "name": "test1",

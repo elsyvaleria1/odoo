@@ -21,7 +21,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestKarmaIntegrity(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -100,7 +99,6 @@ class TestKarmaIntegrity(common.TransactionCase):
 
 
 class TestGoalStateMachine(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -192,7 +190,6 @@ class TestGoalStateMachine(common.TransactionCase):
 
 
 class TestMentorshipSecurity(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -347,7 +344,6 @@ class TestStreakCronIdempotency(common.TransactionCase):
 
 
 class TestStreakTimezone(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -426,7 +422,6 @@ class TestStreakTimezone(common.TransactionCase):
 
 
 class TestCronErrorIsolation(common.TransactionCase):
-
     def _user(self, login):
         return (
             self.env["res.users"]
@@ -593,7 +588,6 @@ class TestCronErrorIsolation(common.TransactionCase):
 
 
 class TestSkillTreeWiring(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -838,7 +832,6 @@ class TestProfilePrivacy(common.TransactionCase):
 
 
 class TestGoalOutcomeFields(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -908,7 +901,6 @@ class TestGoalOutcomeFields(common.TransactionCase):
 
 
 class TestQuestOwnership(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -972,7 +964,6 @@ class TestQuestOwnership(common.TransactionCase):
 
 
 class TestChallengeRetargeting(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1035,7 +1026,6 @@ class TestChallengeRetargeting(common.TransactionCase):
 
 
 class TestConsolidationPreservesGain(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1113,7 +1103,6 @@ class TestConsolidationPreservesGain(common.TransactionCase):
 
 
 class TestActivityFeedRendersAtReadTime(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1153,7 +1142,6 @@ class TestActivityFeedRendersAtReadTime(common.TransactionCase):
 
 
 class TestClosedGoalCurrentFrozen(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1210,7 +1198,6 @@ class TestClosedGoalCurrentFrozen(common.TransactionCase):
 
 
 class TestQuestStepCrossQuestGuard(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1278,7 +1265,6 @@ class TestQuestStepCrossQuestGuard(common.TransactionCase):
 
 
 class TestQuestEnrollmentStateNotDirectlyWritable(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1330,7 +1316,6 @@ class TestQuestEnrollmentStateNotDirectlyWritable(common.TransactionCase):
 
 
 class TestKudosImmutableAfterSend(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1410,7 +1395,6 @@ class TestKudosImmutableAfterSend(common.TransactionCase):
 
 
 class TestStreakConcurrentFirstVisit(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1480,7 +1464,6 @@ class TestStreakConcurrentFirstVisit(common.TransactionCase):
 
 
 class TestXpProgressFollowsRankThresholds(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1525,7 +1508,6 @@ class TestXpProgressFollowsRankThresholds(common.TransactionCase):
 
 
 class TestXpProgressBatchesRankLookup(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

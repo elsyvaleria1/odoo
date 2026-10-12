@@ -129,7 +129,6 @@ Welcome to {{4}} office""",
 class WhatsAppComposerRendering(
     WhatsAppComposerCase, WhatsAppFullCase, CronMixinCase, MockIncomingWhatsApp
 ):
-
     def test_assert_initial_data(self):
         self.assertEqual(self.company_admin.country_id, self.env.ref("base.us"))
         self.assertEqual(self.user_admin.country_id, self.env.ref("base.be"))

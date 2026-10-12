@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardStockPickingUnbatchCorrection(models.TransientModel):
-
     _name = "wizard.stock.picking.unbatch.correction"
     _description = "Remove Transfers from Trip"
 

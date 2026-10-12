@@ -7,7 +7,6 @@ from .common import HrPresenceCase
 
 @tagged("post_install", "-at_install")
 class TestMultiCompany(HrPresenceCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

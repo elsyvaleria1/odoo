@@ -6,7 +6,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged("post_install", "-at_install", "hr_attendance_schedule_refresh")
 class TestTheStoredFieldsFollowTheSchedule(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

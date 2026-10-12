@@ -3,13 +3,9 @@ import logging
 from odoo.exceptions import UserError
 from odoo.tools import LazyTranslate
 
-_lt = LazyTranslate(
-    __name__, default_lang="en_US"
-)
+_lt = LazyTranslate(__name__, default_lang="en_US")
 _logger = logging.getLogger(__name__)
-_phonenumbers_lib_warning = [
-    False
-]
+_phonenumbers_lib_warning = [False]
 
 
 try:

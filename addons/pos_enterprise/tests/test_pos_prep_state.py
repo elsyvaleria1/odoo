@@ -78,7 +78,6 @@ class TestPosPrepState(TestPoSCommon):
         self.assertTrue(state.todo)
         self.assertEqual(pos_line.preparation_time, -1)
 
-
     def test_display_without_stages_is_refused(self):
         with self.assertRaisesRegex(ValidationError, "minimum of one step"):
             self.display.stage_ids = [Command.clear()]

@@ -2,7 +2,6 @@ from odoo import api, models
 
 
 class MixinCalendarSync(models.AbstractModel):
-
     _name = "mixin.calendar.sync"
     _description = "Synchronized with external calendars"
 

@@ -34,9 +34,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                 }
             )
             uom_dozen = self.env.ref("base.product_uom_dozen").id
-            self.subscription_tmpl.duration_value = (
-                2
-            )
+            self.subscription_tmpl.duration_value = 2
             self.subscription_tmpl.duration_unit = "month"
             self.env["sale.order.line"].create(
                 {
@@ -165,9 +163,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             freeze_time("2021-01-01"),
             patch.object(SaleOrder, "_get_unpaid_subscriptions", lambda x: []),
         ):
-            self.subscription.plan_id.auto_close_limit = (
-                5000
-            )
+            self.subscription.plan_id.auto_close_limit = 5000
             context_mail = {"tracking_disable": False}
             sub = (
                 self.env["sale.order"]
@@ -271,9 +267,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             free_renewal_so.line_ids.write({"product_qty": 2, "price_unit": 0})
             self.flush_tracking()
             self.assertEqual(renewal_so.subscription_state, "2_renewal")
-            (
-                sub | free_sub
-            ).pause_subscription()
+            (sub | free_sub).pause_subscription()
             self.flush_tracking()
             self.env["sale.order"]._cron_recurring_create_invoice()
             self.flush_tracking()
@@ -281,9 +275,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             self.flush_tracking()
             self.assertEqual(sub.subscription_state, "5_renewed")
             self.assertEqual(renewal_so.subscription_state, "3_progress")
-            (
-                sub | free_sub
-            ).resume_subscription()
+            (sub | free_sub).resume_subscription()
             self.flush_tracking()
             renewal_invoices = (free_renewal_so | renewal_so)._create_invoices()
             renewal_invoices._post()
@@ -315,9 +307,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             renewal_so.line_ids[1].product_qty += 1
             self.flush_tracking()
 
-        with freeze_time(
-            "2021-05-05"
-        ):
+        with freeze_time("2021-05-05"):
             self.env["sale.order"]._cron_recurring_create_invoice()
             self.assertEqual(sub.recurring_monthly, 21)
             self.assertEqual(sub.subscription_state, "5_renewed")

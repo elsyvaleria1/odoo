@@ -9,7 +9,6 @@ MODEL = "test_access_right.some_obj"
 
 @tagged("post_install", "-at_install")
 class TestFieldVerdictMemo(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

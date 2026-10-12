@@ -415,7 +415,6 @@ class AccessLink(models.Model):
                     )
                 )
 
-
     @api.model
     def _derive_token(self, nonce: str) -> str:
         digest = tools.hmac(self.env(su=True), TOKEN_SCOPE, nonce)
@@ -441,7 +440,6 @@ class AccessLink(models.Model):
             if tools.consteq(hash_token(token), stored_hash):
                 tokens[link_id] = token
         return tokens
-
 
     @api.model
     def _find_reusable(
@@ -787,7 +785,6 @@ class AccessLink(models.Model):
             return
         record.check_access("write" if role == "edit" else "read")
 
-
     @api.model
     def _resolve(
         self,
@@ -938,7 +935,6 @@ class AccessLink(models.Model):
             self.env.cr.execute(statement)
         self.invalidate_recordset(["use_count", "last_used_at"])
 
-
     def _check_may_manage(self) -> None:
         self.check_access("write")
 
@@ -1060,7 +1056,6 @@ class AccessLink(models.Model):
                 for link in self
             ]
         )
-
 
     def _runs_the_machinery(self) -> bool:
         if self.env.su:

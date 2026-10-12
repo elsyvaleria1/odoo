@@ -270,15 +270,11 @@ class StockPicking(models.Model):
             product = self.env["product.product"].search(
                 [("barcode", "=", barcode)], limit=1
             )
-            if (
-                not product and is_uom_enabled
-            ):
+            if not product and is_uom_enabled:
                 product_packaging = self.env["product.uom"].search(
                     [("barcode", "=", barcode)], limit=1
                 )
-                product = (
-                    product_packaging.product_id
-                )
+                product = product_packaging.product_id
             if product:
                 picking_nums = self.search_count(
                     base_domain + [("product_id", "=", product.id)]
@@ -314,9 +310,7 @@ class StockPicking(models.Model):
                 lot_domain = [("move_line_ids.trace_id", "=", lot.id)]
                 picking_nums = self.search_count(base_domain + lot_domain)
                 additional_context["search_default_trace_id"] = lot.id
-        if (
-            not barcode_type and not picking_nums
-        ):
+        if not barcode_type and not picking_nums:
             picking_nums = self.search_count(base_domain + [("name", "=", barcode)])
             additional_context["search_default_name"] = barcode
 

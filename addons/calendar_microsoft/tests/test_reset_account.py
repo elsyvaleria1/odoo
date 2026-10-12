@@ -14,7 +14,6 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 @patch.object(IrCron, "_commit_progress", lambda self, *a, **kw: None)
 @patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestResetAccount(TestCommon):
-
     def setUp(self):
         super().setUp()
         self.create_events_for_tests()

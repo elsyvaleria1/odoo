@@ -143,7 +143,6 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
             Command.link(self.bom.operation_ids[2].id)
         ]
 
-
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.finished
         mo_form.product_qty = 20
@@ -157,7 +156,6 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         self.assertEqual(wo_1.state, "blocked")
         self.assertEqual(wo_2.state, "ready")
         self.assertEqual(wo_3.state, "ready")
-
 
         wo_2.button_start()
         wo_2.qty_producing = 20
@@ -193,7 +191,6 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         self.assertEqual(wo_5.state, "cancel")
         self.assertEqual(wo_6.state, "ready")
 
-
         wo_6.button_start()
         wo_6.qty_producing = 10
         self.assertEqual(mo_2.state, "progress")
@@ -223,7 +220,6 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         self.assertEqual(wo_7.state, "ready")
         self.assertEqual(wo_8.state, "cancel")
         self.assertEqual(wo_9.state, "cancel")
-
 
         wo_7.button_start()
         wo_7.qty_producing = 10

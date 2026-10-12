@@ -11,7 +11,6 @@ _debug = DebugLog(__name__)
 
 
 class CheckIdentityException(SessionExpiredException):
-
     loglevel = logging.DEBUG
 
 

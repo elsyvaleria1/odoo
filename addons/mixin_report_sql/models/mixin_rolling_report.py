@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class MixinRollingReport(models.AbstractModel):
-
     _name = "mixin.rolling.report"
     _inherit = ["mixin.materialized.view"]
     _description = "Rolling-Window Report Mixin"
@@ -20,7 +19,6 @@ class MixinRollingReport(models.AbstractModel):
     _rolling_key_field = "date"
 
     _rolling_window_days = 3
-
 
     def _rolling_cutoff_sql(self) -> SQL:
         return SQL("(current_date - %s::int)", self._rolling_window_days)
@@ -50,7 +48,6 @@ class MixinRollingReport(models.AbstractModel):
     def _create_relation(self, with_data=True, index_field=None):
         self._rolling_columns()
         return super()._create_relation(with_data=with_data, index_field=index_field)
-
 
     def refresh(self, force_rebuild=False) -> bool:
         stale = self._rolling_pop_stale()
@@ -95,7 +92,6 @@ class MixinRollingReport(models.AbstractModel):
             self._rolling_window_days,
         )
 
-
     def _rolling_mark_stale(self) -> None:
         states = self.env["report.rolling.state"].sudo()
         state = states.search_fetch([("model", "=", self._name)], ["stale"], limit=1)
@@ -124,7 +120,6 @@ class MixinRollingReport(models.AbstractModel):
             return False
         state.stale = False
         return True
-
 
     def _is_populated(self, table) -> bool:
         self.env.cr.execute(

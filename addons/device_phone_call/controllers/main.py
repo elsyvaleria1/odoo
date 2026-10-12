@@ -10,7 +10,6 @@ _logger = logging.getLogger(__name__)
 
 
 class DevicePhoneCallController(http.Controller):
-
     @http.route(
         [
             "/remote/device/<string:identifier>/calllog",

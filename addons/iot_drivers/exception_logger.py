@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class ExceptionLogger:
-
     def __init__(self) -> None:
         self._buffer = StringIO()
 

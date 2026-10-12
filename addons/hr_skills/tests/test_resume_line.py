@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestResumeLineSiteName(TransactionCase):
-
     def test_the_site_is_read_from_the_host(self):
         line = self.env["hr.resume.line"]
         for url, expected in (

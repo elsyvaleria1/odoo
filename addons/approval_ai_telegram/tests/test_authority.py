@@ -10,7 +10,6 @@ _THRESHOLD = "smart_approval.confidence_threshold"
 
 @tagged("post_install", "-at_install")
 class TestRequestIntakeAuthority(SmartApprovalTestBase):
-
     def _send(self, call):
         response = self.mock_telegram_response(success=True, result={"message_id": 1})
         with self.mock_api_gateway_post(response) as mock_post:

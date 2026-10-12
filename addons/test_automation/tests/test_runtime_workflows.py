@@ -26,7 +26,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestRuntimeWorkflows(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -73,7 +72,6 @@ class TestRuntimeWorkflows(common.TransactionCase):
                 }
             )
         return action
-
 
     def test_runtime_creation(self):
         _logger.info("Testing runtime creation")
@@ -186,7 +184,6 @@ class TestRuntimeWorkflows(common.TransactionCase):
 
         self.assertEqual(runtime.state, "done")
 
-
     def test_progress_calculation(self):
         _logger.info("Testing progress calculation")
 
@@ -226,7 +223,6 @@ class TestRuntimeWorkflows(common.TransactionCase):
         self.assertEqual(runtime.progress, 100)
         self.assertEqual(runtime.progress_display, "3/3 steps")
         self.assertEqual(runtime.state, "done")
-
 
     def test_runtime_next_step_execution(self):
         _logger.info("Testing runtime next step execution")
@@ -302,7 +298,6 @@ class TestRuntimeWorkflows(common.TransactionCase):
         with self.assertRaises(UserError, msg="Should require in_progress state"):
             runtime.action_next_step()
 
-
     def test_runtime_cancel(self):
         _logger.info("Testing runtime cancellation")
 
@@ -347,7 +342,6 @@ class TestRuntimeWorkflows(common.TransactionCase):
         runtime.action_cancel()
 
         self.assertEqual(runtime.state, "cancel")
-
 
     def test_execution_context_passed_to_actions(self):
         _logger.info("Testing context propagation")
@@ -422,7 +416,6 @@ env['ir.config_parameter'].sudo().set_param(
             runtime.company_ids.name,
         )
 
-
     def test_runtime_line_dag_resolution(self):
         _logger.info("Testing DAG dependency resolution")
 
@@ -463,7 +456,6 @@ env['ir.config_parameter'].sudo().set_param(
         line_c.action_mark_done()
         self.assertEqual(line_d.state, "ready")
 
-
     def test_runtime_line_error_handling(self):
         _logger.info("Testing error handling")
 
@@ -488,7 +480,6 @@ env['ir.config_parameter'].sudo().set_param(
         self.assertEqual(runtime.line_ids.state, "error")
         self.assertIn("Test error", runtime.line_ids.error_message)
         self.assertEqual(runtime.state, "error")
-
 
     def test_multiple_concurrent_runtimes(self):
         _logger.info("Testing concurrent runtimes")

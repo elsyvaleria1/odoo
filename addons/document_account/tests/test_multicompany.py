@@ -55,7 +55,6 @@ NCAwIFIKL1NpemUgOAo+PgpzdGFydHhyZWYKOTc4CiUlRU9GCg==
 
 @tagged("post_install", "-at_install", "documents_account_multicompany_mail")
 class TestMultiCompanyDocumentsAccountMail(MailCommon, DocumentsAccountHelpersCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

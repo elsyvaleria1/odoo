@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class WebsiteVisitorPushSubscription(models.Model):
-
     _name = "website.visitor.push.subscription"
     _description = "Push Subscription for a Website Visitor"
     _log_access = False

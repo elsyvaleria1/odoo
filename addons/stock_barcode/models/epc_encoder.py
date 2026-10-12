@@ -211,11 +211,7 @@ class EpcData:
     @classmethod
     def split_ai(cls, element, company_prefix_length) -> list | None:
         if element[0] == "01":
-            value = element[
-                1
-            ].rjust(
-                14, "0"
-            )
+            value = element[1].rjust(14, "0")
             return [
                 value[1 : 1 + company_prefix_length],
                 value[0:1] + value[1 + company_prefix_length : -1],
@@ -279,9 +275,7 @@ class EpcData:
             bit_string = "".join(bit_array)
 
         if pad_side == "left":
-            padded_bit_string = bit_string.rjust(
-                length, pad_char
-            )
+            padded_bit_string = bit_string.rjust(length, pad_char)
         else:
             padded_bit_string = bit_string.ljust(length, pad_char)
 

@@ -710,7 +710,6 @@ class TestDashboardConsumesLeavesOnce(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestAllocationDescription(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -775,7 +774,6 @@ class TestAllocationDescription(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestLeaveTypeBalanceSearch(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -844,7 +842,6 @@ class TestLeaveTypeBalanceSearch(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestBackToWorkDate(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1079,7 +1076,6 @@ class TestRequestDatesGoTogether(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestPresenceFollowsTheLeave(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1140,7 +1136,6 @@ class TestPresenceFollowsTheLeave(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestOverlapWarning(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1210,7 +1205,6 @@ class TestOverlapWarning(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestFlexibleRequestDuration(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1335,7 +1329,6 @@ class TestFlexibleRequestDuration(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestRefusalIsNotAnApproval(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1418,7 +1411,6 @@ class TestRefusalIsNotAnApproval(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestCreatingManyRequests(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1502,7 +1494,6 @@ class TestCreatingManyRequests(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestContextualEmployee(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1569,7 +1560,6 @@ class TestContextualEmployee(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestLeaveStatusesTravelWithTheMemberList(TestHrHolidaysCommon):
-
     PARTITIONING_PATH = "mail/static/src/discuss/core/common/thread_model_patch.js"
     VOCABULARY_PATH = "hr_holidays/static/src/store_service_patch.js"
 
@@ -1614,7 +1604,6 @@ class TestLeaveStatusesTravelWithTheMemberList(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestReportDoesNotLeakTheDescription(TestHrHolidaysCommon):
-
     SECRET = "Chemotherapy session"
 
     @classmethod
@@ -1692,7 +1681,6 @@ class TestReportDoesNotLeakTheDescription(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestGeneratedTimeOffWaitsForApproval(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1774,7 +1762,6 @@ class TestGeneratedTimeOffWaitsForApproval(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestScheduleChangeRepricesFutureLeave(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1941,7 +1928,6 @@ class TestALeaveCoversItsOwnDays(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestFlexibleDurationOverAPublicHoliday(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2016,7 +2002,6 @@ class TestFlexibleDurationOverAPublicHoliday(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestLeaveResourceCalendar(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2077,7 +2062,6 @@ class TestLeaveResourceCalendar(TestHrHolidaysCommon):
 
 @tagged("post_install", "-at_install")
 class TestBalanceSearchOperators(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

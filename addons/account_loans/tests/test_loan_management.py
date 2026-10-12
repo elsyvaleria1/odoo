@@ -99,9 +99,7 @@ class TestLoanManagement(AccountTestInvoicingCommon):
             "Odoomobile Loan 🚗", "2024-01-01", 2 * 12, 24_000, 2_400, validate=True
         )
 
-        self.assertEqual(
-            loan.outstanding_balance, 17_000
-        )
+        self.assertEqual(loan.outstanding_balance, 17_000)
 
         self.assertEqual(len(loan.line_ids), 24)
         self.assertRecordValues(
@@ -137,12 +135,8 @@ class TestLoanManagement(AccountTestInvoicingCommon):
         self.assertEqual(len(payment_moves), 24)
         reclassification_moves = (
             loan.line_ids.generated_move_ids - payment_moves
-        ).filtered(
-            lambda m: not m.reversed_entry_id
-        )
-        self.assertEqual(
-            len(reclassification_moves), 23
-        )
+        ).filtered(lambda m: not m.reversed_entry_id)
+        self.assertEqual(len(reclassification_moves), 23)
         reclassification_reverse_moves = (
             loan.line_ids.generated_move_ids - payment_moves
         ) - reclassification_moves
@@ -325,9 +319,7 @@ class TestLoanManagement(AccountTestInvoicingCommon):
         wizard.date = fields.Date.to_date("2024-10-31")
         wizard.action_save()
         self.assertEqual(loan.state, "closed")
-        self.assertEqual(
-            len(loan.line_ids.generated_move_ids), 30
-        )
+        self.assertEqual(len(loan.line_ids.generated_move_ids), 30)
 
         loan.action_set_to_draft()
         self.assertEqual(loan.state, "draft")
@@ -416,9 +408,7 @@ class TestLoanManagement(AccountTestInvoicingCommon):
                     "raw": f.read(),
                 }
             )
-            attachment = _account_loans_add_date_column(
-                attachment
-            )
+            attachment = _account_loans_add_date_column(attachment)
 
         action = self.env["account.loan"].action_upload_amortization_schedule(
             attachment.id
@@ -562,9 +552,7 @@ class TestLoanManagement(AccountTestInvoicingCommon):
         )
         wizard.interest_rate = 0
         wizard.action_save()
-        self.assertEqual(
-            len(loan.line_ids), 12
-        )
+        self.assertEqual(len(loan.line_ids), 12)
         self.assertTrue(
             all(payment == 2000 for payment in loan.line_ids.mapped("payment"))
         )

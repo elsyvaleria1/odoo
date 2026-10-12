@@ -13,7 +13,6 @@ from odoo.addons.certificate.tools import CertificateAdapter
 
 @tagged("post_install", "-at_install")
 class TestCertificateAdapter(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

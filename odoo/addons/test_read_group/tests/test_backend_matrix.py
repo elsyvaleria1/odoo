@@ -426,7 +426,6 @@ class TestReadGroupBackendMatrix(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestReadGroupBackendWalk(TestReadGroupBackendMatrix):
-
     SCALAR_GROUPBYS = ([], ["key"], ["key", "partner_id"], ["partner_id"], ["value"])
     SCALAR_AGGREGATES = (
         ["__count"],

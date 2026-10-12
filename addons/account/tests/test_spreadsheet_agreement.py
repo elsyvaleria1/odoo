@@ -6,7 +6,6 @@ from .common_report_engine import TestAccountReportsCommon
 
 @tagged("post_install", "-at_install")
 class TestSpreadsheetAgreesWithTheAccountCodesEngine(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

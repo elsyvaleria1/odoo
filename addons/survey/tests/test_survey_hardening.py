@@ -16,7 +16,6 @@ from odoo.addons.survey.tests import common
 
 @tagged("post_install", "-at_install", "functional")
 class TestWebhookTargetRule(common.TestSurveyCommon):
-
     def test_private_and_local_targets_are_refused(self):
         survey = self.env["survey.survey"]
         for url in (
@@ -103,7 +102,6 @@ class TestWebhookTargetRule(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestSkipActionPrecedence(common.TestSurveyCommon):
-
     def test_the_most_terminal_action_wins(self):
         controller_precedence = __import__(
             "odoo.addons.survey.controllers.main", fromlist=["Survey"]
@@ -172,7 +170,6 @@ class TestSkipActionPrecedence(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestUploadLimits(common.TestSurveyCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -289,7 +286,6 @@ class TestRetentionSweep(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestConcurrentSubmit(common.TestSurveyCommon, HttpCase):
-
     def test_a_second_submit_after_completion_is_refused(self):
         survey = self.env["survey.survey"].create(
             {
@@ -343,7 +339,6 @@ class TestConcurrentSubmit(common.TestSurveyCommon, HttpCase):
 
 @tagged("post_install", "-at_install", "functional")
 class TestCertificationDownload(common.TestSurveyCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -440,7 +435,6 @@ class TestCertificationDownload(common.TestSurveyCommon, HttpCase):
 
 @tagged("post_install", "-at_install", "functional")
 class TestAnswerPayloadShapes(common.TestSurveyCommon):
-
     QUESTION_TYPES = (
         "char_box",
         "text_box",

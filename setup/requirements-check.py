@@ -102,7 +102,6 @@ def cleanup_debian_version(s: str) -> str:
 
 
 class PipPackage:
-
     def __init__(self, name: str) -> None:
         self.name = name
         infos = json.load(urlopen(f"https://pypi.org/pypi/{name}/json"))
@@ -194,7 +193,6 @@ class PipPackage:
 
 
 class Distribution(ABC):
-
     def __init__(self, release: str) -> None:
         self._release = release
 
@@ -214,7 +212,6 @@ class Distribution(ABC):
 
 
 class Debian(Distribution):
-
     def get_version(self, package: str) -> Version | str | None:
         package = SPECIAL.get(package, package)
         prefixes = ["python-", ""]
@@ -244,7 +241,6 @@ class Debian(Distribution):
 
 
 class Ubuntu(Distribution):
-
     def __init__(self, release: str) -> None:
         super().__init__(release)
 
@@ -255,9 +251,7 @@ class Ubuntu(Distribution):
             ) as response,
             gzip.open(response, mode="rt", encoding="utf-8") as data,
         ):
-            for line in itertools.islice(
-                data, 6, None
-            ):
+            for line in itertools.islice(data, 6, None):
                 m = re.match(r"(\S+) \(([^)]+)\)", line.strip())
                 assert m, f"invalid line {line.strip()!r}"
                 self._packages[m[1]] = m[2]

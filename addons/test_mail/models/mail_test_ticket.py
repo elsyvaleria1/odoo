@@ -3,7 +3,6 @@ from odoo.tools import email_normalize
 
 
 class MailTestTicket(models.Model):
-
     _description = "Ticket-like model"
     _name = "mail.test.ticket"
     _inherit = ["mixin.mail.thread"]
@@ -103,7 +102,6 @@ class MailTestTicket(models.Model):
 
 
 class MailTestTicketEl(models.Model):
-
     _description = "Ticket-like model with exclusion list"
     _name = "mail.test.ticket.el"
     _inherit = [
@@ -126,7 +124,6 @@ class MailTestTicketEl(models.Model):
 
 
 class MailTestTicketMc(models.Model):
-
     _description = "Ticket-like model"
     _name = "mail.test.ticket.mc"
     _inherit = ["mail.test.ticket"]
@@ -183,7 +180,6 @@ class MailTestTicketMc(models.Model):
 
 
 class MailTestTicketPartner(models.Model):
-
     _description = "MC ticket-like model with partner support"
     _name = "mail.test.ticket.partner"
     _inherit = [
@@ -254,7 +250,6 @@ class MailTestTicketPartner(models.Model):
 
 
 class MailTestContainer(models.Model):
-
     _description = "Project-like model with alias"
     _name = "mail.test.container"
     _mail_post_access = "read"
@@ -289,7 +284,6 @@ class MailTestContainer(models.Model):
 
 
 class MailTestContainerMc(models.Model):
-
     _description = "Project-like model with alias (MC)"
     _name = "mail.test.container.mc"
     _mail_post_access = "read"

@@ -565,7 +565,6 @@ class TeamTeam(models.Model):
         if self.use_helpdesk and not self.member_ids:
             self.member_ids = [Command.set(self.env.user.ids)]
 
-
     @api.depends("company_id")
     @api.depends_context("allowed_company_ids")
     def _compute_display_name(self):
@@ -932,7 +931,6 @@ class TeamTeam(models.Model):
 
         return bool(modules)
 
-
     def _get_helpdesk_unique_alias_name(self):
         self.check_singleton()
         base_email_alias = (self.name or "").lower().replace(" ", "-")
@@ -959,7 +957,6 @@ class TeamTeam(models.Model):
             [("alias_name", "ilike", email_alias)]
         )
         return {alias.alias_name for alias in existing_aliases}
-
 
     @api.model
     def get_dashboard(self):
@@ -1403,9 +1400,7 @@ class TeamTeam(models.Model):
                     ]
                     break
 
-            if (
-                team.helpdesk_assign_method == "randomly"
-            ):
+            if team.helpdesk_assign_method == "randomly":
                 last_assigned_user = (
                     self.env["helpdesk.ticket"]
                     .search(
@@ -1427,9 +1422,7 @@ class TeamTeam(models.Model):
                         itertools.cycle(member_ids), offset, offset + count
                     )
                 )
-            elif (
-                team.helpdesk_assign_method == "balanced"
-            ):
+            elif team.helpdesk_assign_method == "balanced":
                 ticket_count_data = self.env["helpdesk.ticket"]._read_group(
                     [
                         ("stage_id.fold", "=", False),
@@ -1439,9 +1432,7 @@ class TeamTeam(models.Model):
                     ["user_id"],
                     ["__count"],
                 )
-                open_ticket_per_user_map = dict.fromkeys(
-                    member_ids, 0
-                )
+                open_ticket_per_user_map = dict.fromkeys(member_ids, 0)
                 open_ticket_per_user_map.update(
                     (user.id, count) for user, count in ticket_count_data
                 )
@@ -1487,9 +1478,7 @@ class TeamTeam(models.Model):
                 "helpdesk_to_stage_id",
             ],
         )
-        teams_dict = defaultdict(
-            dict
-        )
+        teams_dict = defaultdict(dict)
         today = fields.Datetime.today()
         for team in teams:
             team["threshold_date"] = today - relativedelta.relativedelta(

@@ -5,7 +5,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestEmployeeProfileAccess(TestHrCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

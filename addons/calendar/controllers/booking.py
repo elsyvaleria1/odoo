@@ -39,7 +39,6 @@ def _formated_weekdays(locale):
 
 
 class AppointmentController(http.Controller):
-
     @route(["/book/<string:short_code>"], type="http", auth="public", website=True)
     def appointment_invite(self, short_code, **kwargs):
         invitation = (
@@ -50,7 +49,6 @@ class AppointmentController(http.Controller):
         if not invitation:
             raise NotFound
         return request.redirect(f"{invitation.redirect_url}&{url_encode(kwargs)}")
-
 
     @route(
         ["/calendar", "/calendar/page/<int:page>"],
@@ -80,7 +78,6 @@ class AppointmentController(http.Controller):
             "calendar.appointments_list_layout",
             self._prepare_appointments_list_data(**kwargs),
         )
-
 
     def _prepare_appointments_list_data(self, appointment_types=None, **kwargs):
 
@@ -152,7 +149,6 @@ class AppointmentController(http.Controller):
             ("end_datetime", "=", False),
             ("end_datetime", ">=", datetime.now(UTC)),
         ]
-
 
     @route(
         ["/calendar/<string:appointment_type>"],
@@ -400,7 +396,6 @@ class AppointmentController(http.Controller):
             "users_possible": users_possible,
         }
 
-
     @http.route(
         "/appointment/<int:appointment_type_id>/avatar",
         type="http",
@@ -452,7 +447,6 @@ class AppointmentController(http.Controller):
             or possible_staff_users
         )
 
-
     @http.route(
         "/appointment/<int:appointment_type_id>/resource_avatar",
         type="http",
@@ -480,7 +474,6 @@ class AppointmentController(http.Controller):
             )
             .prepare_response()
         )
-
 
     @staticmethod
     def _get_checked_private_appointment_types(
@@ -541,7 +534,6 @@ class AppointmentController(http.Controller):
         if domain:
             appointment_types = appointment_types.filtered_domain(domain)
         return appointment_types
-
 
     @http.route(
         ["/appointment/<int:appointment_type_id>/info"],
@@ -1102,7 +1094,6 @@ class AppointmentController(http.Controller):
             f"/calendar/view/{event.booking_access_token}?partner_id={customer.id}&{keep_query('*', state='new')}"
         )
 
-
     def _get_allowed_companies(self, organizer):
         return organizer.company_ids
 
@@ -1173,7 +1164,6 @@ class AppointmentController(http.Controller):
             if not resource_selected_id or int(resource_selected_id) in resource_ids
         }
         return max(capacity_to_resources.values()) if capacity_to_resources else 1
-
 
     @http.route(
         ["/appointment/get_upcoming_appointments"], type="jsonrpc", auth="public"

@@ -18,7 +18,6 @@ def is_whatsapp_channel(channel) -> bool:
 
 
 class DiscussChannel(models.Model):
-
     _inherit = "discuss.channel"
 
     channel_type = fields.Selection(
@@ -78,7 +77,6 @@ class DiscussChannel(models.Model):
                 )
             )
 
-
     @api.depends("last_wa_mail_message_id")
     def _compute_whatsapp_channel_valid_until(self) -> None:
         for channel in self:
@@ -96,7 +94,6 @@ class DiscussChannel(models.Model):
                 channel.whatsapp_channel_valid_until
                 and channel.whatsapp_channel_valid_until > fields.Datetime.now()
             )
-
 
     def _notify_get_channel_message_types(self) -> frozenset[str]:
         return super()._notify_get_channel_message_types() | {"whatsapp_message"}
@@ -142,10 +139,8 @@ class DiscussChannel(models.Model):
             if (
                 parent_wa_msg
                 and len(parent_wa_msg) == 1
-                and parent_wa_msg.message_type
-                == "outbound"
-                and parent_wa_msg.mobile_number_formatted
-                == self.whatsapp_number
+                and parent_wa_msg.message_type == "outbound"
+                and parent_wa_msg.mobile_number_formatted == self.whatsapp_number
             ):
                 valid_parent_id = parent_id
 
@@ -226,7 +221,6 @@ class DiscussChannel(models.Model):
             messages.parent_id = valid_parent_id
 
         return messages[0]
-
 
     def _get_whatsapp_channel(
         self,
@@ -358,7 +352,6 @@ class DiscussChannel(models.Model):
             channel._broadcast(partners_to_notify.ids)
         return channel
 
-
     def _action_unfollow(
         self, partner=None, guest=None, post_leave_message=True
     ) -> None:
@@ -416,7 +409,6 @@ class DiscussChannel(models.Model):
                 notify_opted_in_only=False,
             ),
         }
-
 
     def execute_command_leave(self, **kwargs) -> None:
         if self.channel_type == "whatsapp":

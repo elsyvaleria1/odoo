@@ -19,8 +19,7 @@ PAYMENT_METHODS_MAPPING = {
 }
 
 PAYMENT_STATUS_MAPPING = {
-    "done": tuple(f"{i:04}" for i in range(100))
-    + ("400", "900"),
+    "done": tuple(f"{i:04}" for i in range(100)) + ("400", "900"),
     "cancel": ("9915",),
     "error": (
         "101",

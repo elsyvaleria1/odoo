@@ -21,7 +21,6 @@ FACTURX_PDFA_XMP_RDF = b"""<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-
 class MixinAccountMoveSend(models.AbstractModel):
     _inherit = "mixin.account.move.send"
 
-
     def _get_alerts(self, moves, moves_data):
         alerts = super()._get_alerts(moves, moves_data)
 
@@ -82,7 +81,6 @@ class MixinAccountMoveSend(models.AbstractModel):
                     }
         return alerts
 
-
     def _get_invoice_extra_attachments(self, move):
         return super()._get_invoice_extra_attachments(move) + move.ubl_cii_xml_id
 
@@ -140,7 +138,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             lambda attachment: attachment.mimetype in SUPPORTED_FILE_TYPES
         )
         return accepted_attachments, attachments - accepted_attachments
-
 
     def _hook_invoice_document_before_pdf_report_render(
         self, invoice, invoice_data

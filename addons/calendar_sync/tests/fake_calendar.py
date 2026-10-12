@@ -79,7 +79,6 @@ class FakeCalendars:
 
 
 class FakeAdapter:
-
     def __init__(self, server: FakeCalendars) -> None:
         self.server = server
 

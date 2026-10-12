@@ -21,7 +21,6 @@ TEXT_SHORTEN_SKIP_PATHS = ("/r/",)
 class MixinMailRender(models.AbstractModel):
     _inherit = "mixin.mail.render"
 
-
     @api.model
     def _shorten_links(self, body, link_tracker_vals, blacklist=None, base_url=None):
         if not body or is_html_empty(body):

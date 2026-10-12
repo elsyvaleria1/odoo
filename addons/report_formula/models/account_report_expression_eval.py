@@ -238,7 +238,6 @@ class AccountReportExpressionEval(models.Model):
                     else:
                         result_value_key = "result"
 
-
                     if isinstance(result, list):
                         expression_value = []
                         sublines_info = set()
@@ -539,9 +538,7 @@ class AccountReportExpressionEval(models.Model):
         aggregations_terms_to_evaluate = set()
         for (formula, forced_date_scope), expressions in formulas_dict.items():
             for expression in expressions:
-                aggregations_terms_to_evaluate.add(
-                    f"_expression:{expression.id}"
-                )
+                aggregations_terms_to_evaluate.add(f"_expression:{expression.id}")
 
                 if expression.report_line_id.code:
                     if expression.report_line_id.report_id == self:
@@ -738,9 +735,7 @@ class AccountReportExpressionEval(models.Model):
 
                         bound_subformula = other_expr_criterium_match[
                             "criterium"
-                        ].replace(
-                            "other_expr_", ""
-                        )
+                        ].replace("other_expr_", "")
                         bound_params = other_expr_criterium_match["bound_params"]
                         bounded_value = self._aggregation_apply_bounds(
                             column_group_options,

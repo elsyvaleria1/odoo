@@ -6,7 +6,6 @@ MODEL = "test_ir_access.labelled"
 
 
 class TestRecordLabels(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

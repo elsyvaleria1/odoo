@@ -126,7 +126,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
             self._finish_markup(bot, chat),
         )
 
-
     def _on_message(self, bot, chat, message, partner, internal_user):
         if self._flow_step(chat) != "slips":
             return False
@@ -297,7 +296,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
             return
         self._send(bot, chat, tg.escape(text), self._finish_markup(bot, chat))
 
-
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""
         if data == FINISH:
@@ -367,7 +365,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
             )
             return
         self._record(bot, chat, slip, picking, "choice", content)
-
 
     def _finish(self, bot, chat) -> None:
         tr = self._tr(bot, chat)

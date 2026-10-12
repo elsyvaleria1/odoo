@@ -348,9 +348,7 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         has_duplicate_transactions = self.euro_bank_journal._has_duplicate_transactions(
             fields.Date.to_date("2000-01-01")
         )
-        self.assertTrue(
-            has_duplicate_transactions is True
-        )
+        self.assertTrue(has_duplicate_transactions is True)
 
     def test_duplicate_transaction_online_transaction_identifier(self):
         transactions = self._create_online_transactions(
@@ -396,9 +394,7 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
 
         generated_url = "https://www.odoo.com/help?stage=bank_sync&summary=Bank+sync+error+ref%3A+abc123+-+Provider%3A+theonlyone+-+Client+ID%3A+client_id_1&description=ClientID%3A+client_id_1%0AInstitution%3A+Test+Bank%0AError+Reference%3A+abc123%0AError+Message%3A+This+kind+of+things+can+happen.%0A"
         return_act_url = {"type": "ir.actions.act_url", "url": generated_url}
-        body_generated_url = generated_url.replace(
-            "&", "&amp;"
-        )
+        body_generated_url = generated_url.replace("&", "&amp;")
         message_body = f"""<p>This kind of things can happen.
 
 If you've already opened a ticket for this issue, don't report it again: a support agent will contact you shortly.<br>You can contact Odoo support <a href=\"{body_generated_url}\">Here</a></p>"""
@@ -459,6 +455,4 @@ If you've already opened a ticket for this issue, don't report it again: a suppo
             ]
         )
         self.assertEqual(online_link.account_online_account_ids, online_accounts)
-        self.assertEqual(
-            len(online_link.journal_ids), 2
-        )
+        self.assertEqual(len(online_link.journal_ids), 2)

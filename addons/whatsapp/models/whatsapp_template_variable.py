@@ -219,7 +219,6 @@ class WhatsappTemplateVariable(models.Model):
 
         return value_by_name
 
-
     def _find_value_from_field_chain(self, record):
         self.check_singleton()
         return self._resolve_field_path_value(record.sudo(False))

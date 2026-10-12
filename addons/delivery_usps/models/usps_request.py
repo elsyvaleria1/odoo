@@ -96,9 +96,7 @@ class USPSRequest:
             weight_in_pounds = weight_uom_id._get_quantity_in_unit(
                 tot_weight, order.env.ref("base.product_uom_lb"), round=False
             )
-            if (
-                weight_in_pounds > 4 and order.carrier_id.usps_service == "First Class"
-            ):
+            if weight_in_pounds > 4 and order.carrier_id.usps_service == "First Class":
                 return self.env._(
                     "Please choose another service (maximum weight of this service is 4 pounds)"
                 )
@@ -110,9 +108,7 @@ class USPSRequest:
         return False
 
     def _usps_request_data(self, carrier, order):
-        currency = carrier.env["res.currency"].search(
-            [("name", "=", "USD")], limit=1
-        )
+        currency = carrier.env["res.currency"].search([("name", "=", "USD")], limit=1)
         tot_weight = order._get_estimated_weight()
         total_weight = carrier._usps_convert_weight(tot_weight)
         total_value = (
@@ -221,9 +217,7 @@ class USPSRequest:
     def _item_data(self, line, weight, price) -> dict:
         return {
             "Description": line.name,
-            "Quantity": max(
-                int(line.product_uom_qty), 1
-            ),
+            "Quantity": max(int(line.product_uom_qty), 1),
             "Value": price,
             "NetPounds": weight["pound"],
             "NetOunces": round(weight["ounce"], 0),
@@ -274,9 +268,7 @@ class USPSRequest:
             "ToPOBoxFlagDom": "false",
             "shipping": itemdetail,
             "GrossPounds": gross_weight["pound"],
-            "GrossOunces": int(
-                round(gross_weight["ounce"], 0)
-            ),
+            "GrossOunces": int(round(gross_weight["ounce"], 0)),
             "MailType": carrier.usps_mail_type,
             "FirstClassMailType": "LETTER",
             "ImageType": carrier.usps_label_file_type,

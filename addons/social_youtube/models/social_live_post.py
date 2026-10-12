@@ -57,9 +57,7 @@ class SocialLivePost(models.Model):
 
             youtube_video_ids = posts_per_account[account.id].mapped("youtube_video_id")
 
-            YOUTUBE_BATCH_SIZE = (
-                50
-            )
+            YOUTUBE_BATCH_SIZE = 50
             for video_ids_batch in batched(
                 youtube_video_ids, YOUTUBE_BATCH_SIZE, strict=False
             ):

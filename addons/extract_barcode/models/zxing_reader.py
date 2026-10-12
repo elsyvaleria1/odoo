@@ -20,7 +20,6 @@ def read_page(image: bytes) -> list[str]:
 
 
 class Barcodes(BaseReader):
-
     name = "zxing_barcodes"
     mimetypes = PAGED
     yields = (BARCODES,)

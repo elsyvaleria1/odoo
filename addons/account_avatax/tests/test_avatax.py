@@ -758,7 +758,6 @@ class TestAccountAvalaraInternalIntegration(TestAccountAvalaraInternalCommon):
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraSalesTaxAdministration(TestAccountAvataxCommon):
-
     @classmethod
     def setUpClass(cls):
         res = super().setUpClass()

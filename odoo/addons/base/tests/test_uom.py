@@ -440,7 +440,6 @@ class TestUom(UomCommon):
 
 
 class TestUomConversionScale(UomCommon):
-
     def test_conversion_floor_is_the_destination_unit(self):
         self.assertEqual(self.uom_kgm._get_quantity_in_unit(1, self.uom_ton), 0.01)
         self.assertEqual(
@@ -500,7 +499,6 @@ class TestUomConversionScale(UomCommon):
 
 
 class TestUomPriceDegradeWrappers(UomCommon):
-
     def test_price_wrappers_degrade_on_incompatible_units(self):
         self.assertFalse(self.uom_gram._has_common_reference(self.uom_hour))
         for wrapper in (

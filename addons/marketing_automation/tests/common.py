@@ -29,7 +29,6 @@ class MarketingAutomationCase(MassMailCase):
         with freeze_time(mock_dt), patch.object(self.env.cr, "now", lambda: mock_dt):
             yield
 
-
     def assertMarketAutoTraces(
         self,
         participants_info,
@@ -221,7 +220,6 @@ class MarketingAutomationCase(MassMailCase):
                 self.assertMarketAutoTraces(
                     [{"records": self.env[activity.model_name]}], activity
                 )
-
 
     @classmethod
     def _create_mailing(cls, model, user=None, **mailing_values):

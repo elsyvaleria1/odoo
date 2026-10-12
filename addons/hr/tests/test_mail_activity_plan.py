@@ -381,7 +381,6 @@ class TestActivitySchedule(ActivityScheduleHRCase):
 
 @tagged("post_install", "-at_install")
 class TestPlanResponsibleWithoutOrgChart(ActivityScheduleHRCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

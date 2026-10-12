@@ -4,7 +4,6 @@ from odoo.addons.portal.controllers import portal_thread
 
 
 class PortalChatter(portal_thread.PortalChatter):
-
     def _get_domain_portal_message_fetch_extra(self, data) -> Domain:
         domain = super()._get_domain_portal_message_fetch_extra(data)
         if data.get("rating_value", False) is not False:

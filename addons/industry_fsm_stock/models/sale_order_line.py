@@ -93,7 +93,5 @@ class SaleOrderLine(models.Model):
             and res["tracking"]
             and self.env.context.get("fsm_task_id", False)
         ):
-            res["readOnly"] = (
-                self.order_id._is_readonly()
-            )
+            res["readOnly"] = self.order_id._is_readonly()
         return res

@@ -8,7 +8,6 @@ class AccountFollowupReport(models.AbstractModel):
     _name = "account.followup.report"
     _description = "Follow-up Report"
 
-
     def get_followup_report_html(self, request):
         return self.env["ir.qweb"]._render(
             "account_followup.template_followup_report",
@@ -19,7 +18,6 @@ class AccountFollowupReport(models.AbstractModel):
                 "context": self.env.context,
             },
         )
-
 
     @api.model
     def _get_rendered_body(self, partner_id, template_src, default_body, **kwargs):
@@ -98,9 +96,7 @@ Best Regards,
             partner.name,
         )
 
-        default_body_html = (
-            plaintext2html(default_body) + responsible_signature
-        )
+        default_body_html = plaintext2html(default_body) + responsible_signature
         return self._get_rendered_body(
             partner.id,
             template_src,
@@ -147,7 +143,6 @@ Best Regards,
             )[partner.id]
             recipients |= partner.browse(rendered_values.get("partner_ids"))
         return recipients
-
 
     @api.model
     def _send_sms(self, request) -> None:

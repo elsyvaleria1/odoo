@@ -596,7 +596,6 @@ WHERE sub.user_id = ANY(%s)""",
             "karma_granted": kudos.karma_granted,
         }
 
-
     NUDGE_COOLDOWN_DAYS = 7
 
     def _mark_eligible_users_nudged(self) -> Self:

@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class TelegramInsightLog(models.Model):
-
     _name = "telegram.insight.log"
     _description = "Telegram Question"
     _order = "create_date desc, id desc"

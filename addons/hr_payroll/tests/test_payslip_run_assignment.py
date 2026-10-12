@@ -7,7 +7,6 @@ from .common import TestPayslipBase
 
 @tagged("post_install", "-at_install")
 class TestPayslipRunAssignment(TestPayslipBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

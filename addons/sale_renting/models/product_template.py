@@ -34,7 +34,6 @@ class ProductTemplate(models.Model):
         help="First rental pricing of the product",
     )
 
-
     extra_hourly = fields.Float(
         string="Hourly Fine",
         company_dependent=True,

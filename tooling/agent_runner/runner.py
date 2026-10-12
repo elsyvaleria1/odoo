@@ -247,7 +247,6 @@ class Client:
 
 
 class Reporter:
-
     def __init__(self, client: Client, lease: dict[str, Any]) -> None:
         self._client = client
         self._lease = lease

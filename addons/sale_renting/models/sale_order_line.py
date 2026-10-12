@@ -151,13 +151,9 @@ class SaleOrderLine(models.Model):
                 continue
             match sol.rental_status:
                 case "pickup":
-                    sol.rental_color = (
-                        3 if sol.is_late else 4
-                    )
+                    sol.rental_color = 3 if sol.is_late else 4
                 case "return":
-                    sol.rental_color = (
-                        6 if sol.is_late else 2
-                    )
+                    sol.rental_color = 6 if sol.is_late else 2
                 case "returned":
                     sol.rental_color = 7
 

@@ -7,7 +7,6 @@ from odoo.addons.iot.models.iot_channel import BOX_CHANNEL
 
 @tagged("post_install", "-at_install")
 class TestBoxEnrolment(HttpCase):
-
     def _setup(self, iot_box, devices):
         response = self.url_open(
             "/iot/setup",

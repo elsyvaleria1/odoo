@@ -9,7 +9,6 @@ from odoo.addons.test_mail.tests.common import TestRecipients
 
 @tagged("mail_gateway", "mail_flow", "post_install", "-at_install")
 class TestMailFlow(MailCommon, TestRecipients):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -407,9 +406,7 @@ class TestMailFlow(MailCommon, TestRecipients):
                 {
                     "content": "Well received !",
                     "mail_mail_values": {
-                        "mail_server_id": self.env[
-                            "ir.mail_server"
-                        ],
+                        "mail_server_id": self.env["ir.mail_server"],
                     },
                     "message_type": "comment",
                     "message_values": {

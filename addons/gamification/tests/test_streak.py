@@ -12,7 +12,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestStreakCommon(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -49,7 +48,6 @@ class TestStreakCommon(common.TransactionCase):
 
 
 class TestStreak(TestStreakCommon):
-
     def setUp(self):
         super().setUp()
         self.env["gamification.streak"].search(

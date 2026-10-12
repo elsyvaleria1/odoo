@@ -241,7 +241,6 @@ class TestFailedRun(RunCompletionCase):
 
 
 class TestLostTransaction(RunCompletionCase):
-
     def _ready_line(self):
         step = self._action("step", "record.write({'ref': 'ran'})")
         runtime = self.env["automation.runtime"].create(

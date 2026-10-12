@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class MailTestSms(models.Model):
-
     _name = "mail.test.sms"
     _description = "Chatter Model for SMS Gateway"
     _inherit = ["mixin.mail.thread"]
@@ -28,7 +27,6 @@ class MailTestSms(models.Model):
 
 
 class MailTestSmsBl(models.Model):
-
     _name = "mail.test.sms.bl"
     _description = "SMS Mailing Blacklist Enabled"
     _inherit = ["mixin.mail.thread.phone"]
@@ -68,7 +66,6 @@ class MailTestSmsBl(models.Model):
 
 
 class MailTestSmsBlActivity(models.Model):
-
     _name = "mail.test.sms.bl.activity"
     _description = "SMS Mailing Blacklist Enabled with activities"
     _inherit = [
@@ -85,7 +82,6 @@ class MailTestSmsBlActivity(models.Model):
 
 
 class MailTestSmsBlOptout(models.Model):
-
     _name = "mail.test.sms.bl.optout"
     _description = "SMS Mailing Blacklist / Optout Enabled"
     _inherit = ["mixin.mail.thread.phone"]
@@ -120,7 +116,6 @@ class MailTestSmsBlOptout(models.Model):
 
 
 class MailTestSmsPartner(models.Model):
-
     _name = "mail.test.sms.partner"
     _description = "Chatter Model for SMS Gateway (Partner only)"
     _inherit = ["mixin.mail.thread"]
@@ -137,7 +132,6 @@ class MailTestSmsPartner(models.Model):
 
 
 class MailTestSmsPartner2many(models.Model):
-
     _description = "Chatter Model for SMS Gateway (M2M Partners only)"
     _name = "mail.test.sms.partner.2many"
     _inherit = ["mixin.mail.thread"]
@@ -153,10 +147,7 @@ class MailTestSmsPartner2many(models.Model):
         return self.search([("id", "in", res_ids), ("opt_out", "=", True)]).ids
 
 
-
-
 class SMSTestNotMailThread(models.Model):
-
     _name = "sms.test.nothread"
     _description = "NoThread Model"
     _mail_partner_fields = ("customer_id",)

@@ -11,7 +11,6 @@ from .common import DeviceHttpCase
 
 @tagged("post_install", "-at_install")
 class TestPushRouteAdmission(DeviceHttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

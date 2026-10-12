@@ -4,7 +4,6 @@ from odoo.tests import common
 
 
 class TestMapLabels(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

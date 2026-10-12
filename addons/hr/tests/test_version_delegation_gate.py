@@ -5,7 +5,6 @@ RESTATABLE = frozenset({"related", "inherited", "readonly", "groups", "string", 
 
 @tagged("post_install", "-at_install")
 class TestVersionDelegationGate(TransactionCase):
-
     def _restatements(self):
         Employee = self.env["hr.employee"]
         Version = self.env["hr.version"]

@@ -19,7 +19,6 @@ def _pdf_of(page_labels):
 
 
 class TestCoverPage(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

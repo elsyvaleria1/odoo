@@ -6,7 +6,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestCoverProperties(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

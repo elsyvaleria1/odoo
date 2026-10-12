@@ -60,7 +60,6 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "mercado_pago").update(
@@ -87,7 +86,6 @@ class PaymentProvider(models.Model):
 
     def _compute_mercado_pago_is_oauth_supported(self) -> None:
         self.mercado_pago_is_oauth_supported = False
-
 
     @api.constrains("state", "mercado_pago_access_token")
     def _check_mercado_pago_credentials_are_set_before_enabling(self) -> None:
@@ -116,13 +114,11 @@ class PaymentProvider(models.Model):
                 self.env._("Connect your account before enabling tokenization.")
             )
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "mercado_pago":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def action_start_onboarding(self, menu_id=None):
         self.check_singleton()
@@ -170,7 +166,6 @@ class PaymentProvider(models.Model):
             "allow_tokenization": False,
         }
 
-
     @api.model
     def _get_compatible_providers(
         self, *args, is_validation=False, report=None, **kwargs
@@ -200,7 +195,6 @@ class PaymentProvider(models.Model):
             "public_key": self.mercado_pago_public_key,
         }
         return json_dumps(inline_form_values)
-
 
     def _prepare_request_url(self, endpoint, *, is_proxy_request=False, **kwargs):
         if self.code != "mercado_pago":

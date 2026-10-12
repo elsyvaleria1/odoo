@@ -18,7 +18,6 @@ def _is_sms_trace_matching(number, status, record, trace):
 
 
 class MassSMSCase(SMSCase, MockLinkTracker):
-
     def assertSMSStatistics(self, recipients_info, mailing, records, check_sms=True):
         return self.assertSMSTraces(
             recipients_info, mailing, records, check_sms=check_sms
@@ -167,7 +166,6 @@ class MassSMSCase(SMSCase, MockLinkTracker):
                         link_params=link_params,
                     )
         return traces
-
 
     def gateway_sms_bounce(self, mailing, records, error_code="invalid_destination"):
         traces = mailing.mailing_trace_ids.filtered(

@@ -1,4 +1,3 @@
-
 from freezegun import freeze_time
 
 from odoo import Command, fields
@@ -14,7 +13,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         super().setUpClass()
 
         cls.partner_c = cls._create_partner(name="partner_c")
-
 
         cls.env["account.account"].search(
             [
@@ -68,7 +66,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         for account in accounts_2:
             account.code = account.with_company(cls.company_data_2["company"]).code
 
-
         cls.horizontal_group = cls.env["account.report.horizontal.group"].create(
             {
                 "name": "Horizontal Group",
@@ -88,7 +85,6 @@ class TestFinancialReport(TestAccountReportsCommon):
                 ],
             }
         )
-
 
         cls.move_2019 = cls.env["account.move"].create(
             {

@@ -6,7 +6,6 @@ from odoo.addons.test_trade.tests.common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestDocumentMatch(TestTradeOrderCase):
-
     def _rows(self, orders=None, moves=None):
         self.env.flush_all()
         self.env.invalidate_all()

@@ -124,7 +124,6 @@ class TestCommon(HttpCase):
             "weekday": "WED",
         }
 
-
         self.simple_event_ms_values = {
             "subject": self.simple_event_values["name"],
             "body": {
@@ -219,7 +218,6 @@ class TestCommon(HttpCase):
             },
         }
 
-
         self.simple_event_from_outlook_organizer = {
             "type": "singleInstance",
             "seriesMasterId": None,
@@ -274,7 +272,6 @@ class TestCommon(HttpCase):
         self.simple_event_from_outlook_attendee = dict(
             self.simple_event_from_outlook_organizer, isOrganizer=False
         )
-
 
         self.expected_odoo_event_from_outlook = {
             "name": "simple_event",
@@ -516,7 +513,6 @@ class TestCommon(HttpCase):
         return False
 
     def create_events_for_tests(self):
-
 
         self.simple_event = self.env["calendar.event"].search(
             [("name", "=", "simple_event")]

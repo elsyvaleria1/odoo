@@ -10,7 +10,6 @@ from odoo.addons.telegram.tests.common import TelegramBotTestCase
 
 @tagged("post_install", "-at_install")
 class TestTrackingCommand(TelegramBotTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

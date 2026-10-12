@@ -778,7 +778,6 @@ class BaseFollowersTest(MailCommon):
 @tagged("mail_followers")
 @tagged("mail_followers", "security")
 class FollowerAccessTest(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1483,7 +1482,6 @@ class AdvancedResponsibleNotifiedTest(MailCommon):
 
 @tagged("mail_followers", "post_install", "-at_install")
 class RecipientsNotificationTest(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1545,9 +1543,7 @@ class RecipientsNotificationTest(MailCommon):
             self.assertEqual(set(record_data.keys()), set(partners.ids))
             for partner in partners:
                 partner_data = record_data[partner.id]
-                if partner_to_users and partner_to_users.get(
-                    partner.id
-                ):
+                if partner_to_users and partner_to_users.get(partner.id):
                     user = partner_to_users[partner.id]
                 else:
                     user = next(
@@ -1934,15 +1930,9 @@ class RecipientsNotificationTest(MailCommon):
 
     def test_subscribe_post_author(self):
         test_record = self.env["mail.test.simple"].create({"name": "Test"})
-        self.partner_root.active = (
-            True
-        )
-        (
-            self.user_1 + self.user_2
-        ).active = False
-        self.user_1.partner_id.active = (
-            False
-        )
+        self.partner_root.active = True
+        (self.user_1 + self.user_2).active = False
+        self.user_1.partner_id.active = False
         self.assertFalse(test_record.message_partner_ids)
         for user, author, exp_followers in [
             (self.user_employee, self.user_2.partner_id, self.user_employee.partner_id),
@@ -1972,7 +1962,6 @@ class RecipientsNotificationTest(MailCommon):
 
 @tagged("mail_followers", "post_install", "-at_install")
 class UnfollowLinkTest(MailCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

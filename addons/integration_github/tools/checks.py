@@ -1,5 +1,4 @@
 class ChecksMixin:
-
     def list_check_runs(self, owner, repo, ref, max_pages=10):
         runs = []
         page = 1

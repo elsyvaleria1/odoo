@@ -491,11 +491,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             else SQL(""),
             st_line_amount_condition=st_line_amount_condition,
             last_statement_id_condition=last_statement_id_condition,
-            group_by=groupby_field_sql
-            if current_groupby
-            else SQL(
-                "st_line.id"
-            ),
+            group_by=groupby_field_sql if current_groupby else SQL("st_line.id"),
         )
 
         self.env.cr.execute(query)
@@ -638,9 +634,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             else SQL("account_move_line.balance < 0"),
             group_by=groupby_field_sql
             if current_groupby
-            else SQL(
-                "account_move_line.account_id"
-            ),
+            else SQL("account_move_line.account_id"),
         )
         self.env.cr.execute(query)
         query_res_lines = self.env.cr.dictfetchall()
@@ -720,9 +714,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             model, _model_id = report._get_model_info_from_id(line["id"])
             if model == "account.move.line":
                 line_name = line["name"].split()
-                line["name"] = line_name[
-                    0
-                ]
+                line["name"] = line_name[0]
 
         _debug.pipeline(
             "bank_reco_lines_postprocessed",

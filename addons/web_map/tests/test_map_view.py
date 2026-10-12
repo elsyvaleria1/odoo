@@ -10,7 +10,6 @@ def schema_map_view(arch):
 
 
 class TestMapDefaultView(TransactionCase):
-
     def test_default_view_points_at_the_contact_field(self):
         view = self.env["res.users"]._get_default_map_view()
 
@@ -23,7 +22,6 @@ class TestMapDefaultView(TransactionCase):
 
 
 class TestMapViewRegistration(TransactionCase):
-
     def test_map_declares_its_client_icon(self):
         info = self.env["ir.ui.view"]._get_view_info()
 
@@ -31,7 +29,6 @@ class TestMapViewRegistration(TransactionCase):
 
 
 class TestMapArchValidation(TransactionCase):
-
     def test_the_map_schema_is_declared(self):
         self.assertEqual(
             view_validation.registered_schemas().get("map"),

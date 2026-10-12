@@ -166,7 +166,6 @@ class AmazonAccount(models.Model):
     offer_count = fields.Integer(compute="_compute_offer_count")
     order_count = fields.Integer(compute="_compute_order_count")
 
-
     @api.depends("base_marketplace_id")
     def _compute_name(self):
         for account in self:
@@ -259,7 +258,6 @@ class AmazonAccount(models.Model):
         for account in self:
             account.order_count = len(orders_per_account.get(account, []))
 
-
     @api.onchange("last_orders_sync")
     def _onchange_last_orders_sync(self) -> dict | None:
         self.check_singleton()
@@ -279,7 +277,6 @@ class AmazonAccount(models.Model):
             }
         return None
 
-
     @api.constrains("active_marketplace_ids")
     def _check_actives_subset_of_availables(self) -> None:
         for account in self:
@@ -287,7 +284,6 @@ class AmazonAccount(models.Model):
                 raise exceptions.ValidationError(
                     self.env._("Only available marketplaces can be selected")
                 )
-
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -366,7 +362,6 @@ class AmazonAccount(models.Model):
                     " instead."
                 )
             )
-
 
     def action_archive(self):
         _debug.lifecycle("amazon_account_archived", accounts=self)
@@ -469,7 +464,6 @@ class AmazonAccount(models.Model):
             "target": "new",
         }
 
-
     def _get_available_marketplaces(self):
         self.check_singleton()
 
@@ -511,9 +505,7 @@ class AmazonAccount(models.Model):
             account = account[0]
             amazon_utils.check_account_is_set_up(account)
 
-            last_updated_after = (
-                account.last_orders_sync
-            )
+            last_updated_after = account.last_orders_sync
             status_update_upper_limit = None
 
             payload = {
@@ -1348,9 +1340,7 @@ class AmazonAccount(models.Model):
                 }
             )
             stock_move._update_quantity_done(order_line.product_qty)
-            stock_move.picked = (
-                True
-            )
+            stock_move.picked = True
             stock_move._action_done()
 
     def _sync_inventory(self) -> None:
@@ -1601,9 +1591,7 @@ class AmazonAccount(models.Model):
                     {"feed_ref": feed_ref, "account_id": self.id},
                 )
 
-            elif (
-                feed_status == "CANCELLED"
-            ):
+            elif feed_status == "CANCELLED":
                 feed_records.amazon_sync_status = "pending"
                 if flow == "inventory_sync":
                     _logger.info(

@@ -80,7 +80,6 @@ def rebinding(name, checked, rebound):
 
 
 class FakedDialCase:
-
     def setUp(self):
         super().setUp()
         self.patch(type(self.env["ir.egress"]), "check_host", lambda *a, **k: ())

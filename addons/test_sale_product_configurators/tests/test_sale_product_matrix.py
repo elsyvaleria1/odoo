@@ -51,7 +51,6 @@ class TestSaleMatrixUi(TestMatrixCommon):
 
         self.start_tour("/odoo", "sale_matrix_tour", login="salesman")
 
-
         self.assertEqual(len(self.matrix_template.product_variant_ids), 8)
         self.assertEqual(
             len(

@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestHrAttendanceScenario(TransactionCase):
-
     def test_the_guard_declines_on_a_database_that_already_has_sample_data(self):
         attendance = self.env["hr.attendance"]
         if not attendance.has_demo_data():

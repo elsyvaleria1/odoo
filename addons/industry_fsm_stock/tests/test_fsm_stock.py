@@ -1782,9 +1782,7 @@ class TestFsmFlowStock(TestFsmFlowSaleCommon):
             ],
         )
         self.env.user.write({"property_warehouse_id": self.warehouse_A.id})
-        self.assertEqual(
-            8, len(self.task.sale_order_id.picking_ids)
-        )
+        self.assertEqual(8, len(self.task.sale_order_id.picking_ids))
 
         picking_step = self.task.sale_order_id.picking_ids - old_pickings
         for pick in picking_step:

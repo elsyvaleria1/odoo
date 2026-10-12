@@ -7,7 +7,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestSchedulingCalendarResolution(TransactionCase):
-
     MODEL_NAME = "resource.scheduling.test"
 
     @classmethod

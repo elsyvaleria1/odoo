@@ -147,15 +147,11 @@ class PaymentTransaction(models.Model):
         tx_details = AuthorizeAPI(self.provider_id).get_transaction_details(
             payment_data.get("response", {}).get("x_trans_id")
         )
-        if (
-            "err_code" in tx_details
-        ):
+        if "err_code" in tx_details:
             return None
 
         amount = tx_details.get("transaction", {}).get("authAmount")
-        currency = (
-            self.provider_id.available_currency_ids
-        )
+        currency = self.provider_id.available_currency_ids
         return {
             "amount": float(amount),
             "currency_code": currency.name,
@@ -185,9 +181,7 @@ class PaymentTransaction(models.Model):
                 if self.operation == "validation":
                     self._void()
             elif status_type == "void":
-                if (
-                    self.operation == "validation"
-                ):
+                if self.operation == "validation":
                     self._set_done()
                 else:
                     self._set_canceled(extra_allowed_states=("done",))
@@ -236,9 +230,7 @@ class PaymentTransaction(models.Model):
             self.reference,
             pprint.pformat(cust_profile),
         )
-        if (
-            not cust_profile or "payment_profile_id" not in cust_profile
-        ):
+        if not cust_profile or "payment_profile_id" not in cust_profile:
             return {}
 
         return {

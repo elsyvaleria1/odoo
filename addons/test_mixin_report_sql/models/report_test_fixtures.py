@@ -13,7 +13,6 @@ class ReportTestSource(models.Model):
 
 
 class ReportTestPlain(models.Model):
-
     _name = "mixin.report.sql.test.plain"
     _inherit = ["mixin.sql.report"]
     _description = "SQL Report Test (not materialized)"
@@ -44,7 +43,6 @@ class ReportTestPlain(models.Model):
 
 
 class ReportTestMv(models.Model):
-
     _name = "mixin.report.sql.test.mv"
     _inherit = ["mixin.sql.report", "mixin.materialized.view"]
     _description = "SQL Report Test (materialized view)"

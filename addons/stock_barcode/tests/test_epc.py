@@ -49,9 +49,7 @@ class TestEpcEncoder(HttpCase):
                 data=payload,
                 headers={"Content-Type": "application/json"},
             )
-            received_epc = response.json()[
-                "result"
-            ]
+            received_epc = response.json()["result"]
             self.assertDictEqual(expected_epc, received_epc)
 
     def test_get_epc_takes_the_filter_value(self):

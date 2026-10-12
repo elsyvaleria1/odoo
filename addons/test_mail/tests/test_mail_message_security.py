@@ -90,7 +90,9 @@ class MessageAccessCommon(MailCommon, HttpCase):
 
 @tagged("mail_message", "security", "post_install", "-at_install")
 class TestMailMessageAccess(MessageAccessCommon):
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_assert_initial_values(self):
         for record in (
             self.record_public
@@ -205,7 +207,6 @@ class TestMailMessageAccess(MessageAccessCommon):
         ):
             allowed.with_user(self.user_admin).read(["name"])
 
-
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_access_create(self):
         admin_msg = self.record_admin.message_ids[-1]
@@ -307,9 +308,7 @@ class TestMailMessageAccess(MessageAccessCommon):
                     subtype_id=self.env.ref("mail.mt_comment").id,
                 )
         record.write({"is_locked": True})
-        record.message_unsubscribe(
-            partner_ids=self.partner_employee.ids
-        )
+        record.message_unsubscribe(partner_ids=self.partner_employee.ids)
         record.invalidate_model()
         for user in self.user_employee + self.user_portal:
             with self.subTest(user_name=user.name):
@@ -485,7 +484,9 @@ class TestMailMessageAccess(MessageAccessCommon):
                 )
             )
 
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_access_create_public(self):
         for record in [
             self.env["mail.test.access"],
@@ -562,7 +563,6 @@ class TestMailMessageAccess(MessageAccessCommon):
         )
         self.assertTrue(new_mail)
         self.assertEqual(new_msg.parent_id, message)
-
 
     def test_access_read(self):
         for msg, msg_vals, should_crash, reason in [
@@ -649,18 +649,12 @@ class TestMailMessageAccess(MessageAccessCommon):
                 body=f"AnchorForTest / A message from {self.user_admin.name} on {record.name}",
                 subtype_id=self.env.ref("mail.mt_comment").id,
             )
-        with self.assertRaises(
-            AccessError
-        ):
+        with self.assertRaises(AccessError):
             messages_all[2].with_user(self.user_employee).read(["subject"])
-        with self.assertRaises(
-            AccessError
-        ):
+        with self.assertRaises(AccessError):
             messages_all.with_user(self.user_employee).read(["subject"])
         messages_all[0].with_user(self.user_employee).read(["subject"])
-        messages_all[1].with_user(self.user_employee).read(
-            ["subject"]
-        )
+        messages_all[1].with_user(self.user_employee).read(["subject"])
 
         with self.assertRaises(AccessError):
             _message = messages_all[2].with_user(self.user_employee).copy_data()
@@ -857,7 +851,6 @@ class TestMailMessageAccess(MessageAccessCommon):
         public_msg.write({"author_id": self.user_public.partner_id.id})
         self.assertIn(public_msg, public_messages.search([("id", "=", public_msg.id)]))
 
-
     def test_access_unlink(self):
         for msg, msg_vals, should_crash, reason in [
             (self.record_portal.message_ids[0], {}, False, "W Access on record"),
@@ -922,7 +915,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                         msg.with_user(self.user_portal).unlink()
                 else:
                     msg.with_user(self.user_portal).unlink()
-
 
     def test_access_write(self):
         for msg, msg_vals, should_crash, reason in [
@@ -1023,7 +1015,6 @@ class TestMailMessageAccess(MessageAccessCommon):
         self.assertIn("Edited", message_su.body)
         self.assertEqual(message_su.read(list(envelope))[0], before)
         self.assertEqual(message_su.author_id, self.user_portal.partner_id)
-
 
     def test_search(self):
         base_msg_vals = {
@@ -1234,7 +1225,9 @@ class TestMessageSubModelAccess(MessageAccessCommon):
         message.with_user(self.user_employee).read()
         attachment.with_user(self.user_employee).read(["name", "datas"])
 
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_mail_follower(self):
         internal_record = self.record_internal.with_user(self.user_employee)
         internal_record.message_subscribe(partner_ids=self.user_portal.partner_id.ids)
@@ -1282,7 +1275,9 @@ class TestMessageSubModelAccess(MessageAccessCommon):
         with self.assertRaises(AccessError):
             notif_own.write({"res_partner_id": self.user_admin.partner_id.id})
 
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_mail_notification_portal(self):
         with self.assertRaises(AccessError):
             self.assertFalse(
@@ -1324,7 +1319,6 @@ class TestMessageSubModelAccess(MessageAccessCommon):
 
 @tagged("mail_message", "security", "post_install", "-at_install")
 class TestMailMessageAccessBoundaries(MessageAccessCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

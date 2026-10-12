@@ -926,7 +926,6 @@ class ResCompany(models.Model):
         requested_currency_codes = available_currencies.mapped("name")
         result = {}
 
-
         for table_type in ["A", "B"]:
             if not requested_currency_codes:
                 break
@@ -940,7 +939,6 @@ class ResCompany(models.Model):
             response.raise_for_status()
             response_data = response.json()
             for exchange_table in response_data:
-
                 table_date = datetime.datetime.strptime(
                     exchange_table["effectiveDate"], "%Y-%m-%d"
                 ).date()

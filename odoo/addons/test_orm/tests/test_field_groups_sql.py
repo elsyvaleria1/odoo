@@ -148,7 +148,6 @@ class TestFieldGroupsInSql(TransactionCase):
 
 
 class TestFieldGroupsInPredicates(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

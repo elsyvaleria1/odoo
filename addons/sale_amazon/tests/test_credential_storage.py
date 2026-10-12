@@ -6,7 +6,6 @@ from odoo.addons.sale_amazon.tests.common import TestAmazonCommon
 
 @tagged("post_install", "-at_install")
 class TestAmazonCredentials(TestAmazonCommon):
-
     def test_writing_the_token_creates_a_credential_and_stores_it_there(self):
         self.account.refresh_token = "Atzr|a-refresh-token"
         self.assertTrue(self.account.credential_id)

@@ -31,7 +31,6 @@ FULL_ALLOCATION = 100.0
 
 
 class SlotIntervals(dict):
-
     __slots__ = ()
     __hash__ = object.__hash__
     __eq__ = object.__eq__

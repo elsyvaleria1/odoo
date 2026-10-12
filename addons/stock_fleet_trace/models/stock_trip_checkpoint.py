@@ -52,7 +52,6 @@ HASHED_FIELDS = (
 
 
 class StockTripCheckpoint(models.Model):
-
     _name = "stock.trip.checkpoint"
     _description = "Trip Checkpoint"
     _order = "batch_id, sequence"

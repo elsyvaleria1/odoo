@@ -77,9 +77,7 @@ class TestStructure(TransactionCase):
         ):
             self.env.user.company_id.account_config_id.vat_check_vies = True
             with self.assertRaises(ValidationError):
-                company.vat = (
-                    "BE0987654321"
-                )
+                company.vat = "BE0987654321"
             company.vat = "BE0477472701"
             self.assertEqual(company.vies_valid, True)
 
@@ -105,12 +103,8 @@ class TestStructure(TransactionCase):
 
         test_partner.write({"vat": "BE42", "country_id": None})
         test_partner.write({"vat": "0477472701", "country_id": None})
-        test_partner.write(
-            {"vat": "BE0477472701", "country_id": None}
-        )
-        test_partner.write(
-            {"vat": "BE0477472702", "country_id": None}
-        )
+        test_partner.write({"vat": "BE0477472701", "country_id": None})
+        test_partner.write({"vat": "BE0477472702", "country_id": None})
 
     def test_vat_eu(self):
         test_partner = self.env["res.partner"].create(

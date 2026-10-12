@@ -8,7 +8,6 @@ from odoo.addons.hr_homeworking.models.hr_homeworking import DAYS
 
 @tagged("post_install", "-at_install")
 class TestTodayIsTheEmployeesOwn(HomeworkingCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPartyConvergence(TransactionCase):
-
     @classmethod
     def _diverge(cls, employee, contact):
         cls.env.flush_all()

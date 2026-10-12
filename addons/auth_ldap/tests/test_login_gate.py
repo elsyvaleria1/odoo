@@ -26,7 +26,6 @@ class _WebRequest:
 
 @tagged("post_install", "-at_install")
 class TestLdapLoginGate(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

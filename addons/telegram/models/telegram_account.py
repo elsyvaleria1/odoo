@@ -14,7 +14,6 @@ TIERS = ("contact", "portal", "internal")
 
 
 class TelegramAccount(models.Model):
-
     _name = "telegram.account"
     _description = "Telegram Account"
     _order = "id desc"

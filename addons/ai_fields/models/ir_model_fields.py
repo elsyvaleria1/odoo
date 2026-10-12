@@ -68,9 +68,7 @@ class IrModelFields(models.Model):
     def _prepare_field_vals(self, field, model_id):
         field_params = super()._prepare_field_vals(field, model_id)
         ai = getattr(field, "ai", None)
-        field_params["ai"] = isinstance(
-            ai, str
-        )
+        field_params["ai"] = isinstance(ai, str)
         field_params["system_prompt"] = ai
         return field_params
 

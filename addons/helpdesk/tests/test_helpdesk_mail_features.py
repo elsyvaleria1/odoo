@@ -424,9 +424,7 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                         {
                             "content": "Well received !",
                             "mail_mail_values": {
-                                "mail_server_id": self.env[
-                                    "ir.mail_server"
-                                ],
+                                "mail_server_id": self.env["ir.mail_server"],
                             },
                             "message_type": "comment",
                             "message_values": {

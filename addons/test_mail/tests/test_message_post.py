@@ -106,9 +106,7 @@ class TestMailNotifyAPI(TestMessagePostCommon):
                 },
             ]
         )
-        cls.test_lang_template = cls.env[
-            "mail.template"
-        ].create(
+        cls.test_lang_template = cls.env["mail.template"].create(
             {
                 "auto_delete": True,
                 "body_html": '<p>EnglishBody for <t t-out="object.name"/></p>',
@@ -193,9 +191,7 @@ class TestMailNotifyAPI(TestMessagePostCommon):
                 test_lang_record,
                 {"email_notification_allow_footer": True},
                 self.partner_1 + self.partner_2 + self.partner_employee_c2,
-                self.partner_1
-                + self.partner_2
-                + self.partner_employee_c2,
+                self.partner_1 + self.partner_2 + self.partner_employee_c2,
                 self.partner_employee_c2,
             ),
             (
@@ -219,18 +215,14 @@ class TestMailNotifyAPI(TestMessagePostCommon):
                     "email_notification_allow_footer": True,
                 },
                 self.partner_1 + self.partner_2 + self.partner_employee_c2,
-                self.partner_1
-                + self.partner_2
-                + self.partner_employee_c2,
+                self.partner_1 + self.partner_2 + self.partner_employee_c2,
                 self.partner_employee_c2,
             ),
             (
                 test_classic_record,
                 {"email_notification_force_footer": True},
                 self.partner_employee_c2,
-                self.partner_1
-                + self.partner_2
-                + self.partner_employee_c2,
+                self.partner_1 + self.partner_2 + self.partner_employee_c2,
                 self.partner_employee_c2,
             ),
         ]:
@@ -2143,9 +2135,7 @@ class TestMessagePost(TestMessagePostCommon, CronMixinCase):
         _attachment_records = self.env["ir.attachment"].create(
             self._generate_attachments_data(3, "wizard.mail.message.send", 0)
         )
-        _attachment_records[1].write(
-            {"mimetype": "image/png"}
-        )
+        _attachment_records[1].write({"mimetype": "image/png"})
 
         test_record = (
             self.env["mail.test.simple.main.attachment"]
@@ -2266,16 +2256,10 @@ class TestMessagePost(TestMessagePostCommon, CronMixinCase):
     @users("employee")
     def test_post_answer(self):
         for subtype in (
-            self.env.ref(
-                "test_mail.st_mail_test_ticket_container_mc_upd"
-            ),
+            self.env.ref("test_mail.st_mail_test_ticket_container_mc_upd"),
             self.env.ref("mail.mt_note"),
-            self.env[
-                "mail.message.subtype"
-            ],
-            self.env.ref(
-                "mail.mt_comment"
-            ),
+            self.env["mail.message.subtype"],
+            self.env.ref("mail.mt_comment"),
         ):
             with self.subTest(subtype_name=subtype.name if subtype else "None"):
                 test_record = self.test_record_ticket.with_env(self.env).copy()
@@ -3007,12 +2991,8 @@ class TestMessagePost(TestMessagePostCommon, CronMixinCase):
         self._setup_out_of_office(
             self.user_admin + self.user_employee_c2 + self.user_portal
         )
-        self.user_employee.notification_type = (
-            "email"
-        )
-        self.user_admin.notification_type = (
-            "email"
-        )
+        self.user_employee.notification_type = "email"
+        self.user_admin.notification_type = "email"
 
         for user in self.user_admin + self.user_employee_c2:
             self.assertTrue(user.is_out_of_office)
@@ -3713,7 +3693,6 @@ class TestMessagePostGlobal(TestMessagePostCommon):
 
 @tagged("mail_post")
 class TestMessageNotifyBatchRecipients(TestMessagePostCommon):
-
     def test_per_record_recipients_need_no_redundant_empty_list(self):
         records = self.env["mail.test.simple"].create(
             [{"name": "Notified A"}, {"name": "Notified B"}]
@@ -3760,7 +3739,6 @@ class TestMessageNotifyBatchRecipients(TestMessagePostCommon):
 
 @tagged("mail_post")
 class TestMessageNotifyBatchCost(TestMessagePostCommon):
-
     def _notify_batch_of(self, count):
         records = self.env["mail.test.simple"].create(
             [{"name": f"Notified {index}"} for index in range(count)]
@@ -3859,7 +3837,6 @@ class TestNotifyBatchEmailPrefetch(TestMessagePostCommon):
 
 @tagged("mail_post")
 class TestMessagePostBatchPaths(TestMessagePostCommon):
-
     def _records(self, count=3):
         return self.env["mail.test.simple"].create(
             [{"name": f"Batch {index}"} for index in range(count)]

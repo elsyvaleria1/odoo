@@ -7,7 +7,6 @@ from odoo.addons.test_mail_sms.tests.common import TestSMSRecipients
 
 @tagged("mail_thread")
 class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

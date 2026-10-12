@@ -2385,7 +2385,6 @@ class TestEmbeddedActionsLoadForPortal(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestIrActionsTargetModelWriteInvalidatesBindings(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2452,7 +2451,6 @@ class TestIrActionsTargetModelWriteInvalidatesBindings(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestIrActionsWriteThroughTheRoot(TransactionCase):
-
     def test_a_name_given_through_the_root_is_the_subtype_s_custom_name(self):
         action = self.env["ir.actions.server"].create(
             {

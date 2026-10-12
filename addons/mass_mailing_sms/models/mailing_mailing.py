@@ -128,14 +128,12 @@ class MailingMailing(models.Model):
             elif failure_type == "sms_acc":
                 mass_mailing.sms_has_unregistered_account = True
 
-
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get("mailing_type") == "sms" and vals.get("sms_subject"):
                 vals["subject"] = vals["sms_subject"]
         return super().create(vals_list)
-
 
     def action_retry_failed(self):
         mass_sms = self.filtered(lambda m: m.mailing_type == "sms")
@@ -189,7 +187,6 @@ class MailingMailing(models.Model):
             "type": "ir.actions.act_url",
             "url": url,
         }
-
 
     def _get_opt_out_list_sms(self):
         self.check_singleton()
@@ -308,7 +305,6 @@ class MailingMailing(models.Model):
                 )
                 composer._action_send_sms()
 
-
     def _prepare_statistics_email_values(self):
         values = super()._prepare_statistics_email_values()
         if self.mailing_type == "sms":
@@ -346,7 +342,6 @@ class MailingMailing(models.Model):
             return self.env._("SMS Text Message")
         return super()._get_pretty_mailing_type()
 
-
     def convert_links(self):
         sms_mailings = self.filtered(lambda m: m.mailing_type == "sms")
         res = {}
@@ -366,9 +361,7 @@ class MailingMailing(models.Model):
         max_sms = (
             self.env["sms.sms"].sudo().search_read([], ["id"], order="id desc", limit=1)
         )
-        sms_id_length = (
-            max(len(str(max_sms[0]["id"])), 5) if max_sms else 5
-        )
+        sms_id_length = max(len(str(max_sms[0]["id"])), 5) if max_sms else 5
         max_code = (
             self.env["link.tracker.code"]
             .sudo()
@@ -400,7 +393,6 @@ class MailingMailing(models.Model):
             "link": urljoin(base_url, f"r/{'x' * code_length}/s/{'x' * sms_id_length}"),
             "unsubscribe": f"\n{self.env['wizard.sms.sms.send']._get_unsubscribe_info(opt_out_url)}",
         }
-
 
     def _get_fields_ab_testing_description_modifying(self):
         fields_list = super()._get_fields_ab_testing_description_modifying()

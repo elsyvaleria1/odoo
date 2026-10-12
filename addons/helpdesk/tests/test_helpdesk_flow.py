@@ -12,7 +12,6 @@ from .common import HelpdeskCommon
 
 
 class TestHelpdeskFlow(HelpdeskCommon):
-
     def test_access_rights(self):
         def test_write_and_unlink(record):
             record.write({"name": "test_write"})

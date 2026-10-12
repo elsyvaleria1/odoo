@@ -14,7 +14,6 @@ GUEST_LIMIT = 10
 
 
 class CalendarController(http.Controller):
-
     @staticmethod
     def _attendee_from_token(token, extra_domain=None):
         attendee = request.env["calendar.attendee"]._from_invitation_token(token)
@@ -51,7 +50,6 @@ class CalendarController(http.Controller):
                 "token": token,
             },
         )
-
 
     @http.route(
         "/calendar/meeting/accept",

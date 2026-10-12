@@ -1043,7 +1043,6 @@ class DeviceDevice(models.Model):
             url += f":{self.port}"
         return url
 
-
     @api.model
     def _connection_fields(self):
         return frozenset(

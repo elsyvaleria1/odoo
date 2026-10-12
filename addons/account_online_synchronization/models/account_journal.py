@@ -348,10 +348,7 @@ class AccountJournal(models.Model):
                 """,
             journal_id=self.id,
             date_from=date_from,
-            prior_date=date_from
-            - relativedelta(
-                months=3
-            ),
+            prior_date=date_from - relativedelta(months=3),
         )
 
     def action_view_dashboard_asynchronous_action(self):

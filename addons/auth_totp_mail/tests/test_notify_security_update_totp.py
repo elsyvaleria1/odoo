@@ -1,4 +1,3 @@
-
 from odoo.tests import tagged, users
 
 from odoo.addons.mail.tests.common import MailCommon

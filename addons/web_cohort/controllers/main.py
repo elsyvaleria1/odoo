@@ -12,7 +12,11 @@ from odoo.libs.json import loads as json_loads
 class WebCohort(http.Controller):
     @http.route("/web/cohort/export", type="http", auth="user")
     def export_xls(self, data, **kw):
-        result = json_loads(data.read()) if isinstance(data, FileStorage) else json_loads(data)
+        result = (
+            json_loads(data.read())
+            if isinstance(data, FileStorage)
+            else json_loads(data)
+        )
 
         output = io.BytesIO()
         import xlsxwriter

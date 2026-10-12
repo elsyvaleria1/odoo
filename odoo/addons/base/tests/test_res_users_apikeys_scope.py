@@ -17,7 +17,6 @@ from odoo.addons.base.tests.common import declare_api_scope
 
 
 class ScopeCase(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -183,7 +182,6 @@ class TestHiddenColumns(ScopeCase):
 
 @tagged("post_install", "-at_install")
 class TestHiddenColumnOracles(ScopeCase):
-
     def test_name_search_no_longer_matches_the_hidden_column(self):
         self.assertEqual(self._call("name_search", "LEAKED-ORACLE"), [])
 
@@ -269,7 +267,6 @@ class TestComputedDerivationsAreHidden(ScopeCase):
 
 @tagged("post_install", "-at_install")
 class TestHiddenClasses(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.patch(

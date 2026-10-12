@@ -85,9 +85,7 @@ class MrpProduction(models.Model):
             action["views"] = [(False, "form")]
         else:
             action["domain"] = [("id", "in", self.eco_ids.ids)]
-            action["views"].insert(
-                0, action["views"].pop(1)
-            )
+            action["views"].insert(0, action["views"].pop(1))
         return action
 
     def action_update_bom(self) -> None:

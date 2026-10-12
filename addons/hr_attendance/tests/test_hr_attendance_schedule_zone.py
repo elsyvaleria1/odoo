@@ -44,7 +44,6 @@ OFFICE_ZONE = "Europe/Brussels"
 
 
 class ScheduleZoneCase(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -238,7 +237,6 @@ class TestScheduledHoursExcludeTheBreak(ScheduleZoneCase):
 
 @tagged("post_install", "-at_install")
 class TestFlexibleResourceKeepsItsHours(ScheduleZoneCase):
-
     def _worked(self, setup, flexible, calendar_tz="Asia/Tokyo"):
         employee = self._employee(self._calendar(calendar_tz))
         setup(employee)
@@ -303,7 +301,6 @@ class TestFlexibleResourceKeepsItsHours(ScheduleZoneCase):
 
 @tagged("post_install", "-at_install")
 class TestADayIsNotAlwaysTwentyFourHours(ScheduleZoneCase):
-
     LONG_DAY = date(2026, 4, 4)
     ZONE = "America/Santiago"
 
@@ -355,7 +352,6 @@ class TestADayIsNotAlwaysTwentyFourHours(ScheduleZoneCase):
 
 @tagged("post_install", "-at_install")
 class TestTheVersionIsChosenByTheLocalDay(ScheduleZoneCase):
-
     def _moved(self, before_tz, after_tz, check_in, from_hour=7, to_hour=9):
         before = self._calendar(before_tz, with_lunch=False)
         before.attendance_ids.write({"hour_from": from_hour, "hour_to": from_hour + 8})

@@ -40,12 +40,8 @@ def serial_connection(path, protocol, is_probing=False):
         "bytesize": protocol.bytesize,
         "stopbits": protocol.stopbits,
         "parity": protocol.parity,
-        "timeout": PROBING_TIMEOUT
-        if is_probing
-        else protocol.timeout,
-        "writeTimeout": PROBING_TIMEOUT
-        if is_probing
-        else protocol.writeTimeout,
+        "timeout": PROBING_TIMEOUT if is_probing else protocol.timeout,
+        "writeTimeout": PROBING_TIMEOUT if is_probing else protocol.writeTimeout,
     }
     connection = serial.Serial(path, **port_config)
     try:
@@ -55,7 +51,6 @@ def serial_connection(path, protocol, is_probing=False):
 
 
 class SerialDriver(Driver):
-
     _protocol = None
     connection_type = "serial"
 
@@ -133,9 +128,7 @@ class SerialDriver(Driver):
             ) as connection:
                 self._connection = connection
                 self._do_action(data)
-        event_manager.device_changed(
-            self, data
-        )
+        event_manager.device_changed(self, data)
 
     def run(self):
 

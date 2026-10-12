@@ -42,8 +42,7 @@ class ResPartnerTest(AppointmentCommon):
                     False,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(days=7, hours=8),
+                    self.reference_monday + timedelta(days=7, hours=8),
                     self.reference_monday + timedelta(days=7, hours=11),
                     True,
                 ),
@@ -51,23 +50,20 @@ class ResPartnerTest(AppointmentCommon):
         )
         self.assertFalse(
             self.staff_user_bxls.partner_id._is_calendar_available(
-                self.reference_monday
-                + timedelta(days=1, hours=2),
+                self.reference_monday + timedelta(days=1, hours=2),
                 self.reference_monday + timedelta(days=1, hours=4),
             )
         )
 
         self.assertFalse(
             self.staff_user_bxls.partner_id._is_calendar_available(
-                self.reference_monday
-                + timedelta(days=7, hours=4),
+                self.reference_monday + timedelta(days=7, hours=4),
                 self.reference_monday + timedelta(days=7, hours=8),
             )
         )
         self.assertTrue(
             self.staff_user_bxls.partner_id._is_calendar_available(
-                self.reference_monday
-                + timedelta(days=8, hours=3),
+                self.reference_monday + timedelta(days=8, hours=3),
                 self.reference_monday + timedelta(days=8, hours=4),
             )
         )

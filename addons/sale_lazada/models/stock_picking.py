@@ -47,14 +47,12 @@ class StockPicking(models.Model):
         help="The attachments that are related to the Lazada label.",
     )
 
-
     @api.depends("move_ids.lazada_order_item_ids.status")
     def _compute_lazada_package_status(self) -> None:
         for picking in self:
             picking.lazada_package_status = utils.get_lazada_aggregated_status(
                 picking.move_ids.lazada_order_item_ids.mapped("status")
             )
-
 
     def _pack_lazada_package(self) -> None:
         pickings_by_shop = self._get_lazada_pickings_by_shop()
@@ -120,7 +118,6 @@ class StockPicking(models.Model):
                     error_msg=formatted_errors,
                 )
             )
-
 
     def _get_shipment_provider_data(self, order_id, order_item_ids):
         shop = self.sale_id.lazada_shop_id
@@ -346,7 +343,6 @@ class StockPicking(models.Model):
         )
         self.lazada_shipping_allocate_type = data["shipping_allocate_type"]
 
-
     def _get_lazada_pickings_by_shop(self):
         domain = [
             ("id", "in", self.ids),
@@ -390,7 +386,6 @@ class StockPicking(models.Model):
         return {
             "packages": [{"package_id": picking.package_extern_id} for picking in self]
         }
-
 
     def action_fetch_shipping_label(self) -> None:
         self._download_lazada_labels_and_mark_ready_to_ship()

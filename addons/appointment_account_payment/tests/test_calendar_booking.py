@@ -404,9 +404,7 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
     @freeze_time("2022-02-13")
     @users("apt_manager")
     def test_no_manage_capacity_paid_resource(self):
-        self.assertFalse(
-            self.appointment_resources_payment.meeting_ids
-        )
+        self.assertFalse(self.appointment_resources_payment.meeting_ids)
         self.appointment_resources_payment.write(
             {
                 "manage_capacity": False,

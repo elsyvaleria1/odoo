@@ -13,9 +13,7 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 @tagged("post_install", "-at_install")
 class TestAutoPostBills(AccountTestInvoicingCommon):
     def import_facturx(self, filename="facturx_out_invoice.xml", ref=None, date=None):
-        self.env.cr._now = (
-            datetime.now()
-        )
+        self.env.cr._now = datetime.now()
         with file_open(
             f"account_edi_ubl_cii/tests/test_files/{filename}",
             "rb",
@@ -86,9 +84,7 @@ class TestAutoPostBills(AccountTestInvoicingCommon):
         wizard = self.assert_wizard(autopost_bills_wizard, 3)
         wizard.action_automate_partner()
 
-        move = self.import_facturx(
-            ref="refbill4", date="20170102"
-        )
+        move = self.import_facturx(ref="refbill4", date="20170102")
         self.assertEqual(move.state, "posted")
 
         move.partner_id.autopost_bills = "ask"
@@ -130,9 +126,7 @@ class TestAutoPostBills(AccountTestInvoicingCommon):
             )
             self.assertEqual(move.state, "posted")
 
-        move = self.import_facturx(
-            filename="facturx_out_invoice_abnormal.xml"
-        )
+        move = self.import_facturx(filename="facturx_out_invoice_abnormal.xml")
         self.assertEqual(move.state, "draft")
         res = move.action_post()
         self.assertEqual(res.get("res_model"), "wizard.account.move.post")

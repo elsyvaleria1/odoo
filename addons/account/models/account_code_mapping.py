@@ -29,7 +29,6 @@ def _pinned_ids(domain):
 
 
 class AccountCodeMapping(models.Model):
-
     _name = "account.code.mapping"
     _description = "Mapping of account codes per company"
     _auto = False

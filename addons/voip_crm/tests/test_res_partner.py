@@ -157,9 +157,7 @@ class TestResPartner(TestSalesCommon):
                         for ctx_key, ctx_val in value.items():
                             self.assertEqual(action["context"][ctx_key], ctx_val)
                     elif key == "opportunity_count":
-                        if hasattr(
-                            case["input"], "opportunity_count"
-                        ):
+                        if hasattr(case["input"], "opportunity_count"):
                             self.assertEqual(case["input"].opportunity_count, value)
                     elif key == "domain":
                         self.assertEqual(action["domain"], value)

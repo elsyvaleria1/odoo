@@ -12,7 +12,6 @@ class TestTradeOrderLine(models.Model):
     ]
     _description = "Base Order Test Line"
 
-
     order_id = fields.Many2one(
         comodel_name="test_trade.order",
         string="Order",
@@ -20,9 +19,7 @@ class TestTradeOrderLine(models.Model):
 
     parent_id = fields.Many2one(comodel_name="test_trade.order.line")
 
-
     _direction = SALE
-
 
     def _get_default_line_description(self):
         return self.product_id.display_name or "/"

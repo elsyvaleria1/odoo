@@ -635,7 +635,6 @@ class PlanningSlot(models.Model):
         slot_ids = list({reservation.res_id for reservation in conflicted})
         return [("id", "in" if operator == ">" else "not in", slot_ids)]
 
-
     def _get_fields_reservation_date(self) -> tuple:
         return ("start_datetime", "end_datetime")
 
@@ -1110,9 +1109,7 @@ class PlanningSlot(models.Model):
             return ()
 
         start_datetime, end_datetime = (start, end)
-        if (
-            intervals and (end_datetime - start_datetime).days == 0
-        ):
+        if intervals and (end_datetime - start_datetime).days == 0:
             start_datetime = intervals[0][0]
             end_datetime = [
                 stop
@@ -1149,7 +1146,6 @@ class PlanningSlot(models.Model):
             slot.is_unassign_deadline_passed = (
                 slot.unassign_deadline < fields.Datetime.now()
             )
-
 
     @api.model
     def _read_group_fields_nullify(self):
@@ -1510,9 +1506,7 @@ class PlanningSlot(models.Model):
                             for datetime_key in datetime_keys
                         }
                     )
-                    values["repeat_type"] = (
-                        first_slot.repeat_type
-                    )
+                    values["repeat_type"] = first_slot.repeat_type
                     (all_slots - first_slot).unlink()
                     shifts_to_update = first_slot
                 else:
@@ -1628,7 +1622,6 @@ class PlanningSlot(models.Model):
         result = self.copy({"start_datetime": values.get("start_datetime")})
         self.write({"end_datetime": values.get("end_datetime")})
         return result.id
-
 
     def action_address_recurrency(self, recurrence_update) -> None:
         if recurrence_update == "this":
@@ -2006,7 +1999,6 @@ class PlanningSlot(models.Model):
         open_shift_assigned = shifts_data["open_shift_assigned"]
         self.browse(open_shift_assigned).resource_id = False
 
-
     @api.model
     def get_gantt_data(
         self,
@@ -2082,7 +2074,6 @@ class PlanningSlot(models.Model):
             "is_past"
         ).request_to_switch = False
 
-
     @api.model
     def action_copy_previous_week(
         self, date_start_week, view_domain
@@ -2115,7 +2106,6 @@ class PlanningSlot(models.Model):
     def action_rollback_copy_previous_week(self, copied_slot_ids) -> None:
         self.browse(copied_slot_ids).was_copied = False
         self.exists().unlink()
-
 
     def get_people_without_email(self) -> dict | None:
         self.check_singleton()
@@ -2627,7 +2617,6 @@ class PlanningSlot(models.Model):
             )
         )
 
-
     def _get_slot_duration_capped(self):
         self.check_singleton()
         slot_duration = self._get_slot_duration() or 0.0
@@ -2643,7 +2632,6 @@ class PlanningSlot(models.Model):
         if not max_duration or max_duration >= slot_duration:
             return slot_duration
         return max_duration
-
 
     def _add_delta_with_dst(self, start, delta):
         tz = self._get_tzinfo()
@@ -2700,18 +2688,10 @@ class PlanningSlot(models.Model):
     def _copy_slots(self, start_dt, end_dt, delta):
         resource_per_calendar = defaultdict(lambda: self.env["resource.resource"])
         resource_calendar_validity_intervals = defaultdict(dict)
-        attendance_intervals_per_resource = defaultdict(
-            Intervals
-        )
-        unavailable_intervals_per_resource = defaultdict(
-            Intervals
-        )
-        attendance_intervals_per_calendar = defaultdict(
-            Intervals
-        )
-        leave_intervals_per_calendar = defaultdict(
-            Intervals
-        )
+        attendance_intervals_per_resource = defaultdict(Intervals)
+        unavailable_intervals_per_resource = defaultdict(Intervals)
+        attendance_intervals_per_calendar = defaultdict(Intervals)
+        leave_intervals_per_calendar = defaultdict(Intervals)
         new_slot_values = []
         start_dt_delta = start_dt + delta
         end_dt_delta = end_dt + delta
@@ -2746,9 +2726,7 @@ class PlanningSlot(models.Model):
                 ]:
                     resource_per_calendar[calendar] |= slot.resource_id
             company_calendar_id = slot.company_id.resource_calendar_id
-            resource_per_calendar[company_calendar_id] |= self.env[
-                "resource.resource"
-            ]
+            resource_per_calendar[company_calendar_id] |= self.env["resource.resource"]
         for calendar, resources in resource_per_calendar.items():
             if not calendar:
                 continue
@@ -2829,7 +2807,6 @@ class PlanningSlot(models.Model):
                 else (interval & unavailable_intervals_per_resource[slot.resource_id])
             )
             if not unavailable_interval_company:
-
                 if slot.allocation_type == "planning":
                     if (
                         unavailable_interval_resource
@@ -3271,7 +3248,6 @@ class PlanningSlot(models.Model):
                 email_layout_xmlid="mail.mail_notification_light",
             )
 
-
     @api.model
     def _merge_slots_values(self, slots_to_merge, unforecastable_intervals):
         if not slots_to_merge:
@@ -3458,9 +3434,7 @@ class PlanningSlot(models.Model):
         avg_hours_per_resource = {False: 0}
         for resource in set(resources):
             if resource._is_fully_flexible():
-                avg_hours_per_resource[resource.id] = (
-                    24
-                )
+                avg_hours_per_resource[resource.id] = 24
             else:
                 avg_hours_per_resource[resource.id] = resource.calendar_id.hours_per_day
 

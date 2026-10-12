@@ -7,7 +7,6 @@ from odoo.tools.misc import _format_time_ago, format_date
 
 
 class SocialStreamPost(models.Model):
-
     _name = "social.stream.post"
     _description = "Social Stream Post"
     _order = "published_date desc"

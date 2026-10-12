@@ -40,9 +40,7 @@ class DHLProvider:
         request = self.factory.Request()
         service_header = self.factory.ServiceHeader()
         service_header.MessageTime = datetime.now()
-        service_header.MessageReference = (
-            "ref:" + datetime.now().isoformat()
-        )
+        service_header.MessageReference = "ref:" + datetime.now().isoformat()
         service_header.SiteID = site_id
         service_header.Password = password
         request.ServiceHeader = service_header

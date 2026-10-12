@@ -29,7 +29,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         ondelete={"peppol": "cascade"},
     )
 
-
     def _get_proxy_urls(self):
         urls = super()._get_proxy_urls()
         urls["peppol"] = {
@@ -167,7 +166,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
     def _get_domain_can_send(self) -> tuple:
         return ("sender", "smp_registration", "receiver")
 
-
     def _cron_peppol_get_new_documents(self) -> None:
         edi_users = self.search(
             [
@@ -224,7 +222,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
             ]
         )
         edi_users._peppol_reset_webhook()
-
 
     def _get_proxy_identification(self, company, proxy_type):
         if proxy_type == "peppol":
@@ -346,9 +343,7 @@ class Account_Edi_Proxy_ClientUser(models.Model):
             for uuid, content in all_messages.items():
                 enc_key = content["enc_key"]
                 document_content = content["document"]
-                filename = (
-                    content["filename"] or "attachment"
-                )
+                filename = content["filename"] or "attachment"
                 decoded_document = edi_user._decrypt_data(document_content, enc_key)
                 attachment = self.env["ir.attachment"].create(
                     {
@@ -485,7 +480,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                     edi_user.id,
                 )
 
-
     def _get_company_details(self):
         self.check_singleton()
         return self.env["wizard.account_peppol.config.register"]._get_company_details(
@@ -504,9 +498,7 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                 self.env["ir.model.fields"].get_field_selection(
                     "res.company", "account_peppol_proxy_state"
                 )
-            )[
-                company.account_peppol_config_id.account_peppol_proxy_state
-            ]
+            )[company.account_peppol_config_id.account_peppol_proxy_state]
             raise UserError(
                 self.env._(
                     "Cannot register a user with a %s application", peppol_states

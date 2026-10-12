@@ -5,7 +5,6 @@ from .common import BaseTaxCommon
 
 @tagged("post_install", "-at_install")
 class TestGlobalDiscount(BaseTaxCommon):
-
     def test_percent_discount_reduces_totals(self):
         tax = self._tax(21.0)
         Tax = self.env["account.tax"]
@@ -50,7 +49,6 @@ class TestGlobalDiscount(BaseTaxCommon):
 
 @tagged("post_install", "-at_install")
 class TestDownPayment(BaseTaxCommon):
-
     def test_percent_down_payment_happy_path(self):
         tax = self._tax(21.0)
         Tax = self.env["account.tax"]
@@ -93,7 +91,6 @@ class TestDownPayment(BaseTaxCommon):
 
 @tagged("post_install", "-at_install")
 class TestReturnOfMerchandise(BaseTaxCommon):
-
     def _product(self, name):
         return self.env["product.product"].create({"name": name})
 
@@ -139,7 +136,6 @@ class TestReturnOfMerchandise(BaseTaxCommon):
 
 @tagged("post_install", "-at_install")
 class TestGrossTotalTolerance(BaseTaxCommon):
-
     def test_strict_tolerance_keeps_the_group_total_exact(self):
         tax = self._tax(21.0)
         Tax = self.env["account.tax"]

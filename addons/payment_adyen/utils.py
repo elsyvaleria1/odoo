@@ -32,8 +32,7 @@ def format_partner_address(partner):
     return {
         "city": partner.city or "Unknown",
         "country": partner.country_id.code or "ZZ",
-        "stateOrProvince": partner.state_id.code
-        or "Unknown",
+        "stateOrProvince": partner.state_id.code or "Unknown",
         "postalCode": partner.zip or "",
         "street": street_data.get("street_name", partner.street) or "Unknown",
         "houseNumberOrName": street_data.get("street_number") or "",

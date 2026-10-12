@@ -51,7 +51,6 @@ class TestAssetAccess(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLedgerWritesThroughTheLot(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

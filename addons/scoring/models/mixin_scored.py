@@ -8,7 +8,6 @@ _REFRESH_BATCH_SIZE = 200
 
 
 class MixinScored(models.AbstractModel):
-
     _name = "mixin.scored"
     _description = "Scored Subject Mixin"
 
@@ -53,7 +52,6 @@ class MixinScored(models.AbstractModel):
         help="The active scorecard for the subject's company, or the shared one.",
     )
 
-
     @api.model
     def _score_trigger_fields(self):
         return ()
@@ -85,7 +83,6 @@ class MixinScored(models.AbstractModel):
         if source_key.endswith(":none"):
             return self.env._("No data captured.")
         return ""
-
 
     @api.depends(
         "score_line_ids.points",
@@ -122,7 +119,6 @@ class MixinScored(models.AbstractModel):
     def _get_score_max_points(self, company=None):
         scorecard = self.env["scorecard"]._for(self._name, company or self.env.company)
         return scorecard.max_points if scorecard else 0.0
-
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -163,7 +159,6 @@ class MixinScored(models.AbstractModel):
                 "next": {"type": "ir.actions.act_window_close"},
             },
         }
-
 
     @api.job(channel="scoring.refresh", trailing_run=True)
     def _score_refresh(self) -> None:
@@ -314,7 +309,6 @@ class MixinScored(models.AbstractModel):
             "applied": applied,
             "applicable": applicable,
         }
-
 
     def _score_job_identity_key(self, kind) -> str:
         digest = hashlib.sha256(

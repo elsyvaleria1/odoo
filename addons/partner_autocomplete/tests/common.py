@@ -12,7 +12,6 @@ from odoo.addons.partner_autocomplete.models.iap_autocomplete_api import (
 
 
 class MockIAPPartnerAutocomplete(common.BaseCase):
-
     @classmethod
     def _init_mock_partner_autocomplete(cls):
         cls.base_de = cls.env.ref("base.de")

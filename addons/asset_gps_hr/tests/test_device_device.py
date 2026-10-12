@@ -212,7 +212,6 @@ class TestRemoteDeviceHrSearch(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRemoteDeviceSearchViewDefault(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

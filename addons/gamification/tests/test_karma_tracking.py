@@ -161,9 +161,7 @@ class TestKarmaTrackingCommon(common.TransactionCase):
         self.assertEqual(len(consolidated_2), 1)
         self.assertTrue(consolidated_2.consolidated)
         self.assertEqual(consolidated_2.old_value, 0)
-        self.assertEqual(
-            consolidated_2.new_value, 10 * 9
-        )
+        self.assertEqual(consolidated_2.new_value, 10 * 9)
         self.assertEqual(
             consolidated_2.reason, "Consolidation from 2020-12-01 to 2020-12-31"
         )
@@ -202,9 +200,7 @@ class TestKarmaTrackingCommon(common.TransactionCase):
         self.assertEqual(len(consolidated), 1)
         self.assertTrue(consolidated.consolidated)
         self.assertEqual(consolidated.old_value, base_test_user_2_karma)
-        self.assertEqual(
-            consolidated.new_value, base_test_user_2_karma + 150
-        )
+        self.assertEqual(consolidated.new_value, base_test_user_2_karma + 150)
 
         remaining = Tracking.search(
             [("user_id", "=", self.test_user_2.id), ("consolidated", "=", False)]
@@ -225,22 +221,14 @@ class TestKarmaTrackingCommon(common.TransactionCase):
             ]
         )
         self.assertEqual(len(consolidated), 2)
-        self.assertEqual(
-            consolidated[0].new_value, base_test_user_2_karma + 200
-        )
-        self.assertEqual(
-            consolidated[0].old_value, base_test_user_2_karma + 150
-        )
+        self.assertEqual(consolidated[0].new_value, base_test_user_2_karma + 200)
+        self.assertEqual(consolidated[0].old_value, base_test_user_2_karma + 150)
         self.assertEqual(
             consolidated[0].tracking_date.date(),
             self.test_date.date() + relativedelta(months=1),
         )
-        self.assertEqual(
-            consolidated[-1].new_value, base_test_user_2_karma + 150
-        )
-        self.assertEqual(
-            consolidated[-1].old_value, base_test_user_2_karma
-        )
+        self.assertEqual(consolidated[-1].new_value, base_test_user_2_karma + 150)
+        self.assertEqual(consolidated[-1].old_value, base_test_user_2_karma)
 
         remaining = Tracking.search(
             [("user_id", "=", self.test_user_2.id), ("consolidated", "=", False)]
@@ -606,7 +594,6 @@ class TestComputeRankCommon(common.TransactionCase):
 
 
 class TestKarmaRankTieBreak(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -5,7 +5,6 @@ REPORT = "test_ir_access.reached_report"
 
 
 class TestScopedGrantOnAReport(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

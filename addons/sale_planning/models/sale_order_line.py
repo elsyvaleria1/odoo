@@ -88,7 +88,6 @@ class SaleOrderLine(models.Model):
             ),
         )
 
-
     @api.model_create_multi
     def create(self, vals_list):
         lines = super().create(vals_list)
@@ -119,7 +118,6 @@ class SaleOrderLine(models.Model):
                 )
                 name = f"{name} ({format_duration(remaining_hours)} {remaining})"
             line.display_name = name
-
 
     def _post_process_planning_sale_line(self, ids_to_exclude=None) -> None:
         sol_planning = self.filtered("product_id.planning_enabled")

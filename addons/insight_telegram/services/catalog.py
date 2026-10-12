@@ -24,7 +24,6 @@ MAX_MATCHES = 20
 
 @dataclass(frozen=True)
 class Query:
-
     key: str
     description: str
     run: object
@@ -36,14 +35,12 @@ class Query:
 
 @dataclass
 class Ask:
-
     env: object
     tz: str
     today: date
     params: dict = field(default_factory=dict)
     notes: list = field(default_factory=list)
     extras: dict = field(default_factory=dict)
-
 
     @property
     def group(self):
@@ -155,8 +152,6 @@ class NotFound(Exception):
     pass
 
 
-
-
 def money(amount, currency) -> str:
     _pre, text, _post = format_amount_parts(currency.env, amount, currency)
     text = text.replace(NEGATIVE_SIGN_JOINER, "-").replace(NON_BREAKING_SPACE, " ")
@@ -226,8 +221,6 @@ def _ranked(ask, items, show, by_date=False):
     if len(items) > len(shown):
         lines.append(ask.env._("… and %(count)s more", count=len(items) - len(shown)))
     return lines
-
-
 
 
 def run_sales(ask):

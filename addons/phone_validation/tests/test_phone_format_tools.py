@@ -47,7 +47,6 @@ class TestPhoneFormatTools(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPhoneParseRecoveryBranches(TransactionCase):
-
     def test_unparseable_plus_number_rejected(self):
         with self.assertRaises(UserError) as cm:
             phone_format("+9991234567890", "FR", 33)
@@ -78,7 +77,6 @@ class TestPhoneParseRecoveryBranches(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPhoneBlacklistRemoveWizard(TransactionCase):
-
     def test_wizard_unblacklists_number_with_reason(self):
         Blacklist = self.env["phone.blacklist"]
         Blacklist._add(["+33612345678"])

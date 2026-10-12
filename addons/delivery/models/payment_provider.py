@@ -11,13 +11,11 @@ class PaymentProvider(models.Model):
         selection_add=[("cash_on_delivery", "Cash On Delivery")]
     )
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.custom_mode != "cash_on_delivery":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     @api.model
     def _get_compatible_providers(

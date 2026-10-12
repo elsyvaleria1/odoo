@@ -8,7 +8,6 @@ class AccountEdiXmlUbl_De(models.AbstractModel):
     _inherit = ["account.edi.xml.ubl_bis3"]
     _description = "BIS3 DE (XRechnung)"
 
-
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_ubl_de.xml"
 
@@ -27,7 +26,6 @@ class AccountEdiXmlUbl_De(models.AbstractModel):
         )
 
         return constraints
-
 
     def _get_customization_id(self, process_type="billing"):
         if process_type == "billing":

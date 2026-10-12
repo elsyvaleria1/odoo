@@ -46,12 +46,9 @@ class TestUnityWebReadGroupGantt(TransactionCase):
             ]
         )
 
-
     def test_get_gantt_data_without_limit(self):
         self.env.invalidate_all()
-        with self.assertQueryCount(
-            1
-        ):
+        with self.assertQueryCount(1):
             result = self.env["test.web.gantt.pill"].get_gantt_data(
                 [("id", "in", self.pills.ids)],
                 [],
@@ -133,9 +130,7 @@ class TestUnityWebReadGroupGantt(TransactionCase):
 
     def test_get_gantt_data_with_limit(self):
         self.env.invalidate_all()
-        with self.assertQueryCount(
-            4
-        ):
+        with self.assertQueryCount(4):
             result = self.env["test.web.gantt.pill"].get_gantt_data(
                 [("id", "in", self.pills.ids)],
                 ["parent_id", "name"],

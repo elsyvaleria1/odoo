@@ -144,9 +144,7 @@ class AccountPayment(models.Model):
 
     def _sdd_xml_gen_header(self, company_id, CstmrDrctDbtInitn) -> None:
         GrpHdr = create_xml_node(CstmrDrctDbtInitn, "GrpHdr")
-        create_xml_node(
-            GrpHdr, "MsgId", str(time.time())
-        )
+        create_xml_node(GrpHdr, "MsgId", str(time.time()))
         create_xml_node(GrpHdr, "CreDtTm", datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
         create_xml_node(GrpHdr, "NbOfTxs", str(len(self)))
         create_xml_node(

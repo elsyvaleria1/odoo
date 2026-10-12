@@ -82,7 +82,6 @@ class ProjectProject(models.Model):
         )
         return action
 
-
     def _get_stat_buttons(self):
         buttons = super()._get_stat_buttons()
         if self.env.user.has_group("planning.group_planning_user"):

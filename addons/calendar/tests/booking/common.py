@@ -32,9 +32,7 @@ class AppointmentCommon(MailCase, common.HttpCase):
 
         cls.reference_now = datetime(2022, 2, 13, 20, 0, 0)
         cls.reference_monday = datetime(2022, 2, 14, 7, 0, 0)
-        cls.reference_now_monthweekstart = date(
-            2022, 1, 30
-        )
+        cls.reference_now_monthweekstart = date(2022, 1, 30)
         cls.global_slots_enddate = date(2022, 3, 5)
 
         cls.apt_manager = mail_new_test_user(

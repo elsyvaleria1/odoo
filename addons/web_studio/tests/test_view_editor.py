@@ -44,9 +44,7 @@ class TestEditView(TestStudioController):
         if isinstance(operations, list):
             _ops = []
             for op in operations:
-                _ops.append(
-                    deepcopy(op)
-                )
+                _ops.append(deepcopy(op))
         if studio_arch == "":
             studio_arch = "<data/>"
         return self.studio_controller.edit_view(
@@ -799,7 +797,6 @@ class TestEditView(TestStudioController):
 
 @tagged("post_install", "-at_install")
 class TestStudioViewSpecs(TransactionCase):
-
     def setUp(self):
         super().setUp()
         View = self.env["ir.ui.view"]

@@ -1104,7 +1104,6 @@ class TestHrEmployeeWebJson(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestPublicBirthdayLanguage(TestHrCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1140,7 +1139,6 @@ class TestPublicBirthdayLanguage(TestHrCommon):
 
 @tagged("post_install", "-at_install")
 class TestPresenceOutOfContract(TestHrCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1192,7 +1190,6 @@ class TestPresenceOutOfContract(TestHrCommon):
 
 @tagged("post_install", "-at_install")
 class TestEmployeeKanbanLaunchPlan(TestHrCommon):
-
     def _kanban_arch(self):
         return etree.fromstring(self.env.ref("hr.hr_kanban_view_employees").arch)
 

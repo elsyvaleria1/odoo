@@ -139,9 +139,7 @@ class TestSelfOrderKioskStripe(SelfOrderCommonTest):
             self.assertTrue(order.state == "paid", "The order should be paid")
 
     def test_kiosk_without_payment_terminal(self):
-        invalid_pm = (
-            self.bank_payment_method
-        )
+        invalid_pm = self.bank_payment_method
         self.pos_config.write(
             {
                 "self_ordering_mode": "kiosk",

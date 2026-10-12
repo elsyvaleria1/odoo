@@ -14,7 +14,6 @@ class TestJournalReport(TestAccountReportsCommon):
 
         cls.report = cls.env.ref("account.journal_report")
 
-
         cls.default_bank_journal = cls.company_data["default_journal_bank"]
         cls.default_sale_journal = cls.company_data["default_journal_sale"]
 
@@ -76,7 +75,6 @@ class TestJournalReport(TestAccountReportsCommon):
             }
         )
         cls.move_bank_1.action_post()
-
 
         cls.move_sales_0 = cls.env["account.move"].create(
             {
@@ -1113,6 +1111,4 @@ class TestJournalReport(TestAccountReportsCommon):
         )
 
         thousands_balance = tax_lines[0]["tax_grid_summary_lines"]["US"]["c10"]["+"]
-        self.assertEqual(
-            thousands_balance, "$\xa00"
-        )
+        self.assertEqual(thousands_balance, "$\xa00")

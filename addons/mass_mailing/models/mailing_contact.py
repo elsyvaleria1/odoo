@@ -4,7 +4,6 @@ from odoo.fields import Domain
 
 
 class MailingContact(models.Model):
-
     _name = "mailing.contact"
     _inherit = ["mixin.mail.thread.blacklist", "mixin.properties.base.definition"]
     _description = "Mailing Contact"

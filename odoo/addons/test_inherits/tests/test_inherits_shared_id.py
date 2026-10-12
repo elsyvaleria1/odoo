@@ -5,7 +5,6 @@ from odoo.tools import mute_logger
 
 
 class TestInheritsSharedId(common.TransactionCase):
-
     def test_a_new_record_takes_its_new_parent_id(self):
         crate = self.env["test.crate"].create({"name": "Crate", "label": "fragile"})
         self.assertEqual(crate.id, crate.unit_id.id)

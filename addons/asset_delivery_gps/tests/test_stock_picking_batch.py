@@ -36,7 +36,6 @@ class TestTripGpsOdometer(GpsBridgeCase):
 
 
 class TestTripGpsLegs(GpsBridgeCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -168,9 +168,7 @@ class WizardBaseImportGeodata(models.TransientModel):
 
     def _shapefile_to_geojson(self, raw: bytes) -> dict:
         try:
-            archive = zipfile.ZipFile(
-                io.BytesIO(raw)
-            )
+            archive = zipfile.ZipFile(io.BytesIO(raw))
         except zipfile.BadZipFile as e:
             raise UserError(
                 self.env._("Not a valid GeoJSON file, nor a valid .zip archive.")

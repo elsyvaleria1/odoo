@@ -172,9 +172,7 @@ class TestApprovalNotifier(ApprovalRequestTestBase):
         )
         self.test_user.write({"active": False})
         self.assertEqual(self.approver.user_id, successor)
-        self.assertTrue(
-            self.approval_request._get_approval_activities(user=successor)
-        )
+        self.assertTrue(self.approval_request._get_approval_activities(user=successor))
 
     def test_notify_enabled_helper(self):
         self.assertTrue(self.approver._telegram_notify_enabled())

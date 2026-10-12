@@ -28,7 +28,10 @@ class TestComplianceReportAssets(ComplianceCase):
 
     def _report_row(self):
         return self.env["document.compliance.report"].search(
-            [("entity_type", "=", "resource.resource"), ("entity_id", "=", self.asset.id)]
+            [
+                ("entity_type", "=", "resource.resource"),
+                ("entity_id", "=", self.asset.id),
+            ]
         )
 
     def test_an_asset_is_held_only_to_asset_types(self):

@@ -446,9 +446,7 @@ class TestAccessRightsTimesheetGrid(TestCommonTimesheet):
         )
 
         timesheet1.with_user(self.user_employee3).action_timer_start()
-        timesheet1.write(
-            {"date": today - timedelta(days=3)}
-        )
+        timesheet1.write({"date": today - timedelta(days=3)})
         self.assertTrue(timesheet1.is_timer_running)
         timesheet2.with_user(self.user_approver).action_validate_timesheet()
         self.assertFalse(timesheet1.is_timer_running)

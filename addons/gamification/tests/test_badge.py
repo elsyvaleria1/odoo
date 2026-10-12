@@ -9,7 +9,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestBadgeGranting(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -45,7 +44,6 @@ class TestBadgeGranting(common.TransactionCase):
             groups="base.group_user",
         )
 
-
     def test_everyone_can_grant(self):
         badge = self.env["gamification.badge"].create(
             {
@@ -55,7 +53,6 @@ class TestBadgeGranting(common.TransactionCase):
         )
         status = badge.with_user(self.user_granter)._get_badge_grant_status()
         self.assertEqual(status, badge.CAN_GRANT)
-
 
     def test_nobody_can_grant(self):
         badge = self.env["gamification.badge"].create(
@@ -76,7 +73,6 @@ class TestBadgeGranting(common.TransactionCase):
         )
         status = badge.with_user(self.user_admin)._get_badge_grant_status()
         self.assertEqual(status, badge.CAN_GRANT)
-
 
     def test_users_authorized_can_grant(self):
         badge = self.env["gamification.badge"].create(
@@ -99,7 +95,6 @@ class TestBadgeGranting(common.TransactionCase):
         )
         status = badge.with_user(self.user_granter)._get_badge_grant_status()
         self.assertEqual(status, badge.USER_NOT_VIP)
-
 
     def test_having_with_prerequisite_badge(self):
         prereq_badge = self.env["gamification.badge"].create(
@@ -142,7 +137,6 @@ class TestBadgeGranting(common.TransactionCase):
         )
         status = badge.with_user(self.user_granter)._get_badge_grant_status()
         self.assertEqual(status, badge.BADGE_REQUIRED)
-
 
     def test_monthly_limit_not_exceeded(self):
         badge = self.env["gamification.badge"].create(
@@ -210,7 +204,6 @@ class TestBadgeGranting(common.TransactionCase):
         badge_as_granter = badge.with_user(self.user_granter)
         self.assertEqual(badge_as_granter.remaining_sending, 0)
 
-
     def test_check_granting_raises_on_nobody(self):
         badge = self.env["gamification.badge"].create(
             {
@@ -269,7 +262,6 @@ class TestBadgeGranting(common.TransactionCase):
         with self.assertRaises(UserError):
             badge.with_user(self.user_granter).check_granting()
 
-
     def test_badge_granted_count(self):
         badge = self.env["gamification.badge"].create(
             {
@@ -305,7 +297,6 @@ class TestBadgeGranting(common.TransactionCase):
 
 
 class TestBadgeUserKanbanCardTemplate(common.TransactionCase):
-
     def test_only_one_card_template_node(self):
         view = self.env.ref("gamification.badge_user_kanban_view")
         arch = etree.fromstring(view.arch_db)
@@ -323,7 +314,6 @@ class TestBadgeUserKanbanCardTemplate(common.TransactionCase):
 
 
 class TestGrantBadgeWizardActionContext(common.TransactionCase):
-
     def test_context_has_no_dead_badge_id_key(self):
         from odoo.tools.safe_eval import safe_eval
 

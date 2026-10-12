@@ -57,7 +57,6 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "worldline").update(
@@ -66,13 +65,11 @@ class PaymentProvider(models.Model):
             }
         )
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "worldline":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def _prepare_request_url(self, endpoint, **kwargs):
         if self.code != "worldline":
@@ -95,9 +92,7 @@ class PaymentProvider(models.Model):
             )
 
         content_type = "application/json; charset=utf-8" if method == "POST" else ""
-        dt = format_date_time(
-            Datetime.now().timestamp()
-        )
+        dt = format_date_time(Datetime.now().timestamp())
         signature = self._get_worldline_signature(
             method, endpoint, content_type, dt, idempotency_key=idempotency_key
         )

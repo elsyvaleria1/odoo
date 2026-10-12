@@ -19,7 +19,6 @@ def id_token(**claims) -> str:
 
 
 class OAuthMailServerCase(HttpCase):
-
     allow_inherited_tests_method = True
     service_xmlid = None
     authorize_method = None

@@ -710,7 +710,6 @@ class TestDocumentsLock(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsLockHandsOff(TransactionCaseDocuments):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -809,7 +808,6 @@ class TestDocumentsLockHandsOff(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsDrivePlacement(TransactionCaseDocuments):
-
     def _refused(self, change):
         with self.assertRaises(AccessError):
             with self.env.cr.savepoint():

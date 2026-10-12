@@ -7,7 +7,6 @@ from .test_barcode_client_action import TestBarcodeClientAction
 
 @tagged("post_install", "-at_install")
 class TestBarcodeDraftPicking(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

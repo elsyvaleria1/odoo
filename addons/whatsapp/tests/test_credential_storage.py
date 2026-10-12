@@ -8,7 +8,6 @@ from odoo.addons.whatsapp.tests.common import WhatsAppCommon
 
 @tagged("post_install", "-at_install")
 class TestWhatsAppCredentials(WhatsAppCommon):
-
     def test_writing_a_secret_creates_a_credential_and_stores_it_there(self):
         account = self.env["whatsapp.account"].create(
             {

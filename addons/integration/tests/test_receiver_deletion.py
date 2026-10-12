@@ -7,7 +7,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install", "integration")
 class TestReceiverDeletion(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

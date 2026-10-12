@@ -2,7 +2,6 @@ from odoo.tests import TransactionCase
 
 
 class TestGanttData(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationEngagementSnapshot(models.Model):
-
     _name = "gamification.engagement.snapshot"
     _description = "Gamification Engagement Snapshot"
     _order = "snapshot_date desc"

@@ -24,7 +24,6 @@ PUSH_BUDGET = 200
 
 
 class CalendarSyncAccount(models.Model):
-
     _name = "calendar.sync.account"
     _description = "Calendar Synchronization Account"
     _order = "user_id, provider"
@@ -146,7 +145,6 @@ class CalendarSyncAccount(models.Model):
             for user in Users._calendar_sync_candidates(code):
                 Users._calendar_sync_run_for_cron(user, code)
 
-
     def _adapter(self):
         self.check_singleton()
         return self._adapter_of(self.provider)
@@ -242,7 +240,6 @@ class CalendarSyncAccount(models.Model):
             values["sync_token"] = changes.next_token
         self.write(values)
         return changes, applied
-
 
     def _pull(self, changes) -> list:
         self.check_singleton()
@@ -403,7 +400,6 @@ class CalendarSyncAccount(models.Model):
         events.attendee_ids.filtered(
             lambda attendee: attendee.partner_id == self.user_id.partner_id
         ).state = "declined"
-
 
     def _queue_push(self, records=None, quiet=False) -> None:
         data = self._push_queue()
@@ -781,7 +777,6 @@ class CalendarSyncAccount(models.Model):
 
 
 class _Actives:
-
     def __init__(self, Account, code: str) -> None:
         self.Account, self.code = Account, code
         self._active, self._accounts = {}, {}

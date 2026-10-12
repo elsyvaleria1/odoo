@@ -12,7 +12,6 @@ _MIRRORED_FILES = ("photo", "document", "voice", "audio", "video")
 
 
 class TelegramHandlerMirror(models.AbstractModel):
-
     _name = "telegram.handler.mirror"
     _inherit = "mixin.telegram.handler"
     _description = "Telegram: Mirrored Groups"
@@ -60,7 +59,6 @@ class TelegramHandlerMirror(models.AbstractModel):
                 "user_id": group.user_id.id,
             }
         )
-
 
     def _on_message(self, bot, chat, message, partner, internal_user):
         mirror = self._mirror_of(chat, message)
@@ -146,7 +144,6 @@ class TelegramHandlerMirror(models.AbstractModel):
             )
             .mail_message_id
         )
-
 
     def _linked_record(self, link):
         return (

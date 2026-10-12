@@ -5,7 +5,6 @@ from odoo.tests import HttpCase, TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestBoardArchPreprocessing(TransactionCase):
-
     def _process(self, arch):
         return self.env["board.board"]._arch_preprocessing(arch)
 
@@ -22,7 +21,6 @@ class TestBoardArchPreprocessing(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestBoardGetView(TransactionCase):
-
     def test_get_view_without_custom_view(self):
         board_view = self.env.ref("board.board_my_dash_view")
         res = self.env["board.board"].get_view(board_view.id, "form")
@@ -71,7 +69,6 @@ class TestBoardGetView(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestBoardAddToDashboard(HttpCase):
-
     def test_add_to_dashboard(self):
         self.authenticate("admin", "admin")
         board_view = self.env.ref("board.board_my_dash_view")

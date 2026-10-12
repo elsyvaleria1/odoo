@@ -25,7 +25,6 @@ CENSUS_MAX_AGE_S = 60.0
 
 
 class WorkerCensus:
-
     def __init__(self, pid: int) -> None:
         self.pid = pid
         self.written_at = float("-inf")

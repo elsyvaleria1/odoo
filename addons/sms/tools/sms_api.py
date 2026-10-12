@@ -58,9 +58,7 @@ class SmsApiBase:
         self.company = company
 
 
-class SmsApi(
-    SmsApiBase
-):
+class SmsApi(SmsApiBase):
     DEFAULT_ENDPOINT = "https://sms.api.odoo.com"
     PROVIDER_TO_SMS_FAILURE_TYPE = SmsApiBase.PROVIDER_TO_SMS_FAILURE_TYPE | {
         "country_not_supported": "sms_country_not_supported",
@@ -82,9 +80,7 @@ class SmsApi(
         return self._account
 
     def _contact_iap(self, local_endpoint, params, timeout=15):
-        if (
-            not self.env.registry.ready
-        ):
+        if not self.env.registry.ready:
             raise exceptions.AccessError("Unavailable during module installation.")  # noqa: E8505 -- a guard against reaching IAP during module installation
 
         params["account_token"] = self.account.sudo().account_token
@@ -98,9 +94,7 @@ class SmsApi(
             endpoint + local_endpoint, params=params, timeout=timeout, env=self.env
         )
 
-    def _send_sms_batch(
-        self, messages, delivery_reports_url=False
-    ):
+    def _send_sms_batch(self, messages, delivery_reports_url=False):
         try:
             self._acquire_account()
         except exceptions.UserError as error:

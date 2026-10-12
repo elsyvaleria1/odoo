@@ -75,7 +75,6 @@ class SaleOrder(models.Model):
             },
         }
 
-
     is_rental_order = fields.Boolean(
         string="Created In App Rental",
         compute="_compute_is_rental_order",
@@ -123,7 +122,6 @@ class SaleOrder(models.Model):
         help="The products haven't been picked-up or returned in time."
         " This excludes any grace period before late fees apply.",
     )
-
 
     @api.depends("line_ids.is_rental")
     def _compute_is_rental_order(self) -> None:
@@ -202,12 +200,10 @@ class SaleOrder(models.Model):
         for order in self:
             order.is_late = (
                 order.is_rental_order
-                and order.rental_status
-                in ["pickup", "return"]
+                and order.rental_status in ["pickup", "return"]
                 and order.next_action_date
                 and order.next_action_date < now
             )
-
 
     def _search_is_late(self, operator, value):
         if operator != "in" and True not in value:
@@ -221,7 +217,6 @@ class SaleOrder(models.Model):
                 ("next_action_date", "<", "now"),
             ]
         )
-
 
     @api.onchange("pricelist_id")
     def _onchange_pricelist_id_show_update_prices(self):
@@ -262,7 +257,6 @@ class SaleOrder(models.Model):
     def _onchange_rental_return_date(self) -> None:
         self.line_ids.filtered("is_rental")._compute_name()
 
-
     def action_update_rental_prices(self) -> None:
         _debug.lifecycle("rental_prices_updated", orders=self)
         self.check_singleton()
@@ -279,7 +273,6 @@ class SaleOrder(models.Model):
         if not self.env.context.get("rental_recompute_price"):
             return lines
         return lines.filtered("is_rental")
-
 
     def action_view_pickup(self):
         self.check_singleton()
@@ -346,7 +339,6 @@ class SaleOrder(models.Model):
             )
         return domain
 
-
     def _rental_set_dates(self) -> None:
         _debug.logic("rental_dates_set", orders=self)
         self.check_singleton()
@@ -363,7 +355,6 @@ class SaleOrder(models.Model):
                 "rental_return_date": return_date,
             }
         )
-
 
     def _get_product_catalog_order_data(self, products, **kwargs):
         return super()._get_product_catalog_order_data(

@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 DEFAULT_ENDPOINT = "https://iap.odoo.com"
 
 
-
 _MAIL_PROVIDERS = {
     "gmail.com",
     "hotmail.com",
@@ -256,8 +255,6 @@ _STATES_FILTER_COUNTRIES_WHITELIST = {
     "AE",
     "US",
 }
-
-
 
 
 def mail_prepare_for_domain_search(email, min_email_length=0):

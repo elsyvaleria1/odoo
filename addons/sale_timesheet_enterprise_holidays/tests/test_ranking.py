@@ -23,9 +23,7 @@ class TestSaleTimesheetEnterpriseHolidaysRanking(
                 "employee_id": self.employee_user.id,
                 "holiday_status_id": self.hr_leave_type_with_ts.id,
                 "request_date_from": datetime(2023, 4, 10, 7, 0, 0, 0),
-                "request_date_to": datetime(
-                    2023, 4, 10, 18, 0, 0, 0
-                ),
+                "request_date_to": datetime(2023, 4, 10, 18, 0, 0, 0),
             }
         )
         holiday.action_approve()

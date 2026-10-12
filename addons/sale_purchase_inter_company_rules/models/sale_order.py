@@ -23,9 +23,7 @@ class SaleOrder(models.Model):
     def _action_confirm(self):
         res = super()._action_confirm()
         for order in self:
-            if (
-                not order.company_id
-            ):
+            if not order.company_id:
                 continue
             company = self.env["res.company"]._find_company_from_partner(
                 order.partner_id.id

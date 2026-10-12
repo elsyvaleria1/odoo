@@ -8,7 +8,6 @@ _debug = DebugLog(__name__)
 
 
 class AppointmentHr(AppointmentController):
-
     @route()
     def appointment_type_page(self, appointment_type_id, state=False, **kwargs):
 

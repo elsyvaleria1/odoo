@@ -46,9 +46,7 @@ class Base(models.AbstractModel):
             [("model", "=", self._name), ("res_id", "=", self.id)]
         )
         if data:
-            data.write(
-                {}
-            )
+            data.write({})
         else:
             module = self.env["ir.module.module"].get_or_create_studio_module()
             IrModelData.create(

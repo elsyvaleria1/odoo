@@ -7,7 +7,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestModelVerdicts(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -175,7 +174,6 @@ class TestModelVerdicts(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestMembershipKeepsCaches(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

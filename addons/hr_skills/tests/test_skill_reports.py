@@ -382,7 +382,6 @@ class TestSkillHistoryReport(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestSkillDataMultiCompany(SkillsCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -478,7 +477,6 @@ class TestSkillDataMultiCompany(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestReportRowIdentity(SkillsCase):
-
     def test_the_skill_report_row_is_the_skill_row(self):
         employee = self.env["hr.employee"].create({"name": "Identity employee"})
         row = self.env["hr.employee.skill"].create(

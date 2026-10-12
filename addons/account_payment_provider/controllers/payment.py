@@ -77,7 +77,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
 
         return tx_sudo._prepare_processing_values()
 
-
     @route()
     def payment_pay(
         self, *args, amount=None, invoice_id=None, access_token=None, **kwargs
@@ -129,9 +128,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 invoice_sudo = request.env["access.link"]._open_record(
                     "account.move", invoice_id, access_token
                 )
-            except (
-                AccessError
-            ):
+            except AccessError:
                 if not payment_utils.is_access_token_valid(
                     access_token,
                     kwargs.get("partner_id"),

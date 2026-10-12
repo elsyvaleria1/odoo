@@ -9,7 +9,6 @@ from odoo.tests.common import TransactionCase, tagged
 @freeze_time("2025-06-17 12:00:00")
 @tagged("post_install", "-at_install")
 class TestTheHourTotalsFollowTheAttendances(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -84,7 +83,6 @@ class TestTheHourTotalsFollowTheAttendances(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestExpectedHoursIgnoresAManagersCorrection(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

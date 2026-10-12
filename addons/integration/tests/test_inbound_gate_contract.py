@@ -7,7 +7,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install", "integration")
 class TestInboundGateContract(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

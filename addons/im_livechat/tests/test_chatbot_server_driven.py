@@ -4,7 +4,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestChatbotServerDriven(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

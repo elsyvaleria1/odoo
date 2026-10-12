@@ -11,15 +11,10 @@ from odoo.addons.sale_shopee import const
 _logger = logging.getLogger(__name__)
 
 
-
-
 class ShopeeRateLimitError(Exception):
-
     def __init__(self, operation) -> None:
         self.operation = operation
         super().__init__()
-
-
 
 
 def get_public_sign(account, path, timestamp):
@@ -29,8 +24,6 @@ def get_public_sign(account, path, timestamp):
         _get_public_signing_string(account, path, timestamp).encode(),
         hashlib.sha256,
     ).hexdigest()
-
-
 
 
 def request_access_token(shop, main_account_id=False, is_refresh=False):

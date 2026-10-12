@@ -115,7 +115,6 @@ class TestInputStep(RunCompletionCase):
 
 
 class TestStepInputs(RunCompletionCase):
-
     def setUp(self):
         super().setUp()
         self.needed = self.env["ir.model.fields"]._get(

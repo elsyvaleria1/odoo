@@ -186,7 +186,6 @@ class TestChatbot(LivechatTelegramCase):
 
 
 class TestBusinessAccount(LivechatTelegramCase):
-
     OWNER_ID = 880001
     CUSTOMER_ID = 880002
 

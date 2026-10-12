@@ -830,7 +830,6 @@ class TestPreview(TransactionCase):
 
 
 class test_convert_import_data(TransactionCase):
-
     def test_all(self):
         import_wizard = self.env["base_import.import"].create(
             {

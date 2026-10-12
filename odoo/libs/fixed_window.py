@@ -12,7 +12,6 @@ _debug = DebugLog(__name__)
 
 
 class FixedWindowLimiter:
-
     __slots__ = ("_lock", "_state", "limit", "max_keys", "window")
 
     def __init__(self, window: float, limit: int, max_keys: int = 10_000) -> None:

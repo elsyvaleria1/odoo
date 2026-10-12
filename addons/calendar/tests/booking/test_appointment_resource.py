@@ -1544,9 +1544,7 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_restrict_resources(self):
-        appointment = self.env[
-            "appointment.type"
-        ].create(
+        appointment = self.env["appointment.type"].create(
             {
                 "appointment_tz": "UTC",
                 "is_auto_assign": False,
@@ -2138,7 +2136,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
 @tagged("appointment_resources", "post_install", "-at_install")
 class AppointmentResourceLedgerTest(AppointmentCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

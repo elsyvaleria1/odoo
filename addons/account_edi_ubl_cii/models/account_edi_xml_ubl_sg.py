@@ -13,10 +13,8 @@ class AccountEdiXmlUbl_Sg(models.AbstractModel):
     Documentation: https://www.peppolguide.sg/billing/bis/
     """
 
-
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_sg.xml"
-
 
     def _get_customization_id(self, process_type="billing"):
         if process_type == "billing":

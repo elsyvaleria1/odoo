@@ -9,7 +9,6 @@ from odoo.addons.event.tests.common import EventCase
 
 @tagged("event_internals", "post_install", "-at_install")
 class TestSeatsAvailabilityContract(EventCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

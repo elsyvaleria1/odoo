@@ -402,7 +402,6 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
 
     def test_fiscal_account_id_and_vehicle_id_confusion_regression_test(self):
 
-
         self.env.cr.execute(
             "SELECT currval('resource_resource_id_seq'), currval('account_account_id_seq')"
         )
@@ -624,9 +623,7 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             options,
         )
 
-        for name, amount, _dummy, _dummy, level in expected_lines[
-            :-1
-        ]:
+        for name, amount, _dummy, _dummy, level in expected_lines[:-1]:
             with self.subTest(name=name, amount=amount, level=level):
                 line_id = next(
                     line["id"]

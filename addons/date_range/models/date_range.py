@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class DateRange(models.Model):
-
     _name = "date.range"
     _description = "Date Range"
     _check_company_auto = True

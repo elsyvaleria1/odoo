@@ -374,7 +374,6 @@ class TestXmlrpcMarshalsFrozenList(common.BaseCase):
 
 @common.tagged("post_install", "-at_install")
 class TestXmlrpcAuthentication(common.HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

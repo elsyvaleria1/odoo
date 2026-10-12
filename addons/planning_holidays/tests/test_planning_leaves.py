@@ -124,9 +124,7 @@ class TestPlanningLeaves(TestCommon):
     def test_shift_update_according_time_off(self):
         with freeze_time("2020-04-10"):
             today = datetime.datetime.today()
-            self.env.cr._now = (
-                today
-            )
+            self.env.cr._now = today
 
             ethan = self.env["hr.employee"].create(
                 {
@@ -681,7 +679,6 @@ class TestPlanningLeaves(TestCommon):
                 "default_planning_role_id": self.flex_role.id,
             }
         )
-
 
         custom_leave, half_day_leave = self.env["hr.leave.type"].create(
             [

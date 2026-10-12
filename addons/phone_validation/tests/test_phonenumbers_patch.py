@@ -11,7 +11,6 @@ from odoo.tests.common import BaseCase
 
 class TestPhonenumbersPatch(BaseCase):
     class PhoneInputOutputLine(NamedTuple):
-
         number: str
         region: str = ""
         gt_national_number: int = None

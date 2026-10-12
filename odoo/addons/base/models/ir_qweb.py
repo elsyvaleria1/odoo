@@ -541,7 +541,6 @@ TEMPLATE_REF = "__template_ref__"
 
 
 class TemplateContext(NamedTuple):
-
     directives: tuple[tuple[str, str], ...]
     ancestors: tuple[tuple[str | None, tuple[tuple[str, str], ...]], ...]
     conditions: tuple[tuple[str | None, tuple[tuple[str, str], ...]], ...]

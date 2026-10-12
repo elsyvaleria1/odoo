@@ -507,9 +507,7 @@ class AppointmentUITest(AppointmentUICommon):
         phone_question = self.apt_type_resource._get_main_phone_question()
         self.assertTrue(phone_question)
         self.assertTrue(self.apt_type_resource.auto_confirm)
-        self.apt_type_resource.sudo().manual_confirmation_percentage = (
-            0.5
-        )
+        self.apt_type_resource.sudo().manual_confirmation_percentage = 0.5
 
         appointment_data = {
             "allday": 0,

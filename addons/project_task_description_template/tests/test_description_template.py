@@ -36,7 +36,6 @@ class TestDescriptionTemplate(TransactionCase):
         spec = dict.fromkeys(task_form_values, "1")
         return self.Task.onchange(task_form_values, [changed_field], spec)
 
-
     def test_onchange_fills_an_empty_description(self):
         form = Form(self.Task)
         form.name = "Task A"
@@ -95,7 +94,6 @@ class TestDescriptionTemplate(TransactionCase):
         form = Form(task)
         form.description_template_id = other
         self.assertIn("MINE", str(form.description))
-
 
     def test_button_hidden_while_the_description_matches_the_template(self):
         form = Form(self.Task)
@@ -162,7 +160,6 @@ class TestDescriptionTemplate(TransactionCase):
         )
         self.assertFalse(task.show_apply_template)
 
-
     def test_switching_project_warns_and_keeps_the_description(self):
         values = {
             "name": "Task G",
@@ -205,7 +202,6 @@ class TestDescriptionTemplate(TransactionCase):
             self.project.id,
             "core's _onchange_project_id no longer runs",
         )
-
 
     def test_template_restricted_to_another_project_is_refused(self):
         with self.assertRaises(ValidationError):
@@ -285,7 +281,6 @@ class TestDescriptionTemplate(TransactionCase):
         self.assertFalse(task.company_id)
         self.assertEqual(task.description_template_id, foreign)
 
-
     def test_narrowing_the_template_projects_under_a_task_is_refused(self):
         task = self.Task.create(
             {
@@ -334,7 +329,6 @@ class TestDescriptionTemplate(TransactionCase):
         )
         self.assertIn(self.project, self.restricted.project_ids)
 
-
     def test_the_field_lands_in_the_header_group_not_in_a_subtask_list(self):
         arch = etree.fromstring(
             self.Task.get_view(self.env.ref("project.view_task_form2").id, "form")[
@@ -348,7 +342,6 @@ class TestDescriptionTemplate(TransactionCase):
             "list", ancestors, "a label, a div and a button are invalid there"
         )
         self.assertIn("group", ancestors)
-
 
     def _template_domain_for(self, task):
         source = self.Task._fields["description_template_id"]._description_domain(
@@ -424,7 +417,6 @@ class TestDescriptionTemplate(TransactionCase):
         field = self.Task._fields["description_template_id"]
         self.assertTrue(field.help, "the asymmetry has to be written down")
         self.assertIn("company", field.help)
-
 
     def test_archived_template_is_hidden_from_a_plain_search(self):
         self.template.active = False

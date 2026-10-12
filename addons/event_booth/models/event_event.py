@@ -79,9 +79,7 @@ class EventEvent(models.Model):
 
     @api.depends("event_booth_ids", "event_booth_ids.state")
     def _compute_event_booth_count(self) -> None:
-        if self.ids and all(
-            bool(event.id) for event in self
-        ):
+        if self.ids and all(bool(event.id) for event in self):
             booths_available_count, booths_total_count = self._get_booth_stat_count()
             for event in self:
                 event.event_booth_count_available = booths_available_count.get(

@@ -32,7 +32,6 @@ class TestAccountReports(TestAccountReportsCommon):
         cls.receivable_account_1 = cls.company_data["default_account_receivable"]
         cls.revenue_account_1 = cls.company_data["default_account_revenue"]
 
-
         invoice = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -71,7 +70,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
         invoice.action_post()
 
-
         payment_1 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -102,7 +100,6 @@ class TestAccountReports(TestAccountReportsCommon):
         payment_1.action_post()
 
         cls._reconcile_on((invoice + payment_1).line_ids, cls.receivable_account_1)
-
 
         payment_2 = cls.env["account.move"].create(
             {
@@ -178,9 +175,7 @@ class TestAccountReports(TestAccountReportsCommon):
             options,
         )
 
-        line_id = lines[2][
-            "id"
-        ]
+        line_id = lines[2]["id"]
         options["unfolded_lines"] = [line_id]
         self.assertLinesValues(
             report._get_lines(options),
@@ -595,7 +590,6 @@ class TestAccountReports(TestAccountReportsCommon):
             ],
             options,
         )
-
 
     def _audit_line(self, options, report, line_xml_id):
         lines = report._get_lines(options)
@@ -1081,7 +1075,6 @@ class TestAccountReports(TestAccountReportsCommon):
             },
         )
 
-
         self.env["account.analytic.line"].create(
             {
                 "name": "company specific account",
@@ -1472,7 +1465,6 @@ class TestAccountReports(TestAccountReportsCommon):
             analytic=True,
         )
 
-
         self.assert_line_values(
             report, "2016-02-01", [230.0], cash_basis=True, analytic=False
         )
@@ -1504,7 +1496,6 @@ class TestAccountReports(TestAccountReportsCommon):
         self.assert_line_values(
             report, "2016-03-10", [1360.0], cash_basis=True, analytic=False
         )
-
 
         self.assert_line_values(
             report, "2016-02-01", [0, 0, 0, 230.0], cash_basis=True, analytic=True

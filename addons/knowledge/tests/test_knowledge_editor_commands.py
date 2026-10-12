@@ -9,7 +9,6 @@ from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 
 @tagged("post_install", "-at_install", "knowledge", "knowledge_tour")
 class TestKnowledgeEditorCommands(HttpCaseWithUserDemo):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

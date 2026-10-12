@@ -10,7 +10,6 @@ OWN_ATTENDANCE = "hr_attendance_telegram.privilege_record_own_attendance"
 
 @tagged("post_install", "-at_install")
 class TestAttendanceAuthority(AttendanceTelegramTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

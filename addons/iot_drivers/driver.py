@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class Driver(Thread):
-
     connection_type = ""
     priority = 0
 

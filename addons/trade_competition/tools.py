@@ -1,5 +1,3 @@
-
-
 def to_comparable(price, *, unit, product, currency, company, date):
     if unit and product.uom_id:
         price = unit._get_price_in_unit(price, product.uom_id, raise_if_failure=False)

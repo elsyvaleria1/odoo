@@ -17,7 +17,6 @@ class ResUsers(models.Model):
         groups="base.group_system",
     )
 
-
     def _calendar_sync_existing_account(self, code: str):
         self.check_singleton()
         return self.sudo().calendar_sync_account_ids.filtered(
@@ -99,7 +98,6 @@ class ResUsers(models.Model):
         self.check_singleton()
         return self.with_user(self).sudo()
 
-
     def _calendar_sync_run(self, code: str) -> bool:
         if code not in self.env["calendar.sync.account"]._engine_providers():
             raise NotImplementedError(code)
@@ -113,7 +111,6 @@ class ResUsers(models.Model):
             [("account_id", "=", account.id), ("remote_id", "!=", False)]
         ).pending = True
         account._queue_push()
-
 
     @api.model
     def calendar_sync_providers(self) -> list[dict]:

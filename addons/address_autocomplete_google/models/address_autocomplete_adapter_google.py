@@ -19,9 +19,7 @@ GOOGLE = AddressProvider(
 FIELDS_MAPPING = {
     "country": ["country"],
     "street_number": ["number"],
-    "locality": [
-        "city"
-    ],
+    "locality": ["city"],
     "postal_town": ["city"],
     "route": ["street"],
     "sublocality_level_1": ["street2"],
@@ -178,9 +176,7 @@ class AddressAutocompleteAdapterGoogle(models.AbstractModel):
             fields_standard = FIELDS_MAPPING.get(google_field["type"], [])
 
             for field_standard in fields_standard:
-                if (
-                    field_standard in standard_data
-                ):
+                if field_standard in standard_data:
                     continue
                 if field_standard == "country":
                     country = self.env["res.country"].search(  # noqa: E8507 -- one lookup per field of the autocomplete response

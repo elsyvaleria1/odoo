@@ -5,7 +5,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardReportFormulaExportAttachment(models.TransientModel):
-
     _inherit = "wizard.report.formula.export.attachment"
 
     def _get_default_folder(self):

@@ -78,9 +78,7 @@ class ResPartner(models.Model):
         self_sudo = self
         group_pos_user = self.env.ref("point_of_sale.group_pos_user")
         if group_pos_user in self.env.user.all_group_ids:
-            self_sudo = (
-                self.sudo()
-            )
+            self_sudo = self.sudo()
 
         total_due = (
             self_sudo.parent_id.total_due if self.parent_id else self_sudo.total_due

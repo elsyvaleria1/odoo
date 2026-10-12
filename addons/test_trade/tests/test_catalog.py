@@ -66,7 +66,6 @@ class TestCatalog(TestTradeOrderCase):
         self.assertEqual(data["quantity"], 7.0)
         self.assertTrue(data["readOnly"])
 
-
     def test_update_creates_line_when_absent(self):
         order = self._make_order()
         self.assertFalse(order.line_ids)

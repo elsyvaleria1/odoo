@@ -74,7 +74,6 @@ class SessionStore(ABC):
         self.session_class = session_class
         self._durability = threading.local()
 
-
     @abstractmethod
     def _lock(self, sid: str) -> contextlib.AbstractContextManager[None]: ...
 
@@ -99,7 +98,6 @@ class SessionStore(ABC):
     @abstractmethod
     def vacuum(self, max_lifetime: int = SESSION_LIFETIME) -> None: ...
 
-
     def generate_key(self) -> str:
         return base64.urlsafe_b64encode(os.urandom(63)).decode("ascii")
 
@@ -122,7 +120,6 @@ class SessionStore(ABC):
 
     def _is_durable(self) -> bool:
         return getattr(self._durability, "enabled", False)
-
 
     def new(self) -> Session:
         session = self.session_class({}, self.generate_key(), True)
@@ -243,7 +240,6 @@ class SessionStore(ABC):
                     if exclude_sid is not None and sid == exclude_sid:
                         continue
                     self._remove_sid(sid)
-
 
     def _settle_anonymous_identity(self, session: Session) -> None:
         if session.uid is None and ISSUED_SID_KEY not in session:

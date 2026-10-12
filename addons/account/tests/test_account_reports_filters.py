@@ -1,4 +1,3 @@
-
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
 
@@ -49,7 +48,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
         cls.env["report.formula"].search([]).variant_report_ids.active = False
-
 
     @freeze_time("2017-12-31")
     def test_filter_date_month_range(self):
@@ -891,7 +889,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             },
         )
 
-
     @freeze_time("2017-12-30")
     def test_filter_date_today_single(self):
         self._assert_filter_date(
@@ -1454,7 +1451,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             ],
         )
 
-
     @freeze_time("2023-09-01")
     def test_filter_aml_ir_filters(self):
 
@@ -1853,7 +1849,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
         for i, val in enumerate(new_expected_values):
             self.assertDictEqual(new_options["column_headers"][0][i], val)
 
-
     @freeze_time("2024-09-01")
     def test_returns_period_filter(self):
         generic_tax_report = self.env.ref("account.generic_tax_report")
@@ -2156,7 +2151,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
                 "currency_table_period_key": "2022-10-01_2022-12-31",
             },
         )
-
 
     def test_filter_consolidation(self):
         company1 = self.company_data["company"]

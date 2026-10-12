@@ -260,7 +260,6 @@ class TestRepair(TestRepairCommon):
             'Repair line #3 should be in "Waiting Availability" state.',
         )
 
-
         self.assertEqual(len(repair.sale_order_id), 0)
         repair.partner_id = None
         with self.assertRaises(UserError) as err:
@@ -273,7 +272,6 @@ class TestRepair(TestRepairCommon):
         with self.assertRaises(UserError) as err:
             repair.action_create_sale_order()
 
-
         self.assertNotEqual(repair.state, "done")
         repair.action_repair_cancel()
         self.assertEqual(repair.state, "cancel")
@@ -284,7 +282,6 @@ class TestRepair(TestRepairCommon):
                 for sol in repair.sale_order_id.line_ids
             )
         )
-
 
         repair.action_repair_cancel_draft()
         self.assertEqual(repair.state, "draft")

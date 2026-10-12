@@ -5,7 +5,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestStatementBalances(TransactionCase):
-
     def _statement(self, transactions, **values):
         return {
             "name": "STMT/2026/001",

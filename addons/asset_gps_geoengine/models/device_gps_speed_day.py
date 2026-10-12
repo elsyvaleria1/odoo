@@ -9,7 +9,6 @@ MOVING_MIN_KMH = 5.0
 
 
 class DeviceGpsSpeedDay(models.Model):
-
     _name = "device.gps.speed.day"
     _description = "Daily Speed per Vehicle"
     _auto = False

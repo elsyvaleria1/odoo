@@ -145,9 +145,7 @@ class TestTimesheetGridHolidays(TestCommonTimesheet, MailCase):
             ("project_id", "=", timesheet.project_id.id),
             ("task_id", "=", timesheet.task_id.id),
         ]
-        self.env["account.analytic.line"].with_user(
-            SUPERUSER_ID
-        ).with_context(
+        self.env["account.analytic.line"].with_user(SUPERUSER_ID).with_context(
             default_date=column_date,
             default_project_id=timesheet.project_id.id,
             default_task_id=timesheet.task_id.id,

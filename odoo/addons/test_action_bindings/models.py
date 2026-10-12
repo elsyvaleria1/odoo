@@ -55,7 +55,6 @@ class TabActionComputed(models.Model):
 
 
 class TabActionView(models.Model):
-
     _name = "tab.action.view"
     _description = "tab.action.view"
     _auto = False
@@ -80,7 +79,6 @@ class TabActionView(models.Model):
 
 
 class TabReferenceView(models.Model):
-
     _name = "tab.reference.view"
     _description = "tab.reference.view"
     _auto = False

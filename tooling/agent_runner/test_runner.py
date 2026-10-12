@@ -12,7 +12,6 @@ from . import runner as agent
 
 
 class FakeClient:
-
     def __init__(self, leases=(), *, cancel_after=None, lose_on=None, flaky=0):
         self.leases = list(leases)
         self.calls = []

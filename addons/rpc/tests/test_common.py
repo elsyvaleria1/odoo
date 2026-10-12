@@ -24,7 +24,6 @@ class _FakeRequest:
 
 @tagged("post_install", "-at_install")
 class TestWarnEndpointIsDeprecated(TransactionCase):
-
     def setUp(self):
         super().setUp()
         original_clients = common._WARNED_CLIENTS

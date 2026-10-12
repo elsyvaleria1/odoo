@@ -190,8 +190,6 @@ def build_world(env, names: dict[str, str], note_class: str, *, sql: bool) -> Wo
     return world
 
 
-
-
 LEAVES = {
     "doc": (
         ("plain", "[('level', '>=', {n})]"),
@@ -756,8 +754,6 @@ def _differing(world: World, check: tuple, variations: list[tuple]) -> tuple | N
     return next((v for v in variations if answers[v] != answers[check]), None)
 
 
-
-
 def _resolve(world: World, value: typing.Any) -> typing.Any:
     if isinstance(value, tuple) and value and value[0] == "ref":
         record = world.record(value[1], value[2])
@@ -989,8 +985,6 @@ class _Divergence(Exception):
     def __init__(self, failure: dict) -> None:
         super().__init__(failure)
         self.failure = failure
-
-
 
 
 def principal_env(world: World, principal: tuple) -> typing.Any:

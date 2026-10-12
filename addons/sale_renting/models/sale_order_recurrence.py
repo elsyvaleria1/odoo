@@ -64,7 +64,6 @@ class SaleTemporalRecurrence(models.Model):
         "The pricing duration has to be greater or equal to 0.",
     )
 
-
     @api.depends("overnight", "unit")
     def _compute_displayed_unit(self) -> None:
         for recurrence in self:
@@ -100,7 +99,6 @@ class SaleTemporalRecurrence(models.Model):
             recurrence.duration_display = self.env._(
                 "%(duration)s %(unit)s", duration=display_duration, unit=display_label
             )
-
 
     def _get_unit_label(self, duration):
         self.check_singleton()

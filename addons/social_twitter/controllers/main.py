@@ -19,7 +19,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialTwitterController(SocialController):
-
     @http.route("/social_twitter/callback", type="http", auth="user")
     def social_twitter_account_callback(
         self, oauth_token=None, oauth_verifier=None, iap_twitter_consumer_key=None, **kw
@@ -76,7 +75,6 @@ class SocialTwitterController(SocialController):
                 )
 
         return request.redirect("/odoo/action-social.action_social_stream_post")
-
 
     @http.route(
         "/social_twitter/<int:stream_id>/comment", type="http", methods=["POST"]
@@ -189,7 +187,6 @@ class SocialTwitterController(SocialController):
             )
         except UserError as error:
             return request.prepare_json_response({"error": str(error)})
-
 
     def _twitter_create_accounts(self, oauth_token, oauth_verifier, media):
         twitter_consumer_key = request.env.registry.settings.get(

@@ -196,7 +196,6 @@ class TestUi(TestPointOfSaleHttpCommon):
             len(pos_session.order_ids), 5, msg="5 orders were made in tour part1."
         )
 
-
         (
             promo_coupon1,
             promo_coupon2,

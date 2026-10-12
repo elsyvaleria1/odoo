@@ -125,7 +125,6 @@ class AccountAnalyticLine(models.Model):
             ("date", ">=", fiscalyear_date_range["date_from"] - relativedelta(years=1))
         ]
 
-
     _ACCOUNT_BALANCE_TRIGGERS = frozenset(
         {"amount", "company_id", "currency_id", "date"}
     )

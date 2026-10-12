@@ -457,7 +457,6 @@ class TestMailgateway(MailGatewayCommon):
     def test_assert_initial_values(self):
         self.assertEqual(len(self.test_record.message_ids), 1)
 
-
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
         "odoo.addons.mail.models.mixin_mail_gateway",
@@ -647,7 +646,6 @@ class TestMailgateway(MailGatewayCommon):
             self.partner_employee,
             "message_process: recognized email -> added as follower",
         )
-
 
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
@@ -860,9 +858,7 @@ class TestMailgateway(MailGatewayCommon):
                 "email": f"author-partner@{self.alias_domain}",
             }
         )
-        message = self.env[
-            "mail.message"
-        ].create(
+        message = self.env["mail.message"].create(
             {
                 "body": "<p>test</p>",
                 "email_from": f"author-partner@{self.alias_domain}",
@@ -932,7 +928,6 @@ class TestMailgateway(MailGatewayCommon):
                 )
 
             messages = test_record.message_ids
-
 
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
@@ -1370,7 +1365,6 @@ class TestMailgateway(MailGatewayCommon):
         self.assertEqual(len(self.test_record.message_ids), 2)
         self.assertSentEmail(self.email_from, [self.partner_1], subject="Re: cats")
 
-
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
         "odoo.addons.mail.models.mixin_mail_gateway",
@@ -1487,7 +1481,6 @@ class TestMailgateway(MailGatewayCommon):
         self.assertEqual(record.message_ids[0].subject, "FirstFoundWinner")
         self.assertEqual(record.message_ids[0].create_uid, self.user_root)
         self.assertEqual(record.message_ids[0].author_id, self.user_employee.partner_id)
-
 
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
@@ -1757,7 +1750,6 @@ class TestMailgateway(MailGatewayCommon):
                     bool(res_alias_1), "First alias should always be respected"
                 )
                 self.assertEqual(bool(res_alias_2), container_created)
-
 
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
@@ -2266,7 +2258,6 @@ class TestMailgateway(MailGatewayCommon):
 
         self.assertEqual(notif_partner.notification_status, "bounce")
         self.assertEqual(notif_employee.notification_status, "sent")
-
 
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
@@ -2789,7 +2780,6 @@ class TestMailgateway(MailGatewayCommon):
         self.assertFalse(incoming_msg.parent_id)
         self.assertTrue(incoming_msg.res_id == res_test.id)
 
-
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
         "odoo.addons.mail.models.mixin_mail_gateway",
@@ -2847,7 +2837,6 @@ class TestMailgateway(MailGatewayCommon):
         self.assertEqual(len(record.message_ids[0].attachment_ids), 1)
         self.assertEqual(record.message_ids[0].attachment_ids[0].name, "image0")
         self.assertEqual(record.message_ids[0].attachment_ids[0].type, "binary")
-
 
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
@@ -3032,7 +3021,6 @@ class TestMailgateway(MailGatewayCommon):
         capture.records.check_singleton()
         self.assertEqual(capture.records.name, "เรื่อง")
         self.assertEqual(str(capture.records.message_ids.body), "<pre>ร่างกาย</pre>\n")
-
 
     @mute_logger(
         "odoo.addons.mail.models.mixin_mail_thread",
@@ -3568,12 +3556,10 @@ class TestMailGatewayLoops(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayHelpers(MailGatewayCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.thread_model = cls.env["mixin.mail.thread"]
-
 
     def _mails_on(self, record, count, author=None, email_from=False):
         self.env["mail.message"].sudo().create(
@@ -3650,7 +3636,6 @@ class TestMailGatewayHelpers(MailGatewayCommon):
             "a threshold of zero still does not fire when nothing would be created",
         )
 
-
     def _target(self, model, thread_id, raise_exception=False):
         route = Route(model, thread_id, None, self.env.uid, None)
         return self.thread_model._routing_check_target(
@@ -3694,7 +3679,6 @@ class TestMailGatewayHelpers(MailGatewayCommon):
         record_set, thread_id = self._target("mail.test.gateway", record.id)
         self.assertEqual(record_set, record)
         self.assertEqual(thread_id, record.id)
-
 
     def _dsn(self, final_recipient):
         return email.message_from_string(
@@ -3989,7 +3973,6 @@ class TestMailGatewayHelpers(MailGatewayCommon):
                 self.assertEqual(recipients, [])
                 self.assertTrue(failed, "an unreadable report is still a failure")
 
-
     def test_unlabelled_utf8_part_decodes_as_sent(self):
         part = email.message_from_bytes(
             "Content-Type: text/plain\r\n\r\nCaf\u00e9 na\u00efve\r\n".encode(),
@@ -4010,7 +3993,6 @@ class TestMailGatewayHelpers(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayBounceSender(MailGatewayCommon):
-
     def _bounce_from_for(self, email_to):
         message = email.message_from_string(
             f"From: sender@remote.example.org\r\n"
@@ -4097,9 +4079,7 @@ class TestMailGatewayRecipients(MailGatewayCommon):
                 self.test_partners[0],
                 self.test_partners[0],
                 self.test_partners[1],
-                self.test_partners[
-                    2
-                ],
+                self.test_partners[2],
             ],
             strict=True,
         ):
@@ -4126,7 +4106,6 @@ class TestMailGatewayRecipients(MailGatewayCommon):
 
 @tagged("mail_gateway", "mail_loop", "mail_reply")
 class TestMailGatewayReplies(MailGatewayCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4612,7 +4591,6 @@ class TestMailThreadCC(MailCommon):
 
 
 class TestMailgatewayDedup(MailGatewayCommon):
-
     def test_message_process_duplicate_message_id(self):
         mail = self.format(
             MAIL_TEMPLATE,
@@ -4665,7 +4643,6 @@ class TestMailgatewayDedup(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayRegressions(MailGatewayCommon):
-
     def test_a_pinged_parent_author_stays_in_partner_ids(self):
         author = self.env["res.partner"].create(
             {"name": "Note Author", "email": "note.author@test.example.com"}
@@ -5105,7 +5082,6 @@ class TestMailGatewayRegressions(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayNonThreadTarget(MailGatewayCommon):
-
     def test_an_alias_owner_without_a_thread_still_receives_mail(self):
         owner = self.env["mail.test.gateway.nothread"].create(
             {
@@ -5157,7 +5133,6 @@ class TestMailGatewayNonThreadTarget(MailGatewayCommon):
 
 @tagged("mail_gateway")
 class TestMailGatewayParsedMessageContract(MailGatewayCommon):
-
     def _mails_on(self, record, count, email_from=False):
         self.env["mail.message"].sudo().create(
             [
@@ -5310,7 +5285,6 @@ class TestMailGatewayParsedMessageContract(MailGatewayCommon):
 
 @tagged("mail_gateway", "multi_company")
 class TestMailGatewayBounceCompany(MailGatewayCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

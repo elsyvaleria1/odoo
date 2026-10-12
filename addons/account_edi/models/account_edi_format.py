@@ -14,7 +14,6 @@ class AccountEdiFormat(models.Model):
         "This code already exists",
     )
 
-
     @api.model_create_multi
     def create(self, vals_list):
         edi_formats = super().create(vals_list)
@@ -41,7 +40,6 @@ class AccountEdiFormat(models.Model):
 
         return super()._register_hook()
 
-
     def _get_move_applicability(self, move):
         self.check_singleton()
 
@@ -59,10 +57,8 @@ class AccountEdiFormat(models.Model):
     def _check_move_configuration(self, move):
         return []
 
-
     def _prepare_invoice_report(self, pdf_writer, edi_document) -> None:
         self.check_singleton()
-
 
     @api.model
     def _format_error_message(self, error_title, errors) -> str:

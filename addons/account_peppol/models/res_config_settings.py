@@ -65,7 +65,6 @@ class ResConfigSettings(models.TransientModel):
         inverse="_inverse_peppol_participation_role",
     )
 
-
     @api.depends("company_id.account_peppol_config_id.peppol_parent_company_id")
     def _compute_peppol_use_parent_company(self) -> None:
         for setting in self:
@@ -138,7 +137,6 @@ class ResConfigSettings(models.TransientModel):
                 endpoint="/api/peppol/1/update_user",
                 params=params,
             )
-
 
     def action_view_peppol_form(self):
         registration_wizard = self.env["wizard.account_peppol.config.register"].create(

@@ -107,7 +107,6 @@ def longest_increasing_subsequence(arr):
 Position = Literal["replace", "attributes", "move", "before", "after", "inside"]
 
 
-
 @dataclass
 class TextLeaf:
     element: str | None = None
@@ -226,7 +225,6 @@ DIFF_ATTRIBUTE = "o-diff-key"
 
 
 class DiffAnalyzer:
-
     def __init__(
         self,
         ignore_attributes=None,
@@ -291,9 +289,7 @@ class DiffAnalyzer:
         leaves = []
         kept_nodes = []
         children_to_diff = {}
-        removed_nodes = set(
-            old_set_node_ids
-        )
+        removed_nodes = set(old_set_node_ids)
         candidates_move = []
 
         leaves.append(TextLeaf(new.text))
@@ -374,7 +370,6 @@ class DiffAnalyzer:
 
 
 class KeyedXmlDiffer:
-
     @classmethod
     def update_node_ids_for_diff(cls, tree):
         for index, desc in enumerate(tree.iter(etree.Element)):

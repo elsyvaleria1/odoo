@@ -45,7 +45,6 @@ def _response(reference=REFERENCE_A, code="03", text="Shipment in transit"):
 
 @tagged("post_install", "-at_install")
 class TestTresGuerrasDetails(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

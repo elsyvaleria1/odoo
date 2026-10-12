@@ -63,7 +63,6 @@ def _normalize_file_extension(extension: str) -> str:
 
 
 class DocumentMovePlan(NamedTuple):
-
     new_parent_folder: Any
     documents_to_move: Any
     documents_to_move_per_initial_folder: dict
@@ -919,7 +918,6 @@ class DocumentsDocument(models.Model):
         self._revoke_document_links("the link was rotated")
         self._sync_document_links()
         _debug.lifecycle("document_link_rotated", documents=self)
-
 
     def _check_link_managed(self, change: str) -> None:
         if self._may_manage_access():

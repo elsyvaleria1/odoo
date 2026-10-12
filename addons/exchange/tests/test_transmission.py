@@ -499,7 +499,6 @@ class TestExchangeBatch(ExchangeCase):
 
 
 class TestExchangeClaim(ExchangeCase):
-
     def _held_elsewhere(self):
         self.patch(
             self.registry["exchange.transmission"],

@@ -379,7 +379,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
         allowed_ids = self._get_tag_ids_filtered(options)
         service_ids = self._get_tag_ids_filtered(options, operation_types=["services"])
 
-
         if options.get("sales_report_taxes", {}).get("use_taxes_instead_of_tags"):
             tax_elem_table = SQL("account_tax")
             tax_elem_table_id = SQL("account_tax_id")

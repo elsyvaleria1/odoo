@@ -10,7 +10,6 @@ _RETRY_AFTER = re.compile(r"retry after (\d+)", re.IGNORECASE)
 
 
 class TelegramApiError(Exception):
-
     retryable = False
 
     def __init__(self, error_code, description, parameters=None) -> None:
@@ -21,7 +20,6 @@ class TelegramApiError(Exception):
 
 
 class TelegramRetryAfter(TelegramApiError):
-
     retryable = True
 
     @property
@@ -41,7 +39,6 @@ class TelegramParseError(TelegramApiError):
 
 
 class TelegramChatMigrated(TelegramApiError):
-
     @property
     def new_chat_id(self) -> str:
         return str(self.parameters.get("migrate_to_chat_id") or "")
@@ -56,7 +53,6 @@ class TelegramBadRequest(TelegramApiError):
 
 
 class TelegramUnavailable(TelegramApiError):
-
     retryable = True
 
 

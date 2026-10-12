@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase
 
 
 class TestGanttViewValidation(TransactionCase):
-
     def _create_gantt_view(self, arch):
         return self.env["ir.ui.view"].create(
             {
@@ -122,7 +121,6 @@ class TestGanttViewValidation(TransactionCase):
 
 
 class TestGanttViewRegistration(TransactionCase):
-
     def test_gantt_declares_its_client_icon_and_its_date_range(self):
         view = self.env["ir.ui.view"]
 

@@ -24,7 +24,6 @@ class ExchangeTransmission(models.Model):
         }
     )
 
-
     subject_id = fields.Reference(
         selection="_selection_subject_models",
         index=True,
@@ -157,14 +156,12 @@ class ExchangeTransmission(models.Model):
 
     display_name = fields.Char(compute="_compute_display_name")
 
-
     _queue_idx = models.Index("(state, date_next_retry)")
     _subject_idx = models.Index("(subject_id, intent)")
     _reference_uniq = models.UniqueIndex(
         "(channel_id, reference, intent, document_kind) WHERE reference IS NOT NULL",
         "A counterparty issues one reference per ask.",
     )
-
 
     @api.constrains("state", "event_log_id")
     def _check_state_agrees_with_transport(self) -> None:
@@ -216,7 +213,6 @@ class ExchangeTransmission(models.Model):
                     self.env._("A chain does not cross channels."),
                 )
 
-
     @api.depends("state")
     def _compute_is_settled(self) -> None:
         for transmission in self:
@@ -232,7 +228,6 @@ class ExchangeTransmission(models.Model):
                 label = f"{transmission.reference} - {label}"
             transmission.display_name = label
 
-
     @api.model_create_multi
     def create(self, vals_list):
         transmissions = super().create(vals_list)
@@ -247,7 +242,6 @@ class ExchangeTransmission(models.Model):
         if {"state", "intent"} & set(vals):
             self._notify_subjects()
         return result
-
 
     def _notify_subjects(self) -> None:
         for subject in {transmission.subject_id for transmission in self}:
@@ -286,7 +280,6 @@ class ExchangeTransmission(models.Model):
         self.check_singleton()
         return self.channel_id._get_protocol()
 
-
     def action_send(self) -> None:
         self._send_many()
 
@@ -302,7 +295,6 @@ class ExchangeTransmission(models.Model):
             "res_id": self.subject_id.id,
             "view_mode": "form",
         }
-
 
     def _send(self) -> None:
         self.check_singleton()
@@ -470,7 +462,6 @@ class ExchangeTransmission(models.Model):
                 "res_id": self.id,
             },
         )
-
 
     @api.model
     def _get_due_domain(self, state: str = "queued") -> list:

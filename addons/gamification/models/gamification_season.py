@@ -7,7 +7,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationSeason(models.Model):
-
     _name = "gamification.season"
     _description = "Gamification Season"
     _inherit = ["mixin.mail.thread"]

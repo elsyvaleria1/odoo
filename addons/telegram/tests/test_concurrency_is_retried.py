@@ -146,7 +146,6 @@ class TestWebhookLetsConcurrencyRetry(TelegramBotHttpCase):
 
 
 class TestCommandLogLetsConcurrencyRetry(BaseCase):
-
     def _decorated(self, error):
         @log_command_execution
         def _handle_check_in_command(

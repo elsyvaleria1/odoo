@@ -108,7 +108,6 @@ class SocialStreamPost(models.Model):
         for post in twitter_posts:
             post.is_author = post.twitter_author_id == post.account_id.twitter_user_id
 
-
     def _twitter_comment_add(self, stream, comment_id, message, attachment):
         self.check_singleton()
         tweet_id = comment_id or self.twitter_tweet_id
@@ -346,7 +345,6 @@ class SocialStreamPost(models.Model):
             self.stream_id, message, attachment, quote_tweet_id=self.twitter_tweet_id
         )
         return True
-
 
     def _get_matching_post(self):
         self.check_singleton()

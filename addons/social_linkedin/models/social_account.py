@@ -310,7 +310,6 @@ class SocialAccount(models.Model):
         if streams_to_create:
             self.env["social.stream"].create(streams_to_create)
 
-
     def _linkedin_request(
         self,
         endpoint,

@@ -37,7 +37,6 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "xendit").support_tokenization = True
@@ -50,13 +49,11 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "xendit":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def _get_redirect_form_view(self, is_validation=False):
         self.check_singleton()
@@ -64,7 +61,6 @@ class PaymentProvider(models.Model):
         if self.code == "xendit" and is_validation:
             return None
         return super()._get_redirect_form_view(is_validation)
-
 
     def _prepare_request_url(self, endpoint, **kwargs):
         if self.code != "xendit":

@@ -5,7 +5,6 @@ from odoo.tools.date_utils import get_timedelta, time_unit_selection
 
 
 class MixinEventMailSchedule(models.AbstractModel):
-
     _name = "mixin.event.mail.schedule"
     _description = "Event Communication Scheduling"
 

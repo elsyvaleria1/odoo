@@ -38,7 +38,6 @@ FEDEX_CURR_MATCH = {
 
 
 class LogPlugin(Plugin):
-
     def __init__(self, debug_logger) -> None:
         self.debug_logger = debug_logger
 
@@ -55,7 +54,6 @@ class LogPlugin(Plugin):
 
 
 class FedexRequest:
-
     def __init__(
         self,
         debug_logger,
@@ -73,7 +71,6 @@ class FedexRequest:
             wsdl_path = f"delivery_fedex/api/{wsdl_folder}/RateService_v31.wsdl"
             self.start_rating_transaction(wsdl_path)
 
-
     def web_authentication_detail(self, key, password) -> None:
         WebAuthenticationCredential = self.factory.WebAuthenticationCredential()
         WebAuthenticationCredential.Key = key
@@ -89,7 +86,6 @@ class FedexRequest:
         self.ClientDetail = self.factory.ClientDetail()
         self.ClientDetail.AccountNumber = account_number
         self.ClientDetail.MeterNumber = meter_number
-
 
     def set_shipper(self, company_partner, warehouse_partner) -> None:
         Contact = self.factory.Contact()
@@ -279,7 +275,6 @@ class FedexRequest:
         else:
             self.RequestedShipment.RequestedPackageLineItems = package
 
-
     def start_rating_transaction(self, wsdl_path) -> None:
         settings = Settings(strict=False)
         self.client = Client(
@@ -364,7 +359,6 @@ class FedexRequest:
             formatted_response["errors_message"] = e.args[0]
 
         return formatted_response
-
 
     def start_shipping_transaction(self, wsdl_path) -> None:
         self.client = Client(
@@ -647,7 +641,6 @@ class FedexRequest:
             )
         else:
             return False
-
 
     def set_deletion_details(self, tracking_number) -> None:
         self.TrackingId = self.factory.TrackingId()

@@ -172,8 +172,6 @@ class TestMrpMaintenance(common.TransactionCase):
         asset_form.date_in_service = "2017-04-13"
         asset_01 = asset_form.save()
 
-
-
         maintenance_order_01 = self._create_order(
             name="Some keys are not working",
             date_confirmed=datetime(2017, 5, 3).date(),
@@ -196,10 +194,6 @@ class TestMrpMaintenance(common.TransactionCase):
         self.assertTrue(maintenance_order_01, "Maintenance Order not created")
         self.assertTrue(maintenance_order_02, "Maintenance Order not created")
         self.assertTrue(maintenance_order_03, "Maintenance Order not created")
-
-
-
-
 
         maintenance_order_01.write({"state": "done"})
         maintenance_order_01.date_done = datetime(2017, 5, 3).date() + timedelta(
@@ -277,8 +271,6 @@ class TestMrpMaintenance(common.TransactionCase):
 
         self.assertTrue(workcenter, "Equipment not created")
 
-
-
         maintenance_order_1 = self._create_workcenter_order(
             name="Some keys are not working",
             date_confirmed=datetime(2017, 5, 3).date(),
@@ -301,10 +293,6 @@ class TestMrpMaintenance(common.TransactionCase):
         self.assertTrue(maintenance_order_1, "Maintenance Order not created")
         self.assertTrue(maintenance_order_2, "Maintenance Order not created")
         self.assertTrue(maintenance_order_3, "Maintenance Order not created")
-
-
-
-
 
         maintenance_order_1.write({"state": "done"})
         maintenance_order_1.date_done = datetime(2017, 5, 3).date() + timedelta(days=10)

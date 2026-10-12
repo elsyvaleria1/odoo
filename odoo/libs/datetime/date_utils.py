@@ -573,7 +573,6 @@ real_cpu_time = _time.thread_time
 real_datetime_now = datetime.now
 
 
-
 _EXACT_UNITS: dict[TimeUnit, str] = {"minute": "minutes", "hour": "hours"}
 _ANCHOR_UNITS = frozenset({"day", "week", "month", "year"})
 

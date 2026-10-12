@@ -2,7 +2,6 @@ from odoo import api, models
 
 
 class ResConfigSettings(models.TransientModel):
-
     _inherit = "res.config.settings"
 
     def _is_valid_field_parameter(self, field, name) -> bool:

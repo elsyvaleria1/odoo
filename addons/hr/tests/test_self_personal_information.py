@@ -7,7 +7,6 @@ from odoo.addons.hr.tests.common import TestHrCommon
 
 @tagged("post_install", "-at_install")
 class TestSelfPersonalInformation(TestHrCommon):
-
     PERSONAL_FIELDS = (
         "marital",
         "spouse_complete_name",

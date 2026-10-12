@@ -32,7 +32,6 @@ MAX_HEAT_CELLS = 40_000
 
 @dataclass(frozen=True)
 class HeatView:
-
     minx: float
     miny: float
     maxx: float
@@ -83,7 +82,6 @@ def cell_size(z: int) -> float:
 
 @dataclass(frozen=True)
 class Cell:
-
     z: int
     i: int
     j: int

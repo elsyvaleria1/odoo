@@ -10,7 +10,9 @@ from odoo.addons.calendar.tests.booking.test_appointment_type_security import (
 @tagged("security")
 class WebsiteAppointmentTypeSecurityTest(TestAppointmentTypeSecurity):
     @users("public_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_website_appointment_type_website_published_access(self):
         self._prepare_types_with_user()
         for appointment_type in self.all_apt_types:

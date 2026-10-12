@@ -41,7 +41,6 @@ def _decode_vlq(segment: str) -> list[int]:
 
 
 class Segment(NamedTuple):
-
     line: int
     column: int
     source: int | None
@@ -75,7 +74,6 @@ def iter_segments(mappings: str, *, until_line: int | None = None) -> Iterator[S
 
 
 class Original(NamedTuple):
-
     source: str
     line: int
     column: int

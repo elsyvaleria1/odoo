@@ -68,7 +68,6 @@ class TestDescriptionProbesAreBestEffort(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestFieldDescriptionMemo(TransactionCaseWithUserDemo):
-
     @staticmethod
     def _uncached(model, attributes=None):
         described = {}

@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class MixinBarcodesBarcode_Events_(models.AbstractModel):
-
     _name = "mixin.barcodes.barcode_events"
     _description = "Barcode Event Mixin"
 

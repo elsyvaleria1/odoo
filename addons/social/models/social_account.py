@@ -10,7 +10,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialAccount(models.Model):
-
     _name = "social.account"
     _inherit = ["mixin.credential.holder"]
     _description = "Social Account"

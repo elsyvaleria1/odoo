@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardAccountMoveCreateDebitNote(models.TransientModel):
-
     _name = "wizard.account.move.create.debit.note"
     _description = "Add Debit Note wizard"
 
@@ -105,9 +104,7 @@ class WizardAccountMoveCreateDebitNote(models.TransientModel):
     def create_debit(self):
         self.check_singleton()
         new_moves = self.env["account.move"]
-        for move in self.move_ids.with_context(
-            include_business_fields=True
-        ):
+        for move in self.move_ids.with_context(include_business_fields=True):
             default_values = self._prepare_default_values(move)
             new_move = move.copy(default=default_values)
             new_moves |= new_move

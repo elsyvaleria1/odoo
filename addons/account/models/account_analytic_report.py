@@ -103,9 +103,7 @@ class AccountReport(models.AbstractModel):
                     "name": plan.name,
                     "forced_options": {
                         "analytic_groupby_option": True,
-                        "analytic_accounts_list": tuple(
-                            account_list
-                        ),
+                        "analytic_accounts_list": tuple(account_list),
                         "analytic_plan_id": plan.id,
                     },
                 }
@@ -354,9 +352,7 @@ class AccountReport(models.AbstractModel):
             domain = []
             AccountAnalyticLine = self.env["account.analytic.line"]
             for expression in line_domain:
-                if (
-                    len(expression) == 1
-                ):
+                if len(expression) == 1:
                     domain.append(expression)
                     continue
 

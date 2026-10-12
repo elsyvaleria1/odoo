@@ -157,7 +157,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
         readonly=False,
     )
 
-
     @api.depends("wa_template_id")
     def _compute_number(self) -> None:
         for composer in self:
@@ -351,7 +350,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
             "button_dynamic_url_2",
         ] + [f"free_text_{i}" for i in range(1, 11)]
 
-
     def action_send_whatsapp_template(self):
         self.check_singleton()
         if not self.wa_template_id:
@@ -490,7 +488,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
         return self.wa_template_id._get_formatted_body(
             variable_values=template_variables_value
         )
-
 
     def _get_active_records(self):
         self.check_singleton()

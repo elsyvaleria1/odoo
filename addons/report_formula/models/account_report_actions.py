@@ -62,9 +62,7 @@ class AccountReportActions(models.Model):
         action = {
             "type": "ir.actions.act_window",
             "view_mode": "form",
-            "views": [
-                (view_id, "form")
-            ],
+            "views": [(view_id, "form")],
             "res_model": target_record._name,
             "res_id": target_record.id,
             "context": self.env.context,

@@ -88,7 +88,6 @@ def _pdf(pages=1):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsPdfSplitPlacement(HttpCase, TransactionCaseDocuments):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -404,7 +403,6 @@ class TestDocumentsPdfSplitInput(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsMultiFileUpload(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -506,7 +504,6 @@ class TestDocumentsMultiFileUpload(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsMultiFileUploadCost(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

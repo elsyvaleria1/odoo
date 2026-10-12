@@ -153,7 +153,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
 
         self.assertEqual(llm_calls, 0)
 
-
         def _mocked_request_llm_loop(
             service,
             llm_model,

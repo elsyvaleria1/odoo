@@ -234,7 +234,6 @@ class TestFleetVehicle(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestVehicleIsItsOwnModel(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -339,7 +338,6 @@ class TestVehicleIsItsOwnModel(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestVehicleInheritsWhatBindsAnAsset(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -376,7 +374,6 @@ class TestVehicleInheritsWhatBindsAnAsset(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestFleetActionContexts(TransactionCase):
-
     def test_every_fleet_action_context_survives_evaluation(self):
         data = self.env["ir.model.data"].search(
             [("module", "=", "fleet"), ("model", "=", "ir.actions.act_window")]

@@ -377,7 +377,6 @@ class _BodyValidator(ast.NodeVisitor):
 
 
 class _RuntimeGuard(ast.NodeTransformer):
-
     GUARDED_OPERATORS = {ast.Mult: GUARDED_MULTIPLY, ast.Pow: GUARDED_POWER}
 
     def _guarded(self, guard, left, right, node):

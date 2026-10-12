@@ -124,7 +124,6 @@ class TestWebsiteEventBoothSale(HttpCaseWithUserPortal, TestWebsiteEventSaleComm
 
 @tagged("post_install", "-at_install")
 class TestBoothCartLineRegistrations(TestWebsiteEventSaleCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

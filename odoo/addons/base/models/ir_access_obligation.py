@@ -4,7 +4,6 @@ from odoo import models
 
 
 class IrAccessObligation(models.AbstractModel):
-
     _name = "ir.access.obligation"
     _description = "Access Obligation"
 

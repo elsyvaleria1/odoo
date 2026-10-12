@@ -8,7 +8,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestSecurityRules(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -92,7 +91,6 @@ class TestSecurityRules(common.TransactionCase):
 
 
 class TestGroupMigration(common.TransactionCase):
-
     def test_group_user_implies_gamification_user(self):
         group_user = self.env.ref("base.group_user")
         app_group = self.env.ref("gamification.group_gamification_user")
@@ -130,7 +128,6 @@ class TestGroupMigration(common.TransactionCase):
 
 
 class TestAclParity(common.TransactionCase):
-
     USER_GRANTS = {
         "gamification.achievement": (1, 0, 0, 0),
         "gamification.achievement.unlock": (1, 0, 0, 0),
@@ -162,9 +159,7 @@ class TestAclParity(common.TransactionCase):
     }
 
     MANAGER_GRANTS = {
-        model: (1, 1, 1, 1)
-        for model in USER_GRANTS
-        if not model.startswith("wizard.")
+        model: (1, 1, 1, 1) for model in USER_GRANTS if not model.startswith("wizard.")
     } | {"gamification.karma.rank": (1, 1, 1, 1)}
 
     def _module_grants(self, group_xmlid):

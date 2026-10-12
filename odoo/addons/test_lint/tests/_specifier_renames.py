@@ -1,4 +1,3 @@
-
 RENAMED = {
     "@web/core/l10n/translation": "@web/core/translation",
     "@web/core/confirmation_dialog/confirmation_dialog": (

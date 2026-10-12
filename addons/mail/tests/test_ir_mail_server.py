@@ -1026,7 +1026,6 @@ class _ScriptedSocket:
 
 @tagged("mail_server")
 class TestIrMailServerSessionLoss(MailCommon):
-
     def _session(self, *replies):
         session = smtplib.SMTP(local_hostname="localhost")
         session.sock = _ScriptedSocket(

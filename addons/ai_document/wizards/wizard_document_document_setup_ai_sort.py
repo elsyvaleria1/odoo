@@ -6,7 +6,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardDocumentDocumentSetupAiSort(models.TransientModel):
-
     _name = "wizard.document.document.setup.ai.sort"
     _description = "Ai Documents Sort"
 

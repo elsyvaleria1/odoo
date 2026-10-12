@@ -11,7 +11,6 @@ PNG = (
 
 @tagged("post_install", "-at_install")
 class TestTripDeliveryProof(TripFixtureMixin, TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

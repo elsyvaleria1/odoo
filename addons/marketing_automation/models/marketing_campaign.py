@@ -447,9 +447,7 @@ class MarketingCampaign(models.Model):
 
             record_domain = literal_eval(campaign.domain or "[]")
             db_rec_ids = _uniquify_list(RecordModel.search(record_domain).ids)
-            to_create = [
-                rid for rid in db_rec_ids if rid not in existing_rec_ids
-            ]
+            to_create = [rid for rid in db_rec_ids if rid not in existing_rec_ids]
             to_remove = set(existing_rec_ids) - set(db_rec_ids)
             unique_field = campaign.unique_field_id.sudo()
             if unique_field.name != "id":
@@ -512,7 +510,6 @@ class MarketingCampaign(models.Model):
         self.env["automation.runtime"].sudo()._dispatch_due_steps(
             rules=self.automation_rule_id.sudo()
         )
-
 
     def _prepare_res_partner_category_tag_hot_data(self) -> dict:
         return {
@@ -632,7 +629,6 @@ for record in records:
                             "res_id": created_record.id,
                         }
                     )
-
 
     @api.model
     def get_action_marketing_campaign_from_template(

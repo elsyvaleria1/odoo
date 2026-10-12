@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class EventQuestionAnswer(models.Model):
-
     _name = "event.question.answer"
     _order = "sequence,id"
     _description = "Event Question Answer"

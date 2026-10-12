@@ -7,7 +7,6 @@ from odoo.addons.sale.tests.common import TestSaleCommon
 
 @tagged("-at_install", "post_install")
 class TestInvoiceDraftBucket(TestSaleCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

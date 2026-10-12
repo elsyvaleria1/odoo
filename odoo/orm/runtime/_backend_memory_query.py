@@ -70,7 +70,6 @@ def _parse_column_order(
 
 
 class _InMemoryQuery(Query):
-
     __slots__ = ("_matched", "_model", "_storage", "_unanswerable")
 
     def __init__(

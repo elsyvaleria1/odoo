@@ -11,7 +11,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalStateSync(ApprovalCommon):
-
     def _category(self, approvers=None, **vals):
         return self._make_category(
             name=f"Sync {self.id()} {vals.pop('suffix', '')}",
@@ -48,7 +47,6 @@ class TestApprovalStateSync(ApprovalCommon):
                 }
             )
         return category, steps
-
 
     def test_a_document_created_pending_raises_its_request(self):
         document = self._document(state="submitted")
@@ -110,7 +108,6 @@ class TestApprovalStateSync(ApprovalCommon):
         document.write({"state": "submitted"})
 
         self.assertFalse(document.approval_request_id)
-
 
     def test_an_approver_approving_the_document_records_a_decision(self):
         document = self._document(state="submitted")
@@ -202,7 +199,6 @@ class TestApprovalStateSync(ApprovalCommon):
             )
         )
 
-
     def test_a_decision_on_the_request_moves_the_document_once(self):
         document = self._document(state="submitted")
 
@@ -263,7 +259,6 @@ class TestApprovalStateSync(ApprovalCommon):
 
         self.assertEqual(document.state, "cancelled")
 
-
     def test_a_refusal_note_reaches_a_decided_refusal(self):
         document = self._document(state="submitted")
 
@@ -309,7 +304,6 @@ class TestApprovalStateSync(ApprovalCommon):
         request = document.approval_request_id
         self.assertEqual(request.state, "cancelled")
         self.assertFalse(request.refusal_note)
-
 
     def test_the_document_chooses_the_activity_an_approver_is_asked_with(self):
         category, steps = self._two_step_category([self.approver_1], [self.approver_2])
@@ -366,7 +360,6 @@ class TestApprovalStateSync(ApprovalCommon):
         self._as(document, self.owner_user).unlink()
 
         self.assertEqual(request.state, "cancelled")
-
 
     def test_the_decider_holds_the_verb_of_the_move(self):
         document = self._document(state="submitted")

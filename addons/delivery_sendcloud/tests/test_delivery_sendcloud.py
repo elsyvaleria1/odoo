@@ -327,9 +327,7 @@ class TestDeliverySendCloud(TransactionCase):
 
         with _mock_sendcloud_call(cls.warehouse_id):
             api_res = cls.sendcloud._get_sendcloud()._get_shipping_products("BE")
-            user_chosen_product = cls._set_product_local_cache(
-                cls, api_res[0]
-            )
+            user_chosen_product = cls._set_product_local_cache(cls, api_res[0])
             cls.sendcloud._set_sendcloud_products(user_chosen_product, False)
 
     def _set_product_local_cache(self, sc_product):
@@ -483,9 +481,7 @@ class TestDeliverySendCloud(TransactionCase):
 
         self.assertAlmostEqual(res1["price"], 1.1, places=2)
         self.assertAlmostEqual(res2["price"], 2.2, places=2)
-        self.assertAlmostEqual(
-            res3["price"], 4.4, places=2
-        )
+        self.assertAlmostEqual(res3["price"], 4.4, places=2)
         self.assertIsNotNone(res3["warning_message"])
 
     def test_user_filters(self):

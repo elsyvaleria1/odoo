@@ -7,7 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class StudioApprovalCase(TransactionCase):
-
     MODEL = "res.partner"
     METHOD = "address_get"
 

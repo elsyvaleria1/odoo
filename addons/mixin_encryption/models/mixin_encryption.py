@@ -44,7 +44,6 @@ provide_test_run_key()
 
 
 class MixinEncryption(models.AbstractModel):
-
     _name = "mixin.encryption"
     _description = "Encrypted Field Mixin"
 

@@ -152,9 +152,7 @@ class TestDeviceIsAnAsset(TransactionCase):
         self.asset.invalidate_recordset()
         self.assertEqual(self.asset.device_ids, first + second)
         self.assertEqual(self.asset.count_device_devices, 2)
-        self.assertEqual(
-            first.own_asset_id, second.own_asset_id
-        )
+        self.assertEqual(first.own_asset_id, second.own_asset_id)
         self.assertEqual(
             self.env["resource.resource"]
             .with_context(active_test=False)

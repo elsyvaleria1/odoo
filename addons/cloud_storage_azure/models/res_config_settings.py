@@ -5,7 +5,6 @@ from odoo.exceptions import UserError, ValidationError
 
 
 class ResConfigSettings(models.TransientModel):
-
     _inherit = "res.config.settings"
 
     cloud_storage_provider = fields.Selection(

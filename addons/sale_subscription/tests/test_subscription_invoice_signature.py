@@ -56,9 +56,7 @@ class TestSubscriptionInvoiceSignature(TestInvoiceSignature, TestSubscription):
         self,
     ):
         representative_user = self.company_data["default_user_salesman"]
-        self.env.company.account_config_id.signing_user = (
-            representative_user
-        )
+        self.env.company.account_config_id.signing_user = representative_user
         self.assertEqual(self.subscription.invoice_count, 0)
         with self.sync_env_with_side_cursors():
             self.sale_subscription_cron.method_direct_trigger()

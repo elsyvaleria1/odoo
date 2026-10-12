@@ -120,7 +120,6 @@ class TestAsyncDispatch(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPushRouteStoresOneSource(DeviceHttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

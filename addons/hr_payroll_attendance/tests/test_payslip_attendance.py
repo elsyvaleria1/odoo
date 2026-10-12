@@ -77,9 +77,7 @@ class TestPayslipAttendance(HrWorkEntryAttendanceCommon):
                 },
                 {
                     "employee_id": self.employee.id,
-                    "check_in": datetime(
-                        2024, 1, 30, 23, 30, 0
-                    ),
+                    "check_in": datetime(2024, 1, 30, 23, 30, 0),
                     "check_out": datetime(2024, 1, 31, 7, 30, 0),
                 },
             ]

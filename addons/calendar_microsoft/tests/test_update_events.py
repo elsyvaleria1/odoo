@@ -28,8 +28,6 @@ class TestUpdateEvents(TestCommon):
         super().setUp()
         self.create_events_for_tests()
 
-
-
     @patch.object(MicrosoftCalendarService, "patch")
     def test_update_odoo_simple_event_without_sync(self, mock_patch):
 
@@ -163,7 +161,6 @@ class TestUpdateEvents(TestCommon):
             self.organizer_user,
         )
         self.assertEqual(self.simple_event.name, "my new simple event")
-
 
     @patch.object(MicrosoftCalendarService, "patch")
     def test_update_name_of_one_event_of_recurrence_from_odoo(self, mock_patch):
@@ -303,7 +300,6 @@ class TestUpdateEvents(TestCommon):
         self.assertEqual(
             self.recurrent_events[modified_event_id].follow_recurrence, True
         )
-
 
     @patch.object(MicrosoftCalendarService, "delete")
     @patch.object(MicrosoftCalendarService, "insert")
@@ -568,7 +564,6 @@ class TestUpdateEvents(TestCommon):
             timeout=ANY,
         )
 
-
     @patch.object(MicrosoftCalendarService, "delete")
     @patch.object(MicrosoftCalendarService, "insert")
     @patch.object(MicrosoftCalendarService, "patch")
@@ -742,7 +737,6 @@ class TestUpdateEvents(TestCommon):
                 timeout=ANY,
             )
 
-
     @freeze_time("2021-09-22")
     @patch.object(MicrosoftCalendarService, "get_events")
     def test_update_simple_event_from_outlook_organizer_calendar(self, mock_get_events):
@@ -823,9 +817,7 @@ class TestUpdateEvents(TestCommon):
             MicrosoftEvent(
                 [
                     dict(
-                        dict(
-                            self.simple_event_from_outlook_organizer, id="789"
-                        ),
+                        dict(self.simple_event_from_outlook_organizer, id="789"),
                         subject=new_name,
                         type="exception",
                         lastModifiedDateTime=_modified_date_in_the_future(
@@ -971,7 +963,6 @@ class TestUpdateEvents(TestCommon):
         self, mock_get_events
     ):
 
-
         existing_events = self.env["calendar.event"].search([])
         existing_recurrences = self.env["calendar.recurrence"].search([])
 
@@ -1057,11 +1048,9 @@ class TestUpdateEvents(TestCommon):
         ]
         mock_get_events.return_value = (MicrosoftEvent(events), None)
 
-
         self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
             "microsoft"
         )
-
 
         new_events = self.env["calendar.event"].search([]) - existing_events
         new_recurrences = (
@@ -1101,7 +1090,6 @@ class TestUpdateEvents(TestCommon):
     def test_update_start_of_one_event_and_future_of_recurrence_from_outlook_organizer_calendar_with_overlap(
         self, mock_get_events
     ):
-
 
         existing_events = self.env["calendar.event"].search([])
         existing_recurrences = self.env["calendar.recurrence"].search([])
@@ -1188,11 +1176,9 @@ class TestUpdateEvents(TestCommon):
         ]
         mock_get_events.return_value = (MicrosoftEvent(events), None)
 
-
         self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
             "microsoft"
         )
-
 
         new_events = self.env["calendar.event"].search([]) - existing_events
         new_recurrences = (
@@ -1337,11 +1323,9 @@ class TestUpdateEvents(TestCommon):
         }
         mock_get_events.return_value = (MicrosoftEvent(events), None)
 
-
         self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
             "microsoft"
         )
-
 
         updated_events = self.find_microsoft(
             "calendar.event", "in", tuple(ms_events_to_update.keys())
@@ -1365,7 +1349,6 @@ class TestUpdateEvents(TestCommon):
             events[i]["id"]: events[i]["start"] for i in range(1, nb_of_events + 1)
         }
         mock_get_events.return_value = (MicrosoftEvent(events), None)
-
 
         self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
             "microsoft"
@@ -1394,11 +1377,9 @@ class TestUpdateEvents(TestCommon):
         }
         mock_get_events.return_value = (MicrosoftEvent(events), None)
 
-
         self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
             "microsoft"
         )
-
 
         updated_events = self.find_microsoft(
             "calendar.event", "in", tuple(ms_events_to_update.keys())
@@ -1438,11 +1419,9 @@ class TestUpdateEvents(TestCommon):
         }
         mock_get_events.return_value = (MicrosoftEvent(events), None)
 
-
         self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
             "microsoft"
         )
-
 
         updated_events = self.find_microsoft(
             "calendar.event", "in", tuple(ms_events_to_update.keys())

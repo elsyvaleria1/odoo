@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestLocatedStatusesTravelWithTheClient(TransactionCase):
-
     PARTITIONING_PATH = "mail/static/src/discuss/core/common/thread_model_patch.js"
     STATUS_ICON_PATH = "mail/static/src/core/common/im_status.xml"
     VOCABULARY_PATH = (

@@ -107,9 +107,7 @@ class StockQuant(models.Model):
         company_id = self.env.company.id
         package_types = self.env["stock.package.type"]
         valid_quants = self
-        if (
-            not self
-        ):
+        if not self:
             warehouse_location = (
                 self.env["stock.warehouse"]
                 .search([("company_id", "=", company_id)], limit=1)

@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardSaleOrderAddShipping(models.TransientModel):
-
     _name = "wizard.sale.order.add.shipping"
     _description = "Delivery Carrier Selection Wizard"
 

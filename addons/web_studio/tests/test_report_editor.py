@@ -249,7 +249,6 @@ class TestReportEditor(TransactionCase):
         self.assertEqual(copy_view.with_context(lang="fr_FR").arch, new_arch)
 
 
-
 @tagged("post_install", "-at_install")
 class TestReportEditorUIUnit(HttpCase):
     @classmethod

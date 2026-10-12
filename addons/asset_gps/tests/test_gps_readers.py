@@ -8,7 +8,6 @@ from .test_product_trace import StockLotGpsTestBase
 
 @tagged("post_install", "-at_install")
 class TestGpsReaders(StockLotGpsTestBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

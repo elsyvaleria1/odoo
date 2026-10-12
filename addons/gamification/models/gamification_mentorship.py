@@ -5,7 +5,6 @@ from odoo.tools import frozendict
 
 
 class GamificationMentorship(models.Model):
-
     _name = "gamification.mentorship"
     _description = "Gamification Mentorship"
     _inherit = ["mixin.mail.thread"]

@@ -9,7 +9,6 @@ from odoo.addons.calendar_sync.provider import CalendarSyncProvider
 
 @tagged("post_install", "-at_install")
 class TestCalendarSyncEngine(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

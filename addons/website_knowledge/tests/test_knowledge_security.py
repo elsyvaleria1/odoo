@@ -7,7 +7,9 @@ from odoo.addons.knowledge.tests.common import KnowledgeCommonWData
 
 @tagged("knowledge_acl")
 class TestWKnowledgeSecurity(KnowledgeCommonWData):
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     @users("user_public")
     def test_models_as_public(self):
         article_shared = self.article_shared.with_env(self.env)
@@ -31,7 +33,9 @@ class TestWKnowledgeSecurity(KnowledgeCommonWData):
         ):
             self.env["knowledge.article.stage"].search([])
 
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     @users("portal_test")
     def test_models_as_portal(self):
         article_shared = self.article_shared.with_env(self.env)
@@ -51,7 +55,9 @@ class TestWKnowledgeSecurity(KnowledgeCommonWData):
         article_shared.invalidate_model(["is_user_favorite"])
         self.assertTrue(article_shared.is_user_favorite)
 
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     @users("employee")
     def test_models_as_user(self):
         article_hidden = self.private_children[0].with_env(self.env)

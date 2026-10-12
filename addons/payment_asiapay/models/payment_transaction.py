@@ -119,9 +119,7 @@ class PaymentTransaction(models.Model):
             return super()._extract_amount_data(payment_data)
 
         amount = payment_data.get("Amt")
-        currency = (
-            self.provider_id.available_currency_ids
-        )
+        currency = self.provider_id.available_currency_ids
         return {
             "amount": float(amount),
             "currency_code": currency.name,

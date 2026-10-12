@@ -16,7 +16,6 @@ from odoo.addons.sale_subscription.tests.common_sale_subscription import (
 class TestSubscriptionPaymentsAccount(
     AccountPaymentCommon, TestSubscriptionCommon, MockEmail
 ):
-
     def test_invoice_consolidation(self):
         with patch(
             "odoo.addons.sale_subscription.models.sale_order.SaleOrder._do_payment",

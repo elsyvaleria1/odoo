@@ -8,7 +8,6 @@ from odoo.addons.hr_payroll.tests.common import TestPayslipBase
 
 @tagged("post_install", "-at_install")
 class TestContractDates(TestPayslipBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -537,9 +537,7 @@ class SignRequestItem(models.Model):
                     "subject": signer.sign_request_id.subject,
                     "attachment_ids": attachment_ids,
                 },
-                force_send=self.env.context.get(
-                    "force_send", True
-                ),
+                force_send=self.env.context.get("force_send", True),
             )
             signer.is_mail_sent = True
 

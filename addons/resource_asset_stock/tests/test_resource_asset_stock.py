@@ -195,7 +195,6 @@ class TestResourceAssetStock(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestReceivingAnEnforcedAsset(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

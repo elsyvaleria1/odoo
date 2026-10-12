@@ -722,7 +722,6 @@ class MrpWorkorder(models.Model):
             )
         return vals
 
-
     def open_tablet_view(self):
         self.check_singleton()
         self.env["hr.employee"].login_user_employee()

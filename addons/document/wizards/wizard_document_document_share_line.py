@@ -4,7 +4,6 @@ from odoo.addons.base.models.mixin_access_graph import GRANT_CAUSES
 
 
 class WizardDocumentDocumentShareLine(models.TransientModel):
-
     _name = "wizard.document.document.share.line"
     _description = "Documents share access"
 

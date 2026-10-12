@@ -9,7 +9,6 @@ from .common import TripFixtureMixin
 
 @tagged("post_install", "-at_install")
 class TestTripHardening(TripFixtureMixin, TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

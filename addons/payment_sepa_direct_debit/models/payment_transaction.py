@@ -14,7 +14,6 @@ class PaymentTransaction(models.Model):
         index=True,
     )
 
-
     @api.model_create_multi
     def create(self, vals_list):
         txs = super().create(vals_list)
@@ -28,7 +27,6 @@ class PaymentTransaction(models.Model):
         for tx in sepa_txs:
             tx.mandate_id = tx.token_id.sdd_mandate_id
         return txs
-
 
     def _prepare_provider_processing_values(self, processing_values):
         if (

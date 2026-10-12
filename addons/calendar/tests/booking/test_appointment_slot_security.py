@@ -8,7 +8,9 @@ from odoo.addons.calendar.tests.booking.common import AppointmentSecurityCommon
 @tagged("security")
 class TestAppointmentSlotSecurity(AppointmentSecurityCommon):
     @users("apt_manager")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_slot_access_apt_manager(self):
         self._prepare_slots_with_user()
         for appointment_slot in self.all_apt_slots:
@@ -24,7 +26,9 @@ class TestAppointmentSlotSecurity(AppointmentSecurityCommon):
                 appointment_slot.unlink()
 
     @users("apt_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_slot_access_apt_user(self):
         self._prepare_slots_with_user()
 
@@ -91,7 +95,9 @@ class TestAppointmentSlotSecurity(AppointmentSecurityCommon):
         apt_manager_slots.unlink()
 
     @users("internal_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_slot_access_internal_user(self):
         self._prepare_slots_with_user()
 
@@ -124,7 +130,9 @@ class TestAppointmentSlotSecurity(AppointmentSecurityCommon):
                     appointment_slot.unlink()
 
     @users("public_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_slot_access_public_user(self):
         self._prepare_slots_with_user()
         for appointment_slot in self.all_apt_slots:

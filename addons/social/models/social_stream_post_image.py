@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class SocialStreamPostImage(models.Model):
-
     _name = "social.stream.post.image"
     _description = "Social Stream Post Image Attachment"
 

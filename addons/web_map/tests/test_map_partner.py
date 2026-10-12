@@ -3,7 +3,6 @@ from odoo.tests import Form, TransactionCase
 
 
 class TestMapPartnerAddress(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -81,7 +80,6 @@ class TestMapPartnerAddress(TransactionCase):
 
 
 class TestMapPartnerGeolocation(TransactionCase):
-
     def test_coordinates_follow_the_address_to_a_child_contact(self):
         parent = self.env["res.partner"].create(
             {"name": "Parent", "is_company": True, "street": "Old street"}
@@ -178,7 +176,6 @@ class TestMapPartnerGeolocation(TransactionCase):
 
 
 class TestMapPartnerStoredAddress(TransactionCase):
-
     def test_complete_address_follows_a_renamed_country(self):
         country = self.env["res.country"].create({"name": "Oldland", "code": "ZY"})
         partner = self.env["res.partner"].create(
@@ -192,7 +189,6 @@ class TestMapPartnerStoredAddress(TransactionCase):
 
 
 class TestMapPartnerCoordinatesRpc(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

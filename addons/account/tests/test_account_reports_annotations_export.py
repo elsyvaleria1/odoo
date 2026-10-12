@@ -60,9 +60,7 @@ class TestAccountReportAnnotationsExport(TestAccountReportsCommon):
         )
         move.action_post()
         with freeze_time("2024-06-20"):
-            cls.env.cr._now = (
-                datetime.datetime.now()
-            )
+            cls.env.cr._now = datetime.datetime.now()
             date = datetime.datetime.strptime("2024-06-20", "%Y-%m-%d").date()
             message = cls.env["mail.message"].create(
                 {
@@ -180,9 +178,7 @@ class TestAccountReportAnnotationsExport(TestAccountReportsCommon):
         model = bank_default_account._name
         res_id = bank_default_account.id
         with freeze_time("2024-06-21"):
-            self.env.cr._now = (
-                datetime.datetime.now()
-            )
+            self.env.cr._now = datetime.datetime.now()
             date = datetime.datetime.strptime("2024-06-21", "%Y-%m-%d").date()
             message = self.env["mail.message"].create(
                 {

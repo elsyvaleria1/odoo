@@ -305,7 +305,6 @@ class AccountEdiXmlCii(models.AbstractModel):
             cleanup_xml_node(xml_content), xml_declaration=True, encoding="UTF-8"
         ), set(errors)
 
-
     def _prepare_partner_import_params(self, tree, role):
         return {
             "vat": self._find_value(
@@ -492,7 +491,6 @@ class AccountEdiXmlCii(models.AbstractModel):
                 "barcode": "./ram:SpecifiedTradeProduct/ram:GlobalID",
             },
         }
-
 
     def _get_import_document_amount_sign(self, tree) -> tuple:
         move_type_code = tree.find(".//{*}ExchangedDocument/{*}TypeCode")

@@ -9,7 +9,6 @@ from odoo.addons.telegram.models.telegram_bot import TelegramBot
 
 @tagged("post_install", "-at_install")
 class TestMovedBot(TelegramBotTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -8,7 +8,6 @@ from .gantt_reschedule_dates_common import ProjectGanttRescheduleCommon, fake_no
 @tagged("gantt_reschedule", "post_install", "-at_install")
 @freeze_time(fake_now)
 class TestGanttRescheduleDependencyTypes(ProjectGanttRescheduleCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

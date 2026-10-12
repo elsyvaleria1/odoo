@@ -25,7 +25,6 @@ class PaymentProvider(models.Model):
         "Leave empty to allow it whatever the customer's pricelist.",
     )
 
-
     def _sync_payment_channel(self, allow_create=True) -> None:
         self.check_singleton()
         if not self.id:
@@ -142,7 +141,6 @@ class PaymentProvider(models.Model):
     @api.model
     def _get_provider_payment_method(self, code):
         return self.env["account.payment.method"].search([("code", "=", code)], limit=1)
-
 
     @api.model
     def _get_compatible_providers(

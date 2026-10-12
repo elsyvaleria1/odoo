@@ -17,9 +17,7 @@ class ResCompany(models.Model):
     @api.constrains("sdd_creditor_identifier")
     def check_sdd_creditor_identifier(self) -> None:
         for record in self:
-            if (
-                not record.sdd_creditor_identifier
-            ):
+            if not record.sdd_creditor_identifier:
                 continue
 
             if len(record.sdd_creditor_identifier) > 35:
@@ -43,9 +41,7 @@ class ResCompany(models.Model):
                 )
                 converted_test_str = self._convert_sdd_test_str(test_str)
 
-                if (98 - int(converted_test_str) % 97) != int(
-                    check_digits
-                ):
+                if (98 - int(converted_test_str) % 97) != int(check_digits):
                     raise ValidationError(
                         self.env._(
                             "Invalid creditor identifier. Make sure you made no typo."

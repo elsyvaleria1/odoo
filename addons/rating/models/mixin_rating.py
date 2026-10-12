@@ -9,7 +9,6 @@ from odoo.addons.rating.models import rating_data
 
 
 class MixinRating(models.AbstractModel):
-
     _name = "mixin.rating"
     _description = "Rating Mixin"
     _inherit = ["mixin.mail.thread"]

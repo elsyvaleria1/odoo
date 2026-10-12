@@ -141,15 +141,9 @@ class WorldlineDriver(CtypesTerminalDriver):
         )
         result = easyCTEP.startTransaction(
             ctypes.byref(self.dev),
-            ctypes.c_char_p(
-                str(transaction_amount).encode("utf-8")
-            ),
-            ctypes.c_char_p(
-                str(transaction_id).encode("utf-8")
-            ),
-            ctypes.c_ulong(
-                transaction_action_identifier
-            ),
+            ctypes.c_char_p(str(transaction_amount).encode("utf-8")),
+            ctypes.c_char_p(str(transaction_id).encode("utf-8")),
+            ctypes.c_ulong(transaction_action_identifier),
             merchant_receipt,
             customer_receipt,
             card,
@@ -191,9 +185,7 @@ class WorldlineDriver(CtypesTerminalDriver):
 
         error_code = create_ctypes_string_buffer()
         _logger.info("cancel transaction request for %s", transaction)
-        result = easyCTEP.abortTransaction(
-            ctypes.byref(self.dev), error_code
-        )
+        result = easyCTEP.abortTransaction(ctypes.byref(self.dev), error_code)
         _logger.debug("end cancel transaction request")
 
         if not result:

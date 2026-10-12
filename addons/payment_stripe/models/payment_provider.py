@@ -51,7 +51,6 @@ class PaymentProvider(models.Model):
         "authenticate the messages sent from Stripe to Odoo.",
     )
 
-
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "stripe").update(
@@ -62,7 +61,6 @@ class PaymentProvider(models.Model):
                 "support_tokenization": True,
             }
         )
-
 
     @api.constrains("state", "stripe_publishable_key", "stripe_secret_key")
     def _check_state_of_connected_account_is_never_test(self) -> None:
@@ -94,13 +92,11 @@ class PaymentProvider(models.Model):
         self.check_singleton()
         return False
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "stripe":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def action_start_onboarding(self, menu_id=None):
         self.check_singleton()
@@ -130,9 +126,7 @@ class PaymentProvider(models.Model):
                 menu = self.env.ref(
                     "account_payment_provider.payment_provider_menu", False
                 )
-                menu_id = (
-                    menu and menu.id
-                )
+                menu_id = menu and menu.id
 
             account_link_url = self._stripe_create_account_link(
                 connected_account["id"], menu_id
@@ -184,9 +178,7 @@ class PaymentProvider(models.Model):
                 "message": message,
                 "sticky": False,
                 "type": notification_type,
-                "next": {
-                    "type": "ir.actions.act_window_close"
-                },
+                "next": {"type": "ir.actions.act_window_close"},
             },
         }
 
@@ -214,7 +206,6 @@ class PaymentProvider(models.Model):
     def _get_stripe_webhook_url(self):
         return url_join(self.get_base_url(), StripeController._webhook_url)
 
-
     def _stripe_get_publishable_key(self):
         self.check_singleton()
         return stripe_utils.get_publishable_key(self.sudo())
@@ -234,9 +225,7 @@ class PaymentProvider(models.Model):
             currency_name = currency and currency.name.lower()
         else:
             currency_name = (
-                self.with_context(
-                    validation_pm=payment_method_sudo
-                )
+                self.with_context(validation_pm=payment_method_sudo)
                 ._get_validation_currency()
                 .name.lower()
             )
@@ -280,7 +269,6 @@ class PaymentProvider(models.Model):
 
     def _stripe_get_country(self, country_code):
         return const.COUNTRY_MAPPING.get(country_code, country_code)
-
 
     def _stripe_get_or_create_connected_account(self):
         proxy_payload = self._prepare_json_rpc_payload(
@@ -346,7 +334,6 @@ class PaymentProvider(models.Model):
         self.check_singleton()
 
         return {}
-
 
     def _prepare_request_url(
         self, endpoint, *, is_proxy_request=False, version=1, **kwargs

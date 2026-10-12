@@ -5,7 +5,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestConsentOnPurchases(TransactionCase):
-
     def _category(self, name, **values):
         return self.env["approval.category"].create(
             {"name": name, "approval_minimum": 1, **values}

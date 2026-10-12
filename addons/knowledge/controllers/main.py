@@ -7,7 +7,6 @@ from odoo.addons.base.models.access_link import LinkLoginRequired, LinkRefused
 
 
 class KnowledgeController(http.Controller):
-
     @http.route("/knowledge/home", type="http", auth="user")
     def access_knowledge_home(self):
         article = request.env["knowledge.article"]._get_first_accessible_article()

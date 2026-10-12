@@ -212,7 +212,6 @@ class TestInboundExchangeRecording(TransactionCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestGateRow(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -300,7 +299,6 @@ class TestGateRow(TransactionCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestExternalEventIds(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -6,7 +6,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 @tagged("post_install", "-at_install")
 class TestPartyIdentifiers(TransactionCase):
-
     def _rows(self, employee):
         return {i.type_id.code: i for i in employee.partner_id.identifier_ids}
 

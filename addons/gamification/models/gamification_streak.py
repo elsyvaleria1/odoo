@@ -20,7 +20,6 @@ STREAK_MILESTONES = {
 
 
 class GamificationStreakType(models.Model):
-
     _name = "gamification.streak.type"
     _description = "Gamification Streak Type"
     _order = "sequence, name"
@@ -154,7 +153,6 @@ class GamificationStreakType(models.Model):
 
 
 class GamificationStreak(models.Model):
-
     _name = "gamification.streak"
     _description = "User Activity Streak"
     _order = "current_count desc, id"

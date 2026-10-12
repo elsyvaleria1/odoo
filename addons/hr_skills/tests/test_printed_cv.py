@@ -9,7 +9,6 @@ from .common import SkillsCase
 
 @tagged("post_install", "-at_install")
 class TestPrintedCv(SkillsCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

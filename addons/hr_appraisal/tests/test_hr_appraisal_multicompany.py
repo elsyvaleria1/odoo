@@ -6,7 +6,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class TestHrAppraisalMulticompany(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

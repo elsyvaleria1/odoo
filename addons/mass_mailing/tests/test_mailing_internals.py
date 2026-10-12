@@ -536,7 +536,6 @@ class TestMassMailValues(MassMailCommon):
     @users("user_marketing")
     def test_mailing_computed_fields_default_email_from(self):
 
-
         from_filter_match, from_filter_missmatch = (
             self.env["ir.mail_server"]
             .sudo()
@@ -555,7 +554,6 @@ class TestMassMailValues(MassMailCommon):
                 ]
             )
         )
-
 
         servers = [
             self.env["ir.mail_server"],
@@ -1146,7 +1144,6 @@ Email: <a id="url5" href="mailto:test@odoo.com">test@odoo.com</a></div>""",
 
 @tagged("mail_mail")
 class TestMailingHeaders(MassMailCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -263,9 +263,7 @@ class TestPlanningContract(TestPlanningContractCommon):
             {
                 "date_version": datetime.strptime("2015-11-16", "%Y-%m-%d"),
                 "contract_date_start": datetime.strptime("2015-11-16", "%Y-%m-%d"),
-                "contract_date_end": datetime.strptime(
-                    "2015-12-16", "%Y-%m-%d"
-                ),
+                "contract_date_end": datetime.strptime("2015-12-16", "%Y-%m-%d"),
                 "name": "Fully flex contract for Joseph",
                 "resource_calendar_id": False,
                 "wage": 5000.0,

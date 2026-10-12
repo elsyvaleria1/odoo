@@ -10,7 +10,6 @@ TOKEN_LOG_PREFIX = 12
 
 
 class CaptchaAdapter(models.AbstractModel):
-
     _name = "captcha.adapter"
     _description = "Captcha Provider Adapter"
 

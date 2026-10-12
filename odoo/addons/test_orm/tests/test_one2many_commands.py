@@ -46,7 +46,6 @@ class TestOne2manyCommandsOnTheDatabase(TransactionCase):
 
 
 class TestComputedOne2manyCommandList(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

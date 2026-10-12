@@ -274,7 +274,6 @@ class TestSaleAvalara(TestTaxCommonSale, TestAccountAvataxSaleCommon):
 
 @tagged("-at_install", "post_install")
 class TestAccountAvalaraSalesTaxItemsIntegration(TestAccountAvataxSaleCommon):
-
     @classmethod
     def setUpClass(cls):
         res = super().setUpClass()
@@ -337,9 +336,7 @@ class TestAccountAvalaraSalesTaxItemsIntegration(TestAccountAvataxSaleCommon):
         self.assertEqual(self.sale_order.partner_id.avalara_partner_code, customer_code)
 
     def test_doc_date(self):
-        doc_date = self.captured_arguments[
-            "date"
-        ]
+        doc_date = self.captured_arguments["date"]
         self.assertEqual(
             self.sale_order.date_order.date(), fields.Date.to_date(doc_date)
         )

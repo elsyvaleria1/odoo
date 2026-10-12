@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPhoneBlacklistOps(TransactionCase):
-
     NUMBER = "+33612345678"
 
     @property
@@ -54,7 +53,6 @@ class TestPhoneBlacklistOps(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPhoneBlacklistDoesNotDeriveFromActingUser(TransactionCase):
-
     @property
     def Blacklist(self):
         return self.env["phone.blacklist"]
@@ -92,7 +90,6 @@ class TestPhoneBlacklistDoesNotDeriveFromActingUser(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPortalUserBlacklistOnDeactivate(TransactionCase):
-
     def test_deactivation_with_request_blacklists_phone(self):
         user = self.env["res.users"].create(
             {

@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class AIComposer(models.Model):
-
     _name = "ai.composer"
     _inherit = ["ai.composer"]
 

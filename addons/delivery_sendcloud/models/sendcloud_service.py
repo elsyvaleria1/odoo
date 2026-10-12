@@ -106,9 +106,7 @@ class SendCloud:
             shipping_methods = [
                 {
                     "id": parcel.get("shipment", {}).get("id"),
-                    "weight": int(
-                        float(parcel.get("weight", 0)) * 1000
-                    ),
+                    "weight": int(float(parcel.get("weight", 0)) * 1000),
                 }
             ]
         else:
@@ -270,9 +268,7 @@ class SendCloud:
         for shipping_method in shipping_methods:
             shipping_id = params["shipping_method_id"] = shipping_method["id"]
             if not weight:
-                params["weight"] = (
-                    shipping_method["properties"]["max_weight"] - 1
-                )
+                params["weight"] = shipping_method["properties"]["max_weight"] - 1
             res = self._send_request("shipping-price", params=params)[0]
             if res.get("price"):
                 shipping_prices[shipping_id] = res
@@ -343,11 +339,7 @@ class SendCloud:
                 return None
 
         if not single_shipping:
-            max_allowed_weight = shipping_product[
-                "weight_range"
-            ][
-                "max_weight"
-            ]
+            max_allowed_weight = shipping_product["weight_range"]["max_weight"]
             if sendcloud_product_id.max_weight != max_allowed_weight:
                 sendcloud_product_id.max_weight = max_allowed_weight
 
@@ -663,9 +655,7 @@ class SendCloud:
             parcel_common["shipment"] = {
                 "id": shipping["id"],
             }
-            for pkg in shipping[
-                "packages"
-            ]:
+            for pkg in shipping["packages"]:
                 parcel = dict(parcel_common)
                 if isinstance(pkg, list):
                     max_sizes = self._get_max_package_sizes(pkg)
@@ -733,9 +723,7 @@ class SendCloud:
                 % details
             )
 
-        sorted_methods = [
-            m for m in sorted_methods if m["packages"]
-        ]
+        sorted_methods = [m for m in sorted_methods if m["packages"]]
         if not use_multicollo:
             return sorted_methods
 
@@ -767,9 +755,7 @@ class SendCloud:
                 max_batch_size = MULTICOLLO_MAX_PACKAGE
                 multicollo_batch[-1]["packages"].append([])
 
-            if (
-                min_batch_size <= len(multicollo_batch[-1]["packages"][-1])
-            ):
+            if min_batch_size <= len(multicollo_batch[-1]["packages"][-1]):
                 pkg_number -= 1
                 if pkg_number == 0:
                     break
@@ -784,9 +770,7 @@ class SendCloud:
                     }
                 )
             else:
-                max_batch_size = (
-                    min_batch_size
-                )
+                max_batch_size = min_batch_size
         return multicollo_batch
 
     def _get_sale_totals_by_product(

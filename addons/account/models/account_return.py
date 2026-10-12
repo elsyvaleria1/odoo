@@ -519,9 +519,7 @@ class AccountReturn(models.Model):
                 report.get_report_company_ids(options)
             )
 
-        return self.env["res.company"].browse(
-            companies.ids
-        )
+        return self.env["res.company"].browse(companies.ids)
 
     @api.depends("company_id", "tax_unit_id", "type_id")
     def _compute_company_ids(self) -> None:
@@ -933,7 +931,6 @@ class AccountReturn(models.Model):
             "views": [(False, "form")],
             "target": "new",
         }
-
 
     def _check_transition(self, target_state) -> None:
         self.check_singleton()
@@ -1436,7 +1433,6 @@ class AccountReturn(models.Model):
         ):
             return self._mark_completed()
         return None
-
 
     @_debug.perf.timed
     def action_delete(self):
@@ -2395,7 +2391,6 @@ class AccountReturn(models.Model):
         )
         return line_ids_vals
 
-
     @_debug.perf.timed
     def _check_failing_checks_in_current_stage(self) -> None:
         self.check_singleton()
@@ -2424,9 +2419,7 @@ class AccountReturn(models.Model):
         to_create = []
         to_unlink = self.env["account.return.check"]
         for record in locked_returns:
-            if (
-                record.company_id not in self.env.companies
-            ):
+            if record.company_id not in self.env.companies:
                 continue
 
             if record._is_check_run_required():
@@ -3369,9 +3362,7 @@ class AccountReturn(models.Model):
 
         review_action = {
             "type": "ir.actions.act_window",
-            "name": str(
-                name
-            ),
+            "name": str(name),
             "view_mode": "list",
             "res_model": "account.bank.statement.line",
             "domain": domain,
@@ -3447,9 +3438,7 @@ class AccountReturn(models.Model):
 
         review_action = {
             "type": "ir.actions.act_window",
-            "name": str(
-                name
-            ),
+            "name": str(name),
             "view_mode": "list",
             "res_model": "account.move",
             "domain": domain,

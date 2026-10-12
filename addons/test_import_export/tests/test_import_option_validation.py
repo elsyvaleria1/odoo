@@ -44,7 +44,6 @@ class ImportOptionValidation(TransactionCase):
         )
         return result["messages"][0]["message"]
 
-
     def test_non_numeric_limit_is_reported_not_raised(self):
         self.assertIn("Batch limit", self._message(self._run(limit="abc")))
 
@@ -79,7 +78,6 @@ class ImportOptionValidation(TransactionCase):
         self.env["base_import.import"]._normalize_row_window_options(options)
         self.assertEqual(options["skip"], 0)
 
-
     def test_negative_skip_is_refused_rather_than_silently_reversed(self):
         self.assertIn("Start at line", self._message(self._run(skip=-2)))
 
@@ -106,13 +104,11 @@ class ImportOptionValidation(TransactionCase):
     def test_skip_within_the_file_still_pads_to_absolute_rows(self):
         self.assertEqual(self._run_named(skip=2)["name"], ["", "", "C", "D"])
 
-
     def test_non_string_field_mapping_is_reported_not_raised(self):
         result = self._imp().execute_import(
             [123, "value"], ["A", "Value"], dict(self._OPTS), dryrun=True
         )
         self.assertIn("Column 1", self._message(result))
-
 
     def test_unknown_res_model_is_a_user_error_not_a_key_error(self):
         for entry_point in (
@@ -136,7 +132,6 @@ class ImportOptionValidation(TransactionCase):
 
 @unittest.skipUnless(can_import("odf"), "odfpy not installed")
 class ODSCellFidelity(BaseCase):
-
     def _sheet(self, rows):
         import io
 
@@ -202,7 +197,6 @@ class ODSCellFidelity(BaseCase):
 
 
 class ParsedFileCache(TransactionCase):
-
     _OPTS = {"has_headers": True, "quoting": '"', "separator": ",", "encoding": "utf-8"}
 
     def setUp(self):
@@ -327,7 +321,6 @@ class ParsedFileCache(TransactionCase):
 
 
 class SpreadsheetDateColumnTyping(TransactionCase):
-
     def test_native_dates_do_not_invent_a_date_format(self):
         import datetime
 

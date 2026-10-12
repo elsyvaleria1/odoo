@@ -137,8 +137,7 @@ class MixinMailThread(models.AbstractModel):
 
         return self.message_post(
             body=body,
-            partner_ids=partner_ids
-            or [],
+            partner_ids=partner_ids or [],
             message_type="sms",
             subtype_id=subtype_id,
             sms_numbers=sms_numbers,

@@ -33,9 +33,7 @@ class TestEventPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=335),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             event_values = [
                 dict(self.event_base_vals, website_menu=False)
                 for x in range(batch_size)
@@ -51,9 +49,7 @@ class TestEventPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=3418),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             event_values = [
                 dict(self.event_base_vals, website_menu=True) for x in range(batch_size)
             ]
@@ -69,9 +65,7 @@ class TestEventPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=432),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             event_values = [
                 dict(
                     self.event_base_vals,
@@ -92,9 +86,7 @@ class TestEventPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=3522),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             event_values = [
                 dict(
                     self.event_base_vals,
@@ -107,17 +99,13 @@ class TestEventPerformance(EventPerformanceCase):
     @users("event_user")
     @warmup
     def test_event_create_form_notype(self):
-        has_social = (
-            "social_menu" in self.env["event.event"]
-        )
+        has_social = "social_menu" in self.env["event.event"]
 
         with (
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=108),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             with self.debug_mode():
                 with Form(self.env["event.event"]) as event_form:
                     event_form.name = "Test Event"
@@ -131,17 +119,13 @@ class TestEventPerformance(EventPerformanceCase):
     @users("event_user")
     @warmup
     def test_event_create_form_notype_website(self):
-        has_social = (
-            "social_menu" in self.env["event.event"]
-        )
+        has_social = "social_menu" in self.env["event.event"]
 
         with (
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=429),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             with self.debug_mode():
                 with Form(self.env["event.event"]) as event_form:
                     event_form.name = "Test Event"
@@ -156,17 +140,13 @@ class TestEventPerformance(EventPerformanceCase):
     @warmup
     def test_event_create_form_type_website(self):
         event_type = self.env["event.type"].browse(self.test_event_type.ids)
-        has_social = (
-            "social_menu" in self.env["event.event"]
-        )
+        has_social = "social_menu" in self.env["event.event"]
 
         with (
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=472),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             with self.debug_mode():
                 with Form(self.env["event.event"]) as event_form:
                     event_form.name = "Test Event"
@@ -183,9 +163,7 @@ class TestEventPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=31),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             event_values = dict(self.event_base_vals, website_menu=False)
             self.env["event.event"].create([event_values])
 
@@ -196,9 +174,7 @@ class TestEventPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=242),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             event_values = dict(self.event_base_vals, website_menu=True)
             self.env["event.event"].with_context(lang="en_US").create([event_values])
 
@@ -211,9 +187,7 @@ class TestEventPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=52),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             event_values = dict(
                 self.event_base_vals, event_type_id=event_type.id, website_menu=False
             )
@@ -228,9 +202,7 @@ class TestEventPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=274),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             event_values = dict(
                 self.event_base_vals,
                 event_type_id=event_type.id,
@@ -255,9 +227,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=638),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             registration_values = [
                 dict(reg_data, event_id=event.id) for reg_data in self.customer_data
             ]
@@ -279,9 +249,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=165),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             registration_values = [
                 dict(reg_data, event_id=event.id) for reg_data in self.customer_data
             ]
@@ -307,9 +275,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=651),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             registration_values = [
                 dict(reg_data, event_id=event.id)
                 for reg_data in self.website_customer_data
@@ -335,9 +301,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=145),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             phone = self.env["phone.number"].create({"number": "0456000000"})
             with Form(self.env["event.registration"]) as reg_form:
                 reg_form.event_id = event
@@ -355,9 +319,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=146),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             with Form(self.env["event.registration"]) as reg_form:
                 reg_form.event_id = event
                 reg_form.partner_id = self.partners[0]
@@ -372,9 +334,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=63),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             with Form(
                 self.env["event.registration"].with_context(event_lead_rule_skip=True)
             ) as reg_form:
@@ -391,9 +351,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=122),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             registration_values = dict(self.customer_data[0], event_id=event.id)
             _registration = self.env["event.registration"].create([registration_values])
 
@@ -406,9 +364,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=121),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             registration_values = {
                 "event_id": event.id,
                 "partner_id": self.partners[0].id,
@@ -424,9 +380,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=39),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             registration_values = {
                 "event_id": event.id,
                 "partner_id": self.partners[0].id,
@@ -446,9 +400,7 @@ class TestRegistrationPerformance(EventPerformanceCase):
             freeze_time(self.reference_now),
             self.assertQueryCount(event_user=126),
         ):
-            self.env.cr._now = (
-                self.reference_now
-            )
+            self.env.cr._now = self.reference_now
             registration_values = dict(self.website_customer_data[0], event_id=event.id)
             _registration = self.env["event.registration"].create([registration_values])
 
@@ -517,9 +469,7 @@ class TestOnlineEventPerformance(EventPerformanceCase, UtilPerf):
 
     @warmup
     def test_register_public(self):
-        with freeze_time(
-            self.reference_now + timedelta(hours=3)
-        ):
+        with freeze_time(self.reference_now + timedelta(hours=3)):
             self.assertTrue(self.test_event.event_registrations_started)
             self.authenticate(None, None)
             with self.assertQueryCount(default=1197):

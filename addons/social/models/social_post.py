@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialPost(models.Model):
-
     _name = "social.post"
     _inherit = [
         "mixin.mail.thread",
@@ -469,9 +468,7 @@ class SocialPost(models.Model):
     def _prepare_post_name(self, message, state=False):
         name = self.env._("Post")
         if message:
-            message = message.replace(
-                "\n", " "
-            )
+            message = message.replace("\n", " ")
             if len(message) < 24:
                 name = message
             else:

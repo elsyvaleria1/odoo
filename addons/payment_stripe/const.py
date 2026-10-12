@@ -1,9 +1,7 @@
 from odoo.addons.payment.const import SENSITIVE_KEYS as PAYMENT_SENSITIVE_KEYS
 
 SENSITIVE_KEYS = {"client_secret"}
-PAYMENT_SENSITIVE_KEYS.update(
-    SENSITIVE_KEYS
-)
+PAYMENT_SENSITIVE_KEYS.update(SENSITIVE_KEYS)
 
 API_VERSION = "2019-05-16"
 

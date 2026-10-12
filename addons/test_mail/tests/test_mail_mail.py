@@ -74,9 +74,7 @@ class TestMailMail(MailCommon):
                 }
             ]
         )
-        cls.test_notification = cls.env[
-            "mail.notification"
-        ].create(
+        cls.test_notification = cls.env["mail.notification"].create(
             {
                 "is_read": False,
                 "mail_mail_id": cls.test_mail.id,
@@ -1901,7 +1899,6 @@ class TestMailMailRace(MailCommon):
         self.assertTrue(bounce_deferred, "The bounce should have been deferred")
         self.assertEqual(notif.notification_status, "sent")
 
-
         notif.unlink()
         mail.unlink()
         (mail_message | message).unlink()
@@ -1912,7 +1909,6 @@ class TestMailMailRace(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailQueueResilience(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2019,7 +2015,6 @@ class TestMailMailQueueResilience(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailOutcomeReporting(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2108,7 +2103,6 @@ class TestMailMailOutcomeReporting(MailCommon):
 
 @tagged("mail_mail", "mail_server")
 class TestMailMailPersonalServerQuota(MailCommon):
-
     def test_personal_server_cost_counts_the_raw_address_message(self):
         partners = self.env["res.partner"].create(
             [
@@ -2159,7 +2153,6 @@ class TestMailMailPersonalServerQuota(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailRecipientDeduplication(MailCommon):
-
     def test_a_raw_address_a_partner_also_holds_is_sent_once(self):
         partner = self.env["res.partner"].create(
             {"name": "Twice", "email": '"Twice" <twice@test.example.com>'}
@@ -2196,7 +2189,6 @@ class TestMailMailRecipientDeduplication(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSchedule(MailCommon):
-
     def _scheduled_mail(self):
         return self.env["mail.mail"].create(
             {
@@ -2228,7 +2220,6 @@ class TestMailMailSchedule(MailCommon):
 
 @tagged("mail_mail", "mail_server")
 class TestMailMailSendGuarantees(MailCommon):
-
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_another_users_mail_is_still_refused_on_a_personal_server(self):
         owner = self.env["res.users"].create(
@@ -2567,7 +2558,6 @@ class TestMailMailSendGuarantees(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailChatterPush(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2684,7 +2674,6 @@ class TestMailMailChatterPush(MailCommon):
 
 @tagged("mail_mail")
 class TestFailureTypeCoherence(MailCommon):
-
     def _js_handled_codes(self):
         source = Path(
             file_path("mail/static/src/core/common/notification_model.js")
@@ -2746,7 +2735,6 @@ class TestFailureTypeCoherence(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailDurableMarker(MailCommon):
-
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_the_marker_is_committed_before_the_first_message_leaves(self):
         mail = self.env["mail.mail"].create(
@@ -2815,7 +2803,6 @@ class TestMailMailDurableMarker(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailUnfollowBlock(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2885,7 +2872,6 @@ class TestMailMailUnfollowBlock(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailHeaders(MailCommon):
-
     def test_headers_round_trip_as_a_mapping(self):
         mail = self.env["mail.mail"].create(
             {
@@ -2950,7 +2936,6 @@ class TestMailMailHeaders(MailCommon):
 
 @tagged("mail_mail")
 class TestNumericParameterGuards(MailCommon):
-
     def _accessors(self):
         icp = self.env["ir.config_parameter"]
         return [
@@ -3016,7 +3001,6 @@ class TestNumericParameterGuards(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailFailureClassification(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3083,7 +3067,6 @@ class TestMailMailFailureClassification(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailFailureRanking(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3152,7 +3135,6 @@ class TestMailMailFailureRanking(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailNotificationTruth(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3284,7 +3266,6 @@ class TestMailMailNotificationTruth(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSplitNotifications(MailCommon):
-
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_the_copy_takes_the_notifications_for_what_it_carries(self):
         self.env["ir.config_parameter"].sudo().set_param(
@@ -3363,7 +3344,6 @@ class TestMailMailSplitNotifications(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailQueueNarrowing(MailCommon):
-
     def _one_mail(self, state):
         return self.env["mail.mail"].create(
             {
@@ -3442,7 +3422,6 @@ class TestMailMailQueueNarrowing(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailUnfollowScope(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3532,7 +3511,6 @@ class TestMailMailUnfollowScope(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailOutcomeWrites(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -3625,7 +3603,6 @@ class TestMailMailOutcomeWrites(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailQueueProgress(MailCommon):
-
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_progress_is_reported_in_chunks(self):
         partner = self.env["res.partner"].create(
@@ -3670,7 +3647,6 @@ class TestMailMailQueueProgress(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSelfClosingUnfollowSpan(MailCommon):
-
     def test_a_self_closing_span_keeps_the_rest_of_the_body(self):
         body = '<p>Important</p><span id="mail_unfollow"/><p>Content after the span</p>'
         self.assertEqual(
@@ -3732,7 +3708,6 @@ class TestMailMailSelfClosingUnfollowSpan(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailBodyIsBuiltOncePerMail(MailCommon):
-
     def test_the_document_is_scanned_a_fixed_number_of_times(self):
         partners = self.env["res.partner"].create(
             [
@@ -3778,7 +3753,6 @@ class TestMailMailBodyIsBuiltOncePerMail(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSettlingIsNotDelivery(MailCommon):
-
     def _notification_mail(self):
         partner = self.env["res.partner"].create(
             {"email": "settle@test.example.com", "name": "Settle"}
@@ -3879,7 +3853,6 @@ class TestMailMailSettlingIsNotDelivery(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailReturnPath(MailCommon):
-
     def test_no_bounce_address_leaves_the_header_unset(self):
         self.env.company.bounce_email = False
         mail = self.env["mail.mail"].create(
@@ -3916,7 +3889,6 @@ class TestMailMailReturnPath(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailScheduledDateBounds(MailCommon):
-
     def _fixed_offset(self, hours):
         return datetime_timezone(timedelta(hours=hours))
 
@@ -3980,7 +3952,6 @@ class TestMailMailScheduledDateBounds(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMailSizeEstimate(MailCommon):
-
     def test_attachments_are_counted_at_their_base64_size(self):
         MailMail = self.env["mail.mail"]
         empty = MailMail._estimate_email_size({}, "", [])
@@ -4014,7 +3985,6 @@ class TestMailMailSizeEstimate(MailCommon):
 
 
 class _DroppingSMTPSession:
-
     def __init__(self, drop_on, after_payload=False):
         self.drop_on = drop_on
         self.after_payload = after_payload
@@ -4045,7 +4015,6 @@ class _DroppingSMTPSession:
 
 
 class MailQueueCronCase(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -4098,7 +4067,6 @@ class MailQueueCronCase(MailCommon):
 
 @tagged("mail_mail", "mail_server")
 class TestMailMailSessionLoss(MailQueueCronCase):
-
     def _notified_mail(self, partner):
         message = self.env["mail.message"].create(
             {
@@ -4211,7 +4179,6 @@ class TestMailMailSessionLoss(MailQueueCronCase):
 
 @tagged("mail_mail")
 class TestMailMailQueueTimeBudget(MailQueueCronCase):
-
     def test_the_queue_stops_when_the_budget_is_spent(self):
         self._outgoing(3)
         sent_per_call = []
@@ -4246,7 +4213,6 @@ class TestMailMailQueueTimeBudget(MailQueueCronCase):
 
 @tagged("mail_mail")
 class TestMailMailQueueTriggers(MailCommon):
-
     def _triggers(self):
         cron = self.env.ref("mail.ir_cron_mail_scheduler_action")
         return self.env["ir.cron.trigger"].search([("cron_id", "=", cron.id)])
@@ -4298,7 +4264,6 @@ class TestMailMailQueueTriggers(MailCommon):
 
 @tagged("mail_mail")
 class TestMailMessageScheduleCron(MailQueueCronCase):
-
     def _schedules(self, count):
         partner = self.env["res.partner"].create(
             {"email": "scheduled@test.example.com", "name": "Scheduled"}
@@ -4370,7 +4335,6 @@ class TestMailMessageScheduleCron(MailQueueCronCase):
 
 @tagged("mail_mail")
 class TestMailMailSettlingDatabaseError(MailQueueCronCase):
-
     def _failing_on(self, mail):
         MailMail = self.registry["mail.mail"]
         origin = MailMail._postprocess_sent_message
@@ -4409,7 +4373,6 @@ class TestMailMailSettlingDatabaseError(MailQueueCronCase):
 
 @tagged("mail_mail")
 class TestNotificationUpdateReachesReaders(MailCommon):
-
     def _pushed_channels(self, messages):
         channels = []
         original = Store.bus_send

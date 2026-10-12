@@ -10,7 +10,6 @@ else:
 
 
 class FieldKey(Protocol):
-
     @override
     def __hash__(self) -> int: ...
 

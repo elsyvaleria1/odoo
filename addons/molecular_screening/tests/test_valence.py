@@ -103,16 +103,12 @@ class TestValence(BaseCase):
             return valence.aromaticity(atoms, bonds)["rings"]
 
         self.assertEqual(ring("CCCCC", [2, 1, 2, 1, 1]), 0)
-        self.assertEqual(
-            ring("CCCCC", [2, 1, 2, 1, 1], charges={5: -1}), 1
-        )
+        self.assertEqual(ring("CCCCC", [2, 1, 2, 1, 1], charges={5: -1}), 1)
         self.assertEqual(ring("CCCCCCCC", [2, 1] * 4), 0)
         self.assertEqual(
             ring("CCCCCCOO", [1, 2, 1, 1, 2, 1], [(1, 7, 2), (4, 8, 2)]), 0
         )
-        self.assertEqual(
-            ring("NCCCCCO", [1, 1, 2, 1, 2, 1], [(2, 7, 2)]), 1
-        )
+        self.assertEqual(ring("NCCCCCO", [1, 1, 2, 1, 2, 1], [(2, 7, 2)]), 1)
 
     def test_hill_order(self):
         self.assertEqual(

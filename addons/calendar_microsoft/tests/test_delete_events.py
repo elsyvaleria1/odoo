@@ -169,10 +169,7 @@ class TestDeleteEvents(TestCommon):
                 lastModifiedDateTime=_modified_date_in_the_future(self.recurrence),
             )
             for i, event in enumerate(self.recurrent_event_from_outlook_organizer)
-            if i
-            != (
-                idx + 1
-            )
+            if i != (idx + 1)
         ]
         event_to_remove = self.recurrent_events[idx]
         mock_get_events.return_value = (MicrosoftEvent(rec_values), None)

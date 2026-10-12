@@ -307,9 +307,7 @@ class EquityTransaction(models.Model):
 
     @api.depends("date", "partner_id")
     def _compute_security_price(self) -> None:
-        for transaction in self.filtered(
-            lambda t: not bool(self._origin.id)
-        ):
+        for transaction in self.filtered(lambda t: not bool(self._origin.id)):
             transaction.security_price = self.search(
                 [
                     ("partner_id", "=", transaction.partner_id.id),

@@ -526,13 +526,9 @@ class AIAgent(models.Model):
             raise UserError(self.env._("Invalid search operator."))
 
         if ask_ai_topics := self._get_ask_ai_topics():
-            if (operator == "=" and value) or (
-                operator == "!=" and not value
-            ):
+            if (operator == "=" and value) or (operator == "!=" and not value):
                 return [("topic_ids", "in", [t.id for t in ask_ai_topics])]
-            elif (operator == "=" and not value) or (
-                operator == "!=" and value
-            ):
+            elif (operator == "=" and not value) or (operator == "!=" and value):
                 return [("topic_ids", "not in", [t.id for t in ask_ai_topics])]
         else:
             return [("id", "=", False)]
@@ -991,9 +987,7 @@ class AIAgent(models.Model):
         if self.get_external_id()[self.id] == "ai.ai_agent_natural_language_search":
             extra_context.append(self._get_available_menus())
             extra_context.append(self._get_date_calculation_reference())
-        elif (
-            env_context := discuss_channel.ai_env_context
-        ):
+        elif env_context := discuss_channel.ai_env_context:
             extra_context += env_context
 
         return "\n".join(extra_context) if extra_context else ""

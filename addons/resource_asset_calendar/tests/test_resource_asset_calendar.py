@@ -89,15 +89,11 @@ class TestResourceAssetCalendar(TransactionCase):
         }
         values = {"resource_to_bookings": {}}
         self.assertTrue(
-            offer._slot_availability_is_resource_available(
-                slot, self.projector, values
-            )
+            offer._slot_availability_is_resource_available(slot, self.projector, values)
         )
         self.projector.state = "out_of_service"
         self.assertFalse(
-            offer._slot_availability_is_resource_available(
-                slot, self.projector, values
-            )
+            offer._slot_availability_is_resource_available(slot, self.projector, values)
         )
 
     def test_a_hard_reservation_on_the_asset_refuses_an_overlapping_booking(self):

@@ -56,7 +56,6 @@ class SocialInstagramController(SocialController):
 
         return request.redirect("/odoo/action-social.action_social_stream_post")
 
-
     @http.route("/social_instagram/comment", type="http", auth="user", methods=["POST"])
     def social_instagram_comment(
         self, stream_post_id=None, message=None, comment_id=None, **kwargs
@@ -87,7 +86,6 @@ class SocialInstagramController(SocialController):
         return stream_post._instagram_get_comments(
             next_records_token, count=comments_count
         )
-
 
     @http.route(
         ["/social_instagram/<string:instagram_access_token>/get_image/<int:image_id>"],

@@ -7,7 +7,6 @@ _PREVIEW = 300
 
 
 class TelegramInbox(models.AbstractModel):
-
     _name = "telegram.inbox"
     _description = "Telegram Inbox"
 
@@ -105,7 +104,6 @@ class TelegramInbox(models.AbstractModel):
             if channel and last:
                 channel.self_member_id._mark_as_read(last.id)
         return True
-
 
     @api.model
     def _record(self, model, res_id):

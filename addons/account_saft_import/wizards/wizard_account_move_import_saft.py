@@ -9,7 +9,6 @@ from odoo.exceptions import RedirectWarning
 
 
 class WizardAccountMoveImportSaft(models.TransientModel):
-
     _name = "wizard.account.move.import.saft"
     _description = "Account SAF-T import wizard"
 
@@ -27,7 +26,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         help="Company used for the import",
     )
     import_opening_balance = fields.Boolean(string="Import account opening balances")
-
 
     def _get_account_types(self) -> dict:
         return {}
@@ -48,7 +46,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         nsmap["saft"] = nsmap[nsmap_key]
         del nsmap[nsmap_key]
         return nsmap
-
 
     def _get_account_tag_mapping(self) -> dict[str, str]:
         return {}
@@ -640,7 +637,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         data["account.move"].update(moves_data)
 
         return data
-
 
     def action_import(self):
 

@@ -34,7 +34,6 @@ class VoicePayload(NamedTuple):
 
 
 class Heard(NamedTuple):
-
     text: str | None = None
     failure: str | None = None
     duration: int = 0

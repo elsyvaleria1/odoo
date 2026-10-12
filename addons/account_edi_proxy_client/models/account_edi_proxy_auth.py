@@ -12,7 +12,6 @@ from odoo.libs.json import loads as json_loads
 
 
 class OdooEdiProxyAuth(requests.auth.AuthBase):
-
     def __init__(
         self, user=False, auth_type: Literal["hmac", "asymmetric"] = "hmac"
     ) -> None:

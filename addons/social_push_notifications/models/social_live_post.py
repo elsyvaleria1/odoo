@@ -93,7 +93,6 @@ class SocialLivePost(models.Model):
                 target_visitors,
             )
 
-
             if post.use_visitor_timezone:
                 values = {
                     "reached_visitor_ids": [

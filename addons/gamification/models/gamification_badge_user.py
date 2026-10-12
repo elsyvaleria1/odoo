@@ -9,7 +9,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationBadgeUser(models.Model):
-
     _name = "gamification.badge.user"
     _description = "Gamification User Badge"
     _inherit = ["mixin.mail.thread"]

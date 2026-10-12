@@ -118,9 +118,7 @@ class TestEventNotifications(TransactionCase):
     def test_existing_attendee_added(self):
         self.event.partner_ids = self.partner
         attendee = self.event.attendee_ids
-        self.event.write(
-            {"partner_ids": [(4, self.partner.id)]}
-        )
+        self.event.write({"partner_ids": [(4, self.partner.id)]})
         self.assertEqual(
             self.event.attendee_ids,
             attendee,

@@ -5,7 +5,6 @@ from odoo.tools.misc import file_open
 
 
 class LunchProductCategory(models.Model):
-
     _name = "lunch.product.category"
     _inherit = ["mixin.image"]
     _description = "Lunch Product Category"

@@ -16,9 +16,7 @@ class TestPayslipComputation(TestPayslipContractBase):
         super().setUpClass()
 
         cls.env.user.group_ids |= cls.env.ref("hr_payroll.group_hr_payroll_manager")
-        cls.richard_payslip = cls.env[
-            "hr.payslip"
-        ].create(
+        cls.richard_payslip = cls.env["hr.payslip"].create(
             {
                 "name": "Payslip of Richard",
                 "employee_id": cls.richard_emp.id,
@@ -786,9 +784,7 @@ class TestPayslipComputation(TestPayslipContractBase):
         )
 
         with Form(payslip) as payslip_form:
-            payslip_form.input_line_ids.remove(
-                0
-            )
+            payslip_form.input_line_ids.remove(0)
             with payslip_form.input_line_ids.new() as line:
                 line.input_type_id = self.env.ref("hr_payroll.input_assignment_salary")
                 line.amount = 100
@@ -834,9 +830,7 @@ class TestPayslipComputation(TestPayslipContractBase):
         )
 
         payslip_form = Form(payslip)
-        payslip_form.date_from = date(
-            2016, 1, 16
-        )
+        payslip_form.date_from = date(2016, 1, 16)
         self.assertNotIn(
             inaccurate,
             [issue["message"] for issue in (payslip_form.issues or {}).values()],

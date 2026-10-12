@@ -47,7 +47,6 @@ class TestSubscriptionStockCommon(
             }
         )
 
-
         pricing_commands = [
             Command.create(
                 {
@@ -62,7 +61,6 @@ class TestSubscriptionStockCommon(
                 }
             ),
         ]
-
 
         cls.sub_product_order = Product.create(
             {
@@ -120,7 +118,6 @@ class TestSubscriptionStockCommon(
                 "recurring_invoice": True,
             }
         )
-
 
         cls.subscription_order = SaleOrder.create(
             {
@@ -181,7 +178,6 @@ class TestSubscriptionStockCommon(
             "active_id": cls.subscription_order.id,
             "default_journal_id": cls.company_data["default_journal_sale"].id,
         }
-
 
         with (
             freeze_time("2022-03-02"),

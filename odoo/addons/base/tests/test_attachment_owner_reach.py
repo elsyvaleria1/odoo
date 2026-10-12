@@ -9,7 +9,6 @@ from odoo.addons.base.tests.common import make_guard_row
 
 @tagged("post_install", "-at_install")
 class TestAttachmentOwnerReach(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -241,7 +241,6 @@ class TestEndpointRateLimiterStrictMode(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRateLimitBucketContention(TransactionCase):
-
     def setUp(self):
         super().setUp()
         endpoint = self.env["res.partner"].create({"name": "contention probe"})

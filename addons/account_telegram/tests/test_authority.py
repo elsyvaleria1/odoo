@@ -12,7 +12,6 @@ RENDER = "odoo.addons.web.models.ir_actions_report.IrActionsReport._render_html_
 
 @tagged("post_install", "-at_install")
 class TestStatementAuthority(PartnerLedgerTelegramTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

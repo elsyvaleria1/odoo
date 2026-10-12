@@ -1079,7 +1079,6 @@ class IrAttachment(models.Model):
                     representation, value, read_by=document.read_by(representation)
                 )
 
-
     def _share_readings(self, origins: list[Self], copies: Self) -> None:
         read_origins = [origin.id for origin in origins if origin.has_readings]
         if not read_origins:

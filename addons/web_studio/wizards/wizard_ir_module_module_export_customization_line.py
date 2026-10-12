@@ -4,7 +4,6 @@ from odoo import api, fields, models
 
 
 class WizardIrModuleModuleExportCustomizationLine(models.TransientModel):
-
     _name = "wizard.ir.module.module.export.customization.line"
     _description = "Studio Export Data"
     _order = "model_name, res_id"

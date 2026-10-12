@@ -60,7 +60,6 @@ EXPECTED = (KEEP_SHADOWED | SEPARATE_DESTINATION | WRONG_PARENT) | set(CONDITION
 
 @tagged("post_install", "-at_install")
 class TestPartnerShadowGate(TransactionCase):
-
     @classmethod
     def _shadowed(cls):
         employee = cls.env["hr.employee"]._fields

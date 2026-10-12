@@ -6,7 +6,6 @@ from odoo.addons.hr_work_entry_attendance.tests.common import (
 
 
 class TestAttendanceActions(HrWorkEntryAttendanceCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

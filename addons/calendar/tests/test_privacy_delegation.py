@@ -5,7 +5,6 @@ from odoo.tests import HttpCase, TransactionCase, new_test_user, tagged
 
 
 class CalendarPrivacyCommon:
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -47,7 +46,6 @@ class CalendarPrivacyCommon:
 
 @tagged("post_install", "-at_install")
 class TestAttendeePrivacy(CalendarPrivacyCommon, TransactionCase):
-
     def test_attendees_of_a_private_event_are_not_searchable(self):
         event = self._make_event("private")
         self.env.flush_all()
@@ -125,7 +123,6 @@ class TestAttendeePrivacy(CalendarPrivacyCommon, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRecurrencePrivacy(CalendarPrivacyCommon, TransactionCase):
-
     def _make_recurrence(self, privacy):
         return self._make_event(
             privacy,
@@ -167,7 +164,6 @@ class TestRecurrencePrivacy(CalendarPrivacyCommon, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarFiltersPrivacy(CalendarPrivacyCommon, TransactionCase):
-
     def test_filters_are_private_to_their_user(self):
         own = (
             self.env["calendar.filters"]
@@ -201,7 +197,6 @@ class TestCalendarFiltersPrivacy(CalendarPrivacyCommon, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestInvitationTokenRoutes(CalendarPrivacyCommon, HttpCase):
-
     def test_empty_token_does_not_authenticate(self):
         event = self._make_event("public")
         self.env.flush_all()
@@ -240,7 +235,6 @@ class TestInvitationTokenRoutes(CalendarPrivacyCommon, HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestPrivacyDomainFallback(CalendarPrivacyCommon, TransactionCase):
-
     def test_owner_without_settings_row_is_not_treated_as_private(self):
         owner = new_test_user(self.env, "no_settings_owner", groups="base.group_user")
         owner.sudo().res_users_settings_id.unlink()

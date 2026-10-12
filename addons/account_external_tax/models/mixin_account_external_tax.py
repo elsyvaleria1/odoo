@@ -6,7 +6,6 @@ from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 
 class MixinAccountExternalTax(models.AbstractModel):
-
     _name = "mixin.account.external.tax"
     _description = "Mixin to manage common parts of external tax calculation"
 

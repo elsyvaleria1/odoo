@@ -13,7 +13,6 @@ FAILING = frozenset(
 
 
 class IntegrationGithubCheck(models.Model):
-
     _name = "integration.github.check"
     _description = "GitHub Check"
     _order = "date_updated desc, id desc"

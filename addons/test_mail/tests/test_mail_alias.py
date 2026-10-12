@@ -47,7 +47,6 @@ class TestMailAliasCommon(MailCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAlias(TestMailAliasCommon):
-
     @users("admin")
     def test_alias_domain_allowed_validation(self):
         for value in [",", ",,", ", ,"]:
@@ -681,7 +680,6 @@ class TestMailAlias(TestMailAliasCommon):
 
 @tagged("mail_alias", "multi_company")
 class TestAliasCompany(TestMailAliasCommon):
-
     def test_alias_domain_setup_archived_company(self):
 
         self.company_archived = self.env["res.company"].create(
@@ -942,7 +940,6 @@ class TestAliasCompany(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasBounce(TestMailAliasCommon):
-
     @users("admin")
     def test_bounce_bodies_speak_the_author_language(self):
         self.env["res.lang"]._activate_lang("fr_FR")
@@ -1221,7 +1218,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
 
 @tagged("mail_alias", "multi_company")
 class TestMailAliasDomainLocalParts(TestMailAliasCommon):
-
     @users("admin")
     def test_local_parts_are_never_stored_malformed(self):
         alias_domain = self.env["mail.alias.domain"].create(
@@ -1306,7 +1302,6 @@ class TestMailAliasDomainLocalParts(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "mail_alias_mixin", "multi_company")
 class TestMailAliasMixin(TestMailAliasCommon):
-
     @users("employee")
     @mute_logger("odoo.addons.base.models.ir_model")
     def test_alias_mixin(self):
@@ -1606,7 +1601,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasAddressInput(TestMailAliasCommon):
-
     @users("admin")
     def test_a_full_address_resolves_its_domain(self):
         other = self.env["mail.alias.domain"].create({"name": "support.test.example"})
@@ -1703,7 +1697,6 @@ class TestMailAliasMixinModelOverride(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasDanglingDocument(TestMailAliasCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1934,7 +1927,6 @@ class TestMailAliasDefaultsValidation(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainConfigCache(TestMailAliasCommon):
-
     def _live_config(self):
         domains = self.env["mail.alias.domain"].sudo().search([])
         return (
@@ -2063,7 +2055,6 @@ class TestMailAliasDomainConfigCache(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainName(TestMailAliasCommon):
-
     @users("admin")
     def test_the_domain_name_is_normalised_like_every_other_address_part(self):
         domain = self.env["mail.alias.domain"].create(
@@ -2121,7 +2112,6 @@ class TestMailAliasDomainName(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainReservedAddresses(TestMailAliasCommon):
-
     @users("admin")
     def test_one_domain_cannot_use_one_local_part_for_both_roles(self):
         with self.assertRaises(exceptions.ValidationError):
@@ -2162,7 +2152,6 @@ class TestMailAliasDomainReservedAddresses(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainPersonalServers(TestMailAliasCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2217,7 +2206,6 @@ class TestMailAliasDomainPersonalServers(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainLifecycle(TestMailAliasCommon):
-
     @users("admin")
     def test_the_first_batch_hands_companies_the_sequence_first_domain(self):
         Domain = self.env["mail.alias.domain"]
@@ -2282,7 +2270,6 @@ class TestMailAliasDomainLifecycle(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "multi_company")
 class TestMailAliasDomainFindAliases(TestMailAliasCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2405,7 +2392,6 @@ class TestMailAliasDomainFindAliases(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias")
 class TestMailAliasDomainAllowedParameter(TestMailAliasCommon):
-
     @users("admin")
     def test_entries_are_held_to_the_domain_rule(self):
         Domain = self.env["mail.alias.domain"]
@@ -2425,7 +2411,6 @@ class TestMailAliasDomainAllowedParameter(TestMailAliasCommon):
 
 @tagged("mail_gateway", "mail_alias", "mail_init")
 class TestMailAliasDomainIcpMigration(TestMailAliasCommon):
-
     @users("admin")
     def test_an_unusable_icp_is_skipped_not_raised(self):
         Domain = self.env["mail.alias.domain"]
@@ -2455,7 +2440,6 @@ class TestMailAliasDomainIcpMigration(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasNameAuthority(TestMailAliasCommon):
-
     @users("admin")
     def test_the_constraint_is_the_sanitizer_s_own_fixpoint(self):
         MailAlias = self.env["mail.alias"]
@@ -2512,7 +2496,6 @@ class TestMailAliasNameAuthority(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasModelTarget(TestMailAliasCommon):
-
     def _make(self, model_name, suffix=""):
         return self.env["mail.alias"].create(
             {
@@ -2553,7 +2536,6 @@ class TestMailAliasModelTarget(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasStatusInputs(TestMailAliasCommon):
-
     @users("admin")
     def test_the_owner_pair_repairs_the_fault_and_clears_the_verdict(self):
         model_id = self.env["ir.model"]._get("mail.test.container").id
@@ -2630,7 +2612,6 @@ class TestMailAliasStatusInputs(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasStatusRights(TestMailAliasCommon):
-
     @users("admin")
     def test_marking_an_alias_does_not_need_group_system(self):
         alias = self.env["mail.alias"].create(
@@ -2656,7 +2637,6 @@ class TestMailAliasStatusRights(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasAddressAvailability(TestMailAliasCommon):
-
     def _make(self, name):
         return self.env["mail.alias"].create(
             {
@@ -2761,7 +2741,6 @@ class TestMailAliasAddressAvailability(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasIncomingLocalReservations(TestMailAliasCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2819,7 +2798,6 @@ class TestMailAliasIncomingLocalReservations(TestMailAliasCommon):
 
 @tagged("mail_alias", "multi_company")
 class TestMailAliasBounceCompany(TestMailAliasCommon):
-
     @users("admin")
     def test_the_bounce_names_the_alias_s_company_not_the_gateway_s(self):
         company = self.env["res.company"].create({"name": "Bounce Company"})
@@ -2877,7 +2855,6 @@ class TestMailAliasBounceCompany(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasMixinDomainPrecedence(TestMailAliasCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2958,7 +2935,6 @@ class TestMailAliasMixinDomainPrecedence(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasDefaultsShape(TestMailAliasCommon):
-
     def _make(self, defaults):
         return self.env["mail.alias"].create(
             {
@@ -3000,7 +2976,6 @@ class TestMailAliasDefaultsShape(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestAliasDomainNameRule(TestMailAliasCommon):
-
     @users("admin")
     def test_a_bare_hyphen_is_not_a_domain_name(self):
         MailAlias = self.env["mail.alias"]

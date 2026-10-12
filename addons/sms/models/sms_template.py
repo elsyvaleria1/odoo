@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class SmsTemplate(models.Model):
-
     _name = "sms.template"
     _inherit = ["mixin.mail.render", "mixin.template.reset"]
     _description = "SMS Templates"
@@ -48,7 +47,6 @@ class SmsTemplate(models.Model):
     def _compute_render_model(self) -> None:
         for template in self:
             template.render_model = template.model
-
 
     def copy_data(self, default=None):
         vals_list = super().copy_data(default=default)

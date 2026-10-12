@@ -196,11 +196,8 @@ CREATE INDEX IF NOT EXISTS account_move_invoice_user_id_date_idx ON account_move
             target_changes = [
                 Command.unlink(t.id)
                 for t in plan.target_ids
-                if (
-                    t.date_from < plan.date_from or t.date_to > plan.date_to
-                )
-                or (t.date_to - t.date_from).days
-                not in expected_target_duration
+                if (t.date_from < plan.date_from or t.date_to > plan.date_to)
+                or (t.date_to - t.date_from).days not in expected_target_duration
             ]
 
             while date_from + timedelta - relativedelta(days=1) <= plan.date_to:

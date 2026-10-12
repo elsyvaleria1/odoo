@@ -25,13 +25,11 @@ from odoo.addons.whatsapp.tools.whatsapp_exception import WhatsAppError
 
 
 class MockOutgoingWhatsApp(common.BaseCase):
-
     @contextmanager
     def mockWhatsappGateway(self, exp_json_data=None):
         self._init_wa_mock()
         wa_msg_origin = WhatsappMessage.create
         partner_create_origin = ResPartner.create
-
 
         def _get_all_template(fetch_all=False):
             return template_data
@@ -106,7 +104,6 @@ class MockOutgoingWhatsApp(common.BaseCase):
 
         def _get_phone_number(phone_uid):
             return "+91 12345 67890"
-
 
         def _res_partner_create(model, *args, **kwargs):
             records = partner_create_origin(model, *args, **kwargs)
@@ -239,8 +236,6 @@ class MockOutgoingWhatsApp(common.BaseCase):
 
 
 class MockIncomingWhatsApp(common.HttpCase):
-
-
     def _get_message_signature(self, account, message_data):
         return hmac.new(
             account.app_secret.encode(),
@@ -403,7 +398,6 @@ class MockIncomingWhatsApp(common.HttpCase):
             headers={"Content-Type": "application/json", **(headers or {})},
         )
 
-
     def _find_discuss_channel(self, whatsapp_number):
         return self.env["discuss.channel"].search(
             [("whatsapp_number", "=", whatsapp_number)]
@@ -421,8 +415,6 @@ class MockIncomingWhatsApp(common.HttpCase):
 
 
 class WhatsAppCase(MockOutgoingWhatsApp):
-
-
     def _add_button_to_template(
         self,
         template,
@@ -612,7 +604,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
                 },
             )
 
-
     def _find_sent_wa_wuid(self, msg_uid):
         for wa_sent, wa_sent_msg in zip(
             self._wa_msg_sent, self._wa_msg_sent_vals, strict=True
@@ -769,7 +760,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
             mail_message_values=mail_message_values,
         )
 
-
     def _find_wa_discuss_channel(
         self, whatsapp_number, wa_account=None, channel_domain=None
     ):
@@ -850,7 +840,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         )
         return discuss_channel
 
-
     def assertWATemplate(
         self,
         template,
@@ -924,7 +913,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
 
 
 class WhatsAppCommon(MailCommon, WhatsAppCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

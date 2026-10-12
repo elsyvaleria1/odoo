@@ -253,9 +253,7 @@ class TestAPI(ThreadRecipients):
                     self.assertTrue(isinstance(processed_values["body"], Markup))
 
         content = 'I am "Robert <robert@poilvache.com>"'
-        expected = Markup(
-            '<p>I am "Robert &lt;robert@poilvache.com&gt;"</p>'
-        )
+        expected = Markup('<p>I am "Robert &lt;robert@poilvache.com&gt;"</p>')
         message = ticket_record._message_log(
             body=content,
         )
@@ -401,9 +399,7 @@ class TestAPI(ThreadRecipients):
                 ]
             )
         )
-        dupe_partners = self.env[
-            "res.partner"
-        ].create(
+        dupe_partners = self.env["res.partner"].create(
             [
                 {
                     "company_id": self.company_2.id,
@@ -1491,7 +1487,6 @@ class TestAPI(ThreadRecipients):
 
 @tagged("mail_thread")
 class TestEmptyListHelp(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2125,7 +2120,6 @@ class TestNotification(MailCommon):
 
 @tagged("mail_thread", "mail_nothread")
 class TestNoThread(MailCommon, TestRecipients):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2403,7 +2397,6 @@ class TestNoThread(MailCommon, TestRecipients):
 
 @tagged("mail_thread", "mail_tools")
 class TestBaseFieldRendering(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2553,7 +2546,6 @@ class TestBaseFieldRendering(MailCommon):
 
 @tagged("mail_thread", "mail_tools")
 class TestBaseMailHooks(MailCommon):
-
     def test_mail_get_message_subtypes(self):
         subtypes = self.env["mail.test.simple"]._mail_get_message_subtypes()
         self.assertTrue(subtypes)
@@ -2655,7 +2647,6 @@ class TestBaseMailHooks(MailCommon):
 
 @tagged("mail_thread", "post_install", "-at_install")
 class TestNotificationStateCache(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

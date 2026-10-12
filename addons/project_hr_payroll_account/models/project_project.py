@@ -25,7 +25,6 @@ class ProjectProject(models.Model):
         for project in self:
             project.contracts_count = project_count.get(project.account_id.id, 0)
 
-
     def action_view_project_contracts(self):
         all_contracts = self.env["hr.version"].search(
             [("analytic_distribution", "!=", False)]
@@ -47,7 +46,6 @@ class ProjectProject(models.Model):
             action["views"] = [[False, "form"]]
             action["res_id"] = contracts.id
         return action
-
 
     def _get_stat_buttons(self):
         buttons = super()._get_stat_buttons()

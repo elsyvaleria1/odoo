@@ -5,7 +5,6 @@ from odoo.addons.account.models.res_company import PEPPOL_LIST
 
 
 class PortalAccount(CustomerPortal):
-
     def _prepare_my_account_rendering_values(self, *args, **kwargs):
         rendering_values = super()._prepare_my_account_rendering_values(*args, **kwargs)
         if request.env.company.account_peppol_config_id.peppol_can_send:

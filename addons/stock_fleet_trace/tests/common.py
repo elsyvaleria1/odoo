@@ -2,7 +2,6 @@ from odoo import Command
 
 
 class TripFixtureMixin:
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -128,7 +127,6 @@ class TripFixtureMixin:
 
 
 class OfflineEventsMixin:
-
     def _chain(self, trip, events):
         Event = self.env["stock.trip.offline.event"]
         chain_hash = trip._trip_last_event_hash()

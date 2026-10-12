@@ -315,7 +315,6 @@ class MixinOrderLineMatch(models.AbstractModel):
                             remaining_aml.remove(aml)
                             break
 
-
         if len(residual_move := self.aml_id.move_id) == 1:
             if residual_account_move_lines:
                 _debug.lifecycle(

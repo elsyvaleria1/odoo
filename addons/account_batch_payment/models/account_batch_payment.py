@@ -482,9 +482,7 @@ class AccountBatchPayment(models.Model):
                 )
             )
 
-        errors = (
-            (not self.export_file and self.check_payments_for_errors()) or []
-        )
+        errors = (not self.export_file and self.check_payments_for_errors()) or []
         warnings = self.get_payment_warnings()
         if errors or warnings:
             if len(errors) == 1 and not warnings:

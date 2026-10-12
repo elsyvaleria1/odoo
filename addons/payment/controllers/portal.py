@@ -13,7 +13,6 @@ from odoo.addons.web.controllers.utils import fragments_or_redirect
 
 
 class PaymentPortal(portal.CustomerPortal):
-
     @http.route(
         "/payment/pay",
         type="http",
@@ -57,9 +56,7 @@ class PaymentPortal(portal.CustomerPortal):
                 )
 
         reference = reference or payment_utils.singularize_reference_prefix(prefix="tx")
-        amount = (
-            amount or 0.0
-        )
+        amount = amount or 0.0
         company_id = company_id or partner_sudo.company_id.id or user_sudo.company_id.id
         company = request.env["res.company"].sudo().browse(company_id)
         currency_id = currency_id or company.currency_id.id
@@ -224,9 +221,7 @@ class PaymentPortal(portal.CustomerPortal):
     def payment_transaction(
         self, amount, currency_id, partner_id, access_token, **kwargs
     ):
-        amount = amount and float(
-            amount
-        )
+        amount = amount and float(amount)
         if not payment_utils.is_access_token_valid(
             access_token, partner_id, amount, currency_id
         ):
@@ -238,9 +233,7 @@ class PaymentPortal(portal.CustomerPortal):
         tx_sudo = self._create_transaction(
             amount=amount, currency_id=currency_id, partner_id=partner_id, **kwargs
         )
-        self._update_landing_route(
-            tx_sudo, access_token
-        )
+        self._update_landing_route(tx_sudo, access_token)
         return tx_sudo._prepare_processing_values()
 
     def _create_transaction(
@@ -294,15 +287,11 @@ class PaymentPortal(portal.CustomerPortal):
             **(custom_create_values or {}),
             **kwargs,
         )
-        if (
-            is_validation
-        ):
+        if is_validation:
             amount = provider_sudo._get_validation_amount()
             payment_method = request.env["payment.method"].browse(payment_method_id)
             currency_id = (
-                provider_sudo.with_context(
-                    validation_pm=payment_method
-                )
+                provider_sudo.with_context(validation_pm=payment_method)
                 ._get_validation_currency()
                 .id
             )

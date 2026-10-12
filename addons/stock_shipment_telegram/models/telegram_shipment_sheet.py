@@ -21,7 +21,6 @@ class SheetRefused(Exception):
 
 
 class TelegramShipmentSheet(models.Model):
-
     _name = "telegram.shipment.sheet"
     _description = "Telegram Shipping Order"
     _order = "id desc"

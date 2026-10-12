@@ -659,9 +659,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 order_sudo = request.env["access.link"]._open_record(
                     "sale.order", sale_order_id, access_token
                 )
-            except (
-                AccessError
-            ):
+            except AccessError:
                 if not payment_utils.is_access_token_valid(
                     access_token,
                     kwargs.get("partner_id"),
@@ -693,9 +691,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 invoice_sudo = request.env["access.link"]._open_record(
                     "account.move", invoice_id, access_token
                 )
-            except (
-                AccessError
-            ):
+            except AccessError:
                 if not payment_utils.is_access_token_valid(
                     access_token,
                     kwargs.get("partner_id"),

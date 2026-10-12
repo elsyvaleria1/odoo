@@ -8,7 +8,6 @@ from odoo.addons.website_event_sale.tests.common import TestWebsiteEventSaleComm
 
 @tagged("post_install", "-at_install")
 class TestWebsiteEventSalePayment(TestWebsiteEventSaleCommon):
-
     def _make_registrations(self, order):
         editor = Form(
             self.env["wizard.sale.order.update.attendee"].with_context(

@@ -1,4 +1,3 @@
-
 import odoo.addons.account_edi_ubl_cii.tools.ubl_21_common as cac
 
 InvoiceLine = {

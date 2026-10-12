@@ -3,7 +3,6 @@ from odoo.tools.date_utils import get_timedelta, time_unit_selection
 
 
 class MixinDataCleaningNotification(models.AbstractModel):
-
     _name = "mixin.data.cleaning.notification"
     _description = "Data Cleaning Notification"
 
@@ -69,7 +68,6 @@ class MixinDataCleaningNotification(models.AbstractModel):
             subject=self._get_notification_subject(),
         )
         return True
-
 
     def _get_count_pending(self):
         raise NotImplementedError

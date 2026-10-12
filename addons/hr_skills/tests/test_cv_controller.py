@@ -38,7 +38,6 @@ class TestEmployeeIdsPattern(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPrintedCvAccess(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

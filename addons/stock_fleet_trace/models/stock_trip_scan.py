@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class StockTripScan(models.Model):
-
     _name = "stock.trip.scan"
     _description = "Trip Scan"
     _order = "date desc, id desc"

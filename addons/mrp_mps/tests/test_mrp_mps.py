@@ -1395,12 +1395,8 @@ class TestMpsMps(common.TransactionCase):
         self.assertEqual(leg_forecast_9["indirect_demand_qty"], 8)
         self.assertEqual(screw_forecast_9["indirect_demand_qty"], 40)
 
-        self.mps_table.set_forecast_qty(
-            8, 0, period_scale="week"
-        )
-        self.mps_table.set_forecast_qty(
-            9, 3, period_scale="week"
-        )
+        self.mps_table.set_forecast_qty(8, 0, period_scale="week")
+        self.mps_table.set_forecast_qty(9, 3, period_scale="week")
         mps_table_leg, mps_screw = (
             self.mps_table_leg | self.mps_screw
         ).get_production_schedule_view_state(period_scale="week")

@@ -17,7 +17,6 @@ UNCARRIED_STATE_SESSION_KEY = "social_oauth_uncarried_state"
 
 
 class SocialMedia(models.Model):
-
     _name = "social.media"
     _description = "Social Media"
     _inherit = ["mixin.mail.thread"]
@@ -70,7 +69,6 @@ class SocialMedia(models.Model):
     max_post_length = fields.Integer(
         help="Set a maximum number of characters can be posted in post. 0 for no limit."
     )
-
 
     def action_add_account(self, company_id=None):
         if company_id is None:

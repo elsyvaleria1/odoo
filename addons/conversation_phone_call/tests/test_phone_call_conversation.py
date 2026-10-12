@@ -320,7 +320,6 @@ class TestCallConversationIsQuiet(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCallFiledByWhoMayNotOpenConversations(TransactionCase):
-
     def setUp(self):
         super().setUp()
         engine = register_reader(_Hears())

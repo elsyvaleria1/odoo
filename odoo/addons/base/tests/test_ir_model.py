@@ -3267,7 +3267,6 @@ class TestRefusedFieldRename(BaseCase):
 
 @tagged("-at_install", "post_install")
 class TestDropRetiredModel(TransactionCase):
-
     def test_a_retired_model_whose_table_is_gone_drops_quietly(self):
         retired = self.env["ir.model"].new({"model": "x.retired.gone"})
         with self.assertNoLogs("odoo.addons.base.models.ir_model", "WARNING"):

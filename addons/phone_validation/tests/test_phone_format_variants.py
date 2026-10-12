@@ -8,7 +8,6 @@ from odoo.addons.phone_validation.tools.phone_validation import (
 
 @tagged("post_install", "-at_install")
 class TestPhoneFormatVariants(TransactionCase):
-
     BE_LOCAL = "0485112233"
     FR_NUMBER = "+33485112233"
 

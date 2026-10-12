@@ -8,7 +8,6 @@ from .common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestLineWriteGuards(TestTradeOrderCase):
-
     def test_display_type_cannot_change_on_an_existing_line(self):
         line = self._make_line(product_qty=1.0)
 
@@ -58,7 +57,6 @@ class TestLineWriteGuards(TestTradeOrderCase):
 
         line._check_write_display_type({"display_type": "line_note"})
 
-
     def test_protected_field_refused_on_a_locked_order(self):
         order = self._make_order()
         line = self._make_line(order=order, product_qty=1.0)
@@ -101,7 +99,6 @@ class TestLineWriteGuards(TestTradeOrderCase):
             line._check_write_locked_order(
                 {"name": "Down payment", "price_unit": 42.0},
             )
-
 
     def test_identifier_prefers_the_product(self):
         line = self._make_line(product_qty=1.0)

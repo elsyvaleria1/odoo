@@ -5,7 +5,6 @@ from ..tools.telegram_client import TelegramClient
 
 
 class TelegramController(http.Controller):
-
     @http.route(
         "/telegram/webhook/<string:token>",
         type="http",

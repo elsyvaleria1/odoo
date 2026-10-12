@@ -6,7 +6,6 @@ from odoo.addons.web_studio.tests.test_ui import setup_view_editor_data
 
 
 class TestStudioApprovalsCommon(TransactionCase):
-
     MODEL = "test.studio.model_action"
 
     @classmethod

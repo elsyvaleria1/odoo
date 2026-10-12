@@ -3,7 +3,6 @@ from odoo.fields import Domain
 
 
 class MailTestAccess(models.Model):
-
     _description = "Mail Access Test"
     _name = "mail.test.access"
     _inherit = ["mixin.mail.thread.blacklist"]
@@ -35,7 +34,6 @@ class MailTestAccess(models.Model):
 
 
 class MailTestAccessCusto(models.Model):
-
     _description = "Mail Access Test with Custo"
     _name = "mail.test.access.custo"
     _inherit = ["mixin.mail.thread.blacklist", "mixin.mail.activity"]
@@ -67,7 +65,6 @@ class MailTestAccessCusto(models.Model):
 
 
 class MailTestAccessPublic(models.Model):
-
     _description = "Access Test Public"
     _name = "mail.test.access.public"
     _inherit = ["mixin.mail.thread"]

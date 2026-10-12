@@ -824,9 +824,7 @@ class TestAnalyticReport(TestAccountReportsCommon):
         )
         out_invoice_2.action_post()
 
-        horizontal_group = self.env[
-            "account.report.horizontal.group"
-        ].create(
+        horizontal_group = self.env["account.report.horizontal.group"].create(
             {
                 "name": "Horizontal Group Journal Entries",
                 "report_ids": [self.report.id],
@@ -1213,9 +1211,7 @@ class TestAnalyticReport(TestAccountReportsCommon):
             + other_invoice.invoice_line_ids.analytic_line_ids
         )
 
-        action_dict = _get_action_dict(
-            options, 0
-        )
+        action_dict = _get_action_dict(options, 0)
         self.assertEqual(action_dict["context"].get("group_by"), "move_line_id")
         self.assertEqual(
             self.env["account.analytic.line"]

@@ -66,7 +66,6 @@ class ShopeeAccount(models.Model):
     )
     shop_count = fields.Count(count_of="shop_ids")
 
-
     @api.onchange("api_endpoint")
     def _onchange_api_endpoint(self) -> dict | None:
         if self.shop_ids:
@@ -79,7 +78,6 @@ class ShopeeAccount(models.Model):
                 }
             }
         return None
-
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -97,7 +95,6 @@ class ShopeeAccount(models.Model):
             if vals["api_endpoint"] != self.api_endpoint:
                 self.shop_ids._reset_tokens()
         return super().write(vals)
-
 
     def action_view_shops(self) -> dict:
         self.check_singleton()

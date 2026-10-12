@@ -34,7 +34,6 @@ deployment whose preload genuinely needs longer raises `ODOO_RELOAD_TIMEOUT`.
 
 
 class GenerationHandoff:
-
     __slots__ = (
         "candidate",
         "master",

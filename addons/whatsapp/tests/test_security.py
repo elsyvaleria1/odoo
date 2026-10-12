@@ -354,9 +354,7 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
         field_paths_allowed = ["phone_ids", "phone_sanitized"]
         field_paths_allowed_ko = ["x_studio_phone_ids"]
         field_paths_disallowed = ["name"]
-        field_paths_disallowed_ko = [
-            "my_custom_phone_field"
-        ]
+        field_paths_disallowed_ko = ["my_custom_phone_field"]
         for field_paths, invalid, admin_only in [
             (field_paths_allowed, False, False),
             (field_paths_allowed_ko, True, False),

@@ -9,7 +9,6 @@ _TYPING_SECONDS = 4
 
 
 class TelegramMirror(models.Model):
-
     _name = "telegram.mirror"
     _description = "Telegram Mirror"
     _order = "id desc"
@@ -111,7 +110,6 @@ class TelegramMirror(models.Model):
             reason="a mirrored group speaks on its thread",
         )
         return owner.env[self.res_model].browse(self.res_id).exists()
-
 
     def _send(self, message):
         self.check_singleton()

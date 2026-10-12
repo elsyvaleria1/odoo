@@ -32,9 +32,7 @@ class TestMassMailing(TestMailFullCommon):
         recipient_dup_1.email_from = f'"Format Me" <{recipient_dup_1.email_normalized}>'
         recipient_dup_2 = recipients[9].copy()
         recipient_dup_2.email_from += f'; "TestDupe" <{recipients[8].email_normalized}>'
-        recipient_dup_3 = recipients[
-            9
-        ].copy()
+        recipient_dup_3 = recipients[9].copy()
         recipient_dup_3.email_from += '; "TestMulti" <test.multi@test.example.com>'
         recipient_dup_4 = recipient_dup_2.copy()
 
@@ -104,9 +102,7 @@ class TestMassMailing(TestMailFullCommon):
                 elif recipient == recipient_falsy_1:
                     recipient_info["trace_status"] = "cancel"
                     recipient_info["failure_type"] = "mail_email_invalid"
-                    recipient_info["email"] = (
-                        recipient.email_from
-                    )
+                    recipient_info["email"] = recipient.email_from
                 else:
                     email = self._find_sent_email(
                         self.user_marketing.email_formatted,

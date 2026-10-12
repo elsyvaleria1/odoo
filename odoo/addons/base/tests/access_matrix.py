@@ -162,7 +162,6 @@ def describe(explanation: dict) -> str:
 
 
 class AccessMatrixCase(TransactionCase):
-
     personas: typing.ClassVar[dict[str, Persona]] = {}
     cells: typing.ClassVar[tuple[Cell, ...]] = ()
 

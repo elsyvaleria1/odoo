@@ -315,7 +315,6 @@ class TestConnectionGate(TransactionCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestClientPassesTheConnectionGate(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.service = self.env["integration.service"].create(

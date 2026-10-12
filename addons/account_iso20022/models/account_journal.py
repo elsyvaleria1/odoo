@@ -121,7 +121,6 @@ class AccountJournal(models.Model):
 
         return res
 
-
     def create_iso20022_credit_transfer(
         self, payments, payment_method_code, batch_booking=False
     ):
@@ -200,9 +199,7 @@ class AccountJournal(models.Model):
             PmtTpInf = self._prepare_payment_type_element(
                 group_payment_method_code, priority
             )
-            if (
-                len(PmtTpInf) != 0
-            ):
+            if len(PmtTpInf) != 0:
                 PmtInf.append(PmtTpInf)
 
             ReqdExctnDt = self._prepare_execution_date_element(
@@ -576,7 +573,6 @@ class AccountJournal(models.Model):
 
         return ret
 
-
     def get_document_namespace(self, payment_method_code):
         namespace = "pain.001.001.03"
         if self.sepa_pain_version == "pain.001.001.09":
@@ -689,9 +685,7 @@ class AccountJournal(models.Model):
         ):
             return False
         iid = get_iban_part(iban, "bank")
-        return bool(
-            re.match(r"\d+", iid) and 30000 <= int(iid) <= 31999
-        )
+        return bool(re.match(r"\d+", iid) and 30000 <= int(iid) <= 31999)
 
     def _prepare_structured_remittance_element(
         self,

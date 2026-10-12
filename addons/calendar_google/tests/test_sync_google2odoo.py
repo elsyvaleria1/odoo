@@ -272,9 +272,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     "start": date(2020, 1, 6),
                     "stop": date(2020, 1, 6),
                     "user_id": self.env.user.id,
-                    "partner_ids": [
-                        (6, 0, self.env.user.partner_id.ids)
-                    ],
+                    "partner_ids": [(6, 0, self.env.user.partner_id.ids)],
                 }
             ),
             google_id,
@@ -376,9 +374,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     "stop": date(2020, 1, 6),
                     "allday": True,
                     "user_id": False,
-                    "partner_ids": [
-                        (6, 0, self.env.user.partner_id.ids)
-                    ],
+                    "partner_ids": [(6, 0, self.env.user.partner_id.ids)],
                 }
             ),
             google_id,
@@ -421,9 +417,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     "start": date(2020, 1, 6),
                     "stop": date(2020, 1, 6),
                     "user_id": False,
-                    "partner_ids": [
-                        (6, 0, user.partner_id.ids)
-                    ],
+                    "partner_ids": [(6, 0, user.partner_id.ids)],
                 }
             ),
             google_id,
@@ -1682,9 +1676,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     "start": date(2020, 1, 6),
                     "stop": date(2020, 1, 6),
                     "user_id": False,
-                    "partner_ids": [
-                        (6, 0, user.partner_id.ids)
-                    ],
+                    "partner_ids": [(6, 0, user.partner_id.ids)],
                 }
             ),
             google_id,
@@ -2610,9 +2602,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         )
         self.assertEqual(len(events), 1)
 
-
-
-
         self.apply_google("calendar.event", specific_event)
         events = self.env["calendar.event"].search(
             [
@@ -2753,9 +2742,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 ),
             ]
         )
-        self.assertEqual(
-            len(events), 2
-        )
+        self.assertEqual(len(events), 2)
 
         self.assertGoogleAPINotCalled()
 

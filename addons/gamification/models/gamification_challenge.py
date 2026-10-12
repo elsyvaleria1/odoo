@@ -21,7 +21,6 @@ MAX_VISIBILITY_RANKING = 3
 
 
 class GamificationChallenge(models.Model):
-
     _name = "gamification.challenge"
     _description = "Gamification Challenge"
     _inherit = ["mixin.mail.thread"]
@@ -422,7 +421,6 @@ class GamificationChallenge(models.Model):
         action["domain"] = [("id", "in", self.user_ids.ids)]
         return action
 
-
     def _generate_goals_from_challenge(self) -> bool:
         Goals = self.env["gamification.goal"]
         for challenge in self:
@@ -507,7 +505,6 @@ class GamificationChallenge(models.Model):
                 self.env["ir.cron"]._commit_progress()
 
         return True
-
 
     def _get_serialized_challenge_lines(
         self, user=(), restrict_goals=(), restrict_top: int = 0
@@ -627,7 +624,6 @@ class GamificationChallenge(models.Model):
 
             res_lines.append(line_data)
         return res_lines
-
 
     def report_progress(self, users=(), subset_goals=False) -> bool:
         self.check_singleton()
@@ -931,7 +927,6 @@ class GamificationChallenge(models.Model):
             .create({"user_id": user.id, "badge_id": badge.id, "challenge_id": self.id})
             ._send_badge()
         )
-
 
     def _get_adaptive_targets(self):
         self.check_singleton()

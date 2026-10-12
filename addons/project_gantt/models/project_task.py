@@ -1142,7 +1142,6 @@ class ProjectTask(models.Model):
         else:
             return ""
 
-
     @api.model
     def _gantt_unavailability(self, field_name, res_ids, start, stop, scale):
         resources = self.env["resource.resource"]

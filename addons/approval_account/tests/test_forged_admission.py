@@ -8,7 +8,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestForgedAdmission(AccountApprovalCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

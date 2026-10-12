@@ -156,7 +156,6 @@ class TestDocumentSource(BaseCase):
 
 @tagged("post_install", "-at_install")
 class TestReadingPagesCostsMore(BaseCase):
-
     def setUp(self):
         super().setUp()
         self.pages_read = []

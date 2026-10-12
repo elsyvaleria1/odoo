@@ -1713,7 +1713,6 @@ class TestLeadTeamIsAlive(TestCrmCommon):
 
 @tagged("post_install", "-at_install")
 class TestLeadEmptyListHelp(TestCrmCommon):
-
     @users("user_sales_salesman")
     def test_empty_list_help_names_the_team_alias(self):
         help_html = self.env["crm.lead"].get_empty_list_help("")

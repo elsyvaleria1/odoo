@@ -1942,7 +1942,6 @@ class TestDocumentsCopy(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsCreateBatching(TransactionCaseDocuments):
-
     def _create_with_content(self, count, tag):
         return self.env["document.document"].create(
             [
@@ -2012,7 +2011,6 @@ class TestDocumentsCreateBatching(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsResModelConstraint(TransactionCaseDocuments):
-
     def _link_to(self, document, target):
         document.write({"res_model": "document.document", "res_id": target.id})
 

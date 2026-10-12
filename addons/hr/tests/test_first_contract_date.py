@@ -6,7 +6,6 @@ from odoo.addons.hr.tests.common import TestHrCommon
 
 @tagged("post_install", "-at_install")
 class TestFirstContractDate(TestHrCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -103,7 +103,6 @@ _COMBINATION_ERRORS = (ValidationError, ValueError, etree.ParseError, TypeError)
 
 
 class _ValidationScope:
-
     __slots__ = ("full", "partial")
 
     def __init__(self) -> None:

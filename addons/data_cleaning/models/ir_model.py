@@ -34,7 +34,6 @@ class IrModel(models.Model):
         for model in self:
             model.is_merge_enabled = bool(model.ref_merge_ir_act_server_id)
 
-
     def action_merge(self):
         if self.is_merge_enabled:
             return self.action_merge_contextual_disable()
@@ -46,9 +45,7 @@ class IrModel(models.Model):
             "binding_view_types": "list",
             "state": "code",
             "code": "action = env['data_merge.record'].action_deduplicates(records)",
-            "group_ids": [
-                Command.link(self.env.ref("base.group_system").id)
-            ],
+            "group_ids": [Command.link(self.env.ref("base.group_system").id)],
         }
 
         for model in self:

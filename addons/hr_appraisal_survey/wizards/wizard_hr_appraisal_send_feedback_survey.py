@@ -74,9 +74,7 @@ class WizardHrAppraisalSendFeedbackSurvey(models.TransientModel):
     )
     user_body = fields.Html(string="User Contents")
 
-    @api.depends(
-        "survey_template_id"
-    )
+    @api.depends("survey_template_id")
     def _compute_render_model(self) -> None:
         self.render_model = "survey.user_input"
 

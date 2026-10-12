@@ -9,7 +9,6 @@ from odoo.addons.asset_ledger.tests.common import (
 
 
 class TestSecurityHR(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -148,7 +147,6 @@ class TestSecurityHR(TransactionCase):
 
 
 class TestOperatorSubtypeVisibility(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

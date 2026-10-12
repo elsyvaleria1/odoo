@@ -72,9 +72,7 @@ def check_version_upgrades(local_branch, db_branch) -> None:
             local_branch,
             db_branch,
         )
-        version_db = (
-            db_branch[-4:] if db_branch != "master" else db_branch
-        )
+        version_db = db_branch[-4:] if db_branch != "master" else db_branch
         version_local = local_branch[-4:] if local_branch != "master" else local_branch
         local_python_version = tuple(
             int(x) for x in platform.python_version_tuple()[:2]
@@ -127,9 +125,7 @@ def check_git_branch(server_url=None) -> None:
         )
 
         if db_branch != local_branch:
-            unlink_file(
-                "odoo/.git/shallow.lock"
-            )
+            unlink_file("odoo/.git/shallow.lock")
             check_version_upgrades(local_branch, db_branch)
             checkout(db_branch)
             update_requirements()

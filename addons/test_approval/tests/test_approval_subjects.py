@@ -6,7 +6,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalSubjects(ApprovalCommon):
-
     def _category(self, approvers=None, suffix=""):
         return self._make_category(
             name=f"Subjects {self.id()} {suffix}",

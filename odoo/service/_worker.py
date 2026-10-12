@@ -698,12 +698,10 @@ class WorkerCron(Worker):
 
 
 class WorkerJob(WorkerCron):
-
     kind: ListenerKind = JOB_LISTENER
 
 
 class WorkerStream(WorkerCron):
-
     kind: ListenerKind = STREAM_LISTENER
 
     @override

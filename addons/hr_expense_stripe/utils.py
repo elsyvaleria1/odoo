@@ -383,7 +383,6 @@ STRIPE_REQUEST_REFUSED_REASONS = {
 
 
 class StripeIssuingDatabaseError:
-
     DB_WRONG_SIGNATURE = 462
     DB_ERROR = 550
     DB_WRONG_WEBHOOK = 551

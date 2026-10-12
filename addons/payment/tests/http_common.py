@@ -11,8 +11,6 @@ from odoo.addons.payment.tests.common import PaymentCommon
 
 
 class PaymentHttpCommon(PaymentCommon, HttpCase):
-
-
     def _build_url(self, route):
         return urls.urljoin(self.base_url(), route)
 
@@ -97,7 +95,6 @@ class PaymentHttpCommon(PaymentCommon, HttpCase):
 
         return values
 
-
     def _prepare_pay_values(
         self, amount=0.0, currency=None, reference="", partner=None
     ):
@@ -127,7 +124,6 @@ class PaymentHttpCommon(PaymentCommon, HttpCase):
 
         return self._get_payment_context(response)
 
-
     def _portal_payment_method(self):
         uri = "/my/payment_method"
         url = self._build_url(uri)
@@ -139,7 +135,6 @@ class PaymentHttpCommon(PaymentCommon, HttpCase):
         self.assertEqual(response.status_code, 200)
 
         return self._get_payment_context(response)
-
 
     def _prepare_transaction_values(self, payment_method_id, token_id, flow):
         return {

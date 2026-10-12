@@ -107,7 +107,6 @@ class PaymentMethod(models.Model):
         "to customers.",
     )
 
-
     @api.depends("primary_payment_method_id")
     def _compute_is_primary(self) -> None:
         for payment_method in self:
@@ -117,7 +116,6 @@ class PaymentMethod(models.Model):
         if operator not in ("in", "not in"):
             return NotImplemented
         return [("primary_payment_method_id", operator, [False])]
-
 
     @api.onchange("active", "provider_ids", "support_tokenization")
     def _onchange_warn_before_disabling_tokens(self) -> dict | None:
@@ -178,7 +176,6 @@ class PaymentMethod(models.Model):
             }
         return None
 
-
     @api.constrains("active", "support_manual_capture")
     def _check_manual_capture_supported_by_providers(self) -> None:
         incompatible_pms = self.filtered(
@@ -197,7 +194,6 @@ class PaymentMethod(models.Model):
                     ", ".join(incompatible_pms.mapped("name")),
                 )
             )
-
 
     def write(self, vals):
         archiving = vals.get("active") is False
@@ -225,9 +221,8 @@ class PaymentMethod(models.Model):
         if vals.get("active"):
             for pm in self:
                 primary_pm = pm if pm.is_primary else pm.primary_payment_method_id
-                if (
-                    not primary_pm.active
-                    and all(p.state == "disabled" for p in primary_pm.provider_ids)
+                if not primary_pm.active and all(
+                    p.state == "disabled" for p in primary_pm.provider_ids
                 ):
                     raise UserError(
                         self.env._(
@@ -250,7 +245,6 @@ class PaymentMethod(models.Model):
             raise UserError(
                 self.env._("You cannot delete a payment method linked to a provider.")
             )
-
 
     def _get_compatible_payment_methods(
         self,
@@ -277,9 +271,7 @@ class PaymentMethod(models.Model):
         )
 
         partner = self.env["res.partner"].browse(partner_id)
-        if (
-            partner.country_id
-        ):
+        if partner.country_id:
             unfiltered_pms = payment_methods
             payment_methods = payment_methods.filtered(
                 lambda pm: (

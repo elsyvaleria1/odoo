@@ -73,7 +73,6 @@ def _copy_option_outputs(outputs) -> dict:
 
 
 class _ParsedFileCache:
-
     def __init__(self, entries, max_cells) -> None:
         self._entries = entries
         self._max_cells = max_cells
@@ -114,7 +113,6 @@ CONCAT_SEPARATOR_IMPORT = {
 
 
 class _StoredCurrencySymbols:
-
     def __init__(self, env) -> None:
         self.env = env
 
@@ -125,7 +123,6 @@ class _StoredCurrencySymbols:
 
 
 class ImportValidationError(Exception):
-
     def __init__(self, message, **kwargs) -> None:
         super().__init__(message)
         self.type = kwargs.get("error_type", "error")
@@ -239,7 +236,6 @@ def read_xlsx_rows(data, options):
 
 
 class _SpreadsheetReader(BaseReader):
-
     module = "base_import"
 
     yields = (ROWS,)
@@ -281,7 +277,6 @@ class Base(models.AbstractModel):
 
 
 class Base_ImportMapping(models.Model):
-
     _name = "base_import.mapping"
     _description = "Base Import Mapping"
 
@@ -307,7 +302,6 @@ class ResUsers(models.Model):
 
 
 class Base_ImportImport(models.TransientModel):
-
     _name = "base_import.import"
     _description = "Base Import"
 
@@ -1783,11 +1777,7 @@ DATE_FORMATS = []
 for ps in _PATTERN_BASELINE:
     patterns = {ps}
     for s, t in [("%Y", "%y")]:
-        patterns.update(
-            [
-                tuple(t if it == s else it for it in f) for f in patterns
-            ]
-        )
+        patterns.update([tuple(t if it == s else it for it in f) for f in patterns])
     DATE_FORMATS.extend(patterns)
 DATE_PATTERNS = [sep.join(fmt) for sep in _SEPARATORS for fmt in DATE_FORMATS]
 TIME_PATTERNS = [

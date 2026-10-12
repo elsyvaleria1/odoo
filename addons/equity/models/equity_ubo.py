@@ -24,9 +24,7 @@ CONTROL_METHODS = [
     ),
 ]
 
-ACTIVATE_PERCENTAGES = [
-    "co_1"
-]
+ACTIVATE_PERCENTAGES = ["co_1"]
 ACTIVATE_ROLE = [
     "co_3",
     "ngo_2",

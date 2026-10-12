@@ -1792,7 +1792,6 @@ class test_unique(ImporterCase):
 
 
 class test_inherits(ImporterCase):
-
     model_name = "export.inherits.child"
 
     def test_create_no_parent(self):
@@ -1981,7 +1980,6 @@ class test_inherits(ImporterCase):
 
 class CheckSavepoint(ImporterCase):
     model_name = "export.unique"
-
 
     @mute_logger("odoo.db")
     def test_clean_batch_import_uses_constant_savepoints(self):

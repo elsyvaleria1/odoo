@@ -7,7 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class DefaultEventMixin:
-
     def _create_default_event(self, **vals):
         vals = {
             "name": "Test Event",

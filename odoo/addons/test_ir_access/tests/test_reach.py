@@ -10,7 +10,6 @@ MODEL = "test_ir_access.reached"
 
 
 class TestReach(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

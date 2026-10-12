@@ -429,7 +429,6 @@ class TestFlexibleWeekKeyIsDeterministic(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestAFlexibleScheduleIsNeverSilentlyEmpty(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

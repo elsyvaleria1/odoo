@@ -85,7 +85,6 @@ class TestServerActionsValidation(TestServerActionsBase):
 
 
 class TestOnUnlinkWarnsForActionsNeedingTheirRecord(TestServerActionsBase):
-
     def _configured(self, state, model):
         values = {"name": f"Act {state}", "model_id": model.id, "state": state}
         if state in ("object_create", "object_copy"):
@@ -175,7 +174,6 @@ class TestOnUnlinkWarnsForActionsNeedingTheirRecord(TestServerActionsBase):
 
 @tagged("post_install", "-at_install")
 class TestAutomationBatchesWhatItCan(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -255,7 +253,6 @@ class TestAutomationBatchesWhatItCan(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestAvailableModelsNeverWiden(TransactionCase):
-
     def test_no_state_offers_a_model_base_would_not(self):
         Action = self.env["ir.actions.server"]
         allowed = {
@@ -275,7 +272,6 @@ class TestAvailableModelsNeverWiden(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestMultiActionTakesTheBatchWhenItsChildrenCan(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -324,7 +320,6 @@ class TestMultiActionTakesTheBatchWhenItsChildrenCan(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestConfigurationIsSeededNotImposed(TransactionCase):
-
     def test_no_compute_reimposes_its_default_over_a_chosen_value(self):
         Action = self.env["ir.actions.server"]
         model = self.env["ir.model"]._get("automation.lead.thread.test")

@@ -118,7 +118,6 @@ class SaleOrderLog(models.Model):
         for log in self:
             log.display_name = self.env._("Sale order log: %s", log.id)
 
-
     @api.model
     def _create_log(self, order, initial_values):
         old_state = (

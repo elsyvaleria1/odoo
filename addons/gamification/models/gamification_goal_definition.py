@@ -8,7 +8,6 @@ DOMAIN_TEMPLATE = "[('store', '=', True), '|', ('model_id', '=', model_id), ('mo
 
 
 class GamificationGoalDefinition(models.Model):
-
     _name = "gamification.goal.definition"
     _description = "Gamification Goal Definition"
 

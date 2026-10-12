@@ -8,7 +8,6 @@ from odoo.tools import frozendict
 
 
 class GamificationKudosCategory(models.Model):
-
     _name = "gamification.kudos.category"
     _description = "Kudos Category"
     _order = "sequence, name"
@@ -51,7 +50,6 @@ KUDOS_VALUE_FIELDS = frozenset(
 
 
 class GamificationKudos(models.Model):
-
     _name = "gamification.kudos"
     _description = "Peer Recognition"
     _inherit = ["mixin.mail.thread"]

@@ -5,7 +5,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestStepAdvisory(ApprovalCommon):
-
     def _category(self, **vals):
         return self._make_category(
             name=f"Advisory {self.id()}", approvers=[], company_id=False, **vals

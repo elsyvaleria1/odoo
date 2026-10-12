@@ -124,7 +124,11 @@ class TestStockQuant(TestStockCommon):
         rows = Quant._read_group(
             [("id", "in", quants.ids)],
             ["product_id"],
-            ["available_quantity:avg", "inventory_quantity_auto_apply:avg", "quantity:sum"],
+            [
+                "available_quantity:avg",
+                "inventory_quantity_auto_apply:avg",
+                "quantity:sum",
+            ],
         )
 
         self.assertEqual(rows, [(self.productA, 5.0, 7.5, 15.0)])

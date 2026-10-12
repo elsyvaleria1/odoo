@@ -7,7 +7,6 @@ _debug = DebugLog(__name__)
 class ResUsers(models.Model):
     _inherit = "res.users"
 
-
     def _get_project_task_resource(self):
         _debug.pipeline(
             "task_resource_from_user",

@@ -124,7 +124,6 @@ class WhatsappMessage(models.Model):
             )
             message.mobile_number_formatted = formatted or ""
 
-
     @api.model_create_multi
     def create(self, vals_list):
         messages = super().create(vals_list)
@@ -188,7 +187,6 @@ class WhatsappMessage(models.Model):
     def _get_opt_out_message(self) -> list:
         return ["stop", "unsubscribe", "stop promotions"]
 
-
     def button_resend(self) -> None:
         if self.filtered(lambda rec: rec.state != "error"):
             raise UserError(
@@ -200,7 +198,6 @@ class WhatsappMessage(models.Model):
         if self.filtered(lambda rec: rec.state != "outgoing"):
             raise UserError(self.env._("You can not cancel message which is in queue."))
         self.state = "cancel"
-
 
     def _resend_failed(self) -> None:
         retryable_messages = self.filtered(
@@ -516,7 +513,6 @@ class WhatsappMessage(models.Model):
             vals[whatsapp_media_type]["filename"] = attachment.name
 
         return vals
-
 
     def _process_statuses(self, value):
         mapping = {"failed": "error", "cancelled": "cancel"}

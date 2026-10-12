@@ -174,9 +174,7 @@ class ResGroups(models.Model):
                 group.lock_timeout_inactivity_mfa = False
             else:
                 group.lock_timeout_inactivity = 15
-                group.lock_timeout_inactivity_mfa = (
-                    False
-                )
+                group.lock_timeout_inactivity_mfa = False
 
     @api.onchange(
         "lock_timeout_inactivity_delay_unit", "lock_timeout_inactivity_delay_in_unit"

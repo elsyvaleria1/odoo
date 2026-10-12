@@ -227,7 +227,6 @@ class TestTierScale(TransactionCase):
 
 @tagged("post_install", "-at_install", "partner_scoring")
 class TestAScaleClassifiesItsPartners(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

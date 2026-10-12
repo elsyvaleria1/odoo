@@ -3,7 +3,6 @@ from odoo.tools import frozendict
 
 
 class AccountAssetGroup(models.Model):
-
     _name = "account.asset.group"
     _description = "Asset Group"
     _order = "name"

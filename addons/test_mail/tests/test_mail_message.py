@@ -14,7 +14,6 @@ from odoo.addons.mail.tools.discuss import Store
 
 @tagged("mail_message", "mail_controller", "post_install", "-at_install")
 class TestMessageHelpersRobustness(MailCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -291,12 +290,8 @@ class TestMessageValues(MailCommon):
         note_subtype.sudo().write({"description": ""})
         self.assertEqual(message.sudo()._filtered_empty(), message)
         record._message_update_content(message.sudo(), body="", attachment_ids=[])
-        self.assertEqual(
-            message.notified_partner_ids, self.partner_admin
-        )
-        self.assertEqual(
-            message.starred_partner_ids, self.partner_admin
-        )
+        self.assertEqual(message.notified_partner_ids, self.partner_admin)
+        self.assertEqual(message.starred_partner_ids, self.partner_admin)
 
         record.write({"user_id": self.user_admin.id})
         self.flush_tracking()

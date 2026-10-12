@@ -203,9 +203,7 @@ class HrVersion(models.Model):
             )
         for attendance in attendances:
             resource = attendance.employee_id.resource_id
-            tz = timezone(
-                attendance.employee_id.tz or resource.tz
-            )
+            tz = timezone(attendance.employee_id.tz or resource.tz)
             check_in_tz = attendance.check_in.astimezone(tz)
             check_out_tz = attendance.check_out.astimezone(tz)
             if attendance.overtime_status == "refused":

@@ -399,12 +399,8 @@ class TestCalendar(TestResourceCommon):
             }
         )
         res = calendar.get_work_hours_count(
-            fields.Datetime.from_string(
-                "2017-05-03 14:03:00"
-            ),
-            fields.Datetime.from_string(
-                "2017-05-04 11:03:00"
-            ),
+            fields.Datetime.from_string("2017-05-03 14:03:00"),
+            fields.Datetime.from_string("2017-05-04 11:03:00"),
             compute_leaves=False,
         )
         self.assertEqual(res, 5.0)

@@ -8,7 +8,6 @@ from odoo.addons.purchase.tests.test_purchase_invoice import (
 
 @tagged("-at_install", "post_install")
 class TestBillDraftBucket(TestPurchaseToInvoiceCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

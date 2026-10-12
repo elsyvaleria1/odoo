@@ -283,7 +283,9 @@ class WizardAccountMoveTemplateCreateMove(models.TransientModel):
 
     def _prepare_move_line_vals(self, line: models.Model) -> dict[str, Any]:
         return self.env["account.move"]._prepare_template_move_line_vals(
-            line, self.move_type, self._get_move_partner(),
+            line,
+            self.move_type,
+            self._get_move_partner(),
         )
 
     def _prepare_move_vals(self, journal: models.Model) -> dict[str, Any]:

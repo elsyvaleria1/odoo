@@ -30,7 +30,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             constraints.pop("not_sale_document", None)
         return constraints
 
-
     def _get_alerts(self, moves, moves_data):
         def peppol_partner(moves):
             return moves.partner_id.commercial_partner_id
@@ -107,8 +106,7 @@ class MixinAccountMoveSend(models.AbstractModel):
                     )
                 ),
                 any_moves_not_sent_peppol,
-                len(peppol_not_selected_partners)
-                == 1,
+                len(peppol_not_selected_partners) == 1,
             )
         ):
             alerts["account_peppol_partner_want_peppol"] = {
@@ -119,7 +117,6 @@ class MixinAccountMoveSend(models.AbstractModel):
                 **what_is_peppol_alert,
             }
         return alerts
-
 
     def _get_default_invoice_edi_format(self, move, **kwargs) -> str:
         invoice_edi_format = super()._get_default_invoice_edi_format(move, **kwargs)

@@ -79,7 +79,6 @@ class HelpdeskTicket(models.Model):
             },
         }
 
-
     def _mail_get_message_subtypes(self):
         res = super()._mail_get_message_subtypes()
         if len(self) == 1 and self.team_id:

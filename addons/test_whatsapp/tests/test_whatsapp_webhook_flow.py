@@ -426,18 +426,14 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
                 expected_responsible,
                 test_template_no_record,
             )
-        self.env["discuss.channel"].search(
-            [("channel_type", "=", "whatsapp")]
-        ).unlink()
+        self.env["discuss.channel"].search([("channel_type", "=", "whatsapp")]).unlink()
 
         expected_responsible = self.user_wa_admin
         with self.subTest(expected_responsible=expected_responsible):
             self._test_responsible_with_template(
                 test_record, "+32497999999", expected_responsible, test_template
             )
-        self.env["discuss.channel"].search(
-            [("channel_type", "=", "whatsapp")]
-        ).unlink()
+        self.env["discuss.channel"].search([("channel_type", "=", "whatsapp")]).unlink()
 
         test_record.with_user(self.user_salesperson).write({"name": "Edited name"})
         expected_responsible = self.user_salesperson
@@ -445,9 +441,7 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             self._test_responsible_with_template(
                 test_record, "+32497999999", expected_responsible, test_template
             )
-        self.env["discuss.channel"].search(
-            [("channel_type", "=", "whatsapp")]
-        ).unlink()
+        self.env["discuss.channel"].search([("channel_type", "=", "whatsapp")]).unlink()
 
         expected_responsible = self.user_salesperson_2
         with self.subTest(expected_responsible=expected_responsible):
@@ -458,9 +452,7 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
                 test_template,
                 context_user=self.user_salesperson_2,
             )
-        self.env["discuss.channel"].search(
-            [("channel_type", "=", "whatsapp")]
-        ).unlink()
+        self.env["discuss.channel"].search([("channel_type", "=", "whatsapp")]).unlink()
 
         expected_responsible = self.user_salesperson_3
         test_record.write({"user_id": self.user_salesperson_3.id})
@@ -468,9 +460,7 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             self._test_responsible_with_template(
                 test_record, "+32497999999", expected_responsible, test_template
             )
-        self.env["discuss.channel"].search(
-            [("channel_type", "=", "whatsapp")]
-        ).unlink()
+        self.env["discuss.channel"].search([("channel_type", "=", "whatsapp")]).unlink()
 
         expected_responsible = self.user_salesperson_2 | self.user_salesperson_3
         test_record.write({"user_id": self.user_salesperson_3.id})
@@ -482,9 +472,7 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
                 test_template,
                 context_user=self.user_salesperson_2,
             )
-        self.env["discuss.channel"].search(
-            [("channel_type", "=", "whatsapp")]
-        ).unlink()
+        self.env["discuss.channel"].search([("channel_type", "=", "whatsapp")]).unlink()
         test_record.user_id = False
 
         expected_responsible = (

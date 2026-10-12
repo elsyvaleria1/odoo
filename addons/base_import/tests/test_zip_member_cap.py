@@ -31,7 +31,6 @@ def _archive_of(size):
 
 
 class TestZipMemberCap(TransactionCase):
-
     def _import_record(self, data):
         return self.env["base_import.import"].create(
             {

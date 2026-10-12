@@ -420,11 +420,9 @@ class DeliveryCarrier(models.Model):
                 )
                 dept_number = "BILL D/T: SENDER"
 
-
             packages = self._get_packages_from_picking(
                 picking, self.fedex_default_package_type_id
             )
-
 
             master_tracking_id = False
             package_labels = []
@@ -516,7 +514,6 @@ class DeliveryCarrier(models.Model):
                         "tracking_number": ",".join(carrier_tracking_refs),
                     }
                     res.append(shipping_data)
-
 
             if self.return_label_on_delivery:
                 self.get_return_label(

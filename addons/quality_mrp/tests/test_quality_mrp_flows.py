@@ -6,7 +6,6 @@ from .test_common import TestQualityMrpCommon
 
 
 class TestQualityMrpFlows(TestQualityMrpCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

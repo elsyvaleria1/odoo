@@ -6,7 +6,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestTeam(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

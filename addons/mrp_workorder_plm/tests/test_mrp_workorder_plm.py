@@ -90,7 +90,6 @@ class TestMrpWorkorderPlm(TestPlmCommon):
 
         eco1.action_new_revision()
 
-
         self.assertEqual(eco1.state, "progress", "Wrong state on eco1.")
 
         eco1.new_bom_id.operation_ids[0].quality_point_ids[
@@ -205,9 +204,7 @@ class TestMrpWorkorderPlm(TestPlmCommon):
             )
             last_step = add_step_form.save()
             last_step.add_check_in_chain()
-            wo.write(
-                {"current_quality_check_id": last_step.id}
-            )
+            wo.write({"current_quality_check_id": last_step.id})
 
         action = wo.action_propose_change(
             change_type="remove_step", check_id=last_step.id
@@ -219,9 +216,7 @@ class TestMrpWorkorderPlm(TestPlmCommon):
         delete_suggestion_form.comment = "I declare this step useless"
         delete_suggestion_form.save().process()
 
-        wo.write(
-            {"current_quality_check_id": last_step.id}
-        )
+        wo.write({"current_quality_check_id": last_step.id})
         action = wo.action_add_step()
         add_step_form = Form(
             self.env[action["res_model"]].with_context(action["context"]),

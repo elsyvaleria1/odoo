@@ -10,7 +10,6 @@ from odoo.addons.base.tests.common import ResourceCase
 
 @tagged("post_install", "-at_install")
 class TestSchedulingMixin(TransactionCase):
-
     MODEL_NAME = "resource.scheduling.test"
 
     @classmethod
@@ -58,7 +57,6 @@ class TestSchedulingMixin(TransactionCase):
         )
 
         cls.Model = cls.env[cls.MODEL_NAME]
-
 
     def test_allocated_hours_with_calendar(self):
         record = self.Model.create(
@@ -131,7 +129,6 @@ class TestSchedulingMixin(TransactionCase):
             }
         )
         self.assertEqual(record.allocated_hours, 4.0)
-
 
     def test_overlap_detection(self):
         rec1 = self.Model.create(
@@ -215,7 +212,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertEqual(rec1.schedule_overlap_count, 0)
         self.assertEqual(rec2.schedule_overlap_count, 0)
 
-
     def _manual_vals(self, **overrides):
         vals = {
             "name": "Manual",
@@ -273,7 +269,6 @@ class TestSchedulingMixin(TransactionCase):
             reservation.exists(),
             "a deleted consumer must never leave a claim behind, however it syncs",
         )
-
 
     def _booked_day(self, percentage=100.0, name="Booked"):
         return self.Model.create(
@@ -374,7 +369,6 @@ class TestSchedulingMixin(TransactionCase):
         saved = self.Model.create(values)
         self.env.invalidate_all()
         self.assertEqual(before, saved.schedule_overlap_count)
-
 
     def test_calendar_change(self):
         record = self.Model.create(
@@ -579,7 +573,6 @@ class TestSchedulingMixin(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSchedulingMixinAllocationBounds(TransactionCase):
-
     def _record(self, **vals):
         return self.env["resource.scheduling.test"].create({"name": "bounds", **vals})
 
@@ -603,7 +596,6 @@ class TestSchedulingMixinAllocationBounds(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSchedulingMixinSurplusRelease(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

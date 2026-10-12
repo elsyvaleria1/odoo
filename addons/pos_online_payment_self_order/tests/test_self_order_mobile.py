@@ -24,9 +24,7 @@ class TestSelfOrderMobile(SelfOrderCommonTest, OnlinePaymentCommon):
             exit_route=exit_route,
             confirmation_page=confirmation_page,
         )
-        self.env.ref(
-            "payment.cron_post_process_payment_tx"
-        ).method_direct_trigger()
+        self.env.ref("payment.cron_post_process_payment_tx").method_direct_trigger()
         return res
 
     @classmethod

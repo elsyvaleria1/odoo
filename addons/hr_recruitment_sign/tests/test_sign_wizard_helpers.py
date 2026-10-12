@@ -12,7 +12,6 @@ class TestSignWizardHelpers(SignTemplateFixture, TransactionCase):
         super().setUpClass()
         cls.wizard_model = cls.env["wizard.hr.applicant.send.sign.request"]
 
-
     def test_selectable_templates_filtered_by_responsible_count(self):
         one_role = self._template("Solo", 1)
         two_roles = self._template("Duo", 2)

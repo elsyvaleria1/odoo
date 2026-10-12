@@ -284,7 +284,6 @@ class TestRentalCommon(TransactionCase):
             sol.discount, 0, "Discount should always been 0 on pricelist change"
         )
 
-
     def test_no_pickup_nor_return(self):
         partner = self.env["res.partner"].create({"name": "A partner"})
         partner.property_product_pricelist = self.env["product.pricelist"].create(

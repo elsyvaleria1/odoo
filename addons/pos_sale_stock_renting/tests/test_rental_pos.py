@@ -22,7 +22,6 @@ class TestPoSRental(TestPointOfSaleHttpCommon):
             }
         )
 
-
         self.lot_id1 = self.env["product.trace"].create(
             {
                 "product_id": self.tracked_product_id.id,

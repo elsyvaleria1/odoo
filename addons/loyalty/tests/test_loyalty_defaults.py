@@ -1,10 +1,8 @@
-
 from odoo.tests import TransactionCase, tagged
 
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyDefaults(TransactionCase):
-
     def test_child_default_values_reads_the_create_command(self):
         Program = self.env["loyalty.program"]
         defaults = Program._program_type_default_values()

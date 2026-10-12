@@ -68,9 +68,7 @@ class TestMarketingCardMail(MailCase, MarketingCardCommon):
             "default_reply_to": "test@test.lan",
         }
         mailing = Form(self.env["mailing.mailing"].with_context(mailing_context)).save()
-        mailing.body_html = (
-            mailing.body_arch
-        )
+        mailing.body_html = mailing.body_arch
 
         self.assertTrue(mailing.card_requires_sync_count)
         with self.assertRaises(
@@ -150,9 +148,7 @@ class TestMarketingCardMail(MailCase, MarketingCardCommon):
             "default_reply_to": "test@test.lan",
         }
         mailing = Form(self.env["mailing.mailing"].with_context(mailing_context)).save()
-        mailing.body_html = (
-            mailing.body_arch
-        )
+        mailing.body_html = mailing.body_arch
 
         with self.mock_image_renderer():
             mailing.action_update_cards()
@@ -220,7 +216,6 @@ class TestMarketingCardRender(MarketingCardCommon):
             1,
         )
 
-
         with self.mock_image_renderer():
             campaign.preview_record_ref = self.partners[1]
             self.assertTrue(campaign.image_preview)
@@ -248,14 +243,12 @@ class TestMarketingCardRender(MarketingCardCommon):
         self.assertEqual(cards.mapped("active"), [False] * 2)
         self.assertTrue(cards.mapped("res_id"), self.partners.ids)
 
-
         with self.mock_image_renderer():
             campaign.preview_record_ref.sudo().name = "An updated name"
         self.assertFalse(
             self._render_image_bodies,
             "Updating the preview record does not refresh the preview.",
         )
-
 
         with patch(
             "odoo.addons.marketing_card.models.card_campaign.CardCampaign._selection_campaign_models",

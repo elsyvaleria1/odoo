@@ -53,7 +53,6 @@ class AccountJournalReportHandler(models.AbstractModel):
             },
         }
 
-
     @_debug.perf.timed
     def _report_custom_engine_journal_report(
         self,
@@ -431,7 +430,6 @@ class AccountJournalReportHandler(models.AbstractModel):
             ]
         return print_options
 
-
     def _get_pdf_export_html(
         self, options, lines=None, additional_context=None, template=None, report=None
     ):
@@ -497,7 +495,6 @@ class AccountJournalReportHandler(models.AbstractModel):
             "file_content": pdf_result,
             "file_type": "pdf",
         }
-
 
     @_debug.perf.timed
     def _get_xlsx_sheets(self, options):
@@ -1048,7 +1045,6 @@ class AccountJournalReportHandler(models.AbstractModel):
 
                     cursor_x = start_x
                     cursor_y += 1
-
 
     @_debug.perf.timed
     def _generate_document_data_for_export(
@@ -1615,7 +1611,6 @@ class AccountJournalReportHandler(models.AbstractModel):
 
         return line
 
-
     def _get_payment_lines_filter_case_statement(self, options):
         if not options.get("show_payment_lines"):
             return SQL(
@@ -1669,7 +1664,6 @@ class AccountJournalReportHandler(models.AbstractModel):
             rows=len(initial_balances),
         )
         return initial_balances
-
 
     def _get_journal_ids_with_tax(self, options) -> set:
         report = self.env["report.formula"].browse(options.get("report_id"))
@@ -1971,7 +1965,6 @@ class AccountJournalReportHandler(models.AbstractModel):
                 )
             res_by_key[section_key] = dict(sorted(res.items()))
         return res_by_key
-
 
     def journal_report_tax_tag_template_open_aml(self, options, params=None) -> dict:
         tag_ids = params.get("tag_ids")

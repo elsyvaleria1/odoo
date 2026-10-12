@@ -45,7 +45,6 @@ class TestCalendarReservation(TransactionCase):
             .search([("res_model", "=", "calendar.event"), ("res_id", "in", event.ids)])
         )
 
-
     def test_meeting_books_one_reservation_per_attendee_with_a_resource(self):
         event = self._make_event()
         reservations = self._reservations(event)
@@ -236,7 +235,6 @@ class TestCalendarReservation(TransactionCase):
         event.partner_ids = [(6, 0, [self.organizer.partner_id.id])]
         self.assertEqual(self._reservations(event).resource_id, self.organizer_resource)
 
-
     def test_two_meetings_on_the_same_person_conflict(self):
         first = self._make_event()
         second = self._make_event(
@@ -278,7 +276,6 @@ class TestCalendarReservation(TransactionCase):
         self.assertFalse(first.schedule_overlap_count)
         self.assertFalse(second.schedule_overlap_count)
 
-
     def test_archiving_releases_the_claims_and_restoring_retakes_them(self):
         event = self._make_event()
         event.action_archive()
@@ -299,7 +296,6 @@ class TestCalendarReservation(TransactionCase):
             .with_context(active_test=False)
             .search([("res_model", "=", "calendar.event"), ("res_id", "=", event_id)])
         )
-
 
     def test_a_recurrence_books_every_occurrence_exactly_once(self):
         event = self._make_event(

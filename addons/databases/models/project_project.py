@@ -255,7 +255,9 @@ class ProjectProject(models.Model):
         if not modules.module.current_test:
             self.env["ir.cron"]._commit_progress(remaining=len(database_to_synchronize))
 
-        notifiable_wizards = self.env["wizard.project.project.synchronize.database"].search(
+        notifiable_wizards = self.env[
+            "wizard.project.project.synchronize.database"
+        ].search(
             [
                 ("notify_user", "=", True),
             ]

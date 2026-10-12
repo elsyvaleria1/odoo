@@ -559,7 +559,6 @@ class TestUnsubscribe(MailCommon, HttpCaseWithUserDemo):
 
 @tagged("digest")
 class TestDigestDefects(TestDigestCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -572,7 +571,6 @@ class TestDigestDefects(TestDigestCommon):
             ]
         ).unlink()
         cls._setup_messages()
-
 
     @users("admin")
     def test_timeframes_are_naive_utc(self):
@@ -635,7 +633,6 @@ class TestDigestDefects(TestDigestCommon):
             f"window {start} .. {end} must be the real last 24 hours",
         )
 
-
     @users("admin")
     def test_margin_reports_a_fall_to_zero(self):
         digest = self.digest_1.with_user(self.env.user)
@@ -652,7 +649,6 @@ class TestDigestDefects(TestDigestCommon):
         ]:
             with self.subTest(value=value, previous=previous):
                 self.assertEqual(digest._get_margin_value(value, previous), expected)
-
 
     @users("admin")
     def test_tips_are_consumed_one_by_one(self):
@@ -707,7 +703,6 @@ class TestDigestDefects(TestDigestCommon):
             self.user_employee + reader,
             "Tip B must gain the reader and nothing else",
         )
-
 
     def test_is_subscribed_is_the_reader_s_own(self):
         digest = self.digest_1
@@ -770,7 +765,6 @@ class TestDigestDefects(TestDigestCommon):
             [kpi["kpi_name"] for kpi in kpi_data],
             "a KPI the reader cannot see stays out of their mail",
         )
-
 
     @users("admin")
     def test_one_scan_answers_every_window_with_the_same_numbers(self):
@@ -1018,7 +1012,6 @@ class TestDigestDefects(TestDigestCommon):
 
         to_slowdown = (awake + asleep + empty)._get_digests_to_slowdown()
         self.assertEqual(to_slowdown, asleep + empty)
-
 
     def test_periodicity_table_is_the_selection(self):
         selection = self.env["digest.digest"]._fields["periodicity"].selection

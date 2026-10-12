@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class TestX2manyScopeFollowsWhatTheRulesRead(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

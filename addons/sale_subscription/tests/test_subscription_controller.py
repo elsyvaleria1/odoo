@@ -349,9 +349,7 @@ class TestSubscriptionController(
         )
         first_transaction_id = subscription.transaction_ids
         url = self._build_url("/my/subscriptions/%s/transaction" % subscription.id)
-        amount_to_invoice = (
-            subscription.amount_taxinc_to_invoice
-        )
+        amount_to_invoice = subscription.amount_taxinc_to_invoice
         data = {
             "access_token": subscription.access_token,
             "landing_route": subscription.get_portal_url(),
@@ -467,9 +465,7 @@ class TestSubscriptionController(
                 subscription.sent = True
                 subscription._portal_get_or_create_token()
                 subscription.prepayment_percent = 0.5
-                self.amount = (
-                    subscription.amount_total / 2.0
-                )
+                self.amount = subscription.amount_total / 2.0
                 with MockRequest(self.env):
                     tx_context = CustomerPortal()._prepare_payment_form_context(
                         subscription, is_down_payment=True, payment_amount=self.amount
@@ -496,9 +492,7 @@ class TestSubscriptionController(
                 tx_sudo._set_done()
                 with mute_logger("odoo.addons.sale.models.payment_transaction"):
                     tx_sudo._post_process()
-                self.assertEqual(
-                    subscription.state, "done"
-                )
+                self.assertEqual(subscription.state, "done")
                 self.assertEqual(subscription.next_invoice_date, datetime.date.today())
                 self.assertEqual(subscription.state, "done")
                 self.assertEqual(
@@ -545,9 +539,7 @@ class TestSubscriptionController(
                 self.assertFalse(
                     renewal_so.payment_token_id, "No token should be saved"
                 )
-                self.assertEqual(
-                    renewal_so.state, "done"
-                )
+                self.assertEqual(renewal_so.state, "done")
                 self.assertEqual(
                     renewal_so.invoice_count,
                     1,

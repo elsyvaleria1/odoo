@@ -117,7 +117,6 @@ class TestRedirect(HttpCase):
             return code, f"CUSTOM {code}"
 
         with patch.object(self.registry["ir.http"], "_get_error_html", _get_error_html):
-
             resp = self.url_open(
                 f"/test_website/200/name-{rec_published.id}", allow_redirects=False
             )

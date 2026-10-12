@@ -11,16 +11,12 @@ class AccountMove(models.Model):
             not self.env.context.get("skip_reconcile_expense_with_payslip")
             and self.sudo().payslip_ids.expense_ids
         ):
-            self = self.with_context(
-                skip_reconcile_expense_with_payslip=True
-            )
+            self = self.with_context(skip_reconcile_expense_with_payslip=True)
             lines_to_reconcile = (
                 self._hr_payroll_expense_prepare_move_lines_to_reconcile()
             )
 
-        res = (
-            super()._post_entries()
-        )
+        res = super()._post_entries()
 
         lines_to_reconcile = lines_to_reconcile.filtered(
             lambda line: not line.reconciled
@@ -34,9 +30,7 @@ class AccountMove(models.Model):
                 )
                 .new({})
             )
-            if not (
-                wizard.is_write_off_required or wizard.force_partials
-            ):
+            if not (wizard.is_write_off_required or wizard.force_partials):
                 wizard.reconcile()
         return res
 
@@ -57,9 +51,7 @@ class AccountMove(models.Model):
         payslips_sudo = self.sudo().payslip_ids
         all_payslip_expenses_sudo = payslips_sudo.expense_ids
         if not all_payslip_expenses_sudo:
-            return self.env[
-                "account.move.line"
-            ]
+            return self.env["account.move.line"]
 
         expenses_without_moves = all_payslip_expenses_sudo.filtered(
             lambda expense: not expense.account_move_id

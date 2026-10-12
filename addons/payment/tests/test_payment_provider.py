@@ -21,9 +21,7 @@ class TestPaymentProvider(PaymentCommon):
             "test",
         ):
             for new_state in ("enabled", "test", "disabled"):
-                if (
-                    old_state != new_state
-                ):
+                if old_state != new_state:
                     self.provider.state = old_state
                     token = self._create_token()
                     self.provider.state = new_state
@@ -82,9 +80,7 @@ class TestPaymentProvider(PaymentCommon):
                 self.assertFalse(self.payment_methods.active)
 
     def test_enabling_provider_activates_processing_cron(self):
-        self.env["payment.provider"].search(
-            []
-        ).state = "disabled"
+        self.env["payment.provider"].search([]).state = "disabled"
         post_processing_cron = self.env.ref("payment.cron_post_process_payment_tx")
         for enabled_state in ("enabled", "test"):
             post_processing_cron.active = False
@@ -93,15 +89,11 @@ class TestPaymentProvider(PaymentCommon):
             self.assertTrue(post_processing_cron.active)
 
     def test_disabling_provider_deactivates_processing_cron(self):
-        self.env["payment.provider"].search(
-            []
-        ).state = "disabled"
+        self.env["payment.provider"].search([]).state = "disabled"
         post_processing_cron = self.env.ref("payment.cron_post_process_payment_tx")
         for enabled_state in ("enabled", "test"):
             post_processing_cron.active = True
-            self.provider.state = (
-                enabled_state
-            )
+            self.provider.state = enabled_state
             self.provider.state = "disabled"
             self.assertFalse(post_processing_cron.active)
 
@@ -384,29 +376,21 @@ class TestPaymentProvider(PaymentCommon):
         self.assertDictEqual(report["providers"], expected_providers_report)
 
     def test_validation_currency_is_supported(self):
-        self.provider.available_currency_ids = [
-            Command.clear()
-        ]
-        self.payment_method.supported_currency_ids = [
-            Command.clear()
-        ]
+        self.provider.available_currency_ids = [Command.clear()]
+        self.payment_method.supported_currency_ids = [Command.clear()]
         validation_currency = self.provider.with_context(
             validation_pm=self.payment_method
         )._get_validation_currency()
         self.assertEqual(validation_currency, self.provider.company_id.currency_id)
 
         self.provider.available_currency_ids = [Command.set(self.currency_usd.ids)]
-        self.payment_method.supported_currency_ids = [
-            Command.clear()
-        ]
+        self.payment_method.supported_currency_ids = [Command.clear()]
         validation_currency = self.provider.with_context(
             validation_pm=self.payment_method
         )._get_validation_currency()
         self.assertIn(validation_currency, self.provider.available_currency_ids)
 
-        self.provider.available_currency_ids = [
-            Command.clear()
-        ]
+        self.provider.available_currency_ids = [Command.clear()]
         self.payment_method.supported_currency_ids = [
             Command.set(self.currency_usd.ids)
         ]

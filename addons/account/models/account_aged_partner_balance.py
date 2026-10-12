@@ -263,9 +263,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                 rslt["pending_match"] += query_res["pending_match"]
 
             if groupby == "id":
-                query_res = query_res_lines[
-                    0
-                ]
+                query_res = query_res_lines[0]
                 currency = (
                     self.env["res.currency"].browse(query_res["currency_id"][0])
                     if len(query_res["currency_id"]) == 1
@@ -570,9 +568,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             expand_function_name,
             lines_to_expand,
         ) in lines_to_expand_by_function.items():
-            for (
-                line_to_expand
-            ) in lines_to_expand:
+            for line_to_expand in lines_to_expand:
                 if (
                     expand_function_name
                     == "_report_expand_unfoldable_line_with_groupby"
@@ -767,7 +763,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
 
 
 class AccountAgedSideReportHandler(models.AbstractModel):
-
     _name = "account.aged.side.report.handler"
     _inherit = ["account.aged.partner.balance.report.handler"]
     _description = "Aged Partner Balance Side Custom Handler"

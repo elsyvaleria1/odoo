@@ -39,10 +39,8 @@ class StockPicking(models.Model):
         help="The last time the picking was synchronized with Shopee.",
     )
 
-
     def action_shopee_sync_pickings(self):
         return self._sync_shopee_pickings()
-
 
     def _sync_shopee_pickings(self, shop_ids=(), auto_commit=True) -> dict | None:
         pickings_by_shop = self._get_pickings_by_shop(shop_ids)

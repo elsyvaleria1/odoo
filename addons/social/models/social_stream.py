@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialStream(models.Model):
-
     _name = "social.stream"
     _description = "Social Stream"
     _order = "sequence asc, id asc"

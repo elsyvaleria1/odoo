@@ -5,7 +5,6 @@ from odoo.exceptions import UserError
 
 
 class MailingList(models.Model):
-
     _name = "mailing.list"
     _description = "Mailing List"
     _mailing_enabled = True
@@ -77,7 +76,6 @@ class MailingList(models.Model):
         "management page to allow them to update their preferences.",
     )
 
-
     @api.depends("mailing_ids")
     def _compute_mailing_count(self) -> None:
         data = {}
@@ -136,7 +134,6 @@ class MailingList(models.Model):
                 mailing_list.contact_pct_blacklisted = 0
                 mailing_list.contact_pct_bounce = 0
 
-
     def write(self, vals):
         if "active" in vals and not vals.get("active"):
             mass_mailings = self.env["mailing.mailing"].search_count(
@@ -168,7 +165,6 @@ class MailingList(models.Model):
             dict(vals, name=self.env._("%s (copy)", mailing_list.name))
             for mailing_list, vals in zip(self, vals_list, strict=True)
         ]
-
 
     def action_view_import(self):
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
@@ -307,7 +303,6 @@ class MailingList(models.Model):
         if archive:
             (src_lists - self).action_archive()
 
-
     def _update_subscription_from_email(
         self, email, opt_out=True, force_message=None
     ) -> None:
@@ -384,7 +379,6 @@ class MailingList(models.Model):
                 subtype_id=self.env["ir.model.data"]._xmlid_to_res_id("mail.mt_note"),
             )
 
-
     def _mailing_get_default_domain(self, mailing):
         return [("list_ids", "in", mailing.contact_list_ids.ids)]
 
@@ -399,7 +393,6 @@ class MailingList(models.Model):
             "contact_id.email_normalized"
         )
         return {c for c in opt_out_contacts if c not in opt_in_contacts}
-
 
     def _get_contact_statistics(self):
 

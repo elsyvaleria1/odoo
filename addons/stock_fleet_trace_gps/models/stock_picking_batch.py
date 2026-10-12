@@ -53,7 +53,9 @@ class StockPickingBatch(models.Model):
     def _compute_has_trip_gps(self) -> None:
         for batch in self:
             batch.has_trip_gps = (
-                bool(batch.vehicle_id.resource_id._gps_device_ids()) if batch.vehicle_id else False
+                bool(batch.vehicle_id.resource_id._gps_device_ids())
+                if batch.vehicle_id
+                else False
             )
 
     def _trip_checkpoint(self, event_type, **vals):

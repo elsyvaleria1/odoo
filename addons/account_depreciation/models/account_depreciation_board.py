@@ -35,7 +35,6 @@ RUNNING_BOARD = ("open", "paused")
 
 
 class AccountDepreciationBoard(models.Model):
-
     _name = "account.depreciation.board"
     _description = "Depreciation Board"
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]

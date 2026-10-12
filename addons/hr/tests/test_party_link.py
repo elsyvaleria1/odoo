@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPartyLink(TransactionCase):
-
     def _badged_employee(self):
         tag = self.env["res.partner.tag"].create({"name": "Forklift"})
         employee = self.env["hr.employee"].create(

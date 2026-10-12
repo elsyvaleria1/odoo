@@ -16,7 +16,6 @@ _AWAITING_PRODUCTION = ("merged", "hotfixing")
 
 
 class ErrorIncident(models.Model):
-
     _name = "error.incident"
     _inherit = ["error.incident", "mixin.approval.gate"]
     _access_verbs = {
@@ -57,7 +56,6 @@ class ErrorIncident(models.Model):
         readonly=True,
         help="Since when production is asked whether it runs the merged fix.",
     )
-
 
     def _autofix_pull_changed(self, pull: models.BaseModel) -> None:
         self.check_singleton()
@@ -111,7 +109,6 @@ class ErrorIncident(models.Model):
 
     def _autofix_policy_passes_unchecked(self) -> bool:
         return bool(self._autofix_repository().pass_without_checks)
-
 
     def _check_before_approval(self, verb: str) -> None:
         super()._check_before_approval(verb)
@@ -234,7 +231,6 @@ class ErrorIncident(models.Model):
                     self.env._("the pull request moved past the commit it asked about")
                 )
         return super()._split_for_approval(operation)
-
 
     def _autofix_delivery_ended(self, run: models.BaseModel) -> None:
         self.check_singleton()

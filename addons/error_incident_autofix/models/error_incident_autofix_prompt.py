@@ -3,7 +3,6 @@ from odoo.tools import frozendict
 
 
 class ErrorIncidentAutofixPrompt(models.Model):
-
     _name = "error.incident.autofix.prompt"
     _description = "Autofix Prompt"
     _order = "phase, version desc"

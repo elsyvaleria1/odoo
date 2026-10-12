@@ -1,11 +1,9 @@
-
 from odoo.fields import Command
 from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyCardBatchCost(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -178,7 +178,6 @@ class AccountMove(models.Model):
                     move.edi_show_abandon_cancel_button = True
                     break
 
-
     def _prepare_edi_tax_details(
         self,
         filter_to_apply=None,
@@ -359,7 +358,6 @@ class AccountMove(models.Model):
             attachments, force=force, filter_xml=filter_xml
         )
 
-
     def button_process_edi_web_services(self) -> None:
         self.check_singleton()
         self.action_process_edi_web_services(with_commit=False)
@@ -378,7 +376,6 @@ class AccountMove(models.Model):
     def action_retry_edi_documents_error(self) -> None:
         self._retry_edi_documents_error()
         self.action_process_edi_web_services()
-
 
     def _process_attachments_for_template_post(self, mail_template):
         result = super()._process_attachments_for_template_post(mail_template)

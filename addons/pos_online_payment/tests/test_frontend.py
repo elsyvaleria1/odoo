@@ -87,9 +87,7 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             }
         )
 
-        cls.payment_provider = (
-            cls.provider
-        )
+        cls.payment_provider = cls.provider
 
         cls.payment_provider_old_company_id = cls.payment_provider.company_id.id
         cls.payment_provider_old_journal_id = cls.payment_provider.journal_id.id
@@ -139,7 +137,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             tz="Europe/Brussels",
         )
 
-
         archive_products(cls.env)
 
         pos_categ_misc = cls.env["pos.category"].create(
@@ -167,7 +164,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
                 limit=1,
             )
         return provider
-
 
     def setUp(self):
         self.enable_post_process_patcher = False
@@ -301,7 +297,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
         untax = res["total_excluded"]
         return untax, sum(tax.get("amount", 0.0) for tax in res["taxes"])
 
-
     def test_1_online_payment_with_cashier(self):
         self._test_fake_customer_online_payment(
             payments_amount=1, cashier_request_for_remaining=True
@@ -320,9 +315,7 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
     def test_invalid_access_token(self):
         order = self._open_session_fake_cashier_unpaid_order()
 
-        with mute_logger(
-            "odoo.http"
-        ):
+        with mute_logger("odoo.http"):
             self.assertRaises(
                 AssertionError,
                 self._fake_open_pos_order_pay_page,

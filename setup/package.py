@@ -213,7 +213,6 @@ def _update_build_dir(
 
 
 class Docker:
-
     arch = None
 
     def __init__(self, args: argparse.Namespace) -> None:
@@ -320,7 +319,6 @@ class Docker:
 
 
 class DockerTgz(Docker):
-
     arch = "tgz"
 
     def build(self) -> None:
@@ -367,7 +365,6 @@ class DockerTgz(Docker):
 
 
 class DockerDeb(Docker):
-
     arch = "deb"
 
     def build(self) -> None:
@@ -405,7 +402,6 @@ class DockerDeb(Docker):
 
 
 class DockerRpm(Docker):
-
     arch = "rpm"
 
     def build(self) -> None:
@@ -468,7 +464,6 @@ class DockerRpm(Docker):
 
 
 class DockerWine(Docker):
-
     arch = "win"
 
     def __init__(self, args: argparse.Namespace) -> None:
@@ -491,7 +486,6 @@ class DockerWine(Docker):
 
 
 class DockerIot(DockerWine):
-
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__(args)
         self.package_name = "IoT"

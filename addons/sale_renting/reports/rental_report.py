@@ -108,7 +108,6 @@ class SaleRentalReport(models.Model):
         readonly=True,
     )
 
-
     def _get_fields_select(self) -> dict:
         return {
             "id": "row_number() OVER (ORDER BY sol.id, d.date)",

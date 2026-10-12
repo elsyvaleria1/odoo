@@ -6,7 +6,6 @@ from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install")
 class TestDurationDisplayLanguage(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

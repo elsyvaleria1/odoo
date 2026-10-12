@@ -99,7 +99,6 @@ class StripeIssuingController(Controller):
             data=response, headers=response_headers, status=status
         )
 
-
     @api.model
     def _process_authorization_event(self, env, event):
         auth_object = event["data"]["object"]
@@ -273,9 +272,7 @@ class StripeIssuingController(Controller):
                         if s_id
                     )
                 existing_expenses.split_expense_origin_id = split_id
-                existing_expenses = env[
-                    "hr.expense"
-                ]
+                existing_expenses = env["hr.expense"]
             elif expense_transaction_ids:
                 existing_expenses = existing_expenses.filtered(
                     lambda exp: exp.stripe_transaction_id == transaction_id

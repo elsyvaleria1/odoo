@@ -63,9 +63,7 @@ class AccountReportLines(models.Model):
             horizontal_group_key_tuple = self._get_dict_hashable_key_tuple(
                 column_group_val["horizontal_groupby_element"]
             )
-            column_group_key = str(
-                self._get_dict_hashable_key_tuple(column_group_val)
-            )
+            column_group_key = str(self._get_dict_hashable_key_tuple(column_group_val))
 
             column_groups[column_group_key] = {
                 "forced_options": column_group_val["forced_options"],
@@ -528,9 +526,7 @@ class AccountReportLines(models.Model):
             if editable_cell_data:
                 edit_popup_data = editable_cell_data
 
-            if (
-                column_value is not None
-            ):
+            if column_value is not None:
                 foreign_currency_id = target_line_res_dict.get(
                     f"_currency_{column_expr_label}", {}
                 ).get("value")
@@ -730,9 +726,7 @@ class AccountReportLines(models.Model):
         if column_index is None:
             return list(range(len(lines))) if result_as_index else lines
 
-        descending = (
-            order_column.get("direction") == "DESC"
-        )
+        descending = order_column.get("direction") == "DESC"
 
         comp_key = cmp_to_key(compare_values)
         sorted_list = []
@@ -2044,9 +2038,7 @@ class AccountReportLines(models.Model):
 
             all_column_groups_expression_totals[column_group_key] = {}
             for expr_id, expr_totals in expression_totals.items():
-                expression = self.env["report.formula.expression"].browse(
-                    int(expr_id)
-                )
+                expression = self.env["report.formula.expression"].browse(int(expr_id))
                 if (
                     not expressions_to_exclude
                     or expression not in expressions_to_exclude

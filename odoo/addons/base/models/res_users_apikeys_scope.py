@@ -5,7 +5,6 @@ from odoo.tools import SQL, frozendict
 
 
 class ResUsersApikeysScope(models.Model):
-
     _name = "res.users.apikeys.scope"
     _access_anchors = frozendict({"company": ""})
     _description = "API Key Scope"

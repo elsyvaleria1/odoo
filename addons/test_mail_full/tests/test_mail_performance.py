@@ -125,7 +125,6 @@ class TestMailPerformance(FullBaseMailPerformance):
 
 @tagged("mail_performance", "post_install", "-at_install")
 class TestPortalFormatPerformance(FullBaseMailPerformance):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

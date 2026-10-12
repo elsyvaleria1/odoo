@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class WizardStockTripHandover(models.TransientModel):
-
     _name = "wizard.stock.trip.handover"
     _description = "Trip Handover"
 

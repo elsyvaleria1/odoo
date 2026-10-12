@@ -8,7 +8,6 @@ from odoo.addons.survey.tests import common
 
 @tagged("post_install", "-at_install", "functional")
 class TestSurveyAccessSurface(common.TestSurveyCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -192,7 +191,6 @@ class TestSurveyAccessSurface(common.TestSurveyCommon, HttpCase):
 
 @tagged("post_install", "-at_install", "functional")
 class TestConversationalNavigation(common.TestSurveyCommon):
-
     def test_conversational_can_go_forward(self):
         for layout, expected in (
             ("page_per_question", True),
@@ -244,7 +242,6 @@ class TestConversationalNavigation(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestQualityIndicators(common.TestSurveyCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -323,7 +320,6 @@ class TestQualityIndicators(common.TestSurveyCommon):
 
 @tagged("post_install", "-at_install", "functional")
 class TestQuotaReservation(common.TestSurveyCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

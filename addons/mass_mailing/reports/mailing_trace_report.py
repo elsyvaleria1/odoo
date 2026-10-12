@@ -54,9 +54,7 @@ class MailingTraceReport(models.Model):
     )
     scheduled = fields.Integer(readonly=True)
     processing = fields.Integer(readonly=True)
-    pending = fields.Integer(
-        readonly=True
-    )
+    pending = fields.Integer(readonly=True)
     sent = fields.Integer(readonly=True)
     delivered = fields.Integer(readonly=True)
     error = fields.Integer(readonly=True)

@@ -11,7 +11,6 @@ from odoo.libs.json import loads as json_loads
 
 
 class OdooFinAuth(requests.auth.AuthBase):
-
     def __init__(self, record=None) -> None:
         self.access_token = (record and record.access_token) or False
         self.refresh_token = (record and record.refresh_token) or False

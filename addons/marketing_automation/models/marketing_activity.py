@@ -456,7 +456,6 @@ class MarketingActivity(models.Model):
             activities |= descendants
         return activities
 
-
     def _sync_nodes(self) -> None:
         Node = self.env["ir.actions.server"].sudo()
         for activity in self:
@@ -640,7 +639,6 @@ class MarketingActivity(models.Model):
                 },
             ]
         return graph_data
-
 
     def execute(self, domain=None):
         rules = self.campaign_id.automation_rule_id.sudo()

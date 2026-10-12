@@ -198,7 +198,6 @@ class TestCreateEvents(TestCommon):
         if not self.sync_odoo_recurrences_with_outlook_feature():
             return
 
-
         record = (
             self.env["calendar.event"]
             .with_user(self.organizer_user)
@@ -213,7 +212,6 @@ class TestCreateEvents(TestCommon):
         self.assertEqual(record.name, "recurring_event")
         self.assertEqual(recurrence.name, "Every 2 Days for 7 events")
         self.assertEqual(len(recurrence.calendar_event_ids), 7)
-
 
         event_id = "123"
         event_iCalUId = "456"
@@ -261,7 +259,6 @@ class TestCreateEvents(TestCommon):
         self.assertEqual(
             len(recurrence.calendar_event_ids), self.recurrent_events_count
         )
-
 
         event_id = "123"
         event_iCalUId = "456"

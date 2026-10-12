@@ -568,7 +568,6 @@ class TestReportLogAudit(PartnerLedgerTelegramTestCase):
 
 
 class TestManagerRole(PartnerLedgerTelegramTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -591,7 +590,6 @@ class TestManagerRole(PartnerLedgerTelegramTestCase):
 
 
 class TestCustomerReach(PartnerLedgerTelegramTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -696,7 +694,6 @@ class TestValuesArriveAsText(PartnerLedgerTelegramTestCase):
 
 
 class TestRequesterClock(PartnerLedgerTelegramTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -755,7 +752,6 @@ class TestRequesterClock(PartnerLedgerTelegramTestCase):
 
 
 class TestStatementPartnerSearch(PartnerLedgerTelegramTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -801,7 +797,6 @@ class TestStatementPartnerSearch(PartnerLedgerTelegramTestCase):
 
 
 class TestReceivableOnly(PartnerLedgerTelegramTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

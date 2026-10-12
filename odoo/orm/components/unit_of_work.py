@@ -22,7 +22,6 @@ _debug = DebugLog(__name__)
 
 
 class _StallDetector:
-
     __slots__ = ("_seen",)
 
     def __init__(self) -> None:

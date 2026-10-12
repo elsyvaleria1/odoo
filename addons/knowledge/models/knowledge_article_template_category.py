@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class KnowledgeArticleTemplateCategory(models.Model):
-
     _name = "knowledge.article.template.category"
     _description = "Article Template Category"
     _order = "sequence ASC, id ASC"

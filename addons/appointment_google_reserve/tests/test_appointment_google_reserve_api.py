@@ -477,7 +477,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             datetime(2022, 2, 17, 20, 0, 0),
         )
 
-
     def assertIapRpc(self, post_mock_call_args, post_url, post_data=False):
         args, kwargs = post_mock_call_args
         self.assertEqual(args[0], post_url)

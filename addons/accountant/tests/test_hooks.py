@@ -7,7 +7,6 @@ from odoo.addons.accountant import _accounting_post_init, uninstall_hook
 
 @tagged("post_install", "-at_install")
 class TestAccountantHooks(AccountTestInvoicingCommon):
-
     def _general_journal(self, code):
         return self.env["account.journal"].create(
             {

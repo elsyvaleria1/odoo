@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class StockTripStop(models.Model):
-
     _name = "stock.trip.stop"
     _description = "Trip Delivery Weight"
     _order = "batch_id, sequence, id"

@@ -89,14 +89,10 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
         )
         self.authenticate(self.users[0].login, self.password)
         Channel = self.env["discuss.channel"].with_user(self.users[0])
-        self.channel_general = self.env.ref(
-            "mail.channel_all_employees"
-        )
+        self.channel_general = self.env.ref("mail.channel_all_employees")
         self.channel_general.message_ids.unlink()
         self.channel_general.last_interest_dt = False
-        self.channel_general.channel_member_ids.sudo().last_interest_dt = (
-            False
-        )
+        self.channel_general.channel_member_ids.sudo().last_interest_dt = False
         self.env["discuss.channel"].sudo().search(
             [("id", "!=", self.channel_general.id)]
         ).unlink()

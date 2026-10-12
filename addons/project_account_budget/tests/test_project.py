@@ -78,9 +78,7 @@ class TestProject(TestProjectCommon):
         budget_1.action_budget_confirm()
 
         budget_items = self.project_goats._get_budget_items(False)
-        del budget_items["data"][0][
-            "name"
-        ]
+        del budget_items["data"][0]["name"]
         del budget_items["data"][0]["id"]
         self.assertDictEqual(
             budget_items,
@@ -126,9 +124,7 @@ class TestProject(TestProjectCommon):
         budget_1.action_budget_confirm()
 
         budget_items = self.project_goats._get_budget_items(False)
-        del budget_items["data"][0][
-            "name"
-        ]
+        del budget_items["data"][0]["name"]
         del budget_items["data"][0]["id"]
         self.assertDictEqual(
             budget_items,
@@ -174,9 +170,7 @@ class TestProject(TestProjectCommon):
         budget_1.action_budget_confirm()
 
         budget_items = self.project_goats._get_budget_items(False)
-        del budget_items["data"][0][
-            "name"
-        ]
+        del budget_items["data"][0]["name"]
         del budget_items["data"][0]["id"]
         self.assertDictEqual(
             budget_items,
@@ -240,13 +234,9 @@ class TestProject(TestProjectCommon):
         budget_2.action_budget_confirm()
 
         budget_items = self.project_goats._get_budget_items(False)
-        del budget_items["data"][0][
-            "name"
-        ]
+        del budget_items["data"][0]["name"]
         del budget_items["data"][0]["id"]
-        del budget_items["data"][1][
-            "name"
-        ]
+        del budget_items["data"][1]["name"]
         del budget_items["data"][1]["id"]
         self.assertDictEqual(
             budget_items,
@@ -335,13 +325,9 @@ class TestProject(TestProjectCommon):
         budget_2.action_budget_confirm()
 
         budget_items = self.project_pigs._get_budget_items(False)
-        del budget_items["data"][0][
-            "name"
-        ]
+        del budget_items["data"][0]["name"]
         del budget_items["data"][0]["id"]
-        del budget_items["data"][1][
-            "name"
-        ]
+        del budget_items["data"][1]["name"]
         del budget_items["data"][1]["id"]
         self.assertDictEqual(
             budget_items,
@@ -403,13 +389,9 @@ class TestProject(TestProjectCommon):
         budget_items = self.project_goats.with_context(
             {"allowed_company_ids": [self.env.company.id]}
         )._get_budget_items(with_action=True)
-        del budget_items["data"][0][
-            "name"
-        ]
+        del budget_items["data"][0]["name"]
         del budget_items["data"][0]["id"]
-        del budget_items["data"][1][
-            "name"
-        ]
+        del budget_items["data"][1]["name"]
         del budget_items["data"][1]["id"]
         self.assertDictEqual(
             budget_items,

@@ -8,7 +8,9 @@ from odoo.addons.calendar.tests.booking.common import AppointmentSecurityCommon
 @tagged("post_install", "-at_install", "security")
 class TestAppointmentInviteSecurity(AppointmentSecurityCommon):
     @users("apt_manager")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_invite_access_apt_manager(self):
         self._prepare_link_with_user()
         for share_link in self.all_share_link:
@@ -22,7 +24,9 @@ class TestAppointmentInviteSecurity(AppointmentSecurityCommon):
         )
 
     @users("apt_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_invite_access_apt_user(self):
         self._prepare_link_with_user()
         self.share_link_apt_user.read(["resources_choice"])
@@ -46,7 +50,9 @@ class TestAppointmentInviteSecurity(AppointmentSecurityCommon):
         test_share_link.unlink()
 
     @users("internal_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_invite_access_internal_user(self):
         self._prepare_link_with_user()
         self.share_link_internal_user.read(["resources_choice"])

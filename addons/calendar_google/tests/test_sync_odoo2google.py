@@ -1350,9 +1350,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         with self.mock_datetime_and_now("2023-01-10"):
             self.env.cr.postcommit.clear()
             with self.mock_google_service():
-                future_date = datetime(
-                    2023, 1, 20, 8, 0
-                )
+                future_date = datetime(2023, 1, 20, 8, 0)
                 future_event = self.env["calendar.event"].create(
                     {
                         "name": "Future Event",

@@ -12,7 +12,6 @@ GIF = b"R0lGODdhAQABAIAAAP///////ywAAAAAAQABAAACAkQBADs="
 
 
 class TestCaseDocumentsBridgeSign(SignRequestCommon):
-
     def setUp(self):
         super().setUp()
 
@@ -116,9 +115,7 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
             "The sign.request.item should be completed",
         )
 
-    @mute_logger(
-        "odoo.addons.document.models.document_document", "pypdf._reader"
-    )
+    @mute_logger("odoo.addons.document.models.document_document", "pypdf._reader")
     def test_signed_documents_access_rights(self):
         Document = self.env["document.document"]
         Partner = self.env["res.partner"]

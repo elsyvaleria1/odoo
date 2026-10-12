@@ -65,8 +65,7 @@ class OnlineAppointmentPerformance(AppointmentUIPerformanceCase):
                     False,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(days=7),
+                    self.reference_monday + timedelta(days=7),
                     self.reference_monday + timedelta(days=7, hours=1),
                     True,
                 ),

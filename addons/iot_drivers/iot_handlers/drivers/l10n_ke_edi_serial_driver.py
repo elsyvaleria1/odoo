@@ -76,7 +76,6 @@ COMMAND_ERRORS = {
 
 
 class TremolG03Driver(SerialDriver):
-
     _protocol = TremolG03Protocol
 
     def __init__(self, identifier, device) -> None:
@@ -113,12 +112,10 @@ class TremolG03Driver(SerialDriver):
                 "Error while probing %s with protocol %s", device, protocol.name
             )
 
-
     @staticmethod
     def generate_checksum(message):
         xor = reduce(lambda a, b: a ^ b, message)
         return bytes([(xor >> 4) + 0x30, (xor & 0xF) + 0x30])
-
 
     def send(self, msgs):
 

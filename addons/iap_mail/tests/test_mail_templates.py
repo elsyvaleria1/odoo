@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestMailTemplates(TransactionCase):
-
     def test_enrich_company_renders_every_field(self):
         values = {
             "flavor_text": "Enriched from Clearbit",

@@ -128,9 +128,7 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         self.assertEqual(so3.activity_ids.user_id, self.env.user)
 
         self.customer_company.name = "Esquie's Nest"
-        self.customer_company.vat = (
-            ""
-        )
+        self.customer_company.vat = ""
         xml_attachment_4 = self.get_purchase_xml([])
         self.customer_company.name = "Lumiere LLC"
         self.customer_company.vat = "US14001383"
@@ -176,9 +174,7 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         self.assertEqual(po3.activity_ids.user_id, self.env.user)
 
         self.supplier_company.name = "Esquie's Nest"
-        self.supplier_company.vat = (
-            ""
-        )
+        self.supplier_company.vat = ""
         xml_attachment_4 = self.get_sale_xml([])
         self.supplier_company.name = "Gestral Inc."
         self.supplier_company.vat = "US9357841"

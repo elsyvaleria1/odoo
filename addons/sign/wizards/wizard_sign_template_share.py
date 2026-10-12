@@ -14,9 +14,7 @@ class WizardSignTemplateShare(models.TransientModel):
     )
     sign_request_id = fields.Many2one(comodel_name="sign.request")
 
-    is_shared = fields.Boolean(
-        required=True
-    )
+    is_shared = fields.Boolean(required=True)
     share_link = fields.Char(related="sign_request_id.share_link")
     validity = fields.Date(
         related="sign_request_id.validity",

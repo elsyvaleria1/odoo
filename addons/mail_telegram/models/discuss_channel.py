@@ -61,7 +61,6 @@ class DiscussChannel(models.Model):
             return f"#{self.name}"
         return self.name or ""
 
-
     def _create_sub_channel(self, from_message_id=None, name=None):
         sub_channel = super()._create_sub_channel(
             from_message_id=from_message_id, name=name
@@ -124,7 +123,6 @@ class DiscussChannel(models.Model):
                         "name": self.name[:128],
                     },
                 )
-
 
     def action_telegram_connect_group(self):
         action = super().action_telegram_connect_group()

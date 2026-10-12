@@ -1272,9 +1272,7 @@ class AccountReport(models.Model):
         if "return_period" in options_filter and not options.get("return_periodicity"):
             _debug.logic("return_period_fallback", report=self, filter=options_filter)
             options_filter = "this_month"
-        elif (
-            "return_period" in options_filter
-        ):
+        elif "return_period" in options_filter:
             months_per_period = options["return_periodicity"]["months_per_period"]
             start_day = options["return_periodicity"]["start_day"]
             start_month = options["return_periodicity"]["start_month"]
@@ -3101,7 +3099,6 @@ class AccountReport(models.Model):
                     },
                 )
                 line["columns"][col_index] = comparison_column
-
 
     def show_error_branch_allowed(self, *args, **kwargs) -> None:
         raise UserError(

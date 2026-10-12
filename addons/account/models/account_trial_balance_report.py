@@ -20,9 +20,7 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
         )
 
         if options.get("comparison"):
-            options["comparison"]["period_order"] = (
-                "ascending"
-            )
+            options["comparison"]["period_order"] = "ascending"
             options["comparison"]["hide_period_order_filter"] = True
 
         column_headers, column_groups, columns = self._prepare_trial_balance_columns(
@@ -666,12 +664,8 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             report=report,
             reordered=bool(lines) and not lines[0].get("parent_id"),
         )
-        if lines and not lines[0].get(
-            "parent_id"
-        ):
-            if (
-                self.env.company.account_config_id.totals_below_sections
-            ):
+        if lines and not lines[0].get("parent_id"):
+            if self.env.company.account_config_id.totals_below_sections:
                 lines.pop(0)
                 if unaffected_earning_lines:
                     total_line = lines.pop(-1)

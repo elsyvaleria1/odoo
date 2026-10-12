@@ -206,7 +206,6 @@ def _oversized_png(side):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
-
     def _create_with_content(self, name, raw, mimetype):
         attachment = (
             self.env["ir.attachment"]
@@ -251,7 +250,6 @@ class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsThumbnailPublicUpload(HttpCase):
-
     def _request_document(self):
         return self.env["document.document"].create(
             {
@@ -310,7 +308,6 @@ class TestDocumentsThumbnailPublicUpload(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsThumbnailResolutionBound(TransactionCaseDocuments):
-
     def _upload_shaped_attachment(self, name, side, mode="RGB"):
         buffer = io.BytesIO()
         Image.new(mode, (side, side)).save(buffer, "PNG")
@@ -355,7 +352,6 @@ class TestDocumentsThumbnailResolutionBound(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsThumbnailStore(TransactionCaseDocuments):
-
     def _create(self, name, raw, mimetype, **values):
         return self.env["document.document"].create(
             {

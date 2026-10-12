@@ -43,7 +43,6 @@ class WizardPaymentTransactionCapture(models.TransientModel):
     has_draft_children = fields.Boolean(compute="_compute_has_draft_children")
     has_remaining_amount = fields.Boolean(compute="_compute_has_remaining_amount")
 
-
     @api.depends("transaction_ids")
     def _compute_authorized_amount(self) -> None:
         for wizard in self:
@@ -55,8 +54,10 @@ class WizardPaymentTransactionCapture(models.TransientModel):
             full_capture_txs = wizard.transaction_ids.filtered(
                 lambda tx: tx.state == "done" and not tx.child_transaction_ids
             )
-            partial_capture_child_txs = wizard.transaction_ids.child_transaction_ids.filtered(
-                lambda tx: tx.state == "done"
+            partial_capture_child_txs = (
+                wizard.transaction_ids.child_transaction_ids.filtered(
+                    lambda tx: tx.state == "done"
+                )
             )
             wizard.captured_amount = sum(
                 (full_capture_txs | partial_capture_child_txs).mapped("amount")
@@ -115,7 +116,6 @@ class WizardPaymentTransactionCapture(models.TransientModel):
             if not wizard.has_remaining_amount:
                 wizard.void_remaining_amount = False
 
-
     @api.constrains("amount_to_capture")
     def _check_amount_to_capture_within_boundaries(self) -> None:
         for wizard in self:
@@ -140,7 +140,6 @@ class WizardPaymentTransactionCapture(models.TransientModel):
                     )
                 )
 
-
     def action_capture(self):
         self.check_singleton()
 
@@ -149,8 +148,13 @@ class WizardPaymentTransactionCapture(models.TransientModel):
         for source_tx in self.transaction_ids.filtered(
             lambda tx: tx.state == "authorized"
         ):
-            partial_capture_child_txs = self.transaction_ids.child_transaction_ids.filtered_domain(
-                [("source_transaction_id", "=", source_tx.id), ("state", "=", "done")]
+            partial_capture_child_txs = (
+                self.transaction_ids.child_transaction_ids.filtered_domain(
+                    [
+                        ("source_transaction_id", "=", source_tx.id),
+                        ("state", "=", "done"),
+                    ]
+                )
             )
             source_tx_remaining_amount = source_tx.currency_id.round(
                 source_tx.amount - sum(partial_capture_child_txs.mapped("amount"))

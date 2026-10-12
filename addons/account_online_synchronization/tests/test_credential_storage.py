@@ -8,7 +8,6 @@ from odoo.addons.account_online_synchronization.tests.common import (
 
 @tagged("post_install", "-at_install")
 class TestOdooFinCredentials(AccountOnlineSynchronizationCommon):
-
     def test_the_fixture_tokens_landed_in_one_credential(self):
         credential = self.account_online_link.credential_id.sudo()
 

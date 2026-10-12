@@ -6,7 +6,6 @@ MODEL = "test_ir_access.profile"
 
 
 class TestFieldClassHooks(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

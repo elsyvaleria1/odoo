@@ -11,7 +11,6 @@ from odoo.addons.telegram.tests.test_web_app_init_data import signed_init_data
 
 @tagged("post_install", "-at_install")
 class TestApprovalMiniAppRoute(TelegramBotHttpCase):
-
     def _post(self, path, **data):
         self.env.flush_all()
         return self.url_open(
@@ -127,7 +126,6 @@ class TestApprovalMiniAppRoute(TelegramBotHttpCase):
 
 @tagged("post_install", "-at_install")
 class TestApprovalMiniAppDecision(TelegramBotHttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

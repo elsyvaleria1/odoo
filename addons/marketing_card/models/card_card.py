@@ -4,7 +4,6 @@ from odoo import api, fields, models
 
 
 class CardCard(models.Model):
-
     _name = "card.card"
     _description = "Marketing Card"
 

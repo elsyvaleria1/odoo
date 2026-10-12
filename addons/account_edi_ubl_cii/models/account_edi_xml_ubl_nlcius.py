@@ -23,10 +23,8 @@ class AccountEdiXmlUbl_Nl(models.AbstractModel):
     The trick is to understand which rules are only NLCIUS specific and which are applied to the Bis 3 format.
     """
 
-
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_nlcius.xml"
-
 
     def _get_customization_id(self, process_type="billing"):
         if process_type == "billing":

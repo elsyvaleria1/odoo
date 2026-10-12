@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class SmsTracker(models.Model):
-
     _name = "sms.tracker"
     _description = "Link SMS to mailing/sms tracking models"
 
@@ -31,9 +30,7 @@ class SmsTracker(models.Model):
     )
 
     def _action_update_from_provider_error(self, provider_error) -> tuple:
-        failure_reason = self.env.context.get(
-            "sms_known_failure_reason"
-        )
+        failure_reason = self.env.context.get("sms_known_failure_reason")
         failure_type = f"sms_{provider_error}"
         error_status = None
         if failure_type not in self.env["sms.sms"].DELIVERY_ERRORS:

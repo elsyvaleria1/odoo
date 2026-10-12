@@ -111,9 +111,7 @@ class IoTController(IoTBoxLookup, http.Controller):
                             incompatible_filename
                         ):
                             continue
-                        zf.write(
-                            handler, handler.relative_to(iot_handlers)
-                        )
+                        zf.write(handler, handler.relative_to(iot_handlers))
 
         etag = hashlib.sha256(fobj.getvalue()).hexdigest()
         if etag == request.httprequest.headers.get("If-None-Match"):

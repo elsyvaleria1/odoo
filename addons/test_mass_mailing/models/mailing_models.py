@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class MailingTestCustomer(models.Model):
-
     _name = "mailing.test.customer"
     _description = "Mailing with partner"
     _inherit = ["mixin.mail.thread"]
@@ -29,7 +28,6 @@ class MailingTestCustomer(models.Model):
 
 
 class MailingTestSimple(models.Model):
-
     _name = "mailing.test.simple"
     _description = "Simple Mailing"
     _inherit = ["mixin.mail.thread"]
@@ -40,7 +38,6 @@ class MailingTestSimple(models.Model):
 
 
 class MailingTestUtm(models.Model):
-
     _name = "mailing.test.utm"
     _description = "Mailing: UTM enabled to test UTM sync with mailing"
     _inherit = ["mixin.mail.thread", "mixin.utm"]
@@ -49,7 +46,6 @@ class MailingTestUtm(models.Model):
 
 
 class MailingTestBlacklist(models.Model):
-
     _name = "mailing.test.blacklist"
     _description = "Mailing Blacklist Enabled"
     _inherit = ["mixin.mail.thread.blacklist"]
@@ -72,7 +68,6 @@ class MailingTestBlacklist(models.Model):
 
 
 class MailingTestOptout(models.Model):
-
     _name = "mailing.test.optout"
     _description = "Mailing Blacklist / Optout Enabled"
     _inherit = ["mixin.mail.thread.blacklist"]
@@ -117,7 +112,6 @@ class MailingTestPartner(models.Model):
 
 
 class MailingPerformance(models.Model):
-
     _name = "mailing.performance"
     _description = "Mailing: base performance"
     _inherit = ["mixin.mail.thread"]
@@ -127,7 +121,6 @@ class MailingPerformance(models.Model):
 
 
 class MailingPerformanceBlacklist(models.Model):
-
     _name = "mailing.performance.blacklist"
     _description = "Mailing: blacklist performance"
     _inherit = ["mixin.mail.thread.blacklist"]

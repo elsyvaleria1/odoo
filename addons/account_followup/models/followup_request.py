@@ -8,7 +8,6 @@ from typing import Any, Self
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class FollowupRequest:
-
     partner: Any
     followup_line: Any
     manual: bool = False

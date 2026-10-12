@@ -15,7 +15,6 @@ class PostProcessingRetryError(Exception):
 
 
 class PaymentPostProcessing(http.Controller):
-
     MONITORED_TX_ID_KEY = "__payment_monitored_tx_id__"
 
     @http.route(

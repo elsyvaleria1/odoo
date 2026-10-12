@@ -1253,9 +1253,7 @@ class TestAccountReturn(TestAccountReportsCommon):
         fiscal_country = self.company_data[
             "company"
         ].tax_config_id.account_fiscal_country_id
-        self.basic_return_type.report_id.country_id = (
-            fiscal_country
-        )
+        self.basic_return_type.report_id.country_id = fiscal_country
         other_company_data = self.setup_other_company(
             name="Tax unit other company", account_opening_date="2024-01-01"
         )
@@ -1389,9 +1387,7 @@ class TestAccountReturn(TestAccountReportsCommon):
 
     def test_return_manual_creation_wizard_single_return(self):
         original_number_of_returns = self.env["account.return"].search_count([])
-        wizard = self.env[
-            "wizard.account.return.create"
-        ].create(
+        wizard = self.env["wizard.account.return.create"].create(
             [
                 {
                     "date_from": "2023-11-01",
@@ -1439,9 +1435,7 @@ class TestAccountReturn(TestAccountReportsCommon):
 
     def test_return_manual_creation_wizard_multiple_returns(self):
         original_number_of_returns = self.env["account.return"].search_count([])
-        wizard = self.env[
-            "wizard.account.return.create"
-        ].create(
+        wizard = self.env["wizard.account.return.create"].create(
             [
                 {
                     "date_from": "2023-10-01",
@@ -3624,7 +3618,6 @@ class TestAccountReturn(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAuditAccountSeeding(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

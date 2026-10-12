@@ -42,9 +42,7 @@ class Model(models.AbstractModel):
             try:
                 if field_type in ("many2one", "one2many", "many2many"):
                     linked_records = self.env[field_value._name].browse(field_value.ids)
-                    if (
-                        len(linked_records) > 50
-                    ):
+                    if len(linked_records) > 50:
                         continue
                     names = linked_records._visible_display_names()
                     if None in names.values():
@@ -105,9 +103,7 @@ class Model(models.AbstractModel):
         for fname in fnames:
             field = self._fields.get(fname)
             if field.type in ("binary", "image"):
-                if (
-                    field.attachment and self.ids
-                ):
+                if field.attachment and self.ids:
                     attachments = self.env["ir.attachment"].search(
                         [
                             ("res_model", "=", self._name),
@@ -115,9 +111,7 @@ class Model(models.AbstractModel):
                             ("res_id", "in", self.ids),
                         ]
                     )
-                    __, files_dict = attachments._ai_read(
-                        None, files_dict
-                    )
+                    __, files_dict = attachments._ai_read(None, files_dict)
                 for vals in vals_list:
                     if not vals[fname]:
                         continue
@@ -164,9 +158,7 @@ class Model(models.AbstractModel):
                     record_vals = vals_by_ids[record.id]
                     co_records = record[fname]
                     if not co_records:
-                        record_vals[fname] = (
-                            False
-                        )
+                        record_vals[fname] = False
                     if field.type == "many2one_reference":
                         record_vals[fname] = (
                             {"model": model, "ids": record_vals[fname]}

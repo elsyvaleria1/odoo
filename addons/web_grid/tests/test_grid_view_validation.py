@@ -9,7 +9,6 @@ from ..validation import valid_field_types
 
 @tagged("post_install", "-at_install")
 class TestGridViewValidation(TransactionCase):
-
     def _arch(self, body):
         return etree.fromstring(f'<grid string="Test">{body}</grid>')
 
@@ -101,7 +100,6 @@ class TestGridViewValidation(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestGridViewModeScrub(TransactionCase):
-
     def _grid_view(self, name):
         return self.env["ir.ui.view"].create(
             {

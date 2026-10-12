@@ -7,7 +7,6 @@ from odoo.addons.sms.tools.sms_api import SmsApi
 
 @tagged("post_install", "-at_install")
 class TestSmsProcessQueue(TransactionCase):
-
     def test_process_queue_multi_company_batch(self):
         company_a = self.env["res.company"].create({"name": "Audit Company A"})
         company_b = self.env["res.company"].create({"name": "Audit Company B"})

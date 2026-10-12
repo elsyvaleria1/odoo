@@ -5,7 +5,6 @@ from odoo.addons.trade.tools import SALE
 
 
 class TestTradeOrderDocumentMatch(models.Model):
-
     _name = "test_trade.order.document.match"
     _inherit = ["mixin.order.document.match"]
     _description = "Base Order Test & Invoices Union"

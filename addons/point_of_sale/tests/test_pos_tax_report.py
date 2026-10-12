@@ -162,9 +162,7 @@ class POSTestTaxReport(TestAccountReportsCommon):
         )
 
     def _create_and_pay_pos_order(self, qty, price_unit):
-        tax_amount = (
-            (self.pos_tax.amount / 100) * qty * price_unit
-        )
+        tax_amount = (self.pos_tax.amount / 100) * qty * price_unit
         rounded_total = self.company_data["company"].currency_id.round(
             tax_amount + price_unit * qty
         )

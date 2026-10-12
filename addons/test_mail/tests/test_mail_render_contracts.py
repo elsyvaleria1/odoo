@@ -23,7 +23,6 @@ def _get_scanning(original, scanned):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestEncapsulateContext(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -85,7 +84,6 @@ class TestEncapsulateContext(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRenderLangContract(common.MailCommon):
-
     def test_a_template_with_no_model_answers_rather_than_raising(self):
         template = self.env["mail.template"].create({"name": "no model"})
         record = self.env["mail.test.track"].create(
@@ -111,7 +109,6 @@ class TestRenderLangContract(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestDynamicFieldNames(common.MailCommon):
-
     def test_a_declaring_model_is_taken_at_its_word(self):
         from odoo.addons.mail.models.mail_template import DYNAMIC_FIELD_NAMES
 
@@ -133,7 +130,6 @@ class TestDynamicFieldNames(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRendererSerialisationAgrees(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -216,7 +212,6 @@ class TestRendererSerialisationAgrees(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestStaticMarkerIntegrity(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -249,7 +244,6 @@ class TestStaticMarkerIntegrity(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestEmptyRelationRendersTheDefault(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -304,7 +298,6 @@ class TestEmptyRelationRendersTheDefault(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestStaticExpressionRoots(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -338,7 +331,6 @@ class TestStaticExpressionRoots(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRenderOptionsStayInMail(common.MailCommon):
-
     def test_a_mail_only_option_does_not_reach_the_qweb_context(self):
         record = self.env["mail.test.track"].create(
             {"name": "Opt", "email_from": "opt@test.example.com"}
@@ -368,7 +360,6 @@ class TestRenderOptionsStayInMail(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestStaticProgramIsCompiledOnce(common.MailCommon):
-
     def test_the_decision_survives_across_renders(self):
         model = "mail.test.track"
         record = self.env[model].create(
@@ -393,7 +384,6 @@ class TestStaticProgramIsCompiledOnce(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestTheTwoRenderersAgreeOnAllowListedPlaceholders(common.MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -476,7 +466,6 @@ class TestTheTwoRenderersAgreeOnAllowListedPlaceholders(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestRenderModelIsChecked(common.MailCommon):
-
     def test_a_template_without_a_model_says_so(self):
         template = self.env["mail.template"].create(
             {"name": "no model", "subject": "Hi {{ object.name }}"}
@@ -497,7 +486,6 @@ class TestRenderModelIsChecked(common.MailCommon):
 
 @tagged("mail_render", "post_install", "-at_install")
 class TestUnsafeExpressionScanScope(common.MailCommon):
-
     def test_a_qweb_view_field_is_not_scanned_as_a_template_body(self):
         template = self.env["mail.template"].create(
             {

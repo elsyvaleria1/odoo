@@ -127,7 +127,6 @@ key figure. No tables, no headings, no Markdown other than **bold**.
 
 
 class InsightAgent(BotAssistant):
-
     PURPOSE = PURPOSE
     SETTINGS = (
         "insight_agent_enabled",

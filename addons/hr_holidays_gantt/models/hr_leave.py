@@ -1,4 +1,3 @@
-
 from collections import defaultdict
 from datetime import UTC, datetime, time, timedelta
 from itertools import groupby

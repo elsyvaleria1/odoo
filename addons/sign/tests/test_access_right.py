@@ -61,7 +61,6 @@ class TestAccessRight(SignRequestCommon):
             self.env["sign.request"].with_user(user_B).search([]), sign_request_B
         )
 
-
         with self.assertRaises(ValidationError):
             self.env["sign.request.item"].with_user(user_B).create(
                 {

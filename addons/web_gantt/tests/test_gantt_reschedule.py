@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase
 
 
 class TestGanttReschedule(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

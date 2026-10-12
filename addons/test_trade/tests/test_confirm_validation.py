@@ -11,7 +11,6 @@ class TestConfirmValidation(TestTradeOrderCase):
         self._make_line(order=order, product_qty=1.0)
         return order
 
-
     def test_registry_lists_the_validators(self):
         order = self._make_order()
 
@@ -40,7 +39,6 @@ class TestConfirmValidation(TestTradeOrderCase):
         order = self._confirmable_order()
 
         order._check_confirm_allowed()
-
 
     def test_confirmed_order_cannot_be_confirmed_again(self):
         order = self._confirmable_order()
@@ -78,7 +76,6 @@ class TestConfirmValidation(TestTradeOrderCase):
 
         order._check_confirm_state()
 
-
     def test_order_without_lines_cannot_be_confirmed(self):
         order = self._make_order()
 
@@ -100,7 +97,6 @@ class TestConfirmValidation(TestTradeOrderCase):
 
         with self.assertRaises(UserError):
             order._check_confirm_has_lines()
-
 
     def test_line_without_product_blocks_confirmation(self):
         order = self._make_order()

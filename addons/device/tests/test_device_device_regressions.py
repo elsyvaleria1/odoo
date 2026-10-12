@@ -60,7 +60,6 @@ class TestDeviceConnectionFeedback(_DeviceFixture):
 
 
 class TestManagerCanUseAuthenticatedDevices(InlineStateRetryMixin, _DeviceFixture):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

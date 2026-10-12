@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class ResPartner(models.Model):
-
     _inherit = "res.partner"
 
     test_trade_order_count = fields.Integer(

@@ -8,7 +8,6 @@ _debug = DebugLog(__name__)
 class ProductTemplate(models.Model):
     _inherit = "product.template"
 
-
     preparation_time = fields.Float(
         string="Reserve product",
         company_dependent=True,

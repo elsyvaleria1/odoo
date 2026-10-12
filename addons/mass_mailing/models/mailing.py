@@ -59,7 +59,6 @@ _LOCAL_ATTACHMENT_RE = re.compile(
 
 
 class MailingMailing(models.Model):
-
     _name = "mailing.mailing"
     _description = "Mass Mailing"
     _inherit = [
@@ -381,9 +380,7 @@ class MailingMailing(models.Model):
         aggregator="sum",
     )
     process = fields.Integer(compute="_compute_statistics")
-    pending = fields.Integer(
-        compute="_compute_statistics"
-    )
+    pending = fields.Integer(compute="_compute_statistics")
     delivered = fields.Integer(compute="_compute_statistics")
     opened = fields.Integer(compute="_compute_statistics")
     clicked = fields.Integer(
@@ -796,7 +793,6 @@ class MailingMailing(models.Model):
             "campaign_id",
         ]
 
-
     @api.model_create_multi
     def create(self, vals_list):
         ab_testing_cron = self.env.ref(
@@ -875,7 +871,6 @@ class MailingMailing(models.Model):
                     mailing.ab_testing_schedule_datetime
                 )
         return vals_list
-
 
     def action_add_to_templates(self) -> dict:
         self.is_template = True
@@ -1175,7 +1170,6 @@ class MailingMailing(models.Model):
 
         return values_list
 
-
     def action_compare_versions(self) -> dict:
         self.check_singleton()
         if not self.campaign_id:
@@ -1233,9 +1227,7 @@ class MailingMailing(models.Model):
         final_mailing = self.copy(
             {
                 "ab_testing_pc": 100,
-                "name": self.env._(
-                    " %(subject)s (final)", subject=self.name
-                ),
+                "name": self.env._(" %(subject)s (final)", subject=self.name),
             }
         )
         self.campaign_id.ab_testing_winner_mailing_id = final_mailing
@@ -1288,7 +1280,6 @@ class MailingMailing(models.Model):
             ),
             "user_id": values.get("user_id") or self.user_id.id or self.env.user.id,
         }
-
 
     def _get_opt_out_list(self):
         self.check_singleton()
@@ -1609,7 +1600,6 @@ class MailingMailing(models.Model):
             if mailings:
                 mailings._action_send_statistics()
 
-
     def _action_send_statistics(self):
         self.kpi_mail_required = False
 
@@ -1772,7 +1762,6 @@ class MailingMailing(models.Model):
     @api.model
     def _is_mailing_report_token(self, user_id, token) -> bool:
         return tools.is_hmac_valid(self.env, REPORT_OPT_OUT_SCOPE, user_id, token)
-
 
     def _convert_inline_images_to_urls(self, html_content):
         root = lxml.html.fromstring(html_content)

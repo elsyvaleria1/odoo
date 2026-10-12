@@ -142,7 +142,6 @@ class WizardReportFormulaSend(models.TransientModel):
             for attachment in mail_template.attachment_ids
         ]
 
-
     @api.depends("partner_ids")
     def _compute_mode(self) -> None:
         for wizard in self:

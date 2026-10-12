@@ -8,7 +8,6 @@ from .common import archive_maintenance_approval_categories
 
 @tagged("post_install", "-at_install")
 class TestMaintenanceAccess(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

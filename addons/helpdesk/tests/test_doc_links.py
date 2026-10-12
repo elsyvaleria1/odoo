@@ -3,11 +3,8 @@ import re
 from odoo.tests.common import HttpCase, tagged
 
 
-@tagged(
-    "-standard", "external", "post_install", "-at_install"
-)
+@tagged("-standard", "external", "post_install", "-at_install")
 class TestDocLinks(HttpCase):
-
     def setUp(self):
         super().setUp()
         self.re = re.compile(r'<a href="(\S+/documentation/\S+)"')

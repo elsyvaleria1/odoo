@@ -41,9 +41,7 @@ class TestMailRenderMixin(common.HttpCase):
             "<a >Without href</a>",
         ]
 
-        with self.allow_requests(
-            all_requests=True
-        ):
+        with self.allow_requests(all_requests=True):
             self.env["mixin.mail.render"]._shorten_links("".join(test_links), {})
 
         trackers_to_find = [
@@ -251,9 +249,7 @@ A third: {self.base_url}/r/(\w+)
 A forth: {self.base_url}/r/(\w+)
 And a last, with question mark: {self.base_url}/r/(\w+)"""
         )
-        with self.allow_requests(
-            all_requests=True
-        ):
+        with self.allow_requests(all_requests=True):
             new_content = self.env["mixin.mail.render"]._shorten_links_text(content, {})
 
         self.assertRegex(new_content, expected_pattern)

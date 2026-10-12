@@ -8475,7 +8475,6 @@ class TestCombineBatching(ViewCase):
 
 @tagged("post_install", "-at_install")
 class TestSiblingPrimaryCheck(ViewCase):
-
     def _tree(self, depth, extensions_per_level=1, primaries=2):
         root = self.assertValid(
             '<form><field name="name"/><group name="g0"/></form>',
@@ -9102,7 +9101,6 @@ class TestCombineIsBatched(ViewCase):
 
 
 class TestStaleSiblingWhileLoading(ViewCase):
-
     def _stale_tree(self):
         parent = self.View.create(
             {
@@ -9152,7 +9150,6 @@ class TestStaleSiblingWhileLoading(ViewCase):
 
 
 class TestSweptExtensionWhileLoading(ViewCase):
-
     def _tree(self, owner):
         parent = self.View.create(
             {
@@ -9731,7 +9728,6 @@ class TestXmlIdFollowsTheFirstDeclaration(ViewCase):
 
 
 class TestViewModeScrub(ViewCase):
-
     def _action(self, view_mode):
         return self.env["ir.actions.act_window"].create(
             {"name": "partners", "res_model": "res.partner", "view_mode": view_mode}

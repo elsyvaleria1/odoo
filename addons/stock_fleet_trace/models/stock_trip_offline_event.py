@@ -28,7 +28,6 @@ BLOCKING_STATES = ("pending", "review")
 
 
 class StockTripOfflineEvent(models.Model):
-
     _name = "stock.trip.offline.event"
     _description = "Trip Offline Event"
     _order = "captured_at, id"

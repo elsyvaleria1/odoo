@@ -21,7 +21,6 @@ CALLS = {
 
 @tagged("post_install", "-at_install")
 class TestBoxCalls(HttpCase):
-
     def _new_box(self, identifier):
         return (
             self.env["iot.box"]

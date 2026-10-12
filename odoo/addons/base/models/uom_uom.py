@@ -73,7 +73,6 @@ class UomUom(models.Model):
         "The conversion ratio for a unit of measure must be strictly positive!",
     )
 
-
     @api.depends("relative_factor")
     def _compute_sequence(self) -> None:
         for uom in self:
@@ -97,7 +96,6 @@ class UomUom(models.Model):
         for uom in self:
             uom.reference_uom_id = uom.relative_uom_id.reference_uom_id or uom
 
-
     @api.onchange("relative_factor", "relative_uom_id")
     def _onchange_critical_fields(self) -> dict | None:
         if self._filter_protected_uoms() and self.create_date < (
@@ -117,7 +115,6 @@ class UomUom(models.Model):
             }
         return None
 
-
     @api.constrains("relative_factor", "relative_uom_id")
     def _check_factor(self) -> None:
         for uom in self:
@@ -132,7 +129,6 @@ class UomUom(models.Model):
                         uom.display_name,
                     )
                 )
-
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_master_data(self) -> None:
@@ -155,7 +151,6 @@ class UomUom(models.Model):
                     dependent_units=", ".join(descendants.mapped("name")),
                 )
             )
-
 
     def _precision_digits(self) -> int:
         return self.env["decimal.precision"].get_precision("Product Unit")
@@ -233,7 +228,6 @@ class UomUom(models.Model):
             )
 
         return amount
-
 
     def _get_quantity_lenient(self, qty: float, to_unit: Self, **kwargs) -> float:
         kwargs.pop("raise_if_failure", None)
@@ -350,7 +344,6 @@ class UomUom(models.Model):
                 )
             return price
         return price * to_unit.factor / self.factor
-
 
     def _get_price_lenient(self, price: float, to_unit: Self, **kwargs) -> float:
         kwargs.pop("raise_if_failure", None)

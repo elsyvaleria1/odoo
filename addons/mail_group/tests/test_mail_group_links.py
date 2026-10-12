@@ -8,7 +8,6 @@ from odoo.addons.mail_group.tests.common import TestMailListCommon
 
 @tagged("post_install", "-at_install")
 class TestMailGroupConfirmationLinks(TestMailListCommon, HttpCase):
-
     def _link(self, email, action):
         url = urlsplit(self.test_group._generate_action_url(email, action))
         return f"{url.path}?{url.query}"

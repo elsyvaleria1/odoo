@@ -5,7 +5,6 @@ from odoo.tests.common import new_test_user
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyPartner(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

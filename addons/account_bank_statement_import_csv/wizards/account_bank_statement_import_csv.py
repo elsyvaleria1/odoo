@@ -69,14 +69,10 @@ class Base_ImportImport(models.TransientModel):
                 )
             dates = [fields.Date.from_string(line[index_date]) for line in data]
             sorted_dates_asc = sorted(dates)
-            if (
-                dates != sorted_dates_asc
-            ):
+            if dates != sorted_dates_asc:
                 sorted_dates_desc = sorted_dates_asc[::-1]
                 if dates == sorted_dates_desc:
-                    data = data[
-                        ::-1
-                    ]
+                    data = data[::-1]
                 else:
                     raise UserError(self.env._("Rows must be sorted by date."))
 

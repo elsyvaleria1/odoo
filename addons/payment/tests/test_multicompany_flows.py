@@ -13,9 +13,7 @@ class TestMultiCompanyFlows(PaymentHttpCommon):
         super().setUpClass()
 
         cls.company_a = cls.env.company
-        cls.company_b = cls.env.company.create(
-            {"name": "Payment Test Company"}
-        )
+        cls.company_b = cls.env.company.create({"name": "Payment Test Company"})
 
         cls.user_company_a = cls.internal_user
         cls.user_company_b = cls.env["res.users"].create(

@@ -1,4 +1,3 @@
-
 from odoo.fields import Command
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
@@ -7,7 +6,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyRewardDomain(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

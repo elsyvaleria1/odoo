@@ -8,7 +8,6 @@ from odoo.addons.sale_lazada import const, utils
 
 
 class LazadaItem(models.Model):
-
     _name = "lazada.item"
     _description = "Lazada Item"
     _check_company_auto = True
@@ -68,7 +67,6 @@ class LazadaItem(models.Model):
         "UNIQUE(shop_id, lazada_item_extern_id)",
         "Item External IDs must be unique for a given shop.",
     )
-
 
     @api.constrains("sync_lazada_inventory", "fulfillment_type", "product_id")
     def _check_sync_to_lazada(self) -> None:
@@ -142,7 +140,6 @@ class LazadaItem(models.Model):
                 }
             )
         return json_dumps({"Request": {"Product": {"Skus": {"Sku": vals}}}})
-
 
     def _update_inventory(self, shop, items) -> None:
         shop.check_singleton()

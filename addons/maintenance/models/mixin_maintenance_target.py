@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class MixinMaintenanceTarget(models.AbstractModel):
-
     _name = "mixin.maintenance.target"
     _description = "Maintained Resource"
 

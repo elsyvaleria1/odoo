@@ -32,9 +32,7 @@ class WizardAccountMoveReverse(models.TransientModel):
                         lambda line: line.product_id == self.sudo().product_id
                     )
                 )
-            for line in (
-                self.new_move_ids.invoice_line_ids
-            ):
+            for line in self.new_move_ids.invoice_line_ids:
                 if (
                     not line.product_id
                     or line.display_type != "product"

@@ -65,7 +65,6 @@ class SocialStreamPost(models.Model):
                 post.linkedin_author_urn == post.account_id.linkedin_account_urn
             )
 
-
     def _linkedin_edit_post(self, new_message) -> None:
         self.check_singleton()
         self.check_access("write")
@@ -96,7 +95,6 @@ class SocialStreamPost(models.Model):
             )
 
         self.unlink()
-
 
     def _linkedin_like_comment(self, comment_urn, like) -> None:
         self.check_singleton()
@@ -349,7 +347,6 @@ class SocialStreamPost(models.Model):
             unquote(like_urn).split("entity:")[-1][:-1]: True
             for like_urn in response.get("results", {})
         }
-
 
     def _linkedin_format_comment(self, json_data):
         created_time = json_data.get("created", {}).get("time", 0)

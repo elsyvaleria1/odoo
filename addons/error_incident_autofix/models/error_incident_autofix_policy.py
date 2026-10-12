@@ -9,7 +9,6 @@ DELIVERY_KINDS = (REVISION, HOTFIX)
 
 
 class ErrorIncidentAutofixPolicy(models.Model):
-
     _name = "error.incident.autofix.policy"
     _description = "Autofix Policy"
     _inherit = ["mixin.mail.thread"]

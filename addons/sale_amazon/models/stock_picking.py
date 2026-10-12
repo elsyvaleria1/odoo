@@ -36,7 +36,6 @@ class StockPicking(models.Model):
         readonly=True,
     )
 
-
     def write(self, vals):
         pickings = self
         if "date_done" in vals:
@@ -97,9 +96,7 @@ class StockPicking(models.Model):
                     ratio=completion_ratio,
                     partial=0 < completion_ratio < 1,
                 )
-                if (
-                    0 < completion_ratio < 1
-                ):
+                if 0 < completion_ratio < 1:
                     raise UserError(
                         self.env._(
                             "Products delivered to Amazon customers must have their respective parts in"
@@ -151,7 +148,6 @@ class StockPicking(models.Model):
                 )
         return super()._check_carrier_details_compliance()
 
-
     def action_retry_amazon_sync(self) -> None:
         self.check_singleton()
 
@@ -166,15 +162,10 @@ class StockPicking(models.Model):
 
         _debug.lifecycle("picking_sync_retry", picking=self, account=account)
         account._sync_order_by_reference(self.sale_id.amazon_order_ref)
-        if (
-            self.amazon_sync_status == "error"
-        ):
+        if self.amazon_sync_status == "error":
             _debug.logic("picking_sync_retry_needed", picking=self, status="error")
             self._confirm_shipment(account)
-            self.env["ir.cron"]._trigger_ref(
-                "sale_amazon.ir_cron_sync_amazon_feeds"
-            )
-
+            self.env["ir.cron"]._trigger_ref("sale_amazon.ir_cron_sync_amazon_feeds")
 
     @api.model
     def _sync_pickings(self, account_ids=()) -> None:
@@ -203,9 +194,7 @@ class StockPicking(models.Model):
         for picking in self.search([("amazon_sync_status", "=", sync_status)]):
             if picking.sale_id.line_ids:
                 offer = picking.sale_id.line_ids[0].amazon_offer_id
-                account = (
-                    offer and offer.account_id
-                )
+                account = offer and offer.account_id
                 if not account or (account_ids and account.id not in account_ids):
                     _debug.logic(
                         "picking_excluded",
@@ -325,17 +314,13 @@ class StockPicking(models.Model):
 
         shipper_name = None
         if self.carrier_id:
-            carrier_key = (
-                self.carrier_id._get_delivery_type()
-            )
+            carrier_key = self.carrier_id._get_delivery_type()
             if carrier_key in (
                 "fixed",
                 "base_on_rule",
             ):
                 carrier_key = self.carrier_id.name
-            carrier_key = "".join(
-                filter(str.isalnum, carrier_key)
-            ).lower()
+            carrier_key = "".join(filter(str.isalnum, carrier_key)).lower()
             fallback = self.env.context.get(
                 "amazon_carrier_name_fallback", self.carrier_id.name
             )

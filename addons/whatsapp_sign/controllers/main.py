@@ -93,9 +93,7 @@ class WhatsappSign(http.Controller):
         attachment_ids = sign_request.attachment_ids
         if len(attachment_ids) == 1:
             return attachment_ids._to_http_stream().prepare_response(as_attachment=True)
-        elif (
-            len(attachment_ids) > 1
-        ):
+        elif len(attachment_ids) > 1:
             return self._create_zip_response(sign_request)
 
         raise request.prepare_not_found_error()

@@ -667,9 +667,7 @@ class HrExpenseStripeCard(models.Model):
         if not valid_mcc:
             return False, self.env._("No MCC is properly set")
 
-        if mcc not in (
-            card.spending_policy_category_tag_ids or valid_mcc
-        ):
+        if mcc not in (card.spending_policy_category_tag_ids or valid_mcc):
             return False, self.env._("MCC not allowed")
 
         existing_expenses_data = process_existing_expenses_data(

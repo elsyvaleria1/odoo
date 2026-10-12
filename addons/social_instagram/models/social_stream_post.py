@@ -50,7 +50,6 @@ class SocialStreamPost(models.Model):
                 == post.account_id.instagram_facebook_account_id
             )
 
-
     def _instagram_comment_add(self, message, object_id, comment_type="comment"):
 
         self.check_singleton()
@@ -129,7 +128,6 @@ class SocialStreamPost(models.Model):
             purpose="social_instagram",
             data={"access_token": self.account_id.instagram_access_token},
         )
-
 
     def _get_matching_post(self):
         self.check_singleton()

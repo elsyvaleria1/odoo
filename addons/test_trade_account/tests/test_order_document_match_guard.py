@@ -5,7 +5,6 @@ from odoo.addons.trade.tools import direction_of
 
 @tagged("post_install", "-at_install")
 class TestOrderDocumentMatchGuard(TransactionCase):
-
     def test_missing_direction_raises(self):
         mixin = self.env["mixin.order.document.match"]
         with self.assertRaises(NotImplementedError):

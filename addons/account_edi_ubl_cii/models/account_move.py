@@ -35,7 +35,6 @@ class AccountMove(models.Model):
         compute="_compute_filename",
     )
 
-
     @api.depends("ubl_cii_xml_file")
     def _compute_ubl_cii_xml_id(self) -> None:
         self._compute_linked_attachment_id("ubl_cii_xml_id", "ubl_cii_xml_file")
@@ -45,14 +44,12 @@ class AccountMove(models.Model):
         for record in self:
             record.ubl_cii_xml_filename = record.ubl_cii_xml_id.name
 
-
     def action_invoice_download_ubl(self) -> dict:
         return {
             "type": "ir.actions.act_url",
             "url": f"/account/download_invoice_documents/{','.join(map(str, self.ids))}/ubl?allow_fallback=true",
             "target": "download",
         }
-
 
     def _get_fields_to_detach(self):
         fields_list = super()._get_fields_to_detach()
@@ -105,7 +102,6 @@ class AccountMove(models.Model):
                 }
             )
         return print_items
-
 
     def _import_file_type_rules(self):
         return [

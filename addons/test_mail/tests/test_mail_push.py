@@ -34,7 +34,6 @@ from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE
 
 @tagged("mail_push")
 class TestWebPushPayloadBudget(TransactionCase):
-
     def _truncated(self, title, body, icon="/i.png"):
         payload = {
             "title": title,
@@ -84,15 +83,12 @@ class TestWebPushPayloadBudget(TransactionCase):
         thread = self.env["mixin.mail.thread"]
         emoji = "\N{GRINNING FACE}"
         self.assertEqual(thread._web_push_truncate_json_string(emoji * 3, 4), emoji)
-        self.assertEqual(
-            thread._web_push_truncate_json_string(emoji * 3, 8), emoji * 2
-        )
+        self.assertEqual(thread._web_push_truncate_json_string(emoji * 3, 8), emoji * 2)
 
 
 @tagged("post_install", "-at_install", "mail_push")
 @tagged("mail_push")
 class TestWebPushRecipientLanguage(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -202,7 +198,6 @@ class TestWebPushRecipientLanguage(TransactionCase):
 
 @tagged("mail_push")
 class TestWebPushAuthorSuppression(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -279,7 +274,6 @@ class TestWebPushAuthorSuppression(TransactionCase):
 
 
 class TestWebPushMessageTypes(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -821,7 +815,9 @@ class TestWebPushNotification(SMSCommon):
 
     @patch.object(odoo.addons.mail.models.mixin_mail_thread, "push_to_end_point")
     def test_call_invitation_icon_is_the_logged_in_caller(self, push_to_end_point):
-        caller = self.env["res.users"].sudo().create({"name": "Caller", "login": "caller"})
+        caller = (
+            self.env["res.users"].sudo().create({"name": "Caller", "login": "caller"})
+        )
         stale_guest = self.env["mail.guest"].sudo().create({"name": "Old Visitor"})
         channel = (
             self.env["discuss.channel"]
@@ -1463,44 +1459,41 @@ class TestWebPushNotification(SMSCommon):
         body_size_limit = effective_payload_size_limit - base_payload_size
         encryption_overhead = ENCRYPTION_HEADER_SIZE + ENCRYPTION_BLOCK_OVERHEAD
 
-        test_cases = (
-            [
-                ("empty string", "", 0, 0),
-                (
-                    "1-byte ASCII characters (below limit)",
-                    "X" * (body_size_limit - 1),
-                    body_size_limit - 1,
-                    body_size_limit - 1,
-                ),
-                (
-                    "1-byte ASCII characters (at limit)",
-                    "X" * body_size_limit,
-                    body_size_limit,
-                    body_size_limit,
-                ),
-                (
-                    "1-byte ASCII characters (past limit)",
-                    "X" * (body_size_limit + 1),
-                    body_size_limit,
-                    body_size_limit,
-                ),
-                (
-                    "1-byte ASCII characters (way past limit)",
-                    "X" * 5000,
-                    body_size_limit,
-                    body_size_limit,
-                ),
-            ]
-            + [
-                (
-                    f"2-bytes UTF-8 characters (near limit + {offset}-byte offset)",
-                    ("+" * offset) + ("Ø" * (body_size_limit // 2)),
-                    offset + (body_size_limit - offset) // 2,
-                    offset + ((body_size_limit - offset) // 2) * 2,
-                )
-                for offset in range(4)
-            ]
-        )
+        test_cases = [
+            ("empty string", "", 0, 0),
+            (
+                "1-byte ASCII characters (below limit)",
+                "X" * (body_size_limit - 1),
+                body_size_limit - 1,
+                body_size_limit - 1,
+            ),
+            (
+                "1-byte ASCII characters (at limit)",
+                "X" * body_size_limit,
+                body_size_limit,
+                body_size_limit,
+            ),
+            (
+                "1-byte ASCII characters (past limit)",
+                "X" * (body_size_limit + 1),
+                body_size_limit,
+                body_size_limit,
+            ),
+            (
+                "1-byte ASCII characters (way past limit)",
+                "X" * 5000,
+                body_size_limit,
+                body_size_limit,
+            ),
+        ] + [
+            (
+                f"2-bytes UTF-8 characters (near limit + {offset}-byte offset)",
+                ("+" * offset) + ("Ø" * (body_size_limit // 2)),
+                offset + (body_size_limit - offset) // 2,
+                offset + ((body_size_limit - offset) // 2) * 2,
+            )
+            for offset in range(4)
+        ]
 
         for description, body, expected_body_length, expected_body_size in test_cases:
             with self.subTest(description):
@@ -1563,9 +1556,7 @@ class TestWebPushNotification(SMSCommon):
                 (base_payload_size + body_json_size - 1, pad + "BØD"),
                 (base_payload_size + body_json_size - 2, pad + "BØ"),
             ]
-            + [
-                (base_payload_size + body_json_size - n, pad + "B") for n in range(3, 5)
-            ]
+            + [(base_payload_size + body_json_size - n, pad + "B") for n in range(3, 5)]
             + [
                 (base_payload_size + body_json_size - 5, pad),
                 (

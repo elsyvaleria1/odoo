@@ -309,9 +309,7 @@ class TestPropertiesExportImport(HttpCase):
             [
                 {
                     "properties_id": self.properties_records[0].id,
-                    "another_properties_id": self.properties_records[
-                        1
-                    ].id,
+                    "another_properties_id": self.properties_records[1].id,
                 },
                 {
                     "properties_id": self.properties_records[3].id,

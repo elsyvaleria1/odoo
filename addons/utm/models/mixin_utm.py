@@ -10,7 +10,6 @@ from odoo.http import request
 
 
 class MixinUtm(models.AbstractModel):
-
     _name = "mixin.utm"
     _description = "UTM Mixin"
 

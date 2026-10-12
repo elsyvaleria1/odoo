@@ -55,7 +55,6 @@ class Data_CleaningModel(models.Model):
         compute="_compute_records_to_clean",
     )
 
-
     @api.onchange("res_model_id")
     def _compute_name(self):
         for cm_model in self:
@@ -232,7 +231,6 @@ class Data_CleaningModel(models.Model):
     def _get_notification_subject(self):
         return self.env._("Data to Clean")
 
-
     def write(self, vals):
         stale = self.env["data_cleaning.model"]
         if "active" in vals and not vals["active"]:
@@ -246,7 +244,6 @@ class Data_CleaningModel(models.Model):
                 ]
             ).unlink()
         return super().write(vals)
-
 
     def open_records(self):
         self.check_singleton()

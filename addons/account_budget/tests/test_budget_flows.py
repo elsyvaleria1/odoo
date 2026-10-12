@@ -12,7 +12,6 @@ from odoo.addons.base.models.res_currency import ResCurrency
 
 @tagged("post_install", "-at_install")
 class TestBudgetFlows(TestAccountBudgetCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

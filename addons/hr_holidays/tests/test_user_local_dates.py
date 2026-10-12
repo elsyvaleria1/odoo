@@ -12,7 +12,6 @@ LOCAL_DAY = date(2026, 9, 14)
 
 @tagged("post_install", "-at_install")
 class TestUserLocalDates(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

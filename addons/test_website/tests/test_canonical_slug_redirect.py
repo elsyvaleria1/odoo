@@ -4,7 +4,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("-at_install", "post_install")
 class TestCanonicalSlugRedirect(HttpCase):
-
     EP = "/ignore_args/converteronly/"
 
     def _serve(self, encoded_segment):

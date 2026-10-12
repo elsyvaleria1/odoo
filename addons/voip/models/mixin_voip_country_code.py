@@ -4,7 +4,6 @@ from odoo.addons.voip.models.utils import extract_country_code
 
 
 class MixinVoipCountryCode(models.AbstractModel):
-
     _name = "mixin.voip.country.code"
     _description = "Phone Country Mixin"
 

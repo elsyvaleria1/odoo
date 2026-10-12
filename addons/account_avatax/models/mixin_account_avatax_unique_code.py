@@ -6,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 
 class MixinAccountAvataxUniqueCode(models.AbstractModel):
-
     _name = "mixin.account.avatax.unique.code"
     _description = "Mixin to generate unique ids for Avatax"
 

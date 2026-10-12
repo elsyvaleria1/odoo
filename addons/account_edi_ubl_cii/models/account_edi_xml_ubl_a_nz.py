@@ -12,10 +12,8 @@ class AccountEdiXmlUbl_A_Nz(models.AbstractModel):
     * Documentation: https://github.com/A-NZ-PEPPOL/A-NZ-PEPPOL-BIS-3.0/tree/master/Specifications
     """
 
-
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_a_nz.xml"
-
 
     def _get_customization_id(self, process_type="billing"):
         if process_type == "billing":

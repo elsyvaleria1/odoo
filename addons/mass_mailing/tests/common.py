@@ -20,7 +20,6 @@ def _is_trace_matching(email, status, record, trace):
 
 
 class MassMailCase(MailCase, MockLinkTracker):
-
     def assertMailingStatistics(self, mailing, **kwargs):
         if not kwargs.get("expected"):
             kwargs["expected"] = len(mailing.mailing_trace_ids)
@@ -217,7 +216,6 @@ class MassMailCase(MailCase, MockLinkTracker):
                         link_params=link_params,
                     )
 
-
     def gateway_mail_trace_bounce(self, mailing, record, bounce_base_values=None):
         record_email = record[record._primary_email]
         trace = mailing.mailing_trace_ids.filtered(
@@ -260,9 +258,7 @@ class MassMailCase(MailCase, MockLinkTracker):
         for _url_href, link_url, _dummy, label in mail.HTML_TAG_URL_REGEX.findall(
             email["body"]
         ):
-            if (
-                label == click_label and "/r/" in link_url
-            ):
+            if label == click_label and "/r/" in link_url:
                 parsed_url = urlsplit(link_url)
                 path_items = parsed_url.path.split("/")
                 code, trace_id = path_items[2], int(path_items[4])

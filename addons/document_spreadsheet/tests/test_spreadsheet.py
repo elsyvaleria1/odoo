@@ -276,7 +276,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         with self._freeze_time("2020-02-07"):
             spreadsheet6 = self.create_spreadsheet(name="SP 6")
 
-
         spreadsheets = self.env["document.document"]._get_spreadsheets_to_display(
             [], offset=0, limit=1
         )
@@ -319,7 +318,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         self.assertEqual(
             spreadsheet_ids, [spreadsheet6.id, spreadsheet5.id, spreadsheet4.id]
         )
-
 
         spreadsheets = (
             self.env["document.document"]

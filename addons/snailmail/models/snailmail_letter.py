@@ -251,9 +251,7 @@ class SnailmailLetter(models.Model):
             pdf_bin = self._overwrite_margins(pdf_bin)
             if self.cover:
                 pdf_bin = self._add_cover_page(pdf_bin)
-            attachment = self.env[
-                "ir.attachment"
-            ].create(
+            attachment = self.env["ir.attachment"].create(
                 {
                     "name": filename,
                     "datas": base64.b64encode(pdf_bin),

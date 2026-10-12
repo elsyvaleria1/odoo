@@ -11,7 +11,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestConsentOnFinancialVerbs(AccountApprovalCommon):
-
     def _category(self, name, **values):
         category = self.env["approval.category"].create(
             {

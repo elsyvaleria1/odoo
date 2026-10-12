@@ -74,17 +74,13 @@ class TestBenefits(TransactionCase):
     def test_final_yearly_costs(self):
         self.version.final_yearly_costs = 100000
         self.version._onchange_final_yearly_costs()
-        self.assertAlmostEqual(
-            self.version.final_yearly_costs, 100000, 2
-        )
+        self.assertAlmostEqual(self.version.final_yearly_costs, 100000, 2)
 
         self.version.holidays = 10
         self.version.final_yearly_costs = 100000
         self.version._onchange_final_yearly_costs()
         self.version._onchange_wage_with_holidays()
-        self.assertAlmostEqual(
-            self.version.final_yearly_costs, 100000, 2
-        )
+        self.assertAlmostEqual(self.version.final_yearly_costs, 100000, 2)
 
     def test_mandatory_benefits_survive_a_batched_recompute(self):
         other_type = self.env["hr.payroll.structure.type"].create({"name": "other"})

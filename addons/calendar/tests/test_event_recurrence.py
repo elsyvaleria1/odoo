@@ -516,9 +516,7 @@ class TestCreateRecurrentEvents(TestRecurrentEvents):
         self.event.start = dt
         self.event.stop = dt + relativedelta(hours=1)
 
-        self.assertEqual(
-            self.event.start, datetime(2023, 3, 27, 7, 0, 00)
-        )
+        self.assertEqual(self.event.start, datetime(2023, 3, 27, 7, 0, 00))
 
         self.event._apply_recurrence_values(
             {
@@ -531,7 +529,6 @@ class TestCreateRecurrentEvents(TestRecurrentEvents):
                 "event_tz": tz_name,
             }
         )
-
 
         recurrence = self.env["calendar.recurrence"].search(
             [("base_event_id", "=", self.event.id)]

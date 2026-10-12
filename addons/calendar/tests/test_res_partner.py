@@ -11,7 +11,6 @@ class TestResPartner(TransactionCase):
         Partner = self.env["res.partner"].with_user(test_user)
         Event = self.env["calendar.event"].with_user(test_user)
 
-
         test_partner_1 = Partner.create({"name": "test_partner_1"})
         test_partner_2 = Partner.create(
             {"name": "test_partner_2", "parent_id": test_partner_1.id}

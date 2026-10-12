@@ -63,7 +63,6 @@ what the assistant asked (a yes, a name, a choice, a quantity), answer \
 
 
 class InsightAssistant(BotAssistant):
-
     PURPOSE = PURPOSE
     TRANSCRIBE_CONTEXT = TRANSCRIBE_CONTEXT
     TRANSCRIPTION_PURPOSE = TRANSCRIPTION_PURPOSE

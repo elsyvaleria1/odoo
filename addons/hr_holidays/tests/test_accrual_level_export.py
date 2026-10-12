@@ -3,7 +3,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("post_install", "-at_install", "accruals")
 class TestAccrualLevelExport(HttpCase):
-
     def _import_compatible_field_names(self, model):
         self.authenticate("admin", "admin")
         result = self.call_jsonrpc(

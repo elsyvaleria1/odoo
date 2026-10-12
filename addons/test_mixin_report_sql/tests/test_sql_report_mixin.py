@@ -30,7 +30,6 @@ def _get_constant_hook(value):
 
 
 class TestRegistryComposition(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -134,7 +133,6 @@ class TestRegistryComposition(TransactionCase):
 
 
 class TestFromEntryShapes(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -196,7 +194,6 @@ class TestFromEntryShapes(TransactionCase):
 
 
 class TestPercentEscaping(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -238,7 +235,6 @@ class TestPercentEscaping(TransactionCase):
 
 
 class TestMaterializedMarkerInteraction(TransactionCase):
-
     def test_non_materialized_model_is_inlined(self):
         report = self.env["mixin.report.sql.test.plain"]
         self.assertIsInstance(report._table_query, SQL)

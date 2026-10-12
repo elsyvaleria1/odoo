@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestInstallDirectiveIsDecidedPerUser(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

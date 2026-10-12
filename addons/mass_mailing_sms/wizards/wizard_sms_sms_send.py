@@ -15,7 +15,6 @@ class WizardSmsSmsSend(models.TransientModel):
         ondelete="set null",
     )
 
-
     def _get_unsubscribe_url(self, mailing_id, trace_code):
         return tools.urls.urljoin(
             self.get_base_url(), "/sms/%s/%s" % (mailing_id, trace_code)

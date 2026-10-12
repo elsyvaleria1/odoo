@@ -70,7 +70,6 @@ class TestGeocoder(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestGeocoderEdges(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -188,7 +187,6 @@ class TestGeocoderEdges(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPartnerCoordinatesReset(TransactionCase):
-
     def test_address_change_resets_coordinates(self):
         partner = self.env["res.partner"].create(
             {

@@ -272,7 +272,6 @@ class SaleOrder(models.Model):
         if self.partner_id and self.fiscal_position_id:
             taxes_ids = self.fiscal_position_id.map_tax(taxes).ids
 
-
         if carrier.product_id.description_sale:
             so_description = "%s: %s" % (
                 carrier.name,

@@ -13,7 +13,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GamificationGoal(models.Model):
-
     _name = "gamification.goal"
     _access_anchors = frozendict(
         {

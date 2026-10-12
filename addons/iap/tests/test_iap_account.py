@@ -13,7 +13,6 @@ from odoo.addons.mixin_encryption.models import mixin_encryption as encryption_m
 
 @tagged("post_install", "-at_install")
 class TestIapAccount(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

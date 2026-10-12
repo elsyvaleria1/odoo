@@ -4,7 +4,6 @@ from odoo.tools import mute_logger
 
 
 class TestVerbs(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

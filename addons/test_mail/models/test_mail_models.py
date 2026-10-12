@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class MailTestSimple(models.Model):
-
     _description = "Simple Chatter Model"
     _name = "mail.test.simple"
     _inherit = ["mixin.mail.thread"]
@@ -23,7 +22,6 @@ class MailTestSimple(models.Model):
 
 
 class MailTestSimpleUnnamed(models.Model):
-
     _description = 'Simple Chatter Model without "name" field'
     _name = "mail.test.simple.unnamed"
     _inherit = ["mixin.mail.thread"]
@@ -39,7 +37,6 @@ class MailTestSimpleMainAttachment(models.Model):
 
 
 class MailTestSimpleUnfollow(models.Model):
-
     _description = "Simple Chatter Model"
     _name = "mail.test.simple.unfollow"
     _inherit = ["mixin.mail.thread"]
@@ -51,7 +48,6 @@ class MailTestSimpleUnfollow(models.Model):
 
 
 class MailTestAliasOptional(models.Model):
-
     _description = "Chatter Model using Optional Alias Mixin"
     _name = "mail.test.alias.optional"
     _inherit = ["mixin.mail.thread", "mixin.mail.alias.optional"]
@@ -72,7 +68,6 @@ class MailTestAliasOptional(models.Model):
 
 
 class MailTestGateway(models.Model):
-
     _description = "Simple Chatter Model for Mail Gateway"
     _name = "mail.test.gateway"
     _inherit = ["mixin.mail.thread.blacklist"]
@@ -93,7 +88,6 @@ class MailTestGateway(models.Model):
 
 
 class MailTestGatewayCompany(models.Model):
-
     _description = "Simple Chatter Model for Mail Gateway with company"
     _name = "mail.test.gateway.company"
     _inherit = ["mail.test.gateway"]
@@ -102,7 +96,6 @@ class MailTestGatewayCompany(models.Model):
 
 
 class MailTestGatewayMainAttachment(models.Model):
-
     _description = "Simple Chatter Model for Mail Gateway with company"
     _name = "mail.test.gateway.main.attachment"
     _inherit = ["mail.test.gateway", "mixin.mail.thread.main.attachment"]
@@ -111,7 +104,6 @@ class MailTestGatewayMainAttachment(models.Model):
 
 
 class MailTestGatewayGroups(models.Model):
-
     _description = "Channel/Group-like Chatter Model for Mail Gateway"
     _name = "mail.test.gateway.groups"
     _inherit = ["mixin.mail.thread.blacklist", "mixin.mail.alias"]
@@ -136,7 +128,6 @@ class MailTestGatewayGroups(models.Model):
 
 
 class MailTestTrack(models.Model):
-
     _description = "Standard Chatter Model"
     _name = "mail.test.track"
     _inherit = ["mixin.mail.thread"]
@@ -171,7 +162,6 @@ class MailTestTrack(models.Model):
 
 
 class MailTestActivity(models.Model):
-
     _description = "Activity Model"
     _name = "mail.test.activity"
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
@@ -198,7 +188,6 @@ class MailTestActivity(models.Model):
 
 
 class MailTestComposerMixin(models.Model):
-
     _description = "Invite-like Wizard"
     _name = "mail.test.composer.mixin"
     _inherit = ["mixin.mail.composer"]
@@ -218,7 +207,6 @@ class MailTestComposerMixin(models.Model):
 
 
 class MailTestComposerSource(models.Model):
-
     _description = "Invite-like Source"
     _name = "mail.test.composer.source"
     _inherit = ["mixin.mail.thread.blacklist"]

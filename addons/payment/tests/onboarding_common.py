@@ -10,7 +10,6 @@ from odoo.addons.payment.models import payment_provider
 
 
 class OnboardingStateCases:
-
     allow_inherited_tests_method = True
 
     def _state_of_start_url(self, url) -> str:

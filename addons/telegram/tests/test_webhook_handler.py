@@ -9,7 +9,6 @@ from .common import TelegramBotHttpCase, TelegramBotTestCase
 
 @tagged("post_install", "-at_install")
 class WebhookRouteCase(TelegramBotHttpCase):
-
     def _post(self, token=None, data=None, headers=None, body=None):
         self.env.flush_all()
         if body is None:

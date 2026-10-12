@@ -154,9 +154,7 @@ class WorksheetTemplate(models.Model):
         x_name_fields = self.env["ir.model.fields"].search(
             [("model_id", "in", models_ids), ("name", "=", "x_name")]
         )
-        x_name_fields.write(
-            {"related": False}
-        )
+        x_name_fields.write({"related": False})
         self.mapped("action_id").unlink()
         self.mapped("model_id").with_context(**{MODULE_UNINSTALL_FLAG: True}).unlink()
 
@@ -469,15 +467,12 @@ class WorksheetTemplate(models.Model):
             )
         return action
 
-
     def get_x_model_form_action(self):
         action = self.action_id.read()[0]
         action.update(
             {
                 "views": [[False, "form"]],
-                "context": {
-                    "default_x_%s_id" % self.res_model.replace(".", "_"): True
-                },
+                "context": {"default_x_%s_id" % self.res_model.replace(".", "_"): True},
             }
         )
         return action

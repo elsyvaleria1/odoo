@@ -28,7 +28,6 @@ class TestSaleSubscription(TestCommissionsSetup):
         self.referrer.commission_plan_id = self.gold_plan
         self.assertEqual(so.commission_plan_id, self.gold_plan)
 
-
         form = Form(self.env["sale.order"])
         form.partner_id = self.customer
         form.referrer_id = self.referrer

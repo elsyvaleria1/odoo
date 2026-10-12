@@ -160,7 +160,6 @@ class TestEventSale(TestEventSaleCommon):
         ticket1 = self.event_0.event_ticket_ids[0]
         ticket2 = self.event_0.event_ticket_ids[1]
 
-
         customer_so.write(
             {
                 "line_ids": [
@@ -211,7 +210,6 @@ class TestEventSale(TestEventSaleCommon):
         self.assertEqual(ticket1_reg1.partner_id, self.event_customer)
         for field in ["name", "email", "phone_ids"]:
             self.assertEqual(ticket1_reg1[field], self.event_customer[field])
-
 
         editor = (
             self.env["wizard.sale.order.update.attendee"]
@@ -289,7 +287,6 @@ class TestEventSale(TestEventSaleCommon):
         self.assertEqual(
             ticket2_new_reg.phone_ids, self.event_customer._phone_get_number()
         )
-
 
         ticket2_line.write({"product_qty": 3})
 

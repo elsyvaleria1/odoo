@@ -272,7 +272,6 @@ class TestFilteredDomain(TransactionCase):
 
 
 class TestFilteredDomainAsksTheSearchLast(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

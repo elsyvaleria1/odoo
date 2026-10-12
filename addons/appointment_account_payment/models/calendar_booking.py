@@ -7,7 +7,6 @@ from odoo.tools import format_date, format_time
 
 
 class CalendarBooking(models.Model):
-
     _name = "calendar.booking"
     _description = "Meeting Booking"
     _order = "start desc, id desc"

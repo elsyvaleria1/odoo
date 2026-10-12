@@ -679,7 +679,6 @@ class TestAccessRows(lint_case.LintCase):
 
 
 class TestAccessRowGatesSeeTheirFaults(lint_case.LintCase):
-
     def _row(self, **values):
         defaults = {
             "module": "planted",

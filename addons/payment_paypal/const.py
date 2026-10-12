@@ -1,4 +1,3 @@
-
 SUPPORTED_CURRENCIES = (
     "AUD",
     "BRL",

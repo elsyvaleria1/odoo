@@ -7,7 +7,6 @@ from odoo.tools import replace_exceptions
 
 
 class SpeechController(http.Controller):
-
     def _speech_attachment(self, attachment_id: int, access_token: str | None):
         with replace_exceptions(UserError, by=request.prepare_not_found_error()):
             return request.env["ir.binary"]._get_record(

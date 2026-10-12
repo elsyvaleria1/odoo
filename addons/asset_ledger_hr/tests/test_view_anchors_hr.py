@@ -4,7 +4,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestViewAnchors(TransactionCase):
-
     def _combined(self, xml_id):
         return etree.fromstring(self.env.ref(xml_id).get_combined_arch())
 

@@ -21,9 +21,7 @@ class TestBarcodeGS1Nomenclature(TransactionCase):
             }
         )
         with self.assertRaises(ValidationError):
-            nomenclature.gs1_separator_fnc1 = (
-                "("
-            )
+            nomenclature.gs1_separator_fnc1 = "("
 
     def test_fnc1_separator_is_held_to_browser_syntax(self):
         nomenclature = self.env["barcode.nomenclature"].create(

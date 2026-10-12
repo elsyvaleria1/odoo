@@ -3,7 +3,6 @@ from odoo.tools import float_round, frozendict
 
 
 class LunchCashmove(models.Model):
-
     _name = "lunch.cashmove"
     _description = "Lunch Cashmove"
     _order = "date desc"

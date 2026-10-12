@@ -93,7 +93,9 @@ class StockPickingBatch(models.Model):
 
     def _trip_track_window(self):
         self.check_singleton()
-        device = self.env["device.device"].browse(self.vehicle_id.resource_id._gps_device_ids())
+        device = self.env["device.device"].browse(
+            self.vehicle_id.resource_id._gps_device_ids()
+        )
         if not device:
             raise UserError(
                 self.env._(

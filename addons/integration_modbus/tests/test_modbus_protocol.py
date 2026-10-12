@@ -165,9 +165,7 @@ class TestModbusProtocol(BaseCase):
         handle = self._open()
         self.client.write_register.return_value = _Result(error=True)
         with self.assertRaises(OSError):
-            self.protocol.send(
-                handle, json_dumps_bytes({"address": 1, "value": 1}), {}
-            )
+            self.protocol.send(handle, json_dumps_bytes({"address": 1, "value": 1}), {})
 
     def test_closing_stops_the_poll_and_the_link(self):
         handle = self._open()

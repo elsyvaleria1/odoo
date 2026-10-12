@@ -29,7 +29,6 @@ from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestCalendarPrivacyLeaks(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -118,7 +117,6 @@ class TestCalendarPrivacyLeaks(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarCreateOrdering(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -166,7 +164,6 @@ class TestCalendarCreateOrdering(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarRecurrenceUpdateOnPlainEvent(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -212,7 +209,6 @@ class TestCalendarRecurrenceUpdateOnPlainEvent(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarRecurrenceForever(TransactionCase):
-
     def test_forever_survives_a_flush(self):
         recurrence = self.env["calendar.recurrence"].create(
             {
@@ -234,7 +230,6 @@ class TestCalendarRecurrenceForever(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarNotificationAttachments(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -300,7 +295,6 @@ class TestCalendarNotificationAttachments(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarRangeCalculation(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -352,7 +346,6 @@ class TestCalendarRangeCalculation(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarPopoverDeleteWizard(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -429,7 +422,6 @@ class TestCalendarPopoverDeleteWizard(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarAttendeeCounts(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -513,7 +505,6 @@ class TestCalendarAttendeeCounts(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestAlarmNotifyResponsible(TransactionCase):
-
     def test_the_base_channels_never_offer_it(self):
         responsible_aware = self.env[
             "calendar.alarm"
@@ -538,7 +529,6 @@ class TestAlarmNotifyResponsible(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarOrganizerAnswerReset(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -603,7 +593,6 @@ class TestCalendarOrganizerAnswerReset(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -763,7 +752,6 @@ class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarMassDeletionTrimsTheRule(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -850,7 +838,6 @@ class TestCalendarMassDeletionTrimsTheRule(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarIcsRecurrence(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1010,7 +997,6 @@ class TestCalendarIcsRecurrence(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCalendarUnavailableAttendees(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

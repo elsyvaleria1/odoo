@@ -235,7 +235,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
 
 @tagged("mail_performance", "post_install", "-at_install")
 class TestMAPerformance(MAPerformanceCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

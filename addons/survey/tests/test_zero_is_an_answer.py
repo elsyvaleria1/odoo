@@ -8,7 +8,6 @@ from odoo.addons.survey.tests import common
 
 @tagged("post_install", "-at_install", "functional")
 class TestZeroIsAnAnswer(common.TestSurveyCommon, HttpCase):
-
     ZERO_IS_VALID = ("numerical_box", "scale", "nps", "slider")
 
     @classmethod

@@ -25,7 +25,6 @@ class AccountEdiProxyError(Exception):
 
 
 class Account_Edi_Proxy_ClientUser(models.Model):
-
     _name = "account_edi_proxy_client.user"
     _inherit = ["mixin.credential.holder"]
     _description = "Account EDI proxy user"
@@ -169,9 +168,7 @@ class Account_Edi_Proxy_ClientUser(models.Model):
             error_code = proxy_error["code"]
             if error_code == "refresh_token_expired":
                 self._renew_token()
-                self.env[
-                    "ir.cron"
-                ]._commit_progress()
+                self.env["ir.cron"]._commit_progress()
                 return self._prepare_request(url, params, auth_type="hmac")
             if error_code == "no_such_user":
                 self.sudo().active = False

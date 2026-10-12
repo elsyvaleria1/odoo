@@ -1,4 +1,3 @@
-
 from os import getenv
 from unittest import skipIf
 from unittest.mock import patch

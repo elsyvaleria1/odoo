@@ -5,7 +5,6 @@ _debug = DebugLog(__name__)
 
 
 class WizardReportFormulaExportAttachment(models.TransientModel):
-
     _name = "wizard.report.formula.export.attachment"
     _description = "Export wizard for accounting's reports"
 

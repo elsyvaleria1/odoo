@@ -81,7 +81,6 @@ def fix_import_export_id_paths(fieldname: str) -> tuple[str, ...]:
 
 
 class OrderTerm(typing.NamedTuple):
-
     field: str
     property: str | None
     func: str | None

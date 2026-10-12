@@ -248,7 +248,6 @@ class TestRemoteIndexValidity(DeviceTransactionCase):
 
 
 class TestOwnRemoteLockOverLoopback(DeviceTransactionCase):
-
     SERVER = "device_loopback_srv"
 
     def setUp(self):
@@ -331,7 +330,6 @@ class TestNeutralizedCopyReachesNoForeignServer(DeviceTransactionCase):
 
 
 class TestFdwGuardsOnARegularTable(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -443,7 +441,6 @@ class TestFdwGuardsOnARegularTable(DeviceTransactionCase):
 
 
 class TestGcOrdersLocalWritesFirst(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

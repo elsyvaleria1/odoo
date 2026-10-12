@@ -67,15 +67,13 @@ class ResPartner(models.Model):
     @api.model
     def _iap_replace_language_codes(self, iap_data):
         if lang := iap_data.pop("preferred_language", False):
-            if (
-                installed_lang := (
-                    self.env["res.lang"].search(
-                        [("code", "=", lang), ("iso_code", "=", lang)]
-                    )
-                    or self.env["res.lang"].search(
-                        [("code", "ilike", lang[:2]), ("iso_code", "ilike", lang[:2])],
-                        limit=1,
-                    )
+            if installed_lang := (
+                self.env["res.lang"].search(
+                    [("code", "=", lang), ("iso_code", "=", lang)]
+                )
+                or self.env["res.lang"].search(
+                    [("code", "ilike", lang[:2]), ("iso_code", "ilike", lang[:2])],
+                    limit=1,
                 )
             ):
                 iap_data["lang"] = installed_lang.code
@@ -90,9 +88,7 @@ class ResPartner(models.Model):
 
     @api.model
     def autocomplete_by_name(self, query, query_country_id, timeout=15) -> list:
-        if (
-            query_country_id is False
-        ):
+        if query_country_id is False:
             query_country_id = self.env.company.country_id.id
         query_country_code = self.env["res.country"].browse(query_country_id).code
         response, _ = self.env["iap.autocomplete.api"]._request_partner_autocomplete(

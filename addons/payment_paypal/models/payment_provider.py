@@ -62,7 +62,6 @@ class PaymentProvider(models.Model):
         copy=False,
     )
 
-
     def _get_supported_currencies(self):
         supported_currencies = super()._get_supported_currencies()
         if self.code == "paypal":
@@ -71,13 +70,11 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "paypal":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def action_paypal_create_webhook(self) -> None:
         base_url = self.get_base_url()
@@ -98,7 +95,6 @@ class PaymentProvider(models.Model):
         )
         self.paypal_webhook_id = webhook_data.get("id")
 
-
     def _paypal_get_inline_form_values(self, currency=None):
         inline_form_values = {
             "provider_id": self.id,
@@ -106,7 +102,6 @@ class PaymentProvider(models.Model):
             "currency_code": currency and currency.name,
         }
         return json_dumps(inline_form_values)
-
 
     def _prepare_request_url(self, endpoint, **kwargs):
         if self.code != "paypal":

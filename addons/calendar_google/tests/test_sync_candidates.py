@@ -5,7 +5,6 @@ from odoo.addons.calendar_google.tests.common import authorize_google_calendar
 
 @tagged("post_install", "-at_install")
 class TestGoogleSyncCandidates(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -304,18 +304,10 @@ class TestHrReferral(TestHrReferralBase):
         )
 
         job_applicant.stage_id = stage_parking_1
-        job_applicant.stage_id = (
-            stage_parking_2
-        )
-        job_applicant.stage_id = (
-            stage_parking_1
-        )
-        job_applicant.stage_id = self.env.ref(
-            "hr_recruitment.stage_job3"
-        )
-        job_applicant.stage_id = self.env.ref(
-            "hr_recruitment.stage_job4"
-        )
+        job_applicant.stage_id = stage_parking_2
+        job_applicant.stage_id = stage_parking_1
+        job_applicant.stage_id = self.env.ref("hr_recruitment.stage_job3")
+        job_applicant.stage_id = self.env.ref("hr_recruitment.stage_job4")
         self.assertEqual(
             job_applicant.earned_points,
             35,

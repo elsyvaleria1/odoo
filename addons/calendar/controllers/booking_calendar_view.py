@@ -14,7 +14,6 @@ class AppointmentInvitationData(TypedDict):
 
 
 class AppointmentCalendarView(http.Controller):
-
     @route("/appointment/appointment_type/create_custom", type="jsonrpc", auth="user")
     def appointment_type_create_custom(self, slots, context=None):
         if not slots:
@@ -156,7 +155,6 @@ class AppointmentCalendarView(http.Controller):
                 AppointmentType._prepare_clean_appointment_context()
             ).create(appt_type_vals)
         return cls._acquire_staff_invitation_data(appointment_type)
-
 
     @classmethod
     def _prepare_appointment_type_anytime_values(cls, user):

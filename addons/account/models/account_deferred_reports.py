@@ -29,7 +29,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
             "This method is not implemented in the deferred report handler."
         )
 
-
     def _get_domain_fully_inside_period(self, options) -> list:
         return [
             "!",
@@ -257,7 +256,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
         )
         return totals_per_key, totals_aggregated_by_period
 
-
     @_debug.perf.timed
     def _custom_options_initializer(self, report, options, previous_options):
         super()._custom_options_initializer(
@@ -320,9 +318,7 @@ class AccountDeferredReportHandler(models.AbstractModel):
                 "name": self.env._("Recognized"),
                 "expression_label": "recognized",
                 "date_from": DEFERRED_DATE_MIN,
-                "date_to": options["columns"][-1][
-                    "date_to"
-                ],
+                "date_to": options["columns"][-1]["date_to"],
             }
         ]
         options["columns"] = (
@@ -685,7 +681,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
             total_line=bool(totals_per_grouping_field),
         )
         return report_lines
-
 
     @_debug.perf.timed
     def action_generate_entry(self, options):

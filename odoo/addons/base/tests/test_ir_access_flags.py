@@ -5,7 +5,6 @@ MODEL = "res.partner.industry"
 
 @tagged("post_install", "-at_install")
 class TestAccessFlagsFollowTheOperation(TransactionCase):
-
     def _row(self, operation):
         return self.env["ir.access"].create(
             {

@@ -112,9 +112,7 @@ def api_call_logging(messages, tools=None):
         session["api_time"] += duration
         session["real_input_tokens"] += response_data["real_input_tokens"]
         session["output_tokens"] += response_data["output_tokens"]
-        session["cached_tokens"] = response_data[
-            "cached_tokens"
-        ]
+        session["cached_tokens"] = response_data["cached_tokens"]
 
         if response_data["tool_calls"]:
             num_tools = len(response_data["tool_calls"])

@@ -19,7 +19,6 @@ def _id_token_claims(id_token) -> dict:
 
 
 class MixinOauth2MailProvider(models.AbstractModel):
-
     _name = "mixin.oauth2.mail.provider"
     _description = "OAuth2 Mail Provider Mixin"
 

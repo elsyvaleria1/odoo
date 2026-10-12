@@ -185,9 +185,7 @@ class Base(models.AbstractModel):
                     exc_info=True,
                 )
                 if field.type in ("char", "text", "html"):
-                    record[field.name] = (
-                        ""
-                    )
+                    record[field.name] = ""
 
     def _update_ai_property(self, fname, property_definition) -> None:
         if not property_definition.get("system_prompt"):
@@ -385,9 +383,7 @@ class Base(models.AbstractModel):
         ]
         records = self.env[comodel].browse(records_ids)
 
-        if (
-            len(records) < limit
-        ):
+        if len(records) < limit:
             records |= self.env[comodel].search(
                 Domain.AND([domain, [("id", "not in", records.ids)]]),
                 limit=limit - len(records),

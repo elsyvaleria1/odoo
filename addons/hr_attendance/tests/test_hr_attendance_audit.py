@@ -76,7 +76,6 @@ def _employee(env, company, calendar, ruleset, name="Audited", **extra):
 
 @tagged("post_install", "-at_install")
 class TestPlainUserSystray(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -179,7 +178,6 @@ class TestOwnAttendanceForm(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRegenerationWindow(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -446,7 +444,6 @@ class TestRuleConstraints(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestOvertimeLineForeignKey(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -507,7 +504,6 @@ class TestOvertimeLineForeignKey(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestApprovalSurvivesRegeneration(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

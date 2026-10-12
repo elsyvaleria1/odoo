@@ -930,7 +930,6 @@ class TestControllerChallenge(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDynamicSnippetTemplates(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

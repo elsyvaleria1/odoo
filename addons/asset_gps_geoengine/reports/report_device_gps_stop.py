@@ -4,7 +4,6 @@ from odoo import api, models
 
 
 class ReportDeviceGpsStop(models.AbstractModel):
-
     _name = "report.asset_gps_geoengine.report_device_gps_stop"
     _description = "Vehicle Stops Report"
 

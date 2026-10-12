@@ -8,7 +8,6 @@ from odoo.tools import view_ir
 
 @tagged("post_install", "-at_install")
 class TestViewPayloadConsistency(TransactionCase):
-
     def _overriding_models(self):
         for name, model in self.env.registry.items():
             cls = type(self.env[name])

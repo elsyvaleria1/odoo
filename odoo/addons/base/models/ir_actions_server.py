@@ -343,7 +343,6 @@ class IrActionsServer(models.Model):
 
     _WEBHOOK_TIMEOUT_CEILING = 60
 
-
     @api.constrains("webhook_timeout", "state")
     def _check_webhook_timeout(self) -> None:
         for action in self:
@@ -425,7 +424,6 @@ class IrActionsServer(models.Model):
                     children=", ".join(children_with_warnings.mapped("name")),
                 )
             )
-
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
@@ -515,7 +513,6 @@ class IrActionsServer(models.Model):
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
         )
-
 
     @api.depends("state", "code")
     def _compute_show_code_history(self) -> None:
@@ -679,7 +676,6 @@ class IrActionsServer(models.Model):
             else:
                 action.value_field_to_show = "value"
 
-
     @api.onchange("crud_model_id")
     def _inverse_crud_model_id(self) -> None:
         invalid = self.filtered(
@@ -718,7 +714,6 @@ class IrActionsServer(models.Model):
             if action.selection_value:
                 action.value = action.selection_value.value
 
-
     @api.onchange("name")
     def _onchange_name(self) -> None:
         self.name_is_custom = bool(self.name) and (
@@ -727,7 +722,6 @@ class IrActionsServer(models.Model):
         if not self.name:
             self.automated_name = self._prepare_automated_name()
             self.name = self.automated_name
-
 
     def action_view_code_history(self) -> dict[str, Any]:
         self.check_singleton()
@@ -764,7 +758,6 @@ class IrActionsServer(models.Model):
             "res_model": "ir.cron",
             "res_id": self.ir_cron_ids[:1].id,
         }
-
 
     def _is_batchable(self) -> bool:
         self.check_singleton()
@@ -1392,7 +1385,6 @@ class IrActionsServer(models.Model):
         if config.link_field_id:
             records.check_access("write")
 
-
     def _prepare_server_action_webhook_payload(
         self, record: models.Model
     ) -> dict[str, Any]:
@@ -1435,7 +1427,6 @@ class IrActionsServer(models.Model):
             action_label,
             target,
         )
-
 
     @api.model
     def _default_update_path(self) -> str:

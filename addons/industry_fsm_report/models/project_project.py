@@ -78,7 +78,5 @@ class ProjectProject(models.Model):
                 for project in projects:
                     project.worksheet_template_id = worksheet_mapping.get(
                         project.company_id.id,
-                        worksheet_mapping.get(
-                            False, False
-                        ),
+                        worksheet_mapping.get(False, False),
                     )

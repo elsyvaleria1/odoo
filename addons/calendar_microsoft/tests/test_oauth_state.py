@@ -12,7 +12,6 @@ from odoo.addons.integration_microsoft.models.integration_service import (
 
 @tagged("post_install", "-at_install")
 class TestMicrosoftCalendarAuthorization(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

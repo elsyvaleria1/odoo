@@ -194,9 +194,7 @@ class TestFrontendCommon(TestPointOfSaleHttpCommon):
                 "name": "Desk Organizer",
                 "available_in_pos": True,
                 "list_price": 5.10,
-                "pos_categ_ids": [
-                    (4, drinks_category.id)
-                ],
+                "pos_categ_ids": [(4, drinks_category.id)],
             }
         )
         desk_size_attribute = cls.env["product.attribute"].create(

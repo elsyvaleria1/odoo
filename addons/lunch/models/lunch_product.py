@@ -6,7 +6,6 @@ from odoo.fields import Domain
 
 
 class LunchProduct(models.Model):
-
     _name = "lunch.product"
     _description = "Lunch Product"
     _inherit = ["mixin.image", "mixin.user.favorite"]

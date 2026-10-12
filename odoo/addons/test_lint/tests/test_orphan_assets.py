@@ -15,7 +15,6 @@ _logger = logging.getLogger(__name__)
 BUNDLED_EXTENSIONS = (".js", ".scss", ".css", ".xml")
 
 
-
 @tagged("post_install", "-at_install")
 class TestOrphanAssets(lint_case.LintCase):
     @staticmethod

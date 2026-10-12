@@ -131,9 +131,7 @@ class TestAccountUblCii(AccountTestInvoicingCommon):
             self.assertEqual(
                 Partner._get_peppol_formats(), ["ubl_no_country", "peppol"]
             )
-            self.assertEqual(
-                partner_au._get_suggested_ubl_cii_edi_format(), "cii"
-            )
+            self.assertEqual(partner_au._get_suggested_ubl_cii_edi_format(), "cii")
             self.assertEqual(partner_nz._get_suggested_ubl_cii_edi_format(), "peppol")
             self.assertFalse(partner_be._get_suggested_ubl_cii_edi_format())
 

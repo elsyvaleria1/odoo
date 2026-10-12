@@ -22,7 +22,6 @@ class ProjectProject(models.Model):
         for project in self:
             project.assets_count = data.get(project.account_id.id, 0)
 
-
     def action_view_project_assets(self):
         assets = self.env["account.depreciation.board"].search(
             [("analytic_distribution", "in", self.account_id.ids)],
@@ -56,7 +55,6 @@ class ProjectProject(models.Model):
             action["views"] = [[False, "form"]]
             action["res_id"] = assets[0].id
         return action
-
 
     def _get_stat_buttons(self):
         buttons = super()._get_stat_buttons()

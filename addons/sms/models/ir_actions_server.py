@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class IrActionsServer(models.Model):
-
     _inherit = "ir.actions.server"
 
     state = fields.Selection(

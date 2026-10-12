@@ -287,9 +287,7 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
             )
         )
 
-        sale_order_line = self.env[
-            "sale.order.line"
-        ].create(
+        sale_order_line = self.env["sale.order.line"].create(
             {
                 "order_id": sale_order.id,
                 "product_id": self.product_consumable.id,

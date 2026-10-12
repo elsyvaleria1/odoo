@@ -112,7 +112,8 @@ def _mock_starshipit_call(
             if endpoint in url:
                 response = requests.Response()
                 if _should_simulate_error(url):
-                    response._content = json_dumps_bytes({
+                    response._content = json_dumps_bytes(
+                        {
                             "success": False,
                             "errors": [
                                 {
@@ -120,7 +121,8 @@ def _mock_starshipit_call(
                                     "details": "Simulated error for testing purposes.",
                                 }
                             ],
-                        })
+                        }
+                    )
                     response.status_code = 500
                     return response
 

@@ -38,7 +38,6 @@ class TestRentalCommon(common.TransactionCase):
             }
         )
 
-
         cls.lot_id1 = cls.env["product.trace"].create(
             {
                 "product_id": cls.tracked_product_id.id,
@@ -92,7 +91,6 @@ class TestRentalCommon(common.TransactionCase):
             }
         )
         quants.action_apply_inventory()
-
 
         cls.cust1 = cls.env["res.partner"].create({"name": "test_rental_1"})
 

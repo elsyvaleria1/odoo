@@ -3,7 +3,6 @@ from odoo.exceptions import ValidationError
 
 
 class LazadaOrderItem(models.Model):
-
     _name = "lazada.order.item"
     _description = "Lazada Order Item"
 

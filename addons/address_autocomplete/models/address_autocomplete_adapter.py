@@ -2,7 +2,6 @@ from odoo import api, models
 
 
 class AddressAutocompleteAdapter(models.AbstractModel):
-
     _name = "address.autocomplete.adapter"
     _description = "Address Autocomplete Provider Adapter"
 

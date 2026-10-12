@@ -7,7 +7,6 @@ _debug = DebugLog(__name__)
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-
     rental_loc_id = fields.Many2one(
         comodel_name="stock.location",
         string="Rental Location",
@@ -16,7 +15,6 @@ class ResCompany(models.Model):
         "This location is internal because products in rental"
         "are still considered as company assets.",
     )
-
 
     padding_time = fields.Float(
         default=0.0,

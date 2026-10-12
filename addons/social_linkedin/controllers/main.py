@@ -56,7 +56,6 @@ class SocialLinkedinController(SocialController):
 
         return request.redirect("/odoo/action-social.action_social_stream_post")
 
-
     @http.route("/social_linkedin/comment", type="http", auth="user", methods=["POST"])
     def social_linkedin_add_comment(
         self, stream_post_id, message=None, comment_id=None, is_edit=False, **kwargs
@@ -96,7 +95,6 @@ class SocialLinkedinController(SocialController):
         stream_post = self._get_social_stream_post(stream_post_id, "linkedin")
         return stream_post._linkedin_like_comment(comment_id, like)
 
-
     @http.route("/social_linkedin/edit_post", type="jsonrpc", auth="user")
     def social_linkedin_edit_post(self, stream_post_id, new_message):
         stream_post = self._get_social_stream_post(stream_post_id, "linkedin")
@@ -106,7 +104,6 @@ class SocialLinkedinController(SocialController):
     def social_linkedin_delete_post(self, stream_post_id):
         stream_post = self._get_social_stream_post(stream_post_id, "linkedin")
         return stream_post._linkedin_remove_post()
-
 
     def _linkedin_get_access_token(self, linkedin_authorization_code, media):
         linkedin_url = "https://www.linkedin.com/oauth/v2/accessToken"

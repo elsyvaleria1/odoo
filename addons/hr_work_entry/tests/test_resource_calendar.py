@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, new_test_user
 
 
 class TestResourceCalendarLeaveTypedLine(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

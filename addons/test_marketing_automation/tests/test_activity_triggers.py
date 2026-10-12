@@ -342,9 +342,7 @@ class TestActivityTriggers(ActivityTriggersCase):
 
         date_send = self.date_reference + timedelta(hours=1)
         date_opened = date_send + timedelta(hours=2)
-        date_not_action = date_send + timedelta(
-            days=5
-        )
+        date_not_action = date_send + timedelta(days=5)
         with (
             self.mock_datetime_and_now(date_send),
             self.mockWhatsappGateway(),
@@ -674,9 +672,7 @@ class TestActivityTriggers(ActivityTriggersCase):
 
         self.test_reaction_triggers()
 
-        date_opened = (
-            self.date_reference + timedelta(hours=1) + timedelta(hours=2)
-        )
+        date_opened = self.date_reference + timedelta(hours=1) + timedelta(hours=2)
         date_subaction = date_opened + timedelta(days=1)
 
         with (
@@ -841,8 +837,7 @@ class TestActivityTriggers(ActivityTriggersCase):
                         "records": new_test_records,
                         "status": "scheduled",
                         "fields_values": {
-                            "schedule_date": self.date_reference
-                            + timedelta(hours=4),
+                            "schedule_date": self.date_reference + timedelta(hours=4),
                         },
                     }
                 ],
@@ -921,20 +916,17 @@ class TestActivityTriggers(ActivityTriggersCase):
                 + self.activity_sa_mail_not_click
                 + self.activity_sa_mail_click
                 + self.activity_sa_mail_bounce
-                +
-                self.activity_sa_sms_not_click
+                + self.activity_sa_sms_not_click
                 + self.activity_sa_sms_click
                 + self.activity_sa_sms_bounce
-                +
-                self.activity_sa_wa_not_read
+                + self.activity_sa_wa_not_read
                 + self.activity_sa_wa_read
                 + self.activity_sa_wa_not_replied
                 + self.activity_sa_wa_replied
                 + self.activity_sa_wa_not_click
                 + self.activity_sa_wa_click
                 + self.activity_sa_wa_bounced
-                +
-                self.activity_mail_activity
+                + self.activity_mail_activity
                 + self.activity_sms_activity
                 + self.activity_wa_activity
             ).write(
@@ -1027,12 +1019,10 @@ class TestActivityTriggers(ActivityTriggersCase):
                 + self.activity_sa_mail_not_click
                 + self.activity_sa_mail_click
                 + self.activity_sa_mail_bounce
-                +
-                self.activity_sa_sms_not_click
+                + self.activity_sa_sms_not_click
                 + self.activity_sa_sms_click
                 + self.activity_sa_sms_bounce
-                +
-                self.activity_sa_wa_not_read
+                + self.activity_sa_wa_not_read
                 + self.activity_sa_wa_read
                 + self.activity_sa_wa_not_replied
                 + self.activity_sa_wa_replied

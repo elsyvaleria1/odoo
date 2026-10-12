@@ -4,7 +4,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install")
 class TestCarrierMatchWeightOnPicking(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -13,7 +13,6 @@ from odoo.addons.social.models.social_media import (
 
 
 class SocialOAuthStateMixin:
-
     allow_inherited_tests_method = True
     MEDIA_XMLID = None
     CALLBACK = None

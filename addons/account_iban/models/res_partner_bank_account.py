@@ -78,9 +78,7 @@ def check_iban(iban) -> None:
         )
 
     check_chars = iban[4:] + iban[:4]
-    digits = int(
-        "".join(str(int(char, 36)) for char in check_chars)
-    )
+    digits = int("".join(str(int(char, 36)) for char in check_chars))
     if digits % 97 != 1:
         raise ValidationError(
             _lt("This IBAN does not pass the validation check, please verify it.")

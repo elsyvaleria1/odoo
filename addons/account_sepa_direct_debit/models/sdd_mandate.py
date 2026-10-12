@@ -9,7 +9,6 @@ SDD_FIRST_MIN_PRENOT_PERIOD = 5
 
 
 class SddMandate(models.Model):
-
     _name = "sdd.mandate"
     _inherit = ["mixin.mail.thread.main.attachment", "mixin.mail.activity"]
     _description = "SDD Mandate"
@@ -372,9 +371,7 @@ class SddMandate(models.Model):
     @api.constrains("debtor_id_code")
     def _check_debtor_id_code(self) -> None:
         for record in self:
-            if (
-                record.debtor_id_code and len(record.debtor_id_code) > 35
-            ):
+            if record.debtor_id_code and len(record.debtor_id_code) > 35:
                 raise UserError(
                     self.env._(
                         "The debtor identifier you specified exceeds the limitation of 35 characters imposed by SEPA regulation"
@@ -384,9 +381,7 @@ class SddMandate(models.Model):
     @api.constrains("pre_notification_period")
     def _check_pre_notification_period(self) -> None:
         for mandate in self:
-            if (
-                mandate.pre_notification_period < SDD_MIN_PRENOT_PERIOD
-            ):
+            if mandate.pre_notification_period < SDD_MIN_PRENOT_PERIOD:
                 raise UserError(
                     self.env._(
                         "SEPA regulations set the minimum pre-notification period to a minimum of %s days "
@@ -434,11 +429,7 @@ class SddMandate(models.Model):
     def cron_update_mandates_states(self) -> None:
         mandates = self.search([("state", "=", "active")])
         mandates_per_validity = mandates._update_and_partition_state_by_validity()
-        mandates_per_validity[
-            "valid"
-        ].expiration_warning_already_sent = (
-            False
-        )
+        mandates_per_validity["valid"].expiration_warning_already_sent = False
         for mandate in mandates_per_validity["expiring"].filtered(
             lambda sddm: not sddm.expiration_warning_already_sent
         ):

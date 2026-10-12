@@ -360,10 +360,6 @@ class TestProductMargin(AccountTestInvoicingCommon):
         invoices.invoice_date = fields.Date.today()
         invoices.action_post()
 
-
-
-
-
         result = self.env["product.product"]._read_grouping_sets(
             [("id", "in", [iphone.id, imac.id, self.ipad.id])],
             grouping_sets=[["categ_id", "uom_id"], ["categ_id"], ["uom_id"], []],

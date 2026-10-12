@@ -33,9 +33,7 @@ class TestMessageController(MailControllerThreadCommon):
         )
         self.authenticate(self.user_employee.login, self.user_employee.login)
         record = self.env["mail.test.access.public"].create({"name": "Public Channel"})
-        record.with_user(self.user_employee).write(
-            {"name": "updated"}
-        )
+        record.with_user(self.user_employee).write({"name": "updated"})
         self.assertFalse(self.url_open(f"/web/content/{att.id}").ok)
         response = self.url_open(
             url="/mail/message/post",
@@ -44,9 +42,7 @@ class TestMessageController(MailControllerThreadCommon):
                 {
                     "params": {
                         "post_data": {
-                            "attachment_ids": [
-                                att.id
-                            ],
+                            "attachment_ids": [att.id],
                             "body": "",
                             "message_type": "comment",
                             "partner_ids": [],
@@ -58,9 +54,7 @@ class TestMessageController(MailControllerThreadCommon):
                 },
             ),
         )
-        self.assertNotIn(
-            "arguments_for_firing_marc_demo", response.text
-        )
+        self.assertNotIn("arguments_for_firing_marc_demo", response.text)
 
     def test_thread_partner_from_email_authenticated(self):
         self.authenticate(self.user_employee.login, self.user_employee.login)
@@ -197,7 +191,6 @@ class TestMessageController(MailControllerThreadCommon):
 
 @tagged("-at_install", "post_install", "mail_controller")
 class TestMessagePostEnvelope(MailControllerThreadCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

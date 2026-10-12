@@ -469,12 +469,8 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
         exch = self._quick_create_journal("EXCH", self.vanilla_company1, "general")
         ifrs = self._quick_create_journal("IFRS", self.vanilla_company1, "general")
         caba = self._quick_create_journal("CABA", self.vanilla_company1, "general")
-        inv = self._quick_create_journal(
-            "INV", self.vanilla_company1, "sale"
-        )
-        bill = self._quick_create_journal(
-            "BILL", self.vanilla_company1, "purchase"
-        )
+        inv = self._quick_create_journal("INV", self.vanilla_company1, "sale")
+        bill = self._quick_create_journal("BILL", self.vanilla_company1, "purchase")
 
         g1 = self._quick_create_journal_group("g1", self.vanilla_company1, inv + bill)
         g2 = self._quick_create_journal_group("g2", self.vanilla_company1, misc + bill)

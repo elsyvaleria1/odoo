@@ -330,7 +330,6 @@ class KnowledgeAuditReportController(http.Controller):
         self, root_article, include_pdf_files, include_child_articles, **kwargs
     ):
 
-
         IrConfigParameterSudo = request.env["ir.config_parameter"].sudo()
         print_delay = IrConfigParameterSudo.get_param("report.print_delay")
         IrConfigParameterSudo.set_param("report.print_delay", 100)

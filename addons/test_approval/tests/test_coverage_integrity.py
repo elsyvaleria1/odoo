@@ -6,7 +6,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestCoverageIntegrity(ApprovalCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

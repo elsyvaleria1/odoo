@@ -11,9 +11,7 @@ class ResPartner(models.Model):
         action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
             "crm.crm_lead_opportunities"
         )
-        if (
-            not self
-        ):
+        if not self:
             action["views"] = [[False, "form"]]
             action["context"] = {
                 "default_phone_ids": [

@@ -52,9 +52,7 @@ class TestTokenSyncResolution(TransactionCase):
             self.assertRaises(UserError) as e,
         ):
             settings = self.env["res.config.settings"].create({})
-            settings.account_peppol_contact_email = (
-                "a@a.com"
-            )
+            settings.account_peppol_contact_email = "a@a.com"
 
         self.assertIn(
             "please go to Settings > Accounting > Peppol Settings and click on 'Reconnect this database'",

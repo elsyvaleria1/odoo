@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestOperatorSales(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

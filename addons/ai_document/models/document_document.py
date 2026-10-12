@@ -176,7 +176,6 @@ class DocumentsDocument(models.Model):
                 vals["ai_has_sort_prompt"] = vals["id"] in folders_with_sort_prompts_ids
         return res
 
-
     def _message_post_after_hook_template_values(self):
         return {
             **super()._message_post_after_hook_template_values(),
@@ -271,7 +270,6 @@ class DocumentsDocument(models.Model):
                 _logger.exception("AI Documents: sorting of %s failed", document.id)
 
         return
-
 
     def action_ai_sort(self) -> dict | None:
         documents = self.filtered(

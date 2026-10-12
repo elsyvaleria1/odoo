@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class ProductTemplate(models.Model):
-
     _inherit = "product.template"
 
     email_template_id = fields.Many2one(

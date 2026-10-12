@@ -1,10 +1,8 @@
-
 from odoo.tests import TransactionCase, counting_statements, tagged
 
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyNominative(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -56,7 +54,6 @@ class TestLoyaltyNominative(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyMerge(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

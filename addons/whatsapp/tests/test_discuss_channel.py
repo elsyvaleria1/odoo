@@ -228,9 +228,7 @@ We're always happy to assist!""",
                 "mobile_number": "911234567891",
             },
             mail_message_values={
-                "subtype_id": self.env.ref(
-                    "mail.mt_comment"
-                ),
+                "subtype_id": self.env.ref("mail.mt_comment"),
             },
         )
         self.assertEqual(len(self._new_msgs), 1)

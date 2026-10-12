@@ -19,7 +19,6 @@ SHARED_CONTENT = b"legitimately link-shared content"
 
 @tagged("post_install", "-at_install")
 class TestDocumentsZipShortcutLeak(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -145,7 +144,6 @@ class TestDocumentsZipShortcutLeak(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsActivityExpirationSync(TransactionCaseDocuments):
-
     def _prepare_request(self):
         wizard = self.env["wizard.document.document.request"].create(
             {
@@ -209,7 +207,6 @@ class TestDocumentsActivityExpirationSync(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsRequestWizardSelfRequest(TransactionCaseDocuments):
-
     def test_self_request_keeps_permanent_grant(self):
         document = (
             self.env["wizard.document.document.request"]
@@ -240,7 +237,6 @@ class TestDocumentsRequestWizardSelfRequest(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsOperationBatch(TransactionCaseDocuments):
-
     def test_destination_children_are_not_shifted_in_batch(self):
         Doc = self.env["document.document"]
         child_a, child_b = Doc.create(
@@ -271,7 +267,6 @@ class TestDocumentsOperationBatch(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsLinkToRecordWizard(TransactionCaseDocuments):
-
     def test_link_to_without_record_raises_user_error(self):
         wizard = self.env["wizard.document.document.link.record"].create({})
         with self.assertRaises(UserError):
@@ -298,7 +293,6 @@ class TestDocumentsLinkToRecordWizard(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsInboxAlias(TransactionCase):
-
     def test_inbox_alias_has_a_parent_model(self):
         alias = self.env.ref(
             "document.document_inbox_folder_mail_alias", raise_if_not_found=False
@@ -314,7 +308,6 @@ class TestDocumentsInboxAlias(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsOperationWizard(TransactionCaseDocuments):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -252,7 +252,6 @@ class TestDocumentsVacuumProgress(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsTrashExpiry(TransactionCaseDocuments):
-
     def _trashed(self, name="trash.txt"):
         doc = self.env["document.document"].create(
             {
@@ -363,7 +362,6 @@ class TestDocumentsTrashExpiry(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsTrashInvariant(TransactionCaseDocuments):
-
     def _dated(self, document):
         return document.deletion_date == fields.Date.today() + relativedelta(
             days=document.get_deletion_delay()

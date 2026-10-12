@@ -6,10 +6,8 @@ class AccountEdiXmlUbl_21(models.AbstractModel):
     _inherit = ["account.edi.xml.ubl_20"]
     _description = "UBL 2.1"
 
-
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_ubl_21.xml"
-
 
     def _get_invoice_node(self, vals):
         document_node = super()._get_invoice_node(vals)

@@ -96,7 +96,6 @@ class DocumentsAccountTestCommon(
 
 
 class DocumentsAccountActionsServerCommon(DocumentsAccountTestCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

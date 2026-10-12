@@ -24,7 +24,6 @@ LINK_TRACKER_CLICK_ROUTE_FIELDS = ("ip", "country_id", "link_id")
 
 
 class LinkTracker(models.Model):
-
     _name = "link.tracker"
     _rec_name = "short_url"
     _description = "Link Tracker"
@@ -85,7 +84,6 @@ class LinkTracker(models.Model):
     medium_id = fields.Many2one(ondelete="set null")
     source_id = fields.Many2one(ondelete="set null")
 
-
     @api.model
     def _unique_key_from_values(self, values) -> tuple:
         if isinstance(values, models.BaseModel):
@@ -123,7 +121,6 @@ class LinkTracker(models.Model):
         if not keys:
             return Domain.FALSE
         return Domain("key_hash", "in", [self._unique_key_digest(key) for key in keys])
-
 
     @api.depends("url")
     def _compute_absolute_url(self) -> None:
@@ -253,7 +250,6 @@ class LinkTracker(models.Model):
             return preview["og_title"]
         return url
 
-
     @api.model
     def _normalize_vals(self, vals):
         if "label" in vals and not vals["label"]:
@@ -337,7 +333,6 @@ class LinkTracker(models.Model):
                 )
             )
 
-
     @api.model_create_multi
     def create(self, vals_list):
         vals_list = [self._normalize_vals(vals.copy()) for vals in vals_list]
@@ -407,7 +402,6 @@ class LinkTracker(models.Model):
                 keys.append(self._unique_key_from_values(merged))
             self._check_unicity_of_keys(keys, exclude=self)
         return super().write(vals)
-
 
     @api.model
     def search_or_create(self, vals_list) -> Self:

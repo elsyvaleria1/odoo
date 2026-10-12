@@ -11,7 +11,6 @@ class ProductPricelistItem(models.Model):
         check_company=True,
     )
 
-
     @api.depends("plan_id")
     def _compute_company_id(self):
         rules_with_pricelist = self.filtered("pricelist_id")
@@ -39,7 +38,6 @@ class ProductPricelistItem(models.Model):
                     price_details=item.price,
                     recurrence=item.plan_id.sudo().billing_period_display_sentence,
                 )
-
 
     def _is_applicable_for(self, product, qty_in_product_uom):
         if self.plan_id and not product.recurring_invoice:
@@ -78,7 +76,6 @@ class ProductPricelistItem(models.Model):
         return super()._get_base_price(
             product, quantity, uom, date, currency, plan_id=plan_id, **kwargs
         )
-
 
     def _get_recurring_rules_order(self) -> str:
         return f"pricelist_id, plan_id, {self._order}"

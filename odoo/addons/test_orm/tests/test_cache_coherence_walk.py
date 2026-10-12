@@ -42,7 +42,6 @@ class PostgresHarness:
 
 @tagged("post_install", "-at_install")
 class TestCacheCoherenceWalk(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

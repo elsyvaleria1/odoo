@@ -23,7 +23,6 @@ _MODULE_SCRIPT_RE = re.compile(
 
 @tagged("-at_install", "post_install", "web_assets")
 class TestSplitFrontendPage(HttpCase):
-
     def _pages(self):
         installed = self.env["ir.asset"]._get_addons_installed()
         pages = [("/web/login", None)]

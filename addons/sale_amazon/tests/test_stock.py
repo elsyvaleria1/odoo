@@ -12,7 +12,6 @@ from odoo.addons.stock.tests.common import TestStockCommon
 
 @tagged("post_install", "-at_install")
 class TestStock(common.TestAmazonCommon, TestStockCommon):
-
     def setUp(self):
         super().setUp()
 
@@ -58,9 +57,7 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
         }
         self.move_1 = self.MoveObj.create(move_vals)
         self.move_2 = self.MoveObj.create(move_vals)
-        self.picking.sale_id = (
-            self.sale_order.id
-        )
+        self.picking.sale_id = self.sale_order.id
 
     def test_confirm_picking_trigger_SOL_check(self):
 
@@ -69,9 +66,7 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
             "._check_sales_order_line_completion",
             new=Mock(),
         ) as mock:
-            self.picking.date_done = (
-                fields.Datetime.now()
-            )
+            self.picking.date_done = fields.Datetime.now()
             self.assertEqual(
                 mock.call_count,
                 1,

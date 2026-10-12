@@ -128,7 +128,6 @@ class TestPerProfileRetention(DeviceTransactionCase):
 
 
 class TestGlobalRetentionFallback(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

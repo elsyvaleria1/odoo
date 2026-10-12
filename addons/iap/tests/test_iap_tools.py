@@ -45,7 +45,6 @@ class TestMailDomainSearch(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestIapJsonrpcContract(TransactionCase):
-
     def _call(self, response=None, side_effect=None):
         mock_response = MagicMock()
         mock_response.json.return_value = response or {}

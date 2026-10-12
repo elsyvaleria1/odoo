@@ -22,14 +22,10 @@ class TestAlarm(TestsCommon):
             ],
             ["env['lunch.alert'].browse([%i])._notify_chat()" % self.alert_ny.id],
         )
-        self.assertEqual(
-            cron_ny.nextcall, datetime(2021, 1, 29, 15, 0)
-        )
+        self.assertEqual(cron_ny.nextcall, datetime(2021, 1, 29, 15, 0))
 
         tokyo_cron = self.alert_tokyo.cron_id.sudo()
-        self.assertEqual(
-            tokyo_cron.nextcall, datetime(2021, 1, 29, 23, 0)
-        )
+        self.assertEqual(tokyo_cron.nextcall, datetime(2021, 1, 29, 23, 0))
 
     @common.users("cle-lunch-manager")
     def test_cron_sync_active(self):

@@ -12,7 +12,9 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 @tagged("security")
 class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
     @users("apt_manager")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_type_access_apt_manager(self):
         self._prepare_types_with_user()
         for appointment_type in self.all_apt_types:
@@ -23,7 +25,9 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
         self.env["appointment.type"].create({"name": "Test Create"})
 
     @users("apt_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_type_access_apt_user(self):
         self._prepare_types_with_user()
         with self.assertRaises(AccessError):
@@ -62,7 +66,9 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
         created_apt.unlink()
 
     @users("internal_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_type_access_internal_user(self):
         self._prepare_types_with_user()
         with self.assertRaises(AccessError):
@@ -90,7 +96,9 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
                     appointment_type.unlink()
 
     @users("public_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_type_access_public_user(self):
         self._prepare_types_with_user()
         for appointment_type in self.all_apt_types:
@@ -107,9 +115,7 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
     @users("staff_user_aust")
     def test_appointment_type_customer_description_access(self):
         appointment_type = self.apt_type_bxls_2days
-        appointment_type.sudo().staff_user_ids = [
-            self.apt_manager.id
-        ]
+        appointment_type.sudo().staff_user_ids = [self.apt_manager.id]
         appointment_type.sudo().message_confirmation = "Test confirmation message"
 
         test_event = self.env["calendar.event"].create(
@@ -135,7 +141,9 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
         )
 
     @users("public_user")
-    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
+    @mute_logger(
+        "odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access"
+    )
     def test_appointment_type_image_access_public_user(self):
         self._prepare_types_with_user()
 

@@ -136,7 +136,6 @@ class TestSubscriptionMultiCompany(TestSubscriptionCommon):
 
     def test_ignore_archived_companies_subs(self):
 
-
         company_2 = self.setup_other_company(name="company_2")["company"]
 
         sub = self.env["sale.order"].create(

@@ -112,8 +112,6 @@ class TestFlows(PaymentHttpCommon):
         self.partner = self.internal_partner
         self._test_flow("redirect")
 
-
-
     def test_31_tokenize_portal(self):
         self.authenticate(self.portal_user.login, self.portal_user.login)
         self.partner = self.portal_partner
@@ -125,8 +123,6 @@ class TestFlows(PaymentHttpCommon):
         self.partner = self.internal_partner
         self.user = self.internal_user
         self._test_flow("token")
-
-
 
     @freeze_time("2011-11-02 12:00:21")
     def _test_validation(self, flow):
@@ -194,7 +190,6 @@ class TestFlows(PaymentHttpCommon):
         self.authenticate(self.internal_user.login, self.internal_user.login)
         self.partner = self.internal_partner
         self._test_validation(flow="direct")
-
 
     def test_pay_redirect_if_no_partner_exist(self):
         route_values = self._prepare_pay_values()

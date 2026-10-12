@@ -82,9 +82,7 @@ class TestMassMailValues(MassSMSCommon):
         )
         base_url = self.env["mailing.mailing"].get_base_url()
 
-        link_trackers = bool(
-            self.env["link.tracker"].search([], limit=1)
-        )
+        link_trackers = bool(self.env["link.tracker"].search([], limit=1))
 
         expected = {
             "link": f"{base_url}/r/{'x' * (LINK_TRACKER_MIN_CODE_LENGTH + (1 if link_trackers else 0))}/s/xxxxx",

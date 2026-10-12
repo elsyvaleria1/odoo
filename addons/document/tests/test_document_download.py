@@ -127,7 +127,6 @@ class TestDocumentsDownloadBlocked(TransactionCase):
 
 
 class TestDocumentsDownloadBlockedOverRpc(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -206,7 +205,6 @@ class TestDocumentsDownloadBlockedOverRpc(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsDownloadBlockedGenericRoutes(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -808,7 +806,6 @@ class TestDocumentsVisitLog(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsDownloadBlockedLinkEditor(HttpCase):
-
     def test_a_public_link_editor_may_download_a_blocked_document(self):
         document = self.env["document.document"].create(
             {
@@ -872,7 +869,6 @@ class TestDocumentsDownloadBlockedLinkEditor(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsLinkEditPermissionInvariant(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -982,7 +978,6 @@ class TestDocumentsLinkEditPermissionInvariant(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsDownloadBlockedInlineBypass(HttpCase):
-
     def _blocked(self, name, raw, mimetype):
         document = self.env["document.document"].create(
             {

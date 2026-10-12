@@ -5,7 +5,6 @@ from odoo.exceptions import UserError
 
 
 class WizardSocialAccountRevokeYoutube(models.TransientModel):
-
     _name = "wizard.social.account.revoke.youtube"
     _description = "Revoke YouTube Account"
 

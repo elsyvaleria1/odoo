@@ -22,7 +22,6 @@ def _git(cwd, *args):
 
 @tagged("post_install", "-at_install")
 class TestRepositoryOfAModule(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.root = Path(tempfile.mkdtemp())

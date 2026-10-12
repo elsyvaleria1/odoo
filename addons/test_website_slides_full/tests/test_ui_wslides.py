@@ -12,7 +12,6 @@ class TestUi(TestUICommon):
     def setUp(self):
         super().setUp()
 
-
         self.furniture_survey = self.env["survey.survey"].create(
             {
                 "title": "Furniture Creation Certification",

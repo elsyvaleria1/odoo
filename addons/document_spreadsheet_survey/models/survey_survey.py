@@ -44,7 +44,6 @@ class Survey(models.Model):
     def _get_survey_values(self) -> dict:
         self.check_singleton()
 
-
         locale = self.env["res.lang"]._get_user_spreadsheet_locale()
         date_format = locale["dateFormat"]
         date_time_format = locale["dateFormat"] + " " + locale["timeFormat"]

@@ -12,7 +12,6 @@ _lt = LazyTranslate(__name__)
 
 
 class TelegramHandlerBase(models.AbstractModel):
-
     _name = "telegram.handler.base"
     _inherit = "mixin.telegram.handler"
     _description = "Telegram: General Commands"

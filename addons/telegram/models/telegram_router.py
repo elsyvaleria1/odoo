@@ -33,17 +33,14 @@ HANDLER_PREFIX = "telegram.handler."
 
 
 class ForeignSender(Exception):
-
     def __init__(self, chat):
         super().__init__(chat)
         self.chat = chat
 
 
 class TelegramRouter(models.AbstractModel):
-
     _name = "telegram.router"
     _description = "Telegram Update Router"
-
 
     @api.model
     def _handler_names(self):
@@ -98,7 +95,6 @@ class TelegramRouter(models.AbstractModel):
     def _intake_selection(self, kind) -> list:
         handlers = [h for h in self._handlers() if kind in h._telegram_intakes()]
         return [(h._name, h._description) for h in handlers]
-
 
     @api.model
     def _handle_update(self, bot, data) -> None:
@@ -329,7 +325,6 @@ class TelegramRouter(models.AbstractModel):
                 "You have reached the message limit. Please wait a moment."
             ),
         )
-
 
     @api.model
     def _dispatch_moved(self, bot, data) -> None:
@@ -586,7 +581,6 @@ class TelegramRouter(models.AbstractModel):
         for handler in self._handlers():
             handler._on_bot_membership(bot, chat, status)
 
-
     @api.model
     def _dispatch_service_message(self, bot, message) -> bool:
         chat_data = message.get("chat") or {}
@@ -733,7 +727,6 @@ class TelegramRouter(models.AbstractModel):
         for handler in self._handlers():
             handler._on_chat_migrated(bot, group, supergroup)
 
-
     @api.model
     def _dispatch_business_connection(self, bot, data) -> None:
         connection = bot.env["telegram.business.connection"]._from_update(bot, data)
@@ -820,7 +813,6 @@ class TelegramRouter(models.AbstractModel):
         for handler in self._handlers(bot):
             if handler._on_business_deleted(bot, connection, chat, ledgers):
                 return
-
 
     @api.model
     def _is_command_enabled(self, bot, handler, command, spec) -> bool:
@@ -1013,7 +1005,6 @@ class TelegramRouter(models.AbstractModel):
                 ),
             )
 
-
     @api.model
     def _dispatch_callback_query(self, bot, callback_query) -> None:
         chat, partner, internal_user = self._acquire_chat_and_identity(
@@ -1071,7 +1062,6 @@ class TelegramRouter(models.AbstractModel):
                 if data.startswith(prefix) and len(prefix) > length:
                     best, length = handler, len(prefix)
         return best
-
 
     @api.model
     def _flow_owner(self, chat):
@@ -1177,7 +1167,6 @@ class TelegramRouter(models.AbstractModel):
             chat.flow_owner,
             chat.flow_step,
         )
-
 
     @api.model
     def _command_company(self, bot, chat, handler, internal_user):
@@ -1303,7 +1292,6 @@ class TelegramRouter(models.AbstractModel):
             return False
         self._send_flow_busy_notice(bot, chat, owner)
         return True
-
 
     @api.model
     def _help_sections(self, bot, partner, internal_user, chat=None):

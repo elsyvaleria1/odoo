@@ -10,7 +10,6 @@ from odoo.addons.test_mail_sms.tests.common import TestSMSRecipients
 
 @tagged("sms_post")
 class TestSMSPost(SMSCommon, TestSMSRecipients, CronMixinCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -629,7 +628,6 @@ class TestSMSPostException(SMSCommon, TestSMSRecipients):
             test_record._message_sms(
                 self._test_body, partner_ids=self.test_record.customer_id.ids
             )
-
 
     def test_message_sms_w_numbers_sanitization_duplicate(self):
         pass

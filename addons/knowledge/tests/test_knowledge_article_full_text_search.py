@@ -7,7 +7,6 @@ from odoo.addons.knowledge.tests.common import KnowledgeCommon
 
 
 class TestKnowledgeArticleFullTextSearch(KnowledgeCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

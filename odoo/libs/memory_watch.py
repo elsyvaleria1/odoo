@@ -53,7 +53,6 @@ def _thread_stacks(skip: int | None) -> str:
 
 
 class MemoryWatch:
-
     def __init__(
         self,
         step: int,

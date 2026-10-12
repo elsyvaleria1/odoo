@@ -30,9 +30,7 @@ class HrExpense(models.Model):
 
     def action_refuse(self):
         res = super().action_refuse()
-        self.sudo().refund_in_payslip = (
-            False
-        )
+        self.sudo().refund_in_payslip = False
         return res
 
     def action_reset(self):
@@ -62,9 +60,7 @@ class HrExpense(models.Model):
             )
 
         expense_structure_country_ids = self._get_countries_allowing_payslips()
-        if (
-            False not in expense_structure_country_ids
-        ):
+        if False not in expense_structure_country_ids:
             for country_id in self.grouped(
                 lambda expense: expense.company_id.country_id.id
             ):

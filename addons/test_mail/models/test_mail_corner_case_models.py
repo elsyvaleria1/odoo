@@ -43,7 +43,6 @@ class MailPerformanceTracking(models.Model):
 
 
 class MailTestFieldType(models.Model):
-
     _description = "Test Field Type"
     _name = "mail.test.field.type"
     _inherit = ["mixin.mail.thread"]
@@ -64,7 +63,6 @@ class MailTestFieldType(models.Model):
 
 
 class MailTestLang(models.Model):
-
     _description = "Lang Chatter Model"
     _name = "mail.test.lang"
     _inherit = ["mixin.mail.thread"]
@@ -83,8 +81,6 @@ class MailTestLang(models.Model):
             group_options = group[2]
             group_options["has_button_access"] = True
         return groups
-
-
 
 
 class MailTestTrackAllM2m(models.Model):
@@ -203,7 +199,6 @@ class MailTestTrackMonetary(models.Model):
 
 
 class MailTestTrackSelection(models.Model):
-
     _description = "Test Selection Tracking"
     _name = "mail.test.track.selection"
     _inherit = ["mixin.mail.thread"]
@@ -214,10 +209,7 @@ class MailTestTrackSelection(models.Model):
     )
 
 
-
-
 class MailTestMultiCompany(models.Model):
-
     _description = "Test Multi Company Mail"
     _name = "mail.test.multi.company"
     _inherit = ["mixin.mail.thread.main.attachment"]
@@ -227,7 +219,6 @@ class MailTestMultiCompany(models.Model):
 
 
 class MailTestMultiCompanyRead(models.Model):
-
     _description = "Simple Chatter Model "
     _name = "mail.test.multi.company.read"
     _inherit = ["mail.test.multi.company", "mixin.mail.activity"]
@@ -235,7 +226,6 @@ class MailTestMultiCompanyRead(models.Model):
 
 
 class MailTestMultiCompanyWithActivity(models.Model):
-
     _description = "Test Multi Company Mail With Activity"
     _name = "mail.test.multi.company.with.activity"
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
@@ -245,7 +235,6 @@ class MailTestMultiCompanyWithActivity(models.Model):
 
 
 class MailTestNothread(models.Model):
-
     _description = "NoThread Model"
     _name = "mail.test.nothread"
     _mail_partner_fields = ("customer_id",)

@@ -3,7 +3,6 @@ from odoo.tools import frozendict
 
 
 class GamificationQuest(models.Model):
-
     _name = "gamification.quest"
     _description = "Gamification Quest"
     _inherit = ["mixin.mail.thread"]
@@ -100,7 +99,6 @@ class GamificationQuest(models.Model):
 
 
 class GamificationQuestStep(models.Model):
-
     _name = "gamification.quest.step"
     _description = "Quest Step"
     _order = "sequence, id"
@@ -170,7 +168,6 @@ class GamificationQuestStep(models.Model):
 
 
 class GamificationQuestEnrollment(models.Model):
-
     _name = "gamification.quest.enrollment"
     _description = "Quest Enrollment"
     _order = "create_date desc"
@@ -338,7 +335,6 @@ class GamificationQuestEnrollment(models.Model):
 
 
 class GamificationQuestStepCompletion(models.Model):
-
     _name = "gamification.quest.step.completion"
     _description = "Quest Step Completion"
     _order = "completion_date desc"

@@ -7,7 +7,6 @@ from odoo.tools import mute_logger
 
 @tagged("post_install", "-at_install")
 class TestResourceIdentity(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

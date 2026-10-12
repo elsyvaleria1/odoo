@@ -14,7 +14,6 @@ COMPANY_MODES = ("any", "choose")
 
 @dataclass(frozen=True)
 class TelegramCommand:
-
     method: str
     tier: str = "internal"
     starts_flow: bool = False

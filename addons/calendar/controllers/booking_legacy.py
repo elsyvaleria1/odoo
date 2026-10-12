@@ -6,7 +6,6 @@ from odoo.tools.urls import keep_query
 
 
 class AppointmentLegacy(http.Controller):
-
     @http.route(
         ["/calendar/<string:appointment_type>/appointment"],
         type="http",

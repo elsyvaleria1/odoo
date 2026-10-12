@@ -14,7 +14,6 @@ from odoo.addons.mail.tests.common_activity import ActivityScheduleCase
 
 @tagged("mail_activity", "mail_activity_plan")
 class TestActivitySchedule(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -549,7 +548,6 @@ class TestActivitySchedule(ActivityScheduleCase):
 
 @tagged("mail_activity", "mail_activity_plan")
 class TestPlanScheduleShape(ActivityScheduleCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

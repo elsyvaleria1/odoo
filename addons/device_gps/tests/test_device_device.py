@@ -232,7 +232,6 @@ class TestGpsTrackingToggle(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDeviceWithHistoryIsNotDeletable(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

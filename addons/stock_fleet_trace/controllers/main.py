@@ -149,7 +149,6 @@ def _driver_version():
 
 
 class StockFleetTraceOffline(http.Controller):
-
     def _trip(self, batch_id):
         batch = request.env["stock.picking.batch"].browse(batch_id).exists()
         if not batch:

@@ -73,7 +73,6 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-
     def _compute_feature_support_fields(self) -> None:
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "razorpay").update(
@@ -92,7 +91,6 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-
     @api.constrains("state")
     def _check_razorpay_credentials_are_set_before_enabling(self) -> None:
         for provider in self.filtered(
@@ -107,13 +105,11 @@ class PaymentProvider(models.Model):
                         )
                     )
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "razorpay":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def action_start_onboarding(self, menu_id=None):
         self.check_singleton()
@@ -185,7 +181,6 @@ class PaymentProvider(models.Model):
             },
         }
 
-
     def _get_validation_amount(self):
         res = super()._get_validation_amount()
         if self.code != "razorpay":
@@ -213,7 +208,6 @@ class PaymentProvider(models.Model):
                 secret.encode(), msg=data, digestmod=hashlib.sha256
             ).hexdigest()
 
-
     def _razorpay_refresh_access_token(self) -> None:
         self.check_singleton()
         proxy_payload = self._prepare_json_rpc_payload(
@@ -238,7 +232,6 @@ class PaymentProvider(models.Model):
                     "razorpay_access_token_expiry": expiry,
                 }
             )
-
 
     def _prepare_request_url(
         self, endpoint, *, api_version="v1", is_proxy_request=False, **kwargs

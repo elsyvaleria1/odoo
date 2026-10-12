@@ -3,7 +3,6 @@ from odoo.addons.integration_machine_learning.tools import get_router
 
 
 class BotAssistant:
-
     PURPOSE = None
     TRANSCRIBE_CONTEXT = ""
     TRANSCRIPTION_PURPOSE = None

@@ -14,7 +14,6 @@ from odoo.addons.calendar.models.utils import generate_calendar_token
 
 @tagged("appointment_google_reserve")
 class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCase):
-
     @freeze_time("2022-02-14 07-00-00")
     def test_google_reserve_availability_lookup(self):
 
@@ -317,7 +316,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             self.assertEqual(
                 availability.get("available"), expected_availability["available"]
             )
-
 
     @freeze_time("2022-02-14 07-00-00")
     @patch(
@@ -995,7 +993,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             self.apt_type_resources_table_1,
         )
 
-
     @freeze_time("2022-02-14 07-00-00")
     @patch(
         "odoo.addons.appointment_google_reserve.tools.google_reserve_iap.GoogleReserveIAP.update_availabilities",
@@ -1099,7 +1096,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 self.assertEqual(
                     availability.get("available"), expected_availability["available"]
                 )
-
 
     @freeze_time("2022-02-14 07-00-00")
     @patch(
@@ -1246,7 +1242,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         self.assertEqual(calendar_event.start, start_slot + timedelta(hours=1))
 
         self.assertEqual(update_availabilities.call_count, 2)
-
 
     def _to_utc(self, slot_datetime):
         return str(cal.timegm((slot_datetime).timetuple()))

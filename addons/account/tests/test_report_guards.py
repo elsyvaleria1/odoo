@@ -13,7 +13,6 @@ from .common_report_engine import TestAccountReportsCommon
 
 @tagged("post_install", "-at_install")
 class TestReportValueFormatting(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -99,7 +98,6 @@ class TestReportValueFormatting(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestReportAggregationGuards(TestAccountReportsCommon):
-
     def _build_report(self, lines):
         report = self.env["report.formula"].create(
             {
@@ -227,7 +225,6 @@ class TestReportAggregationGuards(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestReportSortLinesInput(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -260,7 +257,6 @@ class TestReportSortLinesInput(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAuditAccountStatusAccess(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -354,7 +350,6 @@ class TestAuditAccountStatusAccess(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestMultiCompanyScoping(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -430,7 +425,6 @@ class TestMultiCompanyScoping(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestPaymentWizardBankExposure(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -510,7 +504,6 @@ class TestPaymentWizardBankExposure(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestEveryReportRenders(TestAccountReportsCommon):
-
     EXPECTED = (
         "activate more than one currency",
         "Inconsistent report_id",
@@ -631,7 +624,6 @@ class TestEveryReportRenders(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestExportTestFlagIsNotClientSettable(TestAccountReportsCommon):
-
     def test_the_flag_is_honoured_while_a_test_runs(self):
         report = self.env.ref("account.balance_sheet")
         options = report.get_options({"_running_export_test": True})
@@ -649,7 +641,6 @@ class TestExportTestFlagIsNotClientSettable(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAccountsCoverageReportCodelessAccounts(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -706,7 +697,6 @@ class TestAccountsCoverageReportCodelessAccounts(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestSortLinesKeepsEveryLine(TestAccountReportsCommon):
-
     def test_a_hierarchy_keeps_every_line_through_the_sort(self):
         report = self.env.ref("account.trial_balance_report")
         options = self._generate_options(
@@ -747,7 +737,6 @@ class TestSortLinesKeepsEveryLine(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestSortLinesShortLines(TestAccountReportsCommon):
-
     def test_a_line_with_no_columns_does_not_break_the_sort(self):
         invoice = self.init_invoice(
             "out_invoice",
@@ -785,7 +774,6 @@ class TestSortLinesShortLines(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestNewCompanyGetsDeadlineDefaults(TestAccountReportsCommon):
-
     def test_a_new_company_picks_up_every_deadline_default(self):
         return_type = self.env["account.return.type"].search([], limit=1)
         self.assertTrue(return_type, "no return type to configure; nothing tested")
@@ -816,7 +804,6 @@ class TestNewCompanyGetsDeadlineDefaults(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAuditReturnPreviousPeriodScoping(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -937,7 +924,6 @@ class TestAuditReturnPreviousPeriodScoping(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestBudgetItemAccess(TestAccountReportsCommon):
-
     def test_a_basic_user_reads_a_budget_and_its_items_alike(self):
         basic = self.env["res.users"].create(
             {
@@ -960,7 +946,6 @@ class TestBudgetItemAccess(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestManagerReachesTheModulesAcls(TestAccountReportsCommon):
-
     def test_a_manager_reaches_what_the_module_grants(self):
         manager = self.env["res.users"].create(
             {
@@ -994,7 +979,6 @@ class TestManagerReachesTheModulesAcls(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestBudgetFilterIsMultiCompany(TestAccountReportsCommon):
-
     def test_the_filter_lists_every_selected_companys_budgets(self):
         report = self.env["report.formula"].search(
             [("filter_budgets", "=", True)], limit=1
@@ -1023,7 +1007,6 @@ class TestBudgetFilterIsMultiCompany(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestLineIdIsClientInput(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1064,7 +1047,6 @@ class TestLineIdIsClientInput(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestLineIdDelimitersAreRejected(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1087,7 +1069,6 @@ class TestLineIdDelimitersAreRejected(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestDispatchOnSectionsSource(TestAccountReportsCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1151,7 +1132,6 @@ class TestDispatchOnSectionsSource(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestCoverageReportDomainRewrite(TestAccountReportsCommon):
-
     def _rewrite(self, domain):
         report = self.env.ref("account.balance_sheet")
         rewritten = []
@@ -1203,7 +1183,6 @@ class TestCoverageReportDomainRewrite(TestAccountReportsCommon):
 
 @tagged("post_install", "-at_install")
 class TestAnnotationChatterLoad(TestAccountReportsCommon):
-
     def _annotatable_line(self):
         move = self.env["account.move"].create(
             {

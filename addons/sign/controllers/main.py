@@ -186,7 +186,6 @@ class Sign(http.Controller):
         }
         return result
 
-
     @http.route(["/sign/<share_link>"], type="http", auth="public")
     def share_link(self, share_link, **post):
         sign_request_item = request.env["sign.request.item"]._from_signer_token(

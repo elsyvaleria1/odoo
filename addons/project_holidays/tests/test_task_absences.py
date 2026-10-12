@@ -7,7 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 @freeze_time("2020-01-01")
 class TestTaskAbsences(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

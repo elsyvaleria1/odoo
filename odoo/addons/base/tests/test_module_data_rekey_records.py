@@ -12,7 +12,6 @@ from odoo.tools.module_data import (
 
 @tagged("post_install", "-at_install")
 class TestRekeyRecords(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -235,7 +234,6 @@ class TestRekeyRecordsReadsEveryModelColumn(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRehomeReferences(TransactionCase):
-
     def test_the_references_move_to_the_parent_model(self):
         cr = self.env.cr
         cr.execute("""
@@ -273,7 +271,6 @@ class TestRehomeReferences(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestClearDanglingReferences(TransactionCase):
-
     def test_the_value_goes_and_a_view_reading_it_stays(self):
         cr = self.env.cr
         cr.execute("""
@@ -301,7 +298,6 @@ class TestClearDanglingReferences(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLiftColumns(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.env.cr.execute("""
@@ -376,7 +372,6 @@ class TestLiftColumns(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestMergeModel(TransactionCase):
-
     def _insert(self, query, args=()):
         self.env.cr.execute(query + " RETURNING id", args)
         return self.env.cr.fetchone()[0]

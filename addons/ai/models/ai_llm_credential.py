@@ -10,7 +10,6 @@ PROVIDER_KEY_SOURCES = {
 
 
 class AiLlmCredential(models.AbstractModel):
-
     _name = "ai.llm.credential"
     _description = "AI Provider Credentials"
 

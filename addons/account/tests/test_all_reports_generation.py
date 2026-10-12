@@ -39,9 +39,11 @@ class TestAllReportsGeneration(AccountTestInvoicingCommon):
                         report.id,
                         "Composite reports should always reroute.",
                     )
-                    information = self.env["report.formula"].browse(
-                        options["report_id"]
-                    ).get_report_information(options)
+                    information = (
+                        self.env["report.formula"]
+                        .browse(options["report_id"])
+                        .get_report_information(options)
+                    )
                 else:
                     information = report.get_report_information(options)
                 json.dumps(information, default=json_default)
@@ -255,9 +257,7 @@ class TestAllReportsGeneration(AccountTestInvoicingCommon):
                     )
                 ).unlink()
 
-                expressions.report_line_id.user_groupby = (
-                    "account_code"
-                )
+                expressions.report_line_id.user_groupby = "account_code"
                 self.env.flush_all()
                 report._compute_expression_totals_for_each_column_group(
                     expressions, options, groupby_to_expand="account_code"

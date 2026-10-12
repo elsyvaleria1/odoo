@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class MailTestPortal(models.Model):
-
     _name = "mail.test.portal"
     _description = "Chatter Model for Portal"
     _inherit = [
@@ -21,7 +20,6 @@ class MailTestPortal(models.Model):
 
 
 class MailTestPortalNoPartner(models.Model):
-
     _name = "mail.test.portal.no.partner"
     _description = "Chatter Model for Portal (no partner field)"
     _inherit = [
@@ -38,7 +36,6 @@ class MailTestPortalNoPartner(models.Model):
 
 
 class MailTestPortalPublicAccessAction(models.Model):
-
     _description = "Portal Public Access Action"
     _name = "mail.test.portal.public.access.action"
     _inherit = "mail.test.portal"
@@ -63,7 +60,6 @@ class MailTestPortalPublicAccessAction(models.Model):
 
 
 class MailTestRating(models.Model):
-
     _name = "mail.test.rating"
     _description = "Rating Model (ticket-like)"
     _inherit = [
@@ -137,7 +133,6 @@ class MailTestRating(models.Model):
 
 
 class MailTestRatingThread(models.Model):
-
     _name = "mail.test.rating.thread"
     _description = "Model for testing rating without the rating mixin"
     _inherit = ["mixin.mail.thread"]
@@ -153,7 +148,6 @@ class MailTestRatingThread(models.Model):
 
 
 class MailTestRatingThreadRead(models.Model):
-
     _name = "mail.test.rating.thread.read"
     _description = "Read-post rating model"
     _inherit = ["mail.test.rating.thread"]

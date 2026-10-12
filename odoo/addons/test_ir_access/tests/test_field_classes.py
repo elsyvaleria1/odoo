@@ -7,7 +7,6 @@ WHITELISTED = "test_ir_access.whitelisted"
 
 
 class TestFieldClasses(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -192,7 +191,6 @@ class TestFieldClasses(TransactionCase):
 
 
 class TestFieldClassViews(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

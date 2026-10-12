@@ -2932,7 +2932,6 @@ class TestPartnerNameSearchIndexes(TransactionCase):
 
 
 class TestPartnerGeolocationInvalidation(TransactionCase):
-
     def test_moving_the_address_clears_the_coordinates(self):
         partner = self.env["res.partner"].create(
             {

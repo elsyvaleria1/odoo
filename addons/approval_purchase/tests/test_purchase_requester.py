@@ -11,7 +11,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestPurchaseDeclaredRequester(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

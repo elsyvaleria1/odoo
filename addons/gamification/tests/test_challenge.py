@@ -179,9 +179,7 @@ class test_challenge(TestGamificationCommon):
         )
 
     def test_30_create_challenge_with_sum_goal(self):
-        challenge = self.env[
-            "gamification.challenge"
-        ].create(
+        challenge = self.env["gamification.challenge"].create(
             {
                 "name": "test",
                 "state": "draft",
@@ -357,7 +355,6 @@ class test_challenge(TestGamificationCommon):
 
 
 class TestChallengeRewardNobodyBadge(TestGamificationCommon):
-
     def test_reward_nobody_badge_as_erp_manager(self):
         manager = (
             self.env["res.users"]
@@ -433,7 +430,6 @@ class TestChallengeRewardNobodyBadge(TestGamificationCommon):
 
 
 class TestCompletionCap(TestGamificationCommon):
-
     def test_topN_caps_completion_at_100(self):
         goal_def = self.env["gamification.goal.definition"].create(
             {
@@ -484,7 +480,6 @@ class TestCompletionCap(TestGamificationCommon):
 
 
 class TestChallengeStartRefreshButtonAccess(TestGamificationCommon):
-
     def setUp(self):
         super().setUp()
         self.employee_only_user = mail_new_test_user(

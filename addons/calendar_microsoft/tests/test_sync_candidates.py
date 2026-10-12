@@ -5,7 +5,6 @@ from odoo.addons.calendar_microsoft.tests.common import authorize_microsoft_cale
 
 @tagged("post_install", "-at_install")
 class TestMicrosoftSyncCandidates(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

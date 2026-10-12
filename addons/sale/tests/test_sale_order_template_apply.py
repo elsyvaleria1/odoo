@@ -136,9 +136,7 @@ class TestSaleOrderTemplateApply(SaleOrderTemplateCommon):
         cls.sale_order = cls.empty_order
 
     def test_01_template_without_pricelist(self):
-        self.sale_order.write(
-            {"template_id": self.quotation_template_no_discount.id}
-        )
+        self.sale_order.write({"template_id": self.quotation_template_no_discount.id})
         self.sale_order._onchange_template_id()
 
         self.assertEqual(
@@ -301,9 +299,7 @@ class TestSaleOrderTemplateApply(SaleOrderTemplateCommon):
         )
 
     def test_04_update_pricelist_option_line(self):
-        self.sale_order.write(
-            {"template_id": self.quotation_template_no_discount.id}
-        )
+        self.sale_order.write({"template_id": self.quotation_template_no_discount.id})
         self.sale_order._onchange_template_id()
 
         optional_lines = self._get_optional_product_lines(self.sale_order)
@@ -527,12 +523,8 @@ class TestSaleOrderTemplateApply(SaleOrderTemplateCommon):
 
     def test_warning_quotation(self):
         quotation_template = self.empty_order_template
-        quotation_template.line_ids = [
-            Command.create({"product_id": self.product.id})
-        ]
-        self.env["ir.default"].set(
-            "sale.order", "template_id", quotation_template.id
-        )
+        quotation_template.line_ids = [Command.create({"product_id": self.product.id})]
+        self.env["ir.default"].set("sale.order", "template_id", quotation_template.id)
         try:
             with self.assertLogs("odoo.tests.form.onchange") as log_catcher:
                 Form(self.env["sale.order"])
@@ -587,9 +579,7 @@ class TestSaleOrderTemplateApply(SaleOrderTemplateCommon):
                 ],
             }
         )
-        self.env["ir.default"].set(
-            "sale.order", "template_id", quotation_template.id
-        )
+        self.env["ir.default"].set("sale.order", "template_id", quotation_template.id)
         with Form(self.env["sale.order"]) as sale_order_form:
             self.assertTrue(sale_order_form.template_id)
             self.assertTrue(sale_order_form.line_ids)

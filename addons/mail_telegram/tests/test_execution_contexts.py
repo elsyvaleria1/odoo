@@ -14,7 +14,6 @@ _ALERT = "Telegram is not delivering your notifications"
 
 @tagged("post_install", "-at_install")
 class TestExecutionContexts(MailTelegramCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

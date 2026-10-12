@@ -114,7 +114,6 @@ class TestDocumentsLastAccessGrouping(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsClientFieldLists(TransactionCase):
-
     def _read_js(self, relative_path):
         path = pathlib.Path(__file__).resolve().parent.parent / relative_path
         return path.read_text(encoding="utf-8")

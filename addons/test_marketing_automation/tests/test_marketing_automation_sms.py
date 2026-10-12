@@ -40,7 +40,6 @@ class TestMarketingAutomationSms(TestMACommon):
         )
         cls.test_records = cls.test_records_base + cls.test_records_failure
 
-
         cls.campaign = (
             cls.env["marketing.campaign"]
             .with_user(cls.user_marketing_automation)
@@ -94,7 +93,6 @@ class TestMarketingAutomationSms(TestMACommon):
         act1 = self.act1.with_user(self.env.user)
         _act1_1 = self.act1_1.with_user(self.env.user)
         campaign = self.campaign.with_user(self.env.user)
-
 
         with self.mock_datetime_and_now(self.date_reference):
             campaign.action_start_campaign()

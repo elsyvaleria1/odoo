@@ -46,8 +46,8 @@ class SocialYoutubeController(SocialController):
         if self._consume_oauth_state(youtube_media, kw.get("state")) is None:
             return self._render_oauth_state_refused()
 
-        youtube_oauth_client_id = (
-            request.env.registry.settings.get(request.env, "social.youtube_oauth_client_id", False)
+        youtube_oauth_client_id = request.env.registry.settings.get(
+            request.env, "social.youtube_oauth_client_id", False
         )
         youtube_oauth_client_secret = request.env[
             "credential.credential"
@@ -120,7 +120,6 @@ class SocialYoutubeController(SocialController):
 
         return request.redirect("/odoo/action-social.action_social_stream_post")
 
-
     @http.route("/social_youtube/comment", type="http", auth="user", methods=["POST"])
     def social_youtube_comment(
         self,
@@ -146,7 +145,6 @@ class SocialYoutubeController(SocialController):
     ):
         stream_post = self._get_social_stream_post(stream_post_id, "youtube")
         return stream_post._youtube_get_comments(next_page_token, count=comments_count)
-
 
     def _youtube_create_accounts(self, access_token, refresh_token, expires_in):
         youtube_channels_endpoint = url_join(

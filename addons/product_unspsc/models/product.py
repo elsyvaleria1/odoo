@@ -51,7 +51,6 @@ class UomUom(models.Model):
 
 
 class ProductUnspscCode(models.Model):
-
     _name = "product.unspsc.code"
     _description = "Product and UOM Codes from UNSPSC"
     _rec_names_search = ["name", "code"]

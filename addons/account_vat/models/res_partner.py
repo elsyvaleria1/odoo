@@ -29,9 +29,7 @@ _ref_vat = {
     "bg": "BG1234567892",
     "br": _lt("either 11 digits for CPF or 14 digits for CNPJ"),
     "cr": "3101012009",
-    "ch": _lt(
-        "CHE-123.456.788 TVA or CHE-123.456.788 MWST or CHE-123.456.788 IVA"
-    ),
+    "ch": _lt("CHE-123.456.788 TVA or CHE-123.456.788 MWST or CHE-123.456.788 IVA"),
     "cl": "76086428-5",
     "co": "213123432-1",
     "cy": "CY10259033P",

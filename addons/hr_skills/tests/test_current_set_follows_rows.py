@@ -11,7 +11,6 @@ from .common import SkillsCase
 
 @tagged("post_install", "-at_install")
 class TestCurrentSetFollowsTheRows(SkillsCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -93,7 +92,6 @@ class TestCurrentSetFollowsTheRows(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestEveryX2ManyCommandIsAnswered(SkillsCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -219,7 +217,6 @@ class TestEveryX2ManyCommandIsAnswered(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestOneCommandPerRow(SkillsCase):
-
     def _commands_for(self, *client_commands):
         employee = self.env["hr.employee"].create({"name": "One command employee"})
         old = self.env["hr.employee.skill"].create(
@@ -310,7 +307,6 @@ class TestOneCommandPerRow(SkillsCase):
 
 @tagged("post_install", "-at_install")
 class TestCreatingAnOwnerFromCopiedLines(SkillsCase):
-
     def test_the_source_of_a_copy_keeps_its_skills(self):
         source = self.env["hr.employee"].create({"name": "Copy source"})
         live = self.env["hr.employee.skill"].create(

@@ -9,7 +9,6 @@ class ProjectProject(models.Model):
     _name = "project.project"
     _inherit = "project.project"
 
-
     def _get_subscription_action(self, domain=None, subscription_ids=None):
         if not domain and not subscription_ids:
             return {}
@@ -51,7 +50,6 @@ class ProjectProject(models.Model):
         if section_name == "subscriptions":
             return self._get_subscription_action(domain, [res_id] if res_id else [])
         return super().action_profitability_items(section_name, domain, res_id)
-
 
     def _get_profitability_labels(self):
         labels = super()._get_profitability_labels()
@@ -110,9 +108,7 @@ class ProjectProject(models.Model):
         ) in subscription_read_group:
             all_subscription_ids.extend(ids)
             set_currency_ids.add(currency.id)
-            if (
-                subscription_state != "3_progress"
-            ):
+            if subscription_state != "3_progress":
                 continue
             if not template_id:
                 amount_to_invoice_per_currency[currency.id] += recurring_monthly

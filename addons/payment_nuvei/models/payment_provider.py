@@ -37,7 +37,6 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-
     def _get_supported_currencies(self):
         supported_currencies = super()._get_supported_currencies()
         if self.code == "nuvei":
@@ -46,13 +45,11 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "nuvei":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def _nuvei_get_api_url(self) -> str:
         if self.state == "enabled":

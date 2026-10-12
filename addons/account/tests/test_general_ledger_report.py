@@ -1245,7 +1245,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         options = self._generate_options(self.report, "2017-01-01", "2017-12-31")
         options["hierarchy"] = True
 
-
         self.assertLinesValues(
             self.report._get_lines(options),
             [0, 1, 2],

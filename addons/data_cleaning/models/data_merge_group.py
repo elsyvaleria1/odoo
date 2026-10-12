@@ -81,9 +81,7 @@ class Data_MergeGroup(models.Model):
             data = set(records[0].items())
             data = data.intersection(*[set(record.items()) for record in records[1:]])
 
-            diff_fields = set(read_fields) - {
-                k for k, v in data
-            }
+            diff_fields = set(read_fields) - {k for k, v in data}
             group.divergent_fields = ",".join(diff_fields)
             group.similarity = min(1, len(data) / len(read_fields))
 
@@ -98,7 +96,6 @@ class Data_MergeGroup(models.Model):
         if all(not record.active for record in self.record_ids):
             self.active = False
         self._elect_master_record()
-
 
     def _elect_master_record(self) -> None:
         for group in self:
@@ -127,7 +124,6 @@ class Data_MergeGroup(models.Model):
             elected=records_sorted[:1].id,
         )
         return records_sorted[0] if records_sorted else None
-
 
     @api.model
     def merge_multiple_records(self, group_records) -> None:
@@ -243,7 +239,6 @@ class Data_MergeGroup(models.Model):
             origins.unlink()
         else:
             origins.write({origins._active_name: False})
-
 
     def _cron_cleanup(self, auto_commit=True) -> None:
         groups = self.with_context(active_test=False).env["data_merge.group"].search([])

@@ -1,4 +1,3 @@
-
 from odoo.exceptions import ValidationError
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
@@ -6,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyProgramWrite(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -310,9 +310,7 @@ else:
         )
 
         lead = self.create_lead(state="draft", priority=False)
-        self.assertEqual(
-            lead.state, "open"
-        )
+        self.assertEqual(lead.state, "open")
         self.assertEqual(lead.priority, False)
 
         lead.write({"state": "pending"})
@@ -443,9 +441,7 @@ if env.context.get('old_values', None):  # on write
 
         lead = self.create_lead(state="draft")
         self.assertEqual(lead.state, "draft")
-        self.assertEqual(
-            len(automations), 0
-        )
+        self.assertEqual(len(automations), 0)
 
     def test_030_submodel(self):
         line = self.create_line()
@@ -484,9 +480,7 @@ if env.context.get('old_values', None):  # on write
             line_ids=[(0, 0, {"name": "Line", "user_id": self.user_root.id})]
         )
         self.assertEqual(lead.user_id, self.user_demo)
-        self.assertEqual(
-            lead.line_ids.user_id, self.user_demo
-        )
+        self.assertEqual(lead.line_ids.user_id, self.user_demo)
 
     def test_040_modelwithoutaccess(self):
         Model = self.env["automation.link.test"]
@@ -565,8 +559,6 @@ if env.context.get('old_values', None):  # on write
             2,
             "Another record on the project model should have been created",
         )
-
-
 
     def test_060_on_stage_set(self):
         stage_field = self.env["ir.model.fields"].search(
@@ -1060,9 +1052,7 @@ action = {
                     self.env["resource.calendar"].search([], limit=1).check_singleton()
                 )
                 automation.trg_date_range_type = "day"
-                self.env["automation.lead.test"].create(
-                    {"name": "calendar"}
-                )
+                self.env["automation.lead.test"].create({"name": "calendar"})
             with (
                 common.freeze_time("2020-02-02 03:11:00"),
                 patch.object(self.env.cr, "_now", datetime.datetime.now()),

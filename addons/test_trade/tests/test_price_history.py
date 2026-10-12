@@ -7,7 +7,6 @@ from odoo.addons.trade.tools import direction_of
 
 @tagged("post_install", "-at_install")
 class TestPriceHistory(TestTradeOrderCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -37,7 +36,6 @@ class TestPriceHistory(TestTradeOrderCase):
                 "partner_id": (partner or self.partner).id,
             }
         )
-
 
     def test_the_average_is_weighted_by_quantity_not_by_line(self):
         self._confirmed_line(price=10.0, qty=10.0)
@@ -107,7 +105,6 @@ class TestPriceHistory(TestTradeOrderCase):
 
         self.assertAlmostEqual(wizard.avg_price_unit, 50.0, places=2)
 
-
     def test_divergence_is_relative_to_the_period_average(self):
         self._confirmed_line(price=100.0)
         target = self._confirmed_line(price=120.0)
@@ -137,7 +134,6 @@ class TestPriceHistory(TestTradeOrderCase):
         self.assertAlmostEqual(wizard.divergence_pct, 0.0, places=4)
         self.assertFalse(wizard.avg_sample_truncated)
 
-
     def test_the_partner_average_is_read_against_the_market_one(self):
         self._confirmed_line(price=100.0, partner=self.other_partner)
         self._confirmed_line(price=200.0, partner=self.partner)
@@ -158,7 +154,6 @@ class TestPriceHistory(TestTradeOrderCase):
         wizard = self._wizard(target, partner=self.partner)
 
         self.assertEqual(wizard.partner_avg_sample_count, 0)
-
 
     def test_the_period_start_moves_with_the_selection(self):
         target = self._confirmed_line(price=50.0)
@@ -188,7 +183,6 @@ class TestPriceHistory(TestTradeOrderCase):
 
         self.assertEqual(wizard.avg_sample_count, 1)
         self.assertAlmostEqual(wizard.avg_price_unit, 10.0, places=2)
-
 
     def test_the_shortlist_is_filled_from_the_filters(self):
         self._confirmed_line(price=10.0)

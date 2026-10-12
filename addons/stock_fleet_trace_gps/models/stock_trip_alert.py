@@ -15,7 +15,6 @@ ALERT_TYPES = [
 
 
 class StockTripAlert(models.Model):
-
     _name = "stock.trip.alert"
     _description = "Trip Alert"
     _order = "date desc, id desc"

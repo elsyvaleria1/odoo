@@ -663,9 +663,7 @@ class AccountReturnType(models.Model):
                         elif same_period_return.company_ids != expected_companies:
                             same_period_return.company_ids = expected_companies
 
-            periods = list(
-                set(periods) - same_periods
-            )
+            periods = list(set(periods) - same_periods)
             periods.sort(key=lambda period: period[0])
 
             unmatched_existing_periods = set(existing_periods.keys()) - same_periods
@@ -1027,9 +1025,7 @@ class AccountReturnType(models.Model):
         else:
             start_day, start_month = self._get_start_date_elements(company_id)
 
-        aligned_date = (
-            date + relativedelta(days=-(start_day - 1))
-        )
+        aligned_date = date + relativedelta(days=-(start_day - 1))
         year = aligned_date.year
         month_offset = aligned_date.month - start_month
         period_number = (month_offset // period_months) + 1
@@ -1040,9 +1036,8 @@ class AccountReturnType(models.Model):
 
         month_delta = period_number * period_months
 
-        end_date = (
-            datetime.date(year, start_month, 1)
-            + relativedelta(months=month_delta, days=start_day - 2)
+        end_date = datetime.date(year, start_month, 1) + relativedelta(
+            months=month_delta, days=start_day - 2
         )
         start_date = datetime.date(year, start_month, 1) + relativedelta(
             months=month_delta - period_months, day=start_day

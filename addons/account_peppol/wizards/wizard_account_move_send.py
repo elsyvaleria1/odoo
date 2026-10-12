@@ -5,7 +5,6 @@ from odoo.exceptions import AccessError, UserError
 class WizardAccountMoveSend(models.TransientModel):
     _inherit = "wizard.account.move.send"
 
-
     def _compute_sending_method_checkboxes(self) -> None:
         super()._compute_sending_method_checkboxes()
         for wizard in self:

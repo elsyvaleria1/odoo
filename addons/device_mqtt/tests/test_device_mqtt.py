@@ -41,7 +41,6 @@ class TestRemoteDeviceMqttEndpoint(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRemoteDeviceMqttStream(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

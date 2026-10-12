@@ -9,7 +9,6 @@ REQUEST_MODULE = "odoo.addons.web_map.models.res_config_settings.request"
 
 
 class TestCheckMapBoxToken(TransactionCase):
-
     def test_returns_the_response_status_code(self):
         settings = self.env["res.config.settings"].new()
         response = Mock(status_code=200)
@@ -38,7 +37,6 @@ class TestCheckMapBoxToken(TransactionCase):
 
 
 class TestMapBoxTokenOnchange(TransactionCase):
-
     def _settings_with_token(self, token):
         return self.env["res.config.settings"].new({"map_box_token": token})
 

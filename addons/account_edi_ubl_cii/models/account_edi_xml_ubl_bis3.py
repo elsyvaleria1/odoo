@@ -64,14 +64,12 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             == CHORUS_PRO_PEPPOL_ID
         )
 
-
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_ubl_bis3.xml"
 
     def _add_document_currency_vals(self, vals):
         super()._add_document_currency_vals(vals)
         vals["currency_dp"] = 2
-
 
     def _add_invoice_config_vals(self, vals):
         super()._add_invoice_config_vals(vals)
@@ -319,7 +317,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
 
         return financial_account_node
 
-
     def _setup_base_lines(self, vals):
         AccountTax = self.env["account.tax"]
         company = vals["company"]
@@ -369,7 +366,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
 
     def _add_invoice_line_vals(self, vals):
         pass
-
 
     def _ubl_default_tax_category_grouping_key(
         self, base_line, tax_data, vals, currency
@@ -643,7 +639,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             },
         }
 
-
     def _export_invoice_constraints(self, invoice, vals):
         constraints = super()._export_invoice_constraints(invoice, vals)
 
@@ -869,7 +864,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
 
         return constraints
 
-
     def _prepare_partner_import_params(self, tree, role):
         partner_vals = super()._prepare_partner_import_params(tree, role)
         endpoint_node = tree.find(
@@ -886,7 +880,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                     }
                 )
         return partner_vals
-
 
     def _import_order_payment_terms_id(self, company_id, tree, xpath):
         payment_term_name = self._find_value(xpath, tree)

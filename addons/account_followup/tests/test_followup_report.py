@@ -82,7 +82,6 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
         Partner = self.env["res.partner"]
         self.partner_a.is_company = True
 
-
         child_partner = Partner.create(
             {
                 "name": "Child contact",

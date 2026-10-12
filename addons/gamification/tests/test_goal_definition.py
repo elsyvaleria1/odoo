@@ -5,7 +5,6 @@ from odoo.tests import common
 
 
 class TestGoalDefinition(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

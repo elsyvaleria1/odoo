@@ -27,7 +27,6 @@ class AccountEdiUBL(models.AbstractModel):
     _inherit = "account.edi.common"
     _description = "Base helpers for UBL"
 
-
     def _ubl_is_recycling_contribution_tax(self, tax_data):
         if not tax_data:
             return False
@@ -200,7 +199,6 @@ class AccountEdiUBL(models.AbstractModel):
             base_line["product_id"] = self.env["product.product"]
 
         return new_base_lines + extra_base_lines
-
 
     def _ubl_add_base_line_ubl_values_allowance_charges_recycling_contribution(
         self, vals
@@ -441,7 +439,6 @@ class AccountEdiUBL(models.AbstractModel):
             )
 
         for sub_currency, suffix in ((currency, "_currency"), (company_currency, "")):
-
             base_lines_aggregated_values = AccountTax._aggregate_base_lines_tax_details(
                 base_lines=base_lines,
                 grouping_function=partial(
@@ -469,7 +466,6 @@ class AccountEdiUBL(models.AbstractModel):
                     "amount": sign * values[f"tax_amount{suffix}"],
                     "subtotals": {},
                 }
-
 
             base_lines_aggregated_values = AccountTax._aggregate_base_lines_tax_details(
                 base_lines=base_lines,
@@ -508,7 +504,6 @@ class AccountEdiUBL(models.AbstractModel):
                     "tax_amount": sign * values[f"tax_amount{suffix}"],
                     "tax_categories": {},
                 }
-
 
             base_lines_aggregated_values = AccountTax._aggregate_base_lines_tax_details(
                 base_lines=base_lines,
@@ -669,7 +664,6 @@ class AccountEdiUBL(models.AbstractModel):
                         },
                     }
                 )
-
 
     def _ubl_add_line_quantity_node(self, vals) -> None:
         base_line = vals["line_vals"]["base_line"]
@@ -1270,7 +1264,6 @@ class AccountEdiUBL(models.AbstractModel):
             "cac:WithholdingTaxTotal": {},
         }
         for sub_currency, suffix in iter_currency:
-
             base_lines_aggregated_values = AccountTax._aggregate_base_lines_tax_details(
                 base_lines=new_base_lines,
                 grouping_function=partial(_get_tax_total_key, sub_currency),
@@ -1296,7 +1289,6 @@ class AccountEdiUBL(models.AbstractModel):
                     "amount": sign * values[f"tax_amount{suffix}"],
                     "subtotals": {},
                 }
-
 
             base_lines_aggregated_values = AccountTax._aggregate_base_lines_tax_details(
                 base_lines=new_base_lines,
@@ -1331,7 +1323,6 @@ class AccountEdiUBL(models.AbstractModel):
                     "tax_amount": sign * values[f"tax_amount{suffix}"],
                     "tax_categories": {},
                 }
-
 
             base_lines_aggregated_values = AccountTax._aggregate_base_lines_tax_details(
                 base_lines=new_base_lines,

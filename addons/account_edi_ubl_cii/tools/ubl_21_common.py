@@ -1,5 +1,3 @@
-
-
 Period = {
     "cbc:StartDate": {},
     "cbc:EndDate": {},

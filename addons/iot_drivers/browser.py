@@ -20,14 +20,12 @@ CHROMIUM_ARGS = [
 
 
 class BrowserState(Enum):
-
     NORMAL = "normal"
     KIOSK = "kiosk"
     FULLSCREEN = "fullscreen"
 
 
 class Browser:
-
     def __init__(self, url, _x_screen, env) -> None:
         self.url = url
         self.browser = "chromium"

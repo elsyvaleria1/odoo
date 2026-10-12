@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestSmsTemplateDynamicFields(TransactionCase):
-
     def test_the_declared_set_is_the_one_that_is_rendered(self):
         self.assertEqual(
             self.env["sms.template"]._get_dynamic_field_names(), {"body", "lang"}

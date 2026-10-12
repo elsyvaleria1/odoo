@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestObligationInData(TransactionCase):
-
     def test_every_shipped_obligation_is_noupdate_module_data(self):
         obligations = (
             self.env["approval.binding"]

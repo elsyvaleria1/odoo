@@ -15,9 +15,7 @@ class TestMarketAutoFlow(TestMACommon, CronMixinCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.date_reference = Datetime.from_string(
-            "2014-08-01 15:02:32"
-        )
+        cls.date_reference = Datetime.from_string("2014-08-01 15:02:32")
         cls.env["res.lang"]._activate_lang("fr_FR")
 
         cls.test_records_base = cls._create_marketauto_records(
@@ -55,14 +53,11 @@ class TestMarketAutoFlow(TestMACommon, CronMixinCase):
         cls.test_records = cls.test_records_all - cls.test_records_filtered
         cls.test_records_contact_ko = (
             cls.test_records.filtered(
-                lambda r: (
-                    not r.email_from or r.email_from == "wrong"
-                )
+                lambda r: not r.email_from or r.email_from == "wrong"
             )
             + cls.test_records_failure_dupe
         )
         cls.test_records_contact_ok = cls.test_records - cls.test_records_contact_ko
-
 
         cls.campaign = (
             cls.env["marketing.campaign"]
@@ -191,7 +186,6 @@ for record in records:
                 "domain": [("name", "!=", "FilterMe")],
             }
         )
-
 
         with (
             self.mock_datetime_and_now(self.date_reference),
@@ -377,7 +371,6 @@ for record in records:
                 "Grand children should have traces only when their respective parent is executed",
             )
 
-
         date_reference_reply = date_reference + relativedelta(hours=1)
         test_records_mail_replied = test_records_contact_ok[:2]
         with (
@@ -516,7 +509,6 @@ for record in records:
                 captured_trigger.call_at, date_reference_reply + relativedelta(hours=1)
             )
 
-
         date_reference_new = date_reference + relativedelta(hours=2)
 
         with (
@@ -598,7 +590,6 @@ for record in records:
 
         self.assertFalse(captured_triggers.records)
 
-
         self._clear_outgoing_sms()
         test_records_sms_clicked = test_records_mail_replied[0]
         sms_sent = self._find_sms_sent(
@@ -652,7 +643,6 @@ for record in records:
             ],
             act1_1_1,
         )
-
 
         date_reference_new = date_reference + relativedelta(days=1, hours=2)
         self._clear_outgoing_sms()

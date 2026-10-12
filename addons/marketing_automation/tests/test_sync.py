@@ -38,7 +38,6 @@ class SyncingCase(MarketingAutomationCommon):
 
 @tagged("marketing_automation", "ma_sync")
 class TestDuplicate(SyncingCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -120,7 +119,6 @@ class TestDuplicate(SyncingCase):
 
 @tagged("marketing_automation", "ma_sync")
 class TestSyncing(SyncingCase):
-
     @users("user_marketing_automation")
     def test_activity_require_sync(self):
         campaign = self.campaign.with_env(self.env)

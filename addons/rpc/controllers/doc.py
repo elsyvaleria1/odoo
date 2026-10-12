@@ -35,8 +35,6 @@ DOC_ETAG_SCOPE = register_signed_scope(
 
 
 class DocController(http.Controller):
-
-
     @http.route("/doc-bearer/index.json", type="json2", auth="bearer", typed=True)
     def doc_bearer_index(self):
         return self.doc_index()
@@ -119,7 +117,6 @@ class DocController(http.Controller):
         response.headers["Cache-Control"] = "no-cache, private"
         response.headers["Content-Language"] = py_to_js_locale(self.env.lang)
         return response
-
 
     def _check_doc_access(self):
         if not self.env.user.has_group("rpc.group_allow_doc"):

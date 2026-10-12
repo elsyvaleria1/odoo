@@ -51,12 +51,8 @@ class TestCommonPlanning(TransactionCase):
 
     @classmethod
     def setUpDates(cls):
-        cls.random_date = datetime(
-            2020, 11, 27
-        )
-        cls.random_sunday_date = datetime(
-            2024, 3, 10
-        )
+        cls.random_date = datetime(2020, 11, 27)
+        cls.random_sunday_date = datetime(2024, 3, 10)
         cls.random_monday_date = datetime(2024, 3, 11)
 
     @classmethod

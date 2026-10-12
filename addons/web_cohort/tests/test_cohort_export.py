@@ -44,7 +44,6 @@ def _payload(timeline="forward"):
 
 @tagged("post_install", "-at_install")
 class TestCohortExport(HttpCase):
-
     def _export(self, timeline="forward"):
         query = urlencode({"data": json_dumps(_payload(timeline))})
         return self.url_open(f"/web/cohort/export?{query}")

@@ -97,7 +97,6 @@ class TestNodeSize(TestWorkflowCanvasState):
 
 
 class TestStepRemoval(TestWorkflowCanvasState):
-
     def _record_a_run_over(self, action):
         runtime = self.env["automation.runtime"].create(
             {
@@ -238,7 +237,6 @@ class TestStepRemoval(TestWorkflowCanvasState):
 
 
 class TestStepDetail(TestWorkflowCanvasState):
-
     def _nodes(self):
         return {
             node["id"]: node for node in self.automation.get_workflow_graph()["nodes"]

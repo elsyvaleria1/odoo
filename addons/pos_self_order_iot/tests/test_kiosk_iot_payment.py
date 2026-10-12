@@ -120,7 +120,6 @@ class TestKioskIoTPayment(IotCommonTest, SelfOrderCommonTest):
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestKioskIoTRelay(TestKioskIoTPayment):
-
     def setUp(self):
         super().setUp()
         self.iot_websocket_messages = []

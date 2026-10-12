@@ -743,6 +743,7 @@ class RecomputeMixin(_ModelStubs):
             def points_back(value: typing.Any) -> bool:
                 return value in self_ids
         else:
+
             def points_back(value: typing.Any) -> bool:
                 return not self_ids.isdisjoint(value)
 

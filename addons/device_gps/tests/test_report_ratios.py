@@ -7,7 +7,6 @@ from odoo.addons.device.tests.common import DeviceTransactionCase
 
 @tagged("post_install", "-at_install")
 class TestGpsReportRatios(DeviceTransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

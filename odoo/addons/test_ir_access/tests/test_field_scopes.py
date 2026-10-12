@@ -6,7 +6,6 @@ MODEL = "test_ir_access.classified"
 
 
 class TestFieldClassScopes(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

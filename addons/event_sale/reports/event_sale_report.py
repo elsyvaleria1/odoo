@@ -6,7 +6,6 @@ from odoo.addons.sale import const
 
 
 class EventSaleReport(models.Model):
-
     _name = "event.sale.report"
     _description = "Event Sales Report"
     _auto = False

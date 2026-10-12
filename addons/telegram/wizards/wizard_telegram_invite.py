@@ -5,7 +5,6 @@ from odoo.exceptions import UserError
 
 
 class WizardTelegramInvite(models.TransientModel):
-
     _name = "wizard.telegram.invite"
     _description = "Invite a Contact to Telegram"
 

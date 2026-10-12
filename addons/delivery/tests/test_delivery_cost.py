@@ -95,7 +95,6 @@ class TestDeliveryCost(DeliveryCommon, SaleCommon):
         choose_delivery_carrier = delivery_wizard.save()
         choose_delivery_carrier.button_confirm()
 
-
         line = self.sale_normal_delivery_charges.line_ids.filtered_domain(
             [("product_id", "=", self.normal_delivery.product_id.id)]
         )
@@ -115,7 +114,6 @@ class TestDeliveryCost(DeliveryCommon, SaleCommon):
             "Delivery cost does not correspond to 10.0. %s %s"
             % (line.price_subtotal, zin),
         )
-
 
         self.sale_normal_delivery_charges.action_confirm()
 

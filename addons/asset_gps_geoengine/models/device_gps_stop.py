@@ -29,7 +29,6 @@ MAX_PLACE_LOOKUPS = 30
 
 
 class DeviceGpsStop(models.Model):
-
     _name = "device.gps.stop"
     _description = "Vehicle Stop"
     _order = "date desc, asset_id, arrival"
@@ -274,7 +273,6 @@ class DeviceGpsStop(models.Model):
             }
         )
         return wizard.action_generate_trails()
-
 
     @api.model
     def _local_day_start_utc(self, day, timezone=None):

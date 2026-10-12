@@ -25,7 +25,6 @@ def b64url(data: bytes) -> str:
 
 
 class SoftwarePasskey:
-
     def __init__(self, env, user):
         self.key = ec.generate_private_key(ec.SECP256R1())
         numbers = self.key.public_key().public_numbers()

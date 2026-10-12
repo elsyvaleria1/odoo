@@ -177,9 +177,7 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
                         }
                     )
 
-
                     (line_pizza_2 | line_pizza_olive_2 | line_tuna_2).action_order()
-
 
                     assert all(
                         line.state == "ordered"
@@ -207,9 +205,7 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
                 % self.supplier_kothai.id
             ],
         )
-        self.assertEqual(
-            cron_ny.nextcall, datetime(2021, 1, 29, 15, 0)
-        )
+        self.assertEqual(cron_ny.nextcall, datetime(2021, 1, 29, 15, 0))
 
     @common.users("cle-lunch-manager")
     def test_cron_sync_active(self):

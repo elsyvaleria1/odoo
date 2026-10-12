@@ -159,9 +159,7 @@ class TestAssetComplianceReportAccess(TransactionCase):
                             "type": "consu",
                             "is_storable": True,
                             "tracking": "serial",
-                            "asset_kind_id": cls.env.ref(
-                                f"base.kind_{kind}"
-                            ).id,
+                            "asset_kind_id": cls.env.ref(f"base.kind_{kind}").id,
                         }
                     )
                     .id,

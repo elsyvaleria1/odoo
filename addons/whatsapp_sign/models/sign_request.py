@@ -8,9 +8,7 @@ class SignRequest(models.Model):
 
     send_channel = fields.Selection(
         selection_add=[("whatsapp", "WhatsApp")],
-        ondelete={
-            "whatsapp": "set default"
-        },
+        ondelete={"whatsapp": "set default"},
     )
     signers_name = fields.Char(
         string="Signers name",

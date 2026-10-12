@@ -424,7 +424,6 @@ class WhatsappTemplate(models.Model):
                     )
                 )
 
-
     @api.depends("model")
     def _compute_phone_field(self) -> None:
         to_reset = self.filtered(lambda template: not template.model)
@@ -647,7 +646,6 @@ class WhatsappTemplate(models.Model):
         self.quality = "none"
         self.wa_template_uid = False
 
-
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -705,7 +703,6 @@ class WhatsappTemplate(models.Model):
                 if variable_commands:
                     values["variable_ids"] = variable_commands
         return values_list
-
 
     def _prepare_template_header_component(self, file_handle) -> dict[str, Any] | None:
         if self.header_type == "none":
@@ -829,7 +826,6 @@ class WhatsappTemplate(models.Model):
                 )
         except WhatsAppError as we:
             raise UserError(str(we)) from we
-
 
     def button_sync_template(self) -> dict:
         self.check_singleton()
@@ -1041,7 +1037,6 @@ class WhatsappTemplate(models.Model):
                             )
                         template_vals["button_ids"].append(button_vals)
         return template_vals
-
 
     def _get_header_component(
         self, free_text_json, template_variables_value, attachment
@@ -1304,7 +1299,6 @@ class WhatsappTemplate(models.Model):
                 variable_values.get(f"{var.line_type}-{var.name}", fallback_value),
             )
         return self._format_markup_to_html(f"*{header}*\n\n{body}" if header else body)
-
 
     @api.model
     def _can_use_whatsapp(self, model_name) -> bool:

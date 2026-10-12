@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class TestTradeOrderLinePriceHistory(models.TransientModel):
-
     _name = "test_trade.order.line.price.history"
     _inherit = ["mixin.order.line.price.history"]
     _description = "Base Order Test Line Price History"

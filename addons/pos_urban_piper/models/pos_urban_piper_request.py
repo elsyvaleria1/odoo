@@ -197,19 +197,13 @@ class UrbanPiperClient:
         pos_attribute_products = pos_products.filtered(lambda p: p.attribute_line_ids)
         payload = {
             "flush_categories": flush,
-            "categories": self._prepare_categories_data(
-                pos_categories
-            ),
+            "categories": self._prepare_categories_data(pos_categories),
             "flush_items": flush,
             "items": self._prepare_items_data(pos_products),
             "flush_option_groups": flush,
-            "option_groups": self._prepare_option_groups_data(
-                pos_attribute_products
-            ),
+            "option_groups": self._prepare_option_groups_data(pos_attribute_products),
             "flush_options": flush,
-            "options": self._prepare_option_data(
-                pos_attribute_products
-            ),
+            "options": self._prepare_option_data(pos_attribute_products),
             "flush_taxes": flush,
             "taxes": self.config.prepare_taxes_data(pos_products),
             "flush_charges": flush,
@@ -618,9 +612,7 @@ class UrbanPiperClient:
         return url_join(base_url, local_url)
 
     def request_refresh_webhooks(self):
-        self.config.urbanpiper_webhook_url = (
-            self.config.get_base_url()
-        )
+        self.config.urbanpiper_webhook_url = self.config.get_base_url()
         self._register_webhook()
         wehbook_json = self._send_api_request(
             "external/api/v1/webhooks?limit=50", method="GET"

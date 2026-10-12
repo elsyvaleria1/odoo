@@ -94,9 +94,7 @@ class TestTrustedDevice(HttpCase):
         self.assertEqual(user.totp_trust_ids.name, "Chrome on Linux")
 
     def test_portal_user_may_remember_a_device(self):
-        self.env["ir.config_parameter"].sudo().set_param(
-            "portal.allow_api_keys", False
-        )
+        self.env["ir.config_parameter"].sudo().set_param("portal.allow_api_keys", False)
         user, secret = self._new_2fa_user("td_portal", "base.group_portal")
 
         response = self._login_remembering_device("td_portal", secret, CHROME_UA)

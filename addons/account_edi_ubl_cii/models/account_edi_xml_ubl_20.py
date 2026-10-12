@@ -22,7 +22,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
     def _find_value(self, xpath, tree, nsmap=False):
         return super()._find_value(xpath, tree, UBL_NAMESPACES)
 
-
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_ubl_20.xml"
 
@@ -50,7 +49,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
         return etree.tostring(xml_content, xml_declaration=True, encoding="UTF-8"), set(
             errors
         )
-
 
     def _get_document_template(self, vals):
         return {
@@ -105,7 +103,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
 
     def _is_document_allowance_charge(self, base_line) -> bool:
         return base_line["special_type"] == "early_payment"
-
 
     def _get_invoice_node(self, vals):
         self._add_invoice_config_vals(vals)
@@ -467,7 +464,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
     def _add_invoice_line_pricing_reference_nodes(self, line_node, vals):
         pass
 
-
     def _add_document_currency_vals(self, vals) -> None:
         vals["currency_suffix"] = "" if vals["use_company_currency"] else "_currency"
 
@@ -585,7 +581,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
                     f"total_excluded{currency_suffix}"
                 ]
 
-
     def _get_address_node(self, vals):
         partner = vals["partner"]
         country = partner.country_id
@@ -675,7 +670,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
             "cbc:ID": {"_text": partner_bank.acc_number.replace(" ", "")},
             "cac:FinancialInstitutionBranch": financial_institution_branch,
         }
-
 
     def _add_document_tax_total_nodes(self, document_node, vals) -> None:
         base_lines_aggregated_tax_details = self.env[
@@ -884,7 +878,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
                 line_nodes.append(line_node)
                 line_idx += 1
 
-
     def _add_document_allowance_charge_nodes(self, document_node, vals) -> None:
         if vals["document_type"] != "debit_note":
             document_node["cac:AllowanceCharge"] = []
@@ -921,7 +914,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
                 if grouping_key
             ],
         }
-
 
     def _add_document_line_vals(self, vals) -> None:
         self._add_document_line_total_vals(vals)
@@ -1171,7 +1163,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
     def _add_document_line_pricing_reference_nodes(self, line_node, vals):
         pass
 
-
     def _export_invoice_constraints(self, invoice, vals):
         constraints = self._invoice_constraints_common(invoice)
         constraints.update(
@@ -1191,7 +1182,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
             }
         )
         return constraints
-
 
     def _prepare_partner_import_params(self, tree, role):
         return {
@@ -1447,7 +1437,6 @@ class AccountEdiXmlUBL20(models.AbstractModel):
                         difference = currency.round(tax_total - tax_lines_total)
                         if not currency.is_zero(difference):
                             tax_lines[0].amount_currency += sign * difference
-
 
     def _get_import_document_amount_sign(self, tree) -> tuple:
         if (

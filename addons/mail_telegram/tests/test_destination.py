@@ -46,7 +46,6 @@ class DestinationCase(MailTelegramCase):
 
 
 class TestOneDestination(DestinationCase):
-
     def test_the_last_used_chat_gets_it_when_none_is_chosen(self):
         self.test_chat.last_message_time = fields.Datetime.now() - timedelta(days=2)
         recent = self._second_chat()
@@ -122,7 +121,6 @@ class TestOneDestination(DestinationCase):
 
 
 class TestConnecting(DestinationCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -180,7 +178,6 @@ class TestConnecting(DestinationCase):
 
 
 class TestUnreachable(DestinationCase):
-
     def setUp(self):
         super().setUp()
         patcher = patch.object(
@@ -248,7 +245,6 @@ class TestUnreachable(DestinationCase):
 
 
 class TestStatus(DestinationCase):
-
     def _state(self):
         return self.test_user.with_user(self.test_user).telegram_notify_state
 

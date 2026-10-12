@@ -242,7 +242,6 @@ class TestGrantProjection(GrantCase):
 
 @tagged("post_install", "-at_install")
 class TestGroupStateCache(GrantCase):
-
     def assertWarm(self, user):
         user._get_group_ids()
         with self.assertQueryCount(0):

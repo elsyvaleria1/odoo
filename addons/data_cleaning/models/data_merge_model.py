@@ -145,7 +145,6 @@ class Data_MergeModel(models.Model):
             else:
                 dm_model.custom_merge_method = False
 
-
     def _get_count_pending(self):
         self.check_singleton()
         return (
@@ -313,7 +312,6 @@ class Data_MergeModel(models.Model):
 
             _logger.info("Record creation done after %s", timeit.default_timer() - t1)
 
-
     @api.constrains("res_model_id")
     def _check_prevent_merge(self) -> None:
         models = set(self.env["ir.model"].browse(self.res_model_id.ids).mapped("model"))
@@ -328,7 +326,6 @@ class Data_MergeModel(models.Model):
                         "Deduplication is forbidden on the model: %s", model_name
                     )
                 )
-
 
     def copy_data(self, default=None):
         vals_list = super().copy_data(default=default)
@@ -366,7 +363,6 @@ class Data_MergeModel(models.Model):
                 [("model", "=", "data_merge.model"), ("res_id", "in", self.ids)]
             ).sudo().unlink()
         return super().unlink()
-
 
     def open_records(self):
         self.check_singleton()

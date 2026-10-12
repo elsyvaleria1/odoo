@@ -58,9 +58,7 @@ class TestSignRequest(SignRequestCommon, WhatsAppCommon, WhatsAppSignCommon):
         sign_items = self.get_sign_request_items(self.template_3_roles.id)
 
         messages = self.search_for_wa_messages(wa_templates[0].id)
-        self.assertEqual(
-            len(messages), 1
-        )
+        self.assertEqual(len(messages), 1)
 
         sign_items[0].sign(self.signer_1_sign_values)
         messages = self.search_for_wa_messages(wa_templates[0].id)

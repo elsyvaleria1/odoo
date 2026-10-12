@@ -64,7 +64,6 @@ class MassMailController(http.Controller):
             return email, hash_token
         return request.env.user.email_normalized, None
 
-
     @http.route("/mailing/my", type="http", website=True, auth="user")
     def mailing_my(self):
         email, _hash_token = self._get_user_information(None, None)
@@ -550,7 +549,6 @@ class MassMailController(http.Controller):
     def mailing_view_in_browser_placeholder_link(self):
         return request.render("mass_mailing.mailing_view_generic")
 
-
     @http.route(
         "/mail/track/<int:mail_id>/<string:token>/blank.gif", type="http", auth="public"
     )
@@ -580,7 +578,6 @@ class MassMailController(http.Controller):
         if not redirect_url:
             raise NotFound
         return request.redirect(redirect_url, code=301, local=False)
-
 
     @http.route(
         "/mailing/report/unsubscribe",
@@ -663,7 +660,6 @@ class MassMailController(http.Controller):
             },
         )
 
-
     @http.route(
         "/mailing/blocklist/add",
         type="http",
@@ -740,7 +736,6 @@ class MassMailController(http.Controller):
             if document_id
             else "",
         }
-
 
     @http.route(
         "/mailing/mobile/preview",

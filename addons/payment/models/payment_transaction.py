@@ -195,7 +195,6 @@ class PaymentTransaction(models.Model):
         "Reference must be unique!",
     )
 
-
     @api.depends("partner_id")
     def _compute_partner_phone(self) -> None:
         for tx in self:
@@ -217,7 +216,6 @@ class PaymentTransaction(models.Model):
         data = {source_transaction.id: count for source_transaction, count in rg_data}
         for record in self:
             record.refunds_count = data.get(record.id, 0)
-
 
     @api.constrains("state")
     def _check_state_authorized_supported(self) -> None:
@@ -244,7 +242,6 @@ class PaymentTransaction(models.Model):
                     "Creating a transaction from an archived token is forbidden."
                 )
             )
-
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -296,7 +293,6 @@ class PaymentTransaction(models.Model):
         self, provider_code: str, values: ValuesType
     ) -> ValuesType:
         return {}
-
 
     def action_view_refunds(self):
         self.check_singleton()
@@ -403,9 +399,7 @@ class PaymentTransaction(models.Model):
             "params": {
                 "type": notification_type,
                 "message": msg,
-                "next": {
-                    "type": "ir.actions.act_window_close"
-                },
+                "next": {"type": "ir.actions.act_window_close"},
             },
         }
 
@@ -415,7 +409,6 @@ class PaymentTransaction(models.Model):
             "type": "ir.actions.client",
             "tag": "soft_reload",
         }
-
 
     @api.model
     def _get_unique_reference(
@@ -434,13 +427,9 @@ class PaymentTransaction(models.Model):
                 .encode("ascii", "ignore")
                 .decode("utf-8")
             )
-        if (
-            not prefix
-        ):
+        if not prefix:
             prefix = self.sudo()._get_reference_prefix(separator, **kwargs)
-        if (
-            not prefix
-        ):
+        if not prefix:
             prefix = payment_utils.singularize_reference_prefix()
 
         reference = prefix
@@ -462,14 +451,10 @@ class PaymentTransaction(models.Model):
             search_pattern = re.compile(
                 rf"^{re.escape(prefix)}{re.escape(separator)}(\d+)$"
             )
-            max_sequence_number = (
-                0
-            )
+            max_sequence_number = 0
             for existing_reference in same_prefix_references:
                 search_result = re.search(search_pattern, existing_reference)
-                if (
-                    search_result
-                ):
+                if search_result:
                     current_sequence = int(search_result.group(1))
                     max_sequence_number = max(max_sequence_number, current_sequence)
 
@@ -623,7 +608,6 @@ class PaymentTransaction(models.Model):
                 **custom_create_values,
             }
         )
-
 
     def _process(self, provider_code, payment_data):
         tx = self or self._search_by_reference(provider_code, payment_data)
@@ -884,7 +868,6 @@ class PaymentTransaction(models.Model):
                 )
                 child_tx.source_transaction_id._log_received_message()
 
-
     def _cron_post_process(self) -> None:
         txs_to_post_process = self
         if not txs_to_post_process:
@@ -911,7 +894,6 @@ class PaymentTransaction(models.Model):
     def _post_process(self):
         self.is_post_processed = True
 
-
     def _send_api_request(
         self, method, endpoint, *, params=None, data=None, json=None, **kwargs
     ):
@@ -926,7 +908,6 @@ class PaymentTransaction(models.Model):
             **kwargs,
         )
 
-
     def _log_sent_message(self) -> None:
         for tx in self:
             if message := tx._get_sent_message():
@@ -939,7 +920,6 @@ class PaymentTransaction(models.Model):
 
     def _log_message_on_linked_documents(self, message) -> None:
         self.check_singleton()
-
 
     def _get_sent_message(self):
         self.check_singleton()
@@ -962,9 +942,7 @@ class PaymentTransaction(models.Model):
                 formatted_amount=self.currency_id.format(-self.amount),
             )
         else:
-            sent_message = (
-                None
-            )
+            sent_message = None
         return sent_message
 
     def _get_received_message(self):

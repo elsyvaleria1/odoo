@@ -13,9 +13,7 @@ class PosSession(models.Model):
     def close_session_from_ui(self, bank_payment_method_diff_pairs=None):
         result = super().close_session_from_ui(bank_payment_method_diff_pairs)
         if self.config_id.module_pos_urban_piper:
-            self.config_id.update_store_status(
-                status=False
-            )
+            self.config_id.update_store_status(status=False)
         self.config_id.set_urban_piper_provider_states({})
         return result
 

@@ -2,7 +2,6 @@ from .common import AttendanceTelegramTestCase
 
 
 class TestEmployeeDepartures(AttendanceTelegramTestCase):
-
     def _hand(self, tg_user_id, name):
         hand = self._create_partner({"name": name})
         employee = self.env["hr.employee"].create({"name": name, "partner_id": hand.id})

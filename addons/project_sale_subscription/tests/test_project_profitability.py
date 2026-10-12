@@ -165,8 +165,7 @@ class TestSaleSubscriptionProjectProfitability(
         subscription = self.subscription.copy(project_vals)
         subscription.action_confirm()
         new_amount_expected += (
-            subscription.recurring_monthly
-            * subscription.template_id.duration_value
+            subscription.recurring_monthly * subscription.template_id.duration_value
         )
         all_ids = subscription.line_ids.ids
         all_ids.extend(subscription_main_with_foreign_template.line_ids.ids)

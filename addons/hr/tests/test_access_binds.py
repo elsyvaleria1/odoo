@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestHrAccessBind(TransactionCase):
-
     def test_employees_and_units(self):
         user = self.env["res.users"].create(
             {

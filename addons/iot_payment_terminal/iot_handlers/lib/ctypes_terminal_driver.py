@@ -50,7 +50,6 @@ def create_ctypes_string_buffer():
 
 
 class CtypesTerminalDriver(Driver):
-
     DELAY_TIME_BETWEEN_TRANSACTIONS = 5
 
     def __init__(self, identifier, device) -> None:

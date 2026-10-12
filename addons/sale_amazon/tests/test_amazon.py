@@ -758,9 +758,7 @@ class TestAmazon(common.TestAmazonCommon):
     def test_schedule_inventory_reset_if_order_channel_is_fba_but_offer_is_fbm(self):
         self.offer.sku = "TEST"
         self.offer.amazon_channel = "fbm"
-        self.account.last_orders_sync = datetime(
-            1, 1, 1
-        )
+        self.account.last_orders_sync = datetime(1, 1, 1)
         operation_responses_map = {
             **common.OPERATIONS_RESPONSES_MAP,
             "getOrders": {
@@ -792,9 +790,7 @@ class TestAmazon(common.TestAmazonCommon):
         self.offer.sku = "TEST"
         self.offer.amazon_channel = "fba"
         old_sync_status = self.offer.amazon_sync_status
-        self.account.last_orders_sync = datetime(
-            1, 1, 1
-        )
+        self.account.last_orders_sync = datetime(1, 1, 1)
 
         with patch(
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
@@ -804,12 +800,8 @@ class TestAmazon(common.TestAmazonCommon):
         ):
             self.account._sync_orders(auto_commit=False)
 
-        self.assertEqual(
-            self.offer.amazon_sync_status, old_sync_status
-        )
-        self.assertFalse(
-            self.offer.amazon_channel
-        )
+        self.assertEqual(self.offer.amazon_sync_status, old_sync_status)
+        self.assertFalse(self.offer.amazon_channel)
 
     def test_inventory_reset(self):
         self.env["stock.quant"]._update_available_quantity(

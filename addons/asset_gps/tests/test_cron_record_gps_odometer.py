@@ -9,7 +9,6 @@ from .test_product_trace import StockLotGpsTestBase
 
 
 class CronGpsOdometerBase(StockLotGpsTestBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -188,7 +187,6 @@ class TestCronRecordGpsOdometer(CronGpsOdometerBase):
 
 @tagged("post_install", "-at_install")
 class TestCronRecordGpsOdometerAcrossCompanies(CronGpsOdometerBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

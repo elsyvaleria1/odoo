@@ -32,9 +32,7 @@ class AutomationRuleTestUi(HttpCase):
         automation = self.env["automation.rule"].search([])
         self.assertEqual(automation.model_id.model, "res.partner")
         self.assertEqual(automation.trigger, "on_create_or_write")
-        self.assertEqual(
-            automation.action_server_ids.state, "object_write"
-        )
+        self.assertEqual(automation.action_server_ids.state, "object_write")
         self.assertEqual(automation.action_server_ids.model_name, "res.partner")
         self.assertEqual(automation.action_server_ids.update_field_id.name, "function")
         self.assertEqual(automation.action_server_ids.value, "Test")

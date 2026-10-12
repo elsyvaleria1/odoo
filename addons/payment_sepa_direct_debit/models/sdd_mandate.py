@@ -62,9 +62,7 @@ class SddMandate(models.Model):
             linked_tokens = self.env["payment.token"].search(
                 [("sdd_mandate_id", "in", self.ids)]
             )
-            linked_tokens.sudo().active = (
-                False
-            )
+            linked_tokens.sudo().active = False
         return res
 
     def _confirm(self):

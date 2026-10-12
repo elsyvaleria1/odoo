@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestUrbanPiperToggleState(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.config = self.env["pos.config"].create({"name": "Toggle State Probe"})

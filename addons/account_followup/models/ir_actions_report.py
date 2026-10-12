@@ -41,9 +41,7 @@ class IrActionsReport(models.Model):
                 )
             else:
                 invoices = partner._get_invoices_to_print(partner_request)
-                attachments = (
-                    invoices.message_main_attachment_id
-                )
+                attachments = invoices.message_main_attachment_id
 
             writer = OdooPdfFileWriter()
 

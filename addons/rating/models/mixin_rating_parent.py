@@ -92,12 +92,8 @@ class MixinRatingParent(models.AbstractModel):
         )
 
         default_grades = {"great": 0, "okay": 0, "bad": 0}
-        grades_per_parent = {
-            parent_id: dict(default_grades) for parent_id in self.ids
-        }
-        rating_scores_per_parent = defaultdict(
-            int
-        )
+        grades_per_parent = {parent_id: dict(default_grades) for parent_id in self.ids}
+        rating_scores_per_parent = defaultdict(int)
         for parent_id, rating, count in data:
             grade = rating_data._rating_to_grade(rating)
             grades_per_parent[parent_id][grade] += count

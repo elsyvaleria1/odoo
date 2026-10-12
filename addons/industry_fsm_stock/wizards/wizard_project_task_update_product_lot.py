@@ -229,9 +229,7 @@ class WizardProjectTaskUpdateProductLot(models.TransientModel):
                             sol.fsm_trace_id,
                             0 - (sol.product_qty - sol.qty_transferred),
                         )
-                if (
-                    sol.fsm_trace_id != line.trace_id
-                ):
+                if sol.fsm_trace_id != line.trace_id:
                     self._update_lot_id(sol, line)
                 vals = {
                     "fsm_trace_id": line.trace_id,

@@ -33,7 +33,6 @@ runbot_pattern = re.compile(r"^https:\/\/[a-z0-9-_]+\.[a-z0-9-_]+\.odoo\.com$")
 
 
 class OdooFinRedirectException(UserError):
-
     def __init__(self, message=None, mode="link") -> None:
         self.mode = mode
         super().__init__(message or _lt("Redirect"))
@@ -350,7 +349,6 @@ class AccountOnlineAccount(models.Model):
             balances[account.id] = [formatted_balance, account.balance]
         return balances
 
-
     def _get_filtered_transactions(self, new_transactions):
         self.check_singleton()
 
@@ -546,7 +544,6 @@ class AccountOnlineLink(models.Model):
         help="Comma separated list of email addresses to send consent renewal notifications 15, 3 and 1 days before expiry",
     )
 
-
     @api.depends("account_online_account_ids")
     def _compute_journal_ids(self) -> None:
         for online_link in self:
@@ -700,9 +697,7 @@ class AccountOnlineLink(models.Model):
             )
 
     def _record_connection_update(self, journal, connection_state_details) -> None:
-        connection_state_details_status = connection_state_details[
-            "status"
-        ]
+        connection_state_details_status = connection_state_details["status"]
         if not (
             connection_state_details_status == "success"
             and connection_state_details.get("nb_fetched_transactions", 0) == 0
@@ -758,7 +753,6 @@ class AccountOnlineLink(models.Model):
         return self.with_context({"redirect_reconnection": True})._open_iframe(
             mode=mode
         )
-
 
     @api.model
     def _get_odoofin_url(self, url):
@@ -945,7 +939,6 @@ class AccountOnlineLink(models.Model):
             self.message_post(body=message_post, subject=subject)
         return message, url, button_label
 
-
     @api.depends("credential_id")
     def _compute_odoofin_tokens(self) -> None:
         for link in self:
@@ -1081,9 +1074,7 @@ class AccountOnlineLink(models.Model):
         limit_time = tools.config["limit_time_real_cron"] or -1
         if limit_time <= 0:
             limit_time = tools.config["limit_time_real"] or 120
-        limit_time += (
-            20
-        )
+        limit_time += 20
         if (
             self.account_online_account_ids.filtered(
                 lambda account: account.fetching_status == "processing"
@@ -1318,7 +1309,6 @@ class AccountOnlineLink(models.Model):
             journal.message_post(**post_values)
         super()._message_post_prepare_values(post_values)
 
-
     def success(self, mode, data):
         journal_type = "bank"
         if data:
@@ -1438,7 +1428,6 @@ class AccountOnlineLink(models.Model):
         self.check_singleton()
         self._log_information(state="connected")
         return self._get_transactions(check_duplicates=True)
-
 
     def action_new_synchronization(
         self, preferred_inst=None, journal_id=False, journal_type="bank"

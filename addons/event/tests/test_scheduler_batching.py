@@ -10,7 +10,6 @@ from odoo.addons.event.tests.common import EventCase
 
 @tagged("event_mail", "post_install", "-at_install")
 class TestSchedulerBatching(EventCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -3,7 +3,6 @@ from odoo.exceptions import ValidationError
 
 
 class TelegramBot(models.Model):
-
     _inherit = "telegram.bot"
 
     wallet_account_ids = fields.Many2many(

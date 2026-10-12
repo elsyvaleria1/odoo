@@ -78,9 +78,7 @@ class HelpdeskSlaStatus(models.Model):
                     status.deadline = False
                     continue
 
-            avg_hour = (
-                working_calendar.hours_per_day or 8
-            )
+            avg_hour = working_calendar.hours_per_day or 8
             time_days = math.floor(status.sla_id.time / avg_hour)
             if time_days > 0:
                 deadline = working_calendar.plan_days(
@@ -113,9 +111,7 @@ class HelpdeskSlaStatus(models.Model):
     @api.depends("deadline", "reached_datetime")
     def _compute_status(self) -> None:
         for status in self:
-            if (
-                status.reached_datetime and status.deadline
-            ):
+            if status.reached_datetime and status.deadline:
                 status.status = (
                     "reached" if status.reached_datetime < status.deadline else "failed"
                 )

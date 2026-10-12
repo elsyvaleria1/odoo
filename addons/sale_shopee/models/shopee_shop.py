@@ -163,7 +163,6 @@ class ShopeeShop(models.Model):
         "that the authorization will expire soon.",
     )
 
-
     def _compute_order_count(self) -> None:
         for shop in self:
             order_count = self.env["sale.order"].search_count(
@@ -180,7 +179,6 @@ class ShopeeShop(models.Model):
                 ).days
             else:
                 shop.authorization_remaining_days = -1
-
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -227,7 +225,6 @@ class ShopeeShop(models.Model):
             )
         return super().write(vals)
 
-
     def action_sync_orders(self) -> dict | None:
         self._sync_orders()
         return {
@@ -269,7 +266,6 @@ class ShopeeShop(models.Model):
         for shop in self:
             shop._reset_tokens()
         return super().action_archive()
-
 
     def create_or_update_shop(self, company_id, account_id, shop_id, shop_vals):
         shop = self.search(
@@ -612,9 +608,7 @@ class ShopeeShop(models.Model):
             .create(order_vals)
         )
 
-        if (
-            order.picking_ids and shipping_code
-        ):
+        if order.picking_ids and shipping_code:
             delivery_method = self._get_or_create_delivery_carrier(
                 shipping_code, shipping_product
             )
@@ -962,9 +956,7 @@ class ShopeeShop(models.Model):
                 }
             )
             stock_move._update_quantity_done(order_line.product_qty)
-            stock_move.picked = (
-                True
-            )
+            stock_move.picked = True
             stock_move._action_done()
 
     def _handle_sync_failure(

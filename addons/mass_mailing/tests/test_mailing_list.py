@@ -354,7 +354,6 @@ class TestMailingListMerge(MassMailCommon):
 
 @tagged("mailing_list")
 class TestMailingContactImport(MassMailCommon):
-
     @users("user_marketing")
     def test_mailing_contact_import(self):
         first_list, second_list, third_list = self.env["mailing.list"].create(

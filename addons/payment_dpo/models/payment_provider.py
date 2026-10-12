@@ -32,13 +32,11 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "dpo":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def _prepare_request_url(self, endpoint, **kwargs):
         if self.code != "dpo":

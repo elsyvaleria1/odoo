@@ -7,7 +7,6 @@ from .common import CreditAuthorizationCase
 
 @tagged("post_install", "-at_install")
 class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -401,7 +400,6 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestCreditMultiCompanyScoping(TestCreditAuditR2):
-
     def _order_under_company_a(self, partner, price):
         order = self._order(partner, price, company=self.company_b)
         return order.with_context(

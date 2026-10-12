@@ -939,7 +939,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             self.assertEqual(res["invoiced"], [1, 1])
             self.assertEqual(res["to_invoice"], [0, 0])
 
-
         with freeze_time("2023-01-01"):
             sub = sub_temp.copy()
             sub.action_confirm()
@@ -947,9 +946,7 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             self.assertTrue(sub.next_invoice_date, datetime.date(2023, 2, 1))
 
         with freeze_time("2023-02-15"):
-            res = self._get_quantities(
-                sub.line_ids
-            )
+            res = self._get_quantities(sub.line_ids)
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [0, 0])
 
@@ -957,14 +954,11 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             self.validate_picking_moves(sub.picking_ids)
             sub.line_ids[0].qty_transferred = 1
 
-            res = self._get_quantities(
-                sub.line_ids
-            )
+            res = self._get_quantities(sub.line_ids)
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [1, 0])
             self.assertEqual(res["invoiced"], [1, 1])
             self.assertEqual(res["to_invoice"], [0, 0])
-
 
         with freeze_time("2023-01-01"):
             sub = sub_temp.copy()
@@ -976,23 +970,17 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             self.env["sale.order"]._create_recurring_invoice()
 
         with freeze_time("2023-02-15"):
-            res = self._get_quantities(
-                sub.line_ids
-            )
+            res = self._get_quantities(sub.line_ids)
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [0, 0], "products are not yet delivered")
             self.assertEqual(res["invoiced"], [1, 1])
             self.assertEqual(res["to_invoice"], [0, 0])
 
         with freeze_time("2023-02-25"):
-            self.validate_picking_moves(
-                sub.picking_ids
-            )
+            self.validate_picking_moves(sub.picking_ids)
             sub.line_ids[0].qty_transferred = 1
 
-            res = self._get_quantities(
-                sub.line_ids
-            )
+            res = self._get_quantities(sub.line_ids)
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [1, 2])
             self.assertEqual(res["invoiced"], [1, 1])

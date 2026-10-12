@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestSingleEmployeeSalesReport(TestPoSCommon):
-
     def setUp(self):
         super().setUp()
         self.config = self.basic_config

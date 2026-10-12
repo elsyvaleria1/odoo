@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GeocoderProvider(models.Model):
-
     _name = "geocoder.provider"
     _description = "Geocoding Provider"
 
@@ -17,7 +16,6 @@ class GeocoderProvider(models.Model):
 
 
 class Geocoder(models.AbstractModel):
-
     _name = "geocoder"
     _description = "Geocoder"
 

@@ -7,7 +7,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 @tagged("post_install", "-at_install")
 class TestPrivateFacetIdentity(TransactionCase):
-
     def test_create_lands_on_the_facet(self):
         employee = self.env["hr.employee"].create(
             {

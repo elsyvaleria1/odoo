@@ -65,7 +65,6 @@ class AuthAttempt:
 
 
 class LoginCooldown:
-
     __slots__ = ("registry",)
 
     def __init__(self, registry) -> None:
@@ -170,7 +169,6 @@ class MarkedDevice:
 
 
 class LoginDevice:
-
     __slots__ = ("env",)
 
     def __init__(self, env) -> None:

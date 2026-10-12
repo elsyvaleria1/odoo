@@ -8,7 +8,6 @@ from odoo.tools import OrderedSet, format_datetime
 
 
 class SocialPostTemplate(models.Model):
-
     _name = "social.post.template"
     _description = "Social Post Template"
     _rec_names_search = ["display_message"]

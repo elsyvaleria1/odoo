@@ -14,9 +14,7 @@ class WizardWhatsappMessageSend(models.TransientModel):
                 "params": {
                     "title": self.env._("WhatsApp messages triggered successfully!"),
                     "type": "success",
-                    "next": {
-                        "type": "ir.actions.act_window_close"
-                    },
+                    "next": {"type": "ir.actions.act_window_close"},
                 },
             }
         return res

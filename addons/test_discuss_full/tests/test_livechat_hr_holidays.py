@@ -8,7 +8,6 @@ from odoo.addons.mail.tests.common import MailCommon
 
 @tagged("post_install", "-at_install")
 class TestLivechatHrHolidays(HttpCase, MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

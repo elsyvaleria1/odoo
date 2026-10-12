@@ -1237,7 +1237,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             options,
         )
 
-
         misc_move = self.env["account.move"].create(
             {
                 "date": "2016-02-01",
@@ -1312,7 +1311,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             ],
             options,
         )
-
 
         liquidity_move_2 = self.env["account.move"].create(
             {

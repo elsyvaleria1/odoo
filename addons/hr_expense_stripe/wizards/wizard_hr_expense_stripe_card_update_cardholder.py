@@ -16,7 +16,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
     _inherit = "mixin.mail.thread"
     _description = "Wizard to configure the cardholder"
 
-
     card_id = fields.Many2one(
         comodel_name="hr.expense.stripe.card",
         readonly=True,
@@ -166,9 +165,7 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         initial_values = {}
         for field_name, value in self.stripe_values.items():
             match field_name:
-                case (
-                    "billing_country_id"
-                ):
+                case "billing_country_id":
                     initial_values[field_name] = self.env["res.country"].browse(value)
                 case "billing_state_id":
                     initial_values[field_name] = self.env["res.country.state"].browse(
@@ -228,9 +225,7 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         preferred_langs.discard(False)
         payload = {
             "account": self.company_id.sudo().stripe_id,
-            "lang": employee_sudo.user_id.lang
-            or employee_sudo.lang
-            or "en_US",
+            "lang": employee_sudo.user_id.lang or employee_sudo.lang or "en_US",
             "billing": {
                 "address": {
                     "country": self.billing_country_id.code,
@@ -284,9 +279,7 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
                 "The Cardholder had been successfully created."
             )
 
-        payload = {
-            key: value for key, value in payload.items() if value is not False
-        }
+        payload = {key: value for key, value in payload.items() if value is not False}
         response = send_request_stripe_proxy(
             self.company_id.sudo(), route, route_params, payload=payload, method="POST"
         )
@@ -327,9 +320,7 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
             cards_su = cardholder_user_su.stripe_card_ids.filtered_domain(
                 [("company_id", "=", wizard.company_id.id)]
             )
-            message = max(
-                wizard.message_ids, key=lambda msg: msg.date, default=None
-            )
+            message = max(wizard.message_ids, key=lambda msg: msg.date, default=None)
             if message:
                 tracking_values = [
                     Command.create(values)

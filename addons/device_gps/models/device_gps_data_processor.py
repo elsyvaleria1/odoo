@@ -240,9 +240,7 @@ class GpsDataProcessor(models.AbstractModel):
             processor_method = getattr(self, processor_method_name, None)
 
             if processor_method and callable(processor_method):
-                result = processor_method(
-                    value, device_type=device_type, device=device
-                )
+                result = processor_method(value, device_type=device_type, device=device)
 
                 if field_name == "latitude_longitude" and isinstance(result, tuple):
                     lat, lng = result

@@ -71,9 +71,7 @@ class WizardPaymentTransactionViewLink(models.TransientModel):
             related_document = self.env[payment_link.res_model].browse(
                 payment_link.res_id
             )
-            base_url = (
-                related_document.get_base_url()
-            )
+            base_url = related_document.get_base_url()
             url = self._prepare_url(base_url, related_document)
             query_params = self._prepare_query_params(related_document)
             anchor = self._prepare_anchor()

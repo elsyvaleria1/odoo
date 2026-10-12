@@ -172,7 +172,6 @@ class TestRentalWizard(TestRentalCommon):
         """ In company stock valuation """
         self.assertEqual(self.product_id.quantity_svl, 4)
 
-
         self.order_line_id1.write({"qty_transferred": 0})
         self.assertEqual(self.product_id.qty_available, 4)
         self.order_line_id1.write({"qty_transferred": 3})
@@ -224,9 +223,7 @@ class TestRentalWizard(TestRentalCommon):
         rentable_lots = self.env["product.trace"]._get_available_lots(
             self.tracked_product_id
         )
-        self.assertEqual(
-            set(lots.ids), set(rentable_lots.ids)
-        )
+        self.assertEqual(set(lots.ids), set(rentable_lots.ids))
 
         self.order_line_id2.reserved_trace_ids += self.lot_id1
         self.order_line_id2.product_qty = 1.0
@@ -1017,7 +1014,6 @@ class TestRentalWizard(TestRentalCommon):
                 },
             ],
         )
-
 
     def _set_product_quantity(self, quantity):
         quant = self.env["stock.quant"].create(

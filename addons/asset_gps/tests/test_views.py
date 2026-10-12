@@ -4,7 +4,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestGpsKanbanAnchors(TransactionCase):
-
     def _card(self, xml_id):
         return etree.fromstring(self.env.ref(xml_id).get_combined_arch())
 
@@ -192,7 +191,6 @@ class TestGpsKanbanAnchors(TransactionCase):
 
 
 class TestGpsDeviceKanbanAsset(TransactionCase):
-
     def _card(self):
         return etree.fromstring(
             self.env.ref(

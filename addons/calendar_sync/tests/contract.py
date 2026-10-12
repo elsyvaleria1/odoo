@@ -13,7 +13,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class FakeCalendarServer:
-
     def __init__(self, env) -> None:
         self.env = env
         self.ops: list[tuple[int, str, str]] = []
@@ -34,7 +33,6 @@ class FakeCalendarServer:
     def patched(self):
         raise NotImplementedError
 
-
     def add(self, user, name, start, stop, attendees=()) -> str:
         raise NotImplementedError
 
@@ -47,7 +45,6 @@ class FakeCalendarServer:
     def expire_token(self, user) -> None:
         raise NotImplementedError
 
-
     def items(self, user) -> dict[str, dict]:
         raise NotImplementedError
 
@@ -56,7 +53,6 @@ class FakeCalendarServer:
 
 
 class CalendarSyncContract:
-
     allow_inherited_tests_method = True
     code = None
 
@@ -92,7 +88,6 @@ class CalendarSyncContract:
         self.startPatcher(server.patched())
         self.start = datetime.now().replace(microsecond=0) + timedelta(days=3)
         self.stop = self.start + timedelta(hours=1)
-
 
     def sync(self, user):
         result = user.with_user(user).sudo()._calendar_sync_run(self.code)
@@ -138,7 +133,6 @@ class CalendarSyncContract:
 
     def ops_of(self, user):
         return [op[1:] for op in self.server.ops if op[0] == user.id]
-
 
     def test_an_item_of_the_calendar_becomes_one_event(self):
         remote_id = self.server.add(
@@ -209,7 +203,6 @@ class CalendarSyncContract:
         self.server.expire_token(self.organizer)
         self.sync(self.organizer)
         self.assertEqual(len(self.events_named("Missed")), 1)
-
 
     def test_an_odoo_event_is_inserted_once_in_its_organizers_calendar(self):
         event = self.event(name="From Odoo")

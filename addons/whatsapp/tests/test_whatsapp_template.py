@@ -167,9 +167,7 @@ class WhatsAppTemplate(WhatsAppTemplateCommon):
                 ],
             }
         )
-        template.invalidate_recordset(
-            ["variable_ids"]
-        )
+        template.invalidate_recordset(["variable_ids"])
         template.button_ids.flush_recordset()
         template.flush_recordset()
         self.assertWATemplateVariables(
@@ -702,7 +700,6 @@ Welcome to {{3}} office""",
 
 @tagged("wa_template", "wip")
 class WhatsAppTemplateForm(WhatsAppTemplateCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -916,7 +913,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
 
 @tagged("wa_template")
 class WhatsAppTemplateInternals(WhatsAppTemplateCommon):
-
     @users("user_wa_admin")
     def test_copy_attachments(self):
         template = self.env["whatsapp.template"].create(

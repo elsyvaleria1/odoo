@@ -44,7 +44,6 @@ class FakeGoogle(FakeCalendarServer):
 
         return patch.object(GoogleCalendarService, "_request", request)
 
-
     def request(self, user, method, path, params, body):
         match = EVENTS.match(path)
         remote_id = match and match.group("id")
@@ -121,7 +120,6 @@ class FakeGoogle(FakeCalendarServer):
         self._touch(remote_id)
         self.ops.append((user.id, "delete", remote_id))
         return False
-
 
     def _sees(self, user, event) -> bool:
         return event["organizer"]["email"] == user.email or any(

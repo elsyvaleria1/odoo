@@ -15,9 +15,7 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
         self.armande_employee.employee_type = "freelance"
 
         self.task_4.predecessor_ids = [Command.clear()]
-        new_task_3_begin_date = self.task_1_date_deadline - timedelta(
-            hours=2
-        )
+        new_task_3_begin_date = self.task_1_date_deadline - timedelta(hours=2)
 
         self.gantt_reschedule_consume_buffer(
             self.task_3,
@@ -40,9 +38,7 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
                 "resource_calendar_id": self.calendar_morning.id,
             }
         )
-        new_task_3_begin_date = self.task_1.date_start + relativedelta(
-            hour=10
-        )
+        new_task_3_begin_date = self.task_1.date_start + relativedelta(hour=10)
         self.gantt_reschedule_consume_buffer(
             self.task_3,
             {
@@ -456,9 +452,7 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
         )
 
         self.task_4.predecessor_ids = [Command.clear()]
-        new_task_3_begin_date = self.task_1_date_deadline - timedelta(
-            hours=2
-        )
+        new_task_3_begin_date = self.task_1_date_deadline - timedelta(hours=2)
         self.gantt_reschedule_consume_buffer(
             self.task_3,
             {
@@ -475,9 +469,7 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
             new_task_3_begin_date - relativedelta(days=1, hour=11),
             failed_message,
         )
-        new_task_3_begin_date = self.task_1.date_start - relativedelta(
-            days=2
-        )
+        new_task_3_begin_date = self.task_1.date_start - relativedelta(days=2)
         self.gantt_reschedule_consume_buffer(
             self.task_3,
             {
@@ -501,9 +493,7 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
                 - relativedelta(days=1)
             }
         )
-        new_task_3_begin_date = self.task_1.date_start - relativedelta(
-            days=2
-        )
+        new_task_3_begin_date = self.task_1.date_start - relativedelta(days=2)
         old_task_1_begin_task = self.task_1.date_start
         self.gantt_reschedule_consume_buffer(
             self.task_3,
@@ -554,9 +544,7 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
         self.contract_1.resource_calendar_id = self.calendar_morning
 
         self.task_4.predecessor_ids = [Command.clear()]
-        new_task_3_begin_date = self.task_1_date_deadline - timedelta(
-            hours=2
-        )
+        new_task_3_begin_date = self.task_1_date_deadline - timedelta(hours=2)
         self.gantt_reschedule_consume_buffer(
             self.task_3,
             {

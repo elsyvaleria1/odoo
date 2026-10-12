@@ -23,7 +23,6 @@ class ProjectProject(models.Model):
             for project in self:
                 project.display_planning_timesheet_analysis = project.allow_timesheets
 
-
     def open_timesheets_planning_report(self):
         self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
@@ -41,7 +40,6 @@ class ProjectProject(models.Model):
             }
         )
         return action
-
 
     def _get_stat_buttons(self):
         buttons = super()._get_stat_buttons()

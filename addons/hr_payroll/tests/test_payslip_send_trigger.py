@@ -7,7 +7,6 @@ from .common import TestPayslipBase
 
 @tests.tagged("post_install", "-at_install")
 class TestPayslipSendTrigger(TestPayslipBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

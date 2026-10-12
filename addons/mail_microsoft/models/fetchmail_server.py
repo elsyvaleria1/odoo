@@ -6,7 +6,6 @@ from odoo.addons.mail_microsoft.models.mixin_mail_microsoft import OUTLOOK
 
 
 class FetchmailServer(models.Model):
-
     _name = "fetchmail.server"
     _inherit = ["fetchmail.server", "mixin.mail.microsoft"]
     _oauth2_type_field = "server_type"

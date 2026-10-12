@@ -59,7 +59,6 @@ class TestSignupToken(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSignupWithToken(TransactionCase):
-
     def test_signup_token_creates_user_for_partner(self):
         partner = self.env["res.partner"].create(
             {"name": "Invitee", "email": "invitee@test.example.com"}
@@ -144,7 +143,6 @@ class TestSignupWithToken(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSignupUrl(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -210,7 +208,6 @@ class TestSignupUrl(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSignupUserLifecycle(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

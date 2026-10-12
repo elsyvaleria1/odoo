@@ -39,7 +39,6 @@ def _vendors(env: Any) -> frozenset[str]:
 
 
 class AiSpeech(BaseWriter):
-
     name = "ai_speech"
     mimetype = ""
     consumes = TEXT

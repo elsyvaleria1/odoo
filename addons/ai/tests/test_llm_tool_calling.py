@@ -146,9 +146,7 @@ class TestLLMToolCalling(common.TransactionCase):
             ]
         }
 
-        mock_request.return_value = (
-            mock_response_tool_call
-        )
+        mock_request.return_value = mock_response_tool_call
 
         service = LLMApiService(self.env, provider="openai", purpose="ai.test")
 

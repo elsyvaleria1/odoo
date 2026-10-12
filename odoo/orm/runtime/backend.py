@@ -341,8 +341,7 @@ class StorageBackend(typing.Protocol):
         query: Query,
         *,
         probe_links: bool = False,
-    ) -> dict[int, list[int]]:
-        ...
+    ) -> dict[int, list[int]]: ...
 
     def count_m2m_groups(
         self,

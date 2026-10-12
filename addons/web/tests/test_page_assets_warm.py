@@ -6,7 +6,6 @@ from odoo.tools.assets.esm_registry import esm_registry
 
 @tagged("-at_install", "post_install", "web_assets")
 class TestPageAssetsWarm(HttpCase):
-
     def _warmed_bundles(self):
         registry = esm_registry()
         return (

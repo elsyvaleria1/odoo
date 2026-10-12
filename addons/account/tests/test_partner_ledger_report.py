@@ -1455,7 +1455,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             options,
         )
 
-
         horizontal_group = self.env["account.report.horizontal.group"].create(
             {
                 "name": "Horizontal Group Currencies",

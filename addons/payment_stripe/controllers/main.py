@@ -81,9 +81,7 @@ class StripeController(http.Controller):
                 )
                 stripe_object["payment_method"] = payment_method
                 self._include_setup_intent_in_payment_data(stripe_object, data)
-            elif (
-                event["type"] == "charge.refunded"
-            ):
+            elif event["type"] == "charge.refunded":
                 refunds = stripe_object["refunds"]["data"]
 
                 has_more = stripe_object["refunds"]["has_more"]
@@ -109,9 +107,7 @@ class StripeController(http.Controller):
                     self._include_refund_in_payment_data(refund, data)
                     refund_tx_sudo._process("stripe", data)
                 return request.prepare_json_response("")
-            elif (
-                event["type"] == "charge.refund.updated"
-            ):
+            elif event["type"] == "charge.refund.updated":
                 self._include_refund_in_payment_data(stripe_object, data)
 
             tx_sudo._process("stripe", data)

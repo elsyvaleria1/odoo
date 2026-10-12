@@ -17,7 +17,6 @@ def fixture(name: str) -> dict:
 
 
 class WebhookDelivery:
-
     @classmethod
     def _create_hook(cls):
         cls.hook = cls.env["integration.github.webhook"].create({"name": "App"})

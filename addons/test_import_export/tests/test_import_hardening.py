@@ -8,7 +8,6 @@ from odoo.addons.base_import.models.base_import import ImportValidationError
 
 
 class ImportHardeningCase(TransactionCase):
-
     def _make_import(self, res_model="import.char", **vals):
         vals.setdefault("res_model", res_model)
         return self.env["base_import.import"].create(vals)
@@ -65,7 +64,6 @@ class ImportHardeningCase(TransactionCase):
 
 @unittest.skipUnless(can_import("odf"), "odfpy not installed")
 class TestODSReaderHardening(BaseCase):
-
     def _build_doc_with_repeat(self, repeat_value):
         from odf.opendocument import OpenDocumentSpreadsheet
         from odf.table import Table, TableCell, TableRow

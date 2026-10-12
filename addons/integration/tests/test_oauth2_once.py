@@ -48,7 +48,6 @@ def _api_response(status_code, json_data=None):
 
 
 class OAuthOnceCase(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -370,7 +369,6 @@ class TestTokenUse(OAuthOnceCase):
 
 @tagged("post_install", "-at_install", "integration")
 class TestOneFlowEndToEnd(OAuthOnceCase):
-
     @mute_logger("odoo.addons.integration.controllers.oauth")
     def _run(self, connection):
         self.authenticate("once_alice", "once_alice")

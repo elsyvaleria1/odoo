@@ -5,7 +5,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestMenuSecurity(common.TransactionCase):
-
     MANAGER_ONLY_LEAVES = (
         "gamification.gamification_activity_feed_menu",
         "gamification.gamification_engagement_menu",

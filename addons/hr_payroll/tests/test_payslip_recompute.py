@@ -47,7 +47,6 @@ class TestPayslipRecomputeOnWrite(TestPayslipContractBase):
 
 
 class TestPayslipRecomputeOnInputChange(TestPayslipContractBase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

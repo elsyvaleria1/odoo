@@ -87,9 +87,7 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
                 )
 
             elif action == "receive":
-                purchase_line.write(
-                    {"qty_transferred": params["qty"]}
-                )
+                purchase_line.write({"qty_transferred": params["qty"]})
 
                 if "rslt" in params:
                     for invoice_index, status in params["rslt"]:

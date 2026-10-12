@@ -181,9 +181,7 @@ class PrinterDriver(PrinterDriverBase):
                         args,
                         stderr_buf.getvalue(),
                     )
-                    stdout_log_level = (
-                        logging.ERROR
-                    )
+                    stdout_log_level = logging.ERROR
                     self.send_status(status="error", message="ERROR_FAILED")
                     raise
                 finally:

@@ -23,9 +23,7 @@ class TestUi(TestFrontendCommon, OnlinePaymentCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.payment_provider = (
-            cls.provider
-        )
+        cls.payment_provider = cls.provider
 
         cls.payment_provider_old_company_id = cls.payment_provider.company_id.id
         cls.payment_provider_old_journal_id = cls.payment_provider.journal_id.id

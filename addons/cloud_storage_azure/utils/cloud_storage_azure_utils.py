@@ -204,7 +204,6 @@ class _BlobSharedAccessHelper:
 
 
 class UserDelegationKey:
-
     def __init__(self) -> None:
         self.signed_oid = None
         self.signed_tid = None

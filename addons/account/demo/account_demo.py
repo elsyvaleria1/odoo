@@ -62,9 +62,7 @@ class AccountChartTemplate(models.AbstractModel):
             taxes.update(
                 {
                     "supplier_taxes_id": [
-                        Command.link(
-                            company.tax_config_id.account_purchase_tax_id.id
-                        )
+                        Command.link(company.tax_config_id.account_purchase_tax_id.id)
                     ]
                 }
             )

@@ -16,7 +16,6 @@ def route(receiver=None, auth="receiver"):
 
 @tagged("post_install", "-at_install", "integration")
 class TestOpenAPIReceiverSecurity(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

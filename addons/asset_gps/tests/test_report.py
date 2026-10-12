@@ -73,7 +73,6 @@ class TestGpsLogReportQueryExtension(TransactionCase):
 
 
 class TestGpsLogReportRows(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

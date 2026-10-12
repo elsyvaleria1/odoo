@@ -20,19 +20,11 @@ class TestEsgCarbonEmission(TestEsgCommon):
                 "quantity": 100,
             }
         )
-        self.assertEqual(
-            other_emission.esg_emissions_value, 6.214
-        )
-        self.assertEqual(
-            other_emission.esg_uncertainty_absolute_value, 2.1749
-        )
+        self.assertEqual(other_emission.esg_emissions_value, 6.214)
+        self.assertEqual(other_emission.esg_uncertainty_absolute_value, 2.1749)
         other_emission.quantity = 200
-        self.assertEqual(
-            other_emission.esg_emissions_value, 12.428
-        )
-        self.assertEqual(
-            other_emission.esg_uncertainty_absolute_value, 4.3498
-        )
+        self.assertEqual(other_emission.esg_emissions_value, 12.428)
+        self.assertEqual(other_emission.esg_uncertainty_absolute_value, 4.3498)
 
     def test_monetary_method_other_emission_value(self):
         other_emission = self.env["esg.other.emission"].create(
@@ -44,19 +36,11 @@ class TestEsgCarbonEmission(TestEsgCommon):
                 "quantity": 150,
             }
         )
-        self.assertEqual(
-            other_emission.esg_emissions_value, 1.5
-        )
-        self.assertEqual(
-            other_emission.esg_uncertainty_absolute_value, 0.375
-        )
+        self.assertEqual(other_emission.esg_emissions_value, 1.5)
+        self.assertEqual(other_emission.esg_uncertainty_absolute_value, 0.375)
         other_emission.quantity = 300
-        self.assertEqual(
-            other_emission.esg_emissions_value, 3
-        )
-        self.assertEqual(
-            other_emission.esg_uncertainty_absolute_value, 0.75
-        )
+        self.assertEqual(other_emission.esg_emissions_value, 3)
+        self.assertEqual(other_emission.esg_uncertainty_absolute_value, 0.75)
 
     def test_physical_method_account_move_line_emission_value(self):
         bill_line = self.env["account.move.line"].create(
@@ -68,9 +52,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
                 "product_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
-        self.assertEqual(
-            bill_line.esg_emissions_value, 4648.0
-        )
+        self.assertEqual(bill_line.esg_emissions_value, 4648.0)
         self.assertEqual(
             float_compare(
                 bill_line.esg_uncertainty_absolute_value, 697.199, precision_rounding=3
@@ -78,9 +60,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
             0,
         )
         bill_line.quantity = 100
-        self.assertEqual(
-            bill_line.esg_emissions_value, 9296.0
-        )
+        self.assertEqual(bill_line.esg_emissions_value, 9296.0)
         self.assertEqual(
             float_compare(
                 bill_line.esg_uncertainty_absolute_value, 1394.39, precision_rounding=2
@@ -105,12 +85,8 @@ class TestEsgCarbonEmission(TestEsgCommon):
                 "product_uom_id": self.env.ref("base.product_uom_dozen").id,
             }
         )
-        self.assertEqual(
-            bill_line_1.esg_emissions_value, 45000
-        )
-        self.assertEqual(
-            bill_line_1.esg_uncertainty_absolute_value, 11250
-        )
+        self.assertEqual(bill_line_1.esg_emissions_value, 45000)
+        self.assertEqual(bill_line_1.esg_uncertainty_absolute_value, 11250)
 
         self.emission_factor_phones_production.uom_id = self.env.ref(
             "base.product_uom_dozen"
@@ -121,12 +97,8 @@ class TestEsgCarbonEmission(TestEsgCommon):
                 "product_uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
-        self.assertEqual(
-            bill_line_2.esg_emissions_value, 312.5
-        )
-        self.assertEqual(
-            bill_line_2.esg_uncertainty_absolute_value, 78.125
-        )
+        self.assertEqual(bill_line_2.esg_emissions_value, 312.5)
+        self.assertEqual(bill_line_2.esg_uncertainty_absolute_value, 78.125)
 
     def test_monetary_method_account_move_line_emission_value(self):
         for account, esg_usable in self.accounts_to_esg_usable.items():
@@ -253,19 +225,13 @@ class TestEsgCarbonEmission(TestEsgCommon):
                     "The emissions value should be 0 as the amount is 0",
                 )
                 bill_line.price_unit = 5
-                self.assertEqual(
-                    bill_line.price_subtotal, 500
-                )
+                self.assertEqual(bill_line.price_subtotal, 500)
                 self.assertEqual(
                     bill_line.esg_emission_multiplicator, 500 if esg_usable else 0
                 )
-                self.assertEqual(
-                    bill_line.esg_emissions_value, 5 if esg_usable else 0
-                )
+                self.assertEqual(bill_line.esg_emissions_value, 5 if esg_usable else 0)
                 bill_line.price_unit = 10
-                self.assertEqual(
-                    bill_line.price_subtotal, 1000
-                )
+                self.assertEqual(bill_line.price_subtotal, 1000)
                 self.assertEqual(
                     bill_line.esg_emission_multiplicator,
                     1000 if esg_usable else 0,
@@ -301,12 +267,8 @@ class TestEsgCarbonEmission(TestEsgCommon):
                 "uom_id": self.env.ref("base.product_uom_km").id,
             }
         )
-        self.assertEqual(
-            other_emission.esg_emission_multiplicator, 150
-        )
-        self.assertEqual(
-            other_emission.esg_emissions_value, 15
-        )
+        self.assertEqual(other_emission.esg_emission_multiplicator, 150)
+        self.assertEqual(other_emission.esg_emissions_value, 15)
         other_emission.quantity = 300
         self.assertEqual(
             other_emission.esg_emission_multiplicator,
@@ -335,12 +297,8 @@ class TestEsgCarbonEmission(TestEsgCommon):
         other_emission.esg_emission_factor_id = (
             self.emission_factor_electricity_consumption
         )
-        self.assertEqual(
-            other_emission.esg_emission_multiplicator, 300
-        )
-        self.assertEqual(
-            other_emission.esg_emissions_value, 3
-        )
+        self.assertEqual(other_emission.esg_emission_multiplicator, 300)
+        self.assertEqual(other_emission.esg_emissions_value, 3)
         other_emission.quantity = 600
         self.assertEqual(
             other_emission.esg_emission_multiplicator,
@@ -580,9 +538,7 @@ class TestEsgCarbonEmission(TestEsgCommon):
             "As this bill line already has a factor and does not match, it should not be replaced by the assignation rule",
         )
 
-        bill_line_1.esg_emission_factor_id = (
-            False
-        )
+        bill_line_1.esg_emission_factor_id = False
         self.env["wizard.esg.emission.factor.apply.move.line"].with_context(
             active_ids=self.emission_factor_computers_production.ids
         ).create(

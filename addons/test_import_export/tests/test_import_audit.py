@@ -137,7 +137,6 @@ class TestCleanErrors(ImportAuditCommon):
 
 @unittest.skipUnless(can_import("openpyxl"), "openpyxl not available")
 class TestSpreadsheetDateCells(ImportAuditCommon):
-
     def test_date_cell_in_a_float_column(self):
         wizard = self._wizard(
             "import.float",
@@ -453,7 +452,6 @@ class TestFieldsTree(ImportAuditCommon):
 
 
 class TestIsolation(ImportAuditCommon):
-
     def test_a_user_cannot_read_another_users_import(self):
         alice = new_test_user(self.env, login="audit_alice", groups="base.group_user")
         bob = new_test_user(self.env, login="audit_bob", groups="base.group_user")

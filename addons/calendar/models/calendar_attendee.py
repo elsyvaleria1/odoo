@@ -18,7 +18,6 @@ _logger = logging.getLogger(__name__)
 
 
 class CalendarAttendee(models.Model):
-
     _name = "calendar.attendee"
     _inherit = ["mixin.calendar.privacy"]
     _rec_name = "common_name"
@@ -222,7 +221,6 @@ class CalendarAttendee(models.Model):
             ).partner_id & event.message_partner_ids
             event.message_unsubscribe(partner_ids=partners.ids)
 
-
     @api.model
     def _mail_template_default_values(self) -> dict:
         return {
@@ -292,8 +290,7 @@ class CalendarAttendee(models.Model):
                 attendee.event_id.with_context(no_document=True)
                 .sudo()
                 .message_notify(
-                    email_from=emails_from[attendee.id]
-                    or None,
+                    email_from=emails_from[attendee.id] or None,
                     author_id=attendee.event_id.user_id.partner_id.id
                     or self.env.user.partner_id.id,
                     body=bodies[attendee.id],
@@ -384,7 +381,6 @@ class CalendarAttendee(models.Model):
         self.check_singleton()
         partner_not_sender = self.partner_id != self.env.user.partner_id
         return bool(partner_not_sender or notify_author)
-
 
     def do_tentative(self):
         return self.write({"state": "tentative"})

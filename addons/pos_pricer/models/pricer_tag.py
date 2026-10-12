@@ -34,7 +34,6 @@ class PricerTag(models.Model):
 
     pricer_product_to_link = fields.Boolean(default=True)
 
-
     _name_unique = models.Constraint(
         "unique (name)",
         "A Pricer tag with this barcode id already exists",
@@ -55,12 +54,10 @@ class PricerTag(models.Model):
                     )
                 )
 
-
     def write(self, vals):
         if "product_id" in vals:
             vals["pricer_product_to_link"] = True
         return super().write(vals)
-
 
     @api.ondelete(at_uninstall=True)
     def _unlink_product_on_delete(self) -> None:

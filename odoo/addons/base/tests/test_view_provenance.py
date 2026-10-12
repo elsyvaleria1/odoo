@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestViewProvenance(TransactionCase):
-
     def setUp(self):
         super().setUp()
         View = self.env["ir.ui.view"]

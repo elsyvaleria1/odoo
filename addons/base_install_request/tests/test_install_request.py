@@ -61,7 +61,6 @@ class TestBaseModuleInstallRequest(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestInstallRequestRecord(TransactionCase):
-
     def test_sending_records_the_request_and_mails_every_administrator(self):
         if "approval_request_id" in self.env["base.module.install.request"]._fields:
             self.skipTest("approval_base_install_request replaces the e-mail")

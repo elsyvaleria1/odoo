@@ -54,9 +54,7 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
         sale_order.picking_ids.move_ids.quantity = 5
         sale_order.picking_ids.button_validate()
         self.return_product(sale_order, 2)
-        refund_move = self.refund_product(
-            sale_order.invoice_ids
-        )
+        refund_move = self.refund_product(sale_order.invoice_ids)
         self.assertEqual(refund_move.invoice_line_ids.quantity, 2)
 
     def test_refund_after_return_multi_so(self):
@@ -94,9 +92,7 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
         sale_orders.picking_ids.button_validate()
         self.return_product(sale_orders[0], 2)
         self.return_product(sale_orders[1], 3)
-        refund_move = self.refund_product(
-            sale_orders.invoice_ids
-        )
+        refund_move = self.refund_product(sale_orders.invoice_ids)
         self.assertEqual(refund_move.invoice_line_ids[0].quantity, 2)
         self.assertEqual(refund_move.invoice_line_ids[1].quantity, 3)
 
@@ -136,20 +132,14 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
         payment = self.env["wizard.sale.order.invoice"].with_context(context).create({})
         payment.create_invoices()
         self.return_product(sale_order, 2)
-        refund_moves = self.refund_product(
-            sale_order.invoice_ids
-        )
+        refund_moves = self.refund_product(sale_order.invoice_ids)
         refund = refund_moves.filtered(
             lambda move: self.product in move.invoice_line_ids.product_id
         )
         product_line = refund.invoice_line_ids[0]
         down_payment_line = refund.invoice_line_ids[2]
-        self.assertEqual(
-            product_line.quantity, -8
-        )
-        self.assertEqual(
-            down_payment_line.quantity, 1
-        )
+        self.assertEqual(product_line.quantity, -8)
+        self.assertEqual(down_payment_line.quantity, 1)
 
     def refund_product(self, invoice):
         credit_note = self.env["wizard.account.move.reverse"].create(

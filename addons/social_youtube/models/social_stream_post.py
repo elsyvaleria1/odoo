@@ -51,7 +51,6 @@ class SocialStreamPost(models.Model):
         super(SocialStreamPost, (self - youtube_posts))._compute_is_author()
         youtube_posts.is_author = True
 
-
     def _youtube_comment_add(self, comment_id, message, is_edit=False):
         self.check_singleton()
         self.account_id._refresh_youtube_token()
@@ -210,7 +209,6 @@ class SocialStreamPost(models.Model):
             "commentsDisabled": comments_disabled,
             "nextPageToken": result_json.get("nextPageToken"),
         }
-
 
     def _get_matching_post(self):
         self.check_singleton()

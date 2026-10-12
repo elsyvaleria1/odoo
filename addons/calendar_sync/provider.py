@@ -3,7 +3,6 @@ import dataclasses
 
 @dataclasses.dataclass(frozen=True)
 class CalendarSyncCapabilities:
-
     shared_ids: bool = False
     client_insert_id: bool = False
     series_inserts: bool = True
@@ -13,7 +12,6 @@ class CalendarSyncCapabilities:
 
 @dataclasses.dataclass(frozen=True)
 class CalendarSyncProvider:
-
     code: str
     label: str
     key: str

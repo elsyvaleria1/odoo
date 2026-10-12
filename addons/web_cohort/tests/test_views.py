@@ -189,7 +189,6 @@ class TestViews(ViewCase):
 
 
 class TestCohortSchemaDeclaration(ViewCase):
-
     def test_the_cohort_schema_is_declared(self):
         self.assertEqual(
             view_validation.registered_schemas().get("cohort"),

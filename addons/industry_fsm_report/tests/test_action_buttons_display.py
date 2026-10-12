@@ -8,7 +8,6 @@ from odoo.tests import TransactionCase
 
 
 class TestActionButtons(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -121,24 +120,16 @@ class TestActionButtons(TransactionCase):
         self.assertEqual(self.task.display_satisfied_conditions_count, 2)
         self.assertTrue(self.task.display_sign_report_primary)
         self.assertFalse(self.task.display_sign_report_secondary)
-        self.assertTrue(
-            self.task.display_send_report_primary
-        )
-        self.assertFalse(
-            self.task.display_send_report_secondary
-        )
+        self.assertTrue(self.task.display_send_report_primary)
+        self.assertFalse(self.task.display_send_report_secondary)
 
         f = io.BytesIO()
         Image.new("RGB", (50, 50)).save(f, "PNG")
         f.seek(0)
         image = base64.b64encode(f.read())
         self.task.worksheet_signature = image
-        self.assertTrue(
-            self.task.display_send_report_primary
-        )
+        self.assertTrue(self.task.display_send_report_primary)
         self.assertFalse(self.task.display_send_report_secondary)
         self.task.fsm_is_sent = True
         self.assertFalse(self.task.display_send_report_primary)
-        self.assertFalse(
-            self.task.display_send_report_secondary
-        )
+        self.assertFalse(self.task.display_send_report_secondary)

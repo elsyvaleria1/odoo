@@ -8,7 +8,6 @@ from odoo.addons.asset_gps.tools.compatibility import register_legacy_gps_privil
 
 
 class TestResourceAttachmentMigration(StockLotGpsTestBase):
-
     def _migrate(self):
         path = (
             Path(__file__).resolve().parents[1]

@@ -11,7 +11,6 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 @tagged("post_install", "-at_install")
 @patch.object(CalendarSyncAccount, "_has_client", lambda account, code: True)
 class TestAppointmentConnectors(TransactionCase):
-
     def setUp(self):
         super().setUp()
         Account = self.env["calendar.sync.account"]

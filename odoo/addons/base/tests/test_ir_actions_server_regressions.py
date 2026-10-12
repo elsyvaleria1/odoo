@@ -835,7 +835,6 @@ class TestASequenceValueNeedsASequence(ServerActionCase):
 
 @tagged("post_install", "-at_install")
 class TestCrudTargetsAreCheckedWithoutGroups(ServerActionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -980,7 +979,6 @@ class TestACopysNameIsKept(ServerActionCase):
 
 @tagged("post_install", "-at_install")
 class TestADelegatingCreatorsNameIsCustom(ServerActionCase):
-
     def test_a_cron_s_name_survives_a_type_change(self):
         cron = self.env["ir.cron"].create(
             {

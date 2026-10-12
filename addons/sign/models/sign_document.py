@@ -254,9 +254,7 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
                 value = it.option_ids[:1].id
             elif it.type_id.item_type == "radio":
                 radio_items = it.radio_set_id.radio_items
-                value = (
-                    "on" if it == radio_items[:1] else ""
-                )
+                value = "on" if it == radio_items[:1] else ""
             elif it.type_id.item_type == "strikethrough":
                 value = "striked"
             values_dict[it.id] = {

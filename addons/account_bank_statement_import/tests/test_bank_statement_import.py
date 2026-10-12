@@ -8,7 +8,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 @tagged("post_install", "-at_install")
 class TestBankStatementImportHub(AccountTestInvoicingCommon):
-
     def test_find_additional_data_multi_match_raises_user_error(self):
         company_2 = self.env["res.company"].create({"name": "Other Co"})
         bank = self.env["res.bank"].create({"name": "Shared Bank"})

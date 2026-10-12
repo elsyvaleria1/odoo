@@ -5,7 +5,6 @@ from odoo.fields import Domain
 
 
 class MixinCalendarPrivacy(models.AbstractModel):
-
     _name = "mixin.calendar.privacy"
     _description = "Calendar Privacy Delegation"
 

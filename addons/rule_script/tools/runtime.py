@@ -26,7 +26,6 @@ class RuleRuntimeError(RuntimeError):
 
 
 class RuleBudget:
-
     __slots__ = ("calls", "steps")
 
     def __init__(self) -> None:
@@ -50,7 +49,6 @@ _BUDGET = contextvars.ContextVar("rule_budget", default=None)
 
 
 class RuleInputs:
-
     __slots__ = ("_values",)
 
     def __init__(self, signature, values) -> None:
@@ -154,7 +152,6 @@ def compile_rule(module, filename):
 
 
 class RuleContext:
-
     def __init__(self, on_date, resolve, depth=0, trace=None) -> None:
         self.on_date = on_date
         self._resolve = resolve

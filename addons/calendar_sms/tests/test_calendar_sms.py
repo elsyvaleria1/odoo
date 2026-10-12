@@ -107,8 +107,7 @@ class TestCalendarSms(SMSCommon):
         cls.event_24h = cls.env["calendar.event"].create(
             {
                 "name": "Event in 24h",
-                "start": now
-                + timedelta(hours=23, minutes=30),
+                "start": now + timedelta(hours=23, minutes=30),
                 "stop": now + timedelta(hours=24, minutes=30),
                 "alarm_ids": [(4, cls.alarm_1h.id), (4, cls.alarm_24h.id)],
                 "partner_ids": [(6, 0, [cls.partner_phone_2.id])],

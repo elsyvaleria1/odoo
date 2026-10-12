@@ -5,7 +5,6 @@ from odoo.tools import convert
 class MarketingCampaign(models.Model):
     _inherit = "marketing.campaign"
 
-
     def _prepare_ir_actions_server_crm_schedule_call_data(self) -> dict:
         return {
             "xml_id": "marketing_automation_crm.ir_actions_server_crm_schedule_call",
@@ -56,7 +55,6 @@ class MarketingCampaign(models.Model):
                 "update_m2m_operation": "add",
             },
         }
-
 
     @api.model
     def get_campaign_templates_info(self):

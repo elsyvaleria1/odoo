@@ -58,9 +58,7 @@ class AppointmentHrTest(AppointmentHrCommon):
             "enddate": self.global_slots_enddate,
             "startdate": self.reference_now_monthweekstart,
             "slots_startdate": self.reference_monday.date(),
-            "slots_weekdays_nowork": range(
-                2, 7
-            ),
+            "slots_weekdays_nowork": range(2, 7),
         }
 
         self.assertNotEqual(
@@ -251,9 +249,7 @@ class AppointmentHrTest(AppointmentHrCommon):
                     12,
                 ],
                 "slots_startdate": self.reference_monday.date(),
-                "slots_weekdays_nowork": range(
-                    2, 7
-                ),
+                "slots_weekdays_nowork": range(2, 7),
             },
         )
 
@@ -278,8 +274,7 @@ class AppointmentHrTest(AppointmentHrCommon):
             self.env["res.users"],
             [
                 (
-                    self.reference_monday
-                    + timedelta(days=8),
+                    self.reference_monday + timedelta(days=8),
                     self.reference_monday + timedelta(days=8, hours=12),
                 )
             ],
@@ -313,9 +308,7 @@ class AppointmentHrTest(AppointmentHrCommon):
                         {"end": 12, "start": 11},
                         {"end": 14, "start": 13},
                     ],
-                    (
-                        self.reference_monday + timedelta(days=8)
-                    ).date(): [],
+                    (self.reference_monday + timedelta(days=8)).date(): [],
                 },
                 "slots_start_hours": [
                     8,
@@ -325,9 +318,7 @@ class AppointmentHrTest(AppointmentHrCommon):
                     13,
                 ],
                 "slots_startdate": self.reference_monday.date(),
-                "slots_weekdays_nowork": range(
-                    2, 7
-                ),
+                "slots_weekdays_nowork": range(2, 7),
             },
         )
 
@@ -344,28 +335,22 @@ class AppointmentHrTest(AppointmentHrCommon):
                     False,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(days=7),
+                    self.reference_monday + timedelta(days=7),
                     self.reference_monday + timedelta(days=7, hours=1),
                     True,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(days=8, hours=2),
+                    self.reference_monday + timedelta(days=8, hours=2),
                     self.reference_monday + timedelta(days=8, hours=3),
                     False,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(
-                        days=8, hours=3
-                    ),
+                    self.reference_monday + timedelta(days=8, hours=3),
                     self.reference_monday + timedelta(days=8, hours=4),
                     False,
                 ),
                 (
-                    self.reference_monday
-                    + timedelta(days=8, hours=5),
+                    self.reference_monday + timedelta(days=8, hours=5),
                     self.reference_monday + timedelta(days=8, hours=7),
                     False,
                 ),
@@ -396,9 +381,7 @@ class AppointmentHrTest(AppointmentHrCommon):
                         {"end": 12, "start": 11},
                         {"end": 14, "start": 13},
                     ],
-                    (
-                        self.reference_monday + timedelta(days=7)
-                    ).date(): [],
+                    (self.reference_monday + timedelta(days=7)).date(): [],
                     (self.reference_monday + timedelta(days=8)).date(): [
                         {"end": 9, "start": 8},
                         {"end": 10, "start": 9},
@@ -413,9 +396,7 @@ class AppointmentHrTest(AppointmentHrCommon):
                     13,
                 ],
                 "slots_startdate": self.reference_monday.date(),
-                "slots_weekdays_nowork": range(
-                    2, 7
-                ),
+                "slots_weekdays_nowork": range(2, 7),
             },
         )
 

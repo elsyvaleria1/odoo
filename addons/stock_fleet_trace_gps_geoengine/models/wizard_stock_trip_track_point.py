@@ -13,7 +13,6 @@ TRACK_POINT_COLORS = {
 
 
 class WizardStockTripTrackPoint(models.TransientModel):
-
     _name = "wizard.stock.trip.track.point"
     _description = "Trip Track Point"
     _order = "date, id"

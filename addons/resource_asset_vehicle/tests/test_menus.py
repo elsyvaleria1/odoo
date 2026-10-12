@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestVehicleMenus(TransactionCase):
-
     def test_vehicles_have_no_app_of_their_own(self):
         roots = (
             self.env["ir.ui.menu"]

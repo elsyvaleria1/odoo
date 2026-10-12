@@ -5,7 +5,6 @@ from .common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestMerge(TestTradeOrderCase):
-
     def _order_with_line(self, **line_kw):
         order = self._make_order()
         vals = {"product_qty": 1.0, "price_unit": 100.0}

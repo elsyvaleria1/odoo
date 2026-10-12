@@ -203,7 +203,6 @@ class RatingRating(models.Model):
         for rating in self:
             rating.rating_text = rating_data._rating_to_text(rating.rating)
 
-
     @api.model_create_multi
     def create(self, vals_list):
         for values in vals_list:
@@ -281,7 +280,6 @@ class RatingRating(models.Model):
                 data["parent_res_id"] = parent_res_model.id
         return data
 
-
     def action_view_rated_object(self):
         self.check_singleton()
         return {
@@ -290,7 +288,6 @@ class RatingRating(models.Model):
             "res_id": self.res_id,
             "views": [[False, "form"]],
         }
-
 
     def _classify_by_model(self):
         data_by_model = {}

@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class UtmStage(models.Model):
-
     _name = "utm.stage"
     _description = "Campaign Stage"
     _order = "sequence"

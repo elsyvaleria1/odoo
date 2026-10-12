@@ -276,7 +276,6 @@ class TestDayBoundary(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestComputeDeclaresWhatItReads(HrPresenceCase):
-
     REQUIRED = frozenset(
         {
             "active",
@@ -339,7 +338,6 @@ class TestComputeDeclaresWhatItReads(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestAbstainsWhereItHasNoInstrument(HrPresenceCase):
-
     def _employee_without_a_login(self, name, company=None, calendar=None):
         company = company or self.company
         return self.env["hr.employee"].create(
@@ -402,7 +400,6 @@ class TestAbstainsWhereItHasNoInstrument(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestObservationOutranksInference(HrPresenceCase):
-
     def _verdict_with(self, employee, observed):
         today = self._today_for(employee)
         working_now = frozenset(employee._get_employee_ids_working_now())
@@ -501,7 +498,6 @@ class TestObservationOutranksInference(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestDayWindowsTile(HrPresenceCase):
-
     ZONES = (
         "UTC",
         "America/Mexico_City",
@@ -598,7 +594,6 @@ class TestDayWindowsTile(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestTheMirrorIsRightFromBirth(HrPresenceCase):
-
     def test_a_new_employee_is_mirrored_at_once(self):
         employee = self._make_employee("newborn")
         self.assertEqual(
@@ -716,7 +711,6 @@ class TestSweep(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestTheCronEntryPoint(HrPresenceCase):
-
     def test_the_cron_record_still_points_at_a_method_that_exists(self):
         cron = self.env.ref("hr_presence.ir_cron_presence_control")
         self.assertEqual(cron.model_id.model, "hr.employee")
@@ -754,7 +748,6 @@ class TestTheCronEntryPoint(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestSettingsTriggerTheSweep(HrPresenceCase):
-
     def _save_settings(self, company, **values):
         settings = (
             self.env["res.config.settings"]
@@ -814,7 +807,6 @@ class TestSettingsTriggerTheSweep(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestOneUserTwoEmployees(HrPresenceCase):
-
     def test_each_employee_is_judged_against_its_own_company_threshold(self):
         lenient = self.env["res.company"].create({"name": "Lenient Co"})
         strict = self.env["res.company"].create({"name": "Strict Co"})
@@ -944,7 +936,6 @@ class TestActions(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestTheWebsocketRecordsTheEvidence(HrPresenceCase):
-
     def _presence(self, employee, remote_addr):
         from odoo.addons.mail.models.ir_websocket import IrWebsocket as MailWebsocket
 
@@ -1030,7 +1021,6 @@ class TestTheWebsocketRecordsTheEvidence(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestWebsocketGate(HrPresenceCase):
-
     def test_the_gate_follows_the_setting(self):
         Company = self.env["res.company"]
         self.assertTrue(Company._is_presence_ip_tracking_enabled())
@@ -1055,7 +1045,6 @@ class TestWebsocketGate(HrPresenceCase):
 
 @tagged("post_install", "-at_install")
 class TestGearMenuBindings(HrPresenceCase):
-
     def _presence_actions(self):
         return self.env["ir.actions.server"].search(
             [

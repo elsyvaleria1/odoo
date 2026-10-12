@@ -79,4 +79,5 @@ def read_internal_payload(context, key, default=None):
         return stored[1]
     return default
 
+
 LOCKED_QUANTS_CACHE_KEY = "stock.quant.locked"

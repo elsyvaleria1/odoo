@@ -74,9 +74,7 @@ class WizardAccountPaymentRefund(models.TransientModel):
     @api.depends("transaction_id.provider_id", "transaction_id.payment_method_id")
     def _compute_support_refund(self) -> None:
         for wizard in self:
-            tx_sudo = (
-                wizard.transaction_id.sudo()
-            )
+            tx_sudo = wizard.transaction_id.sudo()
             p_support_refund = tx_sudo.provider_id.support_refund
             pm_sudo = tx_sudo.payment_method_id
             pm_support_refund = (

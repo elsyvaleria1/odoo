@@ -436,7 +436,6 @@ class PosPaymentMethod(models.Model):
         if not operation:
             operation = "terminal_request"
 
-
         is_capture_data = (
             operation == "capture"
             and hasattr(self, "adyen_merchant_account")

@@ -5,7 +5,6 @@ from .common import TestPayslipBase
 
 @tagged("post_install", "-at_install")
 class TestPayslipListHeader(TestPayslipBase, HttpCase):
-
     def test_header_buttons_follow_what_each_action_tolerates(self):
         self.user_admin = self.env.ref("base.user_admin")
         self.user_admin.company_ids |= self.company_us

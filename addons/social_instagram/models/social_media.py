@@ -6,7 +6,6 @@ from odoo.libs.web import urljoin as url_join
 
 
 class SocialMedia(models.Model):
-
     _inherit = "social.media"
 
     _INSTAGRAM_ENDPOINT = "https://graph.facebook.com/"
@@ -65,7 +64,9 @@ class SocialMedia(models.Model):
                 params={
                     "returning_url": url_join(base_url, "social_instagram/callback"),
                     "csrf_token": self._issue_oauth_state(),
-                    "db_uuid": self.env.registry.settings.get(self.env, "database.uuid", False),
+                    "db_uuid": self.env.registry.settings.get(
+                        self.env, "database.uuid", False
+                    ),
                 },
                 timeout=5,
             )

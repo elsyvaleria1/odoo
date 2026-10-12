@@ -29,7 +29,6 @@ _FOCUS_KINDS = frozenset({"text", "photo", "document", "voice"})
 
 
 class TelegramHandlerMail(models.AbstractModel):
-
     _name = "telegram.handler.mail"
     _inherit = "mixin.telegram.handler"
     _description = "Telegram: Odoo Notifications and Replies"
@@ -76,7 +75,6 @@ class TelegramHandlerMail(models.AbstractModel):
             )
         return [(tr._("Odoo Notifications"), lines)] if lines else []
 
-
     @log_command_execution
     def _handle_inbox_command(
         self, bot, chat, args, partner=False, internal_user=False
@@ -110,7 +108,6 @@ class TelegramHandlerMail(models.AbstractModel):
             "setChatMenuButton",
             {"menu_button": {"type": "web_app", **inbox}},
         )
-
 
     def _delivered(self, bot, chat, telegram_message_id):
         if not telegram_message_id:
@@ -341,7 +338,6 @@ class TelegramHandlerMail(models.AbstractModel):
         self._react(posted.with_env(thread.env), user.partner_id, added, removed)
         return True
 
-
     def _telegram_intake_label(self, bot, chat, kind):
         return self._tr(bot, chat)._("Message to a conversation")
 
@@ -395,7 +391,6 @@ class TelegramHandlerMail(models.AbstractModel):
             ),
         )
         return True
-
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""
@@ -462,7 +457,6 @@ class TelegramHandlerMail(models.AbstractModel):
                 member._mark_as_read(message.id)
             return
         message.with_user(user).set_message_done()
-
 
     @log_command_execution
     def _handle_write_command(
@@ -591,7 +585,6 @@ class TelegramHandlerMail(models.AbstractModel):
         if channel:
             self._open_focus(bot, chat, channel, user)
 
-
     def _open_focus(self, bot, chat, channel, user) -> None:
         self._update_focus(chat, channel)
         tr = self._tr(bot, chat)
@@ -629,7 +622,6 @@ class TelegramHandlerMail(models.AbstractModel):
             )
         )
         return channel or None
-
 
     def _on_account_bound(self, bot, chat, binding) -> None:
         user = chat.account_id._acting_user("internal")
@@ -701,7 +693,6 @@ class TelegramHandlerMail(models.AbstractModel):
             chat,
             user.with_context(lang=user.lang).env._("you blocked the bot."),
         )
-
 
     def _voice_text(self, bot, chat, message, user):
         return

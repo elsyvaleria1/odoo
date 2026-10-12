@@ -82,9 +82,7 @@ class TestPaymentMethod(PaymentCommon):
 
     def test_non_primary_payment_method_not_compatible(self):
         brand_payment_method = self.payment_method.copy()
-        brand_payment_method.primary_payment_method_id = (
-            self.payment_method_id
-        )
+        brand_payment_method.primary_payment_method_id = self.payment_method_id
         compatible_payment_methods = self.env[
             "payment.method"
         ]._get_compatible_payment_methods(self.provider.ids, self.partner.id)

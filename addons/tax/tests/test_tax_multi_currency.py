@@ -5,7 +5,6 @@ from .common import BaseTaxCommon
 
 @tagged("post_install", "-at_install")
 class TestTaxMultiCurrency(BaseTaxCommon):
-
     def _foreign_currency(self):
         foreign = self.env.ref("base.EUR")
         if foreign == self.currency:

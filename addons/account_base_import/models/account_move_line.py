@@ -14,9 +14,7 @@ class AccountMoveLine(models.Model):
 
         if "import_file" in self.env.context:
             account_move_data = []
-            processed_move_ids = (
-                set()
-            )
+            processed_move_ids = set()
             journal_names = {}
             required_fields = ("journal_id", "move_id", "date")
             if not all(field in fields for field in required_fields):

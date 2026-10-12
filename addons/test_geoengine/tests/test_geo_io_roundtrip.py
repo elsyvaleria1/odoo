@@ -376,9 +376,7 @@ class TestShapefileRoundTrip(TransactionCase):
         vals.update(overrides)
         wizard = self.env["wizard.base.export.geodata"].create(vals)
         wizard.action_export()
-        archive = zipfile.ZipFile(
-            io.BytesIO(base64.b64decode(wizard.output_file))
-        )
+        archive = zipfile.ZipFile(io.BytesIO(base64.b64decode(wizard.output_file)))
         return wizard, archive
 
     def _read_records(self, archive):

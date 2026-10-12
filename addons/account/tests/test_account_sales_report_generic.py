@@ -1,4 +1,3 @@
-
 from freezegun import freeze_time
 
 from odoo import Command

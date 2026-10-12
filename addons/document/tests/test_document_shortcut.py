@@ -265,7 +265,6 @@ class TestDocumentsShortcutAsParent(TransactionCaseDocuments):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsShortcutDestinationAmbiguity(TransactionCaseDocuments):
-
     @users("documents@example.com")
     def test_a_selection_spanning_root_and_a_folder_is_ambiguous(self):
         in_folder = self.env["document.document"].create(

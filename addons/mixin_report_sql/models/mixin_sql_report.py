@@ -5,11 +5,9 @@ from odoo.libs.sql import SQL
 
 
 class MixinSqlReport(models.AbstractModel):
-
     _name = "mixin.sql.report"
     _description = "SQL Report Construction Helper"
     _auto = False
-
 
     def _query(self) -> SQL:
         cte = self._with_cte()
@@ -32,7 +30,6 @@ class MixinSqlReport(models.AbstractModel):
         if getattr(self, "_materialized", False):
             return None
         return self._query()
-
 
     def _with_cte(self) -> SQL:
         return SQL.EMPTY
@@ -127,7 +124,6 @@ class MixinSqlReport(models.AbstractModel):
             SQL(",\n    ").join(field_parts),
         )
 
-
     def _get_fields_select(self) -> dict:
         return {}
 
@@ -145,7 +141,6 @@ class MixinSqlReport(models.AbstractModel):
 
     def _get_fields_order_by(self) -> list:
         return []
-
 
     @staticmethod
     def _check_percent_escaping(expr, location) -> None:

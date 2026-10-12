@@ -13,7 +13,6 @@ _debug = DebugLog(__name__)
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
-
     def pin_validation(self, pin=False) -> bool:
         if not pin:
             pin = False

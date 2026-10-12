@@ -429,9 +429,7 @@ class TestPayrollProperties(TestPayslipContractBase):
         self.assertEqual(version_def[0]["type"], "separator")
         self.assertEqual(version_def[0]["name"], f"separator_{self.category1.id}")
         self.assertEqual(version_def[1]["name"], "existing_prop")
-        self.assertEqual(
-            version_def[2]["name"], str(rule.id)
-        )
+        self.assertEqual(version_def[2]["name"], str(rule.id))
         self.assertEqual(version_def[3]["type"], "separator")
         self.assertEqual(version_def[3]["name"], f"separator_{self.category2.id}")
 

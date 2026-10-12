@@ -93,9 +93,7 @@ class PrinterDriverBase(Driver, ABC):
 
     def send_status(self, status, message=None, action_unique_id=None) -> None:
         if status == "error":
-            self._recent_action_ids.pop(
-                action_unique_id, None
-            )
+            self._recent_action_ids.pop(action_unique_id, None)
         self.data["status"] = status
         self.data["message"] = message
         event_manager.device_changed(self, {"session_id": self.data.get("owner")})

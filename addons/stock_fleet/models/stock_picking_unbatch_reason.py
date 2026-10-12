@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class StockPickingUnbatchReason(models.Model):
-
     _name = "stock.picking.unbatch.reason"
     _description = "Trip Removal Reason"
     _order = "sequence, id"

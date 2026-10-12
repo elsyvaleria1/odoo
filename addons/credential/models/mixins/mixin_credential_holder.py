@@ -7,7 +7,6 @@ NATIVE_CREDENTIAL_FIELDS = frozenset({"api_key", "api_secret", "username", "pass
 
 
 class MixinCredentialHolder(models.AbstractModel):
-
     _name = "mixin.credential.holder"
     _description = "Credential Holder"
 

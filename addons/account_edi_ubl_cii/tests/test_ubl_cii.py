@@ -237,9 +237,7 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
                 self.assertRecordValues(new_invoice.invoice_line_ids, line_vals)
 
     def test_import_tax_prediction(self):
-        self.env.ref(
-            "base.EUR"
-        ).active = True
+        self.env.ref("base.EUR").active = True
         if not hasattr(self.env["account.move.line"], "_predict_specific_tax"):
             self.skipTest(
                 "The predictive bill module isn't install and thus prediction with edi can't be tested."
@@ -877,9 +875,7 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
         )
 
     def test_import_partner_fields(self):
-        self.env.ref(
-            "base.EUR"
-        ).active = True
+        self.env.ref("base.EUR").active = True
         file_path = "bis3_bill_example.xml"
         file_path = f"{self.test_module}/tests/test_files/{file_path}"
         with file_open(file_path, "rb") as file:

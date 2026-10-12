@@ -48,7 +48,6 @@ class ScaleReadHardwareProxy(http.Controller):
 
 
 class ScaleDriver(SerialDriver):
-
     last_sent_value = None
 
     def __init__(self, identifier, device) -> None:
@@ -127,7 +126,6 @@ class ScaleDriver(SerialDriver):
 
 
 class Toledo8217Driver(ScaleDriver):
-
     _protocol = Toledo8217Protocol
 
     def __init__(self, identifier, device) -> None:
@@ -179,13 +177,9 @@ class Toledo8217Driver(ScaleDriver):
             self._protocol.statusRegexp, answer
         )
         if status_match:
-            status_char = status_match.group(
-                1
-            ).decode()
+            status_char = status_match.group(1).decode()
             binary_status_char = format(ord(status_char), "08b")
-            for index, bit in enumerate(
-                binary_status_char[1:][::-1]
-            ):
+            for index, bit in enumerate(binary_status_char[1:][::-1]):
                 if int(bit):
                     _logger.debug(
                         "Scale error: %s. Status string: %s. Scale answer: %s.",

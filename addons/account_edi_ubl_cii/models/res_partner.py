@@ -38,9 +38,7 @@ class ResPartner(models.Model):
         ]
     )
     is_ubl_format = fields.Boolean(compute="_compute_is_ubl_format")
-    is_peppol_edi_format = fields.Boolean(
-        compute="_compute_is_peppol_edi_format"
-    )
+    is_peppol_edi_format = fields.Boolean(compute="_compute_is_peppol_edi_format")
     peppol_endpoint = fields.Char(
         compute="_compute_peppol_endpoint",
         store=True,

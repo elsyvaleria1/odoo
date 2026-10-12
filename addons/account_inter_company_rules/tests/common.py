@@ -2,7 +2,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 
 class TestInterCompanyRulesCommon(AccountTestInvoicingCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

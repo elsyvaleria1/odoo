@@ -127,7 +127,6 @@ class TestSecretValues(TransactionCase):
 
 
 class TestSecretValueAlternatives(TransactionCase):
-
     def _credential(self, **values):
         return self.env["credential.credential"].create(
             {

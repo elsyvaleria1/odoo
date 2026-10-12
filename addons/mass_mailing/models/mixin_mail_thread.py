@@ -8,7 +8,6 @@ BLACKLIST_MAX_BOUNCED_LIMIT = 5
 
 
 class MixinMailThread(models.AbstractModel):
-
     _inherit = "mixin.mail.thread"
 
     @api.model

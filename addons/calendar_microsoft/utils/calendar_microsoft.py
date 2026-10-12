@@ -19,8 +19,6 @@ RESOURCE_NOT_FOUND_STATUSES = (204, 404)
 CALENDAR_SCOPE = "offline_access openid Calendars.ReadWrite"
 
 
-
-
 class MicrosoftCalendarService(CalendarService):
     def _request(
         self, connection, method, path, *, params=None, json=None, headers=None, timeout

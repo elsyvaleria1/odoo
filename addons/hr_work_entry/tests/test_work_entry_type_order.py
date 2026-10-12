@@ -2,7 +2,6 @@ from odoo.tests import TransactionCase, new_test_user
 
 
 class TestWorkEntryTypeOrder(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

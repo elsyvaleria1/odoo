@@ -202,7 +202,9 @@ class TestAssetTripReportHistory(TransactionCase):
         )
         self.assertTrue(self.Report.search([("asset_id", "=", self.lot.asset_id.id)]))
         self.assertFalse(
-            self.Report.with_user(reader).search([("asset_id", "=", self.lot.asset_id.id)])
+            self.Report.with_user(reader).search(
+                [("asset_id", "=", self.lot.asset_id.id)]
+            )
         )
         owner_reader = new_test_user(
             self.env,

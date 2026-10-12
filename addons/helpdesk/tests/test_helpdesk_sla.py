@@ -330,9 +330,7 @@ class HelpdeskSLA(TransactionCase):
                 "Day0:20h + 3h = Day1:8h + 3h = Day1:11h",
             )
 
-            self.sla.exclude_stage_ids = [
-                Command.link(self.stage_wait.id)
-            ]
+            self.sla.exclude_stage_ids = [Command.link(self.stage_wait.id)]
             ticket = self.create_ticket(
                 team=self.test_team_reached, user_id=self.env.user.id
             )

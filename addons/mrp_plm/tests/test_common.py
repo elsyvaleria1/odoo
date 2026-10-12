@@ -63,7 +63,6 @@ class TestPlmCommon(common.TransactionCase):
             }
         )
 
-
         cls.bom_table = cls.Bom.create(
             {
                 "product_id": cls.table.id,

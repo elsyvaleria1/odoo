@@ -42,8 +42,6 @@ class MailTestThreadCustomer(models.Model):
     _primary_email = "customer_email"
 
 
-
-
 class MailTestProperties(models.Model):
     _name = "mail.test.properties"
     _description = "Mail Test Properties"
@@ -55,8 +53,6 @@ class MailTestProperties(models.Model):
         "Properties", definition="parent_id.definition_properties"
     )
     definition_properties = fields.PropertiesDefinition("Definitions")
-
-
 
 
 class MailTestStageField(models.Model):

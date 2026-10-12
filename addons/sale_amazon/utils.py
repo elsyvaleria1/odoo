@@ -20,15 +20,10 @@ from odoo.addons.sale_amazon import const
 _logger = logging.getLogger(__name__)
 
 
-
-
 class AmazonRateLimitError(Exception):
-
     def __init__(self, operation) -> None:
         self.operation = operation
         super().__init__()
-
-
 
 
 def exchange_authorization_code(authorization_code, account) -> None:
@@ -55,8 +50,6 @@ def check_account_is_set_up(account, require_marketplaces=True) -> None:
                 account.name,
             )
         )
-
-
 
 
 def send_proxy_request(endpoint, env, payload=None):
@@ -100,8 +93,6 @@ def send_proxy_request(endpoint, env, payload=None):
     return response.json()
 
 
-
-
 def send_sp_api_request(
     account, operation, path_parameter="", payload=None, method="GET"
 ):
@@ -115,9 +106,7 @@ def send_sp_api_request(
 
     payload = payload or {}
 
-    if (
-        const.API_OPERATIONS_MAPPING[operation]["restricted_resource_path"] is None
-    ):
+    if const.API_OPERATIONS_MAPPING[operation]["restricted_resource_path"] is None:
         refresh_access_token(account)
         access_token = account.access_token
     else:
@@ -232,8 +221,6 @@ def refresh_restricted_data_token(account) -> None:
         )
 
 
-
-
 def get_json_feed(account, messages):
     return json.dumps(
         {
@@ -269,9 +256,7 @@ def get_feed(account, message_type, messages_builder, *args, **kwargs):
     for i, message in enumerate(root.findall("Message")):
         message_id = ET.Element("MessageID")
         message_id.text = f"{int(datetime.now(UTC).timestamp())}{i}"
-        message.insert(
-            0, message_id
-        )
+        message.insert(0, message_id)
     return ET.tostring(root, encoding="UTF-8", method="xml")
 
 
@@ -372,8 +357,6 @@ def get_feed_document(account, document_ref):
             account.env._("Could not process the feed document send by Amazon.")
         ) from err
     return document
-
-
 
 
 def pull_batch_data(

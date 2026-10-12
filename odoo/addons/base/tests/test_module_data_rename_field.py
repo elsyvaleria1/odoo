@@ -88,7 +88,6 @@ class TestRenameFieldCarriesNamedObjects(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameFieldIntoAColumnAlreadyThere(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -169,7 +168,6 @@ def _insert_probe_model(cr, model, fields, ttype="char"):
 
 @tagged("post_install", "-at_install")
 class TestRenameFieldMergeKeepsWhatOnlyTheOldFieldHad(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

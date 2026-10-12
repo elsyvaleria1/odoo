@@ -311,7 +311,6 @@ class WizardSmsSmsSend(models.TransientModel):
             elif record.template_id:
                 record.body = record.template_id.body
 
-
     def action_send_sms(self):
         if self.composition_mode in ("numbers", "comment"):
             if self.comment_single_recipient and not self.recipient_single_valid:
@@ -427,7 +426,6 @@ class WizardSmsSmsSend(models.TransientModel):
             return self.env["sms.sms"].sudo().search([("id", "in", sms_all.ids)])
         return sms_all
 
-
     def _filter_out_and_handle_revoked_sms_values(self, sms_values_all):
         return sms_values_all
 
@@ -530,10 +528,8 @@ class WizardSmsSmsSend(models.TransientModel):
             "message_type": "sms",
         }
 
-
     def _get_additional_render_context(self) -> dict:
         return {}
-
 
     def _prepare_composer_vals(
         self, composition_mode, res_model, res_id, body, template_id

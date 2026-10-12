@@ -5,7 +5,6 @@ from odoo.tests.common import TransactionCase
 
 @tagged("post_install", "-at_install", "integration")
 class TestUnknownCallerLog(TransactionCase):
-
     def _rows(self, model="probe.receiver"):
         return self.env["integration.exchange"].search(
             [

@@ -8,7 +8,6 @@ from odoo.addons.hr_payroll_account.tests.test_hr_payroll_account import (
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPayslipLineAccounts(TestHrPayrollAccountCommon):
-
     def setUp(self):
         super().setUp()
         self.debit_account = self.env["account.account"].create(

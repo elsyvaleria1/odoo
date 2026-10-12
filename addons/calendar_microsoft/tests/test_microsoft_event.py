@@ -7,7 +7,6 @@ from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
 
 
 class TestMicrosoftEvent(TestCommon):
-
     def setUp(self):
         super().setUp()
         self.create_events_for_tests()

@@ -178,9 +178,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             700,
             msg="Half because invoice every two months",
         )
-        self.subscription.line_ids.product_id.subscription_rule_ids = [
-            (6, 0, 0)
-        ]
+        self.subscription.line_ids.product_id.subscription_rule_ids = [(6, 0, 0)]
         self.subscription.plan_id = self.plan_year
         self.assertAlmostEqual(
             self.subscription.amount_untaxed,
@@ -408,9 +406,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_log_change_pricing(self):
-        self.sub_product_tmpl.subscription_rule_ids.fixed_price = (
-            120
-        )
+        self.sub_product_tmpl.subscription_rule_ids.fixed_price = 120
         subscription = self.env["sale.order"].create(
             {
                 "name": "TestSubscription",
@@ -936,9 +932,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "partner_shipping_id": partner2.id,
             }
         )
-        invoice_id = (
-            subscription._create_invoices()
-        )
+        invoice_id = subscription._create_invoices()
         self.assertEqual(invoice_id.partner_shipping_id.id, partner2.id)
         self.assertEqual(invoice_id.partner_id.id, partner.id)
 
@@ -4055,7 +4049,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
     def test_correct_functioning_of_proration(self):
 
         with freeze_time("2025-08-19"):
-
             product_tmpl1 = self.ProductTmpl.create(
                 {
                     "name": "Prorated Service Product",
@@ -4093,7 +4086,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "The product is a default service, therefore it should be prorated.",
             )
 
-
             product_tmpl2 = self.ProductTmpl.create(
                 {
                     "name": "Non Prorated Service Product",
@@ -4129,7 +4121,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 10,
                 "The invoiced amount should be 10 because the product is a service with the proration manually turned off.",
             )
-
 
             product_tmpl3 = self.ProductTmpl.create(
                 {

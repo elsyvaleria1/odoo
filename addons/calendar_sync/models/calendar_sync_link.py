@@ -6,7 +6,6 @@ from odoo.addons.calendar_sync.remote import RemoteKind
 
 
 class CalendarSyncLink(models.Model):
-
     _name = "calendar.sync.link"
     _description = "Calendar Synchronization Link"
 

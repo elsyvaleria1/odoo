@@ -138,7 +138,6 @@ class TestBarcodeHardening(common.TransactionCase):
 
 
 class TestBarcodeSessionInfo(common.TransactionCase):
-
     def _max_time(self, raw):
         self.env["ir.config_parameter"].sudo().set_param(
             "barcode.max_time_between_keys_in_ms", raw

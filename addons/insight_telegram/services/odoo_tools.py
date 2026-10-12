@@ -195,7 +195,6 @@ class ReaderError(Exception):
 
 
 class OdooTools:
-
     def __init__(
         self, reader, queries=None, *, tz="UTC", today=None, writable=False
     ) -> None:
@@ -435,9 +434,7 @@ class OdooTools:
         )
         return {
             "record": record.display_name,
-            "has_image": bool(
-                IMAGE_FIELD in record._fields and record[IMAGE_FIELD]
-            ),
+            "has_image": bool(IMAGE_FIELD in record._fields and record[IMAGE_FIELD]),
             "files": [
                 {
                     "id": attachment.id,
@@ -467,9 +464,7 @@ class OdooTools:
             )
         large = attachments.filtered(lambda a: a.file_size > MAX_SENT_FILE_BYTES)
         if large:
-            raise ReaderError(
-                f"Too large to send: {', '.join(large.mapped('name'))}."
-            )
+            raise ReaderError(f"Too large to send: {', '.join(large.mapped('name'))}.")
         if image and not (IMAGE_FIELD in record._fields and record[IMAGE_FIELD]):
             raise ReaderError(f"{record.display_name} has no image.")
         queued = []
@@ -495,7 +490,6 @@ class OdooTools:
         return {
             "report": catalog.answer(env, query, params, tz=self._tz, today=self._today)
         }
-
 
     def _tool_find_models(self, env, query="") -> dict:
         query = (query or "").strip()

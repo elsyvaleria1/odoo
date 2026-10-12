@@ -309,7 +309,6 @@ class ResUsers(models.Model):
             ["name", "login", "create_uid"],
         ).grouped("create_uid")
 
-
         for user, invited_users in invited_by_users.items():
             invited_user_emails = [f"{u.name} ({u.login})" for u in invited_users]
             template = email_template.with_context(

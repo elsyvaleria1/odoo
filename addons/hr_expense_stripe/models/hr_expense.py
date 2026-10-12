@@ -112,9 +112,7 @@ class HrExpense(models.Model):
             reason=refusal_reason or "none",
         )
         merchant_data = auth_object["merchant_data"]
-        amount_object = (
-            auth_object["pending_request"] or auth_object
-        )
+        amount_object = auth_object["pending_request"] or auth_object
         card = self.env["hr.expense.stripe.card"].search(
             [
                 ("stripe_id", "=", auth_object["card"]["id"]),

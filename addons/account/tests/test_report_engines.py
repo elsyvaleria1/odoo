@@ -56,7 +56,6 @@ class TestReportEngines(TestAccountReportsCommon):
             self.company_data["company"]._phone_get_number().number, "123456789"
         )
 
-
     def _prepare_test_account_move_line(
         self, balance, account_code=None, tax_tags=None, date="2020-01-01", **kwargs
     ):
@@ -294,7 +293,6 @@ class TestReportEngines(TestAccountReportsCommon):
         self.env["report.formula.external.value"].create(external_values_create_list)
 
         return report
-
 
     def test_engine_tax_tags(self):
         self.env.company.tax_config_id.account_fiscal_country_id = self.fake_country
@@ -1265,7 +1263,6 @@ class TestReportEngines(TestAccountReportsCommon):
                 self._prepare_test_account_move_line(-300.0, account_code="101002"),
             ]
         )
-
 
         def _custom_engine_test(
             expressions,

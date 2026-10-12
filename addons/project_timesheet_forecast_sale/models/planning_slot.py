@@ -10,9 +10,7 @@ class PlanningSlot(models.Model):
     def _init_remaining_hours_to_plan(self, remaining_hours_to_plan):
         res = super()._init_remaining_hours_to_plan(remaining_hours_to_plan)
         if self.project_id and not self.sale_line_id.product_id.planning_enabled:
-            if (
-                self.project_id.allocated_hours == 0
-            ):
+            if self.project_id.allocated_hours == 0:
                 return res
             if self.project_id not in remaining_hours_to_plan:
                 remaining_hours_to_plan[self.project_id] = (
@@ -35,9 +33,7 @@ class PlanningSlot(models.Model):
             remaining_hours_to_plan, values
         )
         if self.project_id and not self.sale_line_id.product_id.planning_enabled:
-            if (
-                self.project_id.allocated_hours == 0
-            ):
+            if self.project_id.allocated_hours == 0:
                 return res
             if (
                 float_compare(

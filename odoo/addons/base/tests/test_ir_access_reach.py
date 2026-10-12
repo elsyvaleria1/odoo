@@ -4,7 +4,6 @@ from odoo.addons.base.models.ir_access_reach import Part, Proposal, propose, pro
 
 
 class TestReachRecognizer(BaseCase):
-
     def assert_converts(self, domain, *parts, kind="permission"):
         proposal = propose(domain, kind)
         self.assertIsNotNone(proposal, domain)

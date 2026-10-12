@@ -103,13 +103,11 @@ class WebsiteTest(Home):
     def test_lang_url(self, **kwargs):
         return request.render("test_website.test_view")
 
-
     @http.route(
         "/test_get_dbname", type="jsonrpc", auth="public", website=True, sitemap=False
     )
     def test_get_dbname(self, **kwargs):
         return request.env.cr.dbname
-
 
     @http.route(
         "/test_error_view", type="http", auth="public", website=True, sitemap=False
@@ -277,7 +275,6 @@ class WebsiteTest(Home):
     )
     def get_post_method_no_multilang(self, **kw):
         return request.prepare_response("get_post_nomultilang")
-
 
     @http.route(
         ["/empty_controller_test"],

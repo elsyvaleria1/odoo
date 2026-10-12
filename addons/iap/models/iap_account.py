@@ -27,9 +27,7 @@ class IapAccount(models.Model):
         required=True,
     )
     service_name = fields.Char(related="service_id.technical_name")
-    service_locked = fields.Boolean(
-        default=False
-    )
+    service_locked = fields.Boolean(default=False)
     description = fields.Char(related="service_id.description")
     credential_id = fields.Many2one(
         comodel_name="credential.credential",
@@ -254,7 +252,6 @@ class IapAccount(models.Model):
         )
         if accounts_without_token:
             with self.pool.cursor() as cr:
-
                 self.env.flush_all()
                 IapAccount = self.with_env(self.env(cr=cr))
                 IapAccount.search(
@@ -294,7 +291,6 @@ class IapAccount(models.Model):
                 )
 
             with self.pool.cursor() as cr:
-
                 self.env.flush_all()
                 IapAccount = self.with_env(self.env(cr=cr))
                 account = IapAccount.search(domain, order="id desc", limit=1)

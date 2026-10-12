@@ -6,7 +6,6 @@ from .common import TelegramBotTestCase
 
 @tagged("post_install", "-at_install")
 class TestBotCompany(TelegramBotTestCase):
-
     OTHER_TOKEN = "223456789:XYZ-DEF1234ghIkl-zyx57W2v1u123ew22"
 
     @classmethod

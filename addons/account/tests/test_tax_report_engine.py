@@ -170,7 +170,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
         cls.move_sale.action_post()
 
-
         cls.none_tax_percentage_incl_2 = cls.env["account.tax"].create(
             {
                 "name": "none_tax_percentage_incl_2",
@@ -258,7 +257,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
         cls.move_purchase.action_post()
-
 
         cls.test_fpos_foreign_partner = cls.env["res.partner"].create(
             {
@@ -710,7 +708,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
     def test_tax_report_grid(self):
         company = self.company_data["company"]
-
 
         tax_report = self.env["report.formula"].create(
             {
@@ -2331,7 +2328,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 "main_company_id": company_1.id,
             }
         )
-
 
         for unit_companies in ((company_1 + company_2), (company_2 + company_1)):
             options = self._generate_options(

@@ -25,7 +25,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
         compute="_compute_use_electronic_payment_method"
     )
 
-
     @api.depends("payment_channel_id")
     def _compute_suitable_payment_token_ids(self) -> None:
         for wizard in self:
@@ -85,7 +84,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
                 continue
             else:
                 wizard.payment_token_id = wizard.suitable_payment_token_ids[:1]
-
 
     def _create_payment_vals_from_wizard(self, batch_result):
         payment_vals = super()._create_payment_vals_from_wizard(batch_result)

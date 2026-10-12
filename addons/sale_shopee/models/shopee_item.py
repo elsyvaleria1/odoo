@@ -43,10 +43,8 @@ class ShopeeItem(models.Model):
         "Item and Model Identifiers must be unique for a given shop.",
     )
 
-
     def action_sync_inventory(self):
         self._sync_inventory()
-
 
     def _sync_inventory(self, auto_commit=True) -> None:
         error_messages = []

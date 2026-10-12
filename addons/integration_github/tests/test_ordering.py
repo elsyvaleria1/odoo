@@ -12,7 +12,6 @@ SHA = "a" * 40
 
 @tagged("post_install", "-at_install")
 class TestDeliveryOrder(TransactionCase):
-
     def _pull(self, updated_at, **pr):
         return self.env["integration.github.pull"]._upsert_from_github(
             REPOSITORY,

@@ -8,7 +8,6 @@ SERVE = "im_livechat_telegram.privilege_serve_customers"
 
 
 class LivechatWebhookCase(LivechatTelegramCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -88,7 +87,6 @@ class LivechatWebhookCase(LivechatTelegramCase):
 
 @tagged("post_install", "-at_install")
 class TestCustomerAuthority(LivechatWebhookCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -191,7 +189,6 @@ class TestChatbotAuthority(LivechatWebhookCase):
 
 @tagged("post_install", "-at_install")
 class TestForwardAuthority(LivechatWebhookCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -243,7 +240,6 @@ class TestForwardAuthority(LivechatWebhookCase):
 
 @tagged("post_install", "-at_install")
 class TestBusinessAuthority(LivechatWebhookCase):
-
     OWNER_ID = 588201
     CUSTOMER_ID = 588202
 

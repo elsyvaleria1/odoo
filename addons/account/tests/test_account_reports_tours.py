@@ -1,4 +1,3 @@
-
 from odoo import fields
 from odoo.tests import tagged
 from odoo.tools import html2plaintext

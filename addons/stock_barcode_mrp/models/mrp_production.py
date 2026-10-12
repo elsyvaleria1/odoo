@@ -207,9 +207,7 @@ class MrpProduction(models.Model):
                         base_domain + [("move_raw_ids.product_id", "=", product.id)]
                     )
                     additional_context["search_default_move_raw_ids"] = barcode
-        if (
-            not barcode_type and not mo_nums
-        ):
+        if not barcode_type and not mo_nums:
             mo_nums = self.search_count(base_domain + [("name", "=", barcode)])
             additional_context["search_default_name"] = barcode
 

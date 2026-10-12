@@ -32,7 +32,6 @@ class TestMACommon(
             }
         )
 
-
     def assertMarketAutoTraces(
         self,
         participants_info,
@@ -87,9 +86,7 @@ class TestMACommon(
         traces_by_res_id = traces.grouped("res_id")
 
         for record in participant_info["records"]:
-            phone_number = numbers.get(
-                record.id, record._phone_get_number().number
-            )
+            phone_number = numbers.get(record.id, record._phone_get_number().number)
             _partner = partners.get(record.id, self.env["res.partner"])
 
             fields_values = {
@@ -123,7 +120,6 @@ class TestMACommon(
                     fields_values=fields_values,
                     mail_message_values=mail_message_values,
                 )
-
 
     @classmethod
     def _create_marketauto_records(cls, model="marketing.test.sms", count=1):

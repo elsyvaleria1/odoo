@@ -102,9 +102,7 @@ class TestProjectTask(TestIndustryFsmCommon):
             },
         )
 
-        self.env.company.report_config_id.external_report_layout_id = (
-            False
-        )
+        self.env.company.report_config_id.external_report_layout_id = False
         action = self.task.action_send_report()
         self.assertEqual(
             action["xml_id"], "web.action_base_document_layout_configurator"

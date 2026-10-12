@@ -120,9 +120,7 @@ class AppointmenHrPerformanceCase(AppointmentHrCommon, AppointmentPerformanceCas
             )
         )
 
-        cls.test_apt_type = cls.env[
-            "appointment.type"
-        ].create(
+        cls.test_apt_type = cls.env["appointment.type"].create(
             {
                 "appointment_tz": "Europe/Brussels",
                 "appointment_duration": 1,

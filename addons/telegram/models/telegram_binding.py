@@ -23,7 +23,6 @@ _REVOKE_REASONS = [
 
 
 class TelegramBinding(models.Model):
-
     _name = "telegram.binding"
     _description = "Telegram Binding"
     _order = "id desc"

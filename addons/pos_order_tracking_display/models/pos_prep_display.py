@@ -19,9 +19,7 @@ class PosPrepDisplay(models.Model):
         self.check_singleton()
         if len(self.stage_ids) <= 1:
             return {"done": [], "notDone": []}
-        last_stage = self.stage_ids[
-            -1
-        ]
+        last_stage = self.stage_ids[-1]
         second_last_stage = self.stage_ids[-2]
 
         orders_completed = set()

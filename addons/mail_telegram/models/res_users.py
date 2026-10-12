@@ -98,7 +98,6 @@ class ResUsers(models.Model):
         notifying = self.env["telegram.bot"]._get_notifying_bots(self)
         return (bots & notifying)[:1] or super()._get_telegram_connect_bot()
 
-
     def _get_telegram_notify_chats(self):
         me = self._telegram_self()
         chats = operating(me.env["telegram.chat"])
@@ -195,7 +194,6 @@ class ResUsers(models.Model):
             return "verify_phone", refusal, chats
         return "refused", refusal, chats
 
-
     def action_telegram_request_phone(self) -> dict | None:
         self.check_singleton()
         me = self._telegram_self()
@@ -222,7 +220,6 @@ class ResUsers(models.Model):
                 ),
             },
         }
-
 
     def _notify_telegram_unreachable(self, chat, reason) -> None:
         self.check_singleton()

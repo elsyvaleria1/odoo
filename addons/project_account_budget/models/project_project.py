@@ -104,7 +104,6 @@ class ProjectProject(models.Model):
             "view_mode": "form",
         }
 
-
     def get_panel_data(self):
         panel_data = super().get_panel_data()
         panel_data["account_id"] = self.account_id.id

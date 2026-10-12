@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class SocialStreamType(models.Model):
-
     _name = "social.stream.type"
     _description = "Social Stream Post"
 

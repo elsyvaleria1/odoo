@@ -85,7 +85,6 @@ def _stream_process() -> typing.Callable[[str], object]:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class ListenerKind:
-
     name: str
     channel: str
     population_setting: str

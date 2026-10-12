@@ -4,7 +4,6 @@ from odoo import api, fields, models
 
 
 class MixinScoreScale(models.AbstractModel):
-
     _name = "mixin.score.scale"
     _inherit = ["mixin.catalog", "mixin.band"]
     _description = "Score Scale Mixin"

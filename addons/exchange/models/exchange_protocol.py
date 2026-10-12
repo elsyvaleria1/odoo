@@ -19,7 +19,6 @@ class ExchangeProtocol(models.AbstractModel):
     _document_kinds: dict[str, str] = {}
     _batch_size = 1
 
-
     @api.model
     def _get_protocols(self) -> dict[str, str]:
         protocols: dict[str, str] = {}
@@ -94,7 +93,6 @@ class ExchangeProtocol(models.AbstractModel):
                 f"Known codes: {sorted(self._get_protocols())}",
             )
         return self.env[model_name]
-
 
     def _prepare_message(self, transmission) -> Document:
         raise NotImplementedError(

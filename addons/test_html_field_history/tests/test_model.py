@@ -151,7 +151,6 @@ class TestModel(TransactionCase):
 
 @tagged("-at_install", "post_install")
 class TestHistoryRpcGuards(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

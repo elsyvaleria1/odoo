@@ -2,7 +2,6 @@ from odoo import api, models
 
 
 class MixinStudio(models.AbstractModel):
-
     _name = "mixin.studio"
     _description = "Studio Mixin"
 

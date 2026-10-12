@@ -12,7 +12,6 @@ from odoo.addons.mixin_report_sql.models import mixin_materialized_view
 
 
 class MaterializedCase(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -52,7 +51,6 @@ class MaterializedCase(TransactionCase):
 
 
 class TestIntrospection(MaterializedCase):
-
     def setUp(self):
         super().setUp()
         self.env.cr.execute("CREATE SCHEMA IF NOT EXISTS test_bsr_schema")
@@ -70,9 +68,7 @@ class TestIntrospection(MaterializedCase):
         self.assertTrue(self.report._relation_exists(self.table))
 
     def test_relation_exists_is_kind_scoped(self):
-        self.assertFalse(
-            self.report._relation_exists("mixin_report_sql_test_source")
-        )
+        self.assertFalse(self.report._relation_exists("mixin_report_sql_test_source"))
 
     def test_is_populated_returns_bool_for_missing(self):
         result = self.report._is_populated("obviously_missing_relation_xyz")
@@ -96,7 +92,6 @@ class TestIntrospection(MaterializedCase):
 
 
 class TestIndexPlan(MaterializedCase):
-
     def test_unique_index_is_on_the_declared_column(self):
         self.assertEqual(self.report._relation_index_field, "grain")
         self.assertIn(["grain"], self._indexes().values())
@@ -149,7 +144,6 @@ class TestIndexPlan(MaterializedCase):
 
 
 class TestRefresh(MaterializedCase):
-
     def test_refresh_picks_up_new_source_rows(self):
         self._seed("a", 1.0)
         self.assertTrue(self.report.refresh())
@@ -248,7 +242,6 @@ class TestRefresh(MaterializedCase):
 
 
 class TestCreation(MaterializedCase):
-
     def test_query_must_return_sql(self):
         with patch.object(type(self.report), "_query", lambda self: "SELECT 1"):
             with self.assertRaises(TypeError):
@@ -310,7 +303,6 @@ class TestCreation(MaterializedCase):
 
 @tagged("post_install", "-at_install")
 class TestRebuildSkipAndDeferral(MaterializedCase):
-
     def test_init_skips_rebuild_when_definition_unchanged(self):
         self.report.init()
         oid = self._oid()
@@ -382,7 +374,6 @@ class TestRebuildSkipAndDeferral(MaterializedCase):
 
 
 class TestQueryResolution(MaterializedCase):
-
     def test_composed_model_resolves_to_the_registry_builder(self):
         self.assertIsInstance(self.report._query(), SQL)
         self.assertIn("mixin_report_sql_test_source", self.report._query().code)

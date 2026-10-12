@@ -1,10 +1,8 @@
-
 from odoo.tests import common, counting_statements, tagged
 
 
 @tagged("link_tracker", "post_install", "-at_install")
 class TestLinkTrackerCost(common.TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.env["ir.config_parameter"].sudo().set_param(

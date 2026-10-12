@@ -5,7 +5,6 @@ from odoo.db import schema
 _logger = logging.getLogger(__name__)
 
 
-
 def migrate(cr, version):
     if not version or schema.column_exists(cr, "project_task", "date_first_assign"):
         return

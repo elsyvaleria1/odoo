@@ -260,7 +260,6 @@ class TestMrpPlm(TestPlmCommon):
 
     def test_rebase_with_previous_eco_change(self):
 
-
         eco1 = self._create_eco(
             "ECO1", self.bom_table, self.eco_type.id, self.eco_stage.id
         )
@@ -276,17 +275,14 @@ class TestMrpPlm(TestPlmCommon):
         eco2.action_new_revision()
         eco3.action_new_revision()
 
-
         self.assertEqual(eco1.state, "progress", "Wrong state on eco1.")
         self.assertEqual(eco2.state, "progress", "Wrong state on eco2.")
         self.assertEqual(eco3.state, "progress", "Wrong state on eco2.")
-
 
         eco1_new_table_leg = eco1.new_bom_id.bom_line_ids.filtered(
             lambda x: x.product_id == self.table_leg
         )
         eco1_new_table_leg.product_qty = 6
-
 
         eco1.action_apply()
         self.assertEqual(
@@ -302,7 +298,6 @@ class TestMrpPlm(TestPlmCommon):
         self.assertEqual(eco2.state, "rebase", "Wrong state on eco2.")
         self.assertEqual(eco3.state, "rebase", "Wrong state on eco3.")
 
-
         eco2.will_update_version = False
         eco2.apply_rebase()
         self.assertEqual(eco2.state, "progress", "Wrong state on eco2.")
@@ -317,7 +312,6 @@ class TestMrpPlm(TestPlmCommon):
             "Update version was unchecked in eco, rebasing should leave new bom version as BoM revision of Eco1",
         )
 
-
         eco2.new_bom_id.bom_line_ids.create(
             {
                 "product_id": self.table_bolt.id,
@@ -326,7 +320,6 @@ class TestMrpPlm(TestPlmCommon):
             }
         )
         self.assertTrue(eco2.bom_change_ids, "Eco 2 should have BoM change lines.")
-
 
         eco2.action_apply()
 
@@ -343,12 +336,10 @@ class TestMrpPlm(TestPlmCommon):
             "Update version was unchecked in eco, new bom version should still match BoM revision of Eco1",
         )
 
-
         eco3_new_table_leg = eco3.new_bom_id.bom_line_ids.filtered(
             lambda x: x.product_id == self.table_leg
         )
         eco3_new_table_leg.product_qty = 4
-
 
         eco3.apply_rebase()
 
@@ -382,9 +373,7 @@ class TestMrpPlm(TestPlmCommon):
 
         eco1.action_new_revision()
 
-
         self.assertEqual(eco1.state, "progress", "Wrong state on eco1.")
-
 
         op1 = eco1.new_bom_id.operation_ids.filtered(
             lambda x: x.workcenter_id == self.workcenter_1
@@ -401,7 +390,6 @@ class TestMrpPlm(TestPlmCommon):
             op1_change[0].upd_time_cycle_manual, 10.0, "Wrong duration change."
         )
 
-
         op2 = eco1.new_bom_id.operation_ids.filtered(
             lambda x: x.workcenter_id == self.workcenter_2
         )
@@ -413,7 +401,6 @@ class TestMrpPlm(TestPlmCommon):
         self.assertEqual(
             op2_change.change_type, "remove", "Wrong type on operation change line."
         )
-
 
         eco1.new_bom_id.operation_ids.create(
             {

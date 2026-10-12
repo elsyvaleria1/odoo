@@ -6,7 +6,6 @@ from odoo.addons.approval.tests.common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestLifecycleGate(ApprovalCommon):
-
     def setUp(self):
         super().setUp()
         self.category = self._make_category(

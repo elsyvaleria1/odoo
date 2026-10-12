@@ -18,7 +18,6 @@ class MixinMailThread(models.AbstractModel):
         classification="base.internal",
     )
 
-
     def unlink(self):
         record_ids = self.ids
         result = super().unlink()
@@ -33,7 +32,6 @@ class MixinMailThread(models.AbstractModel):
     def _get_message_create_ignore_field_names(self):
         return super()._get_message_create_ignore_field_names() | {"rating_id"}
 
-
     def _rating_apply_get_default_subtype_id(self):
         return self.env["ir.model.data"]._xmlid_to_res_id("mail.mt_comment")
 
@@ -46,7 +44,6 @@ class MixinMailThread(models.AbstractModel):
         if "partner_id" in self and self.partner_id:
             return self.partner_id
         return self.env["res.partner"]
-
 
     def _rating_get_access_token(self, partner=None):
         self.check_access("read")
@@ -78,7 +75,6 @@ class MixinMailThread(models.AbstractModel):
                 )
             )
         return rating.access_token or rating._issue_link()
-
 
     def rating_send_request(self, template, lang=False, force_send=True) -> None:
         if lang:
@@ -141,8 +137,7 @@ class MixinMailThread(models.AbstractModel):
                 )
             else:
                 self.message_post(
-                    author_id=rating.partner_id.id
-                    or None,
+                    author_id=rating.partner_id.id or None,
                     body=rating_body,
                     rating_id=rating.id,
                     scheduled_date=scheduled_datetime,

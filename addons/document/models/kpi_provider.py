@@ -11,7 +11,6 @@ INBOX_KPI_LABEL = _lt("Inbox")
 
 
 class KpiProvider(models.AbstractModel):
-
     _inherit = "kpi.provider"
 
     @api.model

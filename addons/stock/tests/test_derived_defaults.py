@@ -11,7 +11,6 @@ RECOMPUTE_DRIFT_ALLOWED = {
 
 @tagged("post_install", "-at_install")
 class TestDerivedDefaults(TestStockCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -35,7 +34,6 @@ class TestDerivedDefaults(TestStockCommon):
         record.check_singleton()
         self._force_recompute(record, field_name)
         return record[field_name]
-
 
     def test_a_no_op_code_write_keeps_a_multi_step_warehouse_intact(self):
         before = {
@@ -99,7 +97,6 @@ class TestDerivedDefaults(TestStockCommon):
             "an outgoing type delivers to a customer location",
         )
         self.assertEqual(self.pack_type.default_location_src_id, source)
-
 
     def test_a_picking_state_follows_the_usage_of_its_source_location(self):
         source = self.StockLocationObj.create(
@@ -239,7 +236,6 @@ class TestDerivedDefaults(TestStockCommon):
             "the scrap did not follow the transfer's source location",
         )
 
-
     def test_a_copied_move_without_an_explicit_type_derives_its_locations(self):
         move = self.MoveObj.create(
             {
@@ -260,7 +256,6 @@ class TestDerivedDefaults(TestStockCommon):
         self.assertEqual(copied.picking_type_id, move.picking_type_id)
         self.assertEqual(copied.location_id, move.location_id)
         self.assertEqual(copied.location_dest_id, move.location_dest_id)
-
 
     def _build_sweep_fixture(self):
         product = self.env["product.product"].create(
@@ -358,7 +353,6 @@ class TestDerivedDefaults(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestConstraintTriggers(TestStockCommon):
-
     def _assert_refused(self, message, write):
         with self.assertRaises(ValidationError, msg=message):
             write()
@@ -441,7 +435,6 @@ class TestConstraintTriggers(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestCategoryRouteInheritance(TestStockCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -541,7 +534,6 @@ class TestCategoryRouteInheritance(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestLotCompanyIsNotDecidedByTheReader(TestStockCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -627,7 +619,6 @@ class TestLotCompanyIsNotDecidedByTheReader(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestEditableDefaultsSurviveANoOpTrigger(TestStockCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -706,7 +697,6 @@ class TestEditableDefaultsSurviveANoOpTrigger(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestARerateDoesNotRewriteHistory(TestStockCommon):
-
     def test_a_done_move_keeps_the_quantity_it_recorded(self):
         unit = self.env.ref("base.product_uom_unit")
         box = self.env["uom.uom"].create(
@@ -799,7 +789,6 @@ class TestARerateDoesNotRewriteHistory(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestBatchIsCompanyScoped(TransactionCase):
-
     def test_a_user_of_one_company_cannot_see_anothers_batches(self):
         env = self.env
         co_a, co_b = env["res.company"].create(
@@ -867,7 +856,6 @@ class TestBatchIsCompanyScoped(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestGatherPathsAgree(TestStockCommon):
-
     def test_the_cached_and_searched_paths_return_the_same_quants(self):
         Quant = self.StockQuantObj
         stock = self.stock_location
@@ -948,7 +936,6 @@ class TestGatherPathsAgree(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestANoOpWriteOfQuantityMovesNoStock(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1037,7 +1024,6 @@ class TestANoOpWriteOfQuantityMovesNoStock(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestApplyingACountLandsOnIt(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1085,7 +1071,6 @@ class TestApplyingACountLandsOnIt(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSplittingAMoveCannotAlwaysConserve(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1152,7 +1137,6 @@ class TestSplittingAMoveCannotAlwaysConserve(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestReservationAgreesWithTheQuant(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

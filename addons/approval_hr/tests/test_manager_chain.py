@@ -3,7 +3,6 @@ from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestManagerChain(TransactionCase):
-
     def _employee(self, login, parent=None):
         user = new_test_user(self.env, login=login, groups="base.group_user")
         return self.env["hr.employee"].create(

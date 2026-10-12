@@ -5,7 +5,6 @@ from odoo.tests.common import HttpCase
 
 @tagged("post_install", "-at_install")
 class TestSubtitleRoutes(HttpCase):
-
     def setUp(self):
         super().setUp()
         self.recording = self.env["ir.attachment"].create(

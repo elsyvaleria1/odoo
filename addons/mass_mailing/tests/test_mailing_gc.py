@@ -9,7 +9,6 @@ from odoo.addons.mass_mailing.tests.common import MassMailCommon
 
 @tagged("mail_mail", "post_install", "-at_install")
 class TestGcCanceledMailMail(MassMailCommon):
-
     def setUp(self):
         super().setUp()
         self.icp = self.env["ir.config_parameter"].sudo()

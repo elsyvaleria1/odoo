@@ -4,7 +4,6 @@ from odoo.tests.common import TransactionCase
 
 @tests.tagged("post_install", "-at_install")
 class TestContractTemplateWhitelist(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

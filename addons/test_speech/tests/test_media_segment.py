@@ -144,7 +144,6 @@ class TestSegmentOwnership(SpeechCase):
 
 
 class TestTheMixinDoesNotSquatAConsumersFieldNames(SpeechCase):
-
     def _owner_with_its_own_transcript(self):
         return self.env["speech.test.call.with.own.transcript"].create({})
 

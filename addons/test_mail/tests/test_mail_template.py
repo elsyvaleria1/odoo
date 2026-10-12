@@ -536,7 +536,6 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
 
 @tagged("mail_template")
 class TestMailTemplateSaveGate(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -674,7 +673,6 @@ class TestMailTemplateSaveGate(MailCommon):
 
 @tagged("mail_template")
 class TestMailTemplateFieldLists(MailCommon):
-
     def test_the_lists_hold_their_invariants(self):
         template_fields = self.env["mail.template"]._fields
         rendered_types = {

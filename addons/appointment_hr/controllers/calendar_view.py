@@ -4,7 +4,6 @@ from odoo.addons.calendar.controllers.booking_calendar_view import (
 
 
 class AppointmentHRCalendarView(AppointmentCalendarView):
-
     @classmethod
     def _prepare_appointment_type_anytime_values(cls, user):
         appt_type_vals = super()._prepare_appointment_type_anytime_values(user)

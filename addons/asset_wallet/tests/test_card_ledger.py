@@ -6,7 +6,6 @@ from odoo.addons.asset_ledger.tests.common import create_test_template
 
 @tagged("post_install", "-at_install")
 class TestCardLedger(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

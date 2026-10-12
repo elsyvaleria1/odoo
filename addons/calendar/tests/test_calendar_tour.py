@@ -74,6 +74,4 @@ class TestCalendarTours(HttpCaseWithUserDemo):
         attendee = self.env["calendar.attendee"].search(
             [("event_id", "=", event.id), ("partner_id", "=", user_demo.partner_id.id)]
         )
-        self.assertEqual(
-            attendee.state, "declined"
-        )
+        self.assertEqual(attendee.state, "declined")

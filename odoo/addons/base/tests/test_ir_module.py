@@ -1041,7 +1041,6 @@ class IrModuleStableCacheCase(TransactionCase):
 
 
 class IrModuleUpgradeCascadeOverrideCase(TransactionCase):
-
     def _cascade(self, requested, stamped, data_files):
         Module = self.env["ir.module.module"]
         modules = {}

@@ -5,7 +5,6 @@ MODEL = "res.partner.industry"
 
 @tagged("post_install", "-at_install")
 class TestStoredAccessDomainsResolve(TransactionCase):
-
     def _row(self, domain):
         row = self.env["ir.access"].create(
             {

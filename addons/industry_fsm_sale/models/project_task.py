@@ -241,9 +241,7 @@ class ProjectTask(models.Model):
             is_not_timesheet_line = (
                 sale_line_id.product_id != task.sudo().timesheet_product_id
             )
-            if (
-                employee_mapping_product_ids
-            ):
+            if employee_mapping_product_ids:
                 is_not_timesheet_line = (
                     is_not_timesheet_line
                     and sale_line_id.product_id.id not in employee_mapping_product_ids
@@ -815,9 +813,7 @@ class ProjectTask(models.Model):
             sols_by_product_and_price_dict = defaultdict(
                 lambda: self.env["sale.order.line"]
             )
-            for sol in (
-                existing_service_sols
-            ):
+            for sol in existing_service_sols:
                 sols_by_product_and_price_dict.setdefault(
                     (sol.product_id.id, sol.price_unit), sol
                 )
@@ -825,9 +821,7 @@ class ProjectTask(models.Model):
             task_values = defaultdict()
             update_timesheet_commands = []
 
-            if (
-                not sol_in_task and sols_by_product_and_price_dict
-            ):
+            if not sol_in_task and sols_by_product_and_price_dict:
                 sol = sols_by_product_and_price_dict.get(
                     (
                         self.project_id.timesheet_product_id.id,

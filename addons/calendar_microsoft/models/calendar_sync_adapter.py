@@ -90,7 +90,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             return None
         return self._remote(MicrosoftEvent(values))
 
-
     @api.model
     def _insert(self, account, record, values, insert_id):
         event = self._service().insert(
@@ -164,7 +163,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             kind = ErrorKind.TRANSIENT
         return CalendarSyncError(kind, message)
 
-
     @api.model
     def _synced_fields(self, model_name):
         return frozenset(self.env[model_name]._get_fields_microsoft_synced())
@@ -182,7 +180,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             record._get_fields_microsoft_synced(),
             series_master_id=own.remote_master_id,
         )
-
 
     @api.model
     def _odoo_values(self, remote, model_name, record):

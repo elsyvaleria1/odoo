@@ -13,18 +13,14 @@ from odoo.addons.payment_asiapay.tests.common import AsiaPayCommon
 
 @tagged("post_install", "-at_install")
 class TestPaymentTransaction(AsiaPayCommon, PaymentHttpCommon):
-    @freeze_time(
-        "2011-11-02 12:00:21"
-    )
+    @freeze_time("2011-11-02 12:00:21")
     def test_reference_is_singularized(self):
         reference = self.env["payment.transaction"]._get_unique_reference(
             self.asiapay.code
         )
         self.assertEqual(reference, "tx-20111102120021")
 
-    @freeze_time(
-        "2011-11-02 12:00:21"
-    )
+    @freeze_time("2011-11-02 12:00:21")
     def test_reference_is_computed_based_on_document_name(self):
         self._skip_if_account_payment_is_not_installed()
         company = self.env.company
@@ -62,9 +58,7 @@ class TestPaymentTransaction(AsiaPayCommon, PaymentHttpCommon):
         )
         self.assertEqual(reference, "MISC/2011/11/0001-20111102120021")
 
-    @freeze_time(
-        "2011-11-02 12:00:21"
-    )
+    @freeze_time("2011-11-02 12:00:21")
     def test_reference_is_stripped_at_max_length(self):
         reference = self.env["payment.transaction"]._get_unique_reference(
             self.asiapay.code,

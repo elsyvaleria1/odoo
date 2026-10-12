@@ -17,7 +17,6 @@ IOT_LOG_TO_SERVER_CONFIG_NAME = "iot_log_to_server"
 
 
 class AsyncHTTPHandler(logging.Handler):
-
     _MAX_QUEUE_SIZE = 1000
     """Maximum queue size. If a log record is received but the queue if full it will be discarded"""
     _MAX_BATCH_SIZE = 50
@@ -53,9 +52,7 @@ class AsyncHTTPHandler(logging.Handler):
 
     def _periodic_flush(self) -> None:
         odoo_session = requests.Session()  # noqa: E8518 -- runs on the IoT box, which has no database and so no ir.egress
-        while (
-            self._odoo_server_url and self._active
-        ):
+        while self._odoo_server_url and self._active:
             time.sleep(self._FLUSH_INTERVAL)
             self._flush_logs(odoo_session)
 
@@ -83,9 +80,7 @@ class AsyncHTTPHandler(logging.Handler):
                     f"{queue_size}/{self._MAX_QUEUE_SIZE} "
                     f"({100 * queue_size / self._MAX_QUEUE_SIZE:.2f}%)"
                 )
-                _logger.warning(
-                    log_message
-                )
+                _logger.warning(log_message)
                 yield convert_server_line(logging.WARNING, log_message)
 
         queue_size = self._log_queue.qsize()

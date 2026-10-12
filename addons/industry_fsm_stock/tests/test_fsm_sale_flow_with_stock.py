@@ -8,7 +8,6 @@ from odoo.addons.industry_fsm_sale.tests.common import TestFsmFlowSaleCommon
 
 @tagged("-at_install", "post_install")
 class TestFsmFlowSaleWithStock(TestFsmFlowSaleCommon):
-
     def test_fsm_flow(self):
         self.assertFalse(
             self.task.material_line_product_count,

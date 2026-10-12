@@ -84,9 +84,7 @@ class ResCompany(models.Model):
     def _get_active_peppol_parent_company(self):
         self.check_singleton()
 
-        for parent_company in self.sudo().parent_ids[::-1][
-            1:
-        ]:
+        for parent_company in self.sudo().parent_ids[::-1][1:]:
             if parent_company.sudo().account_peppol_config_id.peppol_can_send:
                 return parent_company
 

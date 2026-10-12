@@ -164,7 +164,6 @@ class TestEventData(TestEventInternalsCommon):
     def test_event_configuration_from_type(self):
         self.assertEqual(self.env.user.tz, "Europe/Brussels")
 
-
         event_type = self.env["event.type"].browse(self.event_type_complex.id)
 
         event = self.env["event.event"].create(
@@ -185,7 +184,6 @@ class TestEventData(TestEventInternalsCommon):
         self.assertEqual(event.event_ticket_ids, self.env["event.event.ticket"])
 
         self._create_registrations(event, 1)
-
 
         event_type.write(
             {
@@ -363,9 +361,7 @@ class TestEventData(TestEventInternalsCommon):
                 {"title": "Event Type 1 Question"},
                 {"title": "Event Type 1 Removed Question"},
                 {"title": "Event Type 2 Question"},
-                {
-                    "title": "Event Type Common Question"
-                },
+                {"title": "Event Type Common Question"},
             ]
         )
         event_type_1_questions = (
@@ -921,7 +917,6 @@ class TestEventData(TestEventInternalsCommon):
         self.assertEqual(event.seats_used, 1)
         self.assertEqual(event.seats_taken, 6)
 
-
         reg_open.action_archive()
         self.assertEqual(event.seats_reserved, 4)
         self.assertEqual(event.seats_available, event.event_type_id.seats_max - 5)
@@ -1370,7 +1365,6 @@ class TestEventTicketData(TestEventInternalsCommon):
         self.assertFalse(second_ticket.sale_available)
         self.assertTrue(second_ticket.is_expired)
 
-
         reg_draft_multiple = self.env["event.registration"].create(
             [
                 {
@@ -1426,7 +1420,6 @@ class TestEventTicketData(TestEventInternalsCommon):
 
         with self.assertRaises(exceptions.ValidationError):
             reg_open.action_unarchive()
-
 
         self.assertEqual(event.seats_available, 0)
         with self.assertRaises(exceptions.ValidationError):

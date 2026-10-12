@@ -240,9 +240,7 @@ class CardCampaign(models.Model):
                     {
                         "url": vals.get("target_url")
                         or self.env["card.campaign"].get_base_url(),
-                        "title": vals[
-                            "name"
-                        ],
+                        "title": vals["name"],
                         "source_id": utm_source.id if utm_source else None,
                         "label": f"marketing_card_campaign_{vals.get('name', '')}_{fields.Datetime.now()}",
                     }
@@ -427,7 +425,6 @@ class CardCampaign(models.Model):
 </div></div></div></div>
 """
 
-
     def _get_image_b64(self, record):
         if not self.card_template_id.body:
             return ""
@@ -450,7 +447,6 @@ class CardCampaign(models.Model):
                 )
             )
         return image_bytes and base64.b64encode(image_bytes)
-
 
     def _update_cards(self, domain, auto_commit=False):
         self.check_singleton()
@@ -508,7 +504,6 @@ class CardCampaign(models.Model):
             [("campaign_id", "=", self.id), ("res_id", "=", res_id)]
         )
         return (card and card._get_path(suffix)) or self.target_url
-
 
     @api.depends("res_model")
     def _compute_render_model(self) -> None:

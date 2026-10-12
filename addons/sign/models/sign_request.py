@@ -977,7 +977,6 @@ class SignRequest(models.Model):
         )
         sign_request.unlink()
 
-
     def _get_user_formatted_datetime(self, datetime_val):
         return format_datetime(
             self.env, datetime_val, tz="UTC", lang_code=self.create_uid.lang
@@ -1090,7 +1089,6 @@ class SignRequest(models.Model):
 
     def _get_signing_field_name(self) -> str:
         return self.env.company.name
-
 
     def _message_send_mail(
         self,

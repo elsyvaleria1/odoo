@@ -17,7 +17,6 @@ ROW_CELLS = [
 
 @tagged("post_install", "-at_install")
 class TestExpenseVerbs(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

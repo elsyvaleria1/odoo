@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class EventRegistrationAnswer(models.Model):
-
     _name = "event.registration.answer"
     _description = "Event Registration Answer"
     _rec_names_search = ["value_answer_id", "value_text_box"]

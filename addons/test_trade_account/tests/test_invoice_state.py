@@ -5,7 +5,6 @@ from odoo.addons.test_trade.tests.common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestInvoiceState(TestTradeOrderCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -19,7 +18,6 @@ class TestInvoiceState(TestTradeOrderCase):
             qty_invoiced_draft_input=drafted,
             **kw,
         )
-
 
     def test_nothing_invoiced_is_to_do(self):
         self.assertEqual(self._line(invoiced=0.0).invoice_state, "to do")
@@ -79,7 +77,6 @@ class TestInvoiceState(TestTradeOrderCase):
         line = self._line(invoiced=0.0, qty=10.0)
 
         self.assertEqual(line.invoice_state, "to do")
-
 
     def test_a_draft_order_reports_nothing_to_invoice(self):
         order = self._make_order()

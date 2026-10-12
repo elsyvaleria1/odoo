@@ -571,9 +571,7 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             self.subscription._compute_pricelist_id()
             upsell_so._compute_pricelist_id()
             first_line_id.product_id = self.product
-            upsell_so.line_ids[0].price_unit = (
-                parent_line_id.price_unit + 0.004
-            )
+            upsell_so.line_ids[0].price_unit = parent_line_id.price_unit + 0.004
             self.assertEqual(
                 upsell_so.line_ids[0].parent_line_id,
                 parent_line_id,
@@ -703,9 +701,7 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             action = renewal_so.prepare_upsell_order()
             upsell_so = self.env["sale.order"].browse(action["res_id"])
             upsell_so.line_ids.filtered(lambda l: not l.display_type).product_qty = 1
-            renewal_so_2.next_invoice_date += relativedelta(
-                days=1
-            )
+            renewal_so_2.next_invoice_date += relativedelta(days=1)
             action = renewal_so_2.prepare_upsell_order()
             upsell_so_2 = self.env["sale.order"].browse(action["res_id"])
             upsell_so_2.line_ids.filtered(lambda l: not l.display_type).product_qty = 1

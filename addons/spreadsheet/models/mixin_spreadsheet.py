@@ -87,9 +87,7 @@ class MixinSpreadsheet(models.AbstractModel):
                     continue
                 for field_chain in field_chains:
                     field_model = model
-                    for fname in field_chain.split(
-                        "."
-                    ):
+                    for fname in field_chain.split("."):
                         if fname not in self.env[field_model]._fields:
                             errors.append(
                                 f"- field '{fname}' used in spreadsheet '{display_name}' does not exist on model '{field_model}'"

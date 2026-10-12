@@ -347,17 +347,13 @@ class PosOrder(models.Model):
                 if order.pdis_general_customer_note != general_customer_note:
                     order.pdis_general_customer_note = general_customer_note or ""
                     flag_change = True
-                    category_ids.update(
-                        pdis_lines[0].product_id.pos_categ_ids.ids
-                    )
+                    category_ids.update(pdis_lines[0].product_id.pos_categ_ids.ids)
         if internal_note is not None:
             for order in pdis_order:
                 if order.pdis_internal_note != internal_note:
                     order.pdis_internal_note = internal_note or "[]"
                     flag_change = True
-                    category_ids.update(
-                        pdis_lines[0].product_id.pos_categ_ids.ids
-                    )
+                    category_ids.update(pdis_lines[0].product_id.pos_categ_ids.ids)
 
         return {
             "change": flag_change,

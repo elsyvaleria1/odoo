@@ -315,7 +315,6 @@ class TestPartnerAgeRange(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPartnerAgeRangeScale(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -487,7 +486,6 @@ class TestPartnerAgeRangeScale(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPartnerAgeRangeClassificationRights(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

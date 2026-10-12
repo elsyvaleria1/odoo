@@ -5,7 +5,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 @tagged("post_install", "-at_install")
 class TestSetupBankManualConfigWizard(AccountTestInvoicingCommon):
-
     def _neutralize_other_bank_journal_candidates(self):
         wiz_new = self.env["wizard.res.partner.bank.account.create"].new({})
         domain = wiz_new._get_domain_unlinked_journal("bank")

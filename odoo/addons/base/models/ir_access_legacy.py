@@ -88,7 +88,6 @@ _CEILING_PREDICATE = "base.access_predicate_conditional_reach"
 
 @dataclass(slots=True)
 class LegacySources:
-
     lines: list[dict[str, Any]] = field(default_factory=list)
     rules: list[dict[str, Any]] = field(default_factory=list)
 

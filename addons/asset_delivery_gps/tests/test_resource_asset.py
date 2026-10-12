@@ -94,7 +94,6 @@ class TestResourceAssetGpsFreshness(GpsBridgeCase):
 
 
 class TestResourceAssetTripReadingAge(GpsBridgeCase):
-
     def test_an_odometer_older_than_two_hours_is_not_a_trip_reading(self):
         self.device.log_gps_last_id = self.gps_log(
             12000.0, minutes_ago=150, fuel_level=61.0

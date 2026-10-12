@@ -11,7 +11,6 @@ from .ir_attachment import get_cloud_storage_google_credential
 
 
 class ResConfigSettings(models.TransientModel):
-
     _inherit = "res.config.settings"
 
     cloud_storage_provider = fields.Selection(

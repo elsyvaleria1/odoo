@@ -5,7 +5,6 @@ OPEN_STATES = ("draft", "submitted")
 
 
 class StockDeliverySlipReceipt(models.Model):
-
     _name = "stock.delivery.slip.receipt"
     _description = "Signed Delivery Slip Receipt"
     _inherit = ["mixin.mail.thread"]

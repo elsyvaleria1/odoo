@@ -151,7 +151,6 @@ class TestPortalControllers(TestPortal):
 
 @tagged("-at_install", "post_install", "portal", "mail_controller")
 class TestPortalFlow(MailCommon, HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

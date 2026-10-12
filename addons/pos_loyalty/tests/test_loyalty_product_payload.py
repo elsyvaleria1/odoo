@@ -8,7 +8,6 @@ from odoo.addons.point_of_sale.tests.common import CommonPosTest
 
 @tagged("post_install", "-at_install")
 class TestPosLoyaltyProductPayload(CommonPosTest):
-
     def setUp(self):
         super().setUp()
         self.config = self.pos_config_usd

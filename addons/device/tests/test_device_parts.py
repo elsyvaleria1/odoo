@@ -10,7 +10,6 @@ from .common import DeviceFixtureMixin
 
 @tagged("post_install", "-at_install")
 class TestDeviceParts(TransactionCase, DeviceFixtureMixin):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -46,7 +46,6 @@ class PlanningSlot(models.Model):
             if not slot.sale_line_id and slot.project_id:
                 slot.sale_line_id = slot.project_id.sale_line_id
 
-
     def _display_name_fields(self):
         display_name_fields = [
             item
@@ -54,7 +53,6 @@ class PlanningSlot(models.Model):
             if item not in ["sale_line_id", "project_id"]
         ]
         return display_name_fields + ["project_id", "sale_line_id"]
-
 
     def _get_domain_shifts_to_plan(self, view_domain=None):
         domain = super()._get_domain_shifts_to_plan(view_domain)

@@ -62,9 +62,7 @@ class EventManager:
                 and not self.sessions[session]["event"].is_set()
             ):
                 if device.device_type in session_devices:
-                    event["device_identifier"] = (
-                        device.device_type
-                    )
+                    event["device_identifier"] = device.device_type
                 self.sessions[session]["result"] = event
                 self.sessions[session]["event"].set()
 

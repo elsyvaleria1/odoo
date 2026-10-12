@@ -10,7 +10,6 @@ _logger = getLogger(__name__)
 
 
 class AiLlmTransport(models.AbstractModel):
-
     _name = "ai.llm.transport"
     _description = "AI Provider Transport"
 

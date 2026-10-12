@@ -5,7 +5,6 @@ from .common import TestPayslipBase
 
 @tagged("post_install", "-at_install")
 class TestPayslipLineReport(TestPayslipBase):
-
     def test_group_payslip_lines_by_structure(self):
         payslip = self.env["hr.payslip"].create(
             {

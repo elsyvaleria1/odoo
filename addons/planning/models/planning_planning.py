@@ -86,7 +86,6 @@ class PlanningPlanning(models.Model):
             self.company_id.planning_employee_unavailabilities == "unassign"
         )
 
-
     def _is_slot_in_planning(self, slot_sudo) -> bool:
         return bool(
             self

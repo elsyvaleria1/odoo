@@ -33,7 +33,6 @@ SUPPLEMENTARY_UNITS = [
 
 
 class AccountIntrastatCode(models.Model):
-
     _name = "account.intrastat.code"
     _description = "Intrastat Code"
     _translate = False

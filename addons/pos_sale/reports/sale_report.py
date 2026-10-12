@@ -37,7 +37,6 @@ class SaleReport(models.Model):
         }
     )
 
-
     order_reference = fields.Reference(
         selection_add=[("pos.order", "POS Order")],
     )
@@ -49,13 +48,11 @@ class SaleReport(models.Model):
         ]
     )
 
-
     @api.model
     def _get_done_states(self):
         done_states = super()._get_done_states()
         done_states.extend(["paid", "invoiced", "posted"])
         return done_states
-
 
     @property
     def _table_query(self) -> SQL:
@@ -75,7 +72,6 @@ class SaleReport(models.Model):
         )
 
         return SQL("( %s ) UNION ALL ( %s )", sale_query, pos_query)
-
 
     def _select_pos(self) -> SQL:
         fields = self._get_fields_pos_select()
@@ -127,7 +123,6 @@ class SaleReport(models.Model):
     def _group_by_pos(self) -> SQL:
         fields = self._get_fields_pos_group_by()
         return SQL(",\n    ").join([SQL(field) for field in fields])
-
 
     def _get_fields_pos_select(self) -> dict:
         currency_rate_pos = self._case_value_or_one("pos.currency_rate")

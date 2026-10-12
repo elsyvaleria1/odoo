@@ -7,7 +7,6 @@ from odoo.addons.test_trade.tests.common import TestTradeOrderCase
 
 @tagged("post_install", "-at_install")
 class TestLineMatch(TestTradeOrderCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -65,7 +64,6 @@ class TestLineMatch(TestTradeOrderCase):
             domain = [("account_move_id", "=", move.id)]
         return Match.search(domain)
 
-
     def test_the_view_carries_both_sides(self):
         order = self._confirmed_order((self.product, 5.0, 10.0))
         move = self._invoice((self.product, 5.0, 10.0))
@@ -92,7 +90,6 @@ class TestLineMatch(TestTradeOrderCase):
         remaining = self._rows(move=move)
 
         self.assertFalse(remaining.filtered("aml_id"))
-
 
     def test_matching_links_the_invoice_line_to_the_order_line(self):
         order = self._confirmed_order((self.product, 5.0, 10.0))
@@ -153,7 +150,6 @@ class TestLineMatch(TestTradeOrderCase):
 
         self.assertEqual(action["res_model"], "account.move")
 
-
     def test_an_unmatched_order_line_is_added_to_the_invoice(self):
         order = self._confirmed_order(
             (self.product, 1.0, 10.0),
@@ -181,7 +177,6 @@ class TestLineMatch(TestTradeOrderCase):
         self.env.invalidate_all()
 
         self.assertNotIn(self.other_product, move.invoice_line_ids.product_id)
-
 
     def test_opening_a_row_goes_to_the_document_it_came_from(self):
         order = self._confirmed_order((self.product, 5.0, 10.0))

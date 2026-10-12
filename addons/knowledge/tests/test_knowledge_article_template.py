@@ -184,7 +184,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
 
         self.article.apply_template(self.template.id, skip_body_update=False)
 
-
         self.assertEqual(self.article.body, Markup("<p>Lorem ipsum dolor sit amet</p>"))
         self.assertEqual(self.article.icon, self.template.icon)
         self.assertEqual(len(self.article.child_ids), 2)
@@ -204,7 +203,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
                 }
             ],
         )
-
 
         fragment = html.fragment_fromstring(child_article_1.body, create_parent="div")
         embedded_views = list(fragment.xpath("//*[@data-embedded='view']"))
@@ -290,13 +288,11 @@ class TestKnowledgeArticleTemplate(HttpCase):
         article = self.env["knowledge.article"].create({"name": "My Article"})
         self.assertFalse(article.origin_template_id)
 
-
         suggested_templates = article.get_suggested_templates()
         self.assertFalse(suggested_templates)
 
         article.apply_template(self.template.id)
         self.assertEqual(article.origin_template_id, self.template)
-
 
         suggested_templates = article.get_suggested_templates()
         self.assertEqual(
@@ -385,7 +381,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
             {"name": "New Category"}
         )
 
-
         self.child_template_1.write({"template_category_id": new_category.id})
         self.assertEqual(self.template.template_category_id, self.personal_category)
         self.assertEqual(
@@ -406,7 +401,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
         self.assertEqual(
             self.child_template_2.template_category_id, self.personal_category
         )
-
 
         self.template.write({"template_category_id": new_category.id})
         self.assertEqual(self.template.template_category_id, new_category)

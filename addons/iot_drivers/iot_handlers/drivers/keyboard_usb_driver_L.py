@@ -27,7 +27,6 @@ xlib = ctypes.cdll.LoadLibrary("libX11.so.6")
 
 
 class KeyboardUSBDriver(Driver):
-
     connection_type = "usb"
     keyboard_layout_groups = []
     available_layouts = []

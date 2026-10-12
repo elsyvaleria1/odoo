@@ -51,7 +51,6 @@ class PaymentProvider(models.Model):
         help="The secure hash function associated to your AsiaPay account.",
     )
 
-
     @api.constrains("available_currency_ids", "state")
     def _check_available_currency_ids(self) -> None:
         super()._check_available_currency_ids()
@@ -74,13 +73,11 @@ class PaymentProvider(models.Model):
                     )
                 )
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
         if self.code != "asiapay":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def _asiapay_get_api_url(self):
         self.check_singleton()

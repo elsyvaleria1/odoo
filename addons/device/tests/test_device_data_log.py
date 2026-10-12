@@ -435,7 +435,6 @@ class TestRawPayloadRetention(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLogMixinApiIsGeneric(DeviceTransactionCase):
-
     def _models_inheriting_the_log_mixin(self):
         return sorted(
             name
@@ -463,7 +462,6 @@ class TestLogMixinApiIsGeneric(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLogIndexes(DeviceTransactionCase):
-
     def _indexes(self, table):
         self.env.cr.execute(
             "SELECT indexname FROM pg_indexes WHERE tablename = %s", (table,)

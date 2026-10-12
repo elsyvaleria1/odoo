@@ -5,7 +5,6 @@ from odoo.tools import frozendict
 
 
 class PlanningCalendarResource(models.Model):
-
     _name = "planning.calendar.resource"
     _description = "planning calendar resource"
     _access_anchors = frozendict(

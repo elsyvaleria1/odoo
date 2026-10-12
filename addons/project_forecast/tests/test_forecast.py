@@ -23,9 +23,7 @@ class TestForecastCreationAndEditing(TestCommonForecast):
             {
                 "project_id": cls.project_opera.id,
                 "resource_id": cls.employee_bert.resource_id.id,
-                "start_datetime": datetime(
-                    2019, 6, 6, 8, 0, 0
-                ),
+                "start_datetime": datetime(2019, 6, 6, 8, 0, 0),
                 "end_datetime": datetime(2019, 6, 6, 17, 0, 0),
             }
         )
@@ -43,9 +41,7 @@ class TestForecastCreationAndEditing(TestCommonForecast):
         values = {
             "allocated_percentage": 100,
             "start_datetime": datetime(2019, 6, 2, 8, 0, 0),
-            "end_datetime": datetime(
-                2019, 6, 2, 17, 0, 0
-            ),
+            "end_datetime": datetime(2019, 6, 2, 17, 0, 0),
         }
         self.slot.write(values)
 
@@ -58,9 +54,7 @@ class TestForecastCreationAndEditing(TestCommonForecast):
         values = {
             "allocated_percentage": 100,
             "start_datetime": datetime(2019, 6, 3, 0, 0, 0),
-            "end_datetime": datetime(
-                2019, 6, 8, 23, 59, 0
-            ),
+            "end_datetime": datetime(2019, 6, 8, 23, 59, 0),
         }
         self.slot.write(values)
 
@@ -86,9 +80,7 @@ class TestForecastCreationAndEditing(TestCommonForecast):
         values = {
             "allocated_percentage": 100,
             "start_datetime": datetime(2019, 6, 2, 8, 0, 0),
-            "end_datetime": datetime(
-                2019, 6, 2, 17, 0, 0
-            ),
+            "end_datetime": datetime(2019, 6, 2, 17, 0, 0),
         }
         self.slot.write(values)
 
@@ -101,9 +93,7 @@ class TestForecastCreationAndEditing(TestCommonForecast):
         values = {
             "allocated_percentage": 100,
             "start_datetime": datetime(2019, 6, 3, 0, 0, 0),
-            "end_datetime": datetime(
-                2019, 6, 8, 23, 0, 0
-            ),
+            "end_datetime": datetime(2019, 6, 8, 23, 0, 0),
         }
         self.slot.write(values)
         self.assertEqual(

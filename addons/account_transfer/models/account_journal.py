@@ -8,9 +8,7 @@ class AccountJournal(models.Model):
 
     @api.ondelete(at_uninstall=True)
     def _unlink_cascade_transfer_model(self) -> None:
-        if self.env.context.get(
-            MODULE_UNINSTALL_FLAG
-        ):
+        if self.env.context.get(MODULE_UNINSTALL_FLAG):
             self.env["account.transfer.model"].search(
                 [("journal_id", "in", self.ids)]
             ).unlink()

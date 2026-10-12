@@ -112,9 +112,7 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
     def test_timezones(self):
         self.employee.version_id.resource_calendar_id.tz = "Asia/Tokyo"
         self.employee.tz = "Asia/Tokyo"
-        monday_morning_tokyo = datetime(
-            2024, 10, 20, 22, 0, 0
-        )
+        monday_morning_tokyo = datetime(2024, 10, 20, 22, 0, 0)
         self.env["hr.attendance"].create(
             {
                 "employee_id": self.employee.id,

@@ -400,9 +400,7 @@ class TestTracking(MailCommon):
 
         self.assertTracking(
             self.record.message_ids,
-            [
-                ("customer_id", "many2one", False, customer)
-            ],
+            [("customer_id", "many2one", False, customer)],
         )
 
     @users("employee")
@@ -458,9 +456,7 @@ class TestTracking(MailCommon):
 
         self.assertTracking(
             self.record.message_ids,
-            [
-                ("container_id", "many2one", False, container)
-            ],
+            [("container_id", "many2one", False, container)],
         )
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
@@ -1592,12 +1588,8 @@ class TestTrackingInternals(MailCommon):
             lambda t: t.field_id.name == "email_from"
         ).sorted("id", reverse=True)
         trackings_all_sorted = [
-            trackings_all.filtered(
-                lambda t: t.field_id.name == "user_id"
-            ),
-            trackings_all.filtered(
-                lambda t: t.field_id.name == "customer_id"
-            ),
+            trackings_all.filtered(lambda t: t.field_id.name == "user_id"),
+            trackings_all.filtered(lambda t: t.field_id.name == "customer_id"),
             *email_from_trackings,
         ]
         fields_info = [
@@ -2084,7 +2076,6 @@ class TestTrackingFieldsOfEveryWriter(MailCommon):
 
 @tagged("mail_track")
 class TestTrackingFieldReadOnSomeRecords(MailCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

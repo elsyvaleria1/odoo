@@ -5,7 +5,6 @@ from odoo import api, fields, models
 
 
 class MailingTrace(models.Model):
-
     _inherit = "mailing.trace"
     CODE_SIZE = 3
 

@@ -14,9 +14,7 @@ from odoo.addons.iot_drivers.iot_handlers.interfaces.SocketInterface import (
 _logger = logging.getLogger(__name__)
 
 
-
 class IngenicoTagType:
-
     def __init__(self, name, tag, tagFormat, tagLen) -> None:
         self.name = name
         self.tag = tag
@@ -37,7 +35,6 @@ class IngenicoTagType:
 
 
 class IngenicoMessage:
-
     _const = type(
         "",
         (),
@@ -134,9 +131,7 @@ class IngenicoMessage:
                 IngenicoTagType("PaperWidth", "4F", "", False),
                 IngenicoTagType("Amount", "50", "i", 4),
                 IngenicoTagType("CurrencyCode", "51", "i", 4),
-                IngenicoTagType(
-                    "CurrencyExponent", "52", "i", 2
-                ),
+                IngenicoTagType("CurrencyExponent", "52", "i", 2),
                 IngenicoTagType("ProgressReportLanguage", "53", "a", 2),
                 IngenicoTagType("TransactionType", "54", "", False),
                 IngenicoTagType("MerchantTransactionReference", "55", "", False),
@@ -177,9 +172,7 @@ class IngenicoMessage:
                 IngenicoTagType("Group_Header", "E1", "GRP", False),
                 IngenicoTagType("Group_Body", "E2", "GRP", False),
                 IngenicoTagType("Group_Footer", "E3", "GRP", False),
-                IngenicoTagType(
-                    "Group_TableRecord", "EF", "REC", False
-                ),
+                IngenicoTagType("Group_TableRecord", "EF", "REC", False),
                 IngenicoTagType("Group_Root", "F0", "GRP", False),
                 IngenicoTagType("TmTransparentMode", "1F01", "", False),
                 IngenicoTagType("TmCardDetectionTimeout", "1F02", "", False),
@@ -196,15 +189,9 @@ class IngenicoMessage:
                 IngenicoTagType("Group_TmTransparentMode", "3F01", "", False),
                 IngenicoTagType("Group_TmUiControl", "3F02", "", False),
                 IngenicoTagType("RebootAndClearType", "C1", "", False),
-                IngenicoTagType(
-                    "SendOrDelete", "C2", "", False
-                ),
-                IngenicoTagType(
-                    "Group_AcquirerList", "E7", "", False
-                ),
-                IngenicoTagType(
-                    "Group_SecuritySchemeList", "BF01", "", False
-                ),
+                IngenicoTagType("SendOrDelete", "C2", "", False),
+                IngenicoTagType("Group_AcquirerList", "E7", "", False),
+                IngenicoTagType("Group_SecuritySchemeList", "BF01", "", False),
                 IngenicoTagType("CardholderLanguage", "DF1A", "", False),
                 IngenicoTagType("Card_Brand_Identifier", "DF5F", "i", 2),
                 IngenicoTagType("SecuritySchemeIdentifier", "DF8204", "", False),

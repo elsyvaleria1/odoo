@@ -5,7 +5,6 @@ from odoo.addons.trade.tools import SALE
 
 
 class TestTradeOrderLineMatch(models.Model):
-
     _name = "test_trade.order.line.match"
     _inherit = ["mixin.order.line.match"]
     _description = "Base Order Test Line & Invoice Line Matching"

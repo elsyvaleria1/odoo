@@ -5,7 +5,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestCheckAccessOverRpc(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -30,7 +29,6 @@ class TestCheckAccessOverRpc(TransactionCase):
 
 
 class TestCompanyDependentRestrictGuard(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -64,7 +62,6 @@ class TestCompanyDependentRestrictGuard(TransactionCase):
 
 
 class TestOne2oneAgainstTheRealIndex(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -119,7 +116,6 @@ class TestOne2oneAgainstTheRealIndex(TransactionCase):
 
 
 class TestMany2oneSortMatchesSql(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -163,7 +159,6 @@ class TestMany2oneSortMatchesSql(TransactionCase):
 
 
 class TestAQueryInADomainIsNotMutated(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

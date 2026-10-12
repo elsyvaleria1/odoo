@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestDeliveryFedexInternal(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.carrier = self.env.ref("delivery_fedex.delivery_carrier_fedex_inter")

@@ -10,7 +10,6 @@ from odoo.libs.json import dumps as json_dumps
 
 
 class ProviderEvents(abc.Set):
-
     def __init__(self, iterable: Iterable[Self | Mapping[str, Any]] = ()) -> None:
         events = {}
         for item in iterable:

@@ -1,4 +1,3 @@
-
 from collections import defaultdict
 
 from odoo.libs.documents import (
@@ -33,7 +32,6 @@ def writer_claims(writers):
 
 @tagged("post_install", "-at_install")
 class TestRegistryIsUnambiguous(BaseCase):
-
     def test_no_two_readers_claim_one_mimetype_at_one_cost(self):
         ambiguous = reader_claims(registered_readers())
 

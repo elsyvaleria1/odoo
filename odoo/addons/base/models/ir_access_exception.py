@@ -40,7 +40,6 @@ class IrAccessLog(models.Model):
 
 
 class IrAccessException(models.Model):
-
     _name = "ir.access.exception"
     _description = "Access Exception"
     _order = "date_to, id"

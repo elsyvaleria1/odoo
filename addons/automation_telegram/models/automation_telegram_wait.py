@@ -42,7 +42,6 @@ def _lost_to_concurrency(error) -> bool:
 
 
 class AutomationTelegramWait(models.Model):
-
     _name = "automation.telegram.wait"
     _access_anchors = frozendict(
         {

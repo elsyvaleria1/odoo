@@ -135,7 +135,6 @@ class TestRatingStats(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRatingExternalRoutes(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -231,7 +230,6 @@ class TestRatingExternalRoutes(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestRatingMailMessage(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

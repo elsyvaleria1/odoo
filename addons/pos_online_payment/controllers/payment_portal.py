@@ -273,9 +273,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
             raise UserError(request.env._("The payment provider is invalid."))
 
         kwargs["reference_prefix"] = None
-        kwargs.pop(
-            "pos_order_id", None
-        )
+        kwargs.pop("pos_order_id", None)
 
         tx_sudo = self._create_transaction(**kwargs)
         tx_sudo.landing_route = PaymentPortal._get_landing_route(

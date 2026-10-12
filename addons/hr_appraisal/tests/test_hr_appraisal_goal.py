@@ -5,7 +5,6 @@ from odoo.tests.common import HttpCase
 
 @tagged("-at_install", "post_install")
 class TestHrAppraisalGoal(HttpCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

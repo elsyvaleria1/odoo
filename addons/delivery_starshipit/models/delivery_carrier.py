@@ -91,7 +91,6 @@ class DeliveryCarrier(models.Model):
                     carrier.starshipit_carrier_code in CARRIER_SUPPORTING_RETURNS
                 )
 
-
     def starshipit_rate_shipment(self, order) -> dict:
         _debug.pipeline(
             "carrier_rate_request",
@@ -537,7 +536,6 @@ class DeliveryCarrier(models.Model):
                 error=e,
             )
             raise UserError(error_message) from e
-
 
     def _starshipit_get_package_information(self, order=False, picking=False) -> tuple:
         packages = []

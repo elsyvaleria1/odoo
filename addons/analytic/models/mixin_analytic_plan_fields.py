@@ -6,7 +6,6 @@ from odoo.fields import Domain
 
 
 class MixinAnalyticPlanFields(models.AbstractModel):
-
     _name = "mixin.analytic.plan.fields"
     _description = "Analytic Plan Fields"
 

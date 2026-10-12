@@ -11,7 +11,6 @@ from odoo.addons.sale_timesheet.tests.common import TestCommonSaleTimesheet
 
 @tagged("-at_install", "post_install")
 class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -403,12 +402,8 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
         employee_map.sale_line_id = other_sale_line
         ordered_task.project_id._update_timesheets_sale_line_id()
 
-        self.assertEqual(
-            not_validated_timesheet.so_line, other_sale_line
-        )
-        self.assertEqual(
-            validated_timesheet.so_line, ordered_task.sale_line_id
-        )
+        self.assertEqual(not_validated_timesheet.so_line, other_sale_line)
+        self.assertEqual(validated_timesheet.so_line, ordered_task.sale_line_id)
 
     def test_create_invoice_for_past_validated_timesheet(self):
         self.env.user.group_ids += self.quick_ref(
@@ -476,9 +471,7 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
                             self.env.ref("project.group_project_user").id,
                             self.env.ref("hr_timesheet.group_hr_timesheet_approver").id,
                             self.env.ref("sale.group_sale_manager").id,
-                            self.env.ref(
-                                "account.group_account_user"
-                            ).id,
+                            self.env.ref("account.group_account_user").id,
                         ],
                     )
                 ],

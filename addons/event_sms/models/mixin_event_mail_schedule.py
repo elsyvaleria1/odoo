@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class MixinEventMailSchedule(models.AbstractModel):
-
     _inherit = "mixin.event.mail.schedule"
 
     notification_type = fields.Selection(selection_add=[("sms", "SMS")])

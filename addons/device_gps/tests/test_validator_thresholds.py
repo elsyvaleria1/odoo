@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestValidatorThresholds(TransactionCase):
-
     def setUp(self):
         super().setUp()
         self.validator = self.env["device.gps.data.validator"]

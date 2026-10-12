@@ -292,9 +292,7 @@ class SpreadsheetORMAccess(SpreadsheetTestCommon):
     def test_write_user_with_doc_access(self):
         self._give_user_access("edit")
         self.env.invalidate_all()
-        self.spreadsheet.with_user(self.user).write(
-            {"name": "new name"}
-        )
+        self.spreadsheet.with_user(self.user).write({"name": "new name"})
         with self.assertRaises(AccessError):
             self.spreadsheet.with_user(self.user).spreadsheet_revision_ids.write({})
 

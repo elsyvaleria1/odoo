@@ -16,7 +16,6 @@ NEGATIVE_OPERATORS = {
 
 
 class ResourceIdentifier(fields.Char):
-
     identifier_code: str = ""
     through: str = ""
 

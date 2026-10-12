@@ -9,7 +9,6 @@ from .common import TestCommonPlanning
 
 @tagged("post_install", "-at_install")
 class TestPlanningPrintReport(HttpCase, TestCommonPlanning):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

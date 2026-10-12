@@ -337,22 +337,14 @@ class AccountReportExport(models.Model):
         all_reported_accounts = AccountAccount
         accounts_by_expressions = {}
         reported_account_codes = []
-        non_existing_codes = defaultdict(
-            lambda: self.env["report.formula.line"]
-        )
+        non_existing_codes = defaultdict(lambda: self.env["report.formula.line"])
         lines_per_non_linked_tag = defaultdict(lambda: self.env["report.formula.line"])
         lines_using_bad_operator_per_tag = defaultdict(
             lambda: self.env["report.formula.line"]
         )
-        candidate_duplicate_codes = defaultdict(
-            lambda: self.env["report.formula.line"]
-        )
-        duplicate_codes = defaultdict(
-            lambda: self.env["report.formula.line"]
-        )
-        duplicate_codes_same_line = defaultdict(
-            lambda: self.env["report.formula.line"]
-        )
+        candidate_duplicate_codes = defaultdict(lambda: self.env["report.formula.line"])
+        duplicate_codes = defaultdict(lambda: self.env["report.formula.line"])
+        duplicate_codes_same_line = defaultdict(lambda: self.env["report.formula.line"])
         common_account_domain = [
             *AccountAccount._check_company_domain(self.env.company),
         ]

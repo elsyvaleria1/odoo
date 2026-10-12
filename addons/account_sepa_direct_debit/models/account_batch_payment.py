@@ -68,9 +68,7 @@ class AccountBatchPayment(models.Model):
         for batch in self.filtered(
             lambda batch: batch.payment_method_code in sepa_codes
         ):
-            if (
-                batch.sdd_required_collection_date
-            ):
+            if batch.sdd_required_collection_date:
                 batch.sdd_required_collection_date = batch.sdd_required_collection_date
                 continue
 

@@ -44,12 +44,8 @@ class TestSaleSubCommissionUser(TestSaleCommissionCommon):
                 {
                     "date": "2024-03-03",
                     "achieved": 100,
-                    "add_user_id": self.commission_plan_manager.user_ids[
-                        0
-                    ].id,
-                    "reduce_user_id": self.commission_plan_manager.user_ids[
-                        1
-                    ].id,
+                    "add_user_id": self.commission_plan_manager.user_ids[0].id,
+                    "reduce_user_id": self.commission_plan_manager.user_ids[1].id,
                 }
             ]
         )

@@ -17,7 +17,6 @@ class TestEventCrm(TestEventFullCommon):
             {"event_id": cls.test_event.id}
         )
 
-
         cls.customer_so.write(
             {
                 "line_ids": [
@@ -74,9 +73,7 @@ class TestEventCrm(TestEventFullCommon):
             self.TICKET1_COUNT + self.TICKET2_COUNT,
         )
         self.assertEqual(len(self.test_rule_order.lead_ids), 1)
-        self.assertEqual(
-            self.test_rule_order_done.lead_ids, self.env["crm.lead"]
-        )
+        self.assertEqual(self.test_rule_order_done.lead_ids, self.env["crm.lead"])
 
         self.assertLeadConvertion(
             self.test_rule_order,

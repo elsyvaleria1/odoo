@@ -33,11 +33,8 @@ ADAMEquipmentProtocol = SerialProtocol(
 
 
 class AdamEquipmentDriver(ScaleDriver):
-
     _protocol = ADAMEquipmentProtocol
-    priority = (
-        -1
-    )
+    priority = -1
 
     def __init__(self, identifier, device) -> None:
         super().__init__(identifier, device)

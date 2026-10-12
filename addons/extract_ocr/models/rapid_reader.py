@@ -22,7 +22,6 @@ def read_page(image: bytes) -> str:
 
 
 class OcrText(BaseReader):
-
     name = "rapidocr_text"
     mimetypes = PAGED
     yields = (TEXT,)

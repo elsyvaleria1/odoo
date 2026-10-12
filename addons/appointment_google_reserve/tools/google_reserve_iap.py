@@ -14,7 +14,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GoogleReserveIAP:
-
     def register_appointment(self, appointment_type) -> None:
 
         if not appointment_type.google_reserve_merchant_id:
@@ -77,7 +76,6 @@ class GoogleReserveIAP:
             env=merchant.env,
         )
 
-
     def update_availabilities(self, appointment_types, start_time, end_time) -> None:
         for appointment_type in appointment_types:
             start_time = start_time.astimezone(UTC)
@@ -92,12 +90,8 @@ class GoogleReserveIAP:
                     appointment_types.env, "database.uuid", False
                 ),
                 "availabilities": availabilities,
-                "start_time": start_time.isoformat().replace(
-                    "+00:00", "Z"
-                ),
-                "end_time": end_time.isoformat().replace(
-                    "+00:00", "Z"
-                ),
+                "start_time": start_time.isoformat().replace("+00:00", "Z"),
+                "end_time": end_time.isoformat().replace("+00:00", "Z"),
             }
 
             try:
@@ -114,7 +108,6 @@ class GoogleReserveIAP:
                 )
             except (IAPServerError, AccessError) as e:
                 _logger.warning("Could not update availabilities: %s", e)
-
 
     def update_booking(
         self, appointment_type, calendar_event_ids, event_update_values
@@ -175,7 +168,6 @@ class GoogleReserveIAP:
         except (IAPServerError, AccessError) as e:
             _logger.warning("Could not update booking: %s", e)
 
-
     def upload_availabilities_feed(self, merchants) -> None:
 
         for merchant in merchants:
@@ -221,7 +213,6 @@ class GoogleReserveIAP:
                     _logger.warning("Could not upload availability feed: %s", res.text)
             except requests.exceptions.RequestException as e:
                 _logger.warning("Could not upload availability feed: %s", e)
-
 
     def _format_merchant_details(self, merchant) -> dict:
         return {

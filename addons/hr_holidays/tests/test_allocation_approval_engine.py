@@ -7,7 +7,6 @@ from .common import TestHrHolidaysCommon
 
 @tagged("post_install", "-at_install")
 class TestAllocationApprovalEngine(TestHrHolidaysCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -45,7 +45,6 @@ register_url_secret = redact.register_pattern
 
 
 class _ShapedRetry(Retry):
-
     backoff_type = "exponential"
 
     def new(self, **kw):

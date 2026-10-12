@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestPartyDelegation(TransactionCase):
-
     def test_an_employee_created_bare_gets_a_party_carrying_its_name(self):
         employee = self.env["hr.employee"].create(
             {"name": "Party Bare", "work_email": "bare@example.com"}

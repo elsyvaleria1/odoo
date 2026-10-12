@@ -6,7 +6,6 @@ from odoo.tools.misc import OrderedSet
 
 @tagged("post_install", "-at_install")
 class TestPartnerPhoneNameSearch(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

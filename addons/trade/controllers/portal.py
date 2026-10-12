@@ -9,7 +9,6 @@ _debug = DebugLog(__name__)
 
 
 class OrderPortalMixin:
-
     def _order_portal_default_sortings(self):
         return {
             "date": {

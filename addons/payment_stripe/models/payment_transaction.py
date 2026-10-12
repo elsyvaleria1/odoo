@@ -274,9 +274,7 @@ class PaymentTransaction(models.Model):
             )
         if self.operation == "validation":
             currency_name = (
-                self.provider_id.with_context(
-                    validation_pm=self.payment_method_id
-                )
+                self.provider_id.with_context(validation_pm=self.payment_method_id)
                 ._get_validation_currency()
                 .name.lower()
             )
@@ -386,9 +384,7 @@ class PaymentTransaction(models.Model):
             return super()._apply_updates(payment_data)
 
         payment_method = payment_data.get("payment_method")
-        if isinstance(
-            payment_method, dict
-        ):
+        if isinstance(payment_method, dict):
             payment_method_type = payment_method.get("type")
             if self.payment_method_id.code == payment_method_type == "card":
                 payment_method_type = payment_data["payment_method"]["card"]["brand"]

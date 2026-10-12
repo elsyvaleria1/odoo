@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestIrModelSmsCapability(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

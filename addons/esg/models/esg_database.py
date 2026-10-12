@@ -395,9 +395,7 @@ class EsgDatabase(models.Model):
                 },
             }
 
-        required_calls = math.ceil(
-            ademe_data["count"] / 10000
-        )
+        required_calls = math.ceil(ademe_data["count"] / 10000)
 
         _logger.info("ESG: Fetching ADEME data from their API")
         complete_data = []

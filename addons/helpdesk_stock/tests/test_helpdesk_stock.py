@@ -7,7 +7,6 @@ from odoo.addons.helpdesk.tests import common
 
 @tagged("post_install", "-at_install")
 class TestHelpdeskStock(common.HelpdeskCommon):
-
     def test_helpdesk_stock(self):
         self.test_team.helpdesk_use_product_returns = True
 

@@ -137,11 +137,14 @@ class AccountMoveTemplateLine(models.Model):
         for code in codes:
             prefix = code.upper()
             exact = accounts.filtered(lambda account, code=code: account.code == code)
-            match = exact[:1] or accounts.filtered(
-                lambda account, prefix=prefix: (
-                    (account.code or "").upper().startswith(prefix)
-                ),
-            )[:1]
+            match = (
+                exact[:1]
+                or accounts.filtered(
+                    lambda account, prefix=prefix: (
+                        (account.code or "").upper().startswith(prefix)
+                    ),
+                )[:1]
+            )
             if match:
                 resolved[code] = match
         return resolved

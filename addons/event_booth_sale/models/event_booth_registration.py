@@ -4,7 +4,6 @@ from odoo import Command, api, fields, models
 
 
 class EventBoothRegistration(models.Model):
-
     _name = "event.booth.registration"
     _description = "Event Booth Registration"
 

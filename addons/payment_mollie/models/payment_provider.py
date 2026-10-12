@@ -27,7 +27,6 @@ class PaymentProvider(models.Model):
         help="The Test or Live API Key depending on the configuration of the provider",
     )
 
-
     def _get_supported_currencies(self):
         supported_currencies = super()._get_supported_currencies()
         if self.code == "mollie":
@@ -36,14 +35,12 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-
     def _get_default_payment_method_codes(self):
         self.check_singleton()
 
         if self.code != "mollie":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
-
 
     def _prepare_request_url(self, endpoint, **kwargs):
         if self.code != "mollie":

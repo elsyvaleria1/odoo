@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 
 class AutomationRule(models.Model):
-
     _inherit = "automation.rule"
 
     trg_date_resource_field_id = fields.Many2one(

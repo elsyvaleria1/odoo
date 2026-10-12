@@ -7,7 +7,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 @tagged("post_install", "-at_install")
 class TestPortalMixinSharing(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -20,7 +20,6 @@ class TestResPartner(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestSearchAge(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -111,7 +110,6 @@ class TestSearchAge(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestBirthdayFilters(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

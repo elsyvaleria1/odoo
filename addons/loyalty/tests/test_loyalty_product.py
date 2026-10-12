@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLoyaltyProductTemplate(TransactionCase):
-
     def test_gift_card_product_gets_placeholder_image(self):
         template = (
             self.env["product.template"]

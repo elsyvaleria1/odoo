@@ -7,7 +7,6 @@ from .test_common import TestPlmCommon
 
 @tagged("post_install", "-at_install")
 class TestEcoApprovalEngine(TestPlmCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

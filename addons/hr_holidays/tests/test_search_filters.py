@@ -10,7 +10,6 @@ from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
 @tagged("search_filters")
 class TestLeaveSearchFilters(TestHrHolidaysCommon):
-
     def _filter_domain(self, view_xmlid, filter_name):
         arch = etree.fromstring(self.env.ref(view_xmlid).arch)
         nodes = arch.xpath(f"//filter[@name='{filter_name}']")

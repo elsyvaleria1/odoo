@@ -26,9 +26,7 @@ class GoogleReserveController(Controller):
         self, appointment_id: int, appointment_token: str
     ):
 
-        slot_time = (
-            request.get_json_data()
-        )
+        slot_time = request.get_json_data()
         if not slot_time:
             raise BadRequest("Invalid JSON payload")
 
@@ -85,9 +83,7 @@ class GoogleReserveController(Controller):
         self, appointment_id: int, appointment_token: str
     ):
 
-        route_params = (
-            request.get_json_data()
-        )
+        route_params = request.get_json_data()
 
         if not all(
             bool(route_params.get(key))
@@ -274,9 +270,7 @@ class GoogleReserveController(Controller):
         self, appointment_id: int, appointment_token: str, calendar_event_id: int
     ):
 
-        route_params = (
-            request.get_json_data()
-        )
+        route_params = request.get_json_data()
 
         if not route_params.get("booking"):
             raise BadRequest("Invalid JSON payload")
@@ -459,7 +453,6 @@ class GoogleReserveController(Controller):
         request.env.ref(
             "appointment_google_reserve.ir_cron_iap_google_reserve_availabilities"
         )._trigger()
-
 
     def _get_appointment(self, appointment_id, appointment_token):
         return request.admission.subject

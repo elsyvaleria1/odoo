@@ -115,7 +115,6 @@ class KnowledgeCommon(MailCommon):
 
 
 class KnowledgeCommonWData(KnowledgeCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -265,7 +264,6 @@ class KnowledgeCommonWData(KnowledgeCommon):
 
 
 class KnowledgeArticlePermissionsCase(KnowledgeCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

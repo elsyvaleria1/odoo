@@ -18,9 +18,7 @@ class JsonRPCDispatcherPatch(JsonRPCDispatcher):
         if isinstance(exc, Forbidden):
             error["code"] = 403
             error["message"] = "403: Forbidden"
-            error["data"] = {
-                "message": error["data"]["message"]
-            }
+            error["data"] = {"message": error["data"]["message"]}
 
         return self._response(error=error)
 

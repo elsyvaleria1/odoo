@@ -7,7 +7,6 @@ from odoo.addons.base.models.mixin_bearer_token import hash_bearer_token
 
 @tagged("post_install", "-at_install")
 class TestBearerToken(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

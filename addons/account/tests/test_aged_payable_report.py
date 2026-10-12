@@ -35,8 +35,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         misc_1 = cls.company_data["default_account_expense"]
         misc_2 = cls.company_data_2["default_account_expense"]
 
-
-
         move_1 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -180,7 +178,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         (move_1 + move_2).line_ids.filtered(
             lambda line: line.account_id == payable_2
         ).reconcile()
-
 
         move_3 = cls.env["account.move"].create(
             {

@@ -23,9 +23,7 @@ class SocialStreamPost(models.Model):
     )
     facebook_author_id = fields.Char(string="Facebook Author ID")
     facebook_likes_count = fields.Integer(string="Likes")
-    facebook_reactions_count = fields.Char(
-        string="Reactions Count"
-    )
+    facebook_reactions_count = fields.Char(string="Reactions Count")
     facebook_user_likes = fields.Boolean(string="User Likes")
     facebook_comments_count = fields.Integer(string="Comments")
     facebook_shares_count = fields.Integer(string="Shares")
@@ -59,7 +57,6 @@ class SocialStreamPost(models.Model):
             post.is_author = (
                 post.facebook_author_id == post.account_id.facebook_account_id
             )
-
 
     def _facebook_remove_comment(self, comment_id) -> bool:
         self.env["ir.egress"].request(
@@ -191,7 +188,6 @@ class SocialStreamPost(models.Model):
                 purpose="social_facebook",
                 data=params,
             )
-
 
     @api.model
     def _format_facebook_published_date(self, comment):

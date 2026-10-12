@@ -11,7 +11,6 @@ ALERT_LOOKBACK = timedelta(hours=24)
 
 
 class DeviceGpsSpeedAlert(models.Model):
-
     _name = "device.gps.speed.alert"
     _description = "Critical Speed Alert"
     _order = "start desc"
@@ -67,10 +66,7 @@ class DeviceGpsSpeedAlert(models.Model):
             self.env["device.gps.speed.event"]
             ._get_recent_events(now - ALERT_LOOKBACK)
             .filtered(
-                lambda event: (
-                    event.level == "critical"
-                    and event.end < now - EVENT_GAP
-                )
+                lambda event: event.level == "critical" and event.end < now - EVENT_GAP
             )
         )
         if not events:

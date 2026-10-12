@@ -17,7 +17,6 @@ register_url_secret(
 
 
 class StockFleetRouteTomtom(models.AbstractModel):
-
     _name = "stock.fleet.route.tomtom"
     _description = "TomTom Routing"
 

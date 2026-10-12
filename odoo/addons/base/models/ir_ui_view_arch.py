@@ -49,7 +49,6 @@ def _option_currency_field(node: _Element) -> str | None:
 
 
 class ElementHandler:
-
     __slots__ = ()
     tag: str = ""
 

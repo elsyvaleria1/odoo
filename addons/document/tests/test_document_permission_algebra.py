@@ -22,7 +22,6 @@ RANK = {"view": 1, "edit": 2, "manage": 3}
 
 
 class LiveFormula:
-
     def __init__(self, env, subject):
         self.subject = subject.sudo()
         self.now = fields.Datetime.now()

@@ -34,7 +34,6 @@ class TestPosPricer(ProductCommon, TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPosPricerLabelPrice(AccountTestInvoicingCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

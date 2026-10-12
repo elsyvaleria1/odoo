@@ -97,9 +97,7 @@ class BarcodeNomenclature(models.Model):
         year = century * 100 + int(gs1_date[0:2])
 
         try:
-            if (
-                gs1_date[-2:] == "00"
-            ):
+            if gs1_date[-2:] == "00":
                 date = datetime.datetime.strptime(str(year) + gs1_date[2:4], "%Y%m")
                 date = date.replace(
                     day=calendar.monthrange(year, int(gs1_date[2:4]))[1]

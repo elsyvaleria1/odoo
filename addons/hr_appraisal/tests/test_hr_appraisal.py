@@ -10,7 +10,6 @@ from odoo.tests.common import TransactionCase
 
 
 class TestHrAppraisal(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

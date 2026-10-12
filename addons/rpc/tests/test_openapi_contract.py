@@ -149,7 +149,6 @@ class TestOpenAPIContract(common.TransactionCase):
 
 @common.tagged("post_install", "-at_install")
 class TestGeneratedClient(common.TransactionCase):
-
     maxDiff = None
 
     def test_the_checked_in_client_is_current(self):

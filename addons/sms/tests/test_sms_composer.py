@@ -8,7 +8,6 @@ from odoo.addons.sms.tests.common import SMSCase, SMSCommon
 
 @tagged("at_install")
 class TestSMSComposerComment(SMSCommon, SMSCase):
-
     def test_message_post_sms_vs_notification(self):
         cases = [
             (

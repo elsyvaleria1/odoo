@@ -101,7 +101,6 @@ class SaleCommissionAchievementReport(models.Model):
         readonly=True,
     )
 
-
     @api.model
     def web_search_read(
         self, domain, specification, offset=0, limit=None, order=None, count_limit=None
@@ -146,7 +145,6 @@ class SaleCommissionAchievementReport(models.Model):
         )
 
     formatted_read_grouping_sets._readonly = False
-
 
     @api.model
     def _search(self, domain, *args, **kwargs):
@@ -284,7 +282,6 @@ class SaleCommissionAchievementReport(models.Model):
         AND date <= '{datetime.strftime(date_to, "%Y-%m-%d") if date_to else today}'
         """
 
-
     def _get_view_parameters(self) -> str:
         return "TEMPORARY"
 
@@ -329,7 +326,6 @@ class SaleCommissionAchievementReport(models.Model):
                AND cl.date::date <= era.date_to;
             {self._view_post_creation()}
         """
-
 
     @api.model
     def _rate_to_case(self, rates) -> str:

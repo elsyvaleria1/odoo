@@ -241,7 +241,6 @@ class TestRenameModel(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameModelOverAForerunner(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -394,7 +393,6 @@ class TestRenameModelOverAForerunner(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameModelOverlongRelation(TransactionCase):
-
     LONG = "probe.short.renamed.with.a.name.long.enough.to.overflow"
 
     @classmethod
@@ -492,7 +490,6 @@ class TestRenameModelOverlongRelation(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameModelLongJoinTable(TransactionCase):
-
     OLD = "probe.join.table.with.a.rather.long.name.xy"
 
     @classmethod
@@ -537,7 +534,6 @@ class TestRenameModelLongJoinTable(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameModelJoinTableWithAnActionComodel(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

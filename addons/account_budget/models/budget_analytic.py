@@ -220,6 +220,4 @@ class BudgetAnalytic(models.Model):
 
     def _get_view(self, view_id=None, view_type="form", **options):
         arch, view = super()._get_view(view_id, view_type, **options)
-        return self.env["budget.line"]._patch_view(
-            arch, view, view_type
-        )
+        return self.env["budget.line"]._patch_view(arch, view, view_type)

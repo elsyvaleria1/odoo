@@ -20,7 +20,6 @@ _debug = DebugLog(__name__)
 class MetaSchema:
     __slots__ = ()
 
-
     def reflect(
         self,
         env: Environment,
@@ -74,7 +73,6 @@ class MetaSchema:
             model, name, kind, definition, module
         )
 
-
     def manual_model_data(self, env: Environment) -> list[dict[str, typing.Any]]:
         if "ir.model" not in env.registry:
             return []
@@ -108,7 +106,6 @@ class MetaSchema:
     def field_ids_by_name(self, env: Environment, model_name: str) -> dict[str, int]:
         return env["ir.model.fields"]._get_ids_by_name(model_name)
 
-
     def model_description(self, env: Environment, model_name: str) -> str | None:
         return env["ir.model"]._get(model_name).name or None
 
@@ -127,7 +124,6 @@ class MetaSchema:
         if "ir.module.module" not in env.registry:
             return set()
         return set(env["ir.module.module"].sudo().search([]).mapped("name"))
-
 
     def model_defaults(
         self, env: Environment, model_name: str, condition: str | bool = False

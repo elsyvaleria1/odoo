@@ -320,6 +320,4 @@ class TestSelfOrderAttribute(SelfOrderCommonTest):
         )
 
         order = self.pos_config.current_session_id.order_ids[0]
-        self.assertEqual(
-            order.amount_total, 11.62
-        )
+        self.assertEqual(order.amount_total, 11.62)

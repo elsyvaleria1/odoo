@@ -6,7 +6,6 @@ from odoo.addons.calendar_sync.provider_events import ProviderEvents
 
 
 class GoogleEvent(ProviderEvents):
-
     @property
     def rrule(self):
         if self.recurrence and any("RRULE" in item for item in self.recurrence):

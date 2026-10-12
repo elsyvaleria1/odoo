@@ -90,7 +90,6 @@ def _get_exit_outcome(
 
 
 class RespawnHold:
-
     __slots__ = ("fast_deaths", "not_before")
 
     def __init__(self) -> None:

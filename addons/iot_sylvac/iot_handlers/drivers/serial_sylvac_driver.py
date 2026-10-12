@@ -33,7 +33,6 @@ SylvacSCalProProtocol = SerialProtocol(
 
 
 class SylvacSCalProDriver(SerialDriver):
-
     _protocol = SylvacSCalProProtocol
 
     def __init__(self, identifier, device) -> None:

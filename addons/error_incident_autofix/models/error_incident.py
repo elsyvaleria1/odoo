@@ -95,7 +95,6 @@ class ErrorIncident(models.Model):
         for incident in self:
             incident.fix_cost = sum(incident.fix_run_ids.mapped("cost"))
 
-
     def _capture(self, payload: dict[str, Any]) -> int:
         incident_id = super()._capture(payload)
         incident = self.browse(incident_id)
@@ -310,7 +309,6 @@ class ErrorIncident(models.Model):
             "regressions": self.count_regression,
             "previous_fixes": previous,
         }
-
 
     def _agent_run_ended(self, run: models.BaseModel) -> None:
         if hasattr(super(), "_agent_run_ended"):

@@ -31,9 +31,7 @@ class TestPaymentTransaction(RedsysCommon):
             merchant_parameters["DS_MERCHANT_CURRENCY"], tx.currency_id.iso_numeric
         )
         self.assertEqual(merchant_parameters["DS_MERCHANT_ORDER"], tx.reference)
-        self.assertEqual(
-            merchant_parameters["DS_MERCHANT_PAYMETHODS"], "C"
-        )
+        self.assertEqual(merchant_parameters["DS_MERCHANT_PAYMETHODS"], "C")
         self.assertTrue("DS_MERCHANT_EMV3DS" in merchant_parameters)
 
     def test_search_by_reference_returns_tx(self):

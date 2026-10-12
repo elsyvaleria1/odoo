@@ -189,7 +189,6 @@ class TestKeyCryptoOperations(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestKeyDerLoading(TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

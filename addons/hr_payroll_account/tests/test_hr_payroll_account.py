@@ -470,7 +470,6 @@ class TestHrPayrollAccount(TestHrPayrollAccountCommon):
 
     def test_09_hr_payslip(self):
 
-
         tax_account = self.env["account.account"].create(
             {
                 "name": "Rental Tax",
