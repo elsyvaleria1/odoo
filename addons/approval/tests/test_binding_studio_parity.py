@@ -5,7 +5,6 @@ from odoo.tests import common, tagged
 
 @tagged("post_install", "-at_install")
 class TestApprovalStudioParity(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

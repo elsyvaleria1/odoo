@@ -931,7 +931,6 @@ class TestDelegationScopeIsLiveRequestsOnly(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestDelegatedActivityHolder(ApprovalCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

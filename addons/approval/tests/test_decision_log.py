@@ -8,7 +8,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestDecisionLog(ApprovalCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

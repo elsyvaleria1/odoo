@@ -10,7 +10,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalStepDecisions(ApprovalCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

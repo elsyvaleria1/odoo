@@ -6,7 +6,6 @@ from .common import ApprovalCommon, pool_step
 
 @tagged("post_install", "-at_install")
 class TestPoolQueue(ApprovalCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

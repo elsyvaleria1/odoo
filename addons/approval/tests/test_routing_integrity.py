@@ -258,7 +258,6 @@ class TestRoutingIntegrity(ApprovalCommon):
         self._delegate_row(row, self.delegate_user)
         self.assertIn(self.delegate_user, request.pending_user_ids)
 
-
     def _two_member_step(self, **step_vals):
         return self._category(
             listed_step([self.approver_1, self.approver_2], name="Pair", **step_vals)

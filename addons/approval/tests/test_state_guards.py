@@ -311,7 +311,6 @@ class TestLockedFields(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestEngineOwnedFields(ApprovalCommon):
-
     FORGED = {
         "granted_by_user_id": None,
         "revoked_state": "refused",

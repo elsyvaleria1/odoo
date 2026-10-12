@@ -218,7 +218,6 @@ class TestCampaignRefusalCensus(ApprovalCommon):
 
 
 class TestCampaignSwallowedFailures(ApprovalCommon):
-
     ALLOWED_TO_STAY_SILENT = {
         "approval_trace.py": "the renderer degrades to <unrenderable>, which IS the report",
     }
@@ -247,7 +246,6 @@ class TestCampaignSwallowedFailures(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestCampaignMeasurement(ApprovalCommon):
-
     def setUp(self):
         super().setUp()
         trace.forget_perf_ledger()

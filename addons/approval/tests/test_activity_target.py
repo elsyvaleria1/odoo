@@ -6,7 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestActivityTarget(ApprovalCommon):
-
     def _category(self, **vals):
         return self._make_category(
             name=f"Target {self.id()}", approvers=[self.approver_1], **vals

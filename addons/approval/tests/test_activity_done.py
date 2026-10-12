@@ -6,7 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestApprovalActivityDone(ApprovalCommon):
-
     def _activity_for(self, request, user):
         activity_type = self.env.ref("approval.mail_activity_data_approval")
         return request.activity_ids.filtered(

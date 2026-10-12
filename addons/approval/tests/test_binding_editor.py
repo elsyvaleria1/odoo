@@ -8,7 +8,6 @@ from odoo.tests import common, tagged
 
 @tagged("post_install", "-at_install")
 class TestApprovalBindingEditor(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

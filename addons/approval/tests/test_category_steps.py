@@ -12,7 +12,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestCategorySteps(ApprovalCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -66,7 +65,6 @@ class TestCategorySteps(ApprovalCommon):
             lambda activity: activity.activity_type_id == activity_type
         ).user_id
 
-
     def test_two_one_of_two_steps_need_one_approval_from_each(self):
         category = self._category()
         self._step(category, "First", (self.approver_1, self.approver_2), 10)
@@ -95,7 +93,6 @@ class TestCategorySteps(ApprovalCommon):
         self.assertEqual(request.state, "pending")
         request.with_user(self.approver_2).action_approve()
         self.assertEqual(request.state, "approved")
-
 
     def test_a_user_in_two_steps_counts_for_both_when_neither_is_exclusive(self):
         category = self._category()
@@ -135,7 +132,6 @@ class TestCategorySteps(ApprovalCommon):
         self.assertEqual(request.state, "pending")
         request.with_user(self.approver_2).action_approve()
         self.assertEqual(request.state, "approved")
-
 
     def test_group_members_join_the_step_pool(self):
         self.step_group.user_ids = self.approver_4
@@ -179,7 +175,6 @@ class TestCategorySteps(ApprovalCommon):
         self.assertNotIn(self.approver_2, request.approver_ids.user_id)
         request.with_user(self.approver_1).action_approve()
         self.assertEqual(request.state, "approved")
-
 
     def test_a_refusal_in_any_step_refuses_the_request(self):
         category = self._category()
@@ -231,7 +226,6 @@ class TestCategorySteps(ApprovalCommon):
         )
         self.assertTrue(notes, "the step's notify list got no note")
 
-
     def test_confirm_refuses_a_step_that_can_never_meet_its_quorum(self):
         category = self._category()
         self._step(category, "Short", (self.approver_1,), minimum=2)
@@ -267,7 +261,6 @@ class TestCategorySteps(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestStepReadingTheRequest(ApprovalCommon):
-
     def _category_with_request_step(self, **step_vals):
         category = self._make_category("Request subject")
         self.env["approval.category.step"].create(

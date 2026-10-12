@@ -6,7 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestRequestGrant(ApprovalCommon):
-
     def _pending_request(self, minimum=2):
         category = self._make_category(
             name=f"Grant {self.id()}",

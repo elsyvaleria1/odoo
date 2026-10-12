@@ -110,7 +110,6 @@ class _Probe(Exception):
 
 
 class RoutingOutcomesCase(ApprovalCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -194,7 +193,6 @@ class RoutingOutcomesCase(ApprovalCommon):
 
 @tagged("post_install", "-at_install")
 class TestStepRoutingOutcomes(RoutingOutcomesCase):
-
     def _stepped(self, steps, **vals):
         category = self._make_category(
             f"Step routing {self._next_sequence_code()}", **vals

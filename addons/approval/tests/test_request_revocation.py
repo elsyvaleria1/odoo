@@ -6,7 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestRequestRevocation(ApprovalCommon):
-
     def _approved_request(self):
         category = self._make_category(
             name=f"Revocation {self.id()}", approvers=[self.approver_1]

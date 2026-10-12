@@ -6,7 +6,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestApprovalBinding(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -55,7 +54,6 @@ class TestApprovalBinding(common.TransactionCase):
         vals.update(kwargs)
         return self.env["res.partner"].create(vals)
 
-
     def test_registering_wraps_the_method_and_unregistering_restores_it(self):
         Partner = self.env.registry["res.partner"]
         self.assertFalse(hasattr(Partner.action_archive, "approval_binding_origin"))
@@ -76,7 +74,6 @@ class TestApprovalBinding(common.TransactionCase):
             hasattr(origin, "approval_binding_origin"),
             "the wrapper wrapped another wrapper",
         )
-
 
     def test_observe_mode_lets_the_call_through_and_records_it(self):
         binding = self._bind(mode="advise")
@@ -139,7 +136,6 @@ class TestApprovalBinding(common.TransactionCase):
         self._partner(is_company=True).action_archive()
         self.assertEqual(binding.observation_count, 1)
 
-
     def test_block_mode_refuses_an_unapproved_record(self):
         self._bind(mode="block", category_id=self.category.id, sudo_policy="enforce")
         partner = self._partner()
@@ -186,7 +182,6 @@ class TestApprovalBinding(common.TransactionCase):
         partner = self._partner()
         partner.action_archive()
         self.assertFalse(partner.active)
-
 
     def test_a_binding_on_a_method_automation_claims_is_refused(self):
         for method in ("create", "write", "unlink", "message_post"):
@@ -298,7 +293,6 @@ class TestApprovalBinding(common.TransactionCase):
                     "method": "action_archive",
                 }
             )
-
 
     def _user(self, login, *groups):
         return self.env["res.users"].create(
@@ -479,8 +473,6 @@ class TestApprovalBinding(common.TransactionCase):
         partner.action_archive()
         self.assertFalse(partner.active)
 
-
-
     def test_a_refusal_stands_and_the_next_call_raises_no_new_request(self):
         binding = self._request_binding()
         requester = self._user("binding_ref_a", "base.group_partner_manager")
@@ -541,7 +533,6 @@ class TestApprovalBinding(common.TransactionCase):
             request.with_user(peer).action_reset_to_draft()
         request.with_user(later).action_reset_to_draft()
         self.assertEqual(request.state, "new")
-
 
     def test_a_later_step_member_may_withdraw_an_earlier_approval_and_a_peer_may_not(
         self,

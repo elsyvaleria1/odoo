@@ -6,7 +6,6 @@ from odoo.addons.approval.tests.common import add_category_approver
 
 @tagged("post_install", "-at_install")
 class TestApprovalBindingActions(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -103,7 +102,6 @@ class TestApprovalBindingActions(common.TransactionCase):
             [("res_model", "=", "res.partner"), ("res_id", "=", partner.id)]
         )
 
-
     def test_a_blocked_server_action_is_refused_on_the_server(self):
         self._bind(self.server_action, mode="block", sudo_policy="enforce")
         partner = self._partner()
@@ -147,7 +145,6 @@ class TestApprovalBindingActions(common.TransactionCase):
         self.assertTrue(self._ran(partner))
         self.assertTrue(request.date_binding_replayed)
 
-
     def _render_html(self, user, partner):
         return (
             self.env["ir.actions.report"]
@@ -187,7 +184,6 @@ class TestApprovalBindingActions(common.TransactionCase):
         html, report_type = self._render_html(self.requester, partner)
         self.assertEqual(report_type, "html")
         self.assertIn(b"Action Partner", html)
-
 
     def test_is_enforced_says_which_operations_the_server_can_refuse(self):
         window = self.env.ref("base.action_partner_form")

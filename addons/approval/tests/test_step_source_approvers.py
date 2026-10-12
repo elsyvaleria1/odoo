@@ -6,7 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestStepSourceApprovers(ApprovalCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -122,7 +121,6 @@ class TestStepSourceApprovers(ApprovalCommon):
         (step,) = request.category_snapshot["steps"]
         self.assertEqual(step["source_user_path"], "user_id")
         self.assertEqual(step["members"], [self.approver_3.id])
-
 
     def test_a_source_step_needs_no_members_or_group(self):
         category = self._make_category(name=f"Source {self.id()}")

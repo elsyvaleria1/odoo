@@ -5,7 +5,6 @@ from .common import ApprovalCommon, record_approval
 
 @tagged("post_install", "-at_install")
 class TestRequestVerbs(ApprovalCommon):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

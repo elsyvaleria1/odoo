@@ -6,7 +6,6 @@ from .common import ApprovalCommon
 
 @tagged("post_install", "-at_install")
 class TestActivityLink(ApprovalCommon):
-
     def _pending_request_on_partner(self):
         category = self._make_category(
             name=f"Activity link {self.id()}", approvers=[self.approver_1]

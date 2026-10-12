@@ -10,7 +10,6 @@ from .common import ApprovalCommon, pool_step, record_approval
 
 
 class MultiCompanyCase(common.TransactionCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
