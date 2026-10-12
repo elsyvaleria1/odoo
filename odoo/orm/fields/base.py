@@ -319,7 +319,8 @@ class Field[T](
         None
     )
 
-    @property
+    @property  # type: ignore[explicit-override]  # mypy cannot mark a settable property override
+    @typing.override
     def groups(self) -> str | None:
         return self.__dict__.get("groups")
 
@@ -333,7 +334,8 @@ class Field[T](
         self.__dict__.pop("groups", None)
         self._rebind_access_classes()
 
-    @property
+    @property  # type: ignore[explicit-override]  # mypy cannot mark a settable property override
+    @typing.override
     def write_groups(self) -> str | Callable[[BaseModel], bool] | None:
         return self.__dict__.get("write_groups")
 
@@ -347,7 +349,8 @@ class Field[T](
         self.__dict__.pop("write_groups", None)
         self._rebind_access_classes()
 
-    @property
+    @property  # type: ignore[explicit-override]  # mypy cannot mark a settable property override
+    @typing.override
     def access_classes(self) -> FieldAccessClasses | None:
         return self.__dict__.get("access_classes")
 
@@ -418,16 +421,19 @@ class Field[T](
             raise TypeError(f"{self} has no comodel_name")
         return self.comodel_name
 
+    @typing.override
     def __str__(self) -> str:
         if not self.name:
             return f"<{__name__}.{type(self).__name__}>"
         return f"{self.model_name}.{self.name}"
 
+    @typing.override
     def __repr__(self) -> str:
         if not self.name:
             return repr(f"<{__name__}.{type(self).__name__}>")
         return repr(f"{self.model_name}.{self.name}")
 
+    @typing.override
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         if not hasattr(cls, "type"):
@@ -664,9 +670,11 @@ class Field[T](
         )
 
     @property
+    @typing.override
     def base_field(self) -> Self:
         return self.inherited_field.base_field if self.inherited_field else self
 
+    @typing.override
     def get_company_dependent_fallback(self, records: ModelLike) -> typing.Any:
         assert self.company_dependent
         fallback = self._get_company_dependent_fallback_raw(records)
@@ -766,6 +774,7 @@ class Field[T](
         if settled:
             field_cache.update(dict.fromkeys(settled, None))
 
+    @typing.override
     def _get_cache(self, env: Environment) -> MutableMapping[IdType, typing.Any]:
         field_cache = env._field_cache_memo.get(self)
         if field_cache is not None:
@@ -1020,6 +1029,7 @@ class Field[T](
         @typing.overload
         def __get__(self, record: object, owner: typing.Any = None) -> typing.Any: ...
 
+        @typing.override
         def __get__(self, record: typing.Any, owner: typing.Any = None) -> T | Self: ...
 
     else:
@@ -1193,6 +1203,7 @@ class Field[T](
         write_value = self.convert_to_write(value, records)
         records.write({self.name: write_value})
 
+    @typing.override
     def check_read_access(self, record: ModelLike) -> None:
         env = record.env
         if (

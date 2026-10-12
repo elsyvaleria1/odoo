@@ -79,6 +79,7 @@ class InMemoryCase(TransactionCase):
     skip_data_files: typing.ClassVar[tuple[str, ...]] = LOADER_OWNED_DATA
 
     @classmethod
+    @typing.override
     def _open_class_transaction(cls) -> None:
         cls.env = typing.cast("typing.Any", _host_environment(cls.hosts_modules))
         cls.cr = typing.cast("typing.Any", cls.env.cr)

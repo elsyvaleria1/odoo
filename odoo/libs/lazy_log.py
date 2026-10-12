@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
-from typing import Protocol
+from typing import Protocol, override
 
 __all__ = [
     "LazyLogValue",
@@ -32,6 +32,7 @@ class LazyLogValue:
     def __init__(self, fn: Callable[[], object]) -> None:
         self.fn = fn
 
+    @override
     def __str__(self) -> str:
         try:
             return str(self.fn())

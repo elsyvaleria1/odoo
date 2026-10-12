@@ -5,7 +5,7 @@ from collections.abc import Callable, Collection, Iterable, Mapping
 from contextlib import contextmanager, suppress
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
 
 from odoo.db import BaseCursor, FunctionStatus
 from odoo.db.savepoint import (
@@ -240,6 +240,7 @@ class InMemoryCursor(BaseCursor):
         ] = fixtures or {}
         self._last_result: list[tuple[Any, ...]] = []
 
+    @override
     def execute(
         self,
         query: Any,
@@ -277,20 +278,25 @@ class InMemoryCursor(BaseCursor):
         )
 
     @property
+    @override
     def closed(self) -> bool:
         return self._closed
 
     @property
+    @override
     def connection(self) -> None:
         return self._cnx
 
     @property
+    @override
     def rowcount(self) -> int:
         return len(self._last_result)
 
+    @override
     def fetchall(self) -> list[tuple[Any, ...]]:
         return list(self._last_result)
 
+    @override
     def fetchone(self) -> tuple[Any, ...] | None:
         return self._last_result[0] if self._last_result else None
 
@@ -304,28 +310,34 @@ class InMemoryCursor(BaseCursor):
         "test to a DB-backed TransactionCase."
     )
 
+    @override
     def dictfetchone(self) -> dict[str, Any] | None:
         if not self._last_result:
             return None
         raise InMemorySqlNotSupported(self._DICT_API_UNSUPPORTED)
 
+    @override
     def dictfetchall(self) -> list[dict[str, Any]]:
         if not self._last_result:
             return []
         raise InMemorySqlNotSupported(self._DICT_API_UNSUPPORTED)
 
+    @override
     def now(self) -> datetime:
         if self._now is None:
             self._now = datetime.now(UTC).replace(tzinfo=None)
         return self._now
 
+    @override
     def savepoint(self, flush: bool = True) -> Any:
         return InMemorySavepoint(self, flush=flush)
 
     @contextmanager
+    @override
     def pipeline(self, log_exceptions: bool = True, query: Any = None) -> Any:
         yield
 
+    @override
     def commit(self) -> None:
         if self._savepoint_depth:
             raise RuntimeError(
@@ -341,6 +353,7 @@ class InMemoryCursor(BaseCursor):
         self.postrollback.clear()
         self.postcommit.drain()
 
+    @override
     def rollback(self) -> None:
         raise InMemorySqlNotSupported(
             "InMemoryCursor (DB-free model_test_env) cannot roll back: storage "
@@ -350,6 +363,7 @@ class InMemoryCursor(BaseCursor):
             "TransactionCase to test rollback behaviour."
         )
 
+    @override
     def close(self) -> None:
         pass
 
@@ -413,6 +427,7 @@ class ModelRegistry(
         self._setup_registry(list(model_defs))
         self.modules = self._modules_of(model_defs)
 
+    @override
     def __getitem__(self, model_name: str) -> type[BaseModel]:
         try:
             return super().__getitem__(model_name)
@@ -433,6 +448,7 @@ class ModelRegistry(
                 ) from None
             raise
 
+    @override
     def __contains__(self, model_name: object) -> bool:
         return model_name in self.models
 
@@ -498,6 +514,7 @@ class ModelRegistry(
         )
 
     @staticmethod
+    @override
     def unaccent(text: str) -> str:
         return text
 
@@ -682,9 +699,11 @@ class _InstalledLangs(Locale):
     def __init__(self, codes: Iterable[str]) -> None:
         self.codes = frozenset(codes) | {"en_US"}
 
+    @override
     def installed_langs(self, env: Environment) -> list[str]:
         return sorted(self.codes)
 
+    @override
     def is_lang_installed(self, env: Environment, code: str) -> bool:
         return code in self.codes
 

@@ -7,7 +7,7 @@ import threading
 import time
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self, overload
+from typing import TYPE_CHECKING, Any, Self, overload, override
 from urllib.parse import quote, urlencode, urlsplit
 
 import werkzeug.routing
@@ -121,6 +121,7 @@ class _locked_cached_property[T](functools.cached_property[T]):
     @overload
     def __get__(self, instance: object, owner: type | None = None) -> T: ...
 
+    @override
     def __get__(self, instance: object, owner: type | None = None) -> Self | T:
         if instance is None:
             return self

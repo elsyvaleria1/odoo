@@ -32,6 +32,7 @@ class _HooksMixin(_ModelStubs):
     __slots__ = ()
 
     @property
+    @typing.override
     def _ondelete_methods(self) -> list[OndeleteMethod]:
         def is_ondelete(func: typing.Any) -> bool:
             return callable(func) and hasattr(func, "_ondelete")
@@ -44,6 +45,7 @@ class _HooksMixin(_ModelStubs):
         )
 
     @property
+    @typing.override
     def _onchange_methods(self) -> dict[str, list[OnchangeMethod]]:
         def is_onchange(func: typing.Any) -> bool:
             return callable(func) and hasattr(func, "_onchange")

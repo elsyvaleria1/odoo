@@ -85,6 +85,7 @@ class Collector:
     _registry: dict[str, type[Collector]] = {}
 
     @classmethod
+    @override
     def __init_subclass__(cls) -> None:
         if cls.name:
             cls._registry[cls.name] = cls
@@ -185,12 +186,14 @@ class Collector:
 class SQLCollector(Collector):
     name = "sql"
 
+    @override
     def start(self) -> None:
         init_thread = self.profiler.init_thread
         if not hasattr(init_thread, "query_hooks"):
             init_thread.query_hooks = []
         init_thread.query_hooks.append(self.hook)
 
+    @override
     def stop(self) -> None:
         self.profiler.init_thread.query_hooks.remove(self.hook)
 
@@ -239,6 +242,7 @@ class _BasePeriodicCollector(Collector):
         self._last_time: float = 0.0
         self._stop_event = threading.Event()
 
+    @override
     def start(self) -> None:
         interval = self.profiler.params.get(f"{self.name}_interval")
         if interval:
@@ -263,6 +267,7 @@ class _BasePeriodicCollector(Collector):
             self.progress()
             self._stop_event.wait(self.frame_interval)
 
+    @override
     def stop(self) -> None:
         self._stop_event.set()
         if self.__thread.is_alive() and self.__thread is not threading.current_thread():
@@ -338,6 +343,7 @@ class MemoryCollector(_BasePeriodicCollector):
             self._lock_acquired = False
             raise
 
+    @override
     def add(
         self,
         entry: dict[str, Any] | None = None,
@@ -366,6 +372,7 @@ class MemoryCollector(_BasePeriodicCollector):
             tracemalloc.stop()
             self._owns_tracing = False
 
+    @override
     def post_process(self) -> None:
         for i, entry in enumerate(self._entries):
             if entry.get("memory", False):
@@ -390,6 +397,7 @@ class SyncCollector(Collector):
         super().__init__()
         self._hook = self.hook
 
+    @override
     def start(self) -> None:
         if (existing := sys.gettrace()) is not None:
             msg = (
@@ -402,6 +410,7 @@ class SyncCollector(Collector):
             raise RuntimeError(msg)
         sys.settrace(self._hook)
 
+    @override
     def stop(self) -> None:
         if sys.gettrace() is self._hook:
             sys.settrace(None)
@@ -417,6 +426,7 @@ class SyncCollector(Collector):
         self.progress(entry, frame=_frame)
         return self._hook
 
+    @override
     def _get_stack_trace(
         self, frame: FrameType | None = None
     ) -> list[tuple[str, int, str, str]] | None:
@@ -569,12 +579,14 @@ class QwebCollector(Collector):
 
         return expr
 
+    @override
     def start(self) -> None:
         init_thread = self.profiler.init_thread
         if not hasattr(init_thread, "qweb_hooks"):
             init_thread.qweb_hooks = []
         init_thread.qweb_hooks.append(self.hook)
 
+    @override
     def stop(self) -> None:
         self.profiler.init_thread.qweb_hooks.remove(self.hook)
 

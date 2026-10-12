@@ -4,6 +4,7 @@ import ast
 import re
 from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -29,6 +30,7 @@ class Issue:
     detail: str
     severity: str = "error"
 
+    @override
     def __str__(self) -> str:
         where = "/".join(map(str, self.path)) or "root"
         return f"{self.severity} {self.code} at {self.kind}[{where}]: {self.detail}"

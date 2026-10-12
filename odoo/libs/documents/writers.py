@@ -4,7 +4,7 @@ import csv
 import io
 import json
 from collections.abc import Mapping
-from typing import Any, Protocol
+from typing import Any, Protocol, override
 
 from .availability import is_available
 from .format import from_value
@@ -37,6 +37,7 @@ class BaseWriter:
     def applies_to(self, mimetype: str) -> bool:
         return self.mimetype in (ANY, mimetype)
 
+    @override
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {self.name}>"
 

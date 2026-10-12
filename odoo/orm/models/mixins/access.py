@@ -3,7 +3,7 @@ import logging
 import typing
 from collections import defaultdict
 from operator import itemgetter
-from typing import Self
+from typing import Self, override
 
 from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.libs.debug_log import DebugLog
@@ -54,6 +54,7 @@ class AccessMixin(_ModelStubs):
     def _access_field_alternative_class(self, field: Field[typing.Any]) -> str | None:
         return None
 
+    @override
     def _has_field_access(
         self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
     ) -> bool:
@@ -71,6 +72,7 @@ class AccessMixin(_ModelStubs):
         return True
 
     @api.model
+    @override
     def _check_fields_write_access(self, field_names: typing.Iterable[str]) -> None:
         field_names = list(field_names)
         for field_name in field_names:
@@ -81,6 +83,7 @@ class AccessMixin(_ModelStubs):
         if self._ids:
             self._check_fields_write_records(field_names)
 
+    @override
     def _check_fields_write_records(self, field_names: typing.Iterable[str]) -> None:
         if self.env.su:
             return
@@ -89,6 +92,7 @@ class AccessMixin(_ModelStubs):
             if field.access_classes is not None:
                 self._check_field_access_records(field, "write")
 
+    @override
     def _field_access_domain(
         self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
     ) -> Domain | None:
@@ -99,11 +103,13 @@ class AccessMixin(_ModelStubs):
             self.env, self._name, classes, operation
         )
 
+    @override
     def _field_empty_value(self, field: Field[typing.Any]) -> typing.Any:
         return field.convert_to_record(
             field.convert_to_cache(False, self, validate=False), self
         )
 
+    @override
     def _filtered_field_access(
         self,
         field: Field[typing.Any],
@@ -116,6 +122,7 @@ class AccessMixin(_ModelStubs):
             [id_ for id_ in self._ids if id_ not in outside]
         ).with_prefetch(self._prefetch_ids)
 
+    @override
     def _check_field_access_records(
         self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
     ) -> None:
@@ -141,6 +148,7 @@ class AccessMixin(_ModelStubs):
             )
         )
 
+    @override
     def _field_masked_ids(self, field: Field[typing.Any]) -> set[IdType] | None:
         outside = self._field_access_outside(field, "read")
         return None if outside is None else set(outside)
@@ -200,6 +208,7 @@ class AccessMixin(_ModelStubs):
     def _ids_within(self, domain: Domain, ids: tuple[IdType, ...]) -> set[IdType]:
         return set(self.browse(ids).sudo().filtered_domain(domain)._ids)
 
+    @override
     def _check_field_access(
         self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
     ) -> None:
@@ -303,6 +312,7 @@ class AccessMixin(_ModelStubs):
             ", ".join([repr(g.display_name) for g in groups] + missing_xmlids),
         )
 
+    @override
     def check_access(self, operation: str) -> None:
         if self.env.su:
             return
@@ -365,6 +375,7 @@ class AccessMixin(_ModelStubs):
         names = dict(zip(named._ids, named.sudo().mapped("display_name"), strict=True))
         return {id_: names.get(id_) for id_ in self._ids}
 
+    @override
     def _check_access(
         self, operation: str
     ) -> tuple[Self, Callable[[], Exception]] | None:
@@ -579,6 +590,7 @@ class AccessMixin(_ModelStubs):
         env.registry.access_policy.verb_checkpoint(env, pending, verb)
         return pending._ids
 
+    @override
     def _check_verb_transitions(
         self, vals: dict[str, typing.Any], transitions: VerbTransitions
     ) -> list[tuple[str, tuple[int, ...]]]:
@@ -601,6 +613,7 @@ class AccessMixin(_ModelStubs):
                     moves.append((name, moved))
         return moves
 
+    @override
     def _anchors_before_write(
         self, vals: dict[str, typing.Any]
     ) -> dict[str, dict[int, typing.Any]] | None:
@@ -626,6 +639,7 @@ class AccessMixin(_ModelStubs):
             for fname in fnames
         }
 
+    @override
     def _check_anchor_moves(self, before: dict[str, dict[int, typing.Any]]) -> None:
         env = self.env
         records = self.sudo()
@@ -670,11 +684,13 @@ class AccessMixin(_ModelStubs):
         if refused:
             raise policy.record_denied_error(env, "create", self.browse(refused))
 
+    @override
     def _land_verb_transitions(self, moves: list[tuple[str, tuple[int, ...]]]) -> None:
         env = self.env
         for name, ids in moves:
             env.registry.access_policy.verb_landed(env, self.browse(ids), name)
 
+    @override
     def _check_verb_creations(self, transitions: VerbTransitions) -> None:
         for fname, verbs in transitions.items():
             field = self._fields[fname]
@@ -700,6 +716,7 @@ class AccessMixin(_ModelStubs):
     def _access_guard(self, operation: str) -> Domain:
         return Domain.TRUE
 
+    @override
     def _note_readable(self) -> None:
         env = self.env
         if (
@@ -713,6 +730,7 @@ class AccessMixin(_ModelStubs):
         for id_ in self._ids:
             verdicts[id_] = True
 
+    @override
     def _known_readable(self) -> bool:
         env = self.env
         if env.su or not self._ids:
@@ -810,6 +828,7 @@ class AccessMixin(_ModelStubs):
                 if not allowed.issuperset(corecords._ids):
                     yield rank, record, name, corecords
 
+    @override
     def _check_company(self, fnames: Collection[str] | None = None) -> None:
         if fnames is None or "company_id" in fnames or "company_ids" in fnames:
             fnames = self._fields

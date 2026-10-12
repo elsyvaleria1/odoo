@@ -54,6 +54,7 @@ class Params:
         self.args = args
         self.kwargs = kwargs
 
+    @typing.override
     def __str__(self) -> str:
         params = [repr(arg) for arg in self.args]
         params.extend(f"{key}={value!r}" for key, value in sorted(self.kwargs.items()))

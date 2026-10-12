@@ -62,6 +62,7 @@ class _RegistryFieldsMixin(_RegistryStubs):
         return self._field_triggers
 
     @property
+    @typing.override
     def field_depends(self) -> Collector[Field[typing.Any], str]:
         return self.model_graph.field_depends
 

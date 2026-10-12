@@ -3,7 +3,7 @@ import functools
 import numbers
 import re
 from collections.abc import Callable
-from typing import Any
+from typing import Any, override
 from urllib.parse import quote, urlencode
 
 from dateutil import relativedelta
@@ -337,6 +337,7 @@ class QWebErrorInfo:
         self.surrounding = surrounding
         self.origin = origin
 
+    @override
     def __str__(self) -> str:
         info = [self.error]
         if self.template is not None:
@@ -365,6 +366,7 @@ class QWebError(Exception):
         super().__init__("Error while rendering the template")
         self.qweb = qweb
 
+    @override
     def __str__(self) -> str:
         return f"{super().__str__()}:\n    {self.qweb}"
 

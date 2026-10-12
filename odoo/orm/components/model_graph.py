@@ -1,7 +1,7 @@
 import logging
 import threading
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs._trigger_trees import TriggerGraph
 from odoo.libs.accel import get_trigger_trees as _get_trigger_trees
@@ -92,6 +92,7 @@ class TriggerTree[F = Any](dict[F, "TriggerTree[F]"]):
     def __bool__(self) -> bool:
         return bool(self.root or len(self))
 
+    @override
     def __repr__(self) -> str:
         return f"TriggerTree(root={self.root!r}, {super().__repr__()})"
 

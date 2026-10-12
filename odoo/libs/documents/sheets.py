@@ -4,7 +4,7 @@ import contextlib
 import io
 from decimal import Decimal
 from fractions import Fraction
-from typing import Any
+from typing import Any, override
 
 from odoo.libs.numbers import float_repr
 from odoo.libs.sheet_names import normalize_excel_sheet_name
@@ -69,6 +69,7 @@ class XlsxSheetsWriter(BaseWriter):
     mimetype = mimetype_for("xlsx")
     consumes = SHEETS
 
+    @override
     def write(self, value: Any, **options: Any) -> bytes:
         import xlsxwriter
 

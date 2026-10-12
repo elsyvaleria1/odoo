@@ -122,6 +122,7 @@ LONG_POLLING_KIND = "Long-polling (evented) subprocess"
 class PreforkServer(CommonServer):
     flavor = "prefork"
 
+    @override
     def get_metrics(self) -> dict[str, Any]:
         if os.getpid() != self.pid:
             return self._census.read()
@@ -775,6 +776,7 @@ class PreforkServer(CommonServer):
                 logger=self.logger,
             )
 
+    @override
     def describe_capacity(self) -> str:
         settings = self.settings
         if not settings.http_enable:
@@ -964,6 +966,7 @@ class PreforkServer(CommonServer):
             phoenix=_process_state.server_phoenix,
         )
 
+    @override
     def run(self, preload: list[str] | None = None, stop: bool = False) -> int | None:
         try:
             self.start()

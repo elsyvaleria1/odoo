@@ -1,3 +1,4 @@
+from typing import override
 import importlib
 import os
 import pkgutil
@@ -19,10 +20,12 @@ class _PatchingLoader(Loader):
         self._loader = loader
         self._target = target
 
+    @override
     def create_module(self, spec: Any) -> ModuleType | None:
         module: ModuleType | None = self._loader.create_module(spec)
         return module
 
+    @override
     def exec_module(self, module: ModuleType) -> None:
         with _debug.perf(
             "monkeypatch.import", module=module.__name__, target=self._target
@@ -33,6 +36,7 @@ class _PatchingLoader(Loader):
     def __getattr__(self, name: str) -> Any:
         return getattr(self._loader, name)
 
+    @override
     def __repr__(self) -> str:
         return f"<_PatchingLoader for {self._target!r} wrapping {self._loader!r}>"
 

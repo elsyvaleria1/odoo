@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -181,6 +181,7 @@ class DictBackend:
         self._sequences[key] += 1
         return self._sequences[key]
 
+    @override
     def __repr__(self) -> str:
         n_tables = len(self._tables)
         n_rows = sum(len(t) for t in self._tables.values())

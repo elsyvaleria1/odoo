@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.filesystem.mimetypes import (
@@ -404,6 +404,7 @@ class Document:
     def read_cost(self, representation: str) -> int:
         return self._read_cost.get(representation, FREE)
 
+    @override
     def __repr__(self) -> str:
         size = "?" if self._data is None else len(self._data)
         return f"<Document {self.name or '?'} {self.mimetype} {size}B>"

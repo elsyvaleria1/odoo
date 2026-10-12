@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from types import MappingProxyType
+from typing import override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -16,6 +17,7 @@ class TransactionSchemaCache:
         self._column_types: dict[tuple[str, tuple[str, ...]], list[int]] = {}
         self._locked_tables: dict[str, int] = {}
 
+    @override
     def __repr__(self) -> str:
         return (
             f"TransactionSchemaCache(sequences={len(self._id_sequences)},"

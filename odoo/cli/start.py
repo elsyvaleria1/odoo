@@ -2,6 +2,7 @@ import os
 import re
 from collections.abc import Iterable
 from pathlib import Path
+from typing import override
 
 import odoo.cli
 from odoo.libs.debug_log import DebugLog
@@ -44,6 +45,7 @@ class Start(Command):
             "the project directory name)",
         )
 
+    @override
     def run(self, cmdargs: list[str]) -> None:
         config.parser.prog = self.prog
         args, _unknown = self.parser.parse_known_args(args=cmdargs)

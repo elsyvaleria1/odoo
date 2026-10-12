@@ -1,7 +1,7 @@
 import typing
 import warnings
 from collections.abc import Iterable, Iterator, Mapping, Reversible
-from typing import Self
+from typing import Self, override
 
 from odoo.libs.accel import origin_ids as _origin_ids
 from odoo.libs.debug_log import DebugLog
@@ -30,11 +30,13 @@ class _OriginPrefetch(Reversible[IdType]):
     def __init__(self, ids: Iterable[IdType]) -> None:
         self._ids = ids
 
+    @override
     def __iter__(self) -> Iterator[IdType]:
         for id_ in self._ids:
             if origin := id_ or getattr(id_, "origin", None):
                 yield origin
 
+    @override
     def __reversed__(self) -> Iterator[IdType]:
         return reversed(_origin_ids(self._ids))
 
@@ -43,6 +45,7 @@ class EnvironmentMixin(_ModelStubs):
     __slots__ = ()
 
     @api.private
+    @override
     def check_singleton(self) -> Self:
         try:
             (_id,) = self._ids
@@ -54,10 +57,12 @@ class EnvironmentMixin(_ModelStubs):
             raise ValueError(f"Expected singleton: {self}") from None
 
     @api.private
+    @override
     def with_env(self, env: Environment) -> Self:
         return self._spawn(env, self._ids, self._prefetch_ids)
 
     @api.private
+    @override
     def sudo(self, flag: bool = True) -> Self:
         if not isinstance(flag, bool):
             raise TypeError(
@@ -69,12 +74,14 @@ class EnvironmentMixin(_ModelStubs):
         return self.with_env(self.env(su=flag))
 
     @api.private
+    @override
     def with_user(self, user: typing.Any) -> Self:
         if not user:
             return self
         return self.with_env(self.env(user=user, su=False))
 
     @api.private
+    @override
     def with_privilege(self, *names: str, reason: str | None = None) -> Self:
         privileges = self.env.registry.access_policy.privilege_ids(self.env, names)
         env = self.env(privileges=self.env.privileges | privileges)
@@ -83,6 +90,7 @@ class EnvironmentMixin(_ModelStubs):
         return self.with_env(env)
 
     @api.private
+    @override
     def with_acting_partner(self, partner: typing.Any) -> Self:
         if not partner:
             return self
@@ -91,6 +99,7 @@ class EnvironmentMixin(_ModelStubs):
         return self.with_context({**self.env.context, ACTING_PARTNER_KEY: acting})
 
     @api.private
+    @override
     def with_company(
         self, company: BaseModel | ResCompanyProtocol | int | None
     ) -> Self:
@@ -119,6 +128,7 @@ class EnvironmentMixin(_ModelStubs):
         return self.with_context(allowed_company_ids=allowed_company_ids)
 
     @api.private
+    @override
     def with_context(
         self, ctx: dict[str, typing.Any] | None = None, /, **overrides: typing.Any
     ) -> Self:
@@ -148,6 +158,7 @@ class EnvironmentMixin(_ModelStubs):
         return self.with_env(self.env(context=context))
 
     @api.private
+    @override
     def with_prefetch(self, prefetch_ids: Reversible[IdType] | None = None) -> Self:
         if prefetch_ids is None:
             prefetch_ids = self._ids
@@ -159,6 +170,7 @@ class EnvironmentMixin(_ModelStubs):
             return any(not id_ for id_ in value)
         return not (value is None or type(value) is int)
 
+    @override
     def _update_cache(self, values: ValuesType, validate: bool = True) -> None:
         self.check_singleton()
         fields = self._fields
@@ -216,6 +228,7 @@ class EnvironmentMixin(_ModelStubs):
 
     @api.model
     @api.private
+    @override
     def new(
         self,
         values: ValuesType | None = None,
@@ -243,10 +256,12 @@ class EnvironmentMixin(_ModelStubs):
         return record
 
     @property
+    @override
     def _has_origin(self) -> bool:
         return any(id_ or getattr(id_, "origin", None) for id_ in self._ids)
 
     @property
+    @override
     def _origin(self) -> Self:
         record_ids = self._ids
         if all(record_ids):

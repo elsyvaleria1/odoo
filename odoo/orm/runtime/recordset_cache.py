@@ -34,6 +34,7 @@ class Cache:
     def __init__(self, transaction: Transaction) -> None:
         self.transaction = transaction
 
+    @typing.override
     def __repr__(self) -> str:
         data: dict[Field[typing.Any], dict[typing.Any, typing.Any]] = {}
         core = self.transaction.core
@@ -308,6 +309,7 @@ class Starred:
     def __init__(self, value: typing.Any) -> None:
         self.value = value
 
+    @typing.override
     def __repr__(self) -> str:
         return f"{self.value!r}*"
 

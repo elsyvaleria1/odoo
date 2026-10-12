@@ -640,6 +640,7 @@ class LangProxyDict(collections.abc.MutableMapping["IdType", typing.Any]):
         self._cache = cache
         self._lang = lang
 
+    @typing.override
     def get(self, key: IdType, default: typing.Any = None) -> typing.Any:
         vals = self._cache.get(key, SENTINEL)
         if vals is SENTINEL:
@@ -650,6 +651,7 @@ class LangProxyDict(collections.abc.MutableMapping["IdType", typing.Any]):
             return vals.get(self._lang, vals.get("en_US", default))
         return vals.get(self._lang, default)
 
+    @typing.override
     def __getitem__(self, key: IdType) -> typing.Any:
         vals = self._cache[key]
         if vals is None:
@@ -658,6 +660,7 @@ class LangProxyDict(collections.abc.MutableMapping["IdType", typing.Any]):
             return vals.get(self._lang, vals.get("en_US"))
         return vals[self._lang]
 
+    @typing.override
     def __setitem__(self, key: IdType, value: typing.Any) -> None:
         if value is None:
             self._cache[key] = None
@@ -670,6 +673,7 @@ class LangProxyDict(collections.abc.MutableMapping["IdType", typing.Any]):
         if not (self._field.compute or (self._field.store and _get_id_or_origin(key))):
             vals.setdefault("en_US", value)
 
+    @typing.override
     def __delitem__(self, key: IdType) -> None:
         vals = self._cache.get(key, _PROXY_MISSING)
         if vals is None:
@@ -679,18 +683,22 @@ class LangProxyDict(collections.abc.MutableMapping["IdType", typing.Any]):
             raise KeyError(key)
         del vals[self._lang]
 
+    @typing.override
     def __iter__(self) -> typing.Iterator[IdType]:
         for key, vals in self._cache.items():
             if vals is None or self._lang in vals:
                 yield key
 
+    @typing.override
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
+    @typing.override
     def clear(self) -> None:
         for vals in self._cache.values():
             if vals:
                 vals.pop(self._lang, None)
 
+    @typing.override
     def __repr__(self) -> str:
         return f"<LangProxyDict lang={self._lang!r} size={len(self._cache)} at {hex(id(self))}>"

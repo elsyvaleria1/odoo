@@ -465,6 +465,7 @@ class WorkerHTTP(Worker):
             on_request=self.setproctitle,
         )
 
+    @override
     def process_work(self) -> None:
         if self.multi.socket is None or not self._listener_ready:
             return
@@ -486,6 +487,7 @@ class WorkerHTTP(Worker):
                 reason="raced" if e.errno == errno.EAGAIN else "aborted",
             )
 
+    @override
     def start(self) -> None:
         Worker.start(self)
         exclusive = False
@@ -539,6 +541,7 @@ class WorkerCron(Worker):
     def _run_jobs_for_database(self, db_name: str) -> None:
         self.kind.process_jobs()(db_name)
 
+    @override
     def sleep(self) -> None:
         if not self.db_queue:
             if self.listener.backing_off:
@@ -577,6 +580,7 @@ class WorkerCron(Worker):
             self.logger.info("Max age (%ss) reached.", max_age)
             self.stop_for("max_age")
 
+    @override
     def process_work(self) -> None:
         self.logger.debug("polling for jobs")
 
@@ -645,6 +649,7 @@ class WorkerCron(Worker):
                 unswept=self.db_count - self.request_max,
             )
 
+    @override
     def start(self) -> None:
         os.nice(10)
         Worker.start(self)
@@ -701,6 +706,7 @@ class WorkerStream(WorkerCron):
 
     kind: ListenerKind = STREAM_LISTENER
 
+    @override
     def sleep(self) -> None:
         if not self.db_queue:
             if self.listener.backing_off:
@@ -708,6 +714,7 @@ class WorkerStream(WorkerCron):
             wait_for_notifies(self.listener, STREAM_HEARTBEAT_S)
             empty_pipe(self.wakeup_pipe[0])
 
+    @override
     def process_work(self) -> None:
         if not self.db_queue:
             if not self.listener.connected:

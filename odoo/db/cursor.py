@@ -5,7 +5,7 @@ from contextlib import AbstractContextManager, contextmanager, suppress
 from datetime import datetime
 from inspect import currentframe
 from time import monotonic
-from typing import TYPE_CHECKING, Any, NoReturn, Self
+from typing import TYPE_CHECKING, Any, NoReturn, Self, override
 
 import psycopg
 from psycopg import sql as _sql
@@ -418,6 +418,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         rows: list[tuple[Any, ...]] = obj.fetchmany(size)
         return rows
 
+    @override
     def dictfetchone(self) -> dict[str, Any] | None:
         row = self.fetchone()
         if row is None:
@@ -432,6 +433,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
     def _rows_to_dict_list(self, rows: list[tuple[Any, ...]]) -> list[dict[str, Any]]:
         return _rows_to_dicts(self._get_column_names(), rows)
 
+    @override
     def dictfetchmany(self, size: int) -> list[dict[str, Any]]:
         if size <= 0:
             return []
@@ -443,6 +445,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             return []
         return self._rows_to_dict_list(rows)
 
+    @override
     def dictfetchall(self) -> list[dict[str, Any]]:
         rows = self._fetchall()
         _debug.perf.count("cursor.fetch", shape="dictfetchall", rows=len(rows))
@@ -450,6 +453,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             return []
         return self._rows_to_dict_list(rows)
 
+    @override
     def fetchone(self) -> tuple[Any, ...] | None:
         obj = self._obj
         row: tuple[Any, ...] | None
@@ -459,6 +463,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             row = obj.fetchone()
         return row
 
+    @override
     def fetchall(self) -> list[tuple[Any, ...]]:
         rows = self._fetchall()
         _debug.perf.count("cursor.fetch", shape="fetchall", rows=len(rows))
@@ -470,12 +475,14 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         return rows
 
     @property
+    @override
     def description(self) -> list[Any] | None:
         self._sync_pipeline_results()
         description: list[Any] | None = self._obj.description
         return description
 
     @property
+    @override
     def rowcount(self) -> int:
         self._sync_pipeline_results()
         rowcount: int = self._obj.rowcount
@@ -680,6 +687,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         self.execute("SET LOCAL statement_timeout = %s", (value,))
         self._transaction_touched = touched
 
+    @override
     def _before_statement(self) -> None:
         if self._statement_timeout is not None and not self._statement_timeout_armed:
             self._arm_statement_timeout()
@@ -778,6 +786,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         if self._pipeline_depth:
             self._pipeline_statement_time += delay
 
+    @override
     def execute(
         self,
         query: str | bytes | SQL | _sql.Composable,
@@ -881,6 +890,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
                 )
         return query, params, prepare, qs, ddl_kw, rollback_to
 
+    @override
     def invalidate_cached_plans(self) -> None:
         cleared = clear_prepared_cache(self._cnx)
         _debug.lifecycle(
@@ -897,10 +907,12 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             self.execute("DEALLOCATE ALL")
         self._schema_cache.invalidate_catalog_facts()
 
+    @override
     def _savepoint_opened(self) -> None:
         self._leave_pipeline("savepoint")
         super()._savepoint_opened()
 
+    @override
     def _on_rollback_to_savepoint(self) -> None:
         _debug.lifecycle(
             "cursor.savepoint_rollback_seen",
@@ -1043,6 +1055,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
 
         self._after_statement(qs, ddl_kw, rollback_to, delay, debug)
 
+    @override
     def close(self) -> None:
         if not self._closed:
             self._close()
@@ -1115,6 +1128,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         clean: bool = self._get_transaction_status() == _TX_IDLE
         return clean
 
+    @override
     def in_failed_transaction(self) -> bool:
         failed: bool = self._get_transaction_status() == _TX_INERROR
         return failed
@@ -1126,6 +1140,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         self._readonly = True
         _debug.lifecycle("cursor.readonly_enforced", db=vars(self).get("dbname"))
 
+    @override
     def commit(self) -> None:
         if self._closed:
             _debug.logic(
@@ -1201,6 +1216,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             "error inside cr.savepoint()"
         )
 
+    @override
     def rollback(self) -> None:
         if self._closed:
             _debug.logic(
@@ -1297,10 +1313,12 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         )
 
     @property
+    @override
     def closed(self) -> bool:
         return self._closed or bool(self._cnx.closed)
 
     @property
+    @override
     def connection(self) -> psycopg.Connection:
         return self._cnx
 
@@ -1309,6 +1327,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         return self._readonly
 
     @property
+    @override
     def readonly_pool(self) -> bool:
         return self.__pool.readonly
 

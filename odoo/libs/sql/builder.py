@@ -4,7 +4,7 @@ import re
 import typing
 import warnings
 from collections.abc import Iterable, Iterator
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from psycopg import sql as _sql
 
@@ -189,12 +189,14 @@ class SQL:
 
         return _PRINTF_DIRECTIVE_RE.sub(substitute, self.__code)
 
+    @override
     def __repr__(self) -> str:
         return f"SQL({', '.join(map(repr, [self.__code, *self.__params]))})"
 
     def __bool__(self) -> bool:
         return bool(self.__code)
 
+    @override
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, SQL)
@@ -202,6 +204,7 @@ class SQL:
             and self.__params == other.__params
         )
 
+    @override
     def __hash__(self) -> int:
         return hash((self.__code, freehash(self.__params)))
 

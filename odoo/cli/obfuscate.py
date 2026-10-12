@@ -5,7 +5,7 @@ import logging
 import pathlib
 import sys
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 import psycopg
 
@@ -572,6 +572,7 @@ class Obfuscate(DatabaseCommand):
             help="Don't ask for manual confirmation.",
         )
 
+    @override
     def run(self, cmdargs: list[str]) -> None:
         opt, unknown = self.parse_args(cmdargs)
         if opt.allfields and not opt.unobfuscate:

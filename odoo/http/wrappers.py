@@ -1,7 +1,7 @@
 import logging
 import unicodedata
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, override
 from urllib.parse import quote as url_quote
 
 import werkzeug.datastructures
@@ -390,6 +390,7 @@ class Headers(Proxy):
     update = ProxyFunc(None)
     values = ProxyFunc()
 
+    @override
     def __eq__(self, other: object) -> bool:
         equal: bool = self._wrapped__ == _unwrap_proxy(other)
         return equal
@@ -422,6 +423,7 @@ class ResponseCacheControl(Proxy):
     stale_while_revalidate = ProxyAttr(int)
     pop = ProxyFunc()
 
+    @override
     def __eq__(self, other: object) -> bool:
         equal: bool = self._wrapped__ == _unwrap_proxy(other)
         return equal

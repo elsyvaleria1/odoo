@@ -1,7 +1,7 @@
 import typing
 import warnings
 from itertools import batched
-from typing import Self
+from typing import Self, override
 
 from odoo.libs.accel import origin_ids as _origin_ids
 from odoo.libs.collections import OrderedSet, ReversedIterable
@@ -34,6 +34,7 @@ class IterationMixin(_ModelStubs):
         self._prefetch_ids = prefetch_ids
 
     @classmethod
+    @override
     def _spawn(
         cls,
         env: Environment,
@@ -47,6 +48,7 @@ class IterationMixin(_ModelStubs):
         return record
 
     @api.private
+    @override
     def browse(self, ids: int | typing.Iterable[IdType] | None = ()) -> Self:
         id_tuple: tuple[IdType, ...]
         if not ids:
@@ -60,11 +62,13 @@ class IterationMixin(_ModelStubs):
         return self._spawn(self.env, id_tuple, id_tuple)
 
     @property
+    @override
     def ids(self) -> list[int]:
         if all(self._ids):
             return list(self._ids)
         return list(_origin_ids(self._ids))
 
+    @override
     def _narrow(self, ids: typing.Iterable[IdType]) -> Self:
         return self._spawn(self.env, tuple(ids), self._prefetch_ids)
 
@@ -75,9 +79,11 @@ class IterationMixin(_ModelStubs):
     def __bool__(self) -> bool:
         return bool(self._ids)
 
+    @override
     def __len__(self) -> int:
         return len(self._ids)
 
+    @override
     def __iter__(self) -> Iterator[Self]:
         ids = self._ids
         size = len(ids)
@@ -146,6 +152,7 @@ class IterationMixin(_ModelStubs):
                 rs._prefetch_ids = prefetch_ids
                 yield rs
 
+    @override
     def __contains__(self, item: typing.Any) -> bool:
         try:
             if self._name == item._name:
@@ -205,6 +212,7 @@ class IterationMixin(_ModelStubs):
         return self.concat(other)
 
     @api.private
+    @override
     def concat(self, *args: typing.Any) -> Self:
         ids = list(self._ids)
         for arg in args:
@@ -218,6 +226,7 @@ class IterationMixin(_ModelStubs):
                 ) from None
         return self.browse(ids)
 
+    @override
     def __sub__(self, other: typing.Any) -> Self:
         try:
             if self._name != other._name:
@@ -250,6 +259,7 @@ class IterationMixin(_ModelStubs):
         return self.union(other)
 
     @api.private
+    @override
     def union(self, *args: typing.Any) -> Self:
         if len(args) == 1:
             arg = args[0]
@@ -280,6 +290,7 @@ class IterationMixin(_ModelStubs):
                 ) from None
         return self.browse(OrderedSet(ids))
 
+    @override
     def __eq__(self, other: object) -> bool:
         peer: typing.Any = other
         try:
@@ -343,12 +354,15 @@ class IterationMixin(_ModelStubs):
             pass
         return NotImplemented
 
+    @override
     def __int__(self) -> int:
         return self.id or 0
 
+    @override
     def __repr__(self) -> str:
         return f"{self._name}{self._ids!r}"
 
+    @override
     def __hash__(self) -> int:
         return hash((self._name, frozenset(self._ids)))
 
@@ -361,6 +375,7 @@ class IterationMixin(_ModelStubs):
     @typing.overload
     def __getitem__(self, key: str) -> typing.Any: ...
 
+    @override
     def __getitem__(self, key: int | slice | str) -> Self | typing.Any:
         if isinstance(key, str):
             return self._fields[key].__get__(self)
@@ -371,5 +386,6 @@ class IterationMixin(_ModelStubs):
             ids = (self._ids[key],)
             return self._spawn(self.env, ids, self._prefetch_ids)
 
+    @override
     def __setitem__(self, key: str, value: typing.Any) -> None:
         return self._fields[key].__set__(typing.cast("BaseModel", self), value)

@@ -54,6 +54,7 @@ class SchemaMixin(_ModelStubs):
         )
         self.invalidate_model(["parent_path"])
 
+    @typing.override
     def _init_column(self, column_name: str, *, new_column: bool = False) -> None:
         field = self._fields[column_name]
         if field.default:
@@ -97,6 +98,7 @@ class SchemaMixin(_ModelStubs):
             )
 
     @ormcache()
+    @typing.override
     def _has_rows_in_table(self) -> bool:
         has_rows = self.env.backend.has_rows_beyond(self, 0)
         _debug.perf.count(
@@ -280,6 +282,7 @@ class SchemaMixin(_ModelStubs):
             obj.apply_to_database(self)
 
     @api.model
+    @typing.override
     def _sql_error_to_message(self, exc: psycopg.Error) -> str:
         if (constraint_name := exc.diag.constraint_name) and (
             cons := self._table_objects.get(constraint_name)

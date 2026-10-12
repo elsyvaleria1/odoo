@@ -29,6 +29,7 @@ class NewId:
     def __bool__(self) -> bool:
         return False
 
+    @typing.override
     def __eq__(self, other: object) -> bool:
         if self is other:
             return True
@@ -41,6 +42,7 @@ class NewId:
                 return self.ref == other.ref
         return False
 
+    @typing.override
     def __hash__(self) -> int:
         return self.__hash
 
@@ -112,6 +114,7 @@ class NewId:
             return self.origin >= other
         return NotImplemented
 
+    @typing.override
     def __repr__(self) -> str:
         if self.origin is not None:
             return f"<NewId origin={self.origin!r}>"
@@ -119,6 +122,7 @@ class NewId:
             return f"<NewId ref={self.ref!r}>"
         return f"<NewId 0x{id(self):x}>"
 
+    @typing.override
     def __str__(self) -> str:
         if self.origin is not None:
             id_part = repr(self.origin)

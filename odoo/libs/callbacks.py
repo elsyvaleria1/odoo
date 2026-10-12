@@ -12,7 +12,7 @@ from collections.abc import (
     MutableSequence,
     MutableSet,
 )
-from typing import Any, Self, SupportsIndex
+from typing import Any, Self, SupportsIndex, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -239,17 +239,20 @@ class JournaledList(list[Any]):
         if self._log.recording:
             self._log.record(_restore_list, self, list(self))
 
+    @override
     def append(self, value: Any, /) -> None:
         if self._log.recording:
             self._log.record(_truncate_list, self, len(self))
         list.append(self, value)
 
+    @override
     def extend(self, values: Iterable[Any], /) -> None:
         if self._log.recording:
             self._log.record(_truncate_list, self, len(self))
         list.extend(self, values)
 
-    def __iadd__(self, values: Iterable[Any], /) -> Self:  # type: ignore[misc]  # Mutation preserves the journaled container's identity.
+    @override
+    def __iadd__(self, values: Iterable[Any], /) -> Self:
         self.extend(values)
         return self
 
@@ -257,6 +260,7 @@ class JournaledList(list[Any]):
         position = operator.index(index)
         return position + len(self) if position < 0 else position
 
+    @override
     def pop(self, index: SupportsIndex = -1, /) -> Any:
         if not self._log.recording:
             return list.pop(self, index)
@@ -265,6 +269,7 @@ class JournaledList(list[Any]):
         self._log.record(list.insert, self, position, value)
         return value
 
+    @override
     def __setitem__(self, index: Any, value: Any, /) -> None:
         if self._log.recording:
             if isinstance(index, slice):
@@ -276,6 +281,7 @@ class JournaledList(list[Any]):
                 )
         list.__setitem__(self, index, value)
 
+    @override
     def __delitem__(self, index: Any, /) -> None:
         if not self._log.recording:
             list.__delitem__(self, index)
@@ -293,11 +299,13 @@ class JournaledList(list[Any]):
         if run:
             self._log.record(_insert_run, self, start, run)
 
+    @override
     def __imul__(self, count: SupportsIndex, /) -> Self:
         self._snapshot()
         list.__imul__(self, count)
         return self
 
+    @override
     def insert(self, index: SupportsIndex, value: Any, /) -> None:
         if self._log.recording:
             size = len(self)
@@ -306,6 +314,7 @@ class JournaledList(list[Any]):
             self._log.record(_delete_at, self, position)
         list.insert(self, index, value)
 
+    @override
     def remove(self, value: Any, /) -> None:
         if not self._log.recording:
             list.remove(self, value)
@@ -314,14 +323,17 @@ class JournaledList(list[Any]):
         self._log.record(list.insert, self, position, list.__getitem__(self, position))
         list.__delitem__(self, position)
 
+    @override
     def clear(self) -> None:
         self._snapshot()
         list.clear(self)
 
+    @override
     def sort(self, *, key: Any = None, reverse: bool = False) -> None:
         self._snapshot()
         list.sort(self, key=key, reverse=reverse)
 
+    @override
     def reverse(self) -> None:
         self._snapshot()
         list.reverse(self)
@@ -346,6 +358,7 @@ class JournaledSet(MutableSet[Any]):
                 self._link(value)
 
     @classmethod
+    @override
     def _from_iterable(cls, it: Iterable[Any]) -> set[Any]:
         return set(it)
 
@@ -362,18 +375,23 @@ class JournaledSet(MutableSet[Any]):
             self._unordered = False
         return items
 
+    @override
     def __contains__(self, value: object) -> bool:
         return value in self._items
 
+    @override
     def __iter__(self) -> Iterator[Any]:
         return iter(self._ordered())
 
+    @override
     def __len__(self) -> int:
         return len(self._items)
 
+    @override
     def __repr__(self) -> str:
         return f"{type(self).__name__}({list(self._ordered())!r})"
 
+    @override
     def add(self, value: Any) -> None:
         if value in self._items:
             return
@@ -386,6 +404,7 @@ class JournaledSet(MutableSet[Any]):
             for value in iterable:
                 self.add(value)
 
+    @override
     def discard(self, value: Any) -> None:
         member = self._items.pop(value, None)
         if member is not None and self._log.recording:
@@ -396,6 +415,7 @@ class JournaledSet(MutableSet[Any]):
             for value in iterable:
                 self.discard(value)
 
+    @override
     def pop(self) -> Any:
         items = self._ordered()
         if not items:
@@ -405,6 +425,7 @@ class JournaledSet(MutableSet[Any]):
             self._log.record(_relink_member, self, member)
         return member[1]
 
+    @override
     def clear(self) -> None:
         if self._items:
             if self._log.recording:
@@ -431,13 +452,16 @@ class JournaledDict(dict[Any, Any]):
             self._log.record(_restore_key, self, key, dict.get(self, key, _MISSING))
         dict.__setitem__(self, key, value)
 
+    @override
     def __setitem__(self, key: Any, value: Any, /) -> None:
         self._store(key, value)
 
+    @override
     def __delitem__(self, key: Any, /) -> None:
         dict.__getitem__(self, key)
         self._remove(key)
 
+    @override
     def pop(self, key: Any, default: Any = _MISSING, /) -> Any:
         value = dict.get(self, key, _MISSING)
         if value is _MISSING:
@@ -453,18 +477,21 @@ class JournaledDict(dict[Any, Any]):
             self._log.record(_restore_items, self, list(dict.items(self)))
         dict.__delitem__(self, key)
 
+    @override
     def popitem(self) -> tuple[Any, Any]:
         key, value = dict.popitem(self)
         if self._log.recording:
             self._log.record(_restore_key, self, key, value)
         return key, value
 
+    @override
     def setdefault(self, key: Any, default: Any = None, /) -> Any:
         value = dict.get(self, key, _MISSING)
         if value is _MISSING:
             self[key] = value = default
         return value
 
+    @override
     def update(self, other: Any = (), /, **kwargs: Any) -> None:
         items = other.items() if hasattr(other, "items") else other
         for key, value in items:
@@ -472,10 +499,12 @@ class JournaledDict(dict[Any, Any]):
         for key, value in kwargs.items():
             self[key] = value
 
-    def __ior__(self, other: Any, /) -> Self:  # type: ignore[misc]  # Mutation preserves the journaled container's identity.
+    @override
+    def __ior__(self, other: Any, /) -> Self:
         self.update(other)
         return self
 
+    @override
     def clear(self) -> None:
         if self._log.recording and self:
             self._log.record(dict.update, self, dict(self))
@@ -520,6 +549,7 @@ _JOURNALED_TYPES = (JournaledList, JournaledSet, JournaledDict)
 class CallbackData(JournaledDict):
     __slots__ = ()
 
+    @override
     def __setitem__(self, key: Any, value: Any, /) -> None:
         if type(value) not in _IMMUTABLE_TYPES:
             self._check_value(key, value)
@@ -587,6 +617,7 @@ class _Durable:
     def __call__(self) -> object:
         return self.func()
 
+    @override
     def __repr__(self) -> str:
         return f"durable({self.func!r})"
 

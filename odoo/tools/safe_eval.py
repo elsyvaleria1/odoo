@@ -433,6 +433,7 @@ _GUARD_FORMAT_NAME = "_odoo_guarded_format_receiver"
 
 
 class _FormatGuardTransform(ast.NodeTransformer):
+    @typing.override
     def visit_Attribute(self, node: ast.Attribute) -> ast.Attribute:
         self.generic_visit(node)
         if node.attr in _FORMAT_METHOD_NAMES:
@@ -795,6 +796,7 @@ class wrap_module:
                 target = wrap_module(target, attributes[attrib])
             setattr(self, attrib, target)
 
+    @typing.override
     def __repr__(self) -> str:
         return self._repr
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import io
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs.json import loads as json_loads
 
@@ -66,6 +66,7 @@ class BaseReader:
         _ = document
         return None
 
+    @override
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {self.name}>"
 
@@ -250,6 +251,7 @@ class _MediaReader(BaseReader):
     mimetypes = VIDEO_MIMETYPES
     cost = CHEAP
 
+    @override
     def available(self, options: Mapping[str, Any]) -> bool:
         from .media import can_decode_media
 
@@ -261,6 +263,7 @@ class _VideoFrames(_MediaReader):
     name = "video_frames"
     yields = (IMAGES,)
 
+    @override
     def read(self, document: Any) -> list[bytes] | None:
         from .media import keyframes
 
@@ -279,6 +282,7 @@ class _EmbeddedSubtitles(_MediaReader):
     yields = (CUES,)
     carried = True
 
+    @override
     def read(self, document: Any) -> Any:
         from .media import subtitle_cues
 

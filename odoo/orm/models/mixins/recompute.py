@@ -267,6 +267,7 @@ class RecomputeMixin(_ModelStubs):
     __slots__ = ()
 
     @api.private
+    @typing.override
     def modified(
         self,
         fnames: Collection[str],
@@ -397,6 +398,7 @@ class RecomputeMixin(_ModelStubs):
                 sibling._flush_recordset_own(get_fields_by_name(sibling, names))
                 sibling._invalidate_cache(names, sibling._ids)
 
+    @typing.override
     def _modified_before(self, fnames: Collection[str]) -> None:
         return self.modified(fnames, before=True)
 
@@ -446,6 +448,7 @@ class RecomputeMixin(_ModelStubs):
                     _invalidate_count += n
         return _mark_count, _invalidate_count
 
+    @typing.override
     def _modified_trigger_loop(
         self,
         fnames: Collection[str],
@@ -826,6 +829,7 @@ class RecomputeMixin(_ModelStubs):
     def _recompute_model(self, fnames: Collection[str] | None = None) -> None:
         self._recompute_fields(self._resolve_recompute_fields(fnames), None)
 
+    @typing.override
     def _recompute_recordset(self, fnames: Collection[str] | None = None) -> None:
         self._recompute_fields(self._resolve_recompute_fields(fnames), self._ids)
 
@@ -886,6 +890,7 @@ class RecomputeMixin(_ModelStubs):
             )
 
     @api.private
+    @typing.override
     def flush_model(self, fnames: Collection[str] | None = None) -> None:
         self._flush_model_own(fnames)
         if self._table_inheritance_root:
@@ -912,6 +917,7 @@ class RecomputeMixin(_ModelStubs):
         prof.stop("flush")
         prof.report(_orm_cache, "flush_model %s", self._name)
 
+    @typing.override
     def _flush_table_inheritance_siblings(
         self, fnames: Collection[str] | None, ids: Sequence[IdType] | None = None
     ) -> None:
@@ -929,6 +935,7 @@ class RecomputeMixin(_ModelStubs):
                 sibling._flush_if_dirty([sibling._fields[fname] for fname in shared])
 
     @api.private
+    @typing.override
     def flush_recordset(self, fnames: Collection[str] | None = None) -> None:
         named_fields = None if fnames is None else get_fields_by_name(self, fnames)
         if not self:
@@ -986,6 +993,7 @@ class RecomputeMixin(_ModelStubs):
             )
             self._flush()
 
+    @typing.override
     def _flush_if_dirty(self, fields: Collection[Field[typing.Any]]) -> None:
         core = self.env.core
         if any(core.get_dirty(field) for field in fields):

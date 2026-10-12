@@ -206,6 +206,7 @@ class BaseString(Field[str | typing.Literal[False]]):
             return dep, ()
         return super().get_depends(model)
 
+    @override
     def _convert_db_column(
         self, model: ModelLike, column: dict[str, typing.Any]
     ) -> None:
@@ -299,6 +300,7 @@ class BaseString(Field[str | typing.Literal[False]]):
     def convert_to_write(self, value: typing.Any, record: ModelLike) -> typing.Any:
         return value
 
+    @override
     def get_translation_dictionary(
         self,
         from_lang_value: str,
@@ -308,9 +310,11 @@ class BaseString(Field[str | typing.Literal[False]]):
             self, from_lang_value, to_lang_values
         )
 
+    @override
     def _get_stored_translations(self, record: ModelLike) -> dict[str, str] | None:
         return _translation.get_stored_translations(self, record)
 
+    @override
     def _get_stored_translations_multi(
         self, records: ModelLike
     ) -> dict[IdType, dict[str, str] | None]:
@@ -319,6 +323,7 @@ class BaseString(Field[str | typing.Literal[False]]):
     def get_translation_lang(self, env: Environment) -> str:
         return _translation.get_translation_lang(self, env)
 
+    @override
     def get_translation_fallback_langs(self, env: Environment) -> tuple[str, ...]:
         return _translation.get_fallback_langs(self, env)
 

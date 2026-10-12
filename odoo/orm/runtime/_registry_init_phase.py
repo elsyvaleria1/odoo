@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -19,6 +19,7 @@ class _RegistryInitPhaseMixin(_RegistryStubs):
         self._init_phase = None
 
     @property
+    @override
     def init_phase(self) -> InitModelsPhase:
         if self._init_phase is None:
             raise RuntimeError(
@@ -56,6 +57,7 @@ class _RegistryInitPhaseMixin(_RegistryStubs):
             self._init_phase = None
 
     @contextmanager
+    @override
     def join_init_models_window(self) -> Iterator[None]:
         if self._init_phase is not None:
             yield

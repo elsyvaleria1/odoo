@@ -133,6 +133,7 @@ current_test: TestCase | bool = False
 
 
 class UpgradeHook(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+    @typing.override
     def find_spec(
         self,
         fullname: str,
@@ -143,11 +144,13 @@ class UpgradeHook(importlib.abc.MetaPathFinder, importlib.abc.Loader):
             return importlib.util.spec_from_loader(fullname, self)
         return None
 
+    @typing.override
     def create_module(
         self, spec: importlib.machinery.ModuleSpec
     ) -> types.ModuleType | None:
         return None
 
+    @typing.override
     def exec_module(self, module: types.ModuleType) -> None:
         canonical_name = module.__name__.replace(
             "odoo.addons.base.maintenance.migrations", "odoo.upgrade"
@@ -288,6 +291,7 @@ class Manifest(Mapping[str, typing.Any]):
             return str(static)
         return None
 
+    @typing.override
     def __getitem__(self, key: str) -> typing.Any:
         if key in self._COMPUTED_KEYS:
             return getattr(self, key)
@@ -302,6 +306,7 @@ class Manifest(Mapping[str, typing.Any]):
     def _force_parse(self) -> None:
         _ = self.__manifest_cached
 
+    @typing.override
     def __iter__(self) -> typing.Iterator[str]:
         manifest = self.__manifest_cached
         yield from manifest
@@ -338,9 +343,11 @@ class Manifest(Mapping[str, typing.Any]):
     def __bool__(self) -> bool:
         return True
 
+    @typing.override
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
+    @typing.override
     def __repr__(self) -> str:
         return f"Manifest({self.name})"
 

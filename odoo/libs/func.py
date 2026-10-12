@@ -2,7 +2,7 @@ import functools
 import operator
 from collections.abc import Callable
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Concatenate, Protocol
+from typing import TYPE_CHECKING, Any, Concatenate, Protocol, override
 
 if TYPE_CHECKING:
     import types
@@ -55,6 +55,7 @@ class classproperty[T]:
         return self.fget.__get__(None, owner)()
 
     @property
+    @override
     def __doc__(self) -> str | None:  # type: ignore[override]  # Computed descriptor documentation.
         return self.fget.__doc__
 
@@ -81,24 +82,30 @@ class lazy:
             raise AttributeError(name)
         return getattr(self._value, name)
 
+    @override
     def __reduce__(self) -> tuple[Any, tuple[Any]]:
         return (_reconstruct_lazy, (self._value,))
 
+    @override
     def __setattr__(self, name: str, value: Any) -> None:
         return setattr(self._value, name, value)
 
+    @override
     def __delattr__(self, name: str) -> None:
         return delattr(self._value, name)
 
+    @override
     def __repr__(self) -> str:
         return repr(self._value) if self._thunk is None else object.__repr__(self)
 
+    @override
     def __str__(self) -> str:
         return str(self._value)
 
     def __bytes__(self) -> bytes:
         return bytes(self._value)
 
+    @override
     def __format__(self, format_spec: str) -> str:
         return format(self._value, format_spec)
 
@@ -108,9 +115,11 @@ class lazy:
     def __le__(self, other: Any) -> Any:
         return other >= self._value
 
+    @override
     def __eq__(self, other: object) -> Any:
         return other == self._value
 
+    @override
     def __ne__(self, other: object) -> Any:
         return other != self._value
 
@@ -120,6 +129,7 @@ class lazy:
     def __ge__(self, other: Any) -> Any:
         return other <= self._value
 
+    @override
     def __hash__(self) -> int:
         return hash(self._value)
 

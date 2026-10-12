@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import time
-from typing import Any
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import consteq
@@ -51,6 +51,7 @@ class _RequestCsrfMixin(RequestState):
         )
         return f"{hm}o{max_ts}"
 
+    @override
     def is_valid_csrf(self, csrf: str | None) -> bool:
         if not isinstance(csrf, str) or not csrf:
             _debug.logic("http.csrf.malformed", reason="empty")

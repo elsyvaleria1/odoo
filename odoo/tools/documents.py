@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import logging
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.documents import (
@@ -26,6 +26,7 @@ class PdfEmbeddedFiles(BaseReader):
     yields = (CHILDREN,)
     cost = FREE
 
+    @override
     def read(self, document: Any) -> list[Document]:
         from struct import error as StructError
 

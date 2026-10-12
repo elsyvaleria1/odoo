@@ -76,18 +76,22 @@ class Secret:
     def fingerprint(self) -> str:
         return hashlib.blake2s(self.reveal_bytes(), digest_size=8).hexdigest()
 
+    @typing.override
     def __repr__(self) -> str:
         return f"Secret({MASK!r})"
 
+    @typing.override
     def __str__(self) -> str:
         return MASK
 
+    @typing.override
     def __format__(self, format_spec: str) -> str:
         return MASK
 
     def __bool__(self) -> bool:
         return bool(self._value)
 
+    @typing.override
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Secret):
             return hmac.compare_digest(self.reveal_bytes(), other.reveal_bytes())
@@ -99,6 +103,7 @@ class Secret:
     # annotation cannot express this supported class-level sentinel.
     __hash__ = None  # type: ignore[assignment]
 
+    @typing.override
     def __reduce_ex__(self, protocol: typing.SupportsIndex) -> typing.NoReturn:
         raise TypeError("a Secret is never pickled")
 

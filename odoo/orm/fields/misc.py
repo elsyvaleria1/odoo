@@ -161,6 +161,7 @@ class Id(Field[IdType | typing.Literal[False]]):
     readonly = True
     prefetch = False
 
+    @override
     def update_db(self, model: ModelLike, columns: dict[str, typing.Any]) -> bool:
         return False
 
@@ -222,6 +223,7 @@ class Id(Field[IdType | typing.Literal[False]]):
                 raise ValueError(f"Invalid id value for {self}: {value!r}") from None
         raise ValueError(f"Invalid id value for {self}: {value!r}")
 
+    @override
     def to_sql(self, model: ModelLike, alias: str) -> SQL:
         assert self.store, "id field must be stored"
         return SQL.identifier(alias, self.name)

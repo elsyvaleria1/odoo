@@ -1,7 +1,7 @@
 import logging
 import threading
 from functools import wraps
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, override
 
 if TYPE_CHECKING:
     import types
@@ -63,6 +63,7 @@ class mute_logger(logging.Handler):
 
         return deco
 
+    @override
     def emit(self, record: logging.LogRecord) -> None:
         pass
 
@@ -105,6 +106,7 @@ class lower_logging(logging.Handler):
         finally:
             _root_lock.release()
 
+    @override
     def emit(self, record: logging.LogRecord) -> None:
         if record.levelno > self.max_level:
             record.levelname = f"_{record.levelname}"

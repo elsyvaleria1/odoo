@@ -52,6 +52,7 @@ class DependsFinding:
     def label(self) -> str:
         return f"{self.model_name}.{self.field_name}"
 
+    @typing.override
     def __str__(self) -> str:
         return (
             f"{self.label} computes without depending on "

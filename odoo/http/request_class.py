@@ -5,7 +5,7 @@ import re
 import secrets
 import types
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 import babel.core
 import werkzeug.datastructures
@@ -122,6 +122,7 @@ class Request(
     def call_after_release(self, func: Callable[[], object]) -> None:
         self._after_release.append(func)
 
+    @override
     def _run_after_release(self) -> None:
         pending, self._after_release = self._after_release, []
         for func in pending:
@@ -173,7 +174,8 @@ class Request(
         self._post_init_done = True
         _debug.lifecycle("http.request.db_free", path=self.httprequest.path)
 
-    @property
+    @property  # type: ignore[explicit-override]  # mypy cannot mark a settable property override
+    @override
     def params(self) -> dict[str, Any]:
         source = self._params_source
         if source is not None:
@@ -268,9 +270,11 @@ class Request(
     def prepare_default_context(self) -> dict[str, Any]:
         return {"lang": self.get_default_lang()}
 
+    @override
     def get_default_lang(self) -> str:
         return self.best_lang or DEFAULT_LANG
 
+    @override
     def get_http_params(self) -> dict[str, Any]:
         return {
             **self.httprequest.args,
@@ -278,6 +282,7 @@ class Request(
             **self.httprequest.files,
         }
 
+    @override
     def get_json_data(self) -> Any:
         memo = self._json_memo
         if memo is not None and memo[0] is self.httprequest:
@@ -330,6 +335,7 @@ class Request(
 
         return contextlib.nullcontext()
 
+    @override
     def _reset_for_replay(self, cr: Any = None) -> None:
         _debug.lifecycle(
             "http.request.reset_for_replay",

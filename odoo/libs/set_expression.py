@@ -1,7 +1,7 @@
 import ast
 import itertools
 import math
-from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict, cast
+from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict, cast, override
 
 from odoo.libs.refs import split_refs
 
@@ -326,6 +326,7 @@ class SetExpression:
     def __bool__(self) -> bool:
         raise NotImplementedError
 
+    @override
     def __eq__(self, other: object) -> bool:
         return isinstance(other, SetExpression) and self.__key == other.__key
 
@@ -346,6 +347,7 @@ class SetExpression:
     def __lt__(self, other: SetExpression) -> bool:
         return self != other and self.__le__(other)
 
+    @override
     def __str__(self) -> str:
         if self.is_empty():
             return "~*"
@@ -360,9 +362,11 @@ class SetExpression:
         wrapped = len(self.__inters) > 1
         return " | ".join(inter_to_str(inter, wrapped) for inter in self.__inters)
 
+    @override
     def __repr__(self) -> str:
         return repr(self.__str__())
 
+    @override
     def __hash__(self) -> int:
         return self.__hash
 
@@ -553,6 +557,7 @@ class Inter:
         leaves = self.__combine(self.leaves, other.leaves)
         return Inter(leaves, optimal=True)
 
+    @override
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Inter) and self.key == other.key
 
@@ -565,6 +570,7 @@ class Inter:
     def __lt__(self, other: Inter) -> bool:
         return self != other and self <= other
 
+    @override
     def __hash__(self) -> int:
         return hash(self.key)
 
@@ -642,6 +648,7 @@ class Leaf:
             else (self.id in user_group_ids)
         )
 
+    @override
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Leaf) and self.key == other.key
 
@@ -660,6 +667,7 @@ class Leaf:
     def __lt__(self, other: Leaf) -> bool:
         return self != other and self <= other
 
+    @override
     def __hash__(self) -> int:
         return hash(self.key)
 
@@ -667,11 +675,13 @@ class Leaf:
 class UnknownId(str):
     __slots__ = ()
 
+    @override
     def __lt__(self, other: object) -> bool:
         if isinstance(other, UnknownId):
             return super().__lt__(other)
         return False
 
+    @override
     def __gt__(self, other: object) -> bool:
         if isinstance(other, UnknownId):
             return super().__gt__(other)

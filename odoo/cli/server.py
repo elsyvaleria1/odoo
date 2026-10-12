@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import override
 
 from psycopg.errors import InsufficientPrivilege
 
@@ -201,6 +202,7 @@ def run_server(args: list[str]) -> None:
 class Server(Command):
     description = "Start the odoo server (default command)"
 
+    @override
     def run(self, args: list[str]) -> None:
         config.parser.prog = self.prog
         _debug.pipeline("cli.server.dispatch", args=len(args))

@@ -62,6 +62,7 @@ class Binary(Field[bytes | typing.Literal[False]]):
     attachment = True
 
     @property
+    @override
     def is_attachment_backed(self) -> bool:
         return self.attachment
 
@@ -104,6 +105,7 @@ class Binary(Field[bytes | typing.Literal[False]]):
             )
 
     @functools.cached_property
+    @override
     def column_type(self) -> tuple[str, str] | None:
         return None if self.attachment else ("bytea", "bytea")
 

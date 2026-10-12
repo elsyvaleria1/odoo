@@ -1,6 +1,6 @@
 import logging
 import typing
-from typing import Self
+from typing import Self, override
 
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
@@ -42,6 +42,7 @@ class _QueryMixin(_ModelStubs):
                 )
             )
 
+    @override
     def _order_to_sql(
         self,
         order: str,
@@ -198,6 +199,7 @@ class _QueryMixin(_ModelStubs):
         return SQL("%s %s %s", sql_value, direction, nulls)
 
     @api.model
+    @override
     def _search(
         self,
         domain: DomainType,
@@ -256,9 +258,11 @@ class _QueryMixin(_ModelStubs):
         self.env.transaction.access_memo.note_search(self._name, query)
         return query
 
+    @override
     def _as_query(self, ordered: bool = True) -> Query:
         return self.env.backend.as_query(self, ordered)
 
+    @override
     def _traverse_related_sql(
         self, alias: str, field: Field[typing.Any], query: Query
     ) -> tuple[ModelLike, Field[typing.Any], str]:
@@ -291,6 +295,7 @@ class _QueryMixin(_ModelStubs):
         )
         return model, model._fields[last_fname], alias
 
+    @override
     def _field_to_sql(
         self, alias: str, field_expr: str, query: Query | None = None
     ) -> SQL:
@@ -398,6 +403,7 @@ class _QueryMixin(_ModelStubs):
         return self.exists()
 
     @api.private
+    @override
     def exists(self) -> Self:
         new_ids, ids = partition(lambda i: isinstance(i, NewId), self._ids)
         if not ids:

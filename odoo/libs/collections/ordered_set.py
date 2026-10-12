@@ -24,15 +24,19 @@ class _OrderedSetBase[T](AbstractSet[T]):
     def __init__(self, elems: Iterable[T] = ()) -> None:
         pass
 
+    @override
     def __contains__(self, elem: object) -> bool:
         return elem in self._map
 
+    @override
     def __iter__(self) -> Iterator[T]:
         return iter(self._map)
 
+    @override
     def __len__(self) -> int:
         return len(self._map)
 
+    @override
     def __and__(self, other: Iterable[object]) -> Self:
         if not isinstance(other, Iterable):
             return NotImplemented
@@ -43,8 +47,10 @@ class _OrderedSetBase[T](AbstractSet[T]):
 
     if TYPE_CHECKING:
 
+        @override
         def __sub__(self, other: AbstractSet[object]) -> Self: ...
 
+    @override
     def __repr__(self) -> str:
         return f"{type(self).__name__}({list(self)!r})"
 
@@ -55,21 +61,27 @@ class FrozenOrderedSet[T](_OrderedSetBase[T]):
     if TYPE_CHECKING:
         # Set's implementations construct type(self); preserve the concrete type
         # while allowing unions and symmetric differences to widen element types.
+        @override
         def __or__[U](self, other: AbstractSet[U]) -> FrozenOrderedSet[T | U]: ...
+        @override
         def __xor__[U](self, other: AbstractSet[U]) -> FrozenOrderedSet[T | U]: ...
 
     def __init__(self, elems: Iterable[T] = ()) -> None:
         object.__setattr__(self, "_map", MappingProxyType(dict.fromkeys(elems)))
 
+    @override
     def __setattr__(self, name: str, value: object) -> None:
         raise TypeError("FrozenOrderedSet is immutable")
 
+    @override
     def __delattr__(self, name: str) -> None:
         raise TypeError("FrozenOrderedSet is immutable")
 
+    @override
     def __hash__(self) -> int:
         return hash(frozenset(self._map))
 
+    @override
     def __reduce__(self) -> tuple[type[Self], tuple[tuple[T, ...]]]:
         return type(self), (tuple(self),)
 
@@ -79,15 +91,19 @@ class OrderedSet[T](_OrderedSetBase[T], MutableSet[T]):
 
     if TYPE_CHECKING:
 
+        @override
         def __or__[U](self, other: AbstractSet[U]) -> OrderedSet[T | U]: ...
+        @override
         def __xor__[U](self, other: AbstractSet[U]) -> OrderedSet[T | U]: ...
 
     def __init__(self, elems: Iterable[T] = ()) -> None:
         self._map: dict[T, None] = dict.fromkeys(elems)
 
+    @override
     def add(self, elem: T) -> None:
         self._map[elem] = None
 
+    @override
     def discard(self, elem: T) -> None:
         self._map.pop(elem, None)
 
@@ -123,6 +139,7 @@ class LastOrderedSet[T](OrderedSet[T]):
         self.discard(elem)
         super().add(elem)
 
+    @override
     def update(self, elems: Iterable[T]) -> None:
         for elem in elems:
             self.add(elem)

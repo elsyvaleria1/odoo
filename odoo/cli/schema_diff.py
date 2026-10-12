@@ -65,6 +65,7 @@ class SchemaDiff(DatabaseCommand):
             help="print every DDL statement; the default folds identical shapes",
         )
 
+    @typing.override
     def run(self, cmdargs: list[str]) -> None:
         parsed_args, unknown = self.parse_args(cmdargs)
         db_name = self.bootstrap_config(parsed_args, extra_args=unknown)

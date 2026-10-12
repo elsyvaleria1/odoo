@@ -1,7 +1,7 @@
 import itertools
 import re
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL, normalize_identifier
@@ -497,6 +497,7 @@ class Query:
             )
         self._ids = ids
 
+    @override
     def __str__(self) -> str:
         sql = self.select()
         return f"<Query: {sql.code!r} with params: {sql.params!r}>"

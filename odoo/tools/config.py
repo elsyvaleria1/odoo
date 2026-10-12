@@ -56,6 +56,7 @@ _RETIRED_CLI_OPTIONS = frozenset({"--limit-memory-hard", "--limit-memory-hard-ge
 
 
 class _Empty:
+    @override
     def __repr__(self) -> str:
         return ""
 
@@ -161,6 +162,7 @@ class _OdooOption(optparse.Option):
                 f"cannot set env_name to an option that is not indexed: {self}"
             )
 
+    @override
     def __str__(self) -> str:
         out = []
         if self.cli_loadable:
@@ -211,6 +213,7 @@ class _PosixOnlyOption(_OdooOption):
 class _Unset:
     __slots__ = ()
 
+    @override
     def __repr__(self) -> str:
         return "None"
 
@@ -287,13 +290,16 @@ class _CountingDict(dict[str, Any]):
         super().__init__()
         self._bump = bump
 
+    @override
     def __reduce__(self) -> tuple[Any, ...]:
         return (dict, (dict(self),))
 
+    @override
     def __setitem__(self, key: str, value: Any) -> None:
         super().__setitem__(key, value)
         self._bump()
 
+    @override
     def __delitem__(self, key: str) -> None:
         super().__delitem__(key)
         self._bump()

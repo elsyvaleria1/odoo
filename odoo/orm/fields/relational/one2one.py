@@ -55,6 +55,7 @@ class One2one(One2many):
                 f'index="unique"; a one2one is held by the database.'
             )
 
+    @override
     def join(self, model: ModelLike, alias: str, query: Query) -> tuple[BaseModel, str]:
         comodel = model.env[self._get_comodel_name()]
         inverse_name = self._get_inverse_name()

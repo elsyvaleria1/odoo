@@ -2,7 +2,7 @@ import functools
 import typing
 from collections import defaultdict
 from operator import itemgetter
-from typing import Self
+from typing import Self, override
 
 from odoo.libs.accel import batch_cache_filter as _batch_cache_filter
 from odoo.libs.accel import batch_cache_get as _batch_cache_get
@@ -62,6 +62,7 @@ class ReversibleComparator:
         less: bool = item < item_cmp
         return less
 
+    @override
     def __eq__(self, other: object) -> bool:
         if other.__class__ is not ReversibleComparator:
             return NotImplemented
@@ -70,6 +71,7 @@ class ReversibleComparator:
     # Value equality disables hashing; object.__hash__ is typed as callable.
     __hash__ = None  # type: ignore[assignment]
 
+    @override
     def __repr__(self) -> str:
         return f"<ReversibleComparator {self.__item!r}{' reverse' if self.__reverse else ''}>"
 
@@ -84,6 +86,7 @@ class TraversalMixin(_ModelStubs):
     def mapped(self, func: Callable[[Self], T]) -> list[T]: ...
 
     @api.private
+    @override
     def mapped(
         self, func: str | Callable[[Self], typing.Any]
     ) -> list[typing.Any] | ModelLike:
@@ -169,6 +172,7 @@ class TraversalMixin(_ModelStubs):
             return typing.cast("Self", single) if is_recordset(single) else []
 
     @api.private
+    @override
     def filtered(self, func: str | Callable[..., typing.Any] | Domain) -> Self:
         if not func:
             return self
@@ -238,6 +242,7 @@ class TraversalMixin(_ModelStubs):
     def grouped(self, key: Callable[[Self], T]) -> dict[T, Self]: ...
 
     @api.private
+    @override
     def grouped(
         self, key: str | Callable[[Self], typing.Any]
     ) -> dict[typing.Any, Self]:
@@ -317,6 +322,7 @@ class TraversalMixin(_ModelStubs):
         }
 
     @api.private
+    @override
     def filtered_domain(self, domain: DomainType) -> Self:
         if not self or not domain:
             return self
@@ -329,6 +335,7 @@ class TraversalMixin(_ModelStubs):
         )
 
     @api.private
+    @override
     def sorted(
         self,
         key: str | Callable[[Self], typing.Any] | None = None,

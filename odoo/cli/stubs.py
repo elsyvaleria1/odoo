@@ -4,6 +4,7 @@ import tempfile
 import typing
 from collections.abc import Mapping
 from pathlib import Path
+from typing import override
 
 from odoo.libs.debug_log import DebugLog
 from odoo.orm.stubs import STUB_MODULE, render_registry
@@ -91,6 +92,7 @@ class Stubs(DatabaseCommand):
             ),
         )
 
+    @override
     def run(self, cmdargs: list[str]) -> None:
         parsed_args, unknown = self.parse_args(cmdargs)
         db_name = self.bootstrap_config(parsed_args, extra_args=unknown)

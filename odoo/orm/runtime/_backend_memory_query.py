@@ -91,13 +91,16 @@ class _InMemoryQuery(Query):
             self._unanswerable = reason
             self._ids = None
 
+    @typing.override
     def _invalidate_ids(self) -> None:
         self._refuse("a condition, a join or a grouping added in SQL")
 
+    @typing.override
     def _drop_ids(self) -> None:
         self._evaluate()
 
-    @property
+    @property  # type: ignore[explicit-override]  # mypy cannot mark a settable property override
+    @typing.override
     def order(self) -> SQL | None:
         return self._order
 
@@ -153,14 +156,17 @@ class _InMemoryQuery(Query):
                 "use a DB-backed TransactionCase"
             )
 
+    @typing.override
     def get_result_ids(self, env: Environment | None = None) -> tuple[int, ...]:
         self._require_answer()
         return super().get_result_ids(env)
 
+    @typing.override
     def __len__(self) -> int:
         self._require_answer()
         return super().__len__()
 
+    @typing.override
     def count_matching(self, limit: int | None = None) -> int:
         self._require_answer()
         count = len(self._matched)

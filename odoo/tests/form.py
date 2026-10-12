@@ -331,6 +331,7 @@ class Form:
         )
         return self._get_view_info(views[view_type], submodel, level=level - 1)
 
+    @override
     def __str__(self) -> str:
         return f"<{type(self).__name__} {self._record}>"
 
@@ -386,6 +387,7 @@ class Form:
             return M2MProxy(self, field_name)
         return value
 
+    @override
     def __setattr__(self, field_name: str, value: Any) -> None:
         if field_name.startswith("_"):
             object.__setattr__(self, field_name, value)
@@ -817,6 +819,7 @@ class O2MForm(Form):
             if vals.get("id"):
                 self._record = model.browse(vals["id"])
 
+    @override
     def _get_modifier(
         self,
         field_name: str,
@@ -831,6 +834,7 @@ class O2MForm(Form):
             return True
         return super()._get_modifier(field_name, modifier, view=view, vals=vals)
 
+    @override
     def _prepare_eval_context(
         self, values: dict[str, Any] | None = None
     ) -> dict[str, Any]:
@@ -838,6 +842,7 @@ class O2MForm(Form):
         eval_context["parent"] = Dotter(self._proxy._form._values)
         return eval_context
 
+    @override
     def _prepare_onchange_vals(self) -> dict[str, Any]:
         values = super()._prepare_onchange_vals()
         field_info = self._proxy._field_info
@@ -849,6 +854,7 @@ class O2MForm(Form):
             values[field_info["relation_field"]] = parent_values
         return values
 
+    @override
     def save(self) -> BaseModel:
         proxy = self._proxy
         field_value = proxy._form._values[proxy._field]
@@ -868,6 +874,7 @@ class O2MForm(Form):
         proxy._form._perform_onchange(proxy._field)
         return self._record
 
+    @override
     def _prepare_save_vals(self) -> UpdateDict:
         values = UpdateDict(self._values)
 
@@ -892,6 +899,7 @@ class UpdateDict(dict[str, Any]):
         if args and isinstance(args[0], UpdateDict):
             self._changed.update(args[0]._changed)
 
+    @override
     def __repr__(self) -> str:
         items = [
             f"{key!r}{'*' if key in self._changed else ''}: {val!r}"
@@ -902,11 +910,13 @@ class UpdateDict(dict[str, Any]):
     def changed_items(self) -> Generator[tuple[str, Any]]:
         return ((k, v) for k, v in self.items() if k in self._changed)
 
+    @override
     def update(self, *args: Any, **kw: Any) -> None:
         super().update(*args, **kw)
         if args and isinstance(args[0], UpdateDict):
             self._changed.update(args[0]._changed)
 
+    @override
     def clear(self) -> None:
         super().clear()
         self._changed.clear()
@@ -924,23 +934,29 @@ class X2MValue(collections.abc.Sequence[Any]):
         self._given: list[Any] = list(self._data)
         self._keys: list[Any] | None = None
 
+    @override
     def __repr__(self) -> str:
         return repr(self._data)
 
+    @override
     def __contains__(self, id_: Any) -> bool:
         return id_ in self._data
 
+    @override
     def __getitem__(self, index: Any) -> Any:
         if self._keys is None:
             self._keys = list(self._data)
         return self._keys[index]
 
+    @override
     def __iter__(self) -> Iterator[Any]:
         return iter(self._data)
 
+    @override
     def __len__(self) -> int:
         return len(self._data)
 
+    @override
     def __eq__(self, other: object) -> bool:
         return list(self) == other
 
@@ -1021,6 +1037,7 @@ class X2MValue(collections.abc.Sequence[Any]):
 
 
 class O2MValue(X2MValue):
+    @override
     def to_commands(
         self, convert_values: Callable[[UpdateDict], Any] = lambda vals: vals
     ) -> list[Any]:
@@ -1035,6 +1052,7 @@ class M2MValue(X2MValue):
             for key, val in vals.changed_items()
         }
 
+    @override
     def to_commands(self) -> list[Any]:
         return self._to_commands(self._convert_changed, Command.unlink)
 

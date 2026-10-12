@@ -2,7 +2,7 @@ import collections.abc
 import logging
 import time
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps_bytes as _dumps_bytes
@@ -148,25 +148,31 @@ class Session(collections.abc.MutableMapping[str, Any]):
             "http.session.merged", keys_before=before, keys_after=len(self.__data)
         )
 
+    @override
     def __getitem__(self, item: str) -> Any:
         return self.__data[item]
 
+    @override
     def __setitem__(self, item: str, value: Any) -> None:
         value = _coerce_session_value(value)
         if item not in self.__data or self.__data[item] != value:
             self.is_dirty = True
         self.__data[item] = value
 
+    @override
     def __delitem__(self, item: str) -> None:
         del self.__data[item]
         self.is_dirty = True
 
+    @override
     def __len__(self) -> int:
         return len(self.__data)
 
+    @override
     def __iter__(self) -> Iterator[str]:
         return iter(self.__data)
 
+    @override
     def clear(self) -> None:
         self.__data.clear()
         self.is_dirty = True

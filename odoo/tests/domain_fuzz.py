@@ -48,6 +48,7 @@ class Ref:
     model: str
     index: int
 
+    @typing.override
     def __repr__(self) -> str:
         return f"{self.model.rsplit('.', 1)[-1]}#{self.index}"
 
@@ -57,6 +58,7 @@ OTHER = Ref(PRINCIPALS, 1)
 
 
 class _UserId:
+    @typing.override
     def __repr__(self) -> str:
         return "user.id"
 
@@ -69,6 +71,7 @@ class Translated:
     en_US: str
     fr_FR: str
 
+    @typing.override
     def __repr__(self) -> str:
         return f"{{en_US: {self.en_US!r}, fr_FR: {self.fr_FR!r}}}"
 
@@ -77,6 +80,7 @@ class Translated:
 class Raised:
     error: str
 
+    @typing.override
     def __repr__(self) -> str:
         return f"raised {self.error}"
 

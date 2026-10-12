@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.80
+:Version: 7.81
 :Date: 2026-10-11
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -3499,9 +3499,13 @@ returned, not ``cast``.
 ``Tuple``/``Set``/``Union``.
 
 **Mark an override in a plain-Python class hierarchy with ``@typing.override``**
-``[review]``. Why: a type checker sees the base there and turns a renamed or
-re-signed parent into an error. On an Odoo ``_inherit`` model no checker can see
-the parent, so the decorator is not required.
+``[review]``; in framework code mypy gates it (``explicit-override``),
+``object``'s dunders included. Why: a type checker sees the base there and turns
+a renamed or re-signed parent into an error. Place it innermost, directly above
+``def``. mypy cannot accept it on an override of a settable property; that line
+carries ``type: ignore[explicit-override]`` with the reason. On an Odoo
+``_inherit`` model no checker can see the parent, so the decorator is not
+required.
 
 .. code-block:: python
 
@@ -6321,6 +6325,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.81
+     - 2026-10-11
+     - §2.9.11: mypy's ``explicit-override`` gates ``@typing.override`` in
+       framework code, ``object``'s dunders included; a settable property
+       override carries a reasoned ``type: ignore[explicit-override]``.
    * - 7.80
      - 2026-10-11
      - §2.9.11: framework code parameterizes every generic and returns no

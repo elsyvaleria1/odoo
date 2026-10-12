@@ -1,7 +1,7 @@
 import logging
 import typing
 from collections import deque
-from typing import Self
+from typing import Self, override
 
 from odoo.exceptions import AccessError, MissingError
 from odoo.libs.accel import batch_cache_fill as _batch_cache_fill
@@ -40,6 +40,7 @@ class ReadMixin(_ModelStubs):
     __slots__ = ()
 
     @api.model
+    @override
     def fields_get(
         self,
         allfields: Collection[str] | None = None,
@@ -82,6 +83,7 @@ class ReadMixin(_ModelStubs):
     @ormcache(
         "attributes", "field_names", "self.env.lang", "self.env.su", cache="default"
     )
+    @override
     def _get_field_descriptions_static(
         self,
         attributes: tuple[str, ...] | None,
@@ -154,6 +156,7 @@ class ReadMixin(_ModelStubs):
         )
 
     @api.model
+    @override
     def _get_fields_default_read(self) -> list[str]:
         model_fields = self._fields
         return [
@@ -307,6 +310,7 @@ class ReadMixin(_ModelStubs):
             except MissingError:
                 vals.clear()
 
+    @override
     def _read_format(
         self, fnames: Sequence[str], load: str | None = "_classic_read"
     ) -> list[ValuesType]:
@@ -398,6 +402,7 @@ class ReadMixin(_ModelStubs):
         self.fetch(fnames)
 
     @api.private
+    @override
     def fetch(self, field_names: Collection[str] | None = None) -> None:
         self = self._origin
         if not self or not (field_names is None or field_names):
@@ -521,6 +526,7 @@ class ReadMixin(_ModelStubs):
             return fields
         return tuple(f for f in fields if self._has_field_access(f, "read"))
 
+    @override
     def _get_fields_to_fetch(
         self,
         field_names: Collection[str] | None = None,
@@ -576,6 +582,7 @@ class ReadMixin(_ModelStubs):
             )
         return fields_to_fetch
 
+    @override
     def _fetch_query(self, query: Query, fields: Sequence[Field[typing.Any]]) -> Self:
         column_fields: OrderedSet[Field[typing.Any]] = OrderedSet()
         other_fields: OrderedSet[Field[typing.Any]] = OrderedSet()

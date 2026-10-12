@@ -1,7 +1,7 @@
 __all__ = ["ConstantMapping", "DotDict", "ReadonlyDict", "submap"]
 
 from collections.abc import Iterable, Iterator, Mapping
-from typing import Any
+from typing import Any, override
 
 
 class ConstantMapping[T](Mapping[Any, T]):
@@ -10,12 +10,15 @@ class ConstantMapping[T](Mapping[Any, T]):
     def __init__(self, val: T) -> None:
         self._value = val
 
+    @override
     def __len__(self) -> int:
         return 0
 
+    @override
     def __iter__(self) -> Iterator[Any]:
         return iter(())
 
+    @override
     def __getitem__(self, item: Any) -> T:
         return self._value
 
@@ -26,15 +29,19 @@ class ReadonlyDict[K, T](Mapping[K, T]):
     def __init__(self, data: Mapping[K, T]) -> None:
         self._data__ = dict(data)
 
+    @override
     def __contains__(self, key: object) -> bool:
         return key in self._data__
 
+    @override
     def __getitem__(self, key: K) -> T:
         return self._data__[key]
 
+    @override
     def __len__(self) -> int:
         return len(self._data__)
 
+    @override
     def __iter__(self) -> Iterator[K]:
         return iter(self._data__)
 

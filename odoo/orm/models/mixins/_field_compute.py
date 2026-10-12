@@ -17,6 +17,7 @@ _debug = DebugLog(__name__)
 class _FieldComputeMixin(_ModelStubs):
     __slots__ = ()
 
+    @typing.override
     def _compute_field_value(
         self, field: Field[typing.Any], validate: bool = True
     ) -> None:
@@ -36,6 +37,7 @@ class _FieldComputeMixin(_ModelStubs):
         if validate:
             self._check_computed(field)
 
+    @typing.override
     def _check_computed(self, field: Field[typing.Any]) -> None:
         if field.store and any(self._ids):
             fnames = [f.name for f in self.pool.field_computed[field]]
@@ -63,6 +65,7 @@ class _FieldComputeMixin(_ModelStubs):
             else:
                 records._check_fields(fnames)
 
+    @typing.override
     def _check_fields_if_they_exist(self, fnames: list[str]) -> None:
         deleted = self.env.core.deleted_ids(self._name)
         if deleted is None:

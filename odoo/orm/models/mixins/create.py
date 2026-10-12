@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Collection
 from itertools import chain
 from operator import attrgetter
-from typing import Self
+from typing import Self, override
 
 from odoo.libs.collections import OrderedSet
 from odoo.libs.debug_log import DebugLog
@@ -342,6 +342,7 @@ class CreateMixin(_ModelStubs):
                 inv_records.invalidate_recordset(fnames=inv_relational_fnames)
 
     @api.model_create_multi
+    @override
     def create(self, vals_list: list[ValuesType]) -> Self:
         if not isinstance(vals_list, (list, tuple)):
             raise TypeError(

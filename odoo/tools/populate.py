@@ -3,7 +3,7 @@ import typing
 from collections import defaultdict
 from contextlib import contextmanager
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from dateutil.relativedelta import relativedelta
 from psycopg.errors import ExclusionViolation, InsufficientPrivilege, UniqueViolation
@@ -528,12 +528,15 @@ class Many2manyModelWrapper:
             column2: Many2oneFieldWrapper(self, column2, field.comodel_name or ""),
         }
 
+    @override
     def __repr__(self) -> str:
         return f"<Many2manyModelWrapper({self._name!r})>"
 
+    @override
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Many2manyModelWrapper) and self._name == other._name
 
+    @override
     def __hash__(self) -> int:
         return hash(self._name)
 

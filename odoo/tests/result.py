@@ -6,7 +6,7 @@ import re
 import sys
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, NamedTuple, Protocol
+from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, override
 
 from .. import db
 from ..libs.debug_log import DebugLog
@@ -40,6 +40,7 @@ class Stat(NamedTuple):
     time: float = 0.0
     queries: int = 0
 
+    @override
     def __add__(self, other: object) -> Stat:
         if not isinstance(other, Stat):
             return NotImplemented
@@ -332,9 +333,11 @@ class OdooTestResult:
             tb = tb.tb_next
         return length
 
+    @override
     def __repr__(self) -> str:
         return f"<{self.__class__.__module__}.{self.__class__.__qualname__} run={self.testsRun} errors={self.errors_count} failures={self.failures_count}>"
 
+    @override
     def __str__(self) -> str:
         summary = (
             f"{self.failures_count} failed, {self.errors_count} error(s) "

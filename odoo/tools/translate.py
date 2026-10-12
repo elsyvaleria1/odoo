@@ -18,7 +18,7 @@ from itertools import batched
 from pathlib import Path
 from tokenize import DEDENT, INDENT, NEWLINE, STRING, generate_tokens
 from types import FrameType
-from typing import IO, Any
+from typing import IO, Any, override
 
 import polib
 from babel.core import get_global
@@ -549,6 +549,7 @@ class TranslationDialect:
     ) -> str | None:
         return self.translate(callback, value)
 
+    @override
     def __repr__(self) -> str:
         return f"<TranslationDialect {self.name}>"
 
@@ -900,6 +901,7 @@ class LazyGettext:
         assert lang, "translate() needs a language; str() infers one from the stack"
         return self._translate(lang)
 
+    @override
     def __repr__(self) -> str:
         args = {
             "_module": self._module,
@@ -908,12 +910,15 @@ class LazyGettext:
         }
         return f"_lt({self._source!r}, **{args!r})"
 
+    @override
     def __str__(self) -> str:
         return self._translate()
 
+    @override
     def __eq__(self, other: object) -> bool:
         raise NotImplementedError
 
+    @override
     def __hash__(self) -> int:
         raise NotImplementedError
 
@@ -2003,6 +2008,7 @@ class TranslationModuleReader(TranslationReader):
         values = self._po_values[module] = (own, others)
         return values
 
+    @override
     def _term_value(self, imd: ImdInfo, source: str, stored: str) -> str:
         if not self._po_lang:
             return ""

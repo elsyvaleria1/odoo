@@ -1,7 +1,7 @@
 import logging
 import time
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from odoo.libs.debug_log import DebugLog
 from odoo.logutils import RUNBOT
@@ -88,6 +88,7 @@ class Populate(DatabaseCommand):
             default=DEFAULT_SEPARATOR,
         )
 
+    @override
     def run(self, cmdargs: list[str]) -> None:
         parser = self.parser
         parsed_args, unknown = self.parse_args(cmdargs)

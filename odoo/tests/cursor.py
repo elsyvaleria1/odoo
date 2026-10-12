@@ -2,7 +2,7 @@ import contextlib
 import logging
 import threading
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, override
 
 import psycopg
 
@@ -308,10 +308,12 @@ class TestCursor(BaseCursor):
         if rollback:
             self._cursor._on_rollback_to_savepoint()
 
+    @override
     def _savepoint_opened(self) -> None:
         self._cursor._savepoint_opened()
         super()._savepoint_opened()
 
+    @override
     def _savepoint_closed(self) -> None:
         super()._savepoint_closed()
         self._cursor._savepoint_closed()
@@ -329,6 +331,7 @@ class TestCursor(BaseCursor):
             )
             return getattr(self._cursor, name)(*args, **kwargs)
 
+    @override
     def execute(self, *args: Any, **kwargs: Any) -> None:
         self._statement("execute", args, kwargs)
 
@@ -344,6 +347,7 @@ class TestCursor(BaseCursor):
     def copy(self, *args: Any, **kwargs: Any) -> Any:
         return self._statement("copy", args, kwargs)
 
+    @override
     def close(self) -> None:
         with self._connection_guard:
             if self._closed:
@@ -388,6 +392,7 @@ class TestCursor(BaseCursor):
         if getattr(self._cursor, "_statement_timeout", None) is not None:
             self._cursor.set_statement_timeout(None)
 
+    @override
     def commit(self) -> None:
         with self._connection_guard:
             self._refuse_if_revoked()
@@ -403,6 +408,7 @@ class TestCursor(BaseCursor):
             "test.cursor.commit", readonly=self.readonly, commits=self.commit_count
         )
 
+    @override
     def rollback(self) -> None:
         with self._connection_guard:
             if self._revoked_by is not None:
@@ -419,6 +425,7 @@ class TestCursor(BaseCursor):
         )
 
     @property
+    @override
     def closed(self) -> bool:
         return self._closed or self._cursor.closed
 
@@ -429,6 +436,7 @@ class TestCursor(BaseCursor):
         self._refuse_if_revoked()
         return self._cursor
 
+    @override
     def fetchone(self) -> tuple[Any, ...] | None:
         with self._connection_guard:
             return self._results().fetchone()
@@ -437,22 +445,27 @@ class TestCursor(BaseCursor):
         with self._connection_guard:
             return self._results().fetchmany(size)
 
+    @override
     def fetchall(self) -> list[tuple[Any, ...]]:
         with self._connection_guard:
             return self._results().fetchall()
 
+    @override
     def dictfetchone(self) -> dict[str, Any] | None:
         with self._connection_guard:
             return self._results().dictfetchone()
 
+    @override
     def dictfetchmany(self, size: int) -> list[dict[str, Any]]:
         with self._connection_guard:
             return self._results().dictfetchmany(size)
 
+    @override
     def dictfetchall(self) -> list[dict[str, Any]]:
         with self._connection_guard:
             return self._results().dictfetchall()
 
+    @override
     def now(self) -> datetime:
         if self._now is None:
             self._now = datetime.now(UTC).replace(tzinfo=None)

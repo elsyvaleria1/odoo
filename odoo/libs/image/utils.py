@@ -6,7 +6,7 @@ import re
 import struct
 from collections.abc import Callable, Iterator
 from random import randrange
-from typing import Any, Literal, Self
+from typing import Any, Literal, Self, override
 
 from PIL import (
     IcoImagePlugin,
@@ -114,6 +114,7 @@ def _decoding(stage: str, source: bytes | Literal[False] | None) -> Iterator[Non
 class _SourceStream(io.BytesIO):
     starved = False
 
+    @override
     def read(self, size: int | None = -1, /) -> bytes:
         data = super().read(size)
         if not data and size != 0:

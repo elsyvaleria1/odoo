@@ -35,6 +35,7 @@ class LifecycleMixin(_ModelStubs):
         return {key: val[0] if val else "" for key, val in results.items()}
 
     @classmethod
+    @typing.override
     def is_transient(cls) -> bool:
         return cls._transient
 

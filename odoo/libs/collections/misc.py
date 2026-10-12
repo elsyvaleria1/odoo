@@ -3,7 +3,7 @@ __all__ = ["Collector", "ReversedIterable", "StackMap"]
 import itertools
 import typing
 from collections.abc import Iterable, Iterator, MutableMapping, Reversible
-from typing import Any, Protocol
+from typing import Any, Protocol, override
 
 
 class _SupportsKeysAndGetItem[K, V](Protocol):
@@ -51,6 +51,7 @@ class Collector[K, T](dict[K, tuple[T, ...]]):
         **kwargs: Iterable[T],
     ) -> None: ...
 
+    @override
     def update(self, mapping: Any = (), /, **kwargs: Iterable[T]) -> None:
         if hasattr(mapping, "items"):
             items = mapping.items()
@@ -62,11 +63,13 @@ class Collector[K, T](dict[K, tuple[T, ...]]):
         for key, val in itertools.chain(items, kwargs.items()):
             self[key] = val
 
+    @override
     def setdefault(self, key: K, default: Iterable[T] = (), /) -> tuple[T, ...]:
         if key not in self:
             self[key] = default
         return self[key]
 
+    @override
     def __getitem__(self, key: K) -> tuple[T, ...]:
         return dict.get(self, key, ())
 
@@ -77,6 +80,7 @@ class Collector[K, T](dict[K, tuple[T, ...]]):
     @typing.overload
     def get[D](self, key: K, /, default: D) -> tuple[T, ...] | D: ...
 
+    @override
     def get(self, key: K, /, default: typing.Any = ()) -> typing.Any:
         return dict.get(self, key, default)
 
@@ -87,9 +91,11 @@ class Collector[K, T](dict[K, tuple[T, ...]]):
     @typing.overload
     def pop[D](self, key: K, /, default: D) -> tuple[T, ...] | D: ...
 
+    @override
     def pop(self, key: K, /, default: typing.Any = ()) -> typing.Any:
         return dict.pop(self, key, default)
 
+    @override
     def __setitem__(self, key: K, val: Iterable[T]) -> None:
         val = tuple(val)
         if val:
@@ -117,6 +123,7 @@ class StackMap[K, T](MutableMapping[K, T]):
     def __init__(self, m: MutableMapping[K, T] | None = None) -> None:
         self._maps: list[MutableMapping[K, T]] = [] if m is None else [m]
 
+    @override
     def __getitem__(self, key: K) -> T:
         for mapping in reversed(self._maps):
             try:
@@ -125,21 +132,26 @@ class StackMap[K, T](MutableMapping[K, T]):
                 pass
         raise KeyError(key)
 
+    @override
     def __setitem__(self, key: K, val: T) -> None:
         self._maps[-1][key] = val
 
+    @override
     def __delitem__(self, key: K) -> None:
         del self._maps[-1][key]
 
     def _unique_keys(self) -> dict[K, None]:
         return dict.fromkeys(key for mapping in self._maps for key in mapping)
 
+    @override
     def __iter__(self) -> Iterator[K]:
         return iter(self._unique_keys())
 
+    @override
     def __len__(self) -> int:
         return len(self._unique_keys())
 
+    @override
     def __str__(self) -> str:
         return f"<StackMap {self._maps}>"
 
@@ -156,8 +168,10 @@ class ReversedIterable[T](Reversible[T]):
     def __init__(self, iterable: Reversible[T]) -> None:
         self.iterable = iterable
 
+    @override
     def __iter__(self) -> Iterator[T]:
         return reversed(self.iterable)
 
+    @override
     def __reversed__(self) -> Iterator[T]:
         return iter(self.iterable)

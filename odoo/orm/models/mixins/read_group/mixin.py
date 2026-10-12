@@ -288,6 +288,7 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
             result,
         )
 
+    @typing.override
     def _can_groupby_spec_duplicate_rows(self, model: ModelLike, spec: str) -> bool:
         fname, property_name, __ = parse_read_group_spec(spec)
         field = model._fields[fname]

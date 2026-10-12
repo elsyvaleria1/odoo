@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, override
 from urllib.parse import urlencode, urlsplit, urlunsplit
 
 import werkzeug.datastructures
@@ -38,6 +38,7 @@ class _RequestResponseMixin(RequestState):
         )
         return response
 
+    @override
     def prepare_json_response(
         self,
         data: Any,
@@ -57,6 +58,7 @@ class _RequestResponseMixin(RequestState):
     def prepare_not_found_error(self, description: str | None = None) -> NotFound:
         return NotFound(description)
 
+    @override
     def redirect(self, location: str, code: int = 303, local: bool = True) -> Response:
         requested = location
         if local:
@@ -79,6 +81,7 @@ class _RequestResponseMixin(RequestState):
         redirect: Response = werkzeug.utils.redirect(location, code, Response=Response)
         return redirect
 
+    @override
     def redirect_query(
         self,
         location: str,

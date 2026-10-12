@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import io
-from typing import TYPE_CHECKING, NamedTuple, cast
+from typing import TYPE_CHECKING, NamedTuple, cast, override
 
 from asn1crypto import x509 as asn1_x509
 from cryptography import x509
@@ -98,11 +98,13 @@ class _IncrementalSigner(PdfSigner):
         self.writer = PdfWriter(io.BytesIO(pdf), incremental=True)
         self.pki = pki
 
+    @override
     def _load_key_and_certificate(
         self,
     ) -> tuple[PrivateKeyTypes | None, x509.Certificate | None]:
         return self.pki.leaf_key, self.pki.leaf
 
+    @override
     def _get_cms_object(
         self,
         digest: bytes,

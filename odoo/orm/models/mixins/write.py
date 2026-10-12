@@ -1,6 +1,6 @@
 import typing
 from collections import defaultdict
-from typing import Self
+from typing import Self, override
 
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
@@ -169,6 +169,7 @@ class WriteMixin(_ModelStubs):
                     ) from e
                 raise
 
+    @override
     def write(self, vals: ValuesType) -> typing.Literal[True]:
         if not self:
             return True
@@ -297,6 +298,7 @@ class WriteMixin(_ModelStubs):
 
         return True
 
+    @override
     def _write_multi(self, vals_list: list[ValuesType]) -> None:
         if len(self) != len(vals_list):
             raise ValueError(

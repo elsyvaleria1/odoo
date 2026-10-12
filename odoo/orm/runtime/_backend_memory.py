@@ -924,6 +924,7 @@ class InMemoryBackend(
         )
         return query
 
+    @typing.override
     def as_query(self, model: ModelLike, ordered: bool = True) -> Query:
         ids = model._ids if ordered else tuple(unique(model._ids))
         return _InMemoryQuery(model, self.storage, ids)

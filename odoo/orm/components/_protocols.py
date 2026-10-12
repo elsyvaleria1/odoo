@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Protocol, override
 
 if TYPE_CHECKING:
     from ..primitives import IdType as RecordId
@@ -11,6 +11,7 @@ else:
 
 class FieldKey(Protocol):
 
+    @override
     def __hash__(self) -> int: ...
 
 

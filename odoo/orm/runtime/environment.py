@@ -169,6 +169,7 @@ class Environment(Mapping[str, "BaseModel"]):
         self.transaction = transaction
         return self
 
+    @typing.override
     def __setattr__(self, name: str, value: typing.Any) -> None:
         if name in vars(self):
             raise AttributeError(
@@ -176,6 +177,7 @@ class Environment(Mapping[str, "BaseModel"]):
             )
         return super().__setattr__(name, value)
 
+    @typing.override
     def __contains__(self, model_name: object) -> bool:
         return model_name in self.registry
 
@@ -308,6 +310,7 @@ class Environment(Mapping[str, "BaseModel"]):
     @typing.overload
     def __getitem__(self, model_name: str) -> BaseModel: ...
 
+    @typing.override
     def __getitem__(self, model_name: str) -> BaseModel:
         registry = self.registry
         try:
@@ -320,9 +323,11 @@ class Environment(Mapping[str, "BaseModel"]):
         rs._prefetch_ids = ()
         return rs
 
+    @typing.override
     def __iter__(self) -> typing.Iterator[str]:
         return iter(self.registry)
 
+    @typing.override
     def __len__(self) -> int:
         return len(self.registry)
 

@@ -4,7 +4,7 @@ import logging
 import sys
 import textwrap
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 
 from odoo.fields import Domain
 from odoo.libs.collections import OrderedSet
@@ -209,6 +209,7 @@ class I18n(DatabaseCommand):
         )
         return parser
 
+    @override
     def run(self, cmdargs: list[str]) -> None:
         parsed_args, unknown = self.parse_args(cmdargs)
         self.bootstrap_config(

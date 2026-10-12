@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Protocol, override
 
 from odoo.db.cursor import BaseCursor
 from odoo.db.savepoint import Savepoint, _FlushingSavepoint
@@ -45,6 +45,7 @@ class _OrmSavepoint(Savepoint):
         self._generation_before = _cache_generation(cr)
         super().__init__(cr)
 
+    @override
     def rollback(self) -> None:
         super().rollback()
         txn = self._cr.transaction
@@ -58,9 +59,11 @@ class _OrmFlushingSavepoint(_FlushingSavepoint):
 
     _restores_orm_state = True
 
+    @override
     def _save_orm_state(self, cr: BaseCursor) -> None:
         self._generation_before = _cache_generation(cr)
 
+    @override
     def _restore_orm_state(self, cr: BaseCursor) -> None:
         txn = cr.transaction
         if txn is None:

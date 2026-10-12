@@ -7,7 +7,7 @@ import sys
 import time
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 from unittest import SkipTest
 
 import odoo.tests.loader
@@ -335,6 +335,7 @@ def test_standalone(args: argparse.Namespace) -> None:
 class _SelectsCommand(argparse.Action):
     command: Any = None
 
+    @override
     def __call__(
         self,
         parser: argparse.ArgumentParser,

@@ -75,6 +75,7 @@ class Many2one(_Relational):
     delegate: bool = False
 
     @property
+    @override
     def is_delegating(self) -> bool:
         return self.delegate
 
@@ -232,6 +233,7 @@ class Many2one(_Relational):
         rs._prefetch_ids = PrefetchMany2one(record, self)
         return rs
 
+    @override
     def convert_to_record_multi(
         self, values: list[int | NewId | None], records: BaseModel
     ) -> BaseModel:
@@ -250,6 +252,7 @@ class Many2one(_Relational):
     ) -> ReadValue:
         return self.convert_to_read_multi([value], record, use_display_name)[0]
 
+    @override
     def convert_to_read_multi(
         self,
         values: list[BaseModel],
@@ -446,6 +449,7 @@ class Many2one(_Relational):
                     )
                     invf._update_cache(env[invf.model_name].browse(coid), ids1)
 
+    @override
     def _update_inverses(
         self, updates: Iterable[tuple[BaseModel, int | NewId | None]]
     ) -> None:
@@ -603,6 +607,7 @@ class Many2one(_Relational):
             )
         return sql
 
+    @override
     def join(self, model: ModelLike, alias: str, query: Query) -> tuple[BaseModel, str]:
         comodel = model.env[self._get_comodel_name()]
         coalias = query.get_table_alias(alias, self.name)
@@ -634,6 +639,7 @@ class PrefetchMany2one(Reversible[int | NewId]):
         self.record = record
         self.field = field
 
+    @override
     def __iter__(self) -> Iterator[int | NewId]:
         field_cache = self.field._get_cache(self.record.env)
         _pending = PENDING
@@ -643,6 +649,7 @@ class PrefetchMany2one(Reversible[int | NewId]):
             if (coid := field_cache.get(id_)) is not None and coid is not _pending
         )
 
+    @override
     def __reversed__(self) -> Iterator[int | NewId]:
         field_cache = self.field._get_cache(self.record.env)
         _pending = PENDING

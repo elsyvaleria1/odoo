@@ -14,6 +14,7 @@ _debug = DebugLog(__name__)
 class TranslationMixin(_ModelStubs):
     __slots__ = ()
 
+    @typing.override
     def update_field_translations(
         self,
         field_name: str,
@@ -306,6 +307,7 @@ class TranslationMixin(_ModelStubs):
         )
         return translations, context
 
+    @typing.override
     def _get_base_lang(self) -> str:
         self.check_singleton()
         return "en_US"

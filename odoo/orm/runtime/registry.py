@@ -730,6 +730,7 @@ class Registry(
                 self.registry_invalidated = False
         self._reset_cache_changes()
 
+    @typing.override
     def cursor(
         self,
         /,

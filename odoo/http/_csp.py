@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import re
 import secrets
-from typing import Any
+from typing import Any, override
 
 from markupsafe import Markup
 
@@ -81,10 +81,12 @@ class _RequestCspMixin(RequestState):
         )
 
     @functools.cached_property
+    @override
     def csp_nonce(self) -> str:
         return secrets.token_urlsafe(18)
 
     @functools.cached_property
+    @override
     def csp_mode(self) -> str:
         env = self.bound_env
         if env is None or env.cr.closed:

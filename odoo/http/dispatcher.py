@@ -4,7 +4,7 @@ import collections.abc
 import logging
 from abc import ABC, abstractmethod
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 import werkzeug.exceptions
 import werkzeug.wrappers
@@ -108,6 +108,7 @@ class Dispatcher(ABC):
 
     statement_timeout: float | None = None
 
+    @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         routing_type = getattr(cls, "routing_type", None)
@@ -284,9 +285,11 @@ class HttpDispatcher(Dispatcher):
     )
 
     @classmethod
+    @override
     def is_compatible_with_request(cls, request: RequestState) -> bool:
         return True
 
+    @override
     def dispatch(self, endpoint: Endpoint, args: dict[str, Any]) -> Any:
         self.request.params = self.request.get_http_params() | args
         httprequest = self.request.httprequest
@@ -329,6 +332,7 @@ class HttpDispatcher(Dispatcher):
             raise werkzeug.exceptions.BadRequest(msg)
         _debug.logic("http.csrf.accepted", path=path)
 
+    @override
     def prepare_error_response(self, exc: Exception) -> Response | HTTPException:
         if isinstance(exc, SessionExpiredException):
             session = self.request.session
@@ -380,9 +384,11 @@ class JsonRPCDispatcher(Dispatcher):
         self.request_id: Any = None
 
     @classmethod
+    @override
     def is_compatible_with_request(cls, request: RequestState) -> bool:
         return request.httprequest.mimetype in cls.mimetypes
 
+    @override
     def dispatch(self, endpoint: Endpoint, args: dict[str, Any]) -> Any:
         try:
             self.jsonrequest = self.request.get_json_data()
@@ -432,6 +438,7 @@ class JsonRPCDispatcher(Dispatcher):
             raise TypeError(e)
         return self._prepare_jsonrpc_response(result)
 
+    @override
     def prepare_error_response(self, exc: Exception) -> Response:
         if self.request_id is None and not self.jsonrequest:
             self.request_id = (_get_json_object(self.request) or {}).get("id")
@@ -531,12 +538,14 @@ class Json2Dispatcher(Dispatcher):
         self.jsonrequest: dict[str, Any] | None = None
 
     @classmethod
+    @override
     def is_compatible_with_request(cls, request: RequestState) -> bool:
         return (
             request.httprequest.mimetype in cls.mimetypes
             or not request.httprequest.content_length
         )
 
+    @override
     def dispatch(self, endpoint: Endpoint, args: dict[str, Any]) -> Any:
         httprequest = self.request.httprequest
         if (
@@ -599,6 +608,7 @@ class Json2Dispatcher(Dispatcher):
         _debug.logic("http.json2.result", kind="json")
         return self.request.prepare_json_response(result)
 
+    @override
     def prepare_error_response(self, exc: Exception) -> Response:
         if isinstance(exc, HTTPException) and exc.response is not None:
             _debug.logic(

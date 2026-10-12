@@ -1,6 +1,6 @@
 from collections import ChainMap, defaultdict
 from collections.abc import Iterator, Sized
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -216,6 +216,7 @@ class FieldCache[F: FieldKey = FieldKey]:
         self._dirty.clear()
         self._patches.clear()
 
+    @override
     def __repr__(self) -> str:
         n_fields = len(self._data.keys() | self._contexts.keys())
         n_dirty = sum(len(ids) for ids in self._dirty.values())

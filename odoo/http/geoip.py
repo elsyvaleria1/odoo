@@ -1,5 +1,5 @@
 import functools
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -18,12 +18,15 @@ class _GeoIPNull:
     def __bool__(self) -> bool:
         return False
 
+    @override
     def __eq__(self, other: object) -> bool:
         return other is self or other is None
 
+    @override
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    @override
     def __hash__(self) -> int:
         return hash(None)
 
@@ -36,9 +39,11 @@ class _GeoIPNull:
     def __getitem__(self, _key: object) -> NoReturn:
         raise IndexError
 
+    @override
     def __str__(self) -> str:
         return ""
 
+    @override
     def __repr__(self) -> str:
         return "<GeoIPNull>"
 

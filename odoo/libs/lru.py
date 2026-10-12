@@ -70,31 +70,38 @@ class LRU[K, V](MutableMapping[K, V]):
         else:
             self._trim()
 
+    @typing.override
     def __contains__(self, key: object) -> bool:
         return key in self._map
 
+    @typing.override
     def __getitem__(self, key: K) -> V:
         value = self._map[key]
         with contextlib.suppress(KeyError):
             self._map.move_to_end(key)
         return value
 
+    @typing.override
     def __setitem__(self, key: K, value: V) -> None:
         with self._lock:
             self._store_locked(key, value)
 
+    @typing.override
     def __delitem__(self, key: K) -> None:
         self.pop(key)
 
+    @typing.override
     def __len__(self) -> int:
         return len(self._map)
 
+    @typing.override
     def __repr__(self) -> str:
         return (
             f"{type(self).__name__}"
             f"(count={self._count}, size={len(self._map)}, gen={self._generation})"
         )
 
+    @typing.override
     def __iter__(self) -> Iterator[K]:
         return iter(self.snapshot)
 
@@ -103,12 +110,15 @@ class LRU[K, V](MutableMapping[K, V]):
         with self._lock:
             return dict(self._map)
 
+    @typing.override
     def keys(self) -> KeysView[K]:
         return self.snapshot.keys()
 
+    @typing.override
     def values(self) -> ValuesView[V]:
         return self.snapshot.values()
 
+    @typing.override
     def items(self) -> ItemsView[K, V]:
         return self.snapshot.items()
 
@@ -122,6 +132,7 @@ class LRU[K, V](MutableMapping[K, V]):
     @typing.overload
     def pop[T](self, key: K, /, default: T) -> V | T: ...
 
+    @typing.override
     def pop(self, key: K, /, default: typing.Any = SENTINEL) -> typing.Any:
         with self._lock:
             self._generation += 1
@@ -135,6 +146,7 @@ class LRU[K, V](MutableMapping[K, V]):
                 self._on_evict(key, value)
             return value
 
+    @typing.override
     def clear(self) -> None:
         with self._lock:
             self._generation += 1

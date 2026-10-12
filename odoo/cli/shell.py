@@ -6,7 +6,7 @@ import signal
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, NoReturn, override
 
 import odoo
 from odoo import api
@@ -270,6 +270,7 @@ class Shell(Command):
             _debug.lifecycle("cli.shell.env_ready", db=None)
             self._enter_console(local_vars)
 
+    @override
     def run(self, args: list[str]) -> None:
         self._start_server(args)
         dbname = get_single_database(config["db_name"], allow_none=True)

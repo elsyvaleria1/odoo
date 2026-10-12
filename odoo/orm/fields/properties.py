@@ -346,6 +346,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
     ) -> typing.Any:
         return self.convert_to_read_multi([value], record, use_display_name)[0]
 
+    @override
     def convert_to_read_multi(
         self,
         values: list[typing.Any],
@@ -594,6 +595,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
                 },
             )
 
+    @override
     def _add_default_values(
         self, env: typing.Any, values: dict[str, typing.Any]
     ) -> list[typing.Any] | dict[str, typing.Any]:
@@ -685,6 +687,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
         )
         return properties_list_values
 
+    @override
     def _get_properties_definition(
         self, record: ModelLike
     ) -> list[dict[str, typing.Any]] | None:
@@ -730,6 +733,7 @@ class Property(abc.Mapping[str, typing.Any]):
                 )
         return index
 
+    @override
     def __iter__(self) -> typing.Iterator[str]:
         if not self.record:
             yield from self._values
@@ -739,12 +743,15 @@ class Property(abc.Mapping[str, typing.Any]):
             if key in definitions:
                 yield key
 
+    @override
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
+    @override
     def __eq__(self, other: object) -> bool:
         return self._values == (other._values if isinstance(other, Property) else other)
 
+    @override
     def __getitem__(self, property_name: str) -> typing.Any:
         if not self.record:
             return False
@@ -782,6 +789,7 @@ class Property(abc.Mapping[str, typing.Any]):
             value = value or False
         return value
 
+    @override
     def __hash__(self) -> int:
         return hash(
             frozendict(

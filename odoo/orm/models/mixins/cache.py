@@ -27,6 +27,7 @@ class RecordCache(Mapping[str, object]):
     def _peek(self, field: Field[typing.Any]) -> Mapping[IdType, typing.Any] | None:
         return field._peek_cache(self._record.env)
 
+    @typing.override
     def __contains__(self, name: object) -> bool:
         record = self._record
         field = record._fields.get(name)
@@ -35,6 +36,7 @@ class RecordCache(Mapping[str, object]):
         cache = self._peek(field)
         return cache is not None and record.id in cache
 
+    @typing.override
     def __getitem__(self, name: str) -> object:
         record = self._record
         field = record._fields[name]
@@ -43,6 +45,7 @@ class RecordCache(Mapping[str, object]):
             raise KeyError(record.id)
         return cache[record.id]
 
+    @typing.override
     def __iter__(self) -> typing.Iterator[str]:
         record = self._record
         id_ = record.id
@@ -51,6 +54,7 @@ class RecordCache(Mapping[str, object]):
             if cache is not None and id_ in cache:
                 yield name
 
+    @typing.override
     def __len__(self) -> int:
         return sum(1 for name in self)
 
@@ -63,6 +67,7 @@ class CacheMixin(_ModelStubs):
         return RecordCache(self)
 
     @api.private
+    @typing.override
     def invalidate_model(
         self, fnames: Collection[str] | None = None, flush: bool = True
     ) -> None:
@@ -79,6 +84,7 @@ class CacheMixin(_ModelStubs):
             _orm_cache.debug("invalidate_model %s: fnames=%s", self._name, fnames)
 
     @api.private
+    @typing.override
     def invalidate_recordset(
         self, fnames: Collection[str] | None = None, flush: bool = True
     ) -> None:
@@ -100,6 +106,7 @@ class CacheMixin(_ModelStubs):
                 fnames,
             )
 
+    @typing.override
     def _invalidate_cache(
         self,
         fnames: Collection[str] | None = None,
@@ -148,6 +155,7 @@ class CacheMixin(_ModelStubs):
                 flushed=flush,
             )
 
+    @typing.override
     def _evict_x2many_scopes_reading_through(
         self, fnames: Collection[str] | None
     ) -> None:
@@ -160,6 +168,7 @@ class CacheMixin(_ModelStubs):
             if core.has_any_context_cached(field):
                 field._evict_user_scopes_reading_through(env, fnames, self._name)
 
+    @typing.override
     def _access_inputs_written(
         self, fnames: Collection[str] | None, *, created: bool = False
     ) -> None:
@@ -172,6 +181,7 @@ class CacheMixin(_ModelStubs):
             if field.comodel_name != self._name and core.has_any_context_cached(field):
                 field._evict_user_scopes_reading_through(env, fnames, self._name)
 
+    @typing.override
     def _access_inputs_forgotten(self, fnames: Collection[str] | None) -> None:
         env = self.env
         env.transaction.access_memo.forget(env.registry, self._name, fnames)

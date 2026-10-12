@@ -120,6 +120,7 @@ class UnlinkMixin(_ModelStubs):
 
         return True
 
+    @typing.override
     def _unlink_inherits_shared_parents(self, parents: BaseModel) -> None:
         parents.exists().unlink()
 

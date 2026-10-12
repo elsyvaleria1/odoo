@@ -1,7 +1,7 @@
 import logging
 import time
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, override
 
 import psycopg
 import werkzeug.exceptions
@@ -77,6 +77,7 @@ def _union_header_tokens(values: Iterable[str]) -> str:
 
 
 class _RequestSessionMixin(RequestState):
+    @override
     def _load_session(self, sid: str | None = None) -> Session:
         root = self.app
 
@@ -103,6 +104,7 @@ class _RequestSessionMixin(RequestState):
             session.mark_clean()
         return session
 
+    @override
     def _select_dbname(self, session: Session) -> str | None:
         root = self.app
 
@@ -167,6 +169,7 @@ class _RequestSessionMixin(RequestState):
         )
         return dbname
 
+    @override
     def _bind_session_transaction(self, cr: Any) -> None:
         if self._session_transaction_cursor is cr:
             return
@@ -179,6 +182,7 @@ class _RequestSessionMixin(RequestState):
         cr.postrollback.add(self._restore_session_snapshot)
         _debug.lifecycle("http.session.transaction_bound", uid=self.session.uid)
 
+    @override
     def _restore_session_snapshot(self) -> None:
         snapshot = self._session_snapshot
         if snapshot is None:
@@ -203,6 +207,7 @@ class _RequestSessionMixin(RequestState):
             can_save=restored.can_save,
         )
 
+    @override
     def _flush_session(self) -> None:
         self._session_transaction_cursor = None
         self._session_snapshot = None
@@ -247,6 +252,7 @@ class _RequestSessionMixin(RequestState):
                 session, env, soft=not session.should_rotate
             )
 
+    @override
     def _update_response_from_future(self, response: Response) -> Response:
         headers = response.headers
         staged = self.future_response.headers
@@ -281,6 +287,7 @@ class _RequestSessionMixin(RequestState):
         )
         return response
 
+    @override
     def _save_session(self, env: odoo.api.Environment | None = None) -> None:
         sess = self.session
         if env is None:

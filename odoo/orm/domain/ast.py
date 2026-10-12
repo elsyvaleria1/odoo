@@ -234,10 +234,12 @@ class Domain:
     def OR(items: Iterable[object]) -> Domain:
         return DomainOr.apply(Domain(item) for item in items)
 
+    @override
     def __setattr__(self, name: str, value: object) -> None:
         msg = "Domain objects are immutable"
         raise TypeError(msg)
 
+    @override
     def __delattr__(self, name: str) -> None:
         msg = "Domain objects are immutable"
         raise TypeError(msg)
@@ -292,9 +294,11 @@ class Domain:
     def __bool__(self) -> bool:
         return not self.is_true()
 
+    @override
     def __eq__(self, other: object) -> bool:
         raise NotImplementedError
 
+    @override
     def __hash__(self) -> int:
         raise NotImplementedError
 
@@ -305,6 +309,7 @@ class Domain:
     def __reversed__(self) -> typing.Iterator[object]:
         return reversed(list(self))
 
+    @override
     def __repr__(self) -> str:
         return repr(list(self))
 
@@ -424,37 +429,47 @@ class DomainBool(Domain):
         object.__setattr__(self, "_opt", (OptimizationLevel.FULL, None))
         return self
 
+    @override
     def __eq__(self, other: object) -> bool:
         return self is other
 
+    @override
     def __hash__(self) -> int:
         return hash(self.value)
 
+    @override
     def is_true(self) -> bool:
         return self.value
 
+    @override
     def is_false(self) -> bool:
         return not self.value
 
+    @override
     def __invert__(self) -> DomainBool:
         return _FALSE_DOMAIN if self.value else _TRUE_DOMAIN
 
+    @override
     def __and__(self, other: object) -> Domain:
         if isinstance(other, Domain):
             return other if self.value else self
         return NotImplemented
 
+    @override
     def __or__(self, other: object) -> Domain:
         if isinstance(other, Domain):
             return self if self.value else other
         return NotImplemented
 
+    @override
     def __iter__(self) -> typing.Iterator[tuple[int, str, int]]:
         yield TRUE_LEAF if self.value else FALSE_LEAF
 
+    @override
     def _as_predicate(self, records: BaseModel) -> Callable[[BaseModel], bool]:
         return lambda _: self.value
 
+    @override
     def _to_sql(self, model: BaseModel, alias: str, query: Query) -> SQL:
         return self._SQL_TRUE if self.value else self._SQL_FALSE
 
@@ -477,27 +492,34 @@ class DomainNot(Domain):
         object.__setattr__(self, "_opt", (OptimizationLevel.NONE, None))
         return self
 
+    @override
     def __invert__(self) -> Domain:
         return self.child
 
+    @override
     def __iter__(self) -> typing.Iterator[object]:
         yield self.OPERATOR
         yield from self.child
 
+    @override
     def iter_conditions(self) -> typing.Iterator[DomainCondition]:
         yield from self.child.iter_conditions()
 
+    @override
     def map_conditions(self, function: Callable[[DomainCondition], Domain]) -> Domain:
         return ~(self.child.map_conditions(function))
 
+    @override
     def _optimize_step(self, model: BaseModel, level: OptimizationLevel) -> Domain:
         return self.child._optimize(model, level)._negate(model)
 
+    @override
     def __eq__(self, other: object) -> bool:
         return self is other or (
             isinstance(other, DomainNot) and self.child == other.child
         )
 
+    @override
     def __hash__(self) -> int:
         try:
             return self._hash
@@ -506,10 +528,12 @@ class DomainNot(Domain):
             object.__setattr__(self, "_hash", h)
             return h
 
+    @override
     def _as_predicate(self, records: BaseModel) -> Callable[[BaseModel], bool]:
         predicate = self.child._as_predicate(records)
         return lambda rec: not predicate(rec)
 
+    @override
     def _to_sql(self, model: BaseModel, alias: str, query: Query) -> SQL:
         condition = self.child._to_sql(model, alias, query)
         return SQL("(%s) IS NOT TRUE", condition)
@@ -559,11 +583,13 @@ class DomainNary(Domain):
                 result.append(child)
         return result or [cls.ZERO]
 
+    @override
     def __iter__(self) -> typing.Iterator[object]:
         yield from itertools.repeat(self.OPERATOR, len(self.children) - 1)
         for child in self.children:
             yield from child
 
+    @override
     def __eq__(self, other: object) -> bool:
         return self is other or (
             isinstance(other, DomainNary)
@@ -571,6 +597,7 @@ class DomainNary(Domain):
             and self.children == other.children
         )
 
+    @override
     def __hash__(self) -> int:
         try:
             return self._hash
@@ -583,19 +610,24 @@ class DomainNary(Domain):
     def INVERSE(self) -> type[DomainNary]:
         raise NotImplementedError
 
+    @override
     def __invert__(self) -> DomainNary:
         return self.INVERSE(tuple(~child for child in self.children))
 
+    @override
     def _negate(self, model: BaseModel) -> DomainNary:
         return self.INVERSE(tuple(child._negate(model) for child in self.children))
 
+    @override
     def iter_conditions(self) -> typing.Iterator[DomainCondition]:
         for child in self.children:
             yield from child.iter_conditions()
 
+    @override
     def map_conditions(self, function: Callable[[DomainCondition], Domain]) -> Domain:
         return self.apply(child.map_conditions(function) for child in self.children)
 
+    @override
     def _optimize_step(self, model: BaseModel, level: OptimizationLevel) -> Domain:
         children = self._flatten(
             child._optimize(model, level) for child in self.children
@@ -631,6 +663,7 @@ class DomainNary(Domain):
                 return self
         return self.apply(children)
 
+    @override
     def _to_sql(self, model: BaseModel, alias: str, query: Query) -> SQL:
         return SQL(
             "(%s)",
@@ -647,14 +680,17 @@ class DomainAnd(DomainNary):
     ZERO = _TRUE_DOMAIN
 
     @classproperty
+    @override
     def INVERSE(self) -> type[DomainNary]:
         return DomainOr
 
+    @override
     def __and__(self, other: object) -> Domain:
         if isinstance(other, DomainAnd):
             return DomainAnd(self.children + other.children)
         return super().__and__(other)
 
+    @override
     def _as_predicate(self, records: BaseModel) -> Callable[[BaseModel], bool]:
         if (optimized := self._predicate_optimized(records)) is not None:
             return optimized._as_predicate(records)
@@ -668,14 +704,17 @@ class DomainOr(DomainNary):
     ZERO = _FALSE_DOMAIN
 
     @classproperty
+    @override
     def INVERSE(self) -> type[DomainNary]:
         return DomainAnd
 
+    @override
     def __or__(self, other: object) -> Domain:
         if isinstance(other, DomainOr):
             return DomainOr(self.children + other.children)
         return super().__or__(other)
 
+    @override
     def _as_predicate(self, records: BaseModel) -> Callable[[BaseModel], bool]:
         if (optimized := self._predicate_optimized(records)) is not None:
             return optimized._as_predicate(records)
@@ -700,6 +739,7 @@ class DomainCustom(Domain):
         object.__setattr__(self, "_opt", (OptimizationLevel.FULL, None))
         return self
 
+    @override
     def _as_predicate(self, records: BaseModel) -> Callable[[BaseModel], bool]:
         if self._filtered is not None:
             return self._filtered
@@ -713,6 +753,7 @@ class DomainCustom(Domain):
         )
         return DomainCondition("id", "any", query)._as_predicate(records)
 
+    @override
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, DomainCustom)
@@ -720,12 +761,15 @@ class DomainCustom(Domain):
             and self._filtered == other._filtered
         )
 
+    @override
     def __hash__(self) -> int:
         return hash(self._sql) ^ hash(self._filtered)
 
+    @override
     def __iter__(self) -> typing.Iterator[object]:
         yield ("<custom_sql>", "", "")
 
+    @override
     def _to_sql(self, model: BaseModel, alias: str, query: Query) -> SQL:
         return self._sql(model, alias, query)
 
@@ -941,6 +985,7 @@ class DomainCondition(Domain):
             return DomainCondition(self.field_expr, op, value)
         return self
 
+    @override
     def __invert__(self) -> Domain:
         if (
             "." not in self.field_expr
@@ -981,6 +1026,7 @@ class DomainCondition(Domain):
 
         return super()._negate(model)
 
+    @override
     def __iter__(self) -> typing.Iterator[tuple[str, str, object]]:
         yield (
             self.field_expr,
@@ -988,6 +1034,7 @@ class DomainCondition(Domain):
             _thaw_comparand(self.operator, self.value),
         )
 
+    @override
     def __eq__(self, other: object) -> bool:
         return self is other or (
             isinstance(other, DomainCondition)
@@ -1002,6 +1049,7 @@ class DomainCondition(Domain):
             )
         )
 
+    @override
     def __hash__(self) -> int:
         try:
             return self._hash
@@ -1030,9 +1078,11 @@ class DomainCondition(Domain):
         object.__setattr__(self, "_hash", h)
         return h
 
+    @override
     def iter_conditions(self) -> typing.Iterator[DomainCondition]:
         yield self
 
+    @override
     def map_conditions(self, function: Callable[[DomainCondition], Domain]) -> Domain:
         result = function(self)
         assert isinstance(result, Domain), "result of map_conditions is not a Domain"
@@ -1071,6 +1121,7 @@ class DomainCondition(Domain):
         object.__setattr__(self, "_field_instance", field)
         return field, property_name or ""
 
+    @override
     def _optimize_step(self, model: BaseModel, level: OptimizationLevel) -> Domain:
         opt_level = self._opt_level
         if level <= opt_level:
@@ -1263,6 +1314,7 @@ class DomainCondition(Domain):
         in_memory = self._get_value_predicate(records)
         return lambda rec: rec._ids[0] in matched if rec._ids[0] else in_memory(rec)
 
+    @override
     def _as_predicate(self, records: BaseModel) -> Callable[[BaseModel], bool]:
         if not records:
             return lambda _: False
@@ -1374,6 +1426,7 @@ class DomainCondition(Domain):
         func = field.filter_function(records, field_expr, positive_operator, value)
         return func if positive_operator == op else lambda rec: not func(rec)
 
+    @override
     def _to_sql(self, model: BaseModel, alias: str, query: Query) -> SQL:
         field_expr, op, value = self.field_expr, self.operator, self.value
         if op not in STANDARD_CONDITION_OPERATORS:

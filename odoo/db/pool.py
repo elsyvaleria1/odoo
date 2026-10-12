@@ -7,7 +7,7 @@ import re
 import sys
 import threading
 from time import monotonic
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 import psycopg
 from psycopg_pool import ConnectionPool as _PsycopgPool
@@ -40,6 +40,7 @@ _debug = DebugLog(__name__)
 
 
 class _SuppressKnownPoolWarnings(logging.Filter):
+    @override
     def filter(self, record: logging.LogRecord) -> bool:
         msg = record.getMessage()
         if "discarding closed connection" in msg:
@@ -212,6 +213,7 @@ class ConnectionPool:
             workers=pool_workers,
         )
 
+    @override
     def __repr__(self) -> str:
         pools = list(self._pools.values())
         total = available = 0

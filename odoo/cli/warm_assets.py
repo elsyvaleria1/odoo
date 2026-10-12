@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Any
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -19,6 +19,7 @@ class WarmAssets(DatabaseCommand):
         super().__init__()
         self.add_config_arguments(self.parser)
 
+    @override
     def run(self, args: list[str]) -> None:
         parsed_args, unknown = self.parse_args(args)
         dbname = self.bootstrap_config(parsed_args, extra_args=unknown)

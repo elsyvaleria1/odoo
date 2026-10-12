@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from email.utils import formatdate
 from enum import Enum
 from http import HTTPStatus
+from typing import override
 from urllib.parse import unquote_to_bytes
 
 __all__ = [
@@ -368,6 +369,7 @@ class _BodyReader(io.RawIOBase):
     def _consume(self, size: int) -> bytes:
         raise NotImplementedError
 
+    @override
     def readable(self) -> bool:
         return True
 
@@ -407,12 +409,14 @@ class _BodyReader(io.RawIOBase):
             self.error = exc
             raise
 
+    @override
     def readinto(self, buffer: Buffer) -> int:
         view = memoryview(buffer).cast("B")
         data = self.read(len(view))
         view[: len(data)] = data
         return len(data)
 
+    @override
     def read(self, size: int | None = -1) -> bytes:
         if size is None or size < 0:
             return self.readall()
@@ -421,12 +425,14 @@ class _BodyReader(io.RawIOBase):
         ready = self._available(size)
         return self._take(ready) if ready else b""
 
+    @override
     def readall(self) -> bytes:
         chunks = []
         while data := self.read(65536):
             chunks.append(data)
         return b"".join(chunks)
 
+    @override
     def readline(self, size: int | None = -1) -> bytes:
         limit = size if size is not None and size >= 0 else None
         out = bytearray()
@@ -440,6 +446,7 @@ class _BodyReader(io.RawIOBase):
                 break
         return bytes(out)
 
+    @override
     def __iter__(self) -> Iterator[bytes]:
         while line := self.readline():
             yield line
@@ -465,9 +472,11 @@ class LengthReader(_BodyReader):
         self._remaining = length
 
     @property
+    @override
     def exhausted(self) -> bool:
         return self._remaining <= 0
 
+    @override
     def _ready(self, most: int) -> int:
         if self._remaining <= 0:
             return 0
@@ -475,6 +484,7 @@ class LengthReader(_BodyReader):
             raise BodyError("connection closed before the declared Content-Length")
         return min(most, self._remaining, len(self._source.buffer))
 
+    @override
     def _consume(self, size: int) -> bytes:
         data = bytes(self._source.buffer[:size])
         del self._source.buffer[:size]
@@ -495,6 +505,7 @@ class ChunkedReader(_BodyReader):
         self._done = False
 
     @property
+    @override
     def exhausted(self) -> bool:
         return self._done
 
@@ -511,6 +522,7 @@ class ChunkedReader(_BodyReader):
             if consumed > self._limits.max_trailer_bytes:
                 raise BodyError("chunked trailer section too large")
 
+    @override
     def _ready(self, most: int) -> int:
         if self._done:
             return 0
@@ -527,6 +539,7 @@ class ChunkedReader(_BodyReader):
             raise BodyError("connection closed inside a chunk")
         return min(most, self._chunk_left, len(self._source.buffer))
 
+    @override
     def _consume(self, size: int) -> bytes:
         data = bytes(self._source.buffer[:size])
         del self._source.buffer[:size]

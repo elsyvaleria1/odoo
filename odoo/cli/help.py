@@ -1,5 +1,6 @@
 import sys
 import textwrap
+from typing import override
 
 import odoo.release
 from odoo.libs.debug_log import DebugLog
@@ -40,6 +41,7 @@ class Help(Command):
             help="show this command's own --help instead of the full list",
         )
 
+    @override
     def run(self, args: list[str]) -> None:
         parsed = self.parser.parse_args(args)
         if parsed.command and Command.is_valid_name(parsed.command):

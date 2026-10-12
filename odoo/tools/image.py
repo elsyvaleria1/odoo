@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Literal
+from typing import Literal, override
 
 from PIL import Image
 
@@ -88,10 +88,12 @@ class ImageProcess(_ImageProcessBase):
         except ValueError as e:
             raise _UserError(str(e)) from e
 
+    @override
     def _decode_upright(self) -> None:
         with _decoded_as_user_error():
             super()._decode_upright()
 
+    @override
     def image_quality(
         self, quality: int = 0, output_format: str = ""
     ) -> bytes | Literal[False]:

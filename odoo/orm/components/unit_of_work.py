@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -233,6 +233,7 @@ class UnitOfWork[F: FieldKey = FieldKey]:
 
         return result
 
+    @override
     def __repr__(self) -> str:
         n_dirty = self.cache.get_dirty_entry_count()
         n_pending = sum(

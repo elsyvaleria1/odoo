@@ -5,7 +5,7 @@ import sys
 import textwrap
 import zipfile
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, NoReturn, override
 
 from odoo.api import Environment
 from odoo.libs.collections import OrderedSet
@@ -107,6 +107,7 @@ class Module(DatabaseCommand):
             "If 'all' is used as `modules` argument, this applies to all installed modules.",
         )
 
+    @override
     def run(self, cmdargs: list[str]) -> None:
         parsed_args, unknown = self.parse_args(cmdargs)
         self.bootstrap_config(parsed_args, extra_args=unknown)

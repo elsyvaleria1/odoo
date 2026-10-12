@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import mimetypes
 from dataclasses import dataclass, field
+from typing import override
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.filesystem import mimetypes as filesystem_mimetypes
@@ -39,6 +40,7 @@ class Format:
     def mimetypes(self) -> frozenset[str]:
         return self.spellings | self.read_from
 
+    @override
     def __repr__(self) -> str:
         return f"<Format {self.extension} {self.mimetype}>"
 

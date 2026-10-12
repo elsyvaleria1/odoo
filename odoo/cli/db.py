@@ -8,7 +8,7 @@ from argparse import RawTextHelpFormatter
 from contextlib import ExitStack
 from functools import partial
 from pathlib import Path
-from typing import NoReturn
+from typing import NoReturn, override
 
 import requests
 
@@ -329,6 +329,7 @@ class Db(Command):
         )
         return portable
 
+    @override
     def run(self, cmdargs: list[str]) -> None:
         args, unknown = self.parser.parse_known_args(cmdargs)
 

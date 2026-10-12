@@ -1,6 +1,6 @@
 from collections import deque
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -272,5 +272,6 @@ class OrmCore[F: FieldKey = FieldKey]:
         self._deleted.clear()
         self._rows_vanished = False
 
+    @override
     def __repr__(self) -> str:
         return f"<OrmCore {self._cache!r} {self._engine!r}>"

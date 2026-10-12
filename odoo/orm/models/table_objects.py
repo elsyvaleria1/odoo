@@ -70,6 +70,7 @@ class TableObject:
     def apply_to_database(self, model: BaseModel) -> None:
         raise NotImplementedError
 
+    @typing.override
     def __str__(self) -> str:
         return f"({self.name!r}, {self.message!r})"
 
@@ -85,11 +86,13 @@ class Constraint(TableObject):
         if message:
             self.message = message
 
+    @typing.override
     def get_definition(self, registry: Registry) -> str:
         if callable(self._definition):
             return self._definition(registry)
         return self._definition
 
+    @typing.override
     def apply_to_database(self, model: BaseModel) -> None:
         cr = model.env.cr
         conname = self.get_full_name(model)
@@ -133,9 +136,11 @@ class Index(TableObject):
             return ""
         return f"{'UNIQUE ' if self.unique else ''}INDEX {clause}"
 
+    @typing.override
     def get_definition(self, registry: Registry) -> str:
         return self._format_definition(self._get_definition_clause(registry))
 
+    @typing.override
     def apply_to_database(self, model: BaseModel) -> None:
         cr = model.env.cr
         conname = self.get_full_name(model)

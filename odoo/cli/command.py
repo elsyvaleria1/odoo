@@ -6,7 +6,7 @@ import sys
 from collections.abc import Callable, Generator
 from inspect import cleandoc
 from pathlib import Path
-from typing import Any, Literal, NoReturn, overload
+from typing import Any, Literal, NoReturn, overload, override
 
 import odoo.cli
 import odoo.init  # noqa: F401 -- Import initializes the Odoo runtime before CLI dispatch.
@@ -147,6 +147,7 @@ class Command:
             f"{type(self).__qualname__} must override `run(self, args)`"
         )
 
+    @override
     def __init_subclass__(cls, register: bool = True) -> None:
         if not register:
             return

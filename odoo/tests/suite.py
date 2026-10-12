@@ -185,9 +185,11 @@ class _ErrorHolder:
     def shortDescription(self) -> None:
         return
 
+    @override
     def __repr__(self) -> str:
         return f"<ErrorHolder description={self.description!r}>"
 
+    @override
     def __str__(self) -> str:
         return self.id()
 
@@ -216,6 +218,7 @@ class OdooSuite(TestSuite):
             f"{measured.__module__}.{measured.__qualname__}.{hook}"
         )
 
+    @override
     def _handleClassSetUp(self, test: TestCase, result: OdooTestResult) -> None:
         currentClass = type(test)
         entering = None
@@ -227,6 +230,7 @@ class OdooSuite(TestSuite):
         with self._timing(result, entering, "setUpClass"):
             super()._handleClassSetUp(test, result)
 
+    @override
     def _tearDownPreviousClass(
         self, test: TestCase | None, result: OdooTestResult
     ) -> None:

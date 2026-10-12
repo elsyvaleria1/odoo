@@ -18,6 +18,7 @@ class _PropertiesMixin(_ModelStubs):
     __slots__ = ()
 
     @api.model
+    @typing.override
     def get_property_definition(self, full_name: str) -> dict[str, typing.Any]:
         self.browse().check_access("read")
         field_name, property_name = parse_field_expr(full_name)
@@ -76,6 +77,7 @@ class _PropertiesMixin(_ModelStubs):
         )
         return dict(definition)
 
+    @typing.override
     def _remove_stale_properties(self) -> None:
         for fname, field in self._fields.items():
             if not field.is_properties:

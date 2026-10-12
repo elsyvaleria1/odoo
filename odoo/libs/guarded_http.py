@@ -103,6 +103,7 @@ _CONFIGURED = _Configured()
 
 
 class CallBudget:
+    @typing.override
     def __repr__(self) -> str:
         return "CALL_BUDGET"
 

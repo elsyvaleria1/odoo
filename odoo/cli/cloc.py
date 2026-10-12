@@ -1,4 +1,5 @@
 import sys
+from typing import override
 
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import cloc
@@ -34,6 +35,7 @@ class Cloc(DatabaseCommand):
         )
         self.parser.add_argument("--verbose", "-v", action="store_true")
 
+    @override
     def run(self, args: list[str]) -> None:
         opt, unknown = self.parse_args(args)
         counter = cloc.Cloc()

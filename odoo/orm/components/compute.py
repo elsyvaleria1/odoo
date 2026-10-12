@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Collection
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -155,6 +155,7 @@ class ComputeEngine[F: FieldKey = FieldKey]:
             )
         self._pending.clear()
 
+    @override
     def __repr__(self) -> str:
         n_fields = len(self._pending)
         n_entries = sum(len(ids) for ids in self._pending.values())

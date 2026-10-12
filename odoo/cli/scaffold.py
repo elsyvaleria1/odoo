@@ -6,7 +6,7 @@ import re
 import sys
 from collections.abc import Callable, Generator
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -62,6 +62,7 @@ class Scaffold(Command):
             help="Overwrite an existing module directory instead of refusing",
         )
 
+    @override
     def run(self, cmdargs: list[str]) -> None:
         parser = self.parser
         args = parser.parse_args(args=cmdargs)
@@ -187,6 +188,7 @@ class Template:
             f"{identifier!r} is not a valid module template"
         )
 
+    @override
     def __str__(self) -> str:
         return self.id
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 from collections import defaultdict
-from typing import Any
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -100,6 +100,7 @@ class RecomputeScheduler:
 
         return recursive_ids
 
+    @override
     def __repr__(self) -> str:
         n_recompute = sum(len(ids) for ids in self.to_recompute.values())
         n_invalidate = sum(len(ids) for _, ids in self.to_invalidate)

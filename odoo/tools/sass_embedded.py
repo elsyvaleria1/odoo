@@ -8,7 +8,7 @@ import subprocess
 import threading
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import IO, NamedTuple, Self
+from typing import IO, NamedTuple, Self, override
 from urllib.parse import unquote, urlparse
 from urllib.request import url2pathname
 
@@ -589,6 +589,7 @@ class OdooSassImporter(SassImporter):
         _debug.logic("sass.load_outside_roots", url=url)
         raise ValueError(f"{url!r} is outside the addons and may not be loaded")
 
+    @override
     def canonicalize(self, url: str, from_import: bool) -> str | None:
         from odoo.tools.files import file_path
 
@@ -622,6 +623,7 @@ class OdooSassImporter(SassImporter):
                 return self._confined(url, found)
         return None
 
+    @override
     def load(self, canonical_url: str) -> tuple[str, str] | None:
         file = _file_url_to_path(canonical_url)
         if not file.is_file():

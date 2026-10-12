@@ -1,7 +1,7 @@
 import contextlib
 import logging
 import typing
-from typing import Self
+from typing import Self, override
 
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
@@ -73,6 +73,7 @@ class SearchMixin(_ModelStubs):
 
     @api.model
     @api.readonly
+    @override
     def search(
         self,
         domain: DomainType,

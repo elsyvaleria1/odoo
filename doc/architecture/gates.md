@@ -88,6 +88,13 @@ db 111, libs 106, http 52, service 62, modules 28, tools 241, cli 6,
 tests 238 (78 of them unannotated defs), top-level + monkeypatches 21 -> 0
 ```
 
+The same scope, and `tooling.typing`, enable `explicit-override`: a method that
+overrides a base, `object`'s dunders included, carries `@typing.override`
+(coding_guidelines §2.9.11), innermost. Enabling it on 2026-10-11 added 716.
+mypy 2.4 cannot accept the marker on an override of a settable property, so
+those lines carry a reasoned `type: ignore[explicit-override]`, which
+`warn_unused_ignores` retires once mypy learns the case.
+
 A field of any value type is `Field[Any]`. `BaseModel`
 declares `env: Environment` (the mixins keep `Any` for their own shortcuts), so
 an addon's `self.env` is typed; `odoo-bin stubs -d <db>` writes

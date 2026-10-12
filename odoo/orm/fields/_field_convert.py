@@ -24,6 +24,7 @@ _debug = DebugLog(__name__)
 
 
 class _FieldConvertMixin[T](_FieldStubs):
+    @typing.override
     def convert_to_column(
         self,
         value: typing.Any,
@@ -177,6 +178,7 @@ class _FieldConvertMixin[T](_FieldStubs):
             return self._get_column_update_plain(record, record_id)
         return self._get_column_update_company_dependent(record, record_id)
 
+    @typing.override
     def convert_to_cache(
         self, value: typing.Any, record: ModelLike, validate: bool = True
     ) -> typing.Any:
@@ -190,6 +192,7 @@ class _FieldConvertMixin[T](_FieldStubs):
     ) -> typing.Any:
         return False if value is None else value
 
+    @typing.override
     def convert_to_write(self, value: typing.Any, record: ModelLike) -> typing.Any:
         cache_value = self.convert_to_cache(value, record, validate=False)
         record_value = self.convert_to_record(cache_value, record)

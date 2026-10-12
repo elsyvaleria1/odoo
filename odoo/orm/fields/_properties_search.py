@@ -134,6 +134,7 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
 
     if typing.TYPE_CHECKING:
 
+        @override
         def _get_properties_definition(
             self, record: ModelLike
         ) -> list[dict[str, typing.Any]] | None: ...
@@ -296,6 +297,7 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
 
         return matches
 
+    @override
     def property_to_sql(
         self,
         field_sql: SQL,

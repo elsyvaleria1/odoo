@@ -155,6 +155,7 @@ class Many2many(_RelationalMulti):
             )
         return shared
 
+    @override
     def _get_relation_triple(self) -> tuple[str, str, str]:
         if not (self.relation and self.column1 and self.column2):
             raise TypeError(
@@ -199,6 +200,7 @@ class Many2many(_RelationalMulti):
             if mname == model_name
         ] or [self.name]
 
+    @override
     def read(self, records: BaseModel) -> None:
         siblings = self._relation_siblings(records)
         if len(siblings) > 1:

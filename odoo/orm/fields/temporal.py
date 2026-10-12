@@ -272,6 +272,7 @@ class BaseDate[T: date](Field[T | typing.Literal[False]]):
 
         return matches
 
+    @override
     def property_to_sql(
         self,
         field_sql: SQL,

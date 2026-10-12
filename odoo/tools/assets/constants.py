@@ -1,3 +1,5 @@
+from typing import override
+
 __all__ = [
     "ANY_UNIQUE",
     "ASSET_EXTENSIONS",
@@ -27,6 +29,7 @@ OWL_FULL_BUILD_URL = "/web/static/lib/owl/owl.es.js"
 class ExternalAsset:
     __slots__ = ()
 
+    @override
     def __repr__(self) -> str:
         return "EXTERNAL_ASSET"
 

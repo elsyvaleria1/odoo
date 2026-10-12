@@ -168,6 +168,7 @@ class _RegistryModelsMixin(_RegistryStubs):
         }
 
     @functools.cached_property
+    @typing.override
     def model_names_by_inheritance_root(self) -> dict[str, tuple[str, ...]]:
         return index_model_names_by_inheritance_root(self.models)
 

@@ -100,6 +100,7 @@ class _ConstraintsMixin(_ModelStubs):
         )
 
     @property
+    @typing.override
     def _constrained_field_names(self) -> frozenset[str]:
         cls = self.env.registry[self._name]
         return get_or_create_class_memo(
@@ -111,6 +112,7 @@ class _ConstraintsMixin(_ModelStubs):
         )
 
     @property
+    @typing.override
     def _required_attachment_names(self) -> frozenset[str]:
         cls = self.env.registry[self._name]
         return get_or_create_class_memo(
@@ -151,6 +153,7 @@ class _ConstraintsMixin(_ModelStubs):
         )
 
     @property
+    @typing.override
     def _constrained_projection_names(self) -> frozenset[str]:
         cls = self.env.registry[self._name]
         return get_or_create_class_memo(
@@ -165,6 +168,7 @@ class _ConstraintsMixin(_ModelStubs):
             ),
         )
 
+    @typing.override
     def _check_fields(
         self, field_names: Iterable[str], excluded_names: Iterable[str] = ()
     ) -> None:

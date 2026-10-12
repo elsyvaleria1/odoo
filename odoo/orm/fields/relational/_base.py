@@ -207,6 +207,7 @@ class _Relational(Field["BaseModel"]):
 
         return self.convert_to_record_multi(vals, records)
 
+    @override
     def _update_inverse(self, records: BaseModel, value: BaseModel) -> None:
         raise NotImplementedError
 
@@ -222,6 +223,7 @@ class _Relational(Field["BaseModel"]):
             f"Field {self} with unknown comodel_name {self.comodel_name or '???'!r}"
         )
 
+    @override
     def setup_inverses(
         self,
         registry: Registry,
@@ -229,6 +231,7 @@ class _Relational(Field["BaseModel"]):
     ) -> None:
         pass
 
+    @override
     def get_comodel_domain(self, model: ModelLike) -> Domain:
         domain = self.domain
         if callable(domain):
@@ -423,37 +426,47 @@ class _ScopedSlot(MutableMapping[IdType, typing.Any]):
     def _pick(self, key: typing.Any) -> dict[IdType, typing.Any]:
         return self.scoped if isinstance(key, int) else self.pending
 
+    @override
     def __getitem__(self, key: typing.Any) -> typing.Any:
         return self._pick(key)[key]
 
+    @override
     def __setitem__(self, key: typing.Any, value: typing.Any) -> None:
         self._pick(key)[key] = value
 
+    @override
     def __delitem__(self, key: typing.Any) -> None:
         del self._pick(key)[key]
 
+    @override
     def __contains__(self, key: object) -> bool:
         return key in self._pick(key)
 
+    @override
     def __iter__(self) -> Iterator[IdType]:
         yield from self.scoped
         yield from self.pending
 
+    @override
     def __len__(self) -> int:
         return len(self.scoped) + len(self.pending)
 
     def __bool__(self) -> bool:
         return bool(self.scoped) or bool(self.pending)
 
+    @override
     def get(self, key: typing.Any, default: typing.Any = None) -> typing.Any:
         return self._pick(key).get(key, default)
 
+    @override
     def pop(self, key: typing.Any, *default: typing.Any) -> typing.Any:
         return self._pick(key).pop(key, *default)
 
+    @override
     def setdefault(self, key: typing.Any, default: typing.Any = None) -> typing.Any:
         return self._pick(key).setdefault(key, default)
 
+    @override
     def clear(self) -> None:
         self.scoped.clear()
         self.pending.clear()
@@ -786,6 +799,7 @@ class _RelationalMulti(_Relational):
             return True
         return facts is None or any((model_name, fname) in facts for fname in fnames)
 
+    @override
     def _evict_user_scopes_reading_through(
         self, env: Environment, fnames: Collection[str] | None, model_name: str
     ) -> None:
@@ -1170,6 +1184,7 @@ class _RelationalMulti(_Relational):
             record.env, value, PrefetchX2many(record, self, value)
         )
 
+    @override
     def convert_to_record_multi(
         self, values: list[tuple[int | NewId, ...]], records: BaseModel
     ) -> BaseModel:
@@ -1492,6 +1507,7 @@ class PrefetchX2many(Reversible[int | NewId]):
         self.field = field
         self.ids = ids
 
+    @override
     def __iter__(self) -> Iterator[int | NewId]:
         field_cache = self.field._get_cache(self.record.env)
         return unique(
@@ -1506,6 +1522,7 @@ class PrefetchX2many(Reversible[int | NewId]):
             )
         )
 
+    @override
     def __reversed__(self) -> Iterator[int | NewId]:
         field_cache = self.field._get_cache(self.record.env)
         return unique(

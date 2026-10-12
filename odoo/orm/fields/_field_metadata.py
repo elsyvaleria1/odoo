@@ -31,6 +31,7 @@ class _FieldMetadataMixin(_FieldStubs):
         _column_type = None
 
     @functools.cached_property
+    @typing.override
     def column_type(self) -> tuple[str, str] | None:
         return (
             ("jsonb", "jsonb")
@@ -39,12 +40,15 @@ class _FieldMetadataMixin(_FieldStubs):
         )
 
     @functools.cached_property
+    @typing.override
     def is_column(self) -> bool:
         return bool(self.store and self.column_type)
 
+    @typing.override
     def _is_context_dependent(self, env: Environment) -> bool:
         return self in env._field_depends_context
 
+    @typing.override
     def _get_company_dependent_fallback_raw(self, records: ModelLike) -> typing.Any:
         env = records.env
         return env.registry.metaschema.company_dependent_fallbacks(

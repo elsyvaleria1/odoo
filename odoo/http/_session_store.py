@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from stat import S_ISREG
-from typing import Any
+from typing import Any, override
 
 import psycopg
 
@@ -494,6 +494,7 @@ class FilesystemSessionStore(SessionStore):
         return str(Path(self.path, sid[:2], self._require_key(sid)))
 
     @contextlib.contextmanager
+    @override
     def _lock(self, sid: str) -> Iterator[None]:
         self._require_key(sid)
         stripe = sid[:2]
@@ -530,6 +531,7 @@ class FilesystemSessionStore(SessionStore):
             directory.mkdir(mode=0o700, exist_ok=True)
             return os.open(directory / stripe, flags, 0o600)
 
+    @override
     def _read(self, sid: str) -> tuple[dict[str, Any], float | None] | None:
         path = Path(self.get_session_filename(sid))
         try:
@@ -545,12 +547,14 @@ class FilesystemSessionStore(SessionStore):
         data = self._decode(sid, payload)
         return None if data is None else (data, mtime)
 
+    @override
     def _read_payload(self, sid: str) -> bytes | None:
         try:
             return Path(self.get_session_filename(sid)).read_bytes()
         except FileNotFoundError, NotADirectoryError:
             return None
 
+    @override
     def _write(self, session: Session, durable: bool) -> None:
         filename = Path(self.get_session_filename(session.sid))
         if not filename.parent.is_dir():
@@ -581,12 +585,14 @@ class FilesystemSessionStore(SessionStore):
                 Path(tmp).unlink()
             raise
 
+    @override
     def _unlink(self, sid: str) -> None:
         path = Path(self.get_session_filename(sid))
         with contextlib.suppress(FileNotFoundError):
             path.unlink()
             _fsync_directory(path.parent)
 
+    @override
     def _touch(self, sid: str) -> bool:
         try:
             os.utime(self.get_session_filename(sid))
@@ -594,12 +600,14 @@ class FilesystemSessionStore(SessionStore):
             return False
         return True
 
+    @override
     def _sids_in_family(self, identifier: str) -> list[str]:
         return [
             entry.name
             for entry in (Path(self.path) / identifier[:2]).glob(identifier + "*")
         ]
 
+    @override
     def get_missing_session_identifiers(self, identifiers: Iterable[str]) -> set[str]:
         identifiers = set(identifiers)
         asked = len(identifiers)
@@ -621,6 +629,7 @@ class FilesystemSessionStore(SessionStore):
         )
         return identifiers
 
+    @override
     def vacuum(self, max_lifetime: int = SESSION_LIFETIME) -> None:
         threshold = time.time() - max_lifetime
         base_path = Path(self.path)
@@ -655,11 +664,13 @@ class MemorySessionStore(SessionStore):
         self._guard = threading.RLock()
 
     @contextlib.contextmanager
+    @override
     def _lock(self, sid: str) -> Iterator[None]:
         self._require_key(sid)
         with self._guard:
             yield
 
+    @override
     def _read(self, sid: str) -> tuple[dict[str, Any], float | None] | None:
         entry = self._entries.get(sid)
         if entry is None:
@@ -668,16 +679,20 @@ class MemorySessionStore(SessionStore):
         data = self._decode(sid, payload)
         return None if data is None else (data, mtime)
 
+    @override
     def _read_payload(self, sid: str) -> bytes | None:
         entry = self._entries.get(sid)
         return None if entry is None else entry[0]
 
+    @override
     def _write(self, session: Session, durable: bool) -> None:
         self._entries[session.sid] = (_dumps_bytes(dict(session)), time.time())
 
+    @override
     def _unlink(self, sid: str) -> None:
         self._entries.pop(sid, None)
 
+    @override
     def _touch(self, sid: str) -> bool:
         entry = self._entries.get(sid)
         if entry is None:
@@ -685,10 +700,12 @@ class MemorySessionStore(SessionStore):
         self._entries[sid] = (entry[0], time.time())
         return True
 
+    @override
     def _sids_in_family(self, identifier: str) -> list[str]:
         with self._guard:
             return [sid for sid in self._entries if sid.startswith(identifier)]
 
+    @override
     def vacuum(self, max_lifetime: int = SESSION_LIFETIME) -> None:
         threshold = time.time() - max_lifetime
         with self._guard:
@@ -795,6 +812,7 @@ class PostgresSessionStore(SessionStore):
             ) from exc
 
     @contextlib.contextmanager
+    @override
     def _lock(self, sid: str) -> Iterator[None]:
         self._require_key(sid)
         outermost = getattr(self._local, "cursor", None) is None
@@ -812,6 +830,7 @@ class PostgresSessionStore(SessionStore):
                 if outermost:
                     self._local.cursor = None
 
+    @override
     def _read(self, sid: str) -> tuple[dict[str, Any], float | None] | None:
         if self._schema_ready and getattr(self._local, "cursor", None) is None:
             with self._storage_errors():
@@ -829,12 +848,14 @@ class PostgresSessionStore(SessionStore):
         data = self._decode(sid, bytes(payload))
         return None if data is None else (data, mtime)
 
+    @override
     def _read_payload(self, sid: str) -> bytes | None:
         with self._cursor() as cr:
             cr.execute("SELECT payload FROM http_session WHERE sid = %s", (sid,))
             row = cr.fetchone()
         return None if row is None else bytes(row[0])
 
+    @override
     def _write(self, session: Session, durable: bool) -> None:
         with self._cursor() as cr:
             cr.execute(
@@ -852,10 +873,12 @@ class PostgresSessionStore(SessionStore):
                 ),
             )
 
+    @override
     def _unlink(self, sid: str) -> None:
         with self._cursor() as cr:
             cr.execute("DELETE FROM http_session WHERE sid = %s", (sid,))
 
+    @override
     def _touch(self, sid: str) -> bool:
         with self._cursor() as cr:
             cr.execute(
@@ -863,11 +886,13 @@ class PostgresSessionStore(SessionStore):
             )
             return bool(cr.rowcount)
 
+    @override
     def _sids_in_family(self, identifier: str) -> list[str]:
         with self._cursor() as cr:
             cr.execute("SELECT sid FROM http_session WHERE family = %s", (identifier,))
             return [row[0] for row in cr.fetchall()]
 
+    @override
     def get_missing_session_identifiers(self, identifiers: Iterable[str]) -> set[str]:
         identifiers = set(identifiers)
         asked = len(identifiers)
@@ -883,6 +908,7 @@ class PostgresSessionStore(SessionStore):
         )
         return identifiers
 
+    @override
     def vacuum(self, max_lifetime: int = SESSION_LIFETIME) -> None:
         threshold = time.time() - max_lifetime
         removed = stripes = 0

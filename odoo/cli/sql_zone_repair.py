@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 from datetime import datetime
-from typing import Any
+from typing import Any, override
 
 import odoo.db
 from odoo.libs.debug_log import DebugLog
@@ -66,6 +66,7 @@ class SqlZoneRepair(DatabaseCommand):
             "--samples", type=int, default=3, help="sample values shown per column"
         )
 
+    @override
     def run(self, args: list[str]) -> None:
         parsed_args, unknown = self.parse_args(args)
         dbname = self.bootstrap_config(parsed_args, extra_args=unknown)

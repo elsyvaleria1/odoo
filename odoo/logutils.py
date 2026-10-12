@@ -37,6 +37,7 @@ class WatchedFileHandler(logging.handlers.WatchedFileHandler):
         super().__init__(filename)
         self._builtin_open = None
 
+    @override
     def _open(self) -> TextIOWrapper:
         return cast(
             "TextIOWrapper",
@@ -60,6 +61,7 @@ class PostgreSQLHandler(logging.Handler):
                     column_exists(cr, "ir_logging", "metadata")
                 )
 
+    @override
     def emit(self, record: logging.LogRecord) -> None:
         ct_db = getattr(current_worker_thread(), "dbname", None)
         dbname = (
@@ -144,6 +146,7 @@ class PerfFilter(logging.Filter):
     def format_cursor_mode(self, cursor_mode: str | None) -> str:
         return cursor_mode or "-"
 
+    @override
     def filter(self, record: logging.LogRecord) -> bool:
         perf_record = cast("LogRecord", record)
         worker = current_worker_thread()
@@ -169,6 +172,7 @@ class PerfFilter(logging.Filter):
 
 
 class ColoredPerfFilter(PerfFilter):
+    @override
     def format_perf(
         self, query_count: int, query_time: float, remaining_time: float
     ) -> tuple[str, str, str]:
@@ -232,6 +236,7 @@ class JSONFormatter(logging.Formatter):
                 "args",
             }
 
+    @override
     def format(self, record: logging.LogRecord) -> str:
         record_json: dict[str, object] = {}
         record_keys = self.record_keys

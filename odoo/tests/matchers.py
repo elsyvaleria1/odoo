@@ -2,7 +2,7 @@ import logging
 import re
 import types
 from functools import partial
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, override
 
 from lxml import etree
 
@@ -90,11 +90,13 @@ class Like:
 
     __hash__ = None  # type: ignore[assignment]  # object stubs cannot express the unhashable sentinel
 
+    @override
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, str):
             return NotImplemented
         return bool(re.fullmatch(self.regex, other.strip(), re.DOTALL))
 
+    @override
     def __repr__(self) -> str:
         return repr(self.pattern)
 
@@ -102,9 +104,11 @@ class Like:
 class WhitespaceInsensitive(str):
     __slots__ = ()
 
+    @override
     def __hash__(self) -> int:
         return hash(re.sub(r"\s+", " ", self))
 
+    @override
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, str):
             return NotImplemented
@@ -129,11 +133,13 @@ class Approx:
         else:
             self.cmp = rounding.compare_amounts
 
+    @override
     def __repr__(self) -> str:
         if self.decorate:
             return f"~{self.value!r}"
         return repr(self.value)
 
+    @override
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, (float, int)):
             return NotImplemented

@@ -496,6 +496,7 @@ class BaseCase(TestCase):
             raise RuntimeError("This test requires a database cursor")
         return self.cr
 
+    @override
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         if cls.__module__.startswith("odoo.addons."):
@@ -631,6 +632,7 @@ class BaseCase(TestCase):
                     break
 
     @classmethod
+    @override
     def setUpClass(cls) -> None:
         def check_remaining_processes() -> None:
             if not _has_child_processes():
@@ -723,6 +725,7 @@ class BaseCase(TestCase):
             retries=cls._tests_run_count - 1,
         )
 
+    @override
     def setUp(self) -> None:
         super().setUp()
         self.http_request_key: str = ""
@@ -828,10 +831,12 @@ class BaseCase(TestCase):
         )
         return mock
 
+    @override
     def enterContext(self, cm: Any) -> Any:
         return _enter_context(cm, self.addCleanup)
 
     @classmethod
+    @override
     def enterClassContext(cls, cm: Any) -> Any:
         return _enter_context(cm, cls.addClassCleanup)
 
@@ -2163,6 +2168,7 @@ class TransactionCase(BaseCase):
         cls.env.transaction.default_env = cls.env
 
     @classmethod
+    @override
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls._open_class_transaction()
@@ -2215,6 +2221,7 @@ class TransactionCase(BaseCase):
             uid=cls.env.uid,
         )
 
+    @override
     def setUp(self) -> None:
         super().setUp()
 
@@ -2350,6 +2357,7 @@ class SingleTransactionCase(BaseCase):
     _starts_freeze_time_itself = True
 
     @classmethod
+    @override
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         if issubclass(cls, TransactionCase):
@@ -2360,6 +2368,7 @@ class SingleTransactionCase(BaseCase):
             )
 
     @classmethod
+    @override
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.registry = Registry(get_db_name())
@@ -2385,6 +2394,7 @@ class SingleTransactionCase(BaseCase):
             db=cls.cr.dbname,
         )
 
+    @override
     def setUp(self) -> None:
         super().setUp()
         with _debug.perf(

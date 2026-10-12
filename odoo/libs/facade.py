@@ -2,7 +2,7 @@ __all__ = ["Proxy", "ProxyAttr", "ProxyFunc", "ProxyMeta"]
 
 import functools
 import inspect
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast, override
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -125,5 +125,6 @@ class Proxy(metaclass=ProxyMeta):
     # The proxy exposes its wrapped class while intentionally preventing
     # reassignment, unlike object's writable __class__ attribute.
     @property  # type: ignore[misc]
+    @override
     def __class__(self) -> type:
         return type(self)._wrapped__

@@ -325,6 +325,7 @@ class Monetary(Field[float]):
 
         return super()._description_aggregator(env)
 
+    @override
     def get_currency_field(self, model: ModelLike) -> str | None:
         return self.currency_field or (
             "currency_id"
@@ -334,6 +335,7 @@ class Monetary(Field[float]):
             else None
         )
 
+    @override
     def _get_currency_field_name(self, model: ModelLike) -> str:
         name = self.get_currency_field(model)
         if name is None:
@@ -396,6 +398,7 @@ class Monetary(Field[float]):
                 return currency.with_env(record.env).round(value)
         return value
 
+    @override
     def convert_to_column_insert(
         self,
         value: typing.Any,

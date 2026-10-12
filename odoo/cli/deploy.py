@@ -6,6 +6,7 @@ import tempfile
 import urllib.parse
 import zipfile
 from pathlib import Path
+from typing import override
 
 import requests
 
@@ -272,6 +273,7 @@ class Deploy(Command):
             raise
         return temp
 
+    @override
     def run(self, cmdargs: list[str]) -> None:
         args = self.parser.parse_args(args=cmdargs)
 

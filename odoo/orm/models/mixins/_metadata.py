@@ -87,6 +87,7 @@ class _ModelMetadataMixin(_ModelStubs):
     _access_verbs: typing.ClassVar[dict[str, typing.Any]] = {}
 
     @property
+    @typing.override
     def _table_sql(self) -> SQL:
         table_query = self._table_query
         if table_query and isinstance(table_query, SQL):
@@ -124,12 +125,15 @@ class _ModelMetadataMixin(_ModelStubs):
                 fields_to_flush.update(model._fields[fname] for fname in field_names)
         return seen, fields_to_flush
 
+    @typing.override
     def _is_an_ordinary_table(self) -> bool:
         return self.pool.is_an_ordinary_table(self)
 
+    @typing.override
     def _is_table_inheritance_root(self) -> bool:
         return bool(self._table) and self._table == self._table_inheritance_root
 
+    @typing.override
     def _get_root_model_name(self) -> str:
         root_table = self._table_inheritance_root
         for name in self.pool.model_names_by_inheritance_root.get(root_table, ()):
@@ -142,6 +146,7 @@ class _ModelMetadataMixin(_ModelStubs):
             return self.env[parent]._get_reference_model_name()
         return self._get_model_name()
 
+    @typing.override
     def _get_inherits_shared_parent(self) -> str:
         for parent, field_name in self._inherits.items():
             if field_name == self._inherits_shared_id:

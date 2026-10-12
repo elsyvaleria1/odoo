@@ -1,7 +1,7 @@
 import collections
 import logging
 from collections.abc import Collection, Generator, Iterable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -33,6 +33,7 @@ class Controller:
         collections.defaultdict(list)
     )
 
+    @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         if Controller in cls.__bases__:

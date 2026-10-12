@@ -109,6 +109,7 @@ class _ReadGroupSQLMixin(_ModelStubs):
             SQL.identifier(alias_rate, "rate"),
         )
 
+    @typing.override
     def _aggregates_through_records(self, field: Field[typing.Any], func: str) -> bool:
         return (
             not field.store
@@ -343,6 +344,7 @@ class _ReadGroupSQLMixin(_ModelStubs):
             sql_expr, field.is_date, granularity, groupby_spec
         )
 
+    @typing.override
     def _read_group_check_temporal_granularity(
         self, granularity: str, is_date: bool, groupby_spec: str
     ) -> None:

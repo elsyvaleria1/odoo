@@ -252,9 +252,11 @@ class PrefetchReference(Reversible[int]):
             and value.startswith(prefix)
         )
 
+    @override
     def __iter__(self) -> Iterator[int]:
         return self._ids(self.record._prefetch_ids)
 
+    @override
     def __reversed__(self) -> Iterator[int]:
         return self._ids(reversed(self.record._prefetch_ids))
 
@@ -285,6 +287,7 @@ class Many2oneReference(Integer):
             value = value._ids[0] if value._ids else None
         return super().convert_to_cache(value, record, validate)
 
+    @override
     def _update_inverse(self, records: BaseModel, value: BaseModel) -> None:
         self._update_cache(records, value.id or 0)
 

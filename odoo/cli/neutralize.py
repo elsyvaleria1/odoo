@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import override
 
 import odoo.db
 import odoo.modules.neutralize
@@ -24,6 +25,7 @@ class Neutralize(DatabaseCommand):
             help="Output the neutralization SQL instead of applying it",
         )
 
+    @override
     def run(self, args: list[str]) -> None:
         parsed_args, unknown = self.parse_args(args)
         dbname = self.bootstrap_config(parsed_args, extra_args=unknown)

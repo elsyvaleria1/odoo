@@ -140,6 +140,7 @@ class ThreadedServer(CommonServer):
         self._listener_stop = threading.Event()
         self._listener_stop_pipe: tuple[int, int] | None = None
 
+    @override
     def get_metrics(self) -> dict[str, Any]:
         return {
             **_get_http_server_metrics(self.httpd),
@@ -147,6 +148,7 @@ class ThreadedServer(CommonServer):
             "overruns_cancelled": self._overruns_cancelled,
         }
 
+    @override
     def describe_capacity(self) -> str:
         settings = self.settings
         http = (
@@ -636,6 +638,7 @@ class ThreadedServer(CommonServer):
             if thread.is_alive() and getattr(thread, "type", None) == "http"
         )
 
+    @override
     def run(self, preload: list[str] | None = None, stop: bool = False) -> int | None:
         rc: int | None = None
         self._stop_after_init = stop
@@ -759,13 +762,16 @@ class WebsocketServer(CommonServer):
         self._cancelled_overruns: dict[threading.Thread, float] = {}
         self._overruns_cancelled = 0
 
+    @override
     def get_memory_soft_limit(self) -> int:
         return self.settings.limit_memory_soft_gevent or self.settings.limit_memory_soft
 
+    @override
     def describe_capacity(self) -> str:
         threads = self.httpd.max_http_threads if self.httpd is not None else 0
         return f"websocket {self.interface}:{self.port} ({threads} threads)"
 
+    @override
     def get_metrics(self) -> dict[str, Any]:
         return {
             **_get_http_server_metrics(self.httpd),
@@ -888,6 +894,7 @@ class WebsocketServer(CommonServer):
             self.httpd.server_close()
         super().stop()
 
+    @override
     def run(self, preload: list[str] | None = None, stop: bool = False) -> int | None:
         _debug.pipeline(
             "server.evented.run", preload=len(preload or ()), stop=stop, pid=self.pid

@@ -8,7 +8,7 @@ import operator
 import threading
 from collections.abc import Callable, Generator
 from contextlib import ExitStack, contextmanager
-from typing import Any, ClassVar
+from typing import Any, ClassVar, override
 from unittest.mock import patch
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 from uuid import uuid4
@@ -70,6 +70,7 @@ class Transport(xmlrpclib.Transport):
         self.test_case = http_case
         super().__init__()
 
+    @override
     def request(self, *args: Any, **kwargs: Any) -> Any:
         self.test_case.cr.flush()
         self.test_case.cr.clear()
@@ -100,6 +101,7 @@ class HttpCase(TransactionCase):
     _logger: logging.Logger
 
     @classmethod
+    @override
     def setUpClass(cls) -> None:
         if cls.http_port() is None:
             _debug.logic("test.http.no_server", cls=cls.__qualname__)
@@ -131,6 +133,7 @@ class HttpCase(TransactionCase):
         httpd = getattr(get_server(), "httpd", None)
         return httpd.server_port if httpd is not None else None
 
+    @override
     def setUp(self) -> None:
         super().setUp()
 
@@ -694,6 +697,7 @@ class HttpCase(TransactionCase):
                 **kwargs,
             )
 
+    @override
     def profile(self, description: str = "", **kwargs: Any) -> Any:
         make_profiler = super().profile
         _profiler = make_profiler(description, **kwargs)

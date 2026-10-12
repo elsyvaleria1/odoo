@@ -132,6 +132,7 @@ class TestCase(_TestCase):
     __unittest_skip__ = False
     __unittest_skip_why__ = ""
 
+    @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         offenders = sorted(
@@ -166,6 +167,7 @@ class TestCase(_TestCase):
             str: "assertMultiLineEqual",
         }
 
+    @override
     def addCleanup(
         self,
         function: Callable[_P, object],
@@ -176,6 +178,7 @@ class TestCase(_TestCase):
         self._cleanups.append((function, args, kwargs))
 
     @classmethod
+    @override
     def addClassCleanup(
         cls,
         function: Callable[_P, object],
@@ -185,10 +188,12 @@ class TestCase(_TestCase):
     ) -> None:
         cls._class_cleanups.append((function, args, kwargs))
 
+    @override
     def shortDescription(self) -> None:
         return None
 
     @contextlib.contextmanager
+    @override
     def subTest(
         self, msg: Any = _subtest_msg_sentinel, **params: Any
     ) -> Generator[None]:
@@ -310,6 +315,7 @@ class TestCase(_TestCase):
 
             self._outcome = None
 
+    @override
     def doCleanups(self) -> None:
 
         assert self._outcome is not None
@@ -327,6 +333,7 @@ class TestCase(_TestCase):
             )
 
     @classmethod
+    @override
     def doClassCleanups(cls) -> None:
         cls.tearDown_exceptions = []
         count = len(cls._class_cleanups)
@@ -382,8 +389,10 @@ class _SubTest(TestCase):
             parts.append(f"({params_desc})")
         return " ".join(parts) or "(<subtest>)"
 
+    @override
     def id(self) -> str:
         return f"{self.test_case.id()} {self._subDescription()}"
 
+    @override
     def __str__(self) -> str:
         return f"{self.test_case} {self._subDescription()}"
