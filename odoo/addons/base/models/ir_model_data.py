@@ -190,26 +190,35 @@ class IrModelData(models.Model):
         return targets
 
     @api.model
+    def _read_xmlid_rows(
+        self, xml_ids: Collection[str]
+    ) -> list[tuple[int, str, str, str, int, bool]]:
+        names_by_module = defaultdict(set)
+        for xml_id in xml_ids:
+            module, dot, name = xml_id.partition(".")
+            if dot:
+                names_by_module[module].add(name)
+            else:
+                _debug.logic("xmlid_miss", xmlid=xml_id, reason="no_module_prefix")
+        if not names_by_module:
+            return []
+        rows = self.search_fetch(
+            self._get_domain_module_names(names_by_module),
+            ["module", "name", "model", "res_id", "noupdate"],
+            order="module, model, name",
+        )
+        return [
+            (row.id, row.module, row.name, row.model, row.res_id, row.noupdate)
+            for row in rows
+        ]
+
+    @api.model
     def _xmlid_targets(
         self, xml_ids: Collection[str]
     ) -> dict[str, tuple[str, int] | None]:
-        names_by_module = defaultdict(set)
-        for xml_id in xml_ids:
-            if "." in xml_id:
-                module, name = xml_id.split(".", 1)
-                names_by_module[module].add(name)
         targets: dict[str, tuple[str, int] | None] = dict.fromkeys(xml_ids)
-        if not names_by_module:
-            return targets
-        self.flush_model(["module", "name", "model", "res_id"])
-        for module, name, model, res_id in self.env.execute_query(
-            SQL(
-                "SELECT module, name, model, res_id FROM ir_model_data WHERE %s",
-                SQL(" OR ").join(
-                    SQL("(module = %s AND name = ANY(%s))", module, sorted(names))
-                    for module, names in names_by_module.items()
-                ),
-            )
+        for _id, module, name, model, res_id, _noupdate in self._read_xmlid_rows(
+            xml_ids
         ):
             if res_id:
                 targets[f"{module}.{name}"] = (model, res_id)
@@ -301,37 +310,21 @@ class IrModelData(models.Model):
             _debug.logic("get_xmlids.skipped", model=model._name, reason="empty")
             return []
 
-        bymodule = defaultdict(set)
-        for xml_id in xml_ids:
-            prefix, suffix = xml_id.split(".", 1)
-            bymodule[prefix].add(suffix)
-
-        rows = self.sudo().search_fetch(
-            self._get_domain_module_names(bymodule),
-            ["module", "name", "model", "res_id", "noupdate"],
-        )
+        rows = self._read_xmlid_rows(xml_ids)
         target_ids = set(
-            model.browse(row.res_id for row in rows if row.model == model._name)
+            model.browse(
+                res_id
+                for _id, _module, _name, res_model, res_id, _noupdate in rows
+                if res_model == model._name and res_id
+            )
             .exists()
             .ids
         )
-        result = [
-            (
-                row.id,
-                row.module,
-                row.name,
-                row.model,
-                row.res_id,
-                row.noupdate,
-                row.res_id if row.res_id in target_ids else None,
-            )
-            for row in rows
-        ]
+        result = [(*row, row[4] if row[4] in target_ids else None) for row in rows]
         _debug.perf.count(
             "get_xmlids",
             model=model._name,
             requested=len(xml_ids),
-            modules=len(bymodule),
             found=len(result),
         )
         return result

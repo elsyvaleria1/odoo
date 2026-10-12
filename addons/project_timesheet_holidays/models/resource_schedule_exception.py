@@ -258,13 +258,15 @@ class ResourceScheduleException(models.Model):
         }
 
     def _generate_timesheeets(self) -> None:
-        results_with_leave_timesheet = self.filtered(
-            lambda r: (
-                not r.resource_id
-                and r.company_id.hr_timesheet_config_id.internal_project_id
-                and r.company_id.project_timesheet_holidays_config_id.leave_timesheet_task_id
+        def books_time_off(leave):
+            company = leave.company_id or self.env.company
+            return bool(
+                not leave.resource_id
+                and company.hr_timesheet_config_id.internal_project_id
+                and company.project_timesheet_holidays_config_id.leave_timesheet_task_id
             )
-        )
+
+        results_with_leave_timesheet = self.filtered(books_time_off)
         _debug.logic(
             "global_leave_timesheet_candidates",
             leaves=self,
@@ -321,10 +323,11 @@ class ResourceScheduleException(models.Model):
         self.check_singleton()
         leave_domain = domain or []
         leave_domain += [
-            ("company_id", "=", self.company_id.id),
             ("date_from", "<=", self.date_to),
             ("date_to", ">=", self.date_from),
         ]
+        if self.company_id:
+            leave_domain += [("company_id", "=", self.company_id.id)]
         if self.calendar_id:
             leave_domain += [
                 ("resource_calendar_id", "in", [False, self.calendar_id.id])

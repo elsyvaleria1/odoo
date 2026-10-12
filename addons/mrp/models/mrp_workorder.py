@@ -960,6 +960,7 @@ class MrpWorkorder(models.Model):
             date_start or self.date_start,
             compute_leaves=True,
             resource=workcenter.resource_id,
+            reservations_to_ignore=self.reservation_ids,
         )
 
     @api.onchange("date_end")

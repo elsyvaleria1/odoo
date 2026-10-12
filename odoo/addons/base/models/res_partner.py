@@ -20,6 +20,8 @@ from odoo.libs.text import name_length_band, similarity_ratio
 from odoo.tools import SQL, frozendict
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Hashable
+
     from .res_company import ResCompany
     from .res_users import ResUsers
     from .resource_resource import ResourceResource
@@ -522,32 +524,8 @@ class ResPartner(models.Model):
     @api.constrains("name")
     def _check_company_party_name_unique(self) -> None:
         company_partner_ids = self.env["res.company"]._get_company_partner_ids()
-        parties = self.filtered(lambda p: p.id in company_partner_ids)
-        if not parties:
-            return
-        twins = (
-            self.env["res.company"]
-            .sudo()
-            .with_context(active_test=False)
-            .search_fetch(
-                [
-                    ("name", "in", parties.mapped("name")),
-                    ("partner_id", "not in", parties.ids),
-                ],
-                ["name"],
-            )
-        )
-        taken = set(twins.mapped("name"))
-        names = parties.mapped("name")
-        if len(names) != len(set(names)):
-            _debug.logic("company_name_duplicate", partners=parties.ids)
-            raise ValidationError(self.env._("The company name must be unique!"))
-        for party in parties:
-            if party.name in taken:
-                _debug.logic(
-                    "company_name_duplicate", partner=party.id, name=party.name
-                )
-                raise ValidationError(self.env._("The company name must be unique!"))
+        if parties := self.filtered(lambda p: p.id in company_partner_ids):
+            self.env["res.company"]._check_names_unique(parties.mapped("name"))
 
     def _compute_is_bank(self) -> None:
         bank_partner_ids = self.env["res.bank"]._get_bank_partner_ids()
@@ -668,32 +646,8 @@ class ResPartner(models.Model):
             count=len(partners),
             companies=sum(1 for vals in vals_list if vals.get("is_company")),
             with_parent=sum(1 for vals in vals_list if vals.get("parent_id")),
-            skip_sync=bool(self.env.context.get("_partners_skip_fields_sync")),
         )
-        if self.env.context.get("_partners_skip_fields_sync"):
-            return partners
-
-        synced = self._synced_field_names()
-        missing_defaults_cache: dict[frozenset[str], list[str]] = {}
-        batches: dict[str, tuple[dict[str, Any], list[int]]] = {}
-        for partner, vals in zip(partners, vals_list, strict=True):
-            vals = self.env["res.partner"]._add_missing_default_values(
-                vals, _missing_defaults_cache=missing_defaults_cache, only=synced
-            )
-            synced_vals = {fname: vals[fname] for fname in synced if fname in vals}
-            key = repr(sorted(synced_vals.items()))
-            batches.setdefault(key, (synced_vals, []))[1].append(partner.id)
-        _debug.perf.count(
-            "create_sync_batches",
-            partners=len(partners),
-            batches=len(batches),
-        )
-        for synced_vals, batch_ids in batches.values():
-            partners.browse(batch_ids)._fields_sync(
-                synced_vals,
-                new=True,
-                commercial_changed=bool(synced_vals.get("parent_id")),
-            )
+        partners._sync_new_partners(vals_list)
         return partners
 
     def write(self, vals: dict[str, Any]) -> bool:
@@ -1960,7 +1914,7 @@ class ResPartner(models.Model):
                 commercial_changed=commercial_changed,
                 was_commercial=was_commercial,
             )
-            partners._fields_sync(
+            partners.with_prefetch(self._prefetch_ids)._fields_sync(
                 {fname: vals[fname] for fname in changed},
                 commercial_changed=commercial_changed,
                 was_commercial=was_commercial,
@@ -2020,18 +1974,39 @@ class ResPartner(models.Model):
         if addr_vals:
             super().write(addr_vals)
 
-    def _update_parent_address(self) -> None:
-        parent = self.parent_id
-        address_fields = self._address_fields()
-        if (
-            (parent.is_company or not parent.parent_id)
-            and any(self[f] for f in address_fields)
-            and not any(parent[f] for f in address_fields)
-            and len(parent.child_ids) == 1
-        ):
-            addr_vals = self._convert_fields_to_values(address_fields)
-            _debug.logic("parent_address_filled", partner=self.id, parent=parent.id)
-            parent._update_address(addr_vals)
+    def _sync_new_partners(self, vals_list: list[ValuesType]) -> None:
+        synced = self._synced_field_names()
+        missing_defaults_cache: dict[frozenset[str], list[str]] = {}
+        with_children = self.filtered("child_ids")
+        batches: dict[Hashable, tuple[dict[str, Any], list[int]]] = {}
+        for partner, vals in zip(self, vals_list, strict=True):
+            vals = self.env["res.partner"]._add_missing_default_values(
+                vals, _missing_defaults_cache=missing_defaults_cache, only=synced
+            )
+            synced_vals = {fname: vals[fname] for fname in synced if fname in vals}
+            # Without children to push values down to, _fields_sync reads only
+            # which fields were given and the parent/type flags, never a value.
+            key: Hashable = (
+                repr(sorted(synced_vals.items()))
+                if partner in with_children
+                else (
+                    frozenset(synced_vals),
+                    bool(synced_vals.get("parent_id")),
+                    synced_vals.get("type") == "contact",
+                )
+            )
+            batches.setdefault(key, (synced_vals, []))[1].append(partner.id)
+        _debug.perf.count(
+            "create_sync_batches",
+            partners=len(self),
+            batches=len(batches),
+        )
+        for synced_vals, batch_ids in batches.values():
+            self.browse(batch_ids)._fields_sync(
+                synced_vals,
+                new=True,
+                commercial_changed=bool(synced_vals.get("parent_id")),
+            )
 
     def _fields_sync(
         self,
@@ -2090,48 +2065,6 @@ class ResPartner(models.Model):
         )
         if children:
             children.write({"company_id": company_id})
-
-    def _load_records_create(self, vals_list: list[ValuesType]) -> Self:
-        partners = super(
-            ResPartner, self.with_context(_partners_skip_fields_sync=True)
-        )._load_records_create(vals_list)
-
-        groups = defaultdict(list)
-        for partner, vals in zip(partners, vals_list, strict=True):
-            cp_id = None
-            if vals.get("parent_id") and partner.commercial_partner_id != partner:
-                cp_id = partner.commercial_partner_id.id
-
-            add_id = None
-            if partner.parent_id and partner.type == "contact":
-                add_id = partner.parent_id.id
-            groups[(cp_id, add_id)].append(partner.id)
-
-        commercial = self.sudo().browse([cp_id for cp_id, _add_id in groups if cp_id])
-        commercial.fetch(self._commercial_fields())
-        address_parents = self.browse([add_id for _cp_id, add_id in groups if add_id])
-        address_parents.fetch(self._address_fields())
-
-        for (cp_id, add_id), children in groups.items():
-            to_write = {}
-            if cp_id:
-                to_write = commercial.browse(cp_id)._prepare_commercial_vals()
-            if add_id:
-                to_write.update(
-                    address_parents.browse(add_id)._prepare_vals_only_when_set(
-                        self._address_fields()
-                    )
-                )
-            if to_write:
-                self.sudo().browse(children).write(to_write)
-
-        _debug.pipeline(
-            "load_records_create", partners=len(partners), groups=len(groups)
-        )
-        for partner, vals in zip(partners, vals_list, strict=True):
-            partner._sync_children(vals, new=True)
-            partner._update_parent_address()
-        return partners
 
     def _create_parent_from_name(
         self, parent_name: str, additional_values: dict[str, Any] | None = None

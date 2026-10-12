@@ -37,10 +37,6 @@ def _alter_sequence(
     )
 
 
-def _select_nextval(env: Any, seq_name: str) -> int:
-    return env.backend.sequences.next_values(env, seq_name, 1)[0]
-
-
 def _select_nextvals(env: Any, seq_name: str, count: int) -> list[int]:
     return env.backend.sequences.next_values(env, seq_name, count)
 
@@ -68,6 +64,61 @@ def _predict_nextvals(env: Any, seq_names: Collection[str]) -> dict[str, int]:
         "nextvals_predicted", asked=len(seq_names), answered=len(predicted)
     )
     return predicted
+
+
+def _draw_numbers(counter: Any, sequence: Any, count: int) -> list[int]:
+    if sequence.implementation == "standard":
+        numbers = _select_nextvals(counter.env, counter._get_pg_sequence_name(), count)
+    else:
+        numbers = _update_nogap_batch(counter, sequence.number_increment, count)
+    counter.invalidate_recordset(["number_next_actual"])
+    return numbers
+
+
+def _assign_number_next_actual(counters: Any, standard: Any) -> None:
+    predicted = _predict_nextvals(
+        counters.env, [counter._get_pg_sequence_name() for counter in standard]
+    )
+    for counter in counters:
+        origin = counter._origin
+        counter.number_next_actual = (
+            predicted.get(origin._get_pg_sequence_name(), counter.number_next)
+            if origin
+            else counter.number_next
+        )
+
+
+def _write_number_next_actual(counters: Any) -> None:
+    for counter in counters:
+        val = counter.number_next_actual
+        _debug.lifecycle(
+            "number_next_set", model=counter._name, record=counter.id, value=val
+        )
+        counter.write({"number_next": val if val is not None else 1})
+
+
+def _carry_over_pg_counters(counters: Any) -> None:
+    if not counters:
+        return
+    predicted = _predict_nextvals(
+        counters.env, [counter._get_pg_sequence_name() for counter in counters]
+    )
+    _debug.lifecycle(
+        "pg_counters_carried_over", model=counters._name, records=counters.ids
+    )
+    counters.flush_recordset(["number_next"])
+    counters.env.backend.columns.write(
+        counters,
+        "number_next",
+        [
+            (
+                counter.id,
+                predicted.get(counter._get_pg_sequence_name(), counter.number_next),
+            )
+            for counter in counters
+        ],
+    )
+    counters.invalidate_recordset(["number_next", "number_next_actual"])
 
 
 _INTERPOLATION_FORMATS = {
@@ -147,27 +198,12 @@ class IrSequence(models.Model):
 
     @api.depends("implementation", "number_next")
     def _compute_number_next_actual(self) -> None:
-        predicted = _predict_nextvals(
-            self.env,
-            [
-                seq._get_pg_sequence_name()
-                for seq in self._origin
-                if seq.implementation == "standard"
-            ],
+        _assign_number_next_actual(
+            self, self._origin.filtered(lambda seq: seq.implementation == "standard")
         )
-        for seq in self:
-            origin = seq._origin
-            seq.number_next_actual = (
-                predicted.get(origin._get_pg_sequence_name(), seq.number_next)
-                if origin
-                else seq.number_next
-            )
 
     def _inverse_number_next_actual(self) -> None:
-        for seq in self:
-            val = seq.number_next_actual
-            _debug.lifecycle("number_next_set", sequence=seq.id, value=val)
-            seq.write({"number_next": val if val is not None else 1})
+        _write_number_next_actual(self)
 
     name = fields.Char(required=True)
     code = fields.Char(string="Sequence Code")
@@ -314,8 +350,8 @@ class IrSequence(models.Model):
                     and "number_next_actual" not in vals,
                 )
                 if "number_next" not in vals and "number_next_actual" not in vals:
-                    seq._carry_over_pg_counter()
-                seq._carry_over_pg_range_counters()
+                    _carry_over_pg_counters(seq)
+                _carry_over_pg_counters(seq.date_range_ids)
                 _drop_sequences(
                     self.env,
                     [
@@ -343,77 +379,6 @@ class IrSequence(models.Model):
                         sub_seq.number_next,
                     )
         return res
-
-    def _carry_over_pg_counter(self) -> None:
-        self.check_singleton()
-        predicted = _predict_nextvals(self.env, [self._get_pg_sequence_name()])
-        _debug.lifecycle(
-            "pg_counter_carried_over",
-            sequence=self.id,
-            number_next=predicted.get(self._get_pg_sequence_name(), self.number_next),
-        )
-        self.flush_recordset(["number_next"])
-        self.env.backend.columns.write(
-            self,
-            "number_next",
-            [(self.id, predicted.get(self._get_pg_sequence_name(), self.number_next))],
-        )
-        self.invalidate_recordset(["number_next", "number_next_actual"])
-
-    def _carry_over_pg_range_counters(self) -> None:
-        self.check_singleton()
-        sub_seqs = self.date_range_ids
-        if not sub_seqs:
-            return
-        predicted = _predict_nextvals(
-            self.env, [sub_seq._get_pg_sequence_name() for sub_seq in sub_seqs]
-        )
-        _debug.lifecycle(
-            "pg_range_counters_carried_over", sequence=self.id, ranges=len(sub_seqs)
-        )
-        sub_seqs.flush_recordset(["number_next"])
-        self.env.backend.columns.write(
-            sub_seqs,
-            "number_next",
-            [
-                (
-                    sub_seq.id,
-                    predicted.get(sub_seq._get_pg_sequence_name(), sub_seq.number_next),
-                )
-                for sub_seq in sub_seqs
-            ],
-        )
-        sub_seqs.invalidate_recordset(["number_next", "number_next_actual"])
-
-    def _next_do(self) -> str:
-        if self.implementation == "standard":
-            number_next = _select_nextval(self.env, self._get_pg_sequence_name())
-        else:
-            number_next = _update_nogap(self, self.number_increment)
-        self.invalidate_recordset(["number_next_actual"])
-        _debug.logic(
-            "next",
-            sequence=self.id,
-            implementation=self.implementation,
-            number=number_next,
-            range=self.env.context.get("ir_sequence_date_range"),
-        )
-        return self.get_next_char(number_next)
-
-    def _next_do_batch(self, count: int) -> list[str]:
-        if self.implementation == "standard":
-            numbers = _select_nextvals(self.env, self._get_pg_sequence_name(), count)
-        else:
-            numbers = _update_nogap_batch(self, self.number_increment, count)
-        self.invalidate_recordset(["number_next_actual"])
-        _debug.logic(
-            "next_batch",
-            sequence=self.id,
-            implementation=self.implementation,
-            count=count,
-            first=numbers[0] if numbers else None,
-        )
-        return self._format_numbers(numbers)
 
     def _get_prefix_suffix(
         self, date: Any = None, date_range: Any = None
@@ -523,44 +488,33 @@ class IrSequence(models.Model):
     def _get_date_range_number_next(self, date_from: Any, date_to: Any) -> int:
         return 1
 
-    def _create_date_range_seq(self, date: Any) -> Any:
+    def _get_new_date_range_bounds(
+        self, date: Any, ranges: Any = None
+    ) -> tuple[Any, Any]:
         date = fields.Date.to_date(date)
         date_from, date_to = self._get_date_range_bounds(date)
-        DateRange = self.env["ir.sequence.date_range"]
-        date_range = DateRange.search(
-            [
-                ("sequence_id", "=", self.id),
-                ("date_from", ">=", date),
-                ("date_from", "<=", date_to),
-            ],
-            order="date_from asc",
-            limit=1,
-        )
-        if date_range:
-            _debug.logic(
-                "date_range_bound_clipped",
-                sequence=self.id,
-                side="to",
-                neighbour=date_range.id,
+        if ranges is None:
+            ranges = self.env["ir.sequence.date_range"].search(
+                [
+                    ("sequence_id", "=", self.id),
+                    ("date_from", "<=", date_to),
+                    ("date_to", ">=", date_from),
+                ]
             )
-            date_to = date_range.date_from + timedelta(days=-1)
-        date_range = DateRange.search(
-            [
-                ("sequence_id", "=", self.id),
-                ("date_to", ">=", date_from),
-                ("date_to", "<=", date),
-            ],
-            order="date_to desc",
-            limit=1,
+        next_start = min(
+            (r.date_from for r in ranges if date <= r.date_from <= date_to),
+            default=None,
         )
-        if date_range:
-            _debug.logic(
-                "date_range_bound_clipped",
-                sequence=self.id,
-                side="from",
-                neighbour=date_range.id,
-            )
-            date_from = date_range.date_to + timedelta(days=1)
+        previous_end = max(
+            (r.date_to for r in ranges if date_from <= r.date_to <= date),
+            default=None,
+        )
+        if next_start is not None:
+            _debug.logic("date_range_bound_clipped", sequence=self.id, side="to")
+            date_to = next_start + timedelta(days=-1)
+        if previous_end is not None:
+            _debug.logic("date_range_bound_clipped", sequence=self.id, side="from")
+            date_from = previous_end + timedelta(days=1)
         if date_from > date_to:
             _debug.logic("date_range_refused", sequence=self.id, reason="no_room")
             raise UserError(
@@ -574,6 +528,12 @@ class IrSequence(models.Model):
                     date_to=date_to,
                 )
             )
+        return date_from, date_to
+
+    def _create_date_range_seq(self, date: Any) -> Any:
+        date = fields.Date.to_date(date)
+        date_from, date_to = self._get_new_date_range_bounds(date)
+        DateRange = self.env["ir.sequence.date_range"]
         vals = {
             "date_from": date_from,
             "date_to": date_to,
@@ -619,58 +579,50 @@ class IrSequence(models.Model):
         )
         return covering or self._create_date_range_seq(dt)
 
-    def _next(self, sequence_date: Any = None) -> str:
-        _debug.pipeline(
-            "next_requested",
-            sequence=self.id,
-            date_range=self.use_date_range,
-            dated=sequence_date is not None,
-        )
-        if not self.use_date_range:
-            if sequence_date is None:
-                return self._next_do()
-            ir_sequence_date = (
+    def _with_sequence_dates(self, sequence_date: Any, range_date: Any = None) -> Self:
+        context = {}
+        if sequence_date is not None:
+            context["ir_sequence_date"] = (
                 sequence_date.replace(tzinfo=None)
                 if isinstance(sequence_date, datetime)
                 else sequence_date
             )
-            return self.with_context(ir_sequence_date=ir_sequence_date)._next_do()
-        dt = self._get_sequence_date(sequence_date)
-        seq_date = self._get_current_sequence(dt)
-        ir_sequence_date = dt.replace(tzinfo=None) if isinstance(dt, datetime) else dt
-        return seq_date.with_context(
-            ir_sequence_date_range=seq_date.date_from,
-            ir_sequence_date=ir_sequence_date,
-        )._next()
+        if range_date is not None:
+            context["ir_sequence_date_range"] = range_date
+        return self.with_context(**context)
+
+    def _next(self, sequence_date: Any = None) -> str:
+        return self._next_batch(1, sequence_date=sequence_date)[0]
 
     def _next_batch(self, count: int, sequence_date: Any = None) -> list[str]:
         self.check_singleton()
         _debug.pipeline(
-            "next_batch_requested",
+            "next_requested",
             sequence=self.id,
             count=count,
             date_range=self.use_date_range,
+            dated=sequence_date is not None,
         )
         if count <= 0:
             return []
-        if not self.use_date_range:
-            if sequence_date is None:
-                return self._next_do_batch(count)
-            ir_sequence_date = (
-                sequence_date.replace(tzinfo=None)
-                if isinstance(sequence_date, datetime)
-                else sequence_date
-            )
-            return self.with_context(ir_sequence_date=ir_sequence_date)._next_do_batch(
-                count
-            )
-        dt = self._get_sequence_date(sequence_date)
-        seq_date = self._get_current_sequence(dt)
-        ir_sequence_date = dt.replace(tzinfo=None) if isinstance(dt, datetime) else dt
-        return seq_date.with_context(
-            ir_sequence_date_range=seq_date.date_from,
-            ir_sequence_date=ir_sequence_date,
-        )._next_batch(count)
+        if self.use_date_range:
+            sequence_date = self._get_sequence_date(sequence_date)
+            counter = self._get_current_sequence(sequence_date)
+            range_date = counter.date_from
+        else:
+            counter, range_date = self, None
+        numbers = _draw_numbers(counter, self, count)
+        _debug.logic(
+            "next",
+            sequence=self.id,
+            range=counter.id if range_date else None,
+            implementation=self.implementation,
+            count=count,
+            first=numbers[0],
+        )
+        return self._with_sequence_dates(sequence_date, range_date)._format_numbers(
+            numbers
+        )
 
     def next_by_id(self, sequence_date: Any = None) -> str:
         self.browse().check_access("read")
@@ -680,14 +632,7 @@ class IrSequence(models.Model):
         self.browse().check_access("read")
         self.check_singleton()
         if not self.use_date_range:
-            if sequence_date is None:
-                return self.get_next_char(self.number_next_actual)
-            ir_sequence_date = (
-                sequence_date.replace(tzinfo=None)
-                if isinstance(sequence_date, datetime)
-                else sequence_date
-            )
-            return self.with_context(ir_sequence_date=ir_sequence_date).get_next_char(
+            return self._with_sequence_dates(sequence_date).get_next_char(
                 self.number_next_actual
             )
         dt = self._get_sequence_date(sequence_date)
@@ -702,13 +647,9 @@ class IrSequence(models.Model):
             number_next = date_range.number_next_actual
             range_date = date_range.date_from
         else:
-            range_date, range_end = self._get_date_range_bounds(fields.Date.to_date(dt))
+            range_date, range_end = self._get_new_date_range_bounds(dt)
             number_next = self._get_date_range_number_next(range_date, range_end)
-        ir_sequence_date = dt.replace(tzinfo=None) if isinstance(dt, datetime) else dt
-        return self.with_context(
-            ir_sequence_date_range=range_date,
-            ir_sequence_date=ir_sequence_date,
-        ).get_next_char(number_next)
+        return self._with_sequence_dates(dt, range_date).get_next_char(number_next)
 
     @api.model
     def _get_by_code(self, sequence_code: str) -> Self:
@@ -771,27 +712,15 @@ class IrSequenceDate_Range(models.Model):
 
     @api.depends("number_next", "sequence_id.implementation")
     def _compute_number_next_actual(self) -> None:
-        predicted = _predict_nextvals(
-            self.env,
-            [
-                seq._get_pg_sequence_name()
-                for seq in self._origin
-                if seq.sequence_id.implementation == "standard"
-            ],
+        _assign_number_next_actual(
+            self,
+            self._origin.filtered(
+                lambda rng: rng.sequence_id.implementation == "standard"
+            ),
         )
-        for seq in self:
-            origin = seq._origin
-            seq.number_next_actual = (
-                predicted.get(origin._get_pg_sequence_name(), seq.number_next)
-                if origin
-                else seq.number_next
-            )
 
     def _inverse_number_next_actual(self) -> None:
-        for seq in self:
-            val = seq.number_next_actual
-            _debug.lifecycle("range_number_next_set", range=seq.id, value=val)
-            seq.write({"number_next": val if val is not None else 1})
+        _write_number_next_actual(self)
 
     date_from = fields.Date(
         string="From",
@@ -871,41 +800,6 @@ class IrSequenceDate_Range(models.Model):
                         other_to=overlapping.date_to,
                     )
                 )
-
-    def _next(self) -> str:
-        if self.sequence_id.implementation == "standard":
-            number_next = _select_nextval(self.env, self._get_pg_sequence_name())
-        else:
-            number_next = _update_nogap(self, self.sequence_id.number_increment)
-        self.invalidate_recordset(["number_next_actual"])
-        _debug.logic(
-            "range_next",
-            sequence=self.sequence_id.id,
-            range=self.id,
-            implementation=self.sequence_id.implementation,
-            number=number_next,
-        )
-        return self.sequence_id.get_next_char(number_next)
-
-    def _next_batch(self, count: int) -> list[str]:
-        if count <= 0:
-            return []
-        if self.sequence_id.implementation == "standard":
-            numbers = _select_nextvals(self.env, self._get_pg_sequence_name(), count)
-        else:
-            numbers = _update_nogap_batch(
-                self, self.sequence_id.number_increment, count
-            )
-        self.invalidate_recordset(["number_next_actual"])
-        _debug.logic(
-            "range_next_batch",
-            sequence=self.sequence_id.id,
-            range=self.id,
-            implementation=self.sequence_id.implementation,
-            count=count,
-            first=numbers[0] if numbers else None,
-        )
-        return self.sequence_id._format_numbers(numbers)
 
     def _alter_sequence(
         self,

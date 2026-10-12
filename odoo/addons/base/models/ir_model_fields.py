@@ -824,9 +824,6 @@ class IrModelFields(models.Model):
                 continue
             if field.store:
                 columns_by_table[model._table].add(field.name)
-        self.filtered(
-            lambda field: field.state == "manual" and field.model in self.env
-        )._pop_registry_fields()
 
         for table, names in columns_by_table.items():
             if sql.get_table_kind(cr, table) != sql.TableKind.Regular:
@@ -921,7 +918,7 @@ class IrModelFields(models.Model):
             return self._get_custom_many2many_names(field.model, field.relation)[0]
         return None
 
-    def _prepare_update(self, setup_models: bool = True) -> Self:
+    def _prepare_update(self) -> Self:
         uninstalling = self.env.context.get(MODULE_UNINSTALL_FLAG)
         requested = {(record.model, record.name) for record in self}
         if not uninstalling and any(
@@ -939,7 +936,6 @@ class IrModelFields(models.Model):
             fields=len(records),
             failed_dependencies=len(failed_dependencies),
             uninstalling=bool(uninstalling),
-            setup_models=setup_models,
         )
 
         if failed_dependencies:
@@ -976,6 +972,7 @@ class IrModelFields(models.Model):
             field = self.env[record.model]._fields.get(record.name)
             if field:
                 self.env.core.pop_dirty(field)
+                self.env.core.discard_field(field)
         fields_ = records._pop_registry_fields()
         self.pool.discard_fields([field for field in fields_ if field is not None])
         self.pool.registry_invalidated = True
@@ -1004,14 +1001,6 @@ class IrModelFields(models.Model):
                 ", ".join(str(f) for f in fields_),
                 view.name,
             )
-        if not uninstalling and setup_models:
-            with _debug.perf(
-                "prepare_update.setup_models",
-                cr=self.env.cr,
-                models=sorted(set(records.mapped("model"))),
-            ):
-                self.pool.setup_models(self.env.cr, OrderedSet(records.mapped("model")))
-
         return self
 
     def _get_attachments_of_binary_fields(self) -> models.BaseModel:
@@ -1419,7 +1408,7 @@ class IrModelFields(models.Model):
         )
 
         if renamed:
-            dependents = renamed._prepare_update(setup_models=False) - self
+            dependents = renamed._prepare_update() - self
             _debug.pipeline(
                 "write.rename_dependents_unlinked",
                 renamed=len(renamed),

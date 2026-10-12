@@ -166,7 +166,6 @@ class IrEmbeddedActions(models.Model):
             return
         active_model = self.env.context.get("active_model")
         domain_id = [("id", "=", active_id)]
-        user_group_ids = self.env.user._get_effective_group_ids()
         for parent_res_model, records in self.grouped("parent_res_model").items():
             if parent_res_model not in self.env or (
                 active_model and parent_res_model != active_model
@@ -195,7 +194,7 @@ class IrEmbeddedActions(models.Model):
                 )
                 if is_valid_method and (
                     not action_groups
-                    or not set(action_groups.ids).isdisjoint(user_group_ids)
+                    or self.env.user.has_any_group_id(action_groups.ids)
                 ):
                     try:
                         domain_model = literal_eval(record.domain or "[]")

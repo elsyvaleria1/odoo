@@ -848,7 +848,7 @@ Versions:
                 work_data_employees[key] += leave.employee_id
         domain = [
             ("time_type_id.is_work", "=", False),
-            ("company_id", "in", self.env.companies.ids),
+            ("company_id", "in", [False, *self.env.companies.ids]),
             "|",
             ("holiday_id", "=", False),
             ("holiday_id", "not in", employee_leaves.ids),

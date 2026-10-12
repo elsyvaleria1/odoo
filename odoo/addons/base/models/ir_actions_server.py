@@ -1318,9 +1318,7 @@ class IrActionsServer(models.Model):
 
         action_groups = config.group_ids
         if action_groups:
-            if set(action_groups.ids).isdisjoint(
-                self.env.user._get_effective_group_ids()
-            ):
+            if not self.env.user.has_any_group_id(action_groups.ids):
                 _debug.logic(
                     "run_denied", action=self.id, uid=self.env.uid, by="groups"
                 )

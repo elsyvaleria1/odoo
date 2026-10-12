@@ -2155,18 +2155,17 @@ class IrUiView(models.Model):
             field_names = [
                 f.name for f in views_sudo._fields.values() if f.prefetch is True
             ]
-            domain = Domain("id", "in", ids) | self._get_domain_template(xmlids)
-            views = views_sudo.search_fetch(
-                domain, field_names, order=self._get_template_order()
+            found_by_key = views_sudo.search_fetch(
+                self._get_domain_template(xmlids),
+                field_names,
+                order=self._get_template_order(),
             )
         else:
-            views = views_sudo.browse(ids)
+            found_by_key = views_sudo.browse()
+        # an id resolves archived views too, as _get_cached_template_info's int
+        # key, which ignores active_test, requires; only the key search filters
+        views = found_by_key | views_sudo.browse(ids)
 
-        found_by_key = (
-            views.filtered_domain(self._get_domain_template(xmlids))
-            if xmlids
-            else views.browse()
-        )
         for view in views:
             try:
                 key = view.key
@@ -2251,7 +2250,10 @@ class IrUiView(models.Model):
     ) -> dict[int | str, dict[str, Any]]:
         self._clear_preload_views_cache_if_needed()
 
-        cache_key = self.env["ir.qweb"]._get_template_cache_signature()
+        cache_key = (
+            self.env["ir.qweb"]._get_template_cache_signature(),
+            self._get_template_cache_keys_minimal(),
+        )
 
         compile_batch = self.env.cr.cache.setdefault("_compile_batch_", {}).setdefault(
             cache_key, {}

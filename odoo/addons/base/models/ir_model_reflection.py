@@ -2,7 +2,7 @@ import logging
 from collections.abc import Collection
 from typing import Any, Self
 
-from psycopg.types.json import Json, Jsonb
+from psycopg.types.json import Jsonb
 
 from odoo import fields, models
 from odoo.api import ValuesType
@@ -185,68 +185,26 @@ class IrModelConstraint(models.Model):
             raise ValueError(
                 f"Invalid constraint type {type!r}: expected 'f', 'u', or 'i'."
             )
-        rows = self.env.execute_query_dict(
-            SQL(
-                """SELECT c.id, type, definition, message->'en_US' as message
-            FROM ir_model_constraint c, ir_module_module m
-            WHERE c.module = m.id AND c.name = %s AND m.name = %s
-            """,
-                conname,
-                module,
-            )
+        key = (conname, module)
+        expected = {
+            key: {
+                "model": model._name,
+                "type": type,
+                "definition": definition,
+                "message": message,
+            }
+        }
+        existing = self._get_existing_constraints(expected)
+        if existing.get(key, (None,))[1:] == (type, definition, message):
+            _debug.logic("constraint_unchanged", name=conname, module=module)
+            return None
+        _debug.lifecycle(
+            "constraint_updated" if key in existing else "constraint_inserted",
+            name=conname,
+            module=module,
+            type=type,
         )
-        if not rows:
-            _debug.lifecycle(
-                "constraint_inserted", name=conname, module=module, type=type
-            )
-            [[cons_id]] = self.env.execute_query(
-                SQL(
-                    """
-                INSERT INTO ir_model_constraint
-                    (name, create_date, write_date, create_uid, write_uid, module, model, type, definition, message)
-                VALUES (%s,
-                        now() AT TIME ZONE 'UTC',
-                        now() AT TIME ZONE 'UTC',
-                        %s, %s,
-                        (SELECT id FROM ir_module_module WHERE name=%s),
-                        (SELECT id FROM ir_model WHERE model=%s),
-                        %s, %s, %s)
-                RETURNING id
-                """,
-                    conname,
-                    self.env.uid,
-                    self.env.uid,
-                    module,
-                    model._name,
-                    type,
-                    definition,
-                    Json({"en_US": message}),
-                )
-            )
-            return self.browse(cons_id)
-        [cons] = rows
-        cons_id = cons.pop("id")
-        if cons != {"type": type, "definition": definition, "message": message}:
-            _debug.lifecycle(
-                "constraint_updated", name=conname, module=module, type=type
-            )
-            self.env.execute_query(
-                SQL(
-                    """
-                UPDATE ir_model_constraint
-                SET write_date=now() AT TIME ZONE 'UTC',
-                    write_uid = %s, type = %s, definition = %s, message = %s
-                WHERE id = %s""",
-                    self.env.uid,
-                    type,
-                    definition,
-                    Json({"en_US": message}),
-                    cons_id,
-                )
-            )
-            return self.browse(cons_id)
-        _debug.logic("constraint_unchanged", name=conname, module=module)
-        return None
+        return self.browse(self._merge_constraints(expected)[key])
 
     def _reflect_constraints(self, model_names: list[str]) -> None:
         expected = self._prepare_expected_constraints(model_names)

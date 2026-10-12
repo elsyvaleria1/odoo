@@ -1848,7 +1848,7 @@ Inherits: `mixin.format.address`, `mixin.avatar`, `mixin.properties.base.definit
 - `_get_complete_name()` — Build display name with company/type
 - `_compute_avatar_*()` — Avatar computation (SVG or image)
 - `_fields_sync(values)` — Sync fields between parent/child
-- `_update_parent_address(partner)` — Auto-link children when parent created
+- `_sync_new_partners(vals_list)` — The one post-create sync, for `create()` and data loads alike, batched by what `_fields_sync` reads
 - `create(vals_list)`, `write(vals)` — With partner_share computation, commercial field sync
 
 ### models/res_partner_tag.py

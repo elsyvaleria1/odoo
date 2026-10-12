@@ -1,5 +1,6 @@
 from odoo import Command
 from odoo.exceptions import AccessError
+from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 
@@ -218,7 +219,9 @@ class TestPartnerSyncCharacterization(TransactionCase):
             "a commercial field the data file declares on the child must survive;"
             " an unset value on the parent is not a value to inherit",
         )
-        self.assertFalse(co.vat)
+        self.assertEqual(
+            co.vat, "BELOADKEEP", "as on create(), it climbs to a parent without one"
+        )
 
     def test_load_import_matches_create_when_the_parent_has_no_commercial_value(self):
         parent = self.Partner.create({"name": "Parity Co", "is_company": True})
@@ -386,3 +389,92 @@ class TestPartnerSyncCharacterization(TransactionCase):
         self.assertEqual(
             below_delivery.street, "Dock", "the walk stops at a non-contact address"
         )
+
+    def test_load_and_create_leave_the_same_rows(self):
+        fnames = ["street", "city", "vat"]
+        cases = {
+            "partial parent address": (
+                {"is_company": True, "street": "Parity St"},
+                [],
+                {"city": "Kid City"},
+            ),
+            "address under an empty parent with a contact": (
+                {"is_company": True},
+                [{"name": "Parity Sibling"}],
+                {"street": "Kid St", "city": "Kid City"},
+            ),
+            "vat under a parent without one": (
+                {"is_company": True},
+                [],
+                {"vat": "BEPARITY3"},
+            ),
+        }
+        for case, (parent_vals, sibling_vals, child_vals) in cases.items():
+            with self.subTest(case=case):
+                rows = {}
+                for how in ("create", "load"):
+                    parent = self.Partner.create(
+                        {"name": f"{case} {how}", **parent_vals}
+                    )
+                    siblings = self.Partner.create(
+                        [{**vals, "parent_id": parent.id} for vals in sibling_vals]
+                    )
+                    if how == "create":
+                        child = self.Partner.create(
+                            {"name": "Parity Kid", "parent_id": parent.id, **child_vals}
+                        )
+                    else:
+                        result = self.Partner.load(
+                            ["name", "parent_id/.id", *child_vals],
+                            [["Parity Kid", str(parent.id), *child_vals.values()]],
+                        )
+                        self.assertFalse(result["messages"], result["messages"])
+                        child = self.Partner.browse(result["ids"])
+                    rows[how] = [
+                        {fname: row[fname] for fname in fnames}
+                        for row in (parent | siblings | child).read(fnames)
+                    ]
+                self.assertEqual(rows["load"], rows["create"])
+
+    def test_load_import_never_merges_a_contact_address_into_its_company(self):
+        company = self.Partner.create(
+            {"name": "Merge Co", "is_company": True, "street": "Company St"}
+        )
+        result = self.Partner.load(
+            ["name", "parent_id/.id", "city"],
+            [["Merge Contact", str(company.id), "Contact City"]],
+        )
+        self.assertFalse(result["messages"], result["messages"])
+        contact = self.Partner.browse(result["ids"])
+        self.assertEqual((company.street, company.city), ("Company St", False))
+        self.assertEqual(
+            (contact.street, contact.city),
+            ("Company St", False),
+            "a contact shares its company's address whole",
+        )
+
+    def test_creating_contacts_under_distinct_parents_costs_no_query_per_row(self):
+        def statement_count(count):
+            parents = self.Partner.create(
+                [
+                    {"name": f"Rows Co {count}.{index}", "is_company": True}
+                    for index in range(count)
+                ]
+            )
+            vals_list = [
+                {
+                    "name": f"Rows Ct {count}.{index}",
+                    "parent_id": parent.id,
+                    "street": f"{index} Rows St",
+                }
+                for index, parent in enumerate(parents)
+            ]
+            self.env.flush_all()
+            self.env.invalidate_all()
+            with counting_statements(self.env.cr) as statements:
+                self.Partner.create(vals_list)
+                self.env.flush_all()
+            return statements.count
+
+        statement_count(2)
+        self.assertEqual(statement_count(10), statement_count(5))

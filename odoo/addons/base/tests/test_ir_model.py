@@ -25,6 +25,19 @@ from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG, upser
 from odoo.addons.base.tests.common import make_access_row
 
 
+@contextmanager
+def _spy_setup_models(registry):
+    original = type(registry).setup_models
+    calls = []
+
+    def spy(registry, cr, model_names=None, **kwargs):
+        calls.append(None if model_names is None else list(model_names))
+        return original(registry, cr, model_names, **kwargs)
+
+    with patch.object(type(registry), "setup_models", spy):
+        yield calls
+
+
 class TestXMLID(TransactionCase):
     def get_data(self, xml_id):
         module, suffix = xml_id.split(".", 1)
@@ -513,6 +526,66 @@ class TestIrModelEdition(TransactionCase):
         self.assertTrue(setup.call_args_list)
         self.assertEqual(setup.call_args_list[-1].args[1], [])
 
+    def test_model_deletion_sets_up_the_registry_once(self):
+        model = self.env["ir.model"].create(
+            {
+                "name": "Setup once",
+                "model": "x_setup_once",
+                "field_id": [Command.create({"name": "x_label", "ttype": "char"})],
+            }
+        )
+        self.env.flush_all()
+        with _spy_setup_models(self.env.registry) as calls:
+            model.unlink()
+        self.assertEqual(calls, [[]])
+        self.assertNotIn("x_setup_once", self.env.registry)
+
+    def test_model_with_a_many2one_and_its_inverse_deletes_in_two_setups(self):
+        model = self.env["ir.model"].create({"name": "Tree", "model": "x_tree"})
+        self.env["ir.model.fields"].create(
+            [
+                {
+                    "model_id": model.id,
+                    "name": "x_parent_id",
+                    "ttype": "many2one",
+                    "relation": "x_tree",
+                },
+                {
+                    "model_id": model.id,
+                    "name": "x_child_ids",
+                    "ttype": "one2many",
+                    "relation": "x_tree",
+                    "relation_field": "x_parent_id",
+                },
+            ]
+        )
+        parent = self.env["x_tree"].create({})
+        self.env["x_tree"].create({"x_parent_id": parent.id})
+        self.env.flush_all()
+        with _spy_setup_models(self.env.registry) as calls:
+            model.unlink()
+        self.assertEqual(calls, [["x_tree"], []])
+        self.assertNotIn("x_tree", self.env.registry)
+        self.assertFalse(self.env["ir.model.fields"].search([("model", "=", "x_tree")]))
+
+    def test_model_deletion_cascades_into_inheritance_trees_once(self):
+        model = self.env["ir.model"].create({"name": "Cascaded", "model": "x_casc"})
+        action = self.env["ir.actions.server"].create(
+            {"name": "Cascaded", "model_id": model.id, "state": "code", "code": "1"}
+        )
+        IrModel = type(self.env["ir.model"])
+        original = IrModel._unlink_inheritance_rows_cascaded
+        calls = []
+
+        def spy(records):
+            calls.append(records.ids)
+            return original(records)
+
+        with patch.object(IrModel, "_unlink_inheritance_rows_cascaded", spy):
+            model.unlink()
+        self.assertEqual(calls, [model.ids])
+        self.assertFalse(action.exists())
+
     def test_model_deletion_survives_a_manual_many2one_on_a_delegating_parent(self):
         IrModel = self.env["ir.model"]
         model = IrModel.create({"name": "Target", "model": "x_target"})
@@ -969,6 +1042,44 @@ class TestIrModelFields(TransactionCase):
         with patch.object(type(self.env.registry), "setup_models", spy):
             field.write({"name": "x_setuponce2"})
         self.assertEqual(len(calls), 1, calls)
+
+    def test_field_deletion_sets_up_the_registry_once(self):
+        for ttype, extra in (("char", {}), ("many2one", {"relation": "res.partner"})):
+            with self.subTest(ttype=ttype):
+                Model, field = self._make_manual_field(f"del{ttype}", **extra)
+                table, name = Model._table, field.name
+                self.env.flush_all()
+                with _spy_setup_models(self.env.registry) as calls:
+                    field.unlink()
+                self.assertEqual(calls, [[Model._name]])
+                self.assertNotIn(name, self.env.registry[Model._name]._fields)
+                self.env.cr.execute(
+                    "SELECT 1 FROM information_schema.columns"
+                    " WHERE table_name = %s AND column_name = %s",
+                    (table, name),
+                )
+                self.assertFalse(self.env.cr.fetchall())
+
+    def test_deleting_a_field_awaiting_recomputation_drops_its_pending_compute(self):
+        Model, _field = self._make_manual_field("pending", ttype="integer")
+        double = self.env["ir.model.fields"].create(
+            {
+                "name": "x_pending_double",
+                "field_description": "Double",
+                "model_id": self.env["ir.model"]._get(Model._name).id,
+                "ttype": "integer",
+                "store": True,
+                "depends": "x_pending",
+                "compute": "for r in self:\n    r['x_pending_double'] = r['x_pending'] * 2",
+            }
+        )
+        record = self.env[Model._name].create({"x_pending": 2})
+        self.env.flush_all()
+        record.x_pending = 3
+        double.unlink()
+        self.env.flush_all()
+        self.assertNotIn("x_pending_double", self.env.registry[Model._name]._fields)
+        self.assertEqual(self.env[Model._name].browse(record.id).x_pending, 3)
 
     def test_rename_blocked_by_a_view_restores_the_registry(self):
         Model, field = self._make_manual_field("viewkept")
@@ -2929,6 +3040,49 @@ class TestIrModelConstraintReflection(TransactionCase):
         after = self._constraint_rows(names)
         self.assertNotEqual(after[drifted][2], "bogus", "drifted row repaired")
         self.assertEqual(after[drifted][0], before[drifted][0])
+
+    def test_both_reflection_paths_agree_on_an_awkward_message(self):
+        Constraint = self.env["ir.model.constraint"]
+        model = self.env["res.partner"]
+        message = 'It\'s "quoted" \\ \u2014 \u00f1 \u65e5\u672c'
+        cons = model._table_objects["res_partner_check_name"]
+        definition = cons.get_definition(model.pool)
+        merges = []
+        merge = type(Constraint)._merge_constraints
+
+        def spy(records, changed):
+            merges.append(sorted(changed))
+            return merge(records, changed)
+
+        with (
+            patch.object(cons, "message", message),
+            patch.object(type(Constraint), "_merge_constraints", spy),
+        ):
+            Constraint._reflect_constraints(["res.partner"])
+            Constraint._reflect_constraints(["res.partner"])
+            unchanged = Constraint._reflect_constraint(
+                model, "res_partner_check_name", "u", definition, "base", message
+            )
+            created = Constraint._reflect_constraint(
+                model, "res_partner_x_awkward_fkey", "f", None, "base", message
+            )
+            repeated = Constraint._reflect_constraint(
+                model, "res_partner_x_awkward_fkey", "f", None, "base", message
+            )
+        self.assertEqual(
+            merges,
+            [
+                [("res_partner_check_name", "base")],
+                [("res_partner_x_awkward_fkey", "base")],
+            ],
+        )
+        self.assertIsNone(unchanged)
+        self.assertTrue(created)
+        self.assertIsNone(repeated)
+        self.assertEqual(
+            (created.type, created.definition, created.message, created.model.model),
+            ("f", False, message, "res.partner"),
+        )
 
     def test_reflect_constraints_resolves_xmlids_in_one_lookup(self):
         Constraint = self.env["ir.model.constraint"]

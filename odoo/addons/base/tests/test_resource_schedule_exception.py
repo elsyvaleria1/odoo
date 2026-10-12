@@ -1,8 +1,9 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time, timedelta
 
 from freezegun import freeze_time
 
 from odoo.exceptions import AccessError, UserError
+from odoo.libs.datetime import timezone
 from odoo.tests import TransactionCase, tagged
 from odoo.tests.common import new_test_user
 
@@ -383,7 +384,7 @@ class TestExceptionCompanies(ResourceCase):
         )
         leave = self._global_leave(shared_calendar)
         self.env.flush_all()
-        self.assertTrue(leave.company_id, "precondition: the leave names a company")
+        self.assertFalse(leave.company_id, "a closure is as shared as its calendar")
         self.assertFalse(resource.company_id)
         self.assertTrue(
             bool(
@@ -393,6 +394,44 @@ class TestExceptionCompanies(ResourceCase):
                     resource,
                 )[resource.id]
             )
+        )
+
+    def test_a_shared_calendar_closure_reaches_every_company_on_it(self):
+        other_company = self.env["res.company"].create({"name": "Sharing Co"})
+        shared = self.env["resource.calendar"].create(
+            {"name": "shared closure", "company_id": False, "tz": "UTC"}
+        )
+        here = self._resource(name="Here", calendar_id=shared.id)
+        there = self._resource(
+            name="There", company_id=other_company.id, calendar_id=shared.id
+        )
+        reservation = self.env["resource.reservation"].create(
+            {
+                "name": "Booked there",
+                "resource_id": there.id,
+                "date_start": datetime(2026, 3, 2, 8, 0),
+                "date_end": datetime(2026, 3, 2, 17, 0),
+            }
+        )
+        leave = self._global_leave(shared)
+        self.env.flush_all()
+        self.assertFalse(leave.company_id)
+        closed = shared._leave_intervals_batch(
+            datetime(2026, 3, 1).replace(tzinfo=UTC),
+            datetime(2026, 3, 8).replace(tzinfo=UTC),
+            here | there,
+        )
+        self.assertTrue(closed[here.id])
+        self.assertTrue(closed[there.id], "the closure is not the creator's alone")
+        self.assertEqual(reservation.allocated_hours, 0.0)
+        planner = new_test_user(
+            self.env, login="shared_closure_planner", company_id=other_company.id
+        )
+        self.assertEqual(
+            self.env["resource.schedule.exception"]
+            .with_user(planner)
+            .search([("id", "=", leave.id)]),
+            leave,
         )
 
     def test_a_leave_cannot_be_stranded_in_another_company(self):
@@ -463,3 +502,42 @@ class TestCompanyHolidayStaysInItsCompany(TransactionCase):
         end = datetime(2026, 11, 3, tzinfo=UTC)
         self.assertEqual(own_calendar.get_work_hours_count(start, end), 0)
         self.assertEqual(other_calendar.get_work_hours_count(start, end), 8)
+
+
+@tagged("post_install", "-at_install")
+class TestFlexibleWindowsCountElapsedHours(TransactionCase):
+    def test_a_day_off_costs_the_hours_the_day_lasts(self):
+        brussels = timezone("Europe/Brussels")
+        calendar = self.env["resource.calendar"].create(
+            {
+                "name": "Round the clock",
+                "tz": "Europe/Brussels",
+                "schedule_type": "flexible",
+                "hours_per_day": 24,
+                "hours_per_week": 168,
+            }
+        )
+        for day, hours in ((date(2026, 3, 29), 23.0), (date(2026, 10, 25), 24.0)):
+            midnight = datetime.combine(day, time.min, brussels)
+            leave = self.env["resource.schedule.exception"].create(
+                {
+                    "name": f"Off {day}",
+                    "calendar_id": calendar.id,
+                    "date_from": midnight.astimezone(UTC).replace(tzinfo=None),
+                    "date_to": datetime.combine(
+                        day + timedelta(days=1), time.min, brussels
+                    )
+                    .astimezone(UTC)
+                    .replace(tzinfo=None),
+                }
+            )
+            self.assertEqual(
+                [
+                    cost
+                    for *_window, cost in leave._get_flexible_windows(
+                        calendar, brussels
+                    )
+                ],
+                [hours],
+                day,
+            )

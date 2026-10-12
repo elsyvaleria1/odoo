@@ -70,7 +70,7 @@ from odoo.addons.base.models.ir_attachment_storage import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Generator, Iterator
+    from collections.abc import Callable, Collection, Generator, Iterable, Iterator
 
     from odoo.tools.query import Query
 
@@ -287,6 +287,25 @@ class IrAttachment(models.Model):
                 self.env._("Sorry, you are not allowed to access this document.")
             )
 
+    def _check_owner_write_access(
+        self, owners: Iterable[tuple[Any, Any]], refusal: str
+    ) -> list[str]:
+        model_and_ids: dict[str | None, OrderedSet] = defaultdict(OrderedSet)
+        for res_model, res_id in owners:
+            model_and_ids[self._coerce_model_name(res_model)].add(res_id)
+        models_ = [model for model in model_and_ids if model]
+        if any(get_inaccessible_owners(self.env, model_and_ids, "write")):
+            _debug.logic(
+                refusal,
+                uid=self.env.uid,
+                models=models_,
+                reason="comodel_inaccessible",
+            )
+            raise AccessError(
+                self.env._("Sorry, you are not allowed to access this document.")
+            )
+        return models_
+
     def _get_res_field_targets(self, vals: dict[str, Any]) -> OrderedSet:
         has_model, has_field = "res_model" in vals, "res_field" in vals
         new_model = self._coerce_model_name(vals["res_model"]) if has_model else None
@@ -332,23 +351,13 @@ class IrAttachment(models.Model):
 
         self.browse().check_access("create")
 
-        model_and_ids = defaultdict(OrderedSet)
         for values in vals_list:
             if res_field := values.get("res_field"):
                 self._check_res_field_access(values.get("res_model"), res_field)
-            model_and_ids[self._coerce_model_name(values.get("res_model"))].add(
-                values.get("res_id")
-            )
-        if any(get_inaccessible_owners(self.env, model_and_ids, "write")):
-            _debug.logic(
-                "create_refused",
-                uid=self.env.uid,
-                models=[m for m in model_and_ids if m],
-                reason="comodel_inaccessible",
-            )
-            raise AccessError(
-                self.env._("Sorry, you are not allowed to access this document.")
-            )
+        models_ = self._check_owner_write_access(
+            ((values.get("res_model"), values.get("res_id")) for values in vals_list),
+            "create_refused",
+        )
 
         backend = self._get_storage_backend()
         verify_collision = self._is_content_collision_check_enabled()
@@ -380,7 +389,7 @@ class IrAttachment(models.Model):
         _debug.lifecycle(
             "create",
             count=len(records),
-            models=[m for m in model_and_ids if m],
+            models=models_,
             backend=type(backend).__name__,
             memoized=len(memo),
         )
@@ -391,25 +400,17 @@ class IrAttachment(models.Model):
             _debug.logic("write.skipped", reason="empty_recordset", fields=list(vals))
             return True
         if not self.env.su and ("res_model" in vals or "res_id" in vals):
-            model_and_ids = defaultdict(OrderedSet)
-            new_model = self._coerce_model_name(vals.get("res_model"))
             if "res_model" in vals and "res_id" in vals:
-                model_and_ids[new_model].add(vals["res_id"])
+                owners = [(vals["res_model"], vals["res_id"])]
             else:
-                for record in self:
-                    model_and_ids[
-                        new_model if "res_model" in vals else record.res_model
-                    ].add(vals.get("res_id", record.res_id))
-            if any(get_inaccessible_owners(self.env, model_and_ids, "write")):
-                _debug.logic(
-                    "write_refused",
-                    uid=self.env.uid,
-                    count=len(self),
-                    reason="comodel_inaccessible",
-                )
-                raise AccessError(
-                    self.env._("Sorry, you are not allowed to access this document.")
-                )
+                owners = [
+                    (
+                        vals.get("res_model", record.res_model),
+                        vals.get("res_id", record.res_id),
+                    )
+                    for record in self
+                ]
+            self._check_owner_write_access(owners, "write_refused")
         for res_model, res_field in self._get_res_field_targets(vals):
             self._check_res_field_access(res_model, res_field)
         vals, has_content = self._normalize_content_vals(vals)
@@ -449,9 +450,7 @@ class IrAttachment(models.Model):
     def copy(self, default: ValuesType | None = None) -> Self:
         if (default or {}).keys() & {"datas", "db_datas", "raw"}:
             return super().copy(default)
-        new_attachments = super(
-            IrAttachment, self.with_context(attachment_index_from_origin=True)
-        ).copy(default)
+        new_attachments = super(IrAttachment, self._with_origin_content()).copy(default)
         self._share_stored_content(list(self), new_attachments)
         return new_attachments.with_env(self.env)
 
@@ -461,7 +460,7 @@ class IrAttachment(models.Model):
         if (default or {}).keys() & {"datas", "db_datas", "raw"}:
             return [self.copy(default) for _ in range(times)]
         vals_list = self.with_context(active_test=False).copy_data(default)
-        copies = self.with_context(attachment_index_from_origin=True).create(
+        copies = self._with_origin_content().create(
             [dict(vals) for _ in range(times) for vals in vals_list]
         )
         self._share_stored_content(list(self) * times, copies)
@@ -470,6 +469,11 @@ class IrAttachment(models.Model):
             copies[index * size : (index + 1) * size].with_env(self.env)
             for index in range(times)
         ]
+
+    def _with_origin_content(self) -> Self:
+        return self.with_context(
+            attachment_index_from_origin=True, image_no_postprocess=True
+        )
 
     def _share_stored_content(self, origins: list[Self], copies: Self) -> None:
         by_content: dict[tuple, list[int]] = defaultdict(list)
@@ -664,7 +668,10 @@ class IrAttachment(models.Model):
         if asked is not None:
             fields = [Owner._fields[name] for name in asked if name in Owner._fields]
         for field in fields:
-            if not Owner._has_field_access(field, "read"):
+            if not (
+                self._is_attachment_backed_field(field)
+                and Owner._has_field_access(field, "read")
+            ):
                 continue
             field_domain = (
                 Owner._field_access_domain(field, "read") if field.attachment else None
@@ -1335,24 +1342,39 @@ class IrAttachment(models.Model):
     def _get_stored_content(self, size: int | None = None) -> bytes | None:
         self.check_singleton()
         if self.store_fname:
-            with _debug.perf(
-                "stored_content_read", attachment=self.id, size=size
-            ) as span:
-                data = self._get_storage_backend_for_key(self.store_fname).read(
-                    self.store_fname, size
-                )
-                span.set(bytes=len(data) if data else 0)
-            self._is_content_unreadable(
-                data,
-                self.file_size if size is None else min(self.file_size, size),
+            data, _unreadable = self._read_store_key(
+                self.store_fname,
+                self.file_size,
+                size,
                 att_id=self.id,
-                key=self.store_fname,
                 action="serving empty bytes",
             )
             return data
         if db_datas := self._with_bin_size_disabled().db_datas:
             return db_datas if size is None else db_datas[:size]
         return None
+
+    @api.model
+    def _read_store_key(
+        self,
+        key: str,
+        file_size: int,
+        size: int | None,
+        *,
+        att_id: Any,
+        action: str,
+    ) -> tuple[bytes, bool]:
+        with _debug.perf("stored_content_read", attachment=att_id, size=size) as span:
+            data = self._get_storage_backend_for_key(key).read(key, size)
+            span.set(bytes=len(data) if data else 0)
+        unreadable = self._is_content_unreadable(
+            data,
+            file_size if size is None else min(file_size, size),
+            att_id=att_id,
+            key=key,
+            action=action,
+        )
+        return data, unreadable
 
     @api.model
     def _is_content_unreadable(
@@ -1682,16 +1704,12 @@ class IrAttachment(models.Model):
         entries: list[tuple[dict, tuple[str, int, str, Any, Any] | None]] = []
         raw_by_key: dict[tuple, bytes] = {}
         verify_collision = self._is_content_collision_check_enabled()
-        model_and_ids = defaultdict(OrderedSet)
         for values in values_list:
             if "mimetype" not in values:
                 _debug.logic("create_unique_refused", reason="missing_mimetype")
                 raise UserError(self.env._("Attachment is missing its mimetype."))
             vals, has_content = self._normalize_content_vals(dict(values))
             vals = self._prepare_contents(vals)
-            model_and_ids[self._coerce_model_name(vals.get("res_model"))].add(
-                vals.get("res_id")
-            )
             key = None
             if has_content:
                 raw = vals["raw"]
@@ -1705,15 +1723,10 @@ class IrAttachment(models.Model):
                     _debug.logic("create_unique_digest_collision", size=len(raw))
                     key = None
             entries.append((vals, key))
-        if any(get_inaccessible_owners(self.env, model_and_ids, "write")):
-            _debug.logic(
-                "create_unique_refused",
-                uid=self.env.uid,
-                reason="comodel_inaccessible",
-            )
-            raise AccessError(
-                self.env._("Sorry, you are not allowed to access this document.")
-            )
+        self._check_owner_write_access(
+            ((vals.get("res_model"), vals.get("res_id")) for vals, _key in entries),
+            "create_unique_refused",
+        )
 
         all_checksums = list({key[0] for _vals, key in entries if key})
         _debug.pipeline(
@@ -1850,23 +1863,18 @@ class IrAttachment(models.Model):
         index_content = None
         if read_size != 0:
             content = b""
-            readable = True
+            unreadable = False
             if store_values.get("store_fname"):
-                content = self._get_storage_backend_for_key(
-                    store_values["store_fname"]
-                ).read(store_values["store_fname"], read_size)
-                if self._is_content_unreadable(
-                    content,
+                content, unreadable = self._read_store_key(
+                    store_values["store_fname"],
                     store_values["file_size"],
+                    read_size,
                     att_id=record.id,
-                    key=store_values["store_fname"],
                     action="skipping index extraction",
-                ):
-                    readable = False
-            elif store_values.get("db_datas"):
-                db_datas = store_values["db_datas"] or b""
+                )
+            elif db_datas := store_values.get("db_datas"):
                 content = db_datas if read_size is None else db_datas[:read_size]
-            if readable:
+            if not unreadable:
                 index_content = self._extract_index_content(content, record.mimetype)
         store_values["index_content"] = index_content
         _debug.lifecycle(
@@ -1891,9 +1899,11 @@ class IrAttachment(models.Model):
 
         if self.store_fname:
             _debug.logic("http_stream", attachment=self.id, source="storage")
-            return self._get_storage_backend_for_key(self.store_fname).to_stream(
+            stream = self._get_storage_backend_for_key(self.store_fname).to_stream(
                 self, stream
             )
+            stream.set_charset_from_content()
+            return stream
 
         inline = self._with_bin_size_disabled().db_datas
         if inline:
@@ -1920,6 +1930,7 @@ class IrAttachment(models.Model):
             stream.size = 0
             _debug.logic("http_stream", attachment=self.id, source="empty")
 
+        stream.set_charset_from_content()
         return stream
 
     def _migrate_remote_to_local(self) -> bool:
@@ -2418,6 +2429,7 @@ class IrAttachment(models.Model):
                         field = comodel._fields.get(res_field)
                         field_access[cache_key] = (
                             field is not None
+                            and self._is_attachment_backed_field(field)
                             and comodel._has_field_access(field, operation)
                             and (
                                 comodel._field_access_domain(field, operation) is None

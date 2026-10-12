@@ -1,6 +1,8 @@
 import base64
+import codecs
 import contextlib
 import mimetypes
+from collections.abc import Iterator
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -10,6 +12,7 @@ from urllib.parse import urlsplit
 from zlib import adler32
 
 from werkzeug.exceptions import NotFound
+from werkzeug.utils import get_content_type
 from werkzeug.utils import send_file as _send_file
 
 from odoo.libs.debug_log import DebugLog
@@ -23,6 +26,11 @@ from .wrappers import Response, _Response, sanitize_download_name
 _debug = DebugLog(__name__)
 
 _REDIRECT_SCHEMES = frozenset({"", "http", "https"})
+
+
+def _labels_charset(mimetype: str) -> bool:
+    labelled: str = get_content_type(mimetype, "utf-8")
+    return labelled != mimetype
 
 
 class Stream:
@@ -44,6 +52,7 @@ class Stream:
     size: int | None = None
     public: bool = False
     encoding: str | None = None
+    charset: str | None = "utf-8"
 
     def __init__(self, **kwargs: Any) -> None:
         unknown = kwargs.keys() - self._ALLOWED_KWARGS
@@ -123,6 +132,36 @@ class Stream:
             size=len(data),
             public=record.env.user._is_public(),
         )
+
+    def set_charset_from_content(self) -> None:
+        if self.type not in ("data", "path") or self.encoding or not self.mimetype:
+            return
+        if not _labels_charset(self.mimetype):
+            return
+        self.charset = "utf-8" if self._is_utf8() else None
+        _debug.logic(
+            "http.stream.charset", mimetype=self.mimetype, charset=self.charset
+        )
+
+    def _is_utf8(self) -> bool:
+        decoder = codecs.getincrementaldecoder("utf-8")()
+        try:
+            for chunk in self._iter_chunks():
+                decoder.decode(chunk)
+            decoder.decode(b"", final=True)
+        except UnicodeDecodeError:
+            return False
+        return True
+
+    def _iter_chunks(self, size: int = 1 << 16) -> Iterator[bytes | memoryview]:
+        if self.type == "data":
+            view = memoryview(self._get_required_attribute("data"))
+            for start in range(0, len(view), size):
+                yield view[start : start + size]
+            return
+        with Path(self._get_required_attribute("path")).open("rb") as file:
+            while chunk := file.read(size):
+                yield chunk
 
     def _get_required_attribute(self, attr: str) -> Any:
         value = getattr(self, attr)
@@ -240,6 +279,12 @@ class Stream:
         headers["X-Content-Type-Options"] = "nosniff"
         if self.encoding:
             headers["Content-Encoding"] = self.encoding
+        if self.charset != "utf-8" and "charset" in res.mimetype_params:
+            headers["Content-Type"] = (
+                get_content_type(res.mimetype, self.charset)
+                if self.charset
+                else res.mimetype
+            )
 
         if content_security_policy:
             headers["Content-Security-Policy"] = content_security_policy

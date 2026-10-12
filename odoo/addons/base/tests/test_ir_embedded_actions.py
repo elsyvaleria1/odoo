@@ -333,3 +333,23 @@ class TestEmbeddedActionsBase(TransactionCaseWithUserDemo):
             self.env["ir.actions.actions"].browse(self.action_2.id),
         )
         self.assertFalse(embedded_action2.python_method)
+
+    def test_debug_group_on_embedded_action_needs_debug_mode(self):
+        no_one = self.env.ref("base.group_no_one")
+        self.env.user.write({"group_ids": [(4, no_one.id)]})
+        debug_only = self.env["ir.embedded.actions"].create(
+            {
+                "name": "EmbeddedActionDebug",
+                "parent_res_model": "res.partner",
+                "parent_action_id": self.parent_action.id,
+                "action_id": self.action_2.id,
+                "group_ids": [(6, 0, no_one.ids)],
+            }
+        )
+        self.assertNotIn(
+            debug_only.id, self.get_embedded_actions_ids(self.parent_action)
+        )
+        with self.debug_mode():
+            self.assertIn(
+                debug_only.id, self.get_embedded_actions_ids(self.parent_action)
+            )

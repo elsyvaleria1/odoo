@@ -76,9 +76,7 @@ class TestDoc(HttpCaseWithUserDemo):
         )
         res.raise_for_status()
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(
-            res.headers.get("Content-Type"), "application/json; charset=utf-8"
-        )
+        self.assertEqual(res.headers.get("Content-Type"), "application/json")
 
         json = res.json()
         self.assertEqual(set(json), {"models"})

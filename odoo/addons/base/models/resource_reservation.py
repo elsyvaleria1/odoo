@@ -12,7 +12,12 @@ from odoo.libs.intervals import Intervals
 from odoo.tools import SQL
 from odoo.tools.date_utils import get_intervals_hours, localized
 
-from .resource_utils import FirstServedClaim, hours_by_day, peak_capacities
+from .resource_utils import (
+    FirstServedClaim,
+    hours_by_day,
+    peak_capacities,
+    saturated_spans,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -745,7 +750,13 @@ class ResourceReservation(models.Model):
         return self.sudo().search_fetch(
             self._get_domain_occupancy(resources, since=start, until=stop)
             & Domain(domain or []),
-            ["resource_id", "date_start", "date_end", "allocated_percentage"],
+            [
+                "resource_id",
+                "date_start",
+                "date_end",
+                "allocated_percentage",
+                "enforcement_mode",
+            ],
         )
 
     @api.model
@@ -975,16 +986,53 @@ class ResourceReservation(models.Model):
 
     @api.model
     def _get_enforced_booking_intervals_batch(
-        self, start_dt, end_dt, resources=None
+        self, start_dt, end_dt, resources=None, *, reservations_to_ignore=None
     ) -> dict[int | bool, Intervals]:
         result: dict[int | bool, Intervals] = {False: Intervals()}
         if not resources:
             return result
-        booked = self._get_reservation_intervals_batch(
-            start_dt, end_dt, resources, domain=self._get_domain_enforced_booking()
+        start = localized(start_dt).astimezone(UTC)
+        stop = localized(end_dt).astimezone(UTC)
+        bookings = self._get_occupancy(
+            resources,
+            start,
+            stop,
+            Domain("id", "not in", reservations_to_ignore._origin.ids)
+            if reservations_to_ignore
+            else None,
         )
+        enforced = bookings.filtered_domain(self._get_domain_enforced_booking())
+        by_resource = bookings.grouped("resource_id")
         for resource in resources:
-            result[resource.id] = booked.get(resource.id, Intervals())
+            mine = by_resource.get(resource, bookings.browse())
+            held = Intervals(
+                [
+                    (
+                        localized(booking.date_start),
+                        localized(booking.date_end),
+                        booking,
+                    )
+                    for booking in mine & enforced
+                ]
+            )
+            if held:
+                saturated = saturated_spans(
+                    [
+                        (
+                            localized(booking.date_start),
+                            localized(booking.date_end),
+                            booking.allocated_percentage,
+                        )
+                        for booking in mine
+                    ],
+                    start,
+                    stop,
+                    mine.resource_id.booking_limit_percentage,
+                )
+                held &= Intervals(
+                    [(left, right, bookings.browse()) for left, right in saturated]
+                )
+            result[resource.id] = held
         return result
 
     def _get_reservation_intervals_batch(

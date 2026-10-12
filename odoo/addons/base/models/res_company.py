@@ -208,14 +208,18 @@ class ResCompany(models.Model):
 
     @api.constrains("partner_id")
     def _check_party_name_unique(self) -> None:
-        names = self.mapped("name")
-        twins = (
+        self._check_names_unique(self.mapped("name"))
+
+    @api.model
+    def _check_names_unique(self, names: list[str]) -> None:
+        bearers = (
             self.sudo()
             .with_context(active_test=False)
-            .search_count([("name", "in", names), ("id", "not in", self.ids)])
+            .search_fetch([("name", "in", names)], ["name"])
+            .mapped("name")
         )
-        if twins or len(names) != len(set(names)):
-            _debug.logic("company_name_duplicate", companies=self.ids)
+        if len(bearers) != len(set(bearers)):
+            _debug.logic("company_name_duplicate", names=sorted(set(names)))
             raise ValidationError(self.env._("The company name must be unique!"))
 
     @api.constrains(

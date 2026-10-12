@@ -27,6 +27,7 @@ CUSTODY_ROLE_BY_FIELD = {"operator_id": OPERATOR_ROLE, "manager_id": MANAGER_ROL
 DEFAULT_HANDOVER_DELAY = timedelta(days=7)
 
 HOURS_PER_DAY = 8
+FULL_ALLOCATION = 100.0
 
 
 class SlotIntervals(dict):
@@ -207,6 +208,13 @@ def capacity_timeline(bookings, start, stop):
             yield previous, instant, total
         total += change
         previous = instant
+
+
+def saturated_spans(bookings, start, stop, ceiling, demand=FULL_ALLOCATION):
+    for left, right, load in capacity_timeline(bookings, start, stop):
+        load = round(load, 9)
+        if load > 0 and load + demand > ceiling + 1e-7:
+            yield left, right
 
 
 def peak_capacity(bookings, start, stop):

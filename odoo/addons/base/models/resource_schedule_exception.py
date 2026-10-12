@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.fields import Domain
-from odoo.libs.datetime import timezone
+from odoo.libs.datetime import elapsed_hours, timezone
 from odoo.tools import frozendict
 
 from .resource_utils import HOURS_PER_DAY, split_at_midnight
@@ -174,9 +174,12 @@ class ResourceScheduleException(models.Model):
         for leave in self.filtered("resource_id"):
             leave.calendar_id = leave.resource_id.calendar_id
 
-    @api.depends("calendar_id", "resource_id.company_id")
+    @api.depends("calendar_id.company_id", "resource_id.company_id")
     def _compute_company_id(self):
         for leave in self:
+            if leave.calendar_id and not leave.resource_id:
+                leave.company_id = leave.calendar_id.company_id
+                continue
             leave.company_id = (
                 leave.calendar_id.company_id
                 or leave.resource_id.company_id
@@ -248,7 +251,7 @@ class ResourceScheduleException(models.Model):
                 piece_start.date(),
                 piece_start,
                 piece_stop,
-                min(hours_per_day, (piece_stop - piece_start).total_seconds() / 3600),
+                min(hours_per_day, elapsed_hours(piece_start, piece_stop)),
             )
             for piece_start, piece_stop, _meta in split_at_midnight(
                 [(start, stop, self)]
@@ -273,7 +276,7 @@ class ResourceScheduleException(models.Model):
         if date_from is not None:
             domain &= Domain("date_to", ">", date_from)
         if companies is not None:
-            domain &= Domain("company_id", "in", companies.ids)
+            domain &= Domain("company_id", "in", [*companies.ids, False])
         if calendars is not None:
             domain &= Domain("calendar_id", "in", [False, *calendars.ids])
         return domain

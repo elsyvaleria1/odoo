@@ -11,7 +11,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.intervals import Intervals
 from odoo.models import ValuesType
 from odoo.tools import SQL, Query
-from odoo.tools.date_utils import localized
+from odoo.tools.date_utils import get_intervals_hours, localized, to_timezone
 from odoo.tools.translate import html_translate
 
 from ..fields import ResourceIdentifier
@@ -29,7 +29,7 @@ from .resource_utils import (
     changed_vals,
     hours_by_day,
     last_day_of,
-    split_at_midnight,
+    saturated_spans,
     week_of,
 )
 from odoo.addons.base.models.res_partner import _selection_timezones
@@ -1054,21 +1054,39 @@ class ResourceResource(models.Model):
         hours: float,
         horizon_days: int = 700,
     ) -> tuple[datetime, datetime] | None:
+        revert = to_timezone(start.tzinfo)
+        window_start = to_timezone(None)(start)
         length = timedelta(hours=hours or 1)
-        window_start = start
-        limit = start + timedelta(days=horizon_days)
-        Reservation = self.env["resource.reservation"]
-        while window_start <= limit:
-            window_end = window_start + length
-            busy = Reservation.sudo().search(
-                Reservation._get_domain_occupancy(
-                    self, since=window_start, until=window_end
+        limit = window_start + timedelta(days=horizon_days)
+        bookings = self.env["resource.reservation"]._get_occupancy(
+            self, window_start, limit + length
+        )
+        busy = Intervals(
+            [
+                (left, right, bookings.browse())
+                for resource, booked in bookings.grouped("resource_id").items()
+                for left, right in saturated_spans(
+                    [
+                        (
+                            booking.date_start,
+                            booking.date_end,
+                            booking.allocated_percentage,
+                        )
+                        for booking in booked
+                    ],
+                    window_start,
+                    limit + length,
+                    resource.booking_limit_percentage,
                 )
-            )
-            if not busy:
-                return window_start, window_end
-            window_start = max(busy.mapped("date_end"))
-        return None
+            ]
+        )
+        for left, right, _bookings in busy:
+            if left >= window_start + length:
+                break
+            window_start = max(window_start, right)
+        if window_start > limit:
+            return None
+        return revert(window_start), revert(window_start + length)
 
     def _get_domain_custody_winner(self, roles, operator, value, when="live"):
         if operator in ("in", "not in"):
@@ -1416,27 +1434,15 @@ class ResourceResource(models.Model):
             resources_per_tz[timezone(resource.tz)].append(resource)
 
         for tz, resources in resources_per_tz.items():
-            day = start.astimezone(tz).date()
-            end_date = end.astimezone(tz).date()
-            ranges = []
-            while day <= end_date:
-                start_datetime = datetime.combine(day, datetime.min.time()).replace(
-                    tzinfo=tz
-                )
-                end_datetime = datetime.combine(
-                    day + timedelta(days=1), time.min
-                ).replace(tzinfo=tz)
-                ranges.append(
-                    (
-                        start_datetime,
-                        end_datetime,
-                        self.env["resource.calendar.attendance"],
-                    )
-                )
-                day += timedelta(days=1)
-
+            whole_days = (
+                datetime.combine(start.astimezone(tz).date(), time.min, tz),
+                datetime.combine(
+                    end.astimezone(tz).date() + timedelta(days=1), time.min, tz
+                ),
+                self.env["resource.calendar.attendance"],
+            )
             for resource in resources:
-                res[resource.id] = Intervals(ranges)
+                res[resource.id] = Intervals([whole_days])
 
         return res
 
@@ -1641,25 +1647,16 @@ class ResourceResource(models.Model):
             raise ValueError("resource must be flexible")
 
         if self._is_fully_flexible():
-            return round(
-                sum(
-                    (end.astimezone(UTC) - start.astimezone(UTC)).total_seconds() / 3600
-                    for start, end, _dummy in intervals
-                ),
-                2,
-            )
+            return round(get_intervals_hours(intervals), 2)
 
         duration_per_day = dict(flexible_resources_hours_per_day)
         duration_per_week = dict(flexible_resources_hours_per_week)
 
-        interval_duration_per_day = defaultdict(float)
         tz = timezone(self.tz)
-        for start, end, _dummy in split_at_midnight(
+        interval_duration_per_day = hours_by_day(
             (start.astimezone(tz), end.astimezone(tz), None)
             for start, end, _dummy in intervals
-        ):
-            duration = (end.astimezone(UTC) - start.astimezone(UTC)).total_seconds()
-            interval_duration_per_day[start.date()] += duration / 3600
+        )
 
         work_hours = 0.0
         for day, hours in interval_duration_per_day.items():

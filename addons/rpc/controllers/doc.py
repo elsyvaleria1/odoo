@@ -181,7 +181,7 @@ class DocController(http.Controller):
                         f"Lang: {self.env.lang}\n"
                         f"Groups: {sorted(self.env.user.all_group_ids.ids)}"
                     ),
-                    "mimetype": "application/json; charset=utf-8",
+                    "mimetype": "application/json",
                     "raw": payload,
                     "public": False,
                 }

@@ -307,6 +307,17 @@ class TestIrSequenceDateRangeOverlap(TransactionCase):
             (created.date_from, created.date_to), (date(2045, 6, 15), date(2045, 6, 15))
         )
 
+    def test_preview_shows_the_range_a_draw_creates_beside_a_neighbour(self):
+        self._make_range(date(2046, 1, 1), date(2046, 3, 31))
+
+        def days_long(seq, date_from, date_to):
+            return (date_to - date_from).days + 1
+
+        with patch.object(type(self.seq), "_get_date_range_number_next", days_long):
+            preview = self.seq.preview_next(date(2046, 5, 10))
+            self.assertEqual(preview, self.seq.next_by_id(date(2046, 5, 10)))
+        self.assertEqual(preview, "04/275")
+
 
 class TestIrSequenceDateRangeSwitchToStandard(TransactionCase):
     def test_switch_to_standard_continues_subsequence_numbering(self):

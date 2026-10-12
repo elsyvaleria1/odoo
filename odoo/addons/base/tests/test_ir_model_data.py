@@ -271,6 +271,31 @@ class TestCompleteNameSearch(TransactionCase):
         self.assertSearch("not =like", "bare.%", self.dotted)
         self.assertSearch("not =ilike", "TEST_XMLID_PROBE.%", self.bare)
 
+    def test_lookups_resolve_a_dotless_name_to_nothing(self):
+        xml_ids = ["test_xmlid_probe.probe_partner", "probe_partner"]
+        partner_id = self.dotted.res_id
+        self.assertEqual(
+            self.Data._xmlid_targets(xml_ids),
+            {
+                "test_xmlid_probe.probe_partner": ("res.partner", partner_id),
+                "probe_partner": None,
+            },
+        )
+        self.assertEqual(
+            self.Data._get_xmlids(xml_ids, self.env["res.partner"]),
+            [
+                (
+                    self.dotted.id,
+                    "test_xmlid_probe",
+                    "probe_partner",
+                    "res.partner",
+                    partner_id,
+                    False,
+                    partner_id,
+                )
+            ],
+        )
+
     def test_name_search_accepts_full_xmlids(self):
         self.assertSearch(
             "=", "test_xmlid_probe.probe_partner", self.dotted, field="display_name"

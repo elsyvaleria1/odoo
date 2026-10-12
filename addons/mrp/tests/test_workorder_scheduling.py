@@ -204,6 +204,24 @@ class TestWorkorderStartStop(WorkorderSchedulingCase):
                     "started at 10:00, an hour of work runs until 11:00",
                 )
 
+    @freeze_time("2030-01-07 01:30:00")
+    def test_starting_is_not_blocked_by_the_orders_own_booking(self):
+        self.workcenter.resource_id.enforce_booking_limit = True
+        workorder = self._confirmed_production(self._bom("press")).workorder_ids
+        workorder.write(
+            {
+                "date_start": self._at(2030, 1, 7, 8),
+                "date_end": self._at(2030, 1, 7, 9),
+                "duration_expected": 60,
+            }
+        )
+        self.assertTrue(workorder.reservation_ids)
+        workorder.button_start()
+        self.assertEqual(
+            (workorder.date_start, workorder.date_end),
+            (self._at(2030, 1, 7, 8, 30), self._at(2030, 1, 7, 9, 30)),
+        )
+
     def test_back_to_ready_stops_every_users_timer(self):
         workorder = self._confirmed_production(self._bom("press")).workorder_ids
         workorder.button_start()

@@ -590,30 +590,19 @@ class ResourceCalendar(models.Model):
     def _get_fully_flexible_intervals(self, start_datetime, end_datetime, tz):
         self.check_singleton()
         expected_day_hours = self.hours_per_day or HOURS_PER_DAY
-        intervals = []
-        day = start_datetime.date()
-        last_day = (end_datetime - timedelta(microseconds=1)).date()
-        while day <= last_day:
-            midnight = datetime.combine(day, time.min).replace(tzinfo=tz)
-            next_midnight = datetime.combine(day + timedelta(days=1), time.min).replace(
-                tzinfo=tz
+        return [
+            (
+                day_start,
+                day_end,
+                self._new_virtual_attendance(
+                    covered_hours := elapsed_hours(day_start, day_end),
+                    min(1.0, covered_hours / expected_day_hours),
+                ),
             )
-            day_start = max(start_datetime, midnight)
-            day_end = min(end_datetime, next_midnight)
-            if day_end > day_start:
-                covered_hours = elapsed_hours(day_start, day_end)
-                intervals.append(
-                    (
-                        day_start,
-                        day_end,
-                        self._new_virtual_attendance(
-                            covered_hours,
-                            min(1.0, covered_hours / expected_day_hours),
-                        ),
-                    )
-                )
-            day += timedelta(days=1)
-        return intervals
+            for day_start, day_end, _meta in split_at_midnight(
+                [(start_datetime.astimezone(tz), end_datetime.astimezone(tz), None)]
+            )
+        ]
 
     @staticmethod
     def _center_block_on_noon(day, hours, tz, free) -> tuple | None:
@@ -916,12 +905,13 @@ class ResourceCalendar(models.Model):
         for leave in self.env["resource.schedule.exception"].search(domain):
             leave_date_from = leave.date_from.replace(tzinfo=UTC)
             leave_date_to = leave.date_to.replace(tzinfo=UTC)
+            scope = (
+                leave.calendar_id.company_id if leave.calendar_id else leave.company_id
+            )
             if leave.resource_id:
                 windows = [window_by_resource[leave.resource_id.id]]
-            elif leave.company_id:
-                windows = (
-                    windows_by_company[leave.company_id.id] + windows_of_no_company
-                )
+            elif scope:
+                windows = windows_by_company[scope.id] + windows_of_no_company
             else:
                 windows = window_per_resource
             bounds_per_tz = {}
@@ -1426,14 +1416,24 @@ class ResourceCalendar(models.Model):
         compute_leaves: bool,
         domain: list | None,
         resource: ResourceResource,
+        *,
+        reservations_to_ignore=None,
     ):
         if compute_leaves:
-            get_intervals = partial(
-                self._work_intervals_batch,
-                domain=domain,
-                resources=resource,
-                exclude_bookings=True,
-            )
+            Reservation = self.env["resource.reservation"]
+
+            def get_intervals(start, stop):
+                work = self._work_intervals_batch(
+                    start, stop, resources=resource, domain=domain
+                )
+                booked = Reservation._get_enforced_booking_intervals_batch(
+                    start,
+                    stop,
+                    resource,
+                    reservations_to_ignore=reservations_to_ignore,
+                )
+                return {resource.id: work[resource.id] - booked[resource.id]}
+
         else:
             get_intervals = partial(
                 self._attendance_intervals_batch, resources=resource
@@ -1463,6 +1463,7 @@ class ResourceCalendar(models.Model):
         compute_leaves: bool = False,
         domain: list | None = None,
         resource: ResourceResource | None = None,
+        reservations_to_ignore=None,
     ) -> datetime | None:
         revert = to_timezone(day_dt.tzinfo)
         day_dt = localized(day_dt)
@@ -1471,7 +1472,12 @@ class ResourceCalendar(models.Model):
         forward = hours >= 0
         hours = abs(hours)
         for start, stop, _meta in self._iter_plan_intervals(
-            day_dt, forward, compute_leaves, domain, resource
+            day_dt,
+            forward,
+            compute_leaves,
+            domain,
+            resource,
+            reservations_to_ignore=reservations_to_ignore,
         ):
             interval_hours = elapsed_hours(start, stop)
             if hours <= interval_hours:

@@ -1017,3 +1017,56 @@ class TestServerActionWarningFollowsLinkField(ServerActionCase):
         self.assertIn("runs on no record", action.warning or "")
         action.link_field_id = False
         self.assertNotIn("runs on no record", action.warning or "")
+
+
+@tagged("post_install", "-at_install")
+class TestTheDebugGroupGatesEverySurfaceAlike(ServerActionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = cls.env["res.users"].create(
+            {
+                "name": "debug-gate",
+                "login": "debug_gate",
+                "group_ids": [
+                    Command.set(
+                        [
+                            cls.env.ref("base.group_user").id,
+                            cls.env.ref("base.group_no_one").id,
+                        ]
+                    )
+                ],
+            }
+        )
+        cls.action = cls.Action.create(
+            {
+                "model_id": cls.partner_model.id,
+                "name": "debug only",
+                "binding_model_id": cls.partner_model.id,
+                "group_ids": [Command.set(cls.env.ref("base.group_no_one").ids)],
+                "state": "code",
+                "code": "action = {'type': 'ir.actions.act_window_close'}",
+            }
+        )
+
+    def _offered(self):
+        bindings = self.Action.with_user(self.user).get_bindings("res.partner")
+        return self.action.id in {
+            action["id"] for actions in bindings.values() for action in actions
+        }
+
+    def _run(self):
+        return self.action.with_user(self.user).run()
+
+    def test_outside_debug_the_action_is_neither_offered_loaded_nor_run(self):
+        self.assertFalse(self._offered())
+        with self.assertRaises(AccessError):
+            self.action.with_user(self.user)._check_access_to_load()
+        with self.assertRaises(AccessError):
+            self._run()
+
+    def test_in_debug_the_action_is_offered_loaded_and_run(self):
+        with self.debug_mode():
+            self.assertTrue(self._offered())
+            self.action.with_user(self.user)._check_access_to_load()
+            self.assertEqual(self._run(), {"type": "ir.actions.act_window_close"})

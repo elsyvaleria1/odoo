@@ -8733,6 +8733,57 @@ class TestTemplateKeyCollision(ViewCase):
 
 
 @tagged("post_install", "-at_install")
+class TestArchivedTemplateResolution(ViewCase):
+    def setUp(self):
+        super().setUp()
+        self.archived = self.View.create(
+            {
+                "name": "archived",
+                "type": "qweb",
+                "key": "base.archived_tpl",
+                "arch": '<t t-name="base.archived_tpl">ARCHIVED</t>',
+                "active": False,
+            }
+        )
+        self.View.create(
+            {
+                "name": "live",
+                "type": "qweb",
+                "key": "base.live_tpl",
+                "arch": '<t t-name="base.live_tpl">LIVE</t>',
+            }
+        )
+        self._clear()
+
+    def _clear(self):
+        self.env.registry.clear_cache("templates")
+        self.env.cr.cache.pop("_compile_batch_", None)
+
+    def test_an_archived_view_resolves_by_id_whatever_the_batch(self):
+        for batch in ([self.archived.id], [self.archived.id, "base.live_tpl"]):
+            with self.subTest(batch=batch):
+                self._clear()
+                fetched = self.View._get_views_by_ref(batch)
+                self.assertEqual(fetched[self.archived.id], self.archived)
+                self.assertEqual(
+                    self.View._get_template_view(self.archived.id), self.archived
+                )
+
+    def test_an_archived_key_is_not_resolved_through_its_id_in_the_batch(self):
+        fetched = self.View._get_views_by_ref([self.archived.id, "base.archived_tpl"])
+        self.assertEqual(fetched[self.archived.id], self.archived)
+        self.assertIsInstance(fetched["base.archived_tpl"], MissingError)
+
+    def test_the_preload_batch_is_keyed_by_active_test(self):
+        unfiltered = self.View.with_context(active_test=False)._preload_views(
+            ["base.archived_tpl"]
+        )
+        self.assertEqual(unfiltered["base.archived_tpl"]["view"], self.archived)
+        filtered = self.View._preload_views(["base.archived_tpl"])
+        self.assertIsInstance(filtered["base.archived_tpl"]["error"], MissingError)
+
+
+@tagged("post_install", "-at_install")
 class TestViewErrorReporting(ViewCase):
     def test_error_quotes_the_offending_line(self):
         arch = (

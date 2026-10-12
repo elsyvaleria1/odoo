@@ -13,11 +13,13 @@ from unittest.mock import patch
 
 from PIL import Image
 from werkzeug.http import parse_accept_header
+from werkzeug.test import EnvironBuilder
 
 from odoo import Command
 from odoo.api import SUPERUSER_ID
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Domain
+from odoo.http import Stream
 from odoo.libs.hashing import ALGO_TAG
 from odoo.models import PREFETCH_MAX
 from odoo.tests.common import TransactionCase, skip_if_dev_mode, tagged
@@ -882,6 +884,50 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         )
         for mimetype in kept:
             self.assertFalse(self.Attachment._is_xml_like_mimetype(mimetype), mimetype)
+
+    def test_served_charset_follows_content(self):
+        environ = EnvironBuilder().get_environ()
+        text = f"nom,ville\nJosé,Zürich\n{uuid.uuid4()}\n"
+        utf8, latin1 = text.encode(), text.encode("latin-1")
+        html = f"<p>café {uuid.uuid4()}</p>".encode()
+        cases = (
+            ("utf8.csv", utf8, "text/csv", "text/csv; charset=utf-8"),
+            ("declared.csv", latin1, "text/csv; charset=latin-1", "text/csv"),
+            ("undeclared.csv", latin1, None, "text/csv"),
+            ("utf16.txt", text.encode("utf-16"), None, "text/plain"),
+            ("doc.json", utf8, "application/json; charset=utf-8", "application/json"),
+            ("page.html", html, "text/html", "text/plain; charset=utf-8"),
+        )
+        Attachment = self.Attachment.with_user(self.user_demo)
+        for location in ("db", "file"):
+            self.env["ir.config_parameter"].set_param(
+                "ir_attachment.location", location
+            )
+            for name, raw, mimetype, content_type in cases:
+                with self.subTest(location=location, name=name):
+                    vals = {"name": name, "raw": raw}
+                    if mimetype:
+                        vals["mimetype"] = mimetype
+                    attachment = Attachment.create(vals)
+                    if attachment.store_fname:
+                        self.addCleanup(
+                            Path(self.filestore, attachment.store_fname).unlink,
+                            missing_ok=True,
+                        )
+                    self.assertEqual(bool(attachment.store_fname), location == "file")
+                    response = attachment._to_http_stream().prepare_response(
+                        environ=environ
+                    )
+                    self.assertEqual(response.headers["Content-Type"], content_type)
+
+        compressed = Stream(
+            type="data",
+            data=gzip.compress(latin1),
+            mimetype="text/javascript",
+            encoding="gzip",
+        )
+        compressed.set_charset_from_content()
+        self.assertEqual(compressed.charset, "utf-8")
 
     def test_to_http_stream_ignores_bin_size(self):
         payload = b"X" * 5000
@@ -2562,6 +2608,25 @@ class TestPermissions(TransactionCaseWithUserDemo):
         admin_user = self.env.ref("base.user_admin")
         self.assertNotEqual(SUPERUSER_ID, admin_user.id)
         _ = attachment_admin.with_user(admin_user).datas
+
+    def test_field_reach_names_only_attachment_backed_fields(self):
+        Partner = self.env["res.partner"]
+        reach = self.Attachments._attached_field_reach(Partner)
+        named = {
+            value
+            for condition in reach.iter_conditions()
+            if condition.field_expr == "res_field" and condition.operator == "in"
+            for value in condition.value
+            if value
+        }
+        self.assertIn("image_128", named)
+        self.assertNotIn("name", named)
+        self.assertTrue(
+            all(
+                self.Attachments._is_attachment_backed_field(Partner._fields[name])
+                for name in named
+            )
+        )
 
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models")
     def test_field_read_permission(self):
@@ -4356,3 +4421,21 @@ class TestAttachmentCopyTimes(TransactionCase):
         )
         self.assertEqual(copies[1].mapped("raw"), originals.mapped("raw"))
         self.assertEqual(originals._copy_times(0), [])
+
+    def test_copying_an_oversized_db_image_keeps_its_bytes(self):
+        icp = self.env["ir.config_parameter"]
+        icp.set_param("ir_attachment.location", "db")
+        icp.set_param("base.image_autoresize_max_px", "1920x1920")
+        buffer = io.BytesIO()
+        Image.new("RGB", (3000, 2000), (10, 200, 30)).save(buffer, "PNG")
+        original = (
+            self.env["ir.attachment"]
+            .with_context(image_no_postprocess=True)
+            .create({"name": "big.png", "raw": buffer.getvalue()})
+            .with_context({})
+        )
+        self.assertFalse(original.store_fname)
+        [copied_times] = original._copy_times(1)
+        for copied in (original.copy(), copied_times):
+            self.assertEqual(copied.checksum, original.checksum)
+            self.assertEqual(copied.raw, original.raw)

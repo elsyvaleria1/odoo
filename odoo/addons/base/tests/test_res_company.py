@@ -250,6 +250,21 @@ class TestCompany(TransactionCase):
         company.name = "renamed co"
         self.assertEqual(company.partner_id.name, "renamed co")
 
+    def test_both_triggers_refuse_a_name_shared_within_their_own_batch(self):
+        with self.assertRaises(ValidationError):
+            self.env["res.company"].create([{"name": "batch co"}, {"name": "batch co"}])
+        first, second = self.env["res.company"].create(
+            [{"name": "batch co a"}, {"name": "batch co b"}]
+        )
+        with self.assertRaises(ValidationError):
+            (first.partner_id | second.partner_id).write({"name": "batch co"})
+        first.partner_id.name = "batch co a"
+        self.assertEqual(first.name, "batch co a", "keeping its own name is no twin")
+        with self.assertRaises(ValidationError):
+            self.env["res.company"].create(
+                {"name": "shared party co", "partner_id": first.partner_id.id}
+            )
+
     def test_identity_is_readable_by_whoever_reads_the_company(self):
         company = self.env["res.company"].create(
             {"name": "public identity co", "email": "co@example.com"}

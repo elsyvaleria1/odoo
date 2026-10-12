@@ -63,6 +63,50 @@ class TestReservationLoad(TransactionCase):
         self.assertTrue(unavailable_at(booked))
         self.assertFalse(unavailable_at(booked, exclude_bookings=False))
 
+    def test_room_under_the_ceiling_stays_free_for_a_full_job(self):
+        resource = self._resource(
+            booking_limit_percentage=150, enforce_booking_limit=True
+        )
+        self._claim(resource, hours=2, allocated_percentage=25)
+        start = self.at.replace(tzinfo=UTC)
+
+        def planned_end():
+            return self.calendar.plan_hours(
+                2, start, compute_leaves=True, resource=resource
+            )
+
+        self.assertEqual(
+            planned_end(),
+            start + timedelta(hours=2),
+            "25% booked under a 150% ceiling leaves room for a full job",
+        )
+        self._claim(resource, hours=2, allocated_percentage=30, name="more")
+        self.assertEqual(
+            planned_end(),
+            datetime(2026, 10, 5, 14, tzinfo=UTC),
+            "55% booked leaves no room for a full job under a 150% ceiling",
+        )
+
+    def test_planning_a_move_ignores_the_booking_being_moved(self):
+        resource = self._resource(enforce_booking_limit=True)
+        moved = self._claim(resource, hours=2, at=self.at + timedelta(hours=1))
+        start = (self.at + timedelta(hours=1, minutes=30)).replace(tzinfo=UTC)
+
+        def planned_end(**kwargs):
+            return self.calendar.plan_hours(
+                2, start, compute_leaves=True, resource=resource, **kwargs
+            )
+
+        self.assertEqual(
+            planned_end(reservations_to_ignore=moved),
+            datetime(2026, 10, 5, 13, 30, tzinfo=UTC),
+        )
+        self.assertEqual(
+            planned_end(),
+            datetime(2026, 10, 5, 15, tzinfo=UTC),
+            "a booking that is not being moved still blocks",
+        )
+
     def test_allocated_hours_follow_time_off(self):
         resource = self._resource()
         claim = self._claim(resource, hours=8)
