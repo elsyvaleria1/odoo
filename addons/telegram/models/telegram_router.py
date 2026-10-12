@@ -911,7 +911,11 @@ class TelegramRouter(models.AbstractModel):
             )
             return
         if not self._tier_allows(spec.tier, partner, internal_user):
-            if not partner:
+            if chat.chat_type in ("group", "supergroup"):
+                msg = tr_env._(
+                    "Use the command %(command)s in a private chat with me."
+                ) % {"command": tg.code(command)}
+            elif not partner:
                 msg = tr_env._(
                     "To use the command %(command)s connect your Telegram account "
                     "to Odoo: in Odoo, open My Preferences and press Connect "

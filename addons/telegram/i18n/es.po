@@ -991,6 +991,11 @@ msgid "Invite to Telegram"
 msgstr "Invitar a Telegram"
 
 #. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__invited_by_id
+msgid "Invited By"
+msgstr "Invitado por"
+
+#. module: telegram
 #: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__is_enabled
 msgid "Is Enabled"
 msgstr "Habilitada"
@@ -2159,6 +2164,12 @@ msgid "Unknown command: %(command)s. Type /ayuda to see the list."
 msgstr "Comando desconocido: %(command)s. Escribe /ayuda para ver la lista."
 
 #. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "Use the command %(command)s in a private chat with me."
+msgstr "Usa el comando %(command)s en un chat privado conmigo."
+
+#. module: telegram
 #: model:ir.model,name:telegram.model_res_users
 #: model:ir.model.fields,field_description:telegram.field_telegram_binding__user_id
 #: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__user_id
@@ -2248,6 +2259,16 @@ msgstr ""
 #: code:addons/telegram/models/telegram_router.py:0
 msgid "Which company is %(command)s for?"
 msgstr "¿Para qué compañía es %(command)s?"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_binding__invited_by_id
+msgid ""
+"Who issued the invitation the contact opened, for a binding proven with one:"
+" whoever handed a contact the link could open it themselves."
+msgstr ""
+"Quién emitió la invitación que abrió el contacto, para una vinculación "
+"probada con una: quien le dio el enlace a un contacto podría abrirlo por sí "
+"mismo."
 
 #. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_chat__partner_id
@@ -2367,18 +2388,3 @@ msgstr "🗑 Descartar lo que traigo"
 #~ msgstr ""
 #~ "La empresa en nombre de la que habla este bot: lo que lee y registra es de "
 #~ "esa empresa, se ejecute la actualización como quien se ejecute."
-
-#. module: telegram
-#: model:ir.model.fields,field_description:telegram.field_telegram_binding__invited_by_id
-msgid "Invited By"
-msgstr "Invitado por"
-
-#. module: telegram
-#: model:ir.model.fields,help:telegram.field_telegram_binding__invited_by_id
-msgid ""
-"Who issued the invitation the contact opened, for a binding proven with one:"
-" whoever handed a contact the link could open it themselves."
-msgstr ""
-"Quién emitió la invitación que abrió el contacto, para una vinculación "
-"probada con una: quien le dio el enlace a un contacto podría abrirlo por sí "
-"mismo."
