@@ -10,6 +10,8 @@ except ImportError:
 
 
 __all__ = [
+    "charset_candidates",
+    "charset_label",
     "decode",
     "guess_encoding",
 ]
@@ -27,6 +29,20 @@ _WIDE_BYTE_ORDER_MARKS = (
 )
 
 _NON_ASCII = re.compile(rb"[\x80-\xff]")
+
+_ASCII_PROBE = bytes(range(0x20, 0x7F)) + b"\t\n\r"
+
+_WEB_LABELS = {
+    "utf-8-sig": "utf-8",
+    "utf-16-le": "utf-16le",
+    "utf-16-be": "utf-16be",
+    "mac-roman": "macintosh",
+    "cp866": "ibm866",
+    "cp874": "windows-874",
+    "cp932": "windows-31j",
+    "big5hkscs": "big5-hkscs",
+    "iso2022_jp": "iso-2022-jp",
+}
 
 
 def _first_non_ascii(data: bytes) -> int:
@@ -104,6 +120,35 @@ def _guess(data: bytes, final: bool) -> tuple[str | None, str | None]:
     except LookupError:
         return None, None
     return encoding, None
+
+
+def _is_ascii_compatible(encoding: str) -> bool:
+    try:
+        return _ASCII_PROBE.decode(encoding) == _ASCII_PROBE.decode("ascii")
+    except LookupError, UnicodeDecodeError:
+        return False
+
+
+def charset_candidates(declared: str | None) -> tuple[str, ...]:
+    if not declared:
+        return ("utf-8",)
+    if _is_ascii_compatible(declared):
+        return ("utf-8", declared)
+    return (declared, "utf-8")
+
+
+def charset_label(encoding: str) -> str | None:
+    try:
+        codec = codecs.lookup(encoding).name
+    except LookupError:
+        return None
+    if label := _WEB_LABELS.get(codec):
+        return label
+    if codec.startswith("iso8859-"):
+        return f"iso-{codec[3:]}"
+    if re.fullmatch(r"cp125\d", codec):
+        return f"windows-{codec[2:]}"
+    return codec.replace("_", "-")
 
 
 def guess_encoding(data: bytes) -> str | None:

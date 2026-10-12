@@ -215,6 +215,6 @@ class HrPayslipWorkedDays(models.Model):
                 (p.calendar_id.id == calendar.id or not p.calendar_id.id)
                 and p.local_date_from <= payslip.date_to
                 and p.local_date_to >= payslip.date_from
-                and p.company_id == payslip.company_id
+                and (not p.company_id or p.company_id == payslip.company_id)
             )
         )

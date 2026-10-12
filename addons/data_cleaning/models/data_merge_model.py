@@ -301,7 +301,14 @@ class Data_MergeModel(models.Model):
 
                 if dm_model.merge_mode == "automatic":
                     if group.similarity * 100 >= dm_model.merge_threshold:
-                        group.merge_records()
+                        try:
+                            with self.env.cr.savepoint():
+                                group.merge_records()
+                        except UserError as error:
+                            _logger.info(
+                                "Automatic merge skipped group %s: %s", group.id, error
+                            )
+                            continue
                         group.unlink()
 
             _logger.info("Record creation done after %s", timeit.default_timer() - t1)

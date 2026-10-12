@@ -182,20 +182,22 @@ class ExchangeChannel(models.Model):
         self.check_singleton()
         return self.endpoint_id.get_retry_delay(attempt_number)
 
-    def _enqueue_send(self, delay: int | None = None) -> None:
+    def _enqueue_send(self) -> None:
         for channel in self:
             channel.delayed(
                 identity_key=f"exchange.send:{channel.id}",
                 channel=f"exchange.{channel.protocol}",
-                eta=delay or None,
                 name=f"Send queued transmissions over {channel.display_name}",
             )._job_send_queued()
 
-    @api.job(channel="exchange", max_retries=0)
+    @api.job(channel="exchange", max_retries=0, trailing_run=True)
     def _job_send_queued(self) -> None:
         self.check_singleton()
         self.env["exchange.transmission"].search(
-            [("channel_id", "=", self.id), ("state", "=", "queued")],
+            [
+                ("channel_id", "=", self.id),
+                *self.env["exchange.transmission"]._get_due_domain(),
+            ],
         )._send_many()
 
     def _get_api_client(self, credential=None):

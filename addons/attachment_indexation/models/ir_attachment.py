@@ -79,9 +79,9 @@ class IrAttachment(models.Model):
             return ""
 
     @api.model
-    def _get_index_content(self, bin_data, mimetype):
+    def _get_index_content(self, bin_data, mimetype, *, charset=None):
         if not bin_data or (mimetype or "").startswith("text/"):
-            return super()._get_index_content(bin_data, mimetype)
+            return super()._get_index_content(bin_data, mimetype, charset=charset)
 
         document = Document(
             bin_data,

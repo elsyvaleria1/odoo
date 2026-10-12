@@ -1,6 +1,8 @@
+from datetime import timedelta
+
 from psycopg.errors import NotNullViolation
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import common, counting_statements
 from odoo.tools import SetDefinitions, SetExpressionError, mute_logger
@@ -1710,6 +1712,71 @@ class TestNoAdministrativeSelfGainThroughImplications(common.TransactionCase):
             {"implied_ids": [Command.link(self.system.id)]}
         )
         self.assertIn(self.system, other.implied_ids)
+
+    def _routed_group(self, name):
+        group = self.env["res.groups"].create({"name": name})
+        return group, group.with_user(self.manager).with_context(
+            allowed_company_ids=self.env.company.ids
+        )
+
+    def test_a_group_held_in_another_company_may_not_imply_system(self):
+        elsewhere = self.env["res.company"].create({"name": "Implication elsewhere"})
+        self.manager.company_ids = [Command.link(elsewhere.id)]
+        group, as_manager = self._routed_group("Implication scoped")
+        self.env["res.users.grant"].create(
+            {
+                "user_id": self.manager.id,
+                "group_id": group.id,
+                "company_ids": [Command.set(elsewhere.ids)],
+            }
+        )
+        with self.assertRaises(AccessError):
+            as_manager.write({"implied_ids": [Command.link(self.system.id)]})
+
+    def test_a_group_held_from_later_may_not_imply_system(self):
+        group, as_manager = self._routed_group("Implication scheduled")
+        self.env["res.users.grant"].create(
+            {
+                "user_id": self.manager.id,
+                "group_id": group.id,
+                "date_from": fields.Datetime.now() + timedelta(days=1),
+            }
+        )
+        with self.assertRaises(AccessError):
+            as_manager.write({"implied_ids": [Command.link(self.system.id)]})
+
+    def test_a_group_one_may_activate_may_not_imply_system(self):
+        group, as_manager = self._routed_group("Implication eligible")
+        self.env["res.users.eligibility"].create(
+            {"user_id": self.manager.id, "group_id": group.id}
+        )
+        with self.assertRaises(AccessError):
+            as_manager.write({"implied_ids": [Command.link(self.system.id)]})
+
+    def test_being_eligible_for_system_does_not_make_it_standing(self):
+        self.env["res.users.eligibility"].create(
+            {"user_id": self.manager.id, "group_id": self.system.id}
+        )
+        feature = self.env["res.groups"].create(
+            {"name": "Implication eligible feature"}
+        )
+        self._as_manager("base.group_user").write(
+            {"implied_ids": [Command.link(feature.id)]}
+        )
+        with self.assertRaises(AccessError):
+            self._as_manager("base.group_user").write(
+                {"implied_ids": [Command.link(self.system.id)]}
+            )
+
+    def test_an_administrator_still_widens_a_group_they_hold(self):
+        admin = common.new_test_user(
+            self.env, login="implication_admin", groups="base.group_system"
+        )
+        feature = self.env["res.groups"].create({"name": "Implication admin feature"})
+        self.env.ref("base.group_user").with_user(admin).write(
+            {"implied_ids": [Command.link(feature.id), Command.link(self.system.id)]}
+        )
+        self.assertIn(self.system, self.env.ref("base.group_user").implied_ids)
 
     def test_clearing_the_name_is_refused_as_a_missing_value(self):
         group = self.env["res.groups"].create({"name": "Named once"})

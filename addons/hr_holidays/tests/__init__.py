@@ -52,3 +52,4 @@ from . import test_leave_verbs
 from . import test_allocation_request_domain
 from . import test_leave_duration
 from . import test_leave_resource_state
+from . import test_upgrade_shared_closures

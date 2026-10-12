@@ -96,3 +96,77 @@ class TestSimulate(TransactionCase):
             wizard.action_simulate()
             counts.append((wizard.hidden_count, wizard.reached_count))
         self.assertEqual(counts[0], counts[1])
+
+    def test_a_domain_through_a_relation_cannot_probe_what_only_they_read(self):
+        Tag = self.env["res.partner.tag"]
+        self.env["ir.access"].create(
+            {
+                "name": "Probe: the blinded read no secret tag",
+                "model_id": self.env["ir.model"]._get_id("res.partner.tag"),
+                "group_id": self.blinded.id,
+                "kind": "guard",
+                "guard_scope": "members",
+                "operation": "r",
+                "domain": "[('name', 'not like', 'secret')]",
+            }
+        )
+        secret = Tag.create({"name": "probe secret"})
+        partner = self.env["res.partner"].create(
+            {"name": "Probe tagged", "tag_ids": [Command.link(secret.id)]}
+        )
+        counts = []
+        for guess in ("probe secret", "probe other"):
+            wizard = (
+                self.env["wizard.res.users.simulate.access"]
+                .with_user(self.admin)
+                .create(
+                    {
+                        "user_id": self.person.id,
+                        "model_name": "res.partner",
+                        "domain": f"[('id', '=', {partner.id}), ('tag_ids', "
+                        f"'not any', [('name', '=', '{guess}')])]",
+                    }
+                )
+            )
+            wizard.action_simulate()
+            counts.append((wizard.shared_count, wizard.extra_count))
+        self.assertEqual(counts, [(1, 0), (1, 0)])
+
+    def test_archived_records_the_domain_selects_are_simulated_too(self):
+        self.common.active = False
+        wizard = (
+            self.env["wizard.res.users.simulate.access"]
+            .with_user(self.admin)
+            .create(
+                {
+                    "user_id": self.person.id,
+                    "model_name": "res.partner.industry",
+                    "domain": "[('name', '=', 'probe common'), "
+                    "('active', 'in', [True, False])]",
+                }
+            )
+        )
+        wizard.action_simulate()
+        self.assertEqual(wizard.shared_ids, [self.common.id])
+
+    def test_both_reaches_span_every_company_each_works_in(self):
+        elsewhere = self.env["res.company"].create({"name": "Simulate elsewhere"})
+        (self.admin | self.person).company_ids = [Command.link(elsewhere.id)]
+        partner = self.env["res.partner"].create(
+            {"name": "Simulate in elsewhere", "company_id": elsewhere.id}
+        )
+        wizard = (
+            self.env["wizard.res.users.simulate.access"]
+            .with_user(self.admin)
+            .with_context(allowed_company_ids=self.env.company.ids)
+            .create(
+                {
+                    "user_id": self.person.id,
+                    "model_name": "res.partner",
+                    "domain": f"[('id', '=', {partner.id})]",
+                }
+            )
+        )
+        wizard.action_simulate()
+        self.assertEqual(wizard.shared_ids, partner.ids)
+        self.assertEqual(wizard.hidden_count, 0)

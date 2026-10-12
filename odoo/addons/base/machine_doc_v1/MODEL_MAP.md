@@ -1191,6 +1191,7 @@ cascade-cancelled (transitively) when a dependency fails or is cancelled.
 **Fields:**
 - `uuid` (Char), `channel` (Char, default='root'), `state` (Selection), `priority` (Integer, default=10)
 - `eta` (Datetime) — earliest execution; `identity_key` (Char) — dedup handle (partial unique index while wait_deps/pending/started)
+- `is_follow_up` (Boolean) — queued while a run of an `@api.job(trailing_run=True)` job with the same key was in progress: it is the key's second queued slot, and is not claimed while a job of that key is started (unique index over started)
 - `model_name`/`method_name` (Char, required), `record_ids`/`args`/`kwargs`/`context` (Json)
 - `user_id` (Many2one → res.users, required), `company_id` (Many2one → res.company)
 - `retry`/`max_retries` (Integer), `exc_name`/`exc_message` (Char), `exc_info` (Text)

@@ -93,6 +93,21 @@ class TestPayslipComputation(TestPayslipContractBase):
             msg="It should be paid 238.11 less",
         )
 
+    def test_a_closure_of_a_shared_schedule_names_the_worked_days(self):
+        calendar = self.richard_payslip.version_id.resource_calendar_id
+        calendar.company_id = False
+        closure = self.env["resource.schedule.exception"].create(
+            {
+                "name": "Shared closure",
+                "calendar_id": calendar.id,
+                "date_from": datetime(2016, 1, 13, 0, 0),
+                "date_to": datetime(2016, 1, 13, 23, 59),
+            }
+        )
+        self.assertFalse(closure.company_id)
+        worked_days = self.richard_payslip.worked_days_line_ids[:1]
+        self.assertEqual(worked_days._get_applicable_public_holidays(closure), closure)
+
     def test_worked_days_amount_with_unpaid(self):
         self.env["resource.schedule.exception"].create(
             {

@@ -470,44 +470,17 @@ GRANT_CAUSES = [
     ("module", "Set by a module"),
     ("approval_request", "Approved request"),
     ("migration", "Carried over by an upgrade"),
+    ("merge", "Kept from a merged contact"),
 ]
-PRIOR_FIELDS = ("prior_role", "prior_cause", "prior_cause_ref", "prior_date_to")
-
-
-class _GrantRow(typing.NamedTuple):
-    id: int
-    role: str
-    cause: str
-    cause_ref: str | None
-    date_to: typing.Any
-    prior_role: str | None
-    prior_cause: str | None
-    prior_cause_ref: str | None
-    prior_date_to: typing.Any
-
-    def live_as_prior(self) -> dict[str, typing.Any]:
-        return {
-            "prior_role": self.role,
-            "prior_cause": self.cause,
-            "prior_cause_ref": self.cause_ref,
-            "prior_date_to": self.date_to,
-        }
-
-    def prior_values(self, role_name: str) -> dict[str, typing.Any]:
-        return {
-            role_name: self.prior_role,
-            "cause": self.prior_cause,
-            "cause_ref": self.prior_cause_ref,
-            "date_to": self.prior_date_to,
-            **dict.fromkeys(PRIOR_FIELDS, False),
-        }
 
 
 class MixinAccessGrant(models.AbstractModel):
     _name = "mixin.access.grant"
     _description = "Grant of a Role on a Node"
+    _merge_clash_policy = "drop"
 
     _access_grant_names: AccessGrantNames
+    _access_grant_by_cause = False
 
     partner_id = fields.Many2one(
         comodel_name="res.partner",
@@ -541,13 +514,6 @@ class MixinAccessGrant(models.AbstractModel):
         index="btree_not_null",
         help="The record that caused the grant, as model,id.",
     )
-    prior_role = fields.Char(
-        help="The role the grant held before a module took it over, given back "
-        "when the module lets it go.",
-    )
-    prior_cause = fields.Selection(selection=GRANT_CAUSES)
-    prior_cause_ref = fields.Char(index="btree_not_null")
-    prior_date_to = fields.Datetime()
     granted_by_id = fields.Many2one(
         comodel_name="res.users",
         default=lambda self: self.env.user,
@@ -570,76 +536,28 @@ class MixinAccessGrant(models.AbstractModel):
         names = self._access_grant_names
         grants = self.sudo()
         ladder = self._fields[names.role].get_values(self.env)
-        self.flush_model(
-            [
-                names.resource,
-                names.role,
-                "partner_id",
-                "group_id",
-                "company_id",
-                "date_to",
-                "cause",
-                "cause_ref",
-                *PRIOR_FIELDS,
-            ]
-        )
-        self.env.cr.execute(
-            SQL(
-                """SELECT id, %(resource)s, partner_id, group_id, company_id,
-                          %(role)s, cause, cause_ref, date_to,
-                          prior_role, prior_cause, prior_cause_ref, prior_date_to
-                     FROM %(table)s
-                    WHERE cause_ref = %(cause_ref)s
-                       OR prior_cause_ref = %(cause_ref)s
-                       OR %(resource)s = ANY(%(nodes)s)""",
-                resource=SQL.identifier(names.resource),
-                role=SQL.identifier(names.role),
-                table=SQL.identifier(self._table),
-                cause_ref=cause_ref,
-                nodes=sorted({node for node, *_ in wanted}),
-            )
-        )
-        rows = {}
-        for (
-            grant_id,
-            node,
-            partner_id,
-            group_id,
-            company_id,
-            *state,
-        ) in self.env.cr.fetchall():
+        roles: dict[tuple, str] = {}
+        for node, kind, principal_id, role, company in wanted:
+            key = (node, kind, principal_id, company or False)
+            if key not in roles or ladder.index(role) > ladder.index(roles[key]):
+                roles[key] = role
+        stale = grants.browse()
+        for grant in grants.search([("cause_ref", "=", cause_ref)]):
+            node = grant[names.resource].id
             key = (
-                (node, "partner_id", partner_id, False)
-                if partner_id
-                else (node, "group_id", group_id, company_id or False)
+                (node, "partner_id", grant.partner_id.id, False)
+                if grant.partner_id
+                else (node, "group_id", grant.group_id.id, grant.company_id.id or False)
             )
-            rows[key] = _GrantRow(grant_id, *state)
-        wanted_roles = {
-            (node, kind, pid, company or False): role
-            for node, kind, pid, role, company in wanted
-        }
-        now = fields.Datetime.now()
-        stale = []
-        for key, row in rows.items():
-            if key in wanted_roles:
-                continue
-            if row.cause_ref == cause_ref:
-                if row.prior_cause and (
-                    not row.prior_date_to or row.prior_date_to > now
-                ):
-                    grants.browse(row.id).write(row.prior_values(names.role))
-                else:
-                    stale.append(row.id)
-            elif row.prior_cause_ref == cause_ref:
-                grants.browse(row.id).write(dict.fromkeys(PRIOR_FIELDS, False))
-        if stale:
-            grants.browse(stale).unlink()
-        creates = []
-        for key, role in wanted_roles.items():
-            node, kind, principal_id, company = key
-            row = rows.get(key)
-            if row is None:
-                creates.append(
+            role = roles.pop(key, None)
+            if role is None:
+                stale |= grant
+            elif grant[names.role] != role or grant.date_to:
+                grant.write({names.role: role, "date_to": False})
+        stale.unlink()
+        if roles:
+            grants.create(
+                [
                     {
                         names.resource: node,
                         kind: principal_id,
@@ -648,34 +566,96 @@ class MixinAccessGrant(models.AbstractModel):
                         "cause": "module",
                         "cause_ref": cause_ref,
                     }
+                    for (node, kind, principal_id, company), role in roles.items()
+                ]
+            )
+
+    @api.model
+    def _merge_partner_claims(
+        self, src_partners: models.BaseModel, dst_partner: models.BaseModel
+    ) -> None:
+        names = self._access_grant_names
+        ladder = self._fields[names.role].get_values(self.env)
+        table = SQL.identifier(self._table)
+        self.flush_model()
+        for src in src_partners:
+            self.env.cr.execute(
+                SQL(
+                    """SELECT src.id, dst.id, src.%(role)s, dst.%(role)s,
+                              src.date_to, dst.date_to
+                         FROM %(table)s AS src
+                         JOIN %(table)s AS dst
+                           ON dst.%(resource)s = src.%(resource)s
+                          AND dst.partner_id = %(dst)s
+                          AND %(same_claim)s
+                        WHERE src.partner_id = %(src)s""",
+                    same_claim=SQL("dst.cause_ref IS NOT DISTINCT FROM src.cause_ref")
+                    if self._access_grant_by_cause
+                    else SQL("TRUE"),
+                    role=SQL.identifier(names.role),
+                    resource=SQL.identifier(names.resource),
+                    table=table,
+                    src=src.id,
+                    dst=dst_partner.id,
                 )
-            elif row.cause_ref == cause_ref:
-                if row.role != role:
-                    grants.browse(row.id).write({names.role: role})
-            else:
-                claim = {
-                    names.role: role,
-                    "cause": "module",
-                    "cause_ref": cause_ref,
-                    "date_to": False,
-                }
-                outranks = row.date_to or ladder.index(row.role) < ladder.index(role)
-                slot_free = not row.prior_cause or row.prior_cause_ref == cause_ref
-                if outranks:
-                    grants.browse(row.id).write(
-                        claim | row.live_as_prior() if slot_free else claim
+            )
+            dropped, carried = [], []
+            for (
+                src_id,
+                dst_id,
+                src_role,
+                dst_role,
+                src_to,
+                dst_to,
+            ) in self.env.cr.fetchall():
+                src_rank, dst_rank = ladder.index(src_role), ladder.index(dst_role)
+                src_lasts = not src_to or bool(dst_to and src_to >= dst_to)
+                dst_lasts = not dst_to or bool(src_to and dst_to >= src_to)
+                if self._access_grant_by_cause and not (
+                    (dst_rank >= src_rank and dst_lasts)
+                    or (src_rank >= dst_rank and src_lasts)
+                ):
+                    carried.append(src_id)
+                    continue
+                if (src_lasts, src_rank) > (dst_lasts, dst_rank):
+                    self.env.cr.execute(
+                        SQL(
+                            "UPDATE %s SET %s = %s, date_to = %s WHERE id = %s",
+                            table,
+                            SQL.identifier(names.role),
+                            src_role,
+                            src_to,
+                            dst_id,
+                        )
                     )
-                elif row.prior_cause_ref == cause_ref:
-                    if row.prior_role != role:
-                        grants.browse(row.id).write({"prior_role": role})
-                elif row.cause == "module" and slot_free:
-                    grants.browse(row.id).write(
-                        {
-                            "prior_role": role,
-                            "prior_cause": "module",
-                            "prior_cause_ref": cause_ref,
-                            "prior_date_to": False,
-                        }
+                dropped.append(src_id)
+            if dropped:
+                self.env.cr.execute(
+                    SQL("DELETE FROM %s WHERE id = ANY(%s)", table, dropped)
+                )
+            if carried:
+                self.env.cr.execute(
+                    SQL(
+                        "UPDATE %s SET cause = 'merge', cause_ref = %s WHERE id = ANY(%s)",
+                        table,
+                        f"res.partner,{src.id}",
+                        carried,
                     )
-        if creates:
-            grants.create(creates)
+                )
+            self.env.cr.execute(
+                SQL(
+                    "UPDATE %s SET partner_id = %s WHERE partner_id = %s",
+                    table,
+                    dst_partner.id,
+                    src.id,
+                )
+            )
+            _debug.lifecycle(
+                "claims_merged",
+                model=self._name,
+                src=src.id,
+                dst=dst_partner.id,
+                dropped=len(dropped),
+                carried=len(carried),
+            )
+        self.invalidate_model()

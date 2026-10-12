@@ -396,122 +396,12 @@ class Data_MergeRecord(models.Model):
 
 
     @api.model
-    def _get_model_references(self, table):
-        self.env.flush_all()
-        return dict(
-            self.env.execute_query(
-                SQL(
-                    """
-            SELECT cl1.relname as table, array_agg(att1.attname) as columns
-            FROM pg_constraint as con, pg_class as cl1, pg_class as cl2, pg_attribute as att1, pg_attribute as att2
-            WHERE con.conrelid = cl1.oid
-                AND con.confrelid = cl2.oid
-                AND array_lower(con.conkey, 1) = 1
-                AND con.conkey[1] = att1.attnum
-                AND att1.attrelid = cl1.oid
-                AND att2.attname = 'id'
-                AND array_lower(con.confkey, 1) = 1
-                AND con.confkey[1] = att2.attnum
-                AND att2.attrelid = cl2.oid
-                AND con.contype = 'f'
-                AND cl2.relname = %s
-                AND cl2.relnamespace = current_schema::regnamespace
-            GROUP BY cl1.relname""",
-                    table,
-                )
-            )
-        )
-
-    @api.model
     def _update_foreign_keys(self, destination, source) -> None:
-        references = self._get_model_references(destination._table)
-
         source_ids = source.ids
         self.env.flush_all()
-
-        for table, columns in references.items():
-            for column in columns:
-                query_dict = {
-                    "table": table,
-                    "column": column,
-                }
-
-                query = SQL(
-                    """
-                    SELECT COUNT("column_name")
-                    FROM "information_schema"."columns"
-                    WHERE "table_name" ILIKE %s
-                    AND table_schema = current_schema
-                    """,
-                    query_dict["table"],
-                )
-                [[column_count]] = self.env.execute_query(query)
-
-                if column_count == 2:
-                    query = SQL(
-                        """
-                        SELECT "column_name"
-                        FROM "information_schema"."columns"
-                        WHERE
-                            "table_name" LIKE %s
-                        AND table_schema = current_schema
-                        AND "column_name" <> %s
-                        """,
-                        query_dict["table"],
-                        query_dict["column"],
-                    )
-                    [[othercol]] = self.env.execute_query(query)
-                    query_dict.update({"othercol": othercol})
-
-                    for rec_id in source_ids:
-                        query = SQL(
-                            """
-                            UPDATE %(table)s o
-                            SET %(column)s =  %(destination_id)s  --- master record
-                            WHERE %(column)s = %(record_id)s      --- record to merge
-                            AND NOT EXISTS (
-                                SELECT 1
-                                FROM  %(table)s i
-                                WHERE %(column)s = %(destination_id)s
-                                AND i.%(othercol)s = o.%(othercol)s
-                            )
-                            """,
-                            table=SQL.identifier(query_dict["table"]),
-                            column=SQL.identifier(query_dict["column"]),
-                            othercol=SQL.identifier(query_dict["othercol"]),
-                            destination_id=destination.id,
-                            record_id=rec_id,
-                        )
-                        self.env.execute_query(query)
-                else:
-                    sql_table = SQL.identifier(query_dict["table"])
-                    sql_column = SQL.identifier(query_dict["column"])
-                    for rec_id in source_ids:
-                        try:
-                            with self.env.cr.savepoint():
-                                self.env.execute_query(
-                                    SQL(
-                                        """
-                                    UPDATE %(table)s o
-                                    SET %(column)s  = %(destination_id)s  --- master record
-                                    WHERE %(column)s = %(record_id)s      --- record to merge
-                                    """,
-                                        table=sql_table,
-                                        column=sql_column,
-                                        destination_id=destination.id,
-                                        record_id=rec_id,
-                                    )
-                                )
-                        except psycopg.errors.UniqueViolation:
-                            _logger.warning(
-                                "Query %s failed, due to an unique constraint", query
-                            )
-                        except psycopg.IntegrityError:
-                            _logger.warning("Query %s failed", query)
-                        except psycopg.Error as error:
-                            raise ValidationError(
-                                self.env._("Query Failed.")
-                            ) from error
+        self.env["mixin.merge"]._update_foreign_keys_generic(
+            destination._name, source, destination
+        )
 
         self._merge_additional_models(destination, source_ids)
         fields_to_recompute = [

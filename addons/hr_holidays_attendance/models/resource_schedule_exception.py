@@ -14,6 +14,7 @@ class ResourceScheduleException(models.Model):
             (
                 scope["resource_id"],
                 scope["company_id"],
+                scope["calendar_id"],
                 scope["date_from"].date() - timedelta(days=1),
                 scope["date_to"].date() + timedelta(days=1),
             )
@@ -30,10 +31,14 @@ class ResourceScheduleException(models.Model):
                         Domain("employee_id.resource_id", "=", resource_id)
                         if resource_id
                         else Domain("employee_id.company_id", "=", company_id)
+                        if company_id or not calendar_id
+                        else Domain(
+                            "employee_id.resource_calendar_id", "=", calendar_id
+                        )
                     )
                     & Domain("date", ">=", date_from)
                     & Domain("date", "<=", date_to)
-                    for resource_id, company_id, date_from, date_to in windows
+                    for resource_id, company_id, calendar_id, date_from, date_to in windows
                 )
             )
         )

@@ -5,6 +5,7 @@ from odoo.tools import frozendict
 class CalendarFilters(models.Model):
     _name = "calendar.filters"
     _description = "Calendar Filters"
+    _merge_clash_policy = "drop"
     _access_anchors = frozendict(
         {
             "owner": "user_id",

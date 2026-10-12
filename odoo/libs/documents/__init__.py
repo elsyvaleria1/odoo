@@ -67,7 +67,7 @@ from .formats import (
     register_extension,
     register_format,
 )
-from .guess import decode, guess_encoding
+from .guess import charset_candidates, charset_label, decode, guess_encoding
 from .layout import ALIGNMENTS, LEFT, RIGHT, Field, Layout
 from .media import (
     AUDIO_SAMPLE_RATE,
@@ -159,6 +159,8 @@ __all__ = [
     "availability",
     "can_decode_media",
     "canonical_mimetypes",
+    "charset_candidates",
+    "charset_label",
     "coerce",
     "cues_as_text",
     "decode",

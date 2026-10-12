@@ -54,6 +54,19 @@ def _ir_job_test_idle(self):
         record.name = f"idle {self.env.cr.fetchone()[0]}"
 
 
+TRAILING = "trailingrun"
+
+
+@api.job(trailing_run=True)
+def _ir_job_test_drain(self, enqueue_again=False, defer=False):
+    inbox = self.env["res.partner"].search([("ref", "=", TRAILING)])
+    inbox.write({"ref": f"{TRAILING}-drained"})
+    if enqueue_again:
+        self.delayed(channel=TRAILING, identity_key=TRAILING)._ir_job_test_drain()
+    if defer:
+        self.env["ir.job"]._defer(0, reason="more to drain")
+
+
 def _isolate_queue(env):
     env.cr.execute(
         "UPDATE ir_job SET state = 'cancelled'"
@@ -974,6 +987,7 @@ class TestIrJob(TransactionCase):
                 "max_retries": 3,
                 "max_defers": 100,
                 "idle_timeout": None,
+                "trailing_run": False,
             },
             "the declaration is still reachable along the MRO",
         )
@@ -2477,6 +2491,151 @@ class TestIrJobDeduplicationIntoARunningJob(BaseCase):
             "a running job whose row a deduplicated caller rewrote cannot mark "
             "itself done, and its whole run is rolled back and replayed",
         )
+
+
+class TestIrJobTrailingRun(BaseCase):
+    OTHER_CHANNEL = f"{TRAILING}-other"
+
+    def setUp(self):
+        super().setUp()
+        self.registry = Registry(common.get_db_name())
+        partner_cls = self.registry["res.partner"]
+        partner_cls._ir_job_test_drain = _ir_job_test_drain
+        self.addCleanup(delattr, partner_cls, "_ir_job_test_drain")
+        self.addCleanup(self._clear)
+        self._clear()
+        with self.registry.cursor() as cr:
+            env = odoo.api.Environment(cr, common.ADMIN_USER_ID, {})
+            self.target_id = env["res.partner"].create({"name": TRAILING}).id
+
+    def _clear(self):
+        with self.registry.cursor() as cr:
+            cr.execute("DELETE FROM ir_job WHERE identity_key = %s", (TRAILING,))
+            cr.execute(
+                "DELETE FROM res_partner WHERE name = %s OR ref LIKE %s",
+                (TRAILING, f"{TRAILING}%"),
+            )
+
+    def _enqueue(self, *, inbox=False, channel=TRAILING):
+        with self.registry.cursor() as cr:
+            env = odoo.api.Environment(cr, common.ADMIN_USER_ID, {})
+            if inbox:
+                env["res.partner"].create({"name": "inbox item", "ref": TRAILING})
+            return (
+                env["res.partner"]
+                .browse(self.target_id)
+                .delayed(channel=channel, identity_key=TRAILING)
+                ._ir_job_test_drain()
+                .id
+            )
+
+    def _start(self):
+        worker = self.registry.cursor()
+        self.addCleanup(worker.close)
+        job = IrJob._claim_next(worker, "test:trailing", [TRAILING])
+        worker.commit()
+        worker.execute("SELECT 1")
+        return worker, job
+
+    def _finish(self, worker, job, **kwargs):
+        job["kwargs"] = kwargs
+        IrJob._run_claimed(worker, job)
+        worker.commit()
+
+    def _claim_elsewhere(self, channel=TRAILING):
+        with self.registry.cursor() as cr:
+            job = IrJob._claim_next(cr, "test:elsewhere", [channel])
+            return job and job["id"]
+
+    def _queued(self):
+        with self.registry.cursor() as cr:
+            cr.execute(
+                "SELECT id, state FROM ir_job WHERE identity_key = %s"
+                " AND state != 'done' ORDER BY id",
+                (TRAILING,),
+            )
+            return cr.fetchall()
+
+    def _inbox_size(self):
+        with self.registry.cursor() as cr:
+            cr.execute("SELECT count(*) FROM res_partner WHERE ref = %s", (TRAILING,))
+            return cr.fetchone()[0]
+
+    def test_an_enqueue_during_a_run_queues_one_run_after_it(self):
+        leader = self._enqueue()
+        self.assertEqual(self._enqueue(), leader)
+        worker, job = self._start()
+        self.assertEqual(job["id"], leader)
+
+        follow_up = self._enqueue(inbox=True)
+        self.assertNotEqual(
+            follow_up,
+            leader,
+            "the enqueue joined a run that had already read its inbox, so the "
+            "item it queued is stranded",
+        )
+        self.assertEqual(self._enqueue(), follow_up)
+
+        self._finish(worker, job)
+        self.assertEqual(self._inbox_size(), 1)
+        self.assertEqual(self._queued(), [(follow_up, "pending")])
+
+        worker, job = self._start()
+        self.assertEqual(job["id"], follow_up)
+        self._finish(worker, job)
+        self.assertEqual(self._inbox_size(), 0)
+
+    def test_the_follow_up_waits_for_the_run_it_follows(self):
+        self._enqueue()
+        worker, job = self._start()
+        follow_up = self._enqueue()
+
+        self.assertIsNone(self._claim_elsewhere())
+        self._finish(worker, job)
+        self.assertEqual(self._claim_elsewhere(), follow_up)
+
+    def test_running_the_follow_up_by_hand_waits_for_the_run_it_follows(self):
+        self._enqueue()
+        self._start()
+        follow_up = self._enqueue()
+        with self.registry.cursor() as cr:
+            env = odoo.api.Environment(cr, common.ADMIN_USER_ID, {})
+            with self.assertRaisesRegex(UserError, "same identity key is running"):
+                env["ir.job"].browse(follow_up).action_run_now()
+
+    def test_an_enqueue_from_the_running_body_is_dropped(self):
+        leader = self._enqueue()
+        worker, job = self._start()
+        self._finish(worker, job, enqueue_again=True)
+        self.assertEqual(self._queued(), [], f"job {leader} queued itself again")
+
+    def test_a_followed_run_that_defers_queues_beside_its_follow_up(self):
+        leader = self._enqueue()
+        worker, job = self._start()
+        follow_up = self._enqueue()
+
+        self._finish(worker, job, defer=True)
+        self.assertEqual(self._queued(), [(leader, "pending"), (follow_up, "pending")])
+        self.assertEqual(self._enqueue(), follow_up)
+
+        self.assertEqual(self._claim_elsewhere(), leader)
+        self.assertIsNone(self._claim_elsewhere())
+
+    @mute_logger("odoo.db.cursor")
+    def test_a_claimer_on_a_stale_snapshot_does_not_start_a_second_run(self):
+        leader = self._enqueue()
+        worker, job = self._start()
+        follow_up = self._enqueue(channel=self.OTHER_CHANNEL)
+        self._finish(worker, job, defer=True)
+
+        stale = self.registry.cursor()
+        self.addCleanup(stale.close)
+        stale.execute("SELECT 1")
+        self.assertEqual(self._claim_elsewhere(self.OTHER_CHANNEL), follow_up)
+
+        self.assertIsNone(IrJob._claim_next(stale, "test:stale", [TRAILING]))
+        stale.rollback()
+        self.assertEqual(self._queued(), [(leader, "pending"), (follow_up, "started")])
 
 
 class TestIrJobClaimCapacity(TransactionCase):

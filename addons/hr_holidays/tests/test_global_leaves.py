@@ -327,6 +327,46 @@ class TestGlobalLeaves(TestHrHolidaysCommon):
                 }
             )
 
+    def test_a_closure_of_a_shared_schedule_overlaps_a_company_holiday(self):
+        shared = self.env["resource.calendar"].create(
+            {"name": "Shared across companies", "company_id": False, "tz": "UTC"}
+        )
+        with self.assertRaises(ValidationError):
+            self.env["resource.schedule.exception"].create(
+                {
+                    "name": "Wrong Time Off",
+                    "local_date_from": date(2022, 3, 7),
+                    "local_date_to": date(2022, 3, 7),
+                    "calendar_id": shared.id,
+                }
+            )
+
+        closure = self.env["resource.schedule.exception"].create(
+            {
+                "name": "Shared closure",
+                "local_date_from": date(2022, 3, 9),
+                "local_date_to": date(2022, 3, 9),
+                "calendar_id": shared.id,
+            }
+        )
+        self.assertFalse(closure.company_id)
+        self.env["resource.schedule.exception"].create(
+            {
+                "name": "Correct Time Off",
+                "local_date_from": date(2022, 3, 9),
+                "local_date_to": date(2022, 3, 9),
+                "calendar_id": self.calendar_2.id,
+            }
+        )
+        with self.assertRaises(ValidationError):
+            self.env["resource.schedule.exception"].create(
+                {
+                    "name": "Wrong Time Off",
+                    "local_date_from": date(2022, 3, 9),
+                    "local_date_to": date(2022, 3, 9),
+                }
+            )
+
     @freeze_time("2023-05-12")
     def test_global_leave_timezone(self):
         calendar_asia = self.env["resource.calendar"].create(
@@ -640,6 +680,35 @@ class TestGlobalLeaves(TestHrHolidaysCommon):
                 value,
                 f"Day {day} should be {'unusual' if value else 'normal'}",
             )
+
+    def test_a_closure_of_a_shared_schedule_gives_the_day_back(self):
+        shared = self.env["resource.calendar"].create(
+            {"name": "Shared across companies", "company_id": False, "tz": "UTC"}
+        )
+        self.employee_emp.resource_calendar_id = shared
+        leave_type = self.env["hr.leave.type"].create(
+            {"name": "Paid Time Off", "requires_allocation": False}
+        )
+        leave = self.env["hr.leave"].create(
+            {
+                "name": "Week off",
+                "employee_id": self.employee_emp.id,
+                "holiday_status_id": leave_type.id,
+                "request_date_from": date(2024, 1, 1),
+                "request_date_to": date(2024, 1, 5),
+            }
+        )
+        self.assertEqual(leave.number_of_days, 5)
+        closure = self.env["resource.schedule.exception"].create(
+            {
+                "name": "Shared closure",
+                "calendar_id": shared.id,
+                "date_from": datetime(2024, 1, 3, 0, 0),
+                "date_to": datetime(2024, 1, 3, 23, 59),
+            }
+        )
+        self.assertFalse(closure.company_id)
+        self.assertEqual(leave.number_of_days, 4)
 
     def test_public_holidays_for_consecutive_allocations(self):
         employee = self.employee_emp

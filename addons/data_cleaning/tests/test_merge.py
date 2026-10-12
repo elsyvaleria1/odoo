@@ -1,4 +1,5 @@
 from odoo import Command
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tests.common import new_test_user
 
@@ -36,6 +37,49 @@ class TestMerge(test_common.TestCommon):
         group.merge_records()
         self.assertFalse(other_record.exists(), "record should be unlinked")
         self.assertEqual(ref.x_test_id, rec, "The reference should be to rec")
+
+    def _merge_pair_with_references(self, *references):
+        self._create_rule("x_name", "exact")
+        rec = self._create_record("x_dm_test_model", x_name="toto")
+        rec2 = self._create_record("x_dm_test_model", x_name="toto")
+        refs = [
+            self._create_record(
+                "x_dm_test_model_ref", x_name=name, x_test_id=(rec, rec2)[on_dup].id
+            )
+            for name, on_dup in references
+        ]
+        self.MyModel.find_duplicates()
+        group = self.env["data_merge.group"].search(
+            [("model_id", "=", self.MyModel.id)]
+        )
+        return rec, rec2, refs, group
+
+    def test_a_reference_that_would_duplicate_the_masters_refuses_the_merge(self):
+        self.env.cr.execute(
+            "CREATE UNIQUE INDEX x_dm_test_model_ref_name_uniq "
+            "ON x_dm_test_model_ref (x_test_id, x_name)"
+        )
+        _rec, rec2, refs, group = self._merge_pair_with_references(
+            ("same", False), ("same", True), ("only on the duplicate", True)
+        )
+        with self.assertRaisesRegex(UserError, "would duplicate"):
+            group.merge_records()
+        self.assertTrue(rec2.exists())
+        self.assertEqual(refs[1].x_test_id, rec2)
+        self.assertEqual(refs[2].x_test_id, rec2)
+
+    def test_the_automatic_merge_skips_a_group_a_reference_clash_refuses(self):
+        self.env.cr.execute(
+            "CREATE UNIQUE INDEX x_dm_test_model_ref_name_uniq "
+            "ON x_dm_test_model_ref (x_test_id, x_name)"
+        )
+        self.MyModel.write({"merge_mode": "automatic", "merge_threshold": 50})
+        _rec, rec2, refs, group = self._merge_pair_with_references(
+            ("same", False), ("same", True)
+        )
+        self.assertTrue(group, "the refused group stays for a manual decision")
+        self.assertTrue(rec2.exists())
+        self.assertEqual(refs[1].x_test_id, rec2)
 
     def test_generic_insensitive_rule(self):
         self._create_rule("x_name", "accent")

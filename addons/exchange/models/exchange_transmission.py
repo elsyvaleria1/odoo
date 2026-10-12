@@ -438,7 +438,6 @@ class ExchangeTransmission(models.Model):
                 "date_next_retry": fields.Datetime.now() + timedelta(seconds=delay),
             },
         )
-        channel._enqueue_send(delay=delay)
 
     def _get_next_retry(self, retry_after: int | None):
         if retry_after is None:
@@ -474,21 +473,21 @@ class ExchangeTransmission(models.Model):
 
 
     @api.model
+    def _get_due_domain(self, state: str = "queued") -> list:
+        return [
+            ("state", "=", state),
+            "|",
+            ("date_next_retry", "=", False),
+            ("date_next_retry", "<=", fields.Datetime.now()),
+        ]
+
+    @api.model
     def _cron_send_queued(self, limit: int = 100) -> None:
-        now = fields.Datetime.now()
-        self.search(
-            [
-                ("state", "=", "queued"),
-                "|",
-                ("date_next_retry", "=", False),
-                ("date_next_retry", "<=", now),
-            ],
-            limit=limit,
-        ).channel_id._enqueue_send()
+        self.search(self._get_due_domain(), limit=limit).channel_id._enqueue_send()
 
     @api.model
     def _cron_read_verdicts(self, limit: int = 100) -> None:
-        pending = self.search([("state", "=", "sent")], limit=limit)
+        pending = self.search(self._get_due_domain("sent"), limit=limit)
         for transmission in pending:
             try:
                 with self.env.cr.savepoint():

@@ -27,6 +27,7 @@ class MailNotification(models.Model):
     _rec_name = "res_partner_id"
     _log_access = False
     _description = "Message Notifications"
+    _merge_clash_policy = "drop"
     _access_anchors = frozendict(
         {
             "author": models.Anchor("author_id", kind="partner"),

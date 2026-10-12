@@ -142,6 +142,16 @@ class TestAccessLink(AccessLinkCase):
         self.assertNotEqual(waived, expiring)
         self.assertFalse(waived.date_to)
 
+    def test_an_expiring_request_is_never_answered_with_a_waived_link(self):
+        admin = self.env.ref("base.user_admin")
+        self.doc.sudo().reader_ids = admin
+        waived, _token = self.Link.with_user(admin)._issue(
+            self.doc.with_user(admin), waive_expiry=True
+        )
+        asked, _token = self._issue()
+        self.assertNotEqual(asked, waived)
+        self.assertTrue(asked.date_to)
+
     def test_each_record_gets_its_own_link_in_one_batch_and_gets_it_back(self):
         people = self.env["res.partner"].create(
             [{"name": "Invitee one"}, {"name": "Invitee two"}]

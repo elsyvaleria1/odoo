@@ -16,6 +16,10 @@ class TestBookingCapacity(TransactionCase):
             {
                 "name": "Constrained overbooking",
                 "booking_limit_percentage": 125,
+                "calendar_id": self.env["resource.calendar"]
+                .create({"name": "40h UTC", "tz": "UTC"})
+                .id,
+                "tz": "UTC",
             }
         )
         self.start = datetime(2030, 1, 7, 10)

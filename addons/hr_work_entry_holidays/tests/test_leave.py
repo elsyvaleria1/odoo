@@ -2,9 +2,11 @@ from datetime import date, datetime
 
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
+from psycopg import IntegrityError
 
 from odoo import SUPERUSER_ID
 from odoo.tests import tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.hr_work_entry_holidays.tests.common import TestWorkEntryHolidaysBase
 
@@ -36,6 +38,27 @@ class TestWorkEntryLeave(TestWorkEntryHolidaysBase):
             self.leave_type.work_entry_type_id,
             "it should have the corresponding work_entry type",
         )
+
+    def test_a_leave_the_database_rejects_keeps_its_error(self):
+        self.create_work_entry(
+            datetime(2019, 10, 10, 9, 0), datetime(2019, 10, 10, 12, 0)
+        )
+        backwards = {
+            "request_date_from": date(2019, 10, 11),
+            "request_date_to": date(2019, 10, 10),
+        }
+        with mute_logger("odoo.db"), self.assertRaises(IntegrityError):
+            self.env["hr.leave"].create(
+                {
+                    "name": "Backwards",
+                    "employee_id": self.richard_emp.id,
+                    "holiday_status_id": self.leave_type.id,
+                    **backwards,
+                }
+            )
+        leave = self.create_leave(date(2019, 10, 10), date(2019, 10, 11))
+        with mute_logger("odoo.db"), self.assertRaises(IntegrityError):
+            leave.write(backwards)
 
     def test_validate_leave_without_overlap(self):
         contract = self.richard_emp.version_id

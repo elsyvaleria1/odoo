@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from freezegun import freeze_time
 
@@ -544,6 +544,70 @@ class TestHolidaysOvertime(TransactionCase):
 
         holiday.unlink()
         self.assertEqual(attendance.overtime_hours, 0)
+
+    def test_a_shared_schedule_closure_added_after_the_attendance_reprices_it(self):
+        shared = self.env["resource.calendar"].create(
+            {"name": "Shared across companies", "company_id": False, "tz": "UTC"}
+        )
+        self.employee.resource_calendar_id = shared
+        attendance = self.new_attendance(
+            check_in=datetime(2021, 1, 5, 8), check_out=datetime(2021, 1, 5, 12)
+        )
+        self.assertEqual(attendance.overtime_hours, 0)
+
+        closure = (
+            self.env["resource.schedule.exception"]
+            .with_company(self.company)
+            .create(
+                {
+                    "name": "Shared closure",
+                    "calendar_id": shared.id,
+                    "date_from": datetime(2021, 1, 5),
+                    "date_to": datetime(2021, 1, 5, 23, 59, 59),
+                }
+            )
+        )
+        self.assertFalse(closure.company_id)
+        self.assertEqual(attendance.overtime_hours, 4)
+
+    def test_a_shared_schedule_closure_leaves_the_attendance_analysis(self):
+        shared = self.env["resource.calendar"].create(
+            {"name": "Shared across companies", "company_id": False, "tz": "UTC"}
+        )
+        closed_day = date.today() - timedelta(days=7)
+        closed_day -= timedelta(days=max(0, closed_day.weekday() - 4))
+        open_day = closed_day - timedelta(days=7)
+        employee = self.env["hr.employee"].create(
+            {
+                "name": "Shared schedule",
+                "company_id": self.company.id,
+                "resource_calendar_id": shared.id,
+            }
+        )
+        employee.version_id.write(
+            {
+                "date_version": open_day - timedelta(days=7),
+                "contract_date_start": open_day - timedelta(days=7),
+            }
+        )
+        closure = (
+            self.env["resource.schedule.exception"]
+            .with_company(self.company)
+            .create(
+                {
+                    "name": "Shared closure",
+                    "calendar_id": shared.id,
+                    "date_from": datetime.combine(closed_day, datetime.min.time()),
+                    "date_to": datetime.combine(closed_day, datetime.max.time()),
+                }
+            )
+        )
+        self.assertFalse(closure.company_id)
+        self.env.flush_all()
+        rows = self.env["hr.leave.attendance.report"].search(
+            [("employee_id", "=", employee.id), ("date", "in", [open_day, closed_day])]
+        )
+        self.assertEqual(rows.mapped("date"), [open_day])
 
     def test_overtime_approval_after_refusal(self):
         self.new_attendance(

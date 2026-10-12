@@ -2266,13 +2266,24 @@ class DocumentsDocument(models.Model):
             return res
         access_vals_list = []
         for doc, doc_copied in zip(self, res, strict=True):
-            taken = set(doc_copied._own_grants())
-            if doc_copied.owner_id:
-                taken.add(("partner", doc_copied.owner_id.partner_id.id, False))
-            doc_access_to_create = doc.access_ids.filtered(
-                lambda access, taken=taken: (
+            taken = {
+                (
                     self._grant_key(
                         access.partner_id, access.group_id, access.company_id
+                    ),
+                    access.cause_ref,
+                )
+                for access in doc_copied.access_ids
+            }
+            owner = doc_copied.owner_id.partner_id
+            doc_access_to_create = doc.access_ids.filtered(
+                lambda access, taken=taken, owner=owner: (
+                    not (owner and access.partner_id == owner)
+                    and (
+                        self._grant_key(
+                            access.partner_id, access.group_id, access.company_id
+                        ),
+                        access.cause_ref,
                     )
                     not in taken
                 )

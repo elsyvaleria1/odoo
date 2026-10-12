@@ -3,7 +3,7 @@ from datetime import UTC, datetime, time, timedelta
 from itertools import chain
 from typing import Self
 
-from psycopg import OperationalError
+from psycopg import DatabaseError
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
@@ -437,7 +437,7 @@ class HrWorkEntry(models.Model):
             siblings = self._reset_conflicts_between(start, stop, employee_ids)
         try:
             yield
-        except OperationalError:
+        except DatabaseError:
             siblings = self.browse()
             raise
         finally:

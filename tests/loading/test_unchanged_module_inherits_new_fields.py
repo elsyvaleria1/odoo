@@ -229,3 +229,52 @@ def test_an_unchanged_module_gets_the_index_an_upgraded_mixin_adds(
         subprocess.run(
             [dropdb_path(), "--if-exists", "--force", db], check=False, timeout=60
         )
+
+
+@pytest.mark.requires_pg
+@pytest.mark.requires_psql
+def test_an_unchanged_module_gets_the_index_a_base_mixin_declares(tmp_path_factory):
+    if not pg_reachable():
+        pytest.skip("no reachable PostgreSQL")
+    if dropdb_path() is None or psql_path() is None:
+        pytest.skip("psql/dropdb not on PATH")
+
+    extra = tmp_path_factory.mktemp("base_mixin_probe_addons")
+    addons = f"{REPO_ROOT / 'odoo' / 'addons'},{REPO_ROOT / 'addons'},{extra}"
+    data_dir = tmp_path_factory.mktemp("base_mixin_probe_data")
+    db = f"odoo_basemixinprobe_{uuid.uuid4().hex[:12]}"
+    child = "probe_catalog"
+    try:
+        _write(
+            extra,
+            child,
+            ["base"],
+            "from odoo import models\n\n\n"
+            "class ProbeCatalogEntry(models.Model):\n"
+            '    _name = "probe.catalog.entry"\n'
+            '    _inherit = ["mixin.catalog"]\n'
+            '    _description = "Inherits a mixin of base"\n',
+        )
+        run = _run_odoo_bin(db, addons, data_dir, "-i", f"base,{child}")
+        assert run.returncode == 0, run.stdout[-4000:]
+        run = _run_odoo_bin(db, addons, data_dir, "-u", "base")
+        assert run.returncode == 0, run.stdout[-4000:]
+        _get_rows(db, "DROP INDEX probe_catalog_entry_name_src_uniq")
+
+        run = _run_odoo_bin(db, addons, data_dir, "-u", "base")
+        assert run.returncode == 0, run.stdout[-4000:]
+        assert "unchanged modules left as installed" in run.stdout
+
+        assert _get_rows(
+            db,
+            "SELECT indexname FROM pg_indexes"
+            " WHERE tablename = 'probe_catalog_entry'"
+            " AND indexname = 'probe_catalog_entry_name_src_uniq'",
+        ) == {"probe_catalog_entry_name_src_uniq"}, (
+            "base is loaded in a pass of its own: the mixins it upgraded must "
+            "still reach the unchanged modules of the next pass"
+        )
+    finally:
+        subprocess.run(
+            [dropdb_path(), "--if-exists", "--force", db], check=False, timeout=60
+        )

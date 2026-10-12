@@ -175,6 +175,7 @@ def job[F: Callable[..., typing.Any]](
     max_retries: int = ...,
     max_defers: int = ...,
     idle_timeout: int | None = ...,
+    trailing_run: bool = ...,
 ) -> F: ...
 
 
@@ -188,6 +189,7 @@ def job(
     max_retries: int = ...,
     max_defers: int = ...,
     idle_timeout: int | None = ...,
+    trailing_run: bool = ...,
 ) -> Decorator: ...
 
 
@@ -200,6 +202,7 @@ def job(
     max_retries: int = 5,
     max_defers: int = 100,
     idle_timeout: int | None = None,
+    trailing_run: bool = False,
 ) -> Callable[..., typing.Any]:
 
     def decorate[F: Callable[..., typing.Any]](func: F) -> F:
@@ -217,6 +220,7 @@ def job(
                 "max_retries": max_retries,
                 "max_defers": max_defers,
                 "idle_timeout": idle_timeout,
+                "trailing_run": trailing_run,
             },
         )
 

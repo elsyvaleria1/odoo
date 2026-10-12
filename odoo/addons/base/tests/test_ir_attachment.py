@@ -948,6 +948,10 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
             ({"mimetype": "text/csv; charset=UTF-8"}, False),
             ({"mimetype": "text/csv; charset=x-nonsense"}, False),
             ({"mimetype": "text/csv", "charset": "euc-jp"}, "euc-jp"),
+            ({"mimetype": "text/csv", "charset": "LATIN1"}, "iso-8859-1"),
+            ({"mimetype": "text/csv", "charset": "mac_roman"}, "macintosh"),
+            ({"mimetype": "text/csv", "charset": "cp1251"}, "windows-1251"),
+            ({"mimetype": "text/csv; charset=utf_16_le"}, "utf-16le"),
             ({"mimetype": "text/csv"}, False),
         )
         for vals, charset in cases:
@@ -958,8 +962,55 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         attachment = Attachment.create(
             {"name": "x.csv", "raw": b"a", "mimetype": "text/csv; charset=latin-1"}
         )
+        attachment.mimetype = "text/plain"
+        self.assertEqual(attachment.charset, "iso-8859-1", "same bytes, same charset")
         attachment.raw = b"b"
         self.assertFalse(attachment.charset, "new bytes drop the old declaration")
+        copied = Attachment.create(
+            {"name": "x.csv", "raw": b"a", "mimetype": "text/csv; charset=latin-1"}
+        ).copy({"raw": b"c"})
+        self.assertFalse(copied.charset, "a copy with new bytes drops it too")
+
+    def test_served_charset_honours_what_the_bytes_cannot_tell(self):
+        environ = EnvironBuilder().get_environ()
+        late = b"code,city\n" * 7000 + f"7,Zürich {uuid.uuid4()}\n".encode("latin-1")
+        cases = (
+            (
+                f"plain notes {uuid.uuid4()}\n".encode("utf-16-le"),
+                "utf-16le",
+                "text/plain; charset=utf-16le",
+            ),
+            (late, None, "text/plain; charset=iso-8859-1"),
+            (
+                f"no mark {uuid.uuid4()} €\n".encode("utf-16-le"),
+                None,
+                "text/plain; charset=utf-16le",
+            ),
+        )
+        for raw, charset, content_type in cases:
+            with self.subTest(content_type=content_type):
+                vals = {"name": "notes.txt", "raw": raw, "mimetype": "text/plain"}
+                if charset:
+                    vals["charset"] = charset
+                attachment = self.Attachment.create(vals)
+                response = attachment._to_http_stream().prepare_response(
+                    environ=environ
+                )
+                self.assertEqual(response.headers["Content-Type"], content_type)
+
+    def test_a_declared_charset_decodes_the_index(self):
+        text = "Zażółć gęślą jaźń"
+        attachment = self.Attachment.create(
+            {
+                "name": "notatki.txt",
+                "mimetype": "text/plain",
+                "charset": "iso-8859-2",
+                "raw": text.encode("iso-8859-2"),
+            }
+        )
+        self.assertEqual(attachment.sudo().index_content, text)
+        attachment.write({"raw": text.encode("iso-8859-2"), "charset": "iso-8859-2"})
+        self.assertEqual(attachment.sudo().index_content, text)
 
     def test_to_http_stream_ignores_bin_size(self):
         payload = b"X" * 5000

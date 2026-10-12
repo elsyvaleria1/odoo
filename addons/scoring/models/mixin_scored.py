@@ -165,7 +165,7 @@ class MixinScored(models.AbstractModel):
         }
 
 
-    @api.job(channel="scoring.refresh")
+    @api.job(channel="scoring.refresh", trailing_run=True)
     def _score_refresh(self) -> None:
         env = self.env(su=True)
         subjects = self.with_env(env)
@@ -329,7 +329,7 @@ class MixinScored(models.AbstractModel):
                 identity_key=batch._score_job_identity_key("refresh")
             )._score_refresh()
 
-    @api.job(channel="scoring.refresh")
+    @api.job(channel="scoring.refresh", trailing_run=True)
     def _score_reclassify(self) -> None:
         for field_name in self._score_classification_fields():
             self.env.add_to_compute(self._fields[field_name], self)

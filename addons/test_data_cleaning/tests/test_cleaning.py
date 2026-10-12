@@ -205,7 +205,7 @@ class TestCleaning(test_common.TestCommon):
         note_html = (
             "h<b>e</b><i>l</i><marquee>lo</marquee> <script>alert('pownez')</script>"
         )
-        note_txt = "h*e* l lo  alert('pownez')"
+        note_txt = "h*e* l lo"
         rec = self._create_record("data_cleaning.test.model", note=note_html)
         self._create_record(
             "data_cleaning.test.model", note="1 is < than 2 and 2 is > than 1"

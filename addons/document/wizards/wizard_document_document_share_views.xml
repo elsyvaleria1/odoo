@@ -122,6 +122,11 @@
                                                     widget="documents_many2one_avatar" />
                                                 <span invisible="not is_inherited" class="text-muted small">From a folder above</span>
                                                 <field
+                                                    name="grant_cause"
+                                                    invisible="not grant_cause or is_inherited"
+                                                    readonly="1"
+                                                    class="text-muted small" />
+                                                <field
                                                     name="expiration_date"
                                                     widget="documents_datetime"
                                                     invisible="not expiration_date"

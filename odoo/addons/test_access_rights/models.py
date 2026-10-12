@@ -231,6 +231,7 @@ class Test_Access_RightGraphGrant(models.Model):
     _inherit = ["mixin.access.grant"]
     _description = "A grant on a tree node"
     _access_grant_names = AccessGrantNames(resource="node_id")
+    _access_grant_by_cause = True
 
     node_id = fields.Many2one(
         comodel_name="test_access_right.graph_node",

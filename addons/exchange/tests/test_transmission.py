@@ -218,6 +218,114 @@ class TestExchangeTransmission(ExchangeCase):
             "what the identity key buys",
         )
 
+    def test_a_transmission_queued_during_a_flush_gets_a_flush_after_it(self):
+        self.env["ir.job"].search([]).unlink()
+        self._add_transmission()
+        key = f"exchange.send:{self.channel.id}"
+        flushing = self.env["ir.job"].search([("identity_key", "=", key)])
+        self.env.cr.execute(
+            "UPDATE ir_job SET state = 'started' WHERE id = %s", [flushing.id]
+        )
+        self.env.invalidate_all()
+
+        self._add_transmission(
+            subject=self.env["res.partner"].create({"name": "Second"})
+        )
+
+        follow_up = self.env["ir.job"].search(
+            [("identity_key", "=", key), ("state", "=", "pending")]
+        )
+        self.assertEqual(
+            len(follow_up),
+            1,
+            "a flush that has already read its queue would leave the new "
+            "transmission behind",
+        )
+        self.assertNotEqual(follow_up, flushing)
+
+    def test_a_send_that_fails_inside_the_job_is_retried_once_due(self):
+        self.env["ir.job"].search([]).unlink()
+        transmission = self._add_transmission()
+        key = f"exchange.send:{self.channel.id}"
+        job = self.env["ir.job"].search([("identity_key", "=", key)])
+        protocol = type(self.env["exchange.protocol.demo"])
+
+        def fail(protocol, transmission, document):
+            raise ConnectionError("no route to host")
+
+        self.patch(protocol, "_send_message", fail)
+        with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
+            job.action_run_now()
+        self.assertEqual(transmission.state, "queued")
+        self.assertEqual(transmission.retry_count, 1)
+
+        self.assertTrue(
+            self.env.ref("exchange.cron_send_queued").active,
+            "the job's own enqueue of its key is dropped, so the sweep is what "
+            "brings a failed send back",
+        )
+        transmission.date_next_retry = "2000-01-01 00:00:00"
+        self.env["exchange.transmission"]._cron_send_queued()
+        self.assertEqual(
+            len(
+                self.env["ir.job"].search(
+                    [("identity_key", "=", key), ("state", "=", "pending")]
+                )
+            ),
+            1,
+        )
+
+    def test_the_job_leaves_a_transmission_that_is_backing_off(self):
+        backing_off = self._add_transmission()
+        backing_off.write({"retry_count": 1, "date_next_retry": "2999-01-01 00:00:00"})
+        fresh = self._add_transmission(
+            subject=self.env["res.partner"].create({"name": "Fresh"})
+        )
+
+        self.channel.with_context(
+            exchange_demo_script=self._accepted("NEW-1"),
+        )._job_send_queued()
+
+        self.assertEqual(fresh.state, "accepted")
+        self.assertEqual(
+            backing_off.state,
+            "queued",
+            "a send for another transmission is no reason to cut a backoff short",
+        )
+        self.assertEqual(backing_off.retry_count, 1)
+
+    def test_a_new_transmission_does_not_wait_out_another_ones_backoff(self):
+        failed = self._add_transmission()
+        self.env["ir.job"].search([]).unlink()
+        with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
+            self._send(failed, ConnectionError("down"))
+        self.assertEqual(failed.state, "queued")
+
+        self._add_transmission(
+            subject=self.env["res.partner"].create({"name": "Second"})
+        )
+
+        job = self.env["ir.job"].search(
+            [("identity_key", "=", f"exchange.send:{self.channel.id}")]
+        )
+        self.assertEqual(len(job), 1)
+        self.assertEqual(job.state, "pending")
+        self.assertFalse(job.eta)
+
+    def test_outstanding_verdicts_are_read_by_default(self):
+        self.assertTrue(self.env.ref("exchange.cron_read_verdicts").active)
+
+    def test_the_verdict_cron_waits_for_the_time_the_counterparty_asked_for(self):
+        transmission = self._add_transmission()
+        self._send(transmission, Verdict(state="sent", retry_after=3600))
+        self.assertTrue(transmission.date_next_retry)
+
+        self.env["exchange.transmission"].with_context(
+            demo_poll=self._accepted("EARLY"),
+        )._cron_read_verdicts()
+
+        self.assertEqual(transmission.state, "sent")
+
     def test_the_verdict_cron_only_touches_what_is_outstanding(self):
         outstanding = self._add_transmission()
         self._send(outstanding, self._sent("ACK-2"))

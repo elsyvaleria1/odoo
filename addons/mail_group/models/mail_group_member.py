@@ -9,6 +9,7 @@ _logger = logging.getLogger(__name__)
 class MailGroupMember(models.Model):
     _name = "mail.group.member"
     _description = "Mailing List Member"
+    _merge_clash_policy = "drop"
     _rec_name = "email"
     _access_anchors = frozendict(
         {

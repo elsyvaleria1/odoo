@@ -486,7 +486,7 @@ class AccessLink(models.Model):
                 & (
                     Domain("date_to", "=", date_to or False)
                     if date_to or waive_expiry
-                    else Domain.TRUE
+                    else Domain("expiry_waived", "=", False)
                 )
                 & self._live_domain(),
                 order="id desc",

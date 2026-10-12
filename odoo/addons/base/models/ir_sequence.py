@@ -4,7 +4,7 @@ from collections.abc import Collection
 from datetime import datetime, timedelta
 from typing import Any, Literal, Self
 
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 from odoo.api import ValuesType
 from odoo.db import get_or_create_row
 from odoo.exceptions import UserError, ValidationError
@@ -119,6 +119,16 @@ def _carry_over_pg_counters(counters: Any) -> None:
         ],
     )
     counters.invalidate_recordset(["number_next", "number_next_actual"])
+
+
+def _range_ids_given_a_counter(vals: dict[str, Any]) -> set[int]:
+    return {
+        command[1]
+        for command in vals.get("date_range_ids") or ()
+        if isinstance(command, (list, tuple))
+        and command[0] == Command.UPDATE
+        and {"number_next", "number_next_actual"} & command[2].keys()
+    }
 
 
 _INTERPOLATION_FORMATS = {
@@ -303,6 +313,7 @@ class IrSequence(models.Model):
 
     def write(self, vals: dict[str, Any]) -> bool:
         previous = {seq.id: (seq.implementation, seq.number_increment) for seq in self}
+        given_range_ids = _range_ids_given_a_counter(vals)
         res = super().write(vals)
         self.flush_model(vals.keys())
         for seq in self:
@@ -351,7 +362,11 @@ class IrSequence(models.Model):
                 )
                 if "number_next" not in vals and "number_next_actual" not in vals:
                     _carry_over_pg_counters(seq)
-                _carry_over_pg_counters(seq.date_range_ids)
+                _carry_over_pg_counters(
+                    seq.date_range_ids.filtered(
+                        lambda rng: rng.id not in given_range_ids
+                    )
+                )
                 _drop_sequences(
                     self.env,
                     [

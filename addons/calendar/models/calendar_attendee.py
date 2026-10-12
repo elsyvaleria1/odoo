@@ -23,6 +23,7 @@ class CalendarAttendee(models.Model):
     _inherit = ["mixin.calendar.privacy"]
     _rec_name = "common_name"
     _description = "Calendar Attendee Information"
+    _merge_clash_policy = "drop"
     _order = "create_date ASC"
     _search_visibility_fields = ("event_id",)
 

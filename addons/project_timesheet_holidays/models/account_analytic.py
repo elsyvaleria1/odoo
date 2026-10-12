@@ -31,6 +31,23 @@ class AccountAnalyticLine(models.Model):
         "(task_id) WHERE (global_leave_id IS NOT NULL OR holiday_id IS NOT NULL) AND project_id IS NOT NULL"
     )
 
+    @api.model
+    def _get_leave_booked_days(self, employee_ids, date_from, date_to) -> dict:
+        return {
+            employee.id: set(dates)
+            for employee, dates in self._read_group(
+                [
+                    ("holiday_id", "!=", False),
+                    ("project_id", "!=", False),
+                    ("employee_id", "in", employee_ids),
+                    ("date", ">=", date_from),
+                    ("date", "<=", date_to),
+                ],
+                ["employee_id"],
+                ["date:array_agg"],
+            )
+        }
+
     def _get_redirect_action(self):
         leave_form_view_id = self.env.ref("hr_holidays.hr_leave_view_form").id
         action_data = {

@@ -272,7 +272,7 @@ class WizardDocumentDocumentShare(models.TransientModel):
                     for document in self.document_ids:
                         access_url = document.access_url
                         member = document.access_ids.filtered_domain(
-                            [("partner_id", "=", partner.id)]
+                            [("partner_id", "=", partner.id), ("cause_ref", "=", False)]
                         )
                         if member and member._is_signup_available():
                             access_url = f"{access_url}?member_signup_token={member._get_member_signup_token()}&member_id={member.id}"
@@ -353,11 +353,12 @@ class WizardDocumentDocumentShare(models.TransientModel):
         ):
             all_partners |= documents.owner_id.partner_id
         for partner in all_partners:
-            role0, inherited0 = access_by_partner_by_doc[documents[0]].get(
-                partner, (None, False)
+            role0, inherited0, caused0 = access_by_partner_by_doc[documents[0]].get(
+                partner, (None, False, False)
             )
             is_mixed = any(
-                role0 != access_by_partner_by_doc[doc].get(partner, (None, False))[0]
+                role0
+                != access_by_partner_by_doc[doc].get(partner, (None, False, False))[0]
                 for doc in documents[1:]
             )
             expiration_date = (
@@ -371,6 +372,7 @@ class WizardDocumentDocumentShare(models.TransientModel):
                         "partner_id": partner.id,
                         "role": "mixed" if is_mixed else role0,
                         "is_inherited": not is_mixed and inherited0,
+                        "grant_cause": not is_mixed and caused0,
                     }
                 )
             )
@@ -444,19 +446,31 @@ class WizardDocumentDocumentShare(models.TransientModel):
         }
         if document.owner_id:
             own[document.owner_id.partner_id] = len(roles)
+        sources = document._access_graph_sources()
         above = document._source_ranks(
-            document._access_graph_sources(),
+            sources,
             lambda source: (
                 source["partner"] if source["partner"] and source["inherited"] else None
             ),
         )
-        return {
-            partner: (
-                roles[max(own.get(partner, 0), above.get(partner, 0)) - 1],
-                above.get(partner, 0) > own.get(partner, 0),
+        caused: dict = {}
+        for source in sources:
+            grant = source["grant"]
+            if source["partner"] and not source["inherited"] and grant.cause_ref:
+                rank = roles.index(source["role"]) + 1
+                if rank > caused.get(source["partner"], (0, False))[0]:
+                    caused[source["partner"]] = (rank, grant.cause)
+        members = {}
+        for partner in own.keys() | above.keys() | caused.keys():
+            mine = own.get(partner, 0)
+            caused_rank, cause = caused.get(partner, (0, False))
+            rank = max(mine, above.get(partner, 0), caused_rank)
+            members[partner] = (
+                roles[rank - 1],
+                above.get(partner, 0) > mine,
+                caused_rank > mine and cause,
             )
-            for partner in own.keys() | above.keys()
-        }
+        return members
 
     @api.model
     def _filtered_relevant_access(self, documents: models.Model) -> models.Model:
@@ -464,6 +478,7 @@ class WizardDocumentDocumentShare(models.TransientModel):
             lambda a: (
                 a.partner_id
                 and a.partner_id != a.document_id.owner_id.partner_id
+                and not a.cause_ref
                 and (not a.date_to or a.date_to > fields.Datetime.now())
             )
         )

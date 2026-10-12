@@ -145,3 +145,34 @@ class TestAvatarMixin(TransactionCase):
         self.assertEqual(
             partner._get_avatar_placeholder(), b64decode(partner.avatar_1920)
         )
+
+    def test_avatar_initial_is_the_composed_letter_after_any_stray_mark(self):
+        for name, initial in (
+            ("\u034fMarc", "M"),
+            ("\ufe0fMarc", "M"),
+            ("E\u0301mile", "\u00c9"),
+            ("\u1112\u1161\u11ab\u1100\u1161\u11bc", "\ud55c"),
+        ):
+            partner = self.env["res.partner"].create(
+                {"name": name, "image_1920": False}
+            )
+            root = etree.fromstring(b64decode(partner.avatar_1920))
+            text_node = root.find(".//{http://www.w3.org/2000/svg}text")
+            self.assertEqual(text_node.text, initial, repr(name))
+
+    def test_name_of_only_hangul_fillers_has_the_placeholder(self):
+        partner = self.env["res.partner"].create(
+            {"name": "\u3164\u3164", "image_1920": False}
+        )
+        self.assertEqual(
+            partner._get_avatar_placeholder(), b64decode(partner.avatar_1920)
+        )
+
+    def test_user_named_only_invisible_characters_keeps_no_generated_image(self):
+        user = self.env["res.users"].create(
+            {"name": "\u200e\u200f", "login": "invisible_name"}
+        )
+        self.assertFalse(user.image_1920)
+        self.assertEqual(
+            user.partner_id._get_avatar_placeholder(), b64decode(user.avatar_1920)
+        )

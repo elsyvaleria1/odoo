@@ -40,7 +40,7 @@ from odoo.tools import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 from .res_users_auth import PasswordStore, session_token
-from .res_users_grant import GROUP_STATE_COMPUTED, deriving, projecting
+from .res_users_grant import GROUP_STATE_COMPUTED, GroupReach, deriving, projecting
 from .res_users_login_cooldown import (
     LOGIN_DEVICE_BUDGET,
     LOGIN_DEVICE_COOKIE,
@@ -460,6 +460,30 @@ class ResUsers(models.Model):
     def _get_effective_group_ids(self) -> tuple[int, ...]:
         self.check_singleton()
         return self._get_group_ids() if self.id else self.all_group_ids._origin._ids
+
+    def _get_group_reach(self) -> tuple[GroupReach, GroupReach]:
+        self.check_singleton()
+        standing = dict(self.with_context(allowed_company_ids=None)._get_group_scopes())
+        grants = self._grant_model()
+        routes = grants.env["res.users.eligibility"].search(
+            [("user_id", "=", self.id), ("state", "=", "active")]
+        )
+        if grants._grants_available():
+            routes = [
+                *routes,
+                *grants.search(
+                    [("user_id", "=", self.id), ("state", "=", "scheduled")]
+                ),
+            ]
+        pending: GroupReach = {}
+        for route in routes:
+            scope = frozenset(route.company_ids._ids) or None
+            for group_id in route.group_id.all_implied_ids._ids:
+                held = pending.get(group_id, frozenset())
+                pending[group_id] = (
+                    None if held is None or scope is None else held | scope
+                )
+        return standing, pending
 
     def _password_store(self) -> PasswordStore:
         return PasswordStore(self.env)
@@ -1266,7 +1290,11 @@ class ResUsers(models.Model):
     def _update_missing_avatars(self) -> None:
         generated = 0
         for user in self:
-            if user.image_1920 or user.share or not (user.name or "").strip():
+            if (
+                user.image_1920
+                or user.share
+                or not user.partner_id._get_avatar_initial()
+            ):
                 continue
             generated += 1
             user.image_1920 = user.partner_id._prepare_avatar_svg()

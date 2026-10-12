@@ -839,6 +839,25 @@ class TestPartner(MailCommon):
         )
         self.assertTrue(all(msg in p2.message_ids for msg in all_msg))
 
+    @mute_logger("odoo.addons.base.merge")
+    def test_a_document_both_contacts_follow_keeps_one_follower(self):
+        Partner = self.env["res.partner"]
+        document = Partner.create({"name": "Followed Document"})
+        kept, merged = Partner.create(
+            [{"name": "Follower Kept"}, {"name": "Follower Merged Away"}]
+        )
+        document.message_subscribe(partner_ids=(kept + merged).ids)
+        self.env["wizard.res.partner.merge"].create({})._merge(
+            (kept + merged).ids, kept
+        )
+        self.assertFalse(merged.exists())
+        self.assertEqual(
+            document.message_follower_ids.partner_id.filtered(
+                lambda partner: partner.name.startswith("Follower")
+            ),
+            kept,
+        )
+
 
 @tagged("res_partner", "mail_tools")
 class TestThreadUnlinkRefused(MailCommon):

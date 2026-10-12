@@ -1,6 +1,6 @@
 {
     "name": "Time Off",
-    "version": "1.16",
+    "version": "1.17",
     "oldest_upgradable_version": "1.16",
     "category": "Human Resources/Time Off",
     "sequence": 85,

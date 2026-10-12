@@ -6,6 +6,7 @@ from odoo.fields import Domain
 class ResourceNationality(models.Model):
     _name = "resource.nationality"
     _description = "Nationality"
+    _merge_clash_policy = "absorb"
     _order = "sequence, id"
 
     partner_id = fields.Many2one(

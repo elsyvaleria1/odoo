@@ -1,5 +1,7 @@
 from odoo import api, fields, models
 
+from odoo.addons.base.models.mixin_access_graph import GRANT_CAUSES
+
 
 class WizardDocumentDocumentShareLine(models.TransientModel):
 
@@ -24,6 +26,12 @@ class WizardDocumentDocumentShareLine(models.TransientModel):
         string="From a folder above",
         help="The role reaches this document from a folder above it. Lowering it "
         "here stops what the folders above grant.",
+    )
+    grant_cause = fields.Selection(
+        selection=GRANT_CAUSES,
+        string="Granted by",
+        help="What else grants the role, for as long as it lasts: lowering or "
+        "removing the member here changes only the role shared by hand.",
     )
     expiration_date = fields.Datetime(string="Expiration")
     original_expiration_date = fields.Datetime(string="Original Expiration")

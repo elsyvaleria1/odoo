@@ -1,7 +1,5 @@
 import base64
-import codecs
 import contextlib
-import email.charset
 import email.message
 import functools
 import io
@@ -34,6 +32,8 @@ from odoo.libs.documents import (
     METERED,
     TEXT,
     Document,
+    charset_candidates,
+    charset_label,
     cues_as_text,
     fix_filename_extension,
 )
@@ -386,6 +386,7 @@ class IrAttachment(models.Model):
                         backend,
                         verify_collision=verify_collision,
                         index=self._is_content_index_required(values),
+                        charset=values["charset"] or None,
                     )
                 )
 
@@ -425,9 +426,12 @@ class IrAttachment(models.Model):
             self._check_res_field_access(res_model, res_field)
         vals, has_content = self._normalize_content_vals(vals)
         if has_content or "mimetype" in vals:
+            keeps_charset = not has_content and "charset" not in vals
             if "mimetype" not in vals:
                 vals["mimetype"] = self._get_mimetype_for_write(vals)
             vals = self._prepare_contents(vals)
+            if keeps_charset and not vals["charset"]:
+                del vals["charset"]
         _debug.lifecycle(
             "write", count=len(self), fields=list(vals), has_content=has_content
         )
@@ -455,6 +459,9 @@ class IrAttachment(models.Model):
                     vals["raw"] = attachment.raw
                     inlined += 1
             _debug.logic("copy_data", count=len(vals_list), inlined_raw=inlined)
+        elif "charset" not in default:
+            for vals in vals_list:
+                vals.pop("charset", None)
         return vals_list
 
     def copy(self, default: ValuesType | None = None) -> Self:
@@ -903,15 +910,16 @@ class IrAttachment(models.Model):
         *,
         verify_collision: bool,
         index: bool = True,
+        charset: str | None = None,
     ) -> dict[str, Any]:
         checksum = self._get_content_checksum(data)
-        key = (checksum, mimetype, index)
+        key = (checksum, mimetype, index, charset)
         cached = memo.get(key)
         if cached is not None and (not verify_collision or cached[0] == data):
             _debug.logic("content_memo_hit", checksum=checksum, size=len(data))
             return cached[1]
         vals = self._store_content(
-            data, mimetype, backend, checksum=checksum, index=index
+            data, mimetype, backend, checksum=checksum, index=index, charset=charset
         )
         memo[key] = (data, vals)
         return vals
@@ -924,6 +932,7 @@ class IrAttachment(models.Model):
         checksum: str | None = None,
         *,
         index: bool = True,
+        charset: str | None = None,
     ) -> dict[str, Any]:
         if checksum is None:
             checksum = self._get_content_checksum(data)
@@ -935,7 +944,11 @@ class IrAttachment(models.Model):
             checksum_given=checksum is not None,
         )
         index_vals = (
-            {"index_content": self._extract_index_content(data, mimetype)}
+            {
+                "index_content": self._extract_index_content(
+                    data, mimetype, charset=charset
+                )
+            }
             if index
             else {}
         )
@@ -1001,17 +1014,12 @@ class IrAttachment(models.Model):
             header = email.message.Message()
             header["Content-Type"] = mimetype
             declared = str(header.get_param("charset") or "")
-        label = declared.strip().lower()
-        if not label:
+        if not (declared := declared.strip()):
             return None
-        try:
-            codec = codecs.lookup(label).name
-        except LookupError:
-            _debug.logic("charset_ignored", declared=label, reason="unknown")
-            return None
-        if codec in ("utf-8", "ascii"):
-            return None
-        return email.charset.Charset(label).input_charset
+        label = charset_label(declared)
+        if label is None:
+            _debug.logic("charset_ignored", declared=declared, reason="unknown")
+        return None if label in ("utf-8", "ascii") else label
 
     def _get_mimetype_for_write(self, vals: dict[str, Any]) -> str:
         naming = {}
@@ -1507,6 +1515,7 @@ class IrAttachment(models.Model):
                 backend,
                 verify_collision=verify_collision,
                 index=index,
+                charset=attach.charset or None,
             )
             if not index:
                 vals = {**vals, "index_content": False}
@@ -1652,14 +1661,13 @@ class IrAttachment(models.Model):
         )
 
     @api.model
-    def _get_index_content(self, bin_data: bytes, file_type: str) -> str | None:
+    def _get_index_content(
+        self, bin_data: bytes, file_type: str, *, charset: str | None = None
+    ) -> str | None:
         if not (file_type and file_type.startswith("text/")):
             return None
         head = bin_data[: self._INDEX_MAX_BYTES]
-        try:
-            text = decode_text(head, final=len(head) == len(bin_data))
-        except UnicodeDecodeError:
-            text = head.decode("utf-8", errors="ignore")
+        text = self._decode_index_head(head, charset, final=len(head) == len(bin_data))
         limit = self._get_index_max_chars()
         if limit <= 0:
             _debug.logic("index_content_unbounded", mimetype=file_type, chars=len(text))
@@ -1677,8 +1685,24 @@ class IrAttachment(models.Model):
         return "\n".join(words)
 
     @api.model
-    def _extract_index_content(self, bin_data: bytes, mimetype: str) -> str | None:
-        index_content = self._get_index_content(bin_data, mimetype)
+    def _decode_index_head(
+        self, head: bytes, charset: str | None, *, final: bool
+    ) -> str:
+        for encoding in charset_candidates(charset) if charset else ():
+            try:
+                return decode_text(head, encoding, final=final)
+            except LookupError, UnicodeDecodeError:
+                continue
+        try:
+            return decode_text(head, final=final)
+        except UnicodeDecodeError:
+            return head.decode("utf-8", errors="ignore")
+
+    @api.model
+    def _extract_index_content(
+        self, bin_data: bytes, mimetype: str, *, charset: str | None = None
+    ) -> str | None:
+        index_content = self._get_index_content(bin_data, mimetype, charset=charset)
         if not index_content:
             return index_content
         limit = self._get_index_max_chars()
@@ -1908,7 +1932,9 @@ class IrAttachment(models.Model):
             elif db_datas := store_values.get("db_datas"):
                 content = db_datas if read_size is None else db_datas[:read_size]
             if not unreadable:
-                index_content = self._extract_index_content(content, record.mimetype)
+                index_content = self._extract_index_content(
+                    content, record.mimetype, charset=record.charset or None
+                )
         store_values["index_content"] = index_content
         _debug.lifecycle(
             "stream_stored",

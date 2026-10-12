@@ -300,8 +300,8 @@ class TestTimesheetHolidays(TestCommonTimesheet):
             ]
         )
 
-        timesheets.with_user(SUPERUSER_ID).unlink()
-        self.assertFalse(timesheets.exists(), "Timesheet should be deleted")
+        self.assertEqual(len(timesheets), 1, "the closure books the day once")
+        self.assertTrue(timesheets.global_leave_id)
 
     def test_timesheets_of_a_timeoff_reduced_to_zero_days_are_deleted(self):
         time_off = self.Requests.with_user(self.user_employee).create(

@@ -4,6 +4,7 @@ from odoo import fields, models
 class AccountFiscalPositionAccount(models.Model):
     _name = "account.fiscal.position.account"
     _description = "Accounts Mapping of Fiscal Position"
+    _merge_clash_policy = "drop"
     _rec_name = "position_id"
     _check_company_auto = True
     _check_company_domain = models.check_company_domain_parent_of

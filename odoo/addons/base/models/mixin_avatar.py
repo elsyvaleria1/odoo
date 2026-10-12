@@ -23,9 +23,19 @@ def _get_placeholder_image(path: str) -> bytes:
     return data
 
 
+# Hangul fillers are letters (Lo) that render as nothing.
+_INVISIBLE_LETTERS = frozenset("\u115f\u1160\u3164\uffa0")
+
+
 def _get_visible_initial(name: str) -> str:
     return next(
-        (char for char in name if unicodedata.category(char)[0] not in "CZ"), ""
+        (
+            char
+            for char in unicodedata.normalize("NFC", name)
+            if unicodedata.category(char)[0] not in "CMZ"
+            and char not in _INVISIBLE_LETTERS
+        ),
+        "",
     )
 
 
@@ -89,8 +99,7 @@ class MixinAvatar(models.AbstractModel):
             avatar = record[image_field]
             if not avatar:
                 fallbacks += 1
-                name = record[record._avatar_name_field]
-                generated = bool(record.id and name and _get_visible_initial(name))
+                generated = bool(record.id and record._get_avatar_initial())
                 _debug.logic(
                     "avatar_fallback",
                     model=record._name,
@@ -111,11 +120,12 @@ class MixinAvatar(models.AbstractModel):
             fallbacks=fallbacks,
         )
 
-    def _prepare_avatar_svg(self) -> bytes:
+    def _get_avatar_initial(self) -> str:
         self.check_singleton()
-        initial = html_escape(
-            _get_visible_initial(self[self._avatar_name_field] or "").upper()
-        )
+        return _get_visible_initial(self[self._avatar_name_field] or "")
+
+    def _prepare_avatar_svg(self) -> bytes:
+        initial = html_escape(self._get_avatar_initial().upper())
         _debug.logic(
             "avatar_svg_generated",
             model=self._name,

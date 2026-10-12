@@ -15,7 +15,16 @@ class TestHolidaysMail(TestHrHolidaysCommon, MailCase):
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.models")
     def test_email_sent_when_approved(self):
         with freeze_time("2022-01-15"):
-            self.env.ref("hr.employee_admin").tz = "Europe/Brussels"
+            admin = self.env.ref("hr.employee_admin")
+            admin.tz = "Europe/Brussels"
+            admin.user_id.company_ids |= self.external_company
+            self.env["hr.employee"].create(
+                {
+                    "name": "Mitchell Admin abroad",
+                    "user_id": admin.user_id.id,
+                    "company_id": self.external_company.id,
+                }
+            )
 
             holiday_status_paid_time_off = self.env["hr.leave.type"].create(
                 {
@@ -68,9 +77,7 @@ class TestHolidaysMail(TestHrHolidaysCommon, MailCase):
             with self.mock_mail_gateway():
                 leave.action_approve()
                 admin_emails = self._new_mails.filtered(
-                    lambda x: (
-                        x.partner_ids.employee_ids.id == self.ref("hr.employee_admin")
-                    )
+                    lambda mail: admin in mail.partner_ids.employee_ids
                 )
                 self.assertEqual(
                     len(admin_emails), 1, "Mitchell Admin should receive an email"

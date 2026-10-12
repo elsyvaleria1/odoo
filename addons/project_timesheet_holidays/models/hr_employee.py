@@ -123,6 +123,8 @@ class HrEmployee(models.Model):
                 calendars=len(work_hours_data),
             )
             for global_time_off in global_leaves:
+                if not global_time_off._books_time_off_for(employee):
+                    continue
                 leave_days = work_hours_data[employee.resource_calendar_id.id][
                     global_time_off.id
                 ]

@@ -94,6 +94,11 @@ class WizardResPartnerMerge(models.TransientModel):
     def _is_source_absorbed_on_merge(self) -> bool:
         return not self or self.absorb_source_values
 
+    def _get_merge_followed_fields(self) -> frozenset[str]:
+        # Its compute keeps a login its partner still holds, so recomputing it only
+        # links the login the merge moved onto the destination.
+        return super()._get_merge_followed_fields() | {"resource.resource.user_id"}
+
     def _get_merge_tables_excluded(self, model: str) -> set[str]:
         tables = super()._get_merge_tables_excluded(model)
         if model == "res.partner":
@@ -240,6 +245,18 @@ class WizardResPartnerMerge(models.TransientModel):
         dropped.unlink()
         kept.write({"partner_id": dst_partner.id})
 
+    @api.model
+    def _merge_access_claims(
+        self, src_partners: models.BaseModel, dst_partner: models.BaseModel
+    ) -> None:
+        for name, Model in self.env.registry.items():
+            if (
+                not Model._abstract
+                and not Model._transient
+                and getattr(Model, "_access_grant_names", None) is not None
+            ):
+                self.env[name]._merge_partner_claims(src_partners, dst_partner)
+
     def _get_unalterable_sources(
         self, src_partners: models.BaseModel
     ) -> dict[str, models.BaseModel]:
@@ -253,6 +270,46 @@ class WizardResPartnerMerge(models.TransientModel):
                 refused={reason: p.ids for reason, p in refused.items()},
             )
             raise UserError("\n".join(refused))
+
+    def _check_one_person_per_company(self, partners: models.BaseModel) -> None:
+        Resource = self.env["resource.resource"]
+        Resource.flush_model(["company_id", "name", "partner_id", "type"])
+        self.env["res.company"].flush_model(["partner_id"])
+        self.env["res.partner"].flush_model(["name"])
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT company_partner.name,
+                       array_agg(resource.name ORDER BY resource.id)
+                  FROM %s AS resource
+             LEFT JOIN res_company AS company ON company.id = resource.company_id
+             LEFT JOIN res_partner AS company_partner
+                    ON company_partner.id = company.partner_id
+                 WHERE resource.type = 'human'
+                   AND resource.partner_id = ANY(%s)
+              GROUP BY resource.company_id, company_partner.name
+                HAVING count(*) > 1
+                """,
+                SQL.identifier(Resource._table),
+                partners.ids,
+            )
+        )
+        if clashes := self.env.cr.fetchall():
+            _debug.logic(
+                "merge_refused", reason="one_person_per_company", partners=partners.ids
+            )
+            raise UserError(
+                self.env._(
+                    "You cannot merge these contacts: each of them has its own "
+                    "human resource in the same company, and a person is one "
+                    "human resource per company. Move one of these resources to "
+                    "another company, or delete it, first:\n%(clashes)s",
+                    clashes="\n".join(
+                        f"{company or self.env._('No company')}: {', '.join(names)}"
+                        for company, names in clashes
+                    ),
+                )
+            )
 
     def _merge(
         self,
@@ -284,6 +341,7 @@ class WizardResPartnerMerge(models.TransientModel):
                     "You cannot merge contacts linked to more than one user even if only one is active."
                 )
             )
+        self._check_one_person_per_company(partner_ids)
 
         anchored_ids = self._get_anchored_partner_ids()
         anchored = partner_ids.filtered(lambda partner: partner.id in anchored_ids)
@@ -346,6 +404,7 @@ class WizardResPartnerMerge(models.TransientModel):
             self._merge_phone_numbers(src_partners, dst_partner)
         self._merge_bank_accounts(src_partners, dst_partner)
         self._merge_identifiers(src_partners, dst_partner)
+        self._merge_access_claims(src_partners, dst_partner)
 
         with _debug.perf(
             "merge_repoint",

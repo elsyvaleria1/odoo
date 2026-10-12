@@ -79,12 +79,18 @@ class WizardResUsersSimulateAccess(models.TransientModel):
             user=principal,
             context={"allowed_company_ids": principal.company_ids.ids},
         )[self.model_name]
-        Mine = self.env[self.model_name]
-        mine = set(Mine.search(domain).ids)
-        theirs = set(Theirs.search(domain & Domain("id", "in", list(mine))).ids)
+        Mine = self.env[self.model_name].with_context(
+            allowed_company_ids=self.env.user.company_ids.ids
+        )
+        mine = Mine.search(domain).ids
+        theirs = set(
+            Theirs.with_context(active_test=False).search(Domain("id", "in", mine)).ids
+        )
         shared = sorted(theirs)
-        extra = sorted(mine - theirs)
-        hidden_count = Theirs.search_count(Domain("id", "not in", Mine._search([])))
+        extra = sorted(set(mine) - theirs)
+        hidden_count = Theirs.search_count(Domain.TRUE) - Theirs.search_count(
+            Domain("id", "in", Mine._search([]))
+        )
         self.write(
             {
                 "reached_count": len(shared) + hidden_count,

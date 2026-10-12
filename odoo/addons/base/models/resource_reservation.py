@@ -993,15 +993,19 @@ class ResourceReservation(models.Model):
             return result
         start = localized(start_dt).astimezone(UTC)
         stop = localized(end_dt).astimezone(UTC)
-        bookings = self._get_occupancy(
-            resources,
-            start,
-            stop,
+        kept = (
             Domain("id", "not in", reservations_to_ignore._origin.ids)
             if reservations_to_ignore
-            else None,
+            else Domain.TRUE
         )
-        enforced = bookings.filtered_domain(self._get_domain_enforced_booking())
+        enforced = self._get_occupancy(
+            resources, start, stop, kept & self._get_domain_enforced_booking()
+        )
+        bookings = (
+            self._get_occupancy(enforced.resource_id, start, stop, kept)
+            if enforced
+            else enforced
+        )
         by_resource = bookings.grouped("resource_id")
         for resource in resources:
             mine = by_resource.get(resource, bookings.browse())

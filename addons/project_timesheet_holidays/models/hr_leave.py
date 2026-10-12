@@ -18,6 +18,10 @@ class HrLeave(models.Model):
         self._create_timesheets()
         return super()._apply_leave_request()
 
+    def _reapply_after_schedule_change(self) -> None:
+        super()._reapply_after_schedule_change()
+        self._create_timesheets()
+
     def _create_timesheets(self, ignored_schedule_exceptions=None) -> None:
         vals_list = []
         leave_ids = []

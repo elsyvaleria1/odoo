@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.service.model import calling
@@ -150,6 +152,74 @@ class TestChangeset(TransactionCase):
                 self.admin
             ).implied_ids = [Command.link(implied.id)]
         self.assertIn(implied, self.readers.implied_ids, "a module's load")
+
+    def as_admin_request(self):
+        return patch.object(
+            self.env.transaction, "default_env", self.env(user=self.admin)
+        )
+
+    def test_nested_commands_into_a_group_stage_as_its_own_form_does(self):
+        implied = self.env.ref("base.group_partner_manager")
+        privilege = self.env["res.groups.privilege"].create({"name": "Probe area"})
+        self.readers.privilege_id = privilege
+        other = new_test_user(self.env, login="nested_other", groups="base.group_user")
+        link = {"implied_ids": [Command.link(implied.id)]}
+        doors = [
+            (
+                "res.groups.privilege",
+                privilege,
+                {"group_ids": [Command.update(self.readers.id, link)]},
+            ),
+            (
+                "res.partner",
+                other.partner_id,
+                {
+                    "user_ids": [
+                        Command.update(
+                            other.id,
+                            {"group_ids": [Command.update(self.readers.id, link)]},
+                        )
+                    ]
+                },
+            ),
+        ]
+        for door, record, vals in doors:
+            with self.subTest(door=door), self.as_admin_request(), calling(door):
+                record.with_user(self.admin).write(vals)
+                self.assertNotIn(implied, self.readers.implied_ids)
+        with self.as_admin_request(), calling("res.groups.privilege"):
+            created = (
+                self.env["res.groups.privilege"]
+                .with_user(self.admin)
+                .create(
+                    {
+                        "name": "Probe nested area",
+                        "group_ids": [Command.create({"name": "Probe nested", **link})],
+                    }
+                )
+                .group_ids
+            )
+        self.assertNotIn(implied, created.implied_ids)
+        self.changeset().action_activate()
+        self.assertIn(implied, self.readers.implied_ids)
+        self.assertIn(implied, created.implied_ids)
+
+    def test_a_group_created_with_an_implication_waits_for_its_change_set(self):
+        implied = self.env.ref("base.group_partner_manager")
+        with calling("res.groups"):
+            group = (
+                self.env["res.groups"]
+                .with_user(self.admin)
+                .create(
+                    {
+                        "name": "Probe created implying",
+                        "implied_ids": [Command.link(implied.id)],
+                    }
+                )
+            )
+        self.assertFalse(group.implied_ids)
+        self.changeset().action_activate()
+        self.assertEqual(group.implied_ids, implied)
 
     def test_the_model_form_and_an_import_stage_as_the_access_form_does(self):
         for door in ("ir.model", "base_import.import"):

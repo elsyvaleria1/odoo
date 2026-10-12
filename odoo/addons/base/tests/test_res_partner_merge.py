@@ -1234,11 +1234,33 @@ class TestMergePartnerRecomputesDependentsElsewhere(TransactionCase):
                 "    record['x_partner_choice'] = record.x_partner_id.name",
             }
         )
+        Fields.create(
+            {
+                "model_id": model.id,
+                "name": "x_partner_name",
+                "ttype": "char",
+                "store": True,
+                "readonly": False,
+                "related": "x_partner_id.name",
+            }
+        )
+        Fields.create(
+            {
+                "model_id": cls.env["ir.model"]._get_id("res.partner"),
+                "name": "x_tag_count",
+                "ttype": "integer",
+                "store": True,
+                "readonly": True,
+                "depends": "tag_ids",
+                "compute": "for record in self:\n"
+                "    record['x_tag_count'] = len(record.tag_ids)",
+            }
+        )
         cls.src = cls.env["res.partner"].create({"name": "Merged Away"})
         cls.dst = cls.env["res.partner"].create({"name": "Kept"})
 
-    def _merge(self):
-        self.env["wizard.res.partner.merge"].create({})._merge(
+    def _merge(self, **wizard_values):
+        self.env["wizard.res.partner.merge"].create(wizard_values)._merge(
             (self.dst + self.src).ids, self.dst
         )
         self.env.invalidate_all()
@@ -1263,3 +1285,188 @@ class TestMergePartnerRecomputesDependentsElsewhere(TransactionCase):
         self._merge()
         self.assertEqual(probe.x_partner_id, self.dst)
         self.assertEqual(probe.x_partner_choice, "chosen by hand")
+
+    def test_an_editable_related_field_follows_the_merge(self):
+        probe = self.env["x_merge_probe"].create({"x_partner_id": self.src.id})
+        self._merge(absorb_source_values=False)
+        self.assertEqual(probe.x_partner_id, self.dst)
+        self.assertEqual(probe.x_partner_name, "Kept")
+
+    def test_a_stored_compute_over_a_many2many_the_destination_gains_follows(self):
+        tag = self.env["res.partner.tag"].create({"name": "Carried Over"})
+        self.src.tag_ids = tag
+        self._merge()
+        self.assertEqual(self.dst.tag_ids, tag)
+        self.assertEqual(self.dst.x_tag_count, 1)
+
+    def test_the_destinations_resource_takes_the_login_the_merge_moves(self):
+        login = self.env["res.users"].create(
+            {
+                "name": "Merged Away",
+                "login": "merged_away_login",
+                "partner_id": self.src.id,
+                "group_ids": [Command.set(self.env.ref("base.group_user").ids)],
+            }
+        )
+        resource = self.env["resource.resource"].create(
+            {"partner_id": self.dst.id, "type": "human"}
+        )
+        self.assertFalse(resource.user_id)
+        self._merge()
+        self.assertEqual(self.dst.user_ids, login)
+        self.assertEqual(resource.user_id, login)
+
+
+@tagged("post_install", "-at_install")
+class TestMergePartnerOnePersonPerCompany(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.src, cls.dst = cls.env["res.partner"].create(
+            [
+                {"name": "Person Merged Away", "email": "person@example.com"},
+                {"name": "Person Kept", "email": "person@example.com"},
+            ]
+        )
+        cls.src_resource = cls.env["resource.resource"].create(
+            {"partner_id": cls.src.id, "type": "human"}
+        )
+
+    def _merge(self, partners):
+        self.env["wizard.res.partner.merge"].create({})._merge(partners.ids, self.dst)
+
+    def test_two_resources_in_one_company_refuse_the_merge_and_keep_their_data(self):
+        dst_resource = self.env["resource.resource"].create(
+            {"partner_id": self.dst.id, "type": "human"}
+        )
+        leave = self.env["resource.schedule.exception"].create(
+            {
+                "resource_id": self.src_resource.id,
+                "time_type_id": self.env["resource.time.type"].search([], limit=1).id,
+                "date_from": "2026-01-05 08:00:00",
+                "date_to": "2026-01-05 17:00:00",
+            }
+        )
+        with self.assertRaisesRegex(UserError, "one human resource per company"):
+            self._merge(self.src + self.dst)
+        self.assertTrue(self.src.exists())
+        self.assertEqual(self.src_resource.partner_id, self.src)
+        self.assertEqual(dst_resource.partner_id, self.dst)
+        self.assertTrue(leave.exists())
+
+    def test_two_sources_with_a_resource_in_one_company_refuse_the_merge(self):
+        other = self.env["res.partner"].create(
+            {"name": "Person Also Merged Away", "email": "person@example.com"}
+        )
+        self.env["resource.resource"].create({"partner_id": other.id, "type": "human"})
+        with self.assertRaisesRegex(UserError, "one human resource per company"):
+            self._merge(self.src + other + self.dst)
+
+    def test_resources_in_different_companies_are_carried_over(self):
+        company = self.env["res.company"].create({"name": "Person Other Co"})
+        dst_resource = self.env["resource.resource"].create(
+            {"partner_id": self.dst.id, "type": "human", "company_id": company.id}
+        )
+        self._merge(self.src + self.dst)
+        self.assertFalse(self.src.exists())
+        self.assertEqual(self.src_resource.partner_id, self.dst)
+        self.assertEqual(dst_resource.partner_id, self.dst)
+
+
+@tagged("post_install", "-at_install")
+class TestMergePartnerRowClash(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.src, cls.dst = cls.env["res.partner"].create(
+            [
+                {"name": "Clash Merged Away", "email": "clash@example.com"},
+                {"name": "Clash Kept", "email": "clash@example.com"},
+            ]
+        )
+
+    def _merge(self):
+        self.env["wizard.res.partner.merge"].create({})._merge(
+            (self.src + self.dst).ids, self.dst
+        )
+        self.env.invalidate_all()
+
+    def _create_clashing_table(self):
+        self.env.cr.execute(
+            """
+            CREATE TABLE test_merge_row_clash (
+                id serial PRIMARY KEY,
+                partner_id int REFERENCES res_partner (id) ON DELETE CASCADE,
+                topic int,
+                note varchar,
+                UNIQUE (partner_id, topic)
+            )
+            """
+        )
+
+    def _row_notes(self, partner):
+        self.env.cr.execute(
+            "SELECT note FROM test_merge_row_clash WHERE partner_id = %s ORDER BY id",
+            [partner.id],
+        )
+        return [note for (note,) in self.env.cr.fetchall()]
+
+    def test_a_row_with_data_the_destination_duplicates_refuses_the_merge(self):
+        self._create_clashing_table()
+        self.env.cr.execute(
+            "INSERT INTO test_merge_row_clash (partner_id, topic, note) VALUES "
+            "(%s, 1, 'kept'), (%s, 1, 'merged away'), (%s, 2, 'moved')",
+            [self.dst.id, self.src.id, self.src.id],
+        )
+        with self.assertRaisesRegex(
+            UserError,
+            r"test_merge_row_clash #\d+ would duplicate test_merge_row_clash #\d+",
+        ):
+            self._merge()
+        self.assertTrue(self.src.exists())
+        self.assertEqual(self._row_notes(self.src), ["merged away", "moved"])
+        self.assertEqual(self._row_notes(self.dst), ["kept"])
+
+    def test_the_automatic_process_skips_a_group_a_row_clash_refuses(self):
+        self._create_clashing_table()
+        self.env.cr.execute(
+            "INSERT INTO test_merge_row_clash (partner_id, topic, note) VALUES "
+            "(%s, 1, 'kept'), (%s, 1, 'merged away')",
+            [self.dst.id, self.src.id],
+        )
+        wizard = self.env["wizard.res.partner.merge"].create({"group_by_email": True})
+        with patch.object(self.env.cr, "commit"):
+            wizard.action_start_automatic_process()
+        self.env.invalidate_all()
+        self.assertTrue(self.src.exists())
+        self.assertEqual(self._row_notes(self.src), ["merged away"])
+
+    def test_a_nationality_both_hold_is_kept_once_with_the_details_of_both(self):
+        Nationality = self.env["resource.nationality"]
+        mexico = self.env.ref("base.mx")
+        kept = Nationality.create({"partner_id": self.dst.id, "country_id": mexico.id})
+        Nationality.create(
+            {
+                "partner_id": self.src.id,
+                "country_id": mexico.id,
+                "basis": "birth",
+                "date_acquired": "1990-05-01",
+            }
+        )
+        self._merge()
+        self.assertEqual(self.dst.nationality_ids, kept)
+        self.assertEqual(kept.basis, "birth")
+        self.assertEqual(str(kept.date_acquired), "1990-05-01")
+
+    def test_a_nationality_keeps_what_the_destination_recorded(self):
+        Nationality = self.env["resource.nationality"]
+        mexico = self.env.ref("base.mx")
+        kept = Nationality.create(
+            {"partner_id": self.dst.id, "country_id": mexico.id, "basis": "descent"}
+        )
+        Nationality.create(
+            {"partner_id": self.src.id, "country_id": mexico.id, "basis": "birth"}
+        )
+        self._merge()
+        self.assertEqual(self.dst.nationality_ids, kept)
+        self.assertEqual(kept.basis, "descent")

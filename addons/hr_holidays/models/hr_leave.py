@@ -1615,6 +1615,9 @@ Versions:
     def _remove_resource_leave(self):
         return self._sync_resource_leave(vals_list_by_leave={})
 
+    def _reapply_after_schedule_change(self) -> None:
+        self._create_resource_leave()
+
     def _apply_leave_request(self):
         holidays = self.filtered("employee_id")
         holidays.meeting_id.write({"active": False})

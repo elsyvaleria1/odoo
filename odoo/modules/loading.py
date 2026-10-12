@@ -840,10 +840,15 @@ class _PackageLoader:
                 )
         elif self.update_module and package.state != "to remove":
             model_names = registry.get_descendants(model_names, "_inherit", "_inherits")
-            self.models_to_check |= model_names & (
-                self.models_updated
-                | registry.get_descendants(self.schema_changing, "_inherit", "_inherits")
-            )
+            if "base" in self.schema_changing:
+                self.models_to_check |= model_names
+            else:
+                self.models_to_check |= model_names & (
+                    self.models_updated
+                    | registry.get_descendants(
+                        self.schema_changing, "_inherit", "_inherits"
+                    )
+                )
         elif self.update_module and package.state == "to remove":
             self.models_to_check |= model_names
 
@@ -1278,9 +1283,15 @@ def load_module_graph(
     install_demo: bool = True,
     run_tests: bool = True,
     migrations: MigrationManager | None = None,
+    models_updated: set[str] | None = None,
+    schema_changing: set[str] | None = None,
 ) -> None:
     if models_to_check is None:
         models_to_check = OrderedSet()
+    if models_updated is None:
+        models_updated = set()
+    if schema_changing is None:
+        schema_changing = set()
 
     registry = env.registry
     cr = env.cr
@@ -1302,8 +1313,6 @@ def load_module_graph(
     extra_queries_at_start = odoo.db.sql_counter
     cursor_queries_at_start = cr.sql_log_count
 
-    models_updated: set[str] = set()
-    schema_changing: set[str] = set()
     gc_cycles = 0
     skipped = 0
 
@@ -1533,11 +1542,13 @@ class _ModuleLoader:
         "install_modules",
         "migrations",
         "models_to_check",
+        "models_updated",
         "new_db_demo",
         "registry",
         "reinit_modules",
         "report",
         "run_tests",
+        "schema_changing",
         "update_module",
         "upgrade_modules",
     )
@@ -1564,6 +1575,8 @@ class _ModuleLoader:
         self.reinit_modules = reinit_modules
         self.new_db_demo = new_db_demo
         self.models_to_check = models_to_check
+        self.models_updated: set[str] = set()
+        self.schema_changing: set[str] = set()
         self.graph: ModuleGraph | None = None
         self.env: Environment | None = None
         self.report: OdooTestResult | None = None
@@ -1706,6 +1719,8 @@ class _ModuleLoader:
             install_demo=self.new_db_demo,
             run_tests=self.run_tests,
             migrations=self.migrations,
+            models_updated=self.models_updated,
+            schema_changing=self.schema_changing,
         )
 
     def load_languages(self) -> None:
@@ -1861,6 +1876,8 @@ class _ModuleLoader:
                 models_to_check=self.models_to_check,
                 run_tests=self.run_tests,
                 migrations=migrations,
+                models_updated=self.models_updated,
+                schema_changing=self.schema_changing,
             )
             if len(self.registry.updated_modules) == updated_modules_count:
                 _debug.logic(

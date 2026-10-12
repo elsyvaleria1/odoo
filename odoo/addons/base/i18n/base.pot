@@ -2277,6 +2277,17 @@ msgid "A job with the same identity key is already queued."
 msgstr ""
 
 #. module: base
+#: model:ir.model.constraint,message:base.constraint_ir_job_identity_running_uniq
+msgid "A job with the same identity key is already running."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_job.py:0
+msgid "A job with the same identity key is running; this one runs once it is over."
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,help:base.field_res_users_apikeys_scope__door_only
 msgid ""
 "A key of this scope opens its door and nothing else: at the universal RPC "
@@ -31607,6 +31618,11 @@ msgid "Is Deletable"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_ir_job__is_follow_up
+msgid "Is Follow Up"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_res_bank__is_public
 #: model:ir.model.fields,field_description:base.field_res_company__is_public
 #: model:ir.model.fields,field_description:base.field_res_partner__is_public
@@ -42075,6 +42091,13 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_attachment_reading__state__queued
 msgid "Queued"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_ir_job__is_follow_up
+msgid ""
+"Queued while a run with the same identity key was in progress: it runs once"
+" that run is over, and later callers join it."
 msgstr ""
 
 #. module: base

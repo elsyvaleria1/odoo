@@ -804,3 +804,20 @@ class TestPortfolioReport(CreditProfileCase):
         )
         self.assertEqual(row.amount_open, 0.0)
         self.assertEqual(row.expected_loss, 0.0)
+
+
+class TestProfileMerge(CreditProfileCase):
+    def test_merging_two_customers_with_a_profile_each_keeps_both(self):
+        kept = self._partner("Merge Kept", credit_grade_id=self.unconditional.id)
+        merged = self._partner("Merge Away", credit_grade_id=self.preferred.id)
+        profile = merged.sudo().credit_profile_id
+        review = profile._open_review("manual")
+        with self.assertRaisesRegex(UserError, "Credit Profile"):
+            self.env["wizard.res.partner.merge"].create({})._merge(
+                (kept + merged).ids, kept
+            )
+        self.assertTrue(merged.exists())
+        self.assertTrue(profile.exists())
+        self.assertEqual(profile.partner_id, merged)
+        self.assertEqual(profile.grade_id, self.preferred)
+        self.assertTrue(review.exists())

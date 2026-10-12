@@ -877,6 +877,7 @@ class DocumentsDocument(models.Model):
                 access.partner_id, access.group_id, access.company_id
             ): access
             for access in self.access_ids
+            if not access.cause_ref
         }
 
     def _update_access_boundary(self, excluded: set[tuple]) -> None:

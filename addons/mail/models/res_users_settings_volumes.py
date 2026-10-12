@@ -13,6 +13,7 @@ if typing.TYPE_CHECKING:
 class ResUsersSettingsVolumes(models.Model):
     _name = "res.users.settings.volumes"
     _description = "User Settings Volumes"
+    _merge_clash_policy = "drop"
     _access_anchors = frozendict(
         {
             "owner": "user_setting_id.user_id",

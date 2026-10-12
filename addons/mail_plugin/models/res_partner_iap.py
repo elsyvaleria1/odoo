@@ -4,6 +4,7 @@ from odoo import fields, models
 class ResPartnerIap(models.Model):
     _name = "res.partner.iap"
     _description = "Partner IAP"
+    _merge_clash_policy = "drop"
 
     partner_id = fields.Many2one(
         comodel_name="res.partner",

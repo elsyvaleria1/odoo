@@ -8,9 +8,17 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import Query, SetDefinitions
 
 from odoo.addons.base.models.mixin_catalog import name_uniq_index
-from odoo.addons.base.models.res_users_grant import is_deriving, projecting
+from odoo.addons.base.models.res_users_grant import (
+    GroupReach,
+    is_deriving,
+    projecting,
+)
 
 _debug = DebugLog(__name__)
+
+
+def _widens(before: frozenset[int] | None, after: frozenset[int] | None) -> bool:
+    return before is not None and (after is None or not after <= before)
 
 
 class ResGroups(models.Model):
@@ -368,8 +376,8 @@ class ResGroups(models.Model):
             if "user_ids" in vals and self.ids and not projecting()
             else None
         )
-        editor_groups = (
-            set(self.env.user._get_effective_group_ids())
+        editor_reach = (
+            self.env.user._get_group_reach()
             if "implied_ids" in vals
             and self.ids
             and not self.env.su
@@ -399,8 +407,8 @@ class ResGroups(models.Model):
             self.env.registry.clear_cache("groups")
             _debug.lifecycle("groups_cache_cleared", groups=self.ids, by="write")
 
-        if editor_groups is not None:
-            self._check_no_administrative_self_gain(editor_groups)
+        if editor_reach is not None:
+            self._check_no_administrative_self_gain(editor_reach)
 
         if "implied_ids" in vals and self.ids:
             self.env["ir.access.sod.rule"]._check_users(
@@ -424,13 +432,17 @@ class ResGroups(models.Model):
             groups |= self.env.ref(xmlid, raise_if_not_found=False) or self.browse()
         return set(groups.ids)
 
-    def _check_no_administrative_self_gain(self, before: set[int]) -> None:
-        gained = set(self.env.user._get_effective_group_ids()) - before
-        refused = gained & self._get_administrative_group_ids()
-        if refused:
-            _debug.logic(
-                "implication_refused", groups=self.ids, gained=sorted(refused)
-            )
+    def _check_no_administrative_self_gain(
+        self, before: tuple[GroupReach, GroupReach]
+    ) -> None:
+        widened = {
+            group_id
+            for was, now in zip(before, self.env.user._get_group_reach(), strict=True)
+            for group_id, scope in now.items()
+            if _widens(was.get(group_id, frozenset()), scope)
+        }
+        if widened and (refused := widened & self._get_administrative_group_ids()):
+            _debug.logic("implication_refused", groups=self.ids, gained=sorted(refused))
             raise AccessError(
                 self.env._(
                     "You cannot grant yourself %(group)s by changing what a group "

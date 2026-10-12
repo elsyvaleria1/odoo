@@ -21,6 +21,7 @@ class DocumentsAccess(models.Model):
     _description = "Document Grant"
     _log_access = False
     _access_grant_names = AccessGrantNames(resource="document_id")
+    _access_grant_by_cause = True
 
     document_id = fields.Many2one(
         comodel_name="document.document",
@@ -36,11 +37,12 @@ class DocumentsAccess(models.Model):
     )
 
     _unique_document_access_member = models.UniqueIndex(
-        "(document_id, partner_id) WHERE partner_id IS NOT NULL",
+        "(document_id, partner_id, COALESCE(cause_ref, '')) WHERE partner_id IS NOT NULL",
         "This partner is already set on this document.",
     )
     _unique_document_access_group = models.UniqueIndex(
-        "(document_id, group_id, COALESCE(company_id, 0)) WHERE group_id IS NOT NULL",
+        "(document_id, group_id, COALESCE(company_id, 0), COALESCE(cause_ref, '')) "
+        "WHERE group_id IS NOT NULL",
         "This group is already set on this document.",
     )
 

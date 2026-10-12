@@ -36,7 +36,8 @@ class WebClient(http.Controller):
         module_sets = request.env["ir.http"]._get_webclient_translation_modules()
         requested = sorted(set(mods.split(","))) if mods else None
         matched = next(
-            (modules for modules in module_sets if sorted(modules) == requested), None
+            (modules for modules in module_sets if sorted(set(modules)) == requested),
+            None,
         )
         if requested is not None and matched is None:
             _debug.logic("translations_mods_ignored", requested=len(requested))

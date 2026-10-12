@@ -48,18 +48,25 @@ class ResourceScheduleException(models.Model):
             self._get_domain_public_holidays(
                 min(dated.mapped("date_from")),
                 max(dated.mapped("date_to")),
-                companies=dated.company_id,
+                companies=(
+                    dated.company_id
+                    if all(record.company_id for record in dated)
+                    else None
+                ),
             )
         )
         for record in dated:
             if not record.resource_id:
                 existing_leaves = (all_existing_leaves - record).filtered_domain(
                     [
-                        ("company_id", "=", record.company_id.id),
                         ("date_to", ">", record.date_from),
                         ("date_from", "<", record.date_to),
                     ]
                 )
+                if record.company_id:
+                    existing_leaves = existing_leaves.filtered_domain(
+                        [("company_id", "in", [False, record.company_id.id])]
+                    )
                 if record.calendar_id:
                     existing_leaves = existing_leaves.filtered_domain(
                         [("calendar_id", "in", [False, record.calendar_id.id])]
@@ -73,11 +80,13 @@ class ResourceScheduleException(models.Model):
 
     def _get_domain_for_periods(self, time_domain_dict):
         return Domain.OR(
-            [
-                ("employee_company_id", "=", date["company_id"]),
-                ("date_to", ">", date["date_from"]),
-                ("date_from", "<", date["date_to"]),
-            ]
+            (
+                Domain("employee_company_id", "=", date["company_id"])
+                if date["company_id"] or not date["calendar_id"]
+                else Domain("resource_calendar_id", "=", date["calendar_id"])
+            )
+            & Domain("date_to", ">", date["date_from"])
+            & Domain("date_from", "<", date["date_to"])
             for date in time_domain_dict
         ) & Domain("state", "not in", ["refuse", "cancel"])
 
@@ -88,11 +97,14 @@ class ResourceScheduleException(models.Model):
             {tuple(sorted(entry.items())): entry for entry in time_domain_dict}.values()
         )
 
-        domain = self._get_domain_for_periods(time_domain_dict)
-        leaves = self.env["hr.leave"].search(domain)
+        self._reevaluate_leave_durations(
+            self.env["hr.leave"].search(self._get_domain_for_periods(time_domain_dict))
+        )
+
+    @api.model
+    def _reevaluate_leave_durations(self, leaves) -> None:
         if not leaves:
             return
-
         previous_durations = leaves.mapped("number_of_days")
         previous_states = leaves.mapped("state")
         self.env.add_to_compute(self.env["hr.leave"]._fields["number_of_days"], leaves)
@@ -135,7 +147,7 @@ class ResourceScheduleException(models.Model):
                 )
             if message:
                 leave._notify_change(message)
-        leaves_to_recreate.sudo()._create_resource_leave()
+        leaves_to_recreate.sudo()._reapply_after_schedule_change()
 
     @api.model
     def _on_schedule_changed(self, scopes) -> None:
@@ -144,6 +156,7 @@ class ResourceScheduleException(models.Model):
             [
                 {
                     "company_id": scope["company_id"],
+                    "calendar_id": scope["calendar_id"],
                     "date_from": scope["date_from"],
                     "date_to": scope["date_to"],
                 }

@@ -9,6 +9,7 @@
                 <field name="partner_id" />
                 <field name="role" />
                 <field name="date_to" />
+                <field name="cause" />
                 </list>
         </field>
     </record>

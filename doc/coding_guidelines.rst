@@ -4,8 +4,8 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.82
-:Date: 2026-10-11
+:Version: 7.83
+:Date: 2026-10-12
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
 
@@ -3612,9 +3612,20 @@ line** ``[review]``:
   integrations their own channel record instead of tuning priorities.
 * Chain with ``delayed(after=job)``, fan in by passing a union, collapse bursts
   with ``identity_key``. A deferral does not release dependents.
+* **A job that reads a queue or recomputes from current state is declared
+  ``@api.job(trailing_run=True)``** ``[review]``. An ``identity_key`` enqueue
+  joins the job of that key that has not started, which keeps the first
+  caller's arguments. One that finds the key *running* is dropped, unless the
+  job is a trailing run: then it queues one follow-up that starts once the run
+  is over, and later callers join the follow-up. The run may have read its
+  input before the caller committed, so a dropped enqueue strands that input
+  (``exchange.channel._job_send_queued``, ``mixin.scored._score_refresh``).
+  A trailing run's join also holds the queued row until the caller commits.
+  Leave it off a job whose key names one piece of work done once (the answer to
+  a message, a delivery, a document read): a follow-up would repeat it.
 * Defaults: ``channel="root"``, ``priority=10``, ``max_retries=5``,
-  ``max_defers=100``. ``idle_timeout=`` (seconds) lets a job's transaction idle
-  while it waits on an external party.
+  ``max_defers=100``, ``trailing_run=False``. ``idle_timeout=`` (seconds) lets
+  a job's transaction idle while it waits on an external party.
 * Ops: Settings → Technical → Automation → Background Jobs. Smoke test:
   ``env["ir.job"].delayed()._job_ping()``.
 
@@ -3632,8 +3643,9 @@ Deferrals spend ``max_defers``; exhausting it raises ``TerminalJobError``.
            self.env["ir.job"]._defer(600, reason="still preparing")
 
 Never use ``RetryableJobError`` for this (it rolls back the progress and spends a
-retry), and never re-enqueue from the body (the running job holds its
-``identity_key``, so the enqueue is dropped).
+retry), and never re-enqueue from the body: an enqueue of the running job's own
+``identity_key`` from inside it is dropped, trailing run or not, since each
+run's follow-up would queue the next one.
 
 2.9.15 JSON
 ~~~~~~~~~~~
@@ -6326,6 +6338,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.83
+     - 2026-10-12
+     - §2.9.14: ``@api.job(trailing_run=True)`` -- an ``identity_key`` enqueue
+       that finds its job running queues one follow-up instead of being
+       dropped; an enqueue from the running body itself still is.
    * - 7.82
      - 2026-10-11
      - ``test_pep649`` checks every framework module instead of a list of 31:

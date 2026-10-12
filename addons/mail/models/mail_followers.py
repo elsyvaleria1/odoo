@@ -169,6 +169,7 @@ class MailFollowers(models.Model):
     _name = "mail.followers"
     _log_access = False
     _description = "Document Followers"
+    _merge_clash_policy = "drop"
 
     res_model = fields.Char(
         string="Related Document Model Name",

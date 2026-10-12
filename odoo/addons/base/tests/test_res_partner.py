@@ -2733,6 +2733,131 @@ class TestPartnerRecursion(TransactionCase):
 
 
 @tagged("res_partner")
+class TestPartnerChildCompany(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Partner = cls.env["res.partner"]
+        cls.company_a = cls.env.ref("base.main_company")
+        cls.company_b = cls.env["res.company"].create({"name": "Child Co B"})
+        cls.parent_b = cls.Partner.create(
+            {"name": "Parent B", "is_company": True, "company_id": cls.company_b.id}
+        )
+        cls.user_a = new_test_user(
+            cls.env,
+            login="child_company_user_a",
+            groups="base.group_user",
+            company_id=cls.company_a.id,
+            company_ids=[Command.set([cls.company_a.id])],
+        )
+
+    def assertHiddenFromCompanyA(self, partners):
+        self.assertFalse(
+            self.Partner.with_user(self.user_a).search([("id", "in", partners.ids)])
+        )
+
+    def test_a_contact_created_under_a_parent_takes_its_company(self):
+        kids = self.Partner.create(
+            [
+                {"name": "kid", "parent_id": self.parent_b.id},
+                {"name": "kid too", "parent_id": self.parent_b.id},
+            ]
+        )
+        self.assertEqual(kids.company_id, self.company_b)
+        self.assertHiddenFromCompanyA(kids)
+
+    def test_contacts_created_through_child_ids_take_the_parent_company(self):
+        parent = self.Partner.create(
+            {
+                "name": "Parent With Kids",
+                "is_company": True,
+                "company_id": self.company_b.id,
+                "child_ids": [Command.create({"name": "kid2"})],
+            }
+        )
+        self.parent_b.write({"child_ids": [Command.create({"name": "kid2 bis"})]})
+        kids = parent.child_ids | self.parent_b.child_ids
+        self.assertEqual(len(kids), 2)
+        self.assertEqual(kids.company_id, self.company_b)
+
+    def test_imported_contacts_take_their_parent_company(self):
+        result = self.Partner.load(
+            ["name", "parent_id/.id"], [["kid3", str(self.parent_b.id)]]
+        )
+        kid = self.Partner.browse(result["ids"])
+        self.assertEqual(kid.company_id, self.company_b)
+
+    def test_a_parent_company_beats_a_context_default(self):
+        kid = self.Partner.with_context(default_company_id=self.company_a.id).create(
+            {"name": "kid4", "parent_id": self.parent_b.id}
+        )
+        self.assertEqual(kid.company_id, self.company_b)
+
+    def test_an_explicit_company_is_kept(self):
+        shared_parent = self.Partner.create({"name": "Shared", "is_company": True})
+        kid = self.Partner.create(
+            {
+                "name": "kid5",
+                "parent_id": shared_parent.id,
+                "company_id": self.company_b.id,
+            }
+        )
+        self.assertEqual(kid.company_id, self.company_b)
+        moved = self.Partner.create({"name": "moved", "company_id": False})
+        moved.write({"parent_id": self.parent_b.id, "company_id": self.company_a.id})
+        self.assertEqual(moved.company_id, self.company_a)
+
+    def test_a_contact_moved_under_a_parent_takes_its_company_with_its_tree(self):
+        contact = self.Partner.create(
+            {"name": "Mover", "company_id": self.company_a.id}
+        )
+        child = self.Partner.create({"name": "Mover Jr", "parent_id": contact.id})
+        archived = self.Partner.create({"name": "Mover Gone", "parent_id": child.id})
+        archived.action_archive()
+        self.assertEqual((child | archived).company_id, self.company_a)
+
+        contact.write({"parent_id": self.parent_b.id})
+
+        self.assertEqual(
+            (contact | child | archived).with_context(active_test=False).company_id,
+            self.company_b,
+        )
+        self.assertHiddenFromCompanyA(contact | child)
+
+    def test_a_contact_moved_under_a_shared_parent_becomes_shared(self):
+        shared_parent = self.Partner.create({"name": "Shared Co", "is_company": True})
+        contact = self.Partner.create(
+            {"name": "Restricted", "company_id": self.company_b.id}
+        )
+        contact.parent_id = shared_parent
+        self.assertFalse(contact.company_id)
+
+    def test_detaching_a_contact_keeps_its_company(self):
+        kid = self.Partner.create({"name": "kid6", "parent_id": self.parent_b.id})
+        kid.parent_id = False
+        self.assertEqual(kid.company_id, self.company_b)
+
+    def test_a_user_contact_cannot_move_under_a_parent_of_another_company(self):
+        user = new_test_user(
+            self.env,
+            login="child_company_user_move",
+            groups="base.group_user",
+            company_id=self.company_a.id,
+            company_ids=[Command.set([self.company_a.id])],
+        )
+        with self.assertRaises(UserError):
+            user.partner_id.write({"parent_id": self.parent_b.id})
+
+    def test_a_parent_created_from_a_name_keeps_the_contact_company(self):
+        contact = self.Partner.create(
+            {"name": "Named Contact", "company_id": self.company_b.id}
+        )
+        parent = contact._create_parent_from_name("Named Co")
+        self.assertEqual(parent.company_id, self.company_b)
+        self.assertEqual(contact.company_id, self.company_b)
+
+
+@tagged("res_partner")
 class TestPartnerCategory(TransactionCase):
     def test_name_search(self):
         category = self.env["res.partner.tag"].create({"name": "buggy_test"})

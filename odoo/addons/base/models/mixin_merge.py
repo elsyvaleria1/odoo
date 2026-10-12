@@ -2,12 +2,13 @@ import itertools
 import logging
 from collections import defaultdict
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, Literal
 
 import psycopg
 
 from odoo import api, models
 from odoo.db import schema as sql_tools
+from odoo.exceptions import UserError
 from odoo.fields import Field
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
@@ -22,6 +23,12 @@ def _is_searchable_reference_pair(model, field) -> bool:
         return False
     name_field = model._fields.get(field.model_field)
     return name_field is not None and name_field._description_searchable
+
+
+class Base(models.AbstractModel):
+    _inherit = "base"
+
+    _merge_clash_policy: Literal["refuse", "drop", "absorb"] = "refuse"
 
 
 class MixinMerge(models.AbstractModel):
@@ -149,7 +156,7 @@ class MixinMerge(models.AbstractModel):
 
         relations = self._get_relations_to_repoint(model)
         to_recompute = self._get_repointed_records_with_dependents(
-            model, relations, src_records
+            model, relations, src_records, dst_record
         )
 
         self.env.invalidate_all()
@@ -175,35 +182,41 @@ class MixinMerge(models.AbstractModel):
         self, records: models.BaseModel, fnames: list[str]
     ) -> None:
         # A merge swaps a link to an equivalent record: values derived from the
-        # link follow it, values a user chose through an editable compute stay.
+        # link follow it (an editable related field too: it mirrors its target),
+        # values a user chose through an editable compute stay.
         scheduler = self.env.core.new_scheduler()
         records._modified_trigger_loop(fnames, False, scheduler)
-        kept = []
+        followed = self._get_merge_followed_fields()
+        recomputed, kept = [], []
         for field, ids in scheduler.to_recompute.items():
-            if field.readonly:
+            if field.readonly or field.related or str(field) in followed:
                 self.env.add_to_compute(field, self.env[field.model_name].browse(ids))
+                recomputed.append(str(field))
             else:
                 kept.append(str(field))
         _debug.logic(
             "merge_dependents_recomputed",
             model=records._name,
             links=fnames,
-            recomputed=sorted(
-                str(field) for field in scheduler.to_recompute if field.readonly
-            ),
+            recomputed=sorted(recomputed),
             kept_editable=sorted(kept),
         )
+
+    def _get_merge_followed_fields(self) -> frozenset[str]:
+        return frozenset()
 
     def _get_repointed_records_with_dependents(
         self,
         model: str,
         relations: list[tuple[str, str]],
         src_records: models.BaseModel,
+        dst_record: models.BaseModel,
     ) -> list[tuple[models.BaseModel, list[str]]]:
         has_dependents = self.env.registry.get_trigger_tree
         repointed = set(relations)
         columns_by_model: dict[str, list[str]] = defaultdict(list)
         joins: list[Field] = []
+        gained: list[str] = []
         for other in self.env.values():
             if other._abstract or not other._is_an_ordinary_table():
                 continue
@@ -212,14 +225,21 @@ class MixinMerge(models.AbstractModel):
                     continue
                 if (other._table, field.name) in repointed and field.column_type:
                     columns_by_model[other._name].append(field.name)
-                elif (
-                    field.type == "many2many"
-                    and field.comodel_name == model
+                    continue
+                if field.type != "many2many":
+                    continue
+                if (
+                    field.comodel_name == model
                     and (field.relation, field.column2) in repointed
                 ):
                     joins.append(field)
+                if (
+                    other._name == model
+                    and (field.relation, field.column1) in repointed
+                ):
+                    gained.append(field.name)
 
-        to_recompute = []
+        to_recompute = [(dst_record, gained)] if gained else []
         for model_name, columns in columns_by_model.items():
             Other = self.env[model_name]
             Other.flush_model(columns)
@@ -254,6 +274,7 @@ class MixinMerge(models.AbstractModel):
             model=model,
             models=sorted(columns_by_model),
             joins=[str(field) for field in joins],
+            gained=gained,
             records=sum(len(records) for records, _fnames in to_recompute),
         )
         return to_recompute
@@ -409,6 +430,7 @@ class MixinMerge(models.AbstractModel):
             by="row",
             rows=len(row_ids),
         )
+        Model = self._get_model_on_table(table)
         for row_id in row_ids:
             try:
                 with mute_logger("odoo.db"), self.env.cr.savepoint():
@@ -422,6 +444,17 @@ class MixinMerge(models.AbstractModel):
                         )
                     )
             except psycopg.Error as error:
+                if not self._resolve_merge_clash(
+                    Model,
+                    table,
+                    column,
+                    row_id,
+                    dst_record.id,
+                    error,
+                    src_records,
+                    dst_record,
+                ):
+                    continue
                 _logger.warning(
                     "Merging %s into %s: re-pointing %s.%s row %s failed (%s); "
                     "dropping only that clashing row",
@@ -433,6 +466,197 @@ class MixinMerge(models.AbstractModel):
                     error.__class__.__name__,
                 )
                 self.env.cr.execute(SQL("DELETE FROM %s WHERE id = %s", tbl, row_id))
+
+    def _get_model_on_table(self, table: str) -> models.BaseModel | None:
+        return next(
+            (
+                model
+                for model in self.env.values()
+                if model._table == table
+                and not model._abstract
+                and model._is_an_ordinary_table()
+            ),
+            None,
+        )
+
+    def _get_merge_clash_twin(
+        self, table: str, column: str, row_id: int, value: Any, error: psycopg.Error
+    ) -> int | None:
+        if not isinstance(error, psycopg.errors.UniqueViolation):
+            return None
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT array_agg(a.attname::text)
+                  FROM pg_index i
+                  JOIN pg_class c ON c.oid = i.indexrelid
+                  JOIN pg_attribute a
+                    ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                 WHERE c.relname = %s
+                   AND c.relnamespace = current_schema::regnamespace
+                   AND i.indexprs IS NULL
+                """,
+                error.diag.constraint_name,
+            )
+        )
+        keys = self.env.cr.fetchone()[0] or []
+        if column not in keys:
+            return None
+        tbl = SQL.identifier(table)
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT twin.id
+                  FROM %s AS twin, %s AS clashing
+                 WHERE clashing.id = %s
+                   AND twin.id != clashing.id
+                   AND twin.%s = %s
+                   AND %s
+                 LIMIT 1
+                """,
+                tbl,
+                tbl,
+                row_id,
+                SQL.identifier(column),
+                value,
+                SQL(" AND ").join(
+                    SQL(
+                        "twin.%s IS NOT DISTINCT FROM clashing.%s",
+                        SQL.identifier(key),
+                        SQL.identifier(key),
+                    )
+                    for key in keys
+                    if key != column
+                )
+                or SQL("TRUE"),
+            )
+        )
+        twin = self.env.cr.fetchone()
+        return twin[0] if twin else None
+
+    def _absorb_merge_clash(
+        self, Model: models.BaseModel, column: str, row_id: int, twin_id: int
+    ) -> bool:
+        fnames = [
+            name
+            for name, field in Model._fields.items()
+            if field.store
+            and field.column_type
+            and not (field.compute and field.readonly)
+            and name not in models.MAGIC_COLUMNS
+            and name != column
+        ]
+        tbl = SQL.identifier(Model._table)
+        try:
+            with mute_logger("odoo.db"), self.env.cr.savepoint(flush=False):
+                if fnames:
+                    self.env.cr.execute(
+                        SQL(
+                            "UPDATE %s AS twin SET %s FROM %s AS clashing "
+                            "WHERE twin.id = %s AND clashing.id = %s",
+                            tbl,
+                            SQL(", ").join(
+                                SQL(
+                                    "%s = COALESCE(twin.%s, clashing.%s)",
+                                    SQL.identifier(name),
+                                    SQL.identifier(name),
+                                    SQL.identifier(name),
+                                )
+                                for name in fnames
+                            ),
+                            tbl,
+                            twin_id,
+                            row_id,
+                        )
+                    )
+                self.env.cr.execute(SQL("DELETE FROM %s WHERE id = %s", tbl, row_id))
+        except psycopg.Error:
+            return False
+        _debug.logic(
+            "merge_clash_absorbed", model=Model._name, row=row_id, twin=twin_id
+        )
+        Model.browse(twin_id).modified(fnames)
+        return True
+
+    def _resolve_merge_clash(
+        self,
+        Model: models.BaseModel | None,
+        table: str,
+        column: str,
+        row_id: int,
+        value: Any,
+        error: psycopg.Error,
+        src_records: models.BaseModel,
+        dst_record: models.BaseModel,
+    ) -> bool:
+        policy = Model._merge_clash_policy if Model is not None else "refuse"
+        _debug.logic(
+            "merge_clash",
+            table=table,
+            column=column,
+            row=row_id,
+            policy=policy,
+            error=error.__class__.__name__,
+        )
+        if policy == "drop":
+            return True
+        twin_id = self._get_merge_clash_twin(table, column, row_id, value, error)
+        if (
+            policy == "absorb"
+            and twin_id
+            and self._absorb_merge_clash(Model, column, row_id, twin_id)
+        ):
+            return False
+        raise self._get_merge_clash_error(
+            Model, table, row_id, twin_id, error, src_records, dst_record
+        )
+
+    def _get_merge_clash_error(
+        self,
+        Model: models.BaseModel | None,
+        table: str,
+        row_id: int,
+        twin_id: int | None,
+        error: psycopg.Error,
+        src_records: models.BaseModel,
+        dst_record: models.BaseModel,
+    ) -> UserError:
+        def describe(record: models.BaseModel) -> str:
+            if record._filtered_access("read"):
+                return f"{record._description} “{record.display_name}”"
+            return f"{record._description} #{record.id}"
+
+        def describe_row(row_id: int) -> str:
+            if Model is None:
+                return f"{table} #{row_id}"
+            return describe(Model.browse(row_id))
+
+        clashing = describe_row(row_id)
+        if Model is not None and error.diag.constraint_name in Model._table_objects:
+            clashing += f" ({Model._sql_error_to_message(error)})"
+        args = {
+            "sources": ", ".join(describe(src) for src in src_records),
+            "destination": describe(dst_record),
+            "record": clashing,
+        }
+        if twin_id:
+            return UserError(
+                self.env._(
+                    "You cannot merge %(sources)s into %(destination)s: %(record)s "
+                    "would duplicate %(twin)s, and merging would delete it with "
+                    "the data it holds. Merge or delete one of them first.",
+                    twin=describe_row(twin_id),
+                    **args,
+                )
+            )
+        return UserError(
+            self.env._(
+                "You cannot merge %(sources)s into %(destination)s: %(record)s "
+                "cannot follow the merge, and merging would delete it with the "
+                "data it holds. Change or delete it first.",
+                **args,
+            )
+        )
 
     @api.model
     def _update_reference_fields_generic(
@@ -573,6 +797,17 @@ class MixinMerge(models.AbstractModel):
                     record.write({field_id: dst_record.id})
                     record.env.flush_all()
             except psycopg.Error as error:
+                if not self._resolve_merge_clash(
+                    self.env[record._name],
+                    record._table,
+                    field_id,
+                    record.id,
+                    dst_record.id,
+                    error,
+                    src_records,
+                    dst_record,
+                ):
+                    continue
                 _logger.warning(
                     "Merging %s into %s: re-pointing %s#%s.%s failed (%s); "
                     "dropping only that clashing row",
@@ -662,6 +897,17 @@ class MixinMerge(models.AbstractModel):
                     rec.sudo().write({declaration.name: new_value})
                     rec.env.flush_all()
             except psycopg.Error as error:
+                if not self._resolve_merge_clash(
+                    self.env[rec._name],
+                    rec._table,
+                    declaration.name,
+                    rec.id,
+                    new_value,
+                    error,
+                    src_records,
+                    dst_record,
+                ):
+                    continue
                 _logger.warning(
                     "Merging %s into %s: re-pointing %s.%s failed (%s), "
                     "deleting %s#%s to keep the reference consistent",

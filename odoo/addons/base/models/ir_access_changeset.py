@@ -32,6 +32,12 @@ _APPLYING: contextvars.ContextVar[bool] = contextvars.ContextVar(
 _MOVING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "ir_access_changeset_moving", default=False
 )
+_NESTED: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "ir_access_changeset_nested", default=False
+)
+COMODEL_WRITING_COMMANDS = frozenset(
+    {fields.Command.CREATE, fields.Command.UPDATE, fields.Command.DELETE}
+)
 LIFECYCLE_FIELDS = frozenset(
     {
         "author_id",
@@ -77,12 +83,60 @@ def staging(env: api.Environment) -> bool:
         or _APPLYING.get()
         or env.context.get("install_module")
         or env.context.get(MODULE_UNINSTALL_FLAG)
-        or called_model() not in STAGING_ENTRIES
+        or (called_model() not in STAGING_ENTRIES and not _NESTED.get())
     )
+
+
+@contextlib.contextmanager
+def nesting() -> Iterator[None]:
+    token = _NESTED.set(True)
+    try:
+        yield
+    finally:
+        _NESTED.reset(token)
 
 
 class _Discard(Exception):
     pass
+
+
+class Base(models.AbstractModel):
+    _inherit = "base"
+
+    @api.model_create_multi
+    def create(self, vals_list: list[ValuesType]) -> Self:
+        if not self._access_staged_commands(vals_list):
+            return super().create(vals_list)
+        with nesting():
+            return super().create(vals_list)
+
+    def write(self, vals: ValuesType) -> bool:
+        if not self._access_staged_commands([vals]):
+            return super().write(vals)
+        with nesting():
+            return super().write(vals)
+
+    def _access_staged_commands(self, vals_list: list[ValuesType]) -> bool:
+        if _NESTED.get() or called_model() is None:
+            return False
+        for vals in vals_list:
+            for name, value in vals.items():
+                field = self._fields.get(name)
+                if (
+                    field is not None
+                    and field.type in ("one2many", "many2many", "one2one")
+                    and isinstance(value, list | tuple)
+                    and issubclass(self.pool[field.comodel_name], MixinAccessStaged)
+                    and any(
+                        isinstance(command, list | tuple)
+                        and command
+                        and command[0] in COMODEL_WRITING_COMMANDS
+                        for command in value
+                    )
+                ):
+                    _debug.logic("nested_commands_staged", model=self._name, field=name)
+                    return True
+        return False
 
 
 class IrAccessLog(models.Model):
@@ -119,6 +173,7 @@ class MixinAccessStaged(models.AbstractModel):
 
     _access_staged_fields: ClassVar[tuple[str, ...]] = ()
     _access_staged_create: ClassVar[tuple[str, Any, Any] | None] = None
+    _access_staged_create_deferred: ClassVar[bool] = False
 
     def _access_staged_names(self, names: Any) -> list[str]:
         staged = self._access_staged_fields
@@ -133,8 +188,12 @@ class MixinAccessStaged(models.AbstractModel):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
+        if not staging(self.env):
+            return super().create(vals_list)
         held = self._access_staged_create
-        if held is None or not staging(self.env):
+        if held is None:
+            if self._access_staged_create_deferred:
+                return self._access_staged_create_then_write(vals_list)
             return super().create(vals_list)
         field, waiting, _live = held
         records = super().create([{**vals, field: waiting} for vals in vals_list])
@@ -152,11 +211,28 @@ class MixinAccessStaged(models.AbstractModel):
         )
         return records
 
-    def write(self, vals: ValuesType) -> bool:
-        names = self._access_staged_names(vals) if staging(self.env) else []
-        if not names or not self:
-            return super().write(vals)
-        staged = {name: vals[name] for name in names}
+    def _access_staged_create_then_write(self, vals_list: list[ValuesType]) -> Self:
+        deferred = [
+            {
+                name: vals[name]
+                for name in self._access_staged_names(vals)
+                if not self._fields[name].required
+            }
+            for vals in vals_list
+        ]
+        records = super().create(
+            [
+                {name: value for name, value in vals.items() if name not in later}
+                for vals, later in zip(vals_list, deferred, strict=True)
+            ]
+        )
+        for record, later in zip(records, deferred, strict=True):
+            if later:
+                record._access_stage_write(later)
+        return records
+
+    def _access_stage_write(self, staged: dict[str, Any]) -> None:
+        names = sorted(staged)
         before = (
             self.env["ir.access"]
             ._access_evaluator(self._name)
@@ -175,8 +251,15 @@ class MixinAccessStaged(models.AbstractModel):
                 for id_ in self.ids
             ]
         )
-        rest = {name: value for name, value in vals.items() if name not in staged}
         _debug.logic("write_staged", model=self._name, ids=self.ids, fields=names)
+
+    def write(self, vals: ValuesType) -> bool:
+        names = self._access_staged_names(vals) if staging(self.env) else []
+        if not names or not self:
+            return super().write(vals)
+        staged = {name: vals[name] for name in names}
+        self._access_stage_write(staged)
+        rest = {name: value for name, value in vals.items() if name not in staged}
         return super().write(rest) if rest else True
 
     def unlink(self) -> bool:
@@ -262,6 +345,7 @@ class ResGroups(models.Model):
         "is_break_glass",
         "is_privilege",
     )
+    _access_staged_create_deferred = True
 
     def unlink(self) -> bool:
         with applying():

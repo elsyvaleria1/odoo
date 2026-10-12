@@ -145,6 +145,18 @@ class test_res_lang(TransactionCase):
         self.assertEqual(lang.grouping, "[3,0]")
 
     @mute_logger("odoo.addons.base.models.res_lang")
+    def test_create_lang_falls_back_on_a_time_format_outside_the_selection(self):
+        formats = {locale.D_FMT: "%d.%m.%Y", locale.T_FMT: "%H.%M.%S"}
+        conventions = {"grouping": [3, 0], "decimal_point": ",", "thousands_sep": " "}
+        with (
+            patch.object(locale, "nl_langinfo", formats.__getitem__),
+            patch.object(locale, "localeconv", lambda: conventions),
+        ):
+            lang = self.env["res.lang"]._create_lang("xx_XX", "Locale Fit Test")
+        self.assertEqual(lang.time_format, "%H:%M:%S")
+        self.assertEqual(lang.date_format, "%d.%m.%Y")
+
+    @mute_logger("odoo.addons.base.models.res_lang")
     def test_create_lang_without_a_system_locale_keeps_defaults(self):
         before = resetlocale()
         self.addCleanup(locale.setlocale, locale.LC_ALL, before)

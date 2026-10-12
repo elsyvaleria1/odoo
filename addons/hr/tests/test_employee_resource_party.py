@@ -1,4 +1,4 @@
-from odoo.exceptions import AccessError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import Form, TransactionCase, new_test_user, tagged
 
 
@@ -53,6 +53,17 @@ class TestEmployeeResourceParty(TransactionCase):
             self.env["hr.employee"].create(
                 {"name": "Hired Once", "partner_id": employee.partner_id.id}
             )
+
+    def test_merging_the_contacts_of_two_employees_of_one_company_is_refused(self):
+        kept, merged_away = self.env["hr.employee"].create(
+            [{"name": "Hired Twice"}, {"name": "Hired Twice Too"}]
+        )
+        with self.assertRaisesRegex(UserError, "one human resource per company"):
+            self.env["wizard.res.partner.merge"].create({})._merge(
+                (kept.partner_id + merged_away.partner_id).ids, kept.partner_id
+            )
+        self.assertEqual(merged_away.resource_id.partner_id, merged_away.partner_id)
+        self.assertTrue(merged_away.partner_id.exists())
 
     def test_leaving_a_shared_party_leaves_its_identifiers_and_keeps_it(self):
         shared = self.env["res.partner"].create({"name": "Generic Public"})

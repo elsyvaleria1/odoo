@@ -853,7 +853,8 @@ class TestCausedGrants(TransactionCase):
         super().setUpClass()
         cls.Grant = cls.env["test_access_right.graph_grant"]
         cls.node = cls.env["test_access_right.graph_node"].create({"name": "Caused"})
-        cls.partner = cls.env["res.partner"].create({"name": "Caused member"})
+        cls.user = new_test_user(cls.env, "caused_member", groups="base.group_user")
+        cls.partner = cls.user.partner_id
 
     def share(self, role, date_to=False):
         return self.Grant.create(
@@ -869,56 +870,125 @@ class TestCausedGrants(TransactionCase):
         wanted = [(self.node.id, "partner_id", self.partner.id, role, False)]
         self.Grant._sync_caused_grants(cause_ref, wanted if role else [])
 
+    def expire(self, grant):
+        grant.date_to = fields.Datetime.now() - timedelta(minutes=1)
+
     def held(self):
-        return [
-            (grant.role, grant.cause, grant.cause_ref, grant.date_to)
+        return sorted(
+            (grant.role, grant.cause, grant.cause_ref)
             for grant in self.Grant.search([("node_id", "=", self.node.id)])
-        ]
+        )
 
-    def test_an_expiring_share_does_not_hold_what_a_module_wants(self):
-        until = fields.Datetime.now() + timedelta(days=1)
-        self.share("manage", until)
+    def effective(self):
+        node = self.node.with_user(self.user).sudo()
+        node.invalidate_recordset(["access_role"])
+        return node.access_role
+
+    def test_an_expiring_share_above_a_module_holds_until_it_expires(self):
+        share = self.share("manage", fields.Datetime.now() + timedelta(days=1))
         self.sync("module.a,1", "edit")
-        self.assertEqual(self.held(), [("edit", "module", "module.a,1", False)])
+        self.assertEqual(self.effective(), "manage")
+        self.expire(share)
+        self.assertEqual(self.effective(), "edit")
         self.sync("module.a,1")
-        self.assertEqual(self.held(), [("manage", "manual", False, until)])
+        self.assertFalse(self.effective())
 
-    def test_a_module_gives_back_the_role_it_took_over(self):
+    def test_a_module_s_release_gives_back_the_share_under_it(self):
         self.share("view")
         self.sync("module.a,1", "edit")
-        self.assertEqual(self.held(), [("edit", "module", "module.a,1", False)])
+        self.assertEqual(self.effective(), "edit")
         self.sync("module.a,1")
-        self.assertEqual(self.held(), [("view", "manual", False, False)])
+        self.assertEqual(self.held(), [("view", "manual", False)])
+        self.assertEqual(self.effective(), "view")
 
-    def test_a_share_that_expired_under_a_module_is_not_given_back(self):
-        self.share("view", fields.Datetime.now() - timedelta(minutes=1))
-        self.sync("module.a,1", "edit")
-        self.sync("module.a,1")
-        self.assertEqual(self.held(), [])
-
-    def test_a_durable_share_that_covers_the_module_stays_the_user_s(self):
+    def test_a_durable_share_above_the_module_stays_the_user_s(self):
         self.share("manage")
         self.sync("module.a,1", "edit")
-        self.assertEqual(self.held(), [("manage", "manual", False, False)])
+        self.assertEqual(self.effective(), "manage")
+        self.sync("module.a,1")
+        self.assertEqual(self.held(), [("manage", "manual", False)])
 
-    def test_a_module_under_another_keeps_its_claim_until_it_lets_go(self):
+    def test_each_module_keeps_its_own_claim(self):
         self.sync("module.a,1", "view")
         self.sync("module.b,1", "edit")
-        self.assertEqual(self.held(), [("edit", "module", "module.b,1", False)])
+        self.sync("module.c,1", "manage")
+        self.assertEqual(self.effective(), "manage")
+        self.sync("module.a,1", "edit")
+        self.sync("module.c,1")
+        self.assertEqual(
+            self.held(),
+            [("edit", "module", "module.a,1"), ("edit", "module", "module.b,1")],
+        )
         self.sync("module.b,1")
-        self.assertEqual(self.held(), [("view", "module", "module.a,1", False)])
-        self.sync("module.b,1", "edit")
-        self.sync("module.a,1", "manage")
-        self.assertEqual(self.held(), [("manage", "module", "module.a,1", False)])
-        self.sync("module.b,1")
+        self.assertEqual(self.effective(), "edit")
         self.sync("module.a,1")
         self.assertEqual(self.held(), [])
+        self.assertFalse(self.effective())
 
-    def test_a_module_s_grant_does_not_hold_what_another_module_wants(self):
-        self.sync("module.a,1", "manage")
-        self.sync("module.b,1", "edit")
-        self.assertEqual(self.held(), [("manage", "module", "module.a,1", False)])
-        self.sync("module.a,1")
-        self.assertEqual(self.held(), [("edit", "module", "module.b,1", False)])
-        self.sync("module.b,1")
-        self.assertEqual(self.held(), [])
+    def test_a_module_resets_the_claim_it_owns(self):
+        self.sync("module.a,1", "edit")
+        claim = self.Grant.search([("cause_ref", "=", "module.a,1")])
+        claim.write({"role": "view", "date_to": fields.Datetime.now()})
+        self.sync("module.a,1", "edit")
+        self.assertEqual((claim.role, claim.date_to), ("edit", False))
+
+    def test_a_module_asking_twice_keeps_the_higher_role(self):
+        wanted = [
+            (self.node.id, "partner_id", self.partner.id, role, False)
+            for role in ("manage", "view")
+        ]
+        self.Grant._sync_caused_grants("module.a,1", wanted)
+        self.assertEqual(self.held(), [("manage", "module", "module.a,1")])
+
+    def merge_in(self, *grants):
+        source = self.env["res.partner"].create({"name": "Merged member"})
+        for role, date_to, cause_ref in grants:
+            self.Grant.create(
+                {
+                    "node_id": self.node.id,
+                    "partner_id": source.id,
+                    "role": role,
+                    "date_to": date_to,
+                    "cause_ref": cause_ref,
+                    "cause": "module" if cause_ref else "manual",
+                }
+            )
+        self.env["wizard.res.partner.merge"]._merge(
+            (self.partner | source).ids, self.partner, extra_checks=False
+        )
+        return source
+
+    def test_a_merge_keeps_the_stronger_share(self):
+        self.share("view")
+        self.merge_in(("manage", False, False))
+        self.assertEqual(self.held(), [("manage", "manual", False)])
+        self.assertEqual(self.effective(), "manage")
+
+    def test_a_merge_keeps_the_module_s_higher_claim(self):
+        self.sync("module.a,1", "view")
+        self.merge_in(("edit", False, "module.a,1"))
+        self.assertEqual(self.held(), [("edit", "module", "module.a,1")])
+
+    def test_a_merge_keeps_claims_of_different_causes(self):
+        self.share("view")
+        self.merge_in(("edit", False, "module.a,1"))
+        self.assertEqual(
+            self.held(), [("edit", "module", "module.a,1"), ("view", "manual", False)]
+        )
+
+    def test_a_one_row_merge_keeps_the_share_that_lasts(self):
+        self.share("view")
+        with patch.object(type(self.Grant), "_access_grant_by_cause", False):
+            self.merge_in(("edit", fields.Datetime.now() + timedelta(days=3), False))
+        self.assertEqual(self.held(), [("view", "manual", False)])
+
+    def test_a_merge_keeps_two_shares_that_each_outlast_the_other_somewhere(self):
+        share = self.share("edit", fields.Datetime.now() + timedelta(days=3))
+        source = self.merge_in(("view", False, False))
+        self.assertEqual(
+            self.held(),
+            [("edit", "manual", False), ("view", "merge", f"res.partner,{source.id}")],
+        )
+        self.assertEqual(self.effective(), "edit")
+        self.expire(share)
+        self.assertEqual(self.effective(), "view")

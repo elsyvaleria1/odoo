@@ -1,10 +1,9 @@
 from collections import defaultdict
-from datetime import UTC
+from datetime import UTC, timedelta
 
 from odoo import api, fields, models
+from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-
-from odoo.addons.base.models.resource_utils import last_day_of
 
 _debug = DebugLog(__name__)
 
@@ -147,11 +146,12 @@ class ResourceScheduleException(models.Model):
     def _timesheet_create_lines(self):
         resource_calendars = self._get_resource_calendars()
         work_hours_data = self._work_time_per_day(resource_calendars)
-        employees_groups = self.env["hr.employee"]._read_group(
-            [
-                ("resource_calendar_id", "in", resource_calendars.ids),
-                ("company_id", "in", self.env.companies.ids),
-            ],
+        timesheets = self.env["account.analytic.line"].sudo()
+        employee_domain = Domain("resource_calendar_id", "in", resource_calendars.ids)
+        if all(leave.company_id for leave in self):
+            employee_domain &= Domain("company_id", "in", self.company_id.ids)
+        employees_groups = timesheets.env["hr.employee"]._read_group(
+            employee_domain,
             ["resource_calendar_id"],
             ["id:recordset"],
         )
@@ -173,33 +173,18 @@ class ResourceScheduleException(models.Model):
                     elif d > max_date:
                         max_date = d
 
-        holidays_read_group = self.env["hr.leave"]._read_group(
-            [
-                ("employee_id", "in", employee_ids_all),
-                ("date_from", "<=", max_date),
-                ("date_to", ">=", min_date),
-                ("state", "=", "validate"),
-            ],
-            ["employee_id"],
-            ["date_from:array_agg", "date_to:array_agg"],
+        booked_by_employee = timesheets._get_leave_booked_days(
+            employee_ids_all, min_date, max_date
         )
-        holidays_by_employee = {
-            employee.id: [
-                (date_from.date(), last_day_of(date_from, date_to))
-                for date_from, date_to in zip(date_from_list, date_to_list, strict=True)
-            ]
-            for employee, date_from_list, date_to_list in holidays_read_group
-        }
         vals_list = []
 
         def get_timesheets_data(employees, work_hours_list, vals_list):
             for employee in employees:
-                holidays = holidays_by_employee.get(employee.id)
+                if not leave._books_time_off_for(employee):
+                    continue
+                booked = booked_by_employee.get(employee.id, ())
                 for index, (day_date, work_hours_count) in enumerate(work_hours_list):
-                    if not holidays or all(
-                        not (date_from <= day_date and date_to >= day_date)
-                        for date_from, date_to in holidays
-                    ):
+                    if day_date not in booked:
                         vals_list.append(
                             leave._timesheet_prepare_line_values(
                                 index,
@@ -234,7 +219,12 @@ class ResourceScheduleException(models.Model):
             window_to=max_date,
             lines=len(vals_list),
         )
-        return self.env["account.analytic.line"].sudo().create(vals_list)
+        companies = self.env.companies | self.env["res.company"].browse(
+            {vals["company_id"] for vals in vals_list}
+        )
+        return timesheets.with_context(allowed_company_ids=companies.ids).create(
+            vals_list
+        )
 
     def _timesheet_prepare_line_values(
         self, index, employee_id, work_hours_data, day_date, work_hours_count
@@ -264,11 +254,17 @@ class ResourceScheduleException(models.Model):
             and company.project_timesheet_holidays_config_id.leave_timesheet_task_id
         )
 
+    def _books_time_off_for(self, employee) -> bool:
+        self.check_singleton()
+        return (
+            not self.company_id or self.company_id == employee.company_id
+        ) and self._books_time_off(employee.company_id)
+
     def _generate_timesheeets(self) -> None:
         results_with_leave_timesheet = self.filtered(
             lambda leave: (
                 not leave.resource_id
-                and self._books_time_off(leave.company_id or self.env.company)
+                and (not leave.company_id or self._books_time_off(leave.company_id))
             )
         )
         _debug.logic(
@@ -284,9 +280,11 @@ class ResourceScheduleException(models.Model):
         skipped_calendar = 0
         skipped_company = 0
         skipped_existing = 0
+        skipped_on_leave = 0
         resource_calendars = self._get_resource_calendars()
         work_hours_data = self._work_time_per_day(resource_calendars)
-        timesheet_read_group = self.env["account.analytic.line"]._read_group(
+        timesheets = self.env["account.analytic.line"].sudo()
+        timesheet_read_group = timesheets._read_group(
             [("global_leave_id", "in", self.ids), ("employee_id", "in", employees.ids)],
             ["employee_id"],
             ["date:array_agg"],
@@ -294,6 +292,11 @@ class ResourceScheduleException(models.Model):
         timesheet_dates_per_employee_id = {
             employee.id: date for employee, date in timesheet_read_group
         }
+        booked_by_employee = timesheets._get_leave_booked_days(
+            employees.ids,
+            min(self.mapped("date_from")).date() - timedelta(days=1),
+            max(self.mapped("date_to")).date() + timedelta(days=1),
+        )
         for leave in self:
             for employee in employees:
                 if (
@@ -302,18 +305,19 @@ class ResourceScheduleException(models.Model):
                 ):
                     skipped_calendar += 1
                     continue
-                if (
-                    leave.company_id and leave.company_id != employee.company_id
-                ) or not self._books_time_off(employee.company_id):
+                if not leave._books_time_off_for(employee):
                     skipped_company += 1
                     continue
                 calendar = leave.calendar_id or employee.resource_calendar_id
                 work_hours_list = work_hours_data[calendar.id][leave.id]
                 timesheet_dates = timesheet_dates_per_employee_id.get(employee.id, [])
+                booked = booked_by_employee.get(employee.id, ())
                 for index, (day_date, work_hours_count) in enumerate(work_hours_list):
-                    generate_timesheet = day_date not in timesheet_dates
-                    if not generate_timesheet:
+                    if day_date in timesheet_dates:
                         skipped_existing += 1
+                        continue
+                    if day_date in booked:
+                        skipped_on_leave += 1
                         continue
                     timesheet_vals = leave._timesheet_prepare_line_values(
                         index, employee, work_hours_list, day_date, work_hours_count
@@ -327,8 +331,9 @@ class ResourceScheduleException(models.Model):
             skipped_wrong_calendar=skipped_calendar,
             skipped_other_company=skipped_company,
             skipped_already_present=skipped_existing,
+            skipped_on_leave=skipped_on_leave,
         )
-        return self.env["account.analytic.line"].sudo().create(timesheet_vals_list)
+        return timesheets.create(timesheet_vals_list)
 
     def _get_overlapping_hr_leaves(self, domain=None):
         self.check_singleton()
@@ -336,6 +341,7 @@ class ResourceScheduleException(models.Model):
         leave_domain += [
             ("date_from", "<=", self.date_to),
             ("date_to", ">=", self.date_from),
+            ("state", "=", "validate"),
         ]
         if self.company_id:
             leave_domain += [("company_id", "=", self.company_id.id)]

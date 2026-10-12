@@ -1,12 +1,13 @@
 import re
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
 import psycopg.errors
 from freezegun import freeze_time
 
 import odoo
+from odoo import Command
 from odoo.exceptions import ConcurrencyError, UserError
 from odoo.modules.registry import Registry
 from odoo.tests import Form, common, counting_statements
@@ -347,6 +348,27 @@ class TestIrSequenceSwitchImplementation(common.TransactionCase):
         self.assertEqual(seq.next_by_id(), "4")
         self.assertEqual(seq.next_by_id(), "5")
 
+    def test_switch_to_no_gap_keeps_a_range_number_given_in_the_same_write(self):
+        for field in ("number_next", "number_next_actual"):
+            with self.subTest(field=field):
+                seq = self.env["ir.sequence"].create(
+                    {
+                        "name": f"test-sequence-switch-impl-range-{field}",
+                        "implementation": "standard",
+                        "use_date_range": True,
+                    }
+                )
+                for i in range(1, 4):
+                    self.assertEqual(seq.next_by_id(), str(i))
+                sub_seq = seq.date_range_ids
+                seq.write(
+                    {
+                        "implementation": "no_gap",
+                        "date_range_ids": [Command.update(sub_seq.id, {field: 100})],
+                    }
+                )
+                self.assertEqual(seq.next_by_id(), "100")
+
 
 @common.tagged("post_install", "-at_install")
 class TestIrSequenceFormSwitch(common.TransactionCase):
@@ -376,8 +398,28 @@ class TestIrSequenceFormSwitch(common.TransactionCase):
         )
         for i in range(1, 4):
             self.assertEqual(seq.next_by_id(), str(i))
-        with Form(seq) as form:
-            form.implementation = "no_gap"
+        sub_seq = seq.date_range_ids
+        line_changes = {"date_to": sub_seq.date_to + timedelta(days=1)}
+        result = seq.onchange(
+            {
+                "implementation": "no_gap",
+                "date_range_ids": [Command.update(sub_seq.id, line_changes)],
+            },
+            ["implementation"],
+            {
+                "implementation": {},
+                "date_range_ids": {"fields": {"date_to": {}, "number_next_actual": {}}},
+            },
+        )
+        for command in result["value"].get("date_range_ids", []):
+            if command[0] == Command.UPDATE and command[1] == sub_seq.id:
+                line_changes.update(command[2])
+        seq.write(
+            {
+                "implementation": "no_gap",
+                "date_range_ids": [Command.update(sub_seq.id, line_changes)],
+            }
+        )
         self.assertEqual(seq.next_by_id(), "4")
 
     def test_a_sequence_created_in_the_form_starts_at_one(self):

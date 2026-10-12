@@ -228,6 +228,23 @@ class TestTagCode(TransactionCase):
         )
         self.assertEqual(len(set(tags.mapped("code"))), 3)
 
+    def test_codes_taken_past_the_first_probe_window_are_skipped(self):
+        self.env["tag.tag"].create(
+            [
+                {
+                    "name": f"Crowded {index}",
+                    "code": "CROWDED" if index == 1 else f"CROWDED_{index}",
+                }
+                for index in range(1, 41)
+            ]
+        )
+        tags = self.env["tag.tag"].create(
+            [{"name": "Crowded!"}, {"name": "Crowded 41"}, {"name": "Crowded?"}]
+        )
+        self.assertEqual(
+            tags.mapped("code"), ["CROWDED_41", "CROWDED_41_2", "CROWDED_42"]
+        )
+
     def test_a_strict_query_finds_the_tag_whatever_the_language(self):
         tag = self._tag(name="Findable", code="FINDABLE")
         self.assertEqual(

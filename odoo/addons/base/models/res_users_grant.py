@@ -32,6 +32,7 @@ _FRESH_USERS: contextvars.ContextVar[frozenset[int]] = contextvars.ContextVar(
     "res_users_grant_fresh_users", default=frozenset()
 )
 GROUP_STATE_COMPUTED = "res_users_group_state_computed"
+type GroupReach = dict[int, frozenset[int] | None]
 _GRANTS_AVAILABLE: weakref.WeakValueDictionary[int, Any] = weakref.WeakValueDictionary()
 _FOLLOWING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "res_users_grant_following", default=False

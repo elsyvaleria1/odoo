@@ -14,6 +14,7 @@ if typing.TYPE_CHECKING:
 class MailMessageReaction(models.Model):
     _name = "mail.message.reaction"
     _description = "Message Reaction"
+    _merge_clash_policy = "drop"
     _order = "id desc"
     _log_access = False
 

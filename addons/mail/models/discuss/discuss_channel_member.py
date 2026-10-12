@@ -44,6 +44,7 @@ class DiscussChannelMember(models.Model):
     _name = "discuss.channel.member"
     _inherit = ["mixin.store.sync"]
     _description = "Channel Member"
+    _merge_clash_policy = "drop"
     _rec_names_search = ["channel_id", "partner_id", "guest_id"]
     _bypass_create_check: typing.ClassVar[dict[str, Any]] = {}
 

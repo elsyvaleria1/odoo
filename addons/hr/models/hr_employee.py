@@ -3256,7 +3256,7 @@ class HrEmployee(models.Model):
             )
             return
         for partner in self.partner_id:
-            if partner.image_1920 or not (partner.name or "").strip():
+            if partner.image_1920 or not partner._get_avatar_initial():
                 continue
             _debug.pipeline("avatar_generated", partner=partner.id)
             partner.image_1920 = partner._prepare_avatar_svg()

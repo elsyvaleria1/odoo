@@ -16,7 +16,7 @@ from werkzeug.utils import get_content_type
 from werkzeug.utils import send_file as _send_file
 
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.documents import guess_encoding
+from odoo.libs.documents import charset_candidates, charset_label, guess_encoding
 from odoo.tools import file_path
 
 from .constants import STATIC_CACHE, STATIC_CACHE_LONG
@@ -139,13 +139,21 @@ class Stream:
             return
         if not _labels_charset(self.mimetype):
             return
-        if self._decodes_as("utf-8"):
-            self.charset = "utf-8"
-        elif declared and self._decodes_as(declared):
-            self.charset = declared
-        else:
-            guessed = guess_encoding(self._head())
-            self.charset = guessed if guessed and self._decodes_as(guessed) else None
+        self.charset = next(
+            (
+                candidate
+                for candidate in charset_candidates(declared)
+                if self._decodes_as(candidate)
+            ),
+            None,
+        )
+        if self.charset is None:
+            guessed = guess_encoding(self._first_non_ascii_chunk())
+            self.charset = (
+                charset_label(guessed)
+                if guessed and self._decodes_as(guessed)
+                else None
+            )
         _debug.logic(
             "http.stream.charset",
             mimetype=self.mimetype,
@@ -163,9 +171,12 @@ class Stream:
             return False
         return True
 
-    def _head(self, size: int = 1 << 16) -> bytes:
-        with contextlib.closing(self._iter_chunks(size)) as chunks:
-            return bytes(next(chunks, b""))
+    def _first_non_ascii_chunk(self) -> bytes:
+        with contextlib.closing(self._iter_chunks()) as chunks:
+            for chunk in chunks:
+                if not (sample := bytes(chunk)).isascii():
+                    return sample
+        return b""
 
     def _iter_chunks(self, size: int = 1 << 16) -> Generator[bytes | memoryview]:
         if self.type == "data":

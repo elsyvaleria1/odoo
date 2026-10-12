@@ -80,3 +80,24 @@ class TestHybridSearch(HttpCase):
             response.text,
         )
         self.assertNotIn("onclick=", response.text)
+
+    def test_autocomplete_serves_the_window_at_the_offset(self):
+        self.env["product.template"].create(
+            [{"name": f"Zqw Pager {index}", "is_published": True} for index in range(7)]
+        )
+
+        def names(**params):
+            result = self.call_jsonrpc(
+                "/website/snippet/autocomplete",
+                {
+                    "search_type": "products_only",
+                    "term": "Zqw Pager",
+                    "order": "name asc",
+                    **params,
+                },
+            )
+            return [row["name"] for row in result["results"]]
+
+        everything = names(limit=10)
+        self.assertEqual(len(everything), 7)
+        self.assertEqual(names(limit=3, offset=3), everything[3:6])

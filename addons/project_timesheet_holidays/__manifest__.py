@@ -1,6 +1,6 @@
 {
     "name": "Time-Off Timesheet Generation",
-    "version": "1.1",
+    "version": "1.2",
     "oldest_upgradable_version": "1.1",
     "category": "Human Resources",
     "summary": "Generate timesheets for eligible employee leave and public holidays",

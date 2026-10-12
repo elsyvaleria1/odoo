@@ -11,6 +11,7 @@ _debug = DebugLog(__name__)
 class ProductWishlist(models.Model):
     _name = "product.wishlist"
     _description = "Product Wishlist"
+    _merge_clash_policy = "drop"
     _product_unique_partner_id = models.UniqueIndex(
         "(product_id, partner_id) WHERE partner_id IS NOT NULL",
         "Duplicated wishlisted product for this partner.",

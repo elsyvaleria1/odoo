@@ -11,6 +11,7 @@ _debug = DebugLog(__name__)
 class WebRecentRecord(models.Model):
     _name = "web.recent.record"
     _description = "Recently Opened Record"
+    _merge_clash_policy = "drop"
     _order = "recency desc, id desc"
     _access_anchors = frozendict({"owner": "user_id"})
 

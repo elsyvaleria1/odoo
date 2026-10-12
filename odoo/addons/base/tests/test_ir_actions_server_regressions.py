@@ -1020,7 +1020,7 @@ class TestServerActionWarningFollowsLinkField(ServerActionCase):
 
 
 @tagged("post_install", "-at_install")
-class TestTheDebugGroupGatesEverySurfaceAlike(ServerActionCase):
+class TestTheDebugGroupHidesAnActionWithoutForbiddingIt(ServerActionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1036,6 +1036,13 @@ class TestTheDebugGroupGatesEverySurfaceAlike(ServerActionCase):
                         ]
                     )
                 ],
+            }
+        )
+        cls.outsider = cls.env["res.users"].create(
+            {
+                "name": "no debug group",
+                "login": "debug_gate_outsider",
+                "group_ids": [Command.set(cls.env.ref("base.group_portal").ids)],
             }
         )
         cls.action = cls.Action.create(
@@ -1058,12 +1065,16 @@ class TestTheDebugGroupGatesEverySurfaceAlike(ServerActionCase):
     def _run(self):
         return self.action.with_user(self.user).run()
 
-    def test_outside_debug_the_action_is_neither_offered_loaded_nor_run(self):
+    def test_outside_debug_the_action_is_neither_offered_nor_loaded_yet_runs(self):
         self.assertFalse(self._offered())
         with self.assertRaises(AccessError):
             self.action.with_user(self.user)._check_access_to_load()
-        with self.assertRaises(AccessError):
-            self._run()
+        closed = {"type": "ir.actions.act_window_close"}
+        self.assertEqual(self._run(), closed)
+        self.assertEqual(self.action.run(), closed)
+        self.assertEqual(self.action.with_user(self.user).sudo().run(), closed)
+        with self.assertRaisesRegex(AccessError, "enough access rights to run"):
+            self.action.with_user(self.outsider).run()
 
     def test_in_debug_the_action_is_offered_loaded_and_run(self):
         with self.debug_mode():

@@ -70,6 +70,7 @@ CLAIM_CANDIDATES_PER_CHANNEL = 8
 CLAIM_WINDOW_GROWTH = 8
 CLAIM_BACKOFF_BASE_S = 0.05
 CLAIM_BACKOFF_MAX_S = 1.0
+CLAIM_RETRY_EXCEPTIONS = (*PG_RETRY_EXCEPTIONS, psycopg.errors.UniqueViolation)
 
 CONCURRENCY_MAX_ATTEMPTS = 5
 CONCURRENCY_BACKOFF_BASE_S = 0.2
@@ -133,9 +134,9 @@ _CHANNEL_DUE_SQL = SQL(
 )
 
 CLAIMED_COLUMNS = SQL(
-    "id, uuid, channel, priority, model_name, method_name, record_ids, args,"
-    " kwargs, user_id, company_id, context, elevated, privileges, retry,"
-    " max_retries, defer_count, max_defers"
+    "id, uuid, channel, priority, identity_key, model_name, method_name,"
+    " record_ids, args, kwargs, user_id, company_id, context, elevated,"
+    " privileges, retry, max_retries, defer_count, max_defers"
 )
 
 
@@ -467,6 +468,11 @@ class IrJob(models.Model):
         help="Earliest execution time (empty: ASAP).",
     )
     identity_key = fields.Char(readonly=True)
+    is_follow_up = fields.Boolean(
+        readonly=True,
+        help="Queued while a run with the same identity key was in progress: "
+        "it runs once that run is over, and later callers join it.",
+    )
 
     model_name = fields.Char(
         readonly=True,
@@ -556,9 +562,13 @@ class IrJob(models.Model):
         "(done_at) WHERE state IN ('done', 'failed', 'cancelled')"
     )
     _identity_uniq = models.UniqueIndex(
-        f"(identity_key) WHERE state IN {QUEUED_STATES_SQL}"
+        f"(identity_key, (is_follow_up IS TRUE)) WHERE state IN {QUEUED_STATES_SQL}"
         " AND identity_key IS NOT NULL",
         "A job with the same identity key is already queued.",
+    )
+    _identity_running_uniq = models.UniqueIndex(
+        "(identity_key) WHERE state = 'started' AND identity_key IS NOT NULL",
+        "A job with the same identity key is already running.",
     )
 
     @api.constrains("depends_on_ids", "dependent_ids")
@@ -623,7 +633,12 @@ class IrJob(models.Model):
             now,
         ]
         row, deduplicated = self._insert_or_reuse_job(
-            values, records, method_name, identity_key, dep_ids
+            values,
+            records,
+            method_name,
+            identity_key,
+            dep_ids,
+            trailing_run=job_config["trailing_run"],
         )
         _debug.lifecycle(
             "enqueue",
@@ -765,7 +780,7 @@ class IrJob(models.Model):
         )
         return state, eta, dep_ids
 
-    def _insert_job_row(self, values: list) -> tuple | None:
+    def _insert_job_row(self, values: list, *, follow_up: bool = False) -> tuple | None:
         self.env.cr.execute(
             SQL(
                 f"""
@@ -774,21 +789,24 @@ class IrJob(models.Model):
                     model_name, method_name, record_ids, args, kwargs,
                     user_id, company_id, context, elevated, privileges,
                     retry, max_retries, defer_count, max_defers,
-                    create_uid, create_date, write_uid, write_date
+                    create_uid, create_date, write_uid, write_date,
+                    is_follow_up
                 ) VALUES (
                     %s, gen_random_uuid()::varchar, %s, %s, %s, %s, %s,
                     %s, %s, %s::jsonb, %s::jsonb, %s::jsonb,
                     %s, %s, %s::jsonb, %s, %s::jsonb, 0, %s,
                     0, %s,
-                    %s, %s, %s, %s
+                    %s, %s, %s, %s,
+                    %s
                 )
-                ON CONFLICT (identity_key)
+                ON CONFLICT (identity_key, (is_follow_up IS TRUE))
                     WHERE state IN {QUEUED_STATES_SQL}
                     AND identity_key IS NOT NULL
                     DO NOTHING
                 RETURNING id
                 """,
                 *values,
+                follow_up,
             )
         )
         return self.env.cr.fetchone()
@@ -829,10 +847,32 @@ class IrJob(models.Model):
         method_name: str,
         identity_key: str | None,
         dep_ids: list[int],
+        *,
+        trailing_run: bool = False,
     ) -> tuple[tuple, bool]:
+        running = _current_job()
+        if identity_key and running and running.get("identity_key") == identity_key:
+            # A follow-up queued by the run it follows would queue the next one
+            # in turn: a body that wants to run again calls _defer().
+            _debug.logic("enqueue.dropped_from_own_body", job=running["id"])
+            return (running["id"],), True
         for _attempt in range(3):
+            if trailing_run and identity_key:
+                row = self._reuse_deduplicated_job(
+                    records, method_name, identity_key, dep_ids, waiting_only=True
+                )
+                if row is not None:
+                    return row, True
             if (row := self._insert_job_row(values)) is not None:
                 return row, False
+            if trailing_run and identity_key:
+                if (row := self._insert_job_row(values, follow_up=True)) is not None:
+                    _debug.logic(
+                        "enqueue.follow_up", job=row[0], identity_key=identity_key
+                    )
+                    return row, False
+                _debug.logic("enqueue.follow_up_raced", identity_key=identity_key)
+                continue
             row = self._reuse_deduplicated_job(
                 records, method_name, identity_key, dep_ids
             )
@@ -852,23 +892,33 @@ class IrJob(models.Model):
         method_name: str,
         identity_key: str | None,
         dep_ids: list[int],
+        *,
+        waiting_only: bool = False,
     ) -> tuple | None:
+        # The joined job must read what this caller commits: the row lock keeps
+        # a worker from claiming it before that commit.
         self.env.cr.execute(
             SQL(
-                "SELECT id FROM ir_job WHERE identity_key = %s"
-                f" AND state IN {QUEUED_STATES_SQL}"
-                " ORDER BY id DESC LIMIT 1",
+                "SELECT id FROM ir_job WHERE identity_key = %s AND %s"
+                " ORDER BY id DESC LIMIT 1%s",
                 identity_key,
+                SQL(f"state IN {UNSTARTED_STATES_SQL}")
+                if waiting_only
+                else SQL(f"state IN {QUEUED_STATES_SQL} AND is_follow_up IS NOT TRUE"),
+                SQL(" FOR KEY SHARE") if waiting_only else SQL(),
             )
         )
         row = self.env.cr.fetchone()
+        if row is None:
+            return None
         _debug.logic(
             "enqueue.deduplicated",
-            existing=row[0] if row else None,
+            existing=row[0],
+            waiting_only=waiting_only,
             chained_lost=bool(dep_ids),
         )
         env = self.env
-        if row and (env.su or env.privileges):
+        if env.su or env.privileges:
             env.cr.execute(
                 SQL(
                     "UPDATE ir_job SET elevated = elevated OR %s, privileges = ("
@@ -880,7 +930,7 @@ class IrJob(models.Model):
                     row[0],
                 )
             )
-        if row and (companies := env.context.get("allowed_company_ids")):
+        if companies := env.context.get("allowed_company_ids"):
             self._widen_deduplicated_company_scope(row[0], companies)
         if dep_ids:
             _logger.warning(
@@ -891,7 +941,7 @@ class IrJob(models.Model):
                 method_name,
                 identity_key,
                 dep_ids,
-                row[0] if row else None,
+                row[0],
             )
         return row
 
@@ -1314,9 +1364,17 @@ class IrJob(models.Model):
                         CLAIMED_COLUMNS,
                     )
                 )
-            except PG_RETRY_EXCEPTIONS:
+            except CLAIM_RETRY_EXCEPTIONS as exc:
                 cr.rollback()
-                _debug.logic("claim_retry", attempt=attempt, reason="serialization")
+                _debug.logic(
+                    "claim_retry",
+                    attempt=attempt,
+                    reason=(
+                        "running_twin"
+                        if isinstance(exc, psycopg.errors.UniqueViolation)
+                        else "serialization"
+                    ),
+                )
                 if attempt < CLAIM_MAX_ATTEMPTS:
                     time.sleep(
                         backoff.get_delay(
@@ -1356,6 +1414,11 @@ class IrJob(models.Model):
                     ) head
                 ))
                   AND j.state = 'pending'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM ir_job twin
+                      WHERE twin.state = 'started'
+                        AND twin.identity_key = j.identity_key
+                  )
                 ORDER BY j.priority, j.create_date, j.id
                 LIMIT 1
                 FOR UPDATE OF j SKIP LOCKED
@@ -2002,6 +2065,11 @@ class IrJob(models.Model):
                     worker_ident = %s,
                     write_date = (now() AT TIME ZONE 'UTC')
                 WHERE id = %s AND state IN %s
+                  AND NOT EXISTS (
+                      SELECT 1 FROM ir_job twin
+                      WHERE twin.state = 'started'
+                        AND twin.identity_key = ir_job.identity_key
+                  )
                 RETURNING %s
                 """,
                 f"manual:{self.env.uid}",
@@ -2011,6 +2079,14 @@ class IrJob(models.Model):
             )
         )
         row = cr.fetchone()
+        if row is None and self.state in RUNNABLE_STATES:
+            _debug.logic("run_now.refused", job=self.id, reason="twin_running")
+            raise UserError(
+                self.env._(
+                    "A job with the same identity key is running; this one "
+                    "runs once it is over."
+                )
+            )
         if row is None:
             _debug.logic("run_now.refused", job=self.id, reason="not_queued")
             raise UserError(self.env._("Only a queued job can be run manually."))
@@ -2018,6 +2094,8 @@ class IrJob(models.Model):
         _debug.lifecycle("run_now.claimed", job=self.id, uid=self.env.uid)
         self.invalidate_recordset()
         type(self)._run_claimed(cr, job)
+        if job["identity_key"]:
+            self._notify_after_commit(cr)
 
     def action_requeue(self) -> None:
         self.browse().check_access("write")

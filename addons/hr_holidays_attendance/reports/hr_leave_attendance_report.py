@@ -206,7 +206,7 @@ class HrLeaveAttendanceReport(models.Model):
                    ON (
                                (rc.id = rcl.calendar_id OR rcl.calendar_id IS NULL)
                            AND rcl.resource_id IS NULL
-                           AND rcl.company_id = emp.company_id
+                           AND (rcl.company_id = emp.company_id OR rcl.company_id IS NULL)
                            AND gs.day
                        BETWEEN (rcl.date_from AT TIME ZONE 'UTC')::date
                            AND (rcl.date_to AT TIME ZONE 'UTC')::date
@@ -258,7 +258,7 @@ class HrLeaveAttendanceReport(models.Model):
                                                ON (
                                                           (rc.id = rcl2.calendar_id OR rcl2.calendar_id IS NULL)
                                                       AND rcl2.resource_id IS NULL
-                                                      AND rcl2.company_id = emp.company_id
+                                                      AND (rcl2.company_id = emp.company_id OR rcl2.company_id IS NULL)
                                                       AND d.day
                                                   BETWEEN (rcl2.date_from AT TIME ZONE 'UTC')::date
                                                       AND (rcl2.date_to AT TIME ZONE 'UTC')::date

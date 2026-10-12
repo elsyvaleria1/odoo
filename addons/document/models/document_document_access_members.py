@@ -44,7 +44,8 @@ class DocumentsDocument(models.Model):
             self.env["document.access"]
             .sudo()
             .search(
-                Domain.OR(
+                Domain("cause_ref", "=", False)
+                & Domain.OR(
                     [
                         ("partner_id", "=", owner.partner_id.id),
                         ("document_id", "in", documents.ids),

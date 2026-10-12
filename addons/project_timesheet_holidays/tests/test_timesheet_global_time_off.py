@@ -817,15 +817,22 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
             }
         )
 
-        self.assertFalse(
-            global_time_off.timesheet_ids.filtered(
-                lambda r: r.employee_id == test_user.employee_id
-            )
+        self.assertEqual(len(holiday.timesheet_ids), 3)
+        self.assertEqual(
+            len(
+                global_time_off.timesheet_ids.filtered(
+                    lambda r: r.employee_id == test_user.employee_id
+                )
+            ),
+            1,
         )
-        self.assertFalse(
-            gto_without_calendar.timesheet_ids.filtered(
-                lambda r: r.employee_id == test_user.employee_id
-            )
+        self.assertEqual(
+            len(
+                gto_without_calendar.timesheet_ids.filtered(
+                    lambda r: r.employee_id == test_user.employee_id
+                )
+            ),
+            1,
         )
 
         holiday.sudo().action_refuse()
@@ -844,6 +851,7 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
 
         global_time_off.unlink()
         gto_without_calendar.unlink()
+        self.assertFalse(holiday.timesheet_ids, "a refused leave books nothing")
 
         holiday2 = HrLeave.with_user(test_user).create(
             {
@@ -872,15 +880,22 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
             }
         )
 
-        self.assertFalse(
-            global_time_off.timesheet_ids.filtered(
-                lambda r: r.employee_id == test_user.employee_id
-            )
+        self.assertEqual(len(holiday2.timesheet_ids), 3)
+        self.assertEqual(
+            len(
+                global_time_off.timesheet_ids.filtered(
+                    lambda r: r.employee_id == test_user.employee_id
+                )
+            ),
+            1,
         )
-        self.assertFalse(
-            gto_without_calendar.timesheet_ids.filtered(
-                lambda r: r.employee_id == test_user.employee_id
-            )
+        self.assertEqual(
+            len(
+                gto_without_calendar.timesheet_ids.filtered(
+                    lambda r: r.employee_id == test_user.employee_id
+                )
+            ),
+            1,
         )
 
         holiday2.with_user(test_user)._action_user_cancel("User cancelled leave")
@@ -920,7 +935,7 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
         self.assertEqual(len(holiday3.timesheet_ids), 5)
         self.assertEqual(sum(holiday3.timesheet_ids.mapped("unit_amount")), 40)
 
-    def test_refusing_a_leave_backfills_a_shared_calendar_closure(self):
+    def test_a_shared_calendar_closure_inside_a_refused_leave_stays_booked_once(self):
         shared = self.env["resource.calendar"].create(
             {"name": "Shared across companies", "company_id": False, "tz": "UTC"}
         )
@@ -961,10 +976,166 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
         )
         self.assertFalse(closure.company_id)
         mine = closure.timesheet_ids.filtered(lambda line: line.employee_id == employee)
-        self.assertFalse(mine)
+        self.assertEqual(mine.date, (start + timedelta(days=2)).date())
+        self.assertNotIn(mine.date, leave.sudo().timesheet_ids.mapped("date"))
         leave.sudo().action_refuse()
         mine = closure.timesheet_ids.filtered(lambda line: line.employee_id == employee)
+        self.assertEqual(len(mine), 1)
         self.assertEqual(mine.company_id, self.test_company)
+
+    def test_a_closure_books_time_off_where_the_employee_s_company_does(self):
+        booking, silent = self.env["res.company"].create(
+            [{"name": "Booking Co"}, {"name": "Silent Co"}]
+        )
+        silent.project_timesheet_holidays_config_id.leave_timesheet_task_id = False
+        shared = self.env["resource.calendar"].create(
+            {"name": "Shared across companies", "company_id": False, "tz": "UTC"}
+        )
+        booker, quiet = self.env["hr.employee"].create(
+            [
+                {
+                    "name": "Booker",
+                    "company_id": booking.id,
+                    "resource_calendar_id": shared.id,
+                },
+                {
+                    "name": "Quiet",
+                    "company_id": silent.id,
+                    "resource_calendar_id": shared.id,
+                },
+            ]
+        )
+        exceptions = self.env["resource.schedule.exception"]
+        closure = exceptions.with_context(
+            allowed_company_ids=[silent.id, booking.id]
+        ).create(
+            {
+                "name": "Shared closure",
+                "calendar_id": shared.id,
+                "date_from": datetime(2030, 1, 7, 0, 0),
+                "date_to": datetime(2030, 1, 7, 23, 59),
+            }
+        )
+        holiday = exceptions.with_context(
+            allowed_company_ids=[booking.id, silent.id]
+        ).create(
+            {
+                "name": "Booking Co holiday",
+                "date_from": datetime(2030, 1, 8, 0, 0),
+                "date_to": datetime(2030, 1, 8, 23, 59),
+            }
+        )
+        self.assertFalse(closure.company_id)
+        self.assertEqual(holiday.company_id, booking)
+        self.assertEqual(closure.timesheet_ids.employee_id, booker)
+        self.assertEqual(holiday.timesheet_ids.employee_id, booker)
+        late = self.env["hr.employee"].create(
+            {
+                "name": "Late",
+                "company_id": silent.id,
+                "resource_calendar_id": shared.id,
+            }
+        )
+        self.assertFalse((closure | holiday).timesheet_ids.employee_id & (quiet | late))
+
+    def test_a_closure_moves_its_day_out_of_a_validated_leave(self):
+        calendar = self.env["resource.calendar"].create(
+            {"name": "Week", "company_id": self.test_company.id, "tz": "UTC"}
+        )
+        employee = self.env["hr.employee"].create(
+            {
+                "name": "On leave",
+                "company_id": self.test_company.id,
+                "resource_calendar_id": calendar.id,
+            }
+        )
+        monday = datetime(2031, 3, 3)
+        leave = (
+            self.env["hr.leave"]
+            .with_context(mail_create_nolog=True, mail_notrack=True)
+            .create(
+                {
+                    "name": "Week off",
+                    "employee_id": employee.id,
+                    "holiday_status_id": self.env["hr.leave.type"]
+                    .create({"name": "Week off", "requires_allocation": False})
+                    .id,
+                    "request_date_from": monday.date(),
+                    "request_date_to": (monday + timedelta(days=4)).date(),
+                }
+            )
+        )
+        leave.sudo().action_approve()
+        week = [(monday + timedelta(days=day)).date() for day in range(5)]
+        lines = self.env["account.analytic.line"]
+
+        def booked():
+            found = lines.search([("employee_id", "=", employee.id)])
+            return sorted(found.mapped("date")), found.filtered("holiday_id")
+
+        self.assertEqual(booked()[0], week)
+        closure = self.env["resource.schedule.exception"].create(
+            {
+                "name": "Closure",
+                "calendar_id": calendar.id,
+                "date_from": monday + timedelta(days=2),
+                "date_to": monday + timedelta(days=2, hours=23),
+            }
+        )
+        self.assertEqual(leave.number_of_days, 4)
+        days, leave_lines = booked()
+        self.assertEqual(days, week, "every day is booked exactly once")
+        self.assertEqual(leave_lines, leave.sudo().timesheet_ids)
+        self.assertEqual(sorted(leave_lines.mapped("date")), week[:2] + week[3:])
+        self.assertEqual(closure.timesheet_ids.date, week[2])
+        closure.write(
+            {
+                "date_from": monday + timedelta(days=3),
+                "date_to": monday + timedelta(days=3, hours=23),
+            }
+        )
+        days, leave_lines = booked()
+        self.assertEqual(days, week)
+        self.assertEqual(sorted(leave_lines.mapped("date")), week[:3] + week[4:])
+        self.assertEqual(closure.timesheet_ids.date, week[3])
+        closure.unlink()
+        days, leave_lines = booked()
+        self.assertEqual(days, week)
+        self.assertEqual(leave.number_of_days, 5)
+        self.assertEqual(len(leave_lines), 5)
+
+    def test_a_shared_closure_books_every_company_on_its_calendar(self):
+        shared = self.env["resource.calendar"].create(
+            {"name": "Shared across companies", "company_id": False, "tz": "UTC"}
+        )
+        here, elsewhere = self.env["hr.employee"].create(
+            [
+                {
+                    "name": "Here",
+                    "company_id": self.test_company.id,
+                    "resource_calendar_id": shared.id,
+                },
+                {
+                    "name": "Elsewhere",
+                    "company_id": self.test_company_2.id,
+                    "resource_calendar_id": shared.id,
+                },
+            ]
+        )
+        closure = (
+            self.env["resource.schedule.exception"]
+            .with_context(allowed_company_ids=[self.test_company.id])
+            .create(
+                {
+                    "name": "Shared closure",
+                    "calendar_id": shared.id,
+                    "date_from": datetime(2031, 3, 5, 0, 0),
+                    "date_to": datetime(2031, 3, 5, 23, 0),
+                }
+            )
+        )
+        self.assertFalse(closure.company_id)
+        self.assertEqual(closure.timesheet_ids.employee_id, here | elsewhere)
 
     def test_unlink_timesheet_with_global_time_off(self):
         leave_start = datetime(2025, 1, 1, 7, 0)
@@ -993,7 +1164,7 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
         self,
     ):
         self.part_time_calendar.company_id = False
-        self.env["resource.schedule.exception"].create(
+        self.env["resource.schedule.exception"].with_company(self.test_company).create(
             {
                 "name": "Public Holiday",
                 "date_from": datetime(2021, 1, 4, 0, 0, 0),
@@ -1015,6 +1186,7 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
         self.flexible_calendar = self.env["resource.calendar"].create(
             {
                 "name": "Flexible Calendar",
+                "company_id": self.test_company.id,
                 "hours_per_day": 7.0,
                 "full_time_required_hours": 7.0,
                 "schedule_type": "flexible",
@@ -1029,7 +1201,7 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
             }
         )
 
-        self.env["resource.schedule.exception"].create(
+        self.env["resource.schedule.exception"].with_company(self.test_company).create(
             {
                 "name": "Public Holiday",
                 "date_from": datetime(2021, 1, 4, 0, 0, 0),

@@ -768,3 +768,108 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
         self.manager_doc.invalidate_recordset(["access_token", "link_date_to"])
         self.assertEqual(self.manager_doc.access_token, old_token)
         self.assertEqual(self.manager_doc.link_date_to, old_date)
+
+
+class TestDocumentsAccessClaims(TransactionCaseDocuments):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Access = cls.env["document.access"]
+        cls.folder = cls.env["document.document"].create(
+            {
+                "type": "folder",
+                "name": "Claimed folder",
+                "owner_id": cls.doc_user.id,
+                "access_internal": "none",
+            }
+        )
+        cls.member = cls.internal_user.partner_id
+
+    def share(self, role, date_to=False):
+        self.folder.action_update_access_rights(partners={self.member: (role, date_to)})
+
+    def sync(self, role=None):
+        wanted = [(self.folder.id, "partner_id", self.member.id, role, False)]
+        self.Access._sync_caused_grants("project.project,1", wanted if role else [])
+
+    def effective(self):
+        folder = self.folder.with_user(self.internal_user).sudo()
+        folder.invalidate_recordset(["access_role"])
+        return folder.access_role
+
+    def arrive(self, moment):
+        self.Access.sudo().search(
+            [("document_id", "=", self.folder.id), ("date_to", "=", moment)]
+        ).date_to = fields.Datetime.now() - timedelta(minutes=1)
+
+    def test_a_share_above_a_module_s_claim_holds_until_it_expires(self):
+        friday = fields.Datetime.now().replace(microsecond=0) + timedelta(days=3)
+        self.share("manage", friday)
+        self.sync("view")
+        self.assertEqual(self.effective(), "manage")
+        self.arrive(friday)
+        self.assertEqual(self.effective(), "view")
+        self.Access._gc_expired()
+        self.assertEqual(self.effective(), "view")
+
+    def test_an_expiry_set_on_a_member_ends_only_the_share(self):
+        now = fields.Datetime.now().replace(microsecond=0)
+        friday = now + timedelta(days=3)
+        self.share("view", now + timedelta(days=30))
+        self.sync("edit")
+        self.share(None, friday)
+        self.arrive(friday)
+        self.assertEqual(self.effective(), "edit")
+        self.Access._gc_expired()
+        self.assertEqual(self.effective(), "edit")
+        self.sync()
+        self.assertFalse(self.effective())
+
+    def test_a_member_changed_by_hand_outlasts_the_module(self):
+        self.sync("edit")
+        self.share("manage")
+        self.sync()
+        self.assertEqual(self.effective(), "manage")
+
+    def test_a_member_lowered_by_hand_keeps_the_module_s_role_until_it_lets_go(self):
+        self.sync("edit")
+        self.share("view")
+        self.assertEqual(self.effective(), "edit")
+        self.sync()
+        self.assertEqual(self.effective(), "view")
+
+    def test_removing_a_member_by_hand_leaves_the_module_s_claim(self):
+        self.share("view")
+        self.sync("edit")
+        self.share(False)
+        self.assertEqual(self.effective(), "edit")
+        self.sync()
+        self.assertFalse(self.effective())
+
+    def test_the_sharing_panel_shows_the_role_a_module_sets(self):
+        self.share("view", fields.Datetime.now() + timedelta(days=3))
+        self.sync("edit")
+        wizard = self.env["wizard.document.document.share"].browse(
+            self.env["wizard.document.document.share"].action_open(self.folder.ids)[
+                "res_id"
+            ]
+        )
+        line = wizard.share_access_ids.filtered(
+            lambda line: line.partner_id == self.member
+        )
+        self.assertEqual(
+            (line.role, line.grant_cause, bool(line.expiration_date)),
+            ("edit", "module", True),
+        )
+
+    def test_a_merged_contact_brings_its_stronger_share(self):
+        source = self.env["res.partner"].create({"name": "Merged member"})
+        self.share("view")
+        self.folder.action_update_access_rights(partners={source: ("manage", False)})
+        self.env["wizard.res.partner.merge"]._merge(
+            (self.member | source).ids, self.member, extra_checks=False
+        )
+        self.assertEqual(self.effective(), "manage")
+        self.assertEqual(
+            self.folder.access_ids.filtered("partner_id").mapped("role"), ["manage"]
+        )

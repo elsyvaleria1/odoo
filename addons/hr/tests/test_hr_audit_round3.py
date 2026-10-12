@@ -335,6 +335,11 @@ class TestHrAuditRound3(TestHrCommon):
 
         self.assertEqual(with_image.image_1920, original)
 
+    def test_a_name_of_invisible_characters_seeds_no_avatar(self):
+        employee = self.Employee.create({"name": "\u200e\u200f"})
+
+        self.assertFalse(employee.partner_id.image_1920)
+
     def test_user_write_still_seeds_a_missing_avatar(self):
         donor = self.Employee.create({"name": "R3 Donor"})
         user = self.env["res.users"].create(

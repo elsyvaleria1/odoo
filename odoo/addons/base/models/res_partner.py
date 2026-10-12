@@ -635,6 +635,7 @@ class ResPartner(models.Model):
             if vals.get("website"):
                 vals["website"] = self._clean_website(vals["website"])
         self._add_lang_to_vals(vals_list)
+        self._add_parent_company_to_vals(vals_list)
         partners = super().create(vals_list)
         partners.browse(
             partner.id
@@ -663,6 +664,15 @@ class ResPartner(models.Model):
             vals["website"] = self._clean_website(vals["website"])
         if vals.get("name"):
             self._rename_bank_holders(vals["name"])
+
+        if vals.get("parent_id") and "company_id" not in vals:
+            parent_field = self._fields["parent_id"]
+            parent = parent_field.convert_to_record(
+                parent_field.convert_to_cache(vals["parent_id"], self), self
+            )
+            parent_company = parent.company_id
+            if any(partner.company_id != parent_company for partner in self):
+                vals["company_id"] = parent_company.id
 
         tracked_fields = vals.keys() & self._synced_field_names()
         commercial_moved = bool({"parent_id", "is_company"} & vals.keys())
@@ -1191,6 +1201,21 @@ class ResPartner(models.Model):
             "domain": [("id", "in", (self | self.duplicate_ids).ids)],
             "context": {"create": False},
         }
+
+    @api.model
+    def _add_parent_company_to_vals(self, vals_list: list[ValuesType]) -> None:
+        orphans = [
+            vals
+            for vals in vals_list
+            if vals.get("parent_id") and "company_id" not in vals
+        ]
+        if not orphans:
+            return
+        parents = self.browse(sorted({vals["parent_id"] for vals in orphans}))
+        company_by_parent = {parent.id: parent.company_id.id for parent in parents}
+        _debug.logic("company_from_parent", contacts=len(orphans), parents=len(parents))
+        for vals in orphans:
+            vals["company_id"] = company_by_parent[vals["parent_id"]]
 
     @api.model
     def _add_lang_to_vals(self, vals_list: list[ValuesType]) -> None:
@@ -2076,6 +2101,7 @@ class ResPartner(models.Model):
             "name": parent_name,
             "is_company": True,
             "vat": self.vat,
+            "company_id": self.company_id.id,
         }
         values.update(self._convert_fields_to_values(self._address_fields()))
         if additional_values:

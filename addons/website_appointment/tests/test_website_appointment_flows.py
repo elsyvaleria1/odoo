@@ -41,6 +41,27 @@ class TestWebsiteAppointmentFlows(HttpCase):
         urls = [result["website_url"] for result in response["results"]]
         self.assertIn("/appointment/%s" % self.appointment_type.id, urls)
 
+    def test_autocomplete_serves_the_window_at_the_offset(self):
+        self.env["appointment.type"].create(
+            [{"name": f"zqw pager {index}", "is_published": True} for index in range(7)]
+        )
+
+        def names(**params):
+            result = self.call_jsonrpc(
+                "/website/snippet/autocomplete",
+                {
+                    "search_type": "appointments",
+                    "term": "zqw pager",
+                    "order": "name asc",
+                    **params,
+                },
+            )
+            return [row["name"] for row in result["results"]]
+
+        everything = names(limit=10)
+        self.assertEqual(len(everything), 7)
+        self.assertEqual(names(limit=3, offset=3), everything[3:6])
+
     def test_website_url_and_backend_menu(self):
         self.assertEqual(
             self.appointment_type.website_url,
