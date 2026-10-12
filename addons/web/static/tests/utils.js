@@ -234,6 +234,7 @@ class Contains {
             });
             this.observer.observe(this.options.target, {
                 attributes: true,
+                characterData: true,
                 childList: true,
                 subtree: true,
             });

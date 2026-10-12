@@ -81,11 +81,41 @@ const StorePatch = {
         this.starred_counter_bus_id = 0;
         /** @type {Map<number, boolean[]>} */
         this.pendingStarToggles = new Map();
+        /** @type {Map<number, number>} */
+        this.pendingNeedactionDone = new Map();
         this.messagingMenuSystrayState = fields.One("MessagingMenuUIState", {
             compute: () => ({ id: "mail.systray", preferredTabId: "chat" }),
         });
         /** @type {ReturnType<typeof import("@web/components/dropdown").useDropdownState>|undefined} */
         this.messagingMenuDropdown = undefined;
+    },
+    /**
+     * A message whose needaction this tab already took off the counter, until
+     * the server's notification for it comes back.
+     *
+     * @param {number} messageId
+     */
+    addPendingNeedactionDone(messageId) {
+        this.pendingNeedactionDone.set(
+            messageId,
+            (this.pendingNeedactionDone.get(messageId) ?? 0) + 1,
+        );
+    },
+    /**
+     * @param {number} messageId
+     * @returns {boolean} whether this tab had already taken it off the counter
+     */
+    takePendingNeedactionDone(messageId) {
+        const count = this.pendingNeedactionDone.get(messageId);
+        if (!count) {
+            return false;
+        }
+        if (count === 1) {
+            this.pendingNeedactionDone.delete(messageId);
+        } else {
+            this.pendingNeedactionDone.set(messageId, count - 1);
+        }
+        return true;
     },
     /** @param {Object} data */
     update(data) {

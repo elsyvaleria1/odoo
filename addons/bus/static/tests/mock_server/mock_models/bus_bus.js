@@ -60,10 +60,11 @@ export class BusBus extends models.Model {
 
     /**
      * Deliver a batch to the worker. When the socket is up, route it through
-     * the worker's message path (as the real server does) so the worker tracks
-     * ids for its `last` watermark and applies its seen-id dedup; otherwise
-     * fall back to a direct broadcast (the worker has no live socket to receive
-     * on, a mock-only shortcut).
+     * the worker's message path (as the real server does); otherwise hand it to
+     * the worker's receive step directly (the worker has no live socket to
+     * receive on, a mock-only shortcut). Either way the worker tracks the ids
+     * for its `last` watermark and its seen-id dedup, so the replay that follows
+     * the next subscribe does not deliver the batch a second time.
      *
      * @param {{ id: number, message: any }[]} values
      */
@@ -74,7 +75,7 @@ export class BusBus extends models.Model {
                 new MessageEvent("message", { data: JSON.stringify(values) }),
             );
         } else {
-            worker?.broadcast("BUS:NOTIFICATION", values);
+            worker?._receiveNotifications(values);
         }
     }
 

@@ -120,6 +120,9 @@ export class MailCoreWeb {
             (payload, { id: notifId }) => {
                 log.pipeline("mail.message/mark_as_read", () => payload);
                 const { message_ids: messageIds, needaction_delta } = payload;
+                const takenOffAlready = messageIds.filter((messageId) =>
+                    this.store.takePendingNeedactionDone(messageId),
+                ).length;
                 for (const messageId of messageIds) {
                     const message = this.store["mail.message"].get(messageId);
                     if (!message) {
@@ -134,9 +137,12 @@ export class MailCoreWeb {
                     message.needaction = false;
                     message.needaction_done = true;
                 }
-                applyCounterDelta(this.store, "needaction_counter", needaction_delta, {
-                    busId: notifId,
-                });
+                applyCounterDelta(
+                    this.store,
+                    "needaction_counter",
+                    needaction_delta + takenOffAlready,
+                    { busId: notifId },
+                );
             },
         );
     }

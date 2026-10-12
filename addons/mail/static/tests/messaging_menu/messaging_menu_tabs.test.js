@@ -13,6 +13,7 @@ import {
     triggerHotkey,
 } from "@mail/../tests/mail_test_helpers";
 import { describe, expect, test } from "@odoo/hoot";
+import { animationFrame } from "@odoo/hoot-dom";
 import { Command, getService, serverState } from "@web/../tests/web_test_helpers";
 
 describe.current.tags("desktop");
@@ -361,6 +362,8 @@ test("the Notifications counter comes before its messages and follows a mark as 
     await click(".o-mail-NotificationItem-markAsRead", {
         parent: [".o-mail-NotificationItem", { text: "msg 1" }],
     });
+    await waitNotifications(["mail.message/mark_as_read"]);
+    await animationFrame();
     await contains(NOTIFICATION_TAB_COUNTER, { text: "1" });
     await contains(".o-mail-NotificationItem", { count: 1 });
 });

@@ -606,6 +606,7 @@ class Contains {
             });
             this.observer.observe(document.body, {
                 attributes: true,
+                characterData: true,
                 childList: true,
                 subtree: true,
             });

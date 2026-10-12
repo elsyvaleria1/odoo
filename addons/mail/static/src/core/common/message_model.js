@@ -801,13 +801,14 @@ export class Message extends Record {
         return !this.thread?.channel;
     }
 
-    /** @this {import("models").Message} */
+    /**
+     * @this {import("models").Message}
+     * @returns {Promise<number[]>} the ids the server marked done, none when it failed
+     */
     async setDone() {
         const wasNeedaction = this.needaction;
-        const storeSnapshot = snapshotCounter(this.store, "needaction_counter");
         const threadSnapshot =
             this.thread && snapshotCounter(this.thread, "message_needaction_counter");
-        let storeApplied = 0;
         let threadApplied = 0;
         log.logic("setDone", () => ({
             id: this.id,
@@ -817,9 +818,6 @@ export class Message extends Record {
         if (wasNeedaction) {
             this.needaction = false;
             this.needaction_done = true;
-            if (this.countsInNotifications) {
-                storeApplied = applyCounterDelta(this.store, "needaction_counter", -1);
-            }
             if (this.thread) {
                 threadApplied = applyCounterDelta(
                     this.thread,
@@ -829,7 +827,7 @@ export class Message extends Record {
             }
         }
         try {
-            await this.store.env.services.orm.silent.call(
+            return await this.store.env.services.orm.silent.call(
                 "mail.message",
                 "set_message_done",
                 [[this.id]],
@@ -839,10 +837,10 @@ export class Message extends Record {
             if (wasNeedaction) {
                 this.needaction = true;
                 this.needaction_done = false;
-                storeSnapshot.restoreDelta(-storeApplied);
                 threadSnapshot?.restoreDelta(-threadApplied);
             }
             console.warn("Failed to mark message as read", e);
+            return [];
         }
     }
 

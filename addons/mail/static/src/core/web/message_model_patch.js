@@ -21,6 +21,21 @@ const messagePatch = {
             !thread.isChannelKind && ["comment", "email"].includes(this.message_type)
         );
     },
+    async setDone() {
+        if (!this.needaction || !this.countsInNotifications) {
+            return super.setDone(...arguments);
+        }
+        const id = Number(this.id);
+        const counterSnapshot = snapshotCounter(this.store, "needaction_counter");
+        const applied = applyCounterDelta(this.store, "needaction_counter", -1);
+        this.store.addPendingNeedactionDone(id);
+        const markedIds = await super.setDone(...arguments);
+        if (!markedIds.includes(id) && this.store.takePendingNeedactionDone(id)) {
+            log.logic("setDone counter restored", () => ({ id: this.id }));
+            counterSnapshot.restoreDelta(-applied);
+        }
+        return markedIds;
+    },
     async toggleStar() {
         const willStar = !this.starred;
         const counterSnapshot = snapshotCounter(this.store, "starred_counter");

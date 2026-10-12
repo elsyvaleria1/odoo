@@ -44,7 +44,10 @@ declare module "models" {
         needaction_counter_bus_id: number;
         onLinkFollowed: (fromThread: Thread) => void;
         onUpdateActivityGroups: () => void;
+        addPendingNeedactionDone: (messageId: number) => void;
+        pendingNeedactionDone: Map<number, number>;
         pendingStarToggles: Map<number, boolean[]>;
+        takePendingNeedactionDone: (messageId: number) => boolean;
         scheduleActivity: (
             resModel: string | false,
             resIds: (number | string)[] | false,

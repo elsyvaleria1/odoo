@@ -583,12 +583,19 @@ export class WebsocketWorker {
             this._logDebug("_onWebsocketMessage: ignored non-array frame");
             return;
         }
+        this._receiveNotifications(payload);
+    }
+
+    /**
+     * @param {{ id: number, message: Object, names?: string[] }[]} payload
+     */
+    _receiveNotifications(payload) {
         const now = Date.now();
         this._pruneSeenNotificationIds(now);
         const notifications = payload.filter(
             (notification) => !this.seenNotificationIds.has(notification.id),
         );
-        this._logDebug("_onWebsocketMessage", notifications);
+        this._logDebug("_receiveNotifications", notifications);
         if (!notifications.length) {
             return;
         }
