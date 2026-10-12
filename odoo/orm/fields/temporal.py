@@ -408,6 +408,14 @@ class Date(BaseDate[date]):
 
     from_string = to_date
 
+    @typing.overload
+    @staticmethod
+    def to_string(value: date) -> str: ...
+
+    @typing.overload
+    @staticmethod
+    def to_string(value: typing.Literal[False]) -> typing.Literal[False]: ...
+
     @staticmethod
     def to_string(
         value: date | typing.Literal[False],
@@ -430,7 +438,8 @@ class Date(BaseDate[date]):
     def convert_to_display_name(
         self, value: typing.Any, record: ModelLike
     ) -> str | typing.Literal[False]:
-        return Date.to_string(value)
+        day: date | typing.Literal[False] = value
+        return Date.to_string(day)
 
 
 class Datetime(BaseDate[datetime]):
@@ -592,6 +601,14 @@ class Datetime(BaseDate[datetime]):
         return parsed
 
     from_string = to_datetime
+
+    @typing.overload
+    @staticmethod
+    def to_string(value: datetime) -> str: ...
+
+    @typing.overload
+    @staticmethod
+    def to_string(value: typing.Literal[False]) -> typing.Literal[False]: ...
 
     @staticmethod
     def to_string(
