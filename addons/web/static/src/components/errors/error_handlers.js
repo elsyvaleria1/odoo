@@ -9,6 +9,7 @@ import { t } from "@odoo/owl";
 import {
     ClientErrorDialog,
     ErrorDialog,
+    exceptionLineage,
     NetworkErrorDialog,
     RequestEntityTooLargeErrorDialog,
     RPCErrorDialog,
@@ -85,11 +86,13 @@ export function rpcErrorHandler(env, error, originalError) {
     }
     if (originalError instanceof RPCError) {
         error.event?.preventDefault();
-        const exceptionName = originalError.exceptionName;
         let ErrorComponent = /** @type {any} */ (originalError).Component;
-        if (!ErrorComponent && exceptionName) {
-            if (errorNotificationRegistry.contains(exceptionName)) {
-                const notif = errorNotificationRegistry.get(exceptionName);
+        const lineage = ErrorComponent
+            ? []
+            : exceptionLineage(originalError.exceptionName, originalError.data);
+        for (const name of lineage) {
+            if (errorNotificationRegistry.contains(name)) {
+                const notif = errorNotificationRegistry.get(name);
                 env.services.notification.add(
                     notif.message ||
                         originalError.data?.message ||
@@ -98,8 +101,9 @@ export function rpcErrorHandler(env, error, originalError) {
                 );
                 return true;
             }
-            if (errorDialogRegistry.contains(exceptionName)) {
-                ErrorComponent = errorDialogRegistry.get(exceptionName);
+            if (errorDialogRegistry.contains(name)) {
+                ErrorComponent = errorDialogRegistry.get(name);
+                break;
             }
         }
         if (!ErrorComponent && originalError.data?.context) {

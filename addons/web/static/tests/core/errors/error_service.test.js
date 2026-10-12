@@ -245,6 +245,102 @@ test("ServerActionWithWarningsError routes to WarningDialog", async () => {
     expect.verifySteps(serializedNames);
 });
 
+test("an unregistered subclass borrows the dialog of its nearest known ancestor", async () => {
+    expect.errors(1);
+    mockService("dialog", {
+        add(dialogClass, /** @type {any} */ props) {
+            expect(dialogClass).toBe(WarningDialog);
+            expect.step(props.exceptionName);
+            return async () => {};
+        },
+    });
+    await makeMockEnv();
+    const name = "odoo.addons.account_credit.models.credit_utils.CreditRefused";
+    Promise.reject(
+        makeErrorFromResponse({
+            code: 200,
+            message: "Odoo Server Error",
+            data: {
+                name,
+                lineage: [
+                    "odoo.exceptions.ValidationError",
+                    "odoo.exceptions.UserError",
+                ],
+                message: "Credit refused",
+                arguments: ["Credit refused"],
+                context: {},
+                debug: "",
+            },
+        }),
+    );
+    await animationFrame();
+    expect.verifyErrors(["RPC_ERROR: Odoo Server Error"]);
+    expect.verifySteps([name]);
+});
+
+test("an exact registration wins over the ancestors in the lineage", async () => {
+    expect.errors(1);
+    class ExactDialog extends Component {
+        static template = xml`<div/>`;
+        static props = { ...standardErrorDialogProps };
+    }
+    mockService("dialog", {
+        add(dialogClass) {
+            expect(dialogClass).toBe(ExactDialog);
+            expect.step("exact");
+            return async () => {};
+        },
+    });
+    await makeMockEnv();
+    errorDialogRegistry.add("exact_error", ExactDialog);
+    Promise.reject(
+        makeErrorFromResponse({
+            code: 200,
+            message: "Odoo Server Error",
+            data: {
+                name: "exact_error",
+                lineage: ["odoo.exceptions.UserError"],
+                message: "Exact",
+                arguments: ["Exact"],
+                context: {},
+                debug: "",
+            },
+        }),
+    );
+    await animationFrame();
+    expect.verifyErrors(["RPC_ERROR: Odoo Server Error"]);
+    expect.verifySteps(["exact"]);
+});
+
+test("a lineage without a known ancestor keeps the server error dialog", async () => {
+    expect.errors(1);
+    mockService("dialog", {
+        add(dialogClass) {
+            expect(dialogClass).toBe(RPCErrorDialog);
+            expect.step("server");
+            return async () => {};
+        },
+    });
+    await makeMockEnv();
+    Promise.reject(
+        makeErrorFromResponse({
+            code: 200,
+            message: "Odoo Server Error",
+            data: {
+                name: "builtins.KeyError",
+                lineage: ["builtins.LookupError"],
+                message: "'x'",
+                arguments: ["x"],
+                context: {},
+                debug: "",
+            },
+        }),
+    );
+    await animationFrame();
+    expect.verifyErrors(["RPC_ERROR: Odoo Server Error"]);
+    expect.verifySteps(["server"]);
+});
+
 test("handle CONNECTION_LOST_ERROR", async () => {
     expect.errors(1);
     mockService("notification", {

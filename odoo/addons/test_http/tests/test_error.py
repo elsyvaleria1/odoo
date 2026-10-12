@@ -1,5 +1,7 @@
+from odoo.exceptions import ValidationError
+from odoo.http import serialize_exception
 from odoo.libs.json import dumps as json_dumps
-from odoo.tests import tagged
+from odoo.tests import BaseCase, tagged
 from odoo.tools import mute_logger
 
 from .test_common import TestHttpBase
@@ -78,6 +80,7 @@ class TestHttpJsonError(TestHttpBase):
                 "arguments": ...,
                 "context": ...,
                 "debug": ...,
+                "lineage": ...,
                 "message": ...,
                 "name": ...,
             },
@@ -157,3 +160,25 @@ class TestHttpJsonError(TestHttpBase):
         self.assertIsErrorPayload(payload)
 
         self.assertEqual(payload["error"]["code"], 404)
+
+
+class _RefusedError(ValidationError):
+    pass
+
+
+@tagged("post_install", "-at_install")
+class TestErrorLineage(BaseCase):
+    def test_a_subclass_names_its_known_ancestors(self):
+        data = serialize_exception(_RefusedError("Credit refused"))
+
+        self.assertEqual(data["name"], f"{__name__}._RefusedError")
+        self.assertEqual(
+            data["lineage"],
+            ["odoo.exceptions.ValidationError", "odoo.exceptions.UserError"],
+        )
+
+    def test_a_builtin_exception_stops_before_exception(self):
+        self.assertEqual(serialize_exception(ValueError("x"))["lineage"], [])
+        self.assertEqual(
+            serialize_exception(KeyError("x"))["lineage"], ["builtins.LookupError"]
+        )

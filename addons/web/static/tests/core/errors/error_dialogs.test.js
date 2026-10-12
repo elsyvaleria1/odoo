@@ -161,6 +161,28 @@ test("WarningDialog", async () => {
     expect(".o_dialog footer button").toHaveText("Close");
 });
 
+test("WarningDialog titles a subclass after its nearest known ancestor", async () => {
+    const env = await makeDialogMockEnv();
+    await mountWithCleanup(WarningDialog, {
+        env,
+        props: {
+            exceptionName:
+                "odoo.addons.account_credit.models.credit_utils.CreditRefused",
+            message: "...",
+            data: {
+                arguments: ["Credit refused"],
+                lineage: [
+                    "odoo.exceptions.ValidationError",
+                    "odoo.exceptions.UserError",
+                ],
+            },
+            close() {},
+        },
+    });
+    expect("header .modal-title").toHaveText("Validation Error");
+    expect("main").toHaveText("Credit refused");
+});
+
 test("RedirectWarningDialog", async () => {
     mockService("action", {
         async doAction(actionId) {

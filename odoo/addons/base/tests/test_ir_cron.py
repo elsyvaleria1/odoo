@@ -188,7 +188,7 @@ class TestIrCron(TransactionCase, CronMixinCase):
         self.assertEqual(list(action_params), ["code", "message", "data"])
         self.assertEqual(
             list(action_params["data"]),
-            ["name", "message", "arguments", "context", "debug"],
+            ["name", "lineage", "message", "arguments", "context", "debug"],
         )
 
     def test_cron_no_job_ready(self):

@@ -46,6 +46,7 @@ class TestHttpWebJson_2(TestHttpBase):
                 "status",
                 "detail",
                 "name",
+                "lineage",
                 "message",
                 "arguments",
                 "context",

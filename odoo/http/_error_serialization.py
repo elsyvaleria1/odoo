@@ -37,6 +37,20 @@ def _client_context(context: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _qualified_name(cls: type) -> str:
+    return f"{cls.__module__}.{cls.__name__}" if cls.__module__ else cls.__name__
+
+
+def _exception_lineage(exception: BaseException) -> list[str]:
+    # The client picks a dialog by exact class name; the ancestors let an
+    # unregistered subclass of a known exception borrow its parent's dialog.
+    return [
+        _qualified_name(base)
+        for base in type(exception).__mro__[1:]
+        if issubclass(base, BaseException) and base not in (Exception, BaseException)
+    ]
+
+
 _OPAQUE_EXCEPTION_TYPES = (psycopg.Error, OSError)
 _MASKED_EXCEPTION_MESSAGE = "Internal Server Error"
 
@@ -48,7 +62,6 @@ def serialize_exception(
     arguments: tuple | None = None,
 ) -> dict[str, Any]:
     name = type(exception).__name__
-    module = type(exception).__module__
     opaque = (
         isinstance(exception, _OPAQUE_EXCEPTION_TYPES) and _is_exception_detail_hidden()
     )
@@ -73,7 +86,8 @@ def serialize_exception(
         traceback_hidden=_is_exception_detail_hidden(),
     )
     return {
-        "name": f"{module}.{name}" if module else name,
+        "name": _qualified_name(type(exception)),
+        "lineage": _exception_lineage(exception),
         "message": message,
         "arguments": arguments,
         "context": _client_context(getattr(exception, "context", {})),

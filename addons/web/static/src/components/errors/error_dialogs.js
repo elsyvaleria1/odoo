@@ -43,13 +43,27 @@ export const standardErrorDialogProps = {
 };
 
 /**
+ * Names to match a server exception against, most specific first: its own
+ * class, then the ancestors the server serialized in `lineage`.
+ *
  * @param {string | null | undefined} exceptionName
+ * @param {Object | null | undefined} data
+ * @returns {string[]}
+ */
+export function exceptionLineage(exceptionName, data) {
+    return exceptionName ? [exceptionName, ...(data?.lineage ?? [])] : [];
+}
+
+/**
+ * @param {string | null | undefined} exceptionName
+ * @param {Object | null | undefined} data
  * @returns {string | undefined}
  */
-function titleForException(exceptionName) {
-    return exceptionName
-        ? odooExceptionTitleMap.get(exceptionName)?.toString()
-        : undefined;
+function titleForException(exceptionName, data) {
+    const known = exceptionLineage(exceptionName, data).find((name) =>
+        odooExceptionTitleMap.has(name),
+    );
+    return known ? odooExceptionTitleMap.get(known)?.toString() : undefined;
 }
 
 export class ErrorDialog extends Component {
@@ -123,7 +137,7 @@ export class RequestEntityTooLargeErrorDialog extends ErrorDialog {
 export class RPCErrorDialog extends ErrorDialog {
     /** @returns {string} */
     get title() {
-        const known = titleForException(this.props.exceptionName);
+        const known = titleForException(this.props.exceptionName, this.props.data);
         if (known) {
             return known;
         }
@@ -166,7 +180,7 @@ export class WarningDialog extends Component {
     /** @returns {string} */
     inferTitle() {
         return (
-            titleForException(this.props.exceptionName) ||
+            titleForException(this.props.exceptionName, this.props.data) ||
             this.props.title ||
             _t("Odoo Warning")
         );
