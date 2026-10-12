@@ -163,11 +163,13 @@ class TestDigestTelegramChatLookup(TransactionCase):
             domain = mock_search.call_args[0][0]
 
         bot_filters = [
-            d for d in domain if isinstance(d, (list, tuple)) and d[0] == "bot_id"
+            d
+            for d in domain
+            if isinstance(d, (list, tuple)) and d[0] == "bot_id" and d[1] == "in"
         ]
         self.assertFalse(
             bot_filters,
-            "bot_id filter must not appear when telegram_bot_id is empty",
+            "the chat must not be pinned to a bot when telegram_bot_id is empty",
         )
 
     def test_chat_returns_empty_recordset_when_none_found(self):

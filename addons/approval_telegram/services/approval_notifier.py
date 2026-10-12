@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from odoo import api, fields, models
+from odoo.fields import Domain
 
 from odoo.addons.telegram.tools import keyboard as kb
 from odoo.addons.telegram.tools.authority import operating
@@ -56,11 +57,17 @@ class TelegramApprovalNotifier(models.AbstractModel):
         )
 
     @api.model
+    def _get_pushing_bot_domain(self) -> Domain:
+        return (
+            Domain("notify_approvals", "=", True)
+            & self.env["telegram.bot"]._get_delivering_domain()
+        )
+
+    @api.model
     def _feature_active(self) -> bool:
         return bool(
             operating(self.env["telegram.bot"]).search_count(
-                [("notify_approvals", "=", True), ("moved_to_id", "=", False)],
-                limit=1,
+                self._get_pushing_bot_domain(), limit=1
             )
         )
 
@@ -76,11 +83,7 @@ class TelegramApprovalNotifier(models.AbstractModel):
         if not user:
             return self.env["telegram.chat"].browse()
         bots = operating(self.env["telegram.bot"]).search(
-            [
-                ("notify_approvals", "=", True),
-                ("company_ids", "in", company.id),
-                ("moved_to_id", "=", False),
-            ]
+            self._get_pushing_bot_domain() & Domain("company_ids", "in", company.id)
         )
         if not bots:
             return self.env["telegram.chat"].browse()

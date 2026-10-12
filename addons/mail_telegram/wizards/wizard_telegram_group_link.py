@@ -1,5 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+from odoo.fields import Domain
 
 
 class WizardTelegramGroupLink(models.TransientModel):
@@ -31,10 +32,14 @@ class WizardTelegramGroupLink(models.TransientModel):
     bot_id = fields.Many2one(
         comodel_name="telegram.bot",
         default=lambda self: self.env["telegram.bot"].search(
-            [("bot_username", "!=", False), ("can_join_groups", "=", True)], limit=1
+            Domain("bot_username", "!=", False)
+            & Domain("can_join_groups", "=", True)
+            & self.env["telegram.bot"]._get_delivering_domain(),
+            limit=1,
         ),
         required=True,
-        domain="[('bot_username', '!=', False), ('can_join_groups', '=', True)]",
+        domain="[('bot_username', '!=', False), ('can_join_groups', '=', True), "
+        "('moved_to_id', '=', False), ('on_air', '=', True)]",
     )
     link = fields.Char(readonly=True)
     command = fields.Char(

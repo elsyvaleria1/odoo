@@ -1,5 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
+from odoo.fields import Domain
 
 from ..tools.authority import operating
 
@@ -42,8 +43,9 @@ class ResUsers(models.Model):
 
     @api.depends_context("uid")
     def _compute_telegram_connect_bot_ids(self) -> None:
-        bots = operating(self.env["telegram.bot"]).search(
-            [("bot_username", "!=", False), ("moved_to_id", "=", False)]
+        Bot = self.env["telegram.bot"]
+        bots = operating(Bot).search(
+            Domain("bot_username", "!=", False) & Bot._get_delivering_domain()
         )
         for user in self:
             user.telegram_connect_bot_ids = bots.filtered(

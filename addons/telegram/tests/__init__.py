@@ -34,5 +34,6 @@ from . import test_access_matrix
 from . import test_bot_company
 from . import test_bot_companies
 from . import test_moved_bot
+from . import test_off_air_bot
 from . import test_departures
 from . import test_phone_and_delivery_health

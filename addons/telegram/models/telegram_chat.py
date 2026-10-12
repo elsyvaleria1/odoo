@@ -6,6 +6,7 @@ import psycopg
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.fields import Domain
 from odoo.models import GC_UNLINK_LIMIT
 from odoo.tools import frozendict
 
@@ -220,14 +221,14 @@ class TelegramChat(models.Model):
 
     @api.model
     def _for_partner(self, partner, bot=None):
-        domain = [
-            ("chat_type", "=", "private"),
-            ("business_connection_id", "=", False),
-            ("account_id.partner_id", "in", partner.ids),
-            ("bot_id.moved_to_id", "=", False),
-        ]
+        domain = (
+            Domain("chat_type", "=", "private")
+            & Domain("business_connection_id", "=", False)
+            & Domain("account_id.partner_id", "in", partner.ids)
+            & Domain("bot_id", "any", self.env["telegram.bot"]._get_delivering_domain())
+        )
         if bot is not None:
-            domain.append(("bot_id", "in", bot.ids))
+            domain &= Domain("bot_id", "in", bot.ids)
         return operating(self).search(domain, order="last_message_time desc, id desc")
 
     @api.model

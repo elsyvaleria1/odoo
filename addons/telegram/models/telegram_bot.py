@@ -7,6 +7,7 @@ import psycopg
 
 from odoo import Command, api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.fields import Domain
 from odoo.libs.json import dumps as json_dumps
 
 from ..tools import errors, get_telegram_client, replay
@@ -120,6 +121,15 @@ class TelegramBot(models.Model):
     command_ids = fields.Many2many(
         comodel_name="telegram.command",
         help="Additional commands that this bot should respond to.",
+    )
+    on_air = fields.Boolean(
+        compute="_compute_on_air",
+        store=True,
+        index=True,
+        copy=False,
+        help="The bot can send: its credential is set and not archived. Archiving "
+        "the credential takes a bot off the air on purpose; no notification, "
+        "push or connect link is routed to a bot that is off the air.",
     )
     token_hash = fields.Char(
         compute="_compute_token_hash",
@@ -238,6 +248,18 @@ class TelegramBot(models.Model):
             (ids,),
         )
         return dict(self.env.cr.fetchall())
+
+    @api.depends("credential_id", "credential_id.active")
+    def _compute_on_air(self) -> None:
+        for bot in self:
+            bot.on_air = bool(keeping(bot).credential_id.active)
+
+    @api.model
+    def _get_delivering_domain(self) -> Domain:
+        return Domain("moved_to_id", "=", False) & Domain("on_air", "=", True)
+
+    def _handle_on_air_change(self) -> None:
+        return
 
     @api.depends("credential_id", "credential_id.active", "credential_id.bearer_token")
     def _compute_token_hash(self) -> None:
@@ -380,7 +402,7 @@ class TelegramBot(models.Model):
         handler = self.env[handler_name]
         return (
             operating(self)
-            .search([("moved_to_id", "=", False)])
+            .search(self._get_delivering_domain())
             .filtered(handler._feature_enabled)
         )
 

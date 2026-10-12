@@ -5,3 +5,6 @@ UPDATE credential_credential
 UPDATE telegram_bot
    SET token_hash = NULL
  WHERE token_hash IS NOT NULL;
+UPDATE telegram_bot
+   SET on_air = FALSE
+ WHERE on_air;

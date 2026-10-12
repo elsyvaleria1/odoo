@@ -15,6 +15,7 @@ class TestTelegramBotNeutralize(TelegramBotTestCase):
     def test_a_neutralized_copy_neither_sends_nor_receives(self):
         self._neutralize()
         self.assertFalse(self.test_credential.active)
+        self.assertFalse(self.test_bot.on_air, "a neutralized copy routed to its bots")
         with self.assertRaises(ValueError):
             self.test_bot._get_bot_token()
         self.assertFalse(

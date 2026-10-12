@@ -146,6 +146,16 @@ class TestApprovalNotifier(ApprovalRequestTestBase):
         self.env["telegram.approval.notifier"]._notify_approver(self.approver)
         self.assertFalse(self._queued())
 
+    def test_no_push_through_a_bot_taken_off_the_air(self):
+        self.test_bot.notify_approvals = True
+
+        self.test_credential.active = False
+
+        notifier = self.env["telegram.approval.notifier"]
+        self.assertFalse(notifier._feature_active())
+        notifier._notify_approver(self.approver)
+        self.assertFalse(self._queued())
+
     def test_no_push_when_toggle_off(self):
         self.test_bot.notify_approvals = True
         self.step_member.notify_telegram = False

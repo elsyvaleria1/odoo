@@ -1,4 +1,5 @@
 from odoo import api, fields, models, tools
+from odoo.fields import Domain
 
 from odoo.addons.telegram.tools.authority import keeping, operating
 
@@ -18,9 +19,13 @@ class TelegramBot(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        if vals.keys() & {"notify_mail", "active", "moved_to_id"}:
+        if vals.keys() & {"notify_mail", "active", "moved_to_id", "credential_id"}:
             self.env.registry.clear_cache("mail")
         return super().write(vals)
+
+    def _handle_on_air_change(self) -> None:
+        super()._handle_on_air_change()
+        self.env.registry.clear_cache("mail")
 
     def unlink(self):
         self.env.registry.clear_cache("mail")
@@ -35,7 +40,9 @@ class TelegramBot(models.Model):
     def _get_notifying_bot_ids(self) -> tuple[int, ...]:
         bots = keeping(self).with_context(active_test=True)
         return tuple(
-            bots.search([("notify_mail", "=", True), ("moved_to_id", "=", False)]).ids
+            bots.search(
+                Domain("notify_mail", "=", True) & bots._get_delivering_domain()
+            ).ids
         )
 
     @api.model

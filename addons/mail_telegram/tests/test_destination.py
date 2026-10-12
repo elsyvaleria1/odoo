@@ -259,6 +259,14 @@ class TestStatus(DestinationCase):
         self.test_bot.notify_mail = False
         self.assertEqual(self._state(), "no_bot")
 
+    def test_a_bot_taken_off_the_air_is_no_bot(self):
+        self.assertEqual(self._state(), "ready")
+
+        self.test_credential.active = False
+        self.test_user.invalidate_recordset(["telegram_notify_state"])
+
+        self.assertEqual(self._state(), "no_bot")
+
     def test_start_bot(self):
         self.test_chat.bot_id = self.env["telegram.bot"].create(
             {

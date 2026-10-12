@@ -2,6 +2,7 @@ from urllib.parse import quote
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+from odoo.fields import Domain
 
 
 class WizardTelegramInvite(models.TransientModel):
@@ -15,10 +16,13 @@ class WizardTelegramInvite(models.TransientModel):
     bot_id = fields.Many2one(
         comodel_name="telegram.bot",
         default=lambda self: self.env["telegram.bot"].search(
-            [("bot_username", "!=", False)], limit=1
+            Domain("bot_username", "!=", False)
+            & self.env["telegram.bot"]._get_delivering_domain(),
+            limit=1,
         ),
         required=True,
-        domain="[('bot_username', '!=', False)]",
+        domain="[('bot_username', '!=', False), ('moved_to_id', '=', False), "
+        "('on_air', '=', True)]",
     )
     link = fields.Char(readonly=True)
     qr_url = fields.Char(compute="_compute_qr_url")
