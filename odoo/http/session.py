@@ -224,11 +224,11 @@ class Session(collections.abc.MutableMapping[str, Any]):
         return self.sid[:STORED_SESSION_BYTES]
 
     @property
-    def session_token(self) -> str | bool | None:
+    def session_token(self) -> str | None:
         return self.get("session_token")
 
     @session_token.setter
-    def session_token(self, session_token: str | bool | None) -> None:
+    def session_token(self, session_token: str | None) -> None:
         self["session_token"] = session_token
 
     def authenticate(self, env: Any, credential: dict[str, Any]) -> dict[str, Any]:

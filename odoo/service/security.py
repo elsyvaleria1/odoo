@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 
-def get_session_token(session: Session, env: Environment) -> str | bool:
+def get_session_token(session: Session, env: Environment) -> str | None:
     user = env["res.users"].browse(session.uid)
     with _debug.perf("session.token_computed", cr=env.cr, uid=session.uid):
         return user._get_session_token(session.sid)
