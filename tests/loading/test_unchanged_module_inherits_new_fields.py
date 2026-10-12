@@ -176,3 +176,56 @@ def test_an_unchanged_module_gets_the_fields_an_upgraded_parent_adds(
         subprocess.run(
             [dropdb_path(), "--if-exists", "--force", db], check=False, timeout=60
         )
+
+
+@pytest.mark.requires_pg
+@pytest.mark.requires_psql
+def test_an_unchanged_module_gets_the_index_an_upgraded_mixin_adds(
+    tmp_path_factory,
+):
+    if not pg_reachable():
+        pytest.skip("no reachable PostgreSQL")
+    if dropdb_path() is None or psql_path() is None:
+        pytest.skip("psql/dropdb not on PATH")
+
+    extra = tmp_path_factory.mktemp("index_probe_addons")
+    addons = f"{REPO_ROOT / 'odoo' / 'addons'},{REPO_ROOT / 'addons'},{extra}"
+    data_dir = tmp_path_factory.mktemp("index_probe_data")
+    db = f"odoo_indexprobe_{uuid.uuid4().hex[:12]}"
+
+    def write_parent(indexed: bool) -> None:
+        _write(
+            extra,
+            PARENT,
+            ["base"],
+            PARENT_MODELS.format(
+                mixin_fields=f"    a = fields.Char(index={indexed})",
+                delegate_fields="    d_a = fields.Char()",
+            ),
+        )
+
+    try:
+        write_parent(indexed=False)
+        _write(extra, CHILD, [PARENT], CHILD_MODELS)
+        run = _run_odoo_bin(db, addons, data_dir, "-i", f"base,{PARENT},{CHILD}")
+        assert run.returncode == 0, run.stdout[-4000:]
+        run = _run_odoo_bin(db, addons, data_dir, "-u", "base")
+        assert run.returncode == 0, run.stdout[-4000:]
+
+        write_parent(indexed=True)
+        run = _run_odoo_bin(db, addons, data_dir, "-u", "base")
+        assert run.returncode == 0, run.stdout[-4000:]
+        assert "unchanged modules left as installed" in run.stdout
+
+        assert _get_rows(
+            db,
+            "SELECT indexname FROM pg_indexes"
+            " WHERE tablename = 'probe_thing' AND indexname = 'probe_thing__a_index'",
+        ) == {"probe_thing__a_index"}, (
+            "an index the upgraded mixin declares never reached the table of "
+            "the unchanged child that inherits it"
+        )
+    finally:
+        subprocess.run(
+            [dropdb_path(), "--if-exists", "--force", db], check=False, timeout=60
+        )

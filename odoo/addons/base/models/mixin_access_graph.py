@@ -465,6 +465,44 @@ class AccessGrantNames:
     role: str = "role"
 
 
+GRANT_CAUSES = [
+    ("manual", "Shared by a user"),
+    ("module", "Set by a module"),
+    ("approval_request", "Approved request"),
+    ("migration", "Carried over by an upgrade"),
+]
+PRIOR_FIELDS = ("prior_role", "prior_cause", "prior_cause_ref", "prior_date_to")
+
+
+class _GrantRow(typing.NamedTuple):
+    id: int
+    role: str
+    cause: str
+    cause_ref: str | None
+    date_to: typing.Any
+    prior_role: str | None
+    prior_cause: str | None
+    prior_cause_ref: str | None
+    prior_date_to: typing.Any
+
+    def live_as_prior(self) -> dict[str, typing.Any]:
+        return {
+            "prior_role": self.role,
+            "prior_cause": self.cause,
+            "prior_cause_ref": self.cause_ref,
+            "prior_date_to": self.date_to,
+        }
+
+    def prior_values(self, role_name: str) -> dict[str, typing.Any]:
+        return {
+            role_name: self.prior_role,
+            "cause": self.prior_cause,
+            "cause_ref": self.prior_cause_ref,
+            "date_to": self.prior_date_to,
+            **dict.fromkeys(PRIOR_FIELDS, False),
+        }
+
+
 class MixinAccessGrant(models.AbstractModel):
     _name = "mixin.access.grant"
     _description = "Grant of a Role on a Node"
@@ -494,19 +532,22 @@ class MixinAccessGrant(models.AbstractModel):
         help="After this moment the grant grants nothing.",
     )
     cause = fields.Selection(
-        selection=[
-            ("manual", "Shared by a user"),
-            ("module", "Set by a module"),
-            ("approval_request", "Approved request"),
-            ("migration", "Carried over by an upgrade"),
-        ],
+        selection=GRANT_CAUSES,
         default="manual",
         required=True,
     )
     cause_ref = fields.Char(
         string="Cause Reference",
+        index="btree_not_null",
         help="The record that caused the grant, as model,id.",
     )
+    prior_role = fields.Char(
+        help="The role the grant held before a module took it over, given back "
+        "when the module lets it go.",
+    )
+    prior_cause = fields.Selection(selection=GRANT_CAUSES)
+    prior_cause_ref = fields.Char(index="btree_not_null")
+    prior_date_to = fields.Datetime()
     granted_by_id = fields.Many2one(
         comodel_name="res.users",
         default=lambda self: self.env.user,
@@ -530,14 +571,27 @@ class MixinAccessGrant(models.AbstractModel):
         grants = self.sudo()
         ladder = self._fields[names.role].get_values(self.env)
         self.flush_model(
-            [names.resource, names.role, "partner_id", "group_id", "company_id"]
+            [
+                names.resource,
+                names.role,
+                "partner_id",
+                "group_id",
+                "company_id",
+                "date_to",
+                "cause",
+                "cause_ref",
+                *PRIOR_FIELDS,
+            ]
         )
         self.env.cr.execute(
             SQL(
                 """SELECT id, %(resource)s, partner_id, group_id, company_id,
-                          %(role)s, cause_ref
+                          %(role)s, cause, cause_ref, date_to,
+                          prior_role, prior_cause, prior_cause_ref, prior_date_to
                      FROM %(table)s
-                    WHERE cause_ref = %(cause_ref)s OR %(resource)s = ANY(%(nodes)s)""",
+                    WHERE cause_ref = %(cause_ref)s
+                       OR prior_cause_ref = %(cause_ref)s
+                       OR %(resource)s = ANY(%(nodes)s)""",
                 resource=SQL.identifier(names.resource),
                 role=SQL.identifier(names.role),
                 table=SQL.identifier(self._table),
@@ -552,30 +606,39 @@ class MixinAccessGrant(models.AbstractModel):
             partner_id,
             group_id,
             company_id,
-            role,
-            ref,
+            *state,
         ) in self.env.cr.fetchall():
             key = (
                 (node, "partner_id", partner_id, False)
                 if partner_id
                 else (node, "group_id", group_id, company_id or False)
             )
-            rows[key] = (grant_id, role, ref)
+            rows[key] = _GrantRow(grant_id, *state)
         wanted_roles = {
             (node, kind, pid, company or False): role
             for node, kind, pid, role, company in wanted
         }
-        stale = [
-            grant_id
-            for key, (grant_id, _role, ref) in rows.items()
-            if ref == cause_ref and key not in wanted_roles
-        ]
+        now = fields.Datetime.now()
+        stale = []
+        for key, row in rows.items():
+            if key in wanted_roles:
+                continue
+            if row.cause_ref == cause_ref:
+                if row.prior_cause and (
+                    not row.prior_date_to or row.prior_date_to > now
+                ):
+                    grants.browse(row.id).write(row.prior_values(names.role))
+                else:
+                    stale.append(row.id)
+            elif row.prior_cause_ref == cause_ref:
+                grants.browse(row.id).write(dict.fromkeys(PRIOR_FIELDS, False))
         if stale:
             grants.browse(stale).unlink()
         creates = []
         for key, role in wanted_roles.items():
             node, kind, principal_id, company = key
-            if key not in rows:
+            row = rows.get(key)
+            if row is None:
                 creates.append(
                     {
                         names.resource: node,
@@ -586,13 +649,33 @@ class MixinAccessGrant(models.AbstractModel):
                         "cause_ref": cause_ref,
                     }
                 )
-                continue
-            grant_id, current, ref = rows[key]
-            if ref == cause_ref and current != role:
-                grants.browse(grant_id).write({names.role: role})
-            elif ref != cause_ref and ladder.index(current) < ladder.index(role):
-                grants.browse(grant_id).write(
-                    {names.role: role, "cause": "module", "cause_ref": cause_ref}
-                )
+            elif row.cause_ref == cause_ref:
+                if row.role != role:
+                    grants.browse(row.id).write({names.role: role})
+            else:
+                claim = {
+                    names.role: role,
+                    "cause": "module",
+                    "cause_ref": cause_ref,
+                    "date_to": False,
+                }
+                outranks = row.date_to or ladder.index(row.role) < ladder.index(role)
+                slot_free = not row.prior_cause or row.prior_cause_ref == cause_ref
+                if outranks:
+                    grants.browse(row.id).write(
+                        claim | row.live_as_prior() if slot_free else claim
+                    )
+                elif row.prior_cause_ref == cause_ref:
+                    if row.prior_role != role:
+                        grants.browse(row.id).write({"prior_role": role})
+                elif row.cause == "module" and slot_free:
+                    grants.browse(row.id).write(
+                        {
+                            "prior_role": role,
+                            "prior_cause": "module",
+                            "prior_cause_ref": cause_ref,
+                            "prior_date_to": False,
+                        }
+                    )
         if creates:
             grants.create(creates)

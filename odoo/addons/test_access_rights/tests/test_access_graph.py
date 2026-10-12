@@ -844,3 +844,81 @@ class TestAccessGraph(TransactionCase):
         description = mixin.fields_get(["access_role", "access_scope_path"])
         self.assertEqual(description["access_role"]["selection"], [])
         self.assertTrue(mixin._search_access_role("in", ["view"]).is_false())
+
+
+@tagged("post_install", "-at_install")
+class TestCausedGrants(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Grant = cls.env["test_access_right.graph_grant"]
+        cls.node = cls.env["test_access_right.graph_node"].create({"name": "Caused"})
+        cls.partner = cls.env["res.partner"].create({"name": "Caused member"})
+
+    def share(self, role, date_to=False):
+        return self.Grant.create(
+            {
+                "node_id": self.node.id,
+                "partner_id": self.partner.id,
+                "role": role,
+                "date_to": date_to,
+            }
+        )
+
+    def sync(self, cause_ref, role=None):
+        wanted = [(self.node.id, "partner_id", self.partner.id, role, False)]
+        self.Grant._sync_caused_grants(cause_ref, wanted if role else [])
+
+    def held(self):
+        return [
+            (grant.role, grant.cause, grant.cause_ref, grant.date_to)
+            for grant in self.Grant.search([("node_id", "=", self.node.id)])
+        ]
+
+    def test_an_expiring_share_does_not_hold_what_a_module_wants(self):
+        until = fields.Datetime.now() + timedelta(days=1)
+        self.share("manage", until)
+        self.sync("module.a,1", "edit")
+        self.assertEqual(self.held(), [("edit", "module", "module.a,1", False)])
+        self.sync("module.a,1")
+        self.assertEqual(self.held(), [("manage", "manual", False, until)])
+
+    def test_a_module_gives_back_the_role_it_took_over(self):
+        self.share("view")
+        self.sync("module.a,1", "edit")
+        self.assertEqual(self.held(), [("edit", "module", "module.a,1", False)])
+        self.sync("module.a,1")
+        self.assertEqual(self.held(), [("view", "manual", False, False)])
+
+    def test_a_share_that_expired_under_a_module_is_not_given_back(self):
+        self.share("view", fields.Datetime.now() - timedelta(minutes=1))
+        self.sync("module.a,1", "edit")
+        self.sync("module.a,1")
+        self.assertEqual(self.held(), [])
+
+    def test_a_durable_share_that_covers_the_module_stays_the_user_s(self):
+        self.share("manage")
+        self.sync("module.a,1", "edit")
+        self.assertEqual(self.held(), [("manage", "manual", False, False)])
+
+    def test_a_module_under_another_keeps_its_claim_until_it_lets_go(self):
+        self.sync("module.a,1", "view")
+        self.sync("module.b,1", "edit")
+        self.assertEqual(self.held(), [("edit", "module", "module.b,1", False)])
+        self.sync("module.b,1")
+        self.assertEqual(self.held(), [("view", "module", "module.a,1", False)])
+        self.sync("module.b,1", "edit")
+        self.sync("module.a,1", "manage")
+        self.assertEqual(self.held(), [("manage", "module", "module.a,1", False)])
+        self.sync("module.b,1")
+        self.sync("module.a,1")
+        self.assertEqual(self.held(), [])
+
+    def test_a_module_s_grant_does_not_hold_what_another_module_wants(self):
+        self.sync("module.a,1", "manage")
+        self.sync("module.b,1", "edit")
+        self.assertEqual(self.held(), [("manage", "module", "module.a,1", False)])
+        self.sync("module.a,1")
+        self.assertEqual(self.held(), [("edit", "module", "module.b,1", False)])
+        self.sync("module.b,1")
+        self.assertEqual(self.held(), [])

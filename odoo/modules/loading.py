@@ -649,6 +649,7 @@ class _PackageLoader:
         "registry",
         "report",
         "run_tests",
+        "schema_changing",
         "started_at",
         "test_queries",
         "test_results",
@@ -671,6 +672,7 @@ class _PackageLoader:
         report: OdooTestResult | None,
         models_to_check: OrderedSet[str],
         models_updated: set[str],
+        schema_changing: set[str],
     ) -> None:
         self.env = env
         self.cr = cr
@@ -685,6 +687,7 @@ class _PackageLoader:
         self.report = report
         self.models_to_check = models_to_check
         self.models_updated = models_updated
+        self.schema_changing = schema_changing
 
         self.started_at = time.time()
         self.cursor_queries_at_start = cr.sql_log_count
@@ -806,6 +809,9 @@ class _PackageLoader:
 
         if self.operation:
             schema_changing = registry.get_schema_changing_models(package)
+            self.schema_changing.update(
+                name for name in schema_changing if registry[name]._abstract
+            )
             model_names |= registry.get_descendants(
                 schema_changing, "_inherit", "_inherits"
             )
@@ -834,7 +840,10 @@ class _PackageLoader:
                 )
         elif self.update_module and package.state != "to remove":
             model_names = registry.get_descendants(model_names, "_inherit", "_inherits")
-            self.models_to_check |= model_names & self.models_updated
+            self.models_to_check |= model_names & (
+                self.models_updated
+                | registry.get_descendants(self.schema_changing, "_inherit", "_inherits")
+            )
         elif self.update_module and package.state == "to remove":
             self.models_to_check |= model_names
 
@@ -1294,6 +1303,7 @@ def load_module_graph(
     cursor_queries_at_start = cr.sql_log_count
 
     models_updated: set[str] = set()
+    schema_changing: set[str] = set()
     gc_cycles = 0
     skipped = 0
 
@@ -1315,6 +1325,7 @@ def load_module_graph(
                 report=report,
                 models_to_check=models_to_check,
                 models_updated=models_updated,
+                schema_changing=schema_changing,
             ).run()
             env.invalidate_all()
             gc_cycles = _run_gc_cycle(registry, gc_cycles)
