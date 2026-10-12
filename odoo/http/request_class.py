@@ -93,7 +93,7 @@ class Request(
         self._session_save_pending = False
         self._after_release: list[Callable[[], object]] = []
 
-    @property
+    @property  # type: ignore[explicit-override]  # mypy cannot mark a settable property override
     def env(self) -> odoo.api.Environment:
         env = self._env
         if env is None:
@@ -105,6 +105,7 @@ class Request(
         self._env = env
 
     @property
+    @override
     def bound_env(self) -> odoo.api.Environment | None:
         return self._env
 

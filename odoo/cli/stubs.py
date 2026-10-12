@@ -1,18 +1,15 @@
 import stat
 import sys
 import tempfile
-import typing
 from collections.abc import Mapping
 from pathlib import Path
 from typing import override
 
+from odoo.api import Environment
 from odoo.libs.debug_log import DebugLog
 from odoo.orm.stubs import STUB_MODULE, render_registry
 
 from . import DatabaseCommand, open_environment
-
-if typing.TYPE_CHECKING:
-    from odoo.api import Environment
 
 _debug = DebugLog(__name__)
 

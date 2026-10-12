@@ -657,6 +657,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         _debug.lifecycle("cursor.cancel", db=self.dbname, backend_pid=self._backend_pid)
         self._cnx.cancel_safe()
 
+    @override
     def set_statement_timeout(self, seconds: float | None) -> None:
         previous, self._statement_timeout = self._statement_timeout, seconds or None
         _debug.logic(
