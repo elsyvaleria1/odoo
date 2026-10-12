@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import annotationlib
+import ast
 import inspect
 import keyword
 import re
+import textwrap
 import typing
 from collections.abc import Iterable, Mapping
 
@@ -220,11 +222,36 @@ def render(
     return "\n".join(out)
 
 
-def render_registry(registry: typing.Any) -> str:
+def _declared_names(body: list[ast.stmt]) -> set[str]:
+    names: set[str] = set()
+    for node in body:
+        if isinstance(node, ast.If):
+            names |= _declared_names(node.body) | _declared_names(node.orelse)
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            names.add(node.target.id)
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            names.add(node.name)
+    return names
+
+
+def reserved_names() -> frozenset[str]:
     from .models.base import BaseModel
 
+    names = set(dir(BaseModel))
+    for klass in BaseModel.__mro__:
+        try:
+            source = textwrap.dedent(inspect.getsource(klass))
+        except OSError, TypeError:
+            continue
+        for node in ast.parse(source).body:
+            if isinstance(node, ast.ClassDef):
+                names |= _declared_names(node.body)
+    return frozenset(names)
+
+
+def render_registry(registry: typing.Any) -> str:
     return render(
         ((name, cls._fields) for name, cls in registry.models.items()),
-        reserved=frozenset(dir(BaseModel)),
+        reserved=reserved_names(),
         classes_by_model=registry.models,
     )

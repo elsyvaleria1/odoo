@@ -80,7 +80,12 @@ declares `env: Environment` (the mixins keep `Any` for their own shortcuts), so
 an addon's `self.env` is typed; `odoo-bin stubs -d <db>` writes
 `odoo_registry_stubs.pyi` from a live registry and `mypy_registry_plugin.py`
 (repo root, standalone so the checker never runs the framework bootstrap)
-types every `env["<name>"]` from it. With generated registry types loaded, an
+types every `env["<name>"]` from it. Beside the stub it writes `addons_shim/`,
+`odoo/addons/<module>` links to every installed module outside
+`odoo/odoo/addons`. Without it, mypy cannot resolve
+`odoo.addons.<module>` and `ignore_missing_imports` turns whatever an addon
+imports from another addon into `Any`. Put both directories on `MYPYPATH`;
+the command prints the value. With generated registry types loaded, an
 unknown literal model name is an error; dynamic strings retain the base type.
 Finite unions of literal names retain the union of their model types and check
 every alternative against the generated registry.
@@ -106,6 +111,29 @@ where an `OrderedSet` was declared, `with_company` given `Any | BaseModel`).
 The `with_company` diagnostic was a declaration defect: a company record need
 not have the receiver's model. Its input now accepts model records and the
 environment's company protocol, while its result retains the receiver's type.
+
+An addon's own model classes see their whole registry model. The plugin
+places each class's generated stub (found by its `_name`, else its first
+`_inherit`) right after the class in its MRO, so `self` reaches the fields and
+methods other modules add. A field read takes the stub's type even where the
+class redeclares the field, and redeclaring a field the stub also has is not an
+override error. `env.user`, `env.company` and `env.companies` read as the
+stub's `ResUsers` / `ResCompany`, and an instance of the class is accepted
+where the stub type is expected. Measured 2026-10-12 with stubs from one
+database holding web, website, sale, account, stock, purchase and hr, over the
+non-test files of those addons: 7 125 diagnostics with the previous plugin,
+2 068 with this one (attr-defined 5 493 -> 824; web 286 -> 110, account
+3 016 -> 729, stock 1 992 -> 353). That includes base's models, which share
+one import cycle with the stub: a class analyzed before its stub class waits for
+it (base's models 2 077 -> 1 570 against the same stub). Most new diagnostics
+are code that became
+checkable, such as `", ".join(records.mapped("name"))` over a Char that may be
+`False`. One false positive remains: a method whose signature differs from the
+stub's, which is taken from the model's last override, is an `[override]` error
+(3 in that set). The stub reserves every name `BaseModel`'s classes declare,
+including those annotated only under `TYPE_CHECKING`, so a model method that
+reuses one (as `credential`'s `_log_access` did, over the ORM flag) cannot
+make the stub itself fail to check.
 
 The foundational packages `odoo.libs.collections`, `odoo.libs.iteration` and
 the modules `func`, `lru`, `callbacks`, `settings`, `utils`, `debug_log`, `http1` also require

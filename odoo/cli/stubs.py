@@ -1,6 +1,8 @@
 import stat
 import sys
 import tempfile
+import typing
+from collections.abc import Mapping
 from pathlib import Path
 
 from odoo.libs.debug_log import DebugLog
@@ -8,7 +10,50 @@ from odoo.orm.stubs import STUB_MODULE, render_registry
 
 from . import DatabaseCommand, open_environment
 
+if typing.TYPE_CHECKING:
+    from odoo.api import Environment
+
 _debug = DebugLog(__name__)
+
+
+SHIM_DIRECTORY = "addons_shim"
+
+
+def installed_module_paths(env: Environment) -> dict[str, Path]:
+    import odoo
+    from odoo.modules import Manifest
+
+    framework_addons = (Path(odoo.__file__).parent / "addons").resolve()
+    paths: dict[str, Path] = {}
+    for name in sorted(env.registry.loaded_modules):
+        manifest = Manifest.for_addon(name, display_warning=False)
+        if manifest is None:
+            continue
+        path = Path(manifest.path).resolve()
+        if path.parent != framework_addons:
+            paths[name] = path
+    return paths
+
+
+def write_addons_shim(root: Path, paths: Mapping[str, Path]) -> Path:
+    addons = root / "odoo" / "addons"
+    addons.mkdir(parents=True, exist_ok=True)
+    for entry in addons.iterdir():
+        if entry.is_symlink() and entry.name not in paths:
+            entry.unlink()
+    for name, path in paths.items():
+        link = addons / name
+        if link.is_symlink():
+            if link.resolve() == path:
+                continue
+            link.unlink()
+        elif link.exists():
+            raise FileExistsError(
+                f"{link} is not a link this command wrote; remove it so the "
+                f"shim can link {name} to {path}"
+            )
+        link.symlink_to(path, target_is_directory=True)
+    return root
 
 
 def _write_stubs(target: Path, source: str) -> None:
@@ -39,7 +84,11 @@ class Stubs(DatabaseCommand):
             "-o",
             "--output",
             dest="output",
-            help=f"directory that receives {STUB_MODULE}.pyi (default: the data dir)",
+            help=(
+                f"directory that receives {STUB_MODULE}.pyi and the {SHIM_DIRECTORY}/ "
+                "tree linking each installed addon as odoo.addons.<module> "
+                "(default: the data dir)"
+            ),
         )
 
     def run(self, cmdargs: list[str]) -> None:
@@ -48,6 +97,7 @@ class Stubs(DatabaseCommand):
         with open_environment(db_name, readonly=True) as env:
             source = render_registry(env.registry)
             models = len(env.registry.models)
+            module_paths = installed_module_paths(env)
         if parsed_args.output:
             directory = Path(parsed_args.output)
         else:
@@ -57,7 +107,15 @@ class Stubs(DatabaseCommand):
         directory.mkdir(parents=True, exist_ok=True)
         target = directory / f"{STUB_MODULE}.pyi"
         _write_stubs(target, source)
+        shim = write_addons_shim(directory / SHIM_DIRECTORY, module_paths)
         _debug.lifecycle(
-            "cli.stubs.written", db=db_name, models=models, path=str(target)
+            "cli.stubs.written",
+            db=db_name,
+            models=models,
+            path=str(target),
+            shimmed=len(module_paths),
         )
-        print(f"{target}: {models} models", file=sys.stderr)
+        print(
+            f"{target}: {models} models; MYPYPATH={directory}:{shim}",
+            file=sys.stderr,
+        )
