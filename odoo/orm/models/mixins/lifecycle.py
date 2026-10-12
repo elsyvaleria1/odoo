@@ -1,4 +1,5 @@
 import typing
+from collections.abc import Collection
 
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
@@ -7,9 +8,9 @@ from ..._typing import IdType, ValuesType
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Collection
-
     from ...fields.base import Field
+else:
+    Field = typing.Any
 
 _debug = DebugLog(__name__)
 

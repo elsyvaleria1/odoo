@@ -2,6 +2,7 @@ import itertools
 import logging
 import typing
 from collections import defaultdict
+from collections.abc import Callable, Collection
 from typing import Self
 
 from odoo.libs.debug_log import DebugLog
@@ -11,10 +12,10 @@ from ...primitives import MAGIC_COLUMNS, PREFETCH_MAX, Command
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Collection
-
     from ..._typing import BaseModel, IdType
     from ...fields import Field
+else:
+    Field = typing.Any
 
 _logger = logging.getLogger("odoo.models")
 _debug = DebugLog(__name__)

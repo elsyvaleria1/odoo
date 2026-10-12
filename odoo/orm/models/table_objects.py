@@ -1,5 +1,7 @@
 import typing
 
+from psycopg.errors import Diagnostic
+
 from odoo.db import schema as sql
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import normalize_identifier
@@ -9,15 +11,14 @@ _debug = DebugLog(__name__)
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
 
-    from psycopg.errors import Diagnostic
-
     from ..runtime import Environment, Registry
+else:
+    Registry = typing.Any
 
-    BaseModel = typing.Any
-
-    ConstraintMessageType = str | Callable[[Environment, Diagnostic | None], str]
-    ConstraintDefinitionType = str | Callable[[Registry], str]
-    IndexDefinitionType = str | Callable[[Registry], str]
+BaseModel = typing.Any
+type ConstraintMessageType = str | Callable[[Environment, Diagnostic | None], str]
+type ConstraintDefinitionType = str | Callable[[Registry], str]
+type IndexDefinitionType = str | Callable[[Registry], str]
 
 
 class TableObject:

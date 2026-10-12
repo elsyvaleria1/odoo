@@ -20,6 +20,10 @@ if typing.TYPE_CHECKING:
     from ..._protocols import ResCompanyProtocol
     from ..._typing import BaseModel
     from ...runtime import Environment
+else:
+    BaseModel = typing.Any
+    Environment = typing.Any
+    ResCompanyProtocol = typing.Any
 
 _debug = DebugLog(__name__)
 

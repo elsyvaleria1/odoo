@@ -36,8 +36,14 @@ if typing.TYPE_CHECKING:
     from ...fields.base import Field
     from ...runtime import TriggerTree
     from ...runtime.origin_reads import OriginReads
+else:
+    BaseModel = typing.Any
+    Field = typing.Any
+    IdType = typing.Any
+    OriginReads = typing.Any
+    TriggerTree = typing.Any
 
-    type ToValidate = dict[Field[typing.Any], OrderedSet[int]]
+type ToValidate = dict[Field[typing.Any], OrderedSet[int]]
 
 
 def _filtered_referencing(

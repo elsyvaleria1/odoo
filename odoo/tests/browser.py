@@ -39,6 +39,8 @@ from .utils import HOST, InfrastructureUnavailable, get_db_name, save_test_file
 
 if TYPE_CHECKING:
     from .common import HttpCase
+else:
+    HttpCase = Any
 
 try:
     import websocket

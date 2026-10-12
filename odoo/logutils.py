@@ -7,10 +7,12 @@ import os
 import platform
 import sys
 import traceback
+import types
 import warnings
+from collections.abc import Collection, Iterable
 from io import TextIOWrapper
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Protocol, TextIO, cast, override
+from typing import Any, Final, Protocol, TextIO, cast, override
 
 from odoo.libs.json import loads as json_loads
 
@@ -23,10 +25,6 @@ from .libs.json import dumps as json_dumps
 from .libs.logging import mute_logger
 from .libs.worker_thread import current_worker_thread
 from .tools.config import LOG_DB_LEVELS
-
-if TYPE_CHECKING:
-    import types
-    from collections.abc import Collection, Iterable
 
 _logger = logging.getLogger(__name__)
 

@@ -1,6 +1,7 @@
 import functools
 import typing
 from collections import defaultdict
+from collections.abc import Callable
 from operator import itemgetter
 from typing import Self, override
 
@@ -30,11 +31,15 @@ from ._model_stubs import _ModelStubs
 
 _debug = DebugLog(__name__)
 
-if typing.TYPE_CHECKING:
-    from collections.abc import Callable
 
+if typing.TYPE_CHECKING:
     from ..._typing import BaseModel, IdType, ModelLike
     from ...fields.base import Field
+else:
+    BaseModel = typing.Any
+    Field = typing.Any
+    IdType = typing.Any
+    ModelLike = typing.Any
 
 T = typing.TypeVar("T")
 

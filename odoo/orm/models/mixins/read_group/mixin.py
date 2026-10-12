@@ -3,6 +3,7 @@ import inspect
 import itertools
 import typing
 from collections import defaultdict
+from collections.abc import Iterable, Sequence
 
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.iteration import unique
@@ -19,10 +20,13 @@ from .format import _ReadGroupFormatMixin
 from .sql import _ReadGroupSQLMixin
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable
 
     from ...._typing import ModelLike
     from ....fields import Field
+else:
+    Field = typing.Any
+    ModelLike = typing.Any
 
 _debug = DebugLog(__name__)
 

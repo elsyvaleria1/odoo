@@ -6,17 +6,15 @@ import re
 import sys
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, override
+import types
+from collections.abc import Generator
+from typing import Any, NamedTuple, Protocol, override
 
 from .. import db
 from ..libs.debug_log import DebugLog
 from ..tools import config
 from . import case
 from .utils import env_int
-
-if TYPE_CHECKING:
-    import types
-    from collections.abc import Generator
 
 __unittest = True
 

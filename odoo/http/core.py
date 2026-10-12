@@ -1,14 +1,15 @@
 import contextlib
-from typing import TYPE_CHECKING
+from collections.abc import Generator
+from typing import TYPE_CHECKING, Any
 
 import werkzeug.local
 
 from odoo.libs.debug_log import DebugLog
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
-
     from .request_class import Request
+else:
+    Request = Any
 
 _debug = DebugLog(__name__)
 

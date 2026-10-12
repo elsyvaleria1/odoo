@@ -17,6 +17,8 @@ from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
     from ...fields import Field
+else:
+    Field = typing.Any
 
 _logger = logging.getLogger("odoo.models")
 _debug = DebugLog(__name__)

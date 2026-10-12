@@ -2,6 +2,7 @@ import logging
 import math
 import statistics
 import time
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
@@ -9,8 +10,6 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.worker_thread import current_worker_thread
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from odoo.orm.runtime.environment import Environment
 
 OUTLIER_PERCENTILE = 5

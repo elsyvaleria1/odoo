@@ -20,6 +20,11 @@ if typing.TYPE_CHECKING:
     from ..primitives import IdType
     from ..runtime import Environment
     from .relational._base import _RelationalMulti
+else:
+    BaseModel = typing.Any
+    Environment = typing.Any
+    ModelLike = typing.Any
+    IdType = typing.Any
 
 REFERENCE_VERIFIED_CACHE_KEY = "reference.verified_pairs"
 

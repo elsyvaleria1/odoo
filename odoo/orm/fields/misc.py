@@ -20,6 +20,10 @@ if typing.TYPE_CHECKING:
 
     from .._typing import ModelLike
     from ..models import BaseModel
+else:
+    BaseModel = typing.Any
+    ModelLike = typing.Any
+    Query = typing.Any
 
 _debug = DebugLog(__name__)
 

@@ -2,6 +2,7 @@ import collections
 import logging
 import typing
 from collections import defaultdict
+from collections.abc import Collection, Iterator, Sequence
 from typing import Self
 
 from odoo.exceptions import UserError
@@ -19,14 +20,16 @@ _EXPORT_CONVERTERS = "__export_converters__"
 
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Iterator, Sequence
+    from collections.abc import Callable
     from datetime import datetime
 
     from ..._typing import ModelLike
     from ...fields import Field
     from ...runtime import Environment
+else:
+    Field = typing.Any
 
-    type ExportCache = dict[Field[typing.Any] | str, dict[typing.Any, typing.Any]]
+type ExportCache = dict[Field[typing.Any] | str, dict[typing.Any, typing.Any]]
 
 
 class ExportMixin(_ModelStubs):

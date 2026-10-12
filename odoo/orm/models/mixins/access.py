@@ -2,6 +2,7 @@ import functools
 import logging
 import typing
 from collections import defaultdict
+from collections.abc import Callable, Collection, Iterator
 from operator import itemgetter
 from typing import Self, override
 
@@ -22,12 +23,17 @@ from ..field_classes import is_anonymous
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Iterator
-
     from ..._typing import BaseModel, IdType, ModelLike
     from ...fields import Field
     from ...runtime.access_memo import RecordVerdicts
     from ._model_stubs import VerbTransitions
+else:
+    Field = typing.Any
+    IdType = typing.Any
+    ModelLike = typing.Any
+    RecordVerdicts = typing.Any
+    VerbTransitions = typing.Any
+    BaseModel = typing.Any
 
 _lt = LazyTranslate("base")
 

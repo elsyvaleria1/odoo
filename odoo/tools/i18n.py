@@ -1,17 +1,18 @@
-from typing import TYPE_CHECKING, Literal
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Literal
 
 from babel import lists
 
 from odoo.tools.locale_utils import babel_locale_parse, get_lang
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
-    import odoo.api
+    from odoo.api import Environment
+else:
+    Environment = Any
 
 
 def format_list(
-    env: odoo.api.Environment | None,
+    env: Environment | None,
     lst: Iterable[object],
     style: Literal[
         "standard",

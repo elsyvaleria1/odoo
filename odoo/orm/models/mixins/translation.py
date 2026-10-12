@@ -1,12 +1,10 @@
 import typing
+from collections.abc import Callable, Collection, Mapping
 
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 
 from ._model_stubs import _ModelStubs
-
-if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Mapping
 
 _debug = DebugLog(__name__)
 

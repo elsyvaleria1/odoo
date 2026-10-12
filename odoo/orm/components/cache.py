@@ -1,13 +1,10 @@
 from collections import ChainMap, defaultdict
-from collections.abc import Iterator, Sized
-from typing import TYPE_CHECKING, Any, override
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sized
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 
 from ._protocols import FieldKey
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
 
 _MISSING = object()
 _REITERABLE = (list, tuple, set, frozenset)

@@ -3,8 +3,10 @@ import sys
 import threading
 import tracemalloc
 import types
+from collections.abc import Callable
 from contextlib import ExitStack, nullcontext
-from typing import TYPE_CHECKING, Any, Self, override
+from types import EllipsisType, FrameType
+from typing import Any, Self, override
 
 from psycopg import OperationalError
 
@@ -16,10 +18,6 @@ from odoo.libs.sql import SQL
 from odoo.libs.worker_thread import current_worker_thread
 
 from .files import file_open
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-    from types import EllipsisType, FrameType
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

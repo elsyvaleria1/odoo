@@ -77,14 +77,10 @@ def _iter_domain_depend_paths(domain: Domain) -> Iterator[str]:
 if typing.TYPE_CHECKING:
     from odoo.libs.collections import Collector
 
-    from ..._typing import (
-        CommandValue,
-        DomainType,
-        Environment,
-        ModelLike,
-        Registry,
-    )
+    from ..._typing import CommandValue, DomainType, Environment, ModelLike, Registry
     from ...models import BaseModel
+else:
+    ModelLike = typing.Any
 
 
 class _Relational(Field["BaseModel"]):

@@ -17,15 +17,16 @@ from odoo.orm.parsing import parse_order
 from odoo.tools.query import Query
 
 if typing.TYPE_CHECKING:
-    from odoo import api, models
-    from odoo.api import DomainType
+    from odoo.api import DomainType, Environment
+    from odoo.models import BaseModel
+else:
+    BaseModel = Environment = typing.Any
+    DomainType = Any
 
 _debug = DebugLog(__name__)
 
 
-def prepare_document_access_error(
-    records: models.BaseModel, operation: str
-) -> AccessError:
+def prepare_document_access_error(records: BaseModel, operation: str) -> AccessError:
     return AccessError(
         records.env._(
             "The requested operation cannot be completed due to security "
@@ -57,7 +58,7 @@ def _seek_operator(order: str | None) -> str | None:
 
 
 def get_accessible_ids(
-    model: models.BaseModel,
+    model: BaseModel,
     domain: DomainType,
     offset: int,
     limit: int | None,
@@ -133,7 +134,7 @@ def get_accessible_ids(
 
 
 def get_inaccessible_owners(
-    env: api.Environment,
+    env: Environment,
     model_and_ids: dict[Any, Collection[int]],
     operation: str,
 ) -> Generator[tuple[str, int]]:

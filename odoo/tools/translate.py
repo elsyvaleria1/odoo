@@ -48,6 +48,11 @@ if typing.TYPE_CHECKING:
     from odoo.db import BaseCursor
     from odoo.orm.fields._field_stubs import TranslateDialect
     from odoo.orm.fields.textual import BaseString
+else:
+    BaseCursor = Any
+    BaseString = Any
+    Environment = Any
+    TranslateDialect = Any
 
 __all__ = [
     "LazyTranslate",

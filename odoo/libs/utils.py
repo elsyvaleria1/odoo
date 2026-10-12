@@ -1,11 +1,9 @@
 import copy
 import re
+import types
+from collections.abc import Mapping, Sequence
 from contextlib import ContextDecorator, suppress
-from typing import TYPE_CHECKING, Any, Self, TypeGuard, overload
-
-if TYPE_CHECKING:
-    import types
-    from collections.abc import Mapping, Sequence
+from typing import Any, Self, TypeGuard, overload
 
 __all__ = [
     "discardattr",

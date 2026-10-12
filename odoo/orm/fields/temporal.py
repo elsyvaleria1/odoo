@@ -1,5 +1,6 @@
 import typing
 import warnings
+from collections.abc import Callable
 from datetime import UTC, date, datetime, time, timedelta, tzinfo
 from typing import override
 
@@ -54,8 +55,6 @@ def _resolve_sql_timezone_name(env: Environment, tz_name: str) -> str | None:
 
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
-
     from odoo.tools import Query
 
     from .._typing import ModelLike
@@ -68,6 +67,10 @@ if typing.TYPE_CHECKING:
     type DatetimeComparand = (
         datetime | str | OrderedSet[DatetimeComparand] | SQL | typing.Literal[False]
     )
+else:
+    BaseModel = typing.Any
+    ModelLike = typing.Any
+    Query = typing.Any
 
 DATE_LENGTH = len(date.today().strftime(DATE_FORMAT))
 DATETIME_LENGTH = len(datetime.now().strftime(DATETIME_FORMAT))

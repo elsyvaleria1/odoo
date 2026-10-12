@@ -35,6 +35,13 @@ if typing.TYPE_CHECKING:
         ValuesType,
     )
     from ...models import BaseModel
+else:
+    BaseModel = typing.Any
+    Environment = typing.Any
+    ModelLike = typing.Any
+    Registry = typing.Any
+    Collector = typing.Any
+    CommandValue = typing.Any
 
 
 class One2many(_RelationalMulti):

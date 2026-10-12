@@ -43,6 +43,9 @@ if TYPE_CHECKING:
     from .fields import Field
     from .models.base import BaseModel
     from .runtime.registry import Registry
+else:
+    BaseModel = Any
+    Registry = Any
 
 _logger = logging.getLogger("odoo.orm.model_test_env")
 _debug = DebugLog(__name__)

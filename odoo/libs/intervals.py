@@ -1,19 +1,20 @@
 __all__ = ["Intervals", "boundaries", "intervals_overlap", "invert_intervals"]
 
 import itertools
-from typing import TYPE_CHECKING
+from collections.abc import Iterable, Iterator
+from typing import Any, Protocol
 
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
-    from typing import Any, Protocol
 
-    class SupportsUnion(Protocol):
-        def union(self, other: Any, /) -> SupportsUnion: ...
+class SupportsUnion(Protocol):
+    def union(self, other: Any, /) -> SupportsUnion: ...
 
-    class SupportsOrdering(Protocol):
-        def __lt__(self, other: Any, /) -> bool: ...
-        def __gt__(self, other: Any, /) -> bool: ...
-        def __ge__(self, other: Any, /) -> bool: ...
+
+class SupportsOrdering(Protocol):
+    def __lt__(self, other: Any, /) -> bool: ...
+
+    def __gt__(self, other: Any, /) -> bool: ...
+
+    def __ge__(self, other: Any, /) -> bool: ...
 
 
 def _get_endpoints(item: tuple[Any, Any, Any]) -> tuple[Any, Any]:

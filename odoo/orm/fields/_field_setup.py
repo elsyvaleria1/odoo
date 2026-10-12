@@ -11,6 +11,9 @@ if typing.TYPE_CHECKING:
     from .._typing import BaseModel, ModelClass
     from ..runtime import Registry
     from .base import Field
+else:
+    BaseModel = typing.Any
+    Field = typing.Any
 
 _debug = DebugLog(__name__)
 

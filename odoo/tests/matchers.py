@@ -12,7 +12,9 @@ from odoo.libs.numbers import float_compare
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    import odoo.addons.base
+    from odoo.addons.base.models.res_currency import ResCurrency
+else:
+    ResCurrency = Any
 
 
 _logger = logging.getLogger(__name__)
@@ -119,7 +121,7 @@ class Approx:
     def __init__(
         self,
         value: float,
-        rounding: float | odoo.addons.base.models.res_currency.ResCurrency,
+        rounding: float | ResCurrency,
         /,
         decorate: bool,
     ) -> None:

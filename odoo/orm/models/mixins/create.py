@@ -30,6 +30,10 @@ if typing.TYPE_CHECKING:
     from ..._typing import BaseModel, IdType
     from ...fields.base import Field
     from ...fields.relational._base import _RelationalMulti
+else:
+    BaseModel = typing.Any
+    Field = typing.Any
+    _RelationalMulti = typing.Any
 
 _debug = DebugLog(__name__)
 

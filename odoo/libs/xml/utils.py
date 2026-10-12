@@ -1,11 +1,10 @@
 import codecs
 import re
-from typing import TYPE_CHECKING, overload
+from collections.abc import Iterable
+from typing import overload
 
 from lxml import etree
 
-if TYPE_CHECKING:
-    from collections.abc import Iterable
 __all__ = [
     "create_xml_node",
     "create_xml_node_chain",

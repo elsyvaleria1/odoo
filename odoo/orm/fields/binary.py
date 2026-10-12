@@ -27,8 +27,13 @@ if typing.TYPE_CHECKING:
     from .._typing import ModelLike
     from ..models import BaseModel
     from ..runtime import Environment
+else:
+    BaseModel = typing.Any
+    Environment = typing.Any
+    ModelLike = typing.Any
+    Query = typing.Any
 
-    type ImageValue = bytes | str | typing.Literal[False] | None
+type ImageValue = bytes | str | typing.Literal[False] | None
 
 _BINARY = memoryview
 

@@ -17,6 +17,9 @@ if typing.TYPE_CHECKING:
     from odoo.api import Environment
 
     from odoo.addons.base.models.res_lang import LangData
+else:
+    Environment = Any
+    LangData = Any
 
 NON_BREAKING_SPACE = "\N{NO-BREAK SPACE}"
 NEGATIVE_SIGN_JOINER = "-\N{ZERO WIDTH NO-BREAK SPACE}"

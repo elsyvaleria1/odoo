@@ -10,6 +10,9 @@ from .numeric import Integer
 
 if typing.TYPE_CHECKING:
     from .._typing import BaseModel, ModelClass
+else:
+    BaseModel = typing.Any
+    ModelClass = typing.Any
 
 COUNTABLE_TYPES = ("one2many", "many2many")
 

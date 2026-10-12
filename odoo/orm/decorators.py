@@ -14,6 +14,8 @@ class Decorator(typing.Protocol):
 
 if typing.TYPE_CHECKING:
     from ._typing import BaseModel, ValuesType
+else:
+    ValuesType = typing.Any
 
 _debug = DebugLog(__name__)
 

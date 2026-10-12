@@ -1,4 +1,5 @@
 import ast
+from collections.abc import Collection, Generator, Mapping
 from tokenize import (
     COMMENT,
     FSTRING_END,
@@ -9,7 +10,7 @@ from tokenize import (
     STRING,
     generate_tokens,
 )
-from typing import IO, TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, Any
 
 from babel.util import parse_encoding, parse_future_flags
 
@@ -24,12 +25,14 @@ type _SimpleKeyword = tuple[int | tuple[int, int] | tuple[int, str], ...] | None
 type _Keyword = dict[int | None, _SimpleKeyword] | _SimpleKeyword
 type _ExtractionResult = tuple[int, str, str | tuple[str, ...], list[str]]
 
+
 if TYPE_CHECKING:
-    from collections.abc import Collection, Generator, Mapping
     from typing import TypedDict
 
     class _PyOptions(TypedDict, total=False):
         encoding: str
+else:
+    _PyOptions = Any
 
 
 def _parse_python_string(value: str, encoding: str, future_flags: int) -> str | None:

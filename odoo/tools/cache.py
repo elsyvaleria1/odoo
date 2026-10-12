@@ -23,6 +23,8 @@ C = typing.TypeVar("C", bound=Callable[..., Any])
 if typing.TYPE_CHECKING:
     from odoo.libs.lru import LRU
     from odoo.models import BaseModel
+else:
+    BaseModel = Any
 
 unsafe_eval = eval  # noqa: S307 -- compiled cache keys intentionally allow expressions
 

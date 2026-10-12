@@ -1,4 +1,5 @@
 import typing
+from collections.abc import Iterable, Sequence
 from operator import itemgetter
 
 from odoo.libs.debug_log import DebugLog
@@ -7,13 +8,16 @@ from ._recordset import is_recordset
 from .domain import Domain
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
-
     from ._protocols import ResCompanyProtocol
     from ._typing import ModelLike
     from .fields.base import Field
     from .models.base import BaseModel
     from .runtime.environment import Environment
+else:
+    BaseModel = typing.Any
+    Environment = typing.Any
+    ModelLike = typing.Any
+    Field = typing.Any
 
 _debug = DebugLog(__name__)
 

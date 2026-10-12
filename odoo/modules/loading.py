@@ -9,6 +9,7 @@ import time
 import traceback
 import types
 import typing
+from collections.abc import Collection
 
 import psycopg
 
@@ -44,14 +45,18 @@ from .registry import Registry
 
 LoadKind = typing.Literal["data", "demo"]
 
+
 if typing.TYPE_CHECKING:
-    from collections.abc import Collection, Iterable, Mapping
+    from collections.abc import Iterable, Mapping
 
     from odoo.db import BaseCursor, Cursor
     from odoo.orm._protocols import IrCronProtocol, IrModuleModuleProtocol
     from odoo.tests.result import OdooTestResult
 
     from .module_graph import ModuleNode
+else:
+    ModuleNode = typing.Any
+    OdooTestResult = typing.Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

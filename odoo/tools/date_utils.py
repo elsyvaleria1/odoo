@@ -45,6 +45,8 @@ def utcnow() -> datetime:
 
 if typing.TYPE_CHECKING:
     from odoo.orm.runtime import Environment
+else:
+    Environment = Any
 
 _TRUNCATE_TODAY = relativedelta(microsecond=0, second=0, minute=0, hour=0)
 _TRUNCATE_UNIT = {

@@ -16,6 +16,9 @@ from odoo.tools.xml_utils import XmlSource, check_with_xsd
 if typing.TYPE_CHECKING:
     from odoo.api import Environment
     from odoo.orm.runtime._model_types import IrAttachmentModel
+else:
+    Environment = Any
+    IrAttachmentModel = Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

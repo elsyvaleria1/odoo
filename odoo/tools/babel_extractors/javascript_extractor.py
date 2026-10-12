@@ -1,6 +1,7 @@
 import io
+from collections.abc import Collection, Generator, Mapping
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from babel.messages.jslexer import Token, line_re, tokenize, unquote_string
 
@@ -16,14 +17,15 @@ type _SimpleKeyword = tuple[int | tuple[int, int] | tuple[int, str], ...] | None
 type _Keyword = dict[int | None, _SimpleKeyword] | _SimpleKeyword
 type _ExtractionResult = tuple[int, str, str | tuple[str, ...], list[str]]
 
+
 if TYPE_CHECKING:
-    from collections.abc import Collection, Generator, Mapping
     from typing import Protocol, TypedDict
 
     from _typeshed import SupportsRead, SupportsReadline
 
     class _FileObj(SupportsRead[bytes], SupportsReadline[bytes], Protocol):
         def seek(self, offset: int, whence: int = ..., /) -> int: ...
+
         def tell(self) -> int: ...
 
     class _JSOptions(TypedDict, total=False):
@@ -31,6 +33,9 @@ if TYPE_CHECKING:
         jsx: bool
         template_string: bool
         parse_template_string: bool
+else:
+    _FileObj = Any
+    _JSOptions = Any
 
 
 def parse_template_string(

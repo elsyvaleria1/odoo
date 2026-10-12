@@ -1,6 +1,7 @@
 import contextlib
 import logging
 from collections.abc import Callable
+from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, override
 from unittest import BaseTestSuite, util
 
@@ -15,8 +16,6 @@ from .result import OdooTestResult, stats_logger
 from .utils import InfrastructureUnavailable
 
 if TYPE_CHECKING:
-    from contextlib import AbstractContextManager
-
     from .result import ExcInfo
 else:
     ExcInfo = Any

@@ -2,6 +2,7 @@ import ast
 import collections.abc
 import itertools
 import logging
+from collections.abc import Callable, Generator
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any, Self, SupportsIndex, override
 
@@ -15,7 +16,7 @@ from odoo.tools.safe_eval import safe_eval
 
 if TYPE_CHECKING:
     import types
-    from collections.abc import Callable, Generator, Iterator
+    from collections.abc import Iterator
 
     from odoo.orm.primitives import NewId
 

@@ -22,7 +22,10 @@ if typing.TYPE_CHECKING:
 
     from odoo.db import Cursor
 
-    from . import module_graph
+    from .module_graph import ModuleGraph, ModuleNode
+else:
+    ModuleGraph = ModuleNode = typing.Any
+    Cursor = typing.Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -265,7 +268,7 @@ class MigrationManager:
     def __init__(
         self,
         cr: Cursor,
-        graph: module_graph.ModuleGraph,
+        graph: ModuleGraph,
         pending_end: dict[str, str] | None = None,
     ) -> None:
         self.cr = cr
@@ -274,19 +277,17 @@ class MigrationManager:
         self.pending_end = dict(pending_end or {})
         self.index_migration_scripts()
 
-    def _is_migration_required(
-        self, pkg: module_graph.ModuleNode, stage: str | None = None
-    ) -> bool:
+    def _is_migration_required(self, pkg: ModuleNode, stage: str | None = None) -> bool:
         if pkg.load_state == "to upgrade":
             return True
         return stage in (None, "end") and pkg.name in self.pending_end
 
-    def _get_installed_version(self, pkg: module_graph.ModuleNode, stage: str) -> str:
+    def _get_installed_version(self, pkg: ModuleNode, stage: str) -> str:
         if stage == "end" and pkg.name in self.pending_end:
             return self.pending_end[pkg.name]
         return pkg.load_version or ""
 
-    def record_pending_end_migrations(self, pkg: module_graph.ModuleNode) -> None:
+    def record_pending_end_migrations(self, pkg: ModuleNode) -> None:
         if pkg.load_state != "to upgrade" or pkg.name in self.pending_end:
             return
         if not self._has_applicable_scripts(pkg, "end"):
@@ -308,7 +309,7 @@ class MigrationManager:
         _write_pending_end_migrations(self.cr, self.pending_end)
         _debug.lifecycle("migration.end_cleared", modules=len(cleared))
 
-    def _has_applicable_scripts(self, pkg: module_graph.ModuleNode, stage: str) -> bool:
+    def _has_applicable_scripts(self, pkg: ModuleNode, stage: str) -> bool:
         sources = self.migrations.get(pkg.name, {})
         installed_version = self._get_installed_version(pkg, stage)
         target_version = pkg.manifest["version"]
@@ -363,7 +364,7 @@ class MigrationManager:
 
     def migrate_module(
         self,
-        pkg: module_graph.ModuleNode,
+        pkg: ModuleNode,
         stage: typing.Literal["pre", "post", "end"],
     ) -> None:
         if stage not in MIGRATION_STAGES:
@@ -376,9 +377,7 @@ class MigrationManager:
         if not self._is_migration_required(pkg, stage):
             return
 
-        def _get_migration_versions(
-            pkg: module_graph.ModuleNode, stage: str
-        ) -> list[str]:
+        def _get_migration_versions(pkg: ModuleNode, stage: str) -> list[str]:
             versions = sorted(
                 {
                     ver
@@ -397,7 +396,7 @@ class MigrationManager:
             return versions
 
         def _get_migration_files(
-            pkg: module_graph.ModuleNode, version: str, stage: str
+            pkg: ModuleNode, version: str, stage: str
         ) -> list[str]:
             m = self.migrations[pkg.name]
 

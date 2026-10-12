@@ -12,6 +12,9 @@ if typing.TYPE_CHECKING:
     from ..primitives import IdType, NewId
     from ..runtime import Environment
     from .base import Field
+else:
+    Environment = typing.Any
+    Field = typing.Any
 
 _debug = DebugLog(__name__)
 

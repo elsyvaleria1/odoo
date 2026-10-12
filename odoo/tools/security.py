@@ -6,6 +6,7 @@ import secrets
 import time
 import typing
 import zlib
+from collections.abc import Callable, MutableMapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,10 +16,11 @@ from odoo.libs.json import loads as json_loads
 from odoo.libs.secret import Secret as _Secret
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, MutableMapping
-
     from odoo.api import Environment
     from odoo.orm._typing import BaseModel
+else:
+    BaseModel = Any
+    Environment = Any
 
 _debug = DebugLog(__name__)
 

@@ -1,5 +1,6 @@
 import typing
 from collections import defaultdict
+from collections.abc import Callable
 from typing import override
 
 from odoo.libs.debug_log import DebugLog
@@ -9,13 +10,16 @@ from odoo.libs.sql import pg_varchar
 from .base import Field, _logger, _prepare_inline_get, call_hook, resolve_mro
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
-
     from .._typing import BaseModel, ModelClass, ModelLike
     from ..runtime import Environment
+else:
+    BaseModel = typing.Any
+    Environment = typing.Any
+    ModelClass = typing.Any
+    ModelLike = typing.Any
 
-    SelectValue = tuple[str, str]
-    OnDeletePolicy = str | Callable[[BaseModel], None]
+type SelectValue = tuple[str, str]
+type OnDeletePolicy = str | Callable[[BaseModel], None]
 
 _debug = DebugLog(__name__)
 

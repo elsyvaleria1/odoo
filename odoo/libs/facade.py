@@ -2,10 +2,8 @@ __all__ = ["Proxy", "ProxyAttr", "ProxyFunc", "ProxyMeta"]
 
 import functools
 import inspect
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Literal, cast, override
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 class ProxyAttr[T = Any]:

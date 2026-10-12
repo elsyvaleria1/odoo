@@ -14,6 +14,7 @@ from collections.abc import (
     Sequence,
 )
 from operator import attrgetter
+from types import NotImplementedType
 
 from odoo.libs.accel import batch_cache_get as _batch_cache_get
 from odoo.libs.accel import to_prefetch_ids as _to_prefetch_ids
@@ -47,8 +48,6 @@ from ._field_setup import COMPANY_DEPENDENT_FIELDS, resolve_mro
 from ._field_sql import _FieldSqlMixin
 
 if typing.TYPE_CHECKING:
-    from types import NotImplementedType
-
     from .._typing import (
         BaseModel,
         ContextType,
@@ -63,6 +62,15 @@ if typing.TYPE_CHECKING:
     from ..runtime import Environment, Registry
 
     M = typing.TypeVar("M", bound=BaseModel)
+else:
+    BaseModel = typing.Any
+    Environment = typing.Any
+    ModelClass = typing.Any
+    ModelLike = typing.Any
+    ModelType = typing.Any
+    Registry = typing.Any
+    DomainType = typing.Any
+    IdType = typing.Any
 
 
 __all__ = ["COMPANY_DEPENDENT_FIELDS", "Field", "call_hook", "resolve_mro"]

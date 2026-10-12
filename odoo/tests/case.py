@@ -1,6 +1,7 @@
 import contextlib
 import inspect
 import logging
+from collections.abc import Callable, Generator
 from pathlib import PurePath
 from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, override
 from unittest import SkipTest
@@ -12,7 +13,6 @@ from .utils import InfrastructureUnavailable, addon_relative_path
 
 if TYPE_CHECKING:
     import types
-    from collections.abc import Callable, Generator
 
     from .result import ExcInfo, OdooTestResult
 else:

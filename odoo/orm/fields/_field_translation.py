@@ -1,6 +1,7 @@
 import collections.abc
 import typing
 from collections import defaultdict
+from collections.abc import Iterable, MutableMapping
 from difflib import get_close_matches
 from hashlib import sha256
 
@@ -17,12 +18,17 @@ _debug = DebugLog(__name__)
 
 _EN_US_KEY = ("en_US",)
 
-if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, MutableMapping
 
+if typing.TYPE_CHECKING:
     from .._typing import BaseModel, IdType, ModelLike
     from ..runtime import Environment
     from .textual import BaseString
+else:
+    BaseString = typing.Any
+    IdType = typing.Any
+    BaseModel = typing.Any
+    Environment = typing.Any
+    ModelLike = typing.Any
 
 
 def _get_term_translator(

@@ -1,14 +1,15 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs.debug_log import DebugLog
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from ._protocols import FieldKey
     from .cache import FieldCache
     from .compute import ComputeEngine
+else:
+    FieldCache = Any
 
 STALL_REPEATS = 16
 

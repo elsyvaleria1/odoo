@@ -38,6 +38,7 @@ __all__ = [
 import calendar
 import math
 import time as _time
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta, timezone, tzinfo
 from typing import TYPE_CHECKING, Any, Literal
@@ -50,9 +51,9 @@ from odoo.libs.numbers.float_utils import float_round
 from .tz import utc
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Sequence
-
-    import babel
+    from babel import Locale
+else:
+    Locale = Any
 
 
 WEEKDAY_NUMBER = dict(
@@ -530,7 +531,7 @@ def get_intervals_hours(intervals: Iterable[tuple[datetime, datetime, Any]]) -> 
     return sum(elapsed_hours(interval[0], interval[1]) for interval in intervals)
 
 
-def weeknumber(locale: babel.Locale, date: date) -> tuple[int, int]:
+def weeknumber(locale: Locale, date: date) -> tuple[int, int]:
     first_week_day = locale.first_week_day
     min_week_days = locale.min_week_days
     day = (date.date() if isinstance(date, datetime) else date).toordinal()
@@ -559,11 +560,11 @@ def _new_year_ordinal(year: int) -> int:
     return date(9999, 12, 31).toordinal() + 1
 
 
-def weekstart(locale: babel.Locale, date: date) -> date:
+def weekstart(locale: Locale, date: date) -> date:
     return add(date, weekday=_WEEKDAYS[locale.first_week_day](-1))
 
 
-def weekend(locale: babel.Locale, date: date) -> date:
+def weekend(locale: Locale, date: date) -> date:
     return add(weekstart(locale, date), days=6)
 
 

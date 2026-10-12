@@ -1,15 +1,11 @@
 import logging
-import typing
+from collections.abc import Iterable, Iterator
 from contextlib import suppress
 
 from odoo.libs.debug_log import DebugLog
 from odoo.modules._protocols import SqlReader
 from odoo.modules.module import Manifest
 from odoo.tools.files import file_open
-
-if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
-
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

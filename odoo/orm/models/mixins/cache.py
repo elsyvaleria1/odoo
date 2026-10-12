@@ -14,6 +14,9 @@ _debug = DebugLog(__name__)
 if typing.TYPE_CHECKING:
     from ..._typing import IdType
     from ...fields.base import Field
+else:
+    Field = typing.Any
+    IdType = typing.Any
 
 
 class RecordCache(Mapping[str, object]):

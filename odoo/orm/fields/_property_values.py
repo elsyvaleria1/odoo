@@ -13,6 +13,8 @@ from .temporal import _resolve_sql_timezone_name
 
 if typing.TYPE_CHECKING:
     from ..models import BaseModel
+else:
+    BaseModel = typing.Any
 
 _debug = DebugLog("odoo.orm.fields.properties")
 

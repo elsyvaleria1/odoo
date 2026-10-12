@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.81
+:Version: 7.82
 :Date: 2026-10-11
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -299,7 +299,8 @@ Registry and tree gates carry no code and are named by test. The full set is
    * - ``test_dunderinit`` / ``test_markers``
      - Module without ``__init__.py``; conflict markers or NUL bytes
    * - ``test_pep649``
-     - Annotations that fail to resolve under PEP 649
+     - Annotations that fail to resolve under PEP 649, in every framework
+       module outside ``addons/`` and ``_vendor/``
 
 
 Suppressing a rule
@@ -6325,6 +6326,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.82
+     - 2026-10-11
+     - ``test_pep649`` checks every framework module instead of a list of 31:
+       a name a signature needs is imported at runtime, or falls back to
+       ``Any`` in the ``else:`` of its ``TYPE_CHECKING`` guard.
    * - 7.81
      - 2026-10-11
      - §2.9.11: mypy's ``explicit-override`` gates ``@typing.override`` in

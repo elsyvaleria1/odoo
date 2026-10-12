@@ -23,13 +23,17 @@ from ._base import _is_cache_order_stable, _Relational, _RelationalMulti
 if typing.TYPE_CHECKING:
     from ..._typing import ModelClass, ModelLike
     from ...models import BaseModel
+else:
+    BaseModel = typing.Any
+    ModelClass = typing.Any
+    ModelLike = typing.Any
 
-    OnDelete = typing.Literal["cascade", "set null", "restrict"]
-    type ReadValue = (
-        IdType
-        | tuple[IdType | typing.Literal[False], str | typing.Literal[False]]
-        | typing.Literal[False]
-    )
+type OnDelete = typing.Literal["cascade", "set null", "restrict"]
+type ReadValue = (
+    IdType
+    | tuple[IdType | typing.Literal[False], str | typing.Literal[False]]
+    | typing.Literal[False]
+)
 
 _debug = DebugLog(__name__)
 

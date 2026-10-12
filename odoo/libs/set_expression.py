@@ -1,13 +1,10 @@
 import ast
 import itertools
 import math
-from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict, cast, override
+from collections.abc import Collection, Iterable
+from typing import Literal, NotRequired, TypedDict, cast, override
 
 from odoo.libs.refs import split_refs
-
-if TYPE_CHECKING:
-    from collections.abc import Collection, Iterable
-
 
 __all__ = ["SetDefinitions", "SetExpressionError"]
 """Only these two leave the module.  `SetExpression`, `SetDefinition`,

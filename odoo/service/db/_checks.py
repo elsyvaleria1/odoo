@@ -1,14 +1,12 @@
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, Literal
+from collections.abc import Callable
+from typing import Literal
 
 import odoo.exceptions
 import odoo.tools
 from odoo.libs.debug_log import DebugLog
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 _logger = logging.getLogger("odoo.service.db")
 _debug = DebugLog(__name__)

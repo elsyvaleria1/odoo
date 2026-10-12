@@ -9,6 +9,8 @@ from ...primitives import Command
 
 if typing.TYPE_CHECKING:
     from ...primitives import IdType, ValuesType
+else:
+    IdType = typing.Any
 
 _debug = DebugLog(__name__)
 

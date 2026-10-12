@@ -5,13 +5,11 @@ import contextlib
 import gc
 import logging
 import threading
+from collections.abc import Generator
 from time import thread_time_ns as _gc_time
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from .debug_log import DebugLog
-
-if TYPE_CHECKING:
-    from collections.abc import Generator
 
 _logger = logging.getLogger("odoo.gc")
 _debug = DebugLog(__name__)

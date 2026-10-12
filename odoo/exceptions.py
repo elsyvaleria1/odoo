@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from odoo.tools.translate import LazyGettext
+else:
+    LazyGettext = Any
 
 __all__ = [
     "AccessDenied",

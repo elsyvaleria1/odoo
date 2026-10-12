@@ -1,11 +1,13 @@
 import typing
+from collections.abc import MutableMapping
 
 if typing.TYPE_CHECKING:
-    from collections.abc import MutableMapping
-
     from ..._typing import IdType
     from ...fields.base import Field
     from ...runtime import Environment
+else:
+    Field = typing.Any
+    IdType = typing.Any
 
 
 def as_scannable_cache(

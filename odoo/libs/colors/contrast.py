@@ -1,8 +1,5 @@
 import math
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 __all__ = [
     "WCAG_AA_NON_TEXT",

@@ -1,12 +1,13 @@
 __all__ = ["merge_sequences", "strongly_connected_components", "topological_sort"]
 
 from collections import defaultdict
+from collections.abc import Collection, Iterable, Mapping
 from typing import TYPE_CHECKING, cast
 
 from .sentinel import SENTINEL, Sentinel
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterable, Iterator, Mapping
+    from collections.abc import Iterator
 
 
 def topological_sort[T](

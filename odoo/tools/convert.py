@@ -36,6 +36,9 @@ if TYPE_CHECKING:
     from odoo.api import Environment
     from odoo.models import BaseModel
     from odoo.orm.primitives import CommandValue
+else:
+    BaseModel = Any
+    Environment = Any
 
 from .config import config
 from .files import file_open, file_path

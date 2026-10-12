@@ -1,6 +1,7 @@
 import contextlib
 import logging
 import typing
+from collections.abc import Sequence
 from typing import Self, override
 
 from odoo.exceptions import UserError
@@ -18,10 +19,10 @@ from ...profiling import _OrmProfile
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from ..._typing import ModelLike
     from ...fields import Field
+else:
+    Field = typing.Any
 
 _logger = logging.getLogger("odoo.models")
 _orm_read = logging.getLogger("odoo.orm.read")

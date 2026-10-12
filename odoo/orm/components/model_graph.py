@@ -1,6 +1,7 @@
 import logging
 import threading
 from collections import defaultdict
+from collections.abc import Callable, Collection, Iterator
 from typing import TYPE_CHECKING, Any, override
 
 from odoo.libs._trigger_trees import TriggerGraph
@@ -11,13 +12,11 @@ from odoo.libs.iteration.sorting import strongly_connected_components
 from odoo.libs.lru import LRU
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Iterator
-
     from odoo.libs._trigger_trees import Bucket, Meta, Node
 
     from ._protocols import FieldLike
 
-    type Triggers[F] = defaultdict[F, dict[tuple[F, ...], list[F]]]
+type Triggers[F] = defaultdict[F, dict[tuple[F, ...], list[F]]]
 
 
 _Collector = Collector

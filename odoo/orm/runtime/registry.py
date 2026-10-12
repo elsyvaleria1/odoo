@@ -48,7 +48,12 @@ if typing.TYPE_CHECKING:
     from odoo.db import BaseCursor, Cursor
     from odoo.fields import Field
     from odoo.models import BaseModel
-    from odoo.modules import module_graph
+    from odoo.modules.module_graph import ModuleNode
+else:
+    ModuleNode = typing.Any
+    BaseCursor = typing.Any
+    BaseModel = typing.Any
+    Cursor = typing.Any
 
 
 _logger = logging.getLogger("odoo.registry")
@@ -309,7 +314,7 @@ class Registry(
     __ne__ = object.__ne__
     __hash__ = object.__hash__
 
-    def load(self, module: module_graph.ModuleNode) -> list[str]:
+    def load(self, module: ModuleNode) -> list[str]:
         model_defs = models.MetaModel._module_to_models__.get(module.name, [])
         if not model_defs:
             return []
@@ -331,7 +336,7 @@ class Registry(
         )
         return model_names
 
-    def get_schema_changing_models(self, module: module_graph.ModuleNode) -> list[str]:
+    def get_schema_changing_models(self, module: ModuleNode) -> list[str]:
         return [
             typing.cast("type[BaseModel]", model_def)._get_model_name()
             for model_def in models.MetaModel._module_to_models__.get(module.name, [])

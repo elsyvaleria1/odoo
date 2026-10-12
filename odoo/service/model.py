@@ -42,6 +42,9 @@ if typing.TYPE_CHECKING:
     from odoo.db import BaseCursor
 
     from .transaction import RetryParticipant
+else:
+    BaseCursor = typing.Any
+    RetryParticipant = typing.Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

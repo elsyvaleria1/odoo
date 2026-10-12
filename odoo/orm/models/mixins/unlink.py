@@ -23,6 +23,8 @@ if typing.TYPE_CHECKING:
     from ..._typing import BaseModel
     from ...fields import Field
     from ...fields.relational._base import _RelationalMulti
+else:
+    BaseModel = typing.Any
 
 
 class UnlinkMixin(_ModelStubs):

@@ -63,6 +63,7 @@ if TYPE_CHECKING:
     from .result import OdooTestResult
 else:
     _GetAddrInfoResult = Any
+    OdooTestResult = Any
 
 type _Patcher = _patch[Any]
 

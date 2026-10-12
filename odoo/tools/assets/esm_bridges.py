@@ -27,6 +27,8 @@ from odoo.tools.assets.esm_registry import esm_registry, external_libs
 
 if TYPE_CHECKING:
     from odoo.orm._protocols import IrAttachmentProtocol
+else:
+    IrAttachmentProtocol = Any
 
 __all__ = ["BridgeShimManager"]
 

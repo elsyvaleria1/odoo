@@ -1,5 +1,6 @@
 import itertools
 import re
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, override
 
@@ -7,9 +8,11 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL, normalize_identifier
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
+    from collections.abc import Sequence
 
     from odoo.api import Environment
+else:
+    Environment = Any
 
 _debug = DebugLog(__name__)
 

@@ -14,6 +14,8 @@ if typing.TYPE_CHECKING:
 
     from .._typing import BaseModel, DomainType, IdType
     from .base import Field
+else:
+    Field = typing.Any
 
 _logger = logging.getLogger("odoo.fields")
 _debug = DebugLog(__name__)

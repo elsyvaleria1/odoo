@@ -1,6 +1,6 @@
 from collections import deque
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, cast, override
+from collections.abc import Callable, Collection, Iterable, Iterator, Mapping
+from typing import Any, cast, override
 
 from odoo.libs.debug_log import DebugLog
 
@@ -8,9 +8,6 @@ from ._protocols import FieldKey
 from .cache import FieldCache
 from .compute import ComputeEngine
 from .recompute import RecomputeScheduler
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Iterable, Mapping
 
 _debug = DebugLog(__name__)
 

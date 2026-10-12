@@ -19,12 +19,14 @@ from odoo.tools.files import file_open
 
 from . import _pypdf as pypdf
 
+from collections.abc import Generator
+
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterator
-
+    from collections.abc import Iterator
     from pypdf import PageObject
-
     from odoo.addons.base.models.ir_attachment import IrAttachment
+else:
+    IrAttachment = Any
 
 from ._pypdf import PdfReader as PdfReaderBase
 from ._pypdf import PdfWriter, create_string_object, errors, filters, generic

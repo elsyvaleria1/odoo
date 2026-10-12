@@ -8,6 +8,7 @@ import string
 import sys
 import types
 import typing
+from collections.abc import Iterator
 from opcode import opmap, opname
 from types import CodeType
 
@@ -21,7 +22,7 @@ from odoo.libs.datetime import tz as _tz_module
 from odoo.libs.debug_log import DebugLog
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Mapping, Sequence
+    from collections.abc import Callable, Mapping, Sequence
 
 unsafe_eval = eval  # noqa: S307 -- executes code checked by the AST and opcode guards
 

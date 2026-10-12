@@ -15,6 +15,13 @@ from .base import Field, _prepare_inline_get
 if typing.TYPE_CHECKING:
     from .._protocols import ResCurrencyProtocol
     from .._typing import BaseModel, Environment, ModelClass, ModelLike, ModelType
+else:
+    BaseModel = typing.Any
+    Environment = typing.Any
+    ModelClass = typing.Any
+    ModelLike = typing.Any
+    ModelType = typing.Any
+    ResCurrencyProtocol = typing.Any
 
 
 _debug = DebugLog(__name__)

@@ -4,6 +4,7 @@ import operator
 import types
 import typing
 import warnings
+from collections.abc import Callable, Iterable
 from typing import Self, override
 
 from odoo.exceptions import UserError
@@ -49,13 +50,12 @@ from .constants import (
 )
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
-
     from ..fields import Field
     from ..models import BaseModel
     from ..primitives import IdType
-
-    M = typing.TypeVar("M", bound=BaseModel)
+else:
+    BaseModel = typing.Any
+    Field = typing.Any
 
 _logger = logging.getLogger("odoo.domains")
 _debug = DebugLog(__name__)
@@ -329,7 +329,7 @@ class Domain:
         with _recursion_error_as_value_error():
             self._optimize(model, OptimizationLevel.FULL)
 
-    def _as_predicate(self, records: M) -> Callable[[M], bool]:
+    def _as_predicate[M: BaseModel](self, records: M) -> Callable[[M], bool]:
         raise NotImplementedError
 
     def _predicate_optimized(self, records: BaseModel) -> Domain | None:

@@ -1,6 +1,7 @@
 import logging
 import typing
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, override
@@ -13,10 +14,11 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
-
     from odoo.api import Environment
     from odoo.models import Model
+else:
+    Environment = Any
+    Model = Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

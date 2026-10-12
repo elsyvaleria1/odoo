@@ -68,6 +68,9 @@ if typing.TYPE_CHECKING:
     from .backend import StorageBackend
 
     M = typing.TypeVar("M", bound=BaseModel)
+else:
+    BaseModel = typing.Any
+    Field = typing.Any
 
 _logger = logging.getLogger("odoo.api")
 _debug = DebugLog(__name__)

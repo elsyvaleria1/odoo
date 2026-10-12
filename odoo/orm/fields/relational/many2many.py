@@ -28,17 +28,19 @@ _debug = DebugLog(__name__)
 if typing.TYPE_CHECKING:
     from odoo.libs.collections import Collector
 
-    from ..._typing import (
-        CommandValue,
-        IdType,
-        ModelLike,
-        Registry,
-        ValuesType,
-    )
+    from ..._typing import CommandValue, IdType, ModelLike, Registry, ValuesType
     from ...models import BaseModel
+else:
+    BaseModel = typing.Any
+    ModelLike = typing.Any
+    Registry = typing.Any
+    Collector = typing.Any
+    CommandValue = typing.Any
+    IdType = typing.Any
+    ValuesType = typing.Any
 
-    OnDelete = typing.Literal["cascade", "set null", "restrict"]
-    type Relation = dict[IdType, OrderedSet[IdType]]
+type OnDelete = typing.Literal["cascade", "set null", "restrict"]
+type Relation = dict[IdType, OrderedSet[IdType]]
 
 
 def _remove_from_relations(

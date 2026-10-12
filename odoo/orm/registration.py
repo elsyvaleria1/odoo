@@ -22,6 +22,11 @@ if typing.TYPE_CHECKING:
     from odoo.fields import Field
     from odoo.models import BaseModel
     from odoo.orm.runtime import Registry
+else:
+    BaseModel = typing.Any
+    Environment = typing.Any
+    Registry = typing.Any
+    Field = typing.Any
 
 _logger = logging.getLogger("odoo.registry")
 _debug = DebugLog(__name__)

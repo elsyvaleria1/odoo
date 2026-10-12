@@ -13,6 +13,14 @@ if typing.TYPE_CHECKING:
     from .base import Field
     from .relational import Many2many, Many2one
     from .textual import BaseString, Char
+else:
+    BaseString = typing.Any
+    Char = typing.Any
+    Field = typing.Any
+    Many2many = typing.Any
+    Many2one = typing.Any
+    BaseModel = typing.Any
+    ModelLike = typing.Any
 
 _logger = logging.getLogger("odoo.fields")
 _debug = DebugLog(__name__)

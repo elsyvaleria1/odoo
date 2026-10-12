@@ -19,6 +19,8 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
     from odoo.db import Cursor
+else:
+    Cursor = typing.Any
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

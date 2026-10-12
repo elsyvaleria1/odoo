@@ -1,9 +1,7 @@
 import re
+from collections.abc import Sequence
 from hashlib import sha512
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 __all__ = [
     "get_brightness",
     "get_hsl_from_seed",

@@ -36,6 +36,8 @@ from .mixins._query import _QueryMixin
 
 if typing.TYPE_CHECKING:
     from ..runtime import Environment
+else:
+    Environment = typing.Any
 
 
 class BaseModel(

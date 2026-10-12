@@ -1,4 +1,5 @@
 import typing
+from collections.abc import Callable
 from functools import wraps
 
 from odoo.libs.debug_log import DebugLog
@@ -6,8 +7,6 @@ from odoo.libs.hashing import cache_hash
 from odoo.libs.json import OPT_SORT_KEYS, dumps_bytes
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
-
     from odoo.http import Request
 
 __all__ = ["versioned", "versioned_dispatched", "versioned_envelope"]

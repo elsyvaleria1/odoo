@@ -1,13 +1,10 @@
 from collections import defaultdict
-from collections.abc import Collection
-from typing import TYPE_CHECKING, Any, override
+from collections.abc import Collection, Iterable
+from typing import Any, override
 
 from odoo.libs.debug_log import DebugLog
 
 from ._protocols import FieldKey
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
 
 _debug = DebugLog(__name__)
 

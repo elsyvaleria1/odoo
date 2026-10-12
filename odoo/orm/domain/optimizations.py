@@ -3,7 +3,7 @@ import logging
 import operator
 import typing
 import warnings
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from collections.abc import Set as AbstractSet
 
 from odoo.exceptions import MissingError
@@ -42,10 +42,10 @@ from .constants import (
 )
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Collection
-
     from ..fields import Field
     from ..models import BaseModel
+else:
+    BaseModel = typing.Any
 
 _logger = logging.getLogger("odoo.domains")
 _debug = DebugLog(__name__)

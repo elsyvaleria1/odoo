@@ -1,4 +1,5 @@
 import typing
+from collections.abc import Sequence
 from typing import override
 
 from odoo.exceptions import UserError
@@ -13,11 +14,14 @@ from .one2many import One2many
 
 _debug = DebugLog(__name__)
 
-if typing.TYPE_CHECKING:
-    from collections.abc import Sequence
 
+if typing.TYPE_CHECKING:
     from ..._typing import CommandValue, ModelLike
     from ...models import BaseModel
+else:
+    BaseModel = typing.Any
+    ModelLike = typing.Any
+    CommandValue = typing.Any
 
 
 class One2one(One2many):

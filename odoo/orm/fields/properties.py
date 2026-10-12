@@ -54,6 +54,10 @@ _PARSED_DEFINITIONS_MAX = 1024
 if typing.TYPE_CHECKING:
     from .._typing import ModelClass, ModelLike
     from ..models import BaseModel
+else:
+    BaseModel = typing.Any
+    ModelClass = typing.Any
+    ModelLike = typing.Any
 
 
 class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]):

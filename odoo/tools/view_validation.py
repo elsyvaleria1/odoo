@@ -3,6 +3,7 @@ import collections
 import functools
 import logging
 import typing
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from lxml import etree
@@ -11,10 +12,7 @@ from odoo import tools
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import view_ir
 
-if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
-
-    type Validator = Callable[..., bool]
+type Validator = Callable[..., bool]
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

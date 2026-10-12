@@ -1,11 +1,9 @@
 import logging
 import threading
+import types
+from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING, Self, override
-
-if TYPE_CHECKING:
-    import types
-    from collections.abc import Callable
+from typing import Self, override
 
 __all__ = ["lower_logging", "mute_logger"]
 

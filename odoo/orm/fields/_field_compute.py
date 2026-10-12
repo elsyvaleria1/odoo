@@ -15,6 +15,9 @@ if typing.TYPE_CHECKING:
     from .._typing import ModelLike
     from ..primitives import IdType
     from .base import Field
+else:
+    Field = typing.Any
+    ModelLike = typing.Any
 
 _orm_compute = logging.getLogger("odoo.orm.compute")
 _debug = DebugLog(__name__)

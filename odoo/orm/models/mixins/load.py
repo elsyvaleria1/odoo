@@ -4,6 +4,7 @@ import itertools
 import logging
 import typing
 from collections import defaultdict
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from typing import Self
 
 import psycopg
@@ -22,10 +23,6 @@ from ._model_stubs import _ModelStubs
 
 _logger = logging.getLogger("odoo.models")
 _debug = DebugLog(__name__)
-
-
-if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 
 
 type FieldPaths = Sequence[Sequence[str | None]]

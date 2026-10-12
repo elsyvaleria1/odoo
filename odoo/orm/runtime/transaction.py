@@ -1,7 +1,7 @@
 import logging
 import typing
 from collections import deque
-from collections.abc import MutableSet
+from collections.abc import Mapping, MutableSet
 from contextlib import contextmanager
 from weakref import WeakSet, WeakValueDictionary
 from weakref import ref as weakref_ref
@@ -24,13 +24,16 @@ from .recordset_cache import Cache
 from .registry import Registry
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Mapping
+    from collections.abc import Iterable, Iterator
 
     from odoo.db import BaseCursor
 
     from ..fields.base import Field
     from ..primitives import IdType
     from .environment import Environment
+else:
+    BaseCursor = typing.Any
+    Environment = typing.Any
 
 _logger = logging.getLogger("odoo.api")
 _orm_cache = logging.getLogger("odoo.orm.cache")
