@@ -2276,6 +2276,14 @@ class TestQWebBasic(TransactionCase):
         except MissingError as e:
             self.assertIn("Template does not exist or has been deleted", str(e))
 
+        self.env.registry.clear_cache("templates")
+        error = self.env["ir.ui.view"]._get_cached_template_info(-999)["error"]
+        self.assertEqual(
+            str(error),
+            str(self.env["ir.ui.view"]._missing_template_error(-999)),
+            "a missing id reads the same whichever path finds it missing",
+        )
+
         with self.assertRaises(MissingError):
             self.env["ir.qweb"]._render("not.wrong_template_xmlid")
         try:

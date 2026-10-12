@@ -1,5 +1,4 @@
 from odoo import fields, models
-from odoo.fields import Domain
 from odoo.libs.datetime import timezone
 from odoo.libs.debug_log import DebugLog
 
@@ -165,14 +164,8 @@ class HrLeave(models.Model):
 
         leaves = self.env["resource.schedule.exception"]
         global_leaves = leaves.search(
-            leaves._get_domain_public_holidays(min_date, max_date)
-            & Domain(
-                "company_id.hr_timesheet_config_id.internal_project_id", "!=", False
-            )
-            & Domain(
-                "company_id.project_timesheet_holidays_config_id.leave_timesheet_task_id",
-                "!=",
-                False,
+            leaves._get_domain_public_holidays(
+                min_date, max_date, companies=self.employee_id.company_id
             )
         )
         _debug.pipeline(

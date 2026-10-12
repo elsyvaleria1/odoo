@@ -288,7 +288,7 @@ class ResUsers(models.Model):
         return None, None
 
     @tools.ormcache("self.id", "sid")
-    def _get_session_token(self, sid: str) -> str | bool:
+    def _get_session_token(self, sid: str) -> str | None:
         field_values = self._get_session_token_values()
         _debug.perf.count(
             "session_token_computed", uid=self.id, has_values=bool(field_values)
@@ -1688,7 +1688,7 @@ class ResUsers(models.Model):
             "group_by": SQL("res_users.id"),
         }
 
-    def _get_session_token_values(self) -> tuple[tuple[str, Any], ...] | bool:
+    def _get_session_token_values(self) -> tuple[tuple[str, Any], ...] | None:
         self.env.cr.execute(
             SQL(
                 "SELECT %(select)s FROM %(from)s %(joins)s WHERE %(where)s GROUP BY %(group_by)s",
@@ -1699,7 +1699,7 @@ class ResUsers(models.Model):
             _debug.logic(
                 "session_token_values_missing", uid=self.id, rows=self.env.cr.rowcount
             )
-            return False
+            return None
         data_fields = self.env.cr.fetchone()
         cr_description = self.env.cr.description
         secret = self.env.registry.settings.get(self.env, "database.secret", None)
@@ -1712,8 +1712,8 @@ class ResUsers(models.Model):
         )
 
     def _hash_session_token(
-        self, sid: str, field_values: tuple[tuple[str, Any], ...] | bool
-    ) -> str | bool:
+        self, sid: str, field_values: tuple[tuple[str, Any], ...] | None
+    ) -> str | None:
         return session_token(sid, field_values)
 
     @api.model

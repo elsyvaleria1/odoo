@@ -2427,3 +2427,10 @@ class TestUsersDisplayName(TransactionCase):
             models.BaseModel._search_display_name(Users, "=", "exact_login"),
             "precedence applies to 'in' and 'ilike' only",
         )
+
+
+class TestSessionTokenAbsence(TransactionCase):
+    def test_a_user_without_a_row_has_no_session_token(self):
+        ghost = self.env["res.users"].browse(2**31 - 1)
+        self.assertIsNone(ghost._get_session_token_values())
+        self.assertIsNone(ghost._get_session_token("sid"))

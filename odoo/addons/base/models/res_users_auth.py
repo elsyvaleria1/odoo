@@ -92,11 +92,11 @@ class PasswordStore:
 
 
 def session_token(
-    sid: str, field_values: tuple[tuple[str, typing.Any], ...] | bool
-) -> str | bool:
+    sid: str, field_values: tuple[tuple[str, typing.Any], ...] | None
+) -> str | None:
     if not field_values:
         _debug.logic("session_token_skipped", reason="no_field_values")
-        return False
+        return None
     key_tuple = tuple((k, v) for k, v in field_values if v is not None)
     key = str(key_tuple).encode()
     return hmac.new(key, sid.encode(), sha256).hexdigest()

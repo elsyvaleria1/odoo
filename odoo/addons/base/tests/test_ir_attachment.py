@@ -4381,6 +4381,19 @@ class TestContentLifecycle(TransactionCase):
         self.assertEqual(later.raw, b"other bytes")
         self.assertEqual(forever.raw, b"kept bytes")
 
+    def test_a_latin1_text_is_indexed_with_its_accents(self):
+        text = "Asociación agrícola de Michoacán, año fiscal\n" * 20
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": "notas.txt",
+                "mimetype": "text/plain",
+                "raw": text.encode("latin-1"),
+            }
+        )
+        index = attachment.sudo().index_content
+        self.assertIn("Asociación", index)
+        self.assertIn("Michoacán", index)
+
     def test_rewriting_a_generated_asset_does_not_index_it(self):
         asset = self.env["ir.attachment"].create(
             {

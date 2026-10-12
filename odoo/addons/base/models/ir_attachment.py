@@ -34,6 +34,9 @@ from odoo.libs.documents import (
     cues_as_text,
     fix_filename_extension,
 )
+from odoo.libs.documents import (
+    decode as decode_text,
+)
 from odoo.libs.field_class_names import PER_RECORD
 from odoo.libs.filesystem import (
     MIMETYPE_HEAD_SIZE,
@@ -1626,7 +1629,11 @@ class IrAttachment(models.Model):
     def _get_index_content(self, bin_data: bytes, file_type: str) -> str | None:
         if not (file_type and file_type.startswith("text/")):
             return None
-        text = bin_data[: self._INDEX_MAX_BYTES].decode("utf-8", errors="ignore")
+        head = bin_data[: self._INDEX_MAX_BYTES]
+        try:
+            text = decode_text(head, final=len(head) == len(bin_data))
+        except UnicodeDecodeError:
+            text = head.decode("utf-8", errors="ignore")
         limit = self._get_index_max_chars()
         if limit <= 0:
             _debug.logic("index_content_unbounded", mimetype=file_type, chars=len(text))

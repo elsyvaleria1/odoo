@@ -920,6 +920,52 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
         self.assertEqual(len(holiday3.timesheet_ids), 5)
         self.assertEqual(sum(holiday3.timesheet_ids.mapped("unit_amount")), 40)
 
+    def test_refusing_a_leave_backfills_a_shared_calendar_closure(self):
+        shared = self.env["resource.calendar"].create(
+            {"name": "Shared across companies", "company_id": False, "tz": "UTC"}
+        )
+        employee = self.env["hr.employee"].create(
+            {
+                "name": "Shared worker",
+                "company_id": self.test_company.id,
+                "resource_calendar_id": shared.id,
+            }
+        )
+        today = datetime.today()
+        monday = today.date() + timedelta(days=-today.weekday(), weeks=1)
+        start = datetime(monday.year, monday.month, monday.day, 8, 0, 0)
+        leave_type = self.env["hr.leave.type"].create(
+            {"name": "Shared closure leave", "requires_allocation": False}
+        )
+        leave = (
+            self.env["hr.leave"]
+            .with_context(mail_create_nolog=True, mail_notrack=True)
+            .create(
+                {
+                    "name": "Week off",
+                    "employee_id": employee.id,
+                    "holiday_status_id": leave_type.id,
+                    "request_date_from": start,
+                    "request_date_to": start + timedelta(days=4, hours=9),
+                }
+            )
+        )
+        leave.sudo().action_approve()
+        closure = self.env["resource.schedule.exception"].create(
+            {
+                "name": "Shared closure",
+                "calendar_id": shared.id,
+                "date_from": start + timedelta(days=2),
+                "date_to": start + timedelta(days=2, hours=12),
+            }
+        )
+        self.assertFalse(closure.company_id)
+        mine = closure.timesheet_ids.filtered(lambda line: line.employee_id == employee)
+        self.assertFalse(mine)
+        leave.sudo().action_refuse()
+        mine = closure.timesheet_ids.filtered(lambda line: line.employee_id == employee)
+        self.assertEqual(mine.company_id, self.test_company)
+
     def test_unlink_timesheet_with_global_time_off(self):
         leave_start = datetime(2025, 1, 1, 7, 0)
         leave_end = datetime(2025, 1, 1, 18, 0)

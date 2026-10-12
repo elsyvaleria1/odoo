@@ -257,16 +257,20 @@ class ResourceScheduleException(models.Model):
             "company_id": employee_id.company_id.id,
         }
 
-    def _generate_timesheeets(self) -> None:
-        def books_time_off(leave):
-            company = leave.company_id or self.env.company
-            return bool(
-                not leave.resource_id
-                and company.hr_timesheet_config_id.internal_project_id
-                and company.project_timesheet_holidays_config_id.leave_timesheet_task_id
-            )
+    @api.model
+    def _books_time_off(self, company) -> bool:
+        return bool(
+            company.hr_timesheet_config_id.internal_project_id
+            and company.project_timesheet_holidays_config_id.leave_timesheet_task_id
+        )
 
-        results_with_leave_timesheet = self.filtered(books_time_off)
+    def _generate_timesheeets(self) -> None:
+        results_with_leave_timesheet = self.filtered(
+            lambda leave: (
+                not leave.resource_id
+                and self._books_time_off(leave.company_id or self.env.company)
+            )
+        )
         _debug.logic(
             "global_leave_timesheet_candidates",
             leaves=self,
@@ -278,6 +282,7 @@ class ResourceScheduleException(models.Model):
     def _generate_public_time_off_timesheets(self, employees):
         timesheet_vals_list = []
         skipped_calendar = 0
+        skipped_company = 0
         skipped_existing = 0
         resource_calendars = self._get_resource_calendars()
         work_hours_data = self._work_time_per_day(resource_calendars)
@@ -297,6 +302,11 @@ class ResourceScheduleException(models.Model):
                 ):
                     skipped_calendar += 1
                     continue
+                if (
+                    leave.company_id and leave.company_id != employee.company_id
+                ) or not self._books_time_off(employee.company_id):
+                    skipped_company += 1
+                    continue
                 calendar = leave.calendar_id or employee.resource_calendar_id
                 work_hours_list = work_hours_data[calendar.id][leave.id]
                 timesheet_dates = timesheet_dates_per_employee_id.get(employee.id, [])
@@ -315,6 +325,7 @@ class ResourceScheduleException(models.Model):
             employees=employees,
             lines=len(timesheet_vals_list),
             skipped_wrong_calendar=skipped_calendar,
+            skipped_other_company=skipped_company,
             skipped_already_present=skipped_existing,
         )
         return self.env["account.analytic.line"].sudo().create(timesheet_vals_list)
