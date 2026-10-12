@@ -1,11 +1,16 @@
-from typing import Self
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError
 from odoo.fields import Command, Domain
 from odoo.tools import frozendict
 
 from .utils import unlink_where_possible
+
+if TYPE_CHECKING:
+    from .product_template import ProductTemplate
+    from .product_template_attribute_value import ProductTemplateAttributeValue
 
 
 class ProductTemplateAttributeLine(models.Model):
@@ -79,14 +84,14 @@ class ProductTemplateAttributeLine(models.Model):
         else:
             self.value_ids -= self._get_stray_values()
 
-    def _subject_label(self):
+    def _subject_label(self) -> str:
         return self.product_tmpl_id.display_name
 
     @api.model_create_multi
-    def create(self, vals_list):
-        create_values = []
-        create_positions = []
-        record_ids = [None] * len(vals_list)
+    def create(self, vals_list: list[ValuesType]) -> Self:
+        create_values: list[ValuesType] = []
+        create_positions: list[int] = []
+        records_by_position: dict[int, ProductTemplateAttributeLine] = {}
         archived_ptal_pool = self._pool_of_reusable_archived_lines(vals_list)
         default_purpose = self.default_get(["purpose"]).get("purpose", "variant")
         for index, value in enumerate(vals_list):
@@ -102,20 +107,21 @@ class ProductTemplateAttributeLine(models.Model):
                 archived_ptal.with_context(
                     update_product_template_attribute_values=False
                 ).write(vals)
-                record_ids[index] = archived_ptal.id
+                records_by_position[index] = archived_ptal
             else:
                 create_values.append(value)
                 create_positions.append(index)
-        for position, record in zip(
-            create_positions, super().create(create_values), strict=True
-        ):
-            record_ids[position] = record.id
-        res = self.browse(record_ids)
+        records_by_position.update(
+            zip(create_positions, super().create(create_values), strict=True)
+        )
+        res = self.browse().concat(
+            *(records_by_position[position] for position in range(len(vals_list)))
+        )
         if self.env.context.get("update_product_template_attribute_values", True):
             res._update_product_template_attribute_values()
         return res
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         values = dict(vals)
         if "product_tmpl_id" in values:
             for ptal in self:
@@ -156,7 +162,7 @@ class ProductTemplateAttributeLine(models.Model):
             self._update_product_template_attribute_values()
         return res
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         self.product_template_value_ids._filtered_active().unlink()
         templates = self.product_tmpl_id
 
@@ -169,12 +175,12 @@ class ProductTemplateAttributeLine(models.Model):
         self._rebuild_variants(templates - ptal_to_archive.product_tmpl_id)
         return True
 
-    def _unlink_without_fallback(self):
+    def _unlink_without_fallback(self) -> Literal[True]:
         return super().unlink()
 
     def _update_product_template_attribute_values(self) -> None:
         ProductTemplateAttributeValue = self.env["product.template.attribute.value"]
-        ptav_to_create = []
+        ptav_to_create: list[ValuesType] = []
         ptav_to_unlink = ProductTemplateAttributeValue
         archived_ptav_pool = self._pool_of_reusable_archived_values()
         for ptal in self:
@@ -193,15 +199,15 @@ class ProductTemplateAttributeLine(models.Model):
 
             line_key = (ptal.product_tmpl_id.id, ptal.attribute_id.id)
             for pav_id in sorted(remaining_pav):
-                ptav = archived_ptav_pool.pop((*line_key, pav_id), None)
-                if ptav is None:
+                archived_ptav = archived_ptav_pool.pop((*line_key, pav_id), None)
+                if archived_ptav is None:
                     continue
-                ptav.write({"ptav_active": True, "attribute_line_id": ptal.id})
-                ptav_to_unlink -= ptav
-                ptav_to_deactivate -= ptav
+                archived_ptav.write({"ptav_active": True, "attribute_line_id": ptal.id})
+                ptav_to_unlink -= archived_ptav
+                ptav_to_deactivate -= archived_ptav
                 remaining_pav.remove(pav_id)
 
-            remaining_pav = (
+            pavs_to_add = (
                 self.env["product.attribute.value"].sudo().browse(sorted(remaining_pav))
             )
             ptav_to_create.extend(
@@ -210,7 +216,7 @@ class ProductTemplateAttributeLine(models.Model):
                     "attribute_line_id": ptal.id,
                     "price_extra": pav.default_extra_price,
                 }
-                for pav in remaining_pav
+                for pav in pavs_to_add
             )
             ptav_to_activate.write({"ptav_active": True})
             ptav_to_deactivate.write({"ptav_active": False})
@@ -224,7 +230,7 @@ class ProductTemplateAttributeLine(models.Model):
         self._rebuild_variants(self.product_tmpl_id)
 
     @api.model
-    def _rebuild_variants(self, templates) -> None:
+    def _rebuild_variants(self, templates: ProductTemplate) -> None:
         if not self.env.context.get("create_product_product", True):
             return
         deferred = self.env.context.get("variant_rebuild_deferred", ())
@@ -233,7 +239,9 @@ class ProductTemplateAttributeLine(models.Model):
         )._create_variant_ids()
 
     @api.model
-    def _pool_of_reusable_archived_lines(self, vals_list):
+    def _pool_of_reusable_archived_lines(
+        self, vals_list: list[ValuesType]
+    ) -> dict[tuple[int, int], list[Self]]:
         wanted = {
             (vals.get("product_tmpl_id"), vals.get("attribute_id"))
             for vals in vals_list
@@ -246,7 +254,7 @@ class ProductTemplateAttributeLine(models.Model):
             & Domain("attribute_id", "=", attribute_id)
             for template_id, attribute_id in wanted
         )
-        pool = {}
+        pool: dict[tuple[int, int], list[Self]] = {}
         for ptal in self.search(domain):
             pool.setdefault((ptal.product_tmpl_id.id, ptal.attribute_id.id), []).append(
                 ptal
@@ -254,14 +262,18 @@ class ProductTemplateAttributeLine(models.Model):
         return pool
 
     @api.model
-    def _archived_value_key(self, ptav) -> tuple:
+    def _archived_value_key(
+        self, ptav: ProductTemplateAttributeValue
+    ) -> tuple[int, int, int]:
         return (
             ptav.product_tmpl_id.id,
             ptav.attribute_id.id,
             ptav.product_attribute_value_id.id,
         )
 
-    def _pool_of_reusable_archived_values(self):
+    def _pool_of_reusable_archived_values(
+        self,
+    ) -> dict[tuple[int, int, int], ProductTemplateAttributeValue]:
         pairs = {(ptal.product_tmpl_id.id, ptal.attribute_id.id) for ptal in self}
         value_ids = self.value_ids.ids
         if not pairs or not value_ids:
@@ -275,7 +287,7 @@ class ProductTemplateAttributeLine(models.Model):
                 for template_id, attribute_id in pairs
             )
         )
-        pool = {}
+        pool: dict[tuple[int, int, int], ProductTemplateAttributeValue] = {}
         for ptav in self.env["product.template.attribute.value"].search(
             domain, order="id"
         ):
@@ -287,7 +299,7 @@ class ProductTemplateAttributeLine(models.Model):
             lambda ptal: ptal.attribute_id.create_variant != "no_variant"
         )
 
-    def _has_single_value(self, only_active=True) -> bool:
+    def _has_single_value(self, only_active: bool = True) -> bool:
         self.check_singleton()
         values = self.product_template_value_ids
         if only_active:
@@ -303,7 +315,7 @@ class ProductTemplateAttributeLine(models.Model):
         )
 
     @api.readonly
-    def action_view_attribute_values(self) -> dict:
+    def action_view_attribute_values(self) -> dict[str, Any]:
         return {
             "type": "ir.actions.act_window",
             "name": self.env._("Product Variant Values"),

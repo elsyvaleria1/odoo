@@ -16,7 +16,7 @@ class ProductAttributeCustomValue(models.Model):
     custom_value = fields.Char()
 
     @api.depends("custom_product_template_attribute_value_id.name", "custom_value")
-    def _compute_name(self):
+    def _compute_name(self) -> None:
         for record in self:
             name = (record.custom_value or "").strip()
             if record.custom_product_template_attribute_value_id.display_name:

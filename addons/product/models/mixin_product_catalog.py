@@ -1,9 +1,23 @@
+from collections.abc import Collection, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
+
 from odoo import api, models
+from odoo.api import ValuesType
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.misc import clean_context
 
+if TYPE_CHECKING:
+    from odoo.addons.product.models.product_product import ProductProduct
+
 _debug = DebugLog(__name__)
+
+
+class CatalogSection(TypedDict):
+    id: int | Literal[False]
+    name: str | Literal[False]
+    sequence: int
+    line_count: int
 
 
 class MixinProductCatalog(models.AbstractModel):
@@ -11,7 +25,7 @@ class MixinProductCatalog(models.AbstractModel):
     _description = "Product Catalog Mixin"
 
     @api.readonly
-    def action_add_from_catalog(self):
+    def action_add_from_catalog(self) -> dict[str, Any]:
         self.check_singleton()
         kanban_view_id = self.env.ref("product.view_product_product_kanban_catalog").id
         search_view_id = self.env.ref("product.view_product_product_search_catalog").id
@@ -26,10 +40,12 @@ class MixinProductCatalog(models.AbstractModel):
             "context": {**self._prepare_catalog_action_context(), **additional_context},
         }
 
-    def _prepare_catalog_action_context(self):
+    def _prepare_catalog_action_context(self) -> dict[str, Any]:
         return clean_context(self.env.context)
 
-    def _get_order_line_values(self, child_field=False) -> dict:
+    def _get_order_line_values(
+        self, child_field: str | Literal[False] = False
+    ) -> dict[str, Any]:
         return {
             "quantity": 0,
             "readOnly": self._is_readonly() if self else False,
@@ -41,10 +57,14 @@ class MixinProductCatalog(models.AbstractModel):
             | Domain("company_id", "parent_of", self.company_id.id)
         ) & Domain("type", "!=", "combo")
 
-    def _get_product_catalog_record_lines(self, product_ids, **kwargs):
+    def _get_product_catalog_record_lines(
+        self, product_ids: Collection[int], **kwargs: Any
+    ) -> Mapping[ProductProduct, models.BaseModel]:
         return {}
 
-    def _get_product_catalog_order_data(self, products, **kwargs):
+    def _get_product_catalog_order_data(
+        self, products: ProductProduct, **kwargs: Any
+    ) -> dict[int, dict[str, Any]]:
         return {
             product.id: {
                 "productType": product.type,
@@ -55,9 +75,12 @@ class MixinProductCatalog(models.AbstractModel):
         }
 
     def _get_product_catalog_order_line_info(
-        self, product_ids, child_field=False, **kwargs
-    ):
-        order_line_info = {}
+        self,
+        product_ids: Collection[int],
+        child_field: str | Literal[False] = False,
+        **kwargs: Any,
+    ) -> dict[int, dict[str, Any]]:
+        order_line_info: dict[int, dict[str, Any]] = {}
 
         for product, record_lines in self._get_product_catalog_record_lines(
             product_ids, child_field=child_field, **kwargs
@@ -89,7 +112,7 @@ class MixinProductCatalog(models.AbstractModel):
 
         return order_line_info
 
-    def _prepare_catalog_extra_context(self):
+    def _prepare_catalog_extra_context(self) -> dict[str, Any]:
         return {
             "display_uom": self.env.user.has_group("base.group_uom"),
             "order_id": self.id,
@@ -99,11 +122,19 @@ class MixinProductCatalog(models.AbstractModel):
     def _is_readonly(self) -> bool:
         return False
 
-    def _update_order_line_info(self, product_id, quantity, **kwargs):
+    def _update_order_line_info(
+        self, product_id: int, quantity: float, **kwargs: Any
+    ) -> float:
         return 0
 
     @_debug.perf.timed
-    def _create_section(self, child_field, name, position, **kwargs) -> dict:
+    def _create_section(
+        self,
+        child_field: str,
+        name: str,
+        position: Literal["top", "bottom"],
+        **kwargs: Any,
+    ) -> dict[str, int]:
         parent_field = self._get_parent_field_on_child_model()
 
         if _debug.logic.enabled and not parent_field:
@@ -141,7 +172,9 @@ class MixinProductCatalog(models.AbstractModel):
             "sequence": section.sequence,
         }
 
-    def _get_new_line_sequence(self, child_field, section_id):
+    def _get_new_line_sequence(
+        self, child_field: str, section_id: int | Literal[False] | None
+    ) -> int:
         lines = self[child_field].sorted("sequence")
 
         sequence = (lines and lines[-1].sequence + 1) or 10
@@ -173,8 +206,8 @@ class MixinProductCatalog(models.AbstractModel):
 
         return sequence
 
-    def _get_sections(self, child_field, **kwargs):
-        sections = {}
+    def _get_sections(self, child_field: str, **kwargs: Any) -> list[CatalogSection]:
+        sections: dict[int | Literal[False], CatalogSection] = {}
         no_section_count = 0
         lines = self[child_field]
         for line in lines.sorted("sequence"):
@@ -207,13 +240,13 @@ class MixinProductCatalog(models.AbstractModel):
         )
         return sorted(sections.values(), key=lambda x: x["sequence"])
 
-    def _prepare_default_create_section_values(self) -> dict:
+    def _prepare_default_create_section_values(self) -> ValuesType:
         return {}
 
     def _get_parent_field_on_child_model(self) -> str:
         return ""
 
-    def _is_line_valid_for_section_line_count(self, line) -> bool:
+    def _is_line_valid_for_section_line_count(self, line: models.BaseModel) -> bool:
         return (
             not line.display_type
             and line.product_type != "combo"
@@ -221,7 +254,9 @@ class MixinProductCatalog(models.AbstractModel):
         )
 
     @_debug.perf.timed
-    def _resequence_sections(self, sections, child_field, **kwargs):
+    def _resequence_sections(
+        self, sections: Sequence[Mapping[str, Any]], child_field: str, **kwargs: Any
+    ) -> dict[int, int]:
         lines = self[child_field].sorted("sequence")
         move_section, target_section = sections
 
@@ -263,16 +298,16 @@ class MixinProductCatalog(models.AbstractModel):
             remaining_lines=len(remaining_lines),
         )
 
-        sections = {}
+        sequences_by_section: dict[int, int] = {}
         for sequence, line in enumerate(reordered_lines, start=1):
             line.sequence = sequence
             if line.display_type == "line_section":
-                sections[line.id] = sequence
+                sequences_by_section[line.id] = sequence
 
         _debug.pipeline(
             "sections_resequenced",
             document=self,
             lines=len(reordered_lines),
-            sections=len(sections),
+            sections=len(sequences_by_section),
         )
-        return sections
+        return sequences_by_section

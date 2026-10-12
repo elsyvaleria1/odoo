@@ -1,6 +1,7 @@
-from typing import Self
+from typing import Any, Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError
 
 from .utils import write_and_reorder
@@ -57,7 +58,7 @@ class ProductAttributeValue(models.Model):
         compute="_compute_default_extra_price_changed"
     )
 
-    def _filtered_used(self):
+    def _filtered_used(self) -> Self:
         return self.filtered("is_used_on_products")
 
     def _usage_label(self) -> str:
@@ -65,12 +66,12 @@ class ProductAttributeValue(models.Model):
             self.pav_attribute_line_ids.product_tmpl_id.mapped("display_name")
         )
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if "attribute_id" in vals:
             self._check_not_carried_when_moved(vals["attribute_id"])
         return write_and_reorder(self, vals, super().write)
 
-    def _check_not_carried_when_moved(self, attribute_id) -> None:
+    def _check_not_carried_when_moved(self, attribute_id: int) -> None:
         carried = self.filtered(
             lambda pav: (
                 pav.attribute_id.id != attribute_id and pav.pav_attribute_line_ids
@@ -86,7 +87,7 @@ class ProductAttributeValue(models.Model):
                 )
             )
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         PTAV = self.env["product.template.attribute.value"].with_context(
             active_test=False
         )
@@ -138,14 +139,14 @@ class ProductAttributeValue(models.Model):
             .grouped("product_attribute_value_id")
         )
         for pav in self:
-            ptavs = ptavs_by_pav.get(pav, [])
+            ptavs = ptavs_by_pav.get(pav, ())
             pav.default_extra_price_changed = (
                 pav.default_extra_price != pav._origin.default_extra_price
                 or any(pav.default_extra_price != ptav.price_extra for ptav in ptavs)
             )
 
     @api.readonly
-    def action_add_to_products(self) -> dict:
+    def action_add_to_products(self) -> dict[str, Any]:
         return {
             "name": self.env._("Add to all products"),
             "type": "ir.actions.act_window",
@@ -160,7 +161,7 @@ class ProductAttributeValue(models.Model):
         }
 
     @api.readonly
-    def action_update_prices(self) -> dict | None:
+    def action_update_prices(self) -> dict[str, Any]:
         return {
             "name": self.env._("Update product extra prices"),
             "type": "ir.actions.act_window",
@@ -179,5 +180,5 @@ class ProductAttributeValue(models.Model):
             lambda pav: pav.attribute_id.create_variant != "no_variant",
         )
 
-    def check_is_used_on_products(self):
+    def check_is_used_on_products(self) -> str | None:
         return self._in_use_message()

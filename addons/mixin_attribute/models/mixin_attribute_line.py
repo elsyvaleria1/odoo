@@ -3,7 +3,6 @@ from odoo.exceptions import ValidationError
 
 
 class MixinAttributeLine(models.AbstractModel):
-
     _name = "mixin.attribute.line"
     _description = "Attribute Line Mixin"
     _order = "sequence, attribute_id, id"

@@ -1,8 +1,16 @@
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from odoo import api, fields, models
+from odoo.api import DomainType
 from odoo.fields import Command
 from odoo.tools import formatLang
+
+if TYPE_CHECKING:
+    from odoo.addons.product.models.product_attribute import ProductAttribute
+    from odoo.addons.product.models.product_attribute_value import (
+        ProductAttributeValue,
+    )
 
 
 class WizardProductAttributeValuePropagate(models.TransientModel):
@@ -50,13 +58,13 @@ class WizardProductAttributeValuePropagate(models.TransientModel):
                     changed_count=wizard.changed_product_count,
                 )
 
-    def _get_domain_company(self) -> list:
+    def _get_domain_company(self) -> DomainType:
         return [("product_tmpl_id.company_id", "in", self.env.companies.ids + [False])]
 
-    def _get_domain_target_templates(self) -> list:
+    def _get_domain_target_templates(self) -> DomainType:
         return [("product_tmpl_id.active", "=", True), *self._get_domain_company()]
 
-    def _get_domain_lines_to_extend(self) -> list:
+    def _get_domain_lines_to_extend(self) -> DomainType:
         self.check_singleton()
         return [
             ("attribute_id", "=", self.attribute_value_id.attribute_id.id),
@@ -64,7 +72,7 @@ class WizardProductAttributeValuePropagate(models.TransientModel):
             *self._get_domain_target_templates(),
         ]
 
-    def _get_domain_values_to_reprice(self) -> list:
+    def _get_domain_values_to_reprice(self) -> DomainType:
         self.check_singleton()
         return [
             ("product_attribute_value_id", "=", self.attribute_value_id.id),
@@ -79,7 +87,7 @@ class WizardProductAttributeValuePropagate(models.TransientModel):
         repricing = self.filtered(lambda wizard: wizard.mode == "update_extra_price")
         if values := adding.attribute_value_id:
             Line = self.env["product.template.attribute.line"]
-            lines_per_attribute = dict(
+            lines_per_attribute: dict[ProductAttribute, int] = dict(
                 Line._read_group(
                     [
                         ("attribute_id", "in", values.attribute_id.ids),
@@ -89,7 +97,7 @@ class WizardProductAttributeValuePropagate(models.TransientModel):
                     ["__count"],
                 )
             )
-            lines_per_value = dict(
+            lines_per_value: dict[ProductAttributeValue, int] = dict(
                 Line._read_group(
                     [
                         ("value_ids", "in", values.ids),
@@ -105,7 +113,9 @@ class WizardProductAttributeValuePropagate(models.TransientModel):
                     value.attribute_id, 0
                 ) - lines_per_value.get(value, 0)
         if values := repricing.attribute_value_id:
-            per_value = defaultdict(lambda: [0, 0])
+            per_value: defaultdict[ProductAttributeValue, list[int]] = defaultdict(
+                lambda: [0, 0]
+            )
             for value, price_extra, count in self.env[
                 "product.template.attribute.value"
             ]._read_group(
@@ -125,7 +135,7 @@ class WizardProductAttributeValuePropagate(models.TransientModel):
                     wizard.attribute_value_id
                 ]
 
-    def action_confirm(self):
+    def action_confirm(self) -> None:
         self.check_singleton()
         if self.mode == "add":
             self.env["product.template.attribute.line"].search(

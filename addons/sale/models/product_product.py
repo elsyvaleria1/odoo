@@ -85,9 +85,6 @@ class ProductProduct(models.Model):
             self.env.ref("sale.sale_menu_root").id
         ]
 
-    def _get_invoice_policy(self):
-        return self.invoice_policy
-
     def _is_uom_change_warning_required(self) -> bool:
         res = super()._is_uom_change_warning_required()
         if res:

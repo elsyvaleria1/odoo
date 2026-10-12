@@ -76,7 +76,7 @@
   "return_bool_or_none_odoo": 14,
   "return_false_sentinel_agromarin": 1,
   "return_false_sentinel_l10n": 9,
-  "return_false_sentinel_odoo": 44,
+  "return_false_sentinel_odoo": 43,
   "return_mixed_value_kinds_l10n": 7,
   "return_mixed_value_kinds_odoo": 33
 }

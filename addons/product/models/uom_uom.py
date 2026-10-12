@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo import fields, models
 from odoo.fields import Domain
 
@@ -12,15 +14,15 @@ class UomUom(models.Model):
         domain=lambda self: self._domain_product_uom_ids(),
     )
 
-    def _domain_product_uom_ids(self):
-        domain = []
+    def _domain_product_uom_ids(self) -> Domain:
+        domain: list[Domain] = []
         if self.env.context.get("product_id"):
             domain.append(Domain("product_id", "=", self.env.context["product_id"]))
         if self.env.context.get("product_ids"):
             domain.append(Domain("product_id", "in", self.env.context["product_ids"]))
         return Domain.OR(domain) if domain else Domain.TRUE
 
-    def action_view_packaging_barcodes(self) -> dict:
+    def action_view_packaging_barcodes(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",

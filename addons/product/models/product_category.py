@@ -1,4 +1,5 @@
 from odoo import _lt, api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import ValidationError
 from odoo.fields import Domain
 
@@ -78,7 +79,7 @@ class ProductCategory(models.Model):
                 )
             )
 
-    def copy_data(self, default=None):
+    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType | None]:
         default = dict(default or {})
         vals_list = super().copy_data(default=default)
         if "name" not in default:
@@ -105,7 +106,7 @@ class ProductCategory(models.Model):
             [("categ_id", "child_of", self.ids)], ["categ_id"], ["__count"]
         )
         self_ids = set(self.ids)
-        count_by_categ = {}
+        count_by_categ: dict[int, int] = {}
         for categ, count in read_group_res:
             for ancestor_id in categ._get_ancestor_ids(include_self=True):
                 if ancestor_id in self_ids:
@@ -116,7 +117,7 @@ class ProductCategory(models.Model):
             categ.product_count = count_by_categ.get(categ.id, 0)
 
     @api.depends_context("hierarchical_naming")
-    def _compute_display_name(self):
+    def _compute_display_name(self) -> None:
         if self.env.context.get("hierarchical_naming", True):
             return super()._compute_display_name()
         for record in self:
@@ -124,6 +125,6 @@ class ProductCategory(models.Model):
         return None
 
     @api.model
-    def name_create(self, name):
+    def name_create(self, name: str) -> tuple[int, str]:
         category = self.create({"name": name})
         return category.id, category.display_name

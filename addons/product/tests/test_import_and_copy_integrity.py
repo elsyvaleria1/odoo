@@ -125,6 +125,51 @@ class TestAttributeLineCreateOrder(ProductCommon):
                 f"{name}: variant carries a value owned by another template",
             )
 
+    def test_import_variants_without_template_or_name_is_refused(self):
+        result = self.env["product.product"].load(
+            ["name", "import_attribute_values"], [["", "OrderColor:OrderRed"]]
+        )
+        self.assertFalse(result["ids"])
+        self.assertEqual(
+            [m["message"] for m in result["messages"]],
+            [
+                (
+                    "Unable to import products with attribute values but without"
+                    " name of product set"
+                )
+            ],
+        )
+
+    def test_import_variants_onto_archived_template_by_id_is_refused(self):
+        archived = self.env["product.template"].create({"name": "ImportByIdArchived"})
+        namesake = self.env["product.template"].create({"name": "ImportByIdNamesake"})
+        archived.action_archive()
+        Product = self.env["product.product"].with_context(active_test=False)
+
+        for row in (
+            [str(archived.id), "", "OrderColor:OrderRed"],
+            [str(archived.id), namesake.name, "OrderColor:OrderRed"],
+        ):
+            with self.subTest(name=row[1]):
+                result = self.env["product.product"].load(
+                    ["product_tmpl_id/.id", "name", "import_attribute_values"], [row]
+                )
+                self.assertFalse(result["ids"])
+                self.assertEqual(
+                    [m["message"] for m in result["messages"]],
+                    [
+                        (
+                            f"Variants cannot be imported onto product templates"
+                            f" {archived.id}: they are archived or do not exist."
+                        )
+                    ],
+                )
+                self.assertFalse(
+                    Product.search(
+                        [("product_tmpl_id", "in", (archived | namesake).ids)]
+                    ).product_template_attribute_value_ids
+                )
+
 
 @tagged("post_install", "-at_install")
 class TestTemplateCopyPriceExtra(ProductCommon):

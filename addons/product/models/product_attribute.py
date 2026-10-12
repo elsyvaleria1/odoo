@@ -1,6 +1,7 @@
-from typing import Self
+from typing import Any, Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError, ValidationError
 
 from .utils import write_and_reorder
@@ -81,7 +82,7 @@ class ProductAttribute(models.Model):
         compute="_compute_count_product_tmpl",
     )
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if "create_variant" in vals:
             for pa in self:
                 if (
@@ -100,7 +101,7 @@ class ProductAttribute(models.Model):
                     )
         return write_and_reorder(self, vals, super().write)
 
-    def _filtered_used(self):
+    def _filtered_used(self) -> Self:
         return self.filtered("count_product_tmpl")
 
     def _usage_label(self) -> str:
@@ -181,7 +182,7 @@ class ProductAttribute(models.Model):
             self.create_variant = "no_variant"
 
     @api.readonly
-    def action_view_product_template_attribute_lines(self) -> dict:
+    def action_view_product_template_attribute_lines(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",

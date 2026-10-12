@@ -1,4 +1,7 @@
+from typing import Literal, Self
+
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.tools import frozendict
 
 
@@ -35,18 +38,18 @@ class ProductTemplateAttributeExclusion(models.Model):
     )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         exclusions = super().create(vals_list)
         exclusions.product_tmpl_id._create_variant_ids()
         return exclusions
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         templates = self.product_tmpl_id
         res = super().unlink()
         templates._create_variant_ids()
         return res
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if not vals.keys() & {
             "product_template_attribute_value_id",
             "product_tmpl_id",

@@ -1,4 +1,7 @@
+from typing import TYPE_CHECKING, Any, Literal, Self
+
 from odoo import api, fields, models
+from odoo.api import IdType, ValuesType
 from odoo.exceptions import ValidationError
 from odoo.tools import (
     float_round,
@@ -7,6 +10,15 @@ from odoo.tools import (
     formatLang,
     frozendict,
 )
+
+if TYPE_CHECKING:
+    from .product_pricelist import PriceDate, PricedProduct, ProductPricelist
+    from odoo.addons.base.models.res_currency import ResCurrency
+    from odoo.addons.base.models.uom_uom import UomUom
+
+type AppliedOn = Literal[
+    "0_product_variant", "1_product", "2_product_category", "3_global"
+]
 
 
 class ProductPricelistItem(models.Model):
@@ -198,7 +210,12 @@ class ProductPricelistItem(models.Model):
 
     @api.constrains("base_pricelist_id", "pricelist_id", "base")
     def _check_pricelist_recursion(self) -> None:
-        def dfs_path(from_pl, to_pl, path, seen):
+        def dfs_path(
+            from_pl: ProductPricelist,
+            to_pl: ProductPricelist,
+            path: ProductPricelist,
+            seen: set[tuple[ProductPricelist, ProductPricelist]],
+        ) -> ProductPricelist:
             if (from_pl, to_pl) in seen:
                 return path.browse()
             if to_pl in path:
@@ -214,7 +231,7 @@ class ProductPricelistItem(models.Model):
                     return res
             return path.browse()
 
-        seen = set()
+        seen: set[tuple[ProductPricelist, ProductPricelist]] = set()
         for item in self:
             if (
                 item.base != "pricelist"
@@ -233,7 +250,7 @@ class ProductPricelistItem(models.Model):
                 )
 
     @api.constrains("date_start", "date_end")
-    def _check_date_range(self):
+    def _check_date_range(self) -> None:
         for item in self:
             if item.date_start and item.date_end and item.date_start >= item.date_end:
                 raise ValidationError(
@@ -321,7 +338,7 @@ class ProductPricelistItem(models.Model):
                 )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         missing_tmpl_ids = [
             vals["product_id"]
             for vals in vals_list
@@ -347,7 +364,7 @@ class ProductPricelistItem(models.Model):
             new_vals_list.append(values)
         return super().create(new_vals_list)
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if vals.get("applied_on"):
             vals = dict(vals)
             self._update_applied_on_vals(vals)
@@ -356,7 +373,7 @@ class ProductPricelistItem(models.Model):
         if not any(field in vals for field in self._TARGETING_FIELDS):
             return super().write(vals)
 
-        writes = {}
+        writes: dict[tuple[AppliedOn, int | Literal[False] | None], list[int]] = {}
         for item in self:
             applied_on, template_id = item._targeting_after_write(vals)
             override = (
@@ -366,19 +383,17 @@ class ProductPricelistItem(models.Model):
             )
             writes.setdefault((applied_on, override), []).append(item.id)
 
-        result = True
         for (applied_on, override), item_ids in writes.items():
             item_vals = {**vals, "applied_on": applied_on}
             if override is not None:
                 item_vals["product_tmpl_id"] = override
             self._update_applied_on_vals(item_vals)
-            result = (
-                super(ProductPricelistItem, self.browse(item_ids)).write(item_vals)
-                and result
-            )
-        return result
+            super(ProductPricelistItem, self.browse(item_ids)).write(item_vals)
+        return True
 
-    def _targeting_after_write(self, vals) -> tuple:
+    def _targeting_after_write(
+        self, vals: ValuesType
+    ) -> tuple[AppliedOn, int | Literal[False] | None]:
         self.check_singleton()
         product = (
             self.env["product.product"].browse(vals["product_id"])
@@ -401,8 +416,11 @@ class ProductPricelistItem(models.Model):
 
     @api.model
     def _deduce_applied_on(
-        self, product_id=False, product_tmpl_id=False, categ_id=False
-    ) -> str:
+        self,
+        product_id: IdType | Literal[False] | None = False,
+        product_tmpl_id: IdType | Literal[False] | None = False,
+        categ_id: IdType | Literal[False] | None = False,
+    ) -> AppliedOn:
         if product_id:
             return "0_product_variant"
         if product_tmpl_id:
@@ -412,7 +430,7 @@ class ProductPricelistItem(models.Model):
         return "3_global"
 
     @api.model
-    def _update_applied_on_vals(self, vals) -> None:
+    def _update_applied_on_vals(self, vals: ValuesType) -> None:
         applied_on = vals.get("applied_on")
         if applied_on == "3_global":
             vals.update({"product_id": None, "product_tmpl_id": None, "categ_id": None})
@@ -427,7 +445,7 @@ class ProductPricelistItem(models.Model):
         self.is_pricelist_required = True
 
     @api.depends("pricelist_id.company_id", "product_tmpl_id.company_id")
-    def _compute_company_id(self):
+    def _compute_company_id(self) -> None:
         for item in self:
             item.company_id = (
                 item.pricelist_id.company_id or item.product_tmpl_id.company_id
@@ -445,7 +463,7 @@ class ProductPricelistItem(models.Model):
     @api.depends(
         "applied_on", "categ_id", "product_tmpl_id", "product_id", "display_applied_on"
     )
-    def _compute_name(self):
+    def _compute_name(self) -> None:
         for item in self:
             if item.categ_id and item.applied_on == "2_product_category":
                 item.name = self.env._("Category: %s", item.categ_id.display_name)
@@ -480,7 +498,7 @@ class ProductPricelistItem(models.Model):
                     currency_obj=item.currency_id,
                 )
             elif item.compute_price == "percentage":
-                percentage = self._int_if_whole(item.percent_price)
+                percentage = self._format_percentage(item.percent_price)
                 if item.base_pricelist_id:
                     item.price = self.env._(
                         "%(percentage)s %% discount on %(pricelist)s",
@@ -576,16 +594,16 @@ class ProductPricelistItem(models.Model):
                 ),
             )
 
-    def _get_displayed_discount(self) -> tuple:
+    def _get_displayed_discount(self) -> tuple[str, str]:
         self.check_singleton()
         if self.base == "standard_price":
-            return self.env._("markup"), self._int_if_whole(self.price_markup)
-        return self.env._("discount"), self._int_if_whole(self.price_discount)
+            return self.env._("markup"), self._format_percentage(self.price_markup)
+        return self.env._("discount"), self._format_percentage(self.price_discount)
 
-    def _int_if_whole(self, percentage):
-        return int(percentage) if percentage == int(percentage) else percentage
+    def _format_percentage(self, percentage: float) -> str:
+        return str(int(percentage) if percentage == int(percentage) else percentage)
 
-    def _get_price_label_base_str(self):
+    def _get_price_label_base_str(self) -> str:
         self.check_singleton()
         base_str = ""
         if self.base == "pricelist" and self.base_pricelist_id:
@@ -596,7 +614,7 @@ class ProductPricelistItem(models.Model):
             base_str = self.env._("sales price")
         return base_str
 
-    def _default_pricelist_id(self):
+    def _default_pricelist_id(self) -> ProductPricelist:
         return self.env["product.pricelist"].search(
             ["|", ("company_id", "=", False), ("company_id", "=", self.env.company.id)],
             limit=1,
@@ -662,7 +680,7 @@ class ProductPricelistItem(models.Model):
                 )
 
     @api.onchange("product_id")
-    def _onchange_product_id(self):
+    def _onchange_product_id(self) -> None:
         has_product_id = self.filtered("product_id")
         for item in has_product_id:
             item.product_tmpl_id = item.product_id.product_tmpl_id
@@ -671,7 +689,7 @@ class ProductPricelistItem(models.Model):
             (self - has_product_id).update({"applied_on": "1_product"})
 
     @api.onchange("product_tmpl_id")
-    def _onchange_product_tmpl_id(self):
+    def _onchange_product_tmpl_id(self) -> None:
         has_tmpl_id = self.filtered("product_tmpl_id")
         for item in has_tmpl_id:
             if (
@@ -702,7 +720,9 @@ class ProductPricelistItem(models.Model):
     def _onchange_validity_period(self) -> None:
         self._check_date_range()
 
-    def _is_applicable_for(self, product, qty_in_product_uom) -> bool:
+    def _is_applicable_for(
+        self, product: PricedProduct, qty_in_product_uom: float
+    ) -> bool:
         self.check_singleton()
         product.check_singleton()
 
@@ -731,8 +751,16 @@ class ProductPricelistItem(models.Model):
         return True
 
     def _get_price(
-        self, product, quantity, uom, date, currency=None, *, base_price=None, **kwargs
-    ):
+        self,
+        product: PricedProduct,
+        quantity: float,
+        uom: UomUom,
+        date: PriceDate,
+        currency: ResCurrency | None = None,
+        *,
+        base_price: float | None = None,
+        **kwargs: Any,
+    ) -> float:
         self and self.check_singleton()
         product.check_singleton()
         uom.check_singleton()
@@ -743,7 +771,7 @@ class ProductPricelistItem(models.Model):
         product_uom_id = product.uom_id
         rule_currency = self.currency_id or currency
 
-        def convert(price):
+        def convert(price: float) -> float:
             if rule_currency != currency:
                 price = rule_currency._convert(
                     price, currency, self.env.company, date, round=False
@@ -779,7 +807,15 @@ class ProductPricelistItem(models.Model):
 
         return base_price
 
-    def _get_base_price(self, product, quantity, uom, date, currency, **kwargs):
+    def _get_base_price(
+        self,
+        product: PricedProduct,
+        quantity: float,
+        uom: UomUom | None,
+        date: PriceDate,
+        currency: ResCurrency,
+        **kwargs: Any,
+    ) -> float:
         currency.check_singleton()
 
         rule_base = self.base or "list_price"
@@ -817,8 +853,14 @@ class ProductPricelistItem(models.Model):
         return price
 
     def _get_price_before_discount(
-        self, product, quantity, uom, date, currency=None, **kwargs
-    ):
+        self,
+        product: PricedProduct,
+        quantity: float,
+        uom: UomUom | None,
+        date: PriceDate,
+        currency: ResCurrency,
+        **kwargs: Any,
+    ) -> float:
         pricelist_item = self
         while pricelist_item.base == "pricelist":
             rule_id = pricelist_item.base_pricelist_id._get_product_rule(

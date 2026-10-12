@@ -1,8 +1,12 @@
+import datetime
 import re
 from collections import defaultdict
-from typing import Self
+from collections.abc import Iterable, Mapping
+from types import NotImplementedType
+from typing import TYPE_CHECKING, Any, Literal, NotRequired, Self, TypedDict
 
 from odoo import api, fields, models
+from odoo.api import DomainType, ValuesType
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.sql import SQL
@@ -12,7 +16,32 @@ from odoo.tools.misc import unique
 
 from .utils import unlink_where_possible
 
+if TYPE_CHECKING:
+    from odoo.orm.models.mixins.load import LoadResult
+
+    from odoo.addons.base.models.uom_uom import UomUom
+    from odoo.addons.product.models.product_attribute_value import (
+        ProductAttributeValue,
+    )
+    from odoo.addons.product.models.product_supplierinfo import ProductSupplierinfo
+    from odoo.addons.product.models.product_template import ProductTemplate
+    from odoo.addons.product.models.product_template_attribute_line import (
+        ProductTemplateAttributeLine,
+    )
+    from odoo.addons.product.models.product_template_attribute_value import (
+        ProductTemplateAttributeValue,
+    )
+    from odoo.addons.product.models.res_partner import ResPartner
+
 IMAGE_SIZES = (1920, 1024, 512, 256, 128)
+
+
+class ImportRow(TypedDict):
+    values: ValuesType
+    name: str
+    product_tmpl_id: int | Literal[False] | None
+    parsed: list[tuple[str, str]]
+    target_template_id: NotRequired[int]
 
 
 class ProductProduct(models.Model):
@@ -250,7 +279,7 @@ class ProductProduct(models.Model):
                 )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         products = super(
             ProductProduct,
             self.with_context(create_product_product=False),
@@ -258,7 +287,7 @@ class ProductProduct(models.Model):
         self.env.registry.clear_cache("product_variants")
         return products.with_env(self.env)
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if "is_user_favorite" in vals:
             self.product_tmpl_id._update_user_favorite(vals.pop("is_user_favorite"))
             if not vals:
@@ -276,7 +305,7 @@ class ProductProduct(models.Model):
             self.env.registry.clear_cache("product_variants")
         return res
 
-    def copy(self, default=None):
+    def copy(self, default: ValuesType | None = None) -> Self:
         templates = self.product_tmpl_id
         new_template_by_template = dict(
             zip(templates, templates.copy(default=default), strict=True)
@@ -304,7 +333,7 @@ class ProductProduct(models.Model):
             )
         return new_products
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         products = self.exists()
         for product in products.with_context(bin_size=False):
             if product.image_variant_1920 and not product.product_tmpl_id.image_1920:
@@ -317,7 +346,7 @@ class ProductProduct(models.Model):
         self.env.registry.clear_cache("product_variants")
         return res
 
-    def _get_templates_emptied_by_unlink(self):
+    def _get_templates_emptied_by_unlink(self) -> ProductTemplate:
         unlink_ids = set(self.ids)
         product_ids_by_template = dict(
             self.with_context(active_test=False)._read_group(
@@ -343,7 +372,7 @@ class ProductProduct(models.Model):
                 )
             )
 
-    def _compute_variant_image(self, size) -> None:
+    def _compute_variant_image(self, size: int) -> None:
         field = "image_%s" % size
         variant_field = "image_variant_%s" % size
         for record in self:
@@ -502,8 +531,8 @@ class ProductProduct(models.Model):
         "lang",
     )
     @api.depends("name", "default_code", "product_tmpl_id")
-    def _compute_display_name(self):
-        def get_display_name(name, code):
+    def _compute_display_name(self) -> None:
+        def get_display_name(name: str, code: str | Literal[False]) -> str:
             if self.env.context.get("display_default_code", True) and code:
                 if self.env.context.get("formatted_display_name"):
                     return f"{name}\t--{code}--"
@@ -516,7 +545,7 @@ class ProductProduct(models.Model):
 
         self.check_access("read")
 
-        context_sellers = (
+        context_sellers: ProductSupplierinfo | list[ProductSupplierinfo] = (
             self.env["product.supplierinfo"]
             .sudo()
             .browse(self.env.context.get("seller_id"))
@@ -541,7 +570,9 @@ class ProductProduct(models.Model):
                     ],
                 )
             )
-            supplier_info_by_template = {}
+            supplier_info_by_template: dict[
+                ProductTemplate, list[ProductSupplierinfo]
+            ] = {}
             for r in supplier_info:
                 supplier_info_by_template.setdefault(r.product_tmpl_id, []).append(r)
 
@@ -609,14 +640,14 @@ class ProductProduct(models.Model):
                 )
             )
 
-    def _inverse_image_1920(self):
-        return self._set_template_field("image_1920", "image_variant_1920")
+    def _inverse_image_1920(self) -> None:
+        self._set_template_field("image_1920", "image_variant_1920")
 
     @api.model
-    def _search_display_name(self, operator, value):
+    def _search_display_name(self, operator: str, value: Any) -> DomainType:
         is_positive = operator not in Domain.NEGATIVE_OPERATORS
-        template_domains = [[("name", operator, value)]]
-        product_domains = [[("default_code", operator, value)]]
+        template_domains: list[DomainType] = [[("name", operator, value)]]
+        product_domains: list[DomainType] = [[("default_code", operator, value)]]
 
         if operator == "in":
             product_domains.append([("barcode", "in", value)])
@@ -680,7 +711,13 @@ class ProductProduct(models.Model):
         return [("id", "in", query)]
 
     @api.model
-    def name_search(self, name="", domain=None, operator="ilike", limit=100):
+    def name_search(
+        self,
+        name: str = "",
+        domain: DomainType | None = None,
+        operator: str = "ilike",
+        limit: int | None = 100,
+    ) -> list[tuple[int, str]]:
         if not name:
             return super().name_search(name, domain, operator, limit)
         positive_operators = ["=", "ilike", "=ilike", "like", "=like"]
@@ -751,7 +788,9 @@ class ProductProduct(models.Model):
             )
         return [(product.id, product.display_name) for product in products.sudo()]
 
-    def _search_all_product_tag_ids(self, operator, operand):
+    def _search_all_product_tag_ids(
+        self, operator: str, operand: Any
+    ) -> DomainType | NotImplementedType:
         if operator in Domain.NEGATIVE_OPERATORS:
             return NotImplemented
         return [
@@ -760,7 +799,9 @@ class ProductProduct(models.Model):
             ("additional_product_tag_ids", operator, operand),
         ]
 
-    def _search_is_in_selected_section_of_order(self, operator, value):
+    def _search_is_in_selected_section_of_order(
+        self, operator: str, value: Any
+    ) -> DomainType | NotImplementedType:
         if operator != "in":
             return NotImplemented
         ctx = self.env.context
@@ -806,13 +847,13 @@ class ProductProduct(models.Model):
             product.write({"list_price": value})
 
     @api.onchange("default_code")
-    def _onchange_default_code(self) -> dict | None:
+    def _onchange_default_code(self) -> dict[str, Any] | None:
         if not self.default_code:
             return None
 
-        domain = [("default_code", "=", self.default_code)]
-        if self.id.origin:
-            domain.append(("id", "!=", self.id.origin))
+        domain = Domain("default_code", "=", self.default_code)
+        if origin_id := self._origin.id:
+            domain &= Domain("id", "!=", origin_id)
 
         if self.env["product.product"].search_count(domain, limit=1):
             return {
@@ -827,7 +868,7 @@ class ProductProduct(models.Model):
         return None
 
     @api.onchange("uom_id")
-    def _onchange_uom_id(self) -> dict | None:
+    def _onchange_uom_id(self) -> dict[str, Any] | None:
         if (
             self._origin.uom_id == self.uom_id
             or not self._is_uom_change_warning_required()
@@ -847,7 +888,7 @@ class ProductProduct(models.Model):
         }
 
     @api.model
-    def view_header_get(self, view_id, view_type):
+    def view_header_get(self, view_id: int | None, view_type: str) -> str | bool:
         if self.env.context.get("categ_id"):
             return self.env._(
                 "Products: %(category)s",
@@ -857,7 +898,7 @@ class ProductProduct(models.Model):
             )
         return super().view_header_get(view_id, view_type)
 
-    def action_archive(self):
+    def action_archive(self) -> None:
         records = self.filtered("active")
         super().action_archive()
         records.product_tmpl_id.filtered(
@@ -866,7 +907,7 @@ class ProductProduct(models.Model):
             ),
         ).action_archive()
 
-    def action_unarchive(self):
+    def action_unarchive(self) -> None:
         records = self.filtered(lambda rec: not rec.active)
         super().action_unarchive()
         records.product_tmpl_id.filtered(
@@ -876,7 +917,7 @@ class ProductProduct(models.Model):
         ).action_unarchive()
 
     @api.readonly
-    def action_view_label_layout(self):
+    def action_view_label_layout(self) -> dict[str, Any]:
         if any(product.type == "service" for product in self):
             raise ValidationError(
                 self.env._("Labels cannot be printed for products of service type"),
@@ -887,7 +928,7 @@ class ProductProduct(models.Model):
         action["context"] = {"default_product_ids": self.ids}
         return action
 
-    def action_open_packaging_barcodes(self) -> dict:
+    def action_open_packaging_barcodes(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
@@ -902,7 +943,7 @@ class ProductProduct(models.Model):
             },
         }
 
-    def view_product_template(self) -> dict:
+    def view_product_template(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
@@ -915,14 +956,14 @@ class ProductProduct(models.Model):
     def _filtered_to_unlink(self) -> Self:
         return self
 
-    def get_contextual_price(self):
+    def get_contextual_price(self) -> float:
         return self._get_contextual_price()
 
-    def _get_contextual_price(self):
+    def _get_contextual_price(self) -> float:
         self.check_singleton()
         return self.product_tmpl_id._get_contextual_price(self)
 
-    def _get_contextual_discount(self):
+    def _get_contextual_discount(self) -> float:
         self.check_singleton()
 
         pricelist = self.product_tmpl_id._get_contextual_pricelist()
@@ -941,34 +982,35 @@ class ProductProduct(models.Model):
             return (lst_price - self._get_contextual_price()) / lst_price
         return 0.0
 
-    def _get_invoice_policy(self):
-        return False
-
-    def _get_placeholder_filename(self, field):
+    def _get_placeholder_filename(self, field: str) -> str | bool:
         if field in tuple("image_%s" % size for size in IMAGE_SIZES):
             return self._get_product_placeholder_filename()
         return super()._get_placeholder_filename(field)
 
-    def _get_product_placeholder_filename(self):
+    def _get_product_placeholder_filename(self) -> str:
         return self.product_tmpl_id._get_product_placeholder_filename()
 
-    def _get_attribute_lines_for_display(self):
+    def _get_attribute_lines_for_display(self) -> ProductTemplateAttributeLine:
         return self.product_tmpl_id._get_attribute_lines_for_display()
 
-    def _get_barcodes_by_company(self) -> list:
+    def _get_barcodes_by_company(
+        self,
+    ) -> list[tuple[int | Literal[False], list[str]]]:
         return [
             (company_id, [p.barcode for p in products if p.barcode])
             for company_id, products in groupby(self, lambda p: p.company_id.id)
         ]
 
-    def _get_domain_barcode_search(self, barcodes_within_company, company_id):
-        domain = [("barcode", "in", barcodes_within_company)]
+    def _get_domain_barcode_search(
+        self, barcodes_within_company: list[str], company_id: int | Literal[False]
+    ) -> Domain:
+        domain = Domain("barcode", "in", barcodes_within_company)
         if company_id:
-            domain.append(("company_id", "in", (False, company_id)))
+            domain &= Domain("company_id", "in", (False, company_id))
         return domain
 
     @api.model
-    def _get_context_seller_partners(self):
+    def _get_context_seller_partners(self) -> ResPartner:
         partners = self.env["res.partner"].browse(self.env.context.get("partner_id"))
         commercial = partners._fields["commercial_partner_id"]
         if not all(
@@ -977,7 +1019,9 @@ class ProductProduct(models.Model):
             partners = partners.exists()
         return partners._get_seller_partners()
 
-    def _get_contextual_partner_seller(self, partners):
+    def _get_contextual_partner_seller(
+        self, partners: ResPartner
+    ) -> ProductSupplierinfo:
         self.check_singleton()
         SupplierInfo = self.env["product.supplierinfo"]
         if not partners or not SupplierInfo.has_access("read"):
@@ -991,7 +1035,9 @@ class ProductProduct(models.Model):
         return nearest.sorted(lambda seller: not seller.product_id)[:1]
 
     @api.model
-    def _keep_nearest_partner_sellers(self, sellers, partners) -> list:
+    def _keep_nearest_partner_sellers(
+        self, sellers: Iterable[ProductSupplierinfo], partners: ResPartner
+    ) -> list[ProductSupplierinfo]:
         for partner in partners:
             nearest = [seller for seller in sellers if seller.partner_id == partner]
             if nearest:
@@ -1000,12 +1046,12 @@ class ProductProduct(models.Model):
 
     def _get_filtered_sellers(
         self,
-        partner_id=False,
-        quantity=0.0,
-        date=None,
-        uom_id=False,
-        params=False,
-    ):
+        partner_id: ResPartner | Literal[False] | None = False,
+        quantity: float | None = 0.0,
+        date: datetime.date | Literal[False] | None = None,
+        uom_id: UomUom | Literal[False] = False,
+        params: Mapping[str, Any] | Literal[False] | None = False,
+    ) -> ProductSupplierinfo:
         self.check_singleton()
         if not date:
             date = fields.Date.context_today(self)
@@ -1050,7 +1096,9 @@ class ProductProduct(models.Model):
             matching_ids.append(seller.id)
         return self.env["product.supplierinfo"].browse(matching_ids)
 
-    def _prepare_product_price_context(self, combination):
+    def _prepare_product_price_context(
+        self, combination: ProductTemplateAttributeValue
+    ) -> dict[str, float]:
         self.check_singleton()
         res = {}
 
@@ -1063,7 +1111,9 @@ class ProductProduct(models.Model):
 
         return res
 
-    def _get_no_variant_attributes_price_extra(self, combination):
+    def _get_no_variant_attributes_price_extra(
+        self, combination: ProductTemplateAttributeValue
+    ) -> float:
         return sum(
             ptav.price_extra
             for ptav in combination.filtered(
@@ -1075,7 +1125,7 @@ class ProductProduct(models.Model):
             )
         )
 
-    def _get_attributes_extra_price(self):
+    def _get_attributes_extra_price(self) -> float:
         self.check_singleton()
 
         return self.price_extra + self.env.context.get(
@@ -1084,35 +1134,38 @@ class ProductProduct(models.Model):
         )
 
     @api.model
-    def get_empty_list_help(self, help_message):
+    def get_empty_list_help(self, help_message: str | Literal[False]) -> str:
         self = self.with_context(
             empty_list_help_document_name=self.env._("product"),
         )
         return super().get_empty_list_help(help_message)
 
-    def get_product_multiline_description_sale(self):
-        name = self.display_name
+    def get_product_multiline_description_sale(self) -> str:
+        name = self.display_name or ""
         if self.description_sale:
             name += "\n" + self.description_sale
 
         return name
 
     @api.model
-    def load(self, fields, data):
+    def load(self, fields: list[str], data: list[list[str]]) -> LoadResult:
         if "import_attribute_values" in fields and not self.env.context.get(
             "from_template_import"
         ):
             res = self.env["product.template"].load(fields, data)
-            res["ids"] = self.search(Domain("product_tmpl_id", "in", res["ids"])).ids
+            if res["ids"]:
+                res["ids"] = self.search(
+                    Domain("product_tmpl_id", "in", res["ids"])
+                ).ids
             return res
         return super().load(fields, data)
 
-    def _load_records_write(self, values):
+    def _load_records_write(self, values: ValuesType) -> None:
         import_attribute_values = values.get("import_attribute_values", "")
         if not import_attribute_values:
             return super()._load_records_write(values)
 
-        def split(values):
+        def split(values: str) -> set[tuple[str, ...]]:
             return {
                 tuple(part.strip() for part in attr.split(":"))
                 for attr in values.split(",")
@@ -1140,7 +1193,7 @@ class ProductProduct(models.Model):
 
         return super()._load_records_write(values)
 
-    def _parse_import_attribute_values(self, raw):
+    def _parse_import_attribute_values(self, raw: str) -> list[tuple[str, str]]:
         parsed = []
         seen_attributes = set()
         for token in raw.split(","):
@@ -1167,7 +1220,7 @@ class ProductProduct(models.Model):
             parsed.append((attribute_name, value_name))
         return parsed
 
-    def _load_records_create(self, data_list):
+    def _load_records_create(self, data_list: list[ValuesType]) -> Self:
         with_import_values = [
             vals for vals in data_list if vals.get("import_attribute_values")
         ]
@@ -1224,12 +1277,14 @@ class ProductProduct(models.Model):
 
         return imported_product.exists() + products
 
-    def _import_read_rows(self, with_import_values):
-        rows = []
+    def _import_read_rows(
+        self, with_import_values: list[ValuesType]
+    ) -> list[ImportRow]:
+        rows: list[ImportRow] = []
         for vals in with_import_values:
             name = (vals.get("name") or "").strip()
             if not name and not vals.get("product_tmpl_id"):
-                raise ValueError(  # noqa: E8511 -- the import wizard shows this text
+                raise UserError(
                     self.env._(
                         "Unable to import products with attribute values but without name of product set"
                     )
@@ -1246,7 +1301,9 @@ class ProductProduct(models.Model):
             )
         return rows
 
-    def _import_template_defaults(self, rows, templates) -> dict:
+    def _import_template_defaults(
+        self, rows: list[ImportRow], templates: ProductTemplate
+    ) -> dict[int, dict[str, Any]]:
         field_names = [
             name
             for name in unique(key for row in rows for key in row["values"])
@@ -1260,8 +1317,12 @@ class ProductProduct(models.Model):
         }
 
     def _import_variant_values(
-        self, row, default_values, template_value_to_ptav, pa_pav_records
-    ):
+        self,
+        row: ImportRow,
+        default_values: dict[int, dict[str, Any]],
+        template_value_to_ptav: dict[tuple[int, int], ProductTemplateAttributeValue],
+        pa_pav_records: dict[tuple[str, str], ProductAttributeValue],
+    ) -> ValuesType:
         template_id = row["target_template_id"]
         defaults = default_values.get(template_id) or {}
         values = {}
@@ -1285,11 +1346,13 @@ class ProductProduct(models.Model):
         ]
         return values
 
-    def _import_resolve_attribute_values(self, rows):
+    def _import_resolve_attribute_values(
+        self, rows: list[ImportRow]
+    ) -> dict[tuple[str, str], ProductAttributeValue]:
         PA = self.env["product.attribute"]
         PAV = self.env["product.attribute.value"]
 
-        attribute_to_values = defaultdict(OrderedSet)
+        attribute_to_values: defaultdict[str, OrderedSet[str]] = defaultdict(OrderedSet)
         for row in rows:
             for attribute_name, value_name in row["parsed"]:
                 attribute_to_values[attribute_name].add(value_name)
@@ -1336,7 +1399,14 @@ class ProductProduct(models.Model):
 
         return pa_pav_records
 
-    def _import_resolve_templates(self, rows) -> tuple:
+    def _import_resolve_templates(
+        self, rows: list[ImportRow]
+    ) -> tuple[
+        dict[int, ProductTemplate],
+        dict[str, ProductTemplate],
+        ProductTemplate,
+        ProductTemplate,
+    ]:
         PT = self.env["product.template"]
 
         product_templates = PT.search(
@@ -1344,6 +1414,20 @@ class ProductProduct(models.Model):
             | Domain("id", "in", [row["product_tmpl_id"] for row in rows])
         )
         id2template = dict(zip(product_templates.ids, product_templates, strict=True))
+        if unresolved_ids := sorted(
+            {
+                row["product_tmpl_id"]
+                for row in rows
+                if row["product_tmpl_id"] and row["product_tmpl_id"] not in id2template
+            }
+        ):
+            raise UserError(
+                self.env._(
+                    "Variants cannot be imported onto product templates %(ids)s:"
+                    " they are archived or do not exist.",
+                    ids=", ".join(map(str, unresolved_ids)),
+                )
+            )
         name2template = dict(
             zip(product_templates.mapped("name"), product_templates, strict=True)
         )
@@ -1369,11 +1453,11 @@ class ProductProduct(models.Model):
 
     def _import_resolve_ptavs(
         self,
-        rows,
-        id2template,
-        name2template,
-        pa_pav_records,
-    ):
+        rows: list[ImportRow],
+        id2template: dict[int, ProductTemplate],
+        name2template: dict[str, ProductTemplate],
+        pa_pav_records: dict[tuple[str, str], ProductAttributeValue],
+    ) -> dict[tuple[int, int], ProductTemplateAttributeValue]:
         PTAL = self.env["product.template.attribute.line"]
 
         pt_to_attribute_to_values = defaultdict(list)
@@ -1446,7 +1530,9 @@ class ProductProduct(models.Model):
                 )
         return ptavs_by_template_value
 
-    def _prepare_sellers(self, params=False):
+    def _prepare_sellers(
+        self, params: Mapping[str, Any] | Literal[False] | None = False
+    ) -> ProductSupplierinfo:
         all_sellers = self.sudo().variant_seller_ids
         sellers = all_sellers._filtered_for_company_and_product(
             self.env.company, self, params
@@ -1455,18 +1541,18 @@ class ProductProduct(models.Model):
 
     def _select_seller(
         self,
-        partner_id=False,
-        quantity=0.0,
-        date=None,
-        uom_id=False,
-        ordered_by="price_discounted",
-        params=False,
-    ):
-        sort_key = ("price_discounted", "sequence", "id")
+        partner_id: ResPartner | Literal[False] | None = False,
+        quantity: float | None = 0.0,
+        date: datetime.date | Literal[False] | None = None,
+        uom_id: UomUom | Literal[False] = False,
+        ordered_by: str = "price_discounted",
+        params: Mapping[str, Any] | Literal[False] | None = False,
+    ) -> ProductSupplierinfo:
+        sort_key: tuple[str, ...] = ("price_discounted", "sequence", "id")
         if ordered_by != "price_discounted":
             sort_key = (ordered_by, "price_discounted", "sequence", "id")
 
-        def sort_function(record):
+        def sort_function(record: ProductSupplierinfo) -> list[Any]:
             vals = {
                 "price_discounted": record.currency_id._convert(
                     record.price_discounted,
@@ -1491,7 +1577,7 @@ class ProductProduct(models.Model):
                     sellers, partner_id._get_seller_partners()
                 )
             )
-        res_ids = []
+        res_ids: list[int] = []
         res_partner = None
         for seller in sellers:
             if not res_ids or res_partner == seller.partner_id:
@@ -1500,7 +1586,7 @@ class ProductProduct(models.Model):
         res = self.env["product.supplierinfo"].browse(res_ids)
         return res and res.sorted(sort_function)[:1]
 
-    def _set_template_field(self, template_field, variant_field) -> None:
+    def _set_template_field(self, template_field: str, variant_field: str) -> None:
         tmpl_ids = self.product_tmpl_id.ids
         variant_counts = {}
         if tmpl_ids:
@@ -1539,7 +1625,9 @@ class ProductProduct(models.Model):
         )
         undeletable.filtered("active").write({"active": False})
 
-    def _is_variant_possible(self, parent_combination=None) -> bool:
+    def _is_variant_possible(
+        self, parent_combination: ProductTemplateAttributeValue | None = None
+    ) -> bool:
         self.check_singleton()
         return bool(
             self.product_tmpl_id._is_combination_possible(
@@ -1549,17 +1637,17 @@ class ProductProduct(models.Model):
             )
         )
 
-    def _update_uom(self, to_uom_id):
-        return True
+    def _update_uom(self, to_uom_id: int) -> None:
+        pass
 
     def _restamp_uom(
         self,
-        model,
-        to_uom_id,
-        domain=None,
-        product_field="product_id",
-        context=None,
-    ):
+        model: str,
+        to_uom_id: int,
+        domain: DomainType | None = None,
+        product_field: str = "product_id",
+        context: Mapping[str, Any] | None = None,
+    ) -> models.BaseModel:
         Model = self.env[model].sudo()
         if domain is None:
             domain = [(product_field, "in", self.ids)]
@@ -1591,7 +1679,7 @@ class ProductProduct(models.Model):
         return to_write
 
     def _check_duplicated_product_barcodes(
-        self, barcodes_within_company, company_id
+        self, barcodes_within_company: list[str], company_id: int | Literal[False]
     ) -> None:
         domain = self._get_domain_barcode_search(barcodes_within_company, company_id)
         products_by_barcode = self.sudo()._read_group(
@@ -1620,7 +1708,7 @@ class ProductProduct(models.Model):
             )
 
     def _check_duplicated_packaging_barcodes(
-        self, barcodes_within_company, company_id
+        self, barcodes_within_company: list[str], company_id: int | Literal[False]
     ) -> None:
         packaging_domain = self._get_domain_barcode_search(
             barcodes_within_company,

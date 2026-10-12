@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
@@ -43,7 +45,7 @@ class WizardProductProductPrintLabel(models.TransientModel):
             else:
                 wizard.columns, wizard.rows = 1, 1
 
-    def _prepare_report_data(self):
+    def _prepare_report_data(self) -> tuple[str, dict[str, Any]]:
         if self.custom_quantity <= 0:
             raise UserError(self.env._("You need to set a positive quantity."))
 
@@ -81,7 +83,7 @@ class WizardProductProductPrintLabel(models.TransientModel):
         }
         return xml_id, data
 
-    def process(self):
+    def process(self) -> dict[str, Any]:
         self.check_singleton()
         xml_id, data = self._prepare_report_data()
         if not xml_id:

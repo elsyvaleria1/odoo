@@ -1,17 +1,24 @@
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Literal, Self
+
 from odoo import api, models
+from odoo.api import ValuesType
 from odoo.fields import Domain
+
+if TYPE_CHECKING:
+    from odoo.addons.base.models.res_currency import ResCurrency
 
 
 class ResCompany(models.Model):
     _inherit = "res.company"
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         companies = super().create(vals_list)
         companies._activate_or_create_pricelists()
         return companies
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if not vals.get("currency_id"):
             return super().write(vals)
 
@@ -31,7 +38,9 @@ class ResCompany(models.Model):
         return res
 
     @api.model
-    def _realign_default_pricelist_currency(self, previous_currency) -> None:
+    def _realign_default_pricelist_currency(
+        self, previous_currency: Mapping[Self, ResCurrency]
+    ) -> None:
         domains = [
             Domain("company_id", "=", company.id)
             & Domain("currency_id", "=", currency.id)
@@ -79,7 +88,7 @@ class ResCompany(models.Model):
                 ]
             )
 
-    def _prepare_default_pricelist_vals(self):
+    def _prepare_default_pricelist_vals(self) -> ValuesType:
         self.check_singleton()
         return {
             "name": self.env._("Default"),

@@ -3,7 +3,6 @@ from odoo.exceptions import UserError
 
 
 class MixinAttribute(models.AbstractModel):
-
     _name = "mixin.attribute"
     _inherit = ["mixin.catalog"]
     _description = "Attribute Mixin"
@@ -38,7 +37,6 @@ class MixinAttribute(models.AbstractModel):
         help="Widget used to pick values of this attribute.",
     )
 
-
     def _filtered_used(self):
         if not self._attribute_line_model:
             return self.browse()
@@ -49,7 +47,6 @@ class MixinAttribute(models.AbstractModel):
 
     def _usage_label(self) -> str:
         return ""
-
 
     def write(self, vals):
         result = super().write(vals)

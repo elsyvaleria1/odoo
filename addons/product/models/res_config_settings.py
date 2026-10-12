@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo import api, fields, models
 
 
@@ -75,7 +77,7 @@ class ResConfigSettings(models.TransientModel):
     )
 
     @api.onchange("group_product_pricelist")
-    def _onchange_group_product_pricelist(self) -> dict | None:
+    def _onchange_group_product_pricelist(self) -> dict[str, Any] | None:
         if not self.group_product_pricelist:
             active_pricelist = (
                 self.env["product.pricelist"]
@@ -93,7 +95,7 @@ class ResConfigSettings(models.TransientModel):
                 }
         return None
 
-    def set_values(self):
+    def set_values(self) -> None:
         had_group_pl = self.default_get(["group_product_pricelist"])[
             "group_product_pricelist"
         ]

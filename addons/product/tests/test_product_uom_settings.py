@@ -15,7 +15,6 @@ class UomSettingsCommon(BaseCommon):
 
 
 class TestLengthIsResolvedOffTheVolumeSetting(UomSettingsCommon):
-
     def test_length_uom_defaults_to_millimeter(self):
         self._set("product.volume_in_cubic_feet", "0")
         self.assertEqual(
@@ -39,7 +38,6 @@ class TestLengthIsResolvedOffTheVolumeSetting(UomSettingsCommon):
 
 
 class TestResolvedUnitsAreSelectable(UomSettingsCommon):
-
     def _resolved(self, kind):
         key = UOM_SETTINGS[kind][0]
         units = []
@@ -69,7 +67,6 @@ class TestResolvedUnitsAreSelectable(UomSettingsCommon):
 
 
 class TestTheUomSettingTable(UomSettingsCommon):
-
     KEY_STATES = {"0": False, "1": True, None: False, "": False, "true": False}
 
     def test_every_kind_on_every_key_state(self):
@@ -88,7 +85,6 @@ class TestTheUomSettingTable(UomSettingsCommon):
 
 
 class TestTheSettingsBlockCarriesEveryUnit(UomSettingsCommon):
-
     FIELDS = (
         "product_weight_in_lbs",
         "product_volume_in_cubic_feet",

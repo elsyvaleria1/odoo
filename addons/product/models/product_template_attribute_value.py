@@ -1,6 +1,7 @@
-from typing import Self
+from typing import Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.tools import frozendict
@@ -110,7 +111,7 @@ class ProductTemplateAttributeValue(models.Model):
                 )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         if any("ptav_product_variant_ids" in v for v in vals_list):
             raise UserError(
                 self.env._(
@@ -119,7 +120,7 @@ class ProductTemplateAttributeValue(models.Model):
             )
         return super().create(vals_list)
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if "ptav_product_variant_ids" in vals:
             raise UserError(
                 self.env._(
@@ -158,7 +159,7 @@ class ProductTemplateAttributeValue(models.Model):
             self.product_tmpl_id._create_variant_ids()
         return res
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         single_values = self.filtered(
             lambda ptav: ptav._is_from_single_value_line(only_active=False)
         )
@@ -180,12 +181,12 @@ class ProductTemplateAttributeValue(models.Model):
         ptav_to_archive.write({"ptav_active": False})
         return True
 
-    def _unlink_without_fallback(self):
+    def _unlink_without_fallback(self) -> Literal[True]:
         return super().unlink()
 
     @api.depends("attribute_id")
     @api.depends_context("show_attribute")
-    def _compute_display_name(self):
+    def _compute_display_name(self) -> None:
         show_attribute = self.env.context.get("show_attribute", True)
         for value in self:
             value.display_name = (
@@ -205,7 +206,7 @@ class ProductTemplateAttributeValue(models.Model):
     def _ids2str(self) -> str:
         return ",".join([str(i) for i in sorted(self.ids)])
 
-    def _get_combination_name(self):
+    def _get_combination_name(self) -> str:
         ptavs = self._without_no_variant_attributes().with_prefetch(self._prefetch_ids)
         ptavs = ptavs._filter_single_value_lines().with_prefetch(self._prefetch_ids)
         return ", ".join([ptav.name for ptav in ptavs])
@@ -216,6 +217,6 @@ class ProductTemplateAttributeValue(models.Model):
             lambda ptav: not ptav._is_from_single_value_line(only_active)
         )
 
-    def _is_from_single_value_line(self, only_active=True) -> bool:
+    def _is_from_single_value_line(self, only_active: bool = True) -> bool:
         self.check_singleton()
         return self.attribute_line_id._has_single_value(only_active)

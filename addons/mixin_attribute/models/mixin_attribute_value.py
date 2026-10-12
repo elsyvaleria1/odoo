@@ -1,5 +1,3 @@
-from typing import Literal
-
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
@@ -7,7 +5,6 @@ from odoo.addons.base.models.mixin_catalog import name_uniq_index
 
 
 class MixinAttributeValue(models.AbstractModel):
-
     _name = "mixin.attribute.value"
     _inherit = ["mixin.catalog", "mixin.color"]
     _description = "Attribute Value Mixin"
@@ -30,7 +27,6 @@ class MixinAttributeValue(models.AbstractModel):
             value.display_name = f"{value.attribute_id.name}: {value.name}"
         return None
 
-
     def _line_model_name(self):
         field = self._fields.get("attribute_id")
         if not field or not field.comodel_name:
@@ -47,10 +43,10 @@ class MixinAttributeValue(models.AbstractModel):
     def _usage_label(self) -> str:
         return ""
 
-    def _in_use_message(self) -> str | Literal[False]:
+    def _in_use_message(self) -> str | None:
         used = self._filtered_used()
         if not used:
-            return False
+            return None
         names = ", ".join(used.mapped("display_name"))
         usage = used._usage_label()
         return (
@@ -66,7 +62,6 @@ class MixinAttributeValue(models.AbstractModel):
                 names=names,
             )
         )
-
 
     def write(self, vals):
         if "attribute_id" in vals:

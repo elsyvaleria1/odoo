@@ -1,6 +1,15 @@
+from collections.abc import Collection
+from types import NotImplementedType
+from typing import TYPE_CHECKING, Any, Self
+
 from odoo import api, fields, models
+from odoo.api import DomainType, ValuesType
 from odoo.exceptions import ValidationError
 from odoo.fields import Domain
+
+if TYPE_CHECKING:
+    from .product_product import ProductProduct
+    from .product_template import ProductTemplate
 
 
 class ProductTag(models.Model):
@@ -8,12 +17,12 @@ class ProductTag(models.Model):
     _description = "Product Tag"
     _order = "sequence, id"
 
-    def _default_product_template_ids(self):
+    def _default_product_template_ids(self) -> ProductTemplate:
         return self.env["product.template"].browse(
             self.env.context.get("product_template_id")
         )
 
-    def _default_product_product_ids(self):
+    def _default_product_product_ids(self) -> ProductProduct:
         return self.env["product.product"].browse(
             self.env.context.get("product_variant_id")
         )
@@ -71,7 +80,7 @@ class ProductTag(models.Model):
                 )
             seen.add(tag.name)
 
-    def copy_data(self, default=None):
+    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType | None]:
         vals_list = super().copy_data(default=default)
         if default and "name" in default:
             return vals_list
@@ -80,7 +89,7 @@ class ProductTag(models.Model):
             for tag, vals in zip(self, vals_list, strict=True)
         ]
 
-    def copy_translations(self, new, excluded=()) -> None:
+    def copy_translations(self, new: Self, excluded: Collection[str] = ()) -> None:
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
@@ -93,7 +102,9 @@ class ProductTag(models.Model):
                 tag.product_template_ids.product_variant_ids | tag.product_product_ids
             )
 
-    def _search_product_ids(self, operator, operand):
+    def _search_product_ids(
+        self, operator: str, operand: Any
+    ) -> DomainType | NotImplementedType:
         if operator in Domain.NEGATIVE_OPERATORS:
             return NotImplemented
         return [

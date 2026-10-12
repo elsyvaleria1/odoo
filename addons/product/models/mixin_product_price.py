@@ -1,12 +1,21 @@
+from typing import TYPE_CHECKING, Literal
+
 from odoo import api, fields, models
+from odoo.api import IdType
 from odoo.exceptions import UserError, ValidationError
+
+if TYPE_CHECKING:
+    from .product_pricelist import PriceDate
+    from odoo.addons.base.models.res_company import ResCompany
+    from odoo.addons.base.models.res_currency import ResCurrency
+    from odoo.addons.base.models.uom_uom import UomUom
 
 
 class MixinProductPrice(models.AbstractModel):
     _name = "mixin.product.price"
     _description = "Product Pricing Mixin"
 
-    def _check_price_uom(self, uom) -> None:
+    def _check_price_uom(self, uom: UomUom | None) -> None:
         self.check_singleton()
         if uom and self.uom_id and not self.uom_id._has_common_reference(uom):
             raise UserError(
@@ -20,11 +29,11 @@ class MixinProductPrice(models.AbstractModel):
                 )
             )
 
-    def _convert_price_to_uom(self, price, uom):
+    def _convert_price_to_uom(self, price: float, uom: UomUom) -> float:
         self._check_price_uom(uom)
         return self.uom_id._get_price_in_unit(price, uom)
 
-    def _convert_price_from_uom(self, price, uom):
+    def _convert_price_from_uom(self, price: float, uom: UomUom) -> float:
         self._check_price_uom(uom)
         return uom._get_price_in_unit(price, self.uom_id)
 
@@ -36,16 +45,21 @@ class MixinProductPrice(models.AbstractModel):
             )
 
     def _get_prices(
-        self, price_type, uom=None, currency=None, company=None, date=False
-    ):
-        company = company or self.env.company
+        self,
+        price_type: str,
+        uom: UomUom | None = None,
+        currency: ResCurrency | None = None,
+        company: ResCompany | None = None,
+        date: PriceDate | Literal[False] | None = False,
+    ) -> dict[IdType, float]:
+        price_company = company or self.env.company
         date = date or fields.Date.context_today(self)
 
-        records = self.with_company(company)
+        records = self.with_company(price_company)
         if price_type == "standard_price":
             records = records.sudo()
 
-        prices = dict.fromkeys(records.ids, 0.0)
+        prices: dict[IdType, float] = dict.fromkeys(records.ids, 0.0)
         for record in records:
             price = record._get_price_base(price_type)
             if price_type == "list_price":
@@ -56,22 +70,22 @@ class MixinProductPrice(models.AbstractModel):
 
             if currency:
                 price = record._get_price_currency(price_type)._convert(
-                    price, currency, company, date
+                    price, currency, price_company, date
                 )
 
             prices[record.id] = price
         return prices
 
-    def _get_price_base(self, price_type):
+    def _get_price_base(self, price_type: str) -> float:
         self.check_singleton()
         return self[price_type] or 0.0
 
-    def _get_price_currency(self, price_type):
+    def _get_price_currency(self, price_type: str) -> ResCurrency:
         self.check_singleton()
         if price_type == "standard_price":
             return self.cost_currency_id
         return self.currency_id
 
-    def _get_attributes_extra_price(self):
+    def _get_attributes_extra_price(self) -> float:
         self.check_singleton()
         return 0.0

@@ -1,3 +1,5 @@
+from typing import Any, Self
+
 from odoo import api, fields, models
 
 
@@ -31,7 +33,7 @@ class ResPartner(models.Model):
         readonly=True,
     )
 
-    def _get_seller_partners(self):
+    def _get_seller_partners(self) -> Self:
         return self | self.parent_id | self.commercial_partner_id
 
     @api.depends_context("company", "country_code")
@@ -57,13 +59,13 @@ class ResPartner(models.Model):
                     else partner.property_product_pricelist.id
                 )
 
-    def _synced_commercial_fields(self):
+    def _synced_commercial_fields(self) -> list[str]:
         return [
             *super()._synced_commercial_fields(),
             "specific_property_product_pricelist",
         ]
 
-    def action_view_manufacturer_products(self) -> dict:
+    def action_view_manufacturer_products(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "name": self.env._("Products"),

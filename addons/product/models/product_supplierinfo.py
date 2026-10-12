@@ -1,8 +1,13 @@
-from typing import Self
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.tools import frozendict
+
+if TYPE_CHECKING:
+    from .product_product import ProductProduct
+    from odoo.addons.base.models.res_company import ResCompany
 
 
 class ProductSupplierinfo(models.Model):
@@ -119,7 +124,7 @@ class ProductSupplierinfo(models.Model):
     )
 
     @api.depends("product_id", "product_tmpl_id")
-    def _compute_product_uom_id(self):
+    def _compute_product_uom_id(self) -> None:
         for rec in self:
             product_uom = (
                 rec.product_id.uom_id if rec.product_id else rec.product_tmpl_id.uom_id
@@ -142,7 +147,7 @@ class ProductSupplierinfo(models.Model):
             ) * (1 - rec.discount / 100)
 
     @api.depends("product_id")
-    def _compute_product_tmpl_id(self):
+    def _compute_product_tmpl_id(self) -> None:
         for rec in self:
             if rec.product_id:
                 rec.product_tmpl_id = rec.product_id.product_tmpl_id
@@ -174,7 +179,7 @@ class ProductSupplierinfo(models.Model):
                 )
 
     @api.constrains("date_start", "date_end")
-    def _check_date_range(self):
+    def _check_date_range(self) -> None:
         for rec in self:
             if rec.date_start and rec.date_end and rec.date_start > rec.date_end:
                 raise ValidationError(
@@ -186,7 +191,7 @@ class ProductSupplierinfo(models.Model):
                 )
 
     @api.onchange("product_tmpl_id")
-    def _onchange_product_tmpl_id(self):
+    def _onchange_product_tmpl_id(self) -> None:
         if (
             self.product_id
             and self.product_id not in self.product_tmpl_id.product_variant_ids
@@ -194,7 +199,7 @@ class ProductSupplierinfo(models.Model):
             self.product_id = False
 
     @api.model
-    def get_import_templates(self):
+    def get_import_templates(self) -> list[dict[str, str]]:
         return [
             {
                 "label": self.env._("Import Template for Vendor Pricelists"),
@@ -203,14 +208,17 @@ class ProductSupplierinfo(models.Model):
         ]
 
     def _filtered_for_company_and_product(
-        self, company_id, product_id, params=False
+        self,
+        company: ResCompany,
+        product: ProductProduct,
+        params: Mapping[str, Any] | Literal[False] | None = False,
     ) -> Self:
         return self.filtered(
             lambda s: (
-                (not s.company_id or s.company_id in company_id.parent_ids)
+                (not s.company_id or s.company_id in company.parent_ids)
                 and (
                     s.partner_id.sudo().active
-                    and (not s.product_id or s.product_id == product_id)
+                    and (not s.product_id or s.product_id == product)
                 )
             )
         )

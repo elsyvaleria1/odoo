@@ -1,8 +1,19 @@
 from collections import defaultdict
-from typing import Any
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Literal
 
 from odoo import api, models
 from odoo.exceptions import UserError
+
+if TYPE_CHECKING:
+    from odoo.addons.product.models.product_product import ProductProduct
+    from odoo.addons.product.models.product_template import ProductTemplate
+    from odoo.addons.product.wizards.wizard_product_product_print_label import (
+        WizardProductProductPrintLabel,
+    )
+
+type LabelProduct = ProductTemplate | ProductProduct
+type LabelQuantities = defaultdict[LabelProduct, list[tuple[str | Literal[False], int]]]
 
 
 class MixinProductLabelReport(models.AbstractModel):
@@ -11,7 +22,9 @@ class MixinProductLabelReport(models.AbstractModel):
 
     MAX_TOTAL_LABELS = 10000
 
-    def _get_report_values(self, docids, data):
+    def _get_report_values(
+        self, docids: list[int] | None, data: dict[str, Any] | None
+    ) -> dict[str, Any]:
         data = data or {}
         layout = (
             self.env["wizard.product.product.print.label"]
@@ -40,13 +53,15 @@ class MixinProductLabelReport(models.AbstractModel):
             "pricelist": layout.pricelist_id,
         }
 
-    def _prepare_studio_report_vals(self, docids, layout) -> dict[str, Any]:
+    def _prepare_studio_report_vals(
+        self, docids: list[int], layout: WizardProductProductPrintLabel
+    ) -> dict[str, Any]:
         products = (
             self.env["product.template"]
             .with_context(display_default_code=False)
             .browse(docids)
         )
-        quantity_by_product = defaultdict(list)
+        quantity_by_product: LabelQuantities = defaultdict(list)
         for product in products:
             quantity_by_product[product].append((product.barcode, 1))
         return {
@@ -56,7 +71,7 @@ class MixinProductLabelReport(models.AbstractModel):
         }
 
     @api.model
-    def _get_label_product_model(self, active_model):
+    def _get_label_product_model(self, active_model: str | None) -> LabelProduct:
         if active_model not in ("product.template", "product.product"):
             raise UserError(
                 self.env._(
@@ -66,14 +81,18 @@ class MixinProductLabelReport(models.AbstractModel):
         return self.env[active_model].with_context(display_default_code=False)
 
     @api.model
-    def _get_label_id(self, value) -> int:
+    def _get_label_id(self, value: str | float | None) -> int:
+        if value is None:
+            return 0
         try:
             return int(value)
         except TypeError, ValueError:
             return 0
 
-    def _get_label_quantities(self, data, Product) -> tuple:
-        quantity_by_product = defaultdict(list)
+    def _get_label_quantities(
+        self, data: Mapping[str, Any], Product: LabelProduct
+    ) -> tuple[LabelQuantities, int]:
+        quantity_by_product: LabelQuantities = defaultdict(list)
         total = 0
 
         requested = {
@@ -105,7 +124,7 @@ class MixinProductLabelReport(models.AbstractModel):
         return quantity_by_product, total
 
     @api.model
-    def _get_label_quantity(self, value):
+    def _get_label_quantity(self, value: str | float) -> int:
         try:
             quantity = int(value)
         except TypeError, ValueError:
@@ -117,7 +136,9 @@ class MixinProductLabelReport(models.AbstractModel):
         return quantity
 
     @api.model
-    def _get_label_page_count(self, total, layout):
+    def _get_label_page_count(
+        self, total: int, layout: WizardProductProductPrintLabel
+    ) -> int:
         per_page = layout.rows * layout.columns
         if not total or per_page <= 0:
             raise UserError(

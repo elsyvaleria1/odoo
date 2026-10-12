@@ -1,9 +1,35 @@
+import datetime
 from collections import defaultdict
+from collections.abc import Collection, Iterable
+from typing import TYPE_CHECKING, Any, Literal, Self, TypedDict
 
 from odoo import api, fields, models
+from odoo.api import IdType, ValuesType
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.tools import frozendict
+
+if TYPE_CHECKING:
+    from .product_pricelist_item import ProductPricelistItem
+    from .product_product import ProductProduct
+    from .product_template import ProductTemplate
+    from odoo.addons.base.models.res_currency import ResCurrency
+    from odoo.addons.base.models.uom_uom import UomUom
+
+type PricedProduct = ProductProduct | ProductTemplate
+type PriceRule = tuple[float, int | Literal[False]]
+type PriceDate = datetime.date | str
+
+RuleIndex = TypedDict(
+    "RuleIndex",
+    {
+        "variant": dict[int, list[int]],
+        "template": dict[int, list[int]],
+        "category": dict[int, list[int]],
+        "global": list[int],
+        "position": dict[int, int],
+    },
+)
 
 
 class ProductPricelist(models.Model):
@@ -56,7 +82,7 @@ class ProductPricelist(models.Model):
         domain=lambda self: self._domain_item_ids(),
     )
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         res = super().write(vals)
 
         if "company_id" in vals:
@@ -66,7 +92,7 @@ class ProductPricelist(models.Model):
 
         return res
 
-    def copy_data(self, default=None):
+    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType | None]:
         default = dict(default or {})
         vals_list = super().copy_data(default=default)
         if "name" not in default:
@@ -76,14 +102,14 @@ class ProductPricelist(models.Model):
                 vals["name"] = self.env._("%s (copy)", pricelist.name)
         return vals_list
 
-    def copy_translations(self, new, excluded=()) -> None:
+    def copy_translations(self, new: Self, excluded: Collection[str] = ()) -> None:
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
         )
 
     @api.depends("currency_id")
-    def _compute_display_name(self):
+    def _compute_display_name(self) -> None:
         for pricelist in self:
             pricelist_name = pricelist.name or self.env._("New")
             pricelist.display_name = f"{pricelist_name} ({pricelist.currency_id.name})"
@@ -115,7 +141,7 @@ class ProductPricelist(models.Model):
             )
 
     @api.readonly
-    def action_view_pricelist_report(self) -> dict:
+    def action_view_pricelist_report(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "name": self.env._("Pricelist Report Preview"),
@@ -123,7 +149,7 @@ class ProductPricelist(models.Model):
             "tag": "generate_pricelist_report",
         }
 
-    def _get_domain_item_ids_base(self) -> list:
+    def _get_domain_item_ids_base(self) -> list[str | tuple[str, str, Any] | list[Any]]:
         return [
             "|",
             ("product_tmpl_id", "=", None),
@@ -135,15 +161,15 @@ class ProductPricelist(models.Model):
 
     def _get_price_rule(
         self,
-        products,
-        quantity,
+        products: PricedProduct,
+        quantity: float,
         *,
-        currency=None,
-        uom=None,
-        date=False,
-        compute_price=True,
-        **kwargs,
-    ):
+        currency: ResCurrency | None = None,
+        uom: UomUom | None = None,
+        date: PriceDate | Literal[False] | None = False,
+        compute_price: bool = True,
+        **kwargs: Any,
+    ) -> dict[IdType, PriceRule]:
         self and self.check_singleton()
 
         currency = currency or self.currency_id or self.env.company.currency_id
@@ -158,8 +184,8 @@ class ProductPricelist(models.Model):
         rules = self._get_applicable_rules(products, date, **kwargs)
         rules_index = self._index_rules_by_target(rules)
 
-        rule_by_pid = {}
-        target_uom_by_pid = {}
+        rule_by_pid: dict[IdType, ProductPricelistItem] = {}
+        target_uom_by_pid: dict[IdType, UomUom] = {}
         for product in products:
             product_uom_id = product.uom_id
             target_uom = uom or product_uom_id
@@ -178,13 +204,13 @@ class ProductPricelist(models.Model):
                 qty_in_product_uom,
             )
 
-        base_price_by_pid = {}
+        base_price_by_pid: dict[IdType, float] = {}
         if compute_price:
             base_price_by_pid = self._get_chained_base_prices(
                 products, rule_by_pid, quantity, uom, date, currency, **kwargs
             )
 
-        results = {}
+        results: dict[IdType, PriceRule] = {}
         for product in products:
             suitable_rule = rule_by_pid[product.id]
 
@@ -205,12 +231,19 @@ class ProductPricelist(models.Model):
 
         return results
 
-    def _get_price_rule_multi(self, products, quantity, uom=None, date=False, **kwargs):
+    def _get_price_rule_multi(
+        self,
+        products: PricedProduct,
+        quantity: float,
+        uom: UomUom | None = None,
+        date: PriceDate | Literal[False] | None = False,
+        **kwargs: Any,
+    ) -> dict[IdType, dict[int, PriceRule]]:
         if not self.ids:
             pricelists = self.search([])
         else:
             pricelists = self
-        results = {}
+        results: dict[IdType, dict[int, PriceRule]] = {}
         for pricelist in pricelists:
             subres = pricelist._get_price_rule(
                 products, quantity, uom=uom, date=date, **kwargs
@@ -219,20 +252,25 @@ class ProductPricelist(models.Model):
                 results.setdefault(product_id, {})[pricelist.id] = price_rule
         return results
 
-    def _default_currency_id(self):
+    def _default_currency_id(self) -> int:
         return self.env.company.currency_id.id
 
-    def _domain_item_ids(self):
+    def _domain_item_ids(self) -> list[str | tuple[str, str, Any] | list[Any]]:
         return self._get_domain_item_ids_base()
 
-    def _get_suitable_rule(self, rules, product, qty_in_product_uom):
+    def _get_suitable_rule(
+        self,
+        rules: ProductPricelistItem,
+        product: PricedProduct,
+        qty_in_product_uom: float,
+    ) -> ProductPricelistItem:
         for rule in rules:
             if rule._is_applicable_for(product, qty_in_product_uom):
                 return rule
         return self.env["product.pricelist.item"]
 
-    def _index_rules_by_target(self, rules):
-        index = {
+    def _index_rules_by_target(self, rules: ProductPricelistItem) -> RuleIndex:
+        index: RuleIndex = {
             "variant": {},
             "template": {},
             "category": {},
@@ -254,7 +292,9 @@ class ProductPricelist(models.Model):
                 index["global"].append(rule.id)
         return index
 
-    def _candidate_rules(self, rules, index, product):
+    def _candidate_rules(
+        self, rules: ProductPricelistItem, index: RuleIndex, product: PricedProduct
+    ) -> ProductPricelistItem:
         if product._name == "product.template":
             template_id = product.id
             variant_id = (
@@ -273,8 +313,9 @@ class ProductPricelist(models.Model):
 
         if index["category"]:
             category = product.categ_id
+            ancestor_ids: list[int]
             if not category:
-                ancestor_ids = ()
+                ancestor_ids = []
             elif category.parent_path:
                 ancestor_ids = [
                     int(ancestor) for ancestor in category.parent_path.split("/")[:-1]
@@ -288,9 +329,18 @@ class ProductPricelist(models.Model):
         return rules.browse(rule_ids).with_prefetch(rules._prefetch_ids)
 
     def _get_chained_base_prices(
-        self, products, rule_by_pid, quantity, uom, date, currency, **kwargs
-    ):
-        products_by_base_pricelist = defaultdict(products.browse)
+        self,
+        products: PricedProduct,
+        rule_by_pid: dict[IdType, ProductPricelistItem],
+        quantity: float,
+        uom: UomUom | None,
+        date: PriceDate,
+        currency: ResCurrency,
+        **kwargs: Any,
+    ) -> dict[IdType, float]:
+        products_by_base_pricelist: defaultdict[Self, PricedProduct] = defaultdict(
+            products.browse
+        )
         for product in products:
             rule = rule_by_pid[product.id]
             if (
@@ -300,7 +350,7 @@ class ProductPricelist(models.Model):
             ):
                 products_by_base_pricelist[rule.base_pricelist_id] |= product
 
-        base_price_by_pid = {}
+        base_price_by_pid: dict[IdType, float] = {}
         for base_pricelist, base_products in products_by_base_pricelist.items():
             src_currency = base_pricelist.currency_id
             price_rule = base_pricelist._get_price_rule(
@@ -320,7 +370,9 @@ class ProductPricelist(models.Model):
                 base_price_by_pid[product.id] = price
         return base_price_by_pid
 
-    def _get_applicable_rules(self, products, date, **kwargs):
+    def _get_applicable_rules(
+        self, products: PricedProduct, date: PriceDate, **kwargs: Any
+    ) -> ProductPricelistItem:
         self and self.check_singleton()
         if not self:
             return self.env["product.pricelist.item"]
@@ -329,7 +381,9 @@ class ProductPricelist(models.Model):
             self._get_domain_applicable_rules(products=products, date=date, **kwargs)
         )
 
-    def _get_domain_applicable_rules(self, products, date, **kwargs):
+    def _get_domain_applicable_rules(
+        self, products: PricedProduct, date: PriceDate, **kwargs: Any
+    ) -> list[str | tuple[str, str, Any] | list[Any]]:
         self and self.check_singleton()
         if products._name == "product.template":
             templates_domain = ("product_tmpl_id", "in", products.ids)
@@ -357,8 +411,10 @@ class ProductPricelist(models.Model):
             ("date_end", ">=", date),
         ]
 
-    def _get_country_pricelist_multi(self, country_ids):
-        def get_param_id(key):
+    def _get_country_pricelist_multi(
+        self, country_ids: Iterable[int]
+    ) -> dict[int | Literal[False], Self]:
+        def get_param_id(key: str) -> int | None:
             value = self.env.registry.settings.get(self.env, key, False)
             try:
                 return int(value) if value else None
@@ -377,7 +433,7 @@ class ProductPricelist(models.Model):
             if ctx_country.id not in country_ids:
                 country_ids.append(ctx_country.id)
         else:
-            ctx_country = False
+            ctx_country = self.env["res.country"]
 
         pl_fallback = (
             self.search(pl_domain & Domain("country_group_ids", "=", False), limit=1)
@@ -391,7 +447,7 @@ class ProductPricelist(models.Model):
         )
 
         requested = set(country_ids)
-        result = {}
+        result: dict[int | Literal[False], Self] = {}
         matching_pricelists = self.search(
             pl_domain & Domain("country_group_ids.country_ids", "in", country_ids)
         )
@@ -407,7 +463,7 @@ class ProductPricelist(models.Model):
         return result
 
     @api.model
-    def get_import_templates(self):
+    def get_import_templates(self) -> list[dict[str, str]]:
         return [
             {
                 "label": self.env._("Import Template for Pricelists"),
@@ -416,7 +472,9 @@ class ProductPricelist(models.Model):
         ]
 
     @api.model
-    def _get_partner_pricelist_multi(self, partner_ids):
+    def _get_partner_pricelist_multi(
+        self, partner_ids: Iterable[IdType]
+    ) -> defaultdict[IdType, Self]:
         ProductPricelist = self.env["product.pricelist"]
 
         if not self.env["res.groups"]._is_feature_enabled(
@@ -426,8 +484,8 @@ class ProductPricelist(models.Model):
 
         Partner = self.env["res.partner"].with_context(active_test=False)
 
-        result = defaultdict(lambda: ProductPricelist)
-        remaining_partner_ids = []
+        result: defaultdict[IdType, Self] = defaultdict(lambda: ProductPricelist)
+        remaining_partner_ids: list[IdType] = []
         for partner in Partner.browse(partner_ids):
             if partner.specific_property_product_pricelist._filtered_partner_pricelist_multi():
                 result[partner.id] = partner.specific_property_product_pricelist
@@ -446,16 +504,20 @@ class ProductPricelist(models.Model):
 
         return result
 
-    def _get_domain_partner_pricelist_multi_search(self, company_id):
+    def _get_domain_partner_pricelist_multi_search(
+        self, company_id: int
+    ) -> list[str | tuple[str, str, Any] | list[Any]]:
         return [
             ("active", "=", True),
             ("company_id", "in", [company_id, False]),
         ]
 
-    def _filtered_partner_pricelist_multi(self):
+    def _filtered_partner_pricelist_multi(self) -> Self:
         return self.filtered("active")
 
-    def _get_products_price(self, products, *args, **kwargs) -> dict:
+    def _get_products_price(
+        self, products: PricedProduct, *args: Any, **kwargs: Any
+    ) -> dict[IdType, float]:
         self and self.check_singleton()
         return {
             product_id: res_tuple[0]
@@ -464,21 +526,32 @@ class ProductPricelist(models.Model):
             ).items()
         }
 
-    def _get_product_price(self, product, *args, **kwargs):
+    def _get_product_price(
+        self, product: PricedProduct, *args: Any, **kwargs: Any
+    ) -> float:
         self and self.check_singleton()
         return self._get_price_rule(product, *args, **kwargs)[product.id][0]
 
-    def _get_product_price_rule(self, product, *args, **kwargs):
+    def _get_product_price_rule(
+        self, product: PricedProduct, *args: Any, **kwargs: Any
+    ) -> PriceRule:
         self and self.check_singleton()
         return self._get_price_rule(product, *args, **kwargs)[product.id]
 
-    def _get_product_rule(self, product, *args, **kwargs):
+    def _get_product_rule(
+        self, product: PricedProduct, *args: Any, **kwargs: Any
+    ) -> int | None:
         self and self.check_singleton()
-        return self._get_price_rule(product, *args, compute_price=False, **kwargs)[
-            product.id
-        ][1]
+        return (
+            self._get_price_rule(product, *args, compute_price=False, **kwargs)[
+                product.id
+            ][1]
+            or None
+        )
 
-    def _price_get(self, product, quantity, **kwargs) -> dict:
+    def _price_get(
+        self, product: PricedProduct, quantity: float, **kwargs: Any
+    ) -> dict[int, float]:
         return {
             pricelist_id: price_rule[0]
             for pricelist_id, price_rule in self._get_price_rule_multi(

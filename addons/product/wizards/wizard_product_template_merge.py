@@ -1,8 +1,9 @@
 import datetime
 from collections import defaultdict
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.db.errors import PG_USER_FAULT_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
@@ -11,7 +12,17 @@ from odoo.tools import SQL, format_list
 
 from .wizard_product_template_merge_line import _can_commit, _logger
 
+if TYPE_CHECKING:
+    from odoo.addons.product.models.product_product import ProductProduct
+    from odoo.addons.product.models.product_template import ProductTemplate
+
 _debug = DebugLog(__name__)
+
+_MERGE_SKIP_EXCEPTIONS: tuple[type[Exception], ...] = (
+    UserError,
+    ValidationError,
+    *PG_USER_FAULT_EXCEPTIONS,
+)
 
 
 class WizardProductTemplateMerge(models.TransientModel):
@@ -136,7 +147,7 @@ class WizardProductTemplateMerge(models.TransientModel):
     def _get_fields_deferred_variant(self) -> tuple[str, ...]:
         return ("barcode",)
 
-    def _get_ordered_templates(self, template_ids: list[int]) -> models.BaseModel:
+    def _get_ordered_templates(self, template_ids: list[int]) -> ProductTemplate:
         return (
             self.env["product.template"]
             .browse(template_ids)
@@ -160,7 +171,7 @@ class WizardProductTemplateMerge(models.TransientModel):
         ]
 
     def _check_mergeable(
-        self, src_templates: models.BaseModel, dst_template: models.BaseModel
+        self, src_templates: ProductTemplate, dst_template: ProductTemplate
     ) -> None:
         templates = src_templates + dst_template
 
@@ -200,19 +211,19 @@ class WizardProductTemplateMerge(models.TransientModel):
                 )
 
     def _get_variant_pairs(
-        self, src_template: models.BaseModel, dst_template: models.BaseModel
-    ) -> dict[models.BaseModel, models.BaseModel]:
+        self, src_template: ProductTemplate, dst_template: ProductTemplate
+    ) -> dict[ProductProduct, ProductProduct]:
 
-        def combination(variant: models.BaseModel) -> frozenset[int]:
+        def combination(variant: ProductProduct) -> frozenset[int]:
             values = variant.product_template_attribute_value_ids
             return frozenset(values.product_attribute_value_id.ids)
 
         dst_variants = dst_template.with_context(active_test=False).product_variant_ids
-        dst_by_combination = {}
+        dst_by_combination: dict[frozenset[int], ProductProduct] = {}
         for variant in dst_variants.sorted(lambda variant: not variant.active):
             dst_by_combination.setdefault(combination(variant), variant)
 
-        pairs = {}
+        pairs: dict[ProductProduct, ProductProduct] = {}
         for variant in src_template.with_context(active_test=False).product_variant_ids:
             counterpart = dst_by_combination.get(combination(variant))
             if not counterpart:
@@ -231,7 +242,7 @@ class WizardProductTemplateMerge(models.TransientModel):
 
     @api.model
     def _update_foreign_keys(
-        self, src_templates: models.BaseModel, dst_template: models.BaseModel
+        self, src_templates: ProductTemplate, dst_template: ProductTemplate
     ) -> None:
         self._update_foreign_keys_generic(
             "product.template", src_templates, dst_template
@@ -239,7 +250,7 @@ class WizardProductTemplateMerge(models.TransientModel):
 
     @api.model
     def _update_reference_fields(
-        self, src_templates: models.BaseModel, dst_template: models.BaseModel
+        self, src_templates: ProductTemplate, dst_template: ProductTemplate
     ) -> None:
         self._update_reference_fields_generic(
             "product.template", src_templates, dst_template
@@ -247,7 +258,7 @@ class WizardProductTemplateMerge(models.TransientModel):
 
     @api.model
     def _update_values(
-        self, src_templates: models.BaseModel, dst_template: models.BaseModel
+        self, src_templates: ProductTemplate, dst_template: ProductTemplate
     ) -> None:
         self._update_values_generic(
             src_templates,
@@ -258,13 +269,13 @@ class WizardProductTemplateMerge(models.TransientModel):
 
     @api.model
     def _update_variant_foreign_keys(
-        self, src_variants: models.BaseModel, dst_variant: models.BaseModel
+        self, src_variants: ProductProduct, dst_variant: ProductProduct
     ) -> None:
         self._update_foreign_keys_generic("product.product", src_variants, dst_variant)
 
     @api.model
     def _update_variant_reference_fields(
-        self, src_variants: models.BaseModel, dst_variant: models.BaseModel
+        self, src_variants: ProductProduct, dst_variant: ProductProduct
     ) -> None:
         self._update_reference_fields_generic(
             "product.product", src_variants, dst_variant
@@ -272,8 +283,8 @@ class WizardProductTemplateMerge(models.TransientModel):
 
     @api.model
     def _update_variant_values(
-        self, src_variants: models.BaseModel, dst_variant: models.BaseModel
-    ) -> dict[str, Any]:
+        self, src_variants: ProductProduct, dst_variant: ProductProduct
+    ) -> ValuesType:
         return self._update_values_generic(
             src_variants,
             dst_variant,
@@ -285,7 +296,7 @@ class WizardProductTemplateMerge(models.TransientModel):
     def _merge(
         self,
         product_tmpl_ids: list[int],
-        dst_template: models.BaseModel | None = None,
+        dst_template: ProductTemplate | None = None,
     ) -> None:
         templates = self.env["product.template"].browse(product_tmpl_ids).exists()
         if len(templates) < 2:
@@ -311,13 +322,15 @@ class WizardProductTemplateMerge(models.TransientModel):
 
         self._check_mergeable(src_templates, dst_template)
 
-        src_variants_by_dst = defaultdict(lambda: self.env["product.product"])
+        src_variants_by_dst: defaultdict[ProductProduct, ProductProduct] = defaultdict(
+            lambda: self.env["product.product"]
+        )
         for src_template in src_templates:
             pairs = self._get_variant_pairs(src_template, dst_template)
             for src_variant, dst_variant in pairs.items():
                 src_variants_by_dst[dst_variant] |= src_variant
 
-        deferred_variant_values = {}
+        deferred_variant_values: dict[ProductProduct, ValuesType] = {}
         for dst_variant, src_variants in src_variants_by_dst.items():
             self._update_variant_foreign_keys(src_variants, dst_variant)
             self._update_variant_reference_fields(src_variants, dst_variant)
@@ -340,7 +353,7 @@ class WizardProductTemplateMerge(models.TransientModel):
                 dst_variant.write(values)
 
     def _log_merge_operation(
-        self, src_templates: models.BaseModel, dst_template: models.BaseModel
+        self, src_templates: ProductTemplate, dst_template: ProductTemplate
     ) -> None:
         _logger.info(
             "(uid = %s) merged the products %r into %s",
@@ -370,8 +383,8 @@ class WizardProductTemplateMerge(models.TransientModel):
         template = SQL.identifier("template")
         variant = SQL.identifier("variant")
 
-        group_expressions = []
-        filters = []
+        group_expressions: list[SQL] = []
+        filters: list[SQL] = []
         for field in fields:
             if field not in self._GROUPBY_ALLOWED_FIELDS:
                 raise ValueError(f"Field {field!r} is not allowed in merge grouping")
@@ -449,7 +462,7 @@ class WizardProductTemplateMerge(models.TransientModel):
         return groups
 
     def _get_exclusion_models(self) -> dict[str, str]:
-        model_mapping = {}
+        model_mapping: dict[str, str] = {}
         if "account.move.line" in self.env and self.exclude_journal_item:
             model_mapping["account.move.line"] = "product_id"
         return model_mapping
@@ -479,7 +492,7 @@ class WizardProductTemplateMerge(models.TransientModel):
         self.env.flush_all()
         self.env.cr.execute(query)  # noqa: E8501 -- built by _generate_query
 
-        line_vals_list = []
+        line_vals_list: list[ValuesType] = []
         for min_id, template_ids in self.env.cr.fetchall():
             if model_mapping:
                 excluded = self._get_excluded_templates(template_ids, model_mapping)
@@ -502,7 +515,7 @@ class WizardProductTemplateMerge(models.TransientModel):
 
     def _action_next_screen(self) -> dict[str, Any]:
         self.env.invalidate_all()
-        values = {}
+        values: ValuesType = {}
         if self.line_ids:
             current_line = self.line_ids[0]
             current_template_ids = current_line.aggr_ids
@@ -578,7 +591,7 @@ class WizardProductTemplateMerge(models.TransientModel):
             try:
                 with self.env.cr.savepoint():
                     self._merge(template_ids)
-            except (UserError, ValidationError, *PG_USER_FAULT_EXCEPTIONS) as error:
+            except _MERGE_SKIP_EXCEPTIONS as error:
                 _logger.warning(
                     "Skipping the merge of products %s: %s", template_ids, error
                 )

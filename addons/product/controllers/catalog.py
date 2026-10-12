@@ -1,13 +1,26 @@
+from typing import TYPE_CHECKING, Any, Literal
+
 from odoo.exceptions import UserError
 from odoo.http import Controller, request, route
 from odoo.libs.debug_log import DebugLog
+
+if TYPE_CHECKING:
+    from odoo.addons.product.models.mixin_product_catalog import (
+        CatalogSection,
+        MixinProductCatalog,
+    )
 
 _debug = DebugLog(__name__)
 
 
 class ProductCatalogController(Controller):
     @staticmethod
-    def _get_order(res_model, order_id, allow_unsaved=False, for_write=False):
+    def _get_order(
+        res_model: str,
+        order_id: int | str | Literal[False] | None,
+        allow_unsaved: bool = False,
+        for_write: bool = False,
+    ) -> MixinProductCatalog:
         env = request.env
         if res_model not in env.registry or not isinstance(
             env[res_model], env.registry["mixin.product.catalog"]
@@ -36,8 +49,8 @@ class ProductCatalogController(Controller):
         "/product/catalog/order_lines_info", auth="user", type="jsonrpc", readonly=True
     )
     def product_catalog_get_order_lines_info(
-        self, res_model, order_id, product_ids, **kwargs
-    ):
+        self, res_model, order_id, product_ids, **kwargs: Any
+    ) -> dict[int, dict[str, Any]]:
         order = self._get_order(res_model, order_id, allow_unsaved=True)
         return order.with_company(
             order.company_id
@@ -48,7 +61,7 @@ class ProductCatalogController(Controller):
 
     @route("/product/catalog/update_order_line_info", auth="user", type="jsonrpc")
     def product_catalog_update_order_line_info(
-        self, res_model, order_id, product_id, quantity=0, **kwargs
+        self, res_model, order_id, product_id, quantity=0, **kwargs: Any
     ):
         order = self._get_order(res_model, order_id, for_write=True)
         return order.with_company(order.company_id)._update_order_line_info(
@@ -58,7 +71,9 @@ class ProductCatalogController(Controller):
         )
 
     @route("/product/catalog/get_sections", auth="user", type="jsonrpc", readonly=True)
-    def product_catalog_get_sections(self, res_model, order_id, child_field, **kwargs):
+    def product_catalog_get_sections(
+        self, res_model, order_id, child_field, **kwargs: Any
+    ) -> list[CatalogSection]:
         _debug.pipeline(
             "route",
             handler="ProductCatalogController.product_catalog_get_sections",
@@ -74,8 +89,8 @@ class ProductCatalogController(Controller):
         child_field,
         name,
         position,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> dict[str, int]:
         _debug.pipeline(
             "route",
             handler="ProductCatalogController.product_catalog_create_section",
@@ -95,8 +110,8 @@ class ProductCatalogController(Controller):
         order_id,
         sections,
         child_field,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> dict[int, int]:
         _debug.pipeline(
             "route",
             handler="ProductCatalogController.product_catalog_resequence_sections",

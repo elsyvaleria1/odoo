@@ -1,10 +1,13 @@
+from typing import Literal
+
 from odoo import models
+from odoo.api import ValuesType
 
 
 class ResCurrency(models.Model):
     _inherit = "res.currency"
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         res = super().write(vals)
 
         if self and "active" in vals and not vals["active"]:

@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.api import DomainType
 from odoo.exceptions import ValidationError
 from odoo.tools import frozendict
 
@@ -48,7 +49,7 @@ class ProductUom(models.Model):
         barcodes = [packaging.barcode for packaging in self if packaging.barcode]
         if not barcodes:
             return
-        domain = [("barcode", "in", barcodes)]
+        domain: DomainType = [("barcode", "in", barcodes)]
         fnames = ["barcode", "company_id"]
         all_companies = self.sudo().env
         holders = [
@@ -74,7 +75,7 @@ class ProductUom(models.Model):
                         )
                     )
 
-    def _compute_display_name(self):
+    def _compute_display_name(self) -> None:
         if not self.env.context.get("show_variant_name"):
             return super()._compute_display_name()
         for record in self:

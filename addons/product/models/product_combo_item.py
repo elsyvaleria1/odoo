@@ -1,3 +1,5 @@
+from typing import Literal
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.tools import frozendict
@@ -51,7 +53,7 @@ class ProductComboItem(models.Model):
                 self.env._('A combo choice can\'t contain products of type "combo".')
             )
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         combo_ids = set(self.combo_id.ids)
         res = super().unlink()
         if combo_ids:
