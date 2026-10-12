@@ -890,11 +890,23 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         text = f"nom,ville\nJosé,Zürich\n{uuid.uuid4()}\n"
         utf8, latin1 = text.encode(), text.encode("latin-1")
         html = f"<p>café {uuid.uuid4()}</p>".encode()
+        euro = f"importe;moneda\n10 €;año {uuid.uuid4()}\n".encode("cp1252")
         cases = (
             ("utf8.csv", utf8, "text/csv", "text/csv; charset=utf-8"),
-            ("declared.csv", latin1, "text/csv; charset=latin-1", "text/csv"),
-            ("undeclared.csv", latin1, None, "text/csv"),
-            ("utf16.txt", text.encode("utf-16"), None, "text/plain"),
+            (
+                "declared.csv",
+                latin1,
+                "text/csv; charset=latin-1",
+                "text/csv; charset=iso-8859-1",
+            ),
+            ("undeclared.csv", latin1, None, "text/csv; charset=iso-8859-1"),
+            (
+                "euro.csv",
+                euro,
+                "text/csv; charset=windows-1252",
+                "text/csv; charset=windows-1252",
+            ),
+            ("utf16.txt", text.encode("utf-16"), None, "text/plain; charset=utf-16"),
             ("doc.json", utf8, "application/json; charset=utf-8", "application/json"),
             ("page.html", html, "text/html", "text/plain; charset=utf-8"),
         )
@@ -928,6 +940,26 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         )
         compressed.set_charset_from_content()
         self.assertEqual(compressed.charset, "utf-8")
+
+    def test_a_declared_charset_is_kept_by_its_mime_name(self):
+        Attachment = self.Attachment
+        cases = (
+            ({"mimetype": "text/csv; charset=latin-1"}, "iso-8859-1"),
+            ({"mimetype": "text/csv; charset=UTF-8"}, False),
+            ({"mimetype": "text/csv; charset=x-nonsense"}, False),
+            ({"mimetype": "text/csv", "charset": "euc-jp"}, "euc-jp"),
+            ({"mimetype": "text/csv"}, False),
+        )
+        for vals, charset in cases:
+            with self.subTest(**vals):
+                attachment = Attachment.create({"name": "x.csv", "raw": b"a", **vals})
+                self.assertEqual(attachment.charset, charset)
+                self.assertEqual(attachment.mimetype, "text/csv")
+        attachment = Attachment.create(
+            {"name": "x.csv", "raw": b"a", "mimetype": "text/csv; charset=latin-1"}
+        )
+        attachment.raw = b"b"
+        self.assertFalse(attachment.charset, "new bytes drop the old declaration")
 
     def test_to_http_stream_ignores_bin_size(self):
         payload = b"X" * 5000

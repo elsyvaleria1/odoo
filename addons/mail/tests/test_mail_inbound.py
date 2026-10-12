@@ -522,3 +522,32 @@ class TestGatewayRetryableFailure(TransactionCase):
             bounces_before,
             "no bounce for a message the retry will deliver",
         )
+
+
+@tagged("post_install", "-at_install")
+class TestInboundTextAttachmentCharset(TransactionCase):
+    def _prepare(self, encoding):
+        partner = self.env["res.partner"].create({"name": "Charset sender"})
+        values, _extra = partner._prepare_new_attachments_for_post(
+            [("nota.txt", "Asociación agrícola", {"encoding": encoding})],
+            "res.partner",
+            partner.id,
+            set(),
+            set(),
+        )
+        return values[0]
+
+    def test_a_text_part_keeps_the_charset_it_was_written_in(self):
+        values = self._prepare("latin-1")
+        self.assertEqual(
+            base64.b64decode(values["datas"]), "Asociación agrícola".encode("latin-1")
+        )
+        attachment = self.env["ir.attachment"].create(values)
+        self.assertEqual(attachment.charset, "iso-8859-1")
+
+    def test_an_unknown_charset_label_falls_back_to_utf8(self):
+        values = self._prepare("x-not-a-charset")
+        self.assertEqual(
+            base64.b64decode(values["datas"]), "Asociación agrícola".encode()
+        )
+        self.assertFalse(values["charset"])

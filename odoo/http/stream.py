@@ -2,7 +2,7 @@ import base64
 import codecs
 import contextlib
 import mimetypes
-from collections.abc import Iterator
+from collections.abc import Generator
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -16,6 +16,7 @@ from werkzeug.utils import get_content_type
 from werkzeug.utils import send_file as _send_file
 
 from odoo.libs.debug_log import DebugLog
+from odoo.libs.documents import guess_encoding
 from odoo.tools import file_path
 
 from .constants import STATIC_CACHE, STATIC_CACHE_LONG
@@ -133,27 +134,40 @@ class Stream:
             public=record.env.user._is_public(),
         )
 
-    def set_charset_from_content(self) -> None:
+    def set_charset_from_content(self, declared: str | None = None) -> None:
         if self.type not in ("data", "path") or self.encoding or not self.mimetype:
             return
         if not _labels_charset(self.mimetype):
             return
-        self.charset = "utf-8" if self._is_utf8() else None
+        if self._decodes_as("utf-8"):
+            self.charset = "utf-8"
+        elif declared and self._decodes_as(declared):
+            self.charset = declared
+        else:
+            guessed = guess_encoding(self._head())
+            self.charset = guessed if guessed and self._decodes_as(guessed) else None
         _debug.logic(
-            "http.stream.charset", mimetype=self.mimetype, charset=self.charset
+            "http.stream.charset",
+            mimetype=self.mimetype,
+            declared=declared,
+            charset=self.charset,
         )
 
-    def _is_utf8(self) -> bool:
-        decoder = codecs.getincrementaldecoder("utf-8")()
+    def _decodes_as(self, encoding: str) -> bool:
         try:
+            decoder = codecs.getincrementaldecoder(encoding)()
             for chunk in self._iter_chunks():
                 decoder.decode(chunk)
             decoder.decode(b"", final=True)
-        except UnicodeDecodeError:
+        except LookupError, UnicodeDecodeError:
             return False
         return True
 
-    def _iter_chunks(self, size: int = 1 << 16) -> Iterator[bytes | memoryview]:
+    def _head(self, size: int = 1 << 16) -> bytes:
+        with contextlib.closing(self._iter_chunks(size)) as chunks:
+            return bytes(next(chunks, b""))
+
+    def _iter_chunks(self, size: int = 1 << 16) -> Generator[bytes | memoryview]:
         if self.type == "data":
             view = memoryview(self._get_required_attribute("data"))
             for start in range(0, len(view), size):

@@ -8769,6 +8769,21 @@ class TestArchivedTemplateResolution(ViewCase):
                     self.View._get_template_view(self.archived.id), self.archived
                 )
 
+    def test_an_xmlid_names_its_view_archived_or_not_a_key_does_not(self):
+        self.env["ir.model.data"].create(
+            {
+                "module": "base",
+                "name": "archived_by_xmlid",
+                "model": "ir.ui.view",
+                "res_id": self.archived.id,
+            }
+        )
+        fetched = self.View._get_views_by_ref(
+            ["base.archived_by_xmlid", "base.archived_tpl"]
+        )
+        self.assertEqual(fetched["base.archived_by_xmlid"], self.archived)
+        self.assertIsInstance(fetched["base.archived_tpl"], MissingError)
+
     def test_an_archived_key_is_not_resolved_through_its_id_in_the_batch(self):
         fetched = self.View._get_views_by_ref([self.archived.id, "base.archived_tpl"])
         self.assertEqual(fetched[self.archived.id], self.archived)

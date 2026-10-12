@@ -2171,11 +2171,13 @@ class MixinMailThread(models.AbstractModel):
             else:
                 continue
 
+            charset = False
             if isinstance(content, str):
                 encoding = info and info.get("encoding")
                 try:
                     content = content.encode(encoding or "utf-8")
-                except UnicodeEncodeError:
+                    charset = encoding or False
+                except UnicodeEncodeError, LookupError:
                     content = content.encode("utf-8")
             elif isinstance(content, EmailMessage):
                 content = content.as_bytes()
@@ -2185,6 +2187,7 @@ class MixinMailThread(models.AbstractModel):
             attachment_values = {
                 "name": name,
                 "datas": base64.b64encode(content),
+                "charset": charset,
                 "type": "binary",
                 "description": name,
                 "res_model": model,

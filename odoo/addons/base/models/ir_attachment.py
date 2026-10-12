@@ -1,5 +1,8 @@
 import base64
+import codecs
 import contextlib
+import email.charset
+import email.message
 import functools
 import io
 import logging
@@ -177,6 +180,10 @@ class IrAttachment(models.Model):
     mimetype = fields.Char(
         string="Mime Type",
         readonly=True,
+    )
+    charset = fields.Char(
+        readonly=True,
+        help="Character encoding the text content declared, when it is not UTF-8.",
     )
     index_content = fields.Text(
         string="Indexed Content",
@@ -986,6 +993,25 @@ class IrAttachment(models.Model):
                 mimetype = guess_mimetype(raw)
                 _debug.logic("mimetype_sniffed", mimetype=mimetype, size=len(raw))
         return (mimetype and mimetype.lower()) or "application/octet-stream"
+
+    @api.model
+    def _get_declared_charset(self, values: dict[str, Any]) -> str | None:
+        declared = values.get("charset") or ""
+        if not declared and (mimetype := values.get("mimetype")):
+            header = email.message.Message()
+            header["Content-Type"] = mimetype
+            declared = str(header.get_param("charset") or "")
+        label = declared.strip().lower()
+        if not label:
+            return None
+        try:
+            codec = codecs.lookup(label).name
+        except LookupError:
+            _debug.logic("charset_ignored", declared=label, reason="unknown")
+            return None
+        if codec in ("utf-8", "ascii"):
+            return None
+        return email.charset.Charset(label).input_charset
 
     def _get_mimetype_for_write(self, vals: dict[str, Any]) -> str:
         naming = {}
@@ -1909,7 +1935,7 @@ class IrAttachment(models.Model):
             stream = self._get_storage_backend_for_key(self.store_fname).to_stream(
                 self, stream
             )
-            stream.set_charset_from_content()
+            stream.set_charset_from_content(self.charset or None)
             return stream
 
         inline = self._with_bin_size_disabled().db_datas
@@ -1937,7 +1963,7 @@ class IrAttachment(models.Model):
             stream.size = 0
             _debug.logic("http_stream", attachment=self.id, source="empty")
 
-        stream.set_charset_from_content()
+        stream.set_charset_from_content(self.charset or None)
         return stream
 
     def _migrate_remote_to_local(self) -> bool:
@@ -2503,6 +2529,7 @@ class IrAttachment(models.Model):
                 )
 
     def _prepare_contents(self, values: dict[str, Any]) -> dict[str, Any]:
+        values["charset"] = self._get_declared_charset(values) or False
         mimetype = values["mimetype"] = self._get_mimetype_from_values(values)
         if self._is_xml_like_mimetype(mimetype) and not self._can_store_markup():
             values["mimetype"] = "text/plain"
