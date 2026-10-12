@@ -1,10 +1,23 @@
 from __future__ import annotations
 
+import keyword
+import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 
-from mypy.nodes import MypyFile, StrExpr, TypeInfo
-from mypy.plugin import MethodContext, Plugin
+from mypy.nodes import (
+    AssignmentStmt,
+    ClassDef,
+    Expression,
+    ListExpr,
+    MypyFile,
+    NameExpr,
+    StrExpr,
+    TupleExpr,
+    TypeInfo,
+    Var,
+)
+from mypy.plugin import AttributeContext, ClassDefContext, MethodContext, Plugin
 from mypy.server.trigger import make_trigger, make_wildcard_trigger
 from mypy.typeops import make_simplified_union
 from mypy.types import (
@@ -24,6 +37,55 @@ STUB_MODULE = "odoo_registry_stubs"
 ENVIRONMENT_GETITEM = "odoo.orm.runtime.environment.Environment.__getitem__"
 BASE_MODEL = "odoo.orm.models.base.BaseModel"
 TRAVERSAL_MIXIN = "odoo.orm.models.mixins.traversal.TraversalMixin"
+ENVIRONMENT_RECORDS = {
+    "odoo.orm.runtime.environment.Environment.user": "res.users",
+    "odoo.orm.runtime.environment.Environment.company": "res.company",
+    "odoo.orm.runtime.environment.Environment.companies": "res.company",
+}
+RESERVED_CLASSES = frozenset(
+    ("Any", "BaseModel", "Environment", "Generic", "Literal", "TypeVar")
+)
+
+
+def stub_class_name(model_name: str) -> str:
+    parts = re.split(r"[._]", model_name)
+    name = "".join(part[:1].upper() + part[1:] for part in parts if part)
+    if (
+        not name
+        or not name[0].isalpha()
+        or keyword.iskeyword(name)
+        or name in RESERVED_CLASSES
+    ):
+        name = "Model" + name
+    return name
+
+
+def _strings(expr: Expression) -> list[str] | None:
+    if isinstance(expr, StrExpr):
+        return [expr.value]
+    if isinstance(expr, ListExpr | TupleExpr):
+        values = [item.value for item in expr.items if isinstance(item, StrExpr)]
+        return values if len(values) == len(expr.items) else None
+    return None
+
+
+def _model_name(defn: ClassDef) -> str | None:
+    declared: dict[str, list[str] | None] = {}
+    for stmt in defn.defs.body:
+        if not isinstance(stmt, AssignmentStmt) or len(stmt.lvalues) != 1:
+            continue
+        target = stmt.lvalues[0]
+        if isinstance(target, NameExpr) and target.name in ("_name", "_inherit"):
+            declared[target.name] = _strings(stmt.rvalue)
+    names = declared.get("_name") or declared.get("_inherit")
+    return names[0] if names else None
+
+
+def _registry_stub(info: TypeInfo) -> TypeInfo | None:
+    return next(
+        (base for base in info.mro if base.fullname.startswith(f"{STUB_MODULE}.")),
+        None,
+    )
 
 
 def _literal_strings(ctx: MethodContext) -> list[str] | None:
@@ -115,13 +177,14 @@ class RegistryStubsPlugin(Plugin):
                     ctx.context,
                 )
                 return AnyType(TypeOfAny.from_error)
-            if not current.type.fullname.startswith(f"{STUB_MODULE}."):
+            stub = _registry_stub(current.type)
+            if stub is None:
                 return AnyType(TypeOfAny.special_form)
-            trigger = make_trigger(f"{current.type.fullname}.{name}")
+            trigger = make_trigger(f"{stub.fullname}.{name}")
             api.tree.plugin_deps.setdefault(trigger, set()).add(
                 api.tscope.current_target()
             )
-            symbol = current.type.names.get(name)
+            symbol = stub.names.get(name)
             descriptor = get_proper_type(symbol.type) if symbol is not None else None
             if (
                 not isinstance(descriptor, Instance)
@@ -169,6 +232,81 @@ class RegistryStubsPlugin(Plugin):
             ):
                 return item
         return ctx.default_return_type
+
+    def _attach_registry_model(self, ctx: ClassDefContext) -> None:
+        info = ctx.cls.info
+        if info.fullname.startswith(f"{STUB_MODULE}.") or not info.has_base(BASE_MODEL):
+            return
+        model_name = _model_name(ctx.cls)
+        if model_name is None:
+            return
+        symbol = ctx.api.lookup_fully_qualified_or_none(
+            f"{STUB_MODULE}.{stub_class_name(model_name)}"
+        )
+        stub = symbol.node if symbol is not None else None
+        if isinstance(stub, TypeInfo) and stub not in info.mro:
+            info.mro = [info, stub, *info.mro[1:]]
+
+    def _release_declared_fields(self, ctx: ClassDefContext) -> None:
+        info = ctx.cls.info
+        stub = _registry_stub(info)
+        if stub is None or stub is info:
+            return
+        for name, symbol in info.names.items():
+            if isinstance(symbol.node, Var) and name in stub.names:
+                symbol.node.allow_incompatible_override = True
+
+    def _registry_field(self, name: str, ctx: AttributeContext) -> Type:
+        receiver = get_proper_type(ctx.type)
+        if ctx.is_lvalue or not isinstance(receiver, Instance):
+            return ctx.default_attr_type
+        stub = _registry_stub(receiver.type)
+        symbol = stub.names.get(name) if stub is not None else None
+        node = symbol.node if symbol is not None else None
+        declared = (
+            get_proper_type(node.type)
+            if isinstance(node, Var) and node.type is not None
+            else None
+        )
+        if (
+            isinstance(declared, Instance)
+            and declared.type.fullname == f"{STUB_MODULE}._F"
+            and declared.args
+        ):
+            return declared.args[0]
+        return ctx.default_attr_type
+
+    def _environment_record(self, model_name: str, ctx: AttributeContext) -> Type:
+        if ctx.is_lvalue:
+            return ctx.default_attr_type
+        module = cast("TypeChecker", ctx.api).modules.get(STUB_MODULE)
+        symbol = (
+            module.names.get(stub_class_name(model_name))
+            if module is not None
+            else None
+        )
+        if symbol is None or not isinstance(symbol.node, TypeInfo):
+            return ctx.default_attr_type
+        return Instance(symbol.node, [])
+
+    def get_customize_class_mro_hook(
+        self, fullname: str
+    ) -> Callable[[ClassDefContext], None] | None:
+        return self._attach_registry_model
+
+    def get_base_class_hook(
+        self, fullname: str
+    ) -> Callable[[ClassDefContext], None] | None:
+        return self._release_declared_fields
+
+    def get_attribute_hook(
+        self, fullname: str
+    ) -> Callable[[AttributeContext], Type] | None:
+        model_name = ENVIRONMENT_RECORDS.get(fullname)
+        if model_name is not None:
+            return lambda ctx: self._environment_record(model_name, ctx)
+        name = fullname.rpartition(".")[2]
+        return lambda ctx: self._registry_field(name, ctx)
 
     def get_additional_deps(self, file: MypyFile) -> list[tuple[int, str, int]]:
         if file.fullname == STUB_MODULE or file.fullname.startswith("mypy."):
