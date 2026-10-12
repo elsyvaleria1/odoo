@@ -2,13 +2,13 @@ from typing import Any, Self
 
 from odoo import api, fields, models, tools
 from odoo.api import ValuesType
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import Query, SetDefinitions
 
 from odoo.addons.base.models.mixin_catalog import name_uniq_index
-from odoo.addons.base.models.res_users_grant import projecting
+from odoo.addons.base.models.res_users_grant import is_deriving, projecting
 
 _debug = DebugLog(__name__)
 
@@ -368,6 +368,14 @@ class ResGroups(models.Model):
             if "user_ids" in vals and self.ids and not projecting()
             else None
         )
+        editor_groups = (
+            set(self.env.user._get_effective_group_ids())
+            if "implied_ids" in vals
+            and self.ids
+            and not self.env.su
+            and not is_deriving()
+            else None
+        )
         _debug.lifecycle("write", count=len(self), fields=list(vals))
         res = super().write(vals)
         if membership is not None:
@@ -391,6 +399,9 @@ class ResGroups(models.Model):
             self.env.registry.clear_cache("groups")
             _debug.lifecycle("groups_cache_cleared", groups=self.ids, by="write")
 
+        if editor_groups is not None:
+            self._check_no_administrative_self_gain(editor_groups)
+
         if "implied_ids" in vals and self.ids:
             self.env["ir.access.sod.rule"]._check_users(
                 self.all_user_ids, "implication_changed"
@@ -399,6 +410,34 @@ class ResGroups(models.Model):
         if implied_by is not None:
             self._write_implied_by(implied_by)
         return res
+
+    @api.model
+    def _get_administrative_group_ids(self) -> set[int]:
+        groups = self.with_context(active_test=False).search(
+            [("is_break_glass", "=", True)]
+        )
+        for xmlid in (
+            "base.group_system",
+            "base.group_erp_manager",
+            "base.group_access_change_approver",
+        ):
+            groups |= self.env.ref(xmlid, raise_if_not_found=False) or self.browse()
+        return set(groups.ids)
+
+    def _check_no_administrative_self_gain(self, before: set[int]) -> None:
+        gained = set(self.env.user._get_effective_group_ids()) - before
+        refused = gained & self._get_administrative_group_ids()
+        if refused:
+            _debug.logic(
+                "implication_refused", groups=self.ids, gained=sorted(refused)
+            )
+            raise AccessError(
+                self.env._(
+                    "You cannot grant yourself %(group)s by changing what a group "
+                    "implies: another administrator does.",
+                    group=self.browse(min(refused)).full_name,
+                )
+            )
 
     def _write_implied_by(self, value: Any) -> None:
         field = self._fields["implied_by_ids"]

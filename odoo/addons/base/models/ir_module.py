@@ -980,7 +980,7 @@ class IrModuleModule(models.Model):
             return pending
 
     @contextlib.contextmanager
-    def _lock_against_concurrent_module_operations(self) -> Iterator[None]:
+    def _hold_module_operations(self) -> Iterator[None]:
         cr = self.env.cr
         with contextlib.ExitStack() as held:
             try:
@@ -999,6 +999,11 @@ class IrModuleModule(models.Model):
             except ModuleOperationInProgress:
                 _debug.logic("module_lock_busy", reason="operation_running")
                 raise UserError(self._get_module_operation_busy_message()) from None
+            yield
+
+    @contextlib.contextmanager
+    def _lock_against_concurrent_module_operations(self) -> Iterator[None]:
+        with self._hold_module_operations():
             self._lock_module_table()
             self._lock_crons()
             if _debug.lifecycle.enabled:

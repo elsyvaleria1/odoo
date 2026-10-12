@@ -9,7 +9,7 @@ from odoo import fields
 from odoo.api import SUPERUSER_ID
 from odoo.db import db_connect
 from odoo.tests import tagged, transaction_case
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, new_test_user
 from odoo.tools import mute_logger
 from odoo.tools.assets import esm_index
 from odoo.tools.assets.esbuild import EsbuildResult
@@ -514,3 +514,25 @@ class TestEsmRowsWrittenOnTheCallersTransaction(TransactionCase):
             {"assets", "assets.links", "assets.files"} & scope.trusted,
             "what the test caches over its copy would reach the next test",
         )
+
+
+@tagged("post_install", "-at_install", "assets_bundle")
+class TestEsmPublicationIgnoresForeignRows(TransactionCase):
+    def test_a_foreign_row_on_the_url_does_not_suppress_the_generated_row(self):
+        IrAttachment = self.env["ir.attachment"]
+        url = f"/web/assets/esm/{uuid.uuid4().hex[:16]}/test.builds.foreign.esm.js"
+        squatter = new_test_user(
+            self.env, login="esm_squatter", groups="base.group_user"
+        )
+        IrAttachment.with_user(squatter).create(
+            {"name": "squat.esm.js", "type": "url", "url": url}
+        )
+        vals = IrAttachment._prepare_generated_asset_vals(
+            name="test.builds.foreign.esm.js",
+            mimetype="text/javascript",
+            raw=b"export {};",
+            url=url,
+        )
+        written = type(self.env["ir.qweb"])._publish_esm_rows(self.env, [vals], None)
+        self.assertEqual(written, 1)
+        self.assertTrue(IrAttachment._search_generated_assets(url=url))

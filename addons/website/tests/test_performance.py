@@ -154,12 +154,12 @@ class TestStandardPerformance(UtilPerf):
         select_tables_perf = {
             "orm_signaling_registry": 1,
             "website": 2,
-            "ir_attachment": 2,
+            "ir_attachment": 1,
         }
-        self._check_url_hot_query(url, 5, select_tables_perf)
+        self._check_url_hot_query(url, 4, select_tables_perf)
 
         self.authenticate("portal", "portal")
-        self._check_url_hot_query(url, 6, {**select_tables_perf, "auth_user_client": 1})
+        self._check_url_hot_query(url, 5, {**select_tables_perf, "auth_user_client": 1})
 
 
 class TestWebsitePerformanceCommon(UtilPerf):

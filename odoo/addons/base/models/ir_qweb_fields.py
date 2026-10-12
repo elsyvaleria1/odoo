@@ -23,7 +23,7 @@ from odoo.tools import (
     format_duration,
     posix_to_ldml,
 )
-from odoo.tools.formatting import hours_to_minutes
+from odoo.tools.formatting import DATE_LENGTH, hours_to_minutes
 from odoo.tools.mail import safe_attrs
 from odoo.tools.misc import babel_locale_parse, get_lang
 
@@ -47,6 +47,11 @@ CONTACT_DEFAULT_FIELDS = ("name", "address", "phone", "email")
 BARCODE_RENDER_OPTIONS = frozenset(
     ("width", "height", "humanreadable", "quiet", "mask")
 )
+
+
+# libxml2 drops everything after </html> and moves what follows </body> out
+# of the body element the converter keeps; inside a fragment they end nothing.
+_DOCUMENT_END_TAG_RE = re.compile(r"</(?:body|html)\s*>", re.IGNORECASE)
 
 
 class IrQwebField(models.AbstractModel):
@@ -169,6 +174,8 @@ class IrQwebFieldInteger(models.AbstractModel):
             return tools.misc.format_decimalized_number(
                 value, options.get("precision_digits", 1)
             )
+        if isinstance(value, float):
+            value = float_utils.float_round(value, precision_digits=0)
         return self._format_number("%d", value)
 
 
@@ -224,8 +231,13 @@ class IrQwebFieldFloat(models.AbstractModel):
     ) -> dict[str, Any]:
         field = record._fields[field_name]
         defaults = {}
-        if "precision" not in options and "decimal_precision" not in options:
-            digits = field.get_digits(record.env)
+        get_digits = getattr(field, "get_digits", None)
+        if (
+            "precision" not in options
+            and "decimal_precision" not in options
+            and get_digits is not None
+        ):
+            digits = get_digits(record.env)
             if digits:
                 defaults["precision"] = digits[1]
         get_min_display_digits = getattr(field, "get_min_display_digits", None)
@@ -262,6 +274,7 @@ class IrQwebFieldDatetime(models.AbstractModel):
         locale = babel_locale_parse(lang.code)
         dateless = isinstance(value, date) and not isinstance(value, datetime)
         if isinstance(value, str):
+            dateless = len(value) <= DATE_LENGTH
             value = fields.Datetime.from_string(value)
         elif dateless:
             value = datetime.combine(value, time.min)
@@ -431,9 +444,12 @@ class IrQwebFieldHtml(models.AbstractModel):
     def value_to_html(self, value: Any, options: dict[str, Any]) -> Markup:
         if not value:
             return Markup("")
+        if isinstance(value, bytes):
+            value = value.decode(errors="replace")
         qweb = self.env["ir.qweb"]
         body = etree.fromstring(
-            f"<body>{value}</body>", etree.HTMLParser(encoding="utf-8")
+            f"<body>{_DOCUMENT_END_TAG_RE.sub('', value)}</body>",
+            etree.HTMLParser(encoding="utf-8"),
         )[0]
         att_names = qweb._get_post_processing_att_names()
         nonce = qweb._script_nonce() if options.get("trusted_scripts") else None

@@ -334,6 +334,41 @@ class TestUnlinkAttachmentsTakesTheEncodedVariants(TransactionCase):
         self.assertFalse((asset | variants).exists())
 
 
+class TestUnlinkingATwinSparesTheSurvivorsEncodedVariants(TransactionCase):
+    URL = "/web/assets/twintest/twin.min.js"
+
+    def _create(self):
+        Attachment = self.env["ir.attachment"]
+        return Attachment.with_user(SUPERUSER_ID).create(
+            Attachment._prepare_generated_asset_vals(
+                name="twin.min.js",
+                mimetype="text/javascript",
+                raw=b"function f(){}\n" * 1000,
+                url=self.URL,
+            )
+        )
+
+    def test_the_survivor_keeps_its_compressed_copies(self):
+        twin = self._create()
+        survivor = self._create()
+        survivor_variants = survivor._newest_encoded_variant_ids()
+        self.assertEqual(len(survivor_variants), 2)
+
+        twin.unlink()
+
+        self.assertEqual(survivor._newest_encoded_variant_ids(), survivor_variants)
+
+    def test_the_last_row_of_a_url_takes_its_compressed_copies(self):
+        twin = self._create()
+        survivor = self._create()
+        (twin | survivor).unlink()
+        self.assertFalse(
+            self.env["ir.attachment"]._search_generated_assets(
+                url_pattern=f"{self.URL}.%"
+            )
+        )
+
+
 class TestSaveKeepsOneRowPerUrl(TransactionCase):
     FILES = [asset_file("/test_assetsbundle/static/src/js/audit_one.js", PLAIN_JS)]
 

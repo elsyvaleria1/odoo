@@ -77,5 +77,5 @@ class WizardResLangImportTranslation(models.TransientModel):
                 langs=[imp.code for imp in base_lang_imports],
                 overwrite=overwrite,
             )
-            translation_importer.save(overwrite=overwrite)
+            translation_importer.save(overwrite=overwrite, force_overwrite=overwrite)
         return True

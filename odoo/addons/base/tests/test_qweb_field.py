@@ -53,6 +53,12 @@ class TestQwebFieldInteger(common.TransactionCase):
             "125.125k",
         )
 
+    def test_a_float_value_is_rounded_not_truncated(self):
+        self.assertEqual(self.value_to_html(0.29 * 100), "29")
+        self.assertEqual(self.value_to_html(2.5), "3")
+        self.assertEqual(self.value_to_html(-2.5), f"{NEGATIVE_SIGN_JOINER}3")
+        self.assertEqual(self.value_to_html(-0.4), "0")
+
 
 class TestQwebFieldFloatConverter(common.TransactionCase):
     def value_to_html(self, value, options=None):
@@ -91,6 +97,16 @@ class TestQwebFieldFloatConverter(common.TransactionCase):
         self.assertEqual(self.value_to_html(3.123, options), "3.123")
         self.assertEqual(self.value_to_html(3.1239, options), "3.1239")
         self.assertEqual(self.value_to_html(3.12349, options), "3.1235")
+
+    def test_float_widget_on_a_field_without_digits(self):
+        partner = self.env["res.partner"].create({"name": "P", "color": 3})
+        resource = self.env["resource.resource"].new({"value_original": 12.5})
+        converter = self.env["ir.qweb.field.float"]
+
+        self.assertEqual(converter.record_to_html(partner, "color", {}), "3.0")
+        self.assertEqual(
+            converter.record_to_html(resource, "value_original", {}), "12.5"
+        )
 
 
 class TestQwebFieldFloatTime(common.TransactionCase):
@@ -397,6 +413,20 @@ class TestQwebFieldHtml(common.TransactionCase):
 
     def test_html_value_passthrough(self):
         self.assertEqual(self.value_to_html("<p>hi</p>"), "<p>hi</p>")
+
+    def test_content_after_a_document_end_tag_is_kept(self):
+        for value in (
+            "<p>a</p></body><p>b</p>",
+            "<p>a</p></html><p>b</p>",
+            "<html><body><p>a</p></body></html><p>b</p>",
+        ):
+            with self.subTest(value=value):
+                rendered = str(self.value_to_html(value))
+                self.assertIn("<p>a</p>", rendered)
+                self.assertIn("<p>b</p>", rendered)
+
+    def test_bytes_are_rendered_as_text(self):
+        self.assertEqual(str(self.value_to_html("<p>é</p>".encode())), "<p>é</p>")
 
 
 XSS_NAME = '<script>alert("xss")</script>'
@@ -789,6 +819,16 @@ class TestQwebFieldDatetimeOnADate(common.TransactionCase):
             "05/04/2024",
             rendered,
             "a +14 offset must not carry the date onto the next day",
+        )
+
+    def test_a_date_string_does_not_move_either(self):
+        converter = self.env["ir.qweb.field.datetime"].with_context(
+            tz="America/Mexico_City"
+        )
+
+        self.assertEqual(
+            converter.value_to_html("2024-05-04", {}),
+            converter.value_to_html(date(2024, 5, 4), {}),
         )
 
     def test_a_real_datetime_still_moves_with_the_reader(self):

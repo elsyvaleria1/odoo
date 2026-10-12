@@ -568,9 +568,13 @@ def force_demo(env: Environment) -> None:
     )
 
     with _debug.perf("modules.force_demo", cr=env.cr, modules=len(graph)) as span:
-        loaded = [
-            package.name for package in graph if load_demo(env, package, {}, "init")
-        ]
+        loaded = []
+        for package in graph:
+            package.demo = package.demo_installable and load_demo(
+                env, package, {}, "init"
+            )
+            if package.demo:
+                loaded.append(package.name)
         span.set(loaded=len(loaded), failed=len(graph) - len(loaded))
 
     env.cr.execute(

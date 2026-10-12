@@ -794,6 +794,27 @@ class TestMalformedInputIsNotAServerError(HttpCase):
         self.assertEqual(again.json(), {"lang": "en_US", "hash": current})
         self.assertEqual(again.headers["Cache-Control"], "no-cache")
 
+    def test_made_up_translation_module_sets_do_not_reach_the_cache(self):
+        IrHttp = self.env.registry["ir.http"]
+        real = IrHttp._get_web_translations_hash
+        seen = []
+
+        def spy(model, modules, lang):
+            seen.append(sorted(modules))
+            return real(model, modules, lang)
+
+        with patch.object(IrHttp, "_get_web_translations_hash", spy):
+            for index in range(3):
+                self.url_open(
+                    f"/web/webclient/translations?hash=&lang=en_US&mods=made_up_{index}"
+                )
+        allowed = [
+            sorted(modules)
+            for modules in self.env["ir.http"]._get_webclient_translation_modules()
+        ]
+        self.assertTrue(seen)
+        self.assertTrue(all(modules in allowed for modules in seen))
+
     def test_an_any_asset_url_is_not_cached_as_immutable(self):
         any_css = self.url_open("/web/assets/any/web.assets_web.min.css")
         self.assertEqual(any_css.status_code, HTTPStatus.OK)

@@ -25,7 +25,7 @@ class MixinTagNested(models.AbstractModel):
         paths = {}
         ancestor_ids = set()
         for tag in self:
-            if tag.parent_path:
+            if tag.parent_path and isinstance(tag.id, int):
                 paths[tag.id] = ids = [
                     int(key) for key in tag.parent_path.split("/") if key
                 ]

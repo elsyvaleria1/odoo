@@ -65,24 +65,28 @@ class IrQweb(models.AbstractModel):
     ) -> None:
         config = self._get_esbuild_config()
         now = time.monotonic()
+        key = self._get_esbuild_cooldown_key(bundle)
         if decline:
-            cooldown_s = extended_cooldown_s = config.get_param_float(
-                "web.esbuild.decline_cooldown_s", self._ESBUILD_DECLINE_COOLDOWN_S
+            entry = _esbuild_circuit.record_decline(
+                key,
+                reason,
+                now=now,
+                cooldown_s=config.get_param_float(
+                    "web.esbuild.decline_cooldown_s", self._ESBUILD_DECLINE_COOLDOWN_S
+                ),
             )
         else:
-            cooldown_s = config.get_param_float(
-                "web.esbuild.cooldown_s", self._ESBUILD_COOLDOWN_S
+            entry = _esbuild_circuit.record_failure(
+                key,
+                reason,
+                now=now,
+                cooldown_s=config.get_param_float(
+                    "web.esbuild.cooldown_s", self._ESBUILD_COOLDOWN_S
+                ),
+                extended_cooldown_s=config.get_param_float(
+                    "web.esbuild.extended_cooldown_s", self._ESBUILD_EXTENDED_COOLDOWN_S
+                ),
             )
-            extended_cooldown_s = config.get_param_float(
-                "web.esbuild.extended_cooldown_s", self._ESBUILD_EXTENDED_COOLDOWN_S
-            )
-        entry = _esbuild_circuit.record_failure(
-            self._get_esbuild_cooldown_key(bundle),
-            reason,
-            now=now,
-            cooldown_s=cooldown_s,
-            extended_cooldown_s=extended_cooldown_s,
-        )
         _debug.lifecycle(
             "esbuild.circuit_opened",
             bundle=bundle,

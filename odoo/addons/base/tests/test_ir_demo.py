@@ -89,6 +89,25 @@ class TestDemoFailure(TransactionCase):
         self.env.flush_all()
         self.assertFalse(partner.parent_id)
 
+    @mute_logger("odoo.modules.loading")
+    def test_force_demo_does_not_load_above_a_failed_demo(self):
+        attempted = []
+
+        def load_data_failing_base(env, idref, mode, kind, package):
+            attempted.append(package.name)
+            if package.name == "base":
+                raise ValueError("the base demo file is broken")
+
+        with patch.object(loading, "load_data", load_data_failing_base):
+            loading.force_demo(self.env)
+
+        self.assertEqual(attempted, ["base"])
+        self.assertFalse(
+            self.env["ir.module.module"]
+            .search([("state", "=", "installed"), ("demo", "=", True)])
+            .mapped("name")
+        )
+
 
 @tagged("post_install", "-at_install")
 class TestDemoDataLoadedCleanly(TransactionCase):

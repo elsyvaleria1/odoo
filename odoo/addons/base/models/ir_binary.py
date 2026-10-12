@@ -46,7 +46,11 @@ class IrBinary(models.AbstractModel):
         record = None
         if xmlid:
             record = self.env.ref(xmlid, False)
-        elif res_id is not None and res_model in self.env:
+        elif (
+            res_id is not None
+            and res_model in self.env
+            and not self.env[res_model]._abstract
+        ):
             record = self.env[res_model].browse(res_id).exists()
         if not record:
             _debug.logic(
@@ -99,8 +103,8 @@ class IrBinary(models.AbstractModel):
             field_attachment = (
                 self.env["ir.attachment"]
                 .sudo()
-                .search(
-                    domain=[
+                .search_fetch(
+                    [
                         ("res_model", "=", record._name),
                         ("res_id", "=", record.id),
                         ("res_field", "=", field_name),

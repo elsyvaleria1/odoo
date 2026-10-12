@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
 
 from psycopg import IntegrityError
@@ -337,6 +337,23 @@ class TestIrDefault(TransactionCase):
         IrDefault = self.env["ir.default"]
         IrDefault.set("ir.cron", "nextcall", datetime(2021, 5, 6, 7, 8, 9))
         self.assertEqual(IrDefault._get("ir.cron", "nextcall"), "2021-05-06 07:08:09")
+
+    def test_set_stores_an_aware_datetime_in_utc(self):
+        IrDefault = self.env["ir.default"]
+        brussels_summer = timezone(timedelta(hours=2))
+        IrDefault.set(
+            "ir.cron", "nextcall", datetime(2021, 5, 6, 9, 8, 9, tzinfo=brussels_summer)
+        )
+        self.assertEqual(IrDefault._get("ir.cron", "nextcall"), "2021-05-06 07:08:09")
+        self.assertEqual(
+            self.env["ir.cron"].default_get(["nextcall"])["nextcall"],
+            datetime(2021, 5, 6, 7, 8, 9),
+        )
+
+    def test_set_date_value_on_a_datetime_field_is_midnight(self):
+        IrDefault = self.env["ir.default"]
+        IrDefault.set("ir.cron", "nextcall", date(2021, 5, 6))
+        self.assertEqual(IrDefault._get("ir.cron", "nextcall"), "2021-05-06 00:00:00")
 
     def test_set_skips_write_when_value_unchanged(self):
         IrDefault = self.env["ir.default"]

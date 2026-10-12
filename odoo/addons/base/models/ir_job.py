@@ -152,6 +152,7 @@ def _states_sql(states: tuple[JobState, ...]) -> str:
 
 
 QUEUED_STATES_SQL = _states_sql(QUEUED_STATES)
+UNSTARTED_STATES_SQL = _states_sql(CANCELLABLE_STATES)
 
 
 def _format_exception(exc: BaseException) -> str:
@@ -597,48 +598,45 @@ class IrJob(models.Model):
         context = {
             key: env.context[key] for key in ALLOWED_CONTEXT_KEYS if key in env.context
         }
-        row = self._insert_job_row(
-            [
-                name,
-                channel or job_config["channel"],
-                state,
-                priority if priority is not None else job_config["priority"],
-                eta or None,
-                identity_key,
-                records._name,
-                method_name,
-                json_dumps(records.ids),
-                args_json,
-                kwargs_json,
-                env.uid,
-                env.company.id,
-                json_dumps(context),
-                env.su,
-                json_dumps(sorted(env.privileges)),
-                max_retries if max_retries is not None else job_config["max_retries"],
-                job_config["max_defers"],
-                env.uid,
-                now,
-                env.uid,
-                now,
-            ]
+        values = [
+            name,
+            channel or job_config["channel"],
+            state,
+            priority if priority is not None else job_config["priority"],
+            eta or None,
+            identity_key,
+            records._name,
+            method_name,
+            json_dumps(records.ids),
+            args_json,
+            kwargs_json,
+            env.uid,
+            env.company.id,
+            json_dumps(context),
+            env.su,
+            json_dumps(sorted(env.privileges)),
+            max_retries if max_retries is not None else job_config["max_retries"],
+            job_config["max_defers"],
+            env.uid,
+            now,
+            env.uid,
+            now,
+        ]
+        row, deduplicated = self._insert_or_reuse_job(
+            values, records, method_name, identity_key, dep_ids
         )
         _debug.lifecycle(
             "enqueue",
-            job=row[0] if row else None,
+            job=row[0],
             model=records._name,
             method=method_name,
             records=len(records),
             state=str(state),
             channel=channel or job_config["channel"],
-            deduplicated=row is None,
+            deduplicated=deduplicated,
             depends_on=dep_ids,
         )
-        if row is None:
-            row = self._reuse_deduplicated_job(
-                records, method_name, identity_key, dep_ids
-            )
-        elif dep_ids:
+        if dep_ids and not deduplicated:
             _debug.pipeline(
                 "enqueue.dependencies_linked", job=row[0], count=len(dep_ids)
             )
@@ -651,7 +649,7 @@ class IrJob(models.Model):
                 )
             )
         if state == JobState.PENDING:
-            _debug.pipeline("enqueue.notify_scheduled", job=row[0] if row else None)
+            _debug.pipeline("enqueue.notify_scheduled", job=row[0])
             self._notify_after_commit(env.cr)
         return self.browse(row[0])
 
@@ -802,7 +800,7 @@ class IrJob(models.Model):
         cr.execute(
             SQL(
                 "SELECT context -> 'allowed_company_ids' FROM ir_job"
-                f" WHERE id = %s AND state IN {QUEUED_STATES_SQL}",
+                f" WHERE id = %s AND state IN {UNSTARTED_STATES_SQL}",
                 job_id,
             )
         )
@@ -818,9 +816,33 @@ class IrJob(models.Model):
             SQL(
                 "UPDATE ir_job SET context = context || jsonb_build_object("
                 "'allowed_company_ids', %s::jsonb)"
-                f" WHERE id = %s AND state IN {QUEUED_STATES_SQL}",
+                f" WHERE id = %s AND state IN {UNSTARTED_STATES_SQL}",
                 json_dumps(widened),
                 job_id,
+            )
+        )
+
+    def _insert_or_reuse_job(
+        self,
+        values: list,
+        records: models.BaseModel,
+        method_name: str,
+        identity_key: str | None,
+        dep_ids: list[int],
+    ) -> tuple[tuple, bool]:
+        for _attempt in range(3):
+            if (row := self._insert_job_row(values)) is not None:
+                return row, False
+            row = self._reuse_deduplicated_job(
+                records, method_name, identity_key, dep_ids
+            )
+            if row is not None:
+                return row, True
+            _debug.logic("enqueue.duplicate_finished", identity_key=identity_key)
+        raise ConcurrencyError(
+            self.env._(
+                "Job %(key)s kept finishing while it was being queued again.",
+                key=identity_key,
             )
         )
 
@@ -852,7 +874,7 @@ class IrJob(models.Model):
                     "UPDATE ir_job SET elevated = elevated OR %s, privileges = ("
                     " SELECT jsonb_agg(DISTINCT p ORDER BY p) FROM jsonb_array_elements("
                     " COALESCE(privileges, '[]'::jsonb) || %s::jsonb) AS p)"
-                    f" WHERE id = %s AND state IN {QUEUED_STATES_SQL}",
+                    f" WHERE id = %s AND state IN {UNSTARTED_STATES_SQL}",
                     env.su,
                     json_dumps(sorted(env.privileges)),
                     row[0],
@@ -1523,12 +1545,13 @@ class IrJob(models.Model):
     @staticmethod
     def _record_deferral(cr, job: dict[str, Any], defer: dict[str, Any]) -> None:
         seconds = defer["seconds"]
+        asked_at = SQL("clock_timestamp()") if seconds > 0 else SQL("now()")
         cr.execute(
             SQL(
                 """
                 UPDATE ir_job
                 SET state = CASE WHEN %s > 0 THEN 'scheduled' ELSE 'pending' END,
-                    eta = (now() AT TIME ZONE 'UTC') + %s * interval '1 second',
+                    eta = (%s AT TIME ZONE 'UTC') + %s * interval '1 second',
                     defer_count = defer_count + 1,
                     defer_reason = %s,
                     exc_name = NULL, exc_message = NULL, exc_info = NULL,
@@ -1537,6 +1560,7 @@ class IrJob(models.Model):
                 WHERE id = %s AND state = 'started'
                 """,
                 seconds,
+                asked_at,
                 seconds,
                 (defer["reason"] or None) and defer["reason"][:1000],
                 job["id"],
@@ -1674,11 +1698,27 @@ class IrJob(models.Model):
                 "job_failed", job=job["id"], retries=retry, error=type(exc).__name__
             )
             IrJob._cancel_dependents(cr, [job["id"]])
-            cls._notify_failed(cr, job, exc)
+            cls._notify_failed_quietly(cr, job, exc)
 
     @staticmethod
     def _notify_failed(cr, job: dict[str, Any], exc: BaseException) -> None:
         pass
+
+    @classmethod
+    def _notify_failed_quietly(
+        cls, cr, job: dict[str, Any], exc: BaseException
+    ) -> None:
+        try:
+            with cr.savepoint():
+                cls._notify_failed(cr, job, exc)
+        except Exception as hook_exc:
+            if is_retryable(hook_exc):
+                _debug.logic(
+                    "job.notify_lost_race", job=job["id"], error=type(hook_exc).__name__
+                )
+                raise
+            _logger.exception("Job %s: could not report its failure", job["id"])
+            _debug.logic("job.notify_failed", job=job["id"])
 
     @staticmethod
     def _reap_dead_jobs(cr) -> int:
@@ -1761,22 +1801,9 @@ class IrJob(models.Model):
         IrJob._cancel_dependents(cr, [job["id"] for job in jobs])
         model = Registry(cr.dbname)[IrJob._name]
         for job in jobs:
-            try:
-                with cr.savepoint():
-                    model._notify_failed(
-                        cr, job, WorkerDied("job worker died during execution")
-                    )
-            except Exception as exc:
-                if is_retryable(exc):
-                    _debug.logic(
-                        "reap.notify_lost_race", job=job["id"], error=type(exc).__name__
-                    )
-                    raise
-                _logger.exception(
-                    "Job %s: could not report its failure after its worker died",
-                    job["id"],
-                )
-                _debug.logic("reap.notify_failed", job=job["id"])
+            model._notify_failed_quietly(
+                cr, job, WorkerDied("job worker died during execution")
+            )
 
     @staticmethod
     def _release_dependents(cr, job_id: int) -> int:

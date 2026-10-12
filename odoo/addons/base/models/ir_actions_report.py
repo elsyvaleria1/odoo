@@ -251,11 +251,7 @@ class IrActionsReport(models.Model):
         return self.env.ref("base.paperformat_euro", raise_if_not_found=False)
 
     def get_paperformat_by_xmlid(self, xml_id: str) -> Any:
-        return (
-            self.env.ref(xml_id).get_paperformat()
-            if xml_id
-            else self.env.company.report_config_id.paperformat_id
-        )
+        return (self.env.ref(xml_id) if xml_id else self.browse()).get_paperformat()
 
     @api.model
     def _get_report_from_name(self, report_name: str) -> Self:

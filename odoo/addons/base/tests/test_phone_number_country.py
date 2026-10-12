@@ -44,6 +44,25 @@ class TestPhoneNumberCountry(TransactionCase):
         self.assertEqual(phone.country_id, self.belgium)
         self.assertFalse(phone.country_inferred)
 
+    def test_a_number_created_with_contact_ids_reads_their_country(self):
+        phone = self.Phone.create(
+            {"number": "021 209 99 95", "partner_ids": [self.contact.id]}
+        )
+
+        self.assertEqual(phone.country_id, self.romania)
+        self.assertTrue(phone.country_inferred)
+
+    def test_a_known_number_created_with_contact_ids_joins_them(self):
+        phone = self.contact.phone_ids
+        branch = self.env["res.partner"].create(
+            {"name": "Bucharest branch", "country_id": self.romania.id}
+        )
+
+        again = self.Phone.create({"number": "0212099999", "partner_ids": [branch.id]})
+
+        self.assertEqual(again, phone)
+        self.assertEqual(phone.partner_ids, self.contact | branch)
+
     def test_setting_a_country_on_the_number_makes_it_chosen(self):
         phone = self.contact.phone_ids
 

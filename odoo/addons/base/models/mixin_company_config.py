@@ -92,12 +92,13 @@ class MixinCompanyConfig(models.AbstractModel):
             for vals in vals_list:
                 self._clear_registry_cache_for(vals)
             return records
-        records = self.browse()
+        config_ids = []
         to_create = []
         for vals in vals_list:
             config = existing.get(vals.get("company_id"))
             if config is None:
                 to_create.append(vals)
+                config_ids.append(None)
                 continue
             _debug.lifecycle(
                 "written_instead_of_created",
@@ -107,13 +108,18 @@ class MixinCompanyConfig(models.AbstractModel):
             config.with_env(self.env).write(
                 {key: value for key, value in vals.items() if key != "company_id"}
             )
-            records |= config.with_env(self.env)
+            config_ids.append(config.id)
+        created = iter(super().create(to_create).ids if to_create else ())
         if to_create:
-            records |= super().create(to_create)
             self.env.registry.clear_cache()
         for vals in vals_list:
             self._clear_registry_cache_for(vals)
-        return records
+        return self.browse(
+            [
+                next(created) if config_id is None else config_id
+                for config_id in config_ids
+            ]
+        )
 
     def write(self, vals: ValuesType) -> bool:
         result = super().write(vals)

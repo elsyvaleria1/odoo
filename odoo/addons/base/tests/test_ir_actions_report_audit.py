@@ -285,3 +285,22 @@ class TestGetReportFromName(TransactionCase):
         self.assertFalse(Report._get_report_from_name("base.__no_such_report__"))
         self.assertFalse(Report._get_report_from_name("no_dot_no_report"))
         self.assertFalse(Report._get_report_from_name(None))
+
+
+@tagged("post_install", "-at_install")
+class TestPaperformatByXmlid(TransactionCase):
+    def test_without_xmlid_it_resolves_like_get_paperformat(self):
+        self.env.company.report_config_id.paperformat_id = False
+        Report = self.env["ir.actions.report"]
+        self.assertTrue(Report.get_paperformat())
+        self.assertEqual(
+            Report.get_paperformat_by_xmlid(False), Report.get_paperformat()
+        )
+
+    def test_without_xmlid_the_overrides_of_get_paperformat_apply(self):
+        Report = self.env["ir.actions.report"]
+        override = self.env["report.paperformat"].create({"name": "Audit override"})
+        with patch.object(
+            type(Report), "get_paperformat", autospec=True, return_value=override
+        ):
+            self.assertEqual(Report.get_paperformat_by_xmlid(None), override)

@@ -164,6 +164,30 @@ class TestEsbuildCircuitBreaker(TransactionCase):
             entry.expiry - time.monotonic(), self.IrQweb._ESBUILD_DECLINE_COOLDOWN_S
         )
 
+    def test_a_decline_does_not_count_toward_escalation(self):
+        key = self.IrQweb._get_esbuild_cooldown_key("web.test_bundle")
+        with self.assertLogs(f"{ASSET_ROOT}.fallback", level=logging.WARNING):
+            self.IrQweb._open_esbuild_circuit(
+                "web.test_bundle", "lock_timeout", decline=True
+            )
+            self.IrQweb._open_esbuild_circuit("web.test_bundle", reason="Err1")
+        entry = self.IrQweb._esbuild_circuit.entry(key)
+        self.assertEqual(entry.failures, 1)
+        self.assertLessEqual(
+            entry.expiry - time.monotonic(), self.IrQweb._ESBUILD_COOLDOWN_S
+        )
+
+    def test_a_decline_never_shortens_an_open_cooldown(self):
+        key = self.IrQweb._get_esbuild_cooldown_key("web.test_bundle")
+        with self.assertLogs(f"{ASSET_ROOT}.fallback", level=logging.WARNING):
+            self.IrQweb._open_esbuild_circuit("web.test_bundle", reason="Err1")
+            self.IrQweb._open_esbuild_circuit("web.test_bundle", reason="Err2")
+            escalated = self.IrQweb._esbuild_circuit.entry(key)
+            self.IrQweb._open_esbuild_circuit(
+                "web.test_bundle", "lock_timeout", decline=True
+            )
+        self.assertEqual(self.IrQweb._esbuild_circuit.entry(key), escalated)
+
     def test_a_declined_compile_keeps_the_next_render_off_the_compile_path(self):
         @contextlib.contextmanager
         def no_lock_cursor(_self, _bundle):
@@ -3790,9 +3814,12 @@ class TestEsmConcurrentPublication(TransactionCase):
         errors = []
         vals = [
             {
-                "url": url,
-                "name": "publication.esm.js",
-                "raw": b"export {};",
+                **self.env["ir.attachment"]._prepare_generated_asset_vals(
+                    name="publication.esm.js",
+                    mimetype="text/javascript",
+                    raw=b"export {};",
+                    url=url,
+                ),
                 "company_id": False,
             }
         ]

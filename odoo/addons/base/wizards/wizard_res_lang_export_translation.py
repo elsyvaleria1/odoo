@@ -51,7 +51,7 @@ class WizardResLangExportTranslation(models.TransientModel):
     )
     export_type = fields.Selection(
         selection=[("module", "Module"), ("model", "Model")],
-        default="module",
+        default=lambda self: "module" if self.env.user._is_system() else "model",
         required=True,
     )
     modules = fields.Many2many(
@@ -90,7 +90,7 @@ class WizardResLangExportTranslation(models.TransientModel):
 
     def action_export_language_file(self) -> dict[str, Any]:
         self.check_singleton()
-        lang = self.lang if self.lang != NEW_LANG_KEY else False
+        lang = self.lang if self.lang != NEW_LANG_KEY else None
         mods = None
 
         with io.BytesIO() as buf:
@@ -154,7 +154,9 @@ class WizardResLangExportTranslation(models.TransientModel):
         _debug.lifecycle("export_file_ready", name=name, exported=bool(out))
         self.write({"state": "get", "data": out, "name": name})
         return {
-            "name": self.env.ref("base.action_wizard_lang_export").name,
+            "name": self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
+                "base.action_wizard_lang_export"
+            )["name"],
             "type": "ir.actions.act_window",
             "res_model": "wizard.res.lang.export.translation",
             "view_mode": "form",

@@ -145,12 +145,25 @@ class IrAttachment(models.Model):
             return self.browse()
         return self._search_generated_assets(urls=variant_urls)
 
+    def _released_encoded_variants(self) -> Self:
+        variants = self._encoded_variants() - self
+        if not variants:
+            return variants
+        bases = {variant.url: variant.url.rsplit(".", 1)[0] for variant in variants}
+        survivors = self._search_generated_assets(urls=sorted(set(bases.values())))
+        surviving = set((survivors - self).mapped("url"))
+        kept: dict[str, int] = {}
+        for variant in variants:
+            if bases[variant.url] in surviving:
+                kept[variant.url] = max(kept.get(variant.url, 0), variant.id)
+        return variants - variants.browse(kept.values())
+
     def unlink(self) -> bool:
         clear_assets = any(
             url and url.startswith(ASSETS_URL_PREFIX) for url in self.mapped("url")
         )
         if clear_assets:
-            if variants := self._encoded_variants() - self:
+            if variants := self._released_encoded_variants():
                 variants.unlink()
         res = super().unlink()
         if clear_assets:

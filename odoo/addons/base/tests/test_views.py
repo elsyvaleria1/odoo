@@ -10011,3 +10011,11 @@ class TestResetViewWizard(ViewCase):
         with self.assertRaises(UserError):
             wizard.reset_view_button()
         self.assertEqual(extension.arch_db, arch)
+
+    def test_the_wizard_opens_only_to_those_who_can_write_views(self):
+        manager = common.new_test_user(
+            self.env, login="reset_manager", groups="base.group_erp_manager"
+        )
+        self.assertFalse(manager.has_group("base.group_system"))
+        with self.assertRaises(AccessError):
+            self.env["wizard.ir.ui.view.reset.arch"].with_user(manager).create({})

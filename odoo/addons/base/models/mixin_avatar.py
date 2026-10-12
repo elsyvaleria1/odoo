@@ -1,4 +1,5 @@
 import functools
+import unicodedata
 from base64 import b64encode
 from datetime import UTC
 
@@ -20,6 +21,12 @@ def _get_placeholder_image(path: str) -> bytes:
         data = file.read()
     _debug.perf.count("placeholder_image_loaded", path=path, bytes=len(data))
     return data
+
+
+def _get_visible_initial(name: str) -> str:
+    return next(
+        (char for char in name if unicodedata.category(char)[0] not in "CZ"), ""
+    )
 
 
 class MixinAvatar(models.AbstractModel):
@@ -83,7 +90,7 @@ class MixinAvatar(models.AbstractModel):
             if not avatar:
                 fallbacks += 1
                 name = record[record._avatar_name_field]
-                generated = bool(record.id and name and name.strip())
+                generated = bool(record.id and name and _get_visible_initial(name))
                 _debug.logic(
                     "avatar_fallback",
                     model=record._name,
@@ -106,7 +113,9 @@ class MixinAvatar(models.AbstractModel):
 
     def _prepare_avatar_svg(self) -> bytes:
         self.check_singleton()
-        initial = html_escape(self[self._avatar_name_field].strip()[0].upper())
+        initial = html_escape(
+            _get_visible_initial(self[self._avatar_name_field] or "").upper()
+        )
         _debug.logic(
             "avatar_svg_generated",
             model=self._name,

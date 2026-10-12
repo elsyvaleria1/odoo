@@ -1,4 +1,7 @@
+from unittest.mock import patch
+
 from odoo.exceptions import AccessDenied, UserError
+from odoo.modules.loading import ModuleOperationInProgress
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 from odoo.tools import mute_logger
 
@@ -44,6 +47,23 @@ class TestBaseModuleWizards(TransactionCase):
         with self.assertRaises(UserError) as ctx:
             wizard.with_user(self.admin).upgrade_module()
         self.assertIn("wizard_upg_missing_dep", str(ctx.exception))
+
+    def test_upgrade_module_refuses_while_another_operation_runs(self):
+        self._make_module("wizard_upg_busy", "to upgrade")
+        wizard = self.env["wizard.ir.module.module.apply.scheduled"].create({})
+        busy = ModuleOperationInProgress("another process holds the lock")
+        with (
+            patch(
+                "odoo.addons.base.models.ir_module.lock_module_operations",
+                side_effect=busy,
+            ),
+            patch("odoo.modules.registry.Registry.new", side_effect=busy) as new,
+            patch.object(self.env.cr, "commit") as commit,
+            self.assertRaises(UserError),
+        ):
+            wizard.with_user(self.admin).upgrade_module()
+        commit.assert_not_called()
+        new.assert_not_called()
 
     def test_upgrade_module_cancel_reverts_schedule(self):
         to_upgrade = self._make_module("wizard_cancel_upg", "to upgrade")

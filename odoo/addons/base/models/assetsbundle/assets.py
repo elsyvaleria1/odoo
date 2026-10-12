@@ -45,6 +45,12 @@ from .common import (
 _debug = DebugLog(__name__)
 
 
+@functools.lru_cache(maxsize=16384)
+def _file_module_header(filename: str, last_modified: float) -> re.Match[str] | None:
+    with file_open(filename, "rb", filter_ext=EXTENSIONS) as fp:
+        return _parse_odoo_module_header(fp.read().decode("utf-8"))
+
+
 class WebAsset:
     def __init__(
         self,
@@ -164,6 +170,14 @@ class JavascriptAsset(WebAsset):
 
     @functools.cached_property
     def parsed_header(self) -> re.Match[str] | None:
+        if (
+            self._filename
+            and not self.inline
+            and self._content is None
+            and self.last_modified >= 0
+        ):
+            with suppress(OSError, ValueError):
+                return _file_module_header(self._filename, self.last_modified)
         return _parse_odoo_module_header(self.raw_content)
 
     def generate_error(self, msg: str) -> str:

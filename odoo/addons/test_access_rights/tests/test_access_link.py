@@ -132,6 +132,16 @@ class TestAccessLink(AccessLinkCase):
         self.assertFalse(link.date_to)
         self.assertTrue(link.expiry_waived)
 
+    def test_a_waived_expiry_is_never_answered_with_an_expiring_link(self):
+        admin = self.env.ref("base.user_admin")
+        self.doc.sudo().reader_ids = admin
+        Link = self.Link.with_user(admin)
+        expiring, _token = Link._issue(self.doc.with_user(admin))
+        self.assertTrue(expiring.date_to)
+        waived, _token = Link._issue(self.doc.with_user(admin), waive_expiry=True)
+        self.assertNotEqual(waived, expiring)
+        self.assertFalse(waived.date_to)
+
     def test_each_record_gets_its_own_link_in_one_batch_and_gets_it_back(self):
         people = self.env["res.partner"].create(
             [{"name": "Invitee one"}, {"name": "Invitee two"}]
@@ -301,6 +311,29 @@ class TestAccessLink(AccessLinkCase):
             administrator.action_extend(far)
         administrator.write({"date_to": far, "expiry_waived": True})
         self.assertAlmostEqual(link.date_to, far, delta=timedelta(seconds=1))
+
+    def test_an_expiry_typed_as_text_is_saved_and_logged(self):
+        link, _token = self._issue()
+        later = fields.Datetime.now() + timedelta(days=10)
+        latest = fields.Datetime.now() + timedelta(days=20)
+
+        link.with_user(self.owner).write({"date_to": fields.Datetime.to_string(later)})
+        self.Link.with_user(self.owner)._update_record_links(
+            self.doc.with_user(self.owner),
+            {"date_to": fields.Datetime.to_string(latest)},
+        )
+
+        self.assertEqual(link.date_to, latest)
+        self.assertEqual(
+            self.env["ir.access.log"]
+            .sudo()
+            .search(
+                [("link_id", "=", link.id), ("event", "=", "link_extended")],
+                order="id",
+            )
+            .mapped("reason"),
+            [fields.Datetime.to_string(later), fields.Datetime.to_string(latest)],
+        )
 
     def test_a_link_is_reused_only_when_it_is_the_one_asked_for(self):
         month, _token = self._issue()

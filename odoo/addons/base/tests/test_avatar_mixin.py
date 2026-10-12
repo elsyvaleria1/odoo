@@ -128,3 +128,20 @@ class TestAvatarMixin(TransactionCase):
         text_node = root.find(".//{http://www.w3.org/2000/svg}text")
         self.assertEqual(text_node.text, '"')
         self.assertEqual(len(text_node), 0)
+
+    def test_avatar_initial_skips_invisible_and_control_characters(self):
+        for name in ("\u200eMarc", "\ufeffMarc", "\x01Marc"):
+            partner = self.env["res.partner"].create(
+                {"name": name, "image_1920": False}
+            )
+            root = etree.fromstring(b64decode(partner.avatar_1920))
+            text_node = root.find(".//{http://www.w3.org/2000/svg}text")
+            self.assertEqual(text_node.text, "M", repr(name))
+
+    def test_name_of_only_invisible_characters_has_the_placeholder(self):
+        partner = self.env["res.partner"].create(
+            {"name": "\u200e\u200f", "image_1920": False}
+        )
+        self.assertEqual(
+            partner._get_avatar_placeholder(), b64decode(partner.avatar_1920)
+        )

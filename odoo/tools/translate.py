@@ -1214,6 +1214,7 @@ def TranslationFileWriter(
     lang: str | None = None,
     previous: str | None = None,
     iso_codes: Mapping[str, str] | None = None,
+    merge_previous: bool = True,
 ) -> _RowWriter:
     if fileformat == "csv":
         return CSVFileWriter(target)
@@ -1222,7 +1223,12 @@ def TranslationFileWriter(
         return PoFileWriter(target, lang=lang, previous=previous)
 
     if fileformat == "tgz":
-        return TarFileWriter(target, lang=lang, iso_codes=iso_codes or {})
+        return TarFileWriter(
+            target,
+            lang=lang,
+            iso_codes=iso_codes or {},
+            merge_previous=merge_previous,
+        )
 
     raise ValueError(
         f"Unrecognized extension: must be one of .csv, .po, or .tgz "
@@ -1455,10 +1461,12 @@ class TarFileWriter:
         target: IO[bytes],
         lang: str | None,
         iso_codes: Mapping[str, str] | None = None,
+        merge_previous: bool = True,
     ) -> None:
         self.target = target
         self.lang = lang
         self.iso_codes = iso_codes or {}
+        self.merge_previous = merge_previous
 
     def write_rows(self, rows: Iterable[TranslationRow]) -> None:
         rows_by_module = defaultdict(list)
@@ -1477,7 +1485,7 @@ class TarFileWriter:
                     name = f"{mod}.pot"
                 previous = (
                     path.read_text(encoding="utf-8")
-                    if path and path.is_file()
+                    if self.merge_previous and path and path.is_file()
                     else None
                 )
                 with io.BytesIO() as buf:
@@ -1510,6 +1518,7 @@ def _trans_export(
         lang=lang,
         previous=reader.previous,
         iso_codes=get_lang_iso_codes(reader.env) if format == "tgz" and lang else None,
+        merge_previous=isinstance(reader, TranslationModuleReader),
     )
     with _debug.perf(
         "translate.export_write",
@@ -1544,7 +1553,7 @@ def trans_export(
 
 
 def trans_export_records(
-    lang: str,
+    lang: str | None,
     model_name: str,
     ids: list[int],
     buffer: IO[bytes],
@@ -2352,7 +2361,24 @@ class TranslationImporter:
                     lang,
                 )
             fileformat = Path(filepath).suffix[1:].lower()
-            return self.load(fileobj, fileformat, lang, xmlids=xmlids, module=module)
+            try:
+                return self.load(
+                    fileobj, fileformat, lang, xmlids=xmlids, module=module
+                )
+            except OSError as exc:
+                _logger.exception(
+                    "couldn't read translation file %s [lang: %s][format: %s]",
+                    filepath,
+                    get_iso_codes(lang),
+                    fileformat,
+                )
+                _debug.logic(
+                    "translate.load_file_unreadable",
+                    lang=lang,
+                    format=fileformat,
+                    module=module,
+                    error=type(exc).__name__,
+                )
         return 0
 
     def read_data_file(self, filepath: str, module: str) -> list[TranslationEntry]:
@@ -2397,34 +2423,16 @@ class TranslationImporter:
             )
             _debug.logic("translate.load_lang_missing", lang=lang, module=module)
             return 0
-        try:
-            fileobj.seek(0)
-            reader = translation_file_reader(
-                fileobj, fileformat=fileformat, module=module
-            )
-            with _debug.perf(
-                "translate.load_file",
-                lang=lang,
-                format=fileformat,
-                module=module,
-                file=getattr(fileobj, "name", None),
-            ):
-                return self._load(reader, lang, xmlids)
-        except OSError as exc:
-            _logger.exception(
-                "couldn't read translation file %s [lang: %s][format: %s]",
-                getattr(fileobj, "name", "<stream>"),
-                get_iso_codes(lang),
-                fileformat,
-            )
-            _debug.logic(
-                "translate.load_file_unreadable",
-                lang=lang,
-                format=fileformat,
-                module=module,
-                error=type(exc).__name__,
-            )
-        return 0
+        fileobj.seek(0)
+        reader = translation_file_reader(fileobj, fileformat=fileformat, module=module)
+        with _debug.perf(
+            "translate.load_file",
+            lang=lang,
+            format=fileformat,
+            module=module,
+            file=getattr(fileobj, "name", None),
+        ):
+            return self._load(reader, lang, xmlids)
 
     def _load(
         self,

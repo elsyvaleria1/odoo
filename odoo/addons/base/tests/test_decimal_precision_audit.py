@@ -34,3 +34,15 @@ class TestDecimalPrecisionAudit(TransactionCase):
         self.assertEqual(Precision.get_precision(name), 2)
         precision.write({"digits": 5})
         self.assertEqual(Precision.get_precision(name), 5)
+
+    def test_uom_rounding_follows_precision_create_and_unlink(self):
+        Precision = self.env["decimal.precision"]
+        uom = self.env["uom.uom"].search([], limit=1)
+        Precision.search([("name", "=", "Product Unit")]).unlink()
+        self.assertEqual(uom.rounding, 0.01)
+
+        created = Precision.create({"name": "Product Unit", "digits": 4})
+        self.assertEqual(uom.rounding, 0.0001)
+
+        created.unlink()
+        self.assertEqual(uom.rounding, 0.01)

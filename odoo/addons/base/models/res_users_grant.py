@@ -25,6 +25,9 @@ _LIFECYCLE: contextvars.ContextVar[bool] = contextvars.ContextVar(
 _ACTIVATING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "res_users_grant_activating", default=False
 )
+_DERIVING: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "res_users_grant_deriving", default=False
+)
 _FRESH_USERS: contextvars.ContextVar[frozenset[int]] = contextvars.ContextVar(
     "res_users_grant_fresh_users", default=frozenset()
 )
@@ -67,8 +70,16 @@ def projecting() -> bool:
     return _PROJECTING.get()
 
 
+def is_deriving() -> bool:
+    return _DERIVING.get()
+
+
 def activating() -> contextlib.AbstractContextManager[None]:
     return _marked(_ACTIVATING)
+
+
+def deriving() -> contextlib.AbstractContextManager[None]:
+    return _marked(_DERIVING)
 
 
 class ResUsersGrant(models.Model):
@@ -655,7 +666,7 @@ class ResUsersGrant(models.Model):
         fresh_user_ids: Iterable[int] = (),
     ) -> None:
         added = set(added)
-        if not self.env.su and (
+        if not (self.env.su or _DERIVING.get()) and (
             own := sorted(
                 group_id for user_id, group_id in added if user_id == self.env.uid
             )

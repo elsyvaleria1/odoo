@@ -86,10 +86,15 @@ class WizardIrModuleModuleApplyScheduled(models.TransientModel):
                     )
                 )
 
-        _debug.pipeline("upgrade_planned", modules=mods.mapped("name"))
-        self.env.cr.commit()
-        with _debug.perf("registry_reload", db=self.env.cr.dbname, modules=len(mods)):
-            odoo.modules.registry.Registry.new(self.env.cr.dbname, update_module=True)
+        with Module._hold_module_operations():
+            _debug.pipeline("upgrade_planned", modules=mods.mapped("name"))
+            self.env.cr.commit()
+            with _debug.perf(
+                "registry_reload", db=self.env.cr.dbname, modules=len(mods)
+            ):
+                odoo.modules.registry.Registry.new(
+                    self.env.cr.dbname, update_module=True
+                )
         self.env.cr.reset()
 
         return {"type": "ir.actions.act_window_close"}

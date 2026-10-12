@@ -804,6 +804,29 @@ class TestUsersTweaks(TransactionCase):
             user.write({"active": True})
 
 
+class TestMultiCompanyGroupFollowsCompanies(TransactionCase):
+    def test_an_administrator_widens_their_own_companies(self):
+        admin = new_test_user(
+            self.env, "mc_own_admin", groups="base.group_user,base.group_system"
+        )
+        other = self.env["res.company"].create({"name": "Own Second Company"})
+        as_admin = admin.with_user(admin)
+
+        as_admin.write({"company_ids": [Command.link(other.id)]})
+        self.assertTrue(admin._has_group("base.group_multi_company"))
+
+        as_admin.write({"company_ids": [Command.unlink(other.id)]})
+        self.assertFalse(admin._has_group("base.group_multi_company"))
+
+    def test_a_group_is_still_not_granted_to_oneself(self):
+        admin = new_test_user(
+            self.env, "mc_self_grant", groups="base.group_user,base.group_system"
+        )
+        group = self.env["res.groups"].create({"name": "Not For Oneself"})
+        with self.assertRaisesRegex(AccessError, "cannot grant yourself"):
+            admin.with_user(admin).write({"group_ids": [Command.link(group.id)]})
+
+
 @tagged("post_install", "-at_install")
 class TestUsersIdentitycheck(HttpCase):
     @users("admin")
@@ -1087,6 +1110,23 @@ class TestLoginCooldown(TransactionCase):
             "203.0.113.8", remaining, "the just-failed source must be recorded"
         )
 
+    @mute_logger("odoo.addons.base.models.res_users")
+    def test_a_failure_past_the_forget_horizon_starts_a_fresh_count(self):
+        users = self.env["res.users"]
+        source = "203.0.113.60"
+        with self.env.registry.cursor() as cr:
+            cr.execute(
+                "INSERT INTO res_users_login_cooldown (source, failures, last_failure) "
+                "VALUES (%s, 2, %s)",
+                [source, datetime.now(UTC).replace(tzinfo=None) - timedelta(days=2)],
+            )
+        self._fail_once(users, source)
+        self.assertEqual(
+            self._failures(source), 1, "failures older than a day are forgotten"
+        )
+        with self._attempt(source), users._assert_can_auth(user=self.env.uid):
+            pass
+
     def test_a_failure_racing_the_first_row_is_counted(self):
         source = "203.0.113.50"
         cooldown = self.env["res.users"]._login_cooldown()
@@ -1287,6 +1327,17 @@ class TestCheckUidPasswdCacheContract(TransactionCase):
         with self.assertRaises(AccessDenied):
             Users._check_uid_passwd(user.id, "old-password")
         Users._check_uid_passwd(user.id, "new-password")
+
+    def test_becoming_a_service_principal_ends_cached_password_access(self):
+        Users = self.env["res.users"]
+        user = new_test_user(self.env, login="rut3_service", password="old-password")
+
+        Users._check_uid_passwd(user.id, "old-password")
+
+        user.principal_type = "service"
+
+        with self.assertRaises(AccessDenied):
+            Users._check_uid_passwd(user.id, "old-password")
 
     def test_raw_sql_change_without_clear_keeps_cache_stale(self):
         Users = self.env["res.users"]

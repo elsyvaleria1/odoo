@@ -79,6 +79,29 @@ class EsbuildCircuit:
         )
         return entry
 
+    def record_decline(
+        self, key: tuple[str, str], reason: str, *, now: float, cooldown_s: float
+    ) -> CircuitEntry:
+        with self._lock:
+            previous = self._entries.get(key)
+            if previous is not None and previous.expiry > now + cooldown_s:
+                entry = previous
+            else:
+                failures = previous.failures if previous else 0
+                entry = CircuitEntry(now + cooldown_s, reason, failures)
+                self._entries[key] = entry
+                if len(self._entries) > self.max_entries:
+                    self._evict(now, keep=key)
+        _debug.lifecycle(
+            "esbuild_circuit.declined",
+            db=key[0],
+            bundle=key[1],
+            reason=reason,
+            kept_longer=entry is previous,
+            failures=entry.failures,
+        )
+        return entry
+
     def record_success(self, key: tuple[str, str]) -> bool:
         with self._lock:
             entry = self._entries.pop(key, None)

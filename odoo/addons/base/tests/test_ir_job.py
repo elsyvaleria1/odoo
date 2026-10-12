@@ -128,6 +128,24 @@ class TestIrJob(TransactionCase):
         third = self.partner.delayed(identity_key="once")._ir_job_test_append()
         self.assertNotEqual(first.id, third.id)
 
+    def test_a_duplicate_that_finishes_before_its_lookup_is_queued_anew(self):
+        IrJob = type(self.env["ir.job"])
+        real_insert = IrJob._insert_job_row
+        calls = []
+
+        def insert(job_model, values):
+            calls.append(values)
+            return None if len(calls) == 1 else real_insert(job_model, values)
+
+        with (
+            patch.object(IrJob, "_insert_job_row", insert),
+            patch.object(IrJob, "_reuse_deduplicated_job", return_value=None),
+        ):
+            job = self.partner.delayed(identity_key="raced")._ir_job_test_append()
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(job.exists())
+        self.assertEqual(job.identity_key, "raced")
+
     def test_claim_respects_priority_and_eta(self):
         low = self.partner.delayed(priority=20)._ir_job_test_append()
         high = self.partner.delayed(priority=1)._ir_job_test_append()
@@ -1028,6 +1046,23 @@ class TestIrJob(TransactionCase):
         self.assertEqual(record.defer_count, 1)
         self.assertEqual(record.defer_reason, "not ready yet")
         self.assertGreater(record.eta - fields.Datetime.now(), timedelta(seconds=60))
+
+    def test_a_deferral_counts_its_delay_from_when_the_job_asked(self):
+        self.partner.delayed()._ir_job_test_poll(seconds=1)
+        job = self._claim()
+        self.env.cr.execute("SELECT pg_sleep(1.2)")
+        IrJob._run_claimed(self.env.cr, job)
+        self.env.cr.execute(
+            "SELECT state, eta > (clock_timestamp() AT TIME ZONE 'UTC')"
+            " FROM ir_job WHERE id = %s",
+            (job["id"],),
+        )
+        self.assertEqual(
+            self.env.cr.fetchone(),
+            ("scheduled", True),
+            "a job that spent longer than its delay before deferring must not "
+            "come back due at once, burning its deferral budget",
+        )
 
     def test_a_deferral_keeps_what_the_job_already_did(self):
         before = self.partner.name
@@ -2066,6 +2101,32 @@ class TestIrJobDrainLoop(BaseCase):
             "and must not put the fleet to sleep on a backlog",
         )
 
+    def test_a_broken_failure_hook_still_records_the_failure(self):
+        self._enqueue(2)
+
+        def job_breaks(cr, job):
+            raise ValueError("job broke")
+
+        def hook_breaks(cr, job, exc):
+            raise RuntimeError("hook broke")
+
+        with (
+            patch.object(IrJob, "_run_claimed", staticmethod(job_breaks)),
+            patch.object(IrJob, "_notify_failed", staticmethod(hook_breaks)),
+            patch.object(ir_job.IrJob, "_notify_workers"),
+            mute_logger("odoo.addons.base.models.ir_job"),
+        ):
+            deadlined = IrJob._claim_and_run_loop(
+                self.db_name, channels=[self.CHANNEL], deadline=time.monotonic() + 60
+            )
+        self.assertFalse(deadlined, "the drain went on past the broken hook")
+        self.assertEqual(
+            self._states(),
+            {"failed": 2},
+            "a job left 'started' by a broken hook is later requeued by the "
+            "reaper as WorkerDied and runs again after it already failed",
+        )
+
     def test_the_drain_budget_follows_the_job_knob_not_the_cron_one(self):
         budgets = {}
         for real, cron, job, expected in (
@@ -2369,6 +2430,52 @@ class TestIrJobDrainLoop(BaseCase):
             )
         self.assertEqual(
             self._states(), {"done": 1}, "the job committed and stayed committed"
+        )
+
+
+class TestIrJobDeduplicationIntoARunningJob(BaseCase):
+    CHANNEL = "deduprunning"
+
+    def setUp(self):
+        super().setUp()
+        self.db_name = common.get_db_name()
+        self.registry = Registry(self.db_name)
+        self.addCleanup(self._clear_jobs)
+        self._clear_jobs()
+
+    def _clear_jobs(self):
+        with self.registry.cursor() as cr:
+            cr.execute("DELETE FROM ir_job WHERE channel = %s", (self.CHANNEL,))
+
+    def _enqueue(self, **env_kwargs):
+        with self.registry.cursor() as cr:
+            env = odoo.api.Environment(cr, common.ADMIN_USER_ID, {}, **env_kwargs)
+            return (
+                env["ir.job"]
+                .delayed(channel=self.CHANNEL, identity_key=self.CHANNEL)
+                ._job_ping()
+                .id
+            )
+
+    def test_a_caller_deduplicated_into_a_running_job_does_not_make_it_replay(self):
+        job_id = self._enqueue()
+        worker = self.registry.cursor()
+        self.addCleanup(worker.close)
+        job = IrJob._claim_next(worker, "test:0", [self.CHANNEL])
+        worker.commit()
+        self.assertEqual(job["id"], job_id)
+        worker.execute("SELECT 1")
+
+        self.assertEqual(self._enqueue(su=True), job_id)
+
+        IrJob._run_claimed(worker, job)
+        worker.commit()
+        worker.execute("SELECT state FROM ir_job WHERE id = %s", (job_id,))
+        self.assertEqual(
+            worker.fetchone()[0],
+            "done",
+            "a running job whose row a deduplicated caller rewrote cannot mark "
+            "itself done, and its whole run is rolled back and replayed",
         )
 
 

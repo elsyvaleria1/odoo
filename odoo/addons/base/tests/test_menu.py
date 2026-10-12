@@ -293,6 +293,26 @@ class TestMenuVisibility(TransactionCase):
             blacklisted.clear()
             self.assertIn(menu.id, set(self.Menu.load_menus(False)))
 
+    def test_load_menus_root_follows_the_blacklist_without_a_cache_clear(self):
+        action = self._act_window("res.partner")
+        root = self.Menu.create({"name": "Blacklistable app"})
+        leaf = self.Menu.create(
+            {
+                "name": "Only entry",
+                "parent_id": root.id,
+                "action": f"{action._name},{action.id}",
+            }
+        )
+        blacklisted = []
+        with patch.object(
+            IrUiMenu, "_get_blacklisted_menu_ids", lambda self: list(blacklisted)
+        ):
+            self.assertIn(root.id, self.Menu.load_menus_root()["all_menu_ids"])
+            blacklisted.append(leaf.id)
+            self.assertNotIn(root.id, self.Menu.load_menus_root()["all_menu_ids"])
+            blacklisted.clear()
+            self.assertIn(root.id, self.Menu.load_menus_root()["all_menu_ids"])
+
     def test_an_action_for_debug_groups_answers_the_debug_flag_it_is_keyed_on(self):
         action = self._act_window("res.partner")
         action.group_ids = self.env.ref("base.group_no_one")

@@ -334,3 +334,27 @@ class TestIrBinaryRequestedMimetype(TransactionCaseWithUserDemo):
         )
         self.assertEqual(page.mimetype, "text/html")
         self.assertEqual(self._stream(page, "text/html").mimetype, "text/html")
+
+
+@tagged("post_install", "-at_install")
+class TestIrBinaryTablelessModel(TransactionCase):
+    def test_a_model_without_a_table_is_a_missing_record(self):
+        for model in ("ir.http", "ir.binary"):
+            with (
+                self.subTest(model=model),
+                self.assertRaises(MissingError),
+                self.assertQueryCount(0),
+            ):
+                self.env["ir.binary"]._get_record(None, model, 1, field_name="raw")
+
+
+@tagged("post_install", "-at_install")
+class TestIrBinaryFieldAttachmentQueries(TransactionCase):
+    def test_an_attachment_backed_field_is_found_and_read_together(self):
+        partner = self.env["res.partner"].create(
+            {"name": "Audit IRB queries", "image_1920": PNG_1x1_B64}
+        )
+        self.env.invalidate_all()
+        with self.assertQueryCount(2):
+            stream = self.env["ir.binary"]._get_stream_from_record(partner, "image_128")
+        self.assertEqual(stream.mimetype, "image/png")

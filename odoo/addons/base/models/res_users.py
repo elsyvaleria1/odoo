@@ -40,7 +40,7 @@ from odoo.tools import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 from .res_users_auth import PasswordStore, session_token
-from .res_users_grant import GROUP_STATE_COMPUTED, projecting
+from .res_users_grant import GROUP_STATE_COMPUTED, deriving, projecting
 from .res_users_login_cooldown import (
     LOGIN_DEVICE_BUDGET,
     LOGIN_DEVICE_COOKIE,
@@ -1540,6 +1540,7 @@ class ResUsers(models.Model):
             "tz",
             "company_id",
             "company_ids",
+            "principal_type",
             *self._get_fields_session_token(),
         }
 
@@ -2404,10 +2405,11 @@ class UsersMultiCompany(models.Model):
             added=to_add.ids,
             removed=to_remove.ids,
         )
-        if to_remove:
-            to_remove.write({"group_ids": [Command.unlink(group_id)]})
-        if to_add:
-            to_add.write({"group_ids": [Command.link(group_id)]})
+        with deriving():
+            if to_remove:
+                to_remove.write({"group_ids": [Command.unlink(group_id)]})
+            if to_add:
+                to_add.write({"group_ids": [Command.link(group_id)]})
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:

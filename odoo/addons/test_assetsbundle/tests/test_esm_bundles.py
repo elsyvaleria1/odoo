@@ -1,3 +1,4 @@
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
@@ -5,13 +6,14 @@ from odoo.tests.common import BaseCase, TransactionCase
 from odoo.tools.assets import esm_graph
 from odoo.tools.assets.esm_registry import esm_registry
 from odoo.tools.json import scriptsafe as json
-from odoo.tools.misc import file_path
+from odoo.tools.misc import file_open_temporary_directory, file_path
 
 from .common import _Mod
 from odoo.addons.base.models import ir_qweb_assets
 from odoo.addons.base.models.assetsbundle import (
     AssetsBundle,
     JavascriptAsset,
+    WebAsset,
     _cached_module_classification,
 )
 
@@ -52,6 +54,47 @@ class TestClassificationCache(TransactionCase):
         AssetsBundle("web.assets_web", files(1.0), env=self.env)
         AssetsBundle("web.assets_web", files(2.0), env=self.env)
         self.assertEqual(_cached_module_classification.cache_info().misses, 2)
+
+
+class TestModuleHeaderIsReadOncePerFile(TransactionCase):
+    def _bundle(self):
+        return self.env["ir.qweb"]._get_asset_bundle(
+            "test_assetsbundle.native_esm", css=False, js=True
+        )
+
+    def test_a_second_bundle_instance_reads_no_module_file(self):
+        first = self._bundle().get_native_module_data(with_bridges=False)
+        reads = []
+        original = WebAsset._get_content
+
+        def counted(asset):
+            reads.append(asset.url)
+            return original(asset)
+
+        with patch.object(WebAsset, "_get_content", counted):
+            second = self._bundle().get_native_module_data(with_bridges=False)
+        self.assertEqual(second["import_map"], first["import_map"])
+        self.assertEqual(reads, [])
+
+    def test_an_edited_header_is_read_again_under_its_new_mtime(self):
+        bundle = AssetsBundle("test_assetsbundle.header_mtime", [], env=self.env)
+        with file_open_temporary_directory() as directory:
+            path = Path(directory) / "h.js"
+
+            def alias(header, mtime):
+                path.write_text(
+                    f"/** @odoo-module native alias={header} */\n", encoding="utf-8"
+                )
+                asset = JavascriptAsset(
+                    bundle,
+                    url="/m/static/src/h.js",
+                    filename=str(path),
+                    last_modified=mtime,
+                )
+                return asset.parsed_header["alias"]
+
+            self.assertEqual(alias("@test/before", 1.0), "@test/before")
+            self.assertEqual(alias("@test/after", 2.0), "@test/after")
 
 
 class TestEsmGraphCanonicalHome(BaseCase):

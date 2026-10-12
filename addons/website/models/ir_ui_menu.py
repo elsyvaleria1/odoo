@@ -16,6 +16,7 @@ class IrUiMenu(models.Model):
         "self.env.lang",
         'self.env.context.get("force_action")',
         "self._get_session_debug()",
+        "frozenset(self._get_blacklisted_menu_ids())",
     )
     def load_menus_root(self):
         root_menus = super().load_menus_root()

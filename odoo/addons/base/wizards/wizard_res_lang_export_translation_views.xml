@@ -10,11 +10,12 @@
                 <group string="Export Settings" invisible="state != 'choose'">
                     <field name="lang" />
                     <field name="format" />
-                    <field name="export_type" />
+                    <field name="export_type" groups="base.group_system" />
                     <field
                         name="modules"
                         widget="many2many_tags"
                         options="{'no_create': True}"
+                        groups="base.group_system"
                         invisible="export_type == 'model'" />
                     <field
                         name="model_id"
@@ -49,6 +50,7 @@
                                     <field
                                         name="modules"
                                         widget="many2many_tags"
+                                        groups="base.group_system"
                                         readonly="1" />
                                     do not contain translatable terms.<br />
                                 </div>

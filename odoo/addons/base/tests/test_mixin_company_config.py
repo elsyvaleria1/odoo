@@ -52,3 +52,16 @@ class TestCompanyConfigDelegation(TransactionCase):
 
             self.assertEqual(created.company_id, branch)
             self.assertEqual(created.paperformat_id, second)
+
+    def test_a_create_returns_each_config_at_the_position_of_its_values(self):
+        Config = self.env["report.config"]
+        company = self.env["res.company"].create({"name": "Config Newcomer"})
+        Config._for(company).unlink()
+
+        configs = Config.create(
+            [{"company_id": company.id}, {"company_id": self.env.company.id}]
+        )
+
+        self.assertEqual(
+            [config.company_id for config in configs], [company, self.env.company]
+        )

@@ -1337,11 +1337,12 @@ class IrCron(models.Model):
         if remaining is None:
             remaining = max(progress.remaining - processed, 0)
         done = progress.done + processed
-        vals = {
-            "remaining": remaining,
-            "done": done,
-        }
-        if deactivate:
+        vals = {}
+        if processed:
+            vals["done"] = done
+        if remaining != progress.remaining:
+            vals["remaining"] = remaining
+        if deactivate and not progress.deactivate:
             vals["deactivate"] = True
         _debug.pipeline(
             "progress",
@@ -1351,7 +1352,8 @@ class IrCron(models.Model):
             remaining=remaining,
             deactivate=deactivate,
         )
-        progress.write(vals)
+        if vals:
+            progress.write(vals)
         self.env.cr.commit()
         return max(ctx.get("cron_end_time", float("inf")) - time.monotonic(), 0)
 
@@ -1414,19 +1416,27 @@ class IrCronProgress(models.Model):
 
     @api.autovacuum
     def _gc_cron_progress(self) -> tuple[int, bool]:
-        records = self.search(
-            [("create_date", "<", self.env.cr.now() - PROGRESS_RETENTION_PERIOD)],
-            limit=GC_UNLINK_LIMIT,
-        )
-        full_batch = len(records) == GC_UNLINK_LIMIT
+        self.flush_model(["cron_id", "create_date"])
         self.env.cr.execute(
-            "SELECT max(id) FROM ir_cron_progress"
-            " WHERE cron_id = ANY(%s) GROUP BY cron_id",
-            [records.cron_id.ids],
+            SQL(
+                """
+                SELECT progress.id
+                  FROM ir_cron_progress AS progress
+                 WHERE progress.create_date < %s
+                   AND EXISTS (
+                        SELECT FROM ir_cron_progress AS later
+                         WHERE later.cron_id = progress.cron_id
+                           AND later.id > progress.id
+                   )
+                 ORDER BY progress.id
+                 LIMIT %s
+                """,
+                self.env.cr.now() - PROGRESS_RETENTION_PERIOD,
+                GC_UNLINK_LIMIT,
+            )
         )
-        kept = self.browse(row[0] for row in self.env.cr.fetchall())
-        _debug.logic("gc_progress_latest_kept", kept=len(kept))
-        records -= kept
+        records = self.browse(row[0] for row in self.env.cr.fetchall())
         records.unlink()
+        full_batch = len(records) == GC_UNLINK_LIMIT
         _debug.lifecycle("gc_progress", count=len(records), full_batch=full_batch)
         return len(records), full_batch

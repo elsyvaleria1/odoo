@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict
-from typing import Self
+from typing import Any, Self
 
 from odoo import Command, api, fields, models
 from odoo.api import ValuesType
@@ -11,6 +11,7 @@ _debug = DebugLog(__name__)
 
 PHONE_NOISE_PATTERN = re.compile(r"[\s\\./\(\)\-]")
 
+
 PHONE_TYPES = [
     ("mobile", "Mobile"),
     ("landline", "Landline"),
@@ -18,6 +19,25 @@ PHONE_TYPES = [
     ("whatsapp", "WhatsApp"),
     ("emergency", "Emergency"),
 ]
+
+
+def _many2many_commands(value: Any) -> list:
+    if isinstance(value, models.BaseModel):
+        return [Command.set(value.ids)]
+    if isinstance(value, tuple):
+        return [Command.set(value)]
+    if not value:
+        return []
+    if not any(isinstance(item, (tuple, list, dict)) for item in value):
+        return [Command.set(value)]
+    return [
+        Command.create(item)
+        if isinstance(item, dict)
+        else item
+        if isinstance(item, (tuple, list))
+        else Command.link(item)
+        for item in value
+    ]
 
 
 class PhoneNumber(models.Model):
@@ -158,8 +178,7 @@ class PhoneNumber(models.Model):
     def _get_contact_country_from_vals(self, vals: ValuesType):
         partner_ids = [
             id_
-            for command in (vals.get("partner_ids") or [])
-            if isinstance(command, (list, tuple))
+            for command in _many2many_commands(vals.get("partner_ids"))
             for id_ in (
                 command[2]
                 if command[0] == Command.SET
@@ -175,13 +194,14 @@ class PhoneNumber(models.Model):
         relational = {
             fname: [
                 Command.link(id_)
-                for command in value
+                for command in commands
                 if command[0] == Command.SET
                 for id_ in command[2]
             ]
-            + [command for command in value if command[0] != Command.SET]
+            + [command for command in commands if command[0] != Command.SET]
             for fname, value in vals.items()
-            if self._fields[fname].type == "many2many" and isinstance(value, list)
+            if self._fields[fname].type == "many2many"
+            and (commands := _many2many_commands(value))
         }
         if not self.active:
             relational["active"] = True

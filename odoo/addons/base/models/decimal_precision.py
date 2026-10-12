@@ -59,21 +59,24 @@ class DecimalPrecision(models.Model):
     def create(self, vals_list: list[ValuesType]) -> Self:
         res = super().create(vals_list)
         _debug.lifecycle("create", names=res.mapped("name"))
-        self.env.registry.clear_cache("stable")
+        self._invalidate_precision_readers()
         return res
 
     def write(self, vals: dict[str, Any]) -> bool:
         _debug.lifecycle("write", names=self.mapped("name"), fields=list(vals))
         res = super().write(vals)
-        self.env.registry.clear_cache("stable")
-        self.env["uom.uom"].invalidate_model(["rounding"])
+        self._invalidate_precision_readers()
         return res
 
     def unlink(self) -> bool:
         _debug.lifecycle("unlink", names=self.mapped("name"))
         res = super().unlink()
-        self.env.registry.clear_cache("stable")
+        self._invalidate_precision_readers()
         return res
+
+    def _invalidate_precision_readers(self) -> None:
+        self.env.registry.clear_cache("stable")
+        self.env["uom.uom"].invalidate_model(["rounding"])
 
     @api.onchange("digits")
     def _onchange_digits(self) -> dict[str, Any] | None:

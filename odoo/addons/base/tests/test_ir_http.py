@@ -154,3 +154,23 @@ class TestWebTranslationsHash(TransactionCase):
                     ),
                     IrHttp._get_web_translations_hash(["base"], code),
                 )
+
+
+class TestSlugifyPath(TransactionCase):
+    def test_the_extension_segment_honours_max_length(self):
+        slug = self.env["ir.http"]._slugify(
+            "Dir/" + "b" * 80 + ".css", max_length=20, path=True
+        )
+        self.assertEqual(slug, "dir/" + "b" * 16 + ".css")
+
+    def test_an_extension_longer_than_max_length_is_not_kept(self):
+        self.assertEqual(
+            self.env["ir.http"]._slugify("dir/style.scss", max_length=4, path=True),
+            "dir/styl",
+        )
+
+    def test_without_max_length_the_extension_is_kept_whole(self):
+        self.assertEqual(
+            self.env["ir.http"]._slugify("My Dir/Main Style.css", path=True),
+            "my-dir/main-style.css",
+        )

@@ -7,6 +7,7 @@ from odoo.tools import SQL, remove_accents
 _debug = DebugLog(__name__)
 
 _CODE_SEPARATORS = re.compile(r"[^A-Z0-9]+")
+_CODE_PROBE_WINDOW = 16
 
 
 class MixinTag(models.AbstractModel):
@@ -46,23 +47,23 @@ class MixinTag(models.AbstractModel):
             )
             return
         self.flush_model(["code"])
-        taken = {
-            code
-            for [code] in self.env.execute_query(
-                SQL(
-                    "SELECT code FROM %s WHERE code IS NOT NULL",
-                    SQL.identifier(self._table),
-                )
-            )
-        }
+        bases = [self._name_to_code(tag.name) or "TAG" for tag in pending]
+        taken: set[str] = set()
+        probed: dict[str, int] = {}
+        self._probe_codes(taken, probed, dict.fromkeys(bases, _CODE_PROBE_WINDOW))
         suffixed = 0
-        for tag in pending:
-            base = self._name_to_code(tag.name) or "TAG"
-            candidate, suffix = base, 1
-            while candidate in taken:
+        for tag, base in zip(pending, bases, strict=True):
+            suffix = 1
+            while True:
+                if suffix > probed[base]:
+                    self._probe_codes(
+                        taken, probed, {base: suffix + _CODE_PROBE_WINDOW - 1}
+                    )
+                candidate = base if suffix == 1 else f"{base}_{suffix}"
+                if candidate not in taken:
+                    break
                 suffix += 1
-                candidate = f"{base}_{suffix}"
-            suffixed += candidate != base
+            suffixed += suffix > 1
             taken.add(candidate)
             tag.code = candidate
         _debug.logic(
@@ -72,6 +73,26 @@ class MixinTag(models.AbstractModel):
             taken=len(taken),
             suffixed=suffixed,
         )
+
+    def _probe_codes(
+        self, taken: set[str], probed: dict[str, int], upto: dict[str, int]
+    ) -> None:
+        candidates = [
+            base if suffix == 1 else f"{base}_{suffix}"
+            for base, last in upto.items()
+            for suffix in range(probed.get(base, 0) + 1, last + 1)
+        ]
+        taken.update(
+            code
+            for [code] in self.env.execute_query(
+                SQL(
+                    "SELECT code FROM %s WHERE code = ANY(%s)",
+                    SQL.identifier(self._table),
+                    candidates,
+                )
+            )
+        )
+        probed.update(upto)
 
     @api.model
     def _name_to_code(self, name):

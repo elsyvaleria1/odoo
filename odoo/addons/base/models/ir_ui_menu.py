@@ -447,6 +447,7 @@ class IrUiMenu(models.Model):
         "self.env.access_signature",
         "self.env.lang",
         "bool(self._get_session_debug())",
+        "frozenset(self._get_blacklisted_menu_ids())",
     )
     def load_menus_root(self) -> dict[str, Any]:
         self = self.sudo(False)

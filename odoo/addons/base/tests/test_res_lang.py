@@ -1,5 +1,6 @@
 import contextlib
 import locale
+from unittest.mock import patch
 
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.locale import format_number
@@ -129,6 +130,19 @@ class test_res_lang(TransactionCase):
             lang.grouping,
             {v for v, _label in lang._fields["grouping"].selection},
         )
+
+    @mute_logger("odoo.addons.base.models.res_lang")
+    def test_create_lang_fits_locale_formats_the_selections_refuse(self):
+        formats = {locale.D_FMT: "%A, %B %d, %Y", locale.T_FMT: "%I:%M:%S %p %Z"}
+        conventions = {"grouping": [4, 0], "decimal_point": ".", "thousands_sep": ","}
+        with (
+            patch.object(locale, "nl_langinfo", formats.__getitem__),
+            patch.object(locale, "localeconv", lambda: conventions),
+        ):
+            lang = self.env["res.lang"]._create_lang("xx_XX", "Locale Fit Test")
+        self.assertEqual(lang.time_format, "%I:%M:%S %p")
+        self.assertEqual(lang.date_format, "%A, %B %d, %Y")
+        self.assertEqual(lang.grouping, "[3,0]")
 
     @mute_logger("odoo.addons.base.models.res_lang")
     def test_create_lang_without_a_system_locale_keeps_defaults(self):

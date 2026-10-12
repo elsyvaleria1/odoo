@@ -4,7 +4,7 @@ import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 from dateutil.relativedelta import relativedelta
 
@@ -106,6 +106,11 @@ class LinkResolution:
 
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _expiry_label(date_to: datetime | str | Literal[False] | None) -> str:
+    moment = fields.Datetime.to_datetime(date_to)
+    return fields.Datetime.to_string(moment) if moment else ""
 
 
 class AccessLink(models.Model):
@@ -450,6 +455,7 @@ class AccessLink(models.Model):
         cause: str = "share",
         cause_record: models.BaseModel | None = None,
         date_to: datetime | None = None,
+        waive_expiry: bool = False,
     ) -> tuple[Self, str | None]:
         record.check_singleton()
         self._check_may_issue(record, role)
@@ -477,7 +483,11 @@ class AccessLink(models.Model):
                 & Domain(
                     "dated_by_record", "=", self._is_dated_by_record(record, cause)
                 )
-                & (Domain("date_to", "=", date_to) if date_to else Domain.TRUE)
+                & (
+                    Domain("date_to", "=", date_to or False)
+                    if date_to or waive_expiry
+                    else Domain.TRUE
+                )
                 & self._live_domain(),
                 order="id desc",
             )
@@ -524,6 +534,7 @@ class AccessLink(models.Model):
             cause=cause,
             cause_record=cause_record,
             date_to=date_to,
+            waive_expiry=waive_expiry,
         )
         if token:
             _debug.logic("link.reused", link=reusable.id, model=record._name)
@@ -1014,9 +1025,7 @@ class AccessLink(models.Model):
         )
         links.write(vals)
         if "date_to" in vals:
-            links._log(
-                "link_extended", reason=fields.Datetime.to_string(vals["date_to"])
-            )
+            links._log("link_extended", reason=_expiry_label(vals["date_to"]))
 
     @api.model
     def _sync_record_expiries(self, *recordsets: models.BaseModel) -> None:
@@ -1081,7 +1090,7 @@ class AccessLink(models.Model):
         if by_hand and "date_to" in vals:
             self._log(
                 "link_extended",
-                reason=fields.Datetime.to_string(vals["date_to"]) or "no expiry",
+                reason=_expiry_label(vals["date_to"]) or "no expiry",
             )
         return result
 

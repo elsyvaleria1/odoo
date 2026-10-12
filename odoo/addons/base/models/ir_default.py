@@ -232,7 +232,7 @@ class IrDefault(models.Model):
         try:
             parsed = orm_field.convert_to_cache(value, model)
             stored_value = (
-                orm_field.to_string(value)
+                orm_field.to_string(parsed)
                 if orm_field.type in ("date", "datetime") and isinstance(value, date)
                 else value
             )

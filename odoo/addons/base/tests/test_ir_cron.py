@@ -938,6 +938,27 @@ class TestIrCron(TransactionCase, CronMixinCase):
             self.assertEqual(progress.done, 2)
             self.assertEqual(progress.deactivate, True)
 
+    def test_a_progress_checkpoint_that_changes_nothing_writes_nothing(self):
+        Progress = self.registry["ir.cron.progress"]
+        with self.sync_env_with_side_cursors(), self.registry.cursor() as cr:
+            cron = self.cron.with_env(
+                self.cron.env(cr=cr, context={"cron_id": self.cron.id})
+            )
+            cron, progress = cron._add_progress()
+            cron._commit_progress(processed=2, remaining=5, deactivate=True)
+            with patch.object(
+                Progress, "write", autospec=True, side_effect=Progress.write
+            ) as write:
+                cron._commit_progress()
+                cron._commit_progress(remaining=5)
+                cron._commit_progress(0, deactivate=True)
+                write.assert_not_called()
+                cron._commit_progress(1)
+                write.assert_called_once()
+            self.assertEqual(
+                (progress.done, progress.remaining, progress.deactivate), (3, 4, True)
+            )
+
     def test_cron_deactivate(self):
         def mocked_run(self):
             self.env["ir.cron"]._commit_progress(
@@ -1016,6 +1037,20 @@ class TestIrCron(TransactionCase, CronMixinCase):
             "GC must follow the transaction clock, not the process wall clock",
         )
         self.assertTrue(recent.exists())
+
+    def test_gc_cron_progress_does_not_report_more_when_only_latest_rows_are_old(self):
+        crons = self.env["ir.cron"].create(
+            [self._get_cron_data(self.env) for _ in range(3)]
+        )
+        latest = self.env["ir.cron.progress"].create(
+            [{"cron_id": cron.id, "timed_out_counter": 0} for cron in crons]
+        )
+        self.env.flush_all()
+        db_future = max(latest.mapped("create_date")) + PROGRESS_RETENTION_PERIOD
+        self.patch(self.env.cr, "now", lambda: db_future + timedelta(days=1))
+        with patch("odoo.addons.base.models.ir_cron.GC_UNLINK_LIMIT", 2):
+            self.assertEqual(self.env["ir.cron.progress"]._gc_cron_progress()[1], False)
+        self.assertEqual(latest.exists(), latest)
 
     def test_gc_cron_progress_keeps_the_latest_row_of_each_cron(self):
         other = self.env["ir.cron"].create(self._get_cron_data(self.env))

@@ -1,5 +1,5 @@
 from odoo import Command
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import common, counting_statements
 from odoo.tools import SetDefinitions, SetExpressionError
 
@@ -1671,3 +1671,40 @@ class TestAllGroupIdsSearch(common.TransactionCase):
                 [("all_group_ids", "not any", [("name", "=", "agis implied probe")])]
             ),
         )
+
+
+class TestNoAdministrativeSelfGainThroughImplications(common.TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.manager = common.new_test_user(
+            cls.env,
+            login="implication_manager",
+            groups="base.group_user,base.group_erp_manager",
+        )
+        cls.system = cls.env.ref("base.group_system")
+
+    def _as_manager(self, xmlid):
+        return self.env.ref(xmlid).with_user(self.manager)
+
+    def test_making_a_held_group_imply_system_is_refused(self):
+        for xmlid in ("base.group_user", "base.group_erp_manager"):
+            with self.subTest(group=xmlid), self.assertRaises(AccessError):
+                self._as_manager(xmlid).write(
+                    {"implied_ids": [Command.link(self.system.id)]}
+                )
+        self.assertFalse(self.manager.has_group("base.group_system"))
+
+    def test_a_feature_group_may_still_be_implied(self):
+        feature = self.env["res.groups"].create({"name": "Implication feature"})
+        self._as_manager("base.group_user").write(
+            {"implied_ids": [Command.link(feature.id)]}
+        )
+        self.assertIn(feature, self.manager.all_group_ids)
+
+    def test_a_group_the_editor_does_not_hold_may_imply_system(self):
+        other = self.env["res.groups"].create({"name": "Implication other"})
+        other.with_user(self.manager).write(
+            {"implied_ids": [Command.link(self.system.id)]}
+        )
+        self.assertIn(self.system, other.implied_ids)

@@ -117,6 +117,13 @@ class TestTagTag(TransactionCase):
         self.assertEqual(first.display_name, "Secondtag / Firstag")
         self.assertEqual(second.display_name, "Firstag / Secondtag")
 
+    def test_display_name_of_an_edited_tag_follows_the_edit(self):
+        draft = self.leaf.new(origin=self.leaf)
+        draft.parent_id = self.other
+        self.assertEqual(draft.display_name, "Loosetag / Leaftag")
+        draft.name = "Renamed"
+        self.assertEqual(draft.display_name, "Loosetag / Renamed")
+
     def test_display_name_newid_without_parent(self):
         self.assertEqual(self.env["tag.tag"].new({"name": "Solo"}).display_name, "Solo")
 

@@ -2238,8 +2238,12 @@ class IrQweb(models.AbstractModel):
         urls = [vals["url"] for vals in vals_list if vals.get("url")]
         if not urls:
             return vals_list
-        cr.execute("SELECT url FROM ir_attachment WHERE url = ANY(%s)", (urls,))
-        present = {row[0] for row in cr.fetchall()}
+        IrAttachment = api.Environment(cr, SUPERUSER_ID, {})["ir.attachment"]
+        present = set(
+            IrAttachment.search_fetch(
+                IrAttachment._get_domain_generated_assets(urls=urls), ["url"]
+            ).mapped("url")
+        )
         _debug.perf.count("esm_rows_present", checked=len(urls), present=len(present))
         return [vals for vals in vals_list if vals.get("url") not in present]
 

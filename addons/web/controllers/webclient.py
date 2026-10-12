@@ -33,11 +33,14 @@ class WebClient(http.Controller):
             client_hash=(hash or "")[:12] or None,
             explicit_mods=bool(mods),
         )
-        module_names = (
-            mods.split(",")
-            if mods
-            else request.env["ir.http"]._get_webclient_translation_modules()[0]
+        module_sets = request.env["ir.http"]._get_webclient_translation_modules()
+        requested = sorted(set(mods.split(","))) if mods else None
+        matched = next(
+            (modules for modules in module_sets if sorted(modules) == requested), None
         )
+        if requested is not None and matched is None:
+            _debug.logic("translations_mods_ignored", requested=len(requested))
+        module_names = matched or module_sets[0]
 
         installed_langs = request.env["res.lang"].sudo().get_installed()
         if lang and lang not in {code for code, _ in installed_langs}:

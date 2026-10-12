@@ -9,8 +9,8 @@ Quick reference for running targeted subsets of `addons/web/tests/`.
 
 | Tag | Type | Tests | Time |
 |-----|------|-------|------|
-| `web_unit` | TransactionCase (pure Python) | 478 tests | ~45s |
-| `web_http` | HttpCase (url_open, no browser) | 200 tests | ~5 min |
+| `web_unit` | TransactionCase (pure Python) | 483 tests | ~45s |
+| `web_http` | HttpCase (url_open, no browser) | 203 tests | ~5 min |
 | `web_tour` | HttpCase (start_tour/browser_js) | 7 tests | ~2 min |
 | `web_js` | Full JS suites (HOOT) | 40 tests | ~1-2 hr † |
 | `addon_js` | HOOT suites of addons with no runner of their own | 225 tests | depends on the DB's module set |

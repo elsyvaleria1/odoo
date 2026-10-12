@@ -115,8 +115,13 @@ class IrHttp(models.AbstractModel):
                     res.append(s)
             p = Path(value)
             ext = p.suffix
-            if ext in EXTENSION_TO_WEB_MIMETYPES and res:
-                res[-1] = cls._slugify_one(p.stem) + ext
+            stem_length = None if max_length is None else max_length - len(ext)
+            if (
+                ext in EXTENSION_TO_WEB_MIMETYPES
+                and res
+                and (stem_length is None or stem_length > 0)
+            ):
+                res[-1] = cls._slugify_one(p.stem, max_length=stem_length) + ext
                 _debug.logic("slug_extension_kept", ext=ext, segments=len(res))
             return "/".join(res)
 

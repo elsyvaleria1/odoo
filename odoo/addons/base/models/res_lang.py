@@ -271,7 +271,7 @@ class ResLang(models.Model):
             format = format.replace("%-", "%")
             for pattern, replacement in tools.misc.DATETIME_FORMATS_MAP.items():
                 format = format.replace(pattern, replacement)
-            return str(format)
+            return str(format).strip()
 
         with _LOCALE_LOCK:
             try:
@@ -290,13 +290,11 @@ class ResLang(models.Model):
 
                 conv = locale.localeconv()
                 grouping = str(conv.get("grouping") or "[3,0]").replace(" ", "")
-                grouping_options = {v for v, _ in self._fields["grouping"].selection}
                 _debug.logic(
                     "locale_resolved",
                     code=lang,
                     locale_found=not fail,
                     grouping=grouping,
-                    grouping_known=grouping in grouping_options,
                 )
                 lang_info = {
                     "code": lang,
@@ -306,17 +304,25 @@ class ResLang(models.Model):
                     "date_format": fix_datetime_format(
                         locale.nl_langinfo(locale.D_FMT)
                     ),
-                    "time_format": fix_datetime_format(
-                        locale.nl_langinfo(locale.T_FMT)
+                    "time_format": self._fit_selection(
+                        "time_format",
+                        fix_datetime_format(locale.nl_langinfo(locale.T_FMT)),
                     ),
                     "decimal_point": str(conv["decimal_point"]),
                     "thousands_sep": str(conv["thousands_sep"]),
-                    "grouping": grouping if grouping in grouping_options else "[3,0]",
+                    "grouping": self._fit_selection("grouping", grouping),
                 }
             finally:
                 resetlocale()
         _debug.lifecycle("lang_created_from_locale", code=lang, iso=iso_lang)
         return self.create(lang_info)
+
+    def _fit_selection(self, fname: str, value: str) -> str:
+        field = self._fields[fname]
+        if value in field.get_values(self.env):
+            return value
+        _debug.logic("locale_value_unsupported", field=fname, value=value)
+        return field.default(self)
 
     @api.model
     def install_lang(self) -> bool:

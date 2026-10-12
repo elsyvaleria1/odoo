@@ -110,28 +110,32 @@ class LoginCooldown:
         device: MarkedDevice | None = None,
     ) -> None:
         now = fields.Datetime.now()
+        horizon = now - max(delay, _FORGET_AFTER)
         with self.registry.cursor() as cr:
             cr.use_read_committed()
             cr.execute(
                 SQL(
                     """
                     INSERT INTO res_users_login_cooldown (source, failures, last_failure)
-                    SELECT source, 1, %s FROM unnest(%s::varchar[]) AS source
+                    SELECT source, 1, %(now)s FROM unnest(%(sources)s::varchar[]) AS source
                     ORDER BY source
                     ON CONFLICT (source) DO UPDATE
-                    SET failures = res_users_login_cooldown.failures + 1,
+                    SET failures = CASE
+                            WHEN res_users_login_cooldown.last_failure < %(horizon)s THEN 1
+                            ELSE res_users_login_cooldown.failures + 1
+                        END,
                         last_failure = EXCLUDED.last_failure
                     RETURNING source, failures
                     """,
-                    now,
-                    sources,
+                    now=now,
+                    sources=sources,
+                    horizon=horizon,
                 )
             )
             counts = dict(cr.fetchall())
             _debug.lifecycle("cooldown_failure_counted", counts=counts)
             if device is not None and counts.get(device.source, 0) >= device.budget:
                 device.retire(cr)
-            horizon = now - max(delay, _FORGET_AFTER)
             expired = self._rows(cr).search([("last_failure", "<", horizon)])
             _debug.lifecycle("cooldown_rows_expired", count=len(expired))
             expired.unlink()
