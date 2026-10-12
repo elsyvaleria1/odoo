@@ -93,8 +93,6 @@ _SLOW_MS = _env_float(SLOW_MS_VAR)
 _WATCH_NPLUSONE = _env_flag(NPLUSONE_VAR) or _SLOW_MS is not None
 
 
-
-
 def _render_ids(ids: Iterable[Any]) -> str:
     shown = list(ids)[: _MAX_IDS + 1]
     if len(shown) > _MAX_IDS:
@@ -143,10 +141,7 @@ def _line(event: str, fields: Mapping[str, Any]) -> str:
     return f"{event} {rendered}"
 
 
-
-
-class _OffSpan(dict):
-
+class _OffSpan(dict[str, Any]):
     def __setitem__(self, key: Any, value: Any) -> None:
         pass
 
@@ -155,7 +150,6 @@ _OFF_SPAN = _OffSpan()
 
 
 class Target:
-
     __slots__ = ("_items_logger", "_logger", "name")
 
     def __init__(self, name: str) -> None:
@@ -224,7 +218,6 @@ class Target:
                     ),
                 )
             _report_outliers(event, elapsed_ms, spanned)
-
 
 
 ACCESS = Target("access")
@@ -304,8 +297,6 @@ def _quiet_by_default() -> None:
 _quiet_by_default()
 
 
-
-
 def accounting() -> bool:
     return _SLOW_MS is not None or _WATCH_NPLUSONE or PERF.on()
 
@@ -349,7 +340,6 @@ def _report_outliers(
 
 
 class LedgerRow(NamedTuple):
-
     call: str
     calls: int
     total_ms: float
@@ -410,7 +400,6 @@ def dump_perf_ledger(reset: bool = True, top: int | None = None) -> None:
 
 def forget_perf_ledger() -> None:
     _perf.clear()
-
 
 
 CALL_TRACES: dict[str, dict[str, str]] = {
@@ -610,7 +599,9 @@ CALL_TRACES: dict[str, dict[str, str]] = {
 }
 
 
-def _traced(target: Target, event: str, origin: Any, on_vals: bool = False) -> Any:
+def _traced(
+    target: Target, event: str, origin: Callable[..., Any], on_vals: bool = False
+) -> Callable[..., Any]:
     @wraps(origin)
     def traced(self, *args: Any, **kwargs: Any) -> Any:
         if not (target.on() or accounting()):

@@ -1,15 +1,18 @@
 import logging
 from collections import Counter
-from typing import TYPE_CHECKING, Any, NamedTuple, Self
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
 
 from odoo import SUPERUSER_ID, api, fields, models
-from odoo.api import ValuesType
+from odoo.api import DomainType, ValuesType
 from odoo.fields import Domain
 
 from . import approval_trace as trace
 from .approval_utils import boolean_search_domain, is_approval_manager
 
 if TYPE_CHECKING:
+    from .approval_approver import ApprovalApprover
+    from .approval_category_step import ApprovalCategoryStep
+    from .res_users import ResUsers
     from odoo.addons.mail.models.mail_message_subtype import MailMessageSubtype
 
 _logger = logging.getLogger(__name__)
@@ -533,7 +536,7 @@ class ApprovalRequest(models.Model):
         for partner_id, request_ids in by_partner.items():
             self.browse(request_ids).message_subscribe(partner_ids=[partner_id])
 
-    def write(self, vals: dict[str, Any]) -> bool:
+    def write(self, vals: ValuesType) -> Literal[True]:
         self._check_access_write()
 
         self._check_no_forged_computed_fields(vals)
@@ -589,7 +592,7 @@ class ApprovalRequest(models.Model):
             )
         return new_records
 
-    def unlink(self) -> bool:
+    def unlink(self) -> Literal[True]:
         self._check_access_unlink()
         self._check_business_rules_unlink()
         trace.CRUD.note("unlink", requests=self.ids, uid=self.env.uid)
@@ -698,7 +701,7 @@ class ApprovalRequest(models.Model):
                 **outcomes,
             )
 
-    def _get_routed_step(self, step) -> RoutedStep:
+    def _get_routed_step(self, step: ApprovalCategoryStep) -> RoutedStep:
         self.check_singleton()
         for entry in (self.category_snapshot or {}).get("steps", ()):
             if entry.get("id") == step.id:
@@ -711,7 +714,7 @@ class ApprovalRequest(models.Model):
                 )
         return self._get_live_step(step)
 
-    def _get_live_step(self, step) -> RoutedStep:
+    def _get_live_step(self, step: ApprovalCategoryStep) -> RoutedStep:
         self.check_singleton()
         required = set(step.member_ids.filtered("required").user_id.ids)
         if step.subject_user_required:
@@ -726,7 +729,9 @@ class ApprovalRequest(models.Model):
             frozenset(required),
         )
 
-    def _sort_routed_steps(self, steps, exclusive_first: bool = False):
+    def _sort_routed_steps(
+        self, steps: ApprovalCategoryStep, exclusive_first: bool = False
+    ) -> ApprovalCategoryStep:
         self.check_singleton()
         if exclusive_first:
             return steps.sorted(
@@ -883,7 +888,7 @@ class ApprovalRequest(models.Model):
 
             approval_threshold = request.approval_minimum
 
-            state_counts = Counter(state_lst)
+            state_counts: Counter[str] = Counter(state_lst)
 
             if request._get_deciding_refusals():
                 request.state = "refused"
@@ -909,7 +914,7 @@ class ApprovalRequest(models.Model):
                     else None,
                 )
 
-    def _get_deciding_refusals(self):
+    def _get_deciding_refusals(self) -> ApprovalApprover:
         self.check_singleton()
         refused = self.approver_ids.filtered(
             lambda approver: approver.state == "refused"
@@ -925,7 +930,9 @@ class ApprovalRequest(models.Model):
             )
         return deciding
 
-    def _is_quorum_met(self, state_counts, approval_threshold: int) -> bool:
+    def _is_quorum_met(
+        self, state_counts: Counter[str], approval_threshold: int
+    ) -> bool:
         self.check_singleton()
         if self.approver_ids.step_ids:
             blocking = self._get_blocking_unmet_steps()
@@ -965,8 +972,10 @@ class ApprovalRequest(models.Model):
             return None
         rows = self.approver_ids.filtered(lambda row: row.state != "refused")
 
-        def short(name, minimum, quorum_rows):
-            def count(delegated):
+        def short(
+            name: str, minimum: int, quorum_rows: ApprovalApprover
+        ) -> dict[str, Any] | None:
+            def count(delegated: bool) -> int:
                 return len(
                     {
                         row._get_decider_key()
@@ -1009,12 +1018,12 @@ class ApprovalRequest(models.Model):
             for step_id, approvers in self._get_step_assignment().items()
         }
 
-    def _get_step_assignment(self) -> dict[int, Any]:
+    def _get_step_assignment(self) -> dict[int, ApprovalApprover]:
         self.check_singleton()
         steps = self._sort_routed_steps(self.approver_ids.step_ids)
         routed = {step.id: self._get_routed_step(step) for step in steps}
         assigned = {step.id: self.env["approval.approver"] for step in steps}
-        deciders = {step.id: set() for step in steps}
+        deciders: dict[int, set[tuple[str, int]]] = {step.id: set() for step in steps}
         approved = self.approver_ids.filtered(
             lambda approver: approver.state == "approved" and approver.decided_step_ids,
         ).sorted(lambda approver: (approver.sequence, approver.id))
@@ -1043,7 +1052,7 @@ class ApprovalRequest(models.Model):
             )
         return assigned
 
-    def _get_unmet_steps(self):
+    def _get_unmet_steps(self) -> ApprovalCategoryStep:
         self.check_singleton()
         counts = self._get_step_counts()
         return self.approver_ids.step_ids.filtered(
@@ -1053,7 +1062,9 @@ class ApprovalRequest(models.Model):
             ),
         )
 
-    def _get_step_required_rows_pending(self, step):
+    def _get_step_required_rows_pending(
+        self, step: ApprovalCategoryStep
+    ) -> ApprovalApprover:
         self.check_singleton()
         required = self._get_routed_step(step).required_user_ids
         if not required:
@@ -1066,13 +1077,13 @@ class ApprovalRequest(models.Model):
             )
         )
 
-    def _get_blocking_unmet_steps(self):
+    def _get_blocking_unmet_steps(self) -> ApprovalCategoryStep:
         self.check_singleton()
         return self._get_unmet_steps().filtered(
             lambda step: not self._get_routed_step(step).advisory
         )
 
-    def _get_step_turn_row(self, step):
+    def _get_step_turn_row(self, step: ApprovalCategoryStep) -> ApprovalApprover:
         self.check_singleton()
         named = step.sudo()._get_source_user_ids(self.get_source_document(), self)
         member_sequence = dict.fromkeys(named, step.subject_user_sequence)
@@ -1090,7 +1101,7 @@ class ApprovalRequest(models.Model):
         )
         return turn
 
-    def _get_rows_out_of_turn(self, rows):
+    def _get_rows_out_of_turn(self, rows: ApprovalApprover) -> ApprovalApprover:
         self.check_singleton()
         return rows.filtered(
             lambda row: (
@@ -1122,11 +1133,11 @@ class ApprovalRequest(models.Model):
                 to_open.sudo().write({"flow_state": "pending"})
                 to_open._create_activity()
 
-    def _is_row_turn(self, row, step) -> bool:
+    def _is_row_turn(self, row: ApprovalApprover, step: ApprovalCategoryStep) -> bool:
         self.check_singleton()
         return not step.in_order or self._get_step_turn_row(step) == row
 
-    def _get_open_steps(self):
+    def _get_open_steps(self) -> ApprovalCategoryStep:
         self.check_singleton()
         unmet = self._get_unmet_steps()
         blocking = unmet.filtered(lambda step: not self._get_routed_step(step).advisory)
@@ -1202,10 +1213,10 @@ class ApprovalRequest(models.Model):
         self.check_singleton()
         return self.name or self.category_id.name
 
-    def get_source_document(self) -> Any:
+    def get_source_document(self) -> models.BaseModel | None:
         self.check_singleton()
         if not self.res_model:
-            return False
+            return None
         try:
             if self.res_id:
                 return self.env[self.res_model].browse(self.res_id)
@@ -1217,9 +1228,9 @@ class ApprovalRequest(models.Model):
                 self.res_model,
                 self.id,
             )
-            return False
+            return None
 
-    def _as_owner(self, record):
+    def _as_owner[M: models.BaseModel](self, record: M) -> M:
         self.check_singleton()
         owner = self.request_owner_id
         acting = record.with_user(owner).with_context(
@@ -1248,7 +1259,9 @@ class ApprovalRequest(models.Model):
         return res
 
     @api.model
-    def _get_domain_pending_review(self, user: models.BaseModel) -> list:
+    def _get_domain_pending_review(
+        self, user: ResUsers
+    ) -> list[str | tuple[str, str, Any]]:
         return [
             ("state", "=", "pending"),
             "|",
@@ -1273,7 +1286,7 @@ class ApprovalRequest(models.Model):
         ]
 
     @api.model
-    def _search_is_pending_my_review(self, operator: str, value: Any) -> Domain:
+    def _search_is_pending_my_review(self, operator: str, value: Any) -> DomainType:
         awaiting = Domain(self._get_domain_pending_review(self.env.user))
         return boolean_search_domain(operator, value, awaiting, ~awaiting)
 

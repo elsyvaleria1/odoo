@@ -1,15 +1,25 @@
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, models
+from odoo.api import ValuesType
 
 from . import approval_trace as trace
+
+if TYPE_CHECKING:
+    from .approval_category import ApprovalCategory
+    from odoo.addons.base.models.ir_model import IrModel
 
 
 class ApprovalBinding(models.Model):
     _inherit = "approval.binding"
 
     @api.model
-    def create_step_for_button(self, model: str, method=False, action_id=False) -> int:
+    def create_step_for_button(
+        self,
+        model: str,
+        method: str | Literal[False] = False,
+        action_id: int | str | Literal[False] = False,
+    ) -> int:
         binding = self._get_or_create_binding_for_button(model, method, action_id)
         category = binding.category_id
         steps = category.step_ids
@@ -36,7 +46,10 @@ class ApprovalBinding(models.Model):
         return step.id
 
     def action_open_button_steps(
-        self, model: str, method=False, action_id=False
+        self,
+        model: str,
+        method: str | Literal[False] = False,
+        action_id: int | str | Literal[False] = False,
     ) -> dict[str, Any]:
         binding = self._get_or_create_binding_for_button(model, method, action_id)
         return {
@@ -53,8 +66,13 @@ class ApprovalBinding(models.Model):
         }
 
     @api.model
-    def _get_or_create_binding_for_button(self, model: str, method, action_id) -> Self:
-        action = False if method else self._parse_button_action(action_id)
+    def _get_or_create_binding_for_button(
+        self,
+        model: str,
+        method: str | Literal[False],
+        action_id: int | str | Literal[False],
+    ) -> Self:
+        action = None if method else self._parse_button_action(action_id)
         binding = self.with_context(active_test=False).search(
             [
                 ("model_name", "=", model),
@@ -75,7 +93,7 @@ class ApprovalBinding(models.Model):
             mode=binding.mode,
             active=binding.active,
         )
-        vals = {"active": True}
+        vals: ValuesType = {"active": True}
         if binding.mode == "advise":
             vals.update(mode="request", approve_on_invoke=True, run_on_approval=False)
         if not binding.category_id:
@@ -86,12 +104,17 @@ class ApprovalBinding(models.Model):
         return binding
 
     @api.model
-    def _create_binding_for_button(self, model: str, method, action_id) -> Self:
+    def _create_binding_for_button(
+        self,
+        model: str,
+        method: str | Literal[False],
+        action_id: int | str | Literal[False],
+    ) -> Self:
         trace.EDITOR.note(
             "binding_created", model=model, method=method or None, action=action_id
         )
         ir_model = self.env["ir.model"]._get(model)
-        action = False if method else self._parse_button_action(action_id)
+        action = None if method else self._parse_button_action(action_id)
         operation = method or self.env["ir.actions.actions"].browse(action).name
         return self.create(
             {
@@ -106,7 +129,9 @@ class ApprovalBinding(models.Model):
         )
 
     @api.model
-    def _create_button_category(self, ir_model, operation: str):
+    def _create_button_category(
+        self, ir_model: IrModel, operation: str
+    ) -> ApprovalCategory:
         return self.env["approval.category"].create(
             {
                 "name": self.env._(

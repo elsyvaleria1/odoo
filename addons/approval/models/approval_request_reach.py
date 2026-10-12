@@ -1,5 +1,13 @@
+from typing import TYPE_CHECKING, Literal, Self
+
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.fields import Domain
+
+if TYPE_CHECKING:
+    from odoo.api import Environment
+
+    from .res_users import ResUsers
 
 
 class ApprovalRequest(models.Model):
@@ -43,7 +51,7 @@ DECIDER_SYNC = "approval.decider_sync"
 DECIDER_CAUSES = ("approval_step", "approval_delegation", "migration")
 
 
-def _sync_decider_grants(env, users) -> None:
+def _sync_decider_grants(env: Environment, users: ResUsers) -> None:
     if not users:
         return
     pending = env.cr.precommit.data.setdefault_set(DECIDER_SYNC)
@@ -52,7 +60,7 @@ def _sync_decider_grants(env, users) -> None:
     pending.update(users.ids)
 
 
-def _flush_decider_sync(env) -> None:
+def _flush_decider_sync(env: Environment) -> None:
     user_ids = sorted(env.cr.precommit.data.pop(DECIDER_SYNC, set()))
     env["res.users.grant"].sudo()._sync_decider_grants(
         env["res.users"].sudo().browse(user_ids).exists()
@@ -71,7 +79,7 @@ class ResUsersGrant(models.Model):
     )
 
     @api.model
-    def _sync_decider_grants(self, users) -> None:
+    def _sync_decider_grants(self, users: ResUsers) -> None:
         group = self.env.ref("approval.group_approval_decider")
         today = fields.Date.context_today(self)
         members = (
@@ -139,7 +147,7 @@ class ApprovalApprover(models.Model):
 
     _delegate_idx = models.Index("(delegate_id) WHERE delegate_id IS NOT NULL")
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         delegation = not self._DELEGATION_ONLY_FIELDS.isdisjoint(vals)
         before = self.delegate_id if delegation else self.env["res.users"]
         result = super().write(vals)
@@ -152,12 +160,12 @@ class ApprovalCategoryStepMember(models.Model):
     _inherit = "approval.category.step.member"
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         members = super().create(vals_list)
         _sync_decider_grants(self.env, members.user_id)
         return members
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         reach = not {"user_id", "date_end"}.isdisjoint(vals)
         before = self.user_id if reach else self.env["res.users"]
         result = super().write(vals)
@@ -165,7 +173,7 @@ class ApprovalCategoryStepMember(models.Model):
             _sync_decider_grants(self.env, before | self.user_id)
         return result
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         users = self.user_id
         result = super().unlink()
         _sync_decider_grants(self.env, users)

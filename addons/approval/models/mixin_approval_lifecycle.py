@@ -6,12 +6,12 @@ class MixinApprovalLifecycle(models.AbstractModel):
     _inherit = ["mixin.approval.gate", "mixin.lifecycle"]
     _description = "Lifecycle Confirmed Through Approval"
 
-    def _check_before_approval(self, verb):
+    def _check_before_approval(self, verb: str) -> None:
         super()._check_before_approval(verb)
         if verb == "confirm":
             self._check_confirm_allowed()
 
-    def _is_operation_run_on_approval(self, operation) -> bool:
+    def _is_operation_run_on_approval(self, operation: str) -> bool:
         self.check_singleton()
         return self.state == "draft"
 

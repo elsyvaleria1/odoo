@@ -5,15 +5,19 @@ import inspect
 import logging
 from collections.abc import Callable
 from contextlib import nullcontext
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import SUPERUSER_ID, api, fields, models
-from odoo.api import MODULE_UNINSTALL_FLAG
+from odoo.api import MODULE_UNINSTALL_FLAG, ValuesType
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import ormcache
 
 from . import approval_trace as trace
 from .approval_utils import RAISE_ADMISSION
+
+if TYPE_CHECKING:
+    from .approval_request import ApprovalRequest
+    from .mixin_approval_gate import MixinApprovalGate
 
 _logger = logging.getLogger(__name__)
 
@@ -250,7 +254,6 @@ class ApprovalBinding(models.Model):
     def _domain_source_field(self) -> str:
         return "subject_domain"
 
-
     @api.constrains(
         "model_id",
         "method",
@@ -426,7 +429,7 @@ class ApprovalBinding(models.Model):
                     ),
                 )
 
-    def _check_move_decides(self, model) -> None:
+    def _check_move_decides(self, model: models.BaseModel) -> None:
         self.check_singleton()
         verb = self.env.registry.model_verbs.get(model._name, {}).get(self.verb or "")
         synced = isinstance(model, self.env.registry["mixin.approval.state.sync"])
@@ -453,7 +456,7 @@ class ApprovalBinding(models.Model):
                 ),
             )
 
-    def _check_verb_declared(self, model) -> None:
+    def _check_verb_declared(self, model: models.BaseModel) -> None:
         self.check_singleton()
         verb = self.env.registry.model_verbs.get(model._name, {}).get(self.verb)
         if verb is None:
@@ -494,7 +497,7 @@ class ApprovalBinding(models.Model):
         {"model_id", "method", "verb", "action_id", "mode", "subject_domain"}
     )
 
-    def _check_model_bindable(self, model) -> None:
+    def _check_model_bindable(self, model: models.BaseModel) -> None:
         self.check_singleton()
         if model._original_module == "approval":
             trace.REFUSAL.event(
@@ -536,7 +539,7 @@ class ApprovalBinding(models.Model):
                 ),
             )
 
-    def _check_method_available(self, model) -> None:
+    def _check_method_available(self, model: models.BaseModel) -> None:
         self.check_singleton()
         if self.method in AUTOMATION_CLAIMED_METHODS:
             trace.REFUSAL.event(
@@ -636,7 +639,7 @@ class ApprovalBinding(models.Model):
                     ),
                 )
 
-    def _check_method_replayable(self, model) -> None:
+    def _check_method_replayable(self, model: models.BaseModel) -> None:
         self.check_singleton()
         method = self._get_method_name()
         function = getattr(model, method)
@@ -714,7 +717,7 @@ class ApprovalBinding(models.Model):
             )
         return anyone
 
-    def _get_selected(self, records):
+    def _get_selected(self, records: models.BaseModel) -> models.BaseModel:
         self.check_singleton()
         if self.mode != "advise" and not self._has_anyone_to_ask():
             return records.browse()
@@ -744,7 +747,7 @@ class ApprovalBinding(models.Model):
         )
         return selected
 
-    def _get_covered_ids(self, records) -> set[int]:
+    def _get_covered_ids(self, records: models.BaseModel) -> set[int]:
         self.check_singleton()
         if not records:
             return set()
@@ -781,7 +784,7 @@ class ApprovalBinding(models.Model):
             covered.add(record.id)
         return covered
 
-    def _get_snapshot(self, record) -> dict:
+    def _get_snapshot(self, record: models.BaseModel) -> dict[str, Any]:
         self.check_singleton()
         if not self.subject_domain:
             return {}
@@ -804,7 +807,7 @@ class ApprovalBinding(models.Model):
         }
 
     @api.model
-    def _get_snapshot_value(self, value):
+    def _get_snapshot_value(self, value: Any) -> Any:
         if isinstance(value, models.BaseModel):
             return sorted(value.ids)
         if isinstance(value, (list, tuple)):
@@ -814,8 +817,8 @@ class ApprovalBinding(models.Model):
         return value
 
     def _prepare_observation_vals(
-        self, record, elevation: str, would_block: bool
-    ) -> dict:
+        self, record: models.BaseModel, elevation: str, would_block: bool
+    ) -> ValuesType:
         self.check_singleton()
         return {
             "binding_id": self.id,
@@ -829,10 +832,10 @@ class ApprovalBinding(models.Model):
 
     def _enforce(
         self,
-        record,
+        record: models.BaseModel,
         elevation: str,
-        observations: list,
-        covered_ids,
+        observations: list[ValuesType],
+        covered_ids: set[int],
         asking: bool = False,
     ) -> bool:
         self.check_singleton()
@@ -891,7 +894,9 @@ class ApprovalBinding(models.Model):
         )
         return True
 
-    def _get_latest_requests(self, records) -> dict[int, Any]:
+    def _get_latest_requests(
+        self, records: models.BaseModel
+    ) -> dict[int, ApprovalRequest]:
         self.check_singleton()
         if not records:
             return {}
@@ -901,7 +906,7 @@ class ApprovalBinding(models.Model):
                 for record in records.sudo()
                 if record.approval_request_id
             }
-        latest = {}
+        latest: dict[int, ApprovalRequest] = {}
         for request in (
             self.env["approval.request"]
             .sudo()
@@ -917,7 +922,7 @@ class ApprovalBinding(models.Model):
             latest.setdefault(request.res_id, request)
         return latest
 
-    def _raise_requests_for(self, records):
+    def _raise_requests_for(self, records: models.BaseModel) -> ApprovalRequest:
         self.check_singleton()
         Request = self.env["approval.request"]
         requests = Request
@@ -975,7 +980,7 @@ class ApprovalBinding(models.Model):
         )
         return requests
 
-    def _approve_on_invoke(self, requests) -> None:
+    def _approve_on_invoke(self, requests: ApprovalRequest) -> None:
         self.check_singleton()
         user = self.env.user
         for request in requests.filtered(lambda r: r.state == "pending"):
@@ -1006,7 +1011,7 @@ class ApprovalBinding(models.Model):
                     exc,
                 )
 
-    def _mark_invoked_run(self, records) -> None:
+    def _mark_invoked_run(self, records: models.BaseModel) -> None:
         self.check_singleton()
         if not records:
             return
@@ -1040,9 +1045,9 @@ class ApprovalBinding(models.Model):
         )
         consumed.write({"date_binding_replayed": fields.Datetime.now()})
 
-    def _get_requests_action(self, requests):
+    def _get_requests_action(self, requests: ApprovalRequest) -> dict[str, Any] | None:
         if not requests:
-            return False
+            return None
         readable = requests._filtered_access("read")
         if not readable:
             return {
@@ -1057,7 +1062,7 @@ class ApprovalBinding(models.Model):
                 },
             }
         requests = readable
-        action = {
+        action: dict[str, Any] = {
             "type": "ir.actions.act_window",
             "res_model": "approval.request",
             "name": self.env._("Approval Required"),
@@ -1068,7 +1073,7 @@ class ApprovalBinding(models.Model):
             action.update(view_mode="list,form", domain=[("id", "in", requests.ids)])
         return action
 
-    def _replay(self, request) -> None:
+    def _replay(self, request: ApprovalRequest) -> None:
         self.check_singleton()
         owner = request.request_owner_id
         record = request._as_owner(self.env[request.res_model].browse(request.res_id))
@@ -1194,7 +1199,7 @@ class ApprovalBinding(models.Model):
             .ids
         )
 
-    def _run_action_on(self, records):
+    def _run_action_on(self, records: models.BaseModel) -> dict[str, Any] | bool:
         self.check_singleton()
         action = records.env["ir.actions.server"].browse(self.action_id.id)
         trace.BINDING.note(
@@ -1206,15 +1211,14 @@ class ApprovalBinding(models.Model):
             active_id=records[:1].id,
         ).run()
 
-
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         bindings = super().create(vals_list)
         bindings._check_gate_left_to_system()
         bindings._apply_to_registry()
         return bindings
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         self._check_move_decides_kept(vals)
         if {"model_id", "method", "verb", "action_id"} & vals.keys():
             self._check_target_unchanged_once_requested(vals)
@@ -1227,7 +1231,7 @@ class ApprovalBinding(models.Model):
         self._apply_to_registry()
         return result
 
-    def _check_target_unchanged_once_requested(self, vals) -> None:
+    def _check_target_unchanged_once_requested(self, vals: ValuesType) -> None:
         requested = (
             self.env["approval.request"]
             .sudo()
@@ -1258,7 +1262,7 @@ class ApprovalBinding(models.Model):
                     ),
                 )
 
-    def _check_move_decides_kept(self, vals=None) -> None:
+    def _check_move_decides_kept(self, vals: ValuesType | None = None) -> None:
         if self.env.context.get(MODULE_UNINSTALL_FLAG):
             return
         frozen = ("mode", "active", "verb", "model_id")
@@ -1280,13 +1284,15 @@ class ApprovalBinding(models.Model):
                 ),
             )
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         self._check_move_decides_kept()
         result = super().unlink()
         self.env.registry.clear_cache()
         return result
 
-    def _get_requests_holding_decisions(self, records):
+    def _get_requests_holding_decisions(
+        self, records: models.BaseModel
+    ) -> ApprovalRequest:
         self.check_singleton()
         waiting = (
             self.env["approval.request"]
@@ -1315,7 +1321,7 @@ class ApprovalBinding(models.Model):
         )
         return covering | waiting
 
-    def _get_covering_requests(self, records):
+    def _get_covering_requests(self, records: models.BaseModel) -> ApprovalRequest:
         self.check_singleton()
         if "approval_request_id" in records._fields:
             return records.sudo().approval_request_id.filtered(
@@ -1341,7 +1347,7 @@ class ApprovalBinding(models.Model):
             )
         )
 
-    def _reset_coverage(self, records) -> None:
+    def _reset_coverage(self, records: models.BaseModel) -> None:
         self.check_singleton()
         holding = self._get_requests_holding_decisions(records)
         trace.BINDING.note(
@@ -1397,10 +1403,9 @@ class ApprovalBinding(models.Model):
             self._register_hook()
             self.env.registry.registry_invalidated = True
 
-
-    def _register_hook(self):
+    def _register_hook(self) -> None:
         super()._register_hook()
-        pairs = {}
+        pairs: dict[str, set[str]] = {}
         for binding in self.sudo().with_context(active_test=True).search([]):
             model = self.env.get(binding.model_name)
             if model is None:
@@ -1454,18 +1459,18 @@ class ApprovalBinding(models.Model):
     @api.model
     def _gate(
         self,
-        records,
-        bindings,
+        records: models.BaseModel,
+        bindings: Self,
         label: str,
-        call,
+        call: Callable[[models.BaseModel], Any],
         replayable: bool = True,
         mark_run: bool = True,
         asking: bool = False,
-    ):
+    ) -> Any:
         elevation = self._elevation()
-        observations = []
-        wanting = {}
-        covered = {}
+        observations: list[ValuesType] = []
+        wanting: dict[Self, models.BaseModel] = {}
+        covered: dict[Self, models.BaseModel] = {}
         for binding in bindings:
             selected = binding._get_selected(records)
             if not selected:
@@ -1538,7 +1543,7 @@ class ApprovalBinding(models.Model):
             runnable=runnable.ids,
             shown=shown.ids,
         )
-        result = False
+        result = None
         if runnable:
             result = call(runnable)
             if mark_run:
@@ -1554,7 +1559,7 @@ class ApprovalBinding(models.Model):
     def _prepare_guarded_method(
         self, model_name: str, method_name: str
     ) -> Callable[..., Any]:
-        def guarded(records, *args, **kwargs):
+        def guarded(records: models.BaseModel, *args, **kwargs) -> Any:
             origin = getattr(guarded, ORIGIN_ATTR)
             Binding = records.env["approval.binding"]
             if not Binding._enabled():
@@ -1600,16 +1605,23 @@ class ApprovalBinding(models.Model):
         return guarded
 
     @api.model
-    def _run_admitted(self, records, operation: str, call):
+    def _run_admitted[T](
+        self,
+        records: models.BaseModel,
+        operation: str,
+        call: Callable[[models.BaseModel], T],
+    ) -> T:
         with records.env.transaction.admitting(records._name, operation, records.ids):
             return call(records)
 
     @api.model
-    def _get_admitted_ids(self, records, operation: str) -> set[int]:
+    def _get_admitted_ids(self, records: models.BaseModel, operation: str) -> set[int]:
         return set(records.env.transaction.admitted_ids(records._name, operation))
 
     @api.model
-    def _enforce_at_checkpoint(self, records, bindings, operation: str) -> None:
+    def _enforce_at_checkpoint(
+        self, records: models.BaseModel, bindings: Self, operation: str
+    ) -> None:
         admitted = self._get_admitted_ids(records, operation)
         pending = records.filtered(lambda record: record.id not in admitted)
         trace.BINDING.event(
@@ -1622,7 +1634,7 @@ class ApprovalBinding(models.Model):
         if not pending:
             return
         elevation = self._elevation()
-        observations = []
+        observations: list[ValuesType] = []
         refused = pending.browse()
         for binding in bindings:
             selected = binding._get_selected(pending)
@@ -1651,13 +1663,14 @@ class ApprovalBinding(models.Model):
                 ),
             )
 
-
     @api.model
-    def _get_declared_verb(self, records, verb: str):
+    def _get_declared_verb(
+        self, records: models.BaseModel, verb: str
+    ) -> models.Verb | None:
         return records.env.registry.model_verbs.get(records._name, {}).get(verb)
 
     @api.model
-    def _get_own_verb(self, records) -> str | None:
+    def _get_own_verb(self, records: models.BaseModel) -> str | None:
         for verb in records.env.registry.model_verbs.get(records._name, ()):
             own, _configured = self._split_verb_bindings(records._name, verb)
             if own:
@@ -1665,7 +1678,7 @@ class ApprovalBinding(models.Model):
         return None
 
     @api.model
-    def _split_verb_bindings(self, model_name: str, verb: str) -> tuple:
+    def _split_verb_bindings(self, model_name: str, verb: str) -> tuple[Self, Self]:
         bindings = self._bindings_for_verb(model_name, verb).filtered(
             lambda binding: binding.mode != "act_decides"
         )
@@ -1684,7 +1697,12 @@ class ApprovalBinding(models.Model):
             for binding in self._bindings_for_verb(model_name, verb)
         )
 
-    def _hold_document_at_door(self, records, verb: str, run):
+    def _hold_document_at_door(
+        self,
+        records: MixinApprovalGate,
+        verb: str,
+        run: Callable[[models.BaseModel], Any],
+    ) -> Any:
         self.check_singleton()
         records._check_before_approval(verb)
         if self.mode == "request" and not self._passes_on_elevation(self._elevation()):
@@ -1692,7 +1710,9 @@ class ApprovalBinding(models.Model):
         records._check_approval_admits(verb, enforced=self._enforces(), binding=self)
         return self._run_admitted(records, verb, run)
 
-    def _hold_document_at_checkpoint(self, records, verb: str) -> None:
+    def _hold_document_at_checkpoint(
+        self, records: MixinApprovalGate, verb: str
+    ) -> None:
         self.check_singleton()
         records._check_approval_admits(verb, enforced=self._enforces(), binding=self)
 

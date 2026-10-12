@@ -1,14 +1,22 @@
 import contextlib
 from collections import Counter
-from collections.abc import Iterator
-from typing import Self
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Self
 
 from odoo import api, models
+from odoo.api import ValuesType
 from odoo.exceptions import AccessError, ValidationError
-from odoo.fields import Command
+from odoo.fields import Command, CommandValue
 
 from . import approval_trace as trace
 from .approval_utils import RAISE_ADMISSION, is_approval_manager
+
+if TYPE_CHECKING:
+    from .approval_approver import ApprovalApprover
+    from .approval_category import ApprovalCategory
+    from .approval_category_step import ApprovalCategoryStep
+    from .res_users import ResUsers
+    from odoo.addons.base.models.ir_access_exception import IrAccessException
 
 _PRODUCING_REQUESTS = "approval.producing_request_ids"
 _RECORD_ADMISSION = "approval.record"
@@ -31,7 +39,7 @@ class ApprovalRequestAccess(models.Model):
         self.check_singleton()
         return self.env.cr.cache.get(_PRODUCING_REQUESTS, {}).get(self.id, 0) > 0
 
-    def _link_produced_documents(self, documents) -> None:
+    def _link_produced_documents(self, documents: models.BaseModel) -> None:
         self.check_singleton()
         with self._producing_documents():
             for document in documents:
@@ -85,7 +93,9 @@ class ApprovalRequestAccess(models.Model):
                 ),
             )
 
-    def _raise_category_change_blocked(self, previous_category) -> None:
+    def _raise_category_change_blocked(
+        self, previous_category: ApprovalCategory
+    ) -> None:
         trace.REFUSAL.event(
             "category_change_after_confirm",
             request=self.id,
@@ -174,7 +184,7 @@ class ApprovalRequestAccess(models.Model):
                 ),
             )
 
-    def _check_routing_fields_after_submit(self, vals: dict) -> None:
+    def _check_routing_fields_after_submit(self, vals: ValuesType) -> None:
         if self._skip_check_access():
             return
         touched = set(vals) & (
@@ -202,7 +212,9 @@ class ApprovalRequestAccess(models.Model):
                 ),
             )
 
-    def _check_approver_ids_business_rules(self, approver_commands: list) -> None:
+    def _check_approver_ids_business_rules(
+        self, approver_commands: Sequence[CommandValue | list[Any]]
+    ) -> None:
         if self.env.su and self.env.context.get("approver_ids_computation"):
             return
 
@@ -315,7 +327,7 @@ class ApprovalRequestAccess(models.Model):
         },
     )
 
-    def _check_no_forged_computed_fields(self, vals: dict) -> None:
+    def _check_no_forged_computed_fields(self, vals: ValuesType) -> None:
         forged = set(vals) & self._COMPUTE_ONLY_FIELDS
         if forged:
             trace.REFUSAL.event(
@@ -334,7 +346,7 @@ class ApprovalRequestAccess(models.Model):
             )
 
     @api.model
-    def _create_raised(self, vals_list: list[dict]) -> Self:
+    def _create_raised(self, vals_list: list[ValuesType]) -> Self:
         with contextlib.ExitStack() as stack:
             for vals in vals_list:
                 stack.enter_context(
@@ -368,7 +380,7 @@ class ApprovalRequestAccess(models.Model):
             self.write(vals)
 
     @api.model
-    def _is_raised_by_source(self, vals: dict) -> bool:
+    def _is_raised_by_source(self, vals: ValuesType) -> bool:
         return RAISE_ADMISSION in self.env.transaction.admitted_names(
             vals.get("res_model") or "", vals.get("res_id") or 0
         )
@@ -392,7 +404,7 @@ class ApprovalRequestAccess(models.Model):
             "approval.request", _RECORD_ADMISSION
         )
 
-    def _without_engine_defaults(self):
+    def _without_engine_defaults(self) -> Self:
         owned = self._WORKFLOW_FIELDS | self._SOURCE_LINK_FIELDS
         context = {
             key: value
@@ -403,7 +415,9 @@ class ApprovalRequestAccess(models.Model):
             return self
         return self.with_context(context)
 
-    def _check_engine_owned_fields(self, vals: dict, create: bool = False) -> None:
+    def _check_engine_owned_fields(
+        self, vals: ValuesType, create: bool = False
+    ) -> None:
         if self.env.su:
             return
         forged = vals.keys() & self._WORKFLOW_FIELDS
@@ -435,7 +449,7 @@ class ApprovalRequestAccess(models.Model):
             ),
         )
 
-    def _check_locked_fields(self, vals: dict) -> None:
+    def _check_locked_fields(self, vals: ValuesType) -> None:
         locked = self._get_fields_locked()
         if not self.env.su:
             locked |= self._SYSTEM_LOCKED_FIELDS
@@ -584,7 +598,7 @@ class ApprovalRequestAccess(models.Model):
             ),
         )
 
-    def _can_reopen_refusal(self, user) -> bool:
+    def _can_reopen_refusal(self, user: ResUsers) -> bool:
         self.check_singleton()
         if user._is_approval_manager():
             trace.ACCESS.event(
@@ -605,7 +619,11 @@ class ApprovalRequestAccess(models.Model):
         )
         return is_refuser or later_step
 
-    def _check_withdraw_actor(self, approver, steps=None) -> None:
+    def _check_withdraw_actor(
+        self,
+        approver: ApprovalApprover,
+        steps: ApprovalCategoryStep | None = None,
+    ) -> None:
         self.check_singleton()
         if self.env.su or self._can_withdraw_approver(approver, self.env.user, steps):
             return
@@ -625,7 +643,12 @@ class ApprovalRequestAccess(models.Model):
             ),
         )
 
-    def _can_withdraw_approver(self, approver, user, steps=None) -> bool:
+    def _can_withdraw_approver(
+        self,
+        approver: ApprovalApprover,
+        user: ResUsers,
+        steps: ApprovalCategoryStep | None = None,
+    ) -> bool:
         self.check_singleton()
         is_manager = user._is_approval_manager()
         is_own = not is_manager and approver._get_effective_approver() == user
@@ -649,7 +672,7 @@ class ApprovalRequestAccess(models.Model):
         )
         return is_manager or is_own or later_step
 
-    def _can_decide_step(self, step, user) -> bool:
+    def _can_decide_step(self, step: ApprovalCategoryStep, user: ResUsers) -> bool:
         self.check_singleton()
         decided = self.approver_ids.filtered(
             lambda a: (
@@ -671,7 +694,7 @@ class ApprovalRequestAccess(models.Model):
         )
         return can
 
-    def _get_rows_decidable_by(self, user):
+    def _get_rows_decidable_by(self, user: ResUsers) -> ApprovalApprover:
         self.check_singleton()
         decidable = self.approver_ids.filtered(
             lambda approver: (
@@ -697,7 +720,12 @@ class ApprovalRequestAccess(models.Model):
         )
         return decidable
 
-    def _is_later_step_member(self, approvers, user, steps=None) -> bool:
+    def _is_later_step_member(
+        self,
+        approvers: ApprovalApprover,
+        user: ResUsers,
+        steps: ApprovalCategoryStep | None = None,
+    ) -> bool:
         self.check_singleton()
         own_steps = steps or approvers.decided_step_ids or approvers.step_ids
         if not own_steps:
@@ -740,7 +768,7 @@ class ApprovalRequestAccess(models.Model):
                     ),
                 )
 
-    def _check_decision_actor(self, approver: models.BaseModel) -> None:
+    def _check_decision_actor(self, approver: ApprovalApprover) -> None:
         self._check_not_deciding_own_request(approver)
         if self.env.su:
             return
@@ -763,7 +791,7 @@ class ApprovalRequestAccess(models.Model):
                 ),
             )
 
-    def _check_not_deciding_own_request(self, approver: models.BaseModel) -> None:
+    def _check_not_deciding_own_request(self, approver: ApprovalApprover) -> None:
         self.check_singleton()
         own_users = self.request_owner_id | self._get_requester()
         own = approver.filtered(
@@ -805,18 +833,18 @@ class ApprovalRequestAccess(models.Model):
         for user in users:
             self._get_own_decision_exception(user)._record_use(self.display_name)
 
-    def _get_requester(self):
+    def _get_requester(self) -> ResUsers:
         self.check_singleton()
         return self.requester_id
 
-    def _get_own_decision_exception(self, user):
+    def _get_own_decision_exception(self, user: ResUsers) -> IrAccessException:
         self.check_singleton()
         kind = (
             "self_approval" if user == self.request_owner_id else "requester_exclusion"
         )
         return self.env["ir.access.exception"]._find(user, kind, self.category_id)
 
-    def _get_excluded_approvers(self):
+    def _get_excluded_approvers(self) -> ResUsers:
         self.check_singleton()
         excluded = self.env["res.users"]
         if self.category_id.allow_self_approval:

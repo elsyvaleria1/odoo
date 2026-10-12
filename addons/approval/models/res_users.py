@@ -1,6 +1,8 @@
 import logging
+from typing import Literal
 
 from odoo import models
+from odoo.api import ValuesType
 
 from . import approval_trace as trace
 
@@ -14,7 +16,7 @@ class ResUsers(models.Model):
         self.check_singleton()
         return self.has_group("approval.group_approval_manager")
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         archiving = self.browse()
         if "active" in vals and not vals["active"]:
             archiving = self.filtered("active")

@@ -117,8 +117,8 @@ class MixinApprovalDocument(models.AbstractModel):
     def _compute_approval_required(self) -> None:
         super()._compute_approval_required()
 
-    def _get_approval_trigger(self) -> str | bool:
-        return APPROVAL_TRIGGER_RULE if self._is_approval_required_by_rule() else False
+    def _get_approval_trigger(self) -> str | None:
+        return APPROVAL_TRIGGER_RULE if self._is_approval_required_by_rule() else None
 
     def _is_approval_required_by_rule(self) -> bool:
         self.check_singleton()

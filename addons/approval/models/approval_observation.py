@@ -2,7 +2,6 @@ from odoo import fields, models
 
 
 class ApprovalObservation(models.Model):
-
     _name = "approval.observation"
     _description = "Approval Observation"
     _order = "id desc"

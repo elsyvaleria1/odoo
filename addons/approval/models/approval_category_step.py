@@ -1,10 +1,18 @@
+from typing import TYPE_CHECKING, Any, Literal
+
 from odoo import SUPERUSER_ID, api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError, ValidationError
-from odoo.fields import Command
+from odoo.fields import Command, Field
 from odoo.tools import SQL
 
 from . import approval_trace as trace
 from .approval_utils import ApprovalStepUnstaffed
+
+if TYPE_CHECKING:
+    from .approval_request import ApprovalRequest
+    from .approval_rule import ApprovalRule
+    from odoo.addons.base.models.res_company import ResCompany
 
 
 class ApprovalCategoryStep(models.Model):
@@ -370,14 +378,15 @@ class ApprovalCategoryStep(models.Model):
                     ),
                 )
 
-    def _get_path_terminal_field(self, model):
+    def _get_path_terminal_field(self, model: models.BaseModel) -> Field[Any]:
         self.check_singleton()
-        current, field = model, None
-        for part in self.subject_user_path.split("."):
+        *path, last = self.subject_user_path.split(".")
+        current = model
+        for part in path:
             field = current._fields[part]
             if field.relational:
                 current = self.env[field.comodel_name]
-        return field
+        return current._fields[last]
 
     @api.constrains("subject_domain", "subject_model_id")
     def _check_condition(self) -> None:
@@ -419,7 +428,7 @@ class ApprovalCategoryStep(models.Model):
             ).unlink()
         self._check_pool()
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if "active" not in vals:
             return super().write(vals)
         requests = self._get_pending_routed_requests()
@@ -428,7 +437,7 @@ class ApprovalCategoryStep(models.Model):
         requests._settle_routing_change(before)
         return result
 
-    def _get_pending_routed_requests(self):
+    def _get_pending_routed_requests(self) -> ApprovalRequest:
         if not self.ids:
             return self.env["approval.request"]
         self.env["approval.approver"].flush_model(["request_id", "step_ids"])
@@ -450,7 +459,10 @@ class ApprovalCategoryStep(models.Model):
         )
 
     def _get_member_user_ids(
-        self, document=None, company=None, request=None
+        self,
+        document: models.BaseModel | None = None,
+        company: ResCompany | None = None,
+        request: ApprovalRequest | None = None,
     ) -> set[int]:
         self.check_singleton()
         today = fields.Date.context_today(self)
@@ -472,13 +484,21 @@ class ApprovalCategoryStep(models.Model):
         )
         return in_company
 
-    def _get_subject(self, document, request):
+    def _get_subject(
+        self,
+        document: models.BaseModel | None,
+        request: ApprovalRequest | None,
+    ) -> models.BaseModel | None:
         self.check_singleton()
         if request and self.subject_model_id.model == request._name:
             return request
         return document
 
-    def _get_source_user_ids(self, document, request=None) -> set[int]:
+    def _get_source_user_ids(
+        self,
+        document: models.BaseModel | None,
+        request: ApprovalRequest | None = None,
+    ) -> set[int]:
         self.check_singleton()
         subject = self._get_subject(document, request)
         if (
@@ -498,7 +518,12 @@ class ApprovalCategoryStep(models.Model):
         )
         return named
 
-    def _get_pool_user_ids(self, document=None, company=None, request=None) -> set[int]:
+    def _get_pool_user_ids(
+        self,
+        document: models.BaseModel | None = None,
+        company: ResCompany | None = None,
+        request: ApprovalRequest | None = None,
+    ) -> set[int]:
         self.check_singleton()
         if self.walk != "none" and request:
             return self._walk(document, company, request)
@@ -523,12 +548,17 @@ class ApprovalCategoryStep(models.Model):
         )
         return pool
 
-    def _walk(self, document, company, request) -> set[int]:
+    def _walk(
+        self,
+        document: models.BaseModel | None,
+        company: ResCompany | None,
+        request: ApprovalRequest,
+    ) -> set[int]:
         self.check_singleton()
         verb = request.operation or (
             document._get_gated_operation()
             if isinstance(document, self.env.registry["mixin.approval.gate"])
-            else False
+            else None
         )
         Users = self.env["res.users"]
         excluded = request._get_excluded_approvers()
@@ -595,7 +625,11 @@ class ApprovalCategoryStep(models.Model):
             company=company,
         )
 
-    def _get_candidate_user_ids(self, document=None, request=None) -> set[int]:
+    def _get_candidate_user_ids(
+        self,
+        document: models.BaseModel | None = None,
+        request: ApprovalRequest | None = None,
+    ) -> set[int]:
         self.check_singleton()
         users = self._get_member_user_ids(document, request=request)
         if self.group_id:
@@ -609,7 +643,9 @@ class ApprovalCategoryStep(models.Model):
             users.update(request._get_manager_chain(start).ids)
         return users
 
-    def _filter_document_user_ids(self, user_ids: set[int], document) -> set[int]:
+    def _filter_document_user_ids(
+        self, user_ids: set[int], document: models.BaseModel | None
+    ) -> set[int]:
         self.check_singleton()
         if (
             not user_ids
@@ -627,7 +663,9 @@ class ApprovalCategoryStep(models.Model):
         )
         return kept
 
-    def _filter_company_user_ids(self, user_ids: set[int], company) -> set[int]:
+    def _filter_company_user_ids(
+        self, user_ids: set[int], company: ResCompany | None
+    ) -> set[int]:
         if not company or not user_ids:
             return user_ids
         users = self.env["res.users"].sudo().browse(user_ids)
@@ -655,7 +693,9 @@ class ApprovalCategoryStep(models.Model):
                 ),
             )
 
-    def _is_applicable_to_request(self, request, matched_rules=None) -> bool:
+    def _is_applicable_to_request(
+        self, request: ApprovalRequest, matched_rules: ApprovalRule | None = None
+    ) -> bool:
         self.check_singleton()
         if self.condition_field and not self._matches_request_figure(request):
             return False
@@ -667,7 +707,9 @@ class ApprovalCategoryStep(models.Model):
             self._get_subject(request.get_source_document(), request)
         )
 
-    def _matches_request_rules(self, request, matched=None) -> bool:
+    def _matches_request_rules(
+        self, request: ApprovalRequest, matched: ApprovalRule | None = None
+    ) -> bool:
         self.check_singleton()
         if not self.when_rule_ids and not self.unless_rule_ids:
             return True
@@ -687,7 +729,7 @@ class ApprovalCategoryStep(models.Model):
         )
         return matches
 
-    def _matches_request_figure(self, request) -> bool:
+    def _matches_request_figure(self, request: ApprovalRequest) -> bool:
         self.check_singleton()
         measured = self._get_field_value(request)
         matches = measured is not None and self._compare(measured, self.threshold)
@@ -703,7 +745,7 @@ class ApprovalCategoryStep(models.Model):
         )
         return matches
 
-    def _is_applicable_to_document(self, document) -> bool:
+    def _is_applicable_to_document(self, document: models.BaseModel | None) -> bool:
         self.check_singleton()
         if not self.subject_domain:
             return True

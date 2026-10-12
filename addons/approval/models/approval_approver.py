@@ -1,13 +1,19 @@
-from typing import Any, Self
+from datetime import date, datetime
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, fields, models
-from odoo.api import ValuesType
+from odoo.api import DomainType, ValuesType
 from odoo.exceptions import AccessError, ValidationError
 from odoo.fields import Command, Domain
 from odoo.tools import TransactionMemo, frozendict
 
 from . import approval_trace as trace
 from .approval_utils import boolean_search_domain, is_approval_manager
+
+if TYPE_CHECKING:
+    from .approval_category_step import ApprovalCategoryStep
+    from .res_users import ResUsers
+    from odoo.addons.mail.models.mail_activity_type import MailActivityType
 
 DELEGATION_TZ_BUCKETS = TransactionMemo(
     "approval_delegation_tz_buckets", invalidated_by={"res.users": ("tz",)}
@@ -272,7 +278,7 @@ class ApprovalApprover(models.Model):
                         self.env._("Delegation end date must be after start date."),
                     )
 
-    def _may_delegate_to(self, delegate) -> bool:
+    def _may_delegate_to(self, delegate: ResUsers) -> bool:
         self.check_singleton()
         request = self.request_id
         others = request.approver_ids - self
@@ -369,7 +375,7 @@ class ApprovalApprover(models.Model):
         self._check_business_rules_create(vals_list)
         return super().create([self._stamp_pending_since(v) for v in vals_list])
 
-    def write(self, vals: dict) -> bool:
+    def write(self, vals: ValuesType) -> Literal[True]:
         self._check_access_write(vals)
         self._check_business_rules_write(vals)
         delegation = self._DELEGATION_ONLY_FIELDS & vals.keys()
@@ -386,7 +392,7 @@ class ApprovalApprover(models.Model):
         return result
 
     def _hand_activities_to_effective_approver(
-        self, previous_delegates: dict | None = None
+        self, previous_delegates: dict[int, ResUsers] | None = None
     ) -> None:
         previous_delegates = previous_delegates or {}
         rows = self.filtered(
@@ -456,7 +462,7 @@ class ApprovalApprover(models.Model):
         )
 
     @api.depends("flow_state", "decision_log_ids", "decided_step_ids")
-    def _compute_state(self):
+    def _compute_state(self) -> None:
         standing = self._get_standing_decisions()
         for row in self:
             verdict = standing.get(row.id)
@@ -469,7 +475,7 @@ class ApprovalApprover(models.Model):
             else:
                 row.state = row.flow_state or "new"
 
-    def _get_standing_decisions(self) -> dict:
+    def _get_standing_decisions(self) -> dict[int, str]:
         rows = self.filtered("id")
         if not rows:
             return {}
@@ -485,7 +491,7 @@ class ApprovalApprover(models.Model):
                 order="id",
             )
         )
-        standing = {}
+        standing: dict[int, tuple[str, int]] = {}
         for fact in facts:
             if fact.verdict == "reset":
                 for row_id in [
@@ -505,7 +511,7 @@ class ApprovalApprover(models.Model):
         )
         return {row_id: verdict for row_id, (verdict, _request) in standing.items()}
 
-    def _stamp_pending_since(self, vals: dict) -> dict:
+    def _stamp_pending_since(self, vals: ValuesType) -> ValuesType:
         state = vals.get("flow_state")
         if state == "pending":
             trace.DECISION.event("pending_clock", rows=self.ids, action="started")
@@ -515,7 +521,7 @@ class ApprovalApprover(models.Model):
             return {**vals, "pending_since": False}
         return vals
 
-    def unlink(self) -> bool:
+    def unlink(self) -> Literal[True]:
         self._check_access_unlink()
         self._check_business_rules_unlink()
         trace.CRUD.note(
@@ -526,7 +532,7 @@ class ApprovalApprover(models.Model):
         )
         return super().unlink()
 
-    def _delegation_today_by_tz(self) -> dict:
+    def _delegation_today_by_tz(self) -> dict[str, date]:
         return {
             tz or "UTC": fields.Date.context_today(self.with_context(tz=tz or "UTC"))
             for tz in set(self.user_id.mapped("tz"))
@@ -548,7 +554,7 @@ class ApprovalApprover(models.Model):
             )
 
     @api.model
-    def _delegation_date_buckets(self) -> dict:
+    def _delegation_date_buckets(self) -> dict[date, list[str | Literal[False]]]:
         if (buckets := DELEGATION_TZ_BUCKETS.peek(self.env)) is not None:
             return buckets
         buckets = DELEGATION_TZ_BUCKETS(self.env)
@@ -564,7 +570,7 @@ class ApprovalApprover(models.Model):
         return buckets
 
     @api.model
-    def _search_is_delegated(self, operator, value):
+    def _search_is_delegated(self, operator: str, value: Any) -> DomainType:
         active = Domain.FALSE
         for local_date, tz_names in self._delegation_date_buckets().items():
             active |= Domain(
@@ -601,7 +607,7 @@ class ApprovalApprover(models.Model):
 
         return self.request_id._get_decision_wizard_action("refuse")
 
-    def _create_activity(self, unlisted: bool = False):
+    def _create_activity(self, unlisted: bool = False) -> None:
         if not self:
             return
         if self.env.context.get("mail_activity_automation_skip"):
@@ -662,7 +668,7 @@ class ApprovalApprover(models.Model):
         if create_vals_list:
             self.env["mail.activity"].create(create_vals_list)
 
-    def _prepare_source_activity_vals(self, target) -> dict:
+    def _prepare_source_activity_vals(self, target: models.BaseModel) -> ValuesType:
         self.check_singleton()
         if not isinstance(target, self.env.registry["mixin.approval.source"]):
             return {}
@@ -688,7 +694,7 @@ class ApprovalApprover(models.Model):
         )
         return advisory_only
 
-    def _get_activity_target(self):
+    def _get_activity_target(self) -> models.BaseModel:
         self.check_singleton()
         request = self.request_id
         if request.category_id.activity_target == "document":
@@ -701,7 +707,7 @@ class ApprovalApprover(models.Model):
         trace.ACTIVITY.event("activity_target", approver=self.id, target=request)
         return request
 
-    def _get_activity_type(self):
+    def _get_activity_type(self) -> MailActivityType:
         self.check_singleton()
         step_type = (
             self.request_id._sort_routed_steps(self.step_ids)
@@ -731,7 +737,7 @@ class ApprovalApprover(models.Model):
         )
         return step_type
 
-    def _filtered_notifiable(self):
+    def _filtered_notifiable(self) -> Self:
         notifiable = self.filtered(lambda approver: approver._is_notifiable())
         trace.ACTIVITY.event(
             "notifiable_rows",
@@ -781,7 +787,7 @@ class ApprovalApprover(models.Model):
         )
         return bool(wanted)
 
-    def _get_effective_approver(self):
+    def _get_effective_approver(self) -> ResUsers:
         self.check_singleton()
         if self.is_delegated:
             trace.DELEGATION.event(
@@ -795,7 +801,12 @@ class ApprovalApprover(models.Model):
         return self.user_id
 
     def _record_decision(
-        self, verdict: str, actor=None, steps=None, date=None, note: str | None = None
+        self,
+        verdict: str,
+        actor: ResUsers | None = None,
+        steps: ApprovalCategoryStep | None = None,
+        date: datetime | None = None,
+        note: str | None = None,
     ) -> None:
         assert verdict in ("approved", "refused")
         for request, rows in self.grouped("request_id").items():
@@ -834,7 +845,7 @@ class ApprovalApprover(models.Model):
                 note=note,
             )
 
-    def _check_access_create(self, vals_list: list[dict]) -> None:
+    def _check_access_create(self, vals_list: list[ValuesType]) -> None:
         if self._skip_check_access():
             return
 
@@ -895,7 +906,7 @@ class ApprovalApprover(models.Model):
 
     _SELF_WRITABLE_FIELDS = frozenset({"refusal_reason_id", "note"})
 
-    def _check_access_write(self, vals: dict | None = None) -> None:
+    def _check_access_write(self, vals: ValuesType | None = None) -> None:
         if self._skip_check_access():
             return
 
@@ -998,7 +1009,7 @@ class ApprovalApprover(models.Model):
         },
     )
 
-    def _check_business_rules_write(self, vals: dict) -> None:
+    def _check_business_rules_write(self, vals: ValuesType) -> None:
         if self.env.su:
             return
         forced = set(vals) & self._WORKFLOW_MANAGED_FIELDS
@@ -1038,7 +1049,7 @@ class ApprovalApprover(models.Model):
                     ),
                 )
 
-    def _check_business_rules_create(self, vals_list: list[dict]) -> None:
+    def _check_business_rules_create(self, vals_list: list[ValuesType]) -> None:
         if self.env.su and self.env.context.get("approver_ids_computation"):
             return
 

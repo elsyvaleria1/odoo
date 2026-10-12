@@ -1,6 +1,8 @@
-from typing import Self
+from collections.abc import Collection
+from typing import Literal, Self
 
 from odoo import api, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError
 from odoo.tools.authority_keys import declare_authority_keys
 
@@ -30,14 +32,18 @@ _STORAGE_LOCATION_FIELDS = frozenset({"type", "url"})
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
 
-    def _approval_terminal_parent_ids(self, request_ids):
+    def _approval_terminal_parent_ids(self, request_ids: Collection[int]) -> set[int]:
         if not request_ids:
             return set()
         terminal = self.env["approval.request"]._TERMINAL_STATES
         requests = self.env["approval.request"].sudo().browse(list(request_ids))
         return {r.id for r in requests if r.exists() and r.state in terminal}
 
-    def _approval_res_field_is_real(self, res_model, res_field) -> bool:
+    def _approval_res_field_is_real(
+        self,
+        res_model: str,
+        res_field: str | Literal[False] | None,
+    ) -> bool:
         if not res_field:
             return False
         model = self.env.get(res_model)
@@ -62,7 +68,7 @@ class IrAttachment(models.Model):
         )
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         if self.env.su and self.env.context.get("attachment_storage_relocation"):
             return super().create(vals_list)
         candidate_ids = {
@@ -89,7 +95,7 @@ class IrAttachment(models.Model):
             )
         return super().create(vals_list)
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if not vals.keys() & _APPROVAL_LOCKED_FIELDS:
             return super().write(vals)
         if (

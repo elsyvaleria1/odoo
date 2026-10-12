@@ -1,7 +1,13 @@
+from typing import TYPE_CHECKING, Any
+
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 from ..models import approval_trace as trace
+
+if TYPE_CHECKING:
+    from ..models.approval_approver import ApprovalApprover
+    from ..models.approval_request import ApprovalRequest
 
 
 class WizardApprovalRequestDecide(models.TransientModel):
@@ -99,7 +105,7 @@ class WizardApprovalRequestDecide(models.TransientModel):
             if wiz.approver_id:
                 wiz.request_id = wiz.approver_id.request_id
 
-    def _check_refusal_reason_applicable(self, request) -> None:
+    def _check_refusal_reason_applicable(self, request: ApprovalRequest) -> None:
         self.check_singleton()
         reason = self.refusal_reason_id
         if reason.category_ids and request.category_id not in reason.category_ids:
@@ -132,7 +138,7 @@ class WizardApprovalRequestDecide(models.TransientModel):
                 ),
             )
 
-    def action_confirm_refuse(self):
+    def action_confirm_refuse(self) -> dict[str, Any]:
         self.check_singleton()
         if not self.refusal_reason_id:
             trace.REFUSAL.event(
@@ -164,7 +170,9 @@ class WizardApprovalRequestDecide(models.TransientModel):
         self.approver_id.with_context(skip_wizard=True).action_refuse()
         return {"type": "ir.actions.act_window_close"}
 
-    def _stamp_refusal(self, request, approver=None) -> None:
+    def _stamp_refusal(
+        self, request: ApprovalRequest, approver: ApprovalApprover | None = None
+    ) -> None:
         self._check_refusal_reason_applicable(request)
         if approver is None:
             approver = request._get_current_pending_approver()
@@ -175,7 +183,7 @@ class WizardApprovalRequestDecide(models.TransientModel):
             }
         )
 
-    def action_confirm_change(self) -> dict:
+    def action_confirm_change(self) -> dict[str, Any]:
         self.check_singleton()
         if not self.change_field:
             trace.REFUSAL.event(
@@ -212,5 +220,5 @@ class WizardApprovalRequestDecide(models.TransientModel):
         ).action_request_change(approver=self.approver_id)
         return {"type": "ir.actions.act_window_close"}
 
-    def action_cancel(self):
+    def action_cancel(self) -> dict[str, Any]:
         return {"type": "ir.actions.act_window_close"}

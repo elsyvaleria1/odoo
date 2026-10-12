@@ -1,9 +1,15 @@
+from typing import TYPE_CHECKING, Literal
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.fields import Domain
 from odoo.tools import frozendict
 
 from . import approval_trace as trace
+
+if TYPE_CHECKING:
+    from .approval_request import ApprovalRequest
+    from .res_users import ResUsers
 
 
 class ApprovalAuthorityLimit(models.Model):
@@ -72,7 +78,13 @@ class ApprovalAuthorityLimit(models.Model):
                 )
 
     @api.model
-    def _get_user_limits(self, users, model_name: str, verb: str, request) -> dict:
+    def _get_user_limits(
+        self,
+        users: ResUsers,
+        model_name: str | Literal[False],
+        verb: str | Literal[False] | None,
+        request: ApprovalRequest,
+    ) -> dict[int, float]:
         if not users:
             return {}
         company = request.company_id

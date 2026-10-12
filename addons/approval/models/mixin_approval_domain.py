@@ -43,7 +43,9 @@ class MixinApprovalDomain(models.AbstractModel):
             )
         return domain
 
-    def _check_domain_against_model(self, model, field_name: str | None = None) -> None:
+    def _check_domain_against_model(
+        self, model: models.BaseModel, field_name: str | None = None
+    ) -> None:
         self.check_singleton()
         field_name = field_name or self._domain_source_field()
         domain = self._parse_domain(field_name)
@@ -60,7 +62,7 @@ class MixinApprovalDomain(models.AbstractModel):
         for field_path in self._domain_field_paths(domain):
             self._check_field_path(model, field_path)
 
-    def _check_field_path(self, model, field_path: str) -> None:
+    def _check_field_path(self, model: models.BaseModel, field_path: str) -> None:
         self.check_singleton()
         current = model
         parts = field_path.split(".")
@@ -105,5 +107,5 @@ class MixinApprovalDomain(models.AbstractModel):
                 )
 
     @api.model
-    def _domain_field_paths(self, domain) -> set[str]:
+    def _domain_field_paths(self, domain: Domain) -> set[str]:
         return {condition.field_expr for condition in domain.iter_conditions()}

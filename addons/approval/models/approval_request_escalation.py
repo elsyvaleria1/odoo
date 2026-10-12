@@ -1,15 +1,20 @@
 import logging
-from datetime import timedelta
-from typing import Any
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any, Self
 
 from markupsafe import Markup
 
 from odoo import api, fields, models
+from odoo.api import DomainType
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.tools import SQL, TransactionMemo
 
 from . import approval_trace as trace
 from .approval_utils import boolean_search_domain
+
+if TYPE_CHECKING:
+    from .approval_approver import ApprovalApprover
+    from .res_users import ResUsers
 
 DEFAULT_ESCALATION_MANAGER = TransactionMemo(
     "approval_default_escalation_manager",
@@ -49,7 +54,7 @@ class ApprovalRequestEscalation(models.Model):
     }
 
     @api.model
-    def _get_domain_overdue(self) -> list:
+    def _get_domain_overdue(self) -> list[str | tuple[str, str, Any] | list[Any]]:
         return [
             ("state", "=", "pending"),
             ("approval_deadline", "!=", False),
@@ -61,7 +66,7 @@ class ApprovalRequestEscalation(models.Model):
         self,
         operator: str,
         value: Any,
-    ) -> list[tuple[str, str, Any]]:
+    ) -> DomainType:
         now = fields.Datetime.now()
         return boolean_search_domain(
             operator,
@@ -172,7 +177,9 @@ class ApprovalRequestEscalation(models.Model):
         return status
 
     @api.model
-    def _search_sla_status(self, operator: str, value: str | list | None) -> list:
+    def _search_sla_status(
+        self, operator: str, value: Any
+    ) -> list[tuple[str, str, list[int]]]:
         if operator not in ("=", "!=", "in", "not in"):
             raise NotImplementedError(
                 f"Unsupported operator {operator!r} for sla_status"
@@ -275,7 +282,7 @@ class ApprovalRequestEscalation(models.Model):
             reminder_threshold = now - timedelta(hours=rules["first_reminder"])
             escalation_threshold = now - timedelta(hours=rules["escalation"])
 
-            domain = [
+            domain: DomainType = [
                 ("state", "=", "pending"),
                 ("priority", "=", priority),
                 ("pending_change_field", "=", False),
@@ -311,7 +318,9 @@ class ApprovalRequestEscalation(models.Model):
 
         return reminders_sent
 
-    def _remind_one_isolated(self, request, escalation_threshold, now) -> bool:
+    def _remind_one_isolated(
+        self, request: Self, escalation_threshold: datetime, now: datetime
+    ) -> bool:
         try:
             with self.env.cr.savepoint():
                 reminded = bool(
@@ -340,7 +349,9 @@ class ApprovalRequestEscalation(models.Model):
             _logger.info(_DECIDED_MEANWHILE, "Smart escalation", request.id)
         return False
 
-    def _escalate_or_remind_one(self, request, escalation_threshold) -> int:
+    def _escalate_or_remind_one(
+        self, request: Self, escalation_threshold: datetime
+    ) -> int:
         has_stalled_approver = any(
             not a._get_effective_approver().active
             for a in request.approver_ids
@@ -407,7 +418,9 @@ class ApprovalRequestEscalation(models.Model):
             _logger.info("Auto-expire: Cancelled %d expired requests", expired_count)
 
     @api.model
-    def _get_past_window(self, hours_field: str, extra_domain=None):
+    def _get_past_window(
+        self, hours_field: str, extra_domain: DomainType | None = None
+    ) -> Self:
         self.flush_model(
             ["state", "date_confirmed", "category_snapshot", "category_id"]
         )
@@ -466,7 +479,7 @@ class ApprovalRequestEscalation(models.Model):
                 consent_count,
             )
 
-    def _consent_approve_one(self, request) -> bool:
+    def _consent_approve_one(self, request: Self) -> bool:
         if not request._can_consent_approve():
             return False
 
@@ -509,7 +522,7 @@ class ApprovalRequestEscalation(models.Model):
         self.check_singleton()
         return not self.category_id._get_financial_verb()
 
-    def _get_escalation_manager(self, approver) -> Any:
+    def _get_escalation_manager(self, approver: ApprovalApprover) -> ResUsers:
         category = self.category_id
         if (
             category.escalate_overdue
@@ -519,7 +532,7 @@ class ApprovalRequestEscalation(models.Model):
             return category.escalation_user_id
         return self._get_default_escalation_manager()
 
-    def _get_default_escalation_manager(self) -> Any:
+    def _get_default_escalation_manager(self) -> ResUsers:
         cache = DEFAULT_ESCALATION_MANAGER(self.env)
         company_id = self.company_id.id
         if company_id not in cache:
@@ -555,9 +568,11 @@ class ApprovalRequestEscalation(models.Model):
     def _invalidate_escalation_manager_cache(self) -> None:
         DEFAULT_ESCALATION_MANAGER.discard(self.env)
 
-    def _resolve_escalation_targets(self) -> tuple[dict, models.BaseModel]:
+    def _resolve_escalation_targets(
+        self,
+    ) -> tuple[dict[ResUsers, ApprovalApprover], ApprovalApprover]:
         self.check_singleton()
-        by_manager: dict = {}
+        by_manager: dict[ResUsers, ApprovalApprover] = {}
         unescalated = self.env["approval.approver"]
         for approver in self.approver_ids.filtered(lambda a: a.state == "pending"):
             manager = self._get_escalation_manager(approver)
@@ -652,7 +667,7 @@ class ApprovalRequestEscalation(models.Model):
         trace.ESCALATION.event("escalation_rules", rules=rules)
         return rules
 
-    def _send_reminder(self, approvers: models.BaseModel | None = None) -> int:
+    def _send_reminder(self, approvers: ApprovalApprover | None = None) -> int:
         self.check_singleton()
         pending_approvers = (
             approvers

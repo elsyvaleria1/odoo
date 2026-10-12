@@ -1,8 +1,14 @@
-from typing import Any
+from typing import Any, Literal, NamedTuple
 
 from odoo import fields, models
+from odoo.api import ValuesType
 
 from . import approval_trace as trace
+
+
+class OutcomePrediction(NamedTuple):
+    outcome: Literal["approve", "refuse", "uncertain"] | None
+    confidence: float
 
 
 class ApprovalRequestPrediction(models.Model):
@@ -16,14 +22,14 @@ class ApprovalRequestPrediction(models.Model):
                 return self.env._("Likely refused")
         return self.env._("Uncertain")
 
-    def _predict_outcome(self) -> tuple[str | bool, float]:
+    def _predict_outcome(self) -> OutcomePrediction:
         self.check_singleton()
         return self._predict_outcomes()[self.id]
 
-    def _predict_outcomes(self) -> dict[int, tuple[str | bool, float]]:
-        stats_cache: dict[tuple[int, int], list] = {}
+    def _predict_outcomes(self) -> dict[int, OutcomePrediction]:
+        stats_cache: dict[tuple[int, int], list[ValuesType]] = {}
 
-        def get_stats_bucket(category_id: int, partner_id: int) -> list:
+        def get_stats_bucket(category_id: int, partner_id: int) -> list[ValuesType]:
             cache_key = (category_id, partner_id)
             if cache_key in stats_cache:
                 trace.PREDICTION.event(
@@ -55,11 +61,11 @@ class ApprovalRequestPrediction(models.Model):
             )
             return rows
 
-        predictions: dict[int, tuple[str | bool, float]] = {}
+        predictions: dict[int, OutcomePrediction] = {}
         scanned = 0
         for request in self:
             if request.state in self._TERMINAL_STATES:
-                predictions[request.id] = (False, 0.0)
+                predictions[request.id] = OutcomePrediction(None, 0.0)
                 continue
 
             rows = get_stats_bucket(
@@ -88,7 +94,7 @@ class ApprovalRequestPrediction(models.Model):
                     rows=len(rows),
                     similar=len(similar),
                 )
-                predictions[request.id] = ("uncertain", 0.0)
+                predictions[request.id] = OutcomePrediction("uncertain", 0.0)
                 continue
 
             approved = sum(1 for r in similar if r["state"] == "approved")
@@ -106,11 +112,11 @@ class ApprovalRequestPrediction(models.Model):
             )
 
             if rate >= 0.75:
-                predictions[request.id] = ("approve", rate)
+                predictions[request.id] = OutcomePrediction("approve", rate)
             elif rate <= 0.25:
-                predictions[request.id] = ("refuse", 1.0 - rate)
+                predictions[request.id] = OutcomePrediction("refuse", 1.0 - rate)
             else:
-                predictions[request.id] = ("uncertain", 0.0)
+                predictions[request.id] = OutcomePrediction("uncertain", 0.0)
         return predictions
 
     def action_predict_outcome(self) -> dict[str, Any]:
@@ -142,7 +148,7 @@ class ApprovalRequestPrediction(models.Model):
             },
         }
 
-    def _prediction_amount_in_own_currency(self, row: dict) -> float:
+    def _prediction_amount_in_own_currency(self, row: ValuesType) -> float:
         self.check_singleton()
         amount = row["amount"]
         row_currency_id = row["currency_id"] and row["currency_id"][0]

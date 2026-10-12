@@ -1,11 +1,17 @@
 from collections import defaultdict
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import ormcache
 
 from . import approval_trace as trace
+
+if TYPE_CHECKING:
+    from .approval_approver import ApprovalApprover
+    from .approval_category_step import ApprovalCategoryStep
+    from .approval_request import ApprovalRequest
+    from .res_users import ResUsers
 
 
 class ApprovalBinding(models.Model):
@@ -26,32 +32,39 @@ class ApprovalBinding(models.Model):
         trace.BUTTON.event("batch_asked", specs=len(specs), uid=self.env.uid)
         by_button = defaultdict(list)
         for index, spec in enumerate(specs):
-            button = (
+            button: tuple[
+                str, str | Literal[False], int | str | Literal[False], bool
+            ] = (
                 spec["model"],
                 spec.get("method") or False,
                 spec.get("action_id") or False,
                 bool(spec.get("configured")),
             )
             by_button[button].append(index)
-        answers = [None] * len(specs)
+        answers: dict[int, dict[str, Any]] = {}
         for (model, method, action_id, configured), indexes in by_button.items():
-            for index, answer in zip(
-                indexes,
-                self._get_button_approvals_for(
-                    model,
-                    [specs[index].get("res_id") or False for index in indexes],
-                    method,
-                    action_id,
-                    configured,
-                ),
-                strict=True,
-            ):
-                answers[index] = answer
-        return answers
+            answers.update(
+                zip(
+                    indexes,
+                    self._get_button_approvals_for(
+                        model,
+                        [specs[index].get("res_id") or False for index in indexes],
+                        method,
+                        action_id,
+                        configured,
+                    ),
+                    strict=True,
+                )
+            )
+        return [answers[index] for index in range(len(specs))]
 
     @api.model
     def check_button_approval(
-        self, model: str, res_id: int | list[int], method=False, action_id=False
+        self,
+        model: str,
+        res_id: int | list[int],
+        method: str | Literal[False] = False,
+        action_id: int | str | Literal[False] = False,
     ) -> dict[str, Any]:
         if not self._enabled():
             return {"approved": True, "request_id": False}
@@ -92,10 +105,10 @@ class ApprovalBinding(models.Model):
         self,
         model: str,
         res_id: int,
-        method=False,
-        action_id=False,
-        approve=True,
-        step_id=False,
+        method: str | Literal[False] = False,
+        action_id: int | str | Literal[False] = False,
+        approve: bool = True,
+        step_id: int | Literal[False] = False,
     ) -> dict[str, Any]:
         records = self._get_records_for_button(model, res_id, "write")
         binding = self._get_button_binding_for(records, method, action_id)
@@ -142,10 +155,10 @@ class ApprovalBinding(models.Model):
         self,
         model: str,
         res_id: int,
-        method=False,
-        action_id=False,
-        approver_id=False,
-        step_id=False,
+        method: str | Literal[False] = False,
+        action_id: int | str | Literal[False] = False,
+        approver_id: int | Literal[False] = False,
+        step_id: int | Literal[False] = False,
     ) -> dict[str, Any]:
         records = self._get_records_for_button(model, res_id, "write")
         binding = self._get_button_binding_for(records, method, action_id)
@@ -182,7 +195,11 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _get_button_approval(
-        self, model: str, res_id=False, method=False, action_id=False
+        self,
+        model: str,
+        res_id: int | Literal[False] = False,
+        method: str | Literal[False] = False,
+        action_id: int | str | Literal[False] = False,
     ) -> dict[str, Any]:
         return self._get_button_approvals_for(model, [res_id], method, action_id)[0]
 
@@ -190,9 +207,9 @@ class ApprovalBinding(models.Model):
     def _get_button_approvals_for(
         self,
         model: str,
-        res_ids: list,
-        method=False,
-        action_id=False,
+        res_ids: list[int | Literal[False]],
+        method: str | Literal[False] = False,
+        action_id: int | str | Literal[False] = False,
         configured: bool = False,
     ) -> list[dict[str, Any]]:
         ungated = {"gated": False, "approved": True, "request": False, "steps": []}
@@ -262,7 +279,12 @@ class ApprovalBinding(models.Model):
         return answers
 
     @api.model
-    def _get_records_for_button(self, model: str, res_id, operation: str = "read"):
+    def _get_records_for_button(
+        self,
+        model: str,
+        res_id: int | list[int] | Literal[False],
+        operation: str = "read",
+    ) -> models.BaseModel:
         records = self.env[model]
         records.check_access(operation)
         res_ids = res_id if isinstance(res_id, list) else [res_id] if res_id else []
@@ -272,7 +294,12 @@ class ApprovalBinding(models.Model):
         return records
 
     @api.model
-    def _get_button_bindings(self, model: str, method, action_id):
+    def _get_button_bindings(
+        self,
+        model: str,
+        method: str | Literal[False],
+        action_id: int | str | Literal[False],
+    ) -> Self:
         if method:
             bindings = self._bindings_for(model, method)
         else:
@@ -281,16 +308,21 @@ class ApprovalBinding(models.Model):
         return bindings.filtered(lambda binding: binding.model_name == model)
 
     @api.model
-    def _parse_button_action(self, action) -> int | bool:
+    def _parse_button_action(self, action: int | str | Literal[False]) -> int | None:
         if not action:
-            return False
+            return None
         if isinstance(action, int) or str(action).isdecimal():
             return int(action)
         record = self.env.ref(str(action), raise_if_not_found=False)
-        return record.id if record else False
+        return record.id if record else None
 
     @api.model
-    def _get_button_binding_for(self, records, method, action_id):
+    def _get_button_binding_for(
+        self,
+        records: models.BaseModel,
+        method: str | Literal[False],
+        action_id: int | str | Literal[False],
+    ) -> Self:
         bindings = self._get_button_bindings(records._name, method, action_id).filtered(
             lambda binding: (
                 binding.mode not in ("advise", "act_decides")
@@ -316,7 +348,9 @@ class ApprovalBinding(models.Model):
         )
         return (waiting or bindings)[:1]
 
-    def _get_button_decision_steps(self, step_id):
+    def _get_button_decision_steps(
+        self, step_id: int | Literal[False]
+    ) -> ApprovalCategoryStep | None:
         self.check_singleton()
         if not step_id:
             return None
@@ -328,12 +362,14 @@ class ApprovalBinding(models.Model):
             raise UserError(self.env._("That step does not gate this button."))
         return steps.sudo(False)
 
-    def _get_button_request(self, record):
+    def _get_button_request(self, record: models.BaseModel) -> ApprovalRequest:
         return self._get_latest_requests(record).get(
             record.id, self.env["approval.request"]
         )
 
-    def _check_someone_asked(self, records, request) -> None:
+    def _check_someone_asked(
+        self, records: models.BaseModel, request: ApprovalRequest
+    ) -> None:
         self.check_singleton()
         if (
             "approval_request_id" in records._fields
@@ -353,7 +389,9 @@ class ApprovalBinding(models.Model):
             )
         )
 
-    def _get_button_steps(self, request, record) -> list[dict[str, Any]]:
+    def _get_button_steps(
+        self, request: ApprovalRequest, record: models.BaseModel
+    ) -> list[dict[str, Any]]:
         self.check_singleton()
         user = self.env.user
         rows = request.approver_ids
@@ -435,7 +473,14 @@ class ApprovalBinding(models.Model):
         )
         return drawn
 
-    def _get_button_flat_step(self, request, rows, decided, user, is_open) -> dict:
+    def _get_button_flat_step(
+        self,
+        request: ApprovalRequest,
+        rows: ApprovalApprover,
+        decided: ApprovalApprover,
+        user: ResUsers,
+        is_open: bool,
+    ) -> dict[str, Any]:
         self.check_singleton()
         category = self.category_id.sudo()
         asked = any(
@@ -465,7 +510,13 @@ class ApprovalBinding(models.Model):
         }
 
     @api.model
-    def _get_button_decision(self, row, request, user, step=None) -> dict[str, Any]:
+    def _get_button_decision(
+        self,
+        row: ApprovalApprover,
+        request: ApprovalRequest,
+        user: ResUsers,
+        step: ApprovalCategoryStep | None = None,
+    ) -> dict[str, Any]:
         actor = row.decided_by_user_id
         return {
             "approver_id": row.id,

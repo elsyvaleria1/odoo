@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 from odoo.tools import SQL
 
+if TYPE_CHECKING:
+    from odoo.db import Cursor
 
-def migrate(cr, version):
+
+def migrate(cr: Cursor, version: str) -> None:
     if not version:
         return
     cr.execute(

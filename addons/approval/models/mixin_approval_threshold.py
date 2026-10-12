@@ -1,9 +1,13 @@
 import math
+from typing import TYPE_CHECKING
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 from . import approval_trace as trace
+
+if TYPE_CHECKING:
+    from .approval_request import ApprovalRequest
 
 _FLOAT_EQ_ABS_TOL = 1e-6
 _FLOAT_EQ_REL_TOL = 1e-9
@@ -82,7 +86,7 @@ class MixinApprovalThreshold(models.AbstractModel):
                 record.company_id.currency_id or self.env.company.currency_id
             )
 
-    def _convert_request_amount(self, request) -> float:
+    def _convert_request_amount(self, request: ApprovalRequest) -> float:
         self.check_singleton()
         from_currency = request.currency_id
         to_currency = self.currency_id
@@ -122,14 +126,17 @@ class MixinApprovalThreshold(models.AbstractModel):
         return converted
 
     @staticmethod
-    def _intervals_overlap(bounds_a, bounds_b) -> bool:
+    def _intervals_overlap(
+        bounds_a: tuple[float, bool, float, bool],
+        bounds_b: tuple[float, bool, float, bool],
+    ) -> bool:
         lo_a, lo_a_closed, hi_a, hi_a_closed = bounds_a
         lo_b, lo_b_closed, hi_b, hi_b_closed = bounds_b
         if hi_a < lo_b or (hi_a == lo_b and not (hi_a_closed and lo_b_closed)):
             return False
         return not (hi_b < lo_a or (hi_b == lo_a and not (hi_b_closed and lo_a_closed)))
 
-    def _get_field_value(self, request) -> float | None:
+    def _get_field_value(self, request: ApprovalRequest) -> float | None:
         match self.condition_field:
             case "amount":
                 return self._convert_request_amount(request)

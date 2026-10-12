@@ -42,7 +42,7 @@ class StockPicking(models.Model):
         self.move_ids.product_id.mapped("categ_id")
         super()._compute_approval_required()
 
-    def _get_approval_trigger(self) -> str | bool:
+    def _get_approval_trigger(self) -> str | None:
         self.check_singleton()
         request = self.approval_request_id
         if (
@@ -50,7 +50,7 @@ class StockPicking(models.Model):
             and request.target_model == "stock.picking"
             and request.state == "approved"
         ):
-            return False
+            return None
         return APPROVAL_TRIGGER_CATEGORY
 
     def _approval_trigger_fired(self) -> bool:

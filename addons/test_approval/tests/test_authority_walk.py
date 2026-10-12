@@ -116,6 +116,22 @@ class TestAuthorityWalk(ApprovalCommon):
         self.assertEqual([row["user"] for row in preview], [self.head.display_name])
         self.assertFalse(document.approval_request_id, "previewing asks nothing")
 
+    def test_the_preview_field_lists_the_chain_or_stays_empty(self):
+        previewed, unrouted = self.env["approval.test.gated"].create(
+            [
+                {
+                    "name": "Previewed",
+                    "partner_id": self.partner.id,
+                    "amount_total": 3000.0,
+                    "test_category_id": self.category.id,
+                },
+                {"name": "Unrouted", "partner_id": self.partner.id},
+            ]
+        )
+        self.assertIn("<ol>", previewed.approval_chain_preview)
+        self.assertIn(self.head.display_name, previewed.approval_chain_preview)
+        self.assertFalse(unrouted.approval_chain_preview)
+
     def test_a_limit_names_a_verb_with_an_amount(self):
         grant = self.env["res.users.grant"].search(
             [("user_id", "=", self.clerk.id), ("group_id", "=", self.signers.id)]

@@ -1,5 +1,5 @@
 import base64
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, fields, models, tools
 from odoo.api import ValuesType
@@ -9,6 +9,9 @@ from odoo.fields import Command, Domain
 from . import approval_trace as trace
 from .approval_utils import ApprovalStepUnstaffed
 from odoo.addons.base.models.mixin_catalog import name_uniq_index
+
+if TYPE_CHECKING:
+    from .res_users import ResUsers
 
 ROUTES_BY_STEPS_CONTEXT = "approval_category_routes_by_steps"
 
@@ -325,7 +328,7 @@ class ApprovalCategory(models.Model):
         return ""
 
     @api.model
-    def default_get(self, fields):
+    def default_get(self, fields: list[str]) -> ValuesType:
         defaults = super().default_get(fields)
         if (
             "step_ids" in fields
@@ -346,7 +349,7 @@ class ApprovalCategory(models.Model):
         return defaults
 
     @api.model_create_multi
-    def create(self, vals_list: list[ValuesType]) -> Any:
+    def create(self, vals_list: list[ValuesType]) -> Self:
         batch_codes: set[str] = {
             vals["sequence_code"] for vals in vals_list if vals.get("sequence_code")
         }
@@ -411,7 +414,7 @@ class ApprovalCategory(models.Model):
                 )
         return super().create(vals_list)
 
-    def write(self, vals: dict[str, Any]) -> bool:
+    def write(self, vals: ValuesType) -> Literal[True]:
         if "sequence_code" in vals and "sequence_id" not in vals:
             sequence_vals = {
                 "name": self.env._("Sequence %(code)s", code=vals["sequence_code"]),
@@ -586,7 +589,9 @@ class ApprovalCategory(models.Model):
             )
             category.kanban_dashboard = dashboard_data
 
-    def _add_approver(self, user, required=False, sequence=10) -> None:
+    def _add_approver(
+        self, user: ResUsers, required: bool = False, sequence: int = 10
+    ) -> None:
         for category in self:
             pool = (
                 category.step_ids.filtered("counts_added_approvers")
@@ -634,14 +639,14 @@ class ApprovalCategory(models.Model):
         with tools.file_open("approval/static/src/img/Folder.png", "rb") as icon_file:
             return base64.b64encode(icon_file.read())
 
-    def _is_applicable_for(self, document) -> bool:
+    def _is_applicable_for(self, document: models.BaseModel) -> bool:
         self.check_singleton()
         trace.SUBJECTS.event(
             "category_applicable", category=self.id, subject=document, applicable=True
         )
         return True
 
-    def _can_be_met_for(self, document) -> bool:
+    def _can_be_met_for(self, document: models.BaseModel) -> bool:
         self.check_singleton()
         request = self.env["approval.request"].new(
             document._prepare_approval_request_values(self)
@@ -658,10 +663,10 @@ class ApprovalCategory(models.Model):
             return False
 
     def _get_view_request(
-        self, label: str, extra_domain: list | None = None
+        self, label: str, extra_domain: list[str | tuple[str, str, Any]] | None = None
     ) -> dict[str, Any]:
         self.check_singleton()
-        domain = [("category_id", "=", self.id)]
+        domain: list[str | tuple[str, str, Any]] = [("category_id", "=", self.id)]
         if extra_domain:
             domain.extend(extra_domain)
         trace.REPORT.note(

@@ -1,9 +1,15 @@
+from typing import TYPE_CHECKING, Any, Literal, Self
+
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 
 from . import approval_trace as trace
-from odoo.addons.mail.tools.discuss import Store
+from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput
+
+if TYPE_CHECKING:
+    from .approval_approver import ApprovalApprover
+    from odoo.addons.mail.models.mail_message import MailMessage
 
 
 class MailActivity(models.Model):
@@ -28,7 +34,9 @@ class MailActivity(models.Model):
         for activity in self:
             activity.approval_request_id = activity.approver_id.request_id
 
-    def _search_approval_request_id(self, operator, value) -> list:
+    def _search_approval_request_id(
+        self, operator: str, value: Any
+    ) -> list[tuple[str, str, Any]]:
         if operator in Domain.NEGATIVE_OPERATORS:
             trace.REFUSAL.event("negative_operator_unsupported", operator=operator)
             raise UserError(
@@ -44,7 +52,11 @@ class MailActivity(models.Model):
                 value = self.env["approval.request"]._search(value)
         return [("approver_id.request_id", operator, value)]
 
-    def _action_done(self, feedback=False, attachment_ids=None):
+    def _action_done(
+        self,
+        feedback: str | Literal[False] = False,
+        attachment_ids: list[int] | None = None,
+    ) -> tuple[MailMessage, Self]:
         approvers = self._get_answering_approvers()
         trace.ACTIVITY.event(
             "done",
@@ -64,7 +76,7 @@ class MailActivity(models.Model):
                 approver.action_approve()
         return result
 
-    def _get_answering_approvers(self):
+    def _get_answering_approvers(self) -> ApprovalApprover:
         user = self.env.user
         return self.filtered(
             lambda activity: (
@@ -79,7 +91,7 @@ class MailActivity(models.Model):
             )
         )
 
-    def _to_store_defaults(self, target):
+    def _to_store_defaults(self, target: Store.Target) -> StoreFieldsInput:
         return super()._to_store_defaults(target) + [
             Store.One("approver_id", ["state"]),
         ]

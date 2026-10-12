@@ -23,10 +23,10 @@ class AccountCollectionRemittance(models.Model):
         "who receives the cash from the collector and approves it with them.",
     )
 
-    def _get_approval_trigger(self) -> str | bool:
+    def _get_approval_trigger(self) -> str | None:
         self.check_singleton()
         if self.destination_type != "cash":
-            return False
+            return None
         return APPROVAL_TRIGGER_CATEGORY
 
     def _get_domain_approval_category(self) -> list[tuple[str, str, Any]]:

@@ -1,10 +1,16 @@
 import logging
 import math
+from typing import TYPE_CHECKING, Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import ValidationError
 
 from . import approval_trace as trace
+
+if TYPE_CHECKING:
+    from .approval_category_step import ApprovalCategoryStep
+    from .approval_request import ApprovalRequest
 
 _logger = logging.getLogger(__name__)
 
@@ -106,7 +112,7 @@ class ApprovalRule(models.Model):
         "Rule name must be unique per category and company.",
     )
 
-    def _get_reading_steps(self):
+    def _get_reading_steps(self) -> ApprovalCategoryStep:
         steps = (
             self.env["approval.category.step"]
             .with_context(active_test=False)
@@ -121,7 +127,7 @@ class ApprovalRule(models.Model):
         trace.RULES.event("rules_read_by_steps", rules=self.ids, steps=steps.ids)
         return steps
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if ("active" in vals and not vals["active"]) or (
             "action_type" in vals and vals["action_type"] != "condition"
         ):
@@ -269,7 +275,7 @@ class ApprovalRule(models.Model):
                     ),
                 )
 
-    def _auto_action_collides(self, other) -> bool:
+    def _auto_action_collides(self, other: Self) -> bool:
         self.check_singleton()
         if self.condition_type != other.condition_type:
             return False
@@ -379,11 +385,11 @@ class ApprovalRule(models.Model):
     def _domain_source_field(self) -> str:
         return "subject_domain"
 
-    def _check_subject_domain(self, model) -> None:
+    def _check_subject_domain(self, model: models.BaseModel) -> None:
         self.check_singleton()
         self._check_domain_against_model(model)
 
-    def _check_subject_field(self, model) -> None:
+    def _check_subject_field(self, model: models.BaseModel) -> None:
         self.check_singleton()
         if not self.subject_field:
             trace.REFUSAL.event("subject_rule_without_field", rule=self.id)
@@ -410,7 +416,7 @@ class ApprovalRule(models.Model):
             for field in depends
         )
 
-    def _evaluate(self, request) -> bool:
+    def _evaluate(self, request: ApprovalRequest) -> bool:
         self.check_singleton()
         match self.condition_type:
             case "domain":
@@ -440,10 +446,10 @@ class ApprovalRule(models.Model):
         )
         return matches
 
-    def _get_subject(self, request):
+    def _get_subject(self, request: ApprovalRequest) -> models.BaseModel | None:
         self.check_singleton()
         if not self.subject_model_id:
-            return False
+            return None
         document = request.get_source_document()
         if not document or document._name != self.subject_model_id.model:
             trace.RULES.event(
@@ -453,10 +459,10 @@ class ApprovalRule(models.Model):
                 wanted=self.subject_model_id.model,
                 got=document._name if document else None,
             )
-            return False
+            return None
         return document.exists()
 
-    def _evaluate_domain(self, request) -> bool:
+    def _evaluate_domain(self, request: ApprovalRequest) -> bool:
         subject = self._get_subject(request)
         if not subject:
             trace.RULES.event(
@@ -485,7 +491,7 @@ class ApprovalRule(models.Model):
         )
         return matched
 
-    def _evaluate_field_selection(self, request) -> bool:
+    def _evaluate_field_selection(self, request: ApprovalRequest) -> bool:
         subject = self._get_subject(request)
         if not subject or not self.subject_field:
             trace.RULES.event(
@@ -533,7 +539,9 @@ class ApprovalRule(models.Model):
             return (t, True, self.threshold_max or math.inf, False)
         return None
 
-    def _condition_bounds_in(self, reference) -> tuple[float, bool, float, bool] | None:
+    def _condition_bounds_in(
+        self, reference: Self
+    ) -> tuple[float, bool, float, bool] | None:
         self.check_singleton()
         bounds = self._condition_bounds()
         if (
@@ -546,7 +554,7 @@ class ApprovalRule(models.Model):
         company = reference.company_id or self.company_id or self.env.company
         today = fields.Date.context_today(self)
 
-        def convert(amount):
+        def convert(amount: float) -> float:
             if math.isinf(amount):
                 return amount
             return self.currency_id._convert(
@@ -555,7 +563,7 @@ class ApprovalRule(models.Model):
 
         return (convert(low), low_closed, convert(high), high_closed)
 
-    def _condition_overlaps(self, other) -> bool:
+    def _condition_overlaps(self, other: Self) -> bool:
         self.check_singleton()
         other.check_singleton()
         bounds_a = self._condition_bounds()

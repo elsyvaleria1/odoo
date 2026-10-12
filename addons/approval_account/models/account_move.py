@@ -59,7 +59,7 @@ class AccountMove(models.Model):
     def _compute_approval_required(self) -> None:
         super()._compute_approval_required()
 
-    def _get_approval_trigger(self) -> str | bool:
+    def _get_approval_trigger(self) -> str | None:
         self.check_singleton()
         request = self.approval_request_id
         if (
@@ -67,7 +67,7 @@ class AccountMove(models.Model):
             and request.target_model == "account.move"
             and request.state == "approved"
         ) or self.move_type == "entry":
-            return False
+            return None
         if self._approval_trigger_fired():
             return APPROVAL_TRIGGER_RULE
         return APPROVAL_TRIGGER_CATEGORY

@@ -1,4 +1,5 @@
-from typing import Any
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Literal
 
 from odoo import fields, models
 from odoo.exceptions import UserError
@@ -6,11 +7,14 @@ from odoo.fields import Domain
 
 from . import approval_trace as trace
 
+if TYPE_CHECKING:
+    from .approval_category import ApprovalCategory
+    from .approval_request import ApprovalRequest
+
 LIVE_REQUEST_STATES = ("new", "pending")
 
 
 class MixinApprovalSubjects(models.AbstractModel):
-
     _name = "mixin.approval.subjects"
     _inherit = ["mixin.approval.source"]
     _description = "Record Holding One Approval Request per Subject"
@@ -27,11 +31,13 @@ class MixinApprovalSubjects(models.AbstractModel):
         ],
     )
 
-    def _get_approval_subject_category(self, subject_key: str):
+    def _get_approval_subject_category(
+        self, subject_key: str
+    ) -> ApprovalCategory | None:
         raise NotImplementedError
 
     def _prepare_approval_subject_request_values(
-        self, subject_key: str, category
+        self, subject_key: str, category: ApprovalCategory
     ) -> dict[str, Any]:
         self.check_singleton()
         vals = {
@@ -46,7 +52,11 @@ class MixinApprovalSubjects(models.AbstractModel):
             vals["company_id"] = self.company_id.id
         return vals
 
-    def _search_subject_approval_requests(self, domain=(), limit=None):
+    def _search_subject_approval_requests(
+        self,
+        domain: Sequence[str | tuple[str, str, Any]] = (),
+        limit: int | None = None,
+    ) -> ApprovalRequest:
         return (
             self.env["approval.request"]
             .sudo()
@@ -60,7 +70,7 @@ class MixinApprovalSubjects(models.AbstractModel):
             )
         )
 
-    def _get_approval_request(self, subject_key: str):
+    def _get_approval_request(self, subject_key: str) -> ApprovalRequest:
         self.check_singleton()
         request = self._search_subject_approval_requests(
             [("subject_key", "=", subject_key)], limit=1
@@ -74,11 +84,11 @@ class MixinApprovalSubjects(models.AbstractModel):
         )
         return request
 
-    def _get_live_approval_request(self, subject_key: str):
+    def _get_live_approval_request(self, subject_key: str) -> ApprovalRequest:
         request = self._get_approval_request(subject_key)
         return request if request.state in LIVE_REQUEST_STATES else request.browse()
 
-    def _raise_approval_request(self, subject_key: str):
+    def _raise_approval_request(self, subject_key: str) -> ApprovalRequest:
         self.check_singleton()
         if self._get_live_approval_request(subject_key):
             trace.REFUSAL.event(
@@ -122,7 +132,7 @@ class MixinApprovalSubjects(models.AbstractModel):
         request.action_confirm()
         return request
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         live = self._search_subject_approval_requests(
             [("state", "in", LIVE_REQUEST_STATES)]
         )
@@ -142,8 +152,10 @@ class MixinApprovalSubjects(models.AbstractModel):
                 )
         return super().unlink()
 
-    def _on_approval_subject_state_changed(self, request, new_state: str) -> None:
+    def _on_approval_subject_state_changed(
+        self, request: ApprovalRequest, new_state: str
+    ) -> None:
         self.check_singleton()
 
-    def _on_approval_subject_progress(self, request) -> None:
+    def _on_approval_subject_progress(self, request: ApprovalRequest) -> None:
         self.check_singleton()

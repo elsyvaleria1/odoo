@@ -1,8 +1,14 @@
+from typing import TYPE_CHECKING, Any
+
 from odoo import api, fields, models
+from odoo.api import DomainType
 from odoo.exceptions import AccessError, ValidationError
 
 from ..models import approval_trace as trace
 from ..models.approval_utils import is_approval_manager
+
+if TYPE_CHECKING:
+    from ..models.approval_approver import ApprovalApprover
 
 
 class WizardApprovalApproverDelegate(models.TransientModel):
@@ -102,7 +108,7 @@ class WizardApprovalApproverDelegate(models.TransientModel):
         self.check_singleton()
         return ["pending"] if self.apply_to == "pending" else ["pending", "waiting"]
 
-    def _get_domain_approver(self, states=None) -> list:
+    def _get_domain_approver(self, states: list[str] | None = None) -> DomainType:
         self.check_singleton()
         return [
             ("user_id", "=", self.user_id.id),
@@ -143,7 +149,7 @@ class WizardApprovalApproverDelegate(models.TransientModel):
             wizard.pending_count = counts.get((wizard.user_id.id, "pending"), 0)
             wizard.waiting_count = counts.get((wizard.user_id.id, "waiting"), 0)
 
-    def action_confirm(self):
+    def action_confirm(self) -> dict[str, Any]:
         self.check_singleton()
 
         is_manager = is_approval_manager(self.env)
@@ -227,7 +233,7 @@ class WizardApprovalApproverDelegate(models.TransientModel):
             },
         }
 
-    def _notify_delegate(self, approvers) -> None:
+    def _notify_delegate(self, approvers: ApprovalApprover) -> None:
         today = fields.Date.context_today(self)
         if not (self.start_date <= today <= self.end_date):
             return

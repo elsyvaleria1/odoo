@@ -1,5 +1,6 @@
 import logging
-from typing import Any
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import fields, models
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
@@ -11,13 +12,19 @@ from odoo.tools import SQL
 from . import approval_trace as trace
 from .approval_utils import ApprovalStepUnstaffed
 
+if TYPE_CHECKING:
+    from .approval_approver import ApprovalApprover
+    from .approval_category_step import ApprovalCategoryStep
+    from .res_users import ResUsers
+    from odoo.addons.mail.models.mail_activity import MailActivity
+
 _logger = logging.getLogger(__name__)
 
 
 class ApprovalRequestLifecycle(models.Model):
     _inherit = "approval.request"
 
-    def _split_bulk_decidable(self) -> tuple[models.BaseModel, list[tuple[str, str]]]:
+    def _split_bulk_decidable(self) -> tuple[Self, list[tuple[str, str]]]:
         readable = self._filtered_access("read")
         decidable_ids = []
         skipped = [
@@ -63,7 +70,7 @@ class ApprovalRequestLifecycle(models.Model):
         action_method: str,
         action_label: str,
         past_tense: str,
-        before: Any = None,
+        before: Callable[[Self], object] | None = None,
     ) -> dict[str, Any]:
         decidable, failed_requests = self._split_bulk_decidable()
         success_count = 0
@@ -155,8 +162,8 @@ class ApprovalRequestLifecycle(models.Model):
     def _apply_decision(
         self,
         decision: str,
-        approver: models.BaseModel | None = None,
-        steps: models.BaseModel | None = None,
+        approver: ApprovalApprover | None = None,
+        steps: ApprovalCategoryStep | None = None,
     ) -> None:
         self.check_singleton()
         assert decision in ("approve", "refuse")
@@ -352,14 +359,16 @@ class ApprovalRequestLifecycle(models.Model):
 
     def action_approve(
         self,
-        approver: models.BaseModel | None = None,
-        steps: models.BaseModel | None = None,
+        approver: ApprovalApprover | None = None,
+        steps: ApprovalCategoryStep | None = None,
     ) -> dict[str, Any] | None:
         self.check_singleton()
         self._check_no_pending_change("approve")
         self._apply_decision("approve", approver, steps)
 
-    def _get_steps_for_decision(self, approver):
+    def _get_steps_for_decision(
+        self, approver: ApprovalApprover
+    ) -> ApprovalCategoryStep:
         self.check_singleton()
         undecided = (approver.step_ids - approver.decided_step_ids).filtered(
             lambda step: self._is_row_turn(approver, step)
@@ -391,7 +400,11 @@ class ApprovalRequestLifecycle(models.Model):
         )
         return chosen
 
-    def _check_steps_decidable(self, approvers, steps=None) -> None:
+    def _check_steps_decidable(
+        self,
+        approvers: ApprovalApprover,
+        steps: ApprovalCategoryStep | None = None,
+    ) -> None:
         self.check_singleton()
         for approver in approvers:
             decided = approver.decided_step_ids
@@ -430,7 +443,11 @@ class ApprovalRequestLifecycle(models.Model):
                     ),
                 )
 
-    def _check_step_turn(self, approvers, steps=None) -> None:
+    def _check_step_turn(
+        self,
+        approvers: ApprovalApprover,
+        steps: ApprovalCategoryStep | None = None,
+    ) -> None:
         self.check_singleton()
         for approver in approvers:
             wanted = steps or (approver.step_ids - approver.decided_step_ids)
@@ -458,7 +475,11 @@ class ApprovalRequestLifecycle(models.Model):
             )
 
     def _notify_step_decision(
-        self, approvers, acting_user, decision: str, steps=None
+        self,
+        approvers: ApprovalApprover,
+        acting_user: ResUsers,
+        decision: str,
+        steps: ApprovalCategoryStep | None = None,
     ) -> None:
         self.check_singleton()
         steps = steps or approvers.decided_step_ids
@@ -552,7 +573,7 @@ class ApprovalRequestLifecycle(models.Model):
 
     def action_request_change(
         self,
-        approver: models.BaseModel | None = None,
+        approver: ApprovalApprover | None = None,
     ) -> dict[str, Any] | None:
         self.check_singleton()
 
@@ -759,7 +780,7 @@ class ApprovalRequestLifecycle(models.Model):
             )
             request._log_cycle("confirm")
 
-    def _open_approval_round(self, approvers: models.BaseModel) -> None:
+    def _open_approval_round(self, approvers: ApprovalApprover) -> None:
         rows_by_request: dict[int, list[int]] = {}
         for approver in approvers:
             rows_by_request.setdefault(approver.request_id.id, []).append(approver.id)
@@ -904,8 +925,8 @@ class ApprovalRequestLifecycle(models.Model):
 
     def action_refuse(
         self,
-        approver: models.BaseModel | None = None,
-        steps: models.BaseModel | None = None,
+        approver: ApprovalApprover | None = None,
+        steps: ApprovalCategoryStep | None = None,
     ) -> dict[str, Any] | None:
         self.check_singleton()
         self._check_no_pending_change("refuse")
@@ -950,9 +971,7 @@ class ApprovalRequestLifecycle(models.Model):
     def _refuse_approval_request(self) -> None:
         return
 
-    def action_withdraw(
-        self, approver: models.BaseModel | None = None
-    ) -> dict[str, Any] | None:
+    def action_withdraw(self, approver: ApprovalApprover | None = None) -> None:
         self._lock_and_reload(with_approvers=True)
         current_user = self.env.user
         explicit_approver = approver if isinstance(approver, models.BaseModel) else None
@@ -1109,7 +1128,9 @@ class ApprovalRequestLifecycle(models.Model):
                 ),
             )
 
-    def _get_unmeetable_steps(self, steps) -> dict[Any, tuple[set[int], set[int]]]:
+    def _get_unmeetable_steps(
+        self, steps: ApprovalCategoryStep
+    ) -> dict[ApprovalCategoryStep, tuple[set[int], set[int]]]:
         self.check_singleton()
         document = self.get_source_document()
         excluded = (
@@ -1136,7 +1157,7 @@ class ApprovalRequestLifecycle(models.Model):
             model, "_approval_request_follows_document", False
         )
 
-    def _check_steps_can_be_met(self, steps) -> None:
+    def _check_steps_can_be_met(self, steps: ApprovalCategoryStep) -> None:
         self.check_singleton()
         document = self.get_source_document()
         for step, (pool, passed_over) in self._get_unmeetable_steps(steps).items():
@@ -1213,7 +1234,9 @@ class ApprovalRequestLifecycle(models.Model):
         else:
             self.action_withdraw(approver)
 
-    def _withdraw_decided_steps(self, approver, steps) -> None:
+    def _withdraw_decided_steps(
+        self, approver: ApprovalApprover, steps: ApprovalCategoryStep
+    ) -> None:
         self.check_singleton()
         self._lock_and_reload(with_approvers=True)
         if self.state not in ("pending", "approved"):
@@ -1340,7 +1363,9 @@ class ApprovalRequestLifecycle(models.Model):
                 ),
             )
 
-    def _raise_withdraw_blocked(self, active_descendants, doc_label) -> None:
+    def _raise_withdraw_blocked(
+        self, active_descendants: models.BaseModel, doc_label: str
+    ) -> None:
         if not active_descendants:
             return
         trace.REFUSAL.event(
@@ -1371,7 +1396,7 @@ class ApprovalRequestLifecycle(models.Model):
         trace.ACTIVITY.event("retire_unasked", request=self.id, stale=len(stale))
         stale.sudo().unlink()
 
-    def _get_approval_activities(self, user: Any = None) -> Any:
+    def _get_approval_activities(self, user: ResUsers | None = None) -> MailActivity:
         domain = [("approver_id.request_id", "in", self.ids)]
         if user:
             domain.append(("user_id", "=", user.id))
@@ -1382,7 +1407,9 @@ class ApprovalRequestLifecycle(models.Model):
         trace.ACTIVITY.event("cancel", requests=self.ids, activities=len(activities))
         activities.unlink()
 
-    def _get_request_activities(self, activity_xmlid: str, user: Any = None) -> Any:
+    def _get_request_activities(
+        self, activity_xmlid: str, user: ResUsers | None = None
+    ) -> MailActivity:
         domain = [
             ("res_model", "=", "approval.request"),
             ("res_id", "in", self.ids),
@@ -1392,7 +1419,7 @@ class ApprovalRequestLifecycle(models.Model):
             domain.append(("user_id", "=", user.id))
         return self.env["mail.activity"].search(domain)
 
-    def _get_change_request_activities(self) -> Any:
+    def _get_change_request_activities(self) -> MailActivity:
         return self._get_request_activities(
             "approval.mail_activity_data_change_request"
         )
@@ -1439,7 +1466,7 @@ class ApprovalRequestLifecycle(models.Model):
     def _stamp_refusal_metadata(
         self,
         refusal_reason: models.BaseModel | None,
-        refusal_note: str | None,
+        refusal_note: str | Literal[False] | None,
     ) -> None:
         self.check_singleton()
         vals: dict[str, Any] = {}
@@ -1650,7 +1677,7 @@ class ApprovalRequestLifecycle(models.Model):
         trace.BINDING.note("replay", request=request.id, binding=request.binding_id.id)
         request.binding_id._replay(request)
 
-    def _get_notifiable_source_document(self):
+    def _get_notifiable_source_document(self) -> models.BaseModel | None:
         self.check_singleton()
         if not self.res_model or not self.res_id:
             trace.SYNC.event(
@@ -1711,7 +1738,7 @@ class ApprovalRequestLifecycle(models.Model):
             return None
         return source_doc.sudo()
 
-    def _is_subject_source(self, source_doc) -> bool:
+    def _is_subject_source(self, source_doc: models.BaseModel) -> bool:
         return isinstance(source_doc, self.env.registry["mixin.approval.subjects"])
 
     def _notify_source_document_state_change(self, new_state: str) -> None:
@@ -1771,7 +1798,7 @@ class ApprovalRequestLifecycle(models.Model):
 
     _CYCLE_LOG_PREFIX = "approval-cycle"
 
-    def _log_cycle(self, event: str, **details) -> None:
+    def _log_cycle(self, event: str, **details: object) -> None:
         if not _logger.isEnabledFor(logging.DEBUG):
             return
         self.check_singleton()

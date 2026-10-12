@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Any
+
 from odoo import models
 
 from . import approval_trace as trace
@@ -6,7 +9,12 @@ from . import approval_trace as trace
 class IrActionsServer(models.Model):
     _inherit = "ir.actions.server"
 
-    def _gate_run(self, records, run, replayable=True):
+    def _gate_run(
+        self,
+        records: models.BaseModel,
+        run: Callable[[models.BaseModel], dict[str, Any] | bool],
+        replayable: bool = True,
+    ) -> dict[str, Any] | bool:
         self.check_singleton()
         Binding = self.env["approval.binding"]
         if not Binding._enabled():

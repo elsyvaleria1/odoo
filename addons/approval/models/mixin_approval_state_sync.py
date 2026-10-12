@@ -1,11 +1,17 @@
+from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import SUPERUSER_ID, api, models
+from odoo.api import ValuesType
 from odoo.fields import Domain
 
 from . import approval_trace as trace
 from .approval_utils import ApprovalStepUnstaffed
+
+if TYPE_CHECKING:
+    from .approval_request import ApprovalRequest
+    from .res_users import ResUsers
 
 SYNC_ADMISSION = "approval.state_sync"
 
@@ -45,7 +51,7 @@ class MixinApprovalStateSync(models.AbstractModel):
         raise NotImplementedError
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         records = super().create(vals_list)
         records._create_approval_requests()
         return records
@@ -93,7 +99,7 @@ class MixinApprovalStateSync(models.AbstractModel):
         ]
         return values[0] if len(values) == 1 else None
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         for record in self.sudo().filtered(
             lambda record: record.approval_request_id.state == "pending"
         ):
@@ -175,12 +181,12 @@ class MixinApprovalStateSync(models.AbstractModel):
                 message_type="notification",
             )
 
-    def _get_synced_approval_request(self):
+    def _get_synced_approval_request(self) -> ApprovalRequest:
         self.check_singleton()
         return self.sudo().approval_request_id
 
     @contextmanager
-    def _approval_sync_admitted(self, request):
+    def _approval_sync_admitted(self, request: ApprovalRequest) -> Iterator[None]:
         with self.env.transaction.admitting(
             "approval.request", SYNC_ADMISSION, request.ids
         ):
@@ -199,7 +205,7 @@ class MixinApprovalStateSync(models.AbstractModel):
             )
         return reentrant
 
-    def _restart_approval_request(self, request) -> None:
+    def _restart_approval_request(self, request: ApprovalRequest) -> None:
         trace.SYNC.note(
             "restart_request",
             record=self,
@@ -237,7 +243,9 @@ class MixinApprovalStateSync(models.AbstractModel):
                 elif kind in ("refused", "cancelled"):
                     record._sync_approval_request_ending(request, user, decides, kind)
 
-    def _sync_approval_request_approval(self, request, user, decides, kind) -> None:
+    def _sync_approval_request_approval(
+        self, request: ApprovalRequest, user: ResUsers, decides: bool, kind: str
+    ) -> None:
         self.check_singleton()
         if request.state in ("new", "refused", "cancelled"):
             self._restart_approval_request(request)
@@ -279,7 +287,9 @@ class MixinApprovalStateSync(models.AbstractModel):
                 )
             )
 
-    def _sync_approval_request_ending(self, request, user, decides, kind) -> None:
+    def _sync_approval_request_ending(
+        self, request: ApprovalRequest, user: ResUsers, decides: bool, kind: str
+    ) -> None:
         self.check_singleton()
         refused = kind == "refused"
         target = "refused" if refused else "cancelled"

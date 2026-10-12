@@ -1,9 +1,20 @@
+from collections.abc import Mapping
+from datetime import datetime
+from typing import TYPE_CHECKING, Literal
+
 from odoo import SUPERUSER_ID, Command, api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.tools import SQL, frozendict
 
 from . import approval_trace as trace
+
+if TYPE_CHECKING:
+    from .approval_approver import ApprovalApprover
+    from .approval_category_step import ApprovalCategoryStep
+    from .approval_refusal_reason import ApprovalRefusalReason
+    from .res_users import ResUsers
 
 VERDICTS = [
     ("approved", "Approved"),
@@ -17,7 +28,6 @@ VERDICTS = [
 
 
 class ApprovalDecisionLog(models.Model):
-
     _name = "approval.decision.log"
     _description = "Approval Decision"
     _order = "date desc, id desc"
@@ -91,7 +101,7 @@ class ApprovalDecisionLog(models.Model):
             return Domain("request_id", "access", "read")
         return super()._access_guard(operation)
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         if not self:
             return True
         trace.REFUSAL.event("decision_log_rewritten", rows=self.ids)
@@ -144,14 +154,14 @@ class ApprovalRequest(models.Model):
 
     def _append_decision_log(
         self,
-        verdict,
-        rows=None,
-        actor=None,
-        steps_by_row=None,
-        reason=None,
-        note=None,
-        date=None,
-    ):
+        verdict: str,
+        rows: ApprovalApprover | None = None,
+        actor: ResUsers | None = None,
+        steps_by_row: Mapping[int, ApprovalCategoryStep] | None = None,
+        reason: ApprovalRefusalReason | None = None,
+        note: str | None = None,
+        date: datetime | None = None,
+    ) -> ApprovalDecisionLog:
         self.check_singleton()
         acting = actor or self.env.user
         elevation = self._decision_elevation()
@@ -192,7 +202,7 @@ class ApprovalRequest(models.Model):
         )
         return logs
 
-    def _stamp_state_after(self, logs) -> None:
+    def _stamp_state_after(self, logs: ApprovalDecisionLog) -> None:
         self.check_singleton()
         self.env.cr.execute(
             SQL(

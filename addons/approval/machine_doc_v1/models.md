@@ -551,7 +551,7 @@ What the engine asks of any record a request is raised for, whichever adopter sh
 | `_get_fields_approval_required()` | **Override**: required fields before approval |
 | `_prepare_approval_request_values()` | **Override**: customize request creation values. Honours `approval_binding_for` = (model, id, binding) in context, only when it names this record, so a binding-raised request knows its operation and a nested document cannot inherit the link |
 | `_on_approval_state_changed()` | **Dispatcher — do NOT override.** Routes to `_on_approval_approved` / `_on_approval_refused` / `_on_approval_cancelled` / `_on_approval_revoked` / `_on_approval_reset`. Base posts a chatter note per state; for the `pending` revocation it also schedules a To-Do for the responsible user on activity-enabled models. See conventions.md |
-| `_get_approval_trigger()` | **Override**: `False` (nothing asks), `APPROVAL_TRIGGER_CATEGORY` (default: a category that applies asks) or `APPROVAL_TRIGGER_RULE` (the document's own rule asks — a flag, a level, a threshold — and a category only routes it; a configured category that does not apply is refused when asked) |
+| `_get_approval_trigger()` | **Override**: `None` (nothing asks), `APPROVAL_TRIGGER_CATEGORY` (default: a category that applies asks) or `APPROVAL_TRIGGER_RULE` (the document's own rule asks — a flag, a level, a threshold — and a category only routes it; a configured category that does not apply is refused when asked) |
 | `_find_approval_category()` | The lookup that never raises: candidates by domain + company, first `_is_applicable_for`, then the fallback. What `_compute_approval_required` reads |
 | `_get_approval_category()` | Find matching category (uses domain + company). Owns the whole selection algorithm; supply `_get_domain_approval_category()`, `approval.category._is_applicable_for()`, `_get_approval_category_fallback()` and the two `_raise_*` hooks instead of overriding it |
 | `_approval_side_effect(failure_note)` | Context manager wrapping any document-advancing call made from a hook: savepoint + `UserError`/`ValidationError` catch + chatter note. Hooks run inside the approver's transaction — do not hand-roll this |
@@ -700,7 +700,7 @@ refusals), `refusal_reason_auto_rule` (auto-refuse rules),
 | Method | Purpose |
 |--------|---------|
 | `_evaluate(request)` | Dispatches on `condition_type` and is the only entry point |
-| `_get_subject(request)` | The source document, or False when it is absent, deleted, or not of `subject_model_id` |
+| `_get_subject(request)` | The source document, or None when it is absent, deleted, or not of `subject_model_id` |
 | `_evaluate_domain(request)` / `_evaluate_field_selection(request)` | The two source-document condition types |
 | `_get_field_value(request)` | Extract numeric value using match/case; `amount` goes through `_convert_request_amount()` so the comparison happens in the rule's currency |
 | `_compare(value, threshold)` | Apply operator |

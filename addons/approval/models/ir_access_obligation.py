@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Any
+
 from odoo import models
 
 from . import approval_trace as trace
@@ -6,7 +9,12 @@ from . import approval_trace as trace
 class IrAccessObligation(models.AbstractModel):
     _inherit = "ir.access.obligation"
 
-    def _at_door(self, records, verb, call):
+    def _at_door(
+        self,
+        records: models.BaseModel,
+        verb: str,
+        call: Callable[[models.BaseModel], Any],
+    ) -> Any:
         Binding = self.env["approval.binding"]
         own, configured = Binding._split_verb_bindings(records._name, verb)
         if not own and not configured:
@@ -27,7 +35,10 @@ class IrAccessObligation(models.AbstractModel):
         run = call
         if configured:
 
-            def run(runnable, call=call):
+            def run(
+                runnable: models.BaseModel,
+                call: Callable[[models.BaseModel], Any] = call,
+            ) -> Any:
                 return Binding._gate(
                     runnable,
                     configured,
@@ -39,7 +50,7 @@ class IrAccessObligation(models.AbstractModel):
             return own._hold_document_at_door(records, verb, run)
         return run(records)
 
-    def _at_checkpoint(self, records, verb):
+    def _at_checkpoint(self, records: models.BaseModel, verb: str) -> None:
         Binding = self.env["approval.binding"]
         own, configured = Binding._split_verb_bindings(records._name, verb)
         if configured:
@@ -48,7 +59,7 @@ class IrAccessObligation(models.AbstractModel):
             own._hold_document_at_checkpoint(records, verb)
         return super()._at_checkpoint(records, verb)
 
-    def _get_held(self, records, verb):
+    def _get_held(self, records: models.BaseModel, verb: str) -> models.BaseModel:
         Binding = self.env["approval.binding"]
         own, configured = Binding._split_verb_bindings(records._name, verb)
         held = records.browse()
@@ -65,12 +76,14 @@ class IrAccessObligation(models.AbstractModel):
         trace.BINDING.event("held", model=records._name, verb=verb, held=held)
         return held
 
-    def _after_move(self, records, verb):
+    def _after_move(self, records: models.BaseModel, verb: str) -> None:
         if self.env["approval.binding"]._move_decides(records._name, verb):
             records._approval_move_decided(verb)
         return super()._after_move(records, verb)
 
-    def _explain_obligations(self, record, verb):
+    def _explain_obligations(
+        self, record: models.BaseModel, verb: str
+    ) -> list[dict[str, Any]]:
         result = super()._explain_obligations(record, verb)
         for binding in self.env["approval.binding"]._bindings_for_verb(
             record._name, verb

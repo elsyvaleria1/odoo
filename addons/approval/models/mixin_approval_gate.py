@@ -1,8 +1,16 @@
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Self
+
 from odoo import fields, models
 from odoo.exceptions import UserError
 
 from . import approval_trace as trace
 from .approval_utils import ApprovalStepUnstaffed
+
+if TYPE_CHECKING:
+    from .approval_binding import ApprovalBinding
+    from .approval_category import ApprovalCategory
+    from .approval_request import ApprovalRequest
 
 ASK_ADMISSION = "approval.ask:"
 GRANT_RUN_ADMISSION = "approval.grant_run"
@@ -13,10 +21,10 @@ class MixinApprovalGate(models.AbstractModel):
     _inherit = ["mixin.approval"]
     _description = "Operation Gated by Approval"
 
-    def _check_before_approval(self, verb):
+    def _check_before_approval(self, verb: str) -> None:
         pass
 
-    def _run_through_approval(self, operation, run):
+    def _run_through_approval(self, operation: str, run: Callable[[Self], Any]) -> Any:
         ready, need_approval = self._split_for_approval(operation)
         result = True
         if ready:
@@ -50,7 +58,7 @@ class MixinApprovalGate(models.AbstractModel):
             operation, ready, asked, result, blocked
         )
 
-    def _submit_drafted_approval(self, operation):
+    def _submit_drafted_approval(self, operation: str) -> dict[str, Any]:
         self.check_singleton()
         request = self._get_own_approval_request()
         if not self._submits_approval_request_on_raise():
@@ -72,7 +80,9 @@ class MixinApprovalGate(models.AbstractModel):
         )
         return self._get_approval_submitted_action(request)
 
-    def _submit_drafted_approval_each(self, operation) -> tuple:
+    def _submit_drafted_approval_each(
+        self, operation: str
+    ) -> tuple[Self, list[tuple[Self, ApprovalStepUnstaffed]]]:
         asked = self.browse()
         blocked = []
         for record in self:
@@ -88,7 +98,9 @@ class MixinApprovalGate(models.AbstractModel):
                 asked |= record
         return asked, blocked
 
-    def _ask_approval_each(self) -> tuple:
+    def _ask_approval_each(
+        self,
+    ) -> tuple[Self, list[tuple[Self, ApprovalStepUnstaffed]]]:
         self.env.flush_all()
         try:
             with self.env.cr.savepoint():
@@ -115,7 +127,12 @@ class MixinApprovalGate(models.AbstractModel):
                 asked |= record
         return asked, blocked
 
-    def _get_approval_asked_headline(self, ready, need_approval, blocked=()) -> str:
+    def _get_approval_asked_headline(
+        self,
+        ready: Self,
+        need_approval: Self,
+        blocked: Sequence[tuple[Self, ApprovalStepUnstaffed]] = (),
+    ) -> str:
         if blocked:
             return self.env._(
                 "%(sent)s sent for approval; %(ran)s went through; "
@@ -130,7 +147,7 @@ class MixinApprovalGate(models.AbstractModel):
             ran=len(ready),
         )
 
-    def _get_approval_unstaffed_note(self, error) -> str:
+    def _get_approval_unstaffed_note(self, error: ApprovalStepUnstaffed) -> str:
         self.check_singleton()
         step = error.step
         company = error.company
@@ -148,8 +165,13 @@ class MixinApprovalGate(models.AbstractModel):
         )
 
     def _get_approval_asked_notification(
-        self, operation, ready, need_approval, result, blocked=()
-    ) -> dict:
+        self,
+        operation: str,
+        ready: Self,
+        need_approval: Self,
+        result: Any,
+        blocked: Sequence[tuple[Self, ApprovalStepUnstaffed]] = (),
+    ) -> dict[str, Any]:
         params = {
             "type": "warning",
             "title": self.env._("Approval Required"),
@@ -172,7 +194,7 @@ class MixinApprovalGate(models.AbstractModel):
             "params": params,
         }
 
-    def _split_for_approval(self, operation) -> tuple:
+    def _split_for_approval(self, operation: str) -> tuple[Self, Self]:
         self.invalidate_recordset(["approval_required"])
         ready = need_approval = self.browse()
         for record in self:
@@ -227,14 +249,14 @@ class MixinApprovalGate(models.AbstractModel):
                 need_approval |= record
         return ready, need_approval
 
-    def _get_own_approval_request(self):
+    def _get_own_approval_request(self) -> ApprovalRequest:
         self.check_singleton()
         request = self.approval_request_id.sudo()
         if not request:
             return request
         return request if request.get_source_document() == self else request.browse()
 
-    def _release_approval_of_other_operation(self, operation) -> None:
+    def _release_approval_of_other_operation(self, operation: str) -> None:
         self.check_singleton()
         request = self._get_own_approval_request()
         if request.state in ("new", "pending"):
@@ -288,30 +310,30 @@ class MixinApprovalGate(models.AbstractModel):
             message_type="notification",
         )
 
-    def _is_approval_reasked_after_refusal(self, operation) -> bool:
+    def _is_approval_reasked_after_refusal(self, operation: str) -> bool:
         self.check_singleton()
         return False
 
-    def _approval_request_gates(self, operation) -> bool:
+    def _approval_request_gates(self, operation: str) -> bool:
         request = self._get_own_approval_request()
         if not request:
             return False
         asked_for = request.operation
         return not asked_for or asked_for in self._get_operation_names(operation)
 
-    def _get_operation_names(self, operation):
+    def _get_operation_names(self, operation: str) -> tuple[str, ...]:
         verb = self.env["approval.binding"]._get_declared_verb(self, operation)
         return (operation, *verb.methods) if verb else (operation,)
 
-    def _get_operation_door(self, operation):
+    def _get_operation_door(self, operation: str) -> str:
         verb = self.env["approval.binding"]._get_declared_verb(self, operation)
         return verb.methods[0] if verb and verb.methods else operation
 
-    def _get_approval_snapshot(self, operation):
+    def _get_approval_snapshot(self, operation: str) -> dict[str, Any]:
         self.check_singleton()
         return {}
 
-    def _check_approval_covers(self, operation) -> None:
+    def _check_approval_covers(self, operation: str) -> None:
         self.check_singleton()
         approved = self.approval_request_id.operation_snapshot
         if not approved:
@@ -330,7 +352,7 @@ class MixinApprovalGate(models.AbstractModel):
                 )
             )
 
-    def _is_approval_covering(self, operation) -> bool:
+    def _is_approval_covering(self, operation: str) -> bool:
         try:
             self._check_approval_covers(operation)
         except UserError as error:
@@ -343,7 +365,7 @@ class MixinApprovalGate(models.AbstractModel):
             return False
         return True
 
-    def _reset_approval_not_covering(self, operation) -> None:
+    def _reset_approval_not_covering(self, operation: str) -> None:
         self.check_singleton()
         request = self._get_own_approval_request()
         request._check_reset_allowed()
@@ -362,13 +384,13 @@ class MixinApprovalGate(models.AbstractModel):
             )
         )
 
-    def _run_admitted(self, operation, run):
+    def _run_admitted(self, operation: str, run: Callable[[Self], Any]) -> Any:
         return self.env["approval.binding"]._run_admitted(self, operation, run)
 
-    def _get_admitted_ids(self, operation):
+    def _get_admitted_ids(self, operation: str) -> set[int]:
         return self.env["approval.binding"]._get_admitted_ids(self, operation)
 
-    def _is_approval_granted_for(self, operation) -> bool:
+    def _is_approval_granted_for(self, operation: str) -> bool:
         self.check_singleton()
         return bool(
             self.approval_request_id
@@ -376,7 +398,7 @@ class MixinApprovalGate(models.AbstractModel):
             and self._approval_request_gates(operation)
         )
 
-    def _get_approval_held(self, operation):
+    def _get_approval_held(self, operation: str) -> Self:
         admitted = self._get_admitted_ids(operation)
         self.invalidate_recordset(["approval_required"])
         return self.filtered(
@@ -393,7 +415,12 @@ class MixinApprovalGate(models.AbstractModel):
             )
         )
 
-    def _check_approval_admits(self, operation, enforced=True, binding=None) -> None:
+    def _check_approval_admits(
+        self,
+        operation: str,
+        enforced: bool = True,
+        binding: ApprovalBinding | None = None,
+    ) -> None:
         admitted = self._get_admitted_ids(operation)
         for record in self.filtered(
             lambda r: r.id not in admitted and r._is_approval_granted_for(operation)
@@ -432,7 +459,7 @@ class MixinApprovalGate(models.AbstractModel):
             )
         )
 
-    def _stamp_operation_run(self, operation) -> None:
+    def _stamp_operation_run(self, operation: str) -> None:
         granted = self.filtered(
             lambda record: (
                 record.approval_state == "approved"
@@ -453,7 +480,7 @@ class MixinApprovalGate(models.AbstractModel):
             )
             requests.date_operation_run = fields.Datetime.now()
 
-    def _get_approval_refresh_values(self, request):
+    def _get_approval_refresh_values(self, request: ApprovalRequest) -> dict[str, Any]:
         values = super()._get_approval_refresh_values(request)
         if operation := request.operation or self._get_gated_operation():
             values["operation_snapshot"] = self._get_approval_snapshot(operation)
@@ -462,7 +489,7 @@ class MixinApprovalGate(models.AbstractModel):
     def _is_approval_acted_on(self) -> bool:
         return bool(self._get_own_approval_request().date_operation_run)
 
-    def _is_operation_run_on_approval(self, operation) -> bool:
+    def _is_operation_run_on_approval(self, operation: str) -> bool:
         self.check_singleton()
         return True
 
@@ -486,24 +513,26 @@ class MixinApprovalGate(models.AbstractModel):
             request.date_operation_run = fields.Datetime.now()
             getattr(document, self._get_operation_door(operation))()
 
-    def _get_operation_failure_note(self, operation) -> str:
+    def _get_operation_failure_note(self, operation: str) -> str:
         self.check_singleton()
         return self.env._(
             "Approval was granted, but the document could not go through: %(error)s"
         )
 
-    def _get_gated_operation(self):
+    def _get_gated_operation(self) -> str | None:
         self.check_singleton()
-        return self.env["approval.binding"]._get_own_verb(self) or False
+        return self.env["approval.binding"]._get_own_verb(self)
 
-    def _get_asked_operation(self):
+    def _get_asked_operation(self) -> str | None:
         (record,) = self
         for name in self.env.transaction.admitted_names(record._name, record.id):
             if name.startswith(ASK_ADMISSION):
                 return name.removeprefix(ASK_ADMISSION)
-        return False
+        return None
 
-    def _prepare_approval_request_values(self, category):
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         values = super()._prepare_approval_request_values(category)
         operation = self._get_asked_operation() or self._get_gated_operation()
         if operation:

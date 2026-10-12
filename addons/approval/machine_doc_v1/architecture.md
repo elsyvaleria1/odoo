@@ -101,7 +101,7 @@
    |   +-- approval_app: _check_category_required_fields()
    +-- name = category sequence consecutive (deferred numbering; a
    |       reset-then-reconfirmed request keeps its original number)
-   +-- _build_category_snapshot() -> category_snapshot (JSON audit,
+   +-- _prepare_category_snapshot() -> category_snapshot (JSON audit,
    |       incl. effective_* keys + the matched replacing rule)
    +-- date_confirmed = fields.Datetime.now()  (stamped BEFORE auto
    |       rules so granted >= confirmed on auto-approved requests)
@@ -428,7 +428,7 @@ _sync_approvers()   [batch-level]
     |   +-- Persist applied_rule_ids from _applied_rule_ids_after_sync()
     |           (the matched_rules the pure step returned)
     |
-    +-- [after the loop] _build_sync_plan() -> _execute_sync_plan():
+    +-- [after the loop] _prepare_sync_plan() -> _execute_sync_plan():
     |       ONE delete, ONE create, then one update PER DISTINCT VALUE SET
     |       (not three statements — rows_to_update is keyed by the value
     |       tuple, so N distinct shapes cost N writes). In this

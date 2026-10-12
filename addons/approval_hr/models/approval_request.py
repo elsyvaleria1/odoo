@@ -1,5 +1,3 @@
-from typing import Any
-
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import frozendict
@@ -37,7 +35,7 @@ class ApprovalRequest(models.Model):
         for request in self:
             request.requester_manager_user_id = request._get_owner_manager_user()
 
-    def action_confirm(self) -> dict[str, Any]:
+    def action_confirm(self) -> None:
         for request in self:
             request._check_manager_approval_constraints()
 
@@ -63,7 +61,7 @@ class ApprovalRequest(models.Model):
                         ),
                     )
 
-        return super().action_confirm()
+        super().action_confirm()
 
     def _get_owner_employee(self):
         self.check_singleton()

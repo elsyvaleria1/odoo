@@ -1,7 +1,14 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.tools import ormcache
+
+if TYPE_CHECKING:
+    from .approval_category_step import (
+        ApprovalCategoryStep as ApprovalCategoryStepModel,
+    )
+    from .res_users import ResUsers
 
 
 class IrAccessSodFunction(models.Model):
@@ -38,7 +45,9 @@ class IrAccessSodFunction(models.Model):
             "approver_category_ids": frozenset(steps.category_id._ids),
         }
 
-    def _get_holder_ids(self, users, scheduled=None) -> set[int]:
+    def _get_holder_ids(
+        self, users: ResUsers, scheduled: dict[int, frozenset[int]] | None = None
+    ) -> set[int]:
         holders = super()._get_holder_ids(users, scheduled)
         categories = self._get_duty_spec().get("approver_category_ids")
         if not categories:
@@ -67,7 +76,7 @@ class IrAccessSodFunction(models.Model):
             if not excluded & frozenset(user.all_group_ids._ids)
         }
 
-    def _get_approval_steps(self):
+    def _get_approval_steps(self) -> ApprovalCategoryStepModel:
         self.check_singleton()
         domain = [("category_id.active", "=", True)]
         if not self.approves_anything:
@@ -80,7 +89,7 @@ class IrAccessSodFunction(models.Model):
         return self.env["approval.category.step"].search(domain)
 
     @api.model
-    def _holds(self, spec: dict[str, Any], user_id: int, held: frozenset) -> bool:
+    def _holds(self, spec: dict[str, Any], user_id: int, held: frozenset[int]) -> bool:
         if super()._holds(spec, user_id, held):
             return True
         if spec["excluded"] & held:
@@ -93,7 +102,7 @@ class IrAccessSodFunction(models.Model):
 class ApprovalCategory(models.Model):
     _inherit = "approval.category"
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         result = super().write(vals)
         if {"active", "approval_type"} & vals.keys():
             self.env.registry.clear_cache("groups")
@@ -104,7 +113,7 @@ class ApprovalCategoryStep(models.Model):
     _inherit = "approval.category.step"
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         steps = super().create(vals_list)
         self.env.registry.clear_cache("groups")
         self.env["ir.access.sod.rule"]._check_users(
@@ -112,7 +121,7 @@ class ApprovalCategoryStep(models.Model):
         )
         return steps
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         result = super().write(vals)
         if {"group_id", "active", "category_id"} & vals.keys():
             self.env.registry.clear_cache("groups")
@@ -121,7 +130,7 @@ class ApprovalCategoryStep(models.Model):
             )
         return result
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         result = super().unlink()
         self.env.registry.clear_cache("groups")
         return result
@@ -131,20 +140,20 @@ class ApprovalCategoryStepMember(models.Model):
     _inherit = "approval.category.step.member"
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         members = super().create(vals_list)
         self.env.registry.clear_cache("groups")
         self.env["ir.access.sod.rule"]._check_users(members.user_id, "approval_step")
         return members
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         result = super().write(vals)
         if "user_id" in vals:
             self.env.registry.clear_cache("groups")
             self.env["ir.access.sod.rule"]._check_users(self.user_id, "approval_step")
         return result
 
-    def unlink(self):
+    def unlink(self) -> Literal[True]:
         result = super().unlink()
         self.env.registry.clear_cache("groups")
         return result
@@ -153,7 +162,7 @@ class ApprovalCategoryStepMember(models.Model):
 class ApprovalApprover(models.Model):
     _inherit = "approval.approver"
 
-    def write(self, vals):
+    def write(self, vals: ValuesType) -> Literal[True]:
         result = super().write(vals)
         if vals.get("delegate_id"):
             self.env["ir.access.sod.rule"]._check_users(

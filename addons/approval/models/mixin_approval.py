@@ -1,6 +1,7 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import timedelta
-from typing import TYPE_CHECKING, Any
+from datetime import date, timedelta
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from markupsafe import Markup, escape
 
@@ -14,6 +15,10 @@ from . import approval_trace as trace
 
 if TYPE_CHECKING:
     from odoo.addons.approval.models.approval_category import ApprovalCategory
+    from odoo.addons.approval.models.approval_request import ApprovalRequest
+    from odoo.addons.approval.models.res_users import ResUsers
+
+type CategoryCandidates = dict[tuple[str, int | Literal[False]], ApprovalCategory]
 
 APPROVAL_TRIGGER_CATEGORY = "category"
 APPROVAL_TRIGGER_RULE = "rule"
@@ -100,7 +105,9 @@ class MixinApproval(models.AbstractModel):
     @api.depends_context("uid", "company")
     def _compute_approval_chain_preview(self) -> None:
         for record in self:
-            record.approval_chain_preview = record._render_approval_chain_preview()
+            record.approval_chain_preview = (
+                record._render_approval_chain_preview() or False
+            )
 
     def _get_approval_chain_preview(self) -> list[dict[str, Any]]:
         self.check_singleton()
@@ -133,10 +140,10 @@ class MixinApproval(models.AbstractModel):
             )
         ]
 
-    def _render_approval_chain_preview(self) -> Markup | bool:
+    def _render_approval_chain_preview(self) -> Markup | None:
         rows = self._get_approval_chain_preview()
         if not rows:
-            return False
+            return None
         if "error" in rows[0]:
             return Markup("<p>%s</p>") % rows[0]["error"]
         items = Markup("").join(
@@ -148,7 +155,7 @@ class MixinApproval(models.AbstractModel):
 
     @api.depends_context("uid", "company")
     def _compute_approval_required(self) -> None:
-        candidates: dict[tuple, Any] = {}
+        candidates: CategoryCandidates = {}
         hits = 0
         required = 0
         unconfigured = 0
@@ -183,7 +190,7 @@ class MixinApproval(models.AbstractModel):
             required=required,
         )
 
-    def _get_approval_trigger(self) -> str | bool:
+    def _get_approval_trigger(self) -> str | None:
         self.check_singleton()
         return APPROVAL_TRIGGER_CATEGORY
 
@@ -228,7 +235,9 @@ class MixinApproval(models.AbstractModel):
                     missing=missing_fields,
                 )
 
-    def _check_can_request_approval(self, candidates=None) -> ApprovalCategory:
+    def _check_can_request_approval(
+        self, candidates: CategoryCandidates | None = None
+    ) -> ApprovalCategory:
         self.check_singleton()
         if self.approval_request_id:
             trace.REFUSAL.event(
@@ -281,7 +290,7 @@ class MixinApproval(models.AbstractModel):
             )
         return category
 
-    def _get_engine_approval_request(self):
+    def _get_engine_approval_request(self) -> ApprovalRequest:
         self.check_singleton()
         return self.approval_request_id.sudo()
 
@@ -301,10 +310,10 @@ class MixinApproval(models.AbstractModel):
         self.check_singleton()
         return self._get_approval_submitted_action(self._raise_approval_requests())
 
-    def _raise_approval_requests(self):
+    def _raise_approval_requests(self) -> ApprovalRequest:
         self.lock_for_update(wait=True)
         self.invalidate_recordset(["approval_request_id"])
-        candidates = {}
+        candidates: CategoryCandidates = {}
         vals_list = [
             record._prepare_approval_request_values(
                 record._check_can_request_approval(candidates)
@@ -333,15 +342,17 @@ class MixinApproval(models.AbstractModel):
     def _submits_approval_request_on_raise(self) -> bool:
         return True
 
-    def _get_approval_raised_note(self, approval) -> Markup:
+    def _get_approval_raised_note(self, approval: ApprovalRequest) -> Markup:
         return Markup(
             "<a href='#' data-oe-model='approval.request' data-oe-id='%s'>%s</a> %s"
         ) % (approval.id, escape(approval.display_name), self.env._("created"))
 
-    def _before_approval_request_submit(self, approval) -> None:
+    def _before_approval_request_submit(self, approval: ApprovalRequest) -> None:
         pass
 
-    def _get_approval_submitted_action(self, approval) -> dict[str, Any]:
+    def _get_approval_submitted_action(
+        self, approval: ApprovalRequest
+    ) -> dict[str, Any]:
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -357,7 +368,7 @@ class MixinApproval(models.AbstractModel):
             },
         }
 
-    def _approval_rate_limit_rate_date(self):
+    def _approval_rate_limit_rate_date(self) -> date:
         self.check_singleton()
         return fields.Date.context_today(self)
 
@@ -368,7 +379,7 @@ class MixinApproval(models.AbstractModel):
         max_count: int,
         max_amount: float,
         under_threshold_amount: float,
-        excluded_states: tuple = ("cancel",),
+        excluded_states: tuple[str, ...] = ("cancel",),
     ) -> bool:
         self.check_singleton()
         company = self.company_id
@@ -458,7 +469,7 @@ class MixinApproval(models.AbstractModel):
     )
 
     @api.model_create_multi
-    def create(self, vals_list: list[ValuesType]):
+    def create(self, vals_list: list[ValuesType]) -> Self:
         for vals in vals_list:
             self._check_no_forged_approval_outputs(vals)
         records = super().create(vals_list)
@@ -467,7 +478,7 @@ class MixinApproval(models.AbstractModel):
                 record._check_approval_request_link(vals["approval_request_id"])
         return records
 
-    def _check_no_forged_approval_outputs(self, vals: dict[str, Any]) -> None:
+    def _check_no_forged_approval_outputs(self, vals: ValuesType) -> None:
         forged = self._APPROVAL_OUTPUT_FIELDS & vals.keys()
         if forged:
             trace.REFUSAL.event(
@@ -482,7 +493,7 @@ class MixinApproval(models.AbstractModel):
                 )
             )
 
-    def _check_approval_request_link(self, request_id: int | Any) -> None:
+    def _check_approval_request_link(self, request_id: int | ApprovalRequest) -> None:
         request = (
             self.env["approval.request"]
             .sudo()
@@ -522,7 +533,7 @@ class MixinApproval(models.AbstractModel):
                 )
             )
 
-    def write(self, vals: dict[str, Any]) -> bool:
+    def write(self, vals: ValuesType) -> Literal[True]:
         self._check_no_forged_approval_outputs(vals)
         if vals.get("approval_request_id"):
             if len(self) > 1:
@@ -573,7 +584,9 @@ class MixinApproval(models.AbstractModel):
     def _is_approval_invalidated_by_changes(self, fields_changed: list[str]) -> bool:
         return True
 
-    def _get_records_approval_invalidated_by(self, vals: dict[str, Any]):
+    def _get_records_approval_invalidated_by(
+        self, vals: ValuesType
+    ) -> list[tuple[Self, list[str]]]:
         protected = set(self._get_fields_approval_protected()) & vals.keys()
         if not protected:
             return []
@@ -664,7 +677,7 @@ class MixinApproval(models.AbstractModel):
                     ),
                 )
 
-    def unlink(self) -> bool:
+    def unlink(self) -> Literal[True]:
         draft_requests = self.env["approval.request"].sudo()
         names = {}
         for record in self:
@@ -742,7 +755,9 @@ class MixinApproval(models.AbstractModel):
             domain + [("company_id", "in", (company_id, False))],
         )
 
-    def _find_approval_category(self, categories=None) -> ApprovalCategory:
+    def _find_approval_category(
+        self, categories: ApprovalCategory | None = None
+    ) -> ApprovalCategory:
         self.check_singleton()
         if categories is None:
             categories = self._get_candidate_approval_categories()
@@ -762,12 +777,14 @@ class MixinApproval(models.AbstractModel):
         )
         return self._get_approval_category_fallback(categories)
 
-    def _get_approval_category(self, candidates=None) -> ApprovalCategory | bool:
+    def _get_approval_category(
+        self, candidates: CategoryCandidates | None = None
+    ) -> ApprovalCategory:
         self.check_singleton()
         domain = self._get_domain_approval_category()
         if not domain:
             trace.MIXIN.event("approval_category", record=self, outcome="no_domain")
-            return False
+            return self.env["approval.category"]
         if candidates is None:
             candidates = {}
         company_id = False
@@ -782,7 +799,7 @@ class MixinApproval(models.AbstractModel):
                 "approval_category", record=self, outcome="none_configured"
             )
             self._raise_approval_category_not_configured()
-            return False
+            return self.env["approval.category"]
         category = self._find_approval_category(categories)
         if category:
             trace.MIXIN.event(
@@ -800,9 +817,11 @@ class MixinApproval(models.AbstractModel):
             candidates=categories.ids,
         )
         self._raise_approval_category_not_matched(categories)
-        return False
+        return self.env["approval.category"]
 
-    def _get_approval_category_fallback(self, categories):
+    def _get_approval_category_fallback(
+        self, categories: ApprovalCategory
+    ) -> ApprovalCategory:
         self.check_singleton()
         trace.DEGRADED.event(
             "no_category_fallback", record=self, candidates=len(categories)
@@ -812,7 +831,9 @@ class MixinApproval(models.AbstractModel):
     def _raise_approval_category_not_configured(self) -> None:
         trace.DEGRADED.event("category_not_configured_unraised", record=self)
 
-    def _raise_approval_category_not_matched(self, categories) -> None:
+    def _raise_approval_category_not_matched(
+        self, categories: ApprovalCategory
+    ) -> None:
         trace.DEGRADED.event(
             "category_not_matched_unraised", record=self, candidates=categories.ids
         )
@@ -835,18 +856,20 @@ class MixinApproval(models.AbstractModel):
     def _get_fields_approval_required(self) -> list[str]:
         return []
 
-    def _get_approval_requester(self):
+    def _get_approval_requester(self) -> ResUsers:
         self.check_singleton()
         if not self._approval_requester_field:
             return self.env["res.users"]
         return self[self._approval_requester_field]
 
-    def _prepare_approval_request_values(self, category: Any) -> dict[str, Any]:
+    def _prepare_approval_request_values(
+        self, category: ApprovalCategory
+    ) -> dict[str, Any]:
         company_id = False
         if "company_id" in self._fields:
             company_id = self.company_id.id if self.company_id else False
 
-        vals = {
+        vals: ValuesType = {
             "category_id": category.id,
             "request_owner_id": self.env.user.id,
             "company_id": company_id or self.env.company.id,
@@ -900,7 +923,7 @@ class MixinApproval(models.AbstractModel):
         "reference",
     )
 
-    def _get_approval_refresh_values(self, request) -> dict[str, Any]:
+    def _get_approval_refresh_values(self, request: ApprovalRequest) -> dict[str, Any]:
         self.check_singleton()
         values = self._prepare_approval_request_values(request.category_id)
         return {
@@ -945,7 +968,7 @@ class MixinApproval(models.AbstractModel):
         )
 
     @contextmanager
-    def _approval_side_effect(self, failure_note: str):
+    def _approval_side_effect(self, failure_note: str) -> Iterator[None]:
         self.check_singleton()
         try:
             with self.env.cr.savepoint():
@@ -968,7 +991,7 @@ class MixinApproval(models.AbstractModel):
         self.check_singleton()
         self.message_post(**self._approval_approved_message_values())
 
-    def _approval_approved_message_values(self) -> dict:
+    def _approval_approved_message_values(self) -> dict[str, Any]:
         return {
             "body": self.env._("Approval granted"),
             "message_type": "notification",

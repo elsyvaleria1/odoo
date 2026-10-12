@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from odoo import api, models
 from odoo.exceptions import UserError
@@ -9,21 +9,29 @@ from odoo.fields import Command
 
 from . import approval_trace as trace
 
+if TYPE_CHECKING:
+    from .approval_approver import ApprovalApprover
+    from .approval_category_step import ApprovalCategoryStep
+    from .approval_rule import ApprovalRule
+    from .res_users import ResUsers
+
 _logger = logging.getLogger(__name__)
 
 
-def _get_member_order(member_order, user_id) -> tuple:
+def _get_member_order(
+    member_order: dict[int, tuple[int, int]], user_id: int
+) -> tuple[bool, tuple[int, int], int]:
     return (user_id not in member_order, member_order.get(user_id, (0, 0)), user_id)
 
 
 @dataclass
 class DesiredApprovers:
-    staging: dict[int, dict]
-    existing_by_user: dict[int, Any]
-    duplicates: list[Any]
-    matched_rules: Any
-    superseded_delegations: Any
-    to_create: dict[int, dict] = field(default_factory=dict)
+    staging: dict[int, dict[str, Any]]
+    existing_by_user: dict[int, ApprovalApprover]
+    duplicates: list[ApprovalApprover]
+    matched_rules: ApprovalRule
+    superseded_delegations: ApprovalApprover
+    to_create: dict[int, dict[str, Any]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.to_create = {
@@ -82,7 +90,9 @@ class ApprovalRequestRouting(models.Model):
         )
         return snapshot
 
-    def _prepare_step_snapshot(self, steps) -> list[dict[str, Any]]:
+    def _prepare_step_snapshot(
+        self, steps: ApprovalCategoryStep
+    ) -> list[dict[str, Any]]:
         self.check_singleton()
         document = self.get_source_document()
         entries = []
@@ -107,7 +117,7 @@ class ApprovalRequestRouting(models.Model):
             )
         return entries
 
-    def _get_applicable_steps(self):
+    def _get_applicable_steps(self) -> ApprovalCategoryStep:
         self.check_singleton()
         steps = self.category_id.step_ids
         matched = self._get_step_rule_matches(
@@ -124,7 +134,7 @@ class ApprovalRequestRouting(models.Model):
         )
         return applicable
 
-    def _get_step_rule_matches(self, rules):
+    def _get_step_rule_matches(self, rules: ApprovalRule) -> ApprovalRule:
         self.check_singleton()
         remembered = self.env.context.get("approval_rule_matches", {}).get(self.id)
         if remembered is not None:
@@ -138,7 +148,7 @@ class ApprovalRequestRouting(models.Model):
         )
         return matched.with_env(rules.env)
 
-    def _applied_rule_ids_after_sync(self, matched_rules):
+    def _applied_rule_ids_after_sync(self, matched_rules: ApprovalRule) -> ApprovalRule:
         self.check_singleton()
         preserved = self.applied_rule_ids.filtered(
             lambda r: r.action_type != "condition",
@@ -154,7 +164,7 @@ class ApprovalRequestRouting(models.Model):
         )
         return kept
 
-    def _get_managed_approver_user_ids(self, steps) -> set[int]:
+    def _get_managed_approver_user_ids(self, steps: ApprovalCategoryStep) -> set[int]:
         self.check_singleton()
         managed = set()
         document = self.get_source_document()
@@ -163,7 +173,7 @@ class ApprovalRequestRouting(models.Model):
         trace.ROUTING.event("managed_users", request=self.id, managed=sorted(managed))
         return managed
 
-    def _rule_applies_to_company(self, rule) -> bool:
+    def _rule_applies_to_company(self, rule: ApprovalRule) -> bool:
         self.check_singleton()
         rule_company = rule.company_id
         applies = not rule_company or rule_company == self.company_id
@@ -251,7 +261,7 @@ class ApprovalRequestRouting(models.Model):
 
         return False
 
-    def _resolve_auto_action(self, matching_rules):
+    def _resolve_auto_action(self, matching_rules: ApprovalRule) -> ApprovalRule:
         refusals = matching_rules.filtered(
             lambda r: r.action_type == "auto_refuse",
         )
@@ -286,7 +296,7 @@ class ApprovalRequestRouting(models.Model):
 
     def _merge_approver_to_staging(
         self,
-        staging: dict[int, dict],
+        staging: dict[int, dict[str, Any]],
         user_id: int,
         required: bool,
         sequence: int,
@@ -318,7 +328,7 @@ class ApprovalRequestRouting(models.Model):
         minimum_updates: dict[int, int] = {}
         rows_to_delete: list[int] = []
         rows_to_create: list[dict[str, Any]] = []
-        rows_to_update: dict[tuple, list[int]] = {}
+        rows_to_update: dict[tuple[tuple[str, Any], ...], list[int]] = {}
 
         self.category_id.fetch(["step_ids"])
 
@@ -421,7 +431,7 @@ class ApprovalRequestRouting(models.Model):
             for minimum, ids in by_minimum.items():
                 self.browse(ids).sudo().write({"approval_minimum": minimum})
 
-    def _extend_approvers_live(self) -> models.BaseModel:
+    def _extend_approvers_live(self) -> ApprovalApprover:
         live = self.filtered(
             lambda r: r.state == "pending" and not r.pending_change_field,
         )
@@ -438,7 +448,7 @@ class ApprovalRequestRouting(models.Model):
             added |= request._reroute_steps_live(request._get_desired_approvers())
         return added
 
-    def _reroute_steps_live(self, desired) -> models.BaseModel:
+    def _reroute_steps_live(self, desired: DesiredApprovers) -> ApprovalApprover:
         self.check_singleton()
         Step = self.env["approval.category.step"]
         previous = self.approver_ids.step_ids
@@ -531,7 +541,9 @@ class ApprovalRequestRouting(models.Model):
             )
             request._follow_state_change(old_state)
 
-    def _create_live_approver_rows(self, missing: dict[int, dict]):
+    def _create_live_approver_rows(
+        self, missing: dict[int, dict[str, Any]]
+    ) -> ApprovalApprover:
         self.check_singleton()
         rows = [
             {
@@ -563,9 +575,9 @@ class ApprovalRequestRouting(models.Model):
         self,
         rows_to_delete: list[int],
         rows_to_create: list[dict[str, Any]],
-        rows_to_update: dict[tuple, list[int]],
-    ) -> list[tuple]:
-        plan: list[tuple] = []
+        rows_to_update: dict[tuple[tuple[str, Any], ...], list[int]],
+    ) -> list[tuple[str, Any]]:
+        plan: list[tuple[str, Any]] = []
         if rows_to_delete:
             plan.append(("delete", rows_to_delete))
         if rows_to_create:
@@ -574,7 +586,7 @@ class ApprovalRequestRouting(models.Model):
             plan.append(("update", (update_vals, approver_ids)))
         return plan
 
-    def _execute_sync_plan(self, plan: list[tuple]) -> None:
+    def _execute_sync_plan(self, plan: list[tuple[str, Any]]) -> None:
         if not plan:
             return
         approver_model = (
@@ -594,7 +606,7 @@ class ApprovalRequestRouting(models.Model):
                     vals["step_ids"] = [Command.set(list(vals["step_ids"]))]
                 approver_model.browse(approver_ids).write(vals)
 
-    def _log_sync_plan(self, plan: list[tuple]) -> None:
+    def _log_sync_plan(self, plan: list[tuple[str, Any]]) -> None:
         _logger.debug(
             "%s batch: %d request(s) %s",
             self._SYNC_LOG_PREFIX,
@@ -640,7 +652,7 @@ class ApprovalRequestRouting(models.Model):
                     " ".join(f"{key}={value}" for key, value in update_vals),
                 )
 
-    def _retire_superseded_delegations(self, rows) -> None:
+    def _retire_superseded_delegations(self, rows: ApprovalApprover) -> None:
         self.check_singleton()
         for row in rows:
             delegate = row.delegate_id
@@ -674,14 +686,14 @@ class ApprovalRequestRouting(models.Model):
     def _supplies_manager_chain(self) -> bool:
         return False
 
-    def _get_manager_chain(self, user):
+    def _get_manager_chain(self, user: ResUsers) -> ResUsers:
         self.check_singleton()
         return self.env["res.users"]
 
     def _get_desired_approvers(self) -> DesiredApprovers:
         self.check_singleton()
-        users_to_approver: dict[int, Any] = {}
-        duplicate_approvers_to_delete: list[Any] = []
+        users_to_approver: dict[int, ApprovalApprover] = {}
+        duplicate_approvers_to_delete: list[ApprovalApprover] = []
         for approver in self.approver_ids:
             user_id = approver.user_id.id
             if user_id in users_to_approver:
@@ -689,7 +701,7 @@ class ApprovalRequestRouting(models.Model):
             else:
                 users_to_approver[user_id] = approver
 
-        approver_staging: dict[int, dict] = {}
+        approver_staging: dict[int, dict[str, Any]] = {}
 
         steps = self._get_applicable_steps()
         step_ids_by_user: dict[int, set[int]] = {}
@@ -777,8 +789,8 @@ class ApprovalRequestRouting(models.Model):
     @api.model
     def _stage_approver_update(
         self,
-        approver: models.BaseModel,
-        rows_to_update: dict[tuple, list[int]],
+        approver: ApprovalApprover,
+        rows_to_update: dict[tuple[tuple[str, Any], ...], list[int]],
         new_required: bool,
         new_sequence: int,
         new_source_rule_id: int | None = None,

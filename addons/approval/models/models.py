@@ -1,3 +1,5 @@
+from typing import Any
+
 from odoo import api, models
 
 from . import approval_trace as trace
@@ -8,7 +10,11 @@ class Base(models.AbstractModel):
 
     @api.model
     @api.readonly
-    def get_views(self, views, options=None):
+    def get_views(
+        self,
+        views: list[list[int | str]],
+        options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         result = super().get_views(views, options=options)
         Binding = self.env["approval.binding"]
         gated = Binding._get_names_of_gated_models() if Binding._enabled() else ()
@@ -21,7 +27,7 @@ class Base(models.AbstractModel):
         )
         return result
 
-    def _register_hook(self):
+    def _register_hook(self) -> None:
         super()._register_hook()
         trace.instrument(self)
 

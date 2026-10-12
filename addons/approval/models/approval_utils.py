@@ -1,29 +1,39 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from odoo.api import DomainType, Environment
 from odoo.exceptions import UserError
 
 from . import approval_trace as trace
+
+if TYPE_CHECKING:
+    from .approval_category_step import ApprovalCategoryStep
+    from odoo.addons.base.models.res_company import ResCompany
 
 RAISE_ADMISSION = "approval.raise"
 
 
 class ApprovalStepUnstaffed(UserError):
-    def __init__(self, message, step=None, company=None) -> None:
+    def __init__(
+        self,
+        message: str,
+        step: ApprovalCategoryStep | None = None,
+        company: ResCompany | None = None,
+    ) -> None:
         super().__init__(message)
         self.step = step
         self.company = company
 
 
-def is_approval_manager(env) -> bool:
+def is_approval_manager(env: Environment) -> bool:
     return env.user._is_approval_manager()
 
 
 def boolean_search_domain(
     operator: str,
     value: Any,
-    true_domain: Any,
-    false_domain: Any,
-) -> Any:
+    true_domain: DomainType,
+    false_domain: DomainType,
+) -> DomainType:
     if operator == "=":
         wants_true, wants_false = bool(value), not value
     elif operator == "!=":
@@ -37,6 +47,7 @@ def boolean_search_domain(
     else:
         raise NotImplementedError(f"Unsupported operator {operator!r}")
 
+    domain: DomainType
     if wants_true and wants_false:
         branch, domain = "both", []
     elif wants_true:
