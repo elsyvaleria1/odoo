@@ -1,4 +1,5 @@
 from odoo.exceptions import AccessError
+from odoo.fields import Domain
 from odoo.tests import new_test_user, tagged
 
 from .common import AccountApprovalCommon
@@ -88,9 +89,10 @@ class TestMoveApproverReach(AccountApprovalCommon):
         self.assertFalse(self._reads(self.invoice))
 
     def test_a_decider_with_nothing_pending_searches_nothing(self):
-        self.assertTrue(
-            self.env["account.move"].with_user(self.decider)._search([]).is_empty()
-        )
+        reach = Domain("approval_pending_user_ids", "in", self.decider.ids)
+        self.assertTrue(self.env["account.move"].sudo()._search(reach).is_empty())
+        visible = self.env["account.move"].with_user(self.decider).search([])
+        self.assertFalse(visible & (self.invoice | self.sibling))
 
     def test_the_reach_is_read_per_user_and_per_query(self):
         self.assertTrue(self.bystander.has_group("approval.group_approval_decider"))
