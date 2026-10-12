@@ -179,6 +179,24 @@ class TestDelivery(MailTelegramCase):
             [call for call in search.call_args_list if "notify_mail" in str(call)]
         )
 
+    def test_a_recipient_reached_on_telegram_otherwise_is_skipped(self):
+        self.record = self.record.with_context(
+            mail_telegram_skip_partner_ids=self.test_partner.ids
+        )
+
+        self._post_to_user()
+
+        self.assertFalse(self._queued())
+
+    def test_skipping_another_recipient_still_delivers(self):
+        self.record = self.record.with_context(
+            mail_telegram_skip_partner_ids=self.author_partner.ids
+        )
+
+        self._post_to_user()
+
+        self.assertEqual(len(self._queued()), 1)
+
     def test_an_unbound_user_gets_nothing(self):
         self.test_binding._revoke("user")
         self._post_to_user()

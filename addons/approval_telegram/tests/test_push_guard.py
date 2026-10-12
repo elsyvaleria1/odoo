@@ -10,6 +10,12 @@ from odoo.addons.telegram.tools.telegram_client import TelegramClient
 class TestTelegramCannotFailAnApproval(ApprovalRequestTestBase):
     def test_pushes_are_queued_and_telegram_is_not_called(self):
         self.test_bot.notify_approvals = True
+        request = self.env["approval.request"].create(
+            {
+                "category_id": self.category.id,
+                "request_owner_id": self.env.ref("base.user_admin").id,
+            }
+        )
         with (
             patch.object(
                 TelegramClient,
@@ -20,7 +26,7 @@ class TestTelegramCannotFailAnApproval(ApprovalRequestTestBase):
                 TelegramClient, "send_message", side_effect=AssertionError("called")
             ),
         ):
-            self.approver._create_activity()
+            request.action_confirm()
         self.assertTrue(
             self.env["telegram.message"].search_count(
                 [("chat_id", "=", self.test_chat.id), ("state", "=", "outgoing")]

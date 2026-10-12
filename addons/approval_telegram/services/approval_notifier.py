@@ -24,20 +24,24 @@ class TelegramApprovalNotifier(models.AbstractModel):
     _description = "Telegram Approval Notifier"
 
     @api.model
+    def _get_push_chat(self, approver: ApprovalApprover) -> TelegramChat:
+        if not approver._telegram_notify_enabled():
+            return self.env["telegram.chat"].browse()
+        return self._target_chat(
+            approver._get_effective_approver(), approver.request_id.company_id
+        )
+
+    @api.model
     def _notify_approver(
         self,
         approver: ApprovalApprover,
         intro: str | None = None,
         resubmitted: bool = False,
     ) -> None:
-        if not approver._telegram_notify_enabled():
-            return
-        request = approver.request_id
-        target = self._target_chat(
-            approver._get_effective_approver(), request.company_id
-        )
+        target = self._get_push_chat(approver)
         if not target:
             return
+        request = approver.request_id
         bot = target.bot_id
         env = self._recipient_env(target)
         if resubmitted:

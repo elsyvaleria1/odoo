@@ -68,18 +68,19 @@ class ApprovalRequest(models.Model):
         return result
 
     def action_resubmit(self) -> None:
-        result = super().action_resubmit()
+        super(
+            ApprovalRequest, self.with_context(approval_telegram_hold_push=True)
+        ).action_resubmit()
         self.write({"tg_change_note": False})
         notifier = self.env["telegram.approval.notifier"]
         if not notifier._feature_active():
-            return result
+            return
         for request in self:
-            pending_approvers = request.approver_ids.filtered(
-                lambda approver: approver.state == "pending"
+            asked = (
+                request.approver_ids & request._get_approval_activities().approver_id
             )
-            for approver in pending_approvers:
+            for approver in asked.filtered(lambda row: row.state == "pending"):
                 notifier._notify_approver(approver, resubmitted=True)
-        return result
 
     @api.depends("telegram_data")
     def _compute_telegram_data_formatted(self) -> None:

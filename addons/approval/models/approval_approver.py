@@ -406,6 +406,7 @@ class ApprovalApprover(models.Model):
         activities = rows.request_id._get_approval_activities().filtered(
             lambda activity: activity.approver_id in rows
         )
+        handed = self.browse()
         for approver in rows:
             holder = approver._get_effective_approver()
             parties = (
@@ -433,9 +434,15 @@ class ApprovalApprover(models.Model):
                 already_held=held.ids,
             )
             if not held:
-                misplaced[:1].write({"user_id": holder.id})
+                misplaced[:1].with_context(**approver._get_ask_context()).write(
+                    {"user_id": holder.id}
+                )
                 misplaced = misplaced[1:]
+                handed |= approver
             misplaced.unlink()
+        if handed:
+            trace.ACTIVITY.event("asked", rows=handed.ids, by="hand_over")
+            handed._notify_asked()
 
     @api.model
     def cron_hand_delegated_activities_over(self) -> None:
@@ -665,8 +672,20 @@ class ApprovalApprover(models.Model):
                 for vals in create_vals_list
             ],
         )
-        if create_vals_list:
-            self.env["mail.activity"].create(create_vals_list)
+        if not create_vals_list:
+            return
+        asked = self.browse([vals["approver_id"] for vals in create_vals_list])
+        self.env["mail.activity"].with_context(**asked._get_ask_context()).create(
+            create_vals_list
+        )
+        trace.ACTIVITY.event("asked", rows=asked.ids, by="create")
+        asked._notify_asked()
+
+    def _get_ask_context(self) -> dict[str, Any]:
+        return {}
+
+    def _notify_asked(self) -> None:
+        return
 
     def _prepare_source_activity_vals(self, target: models.BaseModel) -> ValuesType:
         self.check_singleton()

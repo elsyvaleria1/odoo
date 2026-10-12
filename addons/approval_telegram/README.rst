@@ -15,11 +15,19 @@ approval round-trip to Telegram.
 How it works
 ============
 
-- **Push** — ``approval.approver._create_activity`` is extended; whenever an
-  approver becomes *pending* (initial submit or a sequential-chain promotion),
+- **Push** — ``approval.approver._notify_asked`` is extended; whenever the
+  approval engine hands an approver an approval activity (initial submit, a
+  sequential-chain promotion, a reassignment or a delegation hand-over),
   ``telegram.approval.notifier`` resolves the approver's linked
   ``telegram.chat`` (on a bot with **Notify Approval Requests** enabled) and
-  sends a summary with inline buttons.
+  sends a summary with inline buttons. A pass that finds the activity already
+  held pushes nothing, so a co-approver's decision does not repeat the push.
+  The pushed approvers are named to ``mail_telegram`` through
+  ``mail_telegram_skip_partner_ids``, so the activity's "assigned to you"
+  notification is not forwarded to them a second time.
+- **Resubmit** — once the owner applies a requested change, each approver who
+  holds the request's approval activity gets one "corrected and resubmitted"
+  message, instead of a new-request push as well.
 - **Approve** — one tap → ``approval.request.action_approve(approver=...)``,
   attributed to the real approver.
 - **Refuse** — pick a reason (``approval.refusal.reason`` for the category) +

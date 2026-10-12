@@ -56,10 +56,12 @@ class MixinMailThread(models.AbstractModel):
     def _notify_thread_by_telegram(self, message, recipients_data) -> None:
         if self.env.context.get("mail_telegram_skip"):
             return
+        skipped = set(self.env.context.get("mail_telegram_skip_partner_ids") or ())
         candidates = [
             (recipient, kind)
             for recipient in recipients_data
             if recipient.get("id") and recipient.get("id") != message.author_id.id
+            if recipient["id"] not in skipped
             if (kind := self._telegram_notification_kind(recipient))
         ]
         if not candidates:
