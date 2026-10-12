@@ -338,8 +338,8 @@ class ProductPricelist(models.Model):
         currency: ResCurrency,
         **kwargs: Any,
     ) -> dict[IdType, float]:
-        products_by_base_pricelist: defaultdict[Self, PricedProduct] = defaultdict(
-            products.browse
+        products_by_base_pricelist: defaultdict[ProductPricelist, PricedProduct] = (
+            defaultdict(products.browse)
         )
         for product in products:
             rule = rule_by_pid[product.id]
@@ -474,17 +474,17 @@ class ProductPricelist(models.Model):
     @api.model
     def _get_partner_pricelist_multi(
         self, partner_ids: Iterable[IdType]
-    ) -> defaultdict[IdType, Self]:
-        ProductPricelist = self.env["product.pricelist"]
+    ) -> defaultdict[IdType, ProductPricelist]:
+        Pricelist = self.env["product.pricelist"]
 
         if not self.env["res.groups"]._is_feature_enabled(
             "product.group_product_pricelist"
         ):
-            return defaultdict(lambda: ProductPricelist)
+            return defaultdict(lambda: Pricelist)
 
         Partner = self.env["res.partner"].with_context(active_test=False)
 
-        result: defaultdict[IdType, Self] = defaultdict(lambda: ProductPricelist)
+        result: defaultdict[IdType, ProductPricelist] = defaultdict(lambda: Pricelist)
         remaining_partner_ids: list[IdType] = []
         for partner in Partner.browse(partner_ids):
             if partner.specific_property_product_pricelist._filtered_partner_pricelist_multi():

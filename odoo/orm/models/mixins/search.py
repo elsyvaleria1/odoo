@@ -396,7 +396,7 @@ class SearchMixin(_ModelStubs):
         name: str = "",
         domain: DomainType | None = None,
         operator: str = "ilike",
-        limit: int = 100,
+        limit: int | None = 100,
     ) -> list[tuple[int, str]]:
         domain = Domain("display_name", operator, name) & Domain(domain or Domain.TRUE)
         records = self.search_fetch(domain, ["display_name"], limit=limit)

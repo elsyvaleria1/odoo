@@ -95,8 +95,8 @@ Window action — opens a view on a model.
 
 **Key Methods:**
 - `_compute_views()` — Compute ordered view list
-- `read(fields, load)` — Enriches help from model's `get_empty_list_help()`
-- `_get_action_dict()` — Includes embedded actions data
+- `read(fields, load)` — Returns the stored help verbatim
+- `_get_action_dict()` — Includes embedded actions data, and replaces help with the model's `get_empty_list_help()`, which receives `""` when no help is stored
 
 ### models/ir_actions_act_window_view.py
 

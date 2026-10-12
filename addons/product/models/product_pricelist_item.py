@@ -577,13 +577,13 @@ class ProductPricelistItem(models.Model):
                     discounted_price, precision_rounding=item.price_round
                 )
             surcharge = format_amount(item.env, item.price_surcharge, item.currency_id)
-            discount_type, discount = item._get_displayed_discount()
+            discount_type, displayed_discount = item._get_displayed_discount()
 
             item.rule_tip = self.env._(
                 "%(base)s with a %(discount)s %% %(discount_type)s and %(surcharge)s extra fee\n"
                 "Example: %(amount)s * %(discount_charge)s + %(price_surcharge)s → %(total_amount)s",
                 base=base_selection_vals[item.base],
-                discount=discount,
+                discount=displayed_discount,
                 discount_type=discount_type,
                 surcharge=surcharge,
                 amount=format_amount(item.env, 100, item.currency_id),

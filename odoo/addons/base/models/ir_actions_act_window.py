@@ -196,7 +196,7 @@ class IrActionsAct_Window(models.Model):
             )
             act.views = views
 
-    def _get_empty_list_help(self, stored_help: str | bool) -> str | bool:
+    def _get_empty_list_help(self, stored_help: str) -> str:
         self.check_singleton()
         if self.res_model not in self.env:
             _debug.logic("empty_list_help_stored", action=self.id, model=self.res_model)
@@ -251,7 +251,7 @@ class IrActionsAct_Window(models.Model):
             result["embedded_action_ids"] = embedded.read(
                 sorted(embedded._get_fields_readable())
             )
-        result["help"] = self._get_empty_list_help(result.get("help", ""))
+        result["help"] = self._get_empty_list_help(result.get("help") or "")
         _debug.pipeline(
             "action_dict",
             action=self.id,

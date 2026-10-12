@@ -1475,6 +1475,19 @@ class TestActionsReadAndXmlId(common.TransactionCase):
         action = self._action_on_a_model_that_generates_a_placeholder(False)
         self.assertEqual(action._get_action_dict()["help"], self.PLACEHOLDER)
 
+    def test_a_model_without_stored_help_is_asked_with_an_empty_string(self):
+        received = []
+        self.patch(
+            type(self.env["res.partner"]),
+            "get_empty_list_help",
+            lambda records, help_message: received.append(help_message) or "",
+        )
+        action = self.env["ir.actions.act_window"].create(
+            {"name": "HelpEmpty", "res_model": "res.partner"}
+        )
+        self.assertEqual(action._get_action_dict()["help"], "")
+        self.assertEqual(received, [""])
+
     def test_get_action_dict_by_xml_id_valid_window(self):
         action = self.env["ir.actions.act_window"].create(
             {

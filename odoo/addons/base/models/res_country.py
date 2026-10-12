@@ -129,7 +129,7 @@ class ResCountry(models.Model):
         name: str = "",
         domain: DomainType | None = None,
         operator: str = "ilike",
-        limit: int = 100,
+        limit: int | None = 100,
     ) -> list[tuple[int, str]]:
         result = []
         domain = Domain(domain or Domain.TRUE)
@@ -302,7 +302,7 @@ class ResCountryState(models.Model):
         name: str = "",
         domain: DomainType | None = None,
         operator: str = "ilike",
-        limit: int = 100,
+        limit: int | None = 100,
     ) -> list[tuple[int, str]]:
         result = []
         domain = Domain(domain or Domain.TRUE)

@@ -1475,7 +1475,7 @@ class ResUsers(models.Model):
         name: str = "",
         domain: DomainType | None = None,
         operator: str = "ilike",
-        limit: int = 100,
+        limit: int | None = 100,
     ) -> list[tuple[int, str]]:
         domain = Domain(domain or Domain.TRUE)
         if (

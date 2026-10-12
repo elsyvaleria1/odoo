@@ -1469,7 +1469,7 @@ class ProductTemplate(models.Model):
         return {}
 
     @api.model
-    def get_empty_list_help(self, help_message: str | Literal[False]) -> str:
+    def get_empty_list_help(self, help_message: str) -> str:
         self = self.with_context(
             empty_list_help_document_name=self.env._("product"),
         )
