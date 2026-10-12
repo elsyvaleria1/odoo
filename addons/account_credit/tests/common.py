@@ -9,6 +9,7 @@ class CreditAuthorizationCase:
             orders.action_confirm()
         action = raised.exception.args[1]
         self.assertEqual(action["res_model"], AUTHORIZATION)
+        self.assertEqual(action["views"], [(False, "form")])
         return action
 
     def _credit_authorization_wizard(self, orders):

@@ -399,6 +399,7 @@ class SaleOrder(models.Model):
             "type": "ir.actions.act_window",
             "res_model": "wizard.sale.order.confirm.credit.override",
             "view_mode": "form",
+            "views": [(False, "form")],
             "target": "new",
             "context": {
                 "default_partner_id": blocked.partner_id.commercial_partner_id.id,
