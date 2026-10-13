@@ -88,6 +88,17 @@ class TestModelVerdicts(TransactionCase):
         self.assertVerdict(privileged.env, True)
         self.assertVerdict(env, False)
 
+    def test_a_superuser_needs_no_privilege_while_modules_load(self):
+        partners = self.env["res.partner"].sudo()
+        with patch.object(self.registry, "ready", False):
+            self.assertEqual(
+                partners.with_privilege("base.loading_privilege"), partners
+            )
+            with self.assertRaisesRegex(ValueError, "names no privilege"):
+                self.principal()["res.partner"].with_privilege("base.loading_privilege")
+        with self.assertRaisesRegex(ValueError, "names no privilege"):
+            partners.with_privilege("base.loading_privilege")
+
     def test_a_scoped_grant_follows_the_companies_in_use(self):
         in_a = self.principal(allowed_company_ids=[self.env.company.id])
         in_b = self.principal(allowed_company_ids=[self.company_b.id])

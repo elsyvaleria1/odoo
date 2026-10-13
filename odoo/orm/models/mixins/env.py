@@ -86,7 +86,14 @@ class EnvironmentMixin(_ModelStubs):
     @api.private
     @override
     def with_privilege(self, *names: str, reason: str | None = None) -> Self:
-        privileges = self.env.registry.access_policy.privilege_ids(self.env, names)
+        try:
+            privileges = self.env.registry.access_policy.privilege_ids(self.env, names)
+        except ValueError:
+            # A column default evaluated during schema setup runs before its
+            # module's data declares the privilege it names.
+            if self.env.su and not self.env.registry.ready:
+                return self
+            raise
         env = self.env(privileges=self.env.privileges | privileges)
         if reason:
             env = env(context={**env.context, "privilege_reason": reason})
