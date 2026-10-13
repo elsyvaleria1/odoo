@@ -206,7 +206,8 @@ privilege_settle_tax_return_types,account.return.type: the settlement account of
 privilege_set_matched_partner_st_lines,account.bank.statement.line: the partner its matching found,model_account_bank_statement_line,privilege_set_matched_partner,permission,ru,,,
 privilege_check_entry_owner_payments,account.payment: the payment an entry is held to when it is posted or edited,model_account_payment,privilege_check_entry_owner,permission,r,,,
 account_partial_reconcile_comp_rule,Partial reconciliation multi-company,model_account_partial_reconcile,base.group_everyone,guard,crud,company,,
-account_fiscal_year_comp_rule,Fiscal year multi-company,model_account_fiscal_year,base.group_everyone,guard,crud,company,,
+account_fiscal_year_comp_rule,Fiscal year multi-company,model_account_fiscal_year,base.group_everyone,guard,cud,company,,
+account_fiscal_year_parent_read_rule,Fiscal year of the company or its parents,model_account_fiscal_year,base.group_everyone,guard,r,,,"[('company_id', 'parent_of', company_ids)]"
 account_fiscal_position_account_comp_rule,Fiscal position account mapping multi-company,model_account_fiscal_position_account,base.group_everyone,guard,crud,company,,
 account_payment_channel_comp_rule,Payment channel multi-company,model_account_payment_channel,base.group_everyone,guard,crud,company,,
 account_pending_match_comp_rule,Pending match multi-company,model_account_pending_match,base.group_everyone,guard,crud,company,,

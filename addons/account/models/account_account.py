@@ -778,22 +778,21 @@ class AccountAccount(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         vals_list = [dict(vals) for vals in vals_list]
-        positions_by_company_ids = defaultdict(list)
+        positions_by_companies = defaultdict(list)
         for position, vals in enumerate(vals_list):
-            positions_by_company_ids[repr(vals.get("company_ids", []))].append(position)
-        created_ids = [0] * len(vals_list)
-
-        for positions in positions_by_company_ids.values():
-            vals_list_for_company = [vals_list[position] for position in positions]
-            cache = {vals["code"] for vals in vals_list_for_company if vals.get("code")}
-            company_ids = self._fields["company_ids"].convert_to_cache(
-                vals_list_for_company[0].get("company_ids", []),
-                self.browse(),
+            companies = self.env["res.company"].browse(
+                self._fields["company_ids"].convert_to_cache(
+                    vals.get("company_ids", []), self.browse()
+                )
             )
-            companies = self.env["res.company"].browse(company_ids)
             if self.env.company in companies or not companies:
                 companies = self.env.company | companies
+            positions_by_companies[companies].append(position)
+        created_ids = [0] * len(vals_list)
 
+        for companies, positions in positions_by_companies.items():
+            vals_list_for_company = [vals_list[position] for position in positions]
+            cache = {vals["code"] for vals in vals_list_for_company if vals.get("code")}
             for index, vals in enumerate(vals_list_for_company):
                 self._update_vals_with_code(vals, companies, cache)
                 if vals.get("code") and not companies[0].parent_id:

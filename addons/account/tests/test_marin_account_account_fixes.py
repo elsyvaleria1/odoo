@@ -2,6 +2,7 @@ from datetime import date
 from unittest.mock import patch
 
 from odoo import Command
+from odoo.exceptions import AccessError
 from odoo.tests import new_test_user, tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
@@ -107,6 +108,20 @@ class TestMarinAccountAccountMultiCompany(AccountTestInvoicingCommon):
             ]
         )
         self.assertEqual(accounts.mapped("code"), ["190502", "190501"])
+
+    def test_prefix_code_skips_codes_of_the_same_company_spelled_otherwise(self):
+        Account = self._accounts()
+        accounts = Account.create(
+            [
+                {"name": "Prefixed", "prefix": "1906", "code_digits": 6},
+                {
+                    "name": "Explicit",
+                    "code": "190601",
+                    "company_ids": [Command.set(Account.env.company.ids)],
+                },
+            ]
+        )
+        self.assertEqual(accounts.mapped("code"), ["190602", "190601"])
 
     def test_copy_of_mixed_company_recordset_pairs_sources_with_copies(self):
         accounts = self._accounts().create(
@@ -219,6 +234,37 @@ class TestMarinFiscalYearBranches(AccountTestInvoicingCommon):
         self.assertEqual(
             branch.compute_fiscalyear_dates(day)["date_to"], date(2018, 2, 28)
         )
+
+    def test_a_branch_user_reads_the_root_fiscal_year_but_cannot_edit_it(self):
+        root = self.company_data["company"]
+        branch = self.env["res.company"].create(
+            {"name": "Fiscal year branch only", "parent_id": root.id}
+        )
+        fiscal_year = self.env["account.fiscal.year"].create(
+            {
+                "name": "FY 2017-2018",
+                "date_from": date(2017, 3, 1),
+                "date_to": date(2018, 2, 28),
+                "company_id": root.id,
+            }
+        )
+        user = new_test_user(
+            self.env,
+            login="branch_only_manager",
+            groups="account.group_account_manager",
+            company_id=branch.id,
+            company_ids=[Command.set(branch.ids)],
+        )
+        branch_env = self.env(user=user, context={"allowed_company_ids": branch.ids})
+
+        dates = branch.with_env(branch_env).compute_fiscalyear_dates(date(2017, 6, 1))
+
+        self.assertEqual(
+            (dates["date_from"], dates["date_to"]),
+            (date(2017, 3, 1), date(2018, 2, 28)),
+        )
+        with self.assertRaises(AccessError):
+            fiscal_year.with_env(branch_env).name = "renamed by a branch"
 
 
 @tagged("post_install", "-at_install")

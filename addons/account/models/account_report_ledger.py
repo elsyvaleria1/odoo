@@ -2946,14 +2946,15 @@ class AccountReport(models.Model):
         )
         search_text = (options.get("filter_search_bar") or "").lower()
         lines = []
-        for company_id, line_id in sorted(company_to_line_id.items()):
+        for company in self.env["res.company"].browse(company_to_line_id).sorted():
+            line_id = company_to_line_id[company.id]
             line_name = (
                 str(UNDISTR_LINE_NAME)
                 if len(self.env.companies) == 1
                 else self.env._(
                     "%(line_name)s - %(company)s",
                     line_name=UNDISTR_LINE_NAME,
-                    company=self.env["res.company"].browse(company_id).name,
+                    company=company.name,
                 )
             )
             if search_text not in line_name.lower():
