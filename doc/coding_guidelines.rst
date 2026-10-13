@@ -4,8 +4,8 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.86
-:Date: 2026-10-12
+:Version: 7.87
+:Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
 
@@ -815,14 +815,36 @@ and about its dependencies, and nothing checks either claim.
   was ``base_order`` until it became ``trade``.
 * **An application's companion takes the application's module name**:
   ``sale_team``, ``purchase_team``, ``stock_team``, ``mrp_team``.
-* **A capability family's bridges share its suffix**, base first:
-  ``<host>_speech`` transcribes or reads aloud a host's audio
-  (``mail_speech``, ``document_speech``), ``<host>_voice`` lets a host's screen
-  answer spoken commands (``mail_voice``, ``stock_voice``), and
-  ``<family>_ai`` reaches a family through ``integration_machine_learning``
-  (``speech_ai``, ``extract_ai``, ``voice_ai``). The suffix is what a reader
-  groups by; a bridge named the other way round (``voice_mail``) hides from
-  its family.
+* **A family word means one thing, and no other family uses it.** ``speech``
+  converts between audio and text: transcripts, dictation, synthesis.
+  ``voice_command`` is the web client's spoken-command interface. ``voip`` is
+  telephony. Bare ``voice`` names no family: as a synonym of ``speech`` it does
+  not tell a reader which layer it means. A term of art that contains the word
+  (``speech_voiceprint``) is not the family's token.
+* **A family's own parts are base first, its host bridges host first.**
+  ``speech_local`` and ``speech_analysis`` are parts of ``speech``;
+  ``<host>_speech`` transcribes or reads aloud a host's audio (``mail_speech``,
+  ``document_speech``, ``phone_call_speech_analysis``), and
+  ``<host>_voice_command`` lets a host's screen answer spoken commands. The
+  prefix then lists a family's parts and the suffix its hosts; a bridge named
+  the other way round (``speech_telegram``) hides from its host and passes for
+  a part of the family.
+* **``ai`` and ``ml`` claim different dependencies.** ``ai_<x>`` and ``<x>_ai``
+  depend on the ``ai`` application (``ai_crm``, ``sign_ai``,
+  ``hr_recruitment_ai``); ``<family>_ml`` reaches a family through
+  ``integration_machine_learning`` and does not install ``ai``;
+  ``ai_gateway_ml`` connects the two. Why: ``ai`` brings agents, sources and
+  pgvector, and a name that suggests it reads as installing it.
+* **Renames pending**
+  (``agromarin-knowledge/plans/2026-10-13-speech-voice-module-naming-plan.md``):
+  ``speech_ai``, ``extract_ai``, ``approval_ai_telegram`` → ``speech_ml``,
+  ``extract_ml``, ``approval_telegram_ml``; ``voice``, ``voice_ai``,
+  ``mail_voice``, ``stock_voice``, ``stock_barcode_voice`` → ``voice_command``,
+  ``voice_command_ml``, ``mail_voice_command``, ``stock_voice_command``,
+  ``stock_barcode_voice_command``; ``speech_telegram``,
+  ``mail_speech_telegram``, ``account_speech_telegram`` → ``telegram_speech``,
+  ``mail_telegram_speech``, ``account_telegram_speech``. Each rename removes its
+  names from this list.
 * **A vendor's adapter is ``{domain}_{vendor}``**, domain first: the domain
   module holds what every provider shares and the setting that chooses one,
   the adapter one vendor's protocol (``captcha_recaptcha``,
@@ -6349,6 +6371,14 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.87
+     - 2026-10-13
+     - §1.5: a family word means one thing (``speech`` audio and text,
+       ``voice_command`` spoken commands, bare ``voice`` none); a family's parts
+       are base first and its host bridges host first; ``ai`` names a
+       dependency on the ``ai`` application and ``<family>_ml`` one on
+       ``integration_machine_learning``, replacing ``<family>_ai``; eleven
+       pending renames listed until each lands.
    * - 7.86
      - 2026-10-12
      - §2.1, §2.4.20, §9: ``ruff format`` is gated -- ``lint_ruff_gates.py`` runs
