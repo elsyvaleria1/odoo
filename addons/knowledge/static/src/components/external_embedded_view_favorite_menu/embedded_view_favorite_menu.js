@@ -43,11 +43,7 @@ class InsertEmbeddedViewMenu extends Component {
         this.openArticleSelector = useKnowledgeArticleSelector();
     }
 
-    /**
-     * @returns {Object|null} Template props necessary to render an embedded
-     *                        view in Knowledge, or null if it is not possible
-     *                        to store this view as an embedded view.
-     */
+    /** @returns {Object|null} */
     extractCurrentViewEmbedTemplateProps() {
         const viewProps = {
             context: this.getViewContext(),
@@ -70,10 +66,7 @@ class InsertEmbeddedViewMenu extends Component {
         return null;
     }
 
-    /**
-     * Returns the full context that will be passed to the embedded view.
-     * @returns {Object}
-     */
+    /** @returns {Object} */
     getViewContext() {
         const context = {};
         if (this.searchModel) {
@@ -95,15 +88,7 @@ class InsertEmbeddedViewMenu extends Component {
         return context;
     }
 
-    /**
-     * Prepare a Embedded Component rendered in backend to be inserted in an
-     * article by the KnowledgeCommandsService.
-     * Allow to choose an article in a modal, redirect to that article and
-     * append the rendered template "blueprint" needed for the desired Embedded
-     * Component
-     * @param {string} template template name of the embedded blueprint to
-     *                 render.
-     */
+    /** @param {string} template */
     insertCurrentViewInKnowledge(template) {
         const config = this.config;
         const templateProps = this.extractCurrentViewEmbedTemplateProps();

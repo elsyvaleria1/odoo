@@ -126,10 +126,7 @@ export class AiModelFieldSelectorPopover extends ModelFieldSelectorPopover {
         return Object.fromEntries(filteredKeys.map((k) => [k, fieldDefs[k]]));
     }
 
-    /**
-     * Resolve field paths into field definition chains and store them as the selection.
-     * @param {string[]} fieldsPath - dot-separated field paths
-     */
+    /** @param {string[]} fieldsPath */
     async _loadFields(fieldsPath) {
         const fieldsInfos = Object.fromEntries(
             await Promise.all(

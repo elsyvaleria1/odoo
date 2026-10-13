@@ -106,7 +106,7 @@ export function parseAndTransform(htmlString, transformFunction) {
 
 /**
  * @param {string|import("@odoo/owl").Markup} htmlString
- * @returns {HTMLDivElement} the parsed content, or the raw text in a <pre> when it does not parse
+ * @returns {HTMLDivElement}
  */
 function parseHtmlLeniently(htmlString) {
     const div = document.createElement("div");
@@ -633,8 +633,7 @@ function findFirstEmail(text, honourQuotes) {
 
 /**
  * @param {string} text
- * @returns {[string, string|false]|undefined} the display name and the first address of
- *  `text`, the name falling back to the address; `[text, false]` without an address
+ * @returns {[string, string|false]|undefined}
  */
 export function parseEmail(text) {
     if (!text) {

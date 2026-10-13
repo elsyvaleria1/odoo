@@ -47,7 +47,6 @@ const defaults = {
 };
 
 /**
- * ZoomOdoo — vanilla JS image zoom widget.
  * @param {HTMLElement} target
  * @param {Object} [options]
  */
@@ -69,10 +68,7 @@ function ZoomOdoo(target, options) {
     }
 }
 
-/**
- * Init
- * @private
- */
+/** @private */
 ZoomOdoo.prototype._init = function () {
     if (window.outerWidth > 467 || !this.opts.disabledOnMobile) {
         const linkEl = this.target.querySelector(this.opts.linkTag);
@@ -131,7 +127,6 @@ ZoomOdoo.prototype._init = function () {
 };
 
 /**
- * Show
  * @param {MouseEvent|TouchEvent} e
  * @param {boolean} [testMouseOver]
  */
@@ -240,7 +235,6 @@ ZoomOdoo.prototype.show = function (e, testMouseOver) {
 };
 
 /**
- * On enter
  * @private
  * @param {Event} e
  */
@@ -257,7 +251,6 @@ ZoomOdoo.prototype._onPointerEnter = function (e) {
 };
 
 /**
- * On move
  * @private
  * @param {Event} e
  */
@@ -269,10 +262,7 @@ ZoomOdoo.prototype._onMove = function (e) {
     this._move(e);
 };
 
-/**
- * On leave
- * @private
- */
+/** @private */
 ZoomOdoo.prototype._onLeave = function () {
     this.isMouseOver = false;
     if (this.isOpen) {
@@ -281,7 +271,6 @@ ZoomOdoo.prototype._onLeave = function () {
 };
 
 /**
- * On load
  * @private
  * @param {Function} callback
  * @param {Event} e
@@ -299,7 +288,6 @@ ZoomOdoo.prototype._onLoad = function (callback, e) {
 };
 
 /**
- * Load image
  * @private
  * @param {string} href
  * @param {Function} callback
@@ -313,7 +301,6 @@ ZoomOdoo.prototype._loadImage = function (href, callback) {
 };
 
 /**
- * Move
  * @private
  * @param {Event} e
  */
@@ -370,7 +357,6 @@ ZoomOdoo.prototype.hide = function () {
 };
 
 /**
- * Initialize zoom on an element. Replaces the old jQuery plugin API.
  * @param {HTMLElement} el
  * @param {Object} [options]
  * @returns {ZoomOdoo}

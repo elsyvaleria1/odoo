@@ -3,8 +3,6 @@ import { onMounted, onWillUnmount } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 
 /**
- * Creates an interval that will call the given callback every
- * `duration` ms.
  * @param {Function} callback
  * @param {Number} duration
  */

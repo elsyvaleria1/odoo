@@ -361,7 +361,7 @@ export class TreeEditor extends Component {
     /**
      * @param {Condition} node
      * @param {string} path
-     * @param {{ fieldDef: any }} [fieldInfo] the info the selector already resolved
+     * @param {{ fieldDef: any }} [fieldInfo]
      */
     async _updatePath(node, path, fieldInfo) {
         const { fieldDef } =

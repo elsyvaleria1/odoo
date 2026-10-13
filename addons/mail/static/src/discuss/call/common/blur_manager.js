@@ -10,7 +10,7 @@ const FPS = 30;
 const SELFIE_SEGMENTATION_BUILD = "0.1.1632777926";
 
 export const selfieSegmentationLoader = {
-    /** @returns {Promise<void>} rejects with AssetsLoadingError, then retries on the next call */
+    /** @returns {Promise<void>} */
     load: () => loadJS("/mail/static/lib/selfie_segmentation/selfie_segmentation.js"),
 };
 /** @typedef {HTMLCanvasElement | HTMLVideoElement | HTMLImageElement | ImageBitmap} RasterImage */

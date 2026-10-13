@@ -210,13 +210,7 @@ function truncate(value, length = MAX_HUMAN_READABLE_SIZE) {
     return strValue.length <= length ? strValue : strValue.slice(0, length) + ELLIPSIS;
 }
 
-/**
- * A copy is a report of what was compared, so a value that refuses to be read
- * (a proxy guarding its keys, a throwing getter) is reported as unreadable
- * instead of failing the test that compared it.
- *
- * @param {() => unknown} read
- */
+/** @param {() => unknown} read */
 function _probe(read) {
     try {
         return read();
@@ -1119,8 +1113,7 @@ function binaryBytes(value) {
 
 /**
  * @param {unknown} object
- * @param {boolean} toStringValue a binary body or part is decoded as UTF-8, as
- *  `Response.text()` decodes it
+ * @param {boolean} toStringValue
  */
 export function getSyncValue(object, toStringValue) {
     const result = syncValues.get(object);
@@ -1149,9 +1142,6 @@ export function getSyncValue(object, toStringValue) {
 }
 
 /**
- * The bytes of a mocked body: binary values and parts as they are, the rest as
- * UTF-8. Reading them through text would corrupt anything that is not UTF-8.
- *
  * @param {unknown} object
  * @returns {Uint8Array<ArrayBuffer>}
  */
@@ -1220,7 +1210,7 @@ export function getTypeOf(value) {
                     return `${arrayType}[]`;
                 }
             }
-            // falls through
+
         }
         default: {
             return type;
@@ -1658,9 +1648,6 @@ export function toExplicitString(value) {
 }
 
 /**
- * OWL 2's useEffect: runs at mount, then after a patch only when a dependency
- * changed (OWL 3's useEffect tracks what it reads instead).
- *
  * @param {(...dependencies: any[]) => void | (() => void)} effect
  * @param {() => unknown[]} [computeDependencies]
  */
@@ -1682,12 +1669,7 @@ export function useLayoutEffect(effect, computeDependencies = () => [NaN]) {
     onWillUnmount(() => cleanup?.());
 }
 
-/**
- * Runs `callback` before each render of the calling component, as OWL 2's
- * onWillRender did.
- *
- * @param {() => void} callback
- */
+/** @param {() => void} callback */
 export function onWillRender(callback) {
     const node = useScope();
     const render = node.renderFn;
@@ -1697,20 +1679,13 @@ export function onWillRender(callback) {
     };
 }
 
-/**
- * @returns {(deep?: boolean) => Promise<void>} forces a render of the calling
- * component, as OWL 2's Component#render did
- */
+/** @returns {(deep?: boolean) => Promise<void>} */
 export function useRender() {
     const node = useScope();
     return (deep = false) => node.render(deep === true);
 }
 
-/**
- * A signal ref that also reads as OWL 2's `ref.el`.
- *
- * @returns {import("@odoo/owl").Signal<HTMLElement | null> & { readonly el: HTMLElement | null }}
- */
+/** @returns {import("@odoo/owl").Signal<HTMLElement | null> & { readonly el: HTMLElement | null }} */
 export function elementRef() {
     const ref = signal.ref();
     Object.defineProperty(ref, "el", { get: ref });

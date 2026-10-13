@@ -5,14 +5,8 @@
 const holds = new Map();
 
 /**
- * Makes everything but `anchor` and its ancestors inert: the page behind an open
- * dialog, while the dialog, the popovers and the notifications that live next to
- * it in `anchor` stay usable. Holds are counted, so the dialogs of a stack share
- * one inert page, and an element already inert before the first hold is left as
- * it was.
- *
  * @param {Element} anchor
- * @returns {() => void} releases this hold; releasing it again does nothing
+ * @returns {() => void}
  */
 export function inertOutside(anchor) {
     /** @type {Element[]} */
@@ -45,9 +39,6 @@ export function inertOutside(anchor) {
 }
 
 /**
- * Where a dialog's inert page starts: the main components container holding its
- * overlay (so toasts and popovers stay usable), else the overlay container.
- *
  * @param {Element} dialogElement
  * @returns {Element}
  */

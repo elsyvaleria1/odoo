@@ -22,7 +22,6 @@ export function selectCell(model, xc, sheetId = model.getters.getActiveSheetId()
 }
 
 /**
- * Add a global filter. Does not wait for the data sources to be reloaded
  * @param {import("@spreadsheet").OdooSpreadsheetModel} model
  * @param {CmdGlobalFilter} filter
  */
@@ -35,7 +34,6 @@ export function setGlobalFilterValueWithoutReload(model, payload) {
 }
 
 /**
- * Add a global filter and ensure the data sources are completely reloaded
  * @param {import("@spreadsheet").OdooSpreadsheetModel} model
  * @param {CmdGlobalFilter} filter
  */
@@ -54,7 +52,6 @@ export async function removeGlobalFilter(model, id) {
 }
 
 /**
- * Edit a global filter and ensure the data sources are completely reloaded
  * @param {Model} model
  * @param {CmdGlobalFilter} filter
  */
@@ -115,7 +112,6 @@ export function setCellStyle(
 }
 
 /**
- * Add columns
  * @param {OdooSpreadsheetModel} model
  * @param {"before"|"after"} position
  * @param {string} column
@@ -155,7 +151,6 @@ export function addRows(
 }
 
 /**
- * Delete columns
  * @param {OdooSpreadsheetModel} model
  * @param {string[]} columns
  * @param {UID} sheetId

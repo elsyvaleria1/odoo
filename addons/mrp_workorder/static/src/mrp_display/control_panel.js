@@ -28,16 +28,7 @@ export class ControlPanelButtons extends Component {
         this.trailingControls = elementRef();
         this.ui = useService("ui");
 
-        /**
-         * Natural inline width per workcenter id.
-         *
-         * Only measurable while a button is still laid out inline: the moment
-         * it moves into the dropdown it reports no width of its own, so the
-         * widths cannot be re-read once an overflow has been applied. Each
-         * button is therefore remembered the first time it is seen on screen.
-         *
-         * @type {Map<string, number>}
-         */
+        /** @type {Map<string, number>} */
         this.buttonWidths = new Map();
 
         const resizeObserver = new ResizeObserver(() => this.updateOverflow());
@@ -106,8 +97,7 @@ export class ControlPanelButtons extends Component {
 
     /**
      * @param {number} index
-     * @returns {boolean} whether that button is rendered on the bar rather than
-     *  inside the overflow dropdown.
+     * @returns {boolean}
      */
     isInline(index) {
         return this.state.overflowFrom === null || index < this.state.overflowFrom;

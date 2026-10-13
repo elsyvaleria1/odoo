@@ -2,12 +2,7 @@
 export class BaseWorker {
     /**
      * @param {string} name
-     * @param {boolean} [isShared] whether this code runs in a SharedWorker
-     * (clients answered through the connecting MessagePort) or a dedicated
-     * Worker (answered through the worker global scope). Derived from the
-     * worker name when omitted — the derivation lives in ONE place
-     * (`bus_worker_script.js` passes it explicitly); the fallback only
-     * exists for the test mock, which instantiates this class directly.
+     * @param {boolean} [isShared]
      */
     constructor(name, isShared = Boolean(name?.includes("shared"))) {
         this.name = name;

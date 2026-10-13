@@ -53,13 +53,6 @@ export class BusBus extends models.Model {
     }
 
     /**
-     * Deliver a batch to the worker. When the socket is up, route it through
-     * the worker's message path (as the real server does); otherwise hand it to
-     * the worker's receive step directly (the worker has no live socket to
-     * receive on, a mock-only shortcut). Either way the worker tracks the ids
-     * for its `last` watermark and its seen-id dedup, so the replay that follows
-     * the next subscribe does not deliver the batch a second time.
-     *
      * @param {{ id: number, message: any }[]} values
      */
     _deliver(values) {
@@ -74,9 +67,6 @@ export class BusBus extends models.Model {
     }
 
     /**
-     * Whether `target` (a string channel or a record/[record, subchannel]
-     * tuple) is present in the subscribed `channels` list.
-     *
      * @param {any[]} channels
      * @param {models.Model | string | [models.Model, string]} target
      */
@@ -98,21 +88,7 @@ export class BusBus extends models.Model {
         });
     }
 
-    /**
-     * Re-broadcast stored notifications newer than `last` that still match the
-     * current subscription; with `last` 0, all of them (the server then serves
-     * a lookback window of its own). Mirrors the server replaying missed notifications
-     * on (re)subscribe; the worker's own seen-id dedup drops anything the tab
-     * already processed, so a replay is a no-op unless there is a genuine gap.
-     *
-     * NOTE ON DIVERGENCE: `last` is the aggregate worker watermark (the mock
-     * worker is shared across all tabs of a test), so replay cannot be scoped
-     * to a single (re)subscribing client — it broadcasts to every client and
-     * relies on per-client dedup, exactly as the shared worker does for a live
-     * batch.
-     *
-     * @param {number} [last]
-     */
+    /** @param {number} [last] */
     _replayForSubscribe(last) {
         /** @type {import("mock_models").IrWebSocket} */
         const IrWebSocket = this.env["ir.websocket"];
@@ -136,10 +112,8 @@ export class BusBus extends models.Model {
     }
 
     /**
-     * Close the current websocket with the given reason and code.
-     *
-     * @param {number} closeCode the code to close the connection with.
-     * @param {string} [reason] the reason to close the connection with.
+     * @param {number} closeCode
+     * @param {string} [reason]
      */
     _simulateDisconnection(closeCode, reason) {
         getWebSocketWorker().websocket.close(closeCode, reason);

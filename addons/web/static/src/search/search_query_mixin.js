@@ -219,9 +219,6 @@ export const SearchQueryMixin = (Base) =>
         }
 
         /**
-         * A group-by filter carrying a domain also filters, so only a plain one
-         * stands for a group-by on its field.
-         *
          * @param {string} fieldName
          * @returns {Record<string, any> | undefined}
          */
@@ -493,14 +490,7 @@ export const SearchQueryMixin = (Base) =>
             return this._notify();
         }
 
-        /**
-         * Filters, periods and group-bys are named by their arch `name`, or by
-         * the field they stand on; a group-by the view does not declare is
-         * created when its field is groupable. Nothing already active is
-         * toggled off.
-         *
-         * @param {SearchSpec} spec
-         */
+        /** @param {SearchSpec} spec */
         async applySearchSpec(spec) {
             log.logic("applySearchSpec", () => spec);
             await this._withNotificationsBlockedAsync(() =>

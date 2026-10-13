@@ -6,9 +6,7 @@ import { Modal } from "@web/libs/bootstrap";
 import { patchDynamicContent } from "@web/public/utils";
 
 patch(PortalComposer, {
-    /**
-     * @override static
-     */
+    /** @override */
     prepareOptions(options) {
         options = super.prepareOptions(options);
         if (options.default_rating_value) {

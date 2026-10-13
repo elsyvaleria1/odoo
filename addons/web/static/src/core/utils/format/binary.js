@@ -21,9 +21,6 @@ export function toBase64Length(maxBytes) {
 }
 
 /**
- * `text` as base64 of its UTF-8 bytes. `btoa` takes one byte per character: it
- * throws past U+00FF and writes Latin-1 below it.
- *
  * @param {string} text
  * @returns {string}
  */
@@ -35,9 +32,7 @@ const SIZE_UNITS = "Bytes|KB|MB|GB|TB|PB|EB|ZB|YB";
 
 /**
  * @param {number} size
- * @param {{ localized?: boolean }} [options] `localized: false` formats without
- * translations or localization, for a message that may be written before they
- * are loaded
+ * @param {{ localized?: boolean }} [options]
  * @returns {string}
  */
 export function humanSize(size, { localized = true } = {}) {

@@ -22,12 +22,7 @@ export class HostPage extends Component {
         });
     }
 
-    /**
-     * This method is triggered when the confirm button is clicked.
-     * It sets the host data and displays the RegisterPage component.
-     *
-     * @private
-     */
+    /** @private */
     _onConfirm() {
         this.props.setHostData(this.host);
         this.props.showScreen("RegisterPage");

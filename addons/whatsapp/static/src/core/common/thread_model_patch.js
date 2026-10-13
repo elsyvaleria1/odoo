@@ -38,7 +38,7 @@ patch(DiscussChannel.prototype, {
     get isChatChannel() {
         return this.channel_type === "whatsapp" || super.isChatChannel;
     },
-    /** @override whatsapp conversations show the correspondent's im status */
+    /** @override */
     get imStatusMember() {
         return this.channel_type === "whatsapp"
             ? this.correspondent

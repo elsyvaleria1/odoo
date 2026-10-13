@@ -12,7 +12,7 @@ export function stableStringify(value) {
         : stringifyOrdered(JSON.parse(serialized));
 }
 
-/** @param {any} value @returns {string} */
+/** @param {any} value */
 function stringifyOrdered(value) {
     if (value === null || typeof value !== "object") {
         return JSON.stringify(value);
@@ -38,7 +38,7 @@ export function getKey(url, params) {
 
 /**
  * @param {string} url
- * @param {any} params a value produced by JSON.parse, so no stringify round-trip is needed
+ * @param {any} params
  * @returns {string}
  */
 export function getKeyOfParsed(url, params) {

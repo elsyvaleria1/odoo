@@ -87,11 +87,7 @@ export class FieldMany2OneMailingFilter extends Component {
         };
     }
 
-    /**
-     * Focus the 'Save' button on 'Tab' key, or directly save the filter on 'Enter'
-     *
-     * @param {event} ev
-     */
+    /** @param {event} ev */
     onFilterNameInputKeydown(ev) {
         const btnSave = document.querySelector(".o_mass_mailing_btn_save_filter");
         if (ev.key === "Tab") {
@@ -102,12 +98,7 @@ export class FieldMany2OneMailingFilter extends Component {
         }
     }
 
-    /**
-     * Deletes the saved filter, but we do not reset the applied domain
-     * in this case.
-     *
-     * @param {event} ev
-     */
+    /** @param {event} ev */
     async onRemoveFilter(ev) {
         const filterId = this.props.record.data.mailing_filter_id.id;
         const mailingDomain = this.props.record.data[this.props.domain_field];
@@ -120,16 +111,7 @@ export class FieldMany2OneMailingFilter extends Component {
         });
     }
 
-    /**
-     * Creates a new favorite filter, with the name provided from drop-down and
-     * with the 'up to date' domain. If the input is blank, displays the warning
-     * and keeps the popup open by preventing event propagation.
-     *
-     * Note: We do not disable the save button here to avoid multiple clicks as for the delete,
-     * because as soon as the 'Save' button is clicked, the popup will be closed immediately.
-     *
-     * @param {event} ev
-     */
+    /** @param {event} ev */
     async onSaveFilter(ev) {
         const filterInput = document.querySelector("input.o_mass_mailing_filter_name");
         const filterName = filterInput.value.trim();

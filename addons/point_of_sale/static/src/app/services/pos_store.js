@@ -427,10 +427,7 @@ export class PosStore extends WithLazyGetterTrap {
         return process;
     }
 
-    /**
-     * The display links were revoked: the next display opens with the new one.
-     * @param {{ token: string }} payload
-     */
+    /** @param {{ token: string }} payload */
     customerDisplayTokenNotification({ token }) {
         this.config.customer_display_token = token;
     }
@@ -1947,9 +1944,8 @@ export class PosStore extends WithLazyGetterTrap {
     }
 
     /**
-     * @param {{ line: Object, qty: number }[]} refunds what each sold line is
-     *     to return
-     * @param {Object} [refundOrder] the order already holding these refunds
+     * @param {{ line: Object, qty: number }[]} refunds
+     * @param {Object} [refundOrder]
      */
     async checkRefundableQuantities(refunds, refundOrder = null) {
         const { refreshed, draftRefunds } = await this.readRefundState(

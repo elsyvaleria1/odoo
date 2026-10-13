@@ -48,14 +48,12 @@ export class KanbanEditorCompiler extends KanbanCompiler {
     }
 
     /**
-     * Insert a StudioHook as a sibling of the given node (after it; also before
-     * it when `wrap` is set).
-     * @param {Element} node - The node to attach hooks to
-     * @param {string} type - The type of the hook
-     * @param {string} template - The template to use for the hook
+     * @param {Element} node
+     * @param {string} type
+     * @param {string} template
      * @param {Object} [options]
      * @param {Object} [options.structures]
-     * @param {boolean} [options.wrap=false] - Whether to also insert a hook before the node
+     * @param {boolean} [options.wrap=false]
      */
     addStudioHook(node, type, template, { structures, wrap = false } = {}) {
         const xpath = getElementXpath(node);

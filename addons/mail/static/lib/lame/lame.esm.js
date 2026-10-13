@@ -177,56 +177,32 @@ function Version() {
     var PSY_MAJOR_VERSION = 0;
     var PSY_MINOR_VERSION = 93;
 
-    /**
-     * A string which describes the version of LAME.
-     *
-     * @return string which describes the version of LAME
-     */
+    /** @return */
     this.getLameVersion = function () {
         return (LAME_MAJOR_VERSION + "." + LAME_MINOR_VERSION + "." + LAME_PATCH_VERSION);
     }
 
-    /**
-     * The short version of the LAME version string.
-     *
-     * @return short version of the LAME version string
-     */
+    /** @return */
     this.getLameShortVersion = function () {
         return (LAME_MAJOR_VERSION + "." + LAME_MINOR_VERSION + "." + LAME_PATCH_VERSION);
     }
 
-    /**
-     * The shortest version of the LAME version string.
-     *
-     * @return shortest version of the LAME version string
-     */
+    /** @return */
     this.getLameVeryShortVersion = function () {
         return ("LAME" + LAME_MAJOR_VERSION + "." + LAME_MINOR_VERSION + "r");
     }
 
-    /**
-     * String which describes the version of GPSYCHO
-     *
-     * @return string which describes the version of GPSYCHO
-     */
+    /** @return */
     this.getPsyVersion = function () {
         return (PSY_MAJOR_VERSION + "." + PSY_MINOR_VERSION);
     }
 
-    /**
-     * String which is a URL for the LAME website.
-     *
-     * @return string which is a URL for the LAME website
-     */
+    /** @return */
     this.getLameUrl = function () {
         return LAME_URL;
     }
 
-    /**
-     * Quite useless for a java version, however we are compatible ;-)
-     *
-     * @return "32bits"
-     */
+    /** @return */
     this.getLameOsBitness = function () {
         return "32bits";
     }
@@ -415,10 +391,7 @@ function GainAnalysis() {
         }
     }
 
-    /**
-     * @return INIT_GAIN_ANALYSIS_OK if successful, INIT_GAIN_ANALYSIS_ERROR if
-     *         not
-     */
+    /** @return */
     function ResetSampleFrequency(rgData, samplefreq) {
         for (var i = 0; i < MAX_ORDER; i++)
             rgData.linprebuf[i] = rgData.lstepbuf[i] = rgData.loutbuf[i] = rgData.rinprebuf[i] = rgData.rstepbuf[i] = rgData.routbuf[i] = 0.;
@@ -3088,12 +3061,7 @@ function VBRTag() {
         }
     }
 
-    /**
-     * Add VBR entry, used to fill the VBR TOC entries.
-     *
-     * @param gfp
-     *            global flags
-     */
+    /** @param gfp */
     this.addVbrFrame = function (gfp) {
         var gfc = gfp.internal_flags;
         var kbps = Tables.bitrate_table[gfp.version][gfc.bitrate_index];
@@ -3101,13 +3069,9 @@ function VBRTag() {
     }
 
     /**
-     * Read big endian integer (4-bytes) from header.
-     *
      * @param buf
-     *            header containing the integer
      * @param bufPos
-     *            offset into the header
-     * @return extracted integer
+     * @return
      */
     function extractInteger(buf, bufPos) {
         var x = buf[bufPos + 0] & 0xff;
@@ -3121,14 +3085,9 @@ function VBRTag() {
     }
 
     /**
-     * Write big endian integer (4-bytes) in the header.
-     *
      * @param buf
-     *            header to write the integer into
      * @param bufPos
-     *            offset into the header
      * @param value
-     *            integer value to write
      */
     function createInteger(buf, bufPos, value) {
         buf[bufPos + 0] = 0xff & ((value >> 24) & 0xff);
@@ -3138,14 +3097,9 @@ function VBRTag() {
     }
 
     /**
-     * Write big endian short (2-bytes) in the header.
-     *
      * @param buf
-     *            header to write the integer into
      * @param bufPos
-     *            offset into the header
      * @param value
-     *            integer value to write
      */
     function createShort(buf, bufPos, value) {
         buf[bufPos + 0] = 0xff & ((value >> 8) & 0xff);
@@ -3153,13 +3107,9 @@ function VBRTag() {
     }
 
     /**
-     * Check for magic strings (Xing/Info).
-     *
      * @param buf
-     *            header to check
      * @param bufPos
-     *            header offset to check
-     * @return magic string found
+     * @return
      */
     function isVbrTag(buf, bufPos) {
         return new String(buf, bufPos, VBRTag0.length(), ISO_8859_1)
@@ -3173,14 +3123,8 @@ function VBRTag() {
     }
 
     /**
-     * Construct the MP3 header using the settings of the global flags.
-     *
-     * <img src="1000px-Mp3filestructure.svg.png">
-     *
      * @param gfp
-     *            global flags
      * @param buffer
-     *            header
      */
     function setLameTagFrameHeader(gfp, buffer) {
         var gfc = gfp.internal_flags;
@@ -3241,13 +3185,9 @@ function VBRTag() {
     }
 
     /**
-     * Get VBR tag information
-     *
      * @param buf
-     *            header to analyze
      * @param bufPos
-     *            offset into the header
-     * @return VBR tag data
+     * @return
      */
     this.getVbrTag = function (buf) {
         var pTagData = new VBRTagData();
@@ -3332,12 +3272,7 @@ function VBRTag() {
         return pTagData;
     }
 
-    /**
-     * Initializes the header
-     *
-     * @param gfp
-     *            global flags
-     */
+    /** @param gfp */
     this.InitVbrTag = function (gfp) {
         var gfc = gfp.internal_flags;
 
@@ -3386,8 +3321,6 @@ function VBRTag() {
     }
 
     /**
-     * Fast CRC-16 computation (uses table crc16Lookup).
-     *
      * @param value
      * @param crc
      * @return
@@ -3404,21 +3337,12 @@ function VBRTag() {
     }
 
     /**
-     * Write LAME info: mini version + info on various switches used (Jonathan
-     * Dee 2001/08/31).
-     *
      * @param gfp
-     *            global flags
      * @param musicLength
-     *            music length
      * @param streamBuffer
-     *            pointer to output buffer
      * @param streamBufferPos
-     *            offset into the output buffer
      * @param crc
-     *            computation of CRC-16 of Lame Tag so far (starting at frame
-     *            sync)
-     * @return number of bytes written to the stream
+     * @return
      */
     function putLameVBR(gfp, musicLength, streamBuffer, streamBufferPos, crc) {
         var gfc = gfp.internal_flags;
@@ -3712,15 +3636,10 @@ function VBRTag() {
     }
 
     /**
-     * Write final VBR tag to the file.
-     *
      * @param gfp
-     *            global flags
      * @param stream
-     *            stream to add the VBR tag to
-     * @return 0 (OK), -1 else
-     * @throws IOException
-     *             I/O error
+     * @return
+     * @throws
      */
     this.putVbrTag = function (gfp, stream) {
         var gfc = gfp.internal_flags;
@@ -6060,27 +5979,9 @@ function Quantize() {
     }
 
     /**
-     * <PRE>
-     *  Function: The outer iteration loop controls the masking conditions
-     *  of all scalefactorbands. It computes the best scalefac and
-     *  global gain. This module calls the inner iteration loop
-     *
-     *  mt 5/99 completely rewritten to allow for bit reservoir control,
-     *  mid/side channels with L/R or mid/side masking thresholds,
-     *  and chooses best quantization instead of last quantization when
-     *  no distortion free quantization can be found.
-     *
-     *  added VBR support mt 5/99
-     *
-     *  some code shuffle rh 9/00
-     * </PRE>
-     *
      * @param l3_xmin
-     *            allowed distortion
      * @param xrpow
-     *            coloured magnitudes of spectral
      * @param targ_bits
-     *            maximum allowed bits
      */
     this.outer_loop = function (gfp, cod_info, l3_xmin, xrpow, ch, targ_bits) {
         var gfc = gfp.internal_flags;
@@ -6228,13 +6129,8 @@ function Quantize() {
     };
 
     /**
-     *
-     * 2000-09-04 Robert Hegemann
-     *
      * @param l3_xmin
-     *            allowed distortion of the scalefactor
      * @param xrpow
-     *            coloured magnitudes of spectral values
      */
     this.VBR_encode_granule = function (gfp, cod_info, l3_xmin, xrpow, ch, min_bits, max_bits) {
         var gfc = gfp.internal_flags;
@@ -10961,10 +10857,7 @@ function Lame() {
         }
     }
 
-    /**
-     * @param bRate
-     *            legal rates from 8 to 320
-     */
+    /** @param bRate */
     function FindNearestBitrate(bRate, version, samplerate) {
         if (samplerate < 16000)
             version = 2;
@@ -10983,9 +10876,7 @@ function Lame() {
 
     /**
      * @param bRate
-     *            legal rates from 32 to 448 kbps
      * @param version
-     *            MPEG-1 or MPEG-2/2.5 LSF
      */
     function BitrateIndex(bRate, version, samplerate) {
         if (samplerate < 16000)

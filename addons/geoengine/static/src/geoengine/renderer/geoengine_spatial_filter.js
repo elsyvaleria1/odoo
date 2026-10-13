@@ -14,7 +14,7 @@ const SKETCH_COLOR = "rgba(255, 104, 10, 1)";
 const SKETCH_FILL = "rgba(255, 104, 10, 0.15)";
 
 /**
- * @param {string} projectionCode e.g. "EPSG:3857"
+ * @param {string} projectionCode
  * @returns {number}
  */
 export function sridOf(projectionCode) {
@@ -22,8 +22,6 @@ export function sridOf(projectionCode) {
 }
 
 /**
- * Degrees need more digits than metres for the same ground precision.
- *
  * @param {number} srid
  * @returns {(value: number) => string}
  */
@@ -33,7 +31,7 @@ function coordinateFormatter(srid) {
 }
 
 /**
- * @param {number[][][]} rings linear rings of a polygon, the first one outer
+ * @param {number[][][]} rings
  * @param {number} srid
  * @returns {string}
  */
@@ -105,12 +103,7 @@ export class GeoengineSpatialFilter {
         return this._draw !== null;
     }
 
-    /**
-     * The geometry field of the first layer drawing the view's own model: the
-     * search filters that model, so another model's layer cannot be filtered.
-     *
-     * @returns {string|null}
-     */
+    /** @returns {string|null} */
     get geoFieldName() {
         const model = this.renderer.props.model;
         const resModel = model.root.resModel;

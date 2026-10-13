@@ -84,9 +84,6 @@ export class Softphone {
     }
 
     /**
-     * Whether a softphone input may take the focus: the user opened the
-     * softphone, or nobody is typing elsewhere.
-     *
      * @param {boolean} focusEditable
      * @returns {boolean}
      */

@@ -26,7 +26,7 @@ import { registry } from "@web/core/registry";
 
 /**
  * @typedef {Object} ViewDescription
- * @property {string} [arch] only when loaded with `{ arch: true }`
+ * @property {string} [arch]
  * @property {import("@web/views/ir/view_ir_schema").ViewIRNode} [ir]
  * @property {number|false} id
  * @property {number|null} [custom_view_id]
@@ -95,20 +95,12 @@ class ViewService {
         this.stopWatching = () => {};
     }
 
-    /**
-     * What loadViews adds to a request's options, for a caller that asks for
-     * the views on its behalf.
-     *
-     * @returns {{ mobile: boolean, debug: boolean }}
-     */
+    /** @returns {{ mobile: boolean, debug: boolean }} */
     requestFlags() {
         return { mobile: Boolean(this.env.isSmall), debug: Boolean(this.env.debug) };
     }
 
     /**
-     * The answer to a get_views request, obtained by another call: the next
-     * loadViews making exactly this request takes it instead of the network.
-     *
      * @param {{ model: string, views: any[], context: Object, options: Object }} request
      * @param {any} result
      */
@@ -117,10 +109,6 @@ class ViewService {
     }
 
     /**
-     * The get_views request a server action's window action made last time,
-     * while its answer is still in the cache: /web/action/run need not send
-     * the views again.
-     *
      * @param {number} actionId
      * @returns {any}
      */

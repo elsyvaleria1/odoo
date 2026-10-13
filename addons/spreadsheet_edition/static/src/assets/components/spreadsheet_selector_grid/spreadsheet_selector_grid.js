@@ -43,9 +43,7 @@ export class SpreadsheetSelectorGrid extends Component {
         };
     }
 
-    /**
-     * @returns {Array} - The list of spreadsheets to display in the grid.
-     */
+    /** @returns {Array} */
     get spreadsheets() {
         if (!this.props.displayBlank) {
             return this.props.spreadsheets;
@@ -53,17 +51,12 @@ export class SpreadsheetSelectorGrid extends Component {
         return [this.blankTemplate, ...this.props.spreadsheets];
     }
 
-    /**
-     * @returns {Number} - The number of spreadsheets to display per page.
-     */
+    /** @returns {Number} */
     get itemsPerPage() {
         return this.props.displayBlank ? DEFAULT_LIMIT : DEFAULT_LIMIT + 1;
     }
 
-    /**
-     * Handles the arrow key press event to navigate through spreadsheets and pages.
-     * @param {"left"|"right"} direction - The direction of the arrow key.
-     */
+    /** @param {"left"|"right"} direction */
     async _onArrowKey(direction) {
         const index = this.spreadsheets.findIndex(
             (spreadsheet) => spreadsheet.id === this.props.selectedSpreadsheetId,

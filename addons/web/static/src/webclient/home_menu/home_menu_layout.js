@@ -339,7 +339,7 @@ export class HomeMenuLayout {
         });
     }
 
-    /** @param {unknown} raw the stored configuration the server answered */
+    /** @param {unknown} raw */
     _adopt(raw) {
         user.updateUserSettings("homemenu_config", raw);
         const own = readHomeMenuConfig(raw);

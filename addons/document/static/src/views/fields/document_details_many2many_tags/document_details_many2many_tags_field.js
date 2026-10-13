@@ -2,9 +2,7 @@
 import { Many2ManyTagsField } from "@web/fields/relational/many2many_tags";
 import { useSearchModel } from "@web/search/search_model";
 
-/**
- * @override update,
- */
+/** @override */
 export class DocumentsDetailsMany2ManyTagsField extends Many2ManyTagsField {
     static props = {
         ...Many2ManyTagsField.props,

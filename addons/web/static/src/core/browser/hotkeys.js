@@ -41,7 +41,7 @@ const MODIFIER_KEYS = new Set([
 
 /**
  * @param {KeyboardEvent | MouseEvent} ev
- * @returns {boolean} the platform's primary modifier: Cmd on macOS, Ctrl elsewhere
+ * @returns {boolean}
  */
 export function isCtrlOrCmdKey(ev) {
     return isMacOS() ? ev.metaKey : ev.ctrlKey;

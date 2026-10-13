@@ -43,14 +43,7 @@ export class DynamicGroupList extends DynamicList {
         this.setData(/** @type {any} */ (data));
     }
 
-    /**
-     * A reloaded group hands its new datapoint the list it had, so the
-     * records still in the group keep their datapoints (DynamicRecordList
-     * does the matching); the group itself is rebuilt, its config is the
-     * new load's.
-     *
-     * @param {{ groups: any[], length: number, [key: string]: any }} data
-     */
+    /** @param {{ groups: any[], length: number, [key: string]: any }} data */
     setData(data) {
         if (
             this._nbRecordsMatchingDomain !== null &&

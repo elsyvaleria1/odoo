@@ -57,10 +57,6 @@
         resolve;
 
         /**
-         * A page bundle served as a classic script cannot import: the module
-         * script in front of it imports the libraries it needs and hands them
-         * over, with the one thing only a module can do.
-         *
          * @param {Record<string, any>} namespaces
          * @param {(specifier: string) => string} resolve
          */
@@ -86,10 +82,6 @@
         }
 
         /**
-         * What a classic bundle registers for a library is the copy its
-         * interop made of it. The library itself is what every other bundle
-         * registers, and a copy beside it would read as a second instance.
-         *
          * @param {string} name
          * @param {any} mod
          */

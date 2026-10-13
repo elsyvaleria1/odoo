@@ -52,12 +52,7 @@ export class UrgentSaveCoordinator extends StateMachine {
         return this.status === "active";
     }
 
-    /**
-     * Urgent work a run stopped waiting for: it has not reached the record,
-     * so whatever it carries is not in the save that run made.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get hasUnsettledWork() {
         return this._unsettled.size > 0;
     }
@@ -65,7 +60,7 @@ export class UrgentSaveCoordinator extends StateMachine {
     /**
      * @param {Promise<unknown>} work
      * @param {string} stage
-     * @returns {Promise<boolean>} whether the work settled in microtasks
+     * @returns {Promise<boolean>}
      */
     async _settleOrLeave(work, stage) {
         this._unsettled.add(work);

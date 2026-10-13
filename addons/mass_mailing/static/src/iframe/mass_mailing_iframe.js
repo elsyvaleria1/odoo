@@ -288,13 +288,7 @@ export class MassMailingIframe extends Component {
         this.state.ready = true;
     }
 
-    /**
-     * As no plugins are loaded in readonly mode, we manually set inlining attributes to
-     * any t-element that might be present in the document, provided its children are inline
-     * (which should always be the case for mass_mailing).
-     * TODO: move this to a readonly plugin once they are implemented
-     * @param {HTMLElement} iframe
-     */
+    /** @param {HTMLElement} iframe */
     fixInlineDynamicPlaceholders(iframe) {
         const checkAllInline = function (el) {
             return [...el.children].every((child) => {
@@ -330,9 +324,7 @@ export class MassMailingIframe extends Component {
         );
     }
 
-    /**
-     * @returns {Object} bundleControls { bundleName: activatorObject }
-     */
+    /** @returns {Object} */
     async loadIframeAssets() {
         const bundleEntryPromises = MASS_MAILING_IFRAME_ASSETS.map(async (bundle) => {
             const targets = (

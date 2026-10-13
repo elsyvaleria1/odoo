@@ -18,17 +18,11 @@ function requireMs () {
 	var y = d * 365.25;
 
 	/**
-	 * Parse or format the given `val`.
-	 *
-	 * Options:
-	 *
-	 *  - `long` verbose formatting [false]
-	 *
 	 * @param {String|Number} val
 	 * @param {Object} [options]
-	 * @throws {Error} throw an error if val is not a non-empty string or a number
+	 * @throws {Error}
 	 * @return {String|Number}
-	 * @api public
+	 * @api
 	 */
 
 	ms = function (val, options) {
@@ -46,11 +40,9 @@ function requireMs () {
 	};
 
 	/**
-	 * Parse the given `str` and return milliseconds.
-	 *
 	 * @param {String} str
 	 * @return {Number}
-	 * @api private
+	 * @api
 	 */
 
 	function parse(str) {
@@ -111,11 +103,9 @@ function requireMs () {
 	}
 
 	/**
-	 * Short format for `ms`.
-	 *
 	 * @param {Number} ms
 	 * @return {String}
-	 * @api private
+	 * @api
 	 */
 
 	function fmtShort(ms) {
@@ -136,11 +126,9 @@ function requireMs () {
 	}
 
 	/**
-	 * Long format for `ms`.
-	 *
 	 * @param {Number} ms
 	 * @return {String}
-	 * @api private
+	 * @api
 	 */
 
 	function fmtLong(ms) {
@@ -190,11 +178,10 @@ function setup(env) {
 	createDebug.formatters = {};
 
 	/**
-	* Selects a color for a debug namespace
-	* @param {String} namespace The namespace string for the debug instance to be colored
-	* @return {Number|String} An ANSI color code for the given namespace
-	* @api private
-	*/
+	 * @param {String} namespace
+	 * @return {Number|String}
+	 * @api
+	 */
 	function selectColor(namespace) {
 		let hash = 0;
 
@@ -208,12 +195,10 @@ function setup(env) {
 	createDebug.selectColor = selectColor;
 
 	/**
-	* Create a debugger with the given `namespace`.
-	*
-	* @param {String} namespace
-	* @return {Function}
-	* @api public
-	*/
+	 * @param {String} namespace
+	 * @return {Function}
+	 * @api
+	 */
 	function createDebug(namespace) {
 		let prevTime;
 		let enableOverride = null;
@@ -302,12 +287,9 @@ function setup(env) {
 	}
 
 	/**
-	* Enables a debug mode by namespaces. This can include modes
-	* separated by a colon and wildcards.
-	*
-	* @param {String} namespaces
-	* @api public
-	*/
+	 * @param {String} namespaces
+	 * @api
+	 */
 	function enable(namespaces) {
 		createDebug.save(namespaces);
 		createDebug.namespaces = namespaces;
@@ -331,9 +313,6 @@ function setup(env) {
 	}
 
 	/**
-	 * Checks if the given string matches a namespace template, honoring
-	 * asterisks as wildcards.
-	 *
 	 * @param {String} search
 	 * @param {String} template
 	 * @return {Boolean}
@@ -371,11 +350,9 @@ function setup(env) {
 	}
 
 	/**
-	* Disable debug output.
-	*
-	* @return {String} namespaces
-	* @api public
-	*/
+	 * @return {String}
+	 * @api
+	 */
 	function disable() {
 		const namespaces = [
 			...createDebug.names,
@@ -386,12 +363,10 @@ function setup(env) {
 	}
 
 	/**
-	* Returns true if the given mode name is enabled, false otherwise.
-	*
-	* @param {String} name
-	* @return {Boolean}
-	* @api public
-	*/
+	 * @param {String} name
+	 * @return {Boolean}
+	 * @api
+	 */
 	function enabled(name) {
 		for (const skip of createDebug.skips) {
 			if (matchesTemplate(name, skip)) {
@@ -409,12 +384,10 @@ function setup(env) {
 	}
 
 	/**
-	* Coerce `val`.
-	*
-	* @param {Mixed} val
-	* @return {Mixed}
-	* @api private
-	*/
+	 * @param {Mixed} val
+	 * @return {Mixed}
+	 * @api
+	 */
 	function coerce(val) {
 		if (val instanceof Error) {
 			return val.stack || val.message;
@@ -588,10 +561,8 @@ browser.exports;
 	exports.log = console.debug || console.log || (() => {});
 
 	/**
-	 * Save `namespaces`.
-	 *
 	 * @param {String} namespaces
-	 * @api private
+	 * @api
 	 */
 	function save(namespaces) {
 		try {
@@ -605,10 +576,8 @@ browser.exports;
 	}
 
 	/**
-	 * Load `namespaces`.
-	 *
-	 * @return {String} returns the previously persisted debug modes
-	 * @api private
+	 * @return {String}
+	 * @api
 	 */
 	function load() {
 		let r;
@@ -625,14 +594,8 @@ browser.exports;
 	}
 
 	/**
-	 * Localstorage attempts to return the localstorage.
-	 *
-	 * This is necessary because safari throws
-	 * when a user disables cookies/localstorage
-	 * and you attempt to access it.
-	 *
 	 * @return {LocalStorage}
-	 * @api private
+	 * @api
 	 */
 
 	function localstorage() {
@@ -2814,11 +2777,7 @@ class Producer extends enhancedEvents_1$b.EnhancedEventEmitter {
     get paused() {
         return this._paused;
     }
-    /**
-     * Max spatial layer.
-     *
-     * @type {Number | undefined}
-     */
+    /** @type {Number | undefined} */
     get maxSpatialLayer() {
         return this._maxSpatialLayer;
     }
@@ -3212,11 +3171,7 @@ class DataProducer extends enhancedEvents_1$9.EnhancedEventEmitter {
         this.safeEmit('transportclose');
         this._observer.safeEmit('close');
     }
-    /**
-     * Send a message.
-     *
-     * @param {String|Blob|ArrayBuffer|ArrayBufferView} data.
-     */
+    /** @param {String|Blob|ArrayBuffer|ArrayBufferView} data. */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     send(data) {
         logger$a.debug('send()');
@@ -3535,11 +3490,7 @@ class Transport extends enhancedEvents_1$7.EnhancedEventEmitter {
         super.close();
         this._observer.close();
     }
-    /**
-     * Get associated Transport (RTCPeerConnection) stats.
-     *
-     * @returns {RTCStatsReport}
-     */
+    /** @returns {RTCStatsReport} */
     async getStats() {
         if (this._closed) {
             throw new errors_1$7.InvalidStateError('closed');
@@ -5162,7 +5113,7 @@ class OfferMediaSection extends MediaSection {
                 this._mediaObject.rtp = [];
                 this._mediaObject.rtcpFb = [];
                 this._mediaObject.fmtp = [];
-                // @ts-expect-error --- @types/sdp-transform 2.15.0 is not ready for
+
                 this._mediaObject.msid = [{ id: streamId, appdata: trackId }];
                 for (const codec of offerRtpParameters.codecs) {
                     const rtp = {
@@ -8925,7 +8876,7 @@ class ReactNative106 extends enhancedEvents_1$2.EnhancedEventEmitter {
             return;
         }
         this._closed = true;
-        // @ts-expect-error --- Proprietary API in react-native-webrtc.
+
         this._sendStream.release( false);
         try {
             this._pc.close();
@@ -9620,12 +9571,7 @@ class Device {
     };
     _sctpCapabilities;
     _observer = new enhancedEvents_1$1.EnhancedEventEmitter();
-    /**
-     * Create a new Device to connect to mediasoup server. It uses a more advanced
-     * device detection.
-     *
-     * @throws {UnsupportedError} if device is not supported.
-     */
+    /** @throws {UnsupportedError} */
     static async factory({ handlerName, handlerFactory, } = {}) {
         logger$1.debug('factory()');
         if (handlerName && handlerFactory) {
@@ -9639,11 +9585,7 @@ class Device {
         }
         return new Device({ handlerName, handlerFactory });
     }
-    /**
-     * Create a new Device to connect to mediasoup server.
-     *
-     * @throws {UnsupportedError} if device is not supported.
-     */
+    /** @throws {UnsupportedError} */
     constructor({ handlerName, handlerFactory } = {}) {
         logger$1.debug('constructor()');
         if (handlerName && handlerFactory) {
@@ -9699,22 +9641,14 @@ class Device {
     get loaded() {
         return this._loaded;
     }
-    /**
-     * RTP capabilities of the Device for receiving media.
-     *
-     * @throws {InvalidStateError} if not loaded.
-     */
+    /** @throws {InvalidStateError} */
     get rtpCapabilities() {
         if (!this._loaded) {
             throw new errors_1$1.InvalidStateError('not loaded');
         }
         return this._recvRtpCapabilities;
     }
-    /**
-     * SCTP capabilities of the Device.
-     *
-     * @throws {InvalidStateError} if not loaded.
-     */
+    /** @throws {InvalidStateError} */
     get sctpCapabilities() {
         if (!this._loaded) {
             throw new errors_1$1.InvalidStateError('not loaded');
@@ -9752,10 +9686,8 @@ class Device {
         this._loaded = true;
     }
     /**
-     * Whether we can produce audio/video.
-     *
-     * @throws {InvalidStateError} if not loaded.
-     * @throws {TypeError} if wrong arguments.
+     * @throws {InvalidStateError}
+     * @throws {TypeError}
      */
     canProduce(kind) {
         if (!this._loaded) {
@@ -9767,10 +9699,8 @@ class Device {
         return this._canProduceByKind[kind];
     }
     /**
-     * Creates a Transport for sending media.
-     *
-     * @throws {InvalidStateError} if not loaded.
-     * @throws {TypeError} if wrong arguments.
+     * @throws {InvalidStateError}
+     * @throws {TypeError}
      */
     createSendTransport({ id, iceParameters, iceCandidates, dtlsParameters, sctpParameters, iceServers, iceTransportPolicy, additionalSettings, appData, }) {
         logger$1.debug('createSendTransport()');
@@ -9788,10 +9718,8 @@ class Device {
         });
     }
     /**
-     * Creates a Transport for receiving media.
-     *
-     * @throws {InvalidStateError} if not loaded.
-     * @throws {TypeError} if wrong arguments.
+     * @throws {InvalidStateError}
+     * @throws {TypeError}
      */
     createRecvTransport({ id, iceParameters, iceCandidates, dtlsParameters, sctpParameters, iceServers, iceTransportPolicy, additionalSettings, appData, }) {
         logger$1.debug('createRecvTransport()');
@@ -10168,10 +10096,7 @@ class FakeEvent {
     composedPath() {
         return [];
     }
-    /**
-     * Not implemented.
-     * @deprecated
-     */
+    /** @deprecated */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     initEvent(type, bubbles, cancelable) {
     }
@@ -11216,13 +11141,13 @@ function generateNativeRtpCapabilities() {
             },
             {
                 kind: 'video',
-                // @ts-expect-error --- ON purpose.
+
                 uri: 'http://www.webrtc.org/experiments/rtp-hdrext/video-content-type',
                 preferredId: 7,
             },
             {
                 kind: 'video',
-                // @ts-expect-error --- ON purpose.
+
                 uri: 'http://www.webrtc.org/experiments/rtp-hdrext/video-timing',
                 preferredId: 8,
             },
@@ -11631,7 +11556,7 @@ class Bus {
             this._websocket.on(event, func);
         }
         else {
-            // @ts-expect-error supporting EventTarget interface in browsers
+
             this._websocket.addEventListener(event, func);
         }
     }
@@ -11640,7 +11565,7 @@ class Bus {
             this._websocket.off(event, func);
         }
         else {
-            // @ts-expect-error supporting EventTarget interface in browsers
+
             this._websocket.removeEventListener(event, func);
         }
     }
@@ -11815,9 +11740,7 @@ class SfuClient extends EventTarget {
             detail: { state }
         }));
     }
-    /**
-     * @param message - Any JSON serializable object
-     */
+    /** @param message */
     broadcast(message) {
         var _a;
         (_a = this._bus) === null || _a === void 0 ? void 0 : _a.send({
@@ -11826,9 +11749,9 @@ class SfuClient extends EventTarget {
         }, { batch: true });
     }
     /**
-     * @param url - WebSocket URL
-     * @param jsonWebToken - Authentication token
-     * @param options - Connection options
+     * @param url
+     * @param jsonWebToken
+     * @param options
      */
     async connect(url, jsonWebToken, options = {}) {
         const { channelUUID, iceServers } = options;
@@ -11907,8 +11830,8 @@ class SfuClient extends EventTarget {
         }, { batch: true });
     }
     /**
-     * @param type - Media type to update
-     * @param track - MediaStreamTrack to upload (null removes the track)
+     * @param type
+     * @param track
      */
     async updateUpload(type, track) {
         var _a;

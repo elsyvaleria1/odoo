@@ -15,10 +15,7 @@ export class AutoResizeCover extends AutoResizeImage {
         this.orm = useService("orm");
     }
 
-    /**
-     * @override
-     * Open Dialog to delete the cover record.
-     */
+    /** @override */
     remove() {
         this.dialogs.add(ConfirmationDialog, {
             body: _t(
@@ -52,10 +49,7 @@ export class KnowledgeCoverSelector extends ImageSelector {
         this.searchUnsplash(this.state.needle);
     }
 
-    /**
-     * @override
-     * Domain used to fetch the attachments to display in the coverSelector.
-     */
+    /** @override */
     get attachmentsDomain() {
         return [
             "&",
@@ -64,19 +58,12 @@ export class KnowledgeCoverSelector extends ImageSelector {
         ];
     }
 
-    /**
-     * @override
-     * Update the article's cover using the id of the cover associated to the
-     * attachment clicked.
-     */
+    /** @override */
     onClickAttachment(attachment) {
         this.props.save(attachment.res_id);
     }
 
-    /**
-     * @override
-     * Upload the unsplash image clicked.
-     */
+    /** @override */
     onClickRecord(unsplashRecord) {
         this.unsplashService.uploadUnsplashRecords(
             [unsplashRecord],
@@ -85,11 +72,7 @@ export class KnowledgeCoverSelector extends ImageSelector {
         );
     }
 
-    /**
-     * @override
-     * Remove cover from the opened CoverSelector, and update article's cover
-     * if the cover was used in the current article.
-     */
+    /** @override */
     onRemoved(attachmentId, coverId) {
         super.onRemoved(attachmentId);
         if (coverId === this.props.articleCoverId) {
@@ -97,11 +80,7 @@ export class KnowledgeCoverSelector extends ImageSelector {
         }
     }
 
-    /**
-     * @override
-     * Associate the created attachment to a new cover record, update the
-     * attachment's resId, and update the article's cover.
-     */
+    /** @override */
     async onUploaded(attachment) {
         const [coverId] = await this.orm.create(this.props.resModel, [
             { attachment_id: attachment.id },
@@ -109,24 +88,12 @@ export class KnowledgeCoverSelector extends ImageSelector {
         this.props.save(coverId);
     }
 
-    /**
-     * @override
-     * Overridden to not throw an error.
-     * Designed to be used with several tabs in the dialog (not the case here)
-     * and used for rendering purposes to show selected images when multiImage
-     * is allowed (not the case either).
-     */
+    /** @override */
     get selectedAttachmentIds() {
         return [];
     }
 
-    /**
-     * @override
-     * Overridden to not throw an error.
-     * Designed to be used with several tabs in the dialog (not the case here)
-     * and used for rendering purposes to show selected images when multiImage
-     * is allowed (not the case either).
-     */
+    /** @override */
     get selectedRecordIds() {
         return [];
     }

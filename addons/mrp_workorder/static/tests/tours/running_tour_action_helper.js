@@ -22,7 +22,6 @@ if (!tourHelperActions.contains("scan")) {
 }
 
 /**
- * Get and returns exactly one record (MO or WO), fails if multiple records are found.
  * @param {Object} options
  * @returns {HTMLElement}
  */
@@ -35,8 +34,7 @@ export function getRecord(options = {}) {
 }
 
 /**
- * Get and returns all records matching the given description, fails if no record is found.
- * @param {Object} [options] if no description, will return all the records
+ * @param {Object} [options]
  * @returns {Element[]}
  */
 export function getRecords(options = {}) {
@@ -49,8 +47,7 @@ export function getRecords(options = {}) {
 }
 
 /**
- * Check the given MO has the expected amount of Work Order lines.
- * @param {HTMLElement} productionCard the Manufacturing Order element
+ * @param {HTMLElement} productionCard
  * @param {Number} expectedCount
  */
 export function assertProductionWorkorderCount(productionCard, expectedCount) {
@@ -59,10 +56,9 @@ export function assertProductionWorkorderCount(productionCard, expectedCount) {
 }
 
 /**
- * Check searchview's facets to ensure current filters match what is expected.
  * @param {Object[]} facetsVals
- * @param {string} [facetsVals.label] left part of the facet (must be missing if it's an icon)
- * @param {string} facetsVals.value right part of the facet
+ * @param {string} [facetsVals.label]
+ * @param {string} facetsVals.value
  */
 export function assertSearchFacets(facetsVals = []) {
     const facetEls = document.querySelectorAll(".o_searchview_facet");
@@ -83,13 +79,12 @@ export function assertSearchFacets(facetsVals = []) {
 }
 
 /**
- * Check a specific line (move line, quality step or work order) matches all given data.
  * @param {Object} values
- * @param {Integer} [values.index] line's index, must be used if `step` is not given
- * @param {string} values.label expected line's label
- * @param {string} [values.value] expected line's value, should not be used if line has no value
- * @param {HTMLElement} [values.record] must be given if there is more than one record, optionnal otherwise
- * @param {HTMLElement} [values.step] the check line, must be used if `index` not given
+ * @param {Integer} [values.index]
+ * @param {string} values.label
+ * @param {string} [values.value]
+ * @param {HTMLElement} [values.record]
+ * @param {HTMLElement} [values.step]
  */
 export function assertStep(values) {
     const { index, label, value, workcenter } = values;
@@ -121,12 +116,10 @@ export function assertStep(values) {
 }
 
 /**
- * Check the Workcenter buttons display the expected Workcenters in the expected
- * order. Also check which one is the active button.
- * @param {Array} buttons list of all displayed Workcenter buttons
- * @param {string} buttons.name expected button's name
- * @param {Number} buttons.count expected button's count
- * @param {Boolean} [buttons.active] must be true only for the expected active button
+ * @param {Array} buttons
+ * @param {string} buttons.name
+ * @param {Number} buttons.count
+ * @param {Boolean} [buttons.active]
  */
 export function assertWorkcenterButtons(buttons) {
     const buttonEls = document.querySelectorAll(".o_work_center_btn");
@@ -151,16 +144,13 @@ export function assertWorkcenterButtons(buttons) {
 }
 
 /**
- * Check a specific record (manufacturing order or work order) matches all given data.
  * @param {Object} values
- * @param {Integer} [values.index] record's index, must be used if multiple
- * records are visible but optionnal of there is only one record at the time
- * @param {string} values.name expected record's name
- * @param {string} [values.operation] expected record's operation
- * @param {string} values.product expected record product's name
- * @param {string} values.quantity expected record's producted quantity, UoM included
- * @param {Object[]} [values.steps=[]] every record's line, must be given only
- * if record has at least one line. For more information, @see {@link assertStep}
+ * @param {Integer} [values.index]
+ * @param {string} values.name
+ * @param {string} [values.operation]
+ * @param {string} values.product
+ * @param {string} values.quantity
+ * @param {Object[]} [values.steps=[]]
  */
 export function assertWorkOrderValues(values) {
     const { name, operation, steps = [] } = values;

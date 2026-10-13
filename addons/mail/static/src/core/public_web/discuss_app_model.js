@@ -104,13 +104,7 @@ export class DiscussApp extends Record {
     });
     hasRestoredThread = false;
 
-    /**
-     * Writes the Discuss selection to the URL and to the Discuss action's context, which
-     * breadcrumbs restore from: a thread (`discuss.channel_10`) or a tab
-     * alone (`discuss.tab_channel`).
-     *
-     * @param {string} activeId
-     */
+    /** @param {string} activeId */
     setActiveURL(activeId) {
         router.pushState({ active_id: activeId });
         const action = this.store.env.services.action;

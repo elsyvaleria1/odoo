@@ -27,9 +27,7 @@ export class ExpressCheckout extends Interaction {
     }
 
     /**
-     * Reload the page when the page is restored from the bfcache.
-     *
-     * @param {PageTransitionEvent} event - The pageshow event.
+     * @param {PageTransitionEvent} event
      * @private
      */
     _onNavigationBack(event) {
@@ -39,10 +37,8 @@ export class ExpressCheckout extends Interaction {
     }
 
     /**
-     * Return the express checkout form, if found.
-     *
      * @private
-     * @return {Element|null} - The express checkout form.
+     * @return {Element|null}
      */
     _getExpressCheckoutForm() {
         return document.querySelector(
@@ -51,22 +47,16 @@ export class ExpressCheckout extends Interaction {
     }
 
     /**
-     * Prepare the provider-specific express checkout form based on the provided data.
-     *
-     * For a provider to manage an express checkout form, it must override this method.
-     *
      * @private
-     * @param {Object} providerData - The provider-specific data.
+     * @param {Object} providerData
      * @return {void}
      */
     async _prepareExpressCheckoutForm() {}
 
     /**
-     * Prepare the params for the RPC to the transaction route.
-     *
      * @private
-     * @param {number} providerId - The id of the provider handling the transaction.
-     * @returns {object} - The transaction route params.
+     * @param {number} providerId
+     * @returns {object}
      */
     _prepareTransactionRouteParams(providerId) {
         return {
@@ -82,13 +72,9 @@ export class ExpressCheckout extends Interaction {
     }
 
     /**
-     * Update the amount of the express checkout form.
-     *
-     * For a provider to manage an express form, it must override this method.
-     *
      * @private
-     * @param {number} newAmount - The new amount.
-     * @param {number} newMinorAmount - The new minor amount.
+     * @param {number} newAmount
+     * @param {number} newMinorAmount
      * @return {void}
      */
     _updateAmount(newAmount, newMinorAmount) {

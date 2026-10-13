@@ -49,7 +49,7 @@ function speechLang() {
 export class VoiceService {
     /**
      * @param {Record<string, any>} services
-     * @param {Record<string, any>} allServices for what a registered executor needs
+     * @param {Record<string, any>} allServices
      */
     constructor(services, allServices) {
         this.services = services;
@@ -106,12 +106,8 @@ export class VoiceService {
     }
 
     /**
-     * Each proposal keeps the view it was said to: a palette or a dialog
-     * opened since takes the active element, not the user's intent.
-     *
      * @param {string} text
-     * @param {{ withTargets?: boolean }} [options] the palette is a dialog of
-     *   its own, whose items are not what the user means by "click"
+     * @param {{ withTargets?: boolean }} [options]
      * @returns {Interpretation}
      */
     interpret(text, { withTargets = true } = {}) {
@@ -213,11 +209,7 @@ export class VoiceService {
         });
     }
 
-    /**
-     * The names worth biasing a recogniser towards, most specific first.
-     *
-     * @returns {string[]}
-     */
+    /** @returns {string[]} */
     phrases() {
         const vocabulary = this.vocabulary();
         const view = vocabulary.view;
@@ -252,7 +244,6 @@ export class VoiceService {
     /**
      * @param {string} text
      * @param {{ spoken?: boolean, again?: ((language: string) => Promise<string>) | null }} [options]
-     *   `again` hears the same utterance once more in another language
      */
     async submit(text, { spoken = false, again = null } = {}) {
         this.clear();
@@ -286,10 +277,6 @@ export class VoiceService {
     }
 
     /**
-     * A command said in English inside a Spanish session is often transcribed
-     * as Spanish nonsense; decoded again in English, the grammar may read it.
-     * Only as a second pass: an English first pass translates Spanish.
-     *
      * @param {((language: string) => Promise<string>) | null} again
      * @returns {Promise<{ text: string, interpretation: Interpretation } | null>}
      */
@@ -312,12 +299,7 @@ export class VoiceService {
         }
     }
 
-    /**
-     * What the recogniser most likely misheard, read against what this screen
-     * offers; the grammar stays exact and decides which reading holds.
-     *
-     * @param {string} text
-     */
+    /** @param {string} text */
     correct(text) {
         const inventory = correctionInventory(
             this.lastSaid.vocabulary,
@@ -329,11 +311,8 @@ export class VoiceService {
     }
 
     /**
-     * Said aloud on this device, by the browser's own synthesiser: nothing
-     * leaves it.
-     *
      * @param {string} text
-     * @returns {boolean} whether there was a voice to say it
+     * @returns {boolean}
      */
     speak(text) {
         const synthesis = /** @type {any} */ (browser).speechSynthesis;
@@ -379,7 +358,7 @@ export class VoiceService {
 
     /**
      * @param {string} text
-     * @param {Proposal} proposal one the user already chose, from the palette
+     * @param {Proposal} proposal
      */
     async accept(text, proposal) {
         this.clear();
@@ -429,10 +408,6 @@ export class VoiceService {
     }
 
     /**
-     * A relation named by a word becomes the record of that name, or a
-     * choice when several records answer to it, or when only records that
-     * sound like it do.
-     *
      * @param {Proposal} proposal
      * @returns {Promise<{ resolved: Proposal[], choose: boolean }>}
      */
@@ -465,10 +440,6 @@ export class VoiceService {
     }
 
     /**
-     * A search by a relation keeps what was heard as text when records answer
-     * to it; when none does, the records that sound like it are offered, and
-     * the one chosen is searched for itself.
-     *
      * @param {Proposal} proposal
      * @returns {Promise<{ resolved: Proposal[], choose: boolean }>}
      */
@@ -525,9 +496,6 @@ export class VoiceService {
     }
 
     /**
-     * Nothing is named as it was heard: the records named by any of its words
-     * that sound like the whole of it, offered as a choice, never taken.
-     *
      * @param {string} relation
      * @param {string} value
      */
@@ -625,12 +593,7 @@ export class VoiceService {
         }
     }
 
-    /**
-     * A reading the user chose among several is kept, for someone who shares
-     * what they say, as a term an administrator may approve.
-     *
-     * @param {{ heard: string, as: string } | undefined} corrected
-     */
+    /** @param {{ heard: string, as: string } | undefined} corrected */
     learn(corrected) {
         if (!corrected || !this.sharing) {
             return;

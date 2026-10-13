@@ -9,7 +9,6 @@ import { startSignItemNavigator } from "./sign_item_navigator.js";
 
 export class SignablePDFIframe extends PDFIframe {
     /**
-     * Renders custom elements inside the PDF.js iframe when signing
      * @param {Document} root
      * @param {Object} env
      * @param {Object} owlServices
@@ -59,10 +58,7 @@ export class SignablePDFIframe extends PDFIframe {
         return undefined;
     }
 
-    /**
-     * Modify the selected sign item of the corresponding radio set.
-     * @param {SignItem} signItem
-     */
+    /** @param {SignItem} signItem */
     handleRadioItemSelected(signItem) {
         const radio_set_id = signItem.data.radio_set_id;
         if (this.radioSets[radio_set_id].selected !== signItem.data.id) {
@@ -181,9 +177,6 @@ export class SignablePDFIframe extends PDFIframe {
     }
 
     /**
-     * Logic for wizard/mark behavior is:
-     * If auto_value is defined and the item is not marked yet, auto_value is used
-     * Else, wizard is opened.
      * @param { HTMLElement } signatureItem
      * @param { Object } signItemType
      */
@@ -239,7 +232,6 @@ export class SignablePDFIframe extends PDFIframe {
     }
 
     /**
-     * Opens the signature dialog
      * @param { HTMLElement } signatureItem
      * @param {*} type
      */
@@ -402,10 +394,7 @@ export class SignablePDFIframe extends PDFIframe {
         return itemsToSign;
     }
 
-    /**
-     * Updates the user's signature in the res.user model
-     * @param { Object } type
-     */
+    /** @param { Object } type */
     updateUserSignature(type) {
         return rpc("/sign/update_user_signature", {
             sign_request_id: this.props.requestID,
@@ -418,7 +407,6 @@ export class SignablePDFIframe extends PDFIframe {
     }
 
     /**
-     * Extends the rendering context of the sign item based on its data
      * @param {SignItem.data} signItem
      * @returns {Object}
      */
@@ -474,11 +462,7 @@ export class SignablePDFIframe extends PDFIframe {
 
     async _signDocument() {}
 
-    /**
-     * Gets the signature values from the sign items
-     * Gets the frame values
-     * @returns { Array } [signature values, frame values]
-     */
+    /** @returns { Array } */
     getSignatureValuesFromConfiguration() {
         const signatureValues = {};
         const frameValues = {};

@@ -10,9 +10,6 @@ const COMPOSER_BUTTONS = {
 };
 
 /**
- * The same button the user would press opens the composer, and the words go
- * in after whatever it already held; posting stays the user's.
- *
  * @param {import("@voice_command/interpreter/interpreter").Proposal} proposal
  * @param {import("@voice_command/executor").ExecutionContext} context
  */

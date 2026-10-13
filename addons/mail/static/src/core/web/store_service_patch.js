@@ -18,9 +18,6 @@ const BUS_FENCED_COUNTERS = [
 ];
 
 /**
- * Save the unread counter in the database shared with the service worker, so
- * that the app badge stays up to date.
- *
  * @param {number} counter
  * @param {boolean} [retry=true]
  */

@@ -125,13 +125,7 @@ export class ImageShapeOptionPlugin extends Plugin {
         }
         this.addShapeColorAttribute(this.document);
     }
-    /**
-     * Compute and set default shape colors for images with data-shape but
-     * missing data-shape-colors (e.g. s_cta_mockups, s_closer_look).
-     *
-     * @param {HTMLElement} editingElement - The element to search for images
-     * with missing shape colors.
-     */
+    /** @param {HTMLElement} editingElement */
     async addShapeColorAttribute(editingElement) {
         const missingShapeColorEls = editingElement.querySelectorAll(
             MISSING_SHAPE_COLOR_SELECTORS,
@@ -326,12 +320,7 @@ export class ImageShapeOptionPlugin extends Plugin {
         return [dataURL, { ...handlerDataset, mimetype: "image/svg+xml" }];
     }
 
-    /**
-     * The server builds the stored SVG from the shape's parameters and the
-     * image the preview embeds; the preview itself is never uploaded.
-     *
-     * @param {HTMLElement} img
-     */
+    /** @param {HTMLElement} img */
     getShapeSaveParams(img) {
         const src = img.getAttribute("src") || "";
         const shapeId = img.dataset.shape || this.getDefaultShapeId(img.dataset);
@@ -372,12 +361,8 @@ export class ImageShapeOptionPlugin extends Plugin {
     }
 
     /**
-     * Builds the shape's SVG element by applying its colors, animation speed
-     * and flip/rotate transformations.
-     *
-     * @param {string} svgText svg text file
-     * @param {Object} params shape parameters (shapeId, shapeFlip,
-     *                        shapeRotate, shapeAnimationSpeed, shapeColors)
+     * @param {string} svgText
+     * @param {Object} params
      * @returns {SVGElement}
      */
     async computeShape(svgText, params) {
@@ -418,15 +403,9 @@ export class ImageShapeOptionPlugin extends Plugin {
         return svg;
     }
     /**
-     * Replaces animation durations in both CSS animation rules and SVG
-     * duration attributes of the given SVG string.
-     *
-     * @param {string} svgText The SVG string containing animations.
-     * @param {number} speed The speed used to calculate the new animation
-     *                       durations. If speed is 0.0, the original
-     *                       durations are preserved.
-     * @returns {string} The modified SVG string with updated animation
-     *                   durations.
+     * @param {string} svgText
+     * @param {number} speed
+     * @returns {string}
      */
     replaceAnimationDuration(svgText, speed) {
         const ratio = (speed >= 0.0 ? 1.0 + speed : 1.0 / (1.0 - speed)).toFixed(3);
@@ -731,8 +710,7 @@ registry
 
 /**
  * @param {String} mimetype
- * @param {Boolean} [strict=false] if true, even partially supported images (GIFs)
- *     won't be accepted.
+ * @param {Boolean} [strict=false]
  * @returns {Boolean}
  */
 function isImageSupportedForProcessing(mimetype, strict = false) {

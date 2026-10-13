@@ -24,19 +24,6 @@ export class ResPartner extends hrModels.ResPartner {
     }
 
     /**
-     * Base status first, then the leave mapping over it -- the order the server
-     * uses (`super()._compute_presence()` then the `elif` ladder).
-     *
-     * This is a second implementation of a server computation, and it had
-     * drifted from it in three ways at once. It read `leave_date_to` off
-     * `ResUsers.browse(...)`, which is a *recordset*: the field came back
-     * `undefined` on every call, so the leave branch never once fired and no
-     * partner was ever on leave in a JS test. It consulted `main_user_id`
-     * alone where the server joins over every user. And its `else` swept
-     * `busy` -- and anything else -- into `leave_offline`, so `leave_busy`
-     * could not be produced at all, though `store_service_patch` lists it
-     * among the online statuses.
-     *
      * @param {object} partner
      * @returns {string}
      */

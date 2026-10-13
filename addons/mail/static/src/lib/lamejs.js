@@ -4,11 +4,7 @@ import { makeLazyLib } from "@web/core/lib/lazy_lib";
 
 const lib = makeLazyLib(() => import("lamejs"), { pick: (module) => module.default });
 
-/**
- * The MP3 encoder library, fetched on the first voice message.
- *
- * @type {any}
- */
+/** @type {any} */
 export const lamejs = lib.facade;
 
 export const lamejsLoader = {
@@ -16,11 +12,7 @@ export const lamejsLoader = {
     load: () => lib.load(),
 };
 
-/**
- * Loads lamejs once. Rejects when it cannot load, so the recorder reports it.
- *
- * @returns {Promise<any>}
- */
+/** @returns {Promise<any>} */
 export function loadLamejs() {
     return lamejsLoader.load();
 }

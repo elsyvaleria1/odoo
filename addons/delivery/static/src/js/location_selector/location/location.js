@@ -20,11 +20,7 @@ export class Location extends Component {
     };
     props = useProps(this.constructor.props);
 
-    /**
-     * Get the city and the zip code.
-     *
-     * @return {Object} The city and the zip code.
-     */
+    /** @return {Object} */
     getCityAndZipCode() {
         return `${this.props.zipCode} ${this.props.city}`;
     }

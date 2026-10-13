@@ -385,13 +385,12 @@ var require_range = __commonJS({
     "use strict";
     var Range2 = class _Range {
       /**
-       * Creates a new `Range` object with the given starting and ending rows and columns.
-       * @param {Number} [startRow] The starting row
-       * @param {Number} [startColumn] The starting column
-       * @param {Number} [endRow] The ending row
-       * @param {Number} [endColumn] The ending column
+       * @param {Number} [startRow]
+       * @param {Number} [startColumn]
+       * @param {Number} [endRow]
+       * @param {Number} [endColumn]
        * @constructor
-       **/
+       */
       constructor(startRow, startColumn, endRow, endColumn) {
         this.start = {
           row: startRow,
@@ -403,49 +402,30 @@ var require_range = __commonJS({
         };
       }
       /**
-       * Returns `true` if and only if the starting row and column, and ending row and column, are equivalent to those given by `range`.
-       * @param {IRange} range A range to check against
+       * @param {IRange} range
        * @return {Boolean}
-       **/
+       */
       isEqual(range) {
         return this.start.row === range.start.row && this.end.row === range.end.row && this.start.column === range.start.column && this.end.column === range.end.column;
       }
-      /**
-       * Returns a string containing the range's row and column information, given like this:
-       * ```
-       *    [start.row/start.column] -> [end.row/end.column]
-       * ```
-       * @return {String}
-       **/
+      /** @return {String} */
       toString() {
         return "Range: [" + this.start.row + "/" + this.start.column + "] -> [" + this.end.row + "/" + this.end.column + "]";
       }
       /**
-       * Returns `true` if the `row` and `column` provided are within the given range. This can better be expressed as returning `true` if:
-       * ```javascript
-       *    this.start.row <= row <= this.end.row &&
-       *    this.start.column <= column <= this.end.column
-       * ```
-       * @param {Number} row A row to check for
-       * @param {Number} column A column to check for
+       * @param {Number} row
+       * @param {Number} column
        * @returns {Boolean}
-       * @related [[Range.compare]]
-       **/
+       * @related
+       */
       contains(row, column) {
         return this.compare(row, column) == 0;
       }
       /**
-       * Compares `this` range (A) with another range (B).
-       * @param {IRange} range A range to compare with
-       * @related [[Range.compare]]
-       * @returns {Number} This method returns one of the following numbers:
-       * * `-2`: (B) is in front of (A), and doesn't intersect with (A)
-       * * `-1`: (B) begins before (A) but ends inside of (A)
-       * * `0`: (B) is completely inside of (A)
-       * * `+1`: (B) begins inside of (A) but ends outside of (A)
-       * * `+2`: (B) is after (A) and doesn't intersect with (A)
-       * * `42`: FTW state: (B) ends in (A) but starts outside of (A)
-       **/
+       * @param {IRange} range
+       * @related
+       * @returns {Number}
+       */
       compareRange(range) {
         var cmp, end = range.end, start = range.start;
         cmp = this.compare(end.row, end.column);
@@ -472,56 +452,49 @@ var require_range = __commonJS({
         }
       }
       /**
-       * Compares the row and column of `p` with the starting and ending [[Point]]'s of the calling range (by calling [[Range.compare]]).
-       * @param {Point} p A point to compare with
-       * @related [[Range.compare]]
+       * @param {Point} p
+       * @related
        * @returns {Number}
-       **/
+       */
       comparePoint(p) {
         return this.compare(p.row, p.column);
       }
       /**
-       * Checks the start and end [[Point]]'s of `range` and compares them to the calling range. Returns `true` if the `range` is contained within the caller's range.
-       * @param {IRange} range A range to compare with
+       * @param {IRange} range
        * @returns {Boolean}
-       * @related [[Range.comparePoint]]
-       **/
+       * @related
+       */
       containsRange(range) {
         return this.comparePoint(range.start) == 0 && this.comparePoint(range.end) == 0;
       }
       /**
-       * Returns `true` if passed in `range` intersects with the one calling this method.
-       * @param {IRange} range A range to compare with
+       * @param {IRange} range
        * @returns {Boolean}
-       **/
+       */
       intersects(range) {
         var cmp = this.compareRange(range);
         return cmp == -1 || cmp == 0 || cmp == 1;
       }
       /**
-       * Returns `true` if the caller's ending row is the same as `row`, and if the caller's ending column is the same as `column`.
-       * @param {Number} row A row to compare with
-       * @param {Number} column A column to compare with
+       * @param {Number} row
+       * @param {Number} column
        * @returns {Boolean}
-       **/
+       */
       isEnd(row, column) {
         return this.end.row == row && this.end.column == column;
       }
       /**
-       * Returns `true` if the caller's starting row is the same as `row`, and if the caller's starting column is the same as `column`.
-       * @param {Number} row A row to compare with
-       * @param {Number} column A column to compare with
+       * @param {Number} row
+       * @param {Number} column
        * @returns {Boolean}
-       **/
+       */
       isStart(row, column) {
         return this.start.row == row && this.start.column == column;
       }
       /**
-       * Sets the starting row and column for the range.
-       * @param {Number|Point} row A row to set
-       * @param {Number} [column] A column to set
-       *
-       **/
+       * @param {Number|Point} row
+       * @param {Number} [column]
+       */
       setStart(row, column) {
         if (typeof row == "object") {
           this.start.column = row.column;
@@ -532,11 +505,9 @@ var require_range = __commonJS({
         }
       }
       /**
-       * Sets the starting row and column for the range.
-       * @param {Number|Point} row A row to set
-       * @param {Number} [column] A column to set
-       *
-       **/
+       * @param {Number|Point} row
+       * @param {Number} [column]
+       */
       setEnd(row, column) {
         if (typeof row == "object") {
           this.end.column = row.column;
@@ -547,12 +518,11 @@ var require_range = __commonJS({
         }
       }
       /**
-       * Returns `true` if the `row` and `column` are within the given range.
-       * @param {Number} row A row to compare with
-       * @param {Number} column A column to compare with
+       * @param {Number} row
+       * @param {Number} column
        * @returns {Boolean}
-       * @related [[Range.compare]]
-       **/
+       * @related
+       */
       inside(row, column) {
         if (this.compare(row, column) == 0) {
           if (this.isEnd(row, column) || this.isStart(row, column)) {
@@ -564,12 +534,11 @@ var require_range = __commonJS({
         return false;
       }
       /**
-       * Returns `true` if the `row` and `column` are within the given range's starting [[Point]].
-       * @param {Number} row A row to compare with
-       * @param {Number} column A column to compare with
+       * @param {Number} row
+       * @param {Number} column
        * @returns {Boolean}
-       * @related [[Range.compare]]
-       **/
+       * @related
+       */
       insideStart(row, column) {
         if (this.compare(row, column) == 0) {
           if (this.isEnd(row, column)) {
@@ -581,13 +550,11 @@ var require_range = __commonJS({
         return false;
       }
       /**
-       * Returns `true` if the `row` and `column` are within the given range's ending [[Point]].
-       * @param {Number} row A row to compare with
-       * @param {Number} column A column to compare with
+       * @param {Number} row
+       * @param {Number} column
        * @returns {Boolean}
-       * @related [[Range.compare]]
-       *
-       **/
+       * @related
+       */
       insideEnd(row, column) {
         if (this.compare(row, column) == 0) {
           if (this.isStart(row, column)) {
@@ -599,22 +566,10 @@ var require_range = __commonJS({
         return false;
       }
       /**
-       * Compares the `row` and `column` with the starting and ending [[Point]]'s of the calling range.
-       * @param {Number} row A row to compare with
-       * @param {Number} column A column to compare with
-       * @returns {Number} This method returns one of the following numbers:
-       * * `1` if `row` is greater than the calling range
-       * * `-1` if `row` is less then the calling range
-       * * `0` otherwise
-       *
-       * If the starting row of the calling range is equal to `row`, and:
-       * * `column` is greater than or equal to the calling range's starting column, this returns `0`
-       * * Otherwise, it returns -1
-       *
-       * If the ending row of the calling range is equal to `row`, and:
-       * * `column` is less than or equal to the calling range's ending column, this returns `0`
-       * * Otherwise, it returns 1
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       * @returns {Number}
+       */
       compare(row, column) {
         if (!this.isMultiLine()) {
           if (row === this.start.row) {
@@ -632,13 +587,10 @@ var require_range = __commonJS({
         return 0;
       }
       /**
-       * Compares the `row` and `column` with the starting and ending [[Point]]'s of the calling range.
-       * @param {Number} row A row to compare with
-       * @param {Number} column A column to compare with
-       * @returns {Number} This method returns one of the following numbers:
-       * * `-1` if calling range's starting column and calling range's starting row are equal `row` and `column`
-       * * Otherwise, it returns the value after calling [[Range.compare `compare()`]].
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       * @returns {Number}
+       */
       compareStart(row, column) {
         if (this.start.row == row && this.start.column == column) {
           return -1;
@@ -647,12 +599,9 @@ var require_range = __commonJS({
         }
       }
       /**
-       * Compares the `row` and `column` with the starting and ending [[Point]]'s of the calling range.
-       * @param {Number} row A row to compare with
-       * @param {Number} column A column to compare with
-       * @returns {Number} This method returns one of the following numbers:
-       * * `1` if calling range's ending column and calling range's ending row are equal `row` and `column`.
-       * * Otherwise, it returns the value after calling [[Range.compare `compare()`]].
+       * @param {Number} row
+       * @param {Number} column
+       * @returns {Number}
        */
       compareEnd(row, column) {
         if (this.end.row == row && this.end.column == column) {
@@ -662,14 +611,10 @@ var require_range = __commonJS({
         }
       }
       /**
-       * Compares the `row` and `column` with the start and end [[Point]]'s of the calling range.
-       * @param {Number} row A row to compare with
-       * @param {Number} column A column to compare with
-       * @returns {Number} This method returns one of the following numbers:
-       * * `1` if the ending row of the calling range is equal to `row`, and the ending column of the calling range is equal to `column`
-       * * `-1` if the starting row of the calling range is equal to `row`, and the starting column of the calling range is equal to `column`
-       * * Otherwise, it returns the value after calling [[Range.compare `compare()`]].
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       * @returns {Number}
+       */
       compareInside(row, column) {
         if (this.end.row == row && this.end.column == column) {
           return 1;
@@ -680,11 +625,10 @@ var require_range = __commonJS({
         }
       }
       /**
-       * Returns the part of the current `Range` that occurs within the boundaries of `firstRow` and `lastRow` as a new `Range` object.
-       * @param {Number} firstRow The starting row
-       * @param {Number} lastRow The ending row
+       * @param {Number} firstRow
+       * @param {Number} lastRow
        * @returns {Range}
-      **/
+       */
       clipRows(firstRow, lastRow) {
         if (this.end.row > lastRow)
           var end = { row: lastRow + 1, column: 0 };
@@ -697,11 +641,10 @@ var require_range = __commonJS({
         return _Range.fromPoints(start || this.start, end || this.end);
       }
       /**
-       * Changes the `row` and `column` for the calling range for both the starting and ending [[Point]]'s.
-       * @param {Number} row A new row to extend to
-       * @param {Number} column A new column to extend to
-       * @returns {Range} The original range with the new row
-      **/
+       * @param {Number} row
+       * @param {Number} column
+       * @returns {Range}
+       */
       extend(row, column) {
         var cmp = this.compare(row, column);
         if (cmp == 0)
@@ -712,31 +655,19 @@ var require_range = __commonJS({
           var end = { row, column };
         return _Range.fromPoints(start || this.start, end || this.end);
       }
-      /**
-       * Returns `true` if the calling range is empty (starting [[Point]] == ending [[Point]]).
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       isEmpty() {
         return this.start.row === this.end.row && this.start.column === this.end.column;
       }
-      /**
-       * Returns `true` if the range spans across multiple lines.
-       * @returns {Boolean}
-      **/
+      /** @returns {Boolean} */
       isMultiLine() {
         return this.start.row !== this.end.row;
       }
-      /**
-       * Returns a duplicate of the calling range.
-       * @returns {Range}
-      **/
+      /** @returns {Range} */
       clone() {
         return _Range.fromPoints(this.start, this.end);
       }
-      /**
-       * Returns a range containing the starting and ending rows of the original range, but with a column value of `0`.
-       * @returns {Range}
-      **/
+      /** @returns {Range} */
       collapseRows() {
         if (this.end.column == 0)
           return new _Range(this.start.row, 0, Math.max(this.start.row, this.end.row - 1), 0);
@@ -744,10 +675,9 @@ var require_range = __commonJS({
           return new _Range(this.start.row, 0, this.end.row, 0);
       }
       /**
-       * Given the current `Range`, this function converts those starting and ending [[Point]]'s into screen positions, and then returns a new `Range` object.
-       * @param {EditSession} session The `EditSession` to retrieve coordinates from
+       * @param {EditSession} session
        * @returns {Range}
-      **/
+       */
       toScreenRange(session) {
         var screenPosStart = session.documentToScreenPosition(this.start);
         var screenPosEnd = session.documentToScreenPosition(this.end);
@@ -759,7 +689,6 @@ var require_range = __commonJS({
         );
       }
       /**
-       * Shift the calling range by `row` and `column` values.
        * @param {Number} row
        * @param {Number} column
        * @experimental
@@ -2732,12 +2661,7 @@ var require_textinput = __commonJS({
       setHost(newHost) {
         this.host = newHost;
       }
-      /**
-       * Sets the number of extra lines in the textarea to improve screen reader compatibility.
-       * Extra lines can help screen readers perform better when reading text.
-       *
-       * @param {number} number - The number of extra lines to add. Must be non-negative.
-       */
+      /** @param {number} number */
       setNumberOfExtraLines(number) {
         this.rowStart = Number.MAX_SAFE_INTEGER;
         this.rowEnd = Number.MIN_SAFE_INTEGER;
@@ -2830,11 +2754,7 @@ var require_textinput = __commonJS({
       getElement() {
         return this.text;
       }
-      /**
-       * allows to ignore composition (used by vim keyboard handler in the normal mode)
-       * this is useful on mac, where with some keyboard layouts (e.g swedish) ^ starts composition
-       * @param {boolean} value
-       */
+      /** @param {boolean} value */
       setCommandMode(value) {
         this.commandMode = value;
         this.text.readOnly = false;
@@ -2957,7 +2877,7 @@ var require_default_handlers = __commonJS({
         return ev.preventDefault();
       }
       /**
-       * 
+       *
        * @param {import("../../ace-internal").Ace.Position} [pos]
        * @param {boolean} [waitForClickSelection]
        * @this {MouseHandler}
@@ -3196,33 +3116,21 @@ var require_mouse_event = __commonJS({
         this.stopPropagation();
         this.preventDefault();
       }
-      /**
-       * Get the document position below the mouse cursor
-       * 
-       * @return {Object} 'row' and 'column' of the document position
-       */
+      /** @return {Object} */
       getDocumentPosition() {
         if (this.$pos)
           return this.$pos;
         this.$pos = this.editor.renderer.screenToTextCoordinates(this.clientX, this.clientY);
         return this.$pos;
       }
-      /**
-       * Get the relative position within the gutter.
-       * 
-       * @return {Number} 'row' within the gutter. 
-       */
+      /** @return {Number} */
       getGutterRow() {
         var documentRow = this.getDocumentPosition().row;
         var screenRow = this.editor.session.documentToScreenRow(documentRow, 0);
         var screenTopRow = this.editor.session.documentToScreenRow(this.editor.renderer.$gutterLayer.$lines.get(0).row, 0);
         return screenRow - screenTopRow;
       }
-      /**
-       * Check if the mouse cursor is inside of the text selection
-       * 
-       * @return {Boolean} whether the mouse cursor is inside of the selection
-       */
+      /** @return {Boolean} */
       inSelection() {
         if (this.$inSelection !== null)
           return this.$inSelection;
@@ -3236,17 +3144,11 @@ var require_mouse_event = __commonJS({
         }
         return this.$inSelection;
       }
-      /**
-       * Get the clicked mouse button
-       * 
-       * @return {Number} 0 for left button, 1 for middle button, 2 for right button
-       */
+      /** @return {Number} */
       getButton() {
         return event.getButton(this.domEvent);
       }
-      /**
-       * @return {Boolean} whether the shift key was pressed when the event was emitted
-       */
+      /** @return {Boolean} */
       getShiftKey() {
         return this.domEvent.shiftKey;
       }
@@ -3893,7 +3795,6 @@ var require_default_gutter_handler = __commonJS({
         return summary.join(", ");
       }
       /**
-       * Check if cursor is outside gutter
        * @param e
        * @return {boolean}
        */
@@ -4618,7 +4519,7 @@ var require_mouse_handler = __commonJS({
               renderer.setCursorStyle("");
             }
           },
-          //@ts-expect-error TODO: seems mistyping - should be boolean
+
           editor
         );
       }
@@ -4887,7 +4788,7 @@ var require_keybinding = __commonJS({
         var commands = this.$editor.commands;
         for (var i = this.$handlers.length; i--; ) {
           toExecute = this.$handlers[i].handleKeyboard(
-            // @ts-expect-error TODO: could be wrong arguments amount
+
             this.$data,
             hashId,
             keyString,
@@ -5530,10 +5431,7 @@ var require_bidihandler = __commonJS({
     var lang2 = require_lang();
     var bidiRE = /[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac\u202B]/;
     var BidiHandler = class {
-      /**
-       * Creates a new `BidiHandler` object
-       * @param {EditSession} session The session to use
-       **/
+      /** @param {EditSession} session */
       constructor(session) {
         this.session = session;
         this.bidiMap = {};
@@ -5556,13 +5454,10 @@ var require_bidihandler = __commonJS({
         this.seenBidi = bidiRE.test(session.getValue());
       }
       /**
-       * Returns 'true' if row contains Bidi characters, in such case
-       * creates Bidi map to be used in operations related to selection
-       * (keyboard arrays, mouse click, select)
-       * @param {Number} screenRow the screen row to be checked
-       * @param {Number} [docRow] the document row to be checked [optional]
-       * @param {Number} [splitIndex] the wrapped screen line index [ optional]
-      **/
+       * @param {Number} screenRow
+       * @param {Number} [docRow]
+       * @param {Number} [splitIndex]
+       */
       isBidiRow(screenRow, docRow, splitIndex) {
         if (!this.seenBidi)
           return false;
@@ -5665,11 +5560,7 @@ var require_bidihandler = __commonJS({
       markAsDirty() {
         this.currentRow = null;
       }
-      /**
-       * Updates array of character widths
-       * @param {Object} fontMetrics metrics
-       *
-      **/
+      /** @param {Object} fontMetrics */
       updateCharacterWidths(fontMetrics) {
         if (this.characterWidth === fontMetrics.$characterSize.width)
           return;
@@ -5709,11 +5600,9 @@ var require_bidihandler = __commonJS({
         }
       }
       /**
-       * Returns offset of character at position defined by column.
-       * @param {Number} col the screen column position
-       *
-       * @return {Number} horizontal pixel offset of given screen column
-       **/
+       * @param {Number} col
+       * @return {Number}
+       */
       getPosLeft(col) {
         col -= this.wrapIndent;
         var leftBoundary = this.line.charAt(0) === this.RLE ? 1 : 0;
@@ -5733,12 +5622,10 @@ var require_bidihandler = __commonJS({
         return left;
       }
       /**
-       * Returns 'selections' - array of objects defining set of selection rectangles
-       * @param {Number} startCol the start column position
-       * @param {Number} endCol the end column position
-       *
-       * @return {Object[]} Each object contains 'left' and 'width' values defining selection rectangle.
-      **/
+       * @param {Number} startCol
+       * @param {Number} endCol
+       * @return {Object[]}
+       */
       getSelections(startCol, endCol) {
         var map = this.bidiMap, levels = map.bidiLevels, level, selections = [], offset = 0, selColMin = Math.min(startCol, endCol) - this.wrapIndent, selColMax = Math.max(startCol, endCol) - this.wrapIndent, isSelected = false, isSelectedPrev = false, selectionStart = 0;
         if (this.wrapIndent)
@@ -5766,11 +5653,9 @@ var require_bidihandler = __commonJS({
         return selections;
       }
       /**
-       * Converts character coordinates on the screen to respective document column number
-       * @param {Number} posX character horizontal offset
-       *
-       * @return {Number} screen column number corresponding to given pixel offset
-      **/
+       * @param {Number} posX
+       * @return {Number}
+       */
       offsetToCol(posX) {
         if (this.isRtlDir)
           posX -= this.rtlLineOffset;
@@ -5816,10 +5701,9 @@ var require_selection = __commonJS({
     var Range2 = require_range().Range;
     var Selection = class {
       /**
-       * Creates a new `Selection` object.
-       * @param {EditSession} session The session to use
+       * @param {EditSession} session
        * @constructor
-       **/
+       */
       constructor(session) {
         this.session = session;
         this.doc = session.getDocument();
@@ -5843,68 +5727,46 @@ var require_selection = __commonJS({
             self._emit("changeSelection");
         });
       }
-      /**
-       * Returns `true` if the selection is empty.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       isEmpty() {
         return this.$isEmpty || this.anchor.row == this.lead.row && this.anchor.column == this.lead.column;
       }
-      /**
-       * Returns `true` if the selection is a multi-line.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       isMultiLine() {
         return !this.$isEmpty && this.anchor.row != this.cursor.row;
       }
-      /**
-       * Returns an object containing the `row` and `column` current position of the cursor.
-       * @returns {Point}
-       **/
+      /** @returns {Point} */
       getCursor() {
         return this.lead.getPosition();
       }
       /**
-       * Sets the row and column position of the anchor. This function also emits the `'changeSelection'` event.
-       * @param {Number} row The new row
-       * @param {Number} column The new column
-       *
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       */
       setAnchor(row, column) {
         this.$isEmpty = false;
         this.anchor.setPosition(row, column);
       }
       /**
-       * Returns an object containing the `row` and `column` of the calling selection anchor.
-       *
        * @returns {Point}
-       * @related Anchor.getPosition
-       **/
+       * @related
+       */
       getAnchor() {
         if (this.$isEmpty)
           return this.getSelectionLead();
         return this.anchor.getPosition();
       }
-      /**
-       * Returns an object containing the `row` and `column` of the calling selection lead.
-       * @returns {Object}
-       **/
+      /** @returns {Object} */
       getSelectionLead() {
         return this.lead.getPosition();
       }
-      /**
-       * Returns `true` if the selection is going backwards in the document.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       isBackwards() {
         var anchor = this.anchor;
         var lead = this.lead;
         return anchor.row > lead.row || anchor.row == lead.row && anchor.column > lead.column;
       }
-      /**
-       * [Returns the [[Range]] for the selected text.]{: #Selection.getRange}
-       * @returns {Range}
-       **/
+      /** @returns {Range} */
       getRange() {
         var anchor = this.anchor;
         var lead = this.lead;
@@ -5922,10 +5784,9 @@ var require_selection = __commonJS({
         this.$setSelection(0, 0, Number.MAX_VALUE, Number.MAX_VALUE);
       }
       /**
-       * Sets the selection to the provided range.
-       * @param {import("../ace-internal").Ace.IRange} range The range of text to select
-       * @param {Boolean} [reverse] Indicates if the range should go backwards (`true`) or not
-       **/
+       * @param {import("../ace-internal").Ace.IRange} range
+       * @param {Boolean} [reverse]
+       */
       setRange(range, reverse) {
         var start = reverse ? range.end : range.start;
         var end = reverse ? range.start : range.end;
@@ -5960,37 +5821,29 @@ var require_selection = __commonJS({
         mover.call(this);
       }
       /**
-       * Moves the selection cursor to the indicated row and column.
-       * @param {Number} row The row to select to
-       * @param {Number} column The column to select to
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       */
       selectTo(row, column) {
         this.$moveSelection(function() {
           this.moveCursorTo(row, column);
         });
       }
-      /**
-       * Moves the selection cursor to the row and column indicated by `pos`.
-       * @param {Point} pos An object containing the row and column
-       **/
+      /** @param {Point} pos */
       selectToPosition(pos) {
         this.$moveSelection(function() {
           this.moveCursorToPosition(pos);
         });
       }
       /**
-       * Moves the selection cursor to the indicated row and column.
-       * @param {Number} row The row to select to
-       * @param {Number} column The column to select to
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       */
       moveTo(row, column) {
         this.clearSelection();
         this.moveCursorTo(row, column);
       }
-      /**
-       * Moves the selection cursor to the row and column indicated by `pos`.
-       * @param {Object} pos An object containing the row and column
-       **/
+      /** @param {Object} pos */
       moveToPosition(pos) {
         this.clearSelection();
         this.moveCursorToPosition(pos);
@@ -6066,11 +5919,9 @@ var require_selection = __commonJS({
         this.moveCursorBy(1, 0);
       }
       /**
-       *
-       * Returns `true` if moving the character next to the cursor in the specified direction is a soft tab.
-       * @param {Point} cursor the current cursor position
-       * @param {Number} tabSize the tab size
-       * @param {Number} direction 1 for right, -1 for left
+       * @param {Point} cursor
+       * @param {Number} tabSize
+       * @param {Number} direction
        */
       wouldMoveIntoSoftTab(cursor, tabSize, direction) {
         var start = cursor.column;
@@ -6302,12 +6153,10 @@ var require_selection = __commonJS({
           this.moveCursorShortWordLeft();
       }
       /**
-       * Moves the cursor to position indicated by the parameters. Negative numbers move the cursor backwards in the document.
-       * @param {Number} rows The number of rows to move by
-       * @param {Number} chars The number of characters to move by
-       *
-       * @related EditSession.documentToScreenPosition
-       **/
+       * @param {Number} rows
+       * @param {Number} chars
+       * @related
+       */
       moveCursorBy(rows, chars) {
         var screenPos = this.session.documentToScreenPosition(
           this.lead.row,
@@ -6340,19 +6189,15 @@ var require_selection = __commonJS({
         }
         this.moveCursorTo(docPos.row, docPos.column + chars, chars === 0);
       }
-      /**
-       * Moves the selection to the position indicated by its `row` and `column`.
-       * @param {Point} position The position to move to
-       **/
+      /** @param {Point} position */
       moveCursorToPosition(position) {
         this.moveCursorTo(position.row, position.column);
       }
       /**
-       * Moves the cursor to the row and column provided. [If `preventUpdateDesiredColumn` is `true`, then the cursor stays in the same column position as its original point.]{: #preventUpdateBoolDesc}
-       * @param {Number} row The row to move to
-       * @param {Number} column The column to move to
-       * @param {Boolean} [keepDesiredColumn] [If `true`, the cursor move does not respect the previous column]{: #preventUpdateBool}
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       * @param {Boolean} [keepDesiredColumn]
+       */
       moveCursorTo(row, column, keepDesiredColumn) {
         var fold = this.session.getFoldAt(row, column, 1);
         if (fold) {
@@ -6373,11 +6218,10 @@ var require_selection = __commonJS({
           this.$desiredColumn = null;
       }
       /**
-       * Moves the cursor to the screen position indicated by row and column. {:preventUpdateBoolDesc}
-       * @param {Number} row The row to move to
-       * @param {Number} column The column to move to
-       * @param {Boolean} keepDesiredColumn {:preventUpdateBool}
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       * @param {Boolean} keepDesiredColumn
+       */
       moveCursorToScreen(row, column, keepDesiredColumn) {
         var pos = this.session.screenToDocumentPosition(row, column);
         this.moveCursorTo(pos.row, pos.column, keepDesiredColumn);
@@ -6411,12 +6255,9 @@ var require_selection = __commonJS({
         return range;
       }
       /**
-       * Saves the current cursor position and calls `func` that can change the cursor
-       * postion. The result is the range of the starting and eventual cursor position.
-       * Will reset the cursor position.
-       * @param {Function} func The callback that should change the cursor position
+       * @param {Function} func
        * @returns {Range}
-       **/
+       */
       getRangeOfMovements(func) {
         var start = this.getCursor();
         try {
@@ -6430,7 +6271,7 @@ var require_selection = __commonJS({
         }
       }
       /**
-       * 
+       *
        * @returns {Range|Range[]}
        */
       toJSON() {
@@ -6447,7 +6288,7 @@ var require_selection = __commonJS({
         return data;
       }
       /**
-       * 
+       *
        * @param data
        */
       fromJSON(data) {
@@ -6470,7 +6311,7 @@ var require_selection = __commonJS({
         this.setSelectionRange(data, data.isBackwards);
       }
       /**
-       * 
+       *
        * @param data
        * @return {boolean}
        */
@@ -6500,10 +6341,7 @@ var require_tokenizer = __commonJS({
     var reportError = require_report_error().reportError;
     var MAX_TOKEN_COUNT = 2e3;
     var Tokenizer = class {
-      /**
-       * Constructs a new tokenizer based on the given rules and flags.
-       * @param {Object} rules The highlighting rules
-       **/
+      /** @param {Object} rules */
       constructor(rules) {
         this.splitRegex;
         this.states = rules;
@@ -6674,7 +6512,6 @@ var require_tokenizer = __commonJS({
         return new RegExp(src, (flag || "").replace("g", ""));
       }
       /**
-       * Returns an object containing two properties: `tokens`, which contains all the tokens; and `state`, the current state.
        * @param {string} line
        * @param {string | string[]} startState
        * @returns {{tokens:import("../ace-internal").Ace.Token[], state: string|string[]}}
@@ -6690,7 +6527,7 @@ var require_tokenizer = __commonJS({
         } else
           var stack = [];
         var currentState = (
-          /**@type{string}*/
+          /** @type {string} */
           startState || "start"
         );
         var state = this.states[currentState];
@@ -7059,11 +6896,10 @@ var require_token_iterator = __commonJS({
     var Range2 = require_range().Range;
     var TokenIterator = class {
       /**
-       * Creates a new token iterator object. The inital token index is set to the provided row and column coordinates.
-       * @param {EditSession} session The session to associate with
-       * @param {Number} initialRow The row to start the tokenizing at
-       * @param {Number} initialColumn The column to start the tokenizing at
-       **/
+       * @param {EditSession} session
+       * @param {Number} initialRow
+       * @param {Number} initialColumn
+       */
       constructor(session, initialRow, initialColumn) {
         this.$session = session;
         this.$row = initialRow;
@@ -7071,10 +6907,7 @@ var require_token_iterator = __commonJS({
         var token = session.getTokenAt(initialRow, initialColumn);
         this.$tokenIndex = token ? token.index : -1;
       }
-      /**
-       * Moves iterator position to the start of previous token.
-       * @returns {import("../ace-internal").Ace.Token|null}
-       **/
+      /** @returns {import("../ace-internal").Ace.Token|null} */
       stepBackward() {
         this.$tokenIndex -= 1;
         while (this.$tokenIndex < 0) {
@@ -7088,10 +6921,7 @@ var require_token_iterator = __commonJS({
         }
         return this.$rowTokens[this.$tokenIndex];
       }
-      /**
-       * Moves iterator position to the start of next token.
-       * @returns {import("../ace-internal").Ace.Token|null}
-       **/
+      /** @returns {import("../ace-internal").Ace.Token|null} */
       stepForward() {
         this.$tokenIndex += 1;
         var rowCount;
@@ -7108,27 +6938,15 @@ var require_token_iterator = __commonJS({
         }
         return this.$rowTokens[this.$tokenIndex];
       }
-      /**
-       * 
-       * Returns current token.
-       * @returns {import("../ace-internal").Ace.Token}
-       **/
+      /** @returns {import("../ace-internal").Ace.Token} */
       getCurrentToken() {
         return this.$rowTokens[this.$tokenIndex];
       }
-      /**
-       * 
-       * Returns the current row.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getCurrentTokenRow() {
         return this.$row;
       }
-      /**
-       * 
-       * Returns the current column.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getCurrentTokenColumn() {
         var rowTokens = this.$rowTokens;
         var tokenIndex = this.$tokenIndex;
@@ -7142,17 +6960,11 @@ var require_token_iterator = __commonJS({
         }
         return column;
       }
-      /**
-       * Return the current token position.
-       * @returns {import("../ace-internal").Ace.Point}
-       */
+      /** @returns {import("../ace-internal").Ace.Point} */
       getCurrentTokenPosition() {
         return { row: this.$row, column: this.getCurrentTokenColumn() };
       }
-      /**
-       * Return the current token range.
-       * @returns {Range}
-       */
+      /** @returns {Range} */
       getCurrentTokenRange() {
         var token = this.$rowTokens[this.$tokenIndex];
         var column = this.getCurrentTokenColumn();
@@ -8335,12 +8147,10 @@ var require_anchor = __commonJS({
     var EventEmitter = require_event_emitter().EventEmitter;
     var Anchor = class {
       /**
-       * Creates a new `Anchor` and associates it with a document.
-       *
-       * @param {Document} doc The document to associate with the anchor
-       * @param {Number|import("../ace-internal").Ace.Point} row The starting row position
-       * @param {Number} [column] The starting column position
-       **/
+       * @param {Document} doc
+       * @param {Number|import("../ace-internal").Ace.Point} row
+       * @param {Number} [column]
+       */
       constructor(doc, row, column) {
         this.$onChange = this.onChange.bind(this);
         this.attach(doc);
@@ -8349,23 +8159,15 @@ var require_anchor = __commonJS({
         else
           this.setPosition(row, column);
       }
-      /**
-       * Returns an object identifying the `row` and `column` position of the current anchor.
-       * @returns {import("../ace-internal").Ace.Point}
-       **/
+      /** @returns {import("../ace-internal").Ace.Point} */
       getPosition() {
         return this.$clipPositionToDocument(this.row, this.column);
       }
-      /**
-       *
-       * Returns the current document.
-       * @returns {Document}
-       **/
+      /** @returns {Document} */
       getDocument() {
         return this.document;
       }
       /**
-       * Internal function called when `"change"` event fired.
        * @param {import("../ace-internal").Ace.Delta} delta
        * @internal
        */
@@ -8378,11 +8180,10 @@ var require_anchor = __commonJS({
         this.setPosition(point.row, point.column, true);
       }
       /**
-       * Sets the anchor position to the specified row and column. If `noClip` is `true`, the position is not clipped.
-       * @param {Number} row The row index to move the anchor to
-       * @param {Number} column The column index to move the anchor to
-       * @param {Boolean} [noClip] Identifies if you want the position to be clipped
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       * @param {Boolean} [noClip]
+       */
       setPosition(row, column, noClip) {
         var pos;
         if (noClip) {
@@ -8409,22 +8210,16 @@ var require_anchor = __commonJS({
       detach() {
         this.document.off("change", this.$onChange);
       }
-      /**
-       * When called, the `"change"` event listener is appended.
-       * @param {Document} doc The document to associate with
-       *
-       **/
+      /** @param {Document} doc */
       attach(doc) {
         this.document = doc || this.document;
         this.document.on("change", this.$onChange);
       }
       /**
-       * Clips the anchor position to the specified row and column.
-       * @param {Number} row The row index to clip the anchor to
-       * @param {Number} column The column index to clip the anchor to
+       * @param {Number} row
+       * @param {Number} column
        * @returns {import("../ace-internal").Ace.Point}
-       *
-       **/
+       */
       $clipPositionToDocument(row, column) {
         var pos = {};
         if (row >= this.document.getLength()) {
@@ -8484,11 +8279,7 @@ var require_document = __commonJS({
     var Range2 = require_range().Range;
     var Anchor = require_anchor().Anchor;
     var Document = class {
-      /**
-       *
-       * Creates a new `Document`. If `text` is included, the `Document` contains those strings; otherwise, it's empty.
-       * @param {String | String[]} textOrLines text The starting text
-       **/
+      /** @param {String | String[]} textOrLines */
       constructor(textOrLines) {
         this.$lines = [""];
         if (textOrLines.length === 0) {
@@ -8499,29 +8290,21 @@ var require_document = __commonJS({
           this.insert({ row: 0, column: 0 }, textOrLines);
         }
       }
-      /**
-       * Replaces all the lines in the current `Document` with the value of `text`.
-       *
-       * @param {String} text The text to use
-       **/
+      /** @param {String} text */
       setValue(text) {
         var len = this.getLength() - 1;
         this.remove(new Range2(0, 0, len, this.getLine(len).length));
         this.insert({ row: 0, column: 0 }, text || "");
       }
-      /**
-       * Returns all the lines in the document as a single string, joined by the new line character.
-       * @returns {String}
-       **/
+      /** @returns {String} */
       getValue() {
         return this.getAllLines().join(this.getNewLineCharacter());
       }
-      /** 
-       * Creates a new `Anchor` to define a floating point in the document.
-       * @param {Number} row The row number to use
-       * @param {Number} column The column number to use
+      /**
+       * @param {Number} row
+       * @param {Number} column
        * @returns {Anchor}
-       **/
+       */
       createAnchor(row, column) {
         return new Anchor(this, row, column);
       }
@@ -8533,13 +8316,7 @@ var require_document = __commonJS({
         this.$autoNewLine = match ? match[1] : "\n";
         this._signal("changeNewLineMode");
       }
-      /**
-       * Returns the newline character that's being used, depending on the value of `newLineMode`. 
-       * @returns {String} If `newLineMode == windows`, `\r\n` is returned.  
-       *  If `newLineMode == unix`, `\n` is returned.  
-       *  If `newLineMode == auto`, the value of `autoNewLine` is returned.
-       *
-       **/
+      /** @returns {String} */
       getNewLineCharacter() {
         switch (this.$newLineMode) {
           case "windows":
@@ -8550,78 +8327,58 @@ var require_document = __commonJS({
             return this.$autoNewLine || "\n";
         }
       }
-      /**
-       * [Sets the new line mode.]{: #Document.setNewLineMode.desc}
-       * @param {NewLineMode} newLineMode [The newline mode to use; can be either `windows`, `unix`, or `auto`]
-       
-       **/
+      /** @param {NewLineMode} newLineMode */
       setNewLineMode(newLineMode) {
         if (this.$newLineMode === newLineMode)
           return;
         this.$newLineMode = newLineMode;
         this._signal("changeNewLineMode");
       }
-      /**
-       * Returns the type of newlines being used; either `windows`, `unix`, or `auto`
-       * @returns {NewLineMode}
-       **/
+      /** @returns {NewLineMode} */
       getNewLineMode() {
         return this.$newLineMode;
       }
       /**
-       * Returns `true` if `text` is a newline character (either `\r\n`, `\r`, or `\n`).
-       * @param {String} text The text to check
+       * @param {String} text
        * @returns {boolean}
-       **/
+       */
       isNewLine(text) {
         return text == "\r\n" || text == "\r" || text == "\n";
       }
       /**
-       * Returns a verbatim copy of the given line as it is in the document
-       * @param {Number} row The row index to retrieve
+       * @param {Number} row
        * @returns {string}
-       **/
+       */
       getLine(row) {
         return this.$lines[row] || "";
       }
       /**
-       * Returns an array of strings of the rows between `firstRow` and `lastRow`. This function is inclusive of `lastRow`.
-       * @param {Number} firstRow The first row index to retrieve
-       * @param {Number} lastRow The final row index to retrieve
+       * @param {Number} firstRow
+       * @param {Number} lastRow
        * @returns {string[]}
-       **/
+       */
       getLines(firstRow, lastRow) {
         return this.$lines.slice(firstRow, lastRow + 1);
       }
-      /**
-       * Returns all lines in the document as string array.
-       * @returns {string[]}
-       **/
+      /** @returns {string[]} */
       getAllLines() {
         return this.getLines(0, this.getLength());
       }
-      /**
-       * Returns the number of rows in the document.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getLength() {
         return this.$lines.length;
       }
       /**
-       * Returns all the text within `range` as a single string.
-       * @param {IRange} range The range to work with.
-       * 
+       * @param {IRange} range
        * @returns {String}
-       **/
+       */
       getTextRange(range) {
         return this.getLinesForRange(range).join(this.getNewLineCharacter());
       }
       /**
-       * Returns all the text within `range` as an array of lines.
-       * @param {IRange} range The range to work with.
-       * 
+       * @param {IRange} range
        * @returns {string[]}
-       **/
+       */
       getLinesForRange(range) {
         var lines;
         if (range.start.row === range.end.row) {
@@ -8638,7 +8395,7 @@ var require_document = __commonJS({
       /**
        * @param row
        * @param lines
-       
+
        * @deprecated
        */
       insertLines(row, lines) {
@@ -8649,7 +8406,7 @@ var require_document = __commonJS({
        * @param firstRow
        * @param lastRow
        * @returns {String[]}
-       
+
        * @deprecated
        */
       removeLines(firstRow, lastRow) {
@@ -8659,7 +8416,7 @@ var require_document = __commonJS({
       /**
        * @param position
        * @returns {Point}
-       
+
        * @deprecated
        */
       insertNewLine(position) {
@@ -8667,28 +8424,20 @@ var require_document = __commonJS({
         return this.insertMergedLines(position, ["", ""]);
       }
       /**
-       * Inserts a block of `text` at the indicated `position`.
-       * @param {Point} position The position to start inserting at; it's an object that looks like `{ row: row, column: column}`
-       * @param {String} text A chunk of text to insert
-       * @returns {Point} The position ({row, column}) of the last line of `text`. If the length of `text` is 0, this function simply returns `position`. 
-       
-       **/
+       * @param {Point} position
+       * @param {String} text
+       * @returns {Point}
+       */
       insert(position, text) {
         if (this.getLength() <= 1)
           this.$detectNewLine(text);
         return this.insertMergedLines(position, this.$split(text));
       }
       /**
-       * Inserts `text` into the `position` at the current row. This method also triggers the `"change"` event.
-       * 
-       * This differs from the `insert` method in two ways:
-       *   1. This does NOT handle newline characters (single-line text only).
-       *   2. This is faster than the `insert` method for single-line text insertions.
-       * 
-       * @param {Point} position The position to insert at; it's an object that looks like `{ row: row, column: column}`
-       * @param {String} text A chunk of text without new lines
-       * @returns {Point} Returns the position of the end of the inserted text
-       **/
+       * @param {Point} position
+       * @param {String} text
+       * @returns {Point}
+       */
       insertInLine(position, text) {
         var start = this.clippedPos(position.row, position.column);
         var end = this.pos(position.row, position.column + text.length);
@@ -8701,7 +8450,7 @@ var require_document = __commonJS({
         return this.clonePos(end);
       }
       /**
-       * 
+       *
        * @param {number} row
        * @param {number} column
        * @return {Point}
@@ -8754,11 +8503,9 @@ var require_document = __commonJS({
         return position;
       }
       /**
-       * Inserts the elements in `lines` into the document as full lines (does not merge with existing line), starting at the row index given by `row`. This method also triggers the `"change"` event.
-       * @param {Number} row The index of the row to insert at
-       * @param {string[]} lines An array of strings
-       
-       **/
+       * @param {Number} row
+       * @param {string[]} lines
+       */
       insertFullLines(row, lines) {
         row = Math.min(Math.max(row, 0), this.getLength());
         var column = 0;
@@ -8773,18 +8520,10 @@ var require_document = __commonJS({
         this.insertMergedLines({ row, column }, lines);
       }
       /**
-       * Inserts the elements in `lines` into the document, starting at the position index given by `row`. This method also triggers the `"change"` event.
        * @param {Point} position
-       * @param {string[]} lines An array of strings
-       * @returns {Point} Contains the final row and column, like this:  
-       *   ```
-       *   {row: endRow, column: 0}
-       *   ```  
-       *   If `lines` is empty, this function returns an object containing the current row, and column, like this:  
-       *   ``` 
-       *   {row: row, column: 0}
-       *   ```
-       **/
+       * @param {string[]} lines
+       * @returns {Point}
+       */
       insertMergedLines(position, lines) {
         var start = this.clippedPos(position.row, position.column);
         var end = {
@@ -8800,11 +8539,9 @@ var require_document = __commonJS({
         return this.clonePos(end);
       }
       /**
-       * Removes the `range` from the document.
-       * @param {IRange} range A specified Range to remove
-       * @returns {Point} Returns the new `start` property of the range, which contains `startRow` and `startColumn`. If `range` is empty, this function returns the unmodified value of `range.start`.
-       
-       **/
+       * @param {IRange} range
+       * @returns {Point}
+       */
       remove(range) {
         var start = this.clippedPos(range.start.row, range.start.column);
         var end = this.clippedPos(range.end.row, range.end.column);
@@ -8817,13 +8554,11 @@ var require_document = __commonJS({
         return this.clonePos(start);
       }
       /**
-       * Removes the specified columns from the `row`. This method also triggers a `"change"` event.
-       * @param {Number} row The row to remove from
-       * @param {Number} startColumn The column to start removing at 
-       * @param {Number} endColumn The column to stop removing at
-       * @returns {Point} Returns an object containing `startRow` and `startColumn`, indicating the new row and column values.<br/>If `startColumn` is equal to `endColumn`, this function returns nothing.
-       
-       **/
+       * @param {Number} row
+       * @param {Number} startColumn
+       * @param {Number} endColumn
+       * @returns {Point}
+       */
       removeInLine(row, startColumn, endColumn) {
         var start = this.clippedPos(row, startColumn);
         var end = this.clippedPos(row, endColumn);
@@ -8836,12 +8571,10 @@ var require_document = __commonJS({
         return this.clonePos(start);
       }
       /**
-       * Removes a range of full lines. This method also triggers the `"change"` event.
-       * @param {Number} firstRow The first row to be removed
-       * @param {Number} lastRow The last row to be removed
-       * @returns {String[]} Returns all the removed lines.
-       
-       **/
+       * @param {Number} firstRow
+       * @param {Number} lastRow
+       * @returns {String[]}
+       */
       removeFullLines(firstRow, lastRow) {
         firstRow = Math.min(Math.max(0, firstRow), this.getLength() - 1);
         lastRow = Math.min(Math.max(0, lastRow), this.getLength() - 1);
@@ -8861,11 +8594,7 @@ var require_document = __commonJS({
         });
         return deletedLines;
       }
-      /**
-       * Removes the new line between `row` and the row immediately following it. This method also triggers the `"change"` event.
-       * @param {Number} row The row to check
-       *
-       **/
+      /** @param {Number} row */
       removeNewLine(row) {
         if (row < this.getLength() - 1 && row >= 0) {
           this.applyDelta({
@@ -8877,15 +8606,10 @@ var require_document = __commonJS({
         }
       }
       /**
-       * Replaces a range in the document with the new `text`.
-       * @param {Range | IRange} range A specified Range to replace
-       * @param {String} text The new text to use as a replacement
-       * @returns {Point} Returns an object containing the final row and column, like this:
-       *     {row: endRow, column: 0}
-       * If the text and range are empty, this function returns an object containing the current `range.start` value.
-       * If the text is the exact same as what currently exists, this function returns an object containing the current `range.end` value.
-       *
-       **/
+       * @param {Range | IRange} range
+       * @param {String} text
+       * @returns {Point}
+       */
       replace(range, text) {
         if (!(range instanceof Range2))
           range = Range2.fromPoints(range.start, range.end);
@@ -8902,29 +8626,22 @@ var require_document = __commonJS({
         }
         return end;
       }
-      /**
-       * Applies all changes in `deltas` to the document.
-       * @param {Delta[]} deltas An array of delta objects (can include "insert" and "remove" actions)
-       **/
+      /** @param {Delta[]} deltas */
       applyDeltas(deltas) {
         for (var i = 0; i < deltas.length; i++) {
           this.applyDelta(deltas[i]);
         }
       }
-      /**
-       * Reverts all changes in `deltas` from the document.
-       * @param {Delta[]} deltas An array of delta objects (can include "insert" and "remove" actions)
-       **/
+      /** @param {Delta[]} deltas */
       revertDeltas(deltas) {
         for (var i = deltas.length - 1; i >= 0; i--) {
           this.revertDelta(deltas[i]);
         }
       }
       /**
-       * Applies `delta` to the document.
-       * @param {Delta} delta A delta object (can include "insert" and "remove" actions)
+       * @param {Delta} delta
        * @param {boolean} [doNotValidate]
-       **/
+       */
       applyDelta(delta, doNotValidate) {
         var isInsert = delta.action == "insert";
         if (isInsert ? delta.lines.length <= 1 && !delta.lines[0] : !Range2.comparePoints(delta.start, delta.end)) {
@@ -8947,7 +8664,7 @@ var require_document = __commonJS({
         }
       }
       /**
-       * 
+       *
        * @param {Delta} delta
        * @param {number} MAX
        */
@@ -8972,10 +8689,7 @@ var require_document = __commonJS({
         delta.start.column = column;
         this.applyDelta(delta, true);
       }
-      /**
-       * Reverts `delta` from the document.
-       * @param {Delta} delta A delta object (can include "insert" and "remove" actions)
-       **/
+      /** @param {Delta} delta */
       revertDelta(delta) {
         this.$safeApplyDelta({
           start: this.clonePos(delta.start),
@@ -8985,20 +8699,9 @@ var require_document = __commonJS({
         });
       }
       /**
-       * Converts an index position in a document to a `{row, column}` object.
-       *
-       * Index refers to the "absolute position" of a character in the document. For example:
-       *
-       * ```javascript
-       * var x = 0; // 10 characters, plus one for newline
-       * var y = -1;
-       * ```
-       * 
-       * Here, `y` is an index 15: 11 characters for the first row, and 5 characters until `y` in the second.
-       *
-       * @param {Number} index An index to convert
-       * @param {Number} [startRow=0] The row from which to start the conversion
-       * @returns {Point} A `{row, column}` object of the `index` position
+       * @param {Number} index
+       * @param {Number} [startRow=0]
+       * @returns {Point}
        */
       indexToPosition(index, startRow) {
         var lines = this.$lines || this.getAllLines();
@@ -9011,20 +8714,9 @@ var require_document = __commonJS({
         return { row: l - 1, column: index + lines[l - 1].length + newlineLength };
       }
       /**
-       * Converts the `{row, column}` position in a document to the character's index.
-       *
-       * Index refers to the "absolute position" of a character in the document. For example:
-       *
-       * ```javascript
-       * var x = 0; // 10 characters, plus one for newline
-       * var y = -1;
-       * ```
-       * 
-       * Here, `y` is an index 15: 11 characters for the first row, and 5 characters until `y` in the second.
-       *
-       * @param {Point} pos The `{row, column}` to convert
-       * @param {Number} [startRow=0] The row from which to start the conversion
-       * @returns {Number} The index position in the document
+       * @param {Point} pos
+       * @param {Number} [startRow=0]
+       * @returns {Number}
        */
       positionToIndex(pos, startRow) {
         var lines = this.$lines || this.getAllLines();
@@ -9036,13 +8728,10 @@ var require_document = __commonJS({
         return index + pos.column;
       }
       /**
-       * Splits a string of text on any newline (`\n`) or carriage-return (`\r`) characters.
-       *
-       * @method $split
-       * @param {String} text The text to work with
-       * @returns {String[]} A String array, with each index containing a piece of the original `text` string.
-       *
-       **/
+       * @method
+       * @param {String} text
+       * @returns {String[]}
+       */
       $split(text) {
         return text.split(/\r\n|\r|\n/);
       }
@@ -9061,10 +8750,9 @@ var require_background_tokenizer = __commonJS({
     var EventEmitter = require_event_emitter().EventEmitter;
     var BackgroundTokenizer = class {
       /**
-       * Creates a new `BackgroundTokenizer` object.
-       * @param {Tokenizer} tokenizer The tokenizer to use
-       * @param {EditSession} [session] The editor session to associate with
-       **/
+       * @param {Tokenizer} tokenizer
+       * @param {EditSession} [session]
+       */
       constructor(tokenizer, session) {
         this.running = false;
         this.lines = [];
@@ -9105,20 +8793,14 @@ var require_background_tokenizer = __commonJS({
             self.fireUpdateEvent(startLine, endLine);
         };
       }
-      /**
-       * Sets a new tokenizer for this object.
-       * @param {Tokenizer} tokenizer The new tokenizer to use
-       **/
+      /** @param {Tokenizer} tokenizer */
       setTokenizer(tokenizer) {
         this.tokenizer = tokenizer;
         this.lines = [];
         this.states = [];
         this.start(0);
       }
-      /**
-       * Sets a new document to associate with this object.
-       * @param {Document} doc The new document to associate with
-       **/
+      /** @param {Document} doc */
       setDocument(doc) {
         this.doc = doc;
         this.lines = [];
@@ -9126,10 +8808,9 @@ var require_background_tokenizer = __commonJS({
         this.stop();
       }
       /**
-       * Emits the `'update'` event. `firstRow` and `lastRow` are used to define the boundaries of the region to be updated.
-       * @param {Number} firstRow The starting row region
-       * @param {Number} lastRow The final row region
-       **/
+       * @param {Number} firstRow
+       * @param {Number} lastRow
+       */
       fireUpdateEvent(firstRow, lastRow) {
         var data = {
           first: firstRow,
@@ -9137,10 +8818,7 @@ var require_background_tokenizer = __commonJS({
         };
         this._signal("update", { data });
       }
-      /**
-       * Starts tokenizing at the row indicated.
-       * @param {Number} startRow The row to start at
-       **/
+      /** @param {Number} startRow */
       start(startRow) {
         this.currentLine = Math.min(startRow || 0, this.currentLine, this.doc.getLength());
         this.lines.splice(this.currentLine, this.lines.length);
@@ -9178,18 +8856,16 @@ var require_background_tokenizer = __commonJS({
         this.running = false;
       }
       /**
-       * Gives list of [[Token]]'s of the row. (tokens are cached)
-       * @param {Number} row The row to get tokens at
+       * @param {Number} row
        * @returns {import("../ace-internal").Ace.Token[]}
-       **/
+       */
       getTokens(row) {
         return this.lines[row] || this.$tokenizeRow(row);
       }
       /**
-       * Returns the state of tokenization at the end of a row.
-       * @param {Number} row The row to get state at
+       * @param {Number} row
        * @returns {string | string[]}
-       **/
+       */
       getState(row) {
         if (this.currentLine == row)
           this.$tokenizeRow(row);
@@ -9319,22 +8995,17 @@ var require_undomanager = __commonJS({
         this.reset();
       }
       /**
-       * 
+       *
        * @param {EditSession} session
        */
       addSession(session) {
         this.$session = session;
       }
       /**
-       * Provides a means for implementing your own undo manager. `options` has one property, `args`, an [[Array `Array`]], with two elements:
-       *
-       * - `args[0]` is an array of deltas
-       * - `args[1]` is the document to associate with
-       *
        * @param {import("../ace-internal").Ace.Delta} delta
        * @param {boolean} allowMerge
        * @param {EditSession} [session]
-       **/
+       */
       add(delta, allowMerge, session) {
         if (this.$fromUndo) return;
         if (delta == this.$lastDelta) return;
@@ -9353,7 +9024,7 @@ var require_undomanager = __commonJS({
         this.lastDeltas.push(delta);
       }
       /**
-       * 
+       *
        * @param {any} selection
        * @param {number} [rev]
        */
@@ -9368,7 +9039,7 @@ var require_undomanager = __commonJS({
         return this.$rev;
       }
       /**
-       * 
+       *
        * @param {number} from
        * @param {number} [to]
        */
@@ -9385,7 +9056,7 @@ var require_undomanager = __commonJS({
         this.lastDeltas = null;
       }
       /**
-       * 
+       *
        * @param {number} rev
        * @param {boolean} [after]
        * @return {{ value: string, rev: number }}
@@ -9408,7 +9079,7 @@ var require_undomanager = __commonJS({
         return this.$rev;
       }
       /**
-       * 
+       *
        * @param {number} from
        * @param {number} [to]
        * @return {import("../ace-internal").Ace.Delta[]}
@@ -9429,7 +9100,7 @@ var require_undomanager = __commonJS({
         return stack.slice(start, end);
       }
       /**
-       * 
+       *
        * @param {number} from
        * @param {number} [to]
        */
@@ -9445,10 +9116,9 @@ var require_undomanager = __commonJS({
         if (to == null) to = this.$rev + 1;
       }
       /**
-       * [Perform an undo operation on the document, reverting the last change.]{: #UndoManager.undo}
        * @param {EditSession} session
-       * @param {Boolean} [dontSelect] {:dontSelect}
-       **/
+       * @param {Boolean} [dontSelect]
+       */
       undo(session, dontSelect) {
         this.lastDeltas = null;
         var stack = this.$undoStack;
@@ -9470,11 +9140,9 @@ var require_undomanager = __commonJS({
         return undoSelectionRange;
       }
       /**
-       * [Perform a redo operation on the document, reimplementing the last change.]{: #UndoManager.redo}
        * @param {EditSession} session
-       * @param {Boolean} [dontSelect] {:dontSelect}
-       *
-       **/
+       * @param {Boolean} [dontSelect]
+       */
       redo(session, dontSelect) {
         this.lastDeltas = null;
         if (!session)
@@ -9515,52 +9183,32 @@ var require_undomanager = __commonJS({
         this.$redoStackBaseRev = this.$rev;
         this.selections = [];
       }
-      /**
-       * Returns `true` if there are undo operations left to perform.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       canUndo() {
         return this.$undoStack.length > 0;
       }
-      /**
-       * Returns `true` if there are redo operations left to perform.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       canRedo() {
         return this.$redoStack.length > 0;
       }
-      /**
-       * Marks the current status clean
-       * @param {number} [rev]
-       */
+      /** @param {number} [rev] */
       bookmark(rev) {
         if (rev == void 0)
           rev = this.$rev;
         this.mark = rev;
       }
-      /**
-       * Returns if the current status is clean
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       isAtBookmark() {
         return this.$rev === this.mark;
       }
-      /**
-       * Returns an object which can be safely stringified into JSON
-       * @returns {object}
-       */
+      /** @returns {object} */
       toJSON() {
         return {
           $redoStack: this.$redoStack,
           $undoStack: this.$undoStack
         };
       }
-      /**
-       * Takes in an object which was returned from the toJSON method above,
-       * and resets the current undoManager instance to use the previously exported
-       * instance state.
-       * @param {object} json 
-       */
+      /** @param {object} json */
       fromJSON(json) {
         this.reset();
         this.$undoStack = json.$undoStack;
@@ -9811,7 +9459,6 @@ var require_fold_line = __commonJS({
     var Range2 = require_range().Range;
     var FoldLine = class _FoldLine {
       /**
-       * If an array is passed in, the folds are expected to be sorted already.
        * @param {FoldLine[]} foldData
        * @param {Fold[]|Fold} folds
        */
@@ -9835,10 +9482,7 @@ var require_fold_line = __commonJS({
           fold.setFoldLine(this);
         }, this);
       }
-      /**
-       * Note: This doesn't update wrapData!
-       * @param {number} shift
-       */
+      /** @param {number} shift */
       shiftRow(shift) {
         this.start.row += shift;
         this.end.row += shift;
@@ -11515,10 +11159,9 @@ var require_edit_session = __commonJS({
     var UndoManager2 = require_undomanager().UndoManager;
     var EditSession2 = class _EditSession {
       /**
-       * Sets up a new `EditSession` and associates it with the given `Document` and `Mode`.
-       * @param {Document | String} [text] [If `text` is a `Document`, it associates the `EditSession` with it. Otherwise, a new `Document` is created, with the initial text]{: #textParam}
-       * @param {SyntaxMode | string} [mode] [The initial language mode to use for the document]{: #modeParam}
-       **/
+       * @param {Document | String} [text]
+       * @param {SyntaxMode | string} [mode]
+       */
       constructor(text, mode) {
         this.doc;
         this.$breakpoints = [];
@@ -11544,7 +11187,7 @@ var require_edit_session = __commonJS({
         this.$onChange = this.onChange.bind(this);
         if (typeof text != "object" || !text.getLine)
           text = new Document(
-            /**@type{string}*/
+            /** @type {string} */
             text
           );
         this.setDocument(text);
@@ -11577,10 +11220,7 @@ var require_edit_session = __commonJS({
         }, true);
         this.$operationResetTimer = lang2.delayedCall(this.endOperation.bind(this, true));
       }
-      /**
-       * Start an Ace operation, which will then batch all the subsequent changes (to either content or selection) under a single atomic operation.
-       * @param {{command?: {name?: string}, args?: any}|undefined} [commandEvent] Optional name for the operation
-       */
+      /** @param {{command?: {name?: string}, args?: any}|undefined} [commandEvent] */
       startOperation(commandEvent) {
         if (this.curOp) {
           if (!commandEvent || this.curOp.command) {
@@ -11599,11 +11239,7 @@ var require_edit_session = __commonJS({
         this.curOp.selectionBefore = this.selection.toJSON();
         this._signal("startOperation", commandEvent);
       }
-      /**
-       * End current Ace operation.
-       * Emits "beforeEndOperation" event just before clearing everything, where the current operation can be accessed through `curOp` property.
-       * @param {any} [e]
-       */
+      /** @param {any} [e] */
       endOperation(e) {
         if (this.curOp) {
           if (e && e.returnValue === false) {
@@ -11624,12 +11260,7 @@ var require_edit_session = __commonJS({
           this._signal("endOperation", e);
         }
       }
-      /**
-       * Sets the `EditSession` to point to a new `Document`. If a `BackgroundTokenizer` exists, it also points to `doc`.
-       *
-       * @param {Document} doc The new `Document` to use
-       *
-       **/
+      /** @param {Document} doc */
       setDocument(doc) {
         if (this.doc)
           this.doc.off("change", this.$onChange);
@@ -11638,18 +11269,11 @@ var require_edit_session = __commonJS({
         this.bgTokenizer.setDocument(this.getDocument());
         this.resetCaches();
       }
-      /**
-       * Returns the `Document` associated with this session.
-       * @return {Document}
-       **/
+      /** @return {Document} */
       getDocument() {
         return this.doc;
       }
-      /**
-       * Get "widgetManager" from EditSession
-       *
-       * @returns {LineWidgets} object
-       */
+      /** @returns {LineWidgets} */
       get widgetManager() {
         const widgetManager = new LineWidgets(this);
         this.widgetManager = widgetManager;
@@ -11657,11 +11281,7 @@ var require_edit_session = __commonJS({
           widgetManager.attach(this.$editor);
         return widgetManager;
       }
-      /**
-       * Set "widgetManager" in EditSession
-       *
-       * @returns void
-       */
+      /** @returns */
       set widgetManager(value) {
         Object.defineProperty(this, "widgetManager", {
           writable: true,
@@ -11670,10 +11290,7 @@ var require_edit_session = __commonJS({
           value
         });
       }
-      /**
-       * @param {Number} docRow The row to work with
-       *
-       **/
+      /** @param {Number} docRow */
       $resetRowCache(docRow) {
         if (!docRow) {
           this.$docRowCache = [];
@@ -11731,7 +11348,7 @@ var require_edit_session = __commonJS({
         if (!this.$fromUndo && this.$undoManager) {
           if (removedFolds && removedFolds.length) {
             this.$undoManager.add({
-              // @ts-expect-error TODO: this action type is missing in the types
+
               action: "removeFolds",
               folds: removedFolds
             }, this.mergeUndoDeltas);
@@ -11747,10 +11364,7 @@ var require_edit_session = __commonJS({
       onSelectionChange() {
         this._signal("changeSelection");
       }
-      /**
-       * Sets the session text.
-       * @param {String} text The new text to place
-       **/
+      /** @param {String} text */
       setValue(text) {
         this.doc.setValue(text);
         this.selection.moveTo(0, 0);
@@ -11759,11 +11373,10 @@ var require_edit_session = __commonJS({
         this.getUndoManager().reset();
       }
       /**
-      * Returns a new instance of EditSession with state from JSON.
-      * @method fromJSON
-      * @param {string|object} session The EditSession state.
-      * @returns {EditSession}
-      */
+       * @method
+       * @param {string|object} session
+       * @returns {EditSession}
+       */
       static fromJSON(session) {
         if (typeof session == "string")
           session = JSON.parse(session);
@@ -11786,8 +11399,7 @@ var require_edit_session = __commonJS({
         return editSession;
       }
       /**
-       * Returns the current edit session.
-       * @method toJSON
+       * @method
        * @returns {Object}
        */
       toJSON() {
@@ -11806,46 +11418,37 @@ var require_edit_session = __commonJS({
         };
       }
       /**
-       * Returns the current [[Document `Document`]] as a string.
-       * @method toString
+       * @method
        * @returns {String}
        * @alias EditSession.getValue
-       *
-       **/
+       */
       toString() {
         return this.doc.getValue();
       }
-      /**
-       * Returns selection object.
-       * @returns {Selection}
-       **/
+      /** @returns {Selection} */
       getSelection() {
         return this.selection;
       }
       /**
-       * {:BackgroundTokenizer.getState}
-       * @param {Number} row The row to start at
+       * @param {Number} row
        * @returns {string | string[]}
-       * @related BackgroundTokenizer.getState
-       **/
+       * @related
+       */
       getState(row) {
         return this.bgTokenizer.getState(row);
       }
       /**
-       * Starts tokenizing at the row indicated. Returns a list of objects of the tokenized rows.
-       * @param {Number} row The row to start at
+       * @param {Number} row
        * @returns {import("../ace-internal").Ace.Token[]}
-       **/
+       */
       getTokens(row) {
         return this.bgTokenizer.getTokens(row);
       }
       /**
-       * Returns an object indicating the token at the current row. The object has two properties: `index` and `start`.
-       * @param {Number} row The row number to retrieve from
-       * @param {Number} column The column number to retrieve from
+       * @param {Number} row
+       * @param {Number} column
        * @returns {import("../ace-internal").Ace.Token}
-       *
-       **/
+       */
       getTokenAt(row, column) {
         var tokens = this.bgTokenizer.getTokens(row);
         var token, c = 0;
@@ -11866,10 +11469,7 @@ var require_edit_session = __commonJS({
         token.start = c - token.value.length;
         return token;
       }
-      /**
-       * Sets the undo manager.
-       * @param {UndoManager} undoManager The new undo manager
-       **/
+      /** @param {UndoManager} undoManager */
       setUndoManager(undoManager) {
         this.$undoManager = undoManager;
         if (this.$informUndoManager)
@@ -11891,17 +11491,11 @@ var require_edit_session = __commonJS({
         if (this.$syncInformUndoManager)
           this.$syncInformUndoManager();
       }
-      /**
-       * Returns the current undo manager.
-       * @returns {UndoManager}
-       **/
+      /** @returns {UndoManager} */
       getUndoManager() {
         return this.$undoManager || this.$defaultUndoManager;
       }
-      /**
-       * Returns the current value for tabs. If the user is using soft tabs, this will be a series of spaces (defined by [[EditSession.getTabSize `getTabSize()`]]); otherwise it's simply `'\t'`.
-       * @returns {String}
-       **/
+      /** @returns {String} */
       getTabString() {
         if (this.getUseSoftTabs()) {
           return lang2.stringRepeat(" ", this.getTabSize());
@@ -11909,63 +11503,35 @@ var require_edit_session = __commonJS({
           return "	";
         }
       }
-      /**
-       * Pass `true` to enable the use of soft tabs. Soft tabs means you're using spaces instead of the tab character (`'\t'`).
-       * @param {Boolean} val Value indicating whether or not to use soft tabs
-       **/
+      /** @param {Boolean} val */
       setUseSoftTabs(val) {
         this.setOption("useSoftTabs", val);
       }
-      /**
-       * Returns `true` if soft tabs are being used, `false` otherwise.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       getUseSoftTabs() {
         return this.$useSoftTabs && !this.$mode.$indentWithTabs;
       }
-      /**
-       * Set the number of spaces that define a soft tab; for example, passing in `4` transforms the soft tabs to be equivalent to four spaces. This function also emits the `changeTabSize` event.
-       * @param {Number} tabSize The new tab size
-       **/
+      /** @param {Number} tabSize */
       setTabSize(tabSize) {
         this.setOption("tabSize", tabSize);
       }
-      /**
-       * Returns the current tab size.
-       * @return {number}
-       **/
+      /** @return {number} */
       getTabSize() {
         return this.$tabSize;
       }
-      /**
-       * Returns `true` if the character at the position is a soft tab.
-       * @param {Point} position The position to check
-       **/
+      /** @param {Point} position */
       isTabStop(position) {
         return this.$useSoftTabs && position.column % this.$tabSize === 0;
       }
-      /**
-       * Set whether keyboard navigation of soft tabs moves the cursor within the soft tab, rather than over
-       * @param {Boolean} navigateWithinSoftTabs Value indicating whether or not to navigate within soft tabs
-       **/
+      /** @param {Boolean} navigateWithinSoftTabs */
       setNavigateWithinSoftTabs(navigateWithinSoftTabs) {
         this.setOption("navigateWithinSoftTabs", navigateWithinSoftTabs);
       }
-      /**
-       * Returns `true` if keyboard navigation moves the cursor within soft tabs, `false` if it moves the cursor over soft tabs.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       getNavigateWithinSoftTabs() {
         return this.$navigateWithinSoftTabs;
       }
-      /**
-       * Pass in `true` to enable overwrites in your session, or `false` to disable.
-       *
-       * If overwrites is enabled, any text you enter will type over any text after it. If the value of `overwrite` changes, this function also emits the `changeOverwrite` event.
-       *
-       * @param {Boolean} overwrite Defines whether or not to set overwrites
-       *
-       **/
+      /** @param {Boolean} overwrite */
       setOverwrite(overwrite) {
         this.setOption("overwrite", overwrite);
       }
@@ -11976,10 +11542,9 @@ var require_edit_session = __commonJS({
         this.setOverwrite(!this.$overwrite);
       }
       /**
-       * Adds `className` to the `row`, to be used for CSS stylings and whatnot.
-       * @param {Number} row The row number
-       * @param {String} className The class to add
-       **/
+       * @param {Number} row
+       * @param {String} className
+       */
       addGutterDecoration(row, className) {
         if (!this.$decorations[row])
           this.$decorations[row] = "";
@@ -11987,8 +11552,7 @@ var require_edit_session = __commonJS({
         this._signal("changeBreakpoint", {});
       }
       /**
-       * Replaces the custom icon with the fold widget if present from a specific row in the gutter
-       * @param {number} row The row number for which to hide the custom icon
+       * @param {number} row
        * @experimental
        */
       removeGutterCustomWidget(row) {
@@ -11997,41 +11561,33 @@ var require_edit_session = __commonJS({
         }
       }
       /**
-       * Replaces the fold widget if present with the custom icon from a specific row in the gutter
-       * @param {number} row - The row number where the widget will be displayed
-       * @param {Object} attributes - Configuration attributes for the widget
-       * @param {string} attributes.className - CSS class name for styling the widget
-       * @param {string} attributes.label - Text label to display in the widget
-       * @param {string} attributes.title - Tooltip text for the widget
-       * @param {Object} attributes.callbacks - Event callback functions for the widget e.g onClick; 
+       * @param {number} row
+       * @param {Object} attributes
+       * @param {string} attributes.className
+       * @param {string} attributes.label
+       * @param {string} attributes.title
+       * @param {Object} attributes.callbacks
        * @returns {void}
        * @experimental
-      */
+       */
       addGutterCustomWidget(row, attributes) {
         if (this.$editor) {
           this.$editor.renderer.$gutterLayer.$addCustomWidget(row, attributes);
         }
       }
       /**
-       * Removes `className` from the `row`.
-       * @param {Number} row The row number
-       * @param {String} className The class to add
-       **/
+       * @param {Number} row
+       * @param {String} className
+       */
       removeGutterDecoration(row, className) {
         this.$decorations[row] = (this.$decorations[row] || "").replace(" " + className, "");
         this._signal("changeBreakpoint", {});
       }
-      /**
-       * Returns an array of strings, indicating the breakpoint class (if any) applied to each row.
-       * @returns {String[]}
-       **/
+      /** @returns {String[]} */
       getBreakpoints() {
         return this.$breakpoints;
       }
-      /**
-       * Sets a breakpoint on every row number given by `rows`. This function also emites the `'changeBreakpoint'` event.
-       * @param {number[]} rows An array of row indices
-       **/
+      /** @param {number[]} rows */
       setBreakpoints(rows) {
         this.$breakpoints = [];
         for (var i = 0; i < rows.length; i++) {
@@ -12044,10 +11600,9 @@ var require_edit_session = __commonJS({
         this._signal("changeBreakpoint", {});
       }
       /**
-       * Sets a breakpoint on the row number given by `row`. This function also emits the `'changeBreakpoint'` event.
-       * @param {Number} row A row index
-       * @param {String} className Class of the breakpoint
-       **/
+       * @param {Number} row
+       * @param {String} className
+       */
       setBreakpoint(row, className) {
         if (className === void 0)
           className = "ace_breakpoint";
@@ -12057,23 +11612,18 @@ var require_edit_session = __commonJS({
           delete this.$breakpoints[row];
         this._signal("changeBreakpoint", {});
       }
-      /**
-       * Removes a breakpoint on the row number given by `row`. This function also emits the `'changeBreakpoint'` event.
-       * @param {Number} row A row index
-       **/
+      /** @param {Number} row */
       clearBreakpoint(row) {
         delete this.$breakpoints[row];
         this._signal("changeBreakpoint", {});
       }
       /**
-       * Adds a new marker to the given `Range`. If `inFront` is `true`, a front marker is defined, and the `'changeFrontMarker'` event fires; otherwise, the `'changeBackMarker'` event fires.
-       * @param {Range} range Define the range of the marker
-       * @param {String} clazz Set the CSS class for the marker
-       * @param {import("../ace-internal").Ace.MarkerRenderer | "fullLine" | "screenLine" | "text" | "line"} [type] Identify the renderer type of the marker. If string provided, corresponding built-in renderer is used. Supported string types are "fullLine", "screenLine", "text" or "line". If a Function is provided, that Function is used as renderer.
-       * @param {Boolean} [inFront] Set to `true` to establish a front marker
-       *
-       * @return {Number} The new marker id
-       **/
+       * @param {Range} range
+       * @param {String} clazz
+       * @param {import("../ace-internal").Ace.MarkerRenderer | "fullLine" | "screenLine" | "text" | "line"} [type]
+       * @param {Boolean} [inFront]
+       * @return {Number}
+       */
       addMarker(range, clazz, type, inFront) {
         var id = this.$markerId++;
         var marker = {
@@ -12094,12 +11644,10 @@ var require_edit_session = __commonJS({
         return id;
       }
       /**
-       * Adds a dynamic marker to the session.
-       * @param {import("../ace-internal").Ace.MarkerLike} marker object with update method
-       * @param {Boolean} [inFront] Set to `true` to establish a front marker
-       *
-       * @return {import("../ace-internal").Ace.MarkerLike} The added marker
-       **/
+       * @param {import("../ace-internal").Ace.MarkerLike} marker
+       * @param {Boolean} [inFront]
+       * @return {import("../ace-internal").Ace.MarkerLike}
+       */
       addDynamicMarker(marker, inFront) {
         if (!marker.update)
           return;
@@ -12115,10 +11663,7 @@ var require_edit_session = __commonJS({
         }
         return marker;
       }
-      /**
-       * Removes the marker with the specified ID. If this marker was in front, the `'changeFrontMarker'` event is emitted. If the marker was in the back, the `'changeBackMarker'` event is emitted.
-       * @param {Number} markerId A number representing a marker
-       **/
+      /** @param {Number} markerId */
       removeMarker(markerId) {
         var marker = this.$frontMarkers[markerId] || this.$backMarkers[markerId];
         if (!marker)
@@ -12128,11 +11673,9 @@ var require_edit_session = __commonJS({
         this._signal(marker.inFront ? "changeFrontMarker" : "changeBackMarker");
       }
       /**
-       * Returns an object containing all of the markers, either front or back.
-       * @param {Boolean} [inFront] If `true`, indicates you only want front markers; `false` indicates only back markers
-       *
+       * @param {Boolean} [inFront]
        * @returns {{[id: number]: import("../ace-internal").Ace.MarkerLike}}
-       **/
+       */
       getMarkers(inFront) {
         return inFront ? this.$frontMarkers : this.$backMarkers;
       }
@@ -12147,7 +11690,6 @@ var require_edit_session = __commonJS({
         this.$searchHighlight.setRegexp(re);
       }
       /**
-       * experimental
        * @param {number} startRow
        * @param {number} endRow
        * @param {string} clazz
@@ -12165,29 +11707,19 @@ var require_edit_session = __commonJS({
         range.id = this.addMarker(range, clazz, "fullLine", inFront);
         return range;
       }
-      /**
-       * Sets annotations for the `EditSession`. This functions emits the `'changeAnnotation'` event.
-       * @param {import("../ace-internal").Ace.Annotation[]} annotations A list of annotations
-       **/
+      /** @param {import("../ace-internal").Ace.Annotation[]} annotations */
       setAnnotations(annotations) {
         this.$annotations = annotations;
         this._signal("changeAnnotation", {});
       }
-      /**
-       * Returns the annotations for the `EditSession`.
-       * @returns {import("../ace-internal").Ace.Annotation[]}
-       **/
+      /** @returns {import("../ace-internal").Ace.Annotation[]} */
       getAnnotations() {
         return this.$annotations || [];
       }
       clearAnnotations() {
         this.setAnnotations([]);
       }
-      /**
-       * If `text` contains either the newline (`\n`) or carriage-return ('\r') characters, `$autoNewLine` stores that value.
-       * @param {String} text A block of text
-       *
-       **/
+      /** @param {String} text */
       $detectNewLine(text) {
         var match = text.match(/^.*?(\r?\n)/m);
         if (match) {
@@ -12197,12 +11729,10 @@ var require_edit_session = __commonJS({
         }
       }
       /**
-       * Given a starting row and column, this method returns the `Range` of the first word boundary it finds.
-       * @param {Number} row The row to start at
-       * @param {Number} column The column to start at
-       *
+       * @param {Number} row
+       * @param {Number} column
        * @returns {Range}
-       **/
+       */
       getWordRange(row, column) {
         var line = this.getLine(row);
         var inToken = false;
@@ -12230,12 +11760,10 @@ var require_edit_session = __commonJS({
         return new Range2(row, start, row, end);
       }
       /**
-       * Gets the range of a word, including its right whitespace.
-       * @param {Number} row The row number to start from
-       * @param {Number} column The column number to start from
-       *
+       * @param {Number} row
+       * @param {Number} column
        * @return {Range}
-       **/
+       */
       getAWordRange(row, column) {
         var wordRange = this.getWordRange(row, column);
         var line = this.getLine(wordRange.end.row);
@@ -12245,48 +11773,36 @@ var require_edit_session = __commonJS({
         return wordRange;
       }
       /**
-       * {:Document.setNewLineMode.desc}
-       * @param {import("../ace-internal").Ace.NewLineMode} newLineMode {:Document.setNewLineMode.param}
-       *
-       *
-       * @related Document.setNewLineMode
-       **/
+       * @param {import("../ace-internal").Ace.NewLineMode} newLineMode
+       * @related
+       */
       setNewLineMode(newLineMode) {
         this.doc.setNewLineMode(newLineMode);
       }
       /**
-       *
-       * Returns the current new line mode.
        * @returns {import("../ace-internal").Ace.NewLineMode}
-       * @related Document.getNewLineMode
-       **/
+       * @related
+       */
       getNewLineMode() {
         return this.doc.getNewLineMode();
       }
-      /**
-       * Identifies if you want to use a worker for the `EditSession`.
-       * @param {Boolean} useWorker Set to `true` to use a worker
-       **/
+      /** @param {Boolean} useWorker */
       setUseWorker(useWorker) {
         this.setOption("useWorker", useWorker);
       }
       getUseWorker() {
         return this.$useWorker;
       }
-      /**
-       * Reloads all the tokens on the current session. This function calls [[BackgroundTokenizer.start `BackgroundTokenizer.start ()`]] to all the rows; it also emits the `'tokenizerUpdate'` event.
-       * @internal
-       **/
+      /** @internal */
       onReloadTokenizer(e) {
         var rows = e.data;
         this.bgTokenizer.start(rows.first);
         this._signal("tokenizerUpdate", e);
       }
       /**
-       * Sets a new text mode for the `EditSession`. This method also emits the `'changeMode'` event. If a [[BackgroundTokenizer `BackgroundTokenizer`]] is set, the `'tokenizerUpdate'` event is also emitted.
-       * @param {SyntaxMode | string} mode Set a new text mode
-       * @param {() => void} [cb] optional callback
-       **/
+       * @param {SyntaxMode | string} mode
+       * @param {() => void} [cb]
+       */
       setMode(mode, cb) {
         if (mode && typeof mode === "object") {
           if (mode.getTokenizer)
@@ -12294,7 +11810,7 @@ var require_edit_session = __commonJS({
           var options = mode;
           var path = options.path;
         } else {
-          path = /**@type{string}*/
+          path = /** @type {string} */
           mode || "ace/mode/text";
         }
         if (!this.$modes["ace/mode/text"])
@@ -12372,51 +11888,33 @@ var require_edit_session = __commonJS({
           this.$worker = null;
         }
       }
-      /**
-       * Returns the current text mode.
-       * @returns {TextMode} The current text mode
-       **/
+      /** @returns {TextMode} */
       getMode() {
         return this.$mode;
       }
-      /**
-       * This function sets the scroll top value. It also emits the `'changeScrollTop'` event.
-       * @param {Number} scrollTop The new scroll top value
-       **/
+      /** @param {Number} scrollTop */
       setScrollTop(scrollTop) {
         if (this.$scrollTop === scrollTop || isNaN(scrollTop))
           return;
         this.$scrollTop = scrollTop;
         this._signal("changeScrollTop", scrollTop);
       }
-      /**
-       * [Returns the value of the distance between the top of the editor and the topmost part of the visible content.]{: #EditSession.getScrollTop}
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getScrollTop() {
         return this.$scrollTop;
       }
-      /**
-       * [Sets the value of the distance between the left of the editor and the leftmost part of the visible content.]{: #EditSession.setScrollLeft}
-       * @param {number} scrollLeft
-       */
+      /** @param {number} scrollLeft */
       setScrollLeft(scrollLeft) {
         if (this.$scrollLeft === scrollLeft || isNaN(scrollLeft))
           return;
         this.$scrollLeft = scrollLeft;
         this._signal("changeScrollLeft", scrollLeft);
       }
-      /**
-       * [Returns the value of the distance between the left of the editor and the leftmost part of the visible content.]{: #EditSession.getScrollLeft}
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getScrollLeft() {
         return this.$scrollLeft;
       }
-      /**
-       * Returns the width of the screen.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getScreenWidth() {
         this.$computeWidth();
         if (this.lineWidgets)
@@ -12467,74 +11965,59 @@ var require_edit_session = __commonJS({
         }
       }
       /**
-       * Returns a verbatim copy of the given line as it is in the document
-       * @param {Number} row The row to retrieve from
+       * @param {Number} row
        * @returns {String}
-       **/
+       */
       getLine(row) {
         return this.doc.getLine(row);
       }
       /**
-       * Returns an array of strings of the rows between `firstRow` and `lastRow`. This function is inclusive of `lastRow`.
-       * @param {Number} firstRow The first row index to retrieve
-       * @param {Number} lastRow The final row index to retrieve
-       *
+       * @param {Number} firstRow
+       * @param {Number} lastRow
        * @returns {String[]}
-       *
-       **/
+       */
       getLines(firstRow, lastRow) {
         return this.doc.getLines(firstRow, lastRow);
       }
-      /**
-       * Returns the number of rows in the document.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getLength() {
         return this.doc.getLength();
       }
       /**
-       * {:Document.getTextRange.desc}
-       * @param {IRange} [range] The range to work with
-       *
+       * @param {IRange} [range]
        * @returns {String}
-       **/
+       */
       getTextRange(range) {
         return this.doc.getTextRange(range || this.selection.getRange());
       }
       /**
-       * Inserts a block of `text` and the indicated `position`.
-       * @param {Point} position The position {row, column} to start inserting at
-       * @param {String} text A chunk of text to insert
-       * @returns {Point} The position of the last line of `text`. If the length of `text` is 0, this function simply returns `position`.
-       **/
+       * @param {Point} position
+       * @param {String} text
+       * @returns {Point}
+       */
       insert(position, text) {
         return this.doc.insert(position, text);
       }
       /**
-       * Removes the `range` from the document.
-       * @param {IRange} range A specified Range to remove
-       * @returns {Point} The new `start` property of the range, which contains `startRow` and `startColumn`. If `range` is empty, this function returns the unmodified value of `range.start`.
-       **/
+       * @param {IRange} range
+       * @returns {Point}
+       */
       remove(range) {
         return this.doc.remove(range);
       }
       /**
-       * Removes a range of full lines. This method also triggers the `'change'` event.
-       * @param {Number} firstRow The first row to be removed
-       * @param {Number} lastRow The last row to be removed
-       * @returns {String[]} Returns all the removed lines.
-       *
-       * @related Document.removeFullLines
-       *
-       **/
+       * @param {Number} firstRow
+       * @param {Number} lastRow
+       * @returns {String[]}
+       * @related
+       */
       removeFullLines(firstRow, lastRow) {
         return this.doc.removeFullLines(firstRow, lastRow);
       }
       /**
-       * Reverts previous changes to your document.
-       * @param {Delta[]} deltas An array of previous changes
-       * @param {Boolean} [dontSelect] If `true`, doesn't select the range of where the change occured
-       **/
+       * @param {Delta[]} deltas
+       * @param {Boolean} [dontSelect]
+       */
       undoChanges(deltas, dontSelect) {
         if (!deltas.length)
           return;
@@ -12556,10 +12039,9 @@ var require_edit_session = __commonJS({
         this.$fromUndo = false;
       }
       /**
-       * Re-implements a previously undone change to your document.
-       * @param {Delta[]} deltas An array of previous changes
-       * @param {Boolean} [dontSelect] {:dontSelect}
-       **/
+       * @param {Delta[]} deltas
+       * @param {Boolean} [dontSelect]
+       */
       redoChanges(deltas, dontSelect) {
         if (!deltas.length)
           return;
@@ -12578,11 +12060,7 @@ var require_edit_session = __commonJS({
         }
         this.$fromUndo = false;
       }
-      /**
-       * Enables or disables highlighting of the range where an undo occurred.
-       * @param {Boolean} enable If `true`, selects the range of the reinserted change
-       *
-       **/
+      /** @param {Boolean} enable */
       setUndoSelect(enable) {
         this.$undoSelect = enable;
       }
@@ -12627,32 +12105,20 @@ var require_edit_session = __commonJS({
         return range;
       }
       /**
-       * Replaces a range in the document with the new `text`.
-       *
-       * @param {IRange} range A specified Range to replace
-       * @param {String} text The new text to use as a replacement
-       * @returns {Point} An object containing the final row and column, like this:
-       * ```
-       * {row: endRow, column: 0}
-       * ```
-       * If the text and range are empty, this function returns an object containing the current `range.start` value.
-       * If the text is the exact same as what currently exists, this function returns an object containing the current `range.end` value.
-       *
-       * @related Document.replace
-       **/
+       * @param {IRange} range
+       * @param {String} text
+       * @returns {Point}
+       * @related
+       */
       replace(range, text) {
         return this.doc.replace(range, text);
       }
       /**
-       * Moves a range of text from the given range to the given position. `toPosition` is an object that looks like this:
-       *  ```json
-       *    { row: newRowLocation, column: newColumnLocation }
-       *  ```
-       * @param {Range} fromRange The range of text you want moved within the document
-       * @param {Point} toPosition The location (row and column) where you want to move the text to
+       * @param {Range} fromRange
+       * @param {Point} toPosition
        * @param {boolean} [copy]
-       * @returns {Range} The new range where the text was moved to.
-       **/
+       * @returns {Range}
+       */
       moveText(fromRange, toPosition, copy) {
         var text = this.getTextRange(fromRange);
         var folds = this.getFoldsInRange(fromRange);
@@ -12692,22 +12158,16 @@ var require_edit_session = __commonJS({
         return toRange;
       }
       /**
-       * Indents all the rows, from `startRow` to `endRow` (inclusive), by prefixing each row with the token in `indentString`.
-       *
-       * If `indentString` contains the `'\t'` character, it's replaced by whatever is defined by [[EditSession.getTabString `getTabString()`]].
-       * @param {Number} startRow Starting row
-       * @param {Number} endRow Ending row
-       * @param {String} indentString The indent token
-       **/
+       * @param {Number} startRow
+       * @param {Number} endRow
+       * @param {String} indentString
+       */
       indentRows(startRow, endRow, indentString) {
         indentString = indentString.replace(/\t/g, this.getTabString());
         for (var row = startRow; row <= endRow; row++)
           this.doc.insertInLine({ row, column: 0 }, indentString);
       }
-      /**
-       * Outdents all the rows defined by the `start` and `end` properties of `range`.
-       * @param {Range} range A range of rows
-       **/
+      /** @param {Range} range */
       outdentRows(range) {
         var rowRange = range.collapseRows();
         var deleteRange = new Range2(0, 0, 0, 0);
@@ -12765,29 +12225,26 @@ var require_edit_session = __commonJS({
         return diff;
       }
       /**
-       * Shifts all the lines in the document up one, starting from `firstRow` and ending at `lastRow`.
-       * @param {Number} firstRow The starting row to move up
-       * @param {Number} lastRow The final row to move up
-       * @returns {Number} If `firstRow` is less-than or equal to 0, this function returns 0. Otherwise, on success, it returns -1.
-       **/
+       * @param {Number} firstRow
+       * @param {Number} lastRow
+       * @returns {Number}
+       */
       moveLinesUp(firstRow, lastRow) {
         return this.$moveLines(firstRow, lastRow, -1);
       }
       /**
-       * Shifts all the lines in the document down one, starting from `firstRow` and ending at `lastRow`.
-       * @param {Number} firstRow The starting row to move down
-       * @param {Number} lastRow The final row to move down
-       * @returns {Number} If `firstRow` is less-than or equal to 0, this function returns 0. Otherwise, on success, it returns -1.
-       **/
+       * @param {Number} firstRow
+       * @param {Number} lastRow
+       * @returns {Number}
+       */
       moveLinesDown(firstRow, lastRow) {
         return this.$moveLines(firstRow, lastRow, 1);
       }
       /**
-       * Duplicates all the text between `firstRow` and `lastRow`.
-       * @param {Number} firstRow The starting row to duplicate
-       * @param {Number} lastRow The final row to duplicate
-       * @returns {Number} Returns the number of new rows added; in other words, `lastRow - firstRow + 1`.
-       **/
+       * @param {Number} firstRow
+       * @param {Number} lastRow
+       * @returns {Number}
+       */
       duplicateLines(firstRow, lastRow) {
         return this.$moveLines(firstRow, lastRow, 0);
       }
@@ -12857,10 +12314,7 @@ var require_edit_session = __commonJS({
         }
         return range;
       }
-      /**
-       * Sets whether or not line wrapping is enabled. If `useWrapMode` is different than the current value, the `'changeWrapMode'` event is emitted.
-       * @param {Boolean} useWrapMode Enable (or disable) wrap mode
-       **/
+      /** @param {Boolean} useWrapMode */
       setUseWrapMode(useWrapMode) {
         if (useWrapMode != this.$useWrapMode) {
           this.$useWrapMode = useWrapMode;
@@ -12874,18 +12328,14 @@ var require_edit_session = __commonJS({
           this._signal("changeWrapMode");
         }
       }
-      /**
-       * Returns `true` if wrap mode is being used; `false` otherwise.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       getUseWrapMode() {
         return this.$useWrapMode;
       }
       /**
-       * Sets the boundaries of wrap. Either value can be `null` to have an unconstrained wrap, or, they can be the same number to pin the limit. If the wrap limits for `min` or `max` are different, this method also emits the `'changeWrapMode'` event.
-       * @param {Number} min The minimum wrap value (the left side wrap)
-       * @param {Number} max The maximum wrap value (the right side wrap)
-       **/
+       * @param {Number} min
+       * @param {Number} max
+       */
       setWrapLimitRange(min, max) {
         if (this.$wrapLimitRange.min !== min || this.$wrapLimitRange.max !== max) {
           this.$wrapLimitRange = { min, max };
@@ -12896,11 +12346,10 @@ var require_edit_session = __commonJS({
         }
       }
       /**
-       * This should generally only be called by the renderer when a resize is detected.
-       * @param {Number} desiredLimit The new wrap limit
+       * @param {Number} desiredLimit
        * @param [$printMargin]
        * @returns {Boolean}
-       **/
+       */
       adjustWrapLimit(desiredLimit, $printMargin) {
         var limits = this.$wrapLimitRange;
         if (limits.max < 0)
@@ -12932,29 +12381,15 @@ var require_edit_session = __commonJS({
           wrapLimit = Math.min(max, wrapLimit);
         return wrapLimit;
       }
-      /**
-       * Returns the value of wrap limit.
-       * @returns {Number} The wrap limit.
-       **/
+      /** @returns {Number} */
       getWrapLimit() {
         return this.$wrapLimit;
       }
-      /**
-       * Sets the line length for soft wrap in the editor. Lines will break
-       *  at a minimum of the given length minus 20 chars and at a maximum
-       *  of the given number of chars.
-       * @param {number} limit The maximum line length in chars, for soft wrapping lines.
-       */
+      /** @param {number} limit */
       setWrapLimit(limit) {
         this.setWrapLimitRange(limit, limit);
       }
-      /**
-       * Returns an object that defines the minimum and maximum of the wrap limit; it looks something like this:
-       *
-       *     { min: wrapLimitRange_min, max: wrapLimitRange_max }
-       *
-       * @returns {{ min: number, max: number }}
-       **/
+      /** @returns {{ min: number, max: number }} */
       getWrapLimitRange() {
         return {
           min: this.$wrapLimitRange.min,
@@ -13108,7 +12543,7 @@ var require_edit_session = __commonJS({
         }
       }
       /**
-       * @param {number[]}tokens
+       * @param {number[]} tokens
        * @param {number} wrapLimit
        * @param {number} tabSize
        * @returns {*[]}
@@ -13215,11 +12650,10 @@ var require_edit_session = __commonJS({
         return splits;
       }
       /**
-       * Given a string, returns an array of the display characters, including tabs and spaces.
-       * @param {String} str The string to check
-       * @param {Number} [offset] The value to start at
+       * @param {String} str
+       * @param {Number} [offset]
        * @returns {number[]}
-       **/
+       */
       $getDisplayTokens(str, offset) {
         var arr = [];
         var tabSize;
@@ -13245,14 +12679,11 @@ var require_edit_session = __commonJS({
         return arr;
       }
       /**
-       * Calculates the width of the string `str` on the screen while assuming that the string starts at the first column on the screen.
-       * @param {String} str The string to calculate the screen width of
+       * @param {String} str
        * @param {Number} [maxScreenColumn]
        * @param {Number} [screenColumn]
-       * @returns {Number[]} Returns an `int[]` array with two elements:<br/>
-       * The first position indicates the number of columns for `str` on screen.<br/>
-       * The second value contains the position of the document column that this function read until.
-       **/
+       * @returns {Number[]}
+       */
       $getStringScreenWidth(str, maxScreenColumn, screenColumn) {
         if (maxScreenColumn == 0)
           return [0, 0];
@@ -13276,10 +12707,9 @@ var require_edit_session = __commonJS({
         return [screenColumn, column];
       }
       /**
-       * Returns number of screenrows in a wrapped line.
-       * @param {Number} row The row number to check
+       * @param {Number} row
        * @returns {Number}
-       **/
+       */
       getRowLength(row) {
         var h = 1;
         if (this.lineWidgets)
@@ -13314,38 +12744,33 @@ var require_edit_session = __commonJS({
         }
       }
       /**
-       * Returns the position (on screen) for the last character in the provided screen row.
-       * @param {Number} screenRow The screen row to check
+       * @param {Number} screenRow
        * @returns {Number}
-       *
-       * @related EditSession.documentToScreenColumn
-       **/
+       * @related
+       */
       getScreenLastRowColumn(screenRow) {
         var pos = this.screenToDocumentPosition(screenRow, Number.MAX_VALUE);
         return this.documentToScreenColumn(pos.row, pos.column);
       }
       /**
-       * For the given document row and column, this returns the column position of the last screen row.
        * @param {Number} docRow
        * @param {Number} docColumn
        * @returns {number}
-       **/
+       */
       getDocumentLastRowColumn(docRow, docColumn) {
         var screenRow = this.documentToScreenRow(docRow, docColumn);
         return this.getScreenLastRowColumn(screenRow);
       }
       /**
-       * For the given document row and column, this returns the document position of the last row.
        * @param {Number} docRow
        * @param {Number} docColumn
        * @returns {Point}
-       **/
+       */
       getDocumentLastRowColumnPosition(docRow, docColumn) {
         var screenRow = this.documentToScreenRow(docRow, docColumn);
         return this.screenToDocumentPosition(screenRow, Number.MAX_VALUE / 10);
       }
       /**
-       * For the given row, this returns the split data.
        * @param {number} row
        * @returns {String | undefined}
        */
@@ -13357,11 +12782,9 @@ var require_edit_session = __commonJS({
         }
       }
       /**
-       * The distance to the next tab stop at the specified screen column.
-       * @param {Number} screenColumn The screen column to check
-       *
+       * @param {Number} screenColumn
        * @returns {Number}
-       **/
+       */
       getScreenTabSize(screenColumn) {
         return this.$tabSize - (screenColumn % this.$tabSize | 0);
       }
@@ -13382,15 +12805,12 @@ var require_edit_session = __commonJS({
         return this.screenToDocumentPosition(screenRow, screenColumn).column;
       }
       /**
-       * Converts characters coordinates on the screen to characters coordinates within the document. [This takes into account code folding, word wrap, tab size, and any other visual modifications.]{: #conversionConsiderations}
-       * @param {Number} screenRow The screen row to check
-       * @param {Number} screenColumn The screen column to check
-       * @param {Number} [offsetX] screen character x-offset [optional]
-       *
-       * @returns {Point} The object returned has two properties: `row` and `column`.
-       *
-       * @related EditSession.documentToScreenPosition
-       **/
+       * @param {Number} screenRow
+       * @param {Number} screenColumn
+       * @param {Number} [offsetX]
+       * @returns {Point}
+       * @related
+       */
       screenToDocumentPosition(screenRow, screenColumn, offsetX) {
         if (screenRow < 0)
           return { row: 0, column: 0 };
@@ -13465,24 +12885,22 @@ var require_edit_session = __commonJS({
         return { row: docRow, column: docColumn };
       }
       /**
-       * Converts document coordinates to screen coordinates. {:conversionConsiderations}
-       * @param {Number|Point} docRow The document row to check
-       * @param {Number|undefined} [docColumn] The document column to check
-       * @returns {Point} The object returned by this method has two properties: `row` and `column`.
-       *
-       * @related EditSession.screenToDocumentPosition
-       **/
+       * @param {Number|Point} docRow
+       * @param {Number|undefined} [docColumn]
+       * @returns {Point}
+       * @related
+       */
       documentToScreenPosition(docRow, docColumn) {
         if (typeof docColumn === "undefined")
           var pos = this.$clipPositionToDocument(
-            /**@type{Point}*/
+            /** @type {Point} */
             docRow.row,
-            /**@type{Point}*/
+            /** @type {Point} */
             docRow.column
           );
         else
           pos = this.$clipPositionToDocument(
-            /**@type{number}*/
+            /** @type {number} */
             docRow,
             docColumn
           );
@@ -13558,27 +12976,22 @@ var require_edit_session = __commonJS({
         };
       }
       /**
-       * For the given document row and column, returns the screen column.
        * @param {Number|Point} row
        * @param {Number} [docColumn]
        * @returns {Number}
-       **/
+       */
       documentToScreenColumn(row, docColumn) {
         return this.documentToScreenPosition(row, docColumn).column;
       }
       /**
-       * For the given document row and column, returns the screen row.
        * @param {Number|Point} docRow
        * @param {Number} [docColumn]
        * @returns {number}
-       **/
+       */
       documentToScreenRow(docRow, docColumn) {
         return this.documentToScreenPosition(docRow, docColumn).row;
       }
-      /**
-       * Returns the length of the screen.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getScreenLength() {
         var screenRows = 0;
         var fold = null;
@@ -13635,9 +13048,7 @@ var require_edit_session = __commonJS({
           return [screenColumn, column];
         };
       }
-      /**
-       * @returns {string} the last character preceding the cursor in the editor
-       */
+      /** @returns {string} */
       getPrecedingCharacter() {
         var pos = this.selection.getCursor();
         if (pos.column === 0) {
@@ -13758,7 +13169,7 @@ var require_edit_session = __commonJS({
       wrapMethod: {
         /**
          * @param {"code"|"text"|"auto"|boolean} val
-         * @this{EditSession}
+         * @this {EditSession}
          */
         set: function(val) {
           val = val == "auto" ? this.$mode.type != "text" : val != "text";
@@ -13773,9 +13184,7 @@ var require_edit_session = __commonJS({
         initialValue: "auto"
       },
       indentedSoftWrap: {
-        /**
-         * @this{EditSession}
-         */
+        /** @this {EditSession} */
         set: function() {
           if (this.$useWrapMode) {
             this.$useWrapMode = false;
@@ -13793,7 +13202,7 @@ var require_edit_session = __commonJS({
       useWorker: {
         /**
          * @param {boolean} useWorker
-         * @this{EditSession}
+         * @this {EditSession}
          */
         set: function(useWorker) {
           this.$useWorker = useWorker;
@@ -13807,7 +13216,7 @@ var require_edit_session = __commonJS({
       tabSize: {
         /**
          * @param tabSize
-         * @this{EditSession}
+         * @this {EditSession}
          */
         set: function(tabSize) {
           tabSize = parseInt(tabSize);
@@ -13868,35 +13277,29 @@ var require_search = __commonJS({
         this.$options = {};
       }
       /**
-       * Sets the search options via the `options` parameter.
-       * @param {Partial<SearchOptions>} options An object containing all the new search properties
+       * @param {Partial<SearchOptions>} options
        * @returns {Search}
        * @chainable
-      **/
+       */
       set(options) {
         oop2.mixin(this.$options, options);
         return this;
       }
-      /**
-       * [Returns an object containing all the search options.]{: #Search.getOptions}
-       * @returns {Partial<SearchOptions>}
-      **/
+      /** @returns {Partial<SearchOptions>} */
       getOptions() {
         return lang2.copyObject(this.$options);
       }
       /**
-       * Sets the search options via the `options` parameter.
-       * @param {Partial<SearchOptions>} options object containing all the search propertie
-       * @related Search.set
-      **/
+       * @param {Partial<SearchOptions>} options
+       * @related
+       */
       setOptions(options) {
         this.$options = options;
       }
       /**
-       * Searches for `options.needle`. If found, this method returns the [[Range `Range`]] where the text first occurs. If `options.backwards` is `true`, the search goes backwards in the session.
-       * @param {EditSession} session The session to search with
+       * @param {EditSession} session
        * @returns {Range | null | false}
-       **/
+       */
       find(session) {
         var options = this.$options;
         var iterator = this.$matchIterator(session, options);
@@ -13905,9 +13308,9 @@ var require_search = __commonJS({
         var firstRange = null;
         iterator.forEach(function(sr, sc, er, ec) {
           firstRange = new Range2(sr, sc, er, ec);
-          if (sc == ec && options.start && /**@type{Range}*/
+          if (sc == ec && options.start && /** @type {Range} */
           options.start.start && options.skipCurrent != false && firstRange.isEqual(
-            /**@type{Range}*/
+            /** @type {Range} */
             options.start
           )) {
             firstRange = null;
@@ -13918,10 +13321,9 @@ var require_search = __commonJS({
         return firstRange;
       }
       /**
-       * Searches for all occurrances `options.needle`. If found, this method returns an array of [[Range `Range`s]] where the text first occurs. If `options.backwards` is `true`, the search goes backwards in the session.
-       * @param {EditSession} session The session to search with
+       * @param {EditSession} session
        * @returns {Range[]}
-      **/
+       */
       findAll(session) {
         var options = this.$options;
         if (!options.needle)
@@ -14051,15 +13453,10 @@ var require_search = __commonJS({
         return replacement || replaceString;
       }
       /**
-       * Searches for `options.needle` in `input`, and, if found, replaces it with `replacement`.
-       * @param {String} input The text to search in
-       * @param {any} replacement The replacing text
-       * + (String): If `options.regExp` is `true`, this function returns `input` with the replacement already made. Otherwise, this function just returns `replacement`.<br/>
-       * If `options.needle` was not found, this function returns `null`.
-       *
-       *
+       * @param {String} input
+       * @param {any} replacement
        * @returns {String}
-      **/
+       */
       replace(input, replacement) {
         var options = this.$options;
         var re = this.$assembleRegExp(options);
@@ -14443,7 +13840,7 @@ var require_hash_handler = __commonJS({
         if (!key)
           return;
         if (typeof command == "function")
-          return this.addCommand({ exec: command, bindKey: key, name: command.name || /**@type{string}*/
+          return this.addCommand({ exec: command, bindKey: key, name: command.name || /** @type {string} */
           key });
         key.split("|").forEach(function(keyPart) {
           var chain = "";
@@ -14532,8 +13929,6 @@ var require_hash_handler = __commonJS({
         this.bindKey(command.bindKey, command);
       }
       /**
-       * Accepts keys in the form ctrl+Enter or ctrl-Enter
-       * keys without modifiers or shift only
        * @param {string} keys
        * @returns {{key: string, hashId: number} | false}
        */
@@ -14640,10 +14035,9 @@ var require_command_manager = __commonJS({
     var EventEmitter = require_event_emitter().EventEmitter;
     var CommandManager = class extends MultiHashHandler {
       /**
-       * new CommandManager(platform, commands)
-       * @param {import("../keyboard/hash_handler").Platform} platform Identifier for the platform; must be either `"mac"` or `"win"`
-       * @param {any[]} commands A list of commands
-       **/
+       * @param {import("../keyboard/hash_handler").Platform} platform
+       * @param {any[]} commands
+       */
       constructor(platform, commands) {
         super(commands, platform);
         this.byName = this.commands;
@@ -14655,7 +14049,7 @@ var require_command_manager = __commonJS({
         });
       }
       /**
-       * 
+       *
        * @param {string | string[] | import("../../ace-internal").Ace.Command} command
        * @param {Editor} editor
        * @param {any} args
@@ -16284,35 +15678,19 @@ var require_gutter_handler = __commonJS({
         this.gutterKeyboardHandler = gutterKeyboardHandler;
         this.domEvent = domEvent;
       }
-      /**
-       * Returns the key that was presssed.
-       * 
-       * @return {string} the key that was pressed.
-       */
+      /** @return {string} */
       getKey() {
         return keys.keyCodeToString(this.domEvent.keyCode);
       }
-      /**
-       * Returns the row in the gutter that was focused after the keyboard event was handled.
-       * 
-       * @return {number} the key that was pressed.
-       */
+      /** @return {number} */
       getRow() {
         return this.gutterKeyboardHandler.$rowIndexToRow(this.gutterKeyboardHandler.activeRowIndex);
       }
-      /**
-       * Returns whether focus is on the annotation lane after the keyboard event was handled.
-       * 
-       * @return {boolean} true if focus was on the annotation lane after the keyboard event.
-       */
+      /** @return {boolean} */
       isInAnnotationLane() {
         return this.gutterKeyboardHandler.activeLane === "annotation";
       }
-      /**
-       * Returns whether focus is on the fold lane after the keyboard event was handled.
-       * 
-       * @return {boolean} true if focus was on the fold lane after the keyboard event.
-       */
+      /** @return {boolean} */
       isInFoldLane() {
         return this.gutterKeyboardHandler.activeLane === "fold";
       }
@@ -16348,12 +15726,10 @@ var require_editor = __commonJS({
     var HoverTooltip = require_tooltip().HoverTooltip;
     var Editor = class _Editor {
       /**
-       * Creates a new `Editor` object.
-       *
-       * @param {VirtualRenderer} renderer Associated `VirtualRenderer` that draws everything
-       * @param {EditSession} [session] The `EditSession` to refer to
-       * @param {Partial<import("../ace-internal").Ace.EditorOptions>} [options] The default options
-       **/
+       * @param {VirtualRenderer} renderer
+       * @param {EditSession} [session]
+       * @param {Partial<import("../ace-internal").Ace.EditorOptions>} [options]
+       */
       constructor(renderer, session, options) {
         this.id = "editor" + ++_Editor.$uid;
         this.session;
@@ -16427,7 +15803,7 @@ var require_editor = __commonJS({
             switch (scrollIntoView) {
               case "center-animate":
                 scrollIntoView = "animate";
-              /* fall through */
+
               case "center":
                 this.renderer.scrollCursorIntoView(null, 0.5);
                 break;
@@ -16480,10 +15856,9 @@ var require_editor = __commonJS({
           this.sequenceStartTime = Date.now();
       }
       /**
-       * Sets a new key handler, such as "vim" or "windows".
-       * @param {String | import("../ace-internal").Ace.KeyboardHandler | null} keyboardHandler The new key handler
+       * @param {String | import("../ace-internal").Ace.KeyboardHandler | null} keyboardHandler
        * @param {() => void} [cb]
-       **/
+       */
       setKeyboardHandler(keyboardHandler, cb) {
         if (keyboardHandler && typeof keyboardHandler === "string" && keyboardHandler != "ace") {
           this.$keybindingId = keyboardHandler;
@@ -16499,17 +15874,11 @@ var require_editor = __commonJS({
           cb && cb();
         }
       }
-      /**
-       * Returns the keyboard handler, such as "vim" or "windows".
-       * @returns {Object}
-       **/
+      /** @returns {Object} */
       getKeyboardHandler() {
         return this.keyBinding.getKeyboardHandler();
       }
-      /**
-       * Sets a new editsession to use. This method also emits the `'changeSession'` event.
-       * @param {EditSession|null} [session] The new session to use
-       **/
+      /** @param {EditSession|null} [session] */
       setSession(session) {
         if (this.session == session)
           return;
@@ -16603,21 +15972,16 @@ var require_editor = __commonJS({
         if (session && !session.destroyed)
           session.bgTokenizer.scheduleStart();
       }
-      /**
-       * Returns the current session being used.
-       * @returns {EditSession}
-       **/
+      /** @returns {EditSession} */
       getSession() {
         return this.session;
       }
       /**
-       * Sets the current document to `val`.
-       * @param {String} val The new value to set for the document
-       * @param {Number} [cursorPos] Where to set the new value. `undefined` or 0 is selectAll, -1 is at the document start, and 1 is at the end
-       *
-       * @returns {String} The current document value
-       * @related Document.setValue
-       **/
+       * @param {String} val
+       * @param {Number} [cursorPos]
+       * @returns {String}
+       * @related
+       */
       setValue(val, cursorPos) {
         this.session.doc.setValue(val);
         if (!cursorPos)
@@ -16629,75 +15993,57 @@ var require_editor = __commonJS({
         return val;
       }
       /**
-       * Returns the current session's content.
-       *
        * @returns {String}
-       * @related EditSession.getValue
-       **/
+       * @related
+       */
       getValue() {
         return this.session.getValue();
       }
-      /**
-       *
-       * Returns the currently highlighted selection.
-       * @returns {Selection} The selection object
-       **/
+      /** @returns {Selection} */
       getSelection() {
         return this.selection;
       }
       /**
-       * {:VirtualRenderer.onResize}
-       * @param {Boolean} [force] If `true`, recomputes the size, even if the height and width haven't changed
-       * @related VirtualRenderer.onResize
-       **/
+       * @param {Boolean} [force]
+       * @related
+       */
       resize(force) {
         this.renderer.onResize(force);
       }
       /**
-       * {:VirtualRenderer.setTheme}
-       * @param {string | import("../ace-internal").Ace.Theme} theme The path to a theme
-       * @param {() => void} [cb] optional callback called when theme is loaded
-       **/
+       * @param {string | import("../ace-internal").Ace.Theme} theme
+       * @param {() => void} [cb]
+       */
       setTheme(theme, cb) {
         this.renderer.setTheme(theme, cb);
       }
       /**
-       * {:VirtualRenderer.getTheme}
-       *
-       * @returns {String} The set theme
-       * @related VirtualRenderer.getTheme
-       **/
+       * @returns {String}
+       * @related
+       */
       getTheme() {
         return this.renderer.getTheme();
       }
       /**
-       * {:VirtualRenderer.setStyle}
-       * @param {String} style A class name
-       * @param {boolean} [incluude] pass false to remove the class name
-       * @related VirtualRenderer.setStyle
-       **/
+       * @param {String} style
+       * @param {boolean} [incluude]
+       * @related
+       */
       setStyle(style, incluude) {
         this.renderer.setStyle(style, incluude);
       }
       /**
-       * {:VirtualRenderer.unsetStyle}
-       * @related VirtualRenderer.unsetStyle
+       * @related
        * @param {string} style
        */
       unsetStyle(style) {
         this.renderer.unsetStyle(style);
       }
-      /**
-       * Gets the current font size of the editor text.
-       * @return {string | number}
-       */
+      /** @return {string | number} */
       getFontSize() {
         return this.getOption("fontSize") || dom.computedStyle(this.container).fontSize;
       }
-      /**
-       * Set a new font size (in pixels) for the editor text.
-       * @param {String | number} size A font size ( _e.g._ "12px")
-       **/
+      /** @param {String | number} size */
       setFontSize(size) {
         this.setOption("fontSize", size);
       }
@@ -16764,20 +16110,14 @@ var require_editor = __commonJS({
       focus() {
         this.textInput.focus();
       }
-      /**
-       * Returns `true` if the current `textInput` is in focus.
-       * @return {Boolean}
-       **/
+      /** @return {Boolean} */
       isFocused() {
         return this.textInput.isFocused();
       }
       blur() {
         this.textInput.blur();
       }
-      /**
-       * Emitted once the editor comes into focus.
-       * @internal
-       **/
+      /** @internal */
       onFocus(e) {
         if (this.$isFocused)
           return;
@@ -16786,10 +16126,7 @@ var require_editor = __commonJS({
         this.renderer.visualizeFocus();
         this._emit("focus", e);
       }
-      /**
-       * Emitted once the editor has been blurred.
-       * @internal
-       **/
+      /** @internal */
       onBlur(e) {
         if (!this.$isFocused)
           return;
@@ -16804,10 +16141,9 @@ var require_editor = __commonJS({
         this.$updateHighlightActiveLine();
       }
       /**
-       * Emitted whenever the document is changed.
-       * @param {import("../ace-internal").Ace.Delta} delta Contains a single property, `data`, which has the delta of changes
+       * @param {import("../ace-internal").Ace.Delta} delta
        * @internal
-       **/
+       */
       onDocumentChange(delta) {
         var wrap = this.session.$useWrapMode;
         var lastRow = delta.start.row == delta.end.row ? delta.end.row : Infinity;
@@ -16834,10 +16170,7 @@ var require_editor = __commonJS({
       onScrollLeftChange() {
         this.renderer.scrollToX(this.session.getScrollLeft());
       }
-      /**
-       * Emitted when the selection changes.
-       * @internal
-       **/
+      /** @internal */
       onCursorChange() {
         this.$cursorChange();
         this._signal("changeSelection");
@@ -16960,17 +16293,11 @@ var require_editor = __commonJS({
         this.$updateHighlightActiveLine();
         this.renderer.updateFull();
       }
-      /**
-       * Returns the string of text currently highlighted.
-       * @returns {String}
-       **/
+      /** @returns {String} */
       getSelectedText() {
         return this.session.getTextRange(this.getSelectionRange());
       }
-      /**
-       * Returns the string of text currently highlighted.
-       * @returns {String}
-       **/
+      /** @returns {String} */
       getCopyText() {
         var text = this.getSelectedText();
         var nl = this.session.doc.getNewLineCharacter();
@@ -16990,26 +16317,19 @@ var require_editor = __commonJS({
         clipboard.lineMode = copyLine ? e.text : false;
         return e.text;
       }
-      /**
-       * Called whenever a text "copy" happens.
-       * @internal
-       **/
+      /** @internal */
       onCopy() {
         this.commands.exec("copy", this);
       }
-      /**
-       * Called whenever a text "cut" happens.
-       * @internal
-       **/
+      /** @internal */
       onCut() {
         this.commands.exec("cut", this);
       }
       /**
-       * Called whenever a text "paste" happens.
-       * @param {String} text The pasted text
+       * @param {String} text
        * @param {ClipboardEvent} [event]
        * @internal
-       **/
+       */
       onPaste(text, event2) {
         var e = { text, event: event2 };
         this.commands.exec("paste", this, e);
@@ -17059,10 +16379,9 @@ var require_editor = __commonJS({
         return this.commands.exec(command, this, args);
       }
       /**
-       * Inserts `text` into wherever the cursor is pointing.
-       * @param {String} text The new text to add
+       * @param {String} text
        * @param {boolean} [pasted]
-       **/
+       */
       insert(text, pasted) {
         var session = this.session;
         var mode = session.getMode();
@@ -17216,77 +16535,51 @@ var require_editor = __commonJS({
         return this.keyBinding.onCommandKey(e, hashId, keyCode);
       }
       /**
-       * Pass in `true` to enable overwrites in your session, or `false` to disable. If overwrites is enabled, any text you enter will type over any text after it. If the value of `overwrite` changes, this function also emits the `changeOverwrite` event.
-       * @param {Boolean} overwrite Defines whether or not to set overwrites
-       * @related EditSession.setOverwrite
-       **/
+       * @param {Boolean} overwrite
+       * @related
+       */
       setOverwrite(overwrite) {
         this.session.setOverwrite(overwrite);
       }
       /**
-       * Returns `true` if overwrites are enabled; `false` otherwise.
        * @returns {Boolean}
-       * @related EditSession.getOverwrite
-       **/
+       * @related
+       */
       getOverwrite() {
         return this.session.getOverwrite();
       }
       toggleOverwrite() {
         this.session.toggleOverwrite();
       }
-      /**
-       * Sets how fast the mouse scrolling should do.
-       * @param {Number} speed A value indicating the new speed (in milliseconds)
-       **/
+      /** @param {Number} speed */
       setScrollSpeed(speed) {
         this.setOption("scrollSpeed", speed);
       }
-      /**
-       * Returns the value indicating how fast the mouse scroll speed is (in milliseconds).
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getScrollSpeed() {
         return this.getOption("scrollSpeed");
       }
-      /**
-       * Sets the delay (in milliseconds) of the mouse drag.
-       * @param {Number} dragDelay A value indicating the new delay
-       **/
+      /** @param {Number} dragDelay */
       setDragDelay(dragDelay) {
         this.setOption("dragDelay", dragDelay);
       }
-      /**
-       * Returns the current mouse drag delay.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getDragDelay() {
         return this.getOption("dragDelay");
       }
-      /**
-       * Draw selection markers spanning whole line, or only over selected text. Default value is "line"
-       * @param {"fullLine" | "screenLine" | "text" | "line"} val The new selection style "line"|"text"
-       **/
+      /** @param {"fullLine" | "screenLine" | "text" | "line"} val */
       setSelectionStyle(val) {
         this.setOption("selectionStyle", val);
       }
-      /**
-       * Returns the current selection style.
-       * @returns {import("../ace-internal").Ace.EditorOptions["selectionStyle"]}
-       **/
+      /** @returns {import("../ace-internal").Ace.EditorOptions["selectionStyle"]} */
       getSelectionStyle() {
         return this.getOption("selectionStyle");
       }
-      /**
-       * Determines whether or not the current line should be highlighted.
-       * @param {Boolean} shouldHighlight Set to `true` to highlight the current line
-       **/
+      /** @param {Boolean} shouldHighlight */
       setHighlightActiveLine(shouldHighlight) {
         this.setOption("highlightActiveLine", shouldHighlight);
       }
-      /**
-       * Returns `true` if current lines are always highlighted.
-       * @return {Boolean}
-       **/
+      /** @return {Boolean} */
       getHighlightActiveLine() {
         return this.getOption("highlightActiveLine");
       }
@@ -17302,17 +16595,11 @@ var require_editor = __commonJS({
       getHighlightGutterLine() {
         return this.getOption("highlightGutterLine");
       }
-      /**
-       * Determines if the currently selected word should be highlighted.
-       * @param {Boolean} shouldHighlight Set to `true` to highlight the currently selected word
-       **/
+      /** @param {Boolean} shouldHighlight */
       setHighlightSelectedWord(shouldHighlight) {
         this.setOption("highlightSelectedWord", shouldHighlight);
       }
-      /**
-       * Returns `true` if currently highlighted words are to be highlighted.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       getHighlightSelectedWord() {
         return this.$highlightSelectedWord;
       }
@@ -17328,17 +16615,11 @@ var require_editor = __commonJS({
       getAnimatedScroll() {
         return this.renderer.getAnimatedScroll();
       }
-      /**
-       * If `showInvisibles` is set to `true`, invisible characters&mdash;like spaces or new lines&mdash;are show in the editor.
-       * @param {Boolean} showInvisibles Specifies whether or not to show invisible characters
-       **/
+      /** @param {Boolean} showInvisibles */
       setShowInvisibles(showInvisibles) {
         this.renderer.setShowInvisibles(showInvisibles);
       }
-      /**
-       * Returns `true` if invisible characters are being shown.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       getShowInvisibles() {
         return this.renderer.getShowInvisibles();
       }
@@ -17366,90 +16647,51 @@ var require_editor = __commonJS({
       getHighlightIndentGuides() {
         return this.renderer.getHighlightIndentGuides();
       }
-      /**
-       * If `showPrintMargin` is set to `true`, the print margin is shown in the editor.
-       * @param {Boolean} showPrintMargin Specifies whether or not to show the print margin
-       *
-       **/
+      /** @param {Boolean} showPrintMargin */
       setShowPrintMargin(showPrintMargin) {
         this.renderer.setShowPrintMargin(showPrintMargin);
       }
-      /**
-       * Returns `true` if the print margin is being shown.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       getShowPrintMargin() {
         return this.renderer.getShowPrintMargin();
       }
-      /**
-       * Sets the column defining where the print margin should be.
-       * @param {Number} showPrintMargin Specifies the new print margin
-       *
-       **/
+      /** @param {Number} showPrintMargin */
       setPrintMarginColumn(showPrintMargin) {
         this.renderer.setPrintMarginColumn(showPrintMargin);
       }
-      /**
-       * Returns the column number of where the print margin is.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getPrintMarginColumn() {
         return this.renderer.getPrintMarginColumn();
       }
-      /**
-       * If `readOnly` is true, then the editor is set to read-only mode, and none of the content can change.
-       * @param {Boolean} readOnly Specifies whether the editor can be modified or not
-       **/
+      /** @param {Boolean} readOnly */
       setReadOnly(readOnly) {
         this.setOption("readOnly", readOnly);
       }
-      /**
-       * Returns `true` if the editor is set to read-only mode.
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       getReadOnly() {
         return this.getOption("readOnly");
       }
-      /**
-       * Specifies whether to use behaviors or not. ["Behaviors" in this case is the auto-pairing of special characters, like quotation marks, parenthesis, or brackets.]{: #BehaviorsDef}
-       * @param {Boolean} enabled Enables or disables behaviors
-       **/
+      /** @param {Boolean} enabled */
       setBehavioursEnabled(enabled) {
         this.setOption("behavioursEnabled", enabled);
       }
-      /**
-       * Returns `true` if the behaviors are currently enabled. {:BehaviorsDef}
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       getBehavioursEnabled() {
         return this.getOption("behavioursEnabled");
       }
-      /**
-       * Specifies whether to use wrapping behaviors or not, i.e. automatically wrapping the selection with characters such as brackets
-       * when such a character is typed in.
-       * @param {Boolean} enabled Enables or disables wrapping behaviors
-       **/
+      /** @param {Boolean} enabled */
       setWrapBehavioursEnabled(enabled) {
         this.setOption("wrapBehavioursEnabled", enabled);
       }
-      /**
-       * Returns `true` if the wrapping behaviors are currently enabled.
-       * @returns {boolean}
-       **/
+      /** @returns {boolean} */
       getWrapBehavioursEnabled() {
         return this.getOption("wrapBehavioursEnabled");
       }
-      /**
-       * Indicates whether the fold widgets should be shown or not.
-       * @param {Boolean} show Specifies whether the fold widgets are shown
-       **/
+      /** @param {Boolean} show */
       setShowFoldWidgets(show) {
         this.setOption("showFoldWidgets", show);
       }
-      /**
-       * Returns `true` if the fold widgets are shown.
-       * @return {Boolean}
-       **/
+      /** @return {Boolean} */
       getShowFoldWidgets() {
         return this.getOption("showFoldWidgets");
       }
@@ -17465,10 +16707,7 @@ var require_editor = __commonJS({
       getFadeFoldWidgets() {
         return this.getOption("fadeFoldWidgets");
       }
-      /**
-       * Removes the current selection or one character.
-       * @param {'left' | 'right'} [dir] The direction of the deletion to occur, either "left" or "right"
-       **/
+      /** @param {'left' | 'right'} [dir] */
       remove(dir) {
         if (this.selection.isEmpty()) {
           if (dir == "left")
@@ -17537,12 +16776,8 @@ var require_editor = __commonJS({
         this.moveCursorToPosition(cursor);
       }
       /**
-       * Set the "ghost" text in provided position. "Ghost" text is a kind of
-       * preview text inside the editor which can be used to preview some code
-       * inline in the editor such as, for example, code completions.
-       *
-       * @param {String} text Text to be inserted as "ghost" text
-       * @param {Point} [position] Position to insert text to
+       * @param {String} text
+       * @param {Point} [position]
        */
       setGhostText(text, position) {
         this.renderer.setGhostText(text, position);
@@ -17662,10 +16897,7 @@ var require_editor = __commonJS({
         var range = this.getSelectionRange();
         this.session.getMode().toggleBlockComment(state, this.session, range, cursor);
       }
-      /**
-       * Works like [[EditSession.getTokenAt]], except it returns a number.
-       * @returns {any}
-       **/
+      /** @returns {any} */
       getNumberAt(row, column) {
         var _numberRx = /[\-]?[0-9]+(?:\.[0-9]+)?/g;
         _numberRx.lastIndex = 0;
@@ -17683,10 +16915,7 @@ var require_editor = __commonJS({
         }
         return null;
       }
-      /**
-       * If the character before the cursor is a number, this functions changes its value by `amount`.
-       * @param {Number} amount The value to change the numeral by (can be negative to decrease value)
-       **/
+      /** @param {Number} amount */
       modifyNumber(amount) {
         var row = this.selection.getCursor().row;
         var column = this.selection.getCursor().column;
@@ -17764,10 +16993,7 @@ var require_editor = __commonJS({
           }
         }
       }
-      /**
-       * Finds link at defined {row} and {column}
-       * @returns {String}
-       **/
+      /** @returns {String} */
       findLinkAt(row, column) {
         var line = this.session.getLine(row);
         var wordParts = line.split(/((?:https?|ftp):\/\/[\S]+)/);
@@ -17786,10 +17012,7 @@ var require_editor = __commonJS({
         }
         return match;
       }
-      /**
-       * Open valid url under cursor in another tab
-       * @returns {Boolean}
-       **/
+      /** @returns {Boolean} */
       openLink() {
         var cursor = this.selection.getCursor();
         var url = this.findLinkAt(cursor.row, cursor.column);
@@ -17825,17 +17048,12 @@ var require_editor = __commonJS({
         this.$moveLines(-1, false);
       }
       /**
-       * Moves a range of text from the given range to the given position. `toPosition` is an object that looks like this:
-       * ```json
-       *    { row: newRowLocation, column: newColumnLocation }
-       * ```
-       * @param {Range} range The range of text you want moved within the document
-       * @param {Point} toPosition The location (row and column) where you want to move the text to
+       * @param {Range} range
+       * @param {Point} toPosition
        * @param {boolean} [copy]
-       *
-       * @returns {Range} The new range where the text was moved to.
-       * @related EditSession.moveText
-       **/
+       * @returns {Range}
+       * @related
+       */
       moveText(range, toPosition, copy) {
         return this.session.moveText(range, toPosition, copy);
       }
@@ -17892,15 +17110,7 @@ var require_editor = __commonJS({
           this.inVirtualSelectionMode = false;
         }
       }
-      /**
-       * Returns an object indicating the currently selected rows. The object looks like this:
-       *
-       * ```json
-       * { first: range.start.row, last: range.end.row }
-       * ```
-       *
-       * @returns {Object}
-       **/
+      /** @returns {Object} */
       $getSelectedRows(range) {
         range = (range || this.getSelectionRange()).collapseRows();
         return {
@@ -17927,46 +17137,34 @@ var require_editor = __commonJS({
         this.renderer.hideComposition();
       }
       /**
-       * {:VirtualRenderer.getFirstVisibleRow}
-       *
        * @returns {Number}
-       * @related VirtualRenderer.getFirstVisibleRow
-       **/
+       * @related
+       */
       getFirstVisibleRow() {
         return this.renderer.getFirstVisibleRow();
       }
       /**
-       * {:VirtualRenderer.getLastVisibleRow}
-       *
        * @returns {Number}
-       * @related VirtualRenderer.getLastVisibleRow
-       **/
+       * @related
+       */
       getLastVisibleRow() {
         return this.renderer.getLastVisibleRow();
       }
       /**
-       * Indicates if the row is currently visible on the screen.
-       * @param {Number} row The row to check
-       *
+       * @param {Number} row
        * @returns {Boolean}
-       **/
+       */
       isRowVisible(row) {
         return row >= this.getFirstVisibleRow() && row <= this.getLastVisibleRow();
       }
       /**
-       * Indicates if the entire row is currently visible on the screen.
-       * @param {Number} row The row to check
-       *
-       *
+       * @param {Number} row
        * @returns {Boolean}
-       **/
+       */
       isRowFullyVisible(row) {
         return row >= this.renderer.getFirstFullyVisibleRow() && row <= this.renderer.getLastFullyVisibleRow();
       }
-      /**
-       * Returns the number of currently visible rows.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       $getVisibleRowCount() {
         return this.renderer.getScrollBottomRow() - this.renderer.getScrollTopRow() + 1;
       }
@@ -18007,22 +17205,19 @@ var require_editor = __commonJS({
         this.$moveByPage(-1);
       }
       /**
-       * Moves the editor to the specified row.
-       * @related VirtualRenderer.scrollToRow
+       * @related
        * @param {number} row
        */
       scrollToRow(row) {
         this.renderer.scrollToRow(row);
       }
       /**
-       * Scrolls to a line. If `center` is `true`, it puts the line in middle of screen (or attempts to).
-       * @param {Number} line The line to scroll to
-       * @param {Boolean} center If `true`
-       * @param {Boolean} animate If `true` animates scrolling
-       * @param {() => void} [callback] Function to be called when the animation has finished
-       *
-       * @related VirtualRenderer.scrollToLine
-       **/
+       * @param {Number} line
+       * @param {Boolean} center
+       * @param {Boolean} animate
+       * @param {() => void} [callback]
+       * @related
+       */
       scrollToLine(line, center, animate, callback) {
         this.renderer.scrollToLine(line, center, animate, callback);
       }
@@ -18035,31 +17230,23 @@ var require_editor = __commonJS({
         this.renderer.alignCursor(pos, 0.5);
       }
       /**
-       * Gets the current position of the cursor.
-       * @returns {Point} An object that looks something like this:
-       *
-       * ```json
-       * { row: currRow, column: currCol }
-       * ```
-       *
-       * @related Selection.getCursor
-       **/
+       * @returns {Point}
+       * @related
+       */
       getCursorPosition() {
         return this.selection.getCursor();
       }
       /**
-       * Returns the screen position of the cursor.
        * @returns {Point}
-       * @related EditSession.documentToScreenPosition
-       **/
+       * @related
+       */
       getCursorPositionScreen() {
         return this.session.documentToScreenPosition(this.getCursorPosition());
       }
       /**
-       * {:Selection.getRange}
        * @returns {Range}
-       * @related Selection.getRange
-       **/
+       * @related
+       */
       getSelectionRange() {
         return this.selection.getRange();
       }
@@ -18070,24 +17257,21 @@ var require_editor = __commonJS({
         this.selection.clearSelection();
       }
       /**
-       * Moves the cursor to the specified row and column. Note that this does not de-select the current selection.
-       * @param {Number} row The new row number
-       * @param {Number} column The new column number
-       * @related Selection.moveCursorTo
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       * @related
+       */
       moveCursorTo(row, column) {
         this.selection.moveCursorTo(row, column);
       }
       /**
-       * Moves the cursor to the position indicated by `pos.row` and `pos.column`.
-       * @param {Point} pos An object with two properties, row and column
-       * @related Selection.moveCursorToPosition
-       **/
+       * @param {Point} pos
+       * @related
+       */
       moveCursorToPosition(pos) {
         this.selection.moveCursorToPosition(pos);
       }
       /**
-       * Moves the cursor's row and column to the next matching bracket or HTML tag.
        * @param {boolean} [select]
        * @param {boolean} [expand]
        */
@@ -18215,11 +17399,10 @@ var require_editor = __commonJS({
         }
       }
       /**
-       * Moves the cursor to the specified line number, and also into the indicated column.
-       * @param {Number} lineNumber The line number to go to
-       * @param {Number} [column] A column number to go to
-       * @param {Boolean} [animate] If `true` animates scolling
-       **/
+       * @param {Number} lineNumber
+       * @param {Number} [column]
+       * @param {Boolean} [animate]
+       */
       gotoLine(lineNumber, column, animate) {
         this.selection.clearSelection();
         this.session.unfold({ row: lineNumber - 1, column: column || 0 });
@@ -18229,20 +17412,14 @@ var require_editor = __commonJS({
           this.scrollToLine(lineNumber - 1, true, animate);
       }
       /**
-       * Moves the cursor to the specified row and column. Note that this does de-select the current selection.
-       * @param {Number} row The new row number
-       * @param {Number} column The new column number
-       *
-       * @related Editor.moveCursorTo
-       **/
+       * @param {Number} row
+       * @param {Number} column
+       * @related
+       */
       navigateTo(row, column) {
         this.selection.moveTo(row, column);
       }
-      /**
-       * Moves the cursor up in the document the specified number of times. Note that this does de-select the current selection.
-       * @param {Number} [times] The number of times to change navigation
-       *
-       **/
+      /** @param {Number} [times] */
       navigateUp(times) {
         if (this.selection.isMultiLine() && !this.selection.isBackwards()) {
           var selectionStart = this.selection.anchor.getPosition();
@@ -18251,11 +17428,7 @@ var require_editor = __commonJS({
         this.selection.clearSelection();
         this.selection.moveCursorBy(-times || -1, 0);
       }
-      /**
-       * Moves the cursor down in the document the specified number of times. Note that this does de-select the current selection.
-       * @param {Number} [times] The number of times to change navigation
-       *
-       **/
+      /** @param {Number} [times] */
       navigateDown(times) {
         if (this.selection.isMultiLine() && this.selection.isBackwards()) {
           var selectionEnd = this.selection.anchor.getPosition();
@@ -18264,11 +17437,7 @@ var require_editor = __commonJS({
         this.selection.clearSelection();
         this.selection.moveCursorBy(times || 1, 0);
       }
-      /**
-       * Moves the cursor left in the document the specified number of times. Note that this does de-select the current selection.
-       * @param {Number} [times] The number of times to change navigation
-       *
-       **/
+      /** @param {Number} [times] */
       navigateLeft(times) {
         if (!this.selection.isEmpty()) {
           var selectionStart = this.getSelectionRange().start;
@@ -18281,11 +17450,7 @@ var require_editor = __commonJS({
         }
         this.clearSelection();
       }
-      /**
-       * Moves the cursor right in the document the specified number of times. Note that this does de-select the current selection.
-       * @param {Number} [times] The number of times to change navigation
-       *
-       **/
+      /** @param {Number} [times] */
       navigateRight(times) {
         if (!this.selection.isEmpty()) {
           var selectionEnd = this.getSelectionRange().end;
@@ -18323,11 +17488,10 @@ var require_editor = __commonJS({
         this.clearSelection();
       }
       /**
-       * Replaces the first occurrence of `options.needle` with the value in `replacement`.
-       * @param {String} [replacement] The text to replace with
-       * @param {Partial<SearchOptions>} [options] The [[Search `Search`]] options to use
+       * @param {String} [replacement]
+       * @param {Partial<SearchOptions>} [options]
        * @return {number}
-       **/
+       */
       replace(replacement, options) {
         if (options)
           this.$search.set(options);
@@ -18343,11 +17507,10 @@ var require_editor = __commonJS({
         return replaced;
       }
       /**
-       * Replaces all occurrences of `options.needle` with the value in `replacement`.
-       * @param {String} [replacement] The text to replace with
-       * @param {Partial<SearchOptions>} [options] The [[Search `Search`]] options to use
+       * @param {String} [replacement]
+       * @param {Partial<SearchOptions>} [options]
        * @return {number}
-       **/
+       */
       replaceAll(replacement, options) {
         if (options) {
           this.$search.set(options);
@@ -18381,20 +17544,18 @@ var require_editor = __commonJS({
         }
       }
       /**
-       * {:Search.getOptions} For more information on `options`, see [[Search `Search`]].
-       * @related Search.getOptions
+       * @related
        * @returns {Partial<SearchOptions>}
-       **/
+       */
       getLastSearchOptions() {
         return this.$search.getOptions();
       }
       /**
-       * Attempts to find `needle` within the document. For more information on `options`, see [[Search `Search`]].
-       * @param {String|RegExp|Object} needle The text to search for (optional)
-       * @param {Partial<SearchOptions>} [options] An object defining various search properties
-       * @param {Boolean} [animate] If `true` animate scrolling
-       * @related Search.find
-       **/
+       * @param {String|RegExp|Object} needle
+       * @param {Partial<SearchOptions>} [options]
+       * @param {Boolean} [animate]
+       * @related
+       */
       find(needle, options, animate) {
         if (!options)
           options = {};
@@ -18428,22 +17589,18 @@ var require_editor = __commonJS({
         this.selection.setRange(range);
       }
       /**
-       * Performs another search for `needle` in the document. For more information on `options`, see [[Search `Search`]].
-       * @param {Partial<SearchOptions>} [options] search options
-       * @param {Boolean} [animate] If `true` animate scrolling
-       *
-       * @related Editor.find
-       **/
+       * @param {Partial<SearchOptions>} [options]
+       * @param {Boolean} [animate]
+       * @related
+       */
       findNext(options, animate) {
         this.find({ skipCurrent: true, backwards: false }, options, animate);
       }
       /**
-       * Performs a search for `needle` backwards. For more information on `options`, see [[Search `Search`]].
-       * @param {Partial<SearchOptions>} [options] search options
-       * @param {Boolean} [animate] If `true` animate scrolling
-       *
-       * @related Editor.find
-       **/
+       * @param {Partial<SearchOptions>} [options]
+       * @param {Boolean} [animate]
+       * @related
+       */
       findPrevious(options, animate) {
         this.find(options, { skipCurrent: true, backwards: true }, animate);
       }
@@ -18486,10 +17643,7 @@ var require_editor = __commonJS({
           this._$emitInputEvent.cancel();
         this.removeAllListeners();
       }
-      /**
-       * Enables automatic scrolling of the cursor into view when editor itself is inside scrollable element
-       * @param {Boolean} enable default true
-       **/
+      /** @param {Boolean} enable */
       setAutoScrollEditorIntoView(enable) {
         if (!enable)
           return;
@@ -19572,9 +18726,8 @@ var require_gutter = __commonJS({
         return this.$showFoldWidgets;
       }
       /**
-       * Hides the fold widget/icon from a specific row in the gutter
-       * @param {number} row The row number from which to hide the fold icon
-       * @param {any} cell - Gutter cell 
+       * @param {number} row
+       * @param {any} cell
        * @experimental
        */
       $hideFoldWidget(row, cell) {
@@ -19587,9 +18740,8 @@ var require_gutter = __commonJS({
         }
       }
       /**
-       * Shows the fold widget/icon from a specific row in the gutter
-       * @param {number} row The row number from which to show the fold icon
-       * @param {any} cell - Gutter cell 
+       * @param {number} row
+       * @param {any} cell
        * @experimental
        */
       $showFoldWidget(row, cell) {
@@ -19602,11 +18754,10 @@ var require_gutter = __commonJS({
         }
       }
       /**
-      * Retrieves the gutter cell element at the specified cursor row position.
-      * @param {number} row - The row number in the editor where the gutter cell is located starts from 0
-      * @returns {HTMLElement|undefined} The gutter cell element at the specified row, or undefined if not found
-      * @experimental
-      */
+       * @param {number} row
+       * @returns {HTMLElement|undefined}
+       * @experimental
+       */
       $getGutterCell(row) {
         var cells = this.$lines.cells;
         var min = 0;
@@ -19627,17 +18778,16 @@ var require_gutter = __commonJS({
         return cell;
       }
       /**
-      * Displays a custom widget for a specific row
-      * @param {number} row - The row number where the widget will be displayed
-      * @param {Object} attributes - Configuration attributes for the widget
-      * @param {string} attributes.className - CSS class name for styling the widget
-      * @param {string} attributes.label - Text label to display in the widget
-      * @param {string} attributes.title - Tooltip text for the widget
-      * @param {Object} attributes.callbacks - Event callback functions for the widget e.g onClick; 
-      * @param {any} cell - Gutter cell 
-      * @returns {void}
-      * @experimental
-      */
+       * @param {number} row
+       * @param {Object} attributes
+       * @param {string} attributes.className
+       * @param {string} attributes.label
+       * @param {string} attributes.title
+       * @param {Object} attributes.callbacks
+       * @param {any} cell
+       * @returns {void}
+       * @experimental
+       */
       $addCustomWidget(row, { className, label, title, callbacks }, cell) {
         this.session.$gutterCustomWidgets[row] = { className, label, title, callbacks };
         this.$hideFoldWidget(row, cell);
@@ -19665,12 +18815,11 @@ var require_gutter = __commonJS({
         }
       }
       /**
-      * Remove a custom widget for a specific row
-      * @param {number} row - The row number where the widget will be removed
-      * @param {any} cell - Gutter cell 
-      * @returns {void}
-      * @experimental
-      */
+       * @param {number} row
+       * @param {any} cell
+       * @returns {void}
+       * @experimental
+       */
       $removeCustomWidget(row, cell) {
         delete this.session.$gutterCustomWidgets[row];
         this.$showFoldWidget(row, cell);
@@ -19686,7 +18835,7 @@ var require_gutter = __commonJS({
         if (!this.element.firstChild)
           return { left: 0, right: 0 };
         var style = dom.computedStyle(
-          /**@type{Element}*/
+          /** @type {Element} */
           this.element.firstChild
         );
         this.$padding = {};
@@ -20808,7 +19957,7 @@ var require_cursor = __commonJS({
           this.$startCssAnimation();
         } else {
           var blink = (
-            /**@this{Cursor}*/
+            /** @this {Cursor} */
             function() {
               this.timeoutId = setTimeout(function() {
                 update(false);
@@ -20906,10 +20055,9 @@ var require_scrollbar = __commonJS({
     var MAX_SCROLL_H = 32768;
     var Scrollbar = class {
       /**
-       * Creates a new `ScrollBar`. `parent` is the owner of the scroll bar.
-       * @param {Element} parent A DOM element
+       * @param {Element} parent
        * @param {string} classSuffix
-       **/
+       */
       constructor(parent, classSuffix) {
         this.element = dom.createElement("div");
         this.element.className = "ace_scrollbar ace_scrollbar" + classSuffix;
@@ -20933,10 +20081,9 @@ var require_scrollbar = __commonJS({
     oop2.implement(Scrollbar.prototype, EventEmitter);
     var VScrollBar = class extends Scrollbar {
       /**
-       * Creates a new `VScrollBar`. `parent` is the owner of the scroll bar.
-       * @param {Element} parent A DOM element
-       * @param {Object} renderer An editor renderer
-       **/
+       * @param {Element} parent
+       * @param {Object} renderer
+       */
       constructor(parent, renderer) {
         super(parent, "-v");
         this.scrollTop = 0;
@@ -20946,10 +20093,9 @@ var require_scrollbar = __commonJS({
         this.$minWidth = 0;
       }
       /**
-       * Emitted when the scroll bar, well, scrolls.
-       * @event scroll
+       * @event
        * @internal
-       **/
+       */
       onScroll() {
         if (!this.skipEvent) {
           this.scrollTop = this.element.scrollTop;
@@ -20961,24 +20107,15 @@ var require_scrollbar = __commonJS({
         }
         this.skipEvent = false;
       }
-      /**
-       * Returns the width of the scroll bar.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getWidth() {
         return Math.max(this.isVisible ? this.width : 0, this.$minWidth || 0);
       }
-      /**
-       * Sets the height of the scroll bar, in pixels.
-       * @param {Number} height The new height
-       **/
+      /** @param {Number} height */
       setHeight(height) {
         this.element.style.height = height + "px";
       }
-      /**
-       * Sets the scroll height of the scroll bar, in pixels.
-       * @param {Number} height The new scroll height
-       **/
+      /** @param {Number} height */
       setScrollHeight(height) {
         this.scrollHeight = height;
         if (height > MAX_SCROLL_H) {
@@ -20989,10 +20126,7 @@ var require_scrollbar = __commonJS({
         }
         this.inner.style.height = height + "px";
       }
-      /**
-       * Sets the scroll top of the scroll bar.
-       * @param {Number} scrollTop The new scroll top
-       **/
+      /** @param {Number} scrollTop */
       setScrollTop(scrollTop) {
         if (this.scrollTop != scrollTop) {
           this.skipEvent = true;
@@ -21004,10 +20138,9 @@ var require_scrollbar = __commonJS({
     VScrollBar.prototype.setInnerHeight = VScrollBar.prototype.setScrollHeight;
     var HScrollBar = class extends Scrollbar {
       /**
-       * Creates a new `HScrollBar`. `parent` is the owner of the scroll bar.
-       * @param {Element} parent A DOM element
-       * @param {Object} renderer An editor renderer
-       **/
+       * @param {Element} parent
+       * @param {Object} renderer
+       */
       constructor(parent, renderer) {
         super(parent, "-h");
         this.scrollLeft = 0;
@@ -21015,10 +20148,9 @@ var require_scrollbar = __commonJS({
         this.inner.style.height = this.element.style.height = (this.height || 15) + 5 + "px";
       }
       /**
-       * Emitted when the scroll bar, well, scrolls.
-       * @event scroll
+       * @event
        * @internal
-       **/
+       */
       onScroll() {
         if (!this.skipEvent) {
           this.scrollLeft = this.element.scrollLeft;
@@ -21026,39 +20158,26 @@ var require_scrollbar = __commonJS({
         }
         this.skipEvent = false;
       }
-      /**
-       * Returns the height of the scroll bar.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getHeight() {
         return this.isVisible ? this.height : 0;
       }
-      /**
-       * Sets the width of the scroll bar, in pixels.
-       * @param {Number} width The new width
-       **/
+      /** @param {Number} width */
       setWidth(width) {
         this.element.style.width = width + "px";
       }
       /**
-       * Sets the inner width of the scroll bar, in pixels.
-       * @param {Number} width The new inner width
-       * @deprecated Use setScrollWidth instead
-       **/
+       * @param {Number} width
+       * @deprecated
+       */
       setInnerWidth(width) {
         this.inner.style.width = width + "px";
       }
-      /**
-       * Sets the scroll width of the scroll bar, in pixels.
-       * @param {Number} width The new scroll width
-       **/
+      /** @param {Number} width */
       setScrollWidth(width) {
         this.inner.style.width = width + "px";
       }
-      /**
-       * Sets the scroll left of the scroll bar.
-       * @param {Number} scrollLeft The new scroll left
-       **/
+      /** @param {Number} scrollLeft */
       setScrollLeft(scrollLeft) {
         if (this.scrollLeft != scrollLeft) {
           this.skipEvent = true;
@@ -21122,10 +20241,9 @@ var require_scrollbar_custom = __commonJS({
 }`, "ace_scrollbar.css", false);
     var ScrollBar = class {
       /**
-       * Creates a new `ScrollBar`. `parent` is the owner of the scroll bar.
-       * @param {Element} parent A DOM element
+       * @param {Element} parent
        * @param {string} classSuffix
-       **/
+       */
       constructor(parent, classSuffix) {
         this.element = dom.createElement("div");
         this.element.className = "ace_sb" + classSuffix;
@@ -21157,10 +20275,7 @@ var require_scrollbar_custom = __commonJS({
         this.inner.style.width = this.element.style.width = (this.width || 15) + "px";
         this.$minWidth = 0;
       }
-      /**
-       * Emitted when the scroll thumb dragged or scrollbar canvas clicked.
-       * @internal
-       **/
+      /** @internal */
       onMouseDown(eType, e) {
         if (eType !== "mousedown") return;
         if (event.getButton(e) !== 0 || e.detail === 2) {
@@ -21195,10 +20310,9 @@ var require_scrollbar_custom = __commonJS({
         return this.height;
       }
       /**
-       * Returns new top for scroll thumb
-       * @param {Number}thumbTop
+       * @param {Number} thumbTop
        * @returns {Number}
-       **/
+       */
       scrollTopFromThumbTop(thumbTop) {
         var scrollTop = thumbTop * (this.pageHeight - this.viewHeight) / (this.slideHeight - this.thumbHeight);
         scrollTop = scrollTop >> 0;
@@ -21209,17 +20323,11 @@ var require_scrollbar_custom = __commonJS({
         }
         return scrollTop;
       }
-      /**
-       * Returns the width of the scroll bar.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getWidth() {
         return Math.max(this.isVisible ? this.width : 0, this.$minWidth || 0);
       }
-      /**
-       * Sets the height of the scroll bar, in pixels.
-       * @param {Number} height The new height
-       **/
+      /** @param {Number} height */
       setHeight(height) {
         this.height = Math.max(0, height);
         this.slideHeight = this.height;
@@ -21227,11 +20335,9 @@ var require_scrollbar_custom = __commonJS({
         this.setScrollHeight(this.pageHeight, true);
       }
       /**
-       * Sets the inner and scroll height of the scroll bar, in pixels.
-       * @param {Number} height The new inner height
-       *
-       * @param {boolean} force Forcely update height
-       **/
+       * @param {Number} height
+       * @param {boolean} force
+       */
       setScrollHeight(height, force) {
         if (this.pageHeight === height && !force) return;
         this.pageHeight = height;
@@ -21245,10 +20351,7 @@ var require_scrollbar_custom = __commonJS({
           this._emit("scroll", { data: this.scrollTop });
         }
       }
-      /**
-       * Sets the scroll top of the scroll bar.
-       * @param {Number} scrollTop The new scroll top
-       **/
+      /** @param {Number} scrollTop */
       setScrollTop(scrollTop) {
         this.scrollTop = scrollTop;
         if (scrollTop < 0) scrollTop = 0;
@@ -21259,10 +20362,9 @@ var require_scrollbar_custom = __commonJS({
     VScrollBar.prototype.setInnerHeight = VScrollBar.prototype.setScrollHeight;
     var HScrollBar = class extends ScrollBar {
       /**
-       * Creates a new `HScrollBar`. `parent` is the owner of the scroll bar.
-       * @param {Element} parent A DOM element
-       * @param {Object} renderer An editor renderer
-       **/
+       * @param {Element} parent
+       * @param {Object} renderer
+       */
       constructor(parent, renderer) {
         super(parent, "-h");
         this.scrollLeft = 0;
@@ -21271,10 +20373,7 @@ var require_scrollbar_custom = __commonJS({
         this.inner.style.height = this.element.style.height = (this.height || 12) + "px";
         this.renderer = renderer;
       }
-      /**
-       * Emitted when the scroll thumb dragged or scrollbar canvas clicked.
-       * @internal
-       **/
+      /** @internal */
       onMouseDown(eType, e) {
         if (eType !== "mousedown") return;
         if (event.getButton(e) !== 0 || e.detail === 2) {
@@ -21305,18 +20404,14 @@ var require_scrollbar_custom = __commonJS({
         this._emit("scroll", { data: this.scrollLeftFromThumbLeft(left) });
         return event.preventDefault(e);
       }
-      /**
-       * Returns the height of the scroll bar.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getHeight() {
         return this.isVisible ? this.height : 0;
       }
       /**
-       * Returns new left for scroll thumb
        * @param {Number} thumbLeft
        * @returns {Number}
-       **/
+       */
       scrollLeftFromThumbLeft(thumbLeft) {
         var scrollLeft = thumbLeft * (this.pageWidth - this.viewWidth) / (this.slideWidth - this.thumbWidth);
         scrollLeft = scrollLeft >> 0;
@@ -21327,10 +20422,7 @@ var require_scrollbar_custom = __commonJS({
         }
         return scrollLeft;
       }
-      /**
-       * Sets the width of the scroll bar, in pixels.
-       * @param {Number} width The new width
-       **/
+      /** @param {Number} width */
       setWidth(width) {
         this.width = Math.max(0, width);
         this.element.style.width = this.width + "px";
@@ -21339,10 +20431,9 @@ var require_scrollbar_custom = __commonJS({
         this.setScrollWidth(this.pageWidth, true);
       }
       /**
-       * Sets the inner and scroll width of the scroll bar, in pixels.
-       * @param {Number} width The new inner width
-       * @param {boolean} force Forcely update width
-       **/
+       * @param {Number} width
+       * @param {boolean} force
+       */
       setScrollWidth(width, force) {
         if (this.pageWidth === width && !force) return;
         this.pageWidth = width;
@@ -21356,10 +20447,7 @@ var require_scrollbar_custom = __commonJS({
           this._emit("scroll", { data: this.scrollLeft });
         }
       }
-      /**
-       * Sets the scroll left of the scroll bar.
-       * @param {Number} scrollLeft The new scroll left
-       **/
+      /** @param {Number} scrollLeft */
       setScrollLeft(scrollLeft) {
         this.scrollLeft = scrollLeft;
         if (scrollLeft < 0) scrollLeft = 0;
@@ -22461,11 +21549,9 @@ var require_virtual_renderer = __commonJS({
     dom.importCssString(editorCss, "ace_editor.css", false);
     var VirtualRenderer = class {
       /**
-           * Constructs a new `VirtualRenderer` within the `container` specified, applying the given `theme`.
-           * @param {HTMLElement | null} [container] The root element of the editor
-           * @param {String} [theme] The starting theme
-      
-           **/
+       * @param {HTMLElement | null} [container]
+       * @param {String} [theme]
+       */
       constructor(container, theme) {
         var _self = this;
         this.container = container || dom.createElement("div");
@@ -22575,11 +21661,7 @@ var require_virtual_renderer = __commonJS({
         this.$updatePrintMargin();
         dom.setStyle(this.scroller.style, "line-height", this.lineHeight + "px");
       }
-      /**
-       *
-       * Associates the renderer with an [[EditSession `EditSession`]].
-       * @param {EditSession} session The session to associate with
-       **/
+      /** @param {EditSession} session */
       setSession(session) {
         if (this.session)
           this.session.doc.off("changeNewLineMode", this.onChangeNewLineMode);
@@ -22601,11 +21683,10 @@ var require_virtual_renderer = __commonJS({
         this.session.doc.on("changeNewLineMode", this.onChangeNewLineMode);
       }
       /**
-       * Triggers a partial update of the text, from the range given by the two parameters.
-       * @param {Number} firstRow The first row to update
-       * @param {Number} lastRow The last row to update
+       * @param {Number} firstRow
+       * @param {Number} lastRow
        * @param {boolean} [force]
-       **/
+       */
       updateLines(firstRow, lastRow, force) {
         if (lastRow === void 0)
           lastRow = Infinity;
@@ -22648,11 +21729,7 @@ var require_virtual_renderer = __commonJS({
       updateText() {
         this.$loop.schedule(this.CHANGE_TEXT);
       }
-      /**
-           * Triggers a full update of all the layers, for all the rows.
-           * @param {Boolean} [force] If `true`, forces the changes through
-      
-           **/
+      /** @param {Boolean} [force] */
       updateFull(force) {
         if (force)
           this.$renderChanges(this.CHANGE_FULL, true);
@@ -22669,13 +21746,12 @@ var require_virtual_renderer = __commonJS({
           this.onResize();
       }
       /**
-       * [Triggers a resize of the editor.]{: #VirtualRenderer.onResize}
-       * @param {Boolean} [force] If `true`, recomputes the size, even if the height and width haven't changed
-       * @param {Number} [gutterWidth] The width of the gutter in pixels
-       * @param {Number} [width] The width of the editor in pixels
-       * @param {Number} [height] The hiehgt of the editor, in pixels
+       * @param {Boolean} [force]
+       * @param {Number} [gutterWidth]
+       * @param {Number} [width]
+       * @param {Number} [height]
        * @internal
-       **/
+       */
       onResize(force, gutterWidth, width, height) {
         if (this.resizing > 2)
           return;
@@ -22717,7 +21793,7 @@ var require_virtual_renderer = __commonJS({
            * @param [width]
            * @param [height]
            * @return {number}
-      
+
            */
       $updateCachedSize(force, gutterWidth, width, height) {
         height -= this.$extraHeight || 0;
@@ -22785,124 +21861,84 @@ var require_virtual_renderer = __commonJS({
         var limit = Math.floor(availableWidth / this.characterWidth);
         return this.session.adjustWrapLimit(limit, this.$showPrintMargin && this.$printMarginColumn);
       }
-      /**
-           * Identifies whether you want to have an animated scroll or not.
-           * @param {Boolean} shouldAnimate Set to `true` to show animated scrolls
-      
-           **/
+      /** @param {Boolean} shouldAnimate */
       setAnimatedScroll(shouldAnimate) {
         this.setOption("animatedScroll", shouldAnimate);
       }
-      /**
-           * Returns whether an animated scroll happens or not.
-           * @returns {Boolean}
-      
-           **/
+      /** @returns {Boolean} */
       getAnimatedScroll() {
         return this.$animatedScroll;
       }
-      /**
-           * Identifies whether you want to show invisible characters or not.
-           * @param {Boolean} showInvisibles Set to `true` to show invisibles
-      
-           **/
+      /** @param {Boolean} showInvisibles */
       setShowInvisibles(showInvisibles) {
         this.setOption("showInvisibles", showInvisibles);
         this.session.$bidiHandler.setShowInvisibles(showInvisibles);
       }
-      /**
-           * Returns whether invisible characters are being shown or not.
-           * @returns {Boolean}
-      
-           **/
+      /** @returns {Boolean} */
       getShowInvisibles() {
         return this.getOption("showInvisibles");
       }
       /**
            * @return {boolean}
-      
+
            */
       getDisplayIndentGuides() {
         return this.getOption("displayIndentGuides");
       }
       /**
            * @param {boolean} display
-      
+
            */
       setDisplayIndentGuides(display) {
         this.setOption("displayIndentGuides", display);
       }
       /**
-      
+
            * @return {boolean}
            */
       getHighlightIndentGuides() {
         return this.getOption("highlightIndentGuides");
       }
       /**
-      
+
            * @param {boolean} highlight
            */
       setHighlightIndentGuides(highlight) {
         this.setOption("highlightIndentGuides", highlight);
       }
-      /**
-           * Identifies whether you want to show the print margin or not.
-           * @param {Boolean} showPrintMargin Set to `true` to show the print margin
-      
-           **/
+      /** @param {Boolean} showPrintMargin */
       setShowPrintMargin(showPrintMargin) {
         this.setOption("showPrintMargin", showPrintMargin);
       }
-      /**
-           * Returns whether the print margin is being shown or not.
-           * @returns {Boolean}
-      
-           **/
+      /** @returns {Boolean} */
       getShowPrintMargin() {
         return this.getOption("showPrintMargin");
       }
-      /**
-           * Identifies whether you want to show the print margin column or not.
-           * @param {number} printMarginColumn Set to `true` to show the print margin column
-      
-           **/
+      /** @param {number} printMarginColumn */
       setPrintMarginColumn(printMarginColumn) {
         this.setOption("printMarginColumn", printMarginColumn);
       }
-      /**
-           * Returns whether the print margin column is being shown or not.
-           * @returns {number}
-      
-           **/
+      /** @returns {number} */
       getPrintMarginColumn() {
         return this.getOption("printMarginColumn");
       }
-      /**
-           * Returns `true` if the gutter is being shown.
-           * @returns {Boolean}
-      
-           **/
+      /** @returns {Boolean} */
       getShowGutter() {
         return this.getOption("showGutter");
       }
-      /**
-           * Identifies whether you want to show the gutter or not.
-           * @param {Boolean} show Set to `true` to show the gutter
-      
-           **/
+      /** @param {Boolean} show */
       setShowGutter(show) {
         return this.setOption("showGutter", show);
       }
       /**
-      
+
            * @returns {boolean}
            */
       getFadeFoldWidgets() {
         return this.getOption("fadeFoldWidgets");
       }
       /**
-      
+
            * @param {boolean} show
            */
       setFadeFoldWidgets(show) {
@@ -22916,7 +21952,7 @@ var require_virtual_renderer = __commonJS({
         this.setOption("highlightGutterLine", shouldHighlight);
       }
       /**
-      
+
            * @returns {boolean}
            */
       getHighlightGutterLine() {
@@ -22939,27 +21975,15 @@ var require_virtual_renderer = __commonJS({
         if (this.session && this.session.$wrap == -1)
           this.adjustWrapLimit();
       }
-      /**
-       *
-       * Returns the root element containing this renderer.
-       * @returns {HTMLElement}
-       **/
+      /** @returns {HTMLElement} */
       getContainerElement() {
         return this.container;
       }
-      /**
-       *
-       * Returns the element that the mouse events are attached to
-       * @returns {HTMLElement}
-       **/
+      /** @returns {HTMLElement} */
       getMouseEventTarget() {
         return this.scroller;
       }
-      /**
-       *
-       * Returns the element to which the hidden text area is added.
-       * @returns {HTMLElement}
-       **/
+      /** @returns {HTMLElement} */
       getTextAreaContainer() {
         return this.container;
       }
@@ -23005,26 +22029,15 @@ var require_virtual_renderer = __commonJS({
         dom.setStyle(style, "width", w + "px");
         dom.translate(this.textarea, Math.min(posLeft, this.$size.scrollerWidth - w), Math.min(posTop, maxTop));
       }
-      /**
-       * [Returns the index of the first visible row.]{: #VirtualRenderer.getFirstVisibleRow}
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getFirstVisibleRow() {
         return this.layerConfig.firstRow;
       }
-      /**
-       *
-       * Returns the index of the first fully visible row. "Fully" here means that the characters in the row are not truncated; that the top and the bottom of the row are on the screen.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getFirstFullyVisibleRow() {
         return this.layerConfig.firstRow + (this.layerConfig.offset === 0 ? 0 : 1);
       }
-      /**
-       *
-       * Returns the index of the last fully visible row. "Fully" here means that the characters in the row are not truncated; that the top and the bottom of the row are on the screen.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getLastFullyVisibleRow() {
         var config3 = this.layerConfig;
         var lastRow = config3.lastRow;
@@ -23033,19 +22046,11 @@ var require_virtual_renderer = __commonJS({
           return lastRow - 1;
         return lastRow;
       }
-      /**
-       *
-       * [Returns the index of the last visible row.]{: #VirtualRenderer.getLastVisibleRow}
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getLastVisibleRow() {
         return this.layerConfig.lastRow;
       }
-      /**
-           * Sets the padding for all the layers.
-           * @param {Number} padding A new padding value (in pixels)
-      
-           **/
+      /** @param {Number} padding */
       setPadding(padding) {
         this.$padding = padding;
         this.$textLayer.setPadding(padding);
@@ -23061,7 +22066,7 @@ var require_virtual_renderer = __commonJS({
            * @param {number} [bottom]
            * @param {number} [left]
            * @param {number} [right]
-      
+
            */
       setScrollMargin(top, bottom, left, right) {
         var sm = this.scrollMargin;
@@ -23081,7 +22086,7 @@ var require_virtual_renderer = __commonJS({
            * @param {number} [bottom]
            * @param {number} [left]
            * @param {number} [right]
-      
+
            */
       setMargin(top, bottom, left, right) {
         var sm = this.margin;
@@ -23094,34 +22099,19 @@ var require_virtual_renderer = __commonJS({
         this.$updateCachedSize(true, this.gutterWidth, this.$size.width, this.$size.height);
         this.updateFull();
       }
-      /**
-           * Returns whether the horizontal scrollbar is set to be always visible.
-           * @returns {Boolean}
-      
-           **/
+      /** @returns {Boolean} */
       getHScrollBarAlwaysVisible() {
         return this.$hScrollBarAlwaysVisible;
       }
-      /**
-           * Identifies whether you want to show the horizontal scrollbar or not.
-           * @param {Boolean} alwaysVisible Set to `true` to make the horizontal scroll bar visible
-      
-           **/
+      /** @param {Boolean} alwaysVisible */
       setHScrollBarAlwaysVisible(alwaysVisible) {
         this.setOption("hScrollBarAlwaysVisible", alwaysVisible);
       }
-      /**
-           * Returns whether the horizontal scrollbar is set to be always visible.
-           * @returns {Boolean}
-      
-           **/
+      /** @returns {Boolean} */
       getVScrollBarAlwaysVisible() {
         return this.$vScrollBarAlwaysVisible;
       }
-      /**
-       * Identifies whether you want to show the horizontal scrollbar or not.
-       * @param {Boolean} alwaysVisible Set to `true` to make the horizontal scroll bar visible
-       **/
+      /** @param {Boolean} alwaysVisible */
       setVScrollBarAlwaysVisible(alwaysVisible) {
         this.setOption("vScrollBarAlwaysVisible", alwaysVisible);
       }
@@ -23153,7 +22143,7 @@ var require_virtual_renderer = __commonJS({
            * @param {number} changes
            * @param {boolean} [force]
            * @returns {number}
-      
+
            */
       $renderChanges(changes, force) {
         if (this.$changes) {
@@ -23303,7 +22293,7 @@ var require_virtual_renderer = __commonJS({
         }
       }
       /**
-      
+
            * @returns {number}
            */
       $computeLayerConfig() {
@@ -23391,7 +22381,7 @@ var require_virtual_renderer = __commonJS({
       }
       /**
            * @returns {boolean | undefined}
-      
+
            */
       $updateLines() {
         if (!this.$changedLines) return;
@@ -23417,7 +22407,7 @@ var require_virtual_renderer = __commonJS({
       /**
            *
            * @returns {number}
-      
+
            */
       $getLongestLine() {
         var charCount = this.session.getScreenWidth();
@@ -23435,35 +22425,20 @@ var require_virtual_renderer = __commonJS({
         this.$markerBack.setMarkers(this.session.getMarkers());
         this.$loop.schedule(this.CHANGE_MARKER_BACK);
       }
-      /**
-       *
-       * Deprecated; (moved to [[EditSession]])
-       * @deprecated
-       **/
+      /** @deprecated */
       addGutterDecoration(row, className) {
         this.$gutterLayer.addGutterDecoration(row, className);
       }
-      /**
-       * Deprecated; (moved to [[EditSession]])
-       * @deprecated
-       **/
+      /** @deprecated */
       removeGutterDecoration(row, className) {
         this.$gutterLayer.removeGutterDecoration(row, className);
       }
-      /**
-       *
-       * Redraw breakpoints.
-       * @param {any} [rows]
-       */
+      /** @param {any} [rows] */
       updateBreakpoints(rows) {
         this._rows = rows;
         this.$loop.schedule(this.CHANGE_GUTTER);
       }
-      /**
-       * Sets annotations for the gutter.
-       * @param {import("../ace-internal").Ace.Annotation[]} annotations An array containing annotations
-       *
-       **/
+      /** @param {import("../ace-internal").Ace.Annotation[]} annotations */
       setAnnotations(annotations) {
         this.$gutterLayer.setAnnotations(annotations);
         this.$loop.schedule(this.CHANGE_GUTTER);
@@ -23488,8 +22463,6 @@ var require_virtual_renderer = __commonJS({
         this.scrollCursorIntoView(lead, offset);
       }
       /**
-       *
-       * Scrolls the cursor into the first visibile area of the editor
        * @param {Point} [cursor]
        * @param {number} [offset]
        * @param {{ top?: any; bottom?: any; }} [$viewMargin]
@@ -23535,41 +22508,31 @@ var require_virtual_renderer = __commonJS({
         }
       }
       /**
-       * {:EditSession.getScrollTop}
-       * @related EditSession.getScrollTop
+       * @related
        * @returns {Number}
-       **/
+       */
       getScrollTop() {
         return this.session.getScrollTop();
       }
       /**
-       * {:EditSession.getScrollLeft}
-       * @related EditSession.getScrollLeft
+       * @related
        * @returns {Number}
-       **/
+       */
       getScrollLeft() {
         return this.session.getScrollLeft();
       }
-      /**
-       * Returns the first visible row, regardless of whether it's fully visible or not.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getScrollTopRow() {
         return this.scrollTop / this.lineHeight;
       }
-      /**
-       * Returns the last visible row, regardless of whether it's fully visible or not.
-       * @returns {Number}
-       **/
+      /** @returns {Number} */
       getScrollBottomRow() {
         return Math.max(0, Math.floor((this.scrollTop + this.$size.scrollerHeight) / this.lineHeight) - 1);
       }
       /**
-       * Gracefully scrolls from the top of the editor to the row indicated.
-       * @param {Number} row A row id
-       *
-       * @related EditSession.setScrollTop
-       **/
+       * @param {Number} row
+       * @related
+       */
       scrollToRow(row) {
         this.session.setScrollTop(row * this.lineHeight);
       }
@@ -23606,13 +22569,11 @@ var require_virtual_renderer = __commonJS({
         return steps;
       }
       /**
-           * Gracefully scrolls the editor to the row indicated.
-           * @param {Number} line A line number
-           * @param {Boolean} center If `true`, centers the editor the to indicated line
-           * @param {Boolean} animate If `true` animates scrolling
-           * @param {() => void} [callback] Function to be called after the animation has finished
-      
-           **/
+       * @param {Number} line
+       * @param {Boolean} center
+       * @param {Boolean} animate
+       * @param {() => void} [callback]
+       */
       scrollToLine(line, center, animate, callback) {
         var pos = this.$cursorLayer.getPixelPosition({ row: line, column: 0 });
         var offset = pos.top;
@@ -23627,7 +22588,7 @@ var require_virtual_renderer = __commonJS({
            *
            * @param fromValue
            * @param [callback]
-      
+
            */
       animateScrolling(fromValue, callback) {
         var toValue = this.scrollTop;
@@ -23674,50 +22635,40 @@ var require_virtual_renderer = __commonJS({
           }
         }, 10);
       }
-      /**
-       * Scrolls the editor to the y pixel indicated.
-       * @param {Number} scrollTop The position to scroll to
-       **/
+      /** @param {Number} scrollTop */
       scrollToY(scrollTop) {
         if (this.scrollTop !== scrollTop) {
           this.$loop.schedule(this.CHANGE_SCROLL);
           this.scrollTop = scrollTop;
         }
       }
-      /**
-       * Scrolls the editor across the x-axis to the pixel indicated.
-       * @param {Number} scrollLeft The position to scroll to
-       **/
+      /** @param {Number} scrollLeft */
       scrollToX(scrollLeft) {
         if (this.scrollLeft !== scrollLeft)
           this.scrollLeft = scrollLeft;
         this.$loop.schedule(this.CHANGE_H_SCROLL);
       }
       /**
-       * Scrolls the editor across both x- and y-axes.
-       * @param {Number} x The x value to scroll to
-       * @param {Number} y The y value to scroll to
-       **/
+       * @param {Number} x
+       * @param {Number} y
+       */
       scrollTo(x, y) {
         this.session.setScrollTop(y);
         this.session.setScrollLeft(x);
       }
       /**
-       * Scrolls the editor across both x- and y-axes.
-       * @param {Number} deltaX The x value to scroll by
-       * @param {Number} deltaY The y value to scroll by
-       **/
+       * @param {Number} deltaX
+       * @param {Number} deltaY
+       */
       scrollBy(deltaX, deltaY) {
         deltaY && this.session.setScrollTop(this.session.getScrollTop() + deltaY);
         deltaX && this.session.setScrollLeft(this.session.getScrollLeft() + deltaX);
       }
       /**
-       * Returns `true` if you can still scroll by either parameter; in other words, you haven't reached the end of the file or line.
-       * @param {Number} deltaX The x value to scroll by
-       * @param {Number} deltaY The y value to scroll by
-       *
+       * @param {Number} deltaX
+       * @param {Number} deltaY
        * @returns {Boolean}
-       **/
+       */
       isScrollableBy(deltaX, deltaY) {
         if (deltaY < 0 && this.session.getScrollTop() >= 1 - this.scrollMargin.top)
           return true;
@@ -23733,7 +22684,7 @@ var require_virtual_renderer = __commonJS({
            * @param {number} x
            * @param {number} y
            * @returns {import("../ace-internal").Ace.ScreenCoordinates}
-      
+
            */
       pixelToScreenCoordinates(x, y) {
         var canvasPos;
@@ -23756,7 +22707,7 @@ var require_virtual_renderer = __commonJS({
            * @param {number} x
            * @param {number} y
            * @returns {Point}
-      
+
            */
       screenToTextCoordinates(x, y) {
         var canvasPos;
@@ -23775,12 +22726,10 @@ var require_virtual_renderer = __commonJS({
         return this.session.screenToDocumentPosition(row, Math.max(col, 0), offsetX);
       }
       /**
-       * Returns an object containing the `pageX` and `pageY` coordinates of the document position.
-       * @param {Number} row The document row position
-       * @param {Number} column The document column position
-       *
+       * @param {Number} row
+       * @param {Number} column
        * @returns {{ pageX: number, pageY: number}}
-       **/
+       */
       textToScreenCoordinates(row, column) {
         var canvasPos = this.scroller.getBoundingClientRect();
         var pos = this.session.documentToScreenPosition(row, column);
@@ -23799,7 +22748,7 @@ var require_virtual_renderer = __commonJS({
       }
       /**
            * @param {Object} composition
-      
+
            **/
       showComposition(composition) {
         this.$composition = composition;
@@ -23817,12 +22766,7 @@ var require_virtual_renderer = __commonJS({
           composition.markerId = this.session.addMarker(composition.markerRange, "ace_composition_marker", "text");
         }
       }
-      /**
-           * @param {String} text A string of text to use
-           *
-           * Sets the inner text of the current composition to `text`.
-      
-           **/
+      /** @param {String} text */
       setCompositionText(text) {
         var cursor = this.session.selection.cursor;
         this.addToken(text, "composition_placeholder", cursor.row, cursor.column);
@@ -23899,9 +22843,6 @@ var require_virtual_renderer = __commonJS({
         }
       }
       /**
-       * Calculates and organizes text into wrapped chunks. Initially splits the text by newline characters,
-       * then further processes each line based on display tokens and session settings for tab size and wrapping limits.
-       *
        * @param {string} text
        * @param {Point} position
        * @return {{text: string, wrapped: boolean}[]}
@@ -23994,11 +22935,9 @@ var require_virtual_renderer = __commonJS({
         this.updateLines(row, row);
       }
       /**
-           * [Sets a new theme for the editor. `theme` should exist, and be a directory path, like `ace/theme/textmate`.]{: #VirtualRenderer.setTheme}
-           * @param {String | Theme} [theme] The path to a theme
-           * @param {() => void} [cb] optional callback
-      
-           **/
+       * @param {String | Theme} [theme]
+       * @param {() => void} [cb]
+       */
       setTheme(theme, cb) {
         var _self = this;
         this.$themeId = theme;
@@ -24050,26 +22989,18 @@ var require_virtual_renderer = __commonJS({
           }
         }
       }
-      /**
-       * [Returns the path of the current theme.]{: #VirtualRenderer.getTheme}
-       * @returns {String}
-       **/
+      /** @returns {String} */
       getTheme() {
         return this.$themeId;
       }
       /**
-       * [Adds a new class, `style`, to the editor.]{: #VirtualRenderer.setStyle}
-       * @param {String} style A class name
-       * @param {boolean}[include]
-       **/
+       * @param {String} style
+       * @param {boolean} [include]
+       */
       setStyle(style, include) {
         dom.setCssClass(this.container, style, include !== false);
       }
-      /**
-       * [Removes the class `style` from the editor.]{: #VirtualRenderer.unsetStyle}
-       * @param {String} style A class name
-       *
-       **/
+      /** @param {String} style */
       unsetStyle(style) {
         dom.removeCssClass(this.container, style);
       }
@@ -24079,9 +23010,7 @@ var require_virtual_renderer = __commonJS({
       setCursorStyle(style) {
         dom.setStyle(this.scroller.style, "cursor", style);
       }
-      /**
-       * @param {String} cursorStyle A css cursor style
-       **/
+      /** @param {String} cursorStyle */
       setMouseCursor(cursorStyle) {
         dom.setStyle(this.scroller.style, "cursor", cursorStyle);
       }
@@ -24172,7 +23101,7 @@ var require_virtual_renderer = __commonJS({
       useResizeObserver: {
         /**
          * @param value
-         * @this{VirtualRenderer}
+         * @this {VirtualRenderer}
          */
         set: function(value) {
           if (!value && this.$resizeObserver) {
@@ -24207,7 +23136,7 @@ var require_virtual_renderer = __commonJS({
       printMargin: {
         /**
          * @param val
-         * @this{VirtualRenderer}
+         * @this {VirtualRenderer}
          */
         set: function(val) {
           if (typeof val == "number")
@@ -24313,7 +23242,7 @@ var require_virtual_renderer = __commonJS({
       minLines: {
         /**
          * @param val
-         * @this{VirtualRenderer}
+         * @this {VirtualRenderer}
          */
         set: function(val) {
           if (!(this.$minLines < 562949953421311))
@@ -24330,7 +23259,7 @@ var require_virtual_renderer = __commonJS({
       scrollPastEnd: {
         /**
          * @param val
-         * @this{VirtualRenderer}
+         * @this {VirtualRenderer}
          */
         set: function(val) {
           val = +val || 0;
@@ -24462,9 +23391,6 @@ var require_placeholder = __commonJS({
         }
       }
       /**
-       * PlaceHolder@onUpdate(e)
-       *
-       * Emitted when the place holder updates.
        * @param {import("../ace-internal").Ace.Delta} delta
        * @internal
        */
@@ -24522,9 +23448,6 @@ var require_placeholder = __commonJS({
           updateMarker(this.others[i], this.othersClass);
       }
       /**
-       * PlaceHolder@onCursorChange(e)
-       *
-       * Emitted when the cursor changes.
        * @param {any} [event]
        * @internal
        */

@@ -17,11 +17,7 @@ export class FSMProductCatalogKanbanController extends ProductCatalogKanbanContr
         this.backToTaskDebounced = useDebounced(this.backToTask.bind(this), 500);
     }
 
-    /**
-     * @override
-     * overriding useless method to prevent wrong orm call
-     *
-     * **/
+    /** @override */
     onWillStart() {}
 
     async backToTask() {

@@ -4,13 +4,6 @@ import { useAutoresize } from "@web/core/utils/dom/autoresize";
 const CELL_BOUNDARY = new Set(["TD", "TH", "TR", "TABLE", "FORM", "BODY", "HTML"]);
 
 /**
- * Autoresize for the product-and-label cell.
- *
- * The cell of that widget holds more than the input or textarea being resized:
- * it also carries a node with the product name when that data is available, so
- * the height `useAutoresize` puts on the direct parent is not enough -- the
- * chain up to the cell has to grow by the same amount or the text overflows.
- *
  * @param {Ref} ref
  * @param {{ targetParentName?: string }} [options]
  */

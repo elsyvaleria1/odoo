@@ -82,11 +82,7 @@ defineActions([
     },
 ]);
 
-/**
- * What the action manager held after each of its mutations: the view on
- * screen, and whether a skeleton stood in for one.
- * @returns {string[]}
- */
+/** @returns {string[]} */
 function recordActionManagerStates() {
     const manager = /** @type {HTMLElement} */ (
         document.querySelector(".o_action_manager")
@@ -111,11 +107,7 @@ function recordActionManagerStates() {
     return states;
 }
 
-/**
- * The loading threshold counts from the dispatch, which follows the action's
- * own load: the clock is only advanced once that has happened.
- * @returns {Promise<void>}
- */
+/** @returns {Promise<void>} */
 function nextNavigationDispatched() {
     const { bus } = getService("action").env;
     return new Promise((resolve) => {

@@ -83,17 +83,14 @@ export default class MpsLineComponent extends Component {
     }
 
     /**
-     * Handles the click on replenish button. It will call action_replenish with
-     * all the Ids present in the view.
      * @private
-     * @param {Integer} id mrp.production.schedule Id.
+     * @param {Integer} id
      */
     _onClickReplenish(id) {
         this.model._actionReplenish([id]);
     }
 
     /**
-     * Handles the click on product name. It will open the product form view
      * @private
      * @param {MouseEvent} ev
      */
@@ -108,13 +105,9 @@ export default class MpsLineComponent extends Component {
     }
 
     /**
-     * Handles the click on `min..max` or 'targeted stock' Event. It will open
-     * a form view in order to edit a production schedule and update the
-     * template on save.
-     *
      * @private
      * @param {MouseEvent} ev
-     * @param {Integer} id mrp.production.schedule Id.
+     * @param {Integer} id
      */
     _onClickEdit(ev, id) {
         this.model._editProduct(id);
@@ -144,10 +137,9 @@ export default class MpsLineComponent extends Component {
     }
 
     /**
-     * Handles the change on a forecast cell.
      * @private
      * @param {Event} ev
-     * @param {Object} productionScheduleId mrp.production.schedule Id.
+     * @param {Object} productionScheduleId
      */
     _onChangeForecast(ev, productionScheduleId) {
         const dateIndex = parseInt(ev.target.dataset.date_index);
@@ -180,10 +172,9 @@ export default class MpsLineComponent extends Component {
     }
 
     /**
-     * Handles the quantity To Replenish change on a forecast cell.
      * @private
      * @param {Event} ev
-     * @param {Object} productionScheduleId mrp.production.schedule Id.
+     * @param {Object} productionScheduleId
      */
     _onChangeToReplenish(ev, productionScheduleId) {
         const dateIndex = parseInt(ev.target.dataset.date_index);

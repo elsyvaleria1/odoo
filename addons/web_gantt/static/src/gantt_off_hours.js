@@ -8,12 +8,9 @@ import { zipWith } from "@web/core/utils/collections/arrays";
  */
 
 /**
- * Which slots an ordered, pairwise-disjoint list of unavailabilities covers
- * entirely. Both the cell colours and the foldable columns are this scan.
- *
- * @param {Slot[]} slots -- ordered
- * @param {Slot[]} [unavailabilities] -- ordered, disjoint
- * @returns {(0 | 1)[]} one flag per slot
+ * @param {Slot[]} slots
+ * @param {Slot[]} [unavailabilities]
+ * @returns {(0 | 1)[]}
  */
 export function coveredSlots(slots, unavailabilities = []) {
     const covered = new Array(slots.length).fill(0);
@@ -37,7 +34,7 @@ export function coveredSlots(slots, unavailabilities = []) {
 }
 
 /**
- * @param {(0 | 1)[]} foldedColumns -- one flag per total-grid column
+ * @param {(0 | 1)[]} foldedColumns
  * @returns {{ folded: boolean, length: number }[]}
  */
 export function foldedRuns(foldedColumns) {
@@ -121,17 +118,13 @@ export function computeFoldableColumns({ columns, rows, pills, cellPart, unit })
 }
 
 /**
- * The folded grid: each run of folded columns collapses to one grid column,
- * with the sub-columns of the total grid mapped onto it.
- *
  * @param {Object} params
  * @param {(0 | 1)[]} params.foldableColumns
- * @param {(0 | 1)[]} [params.previousFoldedColumns] -- the user's fold state, if any
+ * @param {(0 | 1)[]} [params.previousFoldedColumns]
  * @param {number} params.columnCount
  * @param {number} params.cellPart
  * @param {string} params.unit
  * @returns {null | { foldedGridColumnSpans: number[], mappingTotalGridToFoldedGridSubColumns: Map<number, number>, foldedColumns: (0 | 1)[], mappingFoldedGridToTotalGridColumnIndex: Map<number, number> }}
- *   null when nothing is folded any more
  */
 export function computeFoldedGrid({
     foldableColumns,

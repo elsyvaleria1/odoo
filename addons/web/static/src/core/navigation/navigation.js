@@ -183,16 +183,11 @@ export class Navigator {
     /** @type {Array<NavigationItem>} */
     items = [];
 
-    /**
-     * Bound by `useNavigation`: points the navigator's mutation observer at
-     * a container, or at nothing. A bare Navigator watches no DOM.
-     *
-     * @type {(containerEl: HTMLElement | null) => void}
-     */
+    /** @type {(containerEl: HTMLElement | null) => void} */
     observe = () => {};
 
-    /** @private @type {Array<() => void>} */ _hotkeyRemoves = [];
-    /** @private @type {import("@web/core/hotkeys/hotkey_service").HotkeyService} */ _hotkeyService;
+    /** @private */ _hotkeyRemoves = [];
+    /** @private */ _hotkeyService;
 
     /**
      * @param {NavigationOptions} options
@@ -723,15 +718,7 @@ export function useNavigation(containerRef, options = {}) {
         navigator._checkFocus(/** @type {any} */ (target));
     /** @type {HTMLElement | null} */
     let observedEl = null;
-    /**
-     * Watches one container at a time: the effect below hands it the ref's
-     * element, and a component whose items live outside its own render
-     * (a dropdown menu in an overlay) hands it that element when it opens
-     * and null when it closes. Same element twice is a no-op, so the two
-     * routes never stack a second observer on one menu.
-     *
-     * @param {HTMLElement | null} containerEl
-     */
+    /** @param {HTMLElement | null} containerEl */
     navigator.observe = (containerEl) => {
         if (containerEl === observedEl) {
             return;

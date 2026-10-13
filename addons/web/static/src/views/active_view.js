@@ -41,7 +41,7 @@ export class ActiveViews {
 
     /**
      * @param {ActiveView} view
-     * @returns {boolean} whether that view is still mounted
+     * @returns {boolean}
      */
     has(view) {
         return this.entries.includes(/** @type {ActiveViewEntry} */ (view));

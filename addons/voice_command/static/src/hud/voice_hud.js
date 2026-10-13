@@ -48,11 +48,7 @@ export class VoiceHud extends Component {
         return _t("Understood “%(as)s” (heard “%(heard)s”)", { as, heard });
     }
 
-    /**
-     * What the user can say here, taken from what is on screen.
-     *
-     * @returns {string[]}
-     */
+    /** @returns {string[]} */
     get examples() {
         const vocabulary = this.voice.vocabulary();
         const view = vocabulary.view;

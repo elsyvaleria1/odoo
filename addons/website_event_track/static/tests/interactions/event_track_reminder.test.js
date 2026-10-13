@@ -20,7 +20,7 @@ const bell = `
         </button>
     </form>`;
 
-/** @param {string} name @param {Object} detail */
+/** @param {string} name */
 function answer(name, detail) {
     document.dispatchEvent(new CustomEvent(name, { detail }));
 }

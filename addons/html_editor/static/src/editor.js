@@ -116,7 +116,7 @@ export class Editor {
         this.editable = null;
         /** @type { Document } */
         this.document = null;
-        /** @ts-ignore  @type { SharedMethods } **/
+        /** @ts-ignore */
         this.shared = {};
     }
 

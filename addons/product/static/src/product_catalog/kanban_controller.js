@@ -66,20 +66,7 @@ export class ProductCatalogKanbanController extends KanbanController {
         }
     }
 
-    /**
-     * Settle every card's debounced quantity write before the action goes away.
-     *
-     * Hooked here rather than on the "Back to Order" button because the button
-     * is not the only way out: a breadcrumb, a menu, or any other action all
-     * leave through `confirmLeave`, which awaits this. The order form is
-     * reloaded by whatever comes next, so the write has to have landed first.
-     *
-     * `allSettled`: a card whose write failed has already reported it, and one
-     * failure must not strand the user in the catalog. Returning anything but
-     * `false` lets the departure proceed.
-     *
-     * @returns {Promise<void>}
-     */
+    /** @returns {Promise<void>} */
     async beforeLeave() {
         await Promise.allSettled(
             [...this.pendingLineUpdates].map((record) => record.flushPendingUpdate()),

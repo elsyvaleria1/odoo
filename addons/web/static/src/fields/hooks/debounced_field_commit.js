@@ -30,9 +30,8 @@ export function useDebouncedFieldCommit(commit, delay) {
 }
 
 /**
- * @param {import("@odoo/owl").EventBus} bus the record's model bus
- * @param {(ev: CustomEvent, urgent: boolean) => void} onFlush pushes its promise
- *  into ev.detail.proms when it has one
+ * @param {import("@odoo/owl").EventBus} bus
+ * @param {(ev: CustomEvent, urgent: boolean) => void} onFlush
  */
 export function useFieldFlush(bus, onFlush) {
     useBus(bus, ModelEvent.NEED_LOCAL_CHANGES, (ev) => onFlush(ev, false));

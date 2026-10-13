@@ -47,8 +47,6 @@ export class StreamPostCommentsReply extends Component {
     }
 
     /**
-     * Method called when the user presses 'Enter' after writing a comment in the textarea.
-     *
      * @param {KeyboardEvent} event
      * @private
      */
@@ -128,10 +126,7 @@ export class StreamPostCommentsReply extends Component {
     }
 
     /**
-     * This method adds the emoji just after the user selection. After it's inserted it
-     * gives back the focus to the textarea just after the added emoji.
-     *
-     * @param {string} str: emoji
+     * @param {string} str:
      * @private
      */
     _onAddEmoji(str) {
@@ -148,11 +143,7 @@ export class StreamPostCommentsReply extends Component {
         );
     }
 
-    /**
-     * Triggers image selection (file system browse).
-     *
-     * @param {MouseEvent} event
-     */
+    /** @param {MouseEvent} event */
     _onAddImage(event) {
         event.currentTarget
             .closest(".o_social_write_reply")
@@ -161,11 +152,6 @@ export class StreamPostCommentsReply extends Component {
     }
 
     /**
-     * When the user selects a file to attach to the comment,
-     * a preview of the image is shown below the comment.
-     *
-     * This is very similar to what Facebook does when commenting a post.
-     *
      * @param {Object} file
      * @param {String} file.data
      * @param {String} file.type

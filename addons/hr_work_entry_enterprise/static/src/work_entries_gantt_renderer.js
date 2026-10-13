@@ -55,14 +55,7 @@ export class WorkEntriesGanttRenderer extends HrGanttRenderer {
     }
 
     /**
-     * Not an override. `GanttRenderer.getDurationStr` takes a *record* and
-     * answers with the parenthesised suffix a pill label carries; this takes a
-     * number of hours and answers a bare duration. Sharing the name shadowed
-     * the base method with an incompatible contract, and the only reason that
-     * never broke was that this class also replaces `getDisplayName` outright,
-     * so the base never calls it.
-     *
-     * @param {number} duration in hours
+     * @param {number} duration
      * @returns {string}
      */
     formatDurationHours(duration) {

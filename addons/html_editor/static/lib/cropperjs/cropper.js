@@ -177,36 +177,32 @@
 
   var isNaN = Number.isNaN || WINDOW.isNaN;
   /**
-   * Check if the given value is a number.
-   * @param {*} value - The value to check.
-   * @returns {boolean} Returns `true` if the given value is a number, else `false`.
+   * @param {*} value
+   * @returns {boolean}
    */
 
   function isNumber(value) {
     return typeof value === 'number' && !isNaN(value);
   }
   /**
-   * Check if the given value is a positive number.
-   * @param {*} value - The value to check.
-   * @returns {boolean} Returns `true` if the given value is a positive number, else `false`.
+   * @param {*} value
+   * @returns {boolean}
    */
 
   var isPositiveNumber = function isPositiveNumber(value) {
     return value > 0 && value < Infinity;
   };
   /**
-   * Check if the given value is undefined.
-   * @param {*} value - The value to check.
-   * @returns {boolean} Returns `true` if the given value is undefined, else `false`.
+   * @param {*} value
+   * @returns {boolean}
    */
 
   function isUndefined(value) {
     return typeof value === 'undefined';
   }
   /**
-   * Check if the given value is an object.
-   * @param {*} value - The value to check.
-   * @returns {boolean} Returns `true` if the given value is an object, else `false`.
+   * @param {*} value
+   * @returns {boolean}
    */
 
   function isObject(value) {
@@ -214,9 +210,8 @@
   }
   var hasOwnProperty = Object.prototype.hasOwnProperty;
   /**
-   * Check if the given value is a plain object.
-   * @param {*} value - The value to check.
-   * @returns {boolean} Returns `true` if the given value is a plain object, else `false`.
+   * @param {*} value
+   * @returns {boolean}
    */
 
   function isPlainObject(value) {
@@ -233,9 +228,8 @@
     }
   }
   /**
-   * Check if the given value is a function.
-   * @param {*} value - The value to check.
-   * @returns {boolean} Returns `true` if the given value is a function, else `false`.
+   * @param {*} value
+   * @returns {boolean}
    */
 
   function isFunction(value) {
@@ -243,19 +237,17 @@
   }
   var slice = Array.prototype.slice;
   /**
-   * Convert array-like or iterable object to an array.
-   * @param {*} value - The value to convert.
-   * @returns {Array} Returns a new array.
+   * @param {*} value
+   * @returns {Array}
    */
 
   function toArray(value) {
     return Array.from ? Array.from(value) : slice.call(value);
   }
   /**
-   * Iterate the given data.
-   * @param {*} data - The data to iterate.
-   * @param {Function} callback - The process function for each element.
-   * @returns {*} The original data.
+   * @param {*} data
+   * @param {Function} callback
+   * @returns {*}
    */
 
   function forEach(data, callback) {
@@ -275,10 +267,9 @@
     return data;
   }
   /**
-   * Extend the given object.
-   * @param {*} target - The target object to extend.
-   * @param {*} args - The rest objects for merging to the target object.
-   * @returns {Object} The extended object.
+   * @param {*} target
+   * @param {*} args
+   * @returns {Object}
    */
 
   var assign = Object.assign || function assign(target) {
@@ -300,11 +291,9 @@
   };
   var REGEXP_DECIMALS = /\.\d*(?:0|9){12}\d*$/;
   /**
-   * Normalize decimal number.
-   * Check out {@link http://0.30000000000000004.com/}
-   * @param {number} value - The value to normalize.
-   * @param {number} [times=100000000000] - The times for normalizing.
-   * @returns {number} Returns the normalized number.
+   * @param {number} value
+   * @param {number} [times=100000000000]
+   * @returns {number}
    */
 
   function normalizeDecimalNumber(value) {
@@ -313,9 +302,8 @@
   }
   var REGEXP_SUFFIX = /^width|height|left|top|marginLeft|marginTop$/;
   /**
-   * Apply styles to the given element.
-   * @param {Element} element - The target element.
-   * @param {Object} styles - The styles for applying.
+   * @param {Element} element
+   * @param {Object} styles
    */
 
   function setStyle(element, styles) {
@@ -329,19 +317,17 @@
     });
   }
   /**
-   * Check if the given element has a special class.
-   * @param {Element} element - The element to check.
-   * @param {string} value - The class to search.
-   * @returns {boolean} Returns `true` if the special class was found.
+   * @param {Element} element
+   * @param {string} value
+   * @returns {boolean}
    */
 
   function hasClass(element, value) {
     return element.classList ? element.classList.contains(value) : element.className.indexOf(value) > -1;
   }
   /**
-   * Add classes to the given element.
-   * @param {Element} element - The target element.
-   * @param {string} value - The classes to be added.
+   * @param {Element} element
+   * @param {string} value
    */
 
   function addClass(element, value) {
@@ -370,9 +356,8 @@
     }
   }
   /**
-   * Remove classes from the given element.
-   * @param {Element} element - The target element.
-   * @param {string} value - The classes to be removed.
+   * @param {Element} element
+   * @param {string} value
    */
 
   function removeClass(element, value) {
@@ -397,10 +382,9 @@
     }
   }
   /**
-   * Add or remove classes from the given element.
-   * @param {Element} element - The target element.
-   * @param {string} value - The classes to be toggled.
-   * @param {boolean} added - Add only.
+   * @param {Element} element
+   * @param {string} value
+   * @param {boolean} added
    */
 
   function toggleClass(element, value, added) {
@@ -424,19 +408,17 @@
   }
   var REGEXP_CAMEL_CASE = /([a-z\d])([A-Z])/g;
   /**
-   * Transform the given string from camelCase to kebab-case
-   * @param {string} value - The value to transform.
-   * @returns {string} The transformed value.
+   * @param {string} value
+   * @returns {string}
    */
 
   function toParamCase(value) {
     return value.replace(REGEXP_CAMEL_CASE, '$1-$2').toLowerCase();
   }
   /**
-   * Get data from the given element.
-   * @param {Element} element - The target element.
-   * @param {string} name - The data key to get.
-   * @returns {string} The data value.
+   * @param {Element} element
+   * @param {string} name
+   * @returns {string}
    */
 
   function getData(element, name) {
@@ -451,10 +433,9 @@
     return element.getAttribute("data-".concat(toParamCase(name)));
   }
   /**
-   * Set data to the given element.
-   * @param {Element} element - The target element.
-   * @param {string} name - The data key to set.
-   * @param {string} data - The data value.
+   * @param {Element} element
+   * @param {string} name
+   * @param {string} data
    */
 
   function setData(element, name, data) {
@@ -467,9 +448,8 @@
     }
   }
   /**
-   * Remove data from the given element.
-   * @param {Element} element - The target element.
-   * @param {string} name - The data key to remove.
+   * @param {Element} element
+   * @param {string} name
    */
 
   function removeData(element, name) {
@@ -505,11 +485,7 @@
           return once;
         },
 
-        /**
-         * This setter can fix a `TypeError` in strict mode
-         * {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Getter_only}
-         * @param {boolean} value - The value to set
-         */
+        /** @param {boolean} value */
         set: function set(value) {
           once = value;
         }
@@ -521,11 +497,10 @@
     return supported;
   }();
   /**
-   * Remove event listener from the target element.
-   * @param {Element} element - The event target.
-   * @param {string} type - The event type(s).
-   * @param {Function} listener - The event listener.
-   * @param {Object} options - The event options.
+   * @param {Element} element
+   * @param {string} type
+   * @param {Function} listener
+   * @param {Object} options
    */
 
 
@@ -554,11 +529,10 @@
     });
   }
   /**
-   * Add event listener to the target element.
-   * @param {Element} element - The event target.
-   * @param {string} type - The event type(s).
-   * @param {Function} listener - The event listener.
-   * @param {Object} options - The event options.
+   * @param {Element} element
+   * @param {string} type
+   * @param {Function} listener
+   * @param {Object} options
    */
 
   function addListener(element, type, listener) {
@@ -596,11 +570,10 @@
     });
   }
   /**
-   * Dispatch event on the target element.
-   * @param {Element} element - The event target.
-   * @param {string} type - The event type(s).
-   * @param {Object} data - The additional event data.
-   * @returns {boolean} Indicate if the event is default prevented or not.
+   * @param {Element} element
+   * @param {string} type
+   * @param {Object} data
+   * @returns {boolean}
    */
 
   function dispatchEvent(element, type, data) {
@@ -620,9 +593,8 @@
     return element.dispatchEvent(event);
   }
   /**
-   * Get the offset base on the document.
-   * @param {Element} element - The target element.
-   * @returns {Object} The offset data.
+   * @param {Element} element
+   * @returns {Object}
    */
 
   function getOffset(element) {
@@ -635,9 +607,8 @@
   var location = WINDOW.location;
   var REGEXP_ORIGINS = /^(\w+:)\/\/([^:/?#]*):?(\d*)/i;
   /**
-   * Check if the given URL is a cross origin URL.
-   * @param {string} url - The target URL.
-   * @returns {boolean} Returns `true` if the given URL is a cross origin URL, else `false`.
+   * @param {string} url
+   * @returns {boolean}
    */
 
   function isCrossOriginURL(url) {
@@ -645,9 +616,8 @@
     return parts !== null && (parts[1] !== location.protocol || parts[2] !== location.hostname || parts[3] !== location.port);
   }
   /**
-   * Add timestamp to the given URL.
-   * @param {string} url - The target URL.
-   * @returns {string} The result URL.
+   * @param {string} url
+   * @returns {string}
    */
 
   function addTimestamp(url) {
@@ -655,9 +625,8 @@
     return url + (url.indexOf('?') === -1 ? '?' : '&') + timestamp;
   }
   /**
-   * Get transforms base on the given object.
-   * @param {Object} obj - The target object.
-   * @returns {string} A string contains transform values.
+   * @param {Object} obj
+   * @returns {string}
    */
 
   function getTransforms(_ref) {
@@ -697,9 +666,8 @@
     };
   }
   /**
-   * Get the max ratio of a group of pointers.
-   * @param {string} pointers - The target pointers.
-   * @returns {number} The result ratio.
+   * @param {string} pointers
+   * @returns {number}
    */
 
   function getMaxZoomRatio(pointers) {
@@ -724,10 +692,9 @@
     return ratios[0];
   }
   /**
-   * Get a pointer from an event object.
-   * @param {Object} event - The target event object.
-   * @param {boolean} endOnly - Indicates if only returns the end point coordinate or not.
-   * @returns {Object} The result pointer contains start and/or end point coordinates.
+   * @param {Object} event
+   * @param {boolean} endOnly
+   * @returns {Object}
    */
 
   function getPointer(_ref2, endOnly) {
@@ -743,9 +710,8 @@
     }, end);
   }
   /**
-   * Get the center point coordinate of a group of pointers.
-   * @param {Object} pointers - The target pointers.
-   * @returns {Object} The center point coordinate.
+   * @param {Object} pointers
+   * @returns {Object}
    */
 
   function getPointersCenter(pointers) {
@@ -767,10 +733,9 @@
     };
   }
   /**
-   * Get the max sizes in a rectangle under the given aspect ratio.
-   * @param {Object} data - The original sizes.
-   * @param {string} [type='contain'] - The adjust type.
-   * @returns {Object} The result sizes.
+   * @param {Object} data
+   * @param {string} [type='contain']
+   * @returns {Object}
    */
 
   function getAdjustedSizes(_ref4)
@@ -802,9 +767,8 @@
     };
   }
   /**
-   * Get the new sizes of a rectangle after rotated.
-   * @param {Object} data - The original sizes.
-   * @returns {Object} The result sizes.
+   * @param {Object} data
+   * @returns {Object}
    */
 
   function getRotatedSizes(_ref5) {
@@ -834,12 +798,11 @@
     };
   }
   /**
-   * Get a canvas which drew the given image.
-   * @param {HTMLImageElement} image - The image for drawing.
-   * @param {Object} imageData - The image data.
-   * @param {Object} canvasData - The canvas data.
-   * @param {Object} options - The options.
-   * @returns {HTMLCanvasElement} The result canvas.
+   * @param {HTMLImageElement} image
+   * @param {Object} imageData
+   * @param {Object} canvasData
+   * @param {Object} options
+   * @returns {HTMLCanvasElement}
    */
 
   function getSourceCanvas(image, _ref6, _ref7, _ref8) {
@@ -914,11 +877,10 @@
   }
   var fromCharCode = String.fromCharCode;
   /**
-   * Get string from char code in data view.
-   * @param {DataView} dataView - The data view for read.
-   * @param {number} start - The start index.
-   * @param {number} length - The read length.
-   * @returns {string} The read result.
+   * @param {DataView} dataView
+   * @param {number} start
+   * @param {number} length
+   * @returns {string}
    */
 
   function getStringFromCharCode(dataView, start, length) {
@@ -933,9 +895,8 @@
   }
   var REGEXP_DATA_URL_HEAD = /^data:.*,/;
   /**
-   * Transform Data URL to array buffer.
-   * @param {string} dataURL - The Data URL to transform.
-   * @returns {ArrayBuffer} The result array buffer.
+   * @param {string} dataURL
+   * @returns {ArrayBuffer}
    */
 
   function dataURLToArrayBuffer(dataURL) {
@@ -949,10 +910,9 @@
     return arrayBuffer;
   }
   /**
-   * Transform array buffer to Data URL.
-   * @param {ArrayBuffer} arrayBuffer - The array buffer to transform.
-   * @param {string} mimeType - The mime type of the Data URL.
-   * @returns {string} The result Data URL.
+   * @param {ArrayBuffer} arrayBuffer
+   * @param {string} mimeType
+   * @returns {string}
    */
 
   function arrayBufferToDataURL(arrayBuffer, mimeType) {
@@ -970,9 +930,8 @@
     return "data:".concat(mimeType, ";base64,").concat(btoa(chunks.join('')));
   }
   /**
-   * Get orientation value from given array buffer.
-   * @param {ArrayBuffer} arrayBuffer - The array buffer to read.
-   * @returns {number} The read orientation value.
+   * @param {ArrayBuffer} arrayBuffer
+   * @returns {number}
    */
 
   function resetAndGetOrientation(arrayBuffer) {
@@ -1047,9 +1006,8 @@
     return orientation;
   }
   /**
-   * Parse Exif Orientation value.
-   * @param {number} orientation - The orientation to parse.
-   * @returns {Object} The parsed result.
+   * @param {number} orientation
+   * @returns {Object}
    */
 
   function parseOrientation(orientation) {
@@ -2371,10 +2329,9 @@
     },
 
     /**
-     * Replace the image's src and rebuild the cropper
-     * @param {string} url - The new URL.
-     * @param {boolean} [hasSameSize] - Indicate if the new image has the same size as the old one.
-     * @returns {Cropper} this
+     * @param {string} url
+     * @param {boolean} [hasSameSize]
+     * @returns {Cropper}
      */
     replace: function replace(url) {
       var hasSameSize = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
@@ -2424,10 +2381,7 @@
       return this;
     },
 
-    /**
-     * Destroy the cropper and remove the instance from the image
-     * @returns {Cropper} this
-     */
+    /** @returns {Cropper} */
     destroy: function destroy() {
       var element = this.element;
 
@@ -2446,10 +2400,9 @@
     },
 
     /**
-     * Move the canvas with relative offsets
-     * @param {number} offsetX - The relative offset distance on the x-axis.
-     * @param {number} [offsetY=offsetX] - The relative offset distance on the y-axis.
-     * @returns {Cropper} this
+     * @param {number} offsetX
+     * @param {number} [offsetY=offsetX]
+     * @returns {Cropper}
      */
     move: function move(offsetX) {
       var offsetY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : offsetX;
@@ -2460,10 +2413,9 @@
     },
 
     /**
-     * Move the canvas to an absolute point
-     * @param {number} x - The x-axis coordinate.
-     * @param {number} [y=x] - The y-axis coordinate.
-     * @returns {Cropper} this
+     * @param {number} x
+     * @param {number} [y=x]
+     * @returns {Cropper}
      */
     moveTo: function moveTo(x) {
       var y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : x;
@@ -2492,10 +2444,9 @@
     },
 
     /**
-     * Zoom the canvas with a relative ratio
-     * @param {number} ratio - The target ratio.
-     * @param {Event} _originalEvent - The original event if any.
-     * @returns {Cropper} this
+     * @param {number} ratio
+     * @param {Event} _originalEvent
+     * @returns {Cropper}
      */
     zoom: function zoom(ratio, _originalEvent) {
       var canvasData = this.canvasData;
@@ -2511,11 +2462,10 @@
     },
 
     /**
-     * Zoom the canvas to an absolute ratio
-     * @param {number} ratio - The target ratio.
-     * @param {Object} pivot - The zoom pivot point coordinate.
-     * @param {Event} _originalEvent - The original event if any.
-     * @returns {Cropper} this
+     * @param {number} ratio
+     * @param {Object} pivot
+     * @param {Event} _originalEvent
+     * @returns {Cropper}
      */
     zoomTo: function zoomTo(ratio, pivot, _originalEvent) {
       var options = this.options,
@@ -2565,18 +2515,16 @@
     },
 
     /**
-     * Rotate the canvas with a relative degree
-     * @param {number} degree - The rotate degree.
-     * @returns {Cropper} this
+     * @param {number} degree
+     * @returns {Cropper}
      */
     rotate: function rotate(degree) {
       return this.rotateTo((this.imageData.rotate || 0) + Number(degree));
     },
 
     /**
-     * Rotate the canvas to an absolute degree
-     * @param {number} degree - The rotate degree.
-     * @returns {Cropper} this
+     * @param {number} degree
+     * @returns {Cropper}
      */
     rotateTo: function rotateTo(degree) {
       degree = Number(degree);
@@ -2590,9 +2538,8 @@
     },
 
     /**
-     * Scale the image on the x-axis.
-     * @param {number} scaleX - The scale ratio on the x-axis.
-     * @returns {Cropper} this
+     * @param {number} scaleX
+     * @returns {Cropper}
      */
     scaleX: function scaleX(_scaleX) {
       var scaleY = this.imageData.scaleY;
@@ -2600,9 +2547,8 @@
     },
 
     /**
-     * Scale the image on the y-axis.
-     * @param {number} scaleY - The scale ratio on the y-axis.
-     * @returns {Cropper} this
+     * @param {number} scaleY
+     * @returns {Cropper}
      */
     scaleY: function scaleY(_scaleY) {
       var scaleX = this.imageData.scaleX;
@@ -2610,10 +2556,9 @@
     },
 
     /**
-     * Scale the image
-     * @param {number} scaleX - The scale ratio on the x-axis.
-     * @param {number} [scaleY=scaleX] - The scale ratio on the y-axis.
-     * @returns {Cropper} this
+     * @param {number} scaleX
+     * @param {number} [scaleY=scaleX]
+     * @returns {Cropper}
      */
     scale: function scale(scaleX) {
       var scaleY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : scaleX;
@@ -2642,9 +2587,8 @@
     },
 
     /**
-     * Get the cropped area position and size data (base on the original image)
-     * @param {boolean} [rounded=false] - Indicate if round the data values or not.
-     * @returns {Object} The result cropped data.
+     * @param {boolean} [rounded=false]
+     * @returns {Object}
      */
     getData: function getData() {
       var rounded = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
@@ -2696,9 +2640,8 @@
     },
 
     /**
-     * Set the cropped area position and size with new data
-     * @param {Object} data - The new data.
-     * @returns {Cropper} this
+     * @param {Object} data
+     * @returns {Cropper}
      */
     setData: function setData(data) {
       var options = this.options,
@@ -2756,26 +2699,17 @@
       return this;
     },
 
-    /**
-     * Get the container size data.
-     * @returns {Object} The result container data.
-     */
+    /** @returns {Object} */
     getContainerData: function getContainerData() {
       return this.ready ? assign({}, this.containerData) : {};
     },
 
-    /**
-     * Get the image position and size data.
-     * @returns {Object} The result image data.
-     */
+    /** @returns {Object} */
     getImageData: function getImageData() {
       return this.sized ? assign({}, this.imageData) : {};
     },
 
-    /**
-     * Get the canvas position and size data.
-     * @returns {Object} The result canvas data.
-     */
+    /** @returns {Object} */
     getCanvasData: function getCanvasData() {
       var canvasData = this.canvasData;
       var data = {};
@@ -2790,9 +2724,8 @@
     },
 
     /**
-     * Set the canvas position and size with new data.
-     * @param {Object} data - The new canvas data.
-     * @returns {Cropper} this
+     * @param {Object} data
+     * @returns {Cropper}
      */
     setCanvasData: function setCanvasData(data) {
       var canvasData = this.canvasData;
@@ -2821,10 +2754,7 @@
       return this;
     },
 
-    /**
-     * Get the crop box position and size data.
-     * @returns {Object} The result crop box data.
-     */
+    /** @returns {Object} */
     getCropBoxData: function getCropBoxData() {
       var cropBoxData = this.cropBoxData;
       var data;
@@ -2842,9 +2772,8 @@
     },
 
     /**
-     * Set the crop box position and size with new data.
-     * @param {Object} data - The new crop box data.
-     * @returns {Cropper} this
+     * @param {Object} data
+     * @returns {Cropper}
      */
     setCropBoxData: function setCropBoxData(data) {
       var cropBoxData = this.cropBoxData;
@@ -2886,9 +2815,8 @@
     },
 
     /**
-     * Get a canvas drawn the cropped image.
-     * @param {Object} [options={}] - The config options.
-     * @returns {HTMLCanvasElement} - The result canvas.
+     * @param {Object} [options={}]
+     * @returns {HTMLCanvasElement}
      */
     getCroppedCanvas: function getCroppedCanvas() {
       var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -3017,9 +2945,8 @@
     },
 
     /**
-     * Change the aspect ratio of the crop box.
-     * @param {number} aspectRatio - The new aspect ratio.
-     * @returns {Cropper} this
+     * @param {number} aspectRatio
+     * @returns {Cropper}
      */
     setAspectRatio: function setAspectRatio(aspectRatio) {
       var options = this.options;
@@ -3040,9 +2967,8 @@
     },
 
     /**
-     * Change the drag mode.
-     * @param {string} mode - The new drag mode.
-     * @returns {Cropper} this
+     * @param {string} mode
+     * @returns {Cropper}
      */
     setDragMode: function setDragMode(mode) {
       var options = this.options,
@@ -3075,9 +3001,8 @@
   /*#__PURE__*/
   function () {
     /**
-     * Create a new Cropper.
-     * @param {Element} element - The target element for cropping.
-     * @param {Object} [options={}] - The configuration options.
+     * @param {Element} element
+     * @param {Object} [options={}]
      */
     function Cropper(element) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -3443,10 +3368,7 @@
           this.stop();
         }
       }
-      /**
-       * Get the no conflict cropper class.
-       * @returns {Cropper} The cropper class.
-       */
+      /** @returns {Cropper} */
 
     }], [{
       key: "noConflict",
@@ -3454,10 +3376,7 @@
         window.Cropper = AnotherCropper;
         return Cropper;
       }
-      /**
-       * Change the default options.
-       * @param {Object} options - The new default options.
-       */
+      /** @param {Object} options */
 
     }, {
       key: "setDefaults",

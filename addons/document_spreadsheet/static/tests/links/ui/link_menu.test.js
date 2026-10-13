@@ -25,8 +25,6 @@ function urlInput() {
 }
 
 /**
- * Create a spreadsheet and open the menu selector to
- * insert a menu link in A1.
  * @param {object} params
  * @param {function} [params.mockRPC]
  */

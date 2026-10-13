@@ -366,7 +366,7 @@ export function useVisible(ref, cb, { ready = true } = {}) {
 /**
  * @param {Element} el
  * @param {Element} scroller
- * @returns {boolean} whether centring `el` moves `scroller`
+ * @returns {boolean}
  */
 function isOffCentre(el, scroller) {
     const elRect = el.getBoundingClientRect();

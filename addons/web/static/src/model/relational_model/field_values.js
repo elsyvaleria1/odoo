@@ -108,9 +108,6 @@ export function parseServerValue(field, value) {
 }
 
 /**
- * A property keeps the value it was stored with when its current type cannot
- * read it (a char value under a property since retyped as a date).
- *
  * @param {any} property
  * @param {any} value
  * @returns {any}
@@ -354,9 +351,6 @@ export function sameMany2OneValue(a, b) {
 }
 
 /**
- * Whether two parsed values of one field read the same, so a reload can leave
- * the field alone. An x2many is its StaticList: only identity counts.
- *
  * @param {Field} field
  * @param {any} a
  * @param {any} b

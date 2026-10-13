@@ -4,21 +4,13 @@ import { patch } from "@web/core/utils/patch";
 import { TourHelpers } from "@web_tour/js/tour_automatic/tour_helpers";
 
 patch(TourHelpers.prototype, {
-    /**
-     * @param {string|Node} selector
-     * @example
-     * @example
-     */
+    /** @param {string|Node} selector */
     async check(selector) {
         const element = this._get_action_element(selector);
         await hoot.check(element);
     },
 
-    /**
-     * @param {Selector} selector
-     * @example
-     * @example
-     */
+    /** @param {Selector} selector */
     async clear(selector) {
         const element = this._get_action_element(selector);
         await hoot.click(element);
@@ -28,19 +20,13 @@ patch(TourHelpers.prototype, {
     /**
      * @param {Selector} selector
      * @param {import("@odoo/hoot-dom").PointerOptions} options
-     * @example
-     * @example
      */
     async click(selector, options = { interactive: false }) {
         const element = this._get_action_element(selector);
         await hoot.click(element, options);
     },
 
-    /**
-     * @param {Selector} selector
-     * @example
-     * @example
-     */
+    /** @param {Selector} selector */
     async dblclick(selector) {
         const element = this._get_action_element(selector);
         await hoot.dblclick(element);
@@ -49,8 +35,6 @@ patch(TourHelpers.prototype, {
     /**
      * @param {Selector} selector
      * @param {hoot.PointerOptions} options
-     * @example
-     * @example
      */
     async drag_and_drop(selector, options) {
         if (typeof options !== "object") {
@@ -85,7 +69,6 @@ patch(TourHelpers.prototype, {
     /**
      * @param {string} text
      * @param {Selector} selector
-     * @example
      */
     async edit(text, selector) {
         const element = this._get_action_element(selector);
@@ -126,7 +109,6 @@ patch(TourHelpers.prototype, {
     /**
      * @param {Selector} selector
      * @param {import("@odoo/hoot-dom").PointerOptions} options
-     * @example
      */
     async hover(selector, options) {
         const element = this._get_action_element(selector);
@@ -152,8 +134,6 @@ patch(TourHelpers.prototype, {
     /**
      * @param {string} value
      * @param {Selector} selector
-     * @example
-     * @example
      */
     async select(value, selector) {
         const element = this._get_action_element(selector);
@@ -164,7 +144,6 @@ patch(TourHelpers.prototype, {
     /**
      * @param {number} index
      * @param {Selector} selector
-     * @example
      */
     async selectByIndex(index, selector) {
         const element = this._get_action_element(selector);
@@ -179,7 +158,6 @@ patch(TourHelpers.prototype, {
     /**
      * @param {string|RegExp} contains
      * @param {Selector} selector
-     * @example
      */
     async selectByLabel(contains, selector) {
         const element = this._get_action_element(selector);
@@ -190,20 +168,13 @@ patch(TourHelpers.prototype, {
         await hoot.select(values, { target: element });
     },
 
-    /**
-     * @param {string|Node} selector
-     * @example
-     * @example
-     */
+    /** @param {string|Node} selector */
     async uncheck(selector) {
         const element = this._get_action_element(selector);
         await hoot.uncheck(element);
     },
 
-    /**
-     * @param {string} url
-     * @example
-     */
+    /** @param {string} url */
     async goToUrl(url) {
         const linkEl = document.createElement("a");
         linkEl.href = url;

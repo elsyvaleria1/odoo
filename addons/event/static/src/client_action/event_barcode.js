@@ -43,12 +43,7 @@ export class EventScanView extends Component {
         onWillStart(this.onWillStart);
     }
 
-    /**
-     * @override
-     * Fetch barcode init information. Notably eventId triggers mono- or multi-
-     * event mode (Registration Desk in multi event allow to manage attendees
-     * from several events and tickets without reloading / changing event in UX.
-     */
+    /** @override */
     async onWillStart() {
         this.data = await rpc("/event/init_barcode_interface", {
             event_id: this.eventId,
@@ -64,9 +59,6 @@ export class EventScanView extends Component {
     }
 
     /**
-     * When scanning a barcode, call Registration.register_attendee() to get
-     * formatted registration information, notably its status or event-related
-     * information. Open a confirmation / choice Dialog to confirm attendee.
      * @param {Object} barcode
      * @param {function} onNextScanTriggered
      */

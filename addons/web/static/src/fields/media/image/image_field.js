@@ -92,12 +92,7 @@ export class ImageField extends FieldComponent {
         this.bustsCacheOnValueChange = isDottedRelated || this.fieldType === "many2one";
     }
 
-    /**
-     * The image the field currently shows: its cache-busting key, its urls,
-     * and whether it failed to load are all tied to one record and value.
-     *
-     * @returns {{ id: number, resId: any, value: any, uniqueId: any, urls: Map<string, string> }}
-     */
+    /** @returns {{ id: number, resId: any, value: any, uniqueId: any, urls: Map<string, string> }} */
     get imageVersion() {
         const { record } = this.props;
         const value = fieldHandleFor(record, this.props.name).value;

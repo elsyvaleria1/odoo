@@ -43,11 +43,9 @@ export class LoadableDataSource {
     }
 
     /**
-     * Load data in the model
-     * @param {object} [params] Params for fetching data
-     * @param {boolean} [params.reload=false] Force the reload of the data
-     *
-     * @returns {Promise} Resolved when data are fetched.
+     * @param {object} [params]
+     * @param {boolean} [params.reload=false]
+     * @returns {Promise}
      */
     async load(params) {
         if (params && params.reload) {
@@ -146,8 +144,6 @@ export class LoadableDataSource {
     }
 
     /**
-     * Load the data in the model
-     *
      * @abstract
      * @protected
      */
@@ -159,9 +155,6 @@ export const LOADING_ERROR = new LoadingDataError();
 export class ModelNotFoundError extends Error {}
 
 /**
- * Return the fields of a given model.
- * If the model is not found, a `ModelNotFoundError` is thrown.
- *
  * @param {{ loadFields: (resModel: string) => Promise<import("@spreadsheet").OdooFields> }} fieldService
  * @param {string} model
  * @returns {Promise<import("@spreadsheet").OdooFields>}

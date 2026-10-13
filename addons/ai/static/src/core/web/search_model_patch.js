@@ -2,11 +2,7 @@
 import { patch } from "@web/core/utils/patch";
 import { SearchModel } from "@web/search/search_model";
 
-/**
- * The agent names field searches as "field=text" strings.
- *
- * @param {{ filters?: string[], groupBys?: string[], fieldSearches?: string[], customDomain?: string }} aiSearch
- */
+/** @param {{ filters?: string[], groupBys?: string[], fieldSearches?: string[], customDomain?: string }} aiSearch */
 export function aiSearchSpec({ filters, groupBys, fieldSearches, customDomain }) {
     const searches = [];
     for (const searchString of fieldSearches || []) {

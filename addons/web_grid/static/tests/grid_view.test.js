@@ -1277,10 +1277,10 @@ describe("grid_view_desktop", () => {
     const flatten = (text) => text.replace(/\s+/g, " ").trim();
 
     /**
-     * @param {string} label rendered column title
-     * @param {string} locale python-style locale, e.g. "th_TH"
+     * @param {string} label
+     * @param {string} locale
      * @param {Intl.DateTimeFormatOptions} options
-     * @param {"weekday" | "month"} leadingPart part that must lead its own line
+     * @param {"weekday" | "month"} leadingPart
      */
     function expectLocalizedLabel(label, locale, options, leadingPart) {
         const jsLocale = pyToJsLocale(locale);
@@ -1726,10 +1726,7 @@ describe("grid_view_desktop", () => {
                 </grid>`,
         });
 
-        /**
-         * Returns unique "data-grid-row" attributes to check for rows equality
-         * @returns {string[]}
-         */
+        /** @returns {string[]} */
         const getCurrentRows = () => [
             ...new Set([...grid.children].map((el) => el.dataset.gridRow)),
         ];

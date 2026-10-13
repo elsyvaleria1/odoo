@@ -4,11 +4,6 @@
 import { saidInLanguage } from "./interpreter/pronunciation.js";
 
 /**
- * Every label on screen is stored by Odoo in each installed language; the word
- * a user says is often the other language's label of what they see ("draft"
- * for *Borrador*, "dashboard" for *Tableros*). These are read from the server
- * once per view and once per session for the menus, and kept.
- *
  * @typedef {{
  *   filters: Record<string, string[]>,
  *   dateFilters: Record<string, string[]>,
@@ -64,7 +59,7 @@ function mergeView(byLang) {
     return merged;
 }
 
-/** @param {any} target an active view */
+/** @param {any} target */
 export function viewRequest(target) {
     if (!target?.searchModel?.resModel) {
         return null;

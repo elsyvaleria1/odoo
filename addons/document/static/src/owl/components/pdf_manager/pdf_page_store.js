@@ -121,7 +121,7 @@ export class PdfPageStore {
     get userGrouped() {
         return this.data.userGrouped;
     }
-    /** @returns {Object} a copy of the grouping and selection, for restore() */
+    /** @returns {Object} */
     snapshot() {
         const { pages, groupData, groupIds, numberOfPages, userGrouped } = toRaw(
             this.data,
@@ -134,7 +134,7 @@ export class PdfPageStore {
             userGrouped,
         });
     }
-    /** @param {Object} snapshot as snapshot() returned it */
+    /** @param {Object} snapshot */
     restore(snapshot) {
         Object.assign(this.data, structuredClone(snapshot));
     }

@@ -4,7 +4,6 @@ import { Plugin } from "@html_editor/plugin";
 /**
  * @typedef { import("./builder_action").BuilderAction } BuilderAction
  * @typedef {} BuilderActionConstructor
- *
  * @typedef { Object } BuilderActionsShared
  * @property { BuilderActionsPlugin['getAction'] } getAction
  * @property { BuilderActionsPlugin['applyAction'] } applyAction
@@ -34,8 +33,6 @@ export class BuilderActionsPlugin extends Plugin {
     }
 
     /**
-     * Get the action object for the given action ID.
-     *
      * @param {string} actionId
      * @returns {Object}
      */
@@ -48,8 +45,6 @@ export class BuilderActionsPlugin extends Plugin {
     }
 
     /**
-     * Apply action for the given action ID.
-     *
      * @param {string} actionId
      * @param {Object} spec
      */

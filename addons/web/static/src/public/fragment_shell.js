@@ -193,7 +193,7 @@ export class FragmentShell {
     /**
      * @param {string} url
      * @param {RequestInit & { headers?: Record<string, string> }} init
-     * @returns {Promise<Response | null>} null when refused or failed
+     * @returns {Promise<Response | null>}
      */
     async request(url, init) {
         let response;
@@ -222,12 +222,7 @@ export class FragmentShell {
         return null;
     }
 
-    /**
-     * Morphs each region of the shell from its counterpart in `page`, and the
-     * title and language.
-     *
-     * @param {Document} page
-     */
+    /** @param {Document} page */
     swapPage(page) {
         const title = page.querySelector("title")?.textContent;
         if (title) {

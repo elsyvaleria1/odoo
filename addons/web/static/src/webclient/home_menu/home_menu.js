@@ -478,7 +478,7 @@ export class HomeMenu extends Component {
         );
     }
 
-    /** @returns {number[]} tiles per row of the pinned block, then of each section */
+    /** @returns {number[]} */
     get sectionWidths() {
         const root = this.rootRef.el;
         const rows = [

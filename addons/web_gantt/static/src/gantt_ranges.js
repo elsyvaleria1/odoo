@@ -15,11 +15,10 @@ import { diffColumn, localStartOf } from "./gantt_helpers.js";
  * @typedef {Temporal.ZonedDateTime} DateTime
  * @typedef {"day" | "week" | "month" | "year"} ScaleId
  * @typedef {"day" | "week" | "month" | "quarter" | "year"} RangeId
- *
- * @typedef Range -- what the user picks in the scale selector
+ * @typedef Range
  * @property {string} id
  * @property {string} description
- * @property {Scale} scale -- the granularity it draws at; shared between ranges
+ * @property {Scale} scale
  */
 
 export const PARTS = { full: 1, half: 2, quarter: 4 };
@@ -90,9 +89,6 @@ export const SCALES = {
 };
 
 /**
- * Formats a date to a special datetime string, in the user's locale settings.
- * It contains the week number, its period and the year if it is different from the current's
- *
  * @param {DateTime} date
  * @returns {string}
  */
@@ -113,18 +109,6 @@ function formatLocalWeekYear(date) {
 }
 
 /**
- * Ranges and scales are two vocabularies, not two collections: a range is what
- * the user picks and a scale is the granularity it draws at, and the mapping is
- * many-to-one -- "month" and "quarter" are both drawn at month granularity.
- * They were once two parallel maps, both keyed by range id, and the scale one
- * was routinely searched by scale id; that works only because four of the five
- * range ids happen to be spelled like a scale id. "quarter" is not, and
- * `<gantt scales="quarter"/>` used to resolve to `undefined` and take the whole
- * view down on the first render.
- *
- * There is one map now, keyed by range id, each entry carrying its own scale,
- * so a lookup can no longer be written in the wrong key space.
- *
  * @param {ScaleId} scaleId
  * @param {Record<string, Range>} ranges
  * @returns {Scale | undefined}
@@ -174,8 +158,6 @@ export const RANGES = {
 };
 
 /**
- * The first column boundary at or after `date`.
- *
  * @param {DateTime} date
  * @param {string} unit
  * @returns {DateTime}
@@ -186,14 +168,10 @@ export function firstColumnAfter(date, unit) {
 }
 
 /**
- * A range as the model keeps it: start before stop, at most ten years long
- * (clamped on the side the user did not just move), snapped outwards to the
- * column grid, with the focus date kept inside it when one is given.
- *
  * @param {Object} params
  * @param {DateTime} params.startDate
  * @param {DateTime} params.stopDate
- * @param {string} params.interval -- the scale's column unit
+ * @param {string} params.interval
  * @param {DateTime} [params.focusDate]
  * @returns {{ startDate: DateTime, stopDate: DateTime, globalStart: DateTime, globalStop: DateTime, focusDate?: DateTime }}
  */
@@ -226,15 +204,10 @@ const CUSTOM_RANGE_UNIT = "month";
 const CUSTOM_RANGE_COUNT = 3;
 
 /**
- * The custom range a context asks for: three months from the start it gives,
- * three months up to the stop it gives, exactly the pair when it gives both
- * (with today as the focus, kept inside), or three months around the focus
- * date when it gives neither.
- *
  * @param {Object} params
  * @param {DateTime | false} [params.startDate]
  * @param {DateTime | false} [params.stopDate]
- * @param {DateTime} params.focusDate -- what `initialDate` or today resolves to
+ * @param {DateTime} params.focusDate
  * @param {DateTime} params.today
  * @returns {{ focusDate: DateTime, startDate: DateTime, stopDate: DateTime }}
  */

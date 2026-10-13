@@ -172,9 +172,6 @@ export const RentingMixin = {
     },
 
     /**
-     * The rental boundary `text` spells, in the website's zone: a day, when
-     * the rental is not counted in hours, is the start of that day there.
-     *
      * @param {string} text
      * @returns {Temporal.ZonedDateTime | null}
      */

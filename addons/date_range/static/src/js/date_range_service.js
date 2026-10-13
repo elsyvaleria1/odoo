@@ -5,28 +5,18 @@ export const dateRangeService = {
     dependencies: ["orm"],
 
     /**
-     * @param {Object} env - Odoo environment
-     * @param {Object} deps - Service dependencies
-     * @param {Object} deps.orm - ORM service for database access
-     * @returns {Object} Service API with loadDateRanges method
+     * @param {Object} env
+     * @param {Object} deps
+     * @param {Object} deps.orm
+     * @returns {Object}
      */
     async start(env, { orm }) {
         let loading = null;
 
         /**
-         * Load date ranges and types from backend.
-         *
-         * Concurrent callers share one in-flight request, but each call
-         * re-fetches: a range created, edited or archived after a previous
-         * call must be visible to the next one without a page reload.
-         *
-         * @returns {Promise<Object>} Object with ranges and types arrays
-         * @returns {Array} ranges - Array of date.range records
-         * @returns {Array} types - Array of date.range.type records
-         *
-         * @example
-         * const { ranges, types } = await dateRangeService.loadDateRanges();
-         * console.log(ranges); // [{ id: 1, name: "Q1 2024", ... }, ...]
+         * @returns {Promise<Object>}
+         * @returns {Array}
+         * @returns {Array}
          */
         async function loadDateRanges() {
             if (loading) {

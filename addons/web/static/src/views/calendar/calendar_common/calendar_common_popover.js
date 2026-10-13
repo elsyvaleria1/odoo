@@ -14,9 +14,6 @@ import { Dialog } from "@web/ui/dialog/dialog";
 import { getColor, getFormattedDateSpan } from "@web/views/calendar/calendar_utils";
 
 /**
- * A duration's count as the calendar has always shown it: rounded down, in the
- * user's numbering system.
- *
  * @param {number} value
  * @returns {string}
  */

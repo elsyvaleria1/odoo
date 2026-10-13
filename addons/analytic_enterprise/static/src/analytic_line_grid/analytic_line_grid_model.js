@@ -11,13 +11,7 @@ export class AnalyticLineGridNavigationInfo extends GridNavigationInfo {
         return this._fiscalYearOfAnchor ? this._periodEnd : super.periodEnd;
     }
 
-    /**
-     * Whether the fiscal year last fetched is the one the anchor is in. Read
-     * outside it -- the anchor just moved a year -- the calendar year stands
-     * in until `prepare` has asked again.
-     *
-     * @return {boolean}
-     */
+    /** @return {boolean} */
     get _fiscalYearOfAnchor() {
         return Boolean(
             this.range.span === "year" &&

@@ -215,10 +215,7 @@ export class ArticleTemplatePickerDialog extends Component {
         };
     }
 
-    /**
-     * Returns the fields required for the preview of the templates.
-     * @returns {Array[String]}
-     */
+    /** @returns {Array[String]} */
     get templateFieldNames() {
         return [
             "cover_image_url",
@@ -231,11 +228,7 @@ export class ArticleTemplatePickerDialog extends Component {
         ];
     }
 
-    /**
-     * Returns the fields required for the preview of the articles that are
-     * listed in the templates gallery.
-     * @returns {Array[String]}
-     */
+    /** @returns {Array[String]} */
     get articleFieldNames() {
         return ["body", "cover_image_url", "icon", "id", "name", "parent_id"];
     }

@@ -40,15 +40,7 @@ export class SurveySessionChart extends Interaction {
         this.env.bus.trigger("SURVEY:CHART_INTERACTION_STARTED");
     }
 
-    /**
-     * Update the chart state based on the CustomEvent received.
-     * Possible options, passed in detail, are:
-     * - showInputs: boolean, show the user inputs on the chart
-     * - showAnswers: boolean, show the correct and incorrect answers on the chart
-     * - questionStatistics: object, the statistics of the current question
-     *
-     * @param {CustomEvent} ev
-     */
+    /** @param {CustomEvent} ev */
     updateState(ev) {
         if ("showInputs" in ev.detail) {
             this.showInputs = ev.detail.showInputs;
@@ -59,14 +51,7 @@ export class SurveySessionChart extends Interaction {
         this.updateChart(ev.detail.questionStatistics);
     }
 
-    /**
-     * Updates the chart data using the latest received question user inputs.
-     *
-     * By updating the numbers in the dataset, we take advantage of the Chartjs API
-     * that will automatically add animations to show the new number.
-     *
-     * @param {Object} questionStatistics object containing chart data (counts / labels / ...)
-     */
+    /** @param {Object} questionStatistics */
     updateChart(questionStatistics) {
         if (questionStatistics) {
             this.questionStatistics =
@@ -82,22 +67,7 @@ export class SurveySessionChart extends Interaction {
         }
     }
 
-    /**
-     * Custom bar chart configuration for our survey session use case.
-     *
-     * Quick summary of enabled features:
-     * - background_color is one of the 20 colors from SESSION_CHART_COLORS
-     *   (see getBackgroundColor for details)
-     * - The ticks are bigger and bolded to be able to see them better on a big screen (projector)
-     * - We don't use tooltips to keep it as simple as possible
-     * - We don't set a suggestedMin or Max so that Chart will adapt automatically based on the given data
-     *   The '+1' part is a small trick to avoid the datalabels to be clipped in height
-     * - We use a custom 'datalabels' plugin to be able to display the number value on top of the
-     *   associated bar of the chart.
-     *   This allows the host to discuss results with attendees in a more interactive way.
-     *
-     * @private
-     */
+    /** @private */
     buildChartConfiguration() {
         return {
             type: "bar",
@@ -167,36 +137,7 @@ export class SurveySessionChart extends Interaction {
             plugins: [
                 ChartDataLabels,
                 {
-                    /**
-                     * The way it works is each label is an array of words.
-                     * eg.: if we have a chart label: "this is an example of a label"
-                     * The library will split it as: ["this is an example", "of a label"]
-                     * Each value of the array represents a line of the label.
-                     * So for this example above: it will be displayed as:
-                     * "this is an examble<br/>of a label", breaking the label in 2 parts and put on 2 lines visually.
-                     *
-                     * What we do here is rework the labels with our own algorithm to make them fit better in screen space
-                     * based on breakpoints based on number of columns to display.
-                     * So this example will become: ["this is an", "example of", "a label"] if we have a lot of labels to put in the chart.
-                     * Which will be displayed as "this is an<br/>example of<br/>a label"
-                     * Obviously, the more labels you have, the more columns, and less screen space is available.
-                     *
-                     * When the screen space is too small for long words, those long words are split over multiple rows.
-                     * At 6 chars per row, the above example becomes ["this", "is an", "examp-", "le of", "a label"]
-                     * Which is displayed as "this<br/>is an<br/>examp-<br/>le of<br/>a label"
-                     *
-                     * We also adapt the font size based on the width available in the chart.
-                     *
-                     * So we counterbalance multiple times:
-                     * - Based on number of columns (i.e. number of survey.question.answer of your current survey.question),
-                     *   we split the words of every labels to make them display on more rows.
-                     * - Based on the width of the chart (which is equivalent to screen width),
-                     *   we reduce the chart font to be able to fit more characters.
-                     * - Based on the longest word present in the labels, we apply a certain ratio with the width of the chart
-                     *   to get a more accurate font size for the space available.
-                     *
-                     * @param {Object} chart
-                     */
+                    /** @param {Object} chart */
                     beforeInit: function (chart) {
                         const nbrCol = chart.data.labels.length;
                         const minRatio = 0.4;
@@ -282,15 +223,8 @@ export class SurveySessionChart extends Interaction {
     }
 
     /**
-     * Custom method that returns a color from SESSION_CHART_COLORS.
-     * It loops through the twenty values and assigns them sequentially.
-     *
-     * We have a special mechanic when the host shows the answers of a question.
-     * Wrong answers are "faded out" using a 0.2 opacity.
-     *
      * @param {Object} metaData
-     * @param {Integer} metaData.dataIndex the index of the label, matching the index of the answer
-     *   in 'this.answersValidity'
+     * @param {Integer} metaData.dataIndex
      */
     getBackgroundColor(metaData) {
         const opacity =
@@ -304,16 +238,8 @@ export class SurveySessionChart extends Interaction {
     }
 
     /**
-     * Custom method that returns the survey.question.answer label color.
-     *
-     * Break-down of use cases:
-     * - Red if the host is showing answer, and the associated answer is not correct
-     * - Green if the host is showing answer, and the associated answer is correct
-     * - Black in all other cases
-     *
      * @param {Object} metaData
-     * @param {Integer} metaData.dataIndex the index of the label, matching the index of the answer
-     *   in 'this.answersValidity'
+     * @param {Integer} metaData.dataIndex
      */
     getLabelColor(metaData) {
         let color = "#212529";
@@ -323,31 +249,12 @@ export class SurveySessionChart extends Interaction {
         return color;
     }
 
-    /**
-     * Small helper method that returns the validity of the answer based on its index.
-     *
-     * We need this special handling because of Chartjs data structure.
-     * The library determines the parameters (color/label/...) by only passing the answer 'index'
-     * (and not the id or anything else we can identify).
-     *
-     * @param {Integer} answerIndex
-     */
+    /** @param {Integer} answerIndex */
     isValidAnswer(answerIndex) {
         return this.answersValidity[answerIndex];
     }
 
-    /**
-     * Special utility method that will process the statistics we receive from the
-     * survey.question#_prepare_statistics method.
-     *
-     * For multiple choice questions, the values we need are stored in a different place.
-     * We simply return the values to make the use of the statistics common for both simple and
-     * multiple choice questions.
-     *
-     * See survey.question#_get_stats_data for more details
-     *
-     * @param {Object} rawStatistics
-     */
+    /** @param {Object} rawStatistics */
     processQuestionStatistics(rawStatistics) {
         if (["multiple_choice", "scale"].includes(this.questionType)) {
             return rawStatistics[0].values;

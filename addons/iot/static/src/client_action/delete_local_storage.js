@@ -23,9 +23,8 @@ export function removeIoTReportIdFromBrowserLocalStorage(report_id) {
 }
 
 /**
- * Set the report_id in the browser LocalStorage
- * @param report_id The report_id to set
- * @param value The value to set
+ * @param report_id
+ * @param value
  */
 export function setReportIdInBrowserLocalStorage(report_id, value) {
     let links = JSON.parse(

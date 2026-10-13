@@ -15,12 +15,7 @@ function recognitionClass() {
     return scope.SpeechRecognition || scope.webkitSpeechRecognition || null;
 }
 
-/**
- * The browser's recogniser, on-device only: without `processLocally` a
- * browser sends the audio to its vendor, and nothing here asked for that.
- *
- * @type {import("./voice_engines.js").VoiceEngine}
- */
+/** @type {import("./voice_engines.js").VoiceEngine} */
 export const browserEngine = {
     async available(lang) {
         const Recognition = recognitionClass();

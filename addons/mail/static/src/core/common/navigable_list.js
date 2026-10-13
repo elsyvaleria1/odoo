@@ -99,12 +99,7 @@ export class NavigableList extends Component {
         );
     }
 
-    /**
-     * The options in display order and their keys, as the render shows them;
-     * the event handlers read the last rendered order.
-     *
-     * @returns {Object[]}
-     */
+    /** @returns {Object[]} */
     sortOptions() {
         this.sortedOptions = [...this.props.options].sort(
             /**

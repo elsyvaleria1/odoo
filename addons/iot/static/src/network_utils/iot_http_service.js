@@ -25,9 +25,7 @@ export class IotHttpService {
         this.setup(...arguments);
     }
 
-    /**
-     * @param {import("services").ServiceFactories & { websocket: IotWebsocket } & { webRtc: IotWebRtc } }} services
-     */
+    /** @param {import("services").ServiceFactories & { websocket: IotWebsocket } & { webRtc: IotWebRtc } } } */
     setup({ iot_longpolling, websocket, webRtc, notification, orm }) {
         this.longpolling = iot_longpolling;
         this.websocket = websocket;
@@ -226,12 +224,11 @@ export class IotHttpService {
     }
 
     /**
-     * Listen for events on the IoT Box
-     * @param iotBoxId IoT Box record ID
-     * @param deviceIdentifier Identifier of the device connected to the IoT Box
-     * @param {(message: Record<string, unknown>, deviceId: string) => void} onSuccess Callback to run when a message is received
-     * @param {(message: Record<string, unknown>, deviceId: string) => void} onFailure Callback to run when the request fails
-     * @param {string|null} messageId Unique identifier for the message (optional)
+     * @param iotBoxId
+     * @param deviceIdentifier
+     * @param {(message: Record<string, unknown>, deviceId: string) => void} onSuccess
+     * @param {(message: Record<string, unknown>, deviceId: string) => void} onFailure
+     * @param {string|null} messageId
      * @returns {Promise<void>}
      */
     async onMessage(
@@ -251,13 +248,12 @@ export class IotHttpService {
     }
 
     /**
-     * Call for an action method on the IoT Box
-     * @param iotBoxId IoT Box record ID
-     * @param deviceIdentifier Identifier of the device connected to the IoT Box
-     * @param data Data to send
-     * @param {(message: Record<string, unknown>, deviceId: string) => void} onSuccess Callback to run when a message is received
-     * @param {(message: Record<string, unknown>, deviceId: string) => void} onFailure Callback to run when the request fails
-     * @param {string|null} messageId Unique identifier for the message (optional)
+     * @param iotBoxId
+     * @param deviceIdentifier
+     * @param data
+     * @param {(message: Record<string, unknown>, deviceId: string) => void} onSuccess
+     * @param {(message: Record<string, unknown>, deviceId: string) => void} onFailure
+     * @param {string|null} messageId
      * @returns {Promise<void>}
      */
     async action(

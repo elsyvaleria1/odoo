@@ -21,9 +21,6 @@ function formatServerDateTime(value) {
 }
 
 /**
- * The server's date format, "YYYY-MM-DD": a date's own day, or the day a
- * datetime falls on in its zone.
- *
  * @param {Temporal.PlainDate | Temporal.ZonedDateTime | null | false | undefined} value
  * @returns {string|false}
  */
@@ -37,8 +34,6 @@ export function serializeDate(value) {
 }
 
 /**
- * The server's datetime format, "YYYY-MM-DD HH:MM:SS" in UTC.
- *
  * @param {Temporal.ZonedDateTime | null | false | undefined} value
  * @returns {string|false}
  */
@@ -76,9 +71,6 @@ function readServerValue(value, zone) {
 }
 
 /**
- * A server date, "YYYY-MM-DD", as that day. Read with luxon's fromSQL grammar,
- * as before; a time, when present, is dropped: a date has none.
- *
  * @param {string} value
  * @returns {Temporal.PlainDate}
  */
@@ -87,10 +79,6 @@ export function deserializeDate(value) {
 }
 
 /**
- * A server datetime, "YYYY-MM-DD HH:MM:SS" in UTC, in `tz` (the user's zone
- * by default). Read with luxon's fromSQL grammar, as before: fractional
- * seconds, surrounding white space and an explicit offset or "Z" are accepted.
- *
  * @param {string} value
  * @param {{tz?: string}} [options]
  * @returns {Temporal.ZonedDateTime}

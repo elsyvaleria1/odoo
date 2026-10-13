@@ -52,12 +52,7 @@ export const DocumentsRecordMixin = (component) =>
             return ret;
         }
 
-        /**
-         * Uploads `input`'s files as this document's new content, then clears
-         * the input for the next pick.
-         *
-         * @param {HTMLInputElement} input
-         */
+        /** @param {HTMLInputElement} input */
         replaceFileFromInput(input) {
             if (!input.files.length) {
                 return;

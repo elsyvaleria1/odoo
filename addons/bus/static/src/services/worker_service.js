@@ -22,15 +22,7 @@ export class WorkerService {
         this.connectionInitializedDeferred = new Deferred();
     }
 
-    /**
-     * What the service effectively ended up running, decided at RUNTIME (a
-     * SharedWorker can fail and fall back to a dedicated Worker, or fail
-     * entirely). Read it after `ensureWorkerStarted()` -- import-time feature
-     * detection (`browser.SharedWorker` presence) is NOT equivalent.
-     *
-     * @returns {"shared" | "dedicated" | "failed" | null} null while the
-     * outcome is not settled yet.
-     */
+    /** @returns {"shared" | "dedicated" | "failed" | null} */
     get workerKind() {
         if (this._state === WORKER_STATE.FAILED) {
             return "failed";
@@ -152,13 +144,8 @@ export class WorkerService {
     }
 
     /**
-     * Send a message to the worker. If the worker is not yet started,
-     * ignore the message. One should call `ensureWorkerStarted` if one
-     * really needs the message to reach the worker.
-     *
-     * @param {String} action Action to be executed by the worker.
-     * @param {Object|undefined} data Data required for the action to be
-     * executed.
+     * @param {String} action
+     * @param {Object|undefined} data
      */
     async send(action, data) {
         if (this._state === WORKER_STATE.UNINITIALIZED) {
@@ -172,11 +159,7 @@ export class WorkerService {
         this._send(action, data);
     }
 
-    /**
-     * Register a function to handle messages from the worker.
-     *
-     * @param {function} handler
-     */
+    /** @param {function} handler */
     async registerHandler(handler) {
         if (this._state === WORKER_STATE.UNINITIALIZED) {
             this.startWorker();

@@ -76,28 +76,7 @@ export class TaskGanttModel extends TaskGanttModelCommon {
         return this.orm.search("project.task", [["planning_overlap", "!=", false]]);
     }
 
-    /**
-     * In the case of special Many2many Fields, like triage_ids in project.task
-     * model, we don't want to write the many2many field but use the inverse method of the
-     * linked Many2one field, in this case the triage_id, to create or update the
-     * record - here set the triage_id - in the triage_ids.
-     *
-     * This is mandatory since the python ORM doesn't support the creation of
-     * a personnal stage from scratch. If this method is not overriden, then an entry
-     * will be inserted in the project_task_user_rel.
-     * One for the faked Many2many user_ids field (1), and a second one for the other faked
-     * Many2many triage_ids field (2).
-     *
-     * While the first one meets the constraint on the project_task_user_rel, the second one
-     * fails because it specifies no user_id; It tries to insert (task_id, triage_id) into the
-     * relation.
-     *
-     * If we don't remove those key from the context, the ORM will face two problems :
-     * - It will try to insert 2 entries in the project_task_user_rel
-     * - It will try to insert an incorrect entry in the project_task_user_rel
-     *
-     * @param {Object} object
-     */
+    /** @param {Object} object */
     _replaceSpecialMany2manyKeys(object) {
         for (const { many2many_field, many2one_field } of MAP_MANY_2_MANY_FIELDS) {
             if (many2many_field in object) {

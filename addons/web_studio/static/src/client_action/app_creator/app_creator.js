@@ -176,10 +176,7 @@ export class AppCreator extends Component {
         }
     }
 
-    /**
-     * Handle the confirmation of options in the modelconfigurator
-     * @param {Object} options
-     */
+    /** @param {Object} options */
     onConfirmOptions(options) {
         this.state.data.modelOptions = options;
         return this.state.next();

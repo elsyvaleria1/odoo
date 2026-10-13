@@ -35,7 +35,7 @@ export class DependencyManager extends EventBus {
     /**
      * @param {string} id
      * @param {BuilderOptionDependency} value
-     * @param {Boolean} ignored - if true, do not override a dependency already registered under this id
+     * @param {Boolean} ignored
      */
     add(id, value, ignored = false) {
         if (!ignored || !(id in this.dependenciesMap)) {

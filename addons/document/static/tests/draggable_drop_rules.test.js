@@ -7,7 +7,7 @@ describe.current.tags("headless");
  * @param {Object} [param0]
  * @param {number[]} [param0.movable]
  * @param {number[]} [param0.nonMovable]
- * @param {number[]} [param0.trashable] all of them unless said
+ * @param {number[]} [param0.trashable]
  * @returns {Object}
  */
 function makeCtx({ movable = [1], nonMovable = [], trashable } = {}) {

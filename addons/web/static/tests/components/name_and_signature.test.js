@@ -253,7 +253,7 @@ for (const action of ["clear", "switch mode", "destroy"]) {
         patchWithCleanup(component.signaturePad.canvas.getContext("2d"), {
             drawImage: () => expect.step("paint"),
         });
-        // @ts-expect-error Exercise the private input handler while its file read is pending.
+
         const pending = component.onChangeSignLoadInput(
             /** @type {any} */ ({
                 target: {

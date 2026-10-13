@@ -347,11 +347,7 @@ export class VersionHistoryAction extends Component {
         });
     }
 
-    /**
-     * The editor of this spreadsheet the history was opened from, if it is
-     * still beneath it.
-     * @param {string} tag the client action that edits this spreadsheet
-     */
+    /** @param {string} tag */
     _editorBeneath(tag) {
         const beneath = this.actionService.controllerStack.at(-2);
         const isEditor =
@@ -360,10 +356,8 @@ export class VersionHistoryAction extends Component {
     }
 
     /**
-     * Opens what a restore or a fork leaves, in place of the history and of
-     * the editor beneath it, which no longer shows the spreadsheet as it is.
      * @param {Object} action
-     * @param {string} editorTag the client action that edits this spreadsheet
+     * @param {string} editorTag
      */
     _replaceEditor(action, editorTag) {
         const stackPosition = this._editorBeneath(editorTag)

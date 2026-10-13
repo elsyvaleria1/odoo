@@ -51,11 +51,7 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
         this.values = {};
     }
 
-    /**
-     * Check if the given command can be dispatched
-     *
-     * @param {import("@spreadsheet").AllCommand} cmd Command
-     */
+    /** @param {import("@spreadsheet").AllCommand} cmd */
     allowDispatch(cmd) {
         switch (cmd.type) {
             case "SET_GLOBAL_FILTER_VALUE": {
@@ -87,11 +83,7 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
         return CommandResult.Success;
     }
 
-    /**
-     * Handle a spreadsheet command
-     *
-     * @param {import("@spreadsheet").AllCommand} cmd
-     */
+    /** @param {import("@spreadsheet").AllCommand} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "SET_GLOBAL_FILTER_VALUE":
@@ -115,7 +107,6 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
     /**
      * @param {string} filterId
      * @param {FieldMatching} fieldMatching
-     *
      * @return {Domain}
      */
     getGlobalFilterDomain(filterId, fieldMatching) {
@@ -143,11 +134,8 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the current value of a global filter
-     *
-     * @param {string} filterId Id of the filter
-     *
-     * @returns {string|Array<string>|Object} value Current value to set
+     * @param {string} filterId
+     * @returns {string|Array<string>|Object}
      */
     getGlobalFilterValue(filterId) {
         const filter = this.getters.getGlobalFilter(filterId);
@@ -174,19 +162,14 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * @param {string} id Id of the filter
-     *
-     * @returns { boolean } true if the given filter is active
+     * @param {string} id
+     * @returns { boolean }
      */
     isGlobalFilterActive(id) {
         return this.getGlobalFilterValue(id) !== undefined;
     }
 
-    /**
-     * Get the number of active global filters
-     *
-     * @returns {number}
-     */
+    /** @returns {number} */
     getActiveFilterCount() {
         return this.getters
             .getGlobalFilters()
@@ -214,8 +197,6 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Returns the possible values a text global filter can take
-     * if the values are restricted by a range of allowed values
      * @param {string} filterId
      * @returns {{value: string, formattedValue: string}[]}
      */
@@ -236,8 +217,6 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Returns the possible values a text global filter can take from a range
-     * or any addition raw string value. Removes duplicates and empty string values.
      * @param {object[]} ranges
      * @param {string[]} additionalOptionValues
      */
@@ -280,10 +259,8 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Set the current value of a global filter
-     *
-     * @param {string} id Id of the filter
-     * @param {string|Array<string>|Object} value Current value to set
+     * @param {string} id
+     * @param {string|Array<string>|Object} value
      */
     _setGlobalFilterValue(id, value) {
         this.values[id] = {
@@ -292,11 +269,7 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
         };
     }
 
-    /**
-     * Set the current value to empty values which functionally deactivate the filter
-     *
-     * @param {string} id Id of the filter
-     */
+    /** @param {string} id */
     _clearGlobalFilterValue(id) {
         this.values[id] = {
             preventDefaultValue: true,
@@ -305,9 +278,7 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the global filter with the given name
-     *
-     * @param {string} label Label
+     * @param {string} label
      * @returns {GlobalFilter|undefined}
      */
     getGlobalFilterByName(label) {
@@ -335,10 +306,6 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the value derived from the default value of a date filter.
-     * e.g. if the default value is "this_year", it returns the actual current
-     * year. If it's a relative period, it returns the period as value.
-     *
      * @param {DateDefaultValue} defaultValue
      * @returns {DateValue|undefined}
      */
@@ -373,13 +340,9 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the domain relative to a date field
-     *
      * @private
-     *
      * @param {DateGlobalFilter} filter
      * @param {FieldMatching} fieldMatching
-     *
      * @returns {Domain}
      */
     _getDateDomain(filter, fieldMatching) {
@@ -393,11 +356,7 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
         return getDateDomain(from, to, field, type);
     }
 
-    /**
-     * Adds all active filters (and their values) at the time of export in a dedicated sheet
-     *
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     exportForExcel(data) {
         if (this.getters.getGlobalFilters().length === 0) {
             return;

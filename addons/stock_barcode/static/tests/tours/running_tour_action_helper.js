@@ -13,10 +13,7 @@ if (!tourHelperActions.contains("scan")) {
     });
 }
 
-/**
- * Simulate scan of RFID(s).
- * @param {String} rfid one or multiple RFID as a string. Use comma (,) to split the string into multi RFID
- */
+/** @param {String} rfid */
 tourHelperActions.add("scanRFID", async function (rfid) {
     const params = { data: rfid.split(",") };
     appContextOf(odoo.__WOWL_DEBUG__.root).services.mobile.bus.trigger(

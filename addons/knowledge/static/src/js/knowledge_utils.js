@@ -3,10 +3,7 @@ import { loadEmoji } from "@web/components/emoji_picker";
 
 const iconsBlocklist = ["💩", "💀", "☠️", "🤮", "🖕", "🤢", "😒"];
 
-/**
- * Get a random icon (that is not in the icons blocklist)
- * @returns {String} emoji
- */
+/** @returns {String} */
 export async function getRandomIcon() {
     const { emojis } = await loadEmoji();
     const randomEmojis = emojis.filter(
@@ -16,10 +13,6 @@ export async function getRandomIcon() {
 }
 
 /**
- * Set an intersection observer on the given element. This function will ensure
- * that the given callback function will be called at most once when the given
- * element becomes visible on screen. This function can be used to load
- * components lazily (see: 'EmbeddedViewComponent').
  * @param {HTMLElement} element
  * @param {Function} callback
  * @returns {IntersectionObserver}

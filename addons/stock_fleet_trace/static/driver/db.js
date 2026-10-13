@@ -61,8 +61,6 @@ export async function putPackage(pkg) {
 }
 
 /**
- * The events of a trip in chain order (the order the phone captured them).
- *
  * @param {number} tripId
  * @returns {Promise<Object[]>}
  */
@@ -81,10 +79,8 @@ export async function addEvent(record) {
 }
 
 /**
- * Record the server's answer for already-sent events, leaving their data intact.
- *
- * @param {Object[]} records events as read from the store
- * @param {Object} result the server's answer, per client_uuid
+ * @param {Object[]} records
+ * @param {Object} result
  */
 export async function markSynced(records, result) {
     const db = await open();

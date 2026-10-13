@@ -4,19 +4,14 @@ import { stepUtils } from "@web_tour/tour_utils";
 import { endKnowledgeTour, openCommandBar } from "../knowledge_tour_utils.js";
 
 /**
- * Verify that a filter is not duplicated and is properly maintained after
- * a round trip with the breadcrumbs.
- *
- * @param {String} kanban name of a kanban view in which records can be created
- * @param {String} filterName name of a favorite filter which is already present in the view
- * @returns {Array} steps
+ * @param {String} kanban
+ * @param {String} filterName
+ * @returns {Array}
  */
 
 /**
- * Insert the Knowledge kanban view as an embedded view in article.
- *
- * @param {String} article article name
- * @returns {Array} steps
+ * @param {String} article
+ * @returns {Array}
  */
 const embedKnowledgeKanbanViewSteps = function (article) {
     return [
@@ -59,12 +54,9 @@ const embedKnowledgeKanbanViewSteps = function (article) {
 };
 
 /**
- * Test favorite filters and use by default filters in embedded views in
- * Knowledge. Need an article with 2 named kanban embeds to work.
- *
- * @param {String} kanban1 name of the first kanban
- * @param {String} kanban2 name of the second kanban
- * @returns {Array} steps
+ * @param {String} kanban1
+ * @param {String} kanban2
+ * @returns {Array}
  */
 
 registry.category("web_tour.tours").add("knowledge_items_search_favorites_tour", {

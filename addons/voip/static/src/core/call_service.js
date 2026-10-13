@@ -74,8 +74,7 @@ export class CallService {
     /**
      * @param {Object} call
      * @param {Object} [options]
-     * @param {string} [options.sipCallId] the dialog's SIP Call-ID, so the phone
-     *  system's report of the same call joins it
+     * @param {string} [options.sipCallId]
      */
     async start(call, { sipCallId } = {}) {
         this.store.insert(

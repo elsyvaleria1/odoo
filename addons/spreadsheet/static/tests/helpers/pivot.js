@@ -135,10 +135,6 @@ export async function createSpreadsheetWithPivot(params = {}) {
 }
 
 /**
- * Return the zone that contains all the cells of the given data source
- *
- * TODO: Un-duplicate this once this or #50623 is merged
- *
  * @param model
  * @param {"pivot" | "list"} dataSourceType
  * @param {string} id

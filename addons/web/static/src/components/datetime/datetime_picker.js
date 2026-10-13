@@ -52,8 +52,7 @@ import { ensureArray } from "@web/core/utils/collections/arrays";
  * @property {DateRange} range
  * @property {string} extraClass
  * @typedef {"today" | NullableDateValue} DateLimit
- * @typedef {Temporal.ZonedDateTime | Temporal.PlainDate} DateTime a day of the
- *  grid, and a value: a date for a "date" picker, a datetime otherwise
+ * @typedef {Temporal.ZonedDateTime | Temporal.PlainDate} DateTime
  * @typedef {[DateTime, DateTime]} DateRange
  * @typedef DateTimePickerProps
  * @property {number} [focusedDateIndex=0]
@@ -99,8 +98,7 @@ import { ensureArray } from "@web/core/utils/collections/arrays";
  * @property {KeySteps} keySteps
  * @typedef {"days" | "months" | "years" | "decades"} PrecisionLevel
  * @typedef {"date" | "time" | "range"} SelectionUnit
- * @typedef KeyboardPort where the picker's owner hands it the keys typed in
- *  the owner's inputs; the handler answers whether it used the key
+ * @typedef KeyboardPort
  * @property {((ev: KeyboardEvent) => boolean) | null} handler
  * @typedef KeySteps
  * @property {Temporal.DurationLike} across
@@ -122,13 +120,10 @@ import { ensureArray } from "@web/core/utils/collections/arrays";
 const log = makeLogger("web.components.datetime_picker");
 
 /**
- * How long a range lasts; a date range counts both its days, and a range
- * ending on a day's last minute runs through that day
- *
  * @param {DateTime} start
  * @param {DateTime} end
  * @param {"date" | "datetime"} [type="datetime"]
- * @param {boolean} [full=true] two units spelled out, or the largest one abbreviated
+ * @param {boolean} [full=true]
  * @returns {string}
  */
 export function formatRangeDuration(start, end, type = "datetime", full = true) {
@@ -159,8 +154,6 @@ const getStartOfCentury = (date) => Math.floor(date.year / 100) * 100;
 const numberRange = (min, max) => [...Array(max - min)].map((_, i) => i + min);
 
 /**
- * The same wall time as `value`, in `zone`
- *
  * @param {Temporal.ZonedDateTime} value
  * @param {string} zone
  * @returns {Temporal.ZonedDateTime}
@@ -168,8 +161,6 @@ const numberRange = (min, max) => [...Array(max - min)].map((_, i) => i + min);
 const keepWallTimeIn = (value, zone) => value.toPlainDateTime().toZonedDateTime(zone);
 
 /**
- * A length spelled out in the user's locale: "2 weeks"
- *
  * @param {Partial<Record<"months" | "weeks" | "days" | "hours", number>>} length
  * @returns {string}
  */
@@ -191,7 +182,7 @@ const humanizeLength = (length) => {
 
 /**
  * @param {Temporal.ZonedDateTime} date
- * @param {number} rounding minutes per step; 0 or less steps by the second
+ * @param {number} rounding
  * @param {boolean} up
  * @returns {Temporal.ZonedDateTime}
  */
@@ -211,9 +202,6 @@ const alignToStep = (date, rounding, up) => {
 };
 
 /**
- * A limit of a date picker is a day; one of a datetime picker is an instant,
- * and a day given to it covers the whole of that day in `zone`
- *
  * @param {DateLimit | undefined} value
  * @param {"min" | "max"} boundary
  * @param {DateTime} today
@@ -554,11 +542,7 @@ export class DateTimePicker extends Component {
             timeValues: [],
             /** @type {PrecisionLevel} */
             precision: this.props.minPrecision,
-            /**
-             * The day the arrow keys move, while they drive the grid
-             *
-             * @type {DateTime | null}
-             */
+            /** @type {DateTime | null} */
             cursorDate: null,
         });
 
@@ -641,9 +625,6 @@ export class DateTimePicker extends Component {
     }
 
     /**
-     * A value in the kind this picker picks: a date picker shows the day a
-     * datetime falls on, a datetime picker the start of a date's day
-     *
      * @param {NullableDateValue | undefined} value
      * @returns {NullableDateValue}
      */
@@ -721,11 +702,7 @@ export class DateTimePicker extends Component {
         return this.decorateGrid(this.gridState.grid);
     }
 
-    /**
-     * The values, previewing the range a click on the hovered day would make
-     *
-     * @returns {NullableDateValue[]}
-     */
+    /** @returns {NullableDateValue[]} */
     get selectedRange() {
         const { focusedDateIndex, range } = this.props;
         const { hoveredDate } = this.state;
@@ -863,9 +840,6 @@ export class DateTimePicker extends Component {
     }
 
     /**
-     * A preset keeps the time a bound already has; an empty bound covers the
-     * whole of its day
-     *
      * @param {DateTime} day
      * @param {number} valueIndex
      * @returns {DateTime}
@@ -931,10 +905,6 @@ export class DateTimePicker extends Component {
     }
 
     /**
-     * Places a picked day into the range without undoing the other bound:
-     * a new start after the end carries the end along by the range's length,
-     * and a new end before the start's day becomes the start instead.
-     *
      * @param {DateTime} picked
      * @param {number} valueIndex
      * @returns {{ value: NullableDateValue[], focusedDateIndex: number }}
@@ -1040,9 +1010,6 @@ export class DateTimePicker extends Component {
     }
 
     /**
-     * A value clamped onto a limit takes the limit's seconds and milliseconds;
-     * it moves inward to the first time the time picker could have offered.
-     *
      * @param {DateTime} value
      * @returns {DateTime}
      */
@@ -1135,12 +1102,7 @@ export class DateTimePicker extends Component {
         }
     }
 
-    /**
-     * Beside another month, a day outside its own month is shown by its
-     * neighbour: it is left blank rather than shown twice
-     *
-     * @param {DateItem} item
-     */
+    /** @param {DateItem} item */
     isHidden(item) {
         return item.isOutOfRange && this.monthCount > 1;
     }
@@ -1166,12 +1128,8 @@ export class DateTimePicker extends Component {
     }
 
     /**
-     * Keys typed in the owner's input: Up or Down hands the arrows to the
-     * grid, where the arrows, Home/End and Page Up/Down move the cursor and
-     * Enter or Space picks it. Typing gives them back to the text.
-     *
      * @param {KeyboardEvent} ev
-     * @returns {boolean} whether the key was used
+     * @returns {boolean}
      */
     onKeydown(ev) {
         const { key, altKey, ctrlKey, metaKey, shiftKey } = ev;
@@ -1244,12 +1202,7 @@ export class DateTimePicker extends Component {
         return null;
     }
 
-    /**
-     * Puts the cursor on a day and turns the grid to it; while a range is
-     * picked, the cursor previews the range as the pointer does
-     *
-     * @param {DateTime} date
-     */
+    /** @param {DateTime} date */
     moveCursor(date) {
         const cursor = this.clampDay(date);
         this.state.cursorDate = cursor;
@@ -1282,7 +1235,7 @@ export class DateTimePicker extends Component {
         );
     }
 
-    /** @returns {DateItem[]} the grid's cells, the days of every month shown */
+    /** @returns {DateItem[]} */
     getDateItems() {
         return this.items.flatMap((item) =>
             "weeks" in item

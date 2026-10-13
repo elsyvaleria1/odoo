@@ -11,11 +11,8 @@ export class VersionErrorPlugin extends Plugin {
     resources = {};
 
     /**
-     * Checks if a snippet is up to date by comparing its versions (vcss, vxml, vjs)
-     * with those of the original snippet in the model.
-     *
-     * @param {HTMLElement} el - The element to check (will look for parent with data-snippet if needed)
-     * @returns {boolean} - true if the snippet is up to date, or if the element is not a snippet
+     * @param {HTMLElement} el
+     * @returns {boolean}
      */
     isSnippetUpToDate(el) {
         const snippetEl = el?.closest?.("[data-snippet]");
@@ -39,12 +36,8 @@ export class VersionErrorPlugin extends Plugin {
     }
 
     /**
-     * Checks if snippet is outdated. If yes, displays an appropriate
-     * notification and returns true, otherwise return false. Only one
-     * notification is open per time.
-     *
-     * @param {HTMLElement} editingElement - The element being checked
-     * @return {Boolean} - True if the snippet is outdated
+     * @param {HTMLElement} editingElement
+     * @return {Boolean}
      */
     checkNotifyOutdatedSnippet(editingElement) {
         if (!this.isSnippetUpToDate(editingElement)) {

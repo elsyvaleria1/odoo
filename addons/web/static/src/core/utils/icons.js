@@ -33,11 +33,6 @@ export function isIconElement(node) {
 }
 
 /**
- * Font Awesome 7 draws nothing for a glyph class without a style class, so a
- * bare `fa-clipboard` — the FA4 spelling every arch attribute and most
- * callers still use — is completed to `fa-solid fa-clipboard`; the FA4 `fa `
- * base is dropped on the way. A class that already names its style is kept.
- *
  * @param {string} iconClass
  * @returns {string}
  */

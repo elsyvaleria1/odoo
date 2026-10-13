@@ -1,38 +1,38 @@
 let QRCode;
 
 (() => {
-    //---------------------------------------------------------------------
-    // QRCode for JavaScript
-    //
+
+
+
     // Copyright (c) 2009 Kazuhiko Arase
-    //
-    // URL: http://www.d-project.com/
-    // Github: https://github.com/davidshimjs/qrcodejs
-    //
+
+
+
+
     // Licensed under the MIT license:
     //   http://www.opensource.org/licenses/mit-license.php
-    //
+
     // The MIT License (MIT)
-    // ---------------------
+
     // Copyright (c) 2012 davidshimjs
-    //
-    // Permission is hereby granted, free of charge,
-    // to any person obtaining a copy of this software and associated documentation files (the "Software"),
-    // to deal in the Software without restriction,
+
+
+
+
     // including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    // and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-    // subject to the following conditions:
-    //
+
+
+
     // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-    //
+
     // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-    //
-    //
-    // The word "QR Code" is registered trademark of
-    // DENSO WAVE INCORPORATED
-    //   http://www.denso-wave.com/qrcode/faqpatent-e.html
-    //
-    //---------------------------------------------------------------------
+
+
+
+
+
+
+
     class QR8bitByte {
         constructor(data) {
             this.mode = QRMode.MODE_8BIT_BYTE;
@@ -1127,11 +1127,9 @@ let QRCode;
               }
 
               /**
-               * Check whether the user's browser supports Data URI or not
-               *
                * @private
-               * @param {Function} fSuccess Occurs if it supports Data URI
-               * @param {Function} fFail Occurs if it doesn't support Data URI
+               * @param {Function} fSuccess
+               * @param {Function} fFail
                */
               function _safeSetDataURI(fSuccess, fFail) {
                   const self = this;
@@ -1169,11 +1167,9 @@ let QRCode;
               }
 
               /**
-               * Drawing QRCode by using canvas
-               *
                * @constructor
                * @param {HTMLElement} el
-               * @param {Object} htOption QRCode Options
+               * @param {Object} htOption
                */
               class Drawing {
                   constructor(el, htOption) {
@@ -1195,11 +1191,7 @@ let QRCode;
                       this._bSupportDataURI = null;
                   }
 
-                  /**
-                   * Draw the QRCode
-                   *
-                   * @param {QRCode} oQRCode
-                   */
+                  /** @param {QRCode} oQRCode */
                   draw(oQRCode) {
                       const _elImage = this._elImage;
                       const _oContext = this._oContext;
@@ -1253,11 +1245,7 @@ let QRCode;
                       }
                   }
 
-                  /**
-                   * Return whether the QRCode is painted or not
-                   *
-                   * @return {Boolean}
-                   */
+                  /** @return {Boolean} */
                   isPainted() {
                       return this._bIsPainted;
                   }
@@ -1284,12 +1272,10 @@ let QRCode;
           })();
 
     /**
-     * Get the type by string length
-     *
      * @private
      * @param {String} sText
      * @param {Number} nCorrectLevel
-     * @return {Number} type
+     * @return {Number}
      */
     function _getTypeNumber(sText, nCorrectLevel) {
         let nType = 1;
@@ -1337,27 +1323,14 @@ let QRCode;
     /**
      * @class QRCode
      * @constructor
-     * @example
-     * new QRCode(document.getElementById("test"), "http://jindo.dev.naver.com/collie");
-     *
-     * @example
-     * const oQRCode = new QRCode("test", {
-     *    text : "http://naver.com",
-     *    width : 128,
-     *    height : 128
-     * });
-     *
-     * oQRCode.clear(); // Clear the QRCode.
-     * oQRCode.makeCode("http://map.naver.com"); // Re-create the QRCode.
-     *
-     * @param {HTMLElement|String} el target element or 'id' attribute of element.
+     * @param {HTMLElement|String} el
      * @param {Object|String} vOption
-     * @param {String} vOption.text QRCode link data
+     * @param {String} vOption.text
      * @param {Number} [vOption.width=256]
      * @param {Number} [vOption.height=256]
      * @param {String} [vOption.colorDark="#000000"]
      * @param {String} [vOption.colorLight="#ffffff"]
-     * @param {QRCode.CorrectLevel} [vOption.correctLevel=QRCode.CorrectLevel.H] [L|M|Q|H]
+     * @param {QRCode.CorrectLevel} [vOption.correctLevel=QRCode.CorrectLevel.H]
      */
     QRCode = function (el, vOption) {
         this._htOption = {
@@ -1399,11 +1372,7 @@ let QRCode;
         }
     };
 
-    /**
-     * Make the QRCode
-     *
-     * @param {String} sText link data
-     */
+    /** @param {String} sText */
     QRCode.prototype.makeCode = function (sText) {
         this._oQRCode = new QRCodeModel(
             _getTypeNumber(sText, this._htOption.correctLevel),
@@ -1416,13 +1385,7 @@ let QRCode;
         this.makeImage();
     };
 
-    /**
-     * Make the Image from Canvas element
-     * - It occurs automatically
-     * - Android below 3 doesn't support Data-URI spec.
-     *
-     * @private
-     */
+    /** @private */
     QRCode.prototype.makeImage = function () {
         if (
             typeof this._oDrawing.makeImage == "function" &&

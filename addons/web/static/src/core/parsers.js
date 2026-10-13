@@ -80,7 +80,7 @@ function evaluateMathematicalExpression(/** @type {string} */ expr) {
  * @param {(v: string) => any} parseValueFn
  * @param {{ integer?: boolean }} [options]
  * @returns {import("@web/core/utils/operation").Operation | false}
- * @throws {InvalidNumberError} on a division by zero
+ * @throws {InvalidNumberError}
  */
 function parseOperation(value, parseValueFn, { integer = false } = {}) {
     const match = value.trim().match(getOperationRegex(localization.decimalPoint));
@@ -97,13 +97,9 @@ function parseOperation(value, parseValueFn, { integer = false } = {}) {
 }
 
 /**
- * The size of each thousands group, rightmost first, following the grouping
- * semantics of `intersperse`: `0` repeats the previous size, `-1` or the end
- * of the list leaves the remaining digits ungrouped.
- *
  * @param {number[]} grouping
  * @param {number} count
- * @returns {number[]} fewer than `count` sizes when the leading digits are ungrouped
+ * @returns {number[]}
  */
 function groupSizes(grouping, count) {
     /** @type {number[]} */
@@ -125,7 +121,7 @@ function groupSizes(grouping, count) {
 }
 
 /**
- * @param {string[]} groups the integer digits split on the thousands separator
+ * @param {string[]} groups
  * @param {number[]} grouping
  * @returns {boolean}
  */
@@ -242,7 +238,7 @@ export function parseFloat(value, { allowOperation = false } = {}) {
     }
     const operation = allowOperation ? parseOperation(value, parseFloat) : null;
     if (operation instanceof Operation) {
-        // @ts-expect-error returns Operation when allowOperation is true
+
         return operation;
     }
     return parseInLocale(value);
@@ -294,7 +290,7 @@ export function parseInteger(value, { allowOperation = false } = {}) {
         ? parseOperation(value, parseInteger, { integer: true })
         : null;
     if (operation instanceof Operation) {
-        // @ts-expect-error returns Operation when allowOperation is true
+
         return operation;
     }
     const parsed = parseInLocale(value);
@@ -306,9 +302,9 @@ export function parseInteger(value, { allowOperation = false } = {}) {
 }
 
 /**
- * @param {string} value what the user typed, for the message
+ * @param {string} value
  * @param {number} parsed
- * @throws {InvalidNumberError} when the integer does not fit the server's int32 column
+ * @throws {InvalidNumberError}
  */
 export function assertInt32(value, parsed) {
     if (parsed < -2147483648 || parsed > 2147483647) {
@@ -345,7 +341,7 @@ export function parsePercentage(value, { allowOperation = false } = {}) {
 export function parseMonetary(value, { allowOperation = false } = {}) {
     const operation = allowOperation ? parseOperation(value, parseMonetary) : null;
     if (operation instanceof Operation) {
-        // @ts-expect-error returns Operation when allowOperation is true
+
         return operation;
     }
     value = value.trim();

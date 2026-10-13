@@ -25,12 +25,7 @@ export class TaskGanttModelCommon extends ProjectTaskModelMixin(GanttModel) {
         return super._fetchData(metaData, additionalContext);
     }
 
-    /**
-     * The highlighted tasks, and the milestones and project dates in range
-     * (not for sample data nor on a small screen).
-     *
-     * @override
-     */
+    /** @override */
     async _fetchCompanionData(metaData) {
         const [highlightIds, deadlines] = await Promise.all([
             this._fetchHighlightIds(),

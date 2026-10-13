@@ -60,12 +60,7 @@ export class SelfOrderRouter extends SignalStore {
         this.historyPage = window.location.pathname;
     }
 
-    /**
-     * Navigate to the given relative route.
-     * We use the history API to navigate to it.
-     * (this means that we don't make additional requests to the server)
-     * @param {string} route
-     */
+    /** @param {string} route */
     navigate(routeName, routeParams = {}) {
         const { route } = this.registeredRoutes[routeName];
         const url = new URL(browser.location.href);

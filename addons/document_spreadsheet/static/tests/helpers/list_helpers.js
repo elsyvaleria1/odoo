@@ -24,18 +24,15 @@ import { WebClient } from "@web/webclient/webclient";
 /** @typedef {import("@spreadsheet/o_spreadsheet/o_spreadsheet").Model} Model */
 
 /**
- * Get a webclient with a list view.
- * The webclient is already configured to work with spreadsheet (env, registries, ...)
- *
  * @param {Object} params
- * @param {string} [params.model] Model name of the list
- * @param {Object} [params.serverData] Data to be injected in the mock server
- * @param {Function} [params.mockRPC] Mock rpc function
- * @param {object} [params.additionalContext] additional action context
- * @param {object[]} [params.orderBy] orderBy argument
- * @param {string} [params.actionXmlId] If set, the list view will be loaded from this action - will ignore model and domain
+ * @param {string} [params.model]
+ * @param {Object} [params.serverData]
+ * @param {Function} [params.mockRPC]
+ * @param {object} [params.additionalContext]
+ * @param {object[]} [params.orderBy]
+ * @param {string} [params.actionXmlId]
  * @param {Object} [params.groupBy]
- * @returns {Promise<object>} Webclient
+ * @returns {Promise<object>}
  */
 export async function spawnListViewForSpreadsheet(params = {}) {
     const { model, serverData, mockRPC } = params;
@@ -73,18 +70,15 @@ export async function spawnListViewForSpreadsheet(params = {}) {
 }
 
 /**
- * Create a spreadsheet model from a List controller
- *
  * @param {object} params
- * @param {string} [params.model] Model name of the list
- * @param {object} [params.serverData] Data to be injected in the mock server
- * @param {function} [params.mockRPC] Mock rpc function
- * @param {object[]} [params.orderBy] orderBy argument
- * @param {() => Promise<void>} [params.actions] orderBy argument
- * @param {object} [params.additionalContext] additional action context
+ * @param {string} [params.model]
+ * @param {object} [params.serverData]
+ * @param {function} [params.mockRPC]
+ * @param {object[]} [params.orderBy]
+ * @param {() => Promise<void>} [params.actions]
+ * @param {object} [params.additionalContext]
  * @param {number} [params.linesNumber]
- * @param {string} [params.actionXmlId] xmlId of the action to load the list view from - model and domain will be ignored
- *
+ * @param {string} [params.actionXmlId]
  * @returns {Promise<{ model: Model, webClient: object, env: object }>}
  */
 export async function createSpreadsheetFromListView(params = {}) {
@@ -125,11 +119,7 @@ export async function createSpreadsheetFromListView(params = {}) {
     };
 }
 
-/**
- * Toggle the CogMenu's Spreadsheet sub-dropdown
- *
- * @returns Promise
- */
+/** @returns */
 export async function toggleCogMenuSpreadsheet() {
     await waitFor(".o-dropdown--menu .dropdown-toggle");
     const dropdownMenu = getDropdownMenu(".o_cp_action_menus .dropdown-toggle");

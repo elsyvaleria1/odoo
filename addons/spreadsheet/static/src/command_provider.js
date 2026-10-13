@@ -51,12 +51,6 @@ function setupSpreadsheetCommandProvider(spreadsheetEnv) {
 }
 
 /**
- * o-spreadsheet stores a menu item's keyboard shortcut in its `description`
- * ("Ctrl+C", "Ctrl+Shift+V"), which it renders to the right of the item in the
- * topbar menus. Turn that into a hotkey the command palette can register, or
- * "" when it is not one our hotkey service accepts -- `useHotkey` throws on an
- * unauthorized key, which would take the whole palette down with it.
- *
  * @param {string} description
  * @returns {string}
  */

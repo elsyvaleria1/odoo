@@ -5,8 +5,7 @@ import { patchInfo } from "@web/core/utils/patch";
 /**
  * @param {object} prototype
  * @param {string} key
- * @returns {PropertyDescriptor|undefined} the lowest definition of `key` on `prototype`, i.e.
- * the one whose `super` reaches the parent: the class body's, else the first patch's.
+ * @returns {PropertyDescriptor|undefined}
  */
 function lowestOwnDefinition(prototype, key) {
     const info = patchInfo(prototype);
@@ -31,11 +30,7 @@ function reachesSuper(descriptor, key) {
         .some((fn) => String(fn).includes(`super.${key}`));
 }
 
-/**
- * A patch of a parent model's method is shadowed on subtype records when the subtype defines
- * the same method without calling `super` there: the patch never runs for them.
- * @returns {string[]}
- */
+/** @returns {string[]} */
 export function getShadowedPatches() {
     const Models = new Set(registry.category("discuss.model").getAll());
     const shadowed = [];

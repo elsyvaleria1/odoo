@@ -29,19 +29,12 @@ export class EventSlotCalendarCommonRenderer extends CalendarCommonRenderer {
         return [];
     }
 
-    /**
-     * @override
-     * Slots cannot be created over multiple days on mobile.
-     * On desktop, using the multi create feature which doesn't consider this value.
-     */
+    /** @override */
     isSelectionAllowed() {
         return false;
     }
 
-    /**
-     * @override
-     * Prevent click on disabled dates in mobile.
-     */
+    /** @override */
     onDateClick(info) {
         if (info.dayEl.classList.contains("o_calendar_disabled")) {
             return;

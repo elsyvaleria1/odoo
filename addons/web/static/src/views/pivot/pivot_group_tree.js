@@ -39,9 +39,6 @@ export function findGroup(groupTree, values) {
 }
 
 /**
- * Subtree keys are values of the groupby at their depth, so an old expansion
- * only transfers onto a tree grouped by the same fields in the same order.
- *
  * @param {Object} tree
  * @param {Object} oldTree
  * @param {string[]} groupBys

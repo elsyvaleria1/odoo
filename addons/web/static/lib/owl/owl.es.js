@@ -8765,9 +8765,7 @@ ${code}`;
     const match = translationRE.exec(str);
     return match[1] + this.translateFn(match[2], translationCtx) + match[3];
   }
-  /**
-   * @returns the newly created block name, if any
-   */
+  /** @returns */
   compileAST(ast, ctx) {
     switch (ast.type) {
       case ASTType.Text:

@@ -12,14 +12,7 @@ export class CohortController extends ReportController {
         this.actionService = useService("action");
     }
 
-    /**
-     * Not lazy, unlike graph and pivot. `CohortRenderer` reads `model.data.rows`
-     * unguarded, and a lazy load mounts the controller before the first load
-     * resolves, so every cohort view throws `Cannot read properties of null`.
-     * Guarding the renderer is the better answer and is a change of its own.
-     *
-     * @override
-     */
+    /** @override */
     get modelOptions() {
         return {};
     }

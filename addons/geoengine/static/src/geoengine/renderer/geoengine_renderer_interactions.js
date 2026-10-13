@@ -60,18 +60,8 @@ export class GeoengineRendererInteractions {
         }
     }
 
-    /**
-     * WebGL and vector tile layers are hit by pixel: neither keeps the
-     * feature objects ol.interaction.Select needs.
-     *
-     * @returns {boolean}
-     */
-    /**
-     * A click that places a measurement or a spatial filter's vertex is not
-     * a click on the feature under it.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
+    /** @returns {boolean} */
     _isSketching() {
         return Boolean(
             this.renderer.mapTools?.isMeasuring ||
@@ -236,9 +226,6 @@ export class GeoengineRendererInteractions {
     }
 
     /**
-     * A tiled feature carries its record's id and styled values only: a cell
-     * of several records zooms in, a record is read before its popup opens.
-     *
      * @param {ol.Feature} feature
      * @param {number[]} [clickCoord]
      */
@@ -260,9 +247,6 @@ export class GeoengineRendererInteractions {
     }
 
     /**
-     * Records stacked in one fine-grid cell cannot be told apart by zooming:
-     * their names are listed, and picking one opens its popup.
-     *
      * @param {ol.Feature} feature
      * @param {number[]} coord
      */
@@ -313,10 +297,6 @@ export class GeoengineRendererInteractions {
     }
 
     /**
-     * A feature can be reshaped when its layer is not read-only, it draws the
-     * view's own records, and the view loads the field it is drawn from: a
-     * change to a field the record does not load would not be saved.
-     *
      * @param {ol.Feature} feature
      * @returns {boolean}
      */
@@ -330,10 +310,6 @@ export class GeoengineRendererInteractions {
     }
 
     /**
-     * A popup record for a row read from the server rather than loaded by the
-     * view: its values are deserialized with the layer model's field
-     * definitions, so the info box formats them as it formats a record.
-     *
      * @param {Object} row
      * @param {string} resModel
      * @param {Object} archInfo
@@ -674,9 +650,6 @@ export class GeoengineRendererInteractions {
     }
 
     /**
-     * Writes a reshaped geometry to its record, then shows whether the server
-     * can store it as drawn.
-     *
      * @param {number} resId
      * @param {string} geoField
      * @param {ol.geom.Geometry} geometry
@@ -708,10 +681,6 @@ export class GeoengineRendererInteractions {
     }
 
     /**
-     * Asks the server what would keep the shape from being stored as drawn,
-     * marks the place and says why. A check overtaken by a later edit is
-     * not shown.
-     *
      * @param {string} resModel
      * @param {string} geoField
      * @param {ol.geom.Geometry} geometry
@@ -817,25 +786,14 @@ export class GeoengineRendererInteractions {
         return this.renderer.modifyClick?.getFeatures().item(0);
     }
 
-    /**
-     * The selected features, in the order they were selected, when they all
-     * draw the same field.
-     *
-     * @returns {Array<ol.Feature>}
-     */
+    /** @returns {Array<ol.Feature>} */
     _mergeableFeatures() {
         const features = this.renderer.modifyClick?.getFeatures().getArray() ?? [];
         const fields = new Set(features.map((feature) => feature.get("geoField")));
         return fields.size === 1 ? features : [];
     }
 
-    /**
-     * Starts an edit of the selected shape: a drawn area to add or cut out,
-     * a click on the part to remove, or a line to split it along. Reshaping
-     * pauses meanwhile.
-     *
-     * @param {"add_area"|"cut_area"|"remove_part"|"split"} edit
-     */
+    /** @param {"add_area"|"cut_area"|"remove_part"|"split"} edit */
     _startShapeEdit(edit) {
         const feature = this._selectedFeature();
         this._stopShapeEdit();
@@ -887,10 +845,6 @@ export class GeoengineRendererInteractions {
     }
 
     /**
-     * Runs a record action that creates or archives records: the edited
-     * record is saved first, the view reloads after, and the reshapes made
-     * before can no longer be undone.
-     *
      * @param {Array<number>} resIds
      * @param {string} method
      * @param {Array} args
@@ -948,9 +902,6 @@ export class GeoengineRendererInteractions {
     }
 
     /**
-     * Asks the server for the selected shape after the edit, then writes it
-     * to the record as a reshape: it is checked and can be undone.
-     *
      * @param {ol.Feature} feature
      * @param {"add_area"|"cut_area"|"remove_part"} edit
      * @param {ol.geom.Geometry} sketch

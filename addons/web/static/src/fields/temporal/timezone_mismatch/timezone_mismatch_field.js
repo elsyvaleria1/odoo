@@ -27,7 +27,7 @@ export class TimezoneMismatchField extends SelectionField {
             ),
     };
 
-    /** @returns {number | null} minutes east of UTC, from the record's "+HHMM" offset */
+    /** @returns {number | null} */
     get recordOffset() {
         const match =
             this.props.record.data[this.props.tzOffsetField]?.match(

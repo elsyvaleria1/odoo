@@ -14,15 +14,13 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Prepare the inline form of Adyen for direct payment.
-     *
-     * @override method from payment.payment_form
+     * @override
      * @private
-     * @param {number} providerId - The id of the selected payment option's provider.
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The online payment flow of the selected payment option
+     * @param {number} providerId
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _prepareInlineForm(
@@ -151,18 +149,12 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Trigger the payment processing by submitting the component.
-     *
-     * The component is submitted here instead of in `_processDirectFlow` because we use the native
-     * submit button for PayPal, which does not follow the standard flow. The transaction is created
-     * in `_adyenOnSubmit`.
-     *
-     * @override method from payment.payment_form
+     * @override
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the payment option handling the transaction.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The online payment flow of the transaction.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
@@ -185,12 +177,10 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Handle the submit event of the component and initiate the payment.
-     *
      * @private
-     * @param {object} state - The state of the component.
-     * @param {object} component - The component.
-     * @param {object} actions - The possible action handlers to call.
+     * @param {object} state
+     * @param {object} component
+     * @param {object} actions
      * @return {void}
      */
     async _adyenOnSubmit(state, component, actions) {
@@ -232,12 +222,10 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Handle the additional details event of the component.
-     *
      * @private
-     * @param {object} state - The state of the component.
-     * @param {object} component - The component.
-     * @param {object} actions - The possible action handlers to call.
+     * @param {object} state
+     * @param {object} component
+     * @param {object} actions
      * @return {void}
      */
     async _adyenOnSubmitAdditionalDetails(state, component, actions) {
@@ -263,8 +251,6 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Called when the payment is completed or failed.
-     *
      * @private
      * @param {object} result
      * @param {object} component
@@ -275,10 +261,8 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Handle the error event of the component.
-     *
      * @private
-     * @param {object} error - The error in the component.
+     * @param {object} error
      * @return {void}
      */
     _adyenOnError(error) {

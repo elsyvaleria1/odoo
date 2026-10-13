@@ -342,12 +342,6 @@ export class ReportEditorModel extends SignalStore {
     }
 
     /**
-     * Load and set the report environment.
-     *
-     * If the report is associated to the same model as the Studio action, the
-     * action ids will be used ; otherwise a search on the report model will be
-     * performed.
-     *
      * @private
      * @returns {Promise}
      */

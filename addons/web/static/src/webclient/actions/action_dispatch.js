@@ -30,9 +30,6 @@ export function lifetimeOf(controller) {
 }
 
 /**
- * Ends each controller of `controllers` that `stack` cannot bring back. One
- * off the stack still comes back while its action is on it: switchView reuses
- * the action's controllers.
  * @param {Controller[]} controllers
  * @param {Controller[]} stack
  */
@@ -53,7 +50,6 @@ export function endUnreachable(controllers, stack) {
 }
 
 /**
- * The one write of the manager's stack: whatever it drops for good ends.
  * @param {ActionManager} am
  * @param {Controller[]} nextStack
  */

@@ -1277,8 +1277,7 @@ function findIconGlyph(font) {
 const iconDataIndexes = new WeakMap();
 /**
  * @param {IconCssData[]} cssData
- * @returns {Map<string, {data: IconCssData, index: number}>} the first rule naming
- *  each icon class, with its position so the earliest rule of a font still wins
+ * @returns {Map<string, {data: IconCssData, index: number}>}
  */
 function getIconDataByName(cssData) {
     let index = iconDataIndexes.get(cssData);
@@ -1912,8 +1911,7 @@ function imageSettled(image) {
 }
 /**
  * @param {HTMLImageElement} source
- * @returns {[number, number]} the rendered size, the intrinsic one where the image is
- *  not rendered (hidden), keeping the ratio when only one side is known
+ * @returns {[number, number]}
  */
 function _getPngSize(source) {
     const width = _getWidth(source);

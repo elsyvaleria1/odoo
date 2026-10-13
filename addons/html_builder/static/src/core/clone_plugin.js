@@ -14,10 +14,7 @@ import { isRemovable } from "./remove_plugin.js";
 
 /**
  * @typedef {((arg: { cloneEl: HTMLElement, originalEl: HTMLElement }) => Promise<void>)[]} on_cloned_handlers
- * Called after an element was cloned and inserted in the DOM.
- *
  * @typedef {((arg: { originalEl: HTMLElement }) => void)[]} on_will_clone_handlers
- * Called on the original element before clone.
  */
 
 const clonableSelector =
@@ -68,16 +65,8 @@ export class ClonePlugin extends Plugin {
     }
 
     /**
-     * Duplicates the given element and returns the created clone.
-     *
-     * @param {HTMLElement} el the element to clone
-     * @param {Object}
-     *   - `position`: specifies where to position the clone (first parameter of
-     *     the `insertAdjacentElement` function)
-     *   - `scrollToClone`: true if we should scroll to the clone (if not in
-     *     the viewport), false otherwise
-     *   - `activateClone`: true if the option containers of the clone should be
-     *     the active ones, false otherwise
+     * @param {HTMLElement} el
+     * @param {Object} -
      * @returns {HTMLElement}
      */
     async cloneElement(

@@ -41,14 +41,9 @@ const messagingMenuTabPatch = {
                 this._resolveCounterChannel(channel);
             },
         });
-        /** @type {string[]} the channel types this tab lists */
+        /** @type {string[]} */
         this.channelTypes = [];
-        /**
-         * Which channels of those types belong here whatever their state, when
-         * two tabs share a type.
-         *
-         * @type {(channel: import("models").DiscussChannel) => boolean}
-         */
+        /** @type {(channel: import("models").DiscussChannel) => boolean} */
         this.holdsChannel = () => true;
         /** @type {(channel: import("models").DiscussChannel) => boolean} */
         this.includesChannel = () => false;
@@ -57,13 +52,7 @@ const messagingMenuTabPatch = {
          */
         this.compareChannels = undefined;
     },
-    /**
-     * A counted id stands for a channel this client has not loaded. Once the
-     * channel appears (partially, from a bus payload), its loaded state is
-     * authoritative: fetch it, then stop counting the id.
-     *
-     * @param {import("models").DiscussChannel} channel
-     */
+    /** @param {import("models").DiscussChannel} channel */
     async _resolveCounterChannel(channel) {
         const id = Number(channel.id);
         const resolved = (

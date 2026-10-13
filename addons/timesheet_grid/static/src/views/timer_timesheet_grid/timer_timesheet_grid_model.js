@@ -193,10 +193,8 @@ export class TimerTimesheetGridModel extends TimesheetGridModel {
     }
 
     /**
-     * Update the timesheet in the timer header
-     *
      * @param {import('@web/model/relational_model').RelationalRecord} timesheet
-     * @param {number} time the time representing in seconds to add to the timer of the timesheet
+     * @param {number} time
      */
     async updateTimerTimesheet(timesheetVals, time = 0.0) {
         this._setTimerData(timesheetVals);

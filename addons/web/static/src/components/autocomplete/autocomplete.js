@@ -555,14 +555,7 @@ export class AutoComplete extends Component {
         this.syncInputAfterSelection(selection);
     }
 
-    /**
-     * A selection that leaves the value unchanged updates no prop, so the parent
-     * never hands the value back and the input would keep what was typed. A
-     * selection that changes it is corrected again by the parent's render,
-     * which lands before the next paint.
-     *
-     * @param {any} selection
-     */
+    /** @param {any} selection */
     async syncInputAfterSelection(selection) {
         await selection;
         log.logic("syncInputAfterSelection", () => ({

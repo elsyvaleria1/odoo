@@ -82,10 +82,6 @@ export class DocumentService {
     }
 
     /**
-     * Asks the next primary documents view to load to show this document:
-     * brought into its first page, selected, and previewed if asked. Made by
-     * the tab's URL and by an action opening the app on a document.
-     *
      * @param {number} documentId
      * @param {{openPreview?: boolean}} [options]
      */
@@ -94,20 +90,12 @@ export class DocumentService {
         log.logic("requestFocus", () => this._focusRequest);
     }
 
-    /**
-     * @returns {{documentId: number, openPreview: boolean}|null} the pending
-     *  request: read by a load, settled only by the one that publishes
-     */
+    /** @returns {{documentId: number, openPreview: boolean}|null} */
     get focusRequest() {
         return this._focusRequest;
     }
 
-    /**
-     * The request was shown (or found missing) by a published load; a
-     * newer request made meanwhile stays pending.
-     *
-     * @param {{documentId: number, openPreview: boolean}} request
-     */
+    /** @param {{documentId: number, openPreview: boolean}} request */
     settleFocusRequest(request) {
         if (this._focusRequest === request) {
             this._focusRequest = null;
@@ -188,11 +176,7 @@ export class DocumentService {
         );
     }
 
-    /**
-     * A link opens; a file downloads; a folder downloads as a zip.
-     *
-     * @param {Object} data a `document.document` read: type, url, access_token
-     */
+    /** @param {Object} data */
     async downloadDocument(data) {
         if (data.type === "url") {
             openDocumentUrl(data.url);
@@ -240,8 +224,7 @@ export class DocumentService {
 
     /**
      * @param {number} documentId
-     * @returns {Promise<boolean>} whether the document was renamed: both
-     *      buttons close the dialog alike, only a save calls onSave
+     * @returns {Promise<boolean>}
      */
     async openDialogRename(documentId) {
         let renamed = false;
@@ -280,8 +263,7 @@ export class DocumentService {
 
     /**
      * @param {number} documentId
-     * @param {() => Promise<void>} onVersionsChanged refreshes what a restored
-     *  or deleted version changed: that document alone
+     * @param {() => Promise<void>} onVersionsChanged
      */
     openDialogManageVersions(documentId, onVersionsChanged) {
         this.dialog.add(DocumentsManageVersions, { documentId, onVersionsChanged });
@@ -436,14 +418,9 @@ export class DocumentService {
     }
 
     /**
-     * Runs a move checked by the server, which refuses it (moving nothing)
-     * when it changes who can access the moved documents or what they
-     * contain, and says what would change; once the user accepts that, runs
-     * it again unchecked.
-     *
      * @param {(context: Object) => Promise<any>} move
      * @param {string} folderName
-     * @returns {Promise<boolean>} whether the documents moved
+     * @returns {Promise<boolean>}
      */
     async moveConfirmingAccess(move, folderName) {
         try {
@@ -476,8 +453,8 @@ export class DocumentService {
     /**
      * @param {{all: number[], movableRecordIds: number[], nonMovableRecordIds: number[]}} records
      * @param {Object} targetFolder
-     * @param {boolean} forceShortcut link instead of moving
-     * @returns {Promise<boolean>} whether anything moved or was linked
+     * @param {boolean} forceShortcut
+     * @returns {Promise<boolean>}
      */
     async moveOrCreateShortcut(records, targetFolder, forceShortcut) {
         let message = "";
@@ -534,7 +511,7 @@ export class DocumentService {
 
     /**
      * @param {{movableRecordIds: number[], nonMovableRecordIds: number[]}} records
-     * @returns {Promise<boolean>} whether anything moved
+     * @returns {Promise<boolean>}
      */
     async moveToCompanyRoot(records) {
         if (!records.movableRecordIds.length) {
@@ -588,19 +565,14 @@ export class DocumentService {
         this.bus.trigger(DocumentsBusEvent.RELOAD);
     }
 
-    /**
-     * The URL is the Documents app's: only a view of it (not a picker opened
-     * over another app) writes a document's token there.
-     *
-     * @returns {() => void} to call when the view goes
-     */
+    /** @returns {() => void} */
     registerURLOwner() {
         this._urlOwners++;
         return () => this._urlOwners--;
     }
 
     /**
-     * @param {Object|false} [folderChange] the folder just opened
+     * @param {Object|false} [folderChange]
      * @param {Object[]|null} [inspectedDocuments]
      * @param {boolean} [forceInspected]
      */
@@ -639,9 +611,6 @@ export class DocumentService {
     }
 
     /**
-     * Record a visit; browsing quickly through documents only counts the one
-     * the user stopped on, while every folder opened counts.
-     *
      * @param {String} accessToken
      * @param {"folder"|"document"} [kind]
      */
@@ -725,9 +694,6 @@ export class DocumentService {
     }
 
     /**
-     * A file that goes straight to the cloud provider never crosses the
-     * server, so the server's upload cap does not apply to it.
-     *
      * @param {File} file
      * @returns {boolean}
      */

@@ -13,12 +13,7 @@ let failures = [];
 /** @type {Set<string>} */
 let allowed = new Set();
 
-/**
- * A failed service start only logs, and the test goes on without the service:
- * the test that makes a service fail on purpose names it.
- *
- * @param {...string} names
- */
+/** @param {...string} names */
 export function allowServiceStartFailure(...names) {
     for (const name of names) {
         allowed.add(name);

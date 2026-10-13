@@ -43,8 +43,6 @@ patch(HardwareProxy.prototype, {
         }
     },
     /**
-     * Set the status of the IoT Box that has the specified url.
-     *
      * @param {String} ip
      * @param {Boolean} connected
      */

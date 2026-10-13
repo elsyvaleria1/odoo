@@ -14,8 +14,6 @@ export async function getMimetypeBeforeShape(imageEl) {
 }
 
 /**
- * Executes a callback for each <img> element in a collection if the given node
- * contains a specific data-* attribute.
  * @param {Array<HTMLElement>} toProcessEls
  * @param {HTMLElement} nodeEl
  * @param {String} dataInfo

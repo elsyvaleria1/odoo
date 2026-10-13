@@ -11,21 +11,10 @@ const leaflet = makeLazyLib(async () => {
     return module;
 });
 
-/**
- * The Leaflet namespace (`L.map`, `L.marker`…), usable once `loadLeaflet()`
- * resolved.
- *
- * @type {any}
- */
+/** @type {any} */
 export const L = leaflet.facade;
 
-/**
- * Loads Leaflet and its stylesheet once. Rejects when either cannot load: a
- * failed import() rejects with a TypeError, a failed stylesheet with an
- * AssetsLoadingError.
- *
- * @returns {Promise<any>}
- */
+/** @returns {Promise<any>} */
 export function loadLeaflet() {
     return leafletLoader.load();
 }

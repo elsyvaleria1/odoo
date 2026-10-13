@@ -16,7 +16,7 @@ const ID_NAME = { id: "int", display_name: "char" };
 /**
  * @param {Record<string, string>} types
  * @param {Record<string, object>} [nested]
- * @param {string[]} [active] the fields to read, when not all of `types`
+ * @param {string[]} [active]
  */
 function relatedSpec(types, nested = {}, active = Object.keys(types)) {
     const fields = {};

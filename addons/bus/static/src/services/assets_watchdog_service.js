@@ -44,13 +44,7 @@ export const assetsWatchdogService = {
             }
         }
 
-        /**
-         * Computes a random delay to avoid hammering the server
-         * when bundles change with all the users reloading
-         * at the same time
-         *
-         * @return {number} delay in milliseconds
-         */
+        /** @return {number} */
         function getBundleNotificationDelay() {
             return 10000 + Math.floor(Math.random() * 50) * 1000;
         }

@@ -145,9 +145,6 @@ function parseMany2OneViews(fieldInfo) {
 }
 
 /**
- * The field node as the view IR; a parser still walking the element hands
- * its `<field>` over and it is converted here, nested sub-views included.
- *
  * @param {ViewIRNode | Element} archNode
  * @param {Record<string, { fields: Record<string, { type: string, string?: string, relation?: string, readonly?: boolean, [k: string]: any }> }>} models
  * @param {string} modelName

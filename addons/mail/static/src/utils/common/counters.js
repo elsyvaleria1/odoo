@@ -8,8 +8,8 @@ const MAX_LOGGED_DELTAS = 200;
 
 /**
  * @typedef {Object} CounterLog
- * @property {number} busId the `<field>_bus_id` this log was last in sync with
- * @property {number} replayableAfter every delta with a higher bus id is in `deltas`
+ * @property {number} busId
+ * @property {number} replayableAfter
  * @property {{busId: number, delta: number}[]} deltas
  */
 
@@ -38,9 +38,6 @@ function getCounterLog(target, field) {
 }
 
 /**
- * Applies a value the server computed as of `busId`: the deltas already applied
- * from later notifications are replayed on top of it.
- *
  * @param {Object} target
  * @param {string} field
  * @param {number} value

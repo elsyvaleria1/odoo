@@ -12,9 +12,9 @@ export class DocumentFile extends FileModel {
     textContent = null;
 
     /**
-     * @param {Object} data the document's read: the target's, for a shortcut
+     * @param {Object} data
      * @param {Object} [param1]
-     * @param {Object} [param1.record] the record the preview was opened from
+     * @param {Object} [param1.record]
      * @param {(documentId: number) => Promise<string>} [param1.loadEmailContent]
      */
     constructor(data, { record, loadEmailContent } = {}) {
@@ -31,8 +31,8 @@ export class DocumentFile extends FileModel {
     }
 
     /**
-     * @param {Object} record a document's record in a view
-     * @param {Object} [options] see the constructor
+     * @param {Object} record
+     * @param {Object} [options]
      */
     static fromRecord(record, options = {}) {
         return new this(record.shortcutTarget.data, { ...options, record });
@@ -100,7 +100,7 @@ export class DocumentFile extends FileModel {
 }
 
 export const documentPreview = {
-    /** @param {Object} data a `document.document` read, the target's for a shortcut */
+    /** @param {Object} data */
     isViewable(data) {
         return data.type !== "folder" && new DocumentFile(data).isViewable;
     },

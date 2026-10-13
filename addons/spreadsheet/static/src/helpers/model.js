@@ -73,7 +73,6 @@ export async function waitForOdooSources(model) {
 }
 
 /**
- * Ensure that the spreadsheet does not contains cells that are in loading state
  * @param {OdooSpreadsheetModel} model
  * @returns {Promise<void>}
  */
@@ -294,8 +293,6 @@ function isLoaded(model) {
 }
 
 /**
- * Return the chart figure as a base64 image.
- * "data:image/png;base64,iVBORw0KGg..."
  * @param {OdooSpreadsheetModel} model
  * @param {{ width: number, height: number }} figure
  * @param {string} chartId
@@ -315,7 +312,7 @@ function odooChartToImage(model, figure, chartId) {
     }
     document.body.append(div);
     runtime.chartJsConfig.plugins = [backgroundColorPlugin];
-    // @ts-ignore
+
     const chart = new Chart(canvas, runtime.chartJsConfig);
     const img = chart.toBase64Image();
     chart.destroy();

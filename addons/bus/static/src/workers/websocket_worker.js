@@ -6,17 +6,9 @@ import {
     WEBSOCKET_READY_STATE,
 } from "@bus/workers/websocket_worker_constants";
 
-/**
- * Type of events that can be sent from the worker to its clients.
- *
- * @typedef { 'BUS:CONNECT' | 'BUS:RECONNECT' | 'BUS:DISCONNECT' | 'BUS:NOTIFICATION' | 'BUS:NOTIFICATION_SEEN' | 'BUS:WATERMARK_RESET' | 'BUS:INITIALIZED' | 'BUS:OUTDATED'| 'BUS:WORKER_STATE_UPDATED' | 'BUS:PROVIDE_LOGS' | 'BUS:PING' } WorkerEvent
- */
+/** @typedef { 'BUS:CONNECT' | 'BUS:RECONNECT' | 'BUS:DISCONNECT' | 'BUS:NOTIFICATION' | 'BUS:NOTIFICATION_SEEN' | 'BUS:WATERMARK_RESET' | 'BUS:INITIALIZED' | 'BUS:OUTDATED'| 'BUS:WORKER_STATE_UPDATED' | 'BUS:PROVIDE_LOGS' | 'BUS:PING' } WorkerEvent */
 
-/**
- * Type of action that can be sent from the client to the worker.
- *
- * @typedef {'BUS:ADD_CHANNEL' | 'BUS:DELETE_CHANNEL' | 'BUS:SET_CHANNELS' | 'BUS:FORCE_UPDATE_CHANNELS' | 'BUS:INITIALIZE_CONNECTION' | 'BUS:REQUEST_LOGS' | 'BUS:SEND' | 'BUS:SET_LOGGING_ENABLED' | 'BUS:LEAVE' | 'BUS:STOP' | 'BUS:START' | 'BUS:PONG'} WorkerAction
- */
+/** @typedef {'BUS:ADD_CHANNEL' | 'BUS:DELETE_CHANNEL' | 'BUS:SET_CHANNELS' | 'BUS:FORCE_UPDATE_CHANNELS' | 'BUS:INITIALIZE_CONNECTION' | 'BUS:REQUEST_LOGS' | 'BUS:SEND' | 'BUS:SET_LOGGING_ENABLED' | 'BUS:LEAVE' | 'BUS:STOP' | 'BUS:START' | 'BUS:PONG'} WorkerAction */
 
 const MAXIMUM_RECONNECT_DELAY = 60000;
 const UUID = Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -103,23 +95,13 @@ export class WebsocketWorker {
         });
     }
 
-    /**
-     * The current connection's socket, or null when none is live. Kept as an
-     * accessor so the many `this.websocket` read sites are unchanged while the
-     * socket's lifetime is owned by `this._connection`.
-     *
-     * @returns {WebSocket|null}
-     */
+    /** @returns {WebSocket|null} */
     get websocket() {
         return this._connection?.socket ?? null;
     }
 
     /**
-     * Send the message to all the clients that are connected to the
-     * worker.
-     *
-     * @param {WorkerEvent} type Event to broadcast to connected
-     * clients.
+     * @param {WorkerEvent} type
      * @param {Object} data
      */
     broadcast(type, data) {
@@ -129,11 +111,7 @@ export class WebsocketWorker {
         }
     }
 
-    /**
-     * Register a client handled by this worker.
-     *
-     * @param {MessagePort} messagePort
-     */
+    /** @param {MessagePort} messagePort */
     registerClient(messagePort) {
         messagePort.addEventListener("message", (ev) => {
             this._onClientMessage(messagePort, ev.data);
@@ -143,8 +121,6 @@ export class WebsocketWorker {
     }
 
     /**
-     * Send message to the given client.
-     *
      * @param {MessagePort} client
      * @param {WorkerEvent} type
      * @param {Object} data
@@ -157,15 +133,10 @@ export class WebsocketWorker {
     }
 
     /**
-     * Called when a message is posted to the worker by a client (i.e. a
-     * MessagePort connected to this worker).
-     *
      * @param {MessagePort} client
      * @param {Object} message
      * @param {WorkerAction} [message.action]
-     * Action to execute.
-     * @param {Object|undefined} [message.data] Data required by the
-     * action.
+     * @param {Object|undefined} [message.data]
      */
     _onClientMessage(client, { action, data }) {
         this._logDebug("_onClientMessage", action, data);
@@ -235,12 +206,6 @@ export class WebsocketWorker {
     }
 
     /**
-     * Add a channel for the given client. Channels are REFCOUNTED per
-     * client: several independent features of one tab may claim the same
-     * channel (e.g. two im_livechat features), and each of their deletes
-     * must only release its own claim. If this channel is not yet known,
-     * update the subscription on the server.
-     *
      * @param {MessagePort} client
      * @param {string} channel
      */
@@ -251,10 +216,6 @@ export class WebsocketWorker {
     }
 
     /**
-     * Release one claim on a channel for the given client; the channel is
-     * only removed when its refcount reaches 0. If this channel is not
-     * used anymore, update the subscription on the server.
-     *
      * @param {MessagePort} client
      * @param {string} channel
      */
@@ -273,13 +234,8 @@ export class WebsocketWorker {
     }
 
     /**
-     * Atomically replace the given client's channel claims. Used by
-     * `bus_service` to replay a tab's full channel map (bfcache restore
-     * after a liveness eviction, `start()` after `stop()`): a snapshot is
-     * immune to the drift an incremental add/delete replay could introduce.
-     *
      * @param {MessagePort} client
-     * @param {[string, number][]} entries channel -> refcount pairs
+     * @param {[string, number][]} entries
      */
     _setChannels(client, entries) {
         const clientChannels = new Map();
@@ -292,11 +248,7 @@ export class WebsocketWorker {
         this._debouncedUpdateChannels();
     }
 
-    /**
-     * Channels claimed (refcount > 0) by at least one client, sorted.
-     *
-     * @returns {string[]}
-     */
+    /** @returns {string[]} */
     _getAllChannels() {
         const channels = new Set();
         for (const clientChannels of this.channelsByClient.values()) {
@@ -312,13 +264,7 @@ export class WebsocketWorker {
         this._debouncedUpdateChannels();
     }
 
-    /**
-     * Remove the given client from this worker client list as well as
-     * its channels. If some of its channels are not used anymore,
-     * update the subscription on the server.
-     *
-     * @param {MessagePort} client
-     */
+    /** @param {MessagePort} client */
     _unregisterClient(client) {
         this.channelsByClient.delete(client);
         this.lastSeenByClient.delete(client);
@@ -355,18 +301,12 @@ export class WebsocketWorker {
     }
 
     /**
-     * Initialize a client connection to this worker.
-     *
      * @param {Object} param0
-     * @param {string} [param0.db] Database name.
-     * @param {Number} [param0.lastNotificationId] Last notification id
-     * known by the client.
-     * @param {String} [param0.websocketURL] URL of the websocket endpoint.
-     * @param {Number|false|undefined} [param0.uid] Current user id
-     *     - Number: user is logged whether on the frontend/backend.
-     *     - false: user is not logged.
-     *     - undefined: not available (e.g. livechat support page)
-     * @param {Number} param0.startTs Timestamp of start of bus service sender.
+     * @param {string} [param0.db]
+     * @param {Number} [param0.lastNotificationId]
+     * @param {String} [param0.websocketURL]
+     * @param {Number|false|undefined} [param0.uid]
+     * @param {Number} param0.startTs
      */
     _initializeConnection(
         client,
@@ -421,16 +361,7 @@ export class WebsocketWorker {
         this._finishClientInitialization(client);
     }
 
-    /**
-     * Send the initialization acknowledgements every client must receive,
-     * regardless of which `_initializeConnection` path handled it: the worker
-     * state, the INITIALIZED handshake, and — when the worker is running
-     * outdated code (the server closed it with OUTDATED_VERSION) — the
-     * OUTDATED signal, so even a late/lazy tab taking the older-startTs early
-     * return renounces main-tab duties and surfaces the reload notice.
-     *
-     * @param {MessagePort} client
-     */
+    /** @param {MessagePort} client */
     _finishClientInitialization(client) {
         this.sendToClient(client, "BUS:WORKER_STATE_UPDATED", this.state);
         this.sendToClient(client, "BUS:INITIALIZED");
@@ -439,24 +370,14 @@ export class WebsocketWorker {
         }
     }
 
-    /**
-     * Determine whether or not the websocket associated to this worker
-     * is connected.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     _isWebsocketConnected() {
         return (
             this.websocket && this.websocket.readyState === WEBSOCKET_READY_STATE.OPEN
         );
     }
 
-    /**
-     * Determine whether or not the websocket associated to this worker
-     * is connecting.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     _isWebsocketConnecting() {
         return (
             this.websocket &&
@@ -464,12 +385,7 @@ export class WebsocketWorker {
         );
     }
 
-    /**
-     * Determine whether or not the websocket associated to this worker
-     * is in the closing state.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     _isWebsocketClosing() {
         return (
             this.websocket &&
@@ -478,15 +394,9 @@ export class WebsocketWorker {
     }
 
     /**
-     * Triggered when a connection is closed. If closure was not clean ,
-     * try to reconnect after indicating to the clients that the
-     * connection was closed.
-     *
      * @param {CloseEvent} ev
-     * @param {number} code  close code indicating why the connection
-     * was closed.
-     * @param {string} reason reason indicating why the connection was
-     * closed.
+     * @param {number} code
+     * @param {string} reason
      */
     _onWebsocketClose(ev) {
         if (this._isStaleSocketEvent(ev)) {
@@ -527,13 +437,6 @@ export class WebsocketWorker {
     }
 
     /**
-     * Whether ``ev`` was fired by a socket that a newer connection has already
-     * superseded. A real DOM event carries its socket as ``currentTarget``;
-     * when that is not the current connection's socket, the event is a late
-     * straggler from a replaced socket and must be ignored. Synthetic events
-     * (built by ``_start`` for the current connection, with no ``currentTarget``)
-     * are trusted.
-     *
      * @param {Event} [ev]
      * @returns {boolean}
      */
@@ -546,11 +449,7 @@ export class WebsocketWorker {
         return false;
     }
 
-    /**
-     * Triggered when a connection failed or failed to established.
-     *
-     * @param {Event} [ev]
-     */
+    /** @param {Event} [ev] */
     _onWebsocketError(ev) {
         if (this._isStaleSocketEvent(ev)) {
             return;
@@ -558,11 +457,7 @@ export class WebsocketWorker {
         this._logDebug("_onWebsocketError");
     }
 
-    /**
-     * Handle data received from the bus.
-     *
-     * @param {MessageEvent} messageEv
-     */
+    /** @param {MessageEvent} messageEv */
     _onWebsocketMessage(messageEv) {
         if (this._isStaleSocketEvent(messageEv)) {
             return;
@@ -613,11 +508,6 @@ export class WebsocketWorker {
     }
 
     /**
-     * Hands each tab the notifications of the channels it claimed a name of,
-     * and the ones no name reaches (a channel every subscriber gets) to every
-     * tab. Every tab learns the batch's highest id: its watermark must not lag
-     * behind what another tab was handed.
-     *
      * @param {{ id: number, message: Object, names?: string[] }[]} notifications
      * @param {number} highestId
      */
@@ -638,14 +528,6 @@ export class WebsocketWorker {
     }
 
     /**
-     * The `last` a subscribe sends. A fresh connection's server side starts
-     * with no history, so resuming at the highest id seen would skip an id
-     * the old connection was still holding back for: drawn below it,
-     * committed after the drop -- whether or not a lower id was seen too.
-     * The server's own rule instead (`NotificationDispatchState`): the
-     * highest seen id that, with every seen id below it, is past the
-     * hold-back. What comes back twice, the seen-id filter drops.
-     *
      * @param {number} [now]
      * @returns {number}
      */
@@ -662,13 +544,7 @@ export class WebsocketWorker {
         return resumeFrom;
     }
 
-    /**
-     * The server answered a subscribe whose `last` lies past its newest
-     * notification (a database restored or recreated under the same name):
-     * adopt the watermark it stands at, and have the tabs do the same.
-     *
-     * @param {number} last
-     */
+    /** @param {number} last */
     _resetWatermark(last) {
         this._logDebug("_resetWatermark", this.lastNotificationId, last);
         this.lastNotificationId = last;
@@ -677,13 +553,7 @@ export class WebsocketWorker {
         this.broadcast("BUS:WATERMARK_RESET", last);
     }
 
-    /**
-     * Forget seen notification ids that are older than the retention window
-     * (they can no longer be legitimately re-sent by the server), and cap the
-     * map size defensively.
-     *
-     * @param {number} now
-     */
+    /** @param {number} now */
     _pruneSeenNotificationIds(now) {
         const isKept = (seenAt) =>
             now - seenAt <= this.SEEN_NOTIFICATION_RETENTION_MS &&
@@ -747,11 +617,8 @@ export class WebsocketWorker {
     }
 
     /**
-     * Hold a message for the next connection; a later one of the same event
-     * name replaces it.
-     *
      * @param {{event_name: string}} message
-     * @param {string} payload serialized message
+     * @param {string} payload
      */
     _holdMessage(message, payload) {
         this.pendingMessages.delete(message.event_name);
@@ -784,13 +651,7 @@ export class WebsocketWorker {
         this.connectTimeout = setTimeout(this._start.bind(this), delay);
     }
 
-    /**
-     * Send a message to the server through the websocket connection.
-     * If the websocket is not open, enqueue the message and send it
-     * upon the next reconnection.
-     *
-     * @param {{event_name: string, data: any }} message Message to send to the server.
-     */
+    /** @param {{event_name: string, data: any }} message */
     _sendToServer(message) {
         this._logDebug("_sendToServer", message);
         const payload = JSON.stringify(message);
@@ -871,13 +732,7 @@ export class WebsocketWorker {
         }
     }
 
-    /**
-     * Update the channel subscription on the server. Ignore if the channels
-     * did not change since the last subscription.
-     *
-     * @param {boolean} force Whether or not we should update the subscription
-     * event if the channels haven't change since last subscription.
-     */
+    /** @param {boolean} force */
     _updateChannels({ force = false } = {}) {
         if (!this._isWebsocketConnected()) {
             return;
@@ -898,11 +753,7 @@ export class WebsocketWorker {
             connection.subscribeDeferred.resolve();
         }
     }
-    /**
-     * Update the worker state and broadcast the new state to its clients.
-     *
-     * @param {CONNECTION_STATE[keyof CONNECTION_STATE]} newState
-     */
+    /** @param {CONNECTION_STATE[keyof CONNECTION_STATE]} newState */
     _updateState(newState) {
         this.state = newState;
         this.broadcast("BUS:WORKER_STATE_UPDATED", newState);

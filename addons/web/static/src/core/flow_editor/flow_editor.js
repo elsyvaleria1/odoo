@@ -67,7 +67,7 @@ const log = makeLogger("web.flow_editor");
  * @property {(params: { connection: import("./flow_types").FlowConnection, validation: import("./connection_validator").FlowConnectionValidation }) => void} onConnectionRejected
  * @property {(params: { connection: import("./flow_types").FlowConnection }) => (boolean | void | Promise<boolean | void>)} onDisconnect
  * @property {(params: { phase: string, node: import("./flow_types").FlowNode | undefined, position: import("./flow_types").FlowPosition, originalEvent: Event | null }) => void} onDrag
- * @property {(params: { node: import("./flow_types").FlowNode }) => (boolean | void | Promise<boolean | void>)} onNodeDelete owns the node's connections: they leave with it, without an onDisconnect each
+ * @property {(params: { node: import("./flow_types").FlowNode }) => (boolean | void | Promise<boolean | void>)} onNodeDelete
  * @property {(params: import("./flow_node").FlowNodeEventParams) => void} onNodeClick
  * @property {(params: { phase: string }) => void} onPan
  * @property {(params: { phase: string, node: import("./flow_types").FlowNode | undefined, size: import("./flow_types").FlowSize, originalEvent: Event | null }) => void} onResize
@@ -1143,10 +1143,6 @@ export class FlowEditor extends Component {
     }
 
     /**
-     * The editor's own rules, without the consumer's `canConnect`: once
-     * `onConnect` has persisted a connection the consumer already counts it, so
-     * asking `canConnect` again would reject every connection it just accepted.
-     *
      * @param {import("./flow_types").FlowConnection} connection
      * @returns {import("./connection_validator").FlowConnectionValidation}
      */

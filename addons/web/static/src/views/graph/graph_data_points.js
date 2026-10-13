@@ -284,11 +284,6 @@ const ADDITIVE_AGGREGATORS = new Set(["sum", "count"]);
 const MULTI_VALUED_TYPES = new Set(["many2many", "one2many", "tags"]);
 
 /**
- * The first series level (a group-by after the x axis) that files one record
- * under several of its values, so that the series overlap and adding them up
- * counts that record more than once; null when the series partition the
- * records.
- *
  * @param {GroupByLevel[]} groupBy
  * @param {FieldsMap} fields
  * @returns {GroupByLevel | null}

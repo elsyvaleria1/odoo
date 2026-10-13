@@ -4,16 +4,7 @@ import { url } from "@web/core/utils/urls";
 
 export const BARCODE_ERROR_SOUND = "/barcodes/static/src/audio/error";
 
-/**
- * Preload the sounds a scanning screen plays, each restarted on every play.
- *
- * `play` settles instead of rejecting: the browser refuses sound it was not
- * allowed to start (autoplay policy, an interrupted load), and that refusal
- * reached the web client as an uncaught promise error. The caller decides what
- * a refusal means -- stop trying, or nothing.
- *
- * @param {Record<string, string>} paths sound name -> path without extension
- */
+/** @param {Record<string, string>} paths */
 export function loadScanSounds(paths) {
     const probe = new browser.Audio();
     const extension = probe.canPlayType("audio/ogg; codecs=vorbis") ? "ogg" : "mp3";
@@ -25,7 +16,7 @@ export function loadScanSounds(paths) {
     return {
         /**
          * @param {string} name
-         * @returns {Promise<boolean>} whether the browser played it
+         * @returns {Promise<boolean>}
          */
         async play(name) {
             const sound = sounds[name];

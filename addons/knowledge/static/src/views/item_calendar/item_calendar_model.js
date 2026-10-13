@@ -9,46 +9,24 @@ import {
 import { CalendarModel } from "@web/views/calendar";
 
 export class ItemCalendarModel extends CalendarModel {
-    /**
-     * @override
-     * Prevent creation of record if the user does not have write access on the
-     * parent record (readonly knowledge articles for example) and if the model
-     * props are invalid
-     */
+    /** @override */
     get canCreate() {
         if (this.meta.invalid) {
             return false;
         }
         return this.meta.canCreate;
     }
-    /**
-     * @override
-     * Usually, records cannot be edited if the start field is readonly (which
-     * is a property shared by every record of the current calendar). In this
-     * case however, it depends on the record (eg. users cannot edit readonly
-     * knowledge articles). Therefore, we always allow users to edit the record
-     * but we show an access error if the user tried to edit a readonly record.
-     */
+    /** @override */
     get canEdit() {
         return true;
     }
 
-    /**
-     * @override
-     * Show the "all day" slot in "day" and "week" scales even if the date is a
-     * datetime, as there is no "allDay" option in this model.
-     */
+    /** @override */
     get hasAllDaySlot() {
         return true;
     }
 
-    /**
-     * @override
-     * Build a raw record from the given partial record and the properties. We
-     * need every property of the record when editing a record otherwise we
-     * will lose the values of these properties when writing on the record
-     * (since the properties are stored as json objects).
-     */
+    /** @override */
     buildRawRecord(partialRecord) {
         let start = partialRecord.start;
         let end = partialRecord.end;
@@ -112,10 +90,7 @@ export class ItemCalendarModel extends CalendarModel {
         return super.loadRecords(data);
     }
 
-    /**
-     * @override
-     * Normalize the given raw record with the properties
-     */
+    /** @override */
     normalizeRecord(rawRecord) {
         const { fieldMapping, propertiesDateType, scale } = this.meta;
         const isDate = propertiesDateType === "date";
@@ -153,15 +128,7 @@ export class ItemCalendarModel extends CalendarModel {
         };
     }
 
-    /**
-     * @override
-     * Compute the domain used to fetch the items using the properties used as
-     * start and end date. The properties definition is used in the domain to
-     * make sure to not match records that still use the "previous" dateStart
-     * property when this property has been changed (if the type of a property
-     * changed, the property will be replaced by a new one but the change will
-     * be propagated to the records using that property when writing on them)
-     */
+    /** @override */
     computeRangeDomain(data) {
         const { fieldMapping } = this.meta;
         const formattedEnd = serializeDateTime(data.range.end);

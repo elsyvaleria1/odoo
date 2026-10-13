@@ -221,12 +221,7 @@ export class BackgroundPositionOverlay extends Component {
         }
     }
 
-    /**
-     * Gets the scale factor of the iframe's parent container.
-     * Useful when the user zooms in/out in the browser, as it affects the
-     * dimensions of the iframe.
-     * @returns {number} The scale factor (1 if no transform is applied)
-     */
+    /** @returns {number} */
     getIframeContainerScale() {
         const matrix = getComputedStyle(this.iframe.parentElement).transform;
         if (matrix === "none") {

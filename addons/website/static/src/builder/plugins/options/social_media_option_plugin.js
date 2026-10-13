@@ -374,7 +374,7 @@ class SocialMediaOptionPlugin extends Plugin {
     /**
      * @param { HTMLElement } el
      * @param { String } iconClass
-     * @param { String } [face] the FA7 face the glyph lives in
+     * @param { String } [face]
      */
     setIconClass(el, iconClass, face = "fa-brands") {
         const iconEl = el.querySelector(ICON_SELECTOR);

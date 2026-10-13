@@ -28,13 +28,11 @@ export class IoTLongpolling {
     }
 
     /**
-     * Add devices to listeners[iot_ip] and restart polling
-     *
      * @param {string} iot_ip
-     * @param {Array} devices list of device identifiers
+     * @param {Array} devices
      * @param {string} listener_id
      * @param {Callback} callback
-     * @param {boolean} fallback if true, no notification will be displayed on fail
+     * @param {boolean} fallback
      */
     async addListener(iot_ip, devices, listener_id, callback, fallback = true) {
         if (!this._listeners[iot_ip]) {
@@ -57,7 +55,6 @@ export class IoTLongpolling {
     }
 
     /**
-     * Stop listening to iot device with id `device_identifier`
      * @param {string} iot_ip
      * @param {string} device_identifier
      * @param {string} listener_id
@@ -78,12 +75,11 @@ export class IoTLongpolling {
     }
 
     /**
-     * Send a message to the IoT Box (action route)
-     * @param iotBoxIp IP Address of the IoT Box
-     * @param message Data to send to the device
-     * @param messageId Unique identifier for the message
-     * @param fallback If longpolling has a fallback option (e.g. websocket), do not display errors to the user
-     * @returns {Promise<*>} response of the request (response.result tells if the device is connected or not)
+     * @param iotBoxIp
+     * @param message
+     * @param messageId
+     * @param fallback
+     * @returns {Promise<*>}
      */
     async sendMessage(iotBoxIp, message, messageId = null, fallback = false) {
         messageId ??= uuid();
@@ -97,12 +93,11 @@ export class IoTLongpolling {
     }
 
     /**
-     * Listen for messages from the IoT Box (polling the IoT Box)
-     * @param iotBoxIp IP Address of the IoT Box
-     * @param iotDeviceIdentifier Identifier of the device connected to the IoT Box
-     * @param onSuccess Callback to run when a successful response is received (can return ``message``, ``deviceIdentifier``, and ``messageId``)
-     * @param onFailure Callback to run when the request fails (can return ``deviceIdentifier`` and ``messageId``)
-     * @param requestId The request ID to listen for (optional)
+     * @param iotBoxIp
+     * @param iotDeviceIdentifier
+     * @param onSuccess
+     * @param onFailure
+     * @param requestId
      */
     onMessage(
         iotBoxIp,
@@ -135,14 +130,11 @@ export class IoTLongpolling {
     }
 
     /**
-     * Execute an action on device_identifier
-     * Action depends on the driver that supports the device
-     *
      * @param {string} iot_ip
      * @param {string} device_identifier
-     * @param {Object} data contains the information needed to perform an action on this device_identifier
-     * @param {boolean} fallback if true, no notification will be displayed on fail
-     * @param {string} route endpoint to call on the IoT Box (default: /iot_drivers/action)
+     * @param {Object} data
+     * @param {boolean} fallback
+     * @param {string} route
      */
     action(iot_ip, device_identifier, data, fallback = false, route = null) {
         const body = {
@@ -160,10 +152,8 @@ export class IoTLongpolling {
     }
 
     /**
-     * Start a long polling, i.e. it continually opens a long poll
-     * connection as long as it is not stopped (@see `stopPolling`)
      * @param {string} iot_ip
-     * @param {boolean} fallback if true, no notification will be displayed on fail
+     * @param {boolean} fallback
      */
     startPolling(iot_ip, fallback = true) {
         if (iot_ip) {
@@ -178,11 +168,7 @@ export class IoTLongpolling {
         }
     }
 
-    /**
-     * Abort the pending long-poll of `iot_ip`, so that we immediately stop
-     * listening on the notifications of its devices.
-     * @param {string} iot_ip
-     */
+    /** @param {string} iot_ip */
     stopPolling(iot_ip) {
         if (this._listeners[iot_ip].abortController) {
             this._listeners[iot_ip].abortController.abort();
@@ -195,15 +181,12 @@ export class IoTLongpolling {
     }
 
     /**
-     * Execute an RPC to the box
-     * Used to do both polling or action
-     *
-     * @param {string} iot_ip IP of the IoT Box
-     * @param {string} route endpoint to call on the IoT Box
-     * @param {Object} params information needed to perform an action or the listener for the polling
-     * @param {number} timeout time before the request times out (undefined to use default timeout from http.js)
-     * @param {boolean} fallback if true, no notification will be displayed on fail
-     * @param {Object} headers headers to send with the request (optional, allows patching)
+     * @param {string} iot_ip
+     * @param {string} route
+     * @param {Object} params
+     * @param {number} timeout
+     * @param {boolean} fallback
+     * @param {Object} headers
      */
     async _rpcIoT(
         iot_ip,
@@ -237,10 +220,8 @@ export class IoTLongpolling {
     }
 
     /**
-     * Make a poll request to an IoT Box
-     *
      * @param {string} iot_ip
-     * @param {boolean} fallback if true, no notification will be displayed on fail
+     * @param {boolean} fallback
      */
     _poll(iot_ip, fallback = true) {
         const listener = this._listeners[iot_ip];
@@ -297,10 +278,7 @@ export class IoTLongpolling {
         );
     }
 
-    /**
-     * Warn the user that the IoT Box could not be reached.
-     * @param {string} url
-     */
+    /** @param {string} url */
     _doWarnFail(url) {
         this.notification.add(_t("Failed to reach IoT Box at %s", url), {
             title: _t("Connection to IoT Box failed"),
@@ -308,11 +286,7 @@ export class IoTLongpolling {
         });
     }
 
-    /**
-     * Enable/disable using Local Network Access.
-     * This forces HTTP on all IoT requests.
-     * @param {boolean} isLnaEnabled
-     */
+    /** @param {boolean} isLnaEnabled */
     setLna(isLnaEnabled) {
         this.useLna = isLnaEnabled;
     }

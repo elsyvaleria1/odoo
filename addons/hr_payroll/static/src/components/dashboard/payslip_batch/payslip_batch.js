@@ -28,11 +28,7 @@ export class PayrollDashboardPayslipBatch extends Component {
         return colorMap[stateCode] || "text-bg-info";
     }
 
-    /**
-     * Handles clicking on the line
-     *
-     * @param {number} batchID
-     */
+    /** @param {number} batchID */
     onClickLine(batchID) {
         this.openPayRun({
             id: batchID,

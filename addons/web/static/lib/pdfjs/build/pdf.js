@@ -20,10 +20,10 @@
  * JavaScript code in this page
  */
 
-/**
- * pdfjsVersion = 6.1.200
- * pdfjsBuild = 6353acefe
- */
+
+
+
+
  var __webpack_modules__ = ({
 
  9306
@@ -22065,7 +22065,7 @@ class PDFWorker {
         return this.#mainThreadWorkerMessageHandler;
       }
       const worker = await import(
-      /*@vite-ignore*/
+
       this.workerSrc);
       return worker.WorkerMessageHandler;
     };
@@ -33951,4 +33951,3 @@ globalThis.pdfjsLib = {
 };
 
 export { AbortException, AnnotationEditorLayer, AnnotationEditorParamsType, AnnotationEditorType, AnnotationEditorUIManager, AnnotationLayer, AnnotationMode, AnnotationType, CSSConstants, ColorPicker, DOMSVGFactory, DrawLayer, FeatureTest, GlobalWorkerOptions, ImageKind, InvalidPDFException, MathClamp, OPS, OutputScale, PDFDataRangeTransport, PDFDateString, PDFWorker, PasswordException, PasswordResponses, PermissionFlag, PixelsPerInch, RenderingCancelledException, ResponseException, SignatureExtractor, SupportedImageMimeTypes, TextLayer, TextLayerImages, TouchManager, Util, VerbosityLevel, XfaLayer, applyOpacity, build, createValidAbsoluteUrl, fetchData, findContrastColor, getDocument, getFilenameFromUrl, getPdfFilenameFromUrl, getRGB, getRGBA, getUuid, isDataScheme, isPdfFile, isValidExplicitDest, makeArr, makeMap, makeObj, noContextMenu, normalizeUnicode, renderRichText, setLayerDimensions, shadow, stopEvent, updateUrlHash, version };
-

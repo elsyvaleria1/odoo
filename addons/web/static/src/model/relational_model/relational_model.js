@@ -928,10 +928,7 @@ export class RelationalModel extends Model {
         return count;
     }
 
-    /**
-     * @returns {RelationalRecord[]} the records a reloaded one may be a second
-     * copy of: only a grouped root shows one record in several groups
-     */
+    /** @returns {RelationalRecord[]} */
     similarRecordCandidates() {
         if (this.config.isMonoRecord || !this.config.groupBy.length) {
             return [];

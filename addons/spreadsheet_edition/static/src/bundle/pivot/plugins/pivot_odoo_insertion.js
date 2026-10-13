@@ -10,10 +10,7 @@ const { sanitizeSheetName, getUniqueText } = helpers;
 export class PivotOdooInsertion extends OdooUIPlugin {
     static getters = /** @type {const} */ ([]);
 
-    /**
-     * Handle a spreadsheet command
-     * @param {Object} cmd Command
-     */
+    /** @param {Object} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "ADD_AND_INSERT_NEW_ODOO_PIVOT":

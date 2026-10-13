@@ -10,10 +10,7 @@ export class CalendarListModel extends listView.Model {
         super.setup(...arguments);
     }
 
-    /**
-     * @override
-     * Add the calendar view's selected attendees to the list view's domain.
-     */
+    /** @override */
     async load(params = {}) {
         const filters = params?.context?.calendar_filters;
         const emptyDomain = Array.isArray(params?.domain) && params.domain.length === 0;

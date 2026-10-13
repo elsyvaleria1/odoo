@@ -4,14 +4,12 @@ import { patch } from "@web/core/utils/patch";
 
 patch(PaymentForm.prototype, {
     /**
-     * Allow forcing redirect to 3-D Secure authentication for Ogone token flow.
-     *
-     * @override method from @payment/js/payment_form
+     * @override
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {object} processingValues - The processing values of the transaction.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {object} processingValues
      * @return {void}
      */
     _processTokenFlow(

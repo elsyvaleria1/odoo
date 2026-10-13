@@ -23,10 +23,7 @@ export default class BarcodeQuantModel extends BarcodeModel {
         return this.apply({ shouldWaitReview: true });
     }
 
-    /**
-     * Check if the Inventory Adjustment can be applied and apply it only if it can be.
-     * @returns {Promise}
-     */
+    /** @returns {Promise} */
     apply(options = {}) {
         if (this.checkBeforeApply()) {
             const { shouldConfirm = false, shouldWaitReview = false } = options;
@@ -49,11 +46,7 @@ export default class BarcodeQuantModel extends BarcodeModel {
         }
     }
 
-    /**
-     * Makes some checks and returns true if the Inventory Adjustment can be
-     * applied or display a notification if it can not.
-     * @returns {Boolean}
-     */
+    /** @returns {Boolean} */
     checkBeforeApply() {
         if (this.applyOn === 0) {
             const message = _t("There is nothing to apply in this page.");
@@ -89,10 +82,7 @@ export default class BarcodeQuantModel extends BarcodeModel {
         return true;
     }
 
-    /**
-     * Apply quantity set on counted quants.
-     * @returns {Promise}
-     */
+    /** @returns {Promise} */
     async _apply(context = {}) {
         await this.save();
         const quantIds = this.pageLines.map((quant) => quant.id);
@@ -286,11 +276,7 @@ export default class BarcodeQuantModel extends BarcodeModel {
         return this.currentState.lines.map((l) => l.id);
     }
 
-    /**
-     * Marks or unmarks the line as counted and set its inventory quantity to zero.
-     *
-     * @param {Object} line
-     */
+    /** @param {Object} line */
     toggleAsCounted(line) {
         line.inventory_quantity = 0;
         line.inventory_quantity_set = !line.inventory_quantity_set;
@@ -749,8 +735,7 @@ export default class BarcodeQuantModel extends BarcodeModel {
     }
 
     /**
-     * A quant as the lines state holds it: records instead of the cache's ids.
-     * @param {Object} quant a copy of the cached quant (it is modified)
+     * @param {Object} quant
      * @param {number} [previousVirtualId]
      */
     _quantToLine(quant, previousVirtualId = false) {

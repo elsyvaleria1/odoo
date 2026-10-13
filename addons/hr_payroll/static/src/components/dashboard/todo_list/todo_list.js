@@ -78,11 +78,7 @@ export class PayrollDashboardTodo extends Component {
         this.startNameEdition(createdNote);
     }
 
-    /**
-     * Switches to the requested note.
-     *
-     * @param { Record } record
-     */
+    /** @param { Record } record */
     async onClickNoteTab(record) {
         if (record.id === this.state.activeNoteId) {
             return;
@@ -111,10 +107,7 @@ export class PayrollDashboardTodo extends Component {
         this.editedNote = editedRecord;
     }
 
-    /**
-     * On double-click, the note name should become editable
-     * @param { Object } record the note record
-     */
+    /** @param { Object } record */
     startNameEdition(record) {
         if (record.id === this.state.activeNoteId) {
             this.state.isEditingNoteName = true;
@@ -122,10 +115,7 @@ export class PayrollDashboardTodo extends Component {
         }
     }
 
-    /**
-     * On input, update buffer
-     * @param { Event } ev
-     */
+    /** @param { Event } ev */
     onInputNoteNameInput(ev) {
         this.bufferedText = ev.target.value;
     }
@@ -134,10 +124,7 @@ export class PayrollDashboardTodo extends Component {
         this._applyNoteRename();
     }
 
-    /**
-     * If enter/escape is pressed either save changes or discard them
-     * @param { Event } ev
-     */
+    /** @param { Event } ev */
     onKeyDownNoteNameInput(ev) {
         switch (ev.key) {
             case "Enter":
@@ -179,10 +166,7 @@ export class PayrollDashboardTodo extends Component {
         });
     }
 
-    /**
-     * Deletes the specified note
-     * @param {Number} noteId
-     */
+    /** @param {Number} noteId */
     async _deleteNote(noteId) {
         await this.orm.unlink(this.recordInfo.model, [noteId]);
         this.state.records = this.state.records.filter(

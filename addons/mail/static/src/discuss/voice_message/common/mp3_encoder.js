@@ -9,7 +9,7 @@ export class Mp3Encoder {
     config;
     /** @type {boolean} */
     encoding;
-    /** @type {any} a lamejs Mp3Encoder */
+    /** @type {any} */
     mp3Encoder;
     /** @type {Int16Array} */
     samplesMono;

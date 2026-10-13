@@ -54,9 +54,6 @@ const _HTML_ESCAPE_MAP = Object.fromEntries(HTML_ESCAPED_CHARACTERS);
 const _HTML_ESCAPE_RE = /[&<>'"`]/g;
 
 /**
- * Escapes the wildcards (`%`, `_`) and the escape character itself so a value
- * matches literally inside a (i)like pattern.
- *
  * @param {string} value
  * @returns {string}
  */

@@ -81,16 +81,15 @@ export function getInnerContent({
 }
 
 /**
- * Creates snippet structure HTML for test fixtures
- * @param {Object} options - Snippet structure configuration
- * @param {string} options.name - The display name of the snippet
- * @param {string} options.content - The HTML content of the snippet
- * @param {string[]} [options.keywords=[]] - Search keywords for the snippet
- * @param {string} options.groupName - The snippet group (category) name
- * @param {string} [options.imagePreview=""] - URL to preview image
- * @param {string|number} [options.moduleId=""] - Module ID if snippet belongs to a module
- * @param {string} [options.moduleDisplayName=""] - Human-readable module name
- * @returns {string} HTML string for the snippet structure
+ * @param {Object} options
+ * @param {string} options.name
+ * @param {string} options.content
+ * @param {string[]} [options.keywords=[]]
+ * @param {string} options.groupName
+ * @param {string} [options.imagePreview=""]
+ * @param {string|number} [options.moduleId=""]
+ * @param {string} [options.moduleDisplayName=""]
+ * @returns {string}
  */
 export function getSnippetStructure({
     name,
@@ -185,7 +184,6 @@ class IrUiView extends models.Model {
 
 /**
  * @typedef { import("@html_editor/editor").Editor } Editor
- *
  * @param {String} content
  * @param {Object} options
  * @param {String} options.headerContent
@@ -452,13 +450,12 @@ export async function modifyText(editor, editableContent) {
 }
 
 /**
- * Creates a basic HTML section structure for test snippets
- * @param {string} content - The content to place inside the section
- * @param {Object} [options={}] - Configuration options
- * @param {string} [options.name] - Name attribute for the section (data-name)
- * @param {string} [options.snippet="s_test"] - Snippet class and data-snippet value
- * @param {string} [options.additionalClassOnRoot=""] - Additional CSS classes for the root element
- * @returns {string} Formatted HTML section element
+ * @param {string} content
+ * @param {Object} [options={}]
+ * @param {string} [options.name]
+ * @param {string} [options.snippet="s_test"]
+ * @param {string} [options.additionalClassOnRoot=""]
+ * @returns {string}
  */
 export function getBasicSection(
     content,

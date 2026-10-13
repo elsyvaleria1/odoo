@@ -46,12 +46,8 @@ export class UploadButton extends Component {
     }
 
     /**
-     * The `allowedMIMETypes` prop can restrict the file types users are guided to select.
-     * However, the `accept` attribute doesn't enforce strict validation; it only suggests
-     * file types for browsers, so the selection is checked here as well.
-     *
      * @param {File} file
-     * @returns Whether the upload file's type is in the whitelist (`allowedMIMETypes`).
+     * @returns
      */
     validFileType(file) {
         return checkFileType(file, this.props.allowedMIMETypes, this.notification);

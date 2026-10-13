@@ -10,10 +10,7 @@ const { PIVOT_TABLE_CONFIG } = constants;
  */
 
 export class ListUIPlugin extends OdooUIPlugin {
-    /**
-     * Handle a spreadsheet command
-     * @param {Object} cmd Command
-     */
+    /** @param {Object} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "INSERT_ODOO_LIST_WITH_TABLE": {

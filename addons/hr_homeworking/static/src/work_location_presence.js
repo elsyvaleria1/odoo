@@ -8,7 +8,7 @@ const LOCATIONS = {
     other: { icon: "fa-solid fa-location-dot", label: _t("At Other") },
 };
 
-/** @type {string[]} the location words this module decorates a status with */
+/** @type {string[]} */
 export const WORK_LOCATION_TYPES = [];
 
 const STATUSES = {

@@ -190,9 +190,6 @@ export function computeFieldDomain(field, autocompleteValues) {
 const DATE_FILTER_CACHE = new WeakMap();
 
 /**
- * The domain, the facet domain and the facet description of a date filter are
- * all read in one notify cycle; the last result per filter is kept.
- *
  * @param {Record<string, any>} referenceMoment
  * @param {Record<string, any>} dateFilter
  * @param {string[]} generatorIds
@@ -326,9 +323,6 @@ export function isEmptyDomain(domain) {
 }
 
 /**
- * A filter that only sets a context (`<filter context="{'key': 1}"/>`) has no
- * domain of its own: it rides along its group's OR without widening it.
- *
  * @param {SearchItem | undefined} searchItem
  * @returns {boolean}
  */
@@ -337,10 +331,6 @@ function isContextOnlyFilter(searchItem) {
 }
 
 /**
- * `Domain.or` drops an empty operand as neutral, but in a facet's OR an item
- * without a domain matches everything, so it makes the whole group match
- * everything, unless it is a context-only filter.
- *
  * @param {QueryGroup} group
  * @param {Function} getSearchItemDomain
  * @param {SearchItems} [searchItems]

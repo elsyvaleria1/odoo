@@ -28,9 +28,7 @@ export class HolidaysListController extends ListController {
         };
     }
 
-    /**
-     * @param {Object} params - Button click parameters containing action details
-     */
+    /** @param {Object} params */
     handleViewButtonClick(params) {
         const actionName = params.clickParams.name;
         const filter = this.actionFilters[actionName];
@@ -56,8 +54,8 @@ export class HolidaysListController extends ListController {
     }
 
     /**
-     * @param {string} functionName - Name of the backend method to call
-     * @param {Array} records - Array of record objects to process
+     * @param {string} functionName
+     * @param {Array} records
      */
     async executeAction(functionName, records) {
         await this.orm.call(this.props.resModel, functionName, [

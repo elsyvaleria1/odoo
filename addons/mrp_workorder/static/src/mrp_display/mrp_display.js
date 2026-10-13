@@ -322,13 +322,7 @@ export class MrpDisplay extends Component {
         );
     }
 
-    /**
-     * Defines and returns relevant records (Manufacturing or Work Orders) depending of:
-     * - state.activeResModel: Display either `mrp.production` or `mrp.workorder`;
-     * - state.activeWorkcenter: Display only selected Workcenter's WO;
-     * - adminWorkorderIds: Display only WO assigned to this user.
-     * @returns {Object[]}
-     */
+    /** @returns {Object[]} */
     defineRelevantRecords() {
         const myWorkordersFilter = (wo) =>
             this.adminWorkorderIds.includes(wo.resId) && wo.data.state !== "cancel";
@@ -563,11 +557,7 @@ export class MrpDisplay extends Component {
         return this.mrpDisplayContext.reload();
     }
 
-    /**
-     * Resolve the active WC id, giving priority to context, then local storage, finally default or false.
-     * If the passed workcenter to activate in context is "Overview" (id:0), also save it to local storage.
-     * @returns {Number | false} id of the active Workcenter or false if no workcenters
-     */
+    /** @returns {Number | false} */
     _loadActiveWorkcenter(localStorageName, workcenters) {
         if (this.props.context.workcenter_id != null) {
             if (this.props.context.workcenter_id === 0) {

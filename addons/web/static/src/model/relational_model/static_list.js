@@ -716,14 +716,9 @@ export class StaticList extends EditableListDataPoint {
     }
 
     /**
-     * A reload that reads the rows it read last time, in the same order,
-     * gives each record the values it reads now: a row that reads as it did
-     * is left alone, another one is written field by field, and only what
-     * shows a changed field renders again. Anything else is a list to rebuild.
-     *
-     * @param {any[] | undefined} previous the rows the list was built from
+     * @param {any[] | undefined} previous
      * @param {any[]} rows
-     * @returns {boolean} whether the list holds the rows
+     * @returns {boolean}
      */
     reconcileRows(previous, rows) {
         if (

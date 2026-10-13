@@ -55,12 +55,7 @@ export class HomeTilesModel {
         });
     }
 
-    /**
-     * The user's own layout, or else the one the server resolved for them from
-     * the layers above (the company's default).
-     *
-     * @param {any} own
-     */
+    /** @param {any} own */
     resolve(own) {
         return tilesOf(own || session.home_tiles_default);
     }

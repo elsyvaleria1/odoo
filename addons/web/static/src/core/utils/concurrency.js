@@ -16,12 +16,6 @@ export function delay(wait) {
 export const MICROTASK_BUDGET = 1000;
 
 /**
- * Whether `promise` settles before `budget` microtasks have run, without ever
- * waiting on a task: inside a native event dispatch (a `beforeunload`) the
- * whole answer is in by the microtask checkpoint that follows the listener,
- * where the browser reads the event. Work waiting on a timer, a request or an
- * image load cannot progress in microtasks, so it runs the budget out.
- *
  * @param {Promise<unknown>} promise
  * @param {number} [budget]
  * @returns {Promise<boolean>}
@@ -133,7 +127,7 @@ export class Mutex {
         return this._queueSize > 0;
     }
 
-    /** @returns {number} the jobs running or queued */
+    /** @returns {number} */
     get pending() {
         return this._queueSize;
     }
@@ -298,7 +292,6 @@ export class InFlight {
         return this._count > 0;
     }
     /**
-     * Returns the original promise, including any caller-provided methods.
      * @template {Promise<unknown>} P
      * @param {P} promise
      * @returns {P}
@@ -322,11 +315,7 @@ export class InFlight {
     }
 }
 
-/**
- * The constructor returns a native promise with resolve/reject methods.
- * Its instance contract is augmented in @types/concurrency.d.ts.
- * @template [T=unknown]
- */
+/** @template [T=unknown] */
 export class Deferred {
     constructor() {
         const { promise, resolve, reject } = Promise.withResolvers();

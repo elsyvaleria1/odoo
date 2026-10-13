@@ -1,12 +1,6 @@
 /** @odoo-module native */
 
-/**
- * Books a meeting from its slot: the calendar opens, and the quick create of
- * the slot picked there comes with a Discuss video call. Saving it returns to
- * where it was scheduled from (`CalendarQuickCreateFormController`).
- *
- * @param {import("@web/env").OdooEnv} env
- */
+/** @param {import("@web/env").OdooEnv} env */
 export async function openScheduleMeeting(env) {
     const videocallLocation = await env.services.orm.call(
         "calendar.event",

@@ -461,10 +461,9 @@ patch(PosStore.prototype, {
         return result;
     },
     /**
-     * Sets up the options for the gift card product.
      * @param {object} program
      * @param {object} options
-     * @returns {Promise<boolean>} whether to proceed with adding the product or not
+     * @returns {Promise<boolean>}
      */
     async _setupGiftCardOptions(program, options) {
         options.quantity = 1;
@@ -679,10 +678,8 @@ patch(PosStore.prototype, {
         }
     },
     /**
-     * Fetches `loyalty.card` records from the server and adds/updates them in our cache.
-     *
-     * @param {domain} domain For the search
-     * @param {int} limit Default to 1
+     * @param {domain} domain
+     * @param {int} limit
      */
     async fetchCoupons(domain, limit = 1) {
         return await this.data.searchRead(
@@ -693,10 +690,6 @@ patch(PosStore.prototype, {
         );
     },
     /**
-     * Fetches a loyalty card for the given program and partner, put in cache afterwards
-     *  if a matching card is found in the cache, that one is used instead.
-     * If no card is found a local only card will be created until the order is validated.
-     *
      * @param {int} programId
      * @param {int} partnerId
      */

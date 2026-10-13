@@ -9,7 +9,7 @@ import { planningAskRecurrenceUpdate } from "./planning_ask_recurrence_update/pl
 
 /**
  * @param {Temporal.ZonedDateTime} date
- * @param {number} hours -- fractional, as a slot template's times are
+ * @param {number} hours
  */
 function addHours(date, hours) {
     return date.add({ milliseconds: Math.round(hours * 3_600_000) });
@@ -224,9 +224,9 @@ export class PlanningCalendarModel extends CalendarModel {
         return filterRecord;
     }
 
-    /*
-     * @override
-     */
+
+
+
     async loadFilters(data) {
         const loadedFilters = await super.loadFilters(data);
         if (

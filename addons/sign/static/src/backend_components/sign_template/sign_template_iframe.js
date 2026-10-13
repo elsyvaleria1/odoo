@@ -14,7 +14,6 @@ import { Deferred } from "@web/core/utils/concurrency";
 
 export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
     /**
-     * Renders custom elements inside the PDF.js iframe
      * @param {Document} root
      * @param {Object} env
      * @param {Object} owlServices
@@ -44,7 +43,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
     }
 
     /**
-     * Draws the connecting lines between two sign items. Uses `canvas_layer_0` for rendering.
      * @param {SignItem} signItem1
      * @param {SignItem} signItem2
      */
@@ -197,10 +195,7 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         }
     }
 
-    /**
-     * Draws a dashed line that goes from (data.start.x, data.start.y) to (data.end.x, data.end.y)
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     renderLine(data) {
         const canvas = this.getCanvas();
         const ctx = canvas.getContext("2d");
@@ -263,10 +258,7 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         }
     }
 
-    /**
-     * Handles opening and closing of popovers in template edition
-     * @param {SignItem} signItem
-     */
+    /** @param {SignItem} signItem */
     async openSignItemPopup(signItem) {
         if (signItem.data.id < 0) {
             await this.saveChangesOnBackend();
@@ -373,7 +365,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
     }
 
     /**
-     * Updates the radio set, re-renders it and saves the template in case there were changes.
      * @param {Number} sign_item_id
      * @param {Object} data
      */
@@ -394,7 +385,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
     }
 
     /**
-     * Updates the sign item, re-renders it and saves the template in case there were changes
      * @param {SignItem} signItem
      * @param {Object} data
      */
@@ -435,10 +425,7 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         }
     }
 
-    /**
-     * Deletes a radio set from the template
-     * @param {radio_set_id}
-     */
+    /** @param {radio_set_id} */
     deleteRadioSet(radio_set_id) {
         const radioSet = this.radioSets[radio_set_id];
         radioSet.radio_item_ids.forEach((id) => {
@@ -451,10 +438,7 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         this.orm.unlink("sign.item.radio.set", [radio_set_id]);
     }
 
-    /**
-     * Duplicates a sign item in the document.
-     * @param {SignItem} signItem
-     */
+    /** @param {SignItem} signItem */
     duplicateSignItem(signItem) {
         if (signItem.data.type === "radio") {
             return this.duplicateRadioSet(signItem.data.radio_set_id);
@@ -475,10 +459,7 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         this.setTemplateChanged();
     }
 
-    /**
-     * Duplicates a radio set in the document.
-     * @param {Number} radio_set_id
-     */
+    /** @param {Number} radio_set_id */
     async duplicateRadioSet(radio_set_id) {
         const radioSet = this.radioSets[radio_set_id];
         const newRadioSet = {
@@ -508,10 +489,7 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         this.setTemplateChanged();
     }
 
-    /**
-     * Deletes a sign item from the template
-     * @param {SignItem} signItem
-     */
+    /** @param {SignItem} signItem */
     deleteSignItem(signItem) {
         if (signItem.data.type === "radio") {
             const radioItem = this.getSignItemById(signItem.data.id);
@@ -524,10 +502,7 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         super.deleteSignItem(signItem);
     }
 
-    /**
-     * Enables resizing and drag/drop for sign items
-     * @param {SignItem} signItem
-     */
+    /** @param {SignItem} signItem */
     enableCustom(signItem) {
         if (this.allowEdit) {
             startResize(signItem, this.onResizeItem.bind(this));
@@ -536,7 +511,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
     }
 
     /**
-     * Extends the rendering context of the sign item based on its data
      * @param {SignItem.data} signItem
      * @returns {Object}
      */
@@ -580,9 +554,8 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
     }
 
     /**
-     * Returns specific alignment according to the sign item type
      * @param {SignItem.data} signItem
-     * @returns {String}: alignment for the sign item type
+     * @returns {String}
      */
     getAlignmentByItem(signItem) {
         if (signItem.type === "radio") {
@@ -729,13 +702,11 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
 
     /**
      * @typedef {Object} SignItem
-     * @property {Object} data // sign item data returned from the search_read
-     * @property {HTMLElement} el // html element of the sign item
+     * @property {Object} data
+     * @property {HTMLElement} el
      */
 
     /**
-     * Creates #count new sign radio items and chains them vertically to the lastSignItem
-     * by increasing of Y position, renders them and saves the template.
      * @param {SignItem} lastSignItem
      * @param {Number} count
      */
@@ -760,7 +731,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
     }
 
     /**
-     * Removes the last #count sign items from radio_item_ids from the template and saves the changes.
      * @param {Number[]} radio_item_ids
      * @param {Number} count
      */
@@ -776,7 +746,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
     }
 
     /**
-     * Apply changes to the entire radio set, re-renders sign items and saved the changes.
      * @param {Number} radio_set_id
      * @param {Object} changes
      * @returns
@@ -806,7 +775,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
     }
 
     /**
-     * Changes radio set number of options, renders new items, deletes extra items and saves changes.
      * @param {Number} radio_set_id
      * @param {Number} count
      */

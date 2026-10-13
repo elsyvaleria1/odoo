@@ -897,9 +897,7 @@ export class FormOptionPlugin extends Plugin {
         }));
         toCleanEls.forEach((el) => el.classList.remove("o_show_form_success_message"));
     }
-    /**
-     * @params {HTMLElement} fieldEl
-     */
+    /** @params {HTMLElement} */
     clearValidationDataset(fieldEl) {
         delete fieldEl.dataset.customError;
         delete fieldEl.dataset.errorMessage;

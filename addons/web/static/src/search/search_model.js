@@ -101,10 +101,6 @@ const log = makeLogger("web.search");
 let blockScopeSeq = 0;
 
 /**
- * Async windows overlap rather than nest (a section reload and an
- * applySearchSpec interleave), so the flag is restored only when the last open
- * window closes, to what it was before the first one opened.
- *
  * @param {{ blockNotification?: boolean, _blockDepth?: number, _blockBase?: boolean }} model
  * @param {boolean} isAsync
  * @returns {() => void}

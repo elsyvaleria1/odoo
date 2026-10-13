@@ -1,5 +1,5 @@
-//     idb-keyval.js 3.2.0
-//     https://github.com/jakearchibald/idb-keyval
+
+
 //     Copyright 2016, Jake Archibald
 //     Licensed under the Apache License, Version 2.0
 

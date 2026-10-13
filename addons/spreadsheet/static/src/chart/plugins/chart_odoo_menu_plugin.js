@@ -10,10 +10,7 @@ export class ChartOdooMenuPlugin extends OdooCorePlugin {
         this.odooMenuReference = {};
     }
 
-    /**
-     * Handle a spreadsheet command
-     * @param {Object} cmd Command
-     */
+    /** @param {Object} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "LINK_ODOO_MENU_TO_CHART":
@@ -41,8 +38,6 @@ export class ChartOdooMenuPlugin extends OdooCorePlugin {
     }
 
     /**
-     * Get odoo menu linked to the chart
-     *
      * @param {string} chartId
      * @returns {object | undefined}
      */

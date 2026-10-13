@@ -15,11 +15,8 @@ if (available) {
 }
 
 /**
- * Responsible for invoking native methods which called from JavaScript
- *
- * @param {String} name name of action want to perform in mobile
- * @param {Object} args extra arguments for mobile
- *
+ * @param {String} name
+ * @param {Object} args
  * @returns {Promise}
  */
 function native_invoke(name, args) {
@@ -38,9 +35,7 @@ function native_invoke(name, args) {
 }
 
 /**
- * Manages deferred callback from initiate from native mobile
- *
- * @param {String} id callback id
+ * @param {String} id
  * @param {Object} result
  */
 window.odoo.native_notify = function (id, result) {
@@ -81,11 +76,9 @@ class BackButtonManager {
     }
 
     /**
-     * Enables the func listener, overriding default back button behavior.
-     *
      * @param {object} listener
      * @param {function} func
-     * @throws {BackButtonListenerError} if the listener has already been registered
+     * @throws {BackButtonListenerError}
      */
     addListener(listener, func) {
         if (!methods.overrideBackButton) {
@@ -101,11 +94,8 @@ class BackButtonManager {
         }
     }
     /**
-     * Disables the func listener, restoring the default back button behavior if
-     * no other listeners are present.
-     *
      * @param {object} listener
-     * @throws {BackButtonListenerError} if the listener has already been unregistered
+     * @throws {BackButtonListenerError}
      */
     removeListener(listener) {
         if (!methods.overrideBackButton) {

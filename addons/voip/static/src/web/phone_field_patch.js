@@ -14,8 +14,6 @@ patch(PhoneField.prototype, {
         }
     },
     /**
-     * Called when the phone number is clicked.
-     *
      * @private
      * @param {MouseEvent} ev
      */

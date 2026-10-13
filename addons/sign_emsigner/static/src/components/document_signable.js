@@ -84,9 +84,8 @@ function deleteQueryParamFromURL(param) {
 }
 
 /**
- * Processes special errors from the IAP server
  * @param { String } errorMessage
- * @returns { [String, Boolean] } error message, title or false
+ * @returns { [String, Boolean] }
  */
 function processErrorMessage(errorMessage) {
     const errorMap = {

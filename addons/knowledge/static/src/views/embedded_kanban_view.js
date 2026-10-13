@@ -7,11 +7,7 @@ import { KanbanController, kanbanView } from "@web/views/kanban";
 export class KnowledgeArticleItemsKanbanController extends EmbeddedControllersPatch(
     KanbanController,
 ) {
-    /**
-     * @override
-     * Some actions require write access on the parent article. Disable those actions if the user
-     * does not have it.
-     */
+    /** @override */
     setup() {
         super.setup();
         this.knowledgeContext = useKnowledgeContext();

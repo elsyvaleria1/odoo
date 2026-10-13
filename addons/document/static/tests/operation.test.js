@@ -596,12 +596,7 @@ test("a composer that forbids uploads gets the documents picker without Add", as
     });
 });
 
-/**
- * Opens the move wizard on "Request" and confirms a move into "Folder 2",
- * which the server refuses with `changes` when checked, if given.
- *
- * @param {Object|null} changes
- */
+/** @param {Object|null} changes */
 async function moveRequestToFolder2(changes) {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Request", { owner_id: serverState.userId }),

@@ -17,7 +17,7 @@ const { ModelStore, NotificationStore, DependencyContainer } = stores;
 /**
  * @template T
  * @param {StoreConstructor<T>} Store
- * @param  {any[]} args
+ * @param {any[]} args
  * @return {Promise<{ store: T, container: InstanceType<typeof DependencyContainer>, model: OdooSpreadsheetModel }>}
  */
 export async function makeStore(Store, ...args) {
@@ -29,7 +29,7 @@ export async function makeStore(Store, ...args) {
  * @template T
  * @param {import("@odoo/o-spreadsheet").Model} model
  * @param {StoreConstructor<T>} Store
- * @param  {any[]} args
+ * @param {any[]} args
  * @return {{ store: T, container: InstanceType<typeof DependencyContainer>, model: OdooSpreadsheetModel }}
  */
 export function makeStoreWithModel(model, Store, ...args) {
@@ -39,7 +39,7 @@ export function makeStoreWithModel(model, Store, ...args) {
     return {
         store: container.instantiate(Store, ...args),
         container,
-        // @ts-ignore
+
         model: container.get(ModelStore),
     };
 }

@@ -70,7 +70,7 @@ export class IndexedDB {
 
     /**
      * @param {string} table
-     * @returns {Promise<Record<string, any>>} every value of the table by key
+     * @returns {Promise<Record<string, any>>}
      */
     async readAll(table) {
         this._tables.add(table);
@@ -79,7 +79,7 @@ export class IndexedDB {
 
     /**
      * @param {string} table
-     * @returns {Promise<string[]>} the keys of the table, without their values
+     * @returns {Promise<string[]>}
      */
     async readKeys(table) {
         this._tables.add(table);

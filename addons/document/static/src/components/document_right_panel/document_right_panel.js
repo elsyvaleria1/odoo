@@ -48,11 +48,7 @@ export class DocumentsRightPanel extends Component {
         );
     }
 
-    /**
-     * The panel narrows the view: the selected document is brought back in sight.
-     *
-     * @param {HTMLElement} panel
-     */
+    /** @param {HTMLElement} panel */
     _scrollSelectionIntoView(panel) {
         const selected = panel
             .closest(".o_documents_content")
@@ -66,11 +62,8 @@ export class DocumentsRightPanel extends Component {
     }
 
     /**
-     * On a small screen the panel opens below the view: shown, its chatter is
-     * scrolled to, once it has rendered.
-     *
      * @param {HTMLElement} panel
-     * @returns {() => void} what stops waiting
+     * @returns {() => void}
      */
     _scrollToChatterOnceShown(panel) {
         const scroll = () => {

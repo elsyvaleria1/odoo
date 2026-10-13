@@ -66,7 +66,7 @@ export class PdfViewerField extends FieldComponent {
 
     /**
      * @param {string} objectUrl
-     * @param {any} value the field value the object URL shows
+     * @param {any} value
      */
     setObjectUrl(objectUrl, value) {
         if (this.state.objectUrl && this.state.objectUrl !== objectUrl) {
@@ -76,14 +76,7 @@ export class PdfViewerField extends FieldComponent {
         this.state.objectUrlKey = { recordId: this.props.record.id, value };
     }
 
-    /**
-     * Keyed on the datapoint, not the resId: saving a new record keeps its
-     * datapoint (so the key survives) while every other record, including
-     * another new one, is a different datapoint. The value is part of the key
-     * because a discard reverts the datapoint to what the server holds.
-     *
-     * @param {PdfKey | null} key
-     */
+    /** @param {PdfKey | null} key */
     isCurrent(key) {
         return (
             key !== null &&

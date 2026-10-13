@@ -23,19 +23,7 @@ export class SurveySessionTextAnswers extends Interaction {
         this.answerIds = [];
     }
 
-    /**
-     * Adds the attendees answers on the screen.
-     * This is used for char_box/date and datetime questions.
-     *
-     * We use some tricks for wow effect:
-     * - force a width on the external div container, to reserve space for that answer
-     * - set the actual width of the answer, and enable a css width animation
-     * - set the opacity to 1, and enable a css opacity animation
-     *
-     * @param {CustomEvent} ev Custom event containing the questionType and
-     * the array of survey.user_input.line records in the form
-     * {id: line.id, value: line.[value_char_box/value_date/value_datetime]}
-     */
+    /** @param {CustomEvent} ev */
     updateTextAnswers(ev) {
         const inputLineValues = ev.detail.inputLineValues;
         const questionType = ev.detail.questionType;

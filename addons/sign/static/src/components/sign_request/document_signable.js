@@ -119,18 +119,12 @@ export class Document extends Component {
         );
     }
 
-    /**
-     * Returns the set of unsigned documents
-     * @returns {Set}
-     */
+    /** @returns {Set} */
     getDocumentsWithUnsignedItems() {
         return this.state.documentsWithUnsignedItems;
     }
 
-    /**
-     * Checks if the current document has unsigned items
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     isDocumentUnsigned() {
         if (!this.documents) {
             return false;
@@ -140,7 +134,6 @@ export class Document extends Component {
     }
 
     /**
-     * Updates the set of unsigned documents
      * @param {string} documentId
      * @param {boolean} hasUnsignedItems
      */
@@ -736,10 +729,7 @@ export class SignableDocument extends Document {
     }
 }
 
-/**
- * Mounts the SignableComponent
- * @param { HTMLElement } parent
- */
+/** @param { HTMLElement } parent */
 export async function initDocumentToSign(parent) {
     const env = makeEnv();
     await startServices(env);

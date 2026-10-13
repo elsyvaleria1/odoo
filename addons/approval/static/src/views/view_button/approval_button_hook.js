@@ -9,9 +9,6 @@ import { trace } from "../../common/approval_trace.js";
 const UNGATED = { gated: false, approved: true, request: false, steps: [] };
 
 /**
- * The approval state of one button on one record, kept current across loads and
- * saves of the record's model.
- *
  * @param {Object} params
  * @param {() => any} params.getRecord
  * @param {string|false} params.method
@@ -34,10 +31,7 @@ export function useApprovalButton({ getRecord, method, action }) {
         ];
     }
 
-    /**
-     * @param {any} [record] the record to ask about, when the button is about to
-     *   receive it and its props still hold the one it leaves
-     */
+    /** @param {any} [record] */
     async function load(record = getRecord()) {
         const [model, resId, buttonMethod, actionId] = buttonArgs(record);
         const request = ++latestRequest;

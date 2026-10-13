@@ -735,11 +735,7 @@ export async function isInViewportOf(childSelector, parentSelector) {
     return inViewportDeferred;
 }
 
-/**
- * Opens the systray messaging menu, then the tab `tabId` when given.
- *
- * @param {string} [tabId]
- */
+/** @param {string} [tabId] */
 export async function openMessagingMenu(tabId) {
     if (!queryFirst(".o-mail-MessagingMenuInDropdown")) {
         await click(".o_menu_systray i[aria-label='Messages']");

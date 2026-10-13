@@ -38,9 +38,7 @@ export class EpsonPrinter extends BasePrinter {
         }));
     }
 
-    /**
-     * @override Create
-     */
+    /** @override */
     processCanvas(canvas) {
         const endRaster = log.perf("canvasToRaster");
         const rasterData = this.canvasToRaster(canvas);

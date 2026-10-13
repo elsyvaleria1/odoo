@@ -38,7 +38,7 @@ export class SpreadsheetName extends Component {
 
     /**
      * @private
-     * @param {string} text in the input element
+     * @param {string} text
      */
     _setInputSize(text) {
         const { fontFamily, fontSize } = window.getComputedStyle(this.input.el);
@@ -50,11 +50,10 @@ export class SpreadsheetName extends Component {
     }
 
     /**
-     * Return the width in pixels of a text with the given font.
      * @private
      * @param {string} text
-     * @param {string} font css font attribute value
-     * @returns {number} width in pixels
+     * @param {string} font
+     * @returns {number}
      */
     _computeTextWidth(text, font) {
         const canvas = document.createElement("canvas");
@@ -65,8 +64,6 @@ export class SpreadsheetName extends Component {
     }
 
     /**
-     * Check if the name is empty or is the generic name
-     * for untitled spreadsheets.
      * @param {string} name
      * @returns {boolean}
      */

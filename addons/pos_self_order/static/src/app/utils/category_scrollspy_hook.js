@@ -2,16 +2,14 @@
 import { onMounted, onWillUnmount } from "@odoo/owl";
 
 /**
- * Detects when a category section becomes visible within a scrollable container.
- *
- * @param {string} categoryId - Initial selected category id
- * @param {Object} categoryScrollContainerRef - Ref to the scrollable container holding the category names
- * @param {Object} productScrollContainerRef - Ref to the scrollable container holding the product items grouped by categories
- * @param {Function} [onCategoryVisible=() => {}] - Callback invoked when the category becomes visible
+ * @param {string} categoryId
+ * @param {Object} categoryScrollContainerRef
+ * @param {Object} productScrollContainerRef
+ * @param {Function} [onCategoryVisible=() => {}]
  * @param {Object} [options={}]
- * @param {number} [options.categoryScrollOffsetLeft=-5] - Horizontal scroll offset applied when scrolling to a category name
- * @param {number} [options.productScrollOffsetTop=-15] - Vertical offset applied when scrolling to a product section
- * @param {number} [options.visibleThreshold=100] - Minimum number of pixels from the top of the container a category must be visible to be considered active
+ * @param {number} [options.categoryScrollOffsetLeft=-5]
+ * @param {number} [options.productScrollOffsetTop=-15]
+ * @param {number} [options.visibleThreshold=100]
  */
 
 export function useCategoryScrollSpy(

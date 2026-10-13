@@ -200,12 +200,7 @@ function collectModelFields(Model, OgClass) {
         }
     })(Model.id);
 }
-/**
- * A registered model extending a registered model that declares a _discriminator is its
- * subtype: one identity map, and the discriminator value picks the class of each record.
- * Without a discriminator, the two models only share code.
- * @param {Object<string, typeof Record>} Models
- */
+/** @param {Object<string, typeof Record>} Models */
 function linkSubtypes(Models) {
     const modelByClass = new Map(
         Object.values(Models).map((Model) => [Object.getPrototypeOf(Model), Model]),

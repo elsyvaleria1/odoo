@@ -68,10 +68,7 @@ export class Map extends Component {
     }
 
     /**
-     * Add the markers of the closest locations on the map.
-     * Binds events to the created markers.
-     *
-     * @param {Array} locations - The list of locations to display on the map.
+     * @param {Array} locations
      * @return {void}
      */
     addMarkers(locations) {
@@ -106,11 +103,7 @@ export class Map extends Component {
         }
     }
 
-    /**
-     * Remove the markers from the map and empty the markers array.
-     *
-     * @return {void}
-     */
+    /** @return {void} */
     removeMarkers() {
         for (const marker of this.markers) {
             marker.removeEventListener();
@@ -119,11 +112,7 @@ export class Map extends Component {
         this.markers = [];
     }
 
-    /**
-     * Find the selected location based on its id.
-     *
-     * @return {Object} The selected location.
-     */
+    /** @return {Object} */
     get selectedLocation() {
         return this.props.locations.find(
             (l) => String(l.id) === this.props.selectedLocationId,

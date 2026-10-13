@@ -591,7 +591,7 @@ export class Rtc extends Record {
     }
 
     /**
-     * @param {KeyboardEvent} [ev] absent when the window lost focus
+     * @param {KeyboardEvent} [ev]
      * @returns {boolean}
      */
     isPushToTalkRelease(ev) {

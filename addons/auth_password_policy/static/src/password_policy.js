@@ -57,10 +57,6 @@ export class ConcretePolicy extends Policy {
 }
 
 /**
- * Computes the password's score, should be roughly continuous, under 0.5
- * if the requirements don't pass and at 1 if the recommendations are
- * exceeded
- *
  * @param {String} password
  * @param {Policy} requirements
  * @param {Policy} recommendations
@@ -75,19 +71,7 @@ export function computeScore(
     return Math.pow(req, 4) * (0.5 + Math.pow(rec, 2) / 2);
 }
 
-/**
- * Recommendations from Shay (2016):
- *
- * > Our research has shown that there are other policies that are more usable
- * > and more secure. We found three policies (2class12, 3class12, and 2word16)
- * > that we can directly recommend over comp8
- *
- * Since 2class12 is a superset of 3class12 and 2word16, either pick it or
- * pick the other two (and get the highest score of the two). We're
- * picking the other two.
- *
- * @type Policy
- */
+/** @type */
 export const recommendations = {
     score(password) {
         return Math.max(...this.policies.map((p) => p.score(password)));

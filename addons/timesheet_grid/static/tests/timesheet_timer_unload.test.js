@@ -51,7 +51,7 @@ function captureController(Controller) {
 
 /**
  * @param {{ type: "kanban" | "list", groupBy?: string[] }} params
- * @returns {Promise<any>} the view's controller, with the timer running
+ * @returns {Promise<any>}
  */
 async function mountWithRunningTimer({ type, groupBy = [] }) {
     const box = captureController(

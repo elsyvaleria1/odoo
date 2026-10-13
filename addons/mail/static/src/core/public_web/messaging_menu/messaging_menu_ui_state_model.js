@@ -85,9 +85,6 @@ export class MessagingMenuUIState extends Record {
     }
 
     /**
-     * Shows `tab`, with `filter` when given ("All" is an undefined filter) instead of the
-     * tab's default: switching tabs resets the filter.
-     *
      * @param {import("models").MessagingMenuTab} tab
      * @param {{filter?: import("models").MessagingMenuTabFilter}} [options]
      */

@@ -91,11 +91,7 @@ export class CommonOdooChartConfigPanel extends Component {
         });
     }
 
-    /**
-     * Get the last update date, formatted
-     *
-     * @returns {string} date formatted
-     */
+    /** @returns {string} */
     getLastUpdate() {
         const dataSource = this.env.model.getters.getChartDataSource(
             this.props.chartId,

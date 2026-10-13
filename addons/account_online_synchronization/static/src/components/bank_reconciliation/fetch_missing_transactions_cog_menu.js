@@ -10,13 +10,7 @@ import { isBankReconciliationView } from "./find_duplicate_transactions_cog_menu
 
 const cogMenuRegistry = registry.category("cogMenu");
 
-/**
- * 'Fetch Missing Transactions' cog menu item of the bank reconciliation widget.
- *
- * Opens a wizard to fetch missing/pending transactions since a given date. The server
- * preselects the journal when a single one is active, otherwise it asks the user.
- * @extends Component
- */
+/** @extends Component */
 export class FetchMissingTransactions extends Component {
     static template = "account_online_synchronization.FetchMissingTransactions";
     static components = { CogMenuItem };

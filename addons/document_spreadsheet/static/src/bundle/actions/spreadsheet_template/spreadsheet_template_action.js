@@ -17,10 +17,7 @@ export class SpreadsheetTemplateAction extends AbstractSpreadsheetAction {
         });
     }
 
-    /**
-     * Create a new empty spreadsheet template
-     * @returns {Promise<number>} id of the newly created spreadsheet template
-     */
+    /** @returns {Promise<number>} */
     async createNewSpreadsheet() {
         const data = {
             name: _t("Untitled spreadsheet template"),

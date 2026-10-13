@@ -63,11 +63,9 @@ export class LocationSelectorDialog extends Component {
     }
 
     /**
-     * Fetch the closest pickup locations based on the zip code.
-     *
      * @private
-     * @param {String} zip - The zip code used to look for close locations.
-     * @return {Object} The result values.
+     * @param {String} zip
+     * @return {Object}
      */
     async _getLocations(zip) {
         return rpc(this.getLocationUrl, {
@@ -77,13 +75,8 @@ export class LocationSelectorDialog extends Component {
     }
 
     /**
-     * Get the locations based on the zip code.
-     *
-     * Select the first location available if no location is currently selected or if the currently
-     * selected location is not on the list anymore.
-     *
      * @private
-     * @param {String} zip - The zip code used to look for close locations.
+     * @param {String} zip
      * @return {void}
      */
     async _updateLocations(zip) {
@@ -110,11 +103,7 @@ export class LocationSelectorDialog extends Component {
         return this.state.locations.length !== 1;
     }
 
-    /**
-     * Find the selected location based on its id.
-     *
-     * @return {Object} The selected location.
-     */
+    /** @return {Object} */
     get selectedLocation() {
         return this.state.locations.find(
             (l) => String(l.id) === this.state.selectedLocationId,
@@ -122,8 +111,6 @@ export class LocationSelectorDialog extends Component {
     }
 
     /**
-     * Set the selectedLocationId in the state.
-     *
      * @param {String} locationId
      * @return {void}
      */
@@ -131,11 +118,7 @@ export class LocationSelectorDialog extends Component {
         this.state.selectedLocationId = String(locationId);
     }
 
-    /**
-     * Confirm the current selected location.
-     *
-     * @return {void}
-     */
+    /** @return {void} */
     async validateSelection() {
         if (!this.state.selectedLocationId) {
             return;
@@ -147,14 +130,7 @@ export class LocationSelectorDialog extends Component {
         this.props.close();
     }
 
-    /**
-     * Determines the component to show in mobile view based on the current state.
-     *
-     * Returns the MapContainer component if `viewMode` is strictly equal to `map`, else return the
-     * List component.
-     *
-     * @return {Component} The component to show in mobile view.
-     */
+    /** @return {Component} */
     get mobileComponent() {
         if (this.state.viewMode === "map") {
             return MapContainer;

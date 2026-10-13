@@ -59,16 +59,7 @@ export class PushNotificationWidget extends Interaction {
         );
     }
 
-    /**
-     * Will handle Firebase Messaging foreground notifications.
-     *
-     * The push notifications will only be displayed is the user has
-     * granted notification permission to the website.
-     *
-     * See: https://rnfirebase.io/messaging/usage#foreground-state-messages
-     *
-     * @private
-     */
+    /** @private */
     _setForegroundNotificationHandler(config, messaging) {
         const onMessage = (payload) => {
             if (window.Notification && Notification.permission === "granted") {
@@ -95,19 +86,7 @@ export class PushNotificationWidget extends Interaction {
         this.firebase.onMessage(messaging, onMessage);
     }
 
-    /**
-     * Will check browser compatibility before trying to register the service worker.
-     * Browsers compatible now (11/07/2019):
-     * - Chrome
-     * - Firefox
-     * - Edge
-     *
-     * For Safari we would need to use an entirely different service since they have their own
-     * push notifications mechanism.
-     * See: https://developer.apple.com/notifications/safari-push-notifications/
-     *
-     * @private
-     */
+    /** @private */
     _isBrowserCompatible() {
         if (!("serviceWorker" in navigator)) {
             return false;
@@ -121,12 +100,8 @@ export class PushNotificationWidget extends Interaction {
     }
 
     /**
-     * Will initialize the firebase app with the given configuration
-     * and return the messaging object.
-     *
-     * @param {Object} config the push configuration
+     * @param {Object} config
      * @returns {firebase.messaging.Messaging}
-     *
      * @private
      */
     _initializeFirebaseApp(config) {
@@ -150,14 +125,8 @@ export class PushNotificationWidget extends Interaction {
     }
 
     /**
-     * Will register a service worker to display later notifications.
-     * This method also handles the notification "subscription token".
-     *
-     * The token will be used by firebase to notify this user directly.
-     *
-     * @param {Object} config the push configuration
+     * @param {Object} config
      * @param {firebase.messaging.Messaging} messaging
-     *
      * @private
      */
     _registerServiceWorker(config, messaging) {
@@ -189,12 +158,7 @@ export class PushNotificationWidget extends Interaction {
             });
     }
 
-    /**
-     * Checks that the push notification configuration is still up to date.
-     * (It expires after 7 days)
-     *
-     * @private
-     */
+    /** @private */
     _isConfigurationUpToDate(pushConfiguration) {
         if (pushConfiguration) {
             if (new Date() < new Date(pushConfiguration.expirationDate)) {
@@ -205,14 +169,7 @@ export class PushNotificationWidget extends Interaction {
         return false;
     }
 
-    /**
-     * Responsible for fetching the full push configuration.
-     *
-     * When the configuration is fetched, it's stored into local storage (for 7 days)
-     * to save future requests.
-     *
-     * @private
-     */
+    /** @private */
     _fetchPushConfiguration() {
         return rpc("/social_push_notifications/get_push_configuration").then(
             (config) => {
@@ -228,17 +185,7 @@ export class PushNotificationWidget extends Interaction {
         );
     }
 
-    /**
-     * Will register the subscription token into database for later notifications
-     *
-     * We store the token in the localStorage for 7 days to avoid having to save
-     * it every time the user loads a website page.
-     *
-     * If the token from localStorage is different from the one we are registering, we clean
-     * the old one from the registrations.
-     *
-     * @param {string} token
-     */
+    /** @param {string} token */
     _registerToken(token) {
         const pushConfiguration = this._getPushConfiguration();
         if (pushConfiguration && pushConfiguration.token !== token) {
@@ -260,33 +207,12 @@ export class PushNotificationWidget extends Interaction {
     }
 
     /**
-     * We work with 2 different permission request popups:
-     *
-     * - The first one is a regular bootstrap popup configurable (title,text,...) from the backend.
-     *   It has an accept and a deny buttons. It also closes if the user clicks outside.
-     *
-     * -> if closed by clicking outside/on cross, will re-open on next page reload
-     * -> if closed by clicking 'Deny', will re-open after 7 days on page reload
-     * -> if closed by clicking on 'Allow', triggers the second popup.
-     *
-     * - The second popup is the one opened by the browser when asking for notifications permission.
-     *
-     * -> if closed by clicking outside/on cross, will re-open the first popup on next page reload
-     * -> if closed by clicking on 'Block', we will not be allowed to send notifications to that user.
-     * -> if closed by clicking on 'Allow', we register a service worker to send notifications.
-     *
-     * In addition to that, the first popup configuration (title,text,...) is stored into localStorage
-     * to avoid having to fetch it on every page reload if the user doesn't accept or deny the popup.
-     *
-     * The configuration is stored for 7 days to still receive visual updates if the configuration
-     * changes on the backend side.
-     *
-     * @param {String} [nextAskPermissionKeySuffix] optional - Suffix of the cache entry
-     * @param {Object} [forcedPopupConfig] optional - Properties that will overwrite the notification request configuration.
-     * @param {String} forcedPopupConfig.title optional - Title of the popup.
-     * @param {String} forcedPopupConfig.body optional - Body of the popup.
-     * @param {String} forcedPopupConfig.delay optional - Delay of the popup.
-     * @param {String} forcedPopupConfig.icon optional - Icon of the popup.
+     * @param {String} [nextAskPermissionKeySuffix]
+     * @param {Object} [forcedPopupConfig]
+     * @param {String} forcedPopupConfig.title
+     * @param {String} forcedPopupConfig.body
+     * @param {String} forcedPopupConfig.delay
+     * @param {String} forcedPopupConfig.icon
      */
     async _askPermission(nextAskPermissionKeySuffix, forcedPopupConfig) {
         const nextAskPermission = browser.localStorage.getItem(
@@ -324,19 +250,9 @@ export class PushNotificationWidget extends Interaction {
     }
 
     /**
-     * Method responsible for the display of the Notification Request Popup.
-     * The popup is rendered from the qweb template and wired here directly
-     * (it was previously a dedicated legacy child widget):
-     * - after the configured delay, the bootstrap dropdown opens;
-     * - 'Allow' triggers the browser permission request and, when granted,
-     *   the service worker / foreground handler registration;
-     * - 'Deny' snoozes the request for 7 days;
-     * - closing the dropdown (outside click, cross, or any button — bootstrap
-     *   auto-close) removes the popup from the DOM.
-     *
-     * @param {Object} popupConfig the popup configuration (title,body,...)
-     * @param {Object} pushConfig the push configuration
-     * @param {String} [nextAskPermissionKeySuffix] optional
+     * @param {Object} popupConfig
+     * @param {Object} pushConfig
+     * @param {String} [nextAskPermissionKeySuffix]
      */
     _showNotificationRequestPopup(popupConfig, pushConfig, nextAskPermissionKeySuffix) {
         const selector = ".o_social_push_notifications_permission_request";
@@ -409,14 +325,7 @@ export class PushNotificationWidget extends Interaction {
     }
 
     /**
-     * Get the notification request configuration.
-     *
-     * The configuration is first retrieved from local storage if it's still valid.
-     * If not, it will be fetched from the server.
-     *
-     * @returns {Promise, boolean} the push configuration as a promise and a boolean
-     * indicating if the configuration was updated.
-     *
+     * @returns {Promise, boolean}
      * @private
      */
     _getNotificationRequestConfiguration() {
@@ -442,24 +351,12 @@ export class PushNotificationWidget extends Interaction {
     }
 
     /**
-     * The module will guarantee that no other push notification request for
-     * the `nextAskPermissionKeySuffix` key will issued if the user dismissed
-     * a request using the same key within the last 7 days.
-     *
-     * This can be useful in specific context, e.g:
-     * When favoriting event.tracks, we want to re-ask the user to enable the push
-     * notifications even if the user recently dismisses the default one. By
-     * using a custom key, we can issue a new request without having to wait that
-     * the 7 days restriction set by the first request expires. When the user
-     * dismisses the new request, a 7 days restriction will also be applied to the
-     * provided key.
-     *
-     * @param {String} [nextAskPermissionKeySuffix] Suffix of the cache entry.
-     * @param {Object} [forcedPopupConfig] Properties of the popup.
-     * @param {String} forcedPopupConfig.title optional - Title of the popup.
-     * @param {String} forcedPopupConfig.body optional - Body of the popup.
-     * @param {String} forcedPopupConfig.delay optional - Delay of the popup.
-     * @param {String} forcedPopupConfig.icon optional - Icon of the popup.
+     * @param {String} [nextAskPermissionKeySuffix]
+     * @param {Object} [forcedPopupConfig]
+     * @param {String} forcedPopupConfig.title
+     * @param {String} forcedPopupConfig.body
+     * @param {String} forcedPopupConfig.delay
+     * @param {String} forcedPopupConfig.icon
      */
     async _onNotificationRequest(nextAskPermissionKeySuffix, forcedPopupConfig) {
         if (Notification.permission !== "default") {

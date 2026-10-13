@@ -52,13 +52,7 @@ function isLinkActive(selection) {
     return false;
 }
 
-/**
- * A click on a `label` belongs to its input and a click on a `button` to its
- * action; a link nested in either one swallows that click instead. So the
- * editor stops offering to create one there.
- *
- * @param {Node} node
- */
+/** @param {Node} node */
 function allowedToCreateLink(node) {
     return !closestElement(node, "label, button");
 }

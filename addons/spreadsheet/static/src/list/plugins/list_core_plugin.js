@@ -13,12 +13,11 @@ const { getMaxObjectId } = helpers;
  * @property {Array<string>} columns
  * @property {Object} context
  * @property {Array<Array<string>>} domain
- * @property {string} id The id of the list
- * @property {string} model The technical name of the model we are listing
- * @property {string} name Name of the list
+ * @property {string} id
+ * @property {string} model
+ * @property {string} name
  * @property {Array<string>} orderBy
  * @property {string} actionXmlId
- *
  * @typedef {Object} List
  * @property {string} id
  * @property {string} dataSourceId
@@ -79,11 +78,7 @@ export class ListCorePlugin extends OdooCorePlugin {
         return CommandResult.Success;
     }
 
-    /**
-     * Handle a spreadsheet command
-     *
-     * @param {Object} cmd Command
-     */
+    /** @param {Object} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "INSERT_ODOO_LIST": {
@@ -159,20 +154,12 @@ export class ListCorePlugin extends OdooCorePlugin {
         return this.lists[id].definition.name;
     }
 
-    /**
-     * Retrieve all the list ids
-     *
-     * @returns {Array<string>} list ids
-     */
+    /** @returns {Array<string>} */
     getListIds() {
         return Object.keys(this.lists);
     }
 
-    /**
-     * Retrieve the next available id for a new list
-     *
-     * @returns {string} id
-     */
+    /** @returns {string} */
     getNextListId() {
         return this.nextId.toString();
     }
@@ -200,10 +187,7 @@ export class ListCorePlugin extends OdooCorePlugin {
     }
 
     /**
-     * Check if an id is an id of an existing list
-     *
-     * @param {string} id Id of the list
-     *
+     * @param {string} id
      * @returns {boolean}
      */
     isExistingList(id) {
@@ -220,12 +204,11 @@ export class ListCorePlugin extends OdooCorePlugin {
     }
 
     /**
-     * Build an Odoo List
-     * @param {string} sheetId Id of the sheet
-     * @param {[number,number]} anchor Top-left cell in which the list should be inserted
-     * @param {string} id Id of the list
-     * @param {number} linesNumber Number of records to insert
-     * @param {Array<Object>} columns Columns ({name, type})
+     * @param {string} sheetId
+     * @param {[number,number]} anchor
+     * @param {string} id
+     * @param {number} linesNumber
+     * @param {Array<Object>} columns
      */
     _insertList(sheetId, anchor, id, linesNumber, columns) {
         this._resizeSheet(sheetId, anchor, columns.length, linesNumber + 1);
@@ -268,13 +251,10 @@ export class ListCorePlugin extends OdooCorePlugin {
     }
 
     /**
-     * Resize the sheet to match the size of the listing. Columns and/or rows
-     * could be added to be sure to insert the entire sheet.
-     *
-     * @param {string} sheetId Id of the sheet
-     * @param {[number,number]} anchor Anchor of the list [col,row]
-     * @param {number} columns Number of columns of the list
-     * @param {number} rows Number of rows of the list
+     * @param {string} sheetId
+     * @param {[number,number]} anchor
+     * @param {number} columns
+     * @param {number} rows
      */
     _resizeSheet(sheetId, anchor, columns, rows) {
         const numberCols = this.getters.getNumberCols(sheetId);
@@ -301,11 +281,7 @@ export class ListCorePlugin extends OdooCorePlugin {
         }
     }
 
-    /**
-     * Import the lists
-     *
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     import(data) {
         if (data.lists) {
             for (const [id, list] of Object.entries(data.lists)) {
@@ -327,11 +303,7 @@ export class ListCorePlugin extends OdooCorePlugin {
         }
         this.nextId = data.listNextId || getMaxObjectId(this.lists) + 1;
     }
-    /**
-     * Export the lists
-     *
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     export(data) {
         data.lists = {};
         for (const id in this.lists) {

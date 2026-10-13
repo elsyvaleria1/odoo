@@ -283,10 +283,8 @@ export class SurveyResultChart extends Interaction {
     }
 
     /**
-     * Adds a unicode 'check' mark if the answer's text is among the question's right answers.
-     *
-     * @param  value
-     * @param  value.text The original text of the answer
+     * @param value
+     * @param value.text
      */
     markIfCorrect(value) {
         return (

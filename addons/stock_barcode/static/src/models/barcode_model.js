@@ -143,10 +143,7 @@ export default class BarcodeModel extends EventBus {
         return true;
     }
 
-    /**
-     * The operation can be validated if there is at least one line.
-     * @returns {number} the number of lines (truthy when the operation can be validated)
-     */
+    /** @returns {number} */
     get canBeValidated() {
         return this.pageLines.length + this.packageLines.length;
     }
@@ -219,11 +216,7 @@ export default class BarcodeModel extends EventBus {
         return line.product_id.tracking === "none" || line.lines;
     }
 
-    /**
-     * Returns the page's lines but with tracked products grouped by product id.
-     *
-     * @returns
-     */
+    /** @returns */
     get groupedLines() {
         this.groupLines();
         return this._sortLine(this._groupedLines);
@@ -316,8 +309,6 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Say if the line quantity is not set. Only useful for the inventory adjustment.
-     *
      * @param {Object} line
      * @returns {boolean}
      */
@@ -416,9 +407,7 @@ export default class BarcodeModel extends EventBus {
         return _t("Validate");
     }
 
-    /**
-     * @param {integer} [lineId] if provided it checks if the line still exist (selects it or removes it from the lines' list)
-     */
+    /** @param {integer} [lineId] */
     async displayBarcodeLines(lineId) {
         if (lineId) {
             const res = await this.orm.search(this.lineModel, [["id", "=", lineId]]);
@@ -455,7 +444,6 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Calls the notification service and plays a sound if the notification's type is "danger".
      * @param {String} message
      * @param {Object} options
      */
@@ -667,11 +655,8 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Can be called by the user from the application. As the quantity field hasn't
-     * the same name for all models, this method must be overridden by each model.
-     *
      * @param {number} virtualId
-     * @param {number} qty Quantity to increment (1 by default)
+     * @param {number} qty
      */
     updateLineQty(virtualId, qty = 1) {
         throw new Error("Not Implemented");
@@ -727,7 +712,6 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Check if the URI was already scanned.
      * @param {String} uri
      * @returns {Boolean}
      */
@@ -736,8 +720,6 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Sometimes, the model receives multiple barcodes as one single string.
-     * This method decomposes it into a list of barcodes.
      * @param {String} barcode
      * @returns {Array<String>}
      */
@@ -886,13 +868,10 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Creates a new line with passed parameters, adds it to the barcode app and
-     * to the list of lines to save.
-     *
      * @param {Object} params
-     * @param {Object} params.copyOf line to copy fields' value from
-     * @param {Object} params.fieldsParams fields' value to override
-     * @returns {Object} the newly created line
+     * @param {Object} params.copyOf
+     * @param {Object} params.fieldsParams
+     * @returns {Object}
      */
     async _createNewLine(params) {
         const newLine = Object.assign(
@@ -946,13 +925,7 @@ export default class BarcodeModel extends EventBus {
         }
     }
 
-    /**
-     * A packaging of a serial-tracked product is one line per unit, each to get its own
-     * serial number. It stops at the first refused line: refusing one clears the source
-     * confirmation it was waiting for, so the next would be created from the unconfirmed
-     * location.
-     * @returns {Promise<Object|false>} the last line created, false if the first was refused
-     */
+    /** @returns {Promise<Object|false>} */
     async _createSerialPackagingLines(fieldsParams, quantity) {
         let line = false;
         for (let lineCount = 0; lineCount < quantity; lineCount++) {
@@ -1111,11 +1084,7 @@ export default class BarcodeModel extends EventBus {
         throw new Error("Not Implemented");
     }
 
-    /**
-     * Says if a tracked line can be incremented even if there is no tracking number on it.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     _incrementTrackedLine() {
         return false;
     }
@@ -1124,11 +1093,7 @@ export default class BarcodeModel extends EventBus {
         throw new Error("Not Implemented");
     }
 
-    /**
-     * Keeps the track of a modified lines to save them later.
-     *
-     * @param {Object} line
-     */
+    /** @param {Object} line */
     _markLineAsDirty(line) {
         if (this.scannedLinesVirtualId.at(-1) !== line.virtual_id) {
             this.scannedLinesVirtualId.push(line.virtual_id);
@@ -1143,18 +1108,9 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Will parse the given barcode according to the used nomenclature and return
-     * the retrieved data as an object.
-     *
      * @param {string} barcode
-     * @param {Object} filters For some models, different records can have the same barcode
-     *      (`product.trace` for example). In this case, these filters can help to get only
-     *      the wanted record by filtering by record's field's value.
-     * @returns {Object} Containing following data:
-     *      - {string} barcode: the scanned barcode
-     *      - {boolean} match: true if the barcode match an existing record
-     *      - {Object} data type: an object for each type of data/record corresponding to the
-     *                 barcode. It could be 'action', 'location', 'product', ...
+     * @param {Object} filters
+     * @returns {Object}
      */
     async _parseBarcode(barcode, filters) {
         const result = {
@@ -1385,8 +1341,6 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Starts by parse the barcode and then process each type of barcode data.
-     *
      * @param {string} barcode
      * @returns {Promise}
      */
@@ -1754,12 +1708,8 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * This method cleans the barcode in case the parser use the GS1 nomenclature, removing the
-     * parentheses and the extra spaces (helping for human readability but not valid).
-     * E.g.: (01) 00001234567895 (10) lot-abc -> 0100001234567895\x1D10lot-abc
-     *
      * @param {string} barcode
-     * @returns {string} barcode
+     * @returns {string}
      */
     cleanBarcode(barcode) {
         if (this.parser.nomenclature.is_gs1_nomenclature) {
@@ -1780,8 +1730,6 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Check if a given line can be taken depending of the current location (if no current location,
-     * it will always be true).
      * @param {Object} line
      * @returns {Boolean}
      */
@@ -1881,8 +1829,6 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Sorts the lines to have new lines always on top and complete lines always on the bottom.
-     *
      * @param {Array<Object>} lines
      * @returns {Array<Object>}
      */
@@ -2015,9 +1961,6 @@ export default class BarcodeModel extends EventBus {
     }
 
     /**
-     * Intended to be used only by `_findLine`.
-     * Depending of the model, they can have additional conditions to know if a
-     * line can be took when a barcode is scanned. This method is meant to be overriden.
      * @param {Object} line
      * @returns {Boolean}
      */

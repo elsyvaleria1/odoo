@@ -33,14 +33,7 @@ export class AddDocumentsAttachmentPlugin extends Plugin {
         openDocumentsPicker(dialog, this.documentsPickerProps());
     }
 
-    /**
-     * What the picker offers here. Content its editor serves to visitors (the
-     * website builder's, `publicAttachments`) links to the documents, shared
-     * by link: a copy attached to the record is no file a visitor may read.
-     * Elsewhere a copy is attached to the record, once it is saved.
-     *
-     * @returns {Object} the picker's props
-     */
+    /** @returns {Object} */
     documentsPickerProps() {
         const { resModel, resId: rawResId } = this.config.getRecordInfo?.() || {};
         const linksArePublic = Boolean(this.config.publicAttachments);

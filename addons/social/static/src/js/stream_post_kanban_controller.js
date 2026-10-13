@@ -125,12 +125,7 @@ export class StreamPostKanbanController extends KanbanController {
         }
     }
 
-    /**
-     * Fetches media on which you can add remote accounts and streams.
-     * We check the fact that they handle streams.
-     *
-     * @private
-     */
+    /** @private */
     async _fetchSocialMedia() {
         if (this.socialMedia) {
             return this.socialMedia;

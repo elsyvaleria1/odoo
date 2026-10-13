@@ -11,12 +11,7 @@ patch(Message.prototype, {
         this.orm = useService("orm");
     },
 
-    /**
-     * This function overrides the original method so that when the user tries to open a the record
-     * from a starred discussion linked to a spreadsheet cell thread, it can be redirected to the corresponding
-     * spreadsheet record.
-     * @override
-     */
+    /** @override */
     async openRecord() {
         if (this.message.model === "spreadsheet.cell.thread") {
             const action = await this.orm.call(

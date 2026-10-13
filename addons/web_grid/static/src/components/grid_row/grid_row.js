@@ -30,16 +30,7 @@ export class GridRow extends Component {
         return value;
     }
 
-    /**
-     * Whether the group this row stands for has a value at all, as distinct
-     * from having a falsy one. `0` is a group like any other -- a grid grouped
-     * by an integer has one whenever a record carries no sequence -- and
-     * labelling it "None" states something else entirely. Odoo answers an
-     * unset value with `false`, and a selection whose key is gone resolves to
-     * `undefined`.
-     *
-     * @return {boolean}
-     */
+    /** @return {boolean} */
     get hasValue() {
         const { value } = this;
         return value !== undefined && value !== null && value !== false && value !== "";

@@ -11,13 +11,7 @@ import { nbsp } from "@web/core/utils/format/strings";
 
 const log = makeLogger("web.view_ir");
 
-/**
- * The arch text hook every view applies: a literal "&nbsp;" in a text node or
- * an attribute value is the non-breaking space the author meant — the same
- * rule the arch-string path applied with one replaceAll over the whole arch.
- *
- * @param {string} value
- */
+/** @param {string} value */
 export const literalNbsp = (value) => value.replaceAll("&nbsp;", nbsp);
 
 export const COMMENT = "#comment";
@@ -56,9 +50,6 @@ function qualify(prefixes, uri, local) {
 }
 
 /**
- * Materialise the DOM element the client parsers and compilers walk, from the
- * IR the server emits in `get_view()` — the twin of `odoo.tools.view_ir.to_arch`.
- *
  * @param {ViewIRNode} ir
  * @param {IRToElementOptions} [options]
  * @returns {Element}
@@ -75,7 +66,7 @@ export function irToElement(ir, options = {}) {
 /**
  * @param {XMLDocument} doc
  * @param {ViewIRNode} ir
- * @param {Map<string, string>} inherited uri -> prefix
+ * @param {Map<string, string>} inherited
  * @param {((value: string) => string) | undefined} text
  * @param {{ nodes: number }} state
  */
@@ -129,9 +120,6 @@ function buildElement(doc, ir, inherited, text, state) {
 }
 
 /**
- * The inverse: the IR of a parsed arch element, byte-for-byte what
- * `odoo.tools.view_ir.from_arch(...).to_dict()` yields for the same XML.
- *
  * @param {Element} element
  * @returns {ViewIRNode}
  */
@@ -165,10 +153,6 @@ function readAttributes(element) {
 }
 
 /**
- * The attributes of a node in either form, in document order — what a helper
- * that reads one node (a button, a widget, a view root) needs, without
- * converting the subtree under an element.
- *
  * @param {ViewIRNode | Element} node
  * @returns {Record<string, string>}
  */

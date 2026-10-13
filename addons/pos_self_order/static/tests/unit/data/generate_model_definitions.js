@@ -14,22 +14,7 @@ import { applySelfOrderProductTemplateRecords } from "./product_template.data.js
 import { applySelfOrderProductTemplateAttributeLineRecords } from "./product_template_attribute_line.data.js";
 import { applySelfOrderProductTemplateAttributeValueRecords } from "./product_template_attribute_value.data.js";
 
-/**
- * Registers the pos_restaurant mock model set (pos_self_order depends on
- * pos_restaurant) plus the pos_self_order-specific models, then augments the
- * config records.
- *
- * Every pos_self_order HOOT unit test must call this instead of the base
- * definePosModels or definePosRestaurantModels — otherwise the models and
- * config fields the active pos_self_order / pos_restaurant production patches
- * read are absent and pos_data crashes at setup.
- *
- * Modules depending on pos_self_order (pos_online_payment_self_order, …)
- * compose on top of this by passing their own model classes as `extraModels`,
- * mirroring the base `definePosModels(extraModels)` signature.
- *
- * @param {Function[]} [extraModels=[]] additional mock-server model classes.
- */
+/** @param {Function[]} [extraModels=[]] */
 export const definePosSelfModels = (extraModels = []) => {
     definePosRestaurantModels([PosSelfOrderCustomLink, ...extraModels]);
     beforeEach(applySelfOrderConfigRecords);

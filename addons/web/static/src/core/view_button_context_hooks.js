@@ -16,8 +16,7 @@ export function useViewButtonContext() {
 
 /**
  * @param {any} component
- * @returns {Record<string, any>} the view-button context the component sees,
- *   its own included, read outside any hook
+ * @returns {Record<string, any>}
  */
 export function readViewButtonContext(component) {
     return envScope.readFrom(component);

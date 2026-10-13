@@ -90,16 +90,7 @@ export class SurveySessionLeaderboard extends Interaction {
         );
     }
 
-    /**
-     * Shows the question leaderboard on screen.
-     * It's based on the attendees score (descending).
-     *
-     * We fade out the .o_survey_session_results element to fade in our rendered template.
-     *
-     * The width of the progress bars is set after the rendering to enable a width css animation.
-     *
-     * @param {CustomEvent} ev CustomEvent triggering the function
-     */
+    /** @param {CustomEvent} ev */
     showLeaderboard(ev) {
         let resolveFadeOut;
         let fadeOutPromise;
@@ -165,15 +156,11 @@ export class SurveySessionLeaderboard extends Interaction {
     }
 
     /**
-     * This method animates the passed element from 0 points to {totalScore} points.
-     * It will create a nice "animated" effect of a counter increasing by {increment} until it
-     * reaches the actual score.
-     *
-     * @param {Element} scoreEl the element to animate
-     * @param {Integer} currentScore the currently displayed score
-     * @param {Integer} totalScore to total score to animate to
-     * @param {Integer} increment the base increment of each animation iteration
-     * @param {Boolean} plusSign wether or not we add a "+" before the score
+     * @param {Element} scoreEl
+     * @param {Integer} currentScore
+     * @param {Integer} totalScore
+     * @param {Integer} increment
+     * @param {Boolean} plusSign
      * @private
      */
     animateScoreCounter(scoreEl, currentScore, totalScore, increment, plusSign) {
@@ -193,13 +180,10 @@ export class SurveySessionLeaderboard extends Interaction {
     }
 
     /**
-     * Helper to move a score bar from its current position in the leaderboard
-     * to a new position.
-     *
-     * @param {Element} scoreEl the score bar to move
-     * @param {Integer} position the new position in the leaderboard
-     * @param {Integer} offset an offset in 'rem'
-     * @param {Integer} timeout time to wait while moving before resolving the promise
+     * @param {Element} scoreEl
+     * @param {Integer} position
+     * @param {Integer} offset
+     * @param {Integer} timeout
      */
     animateMoveTo(scoreEl, position, offset, timeout) {
         let animationDone;
@@ -211,15 +195,7 @@ export class SurveySessionLeaderboard extends Interaction {
         return animationPromise;
     }
 
-    /**
-     * Takes the leaderboard prior to the current question results
-     * and reduce all scores bars to a small width (3rem).
-     * We keep the small score bars on screen for 1s.
-     *
-     * This visually prepares the display of points for the current question.
-     *
-     * @private
-     */
+    /** @private */
     async prepareScores() {
         let animationDone;
         const animationPromise = new Promise(function (resolve) {
@@ -232,20 +208,7 @@ export class SurveySessionLeaderboard extends Interaction {
         return animationPromise;
     }
 
-    /**
-     * Now that we have summed the score for the current question to the total score
-     * of the user and re-weighted the bars accordingly, we need to re-order everything
-     * to match the new ranking.
-     *
-     * In addition to moving the bars to their new position, we create a "bounce" effect
-     * by moving the bar a little bit more to the top or bottom (depending on if it's moving up
-     * the ranking or down), the moving it the other way around, then moving it to its final
-     * position.
-     *
-     * (Feels complicated when explained but it's fairly simple once you see what it does).
-     *
-     * @private
-     */
+    /** @private */
     async reorderScores() {
         let animationDone;
         const animationPromise = new Promise(function (resolve) {
@@ -275,17 +238,7 @@ export class SurveySessionLeaderboard extends Interaction {
         return animationPromise;
     }
 
-    /**
-     * Will display the score for the current question.
-     * We simultaneously:
-     * - increase the width of "question bar"
-     *   (faded out bar right next to the global score one)
-     * - animate the score for the question (ex: from + 0 p to + 40 p)
-     *
-     * (We keep a minimum width of 3rem to be able to display '+30 p' within the bar).
-     *
-     * @private
-     */
+    /** @private */
     async showQuestionScores() {
         let animationDone;
         const animationPromise = new Promise(function (resolve) {
@@ -323,32 +276,7 @@ export class SurveySessionLeaderboard extends Interaction {
         return animationPromise;
     }
 
-    /**
-     * After displaying the score for the current question, we sum the total score
-     * of the user so far with the score of the current question.
-     *
-     * Ex:
-     * We have ('#' for total score before question and '=' for current question score):
-     * 210 p ####=================================== +30 p John
-     * We want:
-     * 240 p ###################################==== +30 p John
-     *
-     * Of course, we also have to weight the bars based on the maximum score.
-     * So if John here has 50% of the points of the leader user, both the question score bar
-     * and the total score bar need to have their width divided by 2:
-     * 240 p ##################== +30 p John
-     *
-     * The width of both bars move at the same time to reach their new position,
-     * with an animation on the width property.
-     * The new width of the "question bar" should represent the ratio of won points
-     * when compared to the total points.
-     * (We keep a minimum width of 3rem to be able to display '+30 p' within the bar).
-     *
-     * The updated total score is animated towards the new value.
-     * we keep this on screen for 500ms before reordering the bars.
-     *
-     * @private
-     */
+    /** @private */
     async sumScores() {
         let animationDone;
         const animationPromise = new Promise(function (resolve) {

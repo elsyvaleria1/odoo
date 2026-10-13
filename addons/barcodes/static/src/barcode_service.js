@@ -35,13 +35,6 @@ export const barcodeService = {
     isMobileChrome: isMobileOS() && isBrowserChrome(),
 
     /**
-     * Normalize a raw scan before it is dispatched.
-     *
-     * The base implementation passes the barcode through: modifier keys never
-     * reach the buffer, so there is nothing to strip. It stays as the hook
-     * where a nomenclature re-encodes scanner-specific sequences --
-     * `barcodes_gs1_nomenclature` patches it to map group separators to FNC1.
-     *
      * @param {string} barcode
      * @returns {string}
      */
@@ -146,12 +139,6 @@ export const barcodeService = {
         return {
             bus,
             /**
-             * Dispatch a barcode as if it had been scanned.
-             *
-             * Lets callers and tests inject a scan without synthesising a
-             * keydown sequence, which is the only reason every barcode test
-             * carries its own `simulateBarCode` helper.
-             *
              * @param {string} barcode
              * @param {EventTarget} [target]
              */

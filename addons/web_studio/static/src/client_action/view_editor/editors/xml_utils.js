@@ -11,14 +11,8 @@ export function countPreviousSiblings(node) {
 }
 
 /**
- * The xpath of a node in a view IR tree, the twin of `computeXpath` for a
- * parser that walks the IR: siblings are counted by kind, a `data-used-by`
- * sibling is skipped as `countPreviousSiblings` skips it, and the walk
- * stops at the first ancestor whose kind is in `upperKinds` (that node
- * included).
- *
  * @param {import("@web/views/ir/view_ir_schema").ViewIRNode} node
- * @param {Map<any, any>} parents node -> parent, from the parser's walk
+ * @param {Map<any, any>} parents
  * @param {string[]} upperKinds
  * @returns {string}
  */

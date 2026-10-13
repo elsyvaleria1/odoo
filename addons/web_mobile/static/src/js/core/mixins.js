@@ -8,11 +8,7 @@ const DEFAULT_AVATAR_SIZE = 128;
 
 export const accountMethodsForMobile = {
     url,
-    /**
-     * Update the user's account details on the mobile app
-     *
-     * @returns {Promise}
-     */
+    /** @returns {Promise} */
     async updateAccount() {
         if (!mobile.methods.updateAccount) {
             return;
@@ -24,12 +20,7 @@ export const accountMethodsForMobile = {
             username: user.login,
         });
     },
-    /**
-     * Fetch current user's avatar as PNG image
-     *
-     * @returns {Promise} resolved with the dataURL, or rejected if the file is
-     *  empty or if an error occurs.
-     */
+    /** @returns {Promise} */
     fetchAvatar() {
         const avatarUrl = accountMethodsForMobile.url("/web/image", {
             model: "res.users",

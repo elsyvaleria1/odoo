@@ -1357,12 +1357,7 @@ test("Latest needaction is shown in thread preview", async () => {
     await contains(".o-mail-NotificationItem:eq(1)", { text: "You: message 1" });
 });
 
-/**
- * Steps each channel-tab page asked of the server, holding the browsing ones
- * until `browsing` resolves.
- *
- * @param {Promise<void>} [browsing]
- */
+/** @param {Promise<void>} [browsing] */
 function listenChannelTabLoads(browsing) {
     onRpc("/mail/data", async (request) => {
         const { params } = await request.json();

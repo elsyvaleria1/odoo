@@ -54,8 +54,6 @@ for (const type in AGGREGATORS_BY_FIELD_TYPE) {
  */
 
 /**
- * Parses the positional char (#), the field and operator string of pivot group.
- * e.g. "create_date:month"
  * @param {Record<string, OdooField | undefined>} allFields
  * @param {string} groupFieldString
  * @returns {{field: OdooField, granularity: Granularity, isPositional: boolean, dimensionWithGranularity: string}}

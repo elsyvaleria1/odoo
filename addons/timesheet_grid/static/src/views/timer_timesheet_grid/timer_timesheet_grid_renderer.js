@@ -88,28 +88,17 @@ export class TimerTimesheetGridRenderer extends TimesheetGridRenderer {
         return gridTemplateColumns;
     }
 
-    /**
-     * Show timer feature
-     *
-     * @returns {boolean} returns true if the timer feature can be displayed and used.
-     */
+    /** @returns {boolean} */
     get showTimer() {
         return this.props.model.showTimer;
     }
 
-    /**
-     * @returns {boolean} returns true if when we need to display the timer button
-     *
-     */
+    /** @returns {boolean} */
     get showTimerButton() {
         return this.props.model.showTimerButtons;
     }
 
-    /**
-     * format the overtime to display it in the total of the column
-     *
-     * @param {import("@web_grid/views/grid_model").DateGridColumn} column
-     */
+    /** @param {import("@web_grid/views/grid_model").DateGridColumn} column */
     formatDailyOvertime(column) {
         const overtime = this.getDailyOvertime(column);
         return overtime
@@ -118,10 +107,8 @@ export class TimerTimesheetGridRenderer extends TimesheetGridRenderer {
     }
 
     /**
-     * Compute the overtime for a particular column
-     *
      * @param {import("@web_grid/views/grid_model").DateGridColumn} column
-     * @returns {number} overtime for that particular day
+     * @returns {number}
      */
     getDailyOvertime(column) {
         let overtime = 0;
@@ -133,8 +120,6 @@ export class TimerTimesheetGridRenderer extends TimesheetGridRenderer {
     }
 
     /**
-     * Format the overtime to display it in the total of the weekly summary column
-     *
      * @param {number} weeklyOvertime
      * @returns {string|string}
      */
@@ -144,11 +129,7 @@ export class TimerTimesheetGridRenderer extends TimesheetGridRenderer {
             : "";
     }
 
-    /**
-     * Compute the overtime for the week
-     *
-     * @returns {number} overtime for the week
-     */
+    /** @returns {number} */
     getWeeklyOvertime() {
         if (!Object.keys(this.props.model.workingHoursData.daily).length) {
             return null;
@@ -247,11 +228,7 @@ export class TimerTimesheetGridRenderer extends TimesheetGridRenderer {
         }
     }
 
-    /**
-     * Mouse out handler
-     *
-     * @param {MouseEvent} ev
-     */
+    /** @param {MouseEvent} ev */
     _onMouseOut(ev) {
         let rowIdHighlighted;
         if (
@@ -289,11 +266,7 @@ export class TimerTimesheetGridRenderer extends TimesheetGridRenderer {
         }
     }
 
-    /**
-     * Handler to start the timer
-     *
-     * @param {import("@timesheet_grid/views/timer_timesheet_grid/timer_timesheet_grid_model").TimerGridRow | undefined} row
-     */
+    /** @param {import("@timesheet_grid/views/timer_timesheet_grid/timer_timesheet_grid_model").TimerGridRow | undefined} row */
     async onTimerStarted(data = {}) {
         const { row, vals } = data;
         if (row) {
@@ -314,11 +287,7 @@ export class TimerTimesheetGridRenderer extends TimesheetGridRenderer {
         }
     }
 
-    /**
-     * Handler to stop the timer
-     *
-     * @param {import("@timesheet_grid/views/timer_timesheet_grid/timer_timesheet_grid_model").TimerGridRow | undefined} row
-     */
+    /** @param {import("@timesheet_grid/views/timer_timesheet_grid/timer_timesheet_grid_model").TimerGridRow | undefined} row */
     async onTimerStopped(row = undefined) {
         if (row) {
             await row.stopTimer();

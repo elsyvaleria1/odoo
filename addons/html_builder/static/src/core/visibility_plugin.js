@@ -89,12 +89,7 @@ export class VisibilityPlugin extends Plugin {
         return visibleSiblingEls[siblingIndex];
     }
 
-    /**
-     * Toggles the visibility of the given element and its ancestors if it was
-     * not visible.
-     *
-     * @param {HTMLElement} targetEl the element
-     */
+    /** @param {HTMLElement} targetEl */
     makeTargetVisible(targetEl) {
         let invisibleEl = targetEl.closest("[data-invisible='1']");
         if (!invisibleEl) {
@@ -144,13 +139,10 @@ export class VisibilityPlugin extends Plugin {
     }
 
     /**
-     * Toggles the visibility of the given element.
-     *
      * @param {HTMLElement} editingEl
-     * @param {Boolean} show true to show the element, false to hide it
+     * @param {Boolean} show
      * @param {Boolean} considerDeviceVisibility
-     * @param {Boolean} [isCleaning=false] true if the function is called by the
-     * clean_for_save handler.
+     * @param {Boolean} [isCleaning=false]
      * @returns {Boolean}
      */
     toggleTargetVisibility(
@@ -166,10 +158,8 @@ export class VisibilityPlugin extends Plugin {
     }
 
     /**
-     * Called when an option changed the visibility of its editing element.
-     *
-     * @param {HTMLElement} editingEl the editing element
-     * @param {Boolean} show true/false if the element was shown/hidden
+     * @param {HTMLElement} editingEl
+     * @param {Boolean} show
      */
     onOptionVisibilityUpdate(editingEl, show) {
         if (this.dependencies.history.getIsPreviewing()) {
@@ -184,10 +174,7 @@ export class VisibilityPlugin extends Plugin {
     }
 
     /**
-     * Sets/removes the `data-invisible` attribute on the given element,
-     * depending on if it is considered as hidden/shown.
-     *
-     * @param {HTMLElement} editingEl the element
+     * @param {HTMLElement} editingEl
      * @param {Boolean} show
      * @param {Boolean} considerDeviceVisibility
      * @returns {Boolean}
@@ -217,15 +204,7 @@ export class VisibilityPlugin extends Plugin {
         return show;
     }
 
-    /**
-     * Hides the given element and updates what needs to be.
-     * Note: to use only when hiding things without adding history steps:
-     * - if an action adding a history step hides the element, it should call
-     *   `onOptionVisibilityUpdate`
-     * - if it concerns the "Invisible Element" panel, refer to its component.
-     *
-     * @param {HTMLElement} toHideEl the element to hide.
-     */
+    /** @param {HTMLElement} toHideEl */
     hideElement(toHideEl) {
         this.toggleTargetVisibility(toHideEl, false);
         this.dependencies.builderOptions.deactivateContainers();

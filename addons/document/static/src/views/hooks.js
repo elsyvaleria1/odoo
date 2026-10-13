@@ -132,11 +132,8 @@ export function useDocumentView(component, helpers) {
     };
 
     /**
-     * A request or a link is made in a form over the view, in the open folder
-     * and for the record the view is scoped to; the view reloads after.
-     *
      * @param {string} actionXmlId
-     * @param {Object} context what this form adds
+     * @param {Object} context
      */
     const openCreateForm = (actionXmlId, context) =>
         action.doAction(actionXmlId, {
@@ -222,8 +219,8 @@ export function useDocumentView(component, helpers) {
 }
 
 /**
- * @param {Object} component the documents view's controller
- * @param {Object} env what useDocumentView gathered: documentsView, model, searchModel
+ * @param {Object} component
+ * @param {Object} env
  * @param {Object} helpers
  */
 function useDocumentsViewFilePreviewer(
@@ -369,8 +366,8 @@ function useDocumentsViewFilePreviewer(
 }
 
 /**
- * @param {Object} component the documents view's controller
- * @param {Object} env what useDocumentView gathered: documentsView, model, searchModel
+ * @param {Object} component
+ * @param {Object} env
  */
 function useDocumentsViewFileUpload(component, env) {
     const bus = env.documentsView.bus;

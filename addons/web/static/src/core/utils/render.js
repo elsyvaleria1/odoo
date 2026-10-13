@@ -45,13 +45,7 @@ export function renderToString(template, context = {}) {
     return div.innerHTML;
 }
 
-/**
- * Owl binds an input's value and checked, a textarea's value and a select's
- * choice as DOM properties, which innerHTML does not serialize: write each one
- * the markup would not reproduce back into its attribute.
- *
- * @param {HTMLElement} root
- */
+/** @param {HTMLElement} root */
 function reflectFormState(root) {
     for (const el of root.querySelectorAll("input, textarea, select")) {
         const pristine = rebuild(el);
@@ -88,9 +82,6 @@ function reflectFormState(root) {
 }
 
 /**
- * The element as its markup alone would create it: a clone carries the
- * property state over, so it cannot tell what the markup loses.
- *
  * @param {Element} el
  * @returns {Element}
  */

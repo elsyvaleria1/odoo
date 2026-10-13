@@ -2,8 +2,6 @@
 import { normalize } from "@web/core/l10n/utils";
 
 /**
- * Removes whitespaces, dashes, slashes and periods from a phone number.
- *
  * @param {string} phoneNumber
  * @returns {string}
  */
@@ -26,13 +24,7 @@ const editableInputTypes = new Set([
     "week",
 ]);
 
-/**
- * Determines whether the currently focused element is editable. This is useful
- * for preventing auto-focus mechanisms when the user is already typing
- * elsewhere.
- *
- * @returns {boolean}
- */
+/** @returns {boolean} */
 export function isCurrentFocusEditable() {
     const el = document.activeElement;
     if (!el) {
@@ -60,16 +52,9 @@ export function isSubstring(targetString, substring) {
 }
 
 /**
- * Matches a target number against a search term and returns a three-part result
- * for highlighting.
- *
- * @param {string} targetNumber - The full phone number to search within.
- * @param {string} searchTerms - The user's original search term.
+ * @param {string} targetNumber
+ * @param {string} searchTerms
  * @returns {{before: string, match: string, after: string} | null}
- * An object with the following properties if a match is found, otherwise null:
- * - `before`: The substring of `targetNumber` that comes *before* the match.
- * - `match`: The actual substring of `targetNumber` that *matched* the regex.
- * - `after`: The substring of `targetNumber` that comes *after* the match.
  */
 export function matchPhoneNumber(targetNumber, searchTerms) {
     if (/[a-zA-Z]/.test(searchTerms)) {

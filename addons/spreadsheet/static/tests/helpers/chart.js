@@ -31,13 +31,11 @@ export function insertChartInSpreadsheet(model, type = "odoo_bar", definition = 
     return definition.id;
 }
 /**
- *
  * @param {Object} params
  * @param {function} [params.definition]
  * @param {function} [params.mockRPC]
  * @param {string} [params.type]
  * @param {import("./data").ServerData} [params.serverData]
- *
  * @returns { Promise<{ model: OdooSpreadsheetModel, env: Object }>}
  */
 export async function createSpreadsheetWithChart(params = {}) {

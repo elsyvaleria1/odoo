@@ -48,11 +48,7 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
         }
     }
 
-    /**
-     * Handle a spreadsheet command
-     *
-     * @param {Object} cmd Command
-     */
+    /** @param {Object} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "CREATE_CHART": {
@@ -124,11 +120,8 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Add an additional domain to a chart
-     *
      * @private
-     *
-     * @param {string} chartId chart id
+     * @param {string} chartId
      */
     _addDomain(chartId) {
         const domainList = [];
@@ -141,12 +134,7 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
         this.getChartDataSource(chartId).addDomain(domain);
     }
 
-    /**
-     * Add an additional domain to all chart
-     *
-     * @private
-     *
-     */
+    /** @private */
     _addDomains() {
         for (const chartId of this.getters.getOdooChartIds()) {
             this._resetChartDataSource(chartId);
@@ -164,10 +152,7 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
         }
     }
 
-    /**
-     * Sets the datasource on the corresponding chart
-     * @param {string} chartId
-     */
+    /** @param {string} chartId */
     _resetChartDataSource(chartId) {
         const definition = this.getters.getChart(chartId).getDefinitionForDataSource();
         const dataSourceId = this._getOdooChartDataSourceId(chartId);
@@ -176,10 +161,7 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
         this._setChartDataSource(chartId);
     }
 
-    /**
-     * Sets the datasource on the corresponding chart
-     * @param {string} chartId
-     */
+    /** @param {string} chartId */
     _setChartDataSource(chartId) {
         const chart = this.getters.getChart(chartId);
         chart.setDataSource(this.getChartDataSource(chartId));
@@ -189,10 +171,7 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
         return `chart-${chartId}`;
     }
 
-    /**
-     * Refresh the cache of a chart
-     * @param {string} chartId Id of the chart
-     */
+    /** @param {string} chartId */
     _refreshOdooChart(chartId) {
         this.getChartDataSource(chartId).load({ reload: true });
     }

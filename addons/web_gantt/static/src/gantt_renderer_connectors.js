@@ -176,7 +176,7 @@ export class GanttRendererConnectors extends GanttRendererCore {
     }
 
     /**
-     * @param {"top"|"bottom"} vertical the vertical alignment of the connector creator
+     * @param {"top"|"bottom"} vertical
      * @returns {{ vertical: "top"|"bottom", horizontal: "left"|"right" }}
      */
     getConnectorCreatorAlignment(vertical) {

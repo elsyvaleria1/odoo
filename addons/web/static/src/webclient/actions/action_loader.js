@@ -37,8 +37,7 @@ export function resolveClientAction(key) {
 /**
  * @param {ActionRequest} actionRequest
  * @param {Context} [context]
- * @param {ViewsPreload} [viewsPreload] when given, an action not in the cache
- *   is loaded with the views its first view asks for, in the same request
+ * @param {ViewsPreload} [viewsPreload]
  * @returns {Promise<Action>}
  */
 export async function loadAction(actionRequest, context = {}, viewsPreload) {

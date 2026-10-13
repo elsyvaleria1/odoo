@@ -120,11 +120,9 @@ export class ChangeColumnCountAction extends BuilderAction {
         );
     }
     /**
-     * Resizes the columns for the mobile or desktop view.
-     *
      * @private
-     * @param {HTMLCollection} columnEls - the elements to resize
-     * @param {integer} nbColumns - the number of wanted columns
+     * @param {HTMLCollection} columnEls
+     * @param {integer} nbColumns
      */
     _resizeColumns(columnEls, nbColumns) {
         const isMobile = this.config.isMobileView(this.editable);

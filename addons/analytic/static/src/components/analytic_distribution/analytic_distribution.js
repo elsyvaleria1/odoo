@@ -148,10 +148,7 @@ export class AnalyticDistribution extends Component {
         this.focusToSelector();
     }
 
-    /**
-     * Computes the totals for each account, grouped by plan (primarily used in tags)
-     * @returns {Object}
-     */
+    /** @returns {Object} */
     accountTotalsByPlan() {
         const accountTotals = {};
         const formattedData = this.props.multi_edit
@@ -188,10 +185,7 @@ export class AnalyticDistribution extends Component {
         return accountTotals;
     }
 
-    /**
-     * Computes the totals for each plan (used in the table headers)
-     * @returns {Object}
-     */
+    /** @returns {Object} */
     planTotals() {
         const summary = this.accountTotalsByPlan();
         this.allPlans.map((plan) => {
@@ -219,19 +213,7 @@ export class AnalyticDistribution extends Component {
         return roundDecimals(total, this.decimalPrecision.digits[1] + 2) === 1;
     }
 
-    /**
-     * Converts the account Totals to a list of tags
-     * PlanA  PlanB  PlanC  Percentage
-     * A1                   100
-     *        B1            80.123     => ["A1", "80.12% B1", "C1"]
-     *               C1     100
-     *
-     * PlanA  PlanB  PlanC  Percentage
-     * A1     B1     C1     50
-     * A2     B1     C1     50         => ["50% A1 | 50% A2 | 50% A3", "150% B1", "C1 | 50% C2"]
-     * A3     B1     C2     50
-     * @returns {Object[]}
-     */
+    /** @returns {Object[]} */
     planSummaryTags() {
         const accountTotals = this.accountTotalsByPlan();
         return Object.values(accountTotals).map((planSummary) => {

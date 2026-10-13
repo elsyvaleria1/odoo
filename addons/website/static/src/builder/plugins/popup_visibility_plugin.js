@@ -91,13 +91,8 @@ export class PopupVisibilityPlugin extends Plugin {
     }
 
     /**
-     * Bootstrap silently drops a show() or hide() that arrives while the
-     * opposite transition is still running (the eye toggled twice within a
-     * fade), leaving the popup in the state the panel does not claim. The
-     * call is replayed once that transition ends.
-     *
      * @param {import("bootstrap").Modal} modal
-     * @param {boolean} shown the state the popup must end in
+     * @param {boolean} shown
      */
     settleModal(modal, shown) {
         if (modal._isTransitioning && modal._isShown !== shown) {

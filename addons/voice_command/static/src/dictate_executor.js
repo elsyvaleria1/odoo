@@ -23,9 +23,6 @@ export function withDictated(before, said, fieldType) {
 }
 
 /**
- * Words arrive per chunk, and out of order; each lands where it was said, and
- * the field shows everything heard so far after what it held before.
- *
  * @param {import("@voice_command/interpreter/interpreter").Proposal} proposal
  * @param {import("@voice_command/executor").ExecutionContext} context
  */

@@ -206,7 +206,7 @@ export class KanbanRecord extends Component {
     static template = "web.KanbanRecord";
     props = useProps(this.constructor.props);
 
-    /** @returns {number} a draggable card waits longer before a long touch selects it */
+    /** @returns {number} */
     get LONG_TOUCH_THRESHOLD() {
         return this.props.canResequence ? 600 : 400;
     }

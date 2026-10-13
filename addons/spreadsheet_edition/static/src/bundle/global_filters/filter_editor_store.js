@@ -398,11 +398,8 @@ export class FilterEditorStore extends SpreadsheetStore {
     }
 
     /**
-     * Get the first field which could be a relation of the current related
-     * model
-     *
      * @param {string} model
-     * @param {Object.<string, OdooField>} fields Fields to look in
+     * @param {Object.<string, OdooField>} fields
      * @returns {OdooField|undefined}
      */
     _findRelation(model, fields) {

@@ -201,8 +201,8 @@ export class FieldProperties extends Component {
     }
 
     /**
-     * @param {string} name of the attribute
-     * @returns if this attribute supported in the current view
+     * @param {string} name
+     * @returns
      */
     isAttributeSupported(name) {
         return this.props.availableOptions?.includes(name);

@@ -20,15 +20,8 @@ export class TimesheetGridModel extends GridModel {
     }
 
     /**
-     * Order the groups by the label of each grouping in turn, the section's
-     * first: read_group orders by value, and a many2one's value is an id.
-     * Labels are read the way the grid reads them -- a pair's second half
-     * for a many2one or a date granularity, a selection's through its
-     * (key, label) list, which used to be asked for the key with `in` and so
-     * left selection rows ordered by key.
-     *
      * @param {{rowFields: Object[], sectionField?: Object}} metaData
-     * @param {Object[]} dataFetched the groups, sorted in place.
+     * @param {Object[]} dataFetched
      */
     _sortGridRows({ rowFields, sectionField }, dataFetched) {
         const orderFields = sectionField ? [sectionField, ...rowFields] : rowFields;

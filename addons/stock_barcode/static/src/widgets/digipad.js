@@ -73,10 +73,7 @@ export class Digipad extends Component {
         return "btn-secondary text-success";
     }
 
-    /**
-     * The quantity typed in the field, which may not be in the record yet.
-     * @private
-     */
+    /** @private */
     _typedQuantity() {
         const input = document.querySelector(
             `div[name="${this.props.fieldToEdit}"] input`,
@@ -97,7 +94,6 @@ export class Digipad extends Component {
     }
 
     /**
-     * Increments the field value by the interval amount (1 by default).
      * @private
      * @param {integer} [interval=1]
      */
@@ -109,7 +105,6 @@ export class Digipad extends Component {
     }
 
     /**
-     * Search for the product's packaging buttons.
      * @private
      * @returns {Promise}
      */
@@ -145,10 +140,7 @@ export class Digipad extends Component {
         }
     }
 
-    /**
-     * Resets the field value to 0.
-     * @private
-     */
+    /** @private */
     erase() {
         return this._setQuantity(0);
     }
@@ -161,10 +153,7 @@ export class Digipad extends Component {
         return this._increment(-1);
     }
 
-    /**
-     * Sets the field value to the fulfill quantity.
-     * @private
-     */
+    /** @private */
     fulfill() {
         return this._setQuantity(this.fulfillQuantity);
     }

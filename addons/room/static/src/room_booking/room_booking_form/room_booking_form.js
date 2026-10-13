@@ -326,7 +326,6 @@ export class RoomBookingForm extends Component {
     }
 
     /**
-     * Handle a click on a slot.
      * @param {Object} slot
      * @param {Temporal.ZonedDateTime} slot.start
      * @param {Boolean} slot.canBeEndDate

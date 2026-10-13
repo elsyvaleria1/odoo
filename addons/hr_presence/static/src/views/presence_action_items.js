@@ -6,8 +6,6 @@ import { HrPresenceSubMenu } from "../search/hr_presence_sub_menu/hr_presence_su
 const SECTION_ORDER = ["state", "follow_up"];
 
 /**
- * Collapse the presence actions bound to hr.employee into one gear submenu.
- *
  * @param {Array<Record<string, any>>} actionItems
  * @param {Function} onItemSelected
  * @returns {Array<Record<string, any>>}
@@ -38,8 +36,6 @@ export function groupPresenceActionItems(actionItems, onItemSelected) {
 }
 
 /**
- * The form cog menu and the list action menu differ only in their base class.
- *
  * @template {new (...args: any[]) => any} T
  * @param {T} Base
  * @returns {T}

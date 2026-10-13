@@ -103,7 +103,6 @@ export function isIterable(value) {
  */
 
 /**
- * Keys are stringified, including symbols, and groups absent from the input are absent from the result.
  * @template T, K
  * @param {Iterable<T>} iterable
  * @param {Criterion<T, K>} [criterion]
@@ -157,8 +156,6 @@ export function symmetricalDifference(iter1, iter2) {
 }
 
 /**
- * Known input counts preserve the zero-input sentinel, flat single input, or
- * tuple positions. A dynamic input list can take any of those runtime branches.
  * @template {readonly (readonly unknown[])[]} A
  * @typedef {number extends A["length"]
  *  ? (A[number][number] | A[number][number][] | undefined)[]
@@ -211,7 +208,6 @@ export function unique(iterable) {
 }
 
 /**
- * With padding, either side may be absent when the iterables differ in length.
  * @template T1, T2
  * @overload
  * @param {Iterable<T1>} iter1

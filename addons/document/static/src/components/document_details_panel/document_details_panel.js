@@ -168,11 +168,6 @@ export class DocumentsDetailsPanel extends Component {
 const detailsPanelRecords = new WeakMap();
 
 /**
- * The panel's view of a record: an edit made there is the record's alone,
- * never dispatched to the rest of the selection (`selected` reads false), and
- * saved at once (`isDetailsPanelRecord`). One wrapper per record, so fields see
- * a stable prop.
- *
  * @param {Object} record
  * @returns {Object}
  */

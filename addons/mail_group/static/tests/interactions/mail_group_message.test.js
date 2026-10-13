@@ -51,9 +51,6 @@ function message(id, body = "", replies = "") {
 }
 
 /**
- * The markup `mail_group.messages_short` renders: a list, then the button
- * that loads the next page of replies.
- *
  * @param {string} items
  * @param {number} [lastId]
  */
@@ -69,12 +66,7 @@ function messagesShort(items, lastId) {
     return `<div><ul class="list-unstyled">${items}</ul>${more}</div>`;
 }
 
-/**
- * What the route answers a row: its page of replies, under the key of the
- * row that asked.
- *
- * @param {(lastId: string) => string} page the replies rendered after lastId
- */
+/** @param {(lastId: string) => string} page */
 function serveReplies(page) {
     const fetch = browser.fetch;
     patchWithCleanup(browser, {

@@ -55,7 +55,7 @@ const writeOnOrder = async (order, data) => {
 /**
  * @param {string} productName
  * @param {number} quantity
- * @returns StepSchema[]
+ * @returns
  */
 export function createNewLine(productName, quantity) {
     return [
@@ -74,7 +74,7 @@ export function createNewLine(productName, quantity) {
 /**
  * @param {string} productName
  * @param {number} quantity
- * @returns StepSchema[]
+ * @returns
  */
 export function changeLineQuantity(productName, quantity) {
     return [
@@ -94,7 +94,7 @@ export function changeLineQuantity(productName, quantity) {
 
 /**
  * @param {string} partnerName
- * @returns StepSchema[]
+ * @returns
  */
 export function changePartner(partnerName) {
     return [

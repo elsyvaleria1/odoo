@@ -4,19 +4,13 @@
 'use strict';
 
 
-/**
- * SHA-1 hash function reference implementation.
- *
- * @namespace
- */
+/** @namespace */
 var Sha1 = {};
 _window.Sha1 = Sha1;
 
 /**
- * Generates SHA-1 hash of string.
- *
- * @param   {string} msg - (Unicode) string to be hashed.
- * @returns {string} Hash of msg as hex character string.
+ * @param {string} msg
+ * @returns {string}
  */
 Sha1.hash = function(msg) {
     msg = msg.utf8Encode();
@@ -77,10 +71,7 @@ Sha1.hash = function(msg) {
 };
 
 
-/**
- * Function 'f' [§4.1.1].
- * @private
- */
+/** @private */
 Sha1.f = function(s, x, y, z)  {
     switch (s) {
         case 0: return (x & y) ^ (~x & z);
@@ -90,19 +81,13 @@ Sha1.f = function(s, x, y, z)  {
     }
 };
 
-/**
- * Rotates left (circular left shift) value x by n positions [§3.2.5].
- * @private
- */
+/** @private */
 Sha1.ROTL = function(x, n) {
     return (x<<n) | (x>>>(32-n));
 };
 
 
-/**
- * Hexadecimal representation of a number.
- * @private
- */
+/** @private */
 Sha1.toHexStr = function(n) {
     var s="", v;
     for (var i=7; i>=0; i--) { v = (n>>>(i*4)) & 0xf; s += v.toString(16); }

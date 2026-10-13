@@ -72,7 +72,7 @@ export function setupAutoplay(src, needCookiesApproval = false) {
 
 /**
  * @param {HTMLIFrameElement} iframeEl
- * @param {() => boolean} [canPlay] Rechecked when the player becomes ready.
+ * @param {() => boolean} [canPlay]
  */
 export function triggerAutoplay(iframeEl, canPlay = () => true) {
     const isYoutubeVideo = isYoutubeUrl(parseVideoUrl(iframeEl.src));

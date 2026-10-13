@@ -49,17 +49,11 @@ const DRAGGABLE_GROUP_TYPES = ["many2one"];
 const SMALLEST_CARD_PITCH = 48;
 const NARROWEST_CARD_WIDTH = 200;
 
-/**
- * What the cards of a model measured the last time they were on screen: how
- * far apart two rows of them are at the least, and how many share a row. Kept
- * per web client, under its services.
- *
- * @type {WeakMap<object, Map<string, { pitch: number, perRow: number }>>}
- */
+/** @type {WeakMap<object, Map<string, { pitch: number, perRow: number }>>} */
 const measuredCardExtents = new WeakMap();
 
 /**
- * @param {object} services the services of a web client
+ * @param {object} services
  * @returns {Map<string, { pitch: number, perRow: number }>}
  */
 export function getMeasuredCardExtents(services) {
@@ -73,8 +67,7 @@ export function getMeasuredCardExtents(services) {
 
 /**
  * @param {HTMLElement} root
- * @returns {{ pitch: number, perRow: number } | null} null when no container
- * holds two rows of cards
+ * @returns {{ pitch: number, perRow: number } | null}
  */
 function measureCards(root) {
     /** @type {Map<Element | null, Map<number, number>>} */
@@ -436,7 +429,7 @@ export class KanbanRenderer extends Component {
 
     /**
      * @param {any} list
-     * @returns {any[]} the leading cards this render builds
+     * @returns {any[]}
      */
     getBuiltRecords(list) {
         return this.screenfulFirst
@@ -459,8 +452,7 @@ export class KanbanRenderer extends Component {
 
     /**
      * @param {boolean} mounted
-     * @returns {number} the cards, of a column or of the whole view, that
-     * cover what is scrolled to and one screen
+     * @returns {number}
      */
     getCardsPerScreen(mounted) {
         const { pitch, perRow } = this.cardExtents.get(this.cardExtentsKey) ?? {

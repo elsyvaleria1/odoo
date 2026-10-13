@@ -55,8 +55,7 @@ export function defineScope(id, { root = appContextOrEmpty } = {}) {
     }
     /**
      * @param {any} component
-     * @returns {T} the value `component` sees, read outside any hook, as
-     * OWL 2's `component.env` could be
+     * @returns {T}
      */
     function readFrom(component) {
         const pluginManager =

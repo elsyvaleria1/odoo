@@ -6,7 +6,7 @@ import { KeepLast } from "@web/core/utils/concurrency";
 import { useService } from "@web/core/utils/hooks";
 import { renderToMarkup } from "@web/core/utils/render";
 
-/** @type {typeof import("jsvat") | undefined} loaded once, on first use */
+/** @type {typeof import("jsvat") | undefined} */
 let jsvat;
 
 const INTERNAL_KEYS = [
@@ -71,15 +71,11 @@ export function usePartnerAutocomplete() {
     }
 
     /**
-     * Build an AutoComplete source that queries the IAP autocomplete API and,
-     * unless already searching worldwide, appends a "Search Worldwide" action
-     * option (handled by PartnerAutoComplete.selectOption).
-     *
      * @param {Object} params
-     * @param {string} params.cssClass          css class for company option rows
-     * @param {() => (number|false)} params.getCountryId  country scope for the query
-     * @param {(suggestion: Object) => any} params.onSelectOption  company-select handler
-     * @returns {Object} an AutoComplete source spec
+     * @param {string} params.cssClass
+     * @param {() => (number|false)} params.getCountryId
+     * @param {(suggestion: Object) => any} params.onSelectOption
+     * @returns {Object}
      */
     function makeAutocompleteSource({ cssClass, getCountryId, onSelectOption }) {
         return {
@@ -114,8 +110,6 @@ export function usePartnerAutocomplete() {
     }
 
     /**
-     * Get enrichment data.
-     *
      * @param {Object} company
      * @returns {Promise}
      */
@@ -147,8 +141,6 @@ export function usePartnerAutocomplete() {
     }
 
     /**
-     * Get enriched data + logo before populating partner form.
-     *
      * @param {Object} company
      * @returns {Promise}
      */
@@ -180,8 +172,6 @@ export function usePartnerAutocomplete() {
     }
 
     /**
-     * Use Odoo Autocomplete API to return suggestions.
-     *
      * @param {string} value
      * @param {boolean} isVAT
      * @param {number|false} queryCountryId

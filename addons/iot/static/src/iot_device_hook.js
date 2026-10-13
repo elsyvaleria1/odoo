@@ -4,7 +4,6 @@ import { useService } from "@web/core/utils/hooks";
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
 
 /**
- * Use this hook to be able to interact with an iot device.
  * @param {{
  *  getIotIp: () => string | undefined,
  *  getIdentifier: () => string | undefined,

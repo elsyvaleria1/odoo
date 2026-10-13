@@ -26,8 +26,6 @@ patch(ExpressCheckout.prototype, {
     },
 
     /**
-     * Process the payment.
-     *
      * @param {Event} ev
      * @return {void}
      */

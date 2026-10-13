@@ -33,11 +33,7 @@ export class AppointmentBookingGanttRenderer extends GanttRenderer {
         });
     }
 
-    /**
-     * @override
-     * If multiple columns have been selected, remove the default duration from the context so that
-     * the stop matches the end of the selection instead of being redefined to match the appointment duration.
-     */
+    /** @override */
     onCreate(rowId, columnStart, columnStop, additionalContext = {}) {
         let { start } = this.getSubColumnFromColNumber(columnStart);
         let { stop } = this.getSubColumnFromColNumber(columnStop);
@@ -108,12 +104,7 @@ export class AppointmentBookingGanttRenderer extends GanttRenderer {
         return result;
     }
 
-    /**
-     * Patch the flow so that we have access, as originId, to the id of the partner or
-     * resource of the row the user originally clicked when writing to reschedule.
-     *
-     * @override
-     */
+    /** @override */
     async dragPillDrop({ pill }) {
         let unpatch = null;
         if (

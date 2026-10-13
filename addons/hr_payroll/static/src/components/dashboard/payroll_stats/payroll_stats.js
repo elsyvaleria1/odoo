@@ -53,9 +53,7 @@ export class PayrollDashboardStats extends Component {
         this.state.monthly = !this.state.monthly;
     }
 
-    /**
-     * @returns {object} The current chart data to be used depending on the state
-     */
+    /** @returns {object} */
     get graphData() {
         return this.props.data[this.state.monthly ? "monthly" : "yearly"];
     }
@@ -68,9 +66,7 @@ export class PayrollDashboardStats extends Component {
         this.chart = new this.Chart(ctx, this.getChartConfig());
     }
 
-    /**
-     * @returns {object} Chart config for the current data
-     */
+    /** @returns {object} */
     getChartConfig() {
         const type = this.props.type;
         if (type === "line") {
@@ -83,9 +79,7 @@ export class PayrollDashboardStats extends Component {
         return {};
     }
 
-    /**
-     * @returns {object} Chart config of type 'line'
-     */
+    /** @returns {object} */
     getLineChartConfig() {
         const data = this.graphData;
         const labels = data.map(function (pt) {
@@ -136,9 +130,7 @@ export class PayrollDashboardStats extends Component {
         };
     }
 
-    /**
-     * @returns {object} Chart config of type 'bar'
-     */
+    /** @returns {object} */
     getBarChartConfig() {
         const data = [];
         const labels = [];
@@ -210,9 +202,7 @@ export class PayrollDashboardStats extends Component {
         };
     }
 
-    /**
-     * @returns {object} Chart config of type 'stacked bar'
-     */
+    /** @returns {object} */
     getStackedBarChartConfig() {
         const labels = [];
         const datasets = [];

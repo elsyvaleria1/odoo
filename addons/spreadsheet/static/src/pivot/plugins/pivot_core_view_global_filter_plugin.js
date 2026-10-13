@@ -11,8 +11,6 @@ import { NO_RECORD_AT_THIS_POSITION } from "../pivot_model.js";
  */
 
 /**
- * Convert pivot period to the related filter value
- *
  * @param {string} value
  * @returns {object}
  */
@@ -80,10 +78,7 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
         }
     }
 
-    /**
-     * Handle a spreadsheet command
-     * @param {Object} cmd Command
-     */
+    /** @param {Object} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "ADD_GLOBAL_FILTER":
@@ -120,9 +115,7 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the computed domain of a pivot
-     * CLEAN ME not used outside of tests
-     * @param {string} pivotId Id of the pivot
+     * @param {string} pivotId
      * @returns {Array}
      */
     getPivotComputedDomain(pivotId) {
@@ -130,8 +123,7 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the filter impacted by a pivot
-     * @param {string} pivotId Id of the pivot
+     * @param {string} pivotId
      * @param {PivotDomain} PivotDomain
      */
     getFiltersMatchingPivotArgs(pivotId, PivotDomain) {
@@ -209,11 +201,8 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Add an additional domain to a pivot
-     *
      * @private
-     *
-     * @param {string} pivotId pivot id
+     * @param {string} pivotId
      */
     _addDomain(pivotId) {
         if (this.getters.getPivotCoreDefinition(pivotId).type !== "ODOO") {
@@ -229,12 +218,7 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
         this.getters.getPivot(pivotId).addGlobalFilterDomain(domain);
     }
 
-    /**
-     * Add an additional domain to all pivots
-     *
-     * @private
-     *
-     */
+    /** @private */
     _addDomains() {
         for (const pivotId of this.getters
             .getPivotIds()

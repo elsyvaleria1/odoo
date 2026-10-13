@@ -10,7 +10,7 @@ import { onRpc } from "@web/../tests/web_test_helpers";
 setupInteractionWhiteList("appointment.appointment_select_appointment_slot");
 describe.current.tags("interaction_dev");
 
-/** @param {string[]} days the dates holding an available slot */
+/** @param {string[]} days */
 const calendar = (days) => `
     <div class="d-contents" data-fragment="calendar.appointment_calendar">
         <div id="slots_availabilities">

@@ -78,11 +78,8 @@ export class ContrastPlugin extends Plugin {
     }
 
     /**
-     * Computes the resolved background color for an element by blending its
-     * background with the nearest ancestor background or the theme background.
-     *
      * @param {HTMLElement} element
-     * @returns {string} background color as rgb() or hex string
+     * @returns {string}
      */
     getEffectiveBackground(element) {
         const elWithBg = closestElement(element, (el) =>
@@ -106,12 +103,9 @@ export class ContrastPlugin extends Plugin {
     }
 
     /**
-     * Resolves a color against a background, taking alpha transparency into
-     * account.
-     *
-     * @param {string} cssColor - CSS color string to resolve
-     * @param {string} bgColor - Background color to blend against (as rgb())
-     * @returns {string} Resolved color as rgb()
+     * @param {string} cssColor
+     * @param {string} bgColor
+     * @returns {string}
      */
     blendWithBackground(cssColor, bgColor) {
         const parsed = convertCSSColorToRgba(cssColor);
@@ -130,11 +124,7 @@ export class ContrastPlugin extends Plugin {
         return `rgb(${r}, ${g}, ${b})`;
     }
 
-    /**
-     * Restores original colors by removing contrast adjustments.
-     *
-     * @param {HTMLElement} element
-     */
+    /** @param {HTMLElement} element */
     restoreOriginalColors(element) {
         const restoreColor = (el) => {
             const original = el.dataset.originalColor;
@@ -156,17 +146,9 @@ export class ContrastPlugin extends Plugin {
 }
 
 /**
- * `--o-bg-view` holds whatever the palette wrote into it, and ours writes the
- * keyword `white`. `convertCSSColorToRgba` reads rgb()/rgba()/hex and nothing
- * else, so the keyword would resolve to nothing and every contrast check
- * against the page background would silently do nothing. Upstream sidestepped
- * this by rewriting the SCSS literal to a hex; that file is in `web`, outside
- * this module, so the value is normalised here by the one thing that
- * understands every CSS colour notation: the document.
- *
  * @param {string} cssColor
  * @param {Document} doc
- * @returns {string} an rgb() string, or "" if the colour is not usable
+ * @returns {string}
  */
 function toRgbColor(cssColor, doc) {
     if (!cssColor) {
@@ -200,13 +182,9 @@ const contrast = (fg, bg) => {
 };
 
 /**
- * Adjusts color lightness to improve contrast against background. Uses binary
- * search for optimal lightness.
- *
- * @param {string} color - CSS color
- * @param {string} background - CSS background color
- * @returns {string|undefined} Adjusted color as rgb(), or nothing if no change
- *      is needed
+ * @param {string} color
+ * @param {string} background
+ * @returns {string|undefined}
  */
 export function adjustColorContrast(color, background) {
     const parsedColor = convertCSSColorToRgba(color);

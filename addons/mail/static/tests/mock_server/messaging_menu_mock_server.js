@@ -98,8 +98,6 @@ export const messagingMenuHelpers = {
             : undefined;
     },
     /**
-     * An ad-hoc meeting ("Start Now") takes place the day it is started.
-     *
      * @param {any} env
      * @param {any} channel
      */
@@ -110,9 +108,6 @@ export const messagingMenuHelpers = {
         );
     },
     /**
-     * The mock keeps no call history: a running call is a channel with RTC
-     * sessions, whose history row the server leaves open.
-     *
      * @param {any} env
      * @param {any} channel
      */

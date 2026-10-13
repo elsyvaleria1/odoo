@@ -49,7 +49,7 @@ const {
  */
 export class OdooPivot {
     /**
-     * @param {Object} services Services (see DataSource)
+     * @param {Object} services
      * @param {Object} params
      * @param {OdooPivotCoreDefinition} params.definition
      * @param {OdooGetters} params.getters
@@ -58,18 +58,18 @@ export class OdooPivot {
         /** @type {"ODOO"} */
         this.type = "ODOO";
 
-        /** @type {OdooPivotCoreDefinition} @protected */
+        /** @type {OdooPivotCoreDefinition} */
         this.coreDefinition = definition;
 
         this.needsReevaluation = false;
 
-        /** @type {OdooPivotRuntimeDefinition | undefined} @protected */
+        /** @type {OdooPivotRuntimeDefinition | undefined} */
         this.runtimeDefinition = undefined;
 
-        /** @type {OdooPivotModel | undefined} @protected */
+        /** @type {OdooPivotModel | undefined} */
         this.model = undefined;
 
-        /** @type {OdooGetters} @protected */
+        /** @type {OdooGetters} */
         this.getters = getters;
 
         /** @protected */
@@ -78,13 +78,13 @@ export class OdooPivot {
             this._load.bind(this),
         );
 
-        /** @type {OdooFields | undefined} @protected */
+        /** @type {OdooFields | undefined} */
         this._fields = undefined;
 
-        /** @protected @type {OdooDataProvider}*/
+        /** @protected */
         this.odooDataProvider = services.odooDataProvider;
 
-        /** @protected @type {Object} */
+        /** @protected */
         this.context = omit(
             definition.context ?? {},
             ...Object.keys(user.context),
@@ -93,7 +93,7 @@ export class OdooPivot {
             "pivot_column_groupby",
         );
 
-        /** @protected @type {import("@web/core/domain").DomainRepr} */
+        /** @protected */
         this.domainWithGlobalFilters = this.coreDefinition.domain;
     }
 
@@ -146,13 +146,6 @@ export class OdooPivot {
     }
 
     /**
-     * Check if the measures changes require a reload of the data
-     *
-     * A measure change requires a reload of the data if:
-     * - a new non-computed measure is added
-     * - a non-computed measure is removed
-     * - a non-computed measure has its fieldName or aggregator changed
-     *
      * @param {PivotCoreMeasure[]} actualMeasures
      * @param {PivotCoreMeasure[]} nextMeasures
      * @returns {boolean}
@@ -198,16 +191,16 @@ export class OdooPivot {
     }
 
     /**
-     * @param {object} [options] options for fetching data
-     * @param {boolean} [options.reload=false] Force the reload of the data
+     * @param {object} [options]
+     * @param {boolean} [options.reload=false]
      */
     init(options) {
         this.load(options);
     }
 
     /**
-     * @param {object} [options] options for fetching data
-     * @param {boolean} [options.reload=false] Force the reload of the data
+     * @param {object} [options]
+     * @param {boolean} [options.reload=false]
      * @returns {Promise<void>}
      */
     async load(options) {
@@ -268,7 +261,6 @@ export class OdooPivot {
 
     /**
      * @param {import("@odoo/o-spreadsheet").Maybe<FunctionResultObject>[]} args
-     *
      * @returns {PivotDomain}
      */
     parseArgsToPivotDomain(args) {
@@ -289,7 +281,7 @@ export class OdooPivot {
                 this.parseGroupField(nameWithGranularity);
             if (isPositional) {
                 const table = this.getExpandedTableStructure();
-                // @ts-ignore: That's a VERY ugly hack to make sure the table is computed and sorted (which is needed for
+
                 this.sortTableStructure(table);
                 const previousDomain = [
                     ...domain,
@@ -339,10 +331,8 @@ export class OdooPivot {
     }
 
     /**
-     * Retrieves the display name of the measure with the given name from the pivot model.
-     *
-     * @param {string} name - The name of the measure.
-     * @return {Object} - An object containing the display name of the measure.
+     * @param {string} name
+     * @return {Object}
      */
     getPivotMeasureValue(name) {
         this.assertIsValid();
@@ -352,12 +342,7 @@ export class OdooPivot {
     }
 
     /**
-     * High level method computing the result of PIVOT.HEADER functions.
-     * - regular function 'PIVOT.HEADER(1,"stage_id",2,"user_id",6)'
-     * - measure header 'PIVOT.HEADER(1,"stage_id",2,"user_id",6,"measure","expected_revenue")
-     * - positional header 'PIVOT.HEADER(1,"#stage_id",1,"#user_id",1)'
-     *
-     * @param {PivotDomain} domain arguments of the function (except the first one which is the pivot id)
+     * @param {PivotDomain} domain
      * @returns {FunctionResultObject}
      */
     getPivotHeaderValueAndFormat(domain) {
@@ -376,8 +361,6 @@ export class OdooPivot {
     }
 
     /**
-     * Get the measure object from its id
-     *
      * @param {string} id
      * @returns {PivotMeasure}
      */
@@ -410,9 +393,6 @@ export class OdooPivot {
     }
 
     /**
-     * Get the format associated to a pivot field (based on its type)
-     * e.g. integer => 0, float => #,##0.00, monetary => #,##0.00
-     *
      * @param {string} fieldName
      * @returns {string | undefined}
      */
@@ -592,10 +572,7 @@ export class OdooPivot {
         this.load({ reload: true });
     }
 
-    /**
-     * Get the computed domain of this source
-     * @returns {Array}
-     */
+    /** @returns {Array} */
     getDomainWithGlobalFilters() {
         return new Domain(this.domainWithGlobalFilters).toList({
             ...this.context,
@@ -641,9 +618,7 @@ export class OdooPivotRuntimeDefinition extends PivotRuntimeDefinition {
     }
 
     /**
-     * Only for Web pivot model compatibility
      * @param {OdooFields} [fields]
-     *
      * @returns {WebPivotModelParams}
      */
 

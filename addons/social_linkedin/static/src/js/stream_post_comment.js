@@ -60,11 +60,7 @@ export class StreamPostCommentLinkedin extends StreamPostComment {
         return true;
     }
 
-    /**
-     * Linkedin stores the created time in milliseconds (number)
-     *
-     * @returns {Temporal.ZonedDateTime}
-     */
+    /** @returns {Temporal.ZonedDateTime} */
     get commentCreatedTime() {
         return (
             super.commentCreatedTime ?? fromEpochMilliseconds(this.comment.created_time)

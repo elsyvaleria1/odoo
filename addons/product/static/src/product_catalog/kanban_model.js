@@ -58,9 +58,7 @@ export class ProductCatalogKanbanModel extends RelationalModel {
     }
 
     /**
-     * Flatten the records held by an opened (sub)group tree.
-     *
-     * @param {Object[]} [groups] as returned by web_read_group
+     * @param {Object[]} [groups]
      * @returns {Object[]}
      */
     _collectGroupedRecords(groups = []) {
@@ -89,19 +87,6 @@ export class ProductCatalogKanbanModel extends RelationalModel {
     }
 
     /**
-     * Stand in for `/product/catalog/order_lines_info` when the view runs on
-     * sample data (no product matched, so there is no order line to read).
-     *
-     * Keyed by the ids actually loaded rather than by a fixed range: a grouped
-     * sample read hands out ids across the whole generated set, not just the
-     * first page of it, and a record with no entry here takes the card template
-     * down with it.
-     *
-     * Values are derived from the id rather than drawn at random so a rendered
-     * sample card is reproducible, and are limited to the props this module's
-     * `ProductCatalogOrderLine` declares -- fields owned by a downstream order
-     * line (`min_qty`, `suggested_qty`, ...) are that module's to supply.
-     *
      * @param {number[]} productIds
      * @returns {Object}
      */

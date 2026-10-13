@@ -171,12 +171,7 @@ export class SurveySessionManage extends Interaction {
         }
     }
 
-    /**
-     * Copies the survey URL link to the clipboard.
-     * We avoid having to print the URL in a standard text input.
-     *
-     * @param {MouseEvent} ev
-     */
+    /** @param {MouseEvent} ev */
     async onCopySessionLink(ev) {
         const copyBtnTooltipHideDelay = 800;
         this.copyBtnTooltip?.dispose();
@@ -200,25 +195,7 @@ export class SurveySessionManage extends Interaction {
         })();
     }
 
-    /**
-     * Handles the "next screen" behavior.
-     * It happens when the host uses the keyboard key / button to go to the next screen.
-     * The result depends on the current screen we're on.
-     *
-     * Possible values of the "next screen" to display are:
-     * - 'userInputs' when going from a question to the display of attendees' survey.user_input.line
-     *   for that question.
-     * - 'results' when going from the inputs to the actual correct / incorrect answers of that
-     *   question. Only used for scored simple / multiple choice questions.
-     * - 'leaderboard' (or 'leaderboardFinal') when going from the correct answers of a question to
-     *   the leaderboard of attendees. Only used for scored simple / multiple choice questions.
-     * - If it's not one of the above: we go to the next question, or end the session if we're on
-     *   the last question of this session.
-     *
-     * See 'getNextScreen' for a detailed logic.
-     *
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     onNext(ev) {
         const screenToDisplay = this.getNextScreen();
         switch (screenToDisplay) {
@@ -255,11 +232,7 @@ export class SurveySessionManage extends Interaction {
         }
     }
 
-    /**
-     * Reverse behavior of 'onNext'.
-     *
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     onBack(ev) {
         const screenToDisplay = this.getPreviousScreen();
         switch (screenToDisplay) {
@@ -316,11 +289,7 @@ export class SurveySessionManage extends Interaction {
         return "nextQuestion";
     }
 
-    /**
-     * Reverse behavior of 'getNextScreen'.
-     *
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     getPreviousScreen() {
         if (this.currentScreen === "userInputs" && this.isScoredQuestion) {
             return "question";
@@ -340,14 +309,6 @@ export class SurveySessionManage extends Interaction {
     }
 
     /**
-     * We use a fade in/out mechanism to display the next question of the session.
-     *
-     * The fade out happens at the same moment as the RPC to get the new question
-     * template. When they're both finished, we update the HTML of this interaction
-     * with the new template and then fade in the updated question to the user.
-     *
-     * The timer (if configured) starts at the end of the fade in animation.
-     *
      * @param {MouseEvent} ev
      * @private
      */
@@ -408,11 +369,7 @@ export class SurveySessionManage extends Interaction {
         this.swapFragments(this.nextQuestion);
     }
 
-    /**
-     * Marks this session as 'done' and redirects the user to the results based on the clicked link.
-     *
-     * @private
-     */
+    /** @private */
     async onEndSessionClick(ev) {
         const showResults = ev?.currentTarget?.dataset?.showResults;
         await this.waitFor(
@@ -429,11 +386,7 @@ export class SurveySessionManage extends Interaction {
         })();
     }
 
-    /**
-     * Listeners for keyboard arrow / spacebar keys.
-     *
-     * @param {KeyboardEvent} ev
-     */
+    /** @param {KeyboardEvent} ev */
     onKeyDown(ev) {
         const hotkey = getActiveHotkey(ev);
         if (hotkey === "arrowright" || hotkey === "space") {

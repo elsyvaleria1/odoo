@@ -47,7 +47,7 @@ const NUMBER_PARSERS = {
 
 /**
  * @template {Temporal.PlainDate | Temporal.ZonedDateTime} T
- * @param {any} value a server string or an already deserialized value
+ * @param {any} value
  * @param {(value: string) => T} deserialize
  * @returns {T | false}
  */

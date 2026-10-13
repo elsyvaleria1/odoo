@@ -14,11 +14,7 @@ describe.current.tags("headless");
 const lines = (quantity) =>
     `<ul data-fragment="cart.lines" data-fragment-live=""><li class="line">${quantity}</li></ul>`;
 
-/**
- * Starts LiveFragments on `html` with a bus that hands its subscriber back.
- *
- * @param {string} html
- */
+/** @param {string} html */
 async function startWithBus(html) {
     /** @type {Function} */
     let subscriber = () => {};

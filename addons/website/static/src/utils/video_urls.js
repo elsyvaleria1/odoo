@@ -11,7 +11,6 @@ const SUPPORTED_HOSTS = new Set([
 ]);
 
 /**
- * Parse absolute or protocol-relative HTTP video URLs without loading providers.
  * @param {string | undefined} src
  * @returns {URL | undefined}
  */

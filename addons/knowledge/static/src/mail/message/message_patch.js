@@ -9,13 +9,7 @@ patch(Message.prototype, {
         this.orm = useService("orm");
     },
 
-    /**
-     * This function overrides the original method so that when the user tries to open a the record
-     * from a starred discussion linked to a knowledge thread, it can be redirected to the corresponding
-     * article. This is needed to avoid the user being redirected to the technical view of the
-     * knowledge.article.thread model.
-     * @override
-     */
+    /** @override */
     async openRecord() {
         if (this.message.model === "knowledge.article.thread") {
             const [articleThread] = await this.orm.searchRead(

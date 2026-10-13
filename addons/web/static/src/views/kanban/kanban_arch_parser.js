@@ -62,11 +62,7 @@ export class KanbanArchParser extends ViewArchParser {
     /** @type {"element" | "ir"} */
     static consumes = "ir";
 
-    /**
-     * The parent of every node of the tree the last `parse()` walked — what
-     * a subclass that locates a node in the arch (web studio's xpath) reads.
-     * @type {Map<ViewIRNode, ViewIRNode | null>}
-     */
+    /** @type {Map<ViewIRNode, ViewIRNode | null>} */
     parents = new Map();
 
     /**
@@ -265,11 +261,6 @@ export class KanbanArchParser extends ViewArchParser {
     }
 
     /**
-     * The tree the parser annotates is its own copy (the node handed in may be
-     * the view cache's IR, or a child of the parent view's tree for an x2many
-     * sub-view); `xmlDoc` and the `templateDocs` the compiler walks are that
-     * annotated copy materialised.
-     *
      * @param {ViewIRNode | Element | string} arch
      * @param {Object} models
      * @param {string} modelName

@@ -29,14 +29,6 @@ const SERVER_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 const MAP_BOX_MAX_ROUTE_POINTS = 25;
 
 /**
- * Whether a partner carries a position the map can render.
- *
- * `partner_latitude` / `partner_longitude` are plain floats defaulting to 0, so
- * an ungeolocated partner is indistinguishable from one on Null Island: the
- * pair (0, 0) is the only value read as "unset". Testing each coordinate for
- * truthiness instead — as this module used to — also discards every partner on
- * the equator or on the prime meridian, which crosses London, Spain and Ghana.
- *
  * @param {Object} [partner]
  * @returns {boolean}
  */
@@ -149,26 +141,12 @@ export class MapModel extends Model {
         );
     }
 
-    /**
-     * Whether the load found anything, which is what `useModelWithSampleData`
-     * asks before swapping in the sample ORM. `Model.hasData()` answers `true`
-     * unconditionally, so a map declaring `sample="1"` used to stay empty.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     hasData() {
         return this.data.count > 0;
     }
 
-    /**
-     * The partner fields `_getRecordSpecification` asks for beyond the arch.
-     *
-     * Without these the sample server samples them as `false` and the sample
-     * map draws nothing, because it has no way to learn that a specification
-     * it accepted reached into `res.partner` for three fields no arch names.
-     *
-     * @returns {Record<string, Record<string, any>>}
-     */
+    /** @returns {Record<string, Record<string, any>>} */
     getSampleRelatedModels() {
         return {
             "res.partner": {
@@ -184,8 +162,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * Resequence the records in `this.data.records` such that the record with the id
-     * `movedId` is moved after the record with the id `targetId`
      * @param {Number} movedId
      * @param {Number} targetId
      */
@@ -217,11 +193,7 @@ export class MapModel extends Model {
         }
     }
 
-    /**
-     * Adds the corresponding partner to a record.
-     *
-     * @protected
-     */
+    /** @protected */
     _addPartnerToRecord(metaData, data) {
         for (const record of data.records) {
             const partnerId =
@@ -233,10 +205,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * Handles the case of an empty map.
-     * Handles the case where the model is res_partner.
-     * Fetches the records according to the model given in the arch.
-     *
      * @protected
      * @param {any} metaData
      * @return {Promise<any>}
@@ -317,8 +285,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * Fetch the records for a given model.
-     *
      * @protected
      * @returns {Promise}
      */
@@ -334,14 +300,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * GET `url` as JSON, rejecting with the third party's own status and message.
-     *
-     * The `http` service maps every failure onto `NetworkError` and friends,
-     * which carry neither a status code nor the provider's response body — the
-     * two things `_mapBoxErrorHandling` and `_getErrorMessage` are written
-     * against. MapBox reports "too many coordinates" as a 422 whose body holds
-     * the only message worth showing the user, so it is read here directly.
-     *
      * @protected
      * @param {string} url
      * @returns {Promise<Object>}
@@ -371,12 +329,9 @@ export class MapModel extends Model {
     }
 
     /**
-     * This function convert the addresses to coordinates using the mapbox API.
-     *
      * @protected
-     * @param {Object} record this object contains the record fetched from the database.
-     * @returns {Promise} result.query contains the query the the api received
-     *      result.features contains results in descendant order of relevance
+     * @param {Object} record
+     * @returns {Promise}
      */
     _fetchCoordinatesFromAddressMB(metaData, data, record) {
         const address = encodeURIComponent(record.contact_address_complete);
@@ -386,12 +341,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * Fetches a MapBox url and, on a non-ok response, throws an error carrying
-     * the HTTP status and the parsed JSON body so `_mapBoxErrorHandling` can
-     * read `err.status`/`err.responseJSON`. `this.http.get()` cannot be used
-     * for these calls: it discards the response status and body as soon as it
-     * throws, so the switch in `_mapBoxErrorHandling` never matches.
-     *
      * @protected
      * @param {string} url
      * @returns {Promise}
@@ -412,14 +361,9 @@ export class MapModel extends Model {
     }
 
     /**
-     * This function convert the addresses to coordinates using the openStreetMap api.
-     *
      * @protected
-     * @param {Object} record this object contains the record fetched from the database.
-     * @returns {Promise} result is an array that contains the result in descendant order of relevance
-     *      result[i].lat is the latitude of the converted address
-     *      result[i].lon is the longitude of the converted address
-     *      result[i].importance is a number that the relevance of the result the closer the number is to one the best it is.
+     * @param {Object} record
+     * @returns {Promise}
      */
     _fetchCoordinatesFromAddressOSM(metaData, data, record) {
         const address = encodeURIComponent(
@@ -430,15 +374,8 @@ export class MapModel extends Model {
     }
 
     /**
-     * Fetch the route from the mapbox api.
-     *
      * @protected
      * @returns {Promise}
-     *      results.geometry.legs[i] contains one leg (i.e: the trip between two markers).
-     *      results.geometry.legs[i].steps contains the sets of coordinates to follow to reach a point from an other.
-     *      results.geometry.legs[i].distance: the distance in meters to reach the destination
-     *      results.geometry.legs[i].duration the duration of the leg
-     *      results.geometry.coordinates contains the sets of coordinates to go from the first to the last marker without the notion of waypoint
      */
     _fetchRoute(metaData, data) {
         const address = encodeURIComponent(this._getRouteCoordinates(data).join(";"));
@@ -448,16 +385,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * The points the route runs through, in record order, one per located
-     * record.
-     *
-     * Consecutive records at one place are deliberately NOT collapsed. It
-     * would save waypoints against the API's ceiling of twenty-five, and the
-     * map already draws such records as a single marker -- but a leg of length
-     * zero is what MapBox returns for them today, and collapsing changes what
-     * a routed map of co-located records shows rather than only what it costs.
-     * That is a product decision, not a defect.
-     *
      * @protected
      * @param {Object} data
      * @returns {string[]}
@@ -472,12 +399,9 @@ export class MapModel extends Model {
     }
 
     /**
-     * Converts a MapBox error message into a custom translatable one.
-     *
      * @protected
      * @param {string} message
-     * @returns {string} the translated message, or `message` when unknown: an
-     *      unrecognised failure is still worth showing.
+     * @returns {string}
      */
     _getErrorMessage(message) {
         const ERROR_MESSAGES = {
@@ -494,7 +418,7 @@ export class MapModel extends Model {
 
     /**
      * @protected
-     * @returns {Object} the fetched records grouped by the groupBy field.
+     * @returns {Object}
      */
     async _getRecordGroups(metaData, data) {
         const [fieldName, subGroup] = data.groupByKey.split(":");
@@ -554,11 +478,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * The partners whose address still has to be geocoded.
-     *
-     * Doubles as the place where a stored but out-of-range pair is dropped, so
-     * both providers agree on what "located" means.
-     *
      * @protected
      * @returns {Object[]}
      */
@@ -577,11 +496,7 @@ export class MapModel extends Model {
         return toGeocode;
     }
 
-    /**
-     * Stores a geocoding result on `partner` and queues it for persistence.
-     *
-     * @protected
-     */
+    /** @protected */
     _setPartnerPosition(data, partner, latitude, longitude) {
         partner.partner_latitude = parseFloat(latitude);
         partner.partner_longitude = parseFloat(longitude);
@@ -589,9 +504,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * Handles the case where the selected api is MapBox.
-     * Iterates on all the partners and fetches their coordinates when they're not set.
-     *
      * @protected
      * @return {Promise}
      */
@@ -614,8 +526,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * Compute the route between the located records, when MapBox can do it.
-     *
      * @protected
      * @returns {Promise}
      */
@@ -646,11 +556,9 @@ export class MapModel extends Model {
     }
 
     /**
-     * Handles the displaying of error message according to the error.
-     *
      * @protected
-     * @param {Object} err contains the error returned by the requests
-     * @param {number} err.status contains the status_code of the failed http request
+     * @param {Object} err
+     * @param {number} err.status
      */
     _mapBoxErrorHandling(metaData, data, err) {
         switch (err.status) {
@@ -679,11 +587,7 @@ export class MapModel extends Model {
         );
     }
 
-    /**
-     * Notifies the fetched coordinates to server and controller.
-     *
-     * @protected
-     */
+    /** @protected */
     _notifyFetchedCoordinate(metaData, data) {
         this._savePartnerCoordinates(metaData, data);
         data.shouldUpdatePosition = false;
@@ -691,13 +595,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * Starts the OpenStreetMap geocoding loop without awaiting it.
-     *
-     * Nominatim's usage policy caps callers at one request per second, so the
-     * loop outlives the load that started it and publishes each address as it
-     * resolves. Tests patch this method to await `_geocodeWithOpenStreetMap`
-     * instead.
-     *
      * @protected
      * @return {Promise}
      */
@@ -706,9 +603,6 @@ export class MapModel extends Model {
         return Promise.resolve();
     }
     /**
-     * Handles the case where the selected api is open street map.
-     * Iterates on all the partners and fetches their coordinates when they're not set.
-     *
      * @protected
      * @returns {Promise}
      */
@@ -784,9 +678,6 @@ export class MapModel extends Model {
     }
 
     /**
-     * if the token is set it uses the mapBoxApi to fetch address and route
-     * if not is uses the openstreetmap api to fetch the address.
-     *
      * @protected
      * @returns {Promise}
      */
@@ -807,8 +698,6 @@ export class MapModel extends Model {
         return this._savePartnerCoordinates(metaData, data);
     }
     /**
-     * Writes partner_longitude and partner_latitude of the res.partner model.
-     *
      * @protected
      * @return {Promise}
      */

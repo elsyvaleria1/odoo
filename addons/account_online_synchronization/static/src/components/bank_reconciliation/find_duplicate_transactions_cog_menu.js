@@ -14,13 +14,7 @@ export function isBankReconciliationView(env) {
     );
 }
 
-/**
- * 'Find Duplicate Transactions' cog menu item of the bank reconciliation widget.
- *
- * Opens a wizard to find duplicate transactions since a given date. The journal is
- * preselected when a single one is active, otherwise the user is asked to choose.
- * @extends Component
- */
+/** @extends Component */
 export class FindDuplicateTransactions extends Component {
     static template = "account_online_synchronization.FindDuplicateTransactions";
     static components = { CogMenuItem };

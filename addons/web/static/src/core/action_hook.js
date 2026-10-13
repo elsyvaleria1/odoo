@@ -69,10 +69,7 @@ export class ControllerLifetime {
     }
 }
 
-/**
- * @returns {ControllerLifetime} the lifetime of the action controller the
- * component belongs to; outside one, the component's own
- */
+/** @returns {ControllerLifetime} */
 export function useControllerLifetime() {
     const { __lifetime__ } = useActionCallbackRecorders();
     if (__lifetime__) {

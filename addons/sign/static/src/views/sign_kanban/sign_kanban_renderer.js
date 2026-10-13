@@ -17,18 +17,12 @@ export class SignKanbanRenderer extends SignDocumentDropZone(KanbanRenderer) {
         this.ui = useService("ui");
     }
 
-    /**
-     * @override
-     * Prevent moving records for sign request items
-     */
+    /** @override */
     get canMoveRecords() {
         return super.canMoveRecords && this.props.list.resModel !== "sign.request";
     }
 
-    /**
-     * @override
-     * Prevent moving groups for sign request items
-     */
+    /** @override */
     get canResequenceGroups() {
         return super.canResequenceGroups && this.props.list.resModel !== "sign.request";
     }

@@ -106,10 +106,7 @@ export class SignTemplate extends Component {
         return !this.ui.isSmall;
     }
 
-    /**
-     * Checks if there are signers without sign items in the template
-     * @returns {Boolean}
-     */
+    /** @returns {Boolean} */
     get hasSignersWithoutItems() {
         return this.state.signers.some((signer) => signer.itemsCount === 0);
     }
@@ -482,11 +479,8 @@ export class SignTemplate extends Component {
     }
 
     /**
-     *
      * @param {Number} documentId
      * @param {Number} direction
-     * Moves the document up (direction = -1) or down (direction = 1) in the list of documents,
-     * by swapping the sequence numbers of the two documents.
      */
     async moveDocument(documentId, direction) {
         const active_documents = this.state.documents

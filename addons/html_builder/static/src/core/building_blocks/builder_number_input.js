@@ -57,8 +57,8 @@ export class BuilderNumberInput extends Component {
     }
 
     /**
-     * @param {string | number} values - Values separated by spaces or a number
-     * @param {(string) => string} convertSingleValueFn - Convert a single value
+     * @param {string | number} values
+     * @param {(string) => string} convertSingleValueFn
      */
     convertSpaceSplitValues(values, convertSingleValueFn) {
         if (typeof values === "number") {

@@ -68,11 +68,7 @@ export const inputModality = {
     get isTouch() {
         return state.current === "touch";
     },
-    /**
-     * Whether the primary pointer can hover at all: a capability of the
-     * device, independent of the modality in use right now.
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get canHover() {
         return browser.matchMedia("(hover: hover)").matches;
     },
@@ -88,10 +84,7 @@ export const inputModality = {
         listeners.add(listener);
         return () => listeners.delete(listener);
     },
-    /**
-     * Starts following the user's input, from the device's primary pointer.
-     * @returns {() => void} stops following
-     */
+    /** @returns {() => void} */
     start() {
         publish(hasTouch() ? "touch" : "mouse");
         const options = { capture: true, passive: true };

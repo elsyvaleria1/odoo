@@ -3,7 +3,6 @@
 import { ATTR_SYM, MANY_SYM, ONE_SYM } from "./misc.js";
 
 /**
- * Metadata has string field names, while proxy lookups can also supply symbols.
  * @template V
  * @typedef {Map<string, V> & Pick<Map<string | symbol, V>, "get" | "has">} FieldMap
  */

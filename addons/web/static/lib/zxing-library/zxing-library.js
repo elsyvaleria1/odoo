@@ -2507,11 +2507,7 @@ var BrowserCodeReader = (
       get: function() {
         return this._timeBetweenDecodingAttempts;
       },
-      /**
-       * Change the time span the decoder waits between two decoding tries.
-       *
-       * @param {number} millis Time between two decoding tries in milli seconds.
-       */
+      /** @param {number} millis */
       set: function(millis) {
         this._timeBetweenDecodingAttempts = millis < 0 ? 0 : millis;
       },

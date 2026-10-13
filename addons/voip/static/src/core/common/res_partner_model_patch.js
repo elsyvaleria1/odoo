@@ -8,11 +8,7 @@ patch(ResPartner.prototype, {
         super.setup(...arguments);
         this.phone_country_id = fields.One("res.country");
     },
-    /**
-     * Can be overridden to change the name.
-     *
-     * @returns {string}
-     */
+    /** @returns {string} */
     get voipName() {
         return this.name || "";
     },

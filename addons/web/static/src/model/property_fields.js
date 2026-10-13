@@ -31,7 +31,7 @@ export function describePropertyDefinitionAsField(propertyFullName, definition) 
  * @param {Record<string, any>} context
  * @param {Record<string, Field>} fields
  * @param {string} propertyFullName
- * @param {() => boolean} [isCurrent] Whether this request may still publish its definition.
+ * @param {() => boolean} [isCurrent]
  * @returns {Promise<void>}
  */
 export async function addPropertyFieldDef(

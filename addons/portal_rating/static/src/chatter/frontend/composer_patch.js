@@ -17,11 +17,11 @@ patch(Composer.prototype, {
         this.portalState = proxy({
             hoveredRatingValue: undefined,
             ratingValue: DEFAULT_STAR_RATING,
-            /** @deprecated: use 'hoveredRatingValue' instead */
+            /** @deprecated */
             get starValue() {
                 return this.hoveredRatingValue;
             },
-            /** @deprecated: use 'hoveredRatingValue' instead */
+            /** @deprecated */
             set starValue(val) {
                 this.hoveredRatingValue = val;
             },

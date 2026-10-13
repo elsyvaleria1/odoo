@@ -6,10 +6,8 @@ let workspaceArticleResId;
 let privateArticleResId;
 
 /**
- * Extract the resId from a Knowledge portal URL of scheme:
- * /knowledge/article/{resId}
  * @param {URL} url
- * @returns {Number} resId
+ * @returns {Number}
  */
 function extractURLResID(url) {
     return parseInt((url.pathname.match("/knowledge/article/([0-9]+)") || []).at(1));

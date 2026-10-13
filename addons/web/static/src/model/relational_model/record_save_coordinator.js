@@ -33,7 +33,7 @@ export class RecordSaveCoordinator {
         this._holdsLock = false;
     }
 
-    /** @returns {boolean} whether the save in flight is a job of the model mutex */
+    /** @returns {boolean} */
     get holdsLock() {
         return this._holdsLock;
     }

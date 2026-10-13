@@ -90,9 +90,6 @@ function isWebClientUrl(url) {
 }
 
 /**
- * Only a web client tab listens for OPEN_CHANNEL / OPEN_RECORD: a website or portal
- * tab would be focused and open nothing.
- *
  * @template {{id: string, url: string, focused?: boolean, visibilityState?: string}} T
  * @param {readonly T[]} clients
  * @param {Object} [options]

@@ -39,9 +39,7 @@ class KnowledgeCover extends Component {
         });
     }
 
-    /**
-     * @returns {boolean} - True if the article is editable
-     */
+    /** @returns {boolean} */
     get isEditable() {
         const recordData = this.props.record.data;
         return (

@@ -31,11 +31,7 @@ export class BusMonitoringService {
         });
     }
 
-    /**
-     * Handle connection-state changes of the WebSocket worker.
-     *
-     * @param {CONNECTION_STATE[keyof CONNECTION_STATE]} state
-     */
+    /** @param {CONNECTION_STATE[keyof CONNECTION_STATE]} state */
     workerStateOnChange(state) {
         switch (state) {
             case CONNECTION_STATE.CONNECTING: {

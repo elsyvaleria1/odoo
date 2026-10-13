@@ -29,17 +29,14 @@ import { WebClient } from "@web/webclient/webclient";
  */
 
 /**
- * Get a webclient with a pivot view.
- * The webclient is already configured to work with spreadsheet (env, registries, ...)
- *
  * @param {object} params
- * @param {string} [params.model] Model name of the pivot
- * @param {object} [params.serverData] Data to be injected in the mock server
- * @param {function} [params.mockRPC] Mock rpc function
- * @param {any[]} [params.domain] Domain of the pivot
- * @param {object} [params.additionalContext] additional context for the action
- * @param {string} [params.actionXmlId] If set, the pivot view will be loaded from this action - will ignore model and domain
- * @returns {Promise<object>} Webclient
+ * @param {string} [params.model]
+ * @param {object} [params.serverData]
+ * @param {function} [params.mockRPC]
+ * @param {any[]} [params.domain]
+ * @param {object} [params.additionalContext]
+ * @param {string} [params.actionXmlId]
+ * @returns {Promise<object>}
  */
 export async function spawnPivotViewForSpreadsheet(params = {}) {
     await prepareWebClientForSpreadsheet();
@@ -67,20 +64,17 @@ export async function spawnPivotViewForSpreadsheet(params = {}) {
 
 /**
  * @typedef {object} CreatePivotTestParams
- * @property {Array} [domain] Domain of the pivot
- * @property {string} [model] pivot resModel
- * @property {string} [actionXmlId] xmlId of the action to load the pivot view from - model and domain will be ignored
- * @property {number} [documentId] ID of an existing document
- * @property {object} [additionalContext] additional context for the action
- * @property {function} [actions] Actions to execute on the pivot view
- *                                before inserting in spreadsheet
+ * @property {Array} [domain]
+ * @property {string} [model]
+ * @property {string} [actionXmlId]
+ * @property {number} [documentId]
+ * @property {object} [additionalContext]
+ * @property {function} [actions]
  */
 
 /**
- * Create a spreadsheet model from a Pivot controller
- *
  * @param {CreatePivotTestParams & import("@document_spreadsheet/../tests/helpers/spreadsheet_test_utils").SpreadsheetTestParams} params
- * @returns {Promise<object>} Webclient
+ * @returns {Promise<object>}
  */
 export async function createSpreadsheetFromPivotView(params = {}) {
     let spreadsheetAction = {};

@@ -16,10 +16,6 @@ function isLaidOut(cell) {
 }
 
 /**
- * For every body row matched by `rows` inside `table`: how many header columns
- * it covers, and which single-width named cells do not start under the header
- * cell of the same name. A cell the browser does not lay out covers nothing.
- *
  * @param {{ table?: string, rows?: string }} [options]
  * @returns {RowLayout[]}
  */
@@ -60,12 +56,7 @@ export function getListRowLayouts({
     });
 }
 
-/**
- * Every matched row spans exactly the header's column grid and puts each named
- * cell under its own header cell; at least one row must match.
- *
- * @param {{ table?: string, rows?: string }} [options]
- */
+/** @param {{ table?: string, rows?: string }} [options] */
 export function expectRowsCoverHeaderGrid(options = {}) {
     const table = options.table ?? ".o_list_table";
     const headerCount = queryAll(`${table} thead tr th`).filter(isLaidOut).length;

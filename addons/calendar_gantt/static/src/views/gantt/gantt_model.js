@@ -16,11 +16,7 @@ export class AppointmentBookingGanttModel extends GanttModel {
         });
     }
 
-    /**
-     * Update the organizer of relevant events after updating attendees.
-     *
-     * @override
-     */
+    /** @override */
     async reschedule(ids, schedule, callback) {
         if (
             !this.metaData.groupedBy ||
@@ -61,13 +57,7 @@ export class AppointmentBookingGanttModel extends GanttModel {
         return result;
     }
 
-    /**
-     * Replace the raw list of ids set by gantt by link and unlink commands
-     * so that only the partner/resource selected by the user changes instead of replacing
-     * all partners/resources with the new one.
-     *
-     * @override
-     */
+    /** @override */
     _scheduleToData(schedule) {
         const data = super._scheduleToData(...arguments);
 

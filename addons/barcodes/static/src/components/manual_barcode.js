@@ -29,11 +29,7 @@ export class BarcodeInput extends Component {
         }
     }
 
-    /**
-     * Called when press Enter after filling barcode input manually.
-     *
-     * @param {KeyboardEvent} ev
-     */
+    /** @param {KeyboardEvent} ev */
     onKeydown(ev) {
         if (getActiveHotkey(ev) === "enter") {
             this.submit();

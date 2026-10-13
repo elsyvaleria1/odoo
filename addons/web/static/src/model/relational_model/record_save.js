@@ -173,7 +173,7 @@ function getSaveKwargs(record, { reload, nextId, orderBys, concurrencyBaseline }
  * @param {Record<string, any>[]} records
  * @param {{ reload: boolean, nextId: number | undefined, creation: boolean,
  * changes: Record<string, any>, orderBys: Record<string, any> }} params
- * @returns {Promise<Set<string>>} the x2many fields left holding rows edited after the send
+ * @returns {Promise<Set<string>>}
  */
 async function applySaveResult(
     record,

@@ -201,12 +201,7 @@ export class GraphRenderer extends Component {
         tooltip.style.left = `${left}px`;
     }
 
-    /**
-     * The metaData the chart draws with: `stacked` is the one the model can
-     * honour, not the one the user asked for.
-     *
-     * @returns {Object}
-     */
+    /** @returns {Object} */
     get chartMetaData() {
         const { metaData, isStacked } = this.model;
         return metaData.stacked === isStacked

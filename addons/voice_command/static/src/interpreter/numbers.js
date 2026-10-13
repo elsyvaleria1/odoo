@@ -109,7 +109,7 @@ const MINUS = new Set(["menos", "minus", "negativo", "negative"]);
 const POINT = new Set(["punto", "coma", "point", "dot"]);
 
 /**
- * @param {string[]} words normalized
+ * @param {string[]} words
  * @returns {number | null}
  */
 function parseInteger(words) {
@@ -142,7 +142,7 @@ function parseInteger(words) {
     return seen ? total + current : null;
 }
 
-/** @param {string} word normalized */
+/** @param {string} word */
 function isNumberWord(word) {
     return (
         (word in UNITS && word !== "a") ||
@@ -153,10 +153,6 @@ function isNumberWord(word) {
 }
 
 /**
- * A code read aloud, its numbers written as digits: "L dos mil veintiséis
- * guion cero cero cuarenta y dos" becomes "L 2026 guion 0042". Leading
- * "cero"s are the zeros of a code; every other word stays as it was heard.
- *
  * @param {string} text
  * @returns {string}
  */
@@ -197,9 +193,6 @@ export function spokenDigits(text) {
 }
 
 /**
- * "cinco", "treinta y cinco", "dos mil quinientos", "five point five",
- * "12.5", "-3": what a speech recogniser writes for a number.
- *
  * @param {string} text
  * @returns {number | null}
  */

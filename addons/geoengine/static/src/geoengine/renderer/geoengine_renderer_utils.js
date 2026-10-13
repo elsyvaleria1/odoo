@@ -101,18 +101,7 @@ export class GeoengineRendererUtils {
         });
     }
 
-    /**
-     * The map frames what the search filtered, and a search only ever filters
-     * the view's own model. A cross-model layer ignores the view's domain by
-     * construction (GeoengineModel._effectiveLayerDomain), so letting it into
-     * the extent makes a search for a single record frame every record of the
-     * other model instead -- the filtered record is then one pin among
-     * hundreds that did not move. Such a layer stays drawn as context; it just
-     * stops driving the fit. Falls back to every layer when the view's model
-     * put nothing on the map, so an overlay-only map still frames itself.
-     *
-     * @returns {number[]|null}
-     */
+    /** @returns {number[]|null} */
     _featuresExtent() {
         const layers = this.renderer.vectorLayersResult || [];
         return this._extentOf(this._viewModelLayers(layers)) || this._extentOf(layers);

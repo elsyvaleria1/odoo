@@ -177,11 +177,11 @@ export class KnowledgeSidebar extends Component {
             onDragStart: () => (this.state.dragging = true),
             onDragEnd: () => (this.state.dragging = false),
             /**
-             * @param {DOMElement} element - dropped element
-             * @param {DOMElement} next - element before which the element was dropped
-             * @param {DOMElement} newGroup - group in which the element was dropped
-             * @param {DOMElement} parent - parent element of where the element was dropped
-             * @param {DOMElement} placeholder - hint element showing the current position
+             * @param {DOMElement} element
+             * @param {DOMElement} next
+             * @param {DOMElement} newGroup
+             * @param {DOMElement} parent
+             * @param {DOMElement} placeholder
              */
             onDrop: async ({ element, next, newGroup, parent, placeholder }) => {
                 const article = this.getArticle(parseInt(element.dataset.articleId));
@@ -209,10 +209,10 @@ export class KnowledgeSidebar extends Component {
                 this.moveArticle(article, currentPosition, newPosition);
             },
             /**
-             * @param {DOMElement} element - moved element
-             * @param {DOMElement} parent - parent element of where the element was moved
-             * @param {DOMElement} newGroup - group in which the element was moved
-             * @param {DOMElement} placeholder - hint element showing the current position
+             * @param {DOMElement} element
+             * @param {DOMElement} parent
+             * @param {DOMElement} newGroup
+             * @param {DOMElement} placeholder
              */
             onMove: ({ element, parent, newGroup, placeholder }) => {
                 if (parent) {
@@ -430,7 +430,6 @@ export class KnowledgeSidebar extends Component {
     }
 
     /**
-     * Change the category of an article, and of all its descendants.
      * @param {Object} article
      * @param {String} category
      */
@@ -449,9 +448,8 @@ export class KnowledgeSidebar extends Component {
     }
 
     /**
-     * Create a new article (and open it).
-     * @param {String} - category
-     * @param {integer} - targetParentId
+     * @param {String} -
+     * @param {integer} -
      */
     createArticle(category, targetParentId) {
         try {
@@ -462,9 +460,8 @@ export class KnowledgeSidebar extends Component {
     }
 
     /**
-     * Fold an article.
-     * @param {integer} articleId: id of article
-     * @param {boolean} isFavorite: whether to fold in favorite tree
+     * @param {integer} articleId:
+     * @param {boolean} isFavorite:
      */
     fold(articleId, isFavorite) {
         if (isFavorite) {
@@ -475,32 +472,27 @@ export class KnowledgeSidebar extends Component {
     }
 
     /**
-     * Get the article stored in the state given its id.
-     * @param {integer} articleId - Id of the article
-     * @returns {Object} article
+     * @param {integer} articleId
+     * @returns {Object}
      */
     getArticle(articleId) {
         return this.state.articles[articleId];
     }
 
     /**
-     * Get the array of article ids stored in the state from the given category
-     * (eg. this.state.workspaceIds for workspace).
      * @param {String} category
-     * @returns {Array} array of articles ids
+     * @returns {Array}
      */
     getCategoryIds(category) {
         return this.state[`${category}Ids`];
     }
 
     /**
-     * Insert the given article at the given position in the sidebar.
-     * @param {Object} article - article stored in the state
+     * @param {Object} article
      * @param {Object} position
      * @param {integer} position.beforeArticleId
      * @param {String} position.category
      * @param {integer} position.parentId
-     *
      */
     async insertArticle(article, position) {
         if (position.parentId) {
@@ -540,7 +532,6 @@ export class KnowledgeSidebar extends Component {
     }
 
     /**
-     * Check if the given article is an ancestor of the active one.
      * @param {integer} articleId
      * @returns {Boolean}
      */
@@ -610,10 +601,7 @@ export class KnowledgeSidebar extends Component {
         this.resetUnfoldedArticles();
     }
 
-    /**
-     * Load the children of a given article
-     * @param {object} article
-     */
+    /** @param {object} article */
     async loadChildren(article) {
         const children = await this.orm.searchRead(
             this.props.record.resModel,
@@ -644,10 +632,6 @@ export class KnowledgeSidebar extends Component {
     }
 
     /**
-     * Try to move the given article to the given position (change its parent/
-     * category/sequence) and update its position in the sidebar.
-     * If the move will change the permissions of the article, show a
-     * confirmation dialog.
      * @param {Object} article
      * @param {Object} currentPosition
      * @param {integer} position.beforeArticleId
@@ -732,10 +716,7 @@ export class KnowledgeSidebar extends Component {
         }
     }
 
-    /**
-     * Move an article to the trash, and remove it from the sidebar.
-     * @param {Object} article
-     */
+    /** @param {Object} article */
     async moveToTrash(article) {
         try {
             await this.orm.call("knowledge.article", "action_send_to_trash", [
@@ -790,8 +771,6 @@ export class KnowledgeSidebar extends Component {
     }
 
     /**
-     * Show a dialog explaining why the given article cannot be moved to the
-     * target position.
      * @param {article}
      * @param {parentId}
      */
@@ -818,10 +797,7 @@ export class KnowledgeSidebar extends Component {
         });
     }
 
-    /**
-     * Remove the given article from the sidebar.
-     * @param {Object} article
-     */
+    /** @param {Object} article */
     removeArticle(article) {
         if (article.parent_id) {
             const parent = this.getArticle(article.parent_id);
@@ -845,10 +821,7 @@ export class KnowledgeSidebar extends Component {
         }
     }
 
-    /**
-     * Remove the given article from the list of favorites.
-     * @param {Object} article
-     */
+    /** @param {Object} article */
     removeFavorite(article) {
         const favoriteIdx = this.state.favoriteIds.indexOf(article.id);
         if (favoriteIdx !== -1) {
@@ -857,7 +830,6 @@ export class KnowledgeSidebar extends Component {
     }
 
     /**
-     * Change the position of an article in the sidebar.
      * @param {Object} article
      * @param {Object} position
      * @param {integer} position.beforeArticleId
@@ -877,10 +849,8 @@ export class KnowledgeSidebar extends Component {
     }
 
     /**
-     * Updates the sequence of favorite articles for the current user.
-     * @param {integer} articleId - Id of the moved favorite article
-     * @param {integer} beforeId - Id of the favorite article after
-     *      which the article is moved
+     * @param {integer} articleId
+     * @param {integer} beforeId
      */
     resequenceFavorites(articleId, beforeId) {
         this.state.favoriteIds.splice(this.state.favoriteIds.indexOf(articleId), 1);
@@ -935,11 +905,7 @@ export class KnowledgeSidebar extends Component {
         document.addEventListener("pointerup", onPointerUp, { once: true });
     }
 
-    /**
-     * Make sure the given article is shown in the sidebar by unfolding every
-     * article until a root article is met.
-     * @param {object} article - article to show in the sidebar
-     */
+    /** @param {object} article */
     showArticle(article) {
         while (
             article &&
@@ -951,9 +917,9 @@ export class KnowledgeSidebar extends Component {
         }
     }
 
-    /** Unfold an article.
-     * @param {integer} articleId: id of article
-     * @param {boolean} isFavorite: whether to unfold in favorite tree
+    /**
+     * @param {integer} articleId:
+     * @param {boolean} isFavorite:
      */
     async unfold(articleId, isFavorite) {
         const article = this.getArticle(articleId);

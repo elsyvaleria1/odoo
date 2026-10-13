@@ -26,7 +26,6 @@ export class ListCoreGlobalFilterPlugin extends OdooCorePlugin {
 
     /**
      * @param {AllCoreCommand} cmd
-     *
      * @returns {string | string[]}
      */
     allowDispatch(cmd) {
@@ -90,8 +89,6 @@ export class ListCoreGlobalFilterPlugin extends OdooCorePlugin {
     }
 
     /**
-     * Sets the current FieldMatching on a list
-     *
      * @param {string} filterId
      * @param {Record<string,FieldMatching>} listFieldMatches
      */

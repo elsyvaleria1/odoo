@@ -506,7 +506,7 @@ const nextMessageMap = new Map();
 /**
  * @param {string} message
  * @param {number} [timeout]
- * @returns {Promise<boolean>} false when the timeout elapses before the message
+ * @returns {Promise<boolean>}
  */
 const waitingMessage = (message, timeout) =>
     new Promise((resolve) => {

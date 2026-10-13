@@ -19,7 +19,6 @@ function assertPrimitiveSegment(segment) {
 }
 
 /**
- * Lookup paths start with the loader arguments and may include extra cache keys.
  * @template T
  * @template {any[]} [Args=any[]]
  */

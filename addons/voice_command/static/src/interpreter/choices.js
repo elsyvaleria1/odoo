@@ -38,9 +38,6 @@ const SENTENCE_ACTIONS = {
  */
 
 /**
- * Everything the user could ask for right now, as ids a model may only pick
- * from: it names no record, no field and no button the screen does not have.
- *
  * @param {Vocabulary} vocabulary
  * @returns {Choice[]}
  */
@@ -116,10 +113,6 @@ export function choicesOf(vocabulary) {
 }
 
 /**
- * The model's picks as the same proposals the grammar makes, so they carry
- * the same risks. Opening a menu leaves the view the other picks were about,
- * so it is taken alone; at most one pick waits for a confirmation.
- *
  * @param {ChosenAction[]} actions
  * @param {Vocabulary} vocabulary
  * @returns {Proposal[]}

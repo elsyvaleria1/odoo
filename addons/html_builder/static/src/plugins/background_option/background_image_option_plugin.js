@@ -16,7 +16,6 @@ import { getBackgroundImageColor } from "./background_image_option.js";
 
 /**
  * @typedef {((editingElement: HTMLElement) => void)[]} on_bg_image_hide_handlers
- *
  * @typedef {((editingElement: HTMLElement) => HTMLElement)[]} background_filter_target_providers
  * @typedef {((el: HTMLElement) => HTMLElement)[]} get_target_element_providers
  */
@@ -45,10 +44,8 @@ export class BackgroundImageOptionPlugin extends Plugin {
         get_target_element_providers: withSequence(5, (el) => el),
     };
     /**
-     * Transfers the background-image and the dataset information relative to
-     * this image from the old editing element to the new one.
-     * @param {HTMLElement} oldEditingEl - The old editing element.
-     * @param {HTMLElement} newEditingEl - The new editing element.
+     * @param {HTMLElement} oldEditingEl
+     * @param {HTMLElement} newEditingEl
      */
     changeEditingEl(oldEditingEl, newEditingEl) {
         const oldBgURL = getBgImageURLFromEl(oldEditingEl);
@@ -140,8 +137,6 @@ export class BackgroundImageOptionPlugin extends Plugin {
         this.dependencies.style.setBackgroundImageUrl(el, backgroundURL);
     }
     /**
-     * Remove the current background image and notify listeners.
-     *
      * @param {Object} context
      * @param {HTMLElement} context.editingElement
      * @param {Object} [context.params]

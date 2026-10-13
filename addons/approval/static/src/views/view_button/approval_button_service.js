@@ -52,16 +52,9 @@ export const approvalButtonService = {
         }
 
         /**
-         * Reloads every gate of `model` whenever its root loads or a record saves.
-         *
-         * The reload is not handed back to the model: approvals are side data the
-         * record renders without, and the server gates every call anyway, so a
-         * load -- and the pager driving it -- must not wait for them. All gates
-         * ask in the same tick, which `load` answers with one call.
-         *
-         * @param {object} model a RelationalModel
+         * @param {object} model
          * @param {TrackedGate} gate
-         * @returns {() => void} stops tracking the gate
+         * @returns {() => void}
          */
         function track(model, gate) {
             let tracked = trackedModels.get(model);

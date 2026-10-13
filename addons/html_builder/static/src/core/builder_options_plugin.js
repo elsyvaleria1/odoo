@@ -19,7 +19,6 @@ import { isRemovable } from "./remove_plugin.js";
  *        handler: () => Promise<void>;
  *        disabledReason?: string;
  * }} BuilderButtonDescriptor
- *
  * @typedef {{
  *     id: string;
  *     element: HTMLElement;
@@ -55,9 +54,7 @@ import { isRemovable } from "./remove_plugin.js";
 /**
  * @typedef {((containers: BuilderOptionContainer[]) => void)[]} change_current_options_containers_listeners
  * @typedef {((newTargetEl: HTMLElement) => void)[]} on_restore_containers_handlers
- *
  * @typedef {((el: HTMLElement) => [] | BuilderButtonDescriptor[])[]} get_options_container_top_buttons
- *
  * @typedef {{
  *     Component: Component;
  *     selector: CSSSelector;
@@ -82,16 +79,8 @@ import { isRemovable } from "./remove_plugin.js";
  * @typedef {CSSSelector[]} no_parent_containers
  * @typedef {((el: HTMLElement) => boolean)[]} keep_overlay_options
  */
-/**
- * @typedef {((arg: { el: HTMLElement, reasons: [] }) => void)[]} clone_disabled_reason_providers
- *
- * Appends new reasons to the `reasons` array given as a parameter.
- */
-/**
- * @typedef {((arg: { el: HTMLElement, reasons: [] }) => void)[]} remove_disabled_reason_providers
- *
- * Appends new reasons to the `reasons` array given as a parameter.
- */
+/** @typedef {((arg: { el: HTMLElement, reasons: [] }) => void)[]} clone_disabled_reason_providers */
+/** @typedef {((arg: { el: HTMLElement, reasons: [] }) => void)[]} remove_disabled_reason_providers */
 
 export class BuilderOptionsPlugin extends Plugin {
     static id = "builderOptions";
@@ -426,13 +415,7 @@ export class BuilderOptionsPlugin extends Plugin {
         }
     }
 
-    /**
-     * Activates the containers of the given element or deactivate them if false
-     * is given. They will be (de)activated once the current step is added (see
-     * `onStepAdded`).
-     *
-     * @param {HTMLElement|Boolean} targetEl the element to activate or `false`
-     */
+    /** @param {HTMLElement|Boolean} targetEl */
     setNextTarget(targetEl) {
         if (this.dependencies.history.getIsPreviewing()) {
             return;
@@ -456,10 +439,8 @@ export class BuilderOptionsPlugin extends Plugin {
     }
 
     /**
-     * Restores the containers of the target stored in the reverted step.
-     *
-     * @param {Object} revertedStep the step
-     * @param {String} mode "undo" or "redo"
+     * @param {Object} revertedStep
+     * @param {String} mode
      */
     restoreContainers(revertedStep, mode) {
         if (revertedStep && revertedStep.extraStepInfos.currentTarget) {
@@ -532,16 +513,10 @@ export class BuilderOptionsPlugin extends Plugin {
     }
 
     /**
-     * Finds the given option in the given element closest options container, as
-     * well as in the parent containers if specified, and returns it and its
-     * target element.
-     *
-     * @param {HTMLElement} el the element
-     * @param {String} optionName the option name
-     * @param {Boolean} [allowParent=false] true if the parent containers should
-     *   be considered
-     * @returns {Object} - `option`: the requested option
-     *                   - `targetEl`: the target element of the option
+     * @param {HTMLElement} el
+     * @param {String} optionName
+     * @param {Boolean} [allowParent=false]
+     * @returns {Object}
      */
     findOption(el, optionName, allowParent = false) {
         let containers = this.getContainers().filter((container) =>
@@ -606,11 +581,8 @@ function getClosestElements(element, selector) {
 }
 
 /**
- * Checks if the given element is valid in order to have an option.
- *
  * @param {HTMLElement} el
- * @param {Boolean} editableOnly when set to false, the element does not need to
- *     be in an editable area and the checks are therefore lighter.
+ * @param {Boolean} editableOnly
  * @param {String} exclude
  * @returns {Boolean}
  */

@@ -331,10 +331,7 @@ export class AbstractSpreadsheetAction extends Component {
         this.data = data;
     }
 
-    /**
-     * Make a copy of the current document
-     * @protected
-     */
+    /** @protected */
     async makeCopy() {
         const display_thumbnail = this.getThumbnail();
         const data = this.model.exportData();
@@ -425,10 +422,7 @@ export class AbstractSpreadsheetAction extends Component {
         return response.json();
     }
 
-    /**
-     * Open a spreadsheet
-     * @private
-     */
+    /** @private */
     _openSpreadsheet(spreadsheetId) {
         this.actionService.doAction(
             {
@@ -473,12 +467,7 @@ export class AbstractSpreadsheetAction extends Component {
         }
     }
 
-    /**
-     * Replays the revisions this session missed, in order, as the bus would
-     * have delivered them.
-     * @returns {Promise<boolean>} false when the server no longer has this
-     * session's revision, or replaying did not move the session past it
-     */
+    /** @returns {Promise<boolean>} */
     async _catchUp() {
         const { session } = this.model;
         const head = session.getRevisionId();

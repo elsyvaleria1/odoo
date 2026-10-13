@@ -364,12 +364,7 @@ export class DateTimeField extends FieldComponent {
         return this.props.record.fields[fieldName]?.string || fieldName;
     }
 
-    /**
-     * An empty bound of a range is named after its field, so that the user
-     * sees which end is which before picking anything
-     *
-     * @param {string} fieldName
-     */
+    /** @param {string} fieldName */
     getPlaceholder(fieldName) {
         if (this.props.placeholder || !this.relatedField) {
             return this.props.placeholder;

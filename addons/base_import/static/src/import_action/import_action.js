@@ -91,23 +91,7 @@ export class ImportAction extends Component {
         onWillStart(this.onWillStart);
     }
 
-    /**
-     * The window action this import was opened on top of, if any.
-     *
-     * Read off `controllerStack` — and, on a deep link, the URL `actionStack`
-     * — both of which the action service declares as its public surface. This
-     * used to read `actionService.currentAction` and
-     * `actionService.currentController` — neither of which exists: the web
-     * architecture redesign made them the private `_getCurrentAction()` /
-     * `_getCurrentController()` and did not carry this consumer across. The
-     * damage was quiet, because `await undefined` is `undefined` rather than a
-     * crash: opening the import screen from a URL bounced straight back out
-     * via `historyBack()`, and opening it from a list view lost the origin
-     * action, so "Imported records" fell back to a default `list,form` instead
-     * of the views the user was actually looking at.
-     *
-     * @returns {object | null}
-     */
+    /** @returns {object | null} */
     async _getOriginAction() {
         const stack = this.actionService.controllerStack ?? [];
         for (let i = stack.length - 1; i >= 0; i--) {

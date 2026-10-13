@@ -9,12 +9,7 @@ import { useSearchModel } from "@web/search/search_model";
 
 const cogMenuRegistry = registry.category("cogMenu");
 
-/**
- * 'Import records' menu
- *
- * This component is used to import the records for particular model.
- * @extends Component
- */
+/** @extends Component */
 export class ImportRecords extends Component {
     static template = "base_import.ImportRecords";
     static components = { CogMenuItem };

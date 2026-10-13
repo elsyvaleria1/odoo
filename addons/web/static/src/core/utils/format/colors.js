@@ -183,7 +183,7 @@ export function convertRgbaToCSSColor(r, g, b, a) {
 }
 
 /**
- * @param {number} opacity Percentage from 0 to 100.
+ * @param {number} opacity
  * @returns {string}
  */
 export function opacityToHex(opacity) {
@@ -195,9 +195,6 @@ const RGB_FUNCTION_REGEX =
     /^rgba?\(\s*(\d*\.?\d+)\s*(?:,\s*|\s+)(\d*\.?\d+)\s*(?:,\s*|\s+)(\d*\.?\d+)\s*(?:[,/]\s*(\d*\.?\d+)(%?)\s*)?\)$/;
 
 /**
- * The one reader of `rgb()` / `rgba()`, comma or space syntax, alpha as a
- * fraction or a percentage. Channels and alpha are returned unrounded.
- *
  * @param {string} value
  * @returns {RgbFunction | null}
  */
@@ -217,10 +214,6 @@ function parseRgbFunction(value) {
 }
 
 /**
- * A color literal -- hex, `rgb()` or `rgba()` -- read by the grammar the
- * server reads the image shape colors with (`parse_css_rgba` in html_editor):
- * html_editor's color conformance vectors hold the two to one result.
- *
  * @param {string} cssColor
  * @returns {RgbaColor | false}
  */
@@ -260,9 +253,6 @@ export function parseCSSColor(cssColor = "") {
 }
 
 /**
- * Any color `parseCSSColor` reads, and the `color()` a browser computes (a
- * `color-mix()` resolves to one), read through a canvas.
- *
  * @param {string} cssColor
  * @returns {RgbaColor | false}
  */
@@ -312,11 +302,9 @@ export function isCSSColor(cssColor) {
     return convertCSSColorToRgba(cssColor) !== false;
 }
 /**
- * Mix as a normalized CSS hex (`#RRGGBB`, or `#RRGGBBAA` when translucent).
- *
  * @param {string} cssColor1
  * @param {string} cssColor2
- * @param {number} weight Weight belonging to the first color.
+ * @param {number} weight
  * @returns {string | false}
  */
 export function mixCssColors(cssColor1, cssColor2, weight) {
@@ -361,9 +349,6 @@ function toLowerHex(channels) {
 }
 
 /**
- * `#rrggbb` for an opaque `rgb()`; a translucent one is blended onto the
- * background of `node` (white by default). "#" when `rgb` is not a color.
- *
  * @param {string} rgb
  * @param {HTMLElement | null} [node]
  * @returns {string}
@@ -384,10 +369,6 @@ export function rgbToHex(rgb = "", node = null) {
 }
 
 /**
- * `#RRGGBB[AA]`, uppercase like `normalizeCSSColor`, for any color
- * `convertCSSColorToRgba` reads; an `rgb()` alpha is kept unrounded and its
- * channels clamped as CSS does. "#" when `color` is not a color.
- *
  * @param {string} color
  * @returns {string}
  */
@@ -425,9 +406,6 @@ function getBackgroundChannels(node) {
 }
 
 /**
- * Flatten an `rgb()` / `rgba()` onto the background of `node` (white by
- * default) as `#rrggbb`. Other inputs go through `rgbToHex`.
- *
  * @param {string} color
  * @param {HTMLElement|null} [node]
  * @returns {string}
@@ -459,7 +437,6 @@ function toRgba(color = "") {
 }
 
 /**
- * Weighted sRGB brightness, without gamma correction (not WCAG luminance).
  * @param {string} color
  * @returns {number}
  */
@@ -478,7 +455,6 @@ export function colorToRgb(color) {
 }
 
 /**
- * Format RGB channels and an optional fractional alpha as a CSS rgb() value.
  * @param {number[]} channels
  * @returns {string}
  */
@@ -504,12 +480,9 @@ function lerp(from, to, weight) {
 }
 
 /**
- * The one color mixer; the exported `mix*Colors` only format its result.
- * Channels are rounded, opacity is left exact for the formatter.
- *
  * @param {string} color1
  * @param {string} color2
- * @param {number} weight Weight belonging to the first color.
+ * @param {number} weight
  * @returns {RgbaColor | false}
  */
 function mixColors(color1, color2, weight) {
@@ -533,11 +506,9 @@ function mixColors(color1, color2, weight) {
 }
 
 /**
- * Mix as an opaque `#rrggbb`, alpha dropped; `color2` when either is not a color.
- *
  * @param {string} color1
  * @param {string} color2
- * @param {number} weight Weight belonging to the first color.
+ * @param {number} weight
  * @returns {string}
  */
 export function mixHexColors(color1, color2, weight) {
@@ -546,11 +517,9 @@ export function mixHexColors(color1, color2, weight) {
 }
 
 /**
- * Mix as `rgba()`, alpha rounded to the gradient editor's percentage precision.
- *
  * @param {string} color1
  * @param {string} color2
- * @param {number} weight Weight belonging to the first color.
+ * @param {number} weight
  * @returns {string | false}
  */
 export function mixRgbaColors(color1, color2, weight) {
@@ -580,10 +549,6 @@ export function darkenColor(color, factor) {
 }
 
 /**
- * One answer for "this colour, at this opacity", for the three renderers that
- * used to carry their own. Accepts hex, rgb() and rgba(), multiplying any
- * alpha they carry; anything else is returned unchanged.
- *
  * @param {string} color
  * @param {number} [opacity]
  * @returns {string}

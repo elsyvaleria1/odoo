@@ -51,13 +51,7 @@ export const serverEngine = {
         return available;
     },
 
-    /**
-     * The last command once more, decoded in another language: only when the
-     * administrator turned the second pass on, and never with the screen's
-     * phrases as a prompt, which are in the first language.
-     *
-     * @param {string} language
-     */
+    /** @param {string} language */
     async hearAgain(language) {
         if (!englishPass || !lastUtterance) {
             return "";

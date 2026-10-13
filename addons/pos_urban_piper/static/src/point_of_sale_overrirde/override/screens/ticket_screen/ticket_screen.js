@@ -29,10 +29,7 @@ patch(TicketScreen.prototype, {
         this.state.upState = this.props.upState;
     },
 
-    /**
-     * @override
-     * Add two search fields.
-     */
+    /** @override */
     _getSearchFields() {
         return Object.assign({}, super._getSearchFields(...arguments), {
             DELIVERYPROVIDER: {
@@ -208,10 +205,7 @@ patch(TicketScreen.prototype, {
         });
     },
 
-    /**
-     * @override
-     * Return results based on upState.
-     */
+    /** @override */
     getFilteredOrderList() {
         const orders = super.getFilteredOrderList();
         if (!this.state.upState) {

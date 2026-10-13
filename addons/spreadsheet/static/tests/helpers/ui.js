@@ -18,7 +18,6 @@ class Parent extends Component {
 }
 
 /**
- * Mount o-spreadsheet component with the given spreadsheet model
  * @param {Model} model
  * @returns {Promise<HTMLElement>}
  */
@@ -35,10 +34,7 @@ export async function mountSpreadsheet(model) {
     return getFixture();
 }
 
-/**
- * Mount public spreadsheet component with the given data
- * @returns {Promise<HTMLElement>}
- */
+/** @returns {Promise<HTMLElement>} */
 export async function mountPublicSpreadsheet(
     dataUrl,
     mode,

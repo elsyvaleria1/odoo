@@ -354,7 +354,7 @@ test("a notification that fails to render does not kill later notifications", as
     await makeMockEnv();
     await mountWithCleanup(MainComponentsContainer);
 
-    // @ts-expect-error
+
     getService("notification").add("faulty", { buttons: "not-a-list" });
     await animationFrame();
     await animationFrame();
@@ -403,7 +403,7 @@ test("an unrecognised option does not cost the caller their notification", async
     await animationFrame();
     expect(".o_notification").toHaveCount(1);
 
-    // @ts-expect-error
+
     getService("notification").add("second", { notAnOption: true });
     await animationFrame();
     await animationFrame();
@@ -483,7 +483,7 @@ test("the main_components entry is the same object across env starts", async () 
     expect(entry.props).toBe(undefined);
 });
 
-/** @param {() => void} fn runs in a component's setup, where the app scope is readable */
+/** @param {() => void} fn */
 async function mountInScope(fn) {
     class Probe extends Component {
         static props = null;
@@ -697,9 +697,9 @@ test("a caller cannot take over the service-owned props", async () => {
     await makeMockEnv();
     await mountWithCleanup(MainComponentsContainer);
     getService("notification").add("real message", {
-        // @ts-ignore hostile on purpose
+
         close: () => expect.step("hijacked close"),
-        // @ts-ignore hostile on purpose
+
         message: "hijacked message",
     });
     await animationFrame();

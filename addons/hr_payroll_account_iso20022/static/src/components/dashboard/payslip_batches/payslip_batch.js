@@ -5,9 +5,7 @@ import { BinaryField } from "@web/fields/media/binary/binary_field";
 import { Record } from "@web/model/record";
 
 patch(PayrollDashboardPayslipBatch.prototype, {
-    /**
-     * @returns {boolean} Whether any batch has a sepa export to display
-     */
+    /** @returns {boolean} */
     _hasSepaExport() {
         return this.props.batches.find((elem) => elem.sepa_export);
     },

@@ -282,7 +282,7 @@ test("an unknown option still warns through the hook's option bag", async () => 
     patchWithCleanup(odoo, { debug: "1" });
 
     const popover = makePopover((...args) => getService("popover").add(...args), Comp, {
-        // @ts-expect-error
+
         totallyBogusOption: true,
     });
     popover.open(getFixture(), {});

@@ -78,8 +78,6 @@ export class DomainHasher {
 }
 
 /**
- * The key the renderer stores its per-view zoom under.
- *
  * @param {string} resModel
  * @param {number|null} viewId
  * @returns {string}
@@ -189,12 +187,6 @@ export class GeoengineModel extends RelationalModel {
     }
 
     /**
-     * The layer configuration is state of this model: the renderer and the
-     * panel read it through the reactive model they receive as a prop, so a
-     * visibility toggle or a reorder in one is seen by the other with no
-     * event bus in between. A vector starts visible when it is active on
-     * startup; the first non-overlay raster is the visible base map.
-     *
      * @param {Object[]} vectors
      * @param {Object[]} rasters
      */
@@ -279,14 +271,7 @@ export class GeoengineModel extends RelationalModel {
         });
     }
 
-    /**
-     * Re-reads the layer configuration from the server and redraws. The
-     * server is the only place that resolves a layer's field names, model and
-     * projected extents, so a saved edit is not patched client-side. The
-     * user's visibility toggles survive the reload.
-     *
-     * @returns {Promise<void>}
-     */
+    /** @returns {Promise<void>} */
     async reloadLayerConfigurations() {
         log.lifecycle("reloadLayerConfigurations", () => ({
             vectors: this.layers.vectors.length,
@@ -310,8 +295,6 @@ export class GeoengineModel extends RelationalModel {
     }
 
     /**
-     * A hidden layer is not read until it is first shown.
-     *
      * @param {number} layerId
      * @returns {Promise<void>}
      */
@@ -322,9 +305,6 @@ export class GeoengineModel extends RelationalModel {
     }
 
     /**
-     * Filters a layer for this session only, for a user who cannot change the
-     * layer itself; it survives configuration reloads until the map closes.
-     *
      * @param {number} layerId
      * @param {string} domain
      * @returns {Promise<void>}
@@ -594,10 +574,6 @@ export class GeoengineModel extends RelationalModel {
     }
 
     /**
-     * The rows a layer draws, and whether they are its whole population: the
-     * view's own records when they carry every styled field, else a fetch with
-     * the layer's effective domain.
-     *
      * @param {Object} layerConfig
      * @param {string[]} fieldsToRead
      * @returns {Promise<{records: Object[], complete: boolean}>}
@@ -650,13 +626,6 @@ export class GeoengineModel extends RelationalModel {
     }
 
     /**
-     * A layer whose features would be truncated is drawn as vector tiles of
-     * its whole population instead: the view's own layer when the page holds
-     * fewer records than the search matched, any other when its population
-     * exceeds the fetch limit. Tiles are cut in Web Mercator, so another
-     * projection is not tiled; a heatmap reads its view's cells instead of
-     * tiles (ViewportHeatStrategy).
-     *
      * @param {Object} layerConfig
      * @returns {Promise<{domain: Array, extent: number[]|null}|null>}
      */
@@ -696,12 +665,7 @@ export class GeoengineModel extends RelationalModel {
         return { domain, extent };
     }
 
-    /**
-     * Whether the map draws every record the search matched, not the page:
-     * the view's own layer is tiled.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     drawsEveryMatch() {
         const resModel = this.root.resModel;
         return (this.root.data?.vectorLayers || []).some(
@@ -710,10 +674,6 @@ export class GeoengineModel extends RelationalModel {
     }
 
     /**
-     * Whether a tiled layer's last tile could not be drawn in time: the layer
-     * warns while the zoom it shows holds a refused tile, and stops once the
-     * tiles of another zoom all render.
-     *
      * @param {number} layerId
      * @param {number} zoom
      * @param {boolean} dense
@@ -733,8 +693,6 @@ export class GeoengineModel extends RelationalModel {
     }
 
     /**
-     * The records a tiled layer counted in one fine-grid cell.
-     *
      * @param {number} layerId
      * @param {string} cell
      * @returns {Promise<{records: {id: number, display_name: string}[], more: boolean}>}
@@ -754,9 +712,6 @@ export class GeoengineModel extends RelationalModel {
     }
 
     /**
-     * The row a tiled feature's popup shows: the fields the view's records
-     * load, or the layer model's info box fields.
-     *
      * @param {string} resModel
      * @param {number} resId
      * @returns {Promise<Object|null>}

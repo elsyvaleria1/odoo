@@ -65,9 +65,7 @@ export class GridLayoutPlugin extends Plugin {
     }
 
     /**
-     * Checks if the given container element has the grid mode option.
-     *
-     * @param {HTMLElement} containerEl the container element
+     * @param {HTMLElement} containerEl
      * @returns {Boolean}
      */
     hasGridLayoutOption(containerEl) {
@@ -160,13 +158,9 @@ export class GridLayoutPlugin extends Plugin {
     }
 
     /**
-     * Adapts the height of the grid item (if any) to its content and returns a
-     * function restoring the grid item height.
-     *
-     * @param {HTMLElement} el the new content
-     * @param {Boolean} [shouldResizeGrid=true] `true` if the grid height should also
-     *   be adapted.
-     * @returns {Function} a function restoring the grid item state
+     * @param {HTMLElement} el
+     * @param {Boolean} [shouldResizeGrid=true]
+     * @returns {Function}
      */
     adjustGridItem(el, shouldResizeGrid = true) {
         const gridItemEl = el.closest(".o_grid_item");
@@ -204,9 +198,7 @@ export class GridLayoutPlugin extends Plugin {
     }
 
     /**
-     * Returns the grid dropzone that overlaps with the given dropzone, if any.
-     *
-     * @param {HTMLElement} dropzoneEl the dropzone
+     * @param {HTMLElement} dropzoneEl
      * @returns {HTMLElement}
      */
     getOverlappingGridDropzone(dropzoneEl) {
@@ -217,12 +209,9 @@ export class GridLayoutPlugin extends Plugin {
     }
 
     /**
-     * Wraps the given element inside a grid item, makes the drag and drop use
-     * this item instead and returns it.
-     *
-     * @param {HTMLElement} el the element
-     * @param {HTMLElement} dropzoneEl the grid dropzone
-     * @param {Object} dragState the current drag state
+     * @param {HTMLElement} el
+     * @param {HTMLElement} dropzoneEl
+     * @param {Object} dragState
      * @returns {HTMLElement}
      */
     wrapInGridItem(el, dropzoneEl, dragState) {
@@ -250,12 +239,7 @@ export class GridLayoutPlugin extends Plugin {
         return columnEl;
     }
 
-    /**
-     * Called when we start dragging the snippet.
-     *
-     * @param {Object} - snippetEl: the dragged snippet
-     *                 - dragState: the current drag state
-     */
+    /** @param {Object} - */
     onSnippetDragged({ snippetEl, dragState }) {
         const paddingRegex = /^((pt|pb)\d{1,3}$)/;
         const marginRegex = /^((mt|my)-\d$)/;
@@ -278,11 +262,7 @@ export class GridLayoutPlugin extends Plugin {
         snippetEl.classList.add(...paddingClasses, ...marginClasses);
     }
 
-    /**
-     * Called when the snippet is dragged over a dropzone.
-     *
-     * @param {Object}
-     */
+    /** @param {Object} */
     onSnippetOverDropzone({ snippetEl, dragState }) {
         const dropzoneEl = dragState.currentDropzoneEl;
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
@@ -301,11 +281,7 @@ export class GridLayoutPlugin extends Plugin {
         this.onDropzoneOver({ draggedEl: dragState.draggedEl, dragState });
     }
 
-    /**
-     * Called when the snippet is dragged out of a dropzone.
-     *
-     * @param {Object}
-     */
+    /** @param {Object} */
     onSnippetOutDropzone({ snippetEl, dragState }) {
         const dropzoneEl = dragState.currentDropzoneEl;
         this.onDropzoneOut({ draggedEl: dragState.draggedEl, dragState });
@@ -325,12 +301,7 @@ export class GridLayoutPlugin extends Plugin {
         }
     }
 
-    /**
-     * Called while moving the dragged element over a dropzone.
-     *
-     * @param {Object} - dragState: the current drag state.
-     *                 - x, y: the horizontal/vertical position of the helper
-     */
+    /** @param {Object} - */
     onSnippetMove({ dragState, x, y }) {
         if (!dragState.overGrid) {
             return;
@@ -338,12 +309,7 @@ export class GridLayoutPlugin extends Plugin {
         this.onDragMove({ draggedEl: dragState.draggedEl, dragState, x, y });
     }
 
-    /**
-     * Called when the snippet is dropped when over a dropzone.
-     *
-     * @param {Object} - droppedEl: the dropped element
-     *                 - dragState: the current drag state
-     */
+    /** @param {Object} - */
     onSnippetDroppedOver({ droppedEl, dragState }) {
         const dropzoneEl = dragState.currentDropzoneEl;
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
@@ -352,11 +318,7 @@ export class GridLayoutPlugin extends Plugin {
         this.onElementDroppedOver({ droppedEl, dragState });
     }
 
-    /**
-     * Called when the snippet is dropped near a dropzone.
-     *
-     * @param {Object} - dropzoneEl: the closest dropzone
-     */
+    /** @param {Object} - */
     onSnippetDroppedNear({ droppedEl, dropzoneEl, dragState }) {
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
             return;
@@ -369,11 +331,7 @@ export class GridLayoutPlugin extends Plugin {
         });
     }
 
-    /**
-     * Called when the snippet is dropped in general.
-     *
-     * @param {Object}
-     */
+    /** @param {Object} */
     onSnippetDropped({ snippetEl, dragState }) {
         if ("restoreGridItem" in dragState) {
             dragState.restoreGridItem();
@@ -382,9 +340,7 @@ export class GridLayoutPlugin extends Plugin {
     }
 
     /**
-     * Tells if the given element is draggable.
-     *
-     * @param {HTMLElement} targetEl the element
+     * @param {HTMLElement} targetEl
      * @returns {Boolean}
      */
     isDraggable(targetEl) {
@@ -395,12 +351,7 @@ export class GridLayoutPlugin extends Plugin {
         return true;
     }
 
-    /**
-     * Called when we start dragging an element.
-     *
-     * @param {Object} - draggedEl: the dragged element
-     *                 - dragState: the current drag state
-     */
+    /** @param {Object} - */
     onElementDragged({ draggedEl, dragState }) {
         const parentEl = draggedEl.parentElement;
         const isColumn = parentEl.classList.contains("row");
@@ -448,11 +399,7 @@ export class GridLayoutPlugin extends Plugin {
         }
     }
 
-    /**
-     * Called when the element is dragged over a dropzone.
-     *
-     * @param {Object}
-     */
+    /** @param {Object} */
     onDropzoneOver({ draggedEl, dragState }) {
         const dropzoneEl = dragState.currentDropzoneEl;
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
@@ -514,11 +461,7 @@ export class GridLayoutPlugin extends Plugin {
         });
     }
 
-    /**
-     * Called when the element is dragged out of a dropzone.
-     *
-     * @param {Object}
-     */
+    /** @param {Object} */
     onDropzoneOut({ draggedEl, dragState }) {
         const dropzoneEl = dragState.currentDropzoneEl;
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
@@ -541,12 +484,7 @@ export class GridLayoutPlugin extends Plugin {
         dropzoneEl.style.gridRowEnd = Math.max(rowCount + 1, 1);
     }
 
-    /**
-     * Called when the element is dropped when over a dropzone.
-     *
-     * @param {Object} - droppedEl: the dropped element
-     *                 - dragState: the current drag state
-     */
+    /** @param {Object} - */
     onElementDroppedOver({ droppedEl, dragState }) {
         const dropzoneEl = dragState.currentDropzoneEl;
         const columnEl = droppedEl;
@@ -564,13 +502,7 @@ export class GridLayoutPlugin extends Plugin {
         }
     }
 
-    /**
-     * Called when the element is dropped near a dropzone.
-     *
-     * @param {Object} - droppedEl: the dropped element
-     *                 - dropzoneEl: the closest dropzone
-     *                 - dragState: the current drag state
-     */
+    /** @param {Object} - */
     onElementDroppedNear({ droppedEl, dropzoneEl, dragState }) {
         const columnEl = droppedEl;
         if (dropzoneEl.classList.contains("oe_grid_zone")) {
@@ -602,13 +534,7 @@ export class GridLayoutPlugin extends Plugin {
         }
     }
 
-    /**
-     * Called while moving the dragged element over a dropzone.
-     *
-     * @param {Object} - draggedEl: the dragged element
-     *                 - dragState: the current drag state.
-     *                 - x, y: the horizontal/vertical position of the helper
-     */
+    /** @param {Object} - */
     onDragMove({ draggedEl, dragState, x, y }) {
         if (!dragState.overGrid) {
             return;
@@ -675,11 +601,7 @@ export class GridLayoutPlugin extends Plugin {
         }
     }
 
-    /**
-     * Called when the element is dropped in general.
-     *
-     * @param {Object}
-     */
+    /** @param {Object} */
     onElementDropped({ droppedEl, dragState }) {
         const { startGridEl } = dragState;
         if (startGridEl) {

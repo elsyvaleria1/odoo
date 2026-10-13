@@ -56,10 +56,7 @@ export class DocumentsFileViewer extends WebFileViewer {
         );
     }
 
-    /**
-     * @override every file shown (next, previous, a preview reopened) comes
-     * through here: it is the previewed document, and its content is fetched
-     */
+    /** @override */
     activateFile(index, files = this.props.files) {
         super.activateFile(index, files);
         this._showFile(files[index]);

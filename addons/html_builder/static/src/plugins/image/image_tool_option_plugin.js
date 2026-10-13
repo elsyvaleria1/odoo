@@ -125,8 +125,6 @@ class ImageToolOptionPlugin extends Plugin {
         }
     }
     /**
-     * Gets the CSS value of a color variable name.
-     *
      * @param {string} color
      * @returns {string}
      */

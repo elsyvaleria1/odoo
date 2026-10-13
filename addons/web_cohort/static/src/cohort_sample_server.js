@@ -15,9 +15,6 @@ function addInterval(date, interval, count) {
 }
 
 /**
- * This function mocks calls to the 'get_cohort_data' method. It is
- * registered to the SampleServer's mockRegistry, so it is called with a
- * SampleServer instance as "this".
  * @private
  * @param {Object} params
  * @param {string} params.model

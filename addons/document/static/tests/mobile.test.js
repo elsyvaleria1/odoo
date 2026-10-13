@@ -102,7 +102,7 @@ test("on a small screen the cog acts on the open folder too", async () => {
     expect(items).toInclude("Share…");
 });
 
-/** @returns {Promise<Object>} the kanban model of the mounted view */
+/** @returns {Promise<Object>} */
 async function mountKanbanCapturingModel(serverData) {
     let model;
     patchWithCleanup(DocumentsKanbanModel.prototype, {

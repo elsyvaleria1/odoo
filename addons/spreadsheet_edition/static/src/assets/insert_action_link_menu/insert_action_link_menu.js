@@ -6,10 +6,7 @@ import { useViewConfig } from "@web/core/view_config_hooks";
 import { CogMenuItem } from "@web/search/cog_menu/cog_menu_item";
 import { useSearchModel } from "@web/search/search_model";
 
-/**
- * Insert a link to a view in spreadsheet
- * @extends Component
- */
+/** @extends Component */
 export class InsertViewSpreadsheet extends Component {
     static props = {};
     static template = "spreadsheet_edition.InsertActionSpreadsheet";

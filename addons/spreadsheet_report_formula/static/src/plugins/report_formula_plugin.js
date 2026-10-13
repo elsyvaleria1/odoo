@@ -29,9 +29,9 @@ export class ReportFormulaPlugin extends OdooUIPlugin {
     }
 
     /**
-     * @param {string | number} report xmlid or id of the report
-     * @param {string} lineCode code of the report line
-     * @param {string} label expression label of the column
+     * @param {string | number} report
+     * @param {string} lineCode
+     * @param {string} label
      * @param {DateRange} dateRange
      * @param {number | null} companyId
      * @param {boolean} includeUnposted

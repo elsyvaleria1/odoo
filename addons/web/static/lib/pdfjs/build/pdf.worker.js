@@ -14975,7 +14975,7 @@ class WasmImage {
     let instance = null;
     try {
       const mod = await import(
-      /*@vite-ignore*/
+
       `${WasmImage.#wasmUrl}${this._noWasmFilename}`);
       instance = mod.default();
     } catch (ex) {
@@ -70215,4 +70215,3 @@ globalThis.pdfjsWorker = {
 };
 
 export { WorkerMessageHandler };
-

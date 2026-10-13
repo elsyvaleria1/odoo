@@ -15,7 +15,7 @@
  * @property {boolean} [isDefault]
  * @property {number} [defaultRank]
  * @property {boolean} [isInvalid]
- * @property {boolean} [ephemeral] reachable only through the query: dropped once it leaves it
+ * @property {boolean} [ephemeral]
  */
 
 /**

@@ -120,9 +120,9 @@ describe("folderCategory", () => {
 
 describe("_updateCategoryValue", () => {
     /**
-     * @param {string|null} stored what the browser remembers
+     * @param {string|null} stored
      * @param {Object} category
-     * @returns {Object} the model, after the update
+     * @returns {Object}
      */
     function update(stored, category, valueIds) {
         patchWithCleanup(browser.localStorage, {

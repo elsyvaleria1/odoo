@@ -86,8 +86,6 @@ export const trace = {
     },
 
     /**
-     * Await `run()` and report what it cost, whether it resolves or rejects.
-     *
      * @template T
      * @param {string} target
      * @param {string} event

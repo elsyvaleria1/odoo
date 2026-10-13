@@ -179,12 +179,8 @@ function askToStay(ev) {
 }
 
 /**
- * The browser reads the event at the microtask checkpoint that follows the
- * listener, so the answer must be in by then: an outcome still waiting on a
- * task counts as unsaved.
- *
  * @param {BeforeUnloadEvent} ev
- * @param {Promise<unknown>} outcome resolves truthy when everything is saved
+ * @param {Promise<unknown>} outcome
  * @param {Record<string, unknown>} details
  */
 async function askToStayUnlessSaved(ev, outcome, details) {
@@ -237,7 +233,7 @@ export function handleBeforeUnload(
 /**
  * @param {{ value: any }} group
  * @param {number} index
- * @returns {string} the render key of a kanban group, stable across reloads
+ * @returns {string}
  */
 export function kanbanGroupKey(group, index) {
     if (isNull(group.value)) {
@@ -388,7 +384,7 @@ export function useControllerServices() {
 /**
  * @param {Record<string, any>} fields
  * @param {Record<string, any>} activeFields
- * @param {(field: any) => boolean} [keep] a view-specific filter, applied first
+ * @param {(field: any) => boolean} [keep]
  * @returns {any[]}
  */
 export function exportableFields(fields, activeFields, keep = () => true) {

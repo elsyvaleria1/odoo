@@ -12,7 +12,7 @@ export class AbstractMacro extends Macro {
      * @param {HTMLElement} options.targetXmlDoc
      * @param {Array[Object]} options.breadcrumbs
      * @param {Any} options.data
-     * @param {Object} options.services required: action, dialog, ui
+     * @param {Object} options.services
      */
     constructor({ targetXmlDoc, breadcrumbs, data, services }) {
         super({
@@ -96,10 +96,6 @@ export class AbstractMacro extends Macro {
     }
 
     /**
-     * Searches for the first element in the dom matching the selector. The
-     * results are filtered with `filter` and the returned element is either
-     * the first or the last depending on `reverse`.
-     *
      * @param {String|HTMLElement} selector
      * @param {Function} filter
      * @param {boolean} reverse
@@ -120,12 +116,7 @@ export class AbstractMacro extends Macro {
         return null;
     }
 
-    /**
-     * To be overridden by an actual Macro implementation. It should contain
-     * the steps to be executed on the target Form view.
-     *
-     * @returns {Array[Object]}
-     */
+    /** @returns {Array[Object]} */
     getSteps() {
         return [];
     }
@@ -145,16 +136,7 @@ export class AbstractMacro extends Macro {
             );
         }
     }
-    /**
-     * Handle the case where an item is hidden in a tab of the form view
-     * notebook. Only pages with the "name" attribute set can be navigated to.
-     * Other pages are ignored (and the fields they contain are too).
-     * @see FormControllerPatch
-     *
-     * @param {String} targetSelector selector (will be used in the target
-     * xml document) for the element (likely an html field) that could be
-     * hidden inside a non-active tab of the notebook.
-     */
+    /** @param {String} targetSelector */
     searchInXmlDocNotebookTab(targetSelector) {
         const searchElement = this.targetXmlDoc.querySelector(targetSelector);
         const page = searchElement ? searchElement.closest("page") : undefined;

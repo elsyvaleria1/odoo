@@ -45,12 +45,7 @@ export class WebsiteEventTrackReminder extends Interaction {
         return this.el.querySelector("input[name='set_reminder_on']")?.value === "0";
     }
 
-    /**
-     * Whether this bell asked for `detail`: a page can show a track's bell
-     * more than once, and each copy hears the answer.
-     *
-     * @param {{ track_id: number }} detail
-     */
+    /** @param {{ track_id: number }} detail */
     _isAnswerToThis(detail) {
         if (!this.submitted || detail.track_id !== this.trackId) {
             return false;
@@ -92,12 +87,7 @@ export class WebsiteEventTrackReminder extends Interaction {
         }
     }
 
-    /**
-     * The service worker queued the toggle while offline, to send it once
-     * back online: the bell shows what was asked.
-     *
-     * @param {CustomEvent<{ track_id: number, reminder_on: boolean }>} ev
-     */
+    /** @param {CustomEvent<{ track_id: number, reminder_on: boolean }>} ev */
     onReminderQueued(ev) {
         if (!this._isAnswerToThis(ev.detail)) {
             return;

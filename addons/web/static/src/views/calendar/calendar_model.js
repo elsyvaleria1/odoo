@@ -42,8 +42,6 @@ import {
 import { normalizeCalendarRecord } from "./calendar_record.js";
 
 /**
- * The start of the day `value` names, where the calendar's time axis opens
- *
  * @param {string} value
  * @returns {Temporal.ZonedDateTime}
  */
@@ -786,10 +784,6 @@ export class CalendarModel extends Model {
     }
 
     /**
-     * Without a stop field, a record starting before the range still shows while
-     * its duration reaches into it; the longest duration among those records
-     * bounds how early such a start can be.
-     *
      * @protected
      * @returns {Promise<any>}
      */

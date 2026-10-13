@@ -16,8 +16,6 @@ export class PaymentButton extends Interaction {
     }
 
     /**
-     * Check if the payment button can be enabled and do it if so.
-     *
      * @private
      * @return {void}
      */
@@ -28,14 +26,8 @@ export class PaymentButton extends Interaction {
     }
 
     /**
-     * Check whether the payment form can be submitted, i.e. whether exactly one payment option is
-     * selected.
-     *
-     * For a module to add a condition on the submission of the form, it must override this method
-     * and return whether both this method's condition and the override method's condition are met.
-     *
      * @private
-     * @return {boolean} Whether the form can be submitted.
+     * @return {boolean}
      */
     _canSubmit() {
         const paymentForm = document.querySelector("#o_payment_form");
@@ -49,8 +41,6 @@ export class PaymentButton extends Interaction {
     }
 
     /**
-     * Enable the payment button.
-     *
      * @private
      * @return {void}
      */
@@ -59,8 +49,6 @@ export class PaymentButton extends Interaction {
     }
 
     /**
-     * Disable the payment button.
-     *
      * @private
      * @return {void}
      */
@@ -69,8 +57,6 @@ export class PaymentButton extends Interaction {
     }
 
     /**
-     * Hide the payment button.
-     *
      * @private
      * @return {void}
      */
@@ -79,8 +65,6 @@ export class PaymentButton extends Interaction {
     }
 
     /**
-     * Show the payment button.
-     *
      * @private
      * @return {void}
      */

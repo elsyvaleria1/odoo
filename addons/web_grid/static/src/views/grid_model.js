@@ -32,9 +32,6 @@ export function addGranularity(date, granularity, count) {
 }
 
 /**
- * An arch's unit in any case or number ("Year", "months") as the date
- * helpers name it ("year", "month").
- *
  * @param {string} unit
  * @returns {any}
  */
@@ -45,12 +42,10 @@ function dateUnit(unit) {
 
 export class GridCell {
     /**
-     * Constructor
-     *
-     * @param model {GridModel} the grid model.
-     * @param row {GridRow} the grid row linked to the cell.
-     * @param column {GridColumn} the grid column linked to the cell.
-     * @param value {Number} the value of the cell.
+     * @param model
+     * @param row
+     * @param column
+     * @param value
      */
     constructor(model, row, column, value = 0) {
         this.row = row;
@@ -64,11 +59,7 @@ export class GridCell {
         return this._readonly || this.column.readonly;
     }
 
-    /**
-     * Get the domain of the cell, it will be the domain of row AND the one of the column associated
-     *
-     * @return {Domain} the domain of the cell
-     */
+    /** @return {Domain} */
     get domain() {
         const domains = [
             this.model.searchParams.domain,
@@ -96,11 +87,7 @@ export class GridCell {
         return `${rowTitle} (${columnTitle})`;
     }
 
-    /**
-     * Update the grid cell according to the value set by the current user.
-     *
-     * @param {Number} value the value entered by the current user.
-     */
+    /** @param {Number} value */
     async update(value) {
         return this.model.mutex.exec(async () => {
             await this._update(value);
@@ -131,14 +118,12 @@ export class GridCell {
 
 export class GridRow {
     /**
-     * Constructor
-     *
-     * @param data {Object} the row data.
-     * @param domain {Domain} the domain of the row.
-     * @param valuePerFieldName {{string: string}} the field values used to display the row label.
-     * @param model {GridModel} the grid model.
-     * @param section {GridSection} the section of the grid.
-     * @param isAdditionalRow {Boolean} whether the row is an additional (non-data) row.
+     * @param data
+     * @param domain
+     * @param valuePerFieldName
+     * @param model
+     * @param section
+     * @param isAdditionalRow
      */
     constructor(
         data,
@@ -205,10 +190,7 @@ export class GridRow {
         return !this.section.isFake && this.section;
     }
 
-    /**
-     * Generate the cells for each column that is present in the row.
-     * @private
-     */
+    /** @private */
     _generateCells(data) {
         for (const column of Object.values(data.columns)) {
             this.cells[column.id] = new this.model.constructor.Cell(
@@ -227,9 +209,8 @@ export class GridRow {
     }
 
     /**
-     * Update the cell value of a cell.
-     * @param {GridColumn} column containing the cell to update.
-     * @param {number} value the value to update
+     * @param {GridColumn} column
+     * @param {number} value
      */
     updateCell(column, value) {
         this._ensureColumnExist(column);
@@ -313,10 +294,7 @@ export class GridSection extends GridRow {
         return !this.isFake && this;
     }
 
-    /**
-     * Add row to the section rows.
-     * @param row {GridRow} the row to add.
-     */
+    /** @param row */
     addRow(row) {
         if (row.id in this.rows) {
             throw new Error("Row already added in section");
@@ -326,9 +304,8 @@ export class GridSection extends GridRow {
     }
 
     /**
-     * Update the grand totals according to the provided column and delta.
-     * @param column {GridColumn} the column the grand total has to be updated for.
-     * @param delta {Number} the delta to apply on the grand totals.
+     * @param column
+     * @param delta
      */
     updateGrandTotal(column, delta) {
         this.cells[column.id].value += delta;
@@ -339,11 +316,9 @@ export class GridSection extends GridRow {
 
 export class GridColumn {
     /**
-     * Constructor
-     *
-     * @param data {Object} the grid data the column belongs to.
-     * @param model {GridModel} the grid model.
-     * @param title {string} the title of the column to display.
+     * @param data
+     * @param model
+     * @param title
      */
     constructor(data, model, title, value, readonly = false) {
         this.model = model;
@@ -365,15 +340,13 @@ export class GridColumn {
 
 export class DateGridColumn extends GridColumn {
     /**
-     * Constructor
-     *
-     * @param data {Object} the grid data the column belongs to.
-     * @param model {GridModel} the grid model.
-     * @param title {string} the title of the column to display.
-     * @param dateStart {String} the date start serialized
-     * @param dateEnd {String} the date end serialized
-     * @param isToday {Boolean} is the date column representing today?
-     * @param isWeekDay {Boolean} whether the column is not a weekend day.
+     * @param data
+     * @param model
+     * @param title
+     * @param dateStart
+     * @param dateEnd
+     * @param isToday
+     * @param isWeekDay
      */
     constructor(
         data,
@@ -494,14 +467,8 @@ export class GridModel extends Model {
     }
 
     /**
-     * Resolve the range the view opens on: the one last picked by this user for
-     * this view, else the arch's default. A name read back from storage is only
-     * honoured while the arch still declares it -- ranges get renamed and
-     * removed, and every period getter dereferences `range` unconditionally, so
-     * an unchecked stale name is a crash on mount rather than a stale scale.
-     *
      * @private
-     * @return {Object|undefined} the range to activate, if any.
+     * @return {Object|undefined}
      */
     _getInitialRange(params) {
         const storedRangeName = browser.localStorage.getItem(this.storageKey);
@@ -551,13 +518,7 @@ export class GridModel extends Model {
         return `${this.measureFieldName}:${this.measureField.aggregator}`;
     }
 
-    /**
-     * The aggregate the readonly field is read off a group with, if the arch
-     * declares one. Named once: it is asked for in `aggregates` and read back
-     * in `_generateData`, and the two spellings have to agree.
-     *
-     * @return {string|undefined}
-     */
+    /** @return {string|undefined} */
     get readonlyGroupByFieldName() {
         return (
             this.readonlyField &&
@@ -585,10 +546,9 @@ export class GridModel extends Model {
     }
 
     /**
-     * Get fields to use in the group by or in fields of the read_group
      * @private
      * @param {Object} metaData
-     * @return {string[]} list of fields name.
+     * @return {string[]}
      */
     _getGroupByFields({ rowFields, sectionField }) {
         const fields = [
@@ -602,13 +562,8 @@ export class GridModel extends Model {
     }
 
     /**
-     * Split a groupby spec into the field it groups and the granularity it
-     * asks for. The two are not interchangeable: read_group keys its result by
-     * the whole spec (`date:month`), while fieldsInfo, the row domain and every
-     * `default_` context key are about the field alone (`date`).
-     *
      * @private
-     * @param {string} groupBy a groupby spec, e.g. "date:month".
+     * @param {string} groupBy
      * @return {{name: string, granularity: string|undefined}}
      */
     _parseGroupBy(groupBy) {
@@ -617,11 +572,6 @@ export class GridModel extends Model {
     }
 
     /**
-     * The spec to send to read_group for a row or section field, and to read
-     * its value back off a group with. Composed rather than stored, so a field
-     * declared in the arch and a field taken from a search groupby cannot
-     * disagree about what was asked for.
-     *
      * @param {{name: string, granularity?: string}} field
      * @return {string}
      */
@@ -630,10 +580,6 @@ export class GridModel extends Model {
     }
 
     /**
-     * Whether read_group answers this grouping with a `(value, label)` pair
-     * rather than a bare value -- a many2one's `(id, display_name)` and a date
-     * granularity's `(period start, label)` share that shape.
-     *
      * @param {{name: string, granularity?: string}} field
      * @return {boolean}
      */
@@ -644,11 +590,8 @@ export class GridModel extends Model {
     }
 
     /**
-     * The identity a grouped value is keyed and filtered by, taken out of
-     * whatever shape read_group answered with.
-     *
      * @param {{name: string, granularity?: string}} field
-     * @param {*} rawValue the value as read_group returned it.
+     * @param {*} rawValue
      * @return {*}
      */
     getGroupValue(field, rawValue) {
@@ -656,13 +599,9 @@ export class GridModel extends Model {
     }
 
     /**
-     * The domain selecting the records of one group of `field`. A granularity
-     * names a period, not a value, so it is filtered by its bounds -- writing
-     * `date = "2017-01-01"` for a month group would keep one day of it.
-     *
      * @private
      * @param {{name: string, granularity?: string}} field
-     * @param {*} rawValue the value as read_group returned it.
+     * @param {*} rawValue
      * @return {Domain}
      */
     _getGroupDomain(field, rawValue) {
@@ -733,10 +672,7 @@ export class GridModel extends Model {
         return this.sectionsArray.length > 0;
     }
 
-    /**
-     * Set the new range according to the range name passed into parameter.
-     * @param rangeName {string} the range name to set.
-     */
+    /** @param rangeName */
     async setRange(rangeName) {
         this.navigationInfo.range = this.ranges[rangeName];
         browser.localStorage.setItem(this.storageKey, rangeName);
@@ -769,10 +705,7 @@ export class GridModel extends Model {
         await this.setAnchor(this.defaultAnchor);
     }
 
-    /**
-     * Move the anchor to the next/previous step
-     * @param direction {"forward"|"backward"} the direction to the move the anchor
-     */
+    /** @param direction */
     async moveAnchor(direction) {
         if (direction === "forward") {
             this.navigationInfo.anchor = addGranularity(
@@ -886,10 +819,8 @@ export class GridModel extends Model {
     }
 
     /**
-     * Load the model
-     *
      * @override
-     * @param params {Object} the search parameters (domain, groupBy, etc.)
+     * @param params
      * @return {Promise<void>}
      */
     async load(params = {}) {
@@ -961,12 +892,8 @@ export class GridModel extends Model {
     }
 
     /**
-     * A groupby is the column field's own when it names that field, with or
-     * without a granularity suffix -- `date` and `date:month` are, `date_end`
-     * merely starts with the same letters and is a perfectly good row field.
-     *
      * @private
-     * @param {string} groupBy a groupby spec, e.g. "date:month".
+     * @param {string} groupBy
      * @return {boolean}
      */
     _isColumnFieldGroupBy(groupBy) {
@@ -979,10 +906,7 @@ export class GridModel extends Model {
         this.notify();
     }
 
-    /**
-     * Generate the date columns.
-     * @private
-     */
+    /** @private */
     _generateDateColumns({ data }) {
         const { step } = this.navigationInfo.range;
         const generateNext = (dateStart) => addGranularity(dateStart, step, 1);
@@ -1010,34 +934,13 @@ export class GridModel extends Model {
     }
 
     /**
-     * Search grid columns.
-     *
-     * Both parameters are an extension point and nothing here passes either:
-     * `_getInitialData` calls this bare. They are the only route to a readonly
-     * *column* -- `GridColumn.readonly` makes every cell under it readonly --
-     * so that capability is reachable only from an override. The readonly
-     * field named here is a field of the column's own relation, not the grid's
-     * `readonlyField`, which is aggregated per cell out of the read_group and
-     * is a different question entirely.
-     *
-     * @param {Array} [domain] domain to filter the columns.
-     * @param {string} [readonlyField] a field of the related model marking a
-     *      column readonly.
-     * @returns {Array} rows of [id, display_name] or [id, display_name, readonly].
+     * @param {Array} [domain]
+     * @param {string} [readonlyField]
+     * @returns {Array}
      */
     /**
-     * The ORM to resolve the column axis with. A grid's columns are metadata --
-     * a selection's values, or the records of the relation -- and not sampled
-     * content; only the rows are sampled. A SampleServer can serve neither:
-     * it is built for one model and knows seven routes, so the many2one
-     * lookup dies on the route (`search_read` is not among them, and
-     * `UnimplementedRouteError` carries no message at all) and the selection
-     * lookup dies a step earlier still, on the model, since
-     * `ir.model.fields` is not the one it was built for. Either way the
-     * sample reload throws and the view never mounts.
-     *
      * @private
-     * @return {Object} the orm service, never the sample one.
+     * @return {Object}
      */
     get _columnsOrm() {
         return this.orm.isSample ? Object.getPrototypeOf(this.orm) : this.orm;
@@ -1057,10 +960,7 @@ export class GridModel extends Model {
         return columnRecords.map((record) => fieldsToFetch.map((f) => record[f]));
     }
 
-    /**
-     * Initialize the data.
-     * @private
-     */
+    /** @private */
     async _getInitialData({ sectionField, rowFields }) {
         const initialData = {
             data: {
@@ -1148,31 +1048,7 @@ export class GridModel extends Model {
     }
 
     /**
-     * Gets additional groups to be added to the grid. The call to this function is made in parallel to the main data
-     * fetching.
-     *
-     * This function is intended to be overriden in modules where we want to display additional sections and/or rows in
-     * the grid than what would be returned by the formattedReadGroup.
-     * The model `sectionField` and `rowFields` can be used in order to know what need to be returned.
-     *
-     * An example of this is:
-     * - when considering timesheet, we want to ease their encoding by adding (to the data that is fetched for scale),
-     *   the entries that have been entered the week before. That way, the first day of week
-     *   (or month, depending on the scale), a line is already displayed with 0's and can directly been used in the
-     *   grid instead of having to use the create button.
-     *
-     * @return {Array<Promise<Object>>} an array of Promise of Object of type:
-     *                                      {
-     *                                          sectionKey: {
-     *                                              value: Any,
-     *                                              rows: {
-     *                                                  rowKey: {
-     *                                                      domain: Domain,
-     *                                                      values: [Any],
-     *                                                  },
-     *                                              },
-     *                                          },
-     *                                      }
+     * @return {Array<Promise<Object>>}
      * @private
      */
     _fetchAdditionalData(metaData) {
@@ -1180,24 +1056,7 @@ export class GridModel extends Model {
     }
 
     /**
-     * Gets additional groups to be added to the grid. The call to this function is made after the main data fetching
-     * has been processed which allows using `data` in the code.
-     * This function is intended to be overriden in modules where we want to display additional sections and/or rows in
-     * the grid than what would be returned by the formattedReadGroup.
-     * The model `sectionField`, `rowFields` as well as `data` can be used in order to know what need to be returned.
-     *
-     * @return {Array<Promise<Object>>} an array of Promise of Object of type:
-     *                                      {
-     *                                          sectionKey: {
-     *                                              value: Any,
-     *                                              rows: {
-     *                                                  rowKey: {
-     *                                                      domain: Domain,
-     *                                                      values: [Any],
-     *                                                  },
-     *                                              },
-     *                                          },
-     *                                      }
+     * @return {Array<Promise<Object>>}
      * @private
      */
     _postFetchAdditionalData(metaData) {
@@ -1208,16 +1067,7 @@ export class GridModel extends Model {
         return this.usesUnavailability ? [this._fetchUnavailabilityDays(metaData)] : [];
     }
 
-    /**
-     * Whether this grid renders unavailability at all. `grid_unavailability`
-     * answers `{}` on `base` and `_processUnavailabilityDays` drops it on the
-     * floor, so asking for it by default costs every grid in the database a
-     * round trip whose result nothing reads -- and costs every test of one a
-     * stub for a route it never wanted. A model that displays unavailability
-     * turns it on.
-     *
-     * @return {boolean}
-     */
+    /** @return {boolean} */
     get usesUnavailability() {
         return false;
     }
@@ -1241,25 +1091,13 @@ export class GridModel extends Model {
     }
 
     /**
-     * Store what `grid_unavailability` answered, for a renderer to shade cells
-     * with.
-     *
-     * Put it on `metaData`, not on the model: `load` publishes metaData with
-     * one `Object.assign` once `keepLast` has decided this load is the current
-     * one, and that is what makes a superseded load's work harmless. This was
-     * the only extension point handed no metaData, and so the only one whose
-     * result could outlive the load that asked for it -- two reloads in quick
-     * succession, and whichever `grid_unavailability` answered last shaded the
-     * grid, regardless of which load was on screen.
-     *
-     * @param {Object} result what the server answered.
-     * @param {Object} metaData the load this result belongs to.
+     * @param {Object} result
+     * @param {Object} metaData
      */
     _processUnavailabilityDays(result, metaData) {}
 
     /**
-     * Generate the row key according to the provided read group result.
-     * @param readGroupResult {Array} the read group result the key has to be generated for.
+     * @param readGroupResult
      * @private
      * @return {string}
      */
@@ -1279,13 +1117,7 @@ export class GridModel extends Model {
     }
 
     /**
-     * The key a row is filed under, from the identity of each of its groups
-     * rather than from a read_group answer: a consumer holding a record's
-     * plain values -- the timesheet timer's, say -- finds the record's row
-     * without re-spelling the key's format.
-     *
-     * @param {Object} values group identity per field name: a many2one's id,
-     *      a selection's key, `false` for an unset one.
+     * @param {Object} values
      * @param {{sectionField?: Object, rowFields: Object[]}} metaData
      * @return {string}
      */
@@ -1308,12 +1140,8 @@ export class GridModel extends Model {
     }
 
     /**
-     * The value read_group answered for `field`, as it answered it, or `false`
-     * for a group that was not asked to group by it -- an additional row
-     * built from another model's records carries only the fields it has.
-     *
      * @private
-     * @param {Object} readGroupResult one group of a read_group.
+     * @param {Object} readGroupResult
      * @param {{name: string, granularity?: string}} field
      * @return {*}
      */
@@ -1323,11 +1151,8 @@ export class GridModel extends Model {
     }
 
     /**
-     * The key of the column a group belongs to: the id a many2one or date
-     * column was mapped by, the value of a selection one.
-     *
      * @private
-     * @param {Object} readGroupResult one group of a read_group.
+     * @param {Object} readGroupResult
      * @return {*}
      */
     _getColumnKey(readGroupResult) {
@@ -1341,7 +1166,6 @@ export class GridModel extends Model {
     }
 
     /**
-     * Generate the section key
      * @param readGroupResult
      * @private
      */
@@ -1351,9 +1175,8 @@ export class GridModel extends Model {
     }
 
     /**
-     * Generate the row domain for the provided read group result.
-     * @param readGroupResult {Array} the read group result the domain has to be generated for.
-     * @return {{domain: Domain, values: Object}} the generated domain and values.
+     * @param readGroupResult
+     * @return {{domain: Domain, values: Object}}
      */
     _generateRowDomainAndValues(readGroupResult, rowFields) {
         let domain = new Domain();
@@ -1366,15 +1189,7 @@ export class GridModel extends Model {
         return { domain, values };
     }
 
-    /**
-     * The single valueless section a grid without a section field hangs every
-     * row under. Idempotent: `_generateData` needs the same one for every
-     * group, and used to get it by carrying the local from one loop iteration
-     * to the next -- which answered `undefined` for the first group the moment
-     * anything else had already put a section in `data`.
-     *
-     * @private
-     */
+    /** @private */
     _getFakeSection(data) {
         const sectionId = data.sectionsKeyToIdMapping["false"];
         return sectionId === undefined
@@ -1450,9 +1265,6 @@ export class GridModel extends Model {
         }
     }
 
-    /**
-     * Method meant to be overridden whenever an item (row and section) post process is needed.
-     * @param item {GridSection|GridRow}
-     */
+    /** @param item */
     _itemsPostProcess(item, metaData) {}
 }

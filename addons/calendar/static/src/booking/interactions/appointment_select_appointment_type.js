@@ -27,12 +27,7 @@ export class AppointmentTypeSelect extends Interaction {
         }
     }
 
-    /**
-     * On appointment type change: adapt appointment intro text and available
-     * users. (if option enabled)
-     *
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     async onAppointmentTypeChange(ev) {
         const appointmentTypeID = ev.target.value;
         const filterAppointmentTypeIds = this.el.querySelector(
@@ -71,11 +66,7 @@ export class AppointmentTypeSelect extends Interaction {
         })();
     }
 
-    /**
-     * On appointment type selected: redirect to the selected appointment type.
-     *
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     onAppointmentTypeSelected() {
         const optionSelected = this.el.querySelector("select").selectedOptions[0];
         window.location = optionSelected.dataset.appointmentUrl;

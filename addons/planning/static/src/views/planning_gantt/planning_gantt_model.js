@@ -245,8 +245,6 @@ export class PlanningGanttModel extends GanttModel {
     }
 
     /**
-     * Check if the given groupedBy includes fields for which an empty fake group will be created
-     *
      * @protected
      * @param {string[]} groupedBy
      * @returns {boolean}
@@ -256,8 +254,6 @@ export class PlanningGanttModel extends GanttModel {
     }
 
     /**
-     * Check if the given groupBy is in the list that has to generate empty lines
-     *
      * @protected
      * @param {string[]} groupedBy
      * @returns {boolean}
@@ -370,11 +366,7 @@ export class PlanningGanttModel extends GanttModel {
         return super._getInitialRangeParams(...arguments);
     }
 
-    /**
-     * Rename 'Undefined Resource' and 'Undefined Department' to 'Open Shifts'.
-     *
-     * @override
-     */
+    /** @override */
     _getRowName(_, groupedByField, value) {
         if (["department_id", "resource_id"].includes(groupedByField)) {
             const resId = Array.isArray(value) ? value[0] : value;

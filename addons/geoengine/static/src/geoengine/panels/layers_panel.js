@@ -236,9 +236,6 @@ export class LayersPanel extends Component {
         this.geoLayers.vectors.splice(toIndex, 0, record);
     }
     /**
-     * An overlay is shown or hidden on its own; a base map replaces the one
-     * shown, and overlays stay as they are.
-     *
      * @param {Object} layer
      * @param {boolean} checked
      */

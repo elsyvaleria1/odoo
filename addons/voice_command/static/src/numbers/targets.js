@@ -52,9 +52,6 @@ export function targetLabel(el) {
 }
 
 /**
- * What can be clicked in `root`, in reading order, the voice layer's own UI
- * left out.
- *
  * @param {Document | HTMLElement} root
  * @returns {Target[]}
  */

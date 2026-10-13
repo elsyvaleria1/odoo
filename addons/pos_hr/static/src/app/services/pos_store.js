@@ -93,12 +93,7 @@ patch(PosStore.prototype, {
 
         return super.addLineToCurrentOrder(vals, opt, configure);
     },
-    /**
-     * If pos_hr is activated, return the cashier's `hr.employee` record:
-     * {id: int, name: string, user_id: res.users, partner_id: res.partner,
-     * _role: string, _barcode: string, _pin: string}
-     * @returns {null|*}
-     */
+    /** @returns {null|*} */
     getCashier() {
         if (this.config.module_pos_hr) {
             return this.cashier;

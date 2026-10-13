@@ -1,18 +1,15 @@
 /** @odoo-module native */
-/**
- * Golden vectors for the color grammar the image shape protocol uses: what a
- * color literal parses to, the same in the browser (`parseCSSColor`, web's
- * colors.js) and on the server (`parse_css_rgba`, html_editor's
- * ir_attachment.py). `rgba` is null where both refuse the value.
- *
- * Read by:
- *   JS     -> html_editor/static/tests/color_conformance.test.js
- *   Python -> html_editor/tests/test_color_conformance.py, which slices the
- *             template literal below and json.loads it.
- *
- * The payload is a JSON string, not an object literal, so oxfmt leaves it as
- * JSON (see barcodes/static/tests/conformance_vectors.js).
- */
+
+
+
+
+
+
+
+
+
+
+
 
 export const VECTORS = JSON.parse(String.raw`
 [

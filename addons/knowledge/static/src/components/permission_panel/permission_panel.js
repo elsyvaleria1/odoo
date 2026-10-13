@@ -130,12 +130,7 @@ export class PermissionPanel extends Component {
         return { everyone: _t("Everyone"), members: _t("Members only") };
     }
 
-    /**
-     * Loads the members displayed in the permissions panel.
-     * If the user is included in the member list, they will be shown first,
-     * followed by the other members in alphabetical order.
-     * @param {integer} articleId
-     */
+    /** @param {integer} articleId */
     async loadMembers(articleId = this.record.resId) {
         const members = await this.orm.call(
             "knowledge.article",

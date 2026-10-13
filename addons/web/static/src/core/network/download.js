@@ -109,7 +109,7 @@ download._download = (/** @type {any} */ options) =>
     });
 
 /**
- * @param {string | null | undefined} header a Content-Disposition value
+ * @param {string | null | undefined} header
  * @returns {string | null}
  */
 function filenameFromDisposition(header) {
@@ -127,11 +127,6 @@ function filenameFromDisposition(header) {
 }
 
 /**
- * A redirect to a cloud storage blob answers from another origin, whose
- * Content-Disposition the browser hides from us unless the bucket exposes it
- * through CORS. The server signs that header into the url itself (S3 and Google
- * as `response-content-disposition`, Azure as `rscd`), so read it from there.
- *
  * @param {string | undefined} responseURL
  * @returns {string | null}
  */

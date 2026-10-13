@@ -3,19 +3,13 @@ import { Mutex } from "@web/core/utils/concurrency";
 
 /**
  * @typedef OperationParams
- * @property {Function} load an async function for which the mutex should wait
- *   before executing the main function
- * @property {Boolean} cancellable tells if the operation is cancellable (if it
- *   is a preview for example)
- * @property {Function} cancelPrevious the function to run when cancelling
- * @property {Number} [cancelTime=50] TODO
- * @property {Boolean} [withLoadingEffect=true] specifies if a spinner should
- *   appear on the editable during the operation
- * @property {Number} [loadingEffectDelay=500] the delay after which the
- *   spinner should appear
- * @property {Boolean} [shouldInterceptClick=false] whether clicking while the
- *   loading screen is present should retarget the click at the end of the
- *   loading time.
+ * @property {Function} load
+ * @property {Boolean} cancellable
+ * @property {Function} cancelPrevious
+ * @property {Number} [cancelTime=50]
+ * @property {Boolean} [withLoadingEffect=true]
+ * @property {Number} [loadingEffectDelay=500]
+ * @property {Boolean} [shouldInterceptClick=false]
  * @property {Boolean} [canTimeout=true]
  * @property {Number} [timeout=10000]
  */
@@ -52,10 +46,7 @@ export class Operation {
     }
 
     /**
-     * Allows to execute a function in the mutex.
-     * See `OperationParams.load` to make it async.
-     *
-     * @param {Function} fn the function
+     * @param {Function} fn
      * @param {OperationParams} params
      * @returns {Promise<void>}
      */
@@ -149,15 +140,9 @@ export class Operation {
     }
 
     /**
-     * Adds a transparent loading screen above the editable to prevent modifying
-     * its content during an ongoing operation. Returns a callback to remove
-     * the loading screen.
-     *
-     * @param {Boolean} withLoadingEffect if true, adds a loading effect
-     * @param {Number} loadingEffectDelay delay after which the loading effect
-     *   should appear
-     * @param {Boolean} shouldInterceptClick - whether to redispatch the click
-     *   under the loading element after the end of the current operation
+     * @param {Boolean} withLoadingEffect
+     * @param {Number} loadingEffectDelay
+     * @param {Boolean} shouldInterceptClick
      * @returns {Function}
      */
     addLoadingElement(withLoadingEffect, loadingEffectDelay, shouldInterceptClick) {

@@ -13,7 +13,6 @@ import { interactor } from "@odoo/hoot-dom-utils";
  * @typedef {import("./helpers/dom").QueryRectOptions} QueryRectOptions
  * @typedef {import("./helpers/dom").QueryTextOptions} QueryTextOptions
  * @typedef {import("./helpers/dom").Target} Target
- *
  * @typedef {import("./helpers/events").DragHelpers} DragHelpers
  * @typedef {import("./helpers/events").DragOptions} DragOptions
  * @typedef {import("./helpers/events").EventType} EventType

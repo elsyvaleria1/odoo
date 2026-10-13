@@ -266,8 +266,6 @@ extendSpreadsheetAdapter("second_number", odooSecondNumberAdapter);
 extendSpreadsheetAdapter("month", odooMonthAdapter);
 
 /**
- * When grouping by a time field, return
- * the group starting day (local to the timezone)
  * @param {import("@spreadsheet").OdooField} field
  * @param {string} groupBy
  * @param {Record<string, any>} group
@@ -281,12 +279,7 @@ function getGroupStartingDay(field, groupBy, group) {
     return toISODate(deserializeDateTime(sqlValue, { tz: user.tz }));
 }
 
-/**
- * Parses a pivot week header value.
- * @param {Array} value
- * @example
- * parseServerWeekHeader(['2016-04-11', 'W15 2016']) // { week: 15, year: 2016 }
- */
+/** @param {Array} value */
 function parseServerWeekHeader(value) {
     const [week, year] = value[1].split(" ");
     return { week: Number(week.slice(1)), year: Number(year) };

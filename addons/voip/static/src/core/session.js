@@ -14,9 +14,7 @@ export class Session {
         }
         return constraints;
     }
-    /**
-     * @type {string};
-     */
+    /** @type {string} */
     static preferredInputDevice = "";
 
     /** @type {string} */
@@ -220,12 +218,7 @@ export class Session {
         this.remoteAudio = null;
     }
 
-    /**
-     * Triggered when receiving CANCEL request.
-     * Useful to handle missed phone calls.
-     *
-     * @param {SIP.IncomingRequestMessage} message
-     */
+    /** @param {SIP.IncomingRequestMessage} message */
     _onIncomingInviteCanceled() {
         if (this.isActiveSession) {
             this.ringtones.stopPlaying();
@@ -235,11 +228,7 @@ export class Session {
         this.callService.miss(this.call);
     }
 
-    /**
-     * Triggered when receiving a 2xx final response to the INVITE request.
-     *
-     * @param {SIP.IncomingResponse} response
-     */
+    /** @param {SIP.IncomingResponse} response */
     _onOutgoingInviteAccepted(response) {
         this.inviteState = "ok";
         if (this.isActiveSession) {
@@ -334,9 +323,7 @@ export class Session {
         this._cleanUpRemoteAudio();
     }
 
-    /**
-     * @param {boolean} state `true` to put on hold, `false` to resume.
-     */
+    /** @param {boolean} state */
     async _requestHold(state) {
         try {
             await this.sipSession.invite({

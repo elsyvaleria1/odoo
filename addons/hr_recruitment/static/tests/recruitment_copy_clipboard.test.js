@@ -34,7 +34,7 @@ beforeEach(() => {
     });
 });
 
-/** @returns {HTMLElement[]} the two copy buttons, plain first, generating second */
+/** @returns {HTMLElement[]} */
 function copyButtons() {
     const buttons = queryAll(".o_clipboard_button");
     expect(buttons).toHaveLength(2, {

@@ -11,11 +11,8 @@ import { useGridCell } from "@web_grid/hooks/grid_cell_hook";
 import { useInputHook } from "@web_grid/hooks/input_hook";
 
 /**
- * Get the display factor to apply to a grid cell's value, shared by the
- * float_factor and float_toggle grid cell widgets.
- *
- * @param {Object} props component props, must carry `factor` and `fieldInfo`.
- * @return {Number} the factor to apply.
+ * @param {Object} props
+ * @return {Number}
  */
 export function getGridCellFactor(props) {
     return props.factor || props.fieldInfo.options?.factor || 1;
@@ -54,13 +51,7 @@ export class GridCell extends Component {
         this._setupEditor();
     }
 
-    /**
-     * Wire up what edits the cell: an input for a typed value. A cell edited
-     * some other way -- float_toggle cycles a button through fixed values --
-     * overrides this and nothing else.
-     *
-     * @protected
-     */
+    /** @protected */
     _setupEditor() {
         this.discardChanges = false;
         this.numpadDecimalRef = elementRef();
@@ -133,16 +124,7 @@ export class GridCell extends Component {
         return "numeric";
     }
 
-    /**
-     * The accessible name of the cell's input, which is otherwise an unlabelled
-     * text box: the grid says which row and column a cell belongs to by where
-     * it sits, and position is exactly what a screen reader does not have.
-     * `GridCell.title` already reads "row (column)"; the date columns' titles
-     * carry a newline for their two-line headers, which is a line break to a
-     * renderer and nothing to a screen reader.
-     *
-     * @return {string}
-     */
+    /** @return {string} */
     get inputLabel() {
         return (this.state.cell?.title || "").replace(/\s+/g, " ").trim();
     }

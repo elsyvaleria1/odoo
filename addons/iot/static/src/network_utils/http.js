@@ -2,13 +2,10 @@
 import { browser } from "@web/core/browser/browser";
 
 /**
- * Format the endpoint to send the request to
- * Used to ensure the request is sent with the same protocol as the current page
- * (e.g. if the current page is HTTPS, the request will be sent to the IoT Box using HTTPS)
- * @param {string} ip IP Address of the IoT Box
- * @param {string} route Route to send the request to
- * @param {boolean} forceHttp If true, always use HTTP even in HTTPS context (for browser supporting LNA)
- * @returns {string} The formatted endpoint
+ * @param {string} ip
+ * @param {string} route
+ * @param {boolean} forceHttp
+ * @returns {string}
  */
 export function formatEndpoint(ip, route, forceHttp = false) {
     const protocol = forceHttp ? "http:" : window.location.protocol;
@@ -21,14 +18,13 @@ export function formatEndpoint(ip, route, forceHttp = false) {
 }
 
 /**
- * Send a POST request to the IoT Box
- * @param {string} ip IP Address of the IoT Box
- * @param {string} route Endpoint to send the request to
- * @param {Record<string, unknown>} params Parameters to send with the request (optional)
- * @param {number} timeout Time before the request times out (default: 6000ms)
- * @param {Record<string, unknown>} headers HTTP headers to send with the request (optional)
- * @param {AbortSignal} abortSignal AbortSignal used to cancel the request early (optional)
- * @param {boolean} useLna If true, use local targetAddressSpace + Force HTTP
+ * @param {string} ip
+ * @param {string} route
+ * @param {Record<string, unknown>} params
+ * @param {number} timeout
+ * @param {Record<string, unknown>} headers
+ * @param {AbortSignal} abortSignal
+ * @param {boolean} useLna
  * @returns {Promise<any>}
  */
 export async function post(

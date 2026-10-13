@@ -14,14 +14,7 @@ const log = makeAssetLog("precompiled_templates");
 
 const LOAD_WAIT_MS = 500;
 
-/**
- * A template without its artifact compiles in the browser, which takes OWL's
- * compiler: a page whose bundles are all eval-free does not import it, yet
- * an internal user's frontend page (its editor bundles need eval) takes the
- * bounded wait, and so may compile.
- *
- * @returns {Promise<unknown>}
- */
+/** @returns {Promise<unknown>} */
 function ensureCompiler() {
     return TemplateSet.compiler
         ? Promise.resolve()
@@ -29,16 +22,11 @@ function ensureCompiler() {
 }
 
 /**
- * The translations are compiled into the code, so the artifact is per
- * language and per payload of translations the page runs with; OWL's dev
- * mode generates other code, so it has an artifact of its own.
- *
  * @param {string} bundle
  * @param {string} checksum
  * @param {{ code: string, translationsHash?: string }} localization
  * @param {boolean} [dev]
- * @param {Record<string, any>} [params] the assets params the bundle was built
- *  with (a website's), which the server needs to rebuild it
+ * @param {Record<string, any>} [params]
  */
 export function precompiledTemplatesUrl(
     bundle,

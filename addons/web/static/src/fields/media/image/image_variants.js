@@ -71,9 +71,6 @@ function drawScaled(image, ratio) {
 }
 
 /**
- * JPEG has no alpha channel and the canvas encoder composites transparent
- * pixels onto black, so flatten onto white first.
- *
  * @param {HTMLCanvasElement} canvas
  * @returns {string}
  */

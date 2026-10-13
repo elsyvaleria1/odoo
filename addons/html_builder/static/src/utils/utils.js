@@ -6,10 +6,7 @@ import { isIconElement } from "@web/core/utils/icons";
 import { DependencyManager } from "../core/dependency_manager.js";
 
 /**
- * Retrieves the default name corresponding to the edited element (to display it
- * in the sidebar for example).
- *
- * @param {HTMLElement} snippetEl - the edited element
+ * @param {HTMLElement} snippetEl
  * @returns {String}
  */
 export function getSnippetName(snippetEl) {
@@ -38,8 +35,6 @@ export function getSnippetName(snippetEl) {
 }
 
 /**
- * Checks if the element is visible (= in the viewport).
- *
  * @param {HTMLElement} el
  * @returns {Boolean}
  */
@@ -56,10 +51,7 @@ export function isElementInViewport(el) {
 }
 
 /**
- * Checks if the given element is visible in the sense of the jQuery `:visible`
- * selector.
- *
- * @param {HTMLElement} el the element
+ * @param {HTMLElement} el
  * @returns {Boolean}
  */
 export function isVisible(el) {
@@ -70,9 +62,6 @@ export function isVisible(el) {
 }
 
 /**
- * Gets all the elements matching an option selector/exclude starting from the
- * root element.
- *
  * @param {HTMLElement} rootEl
  * @param {String} selector
  * @param {String} exclude
@@ -117,11 +106,7 @@ export function getValueFromVar(value) {
     return value;
 }
 
-/**
- * Converts a value to a ratio.
- *
- * @param {string} value
- */
+/** @param {string} value */
 export function toRatio(value) {
     const inputValueAsNumber = Number(value);
     const ratio =
@@ -136,13 +121,9 @@ export function filterExtends(arr, PotentialSuperClass) {
 }
 
 /**
- * Checks if a `potentialSubClass` directly or indirectly extends a
- * `potentialSuperClass`.
- *
- * @param {Function} PotentialSubClass The class that might be a subclass.
- * @param {Function} PotentialSuperClass The class that might be a superclass.
- * @returns {boolean} True if `potentialSubClass` extends `potentialSuperClass`,
- * false otherwise.
+ * @param {Function} PotentialSubClass
+ * @param {Function} PotentialSuperClass
+ * @returns {boolean}
  */
 function doesExtendsClass(PotentialSubClass, PotentialSuperClass) {
     if (PotentialSubClass === PotentialSuperClass) {
@@ -152,9 +133,7 @@ function doesExtendsClass(PotentialSubClass, PotentialSuperClass) {
 }
 
 /**
- * Checks if the given element is editable.
- *
- * @param {HTMLElement} node the element
+ * @param {HTMLElement} node
  * @returns {Boolean}
  */
 export function isEditable(node) {
@@ -174,10 +153,8 @@ export function isEditable(node) {
 }
 
 /**
- * Removes the specified plugins from a given list of plugins.
- *
- * @param {Array<Plugin>} plugins the list of plugins
- * @param {Array<string>} pluginsToRemove the names of the plugins to remove
+ * @param {Array<Plugin>} plugins
+ * @param {Array<string>} pluginsToRemove
  * @returns {Array<Plugin>}
  */
 export function removePlugins(plugins, pluginsToRemove) {
@@ -185,7 +162,6 @@ export function removePlugins(plugins, pluginsToRemove) {
 }
 
 /**
- * Check if the given value is an integer with at most 15 digits.
  * @param {String} value
  * @returns {Boolean}
  */

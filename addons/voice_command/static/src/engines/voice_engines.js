@@ -7,10 +7,6 @@ import { registry } from "@web/core/registry";
 export const AVAILABILITY_TIMEOUT_MS = 2000;
 
 /**
- * A speech engine turns one utterance into text. The first available one, by
- * sequence, is used. One that keeps the utterance may hear it again in
- * another language (`hearAgain`), for a command nothing understood.
- *
  * @typedef {{
  *   lang: string,
  *   phrases: string[],

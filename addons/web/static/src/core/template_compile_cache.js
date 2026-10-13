@@ -35,9 +35,6 @@ function functionBody(fn) {
 }
 
 /**
- * Another language's row stays: an editor's website page may run in another
- * language than the backend.
- *
  * @param {string} key
  * @param {string} scope
  * @returns {boolean}
@@ -133,9 +130,6 @@ export class TemplateCompileCache {
     }
 
     /**
-     * The pre-seed seam: what a server that compiles ahead of time would
-     * call, and what a miss calls after compiling.
-     *
      * @param {string} key
      * @param {string} code
      * @param {{ persist?: boolean }} [options]
@@ -157,12 +151,7 @@ export class TemplateCompileCache {
         this.seed(key, functionBody(fn));
     }
 
-    /**
-     * Route an OWL app's template compiles through the cache: a hit returns
-     * the stored code as a template function, a miss compiles and stores.
-     *
-     * @param {{ _compileTemplate: (name: string, template: string | Element) => TemplateFn, dev?: boolean }} app
-     */
+    /** @param {{ _compileTemplate: (name: string, template: string | Element) => TemplateFn, dev?: boolean }} app */
     install(app) {
         const compile = app._compileTemplate;
         app._compileTemplate = (name, template) => {
@@ -179,12 +168,6 @@ export class TemplateCompileCache {
 }
 
 /**
- * Everything the compiled code is a function of besides the template text:
- * the translations it embeds and OWL's compiler, named by its build (version
- * and commit: a rebuilt owl.es.js keeps its version string while its compiled
- * code may change). The assets that shipped the template are covered by the
- * registry hash that versions the database.
- *
  * @param {{ translationsHash?: string, code: string }} localization
  * @param {string} owlBuild
  */

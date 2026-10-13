@@ -42,14 +42,13 @@ export const INACTIVITY_TIMEOUT = 120000;
 export const REFRESH_INTERVAL = 1000;
 
 /**
- * Format a booking received from the server to the format used in the room booking view
  * @param {Object} booking
  * @param {Number} booking.id
  * @param {String} booking.name
- * @param {Boolean} [booking.private] the server withholds its name
+ * @param {Boolean} [booking.private]
  * @param {String} booking.start_datetime
  * @param {String} booking.stop_datetime
- * @param {Boolean} [booking.readonly] a reservation from another origin (maintenance)
+ * @param {Boolean} [booking.readonly]
  */
 function formatServerBooking(booking) {
     return {
@@ -164,10 +163,7 @@ export class RoomBookingView extends Component {
         );
     }
 
-    /**
-     * Return the next booking
-     * @returns {Object} booking
-     */
+    /** @returns {Object} */
     get nextBooking() {
         return this.state.currentBooking
             ? this.state.bookings[1]
@@ -178,17 +174,12 @@ export class RoomBookingView extends Component {
         return now();
     }
 
-    /**
-     * @returns {string} Raw HTML of the description
-     */
+    /** @returns {string} */
     get roomDescription() {
         return markup(this.props.description);
     }
 
-    /**
-     * Shows a confirmation dialog to delete the given booking
-     * @param {Number} bookingId
-     */
+    /** @param {Number} bookingId */
     deleteBooking(bookingId) {
         this.dialogService.add(ConfirmationDialog, {
             body: _t("Are you sure you want to delete this booking?"),
@@ -199,7 +190,6 @@ export class RoomBookingView extends Component {
     }
 
     /**
-     * Edit the given booking with the given values
      * @param {Number} bookingId
      * @param {String} name
      * @param {Temporal.ZonedDateTime} start
@@ -248,10 +238,7 @@ export class RoomBookingView extends Component {
         this.refreshBookingView();
     }
 
-    /**
-     * Book the room for the given duration
-     * @param {Number} duration (in minutes)
-     */
+    /** @param {Number} duration */
     quickCreateBooking(duration) {
         this.scheduleBooking(
             this.state.bookingName,
@@ -288,7 +275,6 @@ export class RoomBookingView extends Component {
     }
 
     /**
-     * Schedule a booking for the given time range, and reset the view to the main screen
      * @param {String} name
      * @param {Temporal.ZonedDateTime} start
      * @param {Temporal.ZonedDateTime} end
@@ -311,7 +297,6 @@ export class RoomBookingView extends Component {
     }
 
     /**
-     * Add a booking to the list of bookings, keeping the list sorted by start date
      * @param {Object} newBooking
      * @param {Number} newBooking.id
      * @param {String} newBooking.name
@@ -338,10 +323,7 @@ export class RoomBookingView extends Component {
         }
     }
 
-    /**
-     * Remove a booking from the list of bookings
-     * @param {Number} bookingId
-     */
+    /** @param {Number} bookingId */
     removeBooking(bookingId) {
         const bookingIdx = this.state.bookings.findIndex(
             (booking) => booking.id === bookingId,
@@ -361,8 +343,6 @@ export class RoomBookingView extends Component {
     }
 
     /**
-     * Update the given booking with the new values. For simplicity, the existing booking
-     * is replaced by the new one so that order is maintained if the start date changed.
      * @param {Object} booking
      * @param {Number} booking.id
      * @param {{ start: Temporal.ZonedDateTime, end: Temporal.ZonedDateTime }} booking.interval

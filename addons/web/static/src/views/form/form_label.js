@@ -7,12 +7,7 @@ import { user } from "@web/core/user";
 import { fieldLabelFeedback } from "@web/fields/field";
 import { getTooltipInfo } from "@web/fields/field_tooltip";
 
-/**
- * A label's tooltip payload depends on the field definition, the arch's field
- * info and the debug flag, none of which change for the life of a form, so it
- * is serialised once per label rather than on every render.
- * @type {WeakMap<Object, { field: Object, debug: string, info: string }>}
- */
+/** @type {WeakMap<Object, { field: Object, debug: string, info: string }>} */
 const tooltipInfoByFieldInfo = new WeakMap();
 
 export class FormLabel extends Component {

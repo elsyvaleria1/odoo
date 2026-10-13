@@ -19,8 +19,8 @@ patch(Navbar.prototype, {
                 }
                 /**
                  * @typedef {Object} Display
-                 * @property {number} displayId - The ID of the display.
-                 * @property {string} name - The name of the display.
+                 * @property {number} displayId
+                 * @property {string} name
                  */
 
                 /** @type {Display[]} */
@@ -72,8 +72,8 @@ patch(Navbar.prototype, {
 
                 /**
                  * @typedef {Object} Display
-                 * @property {number} displayId - The ID of the display.
-                 * @property {string} name - The name of the display.
+                 * @property {number} displayId
+                 * @property {string} name
                  */
 
                 /** @type {Display[]} */

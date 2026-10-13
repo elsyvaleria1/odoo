@@ -134,26 +134,14 @@ export class MapRenderer extends Component {
         }
     }
 
-    /**
-     * Return the route to the tiles api with or without access token.
-     *
-     * @returns {string}
-     */
+    /** @returns {string} */
     get apiTilesRoute() {
         return this.model.data.useMapBoxAPI
             ? apiTilesRouteWithToken
             : apiTilesRouteWithoutToken;
     }
 
-    /**
-     * Groups the visible records by the point they sit on.
-     *
-     * `records` keeps the load order, so `records[0]` is the record whose
-     * number and popup stand for the whole cluster and the pin list agrees
-     * with the marker.
-     *
-     * @returns {Object[]}
-     */
+    /** @returns {Object[]} */
     getMarkersInfo() {
         const markersInfo = new Map();
         const pinInSamePlace = {};
@@ -183,9 +171,6 @@ export class MapRenderer extends Component {
     }
 
     /**
-     * Whether `record`'s partner is placed on the map. Read by the pin list,
-     * which must show exactly the records the markers do.
-     *
      * @param {Object} record
      * @returns {boolean}
      */
@@ -194,13 +179,6 @@ export class MapRenderer extends Component {
     }
 
     /**
-     * The classes a pin-list entry carries.
-     *
-     * A method rather than a `t-att-class` expression: an inheriting view that
-     * marks some records out -- an unplanned task, say -- composes with this
-     * instead of xpath-ing a second class binding onto the same element, which
-     * would collide with this one.
-     *
      * @param {Object} record
      * @returns {string}
      */
@@ -211,18 +189,9 @@ export class MapRenderer extends Component {
     }
 
     /**
-     * The position `record` holds in the numbered route drawn over `records`.
-     *
-     * Counted over the *located* records only, because those are the ones the
-     * map draws and the ones `_fetchRoute` sends: numbering over every record
-     * instead made the pin list start at 2 whenever the first record had no
-     * position, and made a marker's number name a route leg that was not its
-     * own.
-     *
      * @param {Object} record
-     * @param {Object[]} records the list the numbering runs over -- every
-     *      record when ungrouped, the group's records when grouped
-     * @returns {number} 1-based, or 0 when `record` is not located
+     * @param {Object[]} records
+     * @returns {number}
      */
     getPinNumber(record, records) {
         return (
@@ -233,8 +202,6 @@ export class MapRenderer extends Component {
     }
 
     /**
-     * The record standing for a cluster: its popup, its number, its position.
-     *
      * @param {Object} markerInfo
      * @returns {Object}
      */
@@ -243,8 +210,6 @@ export class MapRenderer extends Component {
     }
 
     /**
-     * The number the marker standing for `markerInfo` shows.
-     *
      * @param {Object} markerInfo
      * @returns {number}
      */
@@ -257,9 +222,6 @@ export class MapRenderer extends Component {
     }
 
     /**
-     * A cheap description of everything addMarkers() reads, so the Leaflet
-     * layers are only torn down and rebuilt when one of them moved.
-     *
      * @param {Object[]} markersInfos
      * @returns {string}
      */
@@ -355,8 +317,6 @@ export class MapRenderer extends Component {
         }
     }
     /**
-     * Create a popup for the specified marker.
-     *
      * @param {Object} markerInfo
      * @param {Number} latLongOffset
      */
@@ -403,14 +363,7 @@ export class MapRenderer extends Component {
         const index = Object.keys(this.model.data.recordGroups).indexOf(groupId);
         return colors[index % colors.length];
     }
-    /**
-     * Returns the records that are actually shown on the map: every record
-     * when the view isn't grouped, or only the records of the currently
-     * expanded groups otherwise. Shared by addMarkers() and getVisibleBounds()
-     * so the fitted viewport can never diverge from what is actually rendered.
-     *
-     * @returns {Object[]}
-     */
+    /** @returns {Object[]} */
     getVisibleRecords() {
         if (!this.model.data.isGrouped) {
             return this.model.data.records;
@@ -421,11 +374,7 @@ export class MapRenderer extends Component {
                 value.records.map((elem) => ({ ...elem, groupId })),
             );
     }
-    /**
-     * The bounds holding every visible marker.
-     *
-     * @returns {latLngBounds|false} false when no visible record is located.
-     */
+    /** @returns {latLngBounds|false} */
     getVisibleBounds() {
         const tabLatLng = [];
         for (const record of this.getVisibleRecords()) {
@@ -482,11 +431,8 @@ export class MapRenderer extends Component {
         return fieldsView;
     }
     /**
-     * Get the fields' name and value to display in the popup.
-     *
      * @param {Object} markerInfo
-     * @returns {Object[]} value contains the value of the field and string
-     *                   contains the value of the xml's string attribute
+     * @returns {Object[]}
      */
     getMarkerPopupData(markerInfo) {
         const record = this.getMarkerRecord(markerInfo);
@@ -503,11 +449,7 @@ export class MapRenderer extends Component {
         }
         return this.getMarkerPopupRecordData(record);
     }
-    /**
-     * The addresses to route through, deduplicated and in load order.
-     *
-     * @returns {string[]}
-     */
+    /** @returns {string[]} */
     getRouteAddresses() {
         const addresses = new Set();
         for (const { partner } of this.model.data.records) {
@@ -517,13 +459,7 @@ export class MapRenderer extends Component {
         }
         return [...addresses];
     }
-    /**
-     * The Google Maps directions parameters, as an overridable object rather
-     * than a half-built string: a subclass routing from a fixed origin sets
-     * `origin` instead of appending a second `destination` to the query.
-     *
-     * @returns {Object}
-     */
+    /** @returns {Object} */
     get googleMapParams() {
         const addresses = this.getRouteAddresses();
         if (!addresses.length) {
@@ -536,9 +472,6 @@ export class MapRenderer extends Component {
         return params;
     }
     /**
-     * Join `addresses` into a `waypoints` value, capped at what the platform
-     * the link opens on will accept.
-     *
      * @param {string[]} addresses
      * @returns {string}
      */
@@ -611,11 +544,7 @@ export class MapRenderer extends Component {
         this.addRoutes();
     }
 
-    /**
-     * Center the map on a certain pin and open the popup linked to it.
-     *
-     * @param {Object} record
-     */
+    /** @param {Object} record */
     async centerAndOpenPin(record) {
         if (!this.isRecordLocated(record)) {
             return;
@@ -655,23 +584,8 @@ export class MapRenderer extends Component {
         return this.ui.isSmall ? this.state.expandedPinList : false;
     }
 
-    /**
-     * Whether to invite the user to set a MapBox token.
-     *
-     * A getter rather than an inline template condition: an inheriting view
-     * that shows the invitation to some users only narrows this instead of
-     * xpath-ing on the condition's source text.
-     *
-     * @returns {boolean}
-     */
-    /**
-     * Whether the pin list gives way to the no-content help the chassis draws.
-     *
-     * The map itself stays: it is still a map, and under sample data it is
-     * showing sampled pins the helper is explaining.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
+    /** @returns {boolean} */
     get displayNoContentHelper() {
         return Boolean(this.model.useSampleModel || !this.model.hasData());
     }

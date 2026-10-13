@@ -17,9 +17,6 @@ export const DEFAULT_MIN_SIZE = 5;
 export { withOpacity } from "@web/core/colors/colors";
 
 /**
- * A stable 31-bit hash of a value's text, for data fingerprints: hashing a
- * string by its length made "AB" and "CD" the same value.
- *
  * @param {*} value
  * @returns {number}
  */
@@ -36,10 +33,6 @@ export function valueHash(value) {
 }
 
 /**
- * The value a feature is classified by, in the form the server sends a
- * layer's population in: a record's date is a Temporal value, the server's a
- * string. An empty value classifies nothing.
- *
  * @param {*} value
  * @returns {*}
  */
@@ -145,9 +138,6 @@ export function legendHtml(title, labels, colors) {
 }
 
 /**
- * A proportional symbol's radius: the value's place in the population's
- * range, between the layer's sizes; the smallest size for a missing value.
- *
  * @param {{minValue: number, maxValue: number, minSize: number, maxSize: number}} styling
  * @param {*} value
  * @returns {number}

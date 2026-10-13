@@ -38,20 +38,12 @@ export class VoipSystrayItem extends Component {
         return "oi oi-voip";
     }
 
-    /**
-     * Number of missed calls used to display in systray item icon.
-     *
-     * @returns {number}
-     */
+    /** @returns {number} */
     get missedCallCount() {
         return this.voip.missedCalls;
     }
 
-    /**
-     * Translated text used as the title attribute of the systray item.
-     *
-     * @returns {string}
-     */
+    /** @returns {string} */
     get titleText() {
         return this.softphone.isDisplayed ? _t("Hide Softphone") : _t("Show Softphone");
     }

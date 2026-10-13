@@ -1,11 +1,9 @@
 /** @odoo-module native */
 // @ts-check
 /**
- *
  * @typedef {import("@spreadsheet").OdooPivotCoreDefinition} OdooPivotCoreDefinition
  * @typedef {import("@spreadsheet").AllCoreCommand} AllCoreCommand
  * @typedef {import("@spreadsheet").GFLocalPivot} GFLocalPivot
- *
  * @typedef {import("@spreadsheet").FieldMatching} FieldMatching
  */
 
@@ -29,7 +27,6 @@ export class PivotCoreGlobalFilterPlugin extends OdooCorePlugin {
 
     /**
      * @param {AllCoreCommand} cmd
-     *
      * @returns {string | string[]}
      */
     allowDispatch(cmd) {
@@ -94,8 +91,6 @@ export class PivotCoreGlobalFilterPlugin extends OdooCorePlugin {
     }
 
     /**
-     * Get the current pivotFieldMatching on a pivot
-     *
      * @param {string} pivotId
      * @param {string} filterId
      */
@@ -104,8 +99,6 @@ export class PivotCoreGlobalFilterPlugin extends OdooCorePlugin {
     }
 
     /**
-     * Sets the current pivotFieldMatching on a pivot
-     *
      * @param {string} filterId
      * @param {Record<string,FieldMatching>} pivotFieldMatches
      */
@@ -153,11 +146,7 @@ export class PivotCoreGlobalFilterPlugin extends OdooCorePlugin {
         }
     }
 
-    /**
-     * Import the pivots
-     *
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     import(data) {
         if (data.pivots) {
             for (const [id, pivot] of Object.entries(data.pivots)) {
@@ -165,11 +154,7 @@ export class PivotCoreGlobalFilterPlugin extends OdooCorePlugin {
             }
         }
     }
-    /**
-     * Export the pivots
-     *
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     export(data) {
         for (const id in this.pivots) {
             const pivot = this.getters.getPivotCoreDefinition(id);

@@ -27,7 +27,7 @@ async function openChartSidePanel() {
 
 beforeEach(() => {
     target = getFixture();
-    serverData = /** @type any */ ({});
+    serverData = /** @type */ ({});
     serverData.menus = {
         root: {
             id: "root",

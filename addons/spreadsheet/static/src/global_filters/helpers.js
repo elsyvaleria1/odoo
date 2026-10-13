@@ -149,10 +149,7 @@ function formatDateRange(from, to, options) {
  * @typedef {import("@spreadsheet").FieldMatching} FieldMatching
  */
 
-/**
- * Check if the default value is valid for a given filter.
- * @returns {boolean}
- */
+/** @returns {boolean} */
 export function checkFilterDefaultValueIsValid(filter, defaultValue) {
     if (defaultValue === undefined) {
         return true;
@@ -384,7 +381,6 @@ const FILTERS_BEHAVIORS = {
 };
 
 /**
- * Check if the value is valid for given filter.
  * @param {GlobalFilter | CmdGlobalFilter} filter
  * @param {any} value
  * @returns {boolean}
@@ -411,10 +407,7 @@ function isArrayOfStrings(strings) {
     );
 }
 
-/**
- * A numeric filter value is valid if it is a number
- * @returns {boolean}
- */
+/** @returns {boolean} */
 function isNumericFilterValueValid(value) {
     return typeof value === "number";
 }
@@ -427,20 +420,12 @@ function isCurrentUserOrArrayOfIds(value) {
     return value.ids === "current_user" || isArrayOfIds(value.ids);
 }
 
-/**
- * A boolean filter value is valid if it is an array of booleans. It's the same
- * for the default value.
- * @returns {boolean}
- */
+/** @returns {boolean} */
 function isSetValueValid(value) {
     return value.operator === "set" || value.operator === "not set";
 }
 
-/**
- * A date filter default value is valid if it's a known string representing
- * a relative period (like "last_7_days") or a "current" period (like "this_month", "this_quarter", "this_year"),
- * @returns {boolean}
- */
+/** @returns {boolean} */
 function isDateFilterDefaultValueValid(value) {
     return (
         Object.keys(RELATIVE_PERIODS).includes(value) ||
@@ -448,15 +433,7 @@ function isDateFilterDefaultValueValid(value) {
     );
 }
 
-/**
- * A date filter value is valid depending on its type:
- * - "relative": must have a valid period (like "last_7_days")
- * - "month": must have a valid year and month
- * - "quarter": must have a valid year and quarter
- * - "year": must have a valid year
- * - "range": must have valid from and to values (or be empty)
- * @returns {boolean}
- */
+/** @returns {boolean} */
 function isDateFilterValueValid(value) {
     switch (value.type) {
         case "relative":
@@ -500,11 +477,7 @@ export function checkFilterFieldMatching(fieldMatchings) {
     return CommandResult.Success;
 }
 
-/**
- * The from-to date range from a date filter value.
- *
- * @returns {{ from?: Temporal.ZonedDateTime, to?: Temporal.ZonedDateTime }}
- */
+/** @returns {{ from?: Temporal.ZonedDateTime, to?: Temporal.ZonedDateTime }} */
 export function getDateRange(value, offset = 0) {
     if (!value) {
         return {};
@@ -629,8 +602,6 @@ export function getRelativeDateFromTo(now, offset, period) {
 }
 
 /**
- * Compute the next date filter value.
- *
  * @param {DateValue | undefined} value
  * @returns {DateValue | undefined}
  */
@@ -689,8 +660,6 @@ export function getPreviousDateFilterValue(value) {
 }
 
 /**
- * Compute the next relative date filter value.
- *
  * @param {RelativeDateValue} value
  * @returns {RelativeDateValue}
  */
@@ -750,8 +719,6 @@ function getNextRelativeDateFilterValue(value) {
 }
 
 /**
- * Compute the previous relative date filter value.
- *
  * @param {RelativeDateValue} value
  * @returns {RelativeDateValue}
  */
@@ -812,8 +779,6 @@ function getPreviousRelativeDateFilterValue(value) {
 }
 
 /**
- * Compute the next date range filter value.
- *
  * @param {DateRangeValue} value
  * @returns {DateRangeValue}
  */
@@ -835,8 +800,6 @@ export function getNextRangeDateFilterValue(value) {
 }
 
 /**
- * Compute the previous date range filter value.
- *
  * @param {DateRangeValue} value
  * @returns {DateRangeValue}
  */

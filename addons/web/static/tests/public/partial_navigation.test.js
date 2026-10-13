@@ -32,9 +32,7 @@ const region = (rows) => `
 const page = (rows, title = "Orders") =>
     `<html><head><title>${title}</title></head><body><div id="wrapwrap">${region(rows)}</div></body></html>`;
 
-/**
- * @param {(url: string) => string | null} answer the HTML served for a URL, null for a 404
- */
+/** @param {(url: string) => string | null} answer */
 function serve(answer) {
     patchWithCleanup(browser, {
         fetch: async (url) => {

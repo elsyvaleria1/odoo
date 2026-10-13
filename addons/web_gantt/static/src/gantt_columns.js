@@ -10,15 +10,10 @@ import { localEndOf, localStartOf } from "./gantt_helpers.js";
  */
 
 /**
- * The columns, sub-columns and column groups of the visible window of the
- * grid, and the coarse grid lines they need: one column per rendered
- * `interval`, folded runs collapsed to one, sub-columns for the unfolded
- * ones, and a group header per `unit` clipped to the window and the range.
- *
  * @param {Object} params
- * @param {number} params.firstIndex -- first rendered column, in the folded grid
+ * @param {number} params.firstIndex
  * @param {number} params.lastIndex
- * @param {number} params.columnCount -- columns in the total grid
+ * @param {number} params.columnCount
  * @param {Scale} params.scale
  * @param {DateTime} params.globalStart
  * @param {DateTime} params.globalStop

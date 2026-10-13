@@ -12,7 +12,6 @@ import { listId } from "./static_list_utils.js";
 const log = makeLogger("web.model.record");
 
 /**
- * A separator is a layout device: it needs a key, but its label is optional.
  * @param {{ name?: string, string?: string, type?: string }} definition
  * @returns {boolean}
  */

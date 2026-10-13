@@ -13,11 +13,7 @@ import { OdooUIPlugin } from "@spreadsheet/plugins";
 import { globalFieldMatchingRegistry } from "../helpers.js";
 
 export class GlobalFiltersUIPlugin extends OdooUIPlugin {
-    /**
-     * Handle a spreadsheet command
-     *
-     * @param {import("@spreadsheet").AllCommand} cmd
-     */
+    /** @param {import("@spreadsheet").AllCommand} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "SET_MANY_GLOBAL_FILTER_VALUE":

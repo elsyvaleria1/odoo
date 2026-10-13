@@ -133,7 +133,7 @@ export class ListController extends MultiRecordController {
         this.setupPager();
     }
 
-    /** @returns {Promise<boolean>} the edited row must be saved before the page moves */
+    /** @returns {Promise<boolean>} */
     async beforePagerUpdate() {
         return this.editedRecord ? Boolean(await this.editedRecord.save()) : true;
     }
@@ -357,7 +357,7 @@ export class ListController extends MultiRecordController {
         return ".o_content .o_list_renderer";
     }
 
-    /** @returns {number} where the list is scrolled back to once it is mounted */
+    /** @returns {number} */
     get restoredScrollTop() {
         const state = this.props.state;
         return (

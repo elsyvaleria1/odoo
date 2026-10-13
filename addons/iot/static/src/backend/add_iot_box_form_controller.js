@@ -24,10 +24,7 @@ export class AddIoTBoxFormController extends FormController {
         });
     }
 
-    /**
-     * Creates a loop to check for new IoT Boxes every 10 seconds.
-     * @returns {Promise<void>}
-     */
+    /** @returns {Promise<void>} */
     async initializeIoTConnection() {
         this.iotBoxesBeforeConnection = await this.orm.call("iot.box", "search_read", [
             [],
@@ -44,10 +41,7 @@ export class AddIoTBoxFormController extends FormController {
         setTimeout(() => this.notifyIoTBoxFound(false), 60 * 2 * 1000);
     }
 
-    /**
-     * Look for new IoT Boxes that have been connected since the last check.
-     * @returns {Promise<boolean>} True if a new IoT Box has been found, false otherwise.
-     */
+    /** @returns {Promise<boolean>} */
     async lookForNewIoTBox() {
         const iotBoxesAfterConnection = await this.orm.call("iot.box", "search_read", [
             [],
@@ -63,10 +57,7 @@ export class AddIoTBoxFormController extends FormController {
         return this.newIoTBoxes.length > 0;
     }
 
-    /**
-     * Notify the user if a new IoT Box has been found. If no new IoT Box has been found, notify the user.
-     * @param {boolean} found Whether a new IoT Box has been found.
-     */
+    /** @param {boolean} found */
     notifyIoTBoxFound(found) {
         if (found) {
             this.action.doAction({ type: "ir.actions.act_window_close" });

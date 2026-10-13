@@ -25,12 +25,6 @@ import {
 import { NUMBER_WORDS_SPOKEN, spokenDigits } from "./numbers.js";
 
 /**
- * Context correction: a transcript the grammar did not understand is compared,
- * by Spanish sound, with the phrases the screen in use accepts. Only its head --
- * the command, its first one to three words -- may be replaced; what follows,
- * the content, is kept exactly as heard. A correction is only a proposal: the
- * grammar decides which reading, if any, holds.
- *
  * @typedef {import("./interpreter.js").Interpretation} Interpretation
  * @typedef {{ phrase: string, meaning: string }} InventoryTerm
  * @typedef {{ text: string, heard: string, as: string, distance: number }} Correction
@@ -43,7 +37,7 @@ const CONFUSABLE = ["dt", "rl", "pt", "bm", "bd", "kg", "sf"].map(
     (pair) => new Set(pair),
 );
 
-/** @param {string} word normalized */
+/** @param {string} word */
 function wordSound(word) {
     return word
         .replaceAll("ch", "C")
@@ -68,8 +62,6 @@ function soundWords(text) {
 }
 
 /**
- * How a phrase sounds, word boundaries ignored: "ve a" and "vea" are one sound.
- *
  * @param {string} text
  * @returns {string}
  */
@@ -81,8 +73,8 @@ export function soundKey(text) {
 }
 
 /**
- * @param {string} a sound key
- * @param {string} b sound key
+ * @param {string} a
+ * @param {string} b
  * @returns {number}
  */
 export function soundDistance(a, b) {
@@ -112,8 +104,6 @@ export function soundDistance(a, b) {
 }
 
 /**
- * How far a heard span may be from a phrase of that many sounds.
- *
  * @param {string} key
  * @returns {number}
  */
@@ -140,11 +130,6 @@ function terms(phrases, meaning) {
 }
 
 /**
- * Every phrase the grammar accepts on this screen, with what it means: the
- * lexicon's command words, the menus, the view's filters, fields and buttons,
- * the palette's commands, what the numbers overlay shows, a screen's own words,
- * and the company's terms, each meaning what the words it stands for mean.
- *
  * @param {import("./vocabulary.js").Vocabulary | null} vocabulary
  * @param {string[]} [screenWords]
  * @returns {InventoryTerm[]}
@@ -258,9 +243,6 @@ function screenInventory(vocabulary, screenWords) {
 }
 
 /**
- * The readings of a transcript's head that are near a phrase of the inventory,
- * nearest first; the rest of the transcript is carried over byte for byte.
- *
  * @param {string} text
  * @param {InventoryTerm[]} inventory
  * @returns {Correction[]}
@@ -343,10 +325,6 @@ export function correctionCandidates(text, inventory) {
 }
 
 /**
- * Phrases a screen accepts that mean different things yet sound within one
- * edit of each other: the pairs a recogniser can swap without either being
- * wrong to the ear. A screen's words are designed to keep this list short.
- *
  * @param {InventoryTerm[]} inventory
  * @returns {{ a: string, b: string, distance: number }[]}
  */
@@ -384,8 +362,6 @@ export function soundCollisions(inventory) {
 const SPOKEN_MARKS = new Set(["guion", "diagonal", "bajo", "slash", "dash", "hyphen"]);
 
 /**
- * The words of a heard value worth looking records up by, as they were heard.
- *
  * @param {string} value
  * @returns {string[]}
  */
@@ -397,12 +373,6 @@ export function recordSearchWords(value) {
 }
 
 /**
- * Records whose name sounds like the heard value, nearest first. A name may run
- * on past what was said ("… S.A. de C.V."), and spaces, accents and spoken
- * punctuation do not count: "distribuidor a López" sounds like "Distribuidora
- * López", "L dos mil veintiséis guion cero cero cuarenta y dos" like
- * "L-2026-0042".
- *
  * @template {{ display_name: string }} R
  * @param {string} value
  * @param {R[]} records
@@ -449,10 +419,6 @@ function readingOf({ proposals, candidates, blocked }) {
 }
 
 /**
- * The grammar decides: the nearest correction it understands holds; two
- * equally near ones read differently become a choice, never a guess. Each
- * choice carries what was heard and what it was read as (`corrected`).
- *
  * @param {string} text
  * @param {InventoryTerm[]} inventory
  * @param {(text: string) => Interpretation} understand

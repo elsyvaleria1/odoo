@@ -50,12 +50,6 @@ export class DynamicRecordList extends DynamicList {
     }
 
     /**
-     * A reloaded row keeps its datapoint, and so its components, when it still
-     * describes the same record under the same field set; anything the user
-     * touched, or a row built for another config, is rebuilt. Config members
-     * are compared raw: the list and its records reach them through different
-     * reactive proxies of one object.
-     *
      * @param {RelationalRecord} record
      * @returns {boolean}
      */

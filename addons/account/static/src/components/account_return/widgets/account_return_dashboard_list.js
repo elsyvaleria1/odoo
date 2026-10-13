@@ -65,10 +65,7 @@ export class AccountReturnDashboardList extends Component {
         this.accountReturns = returns.map(this.formatReturn);
     }
 
-    /**
-     * Opens the Tax Return view filtered by return type.
-     * @param {Object} accountReturn - The account return object.
-     */
+    /** @param {Object} accountReturn */
     async openTaxReturn(accountReturn) {
         const returnTypeId = accountReturn?.type_id || "";
         const [viewId, searchViewId] = await this.orm.call(

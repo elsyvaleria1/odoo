@@ -108,10 +108,10 @@ export class IncidentJourney {
         this.timer = setTimeout(() => this.ask(attempt + 1), delay);
     }
 
-    /* An error the browser raised on its own: no server named it, so the
-     * dialog records it and follows the incident it lands in.
-     *
-     * @param {string} stack */
+
+
+
+
     async report(stack) {
         this.state.stage = "waiting";
         this.listen();
@@ -222,11 +222,7 @@ export class IncidentJourney {
     }
 }
 
-/**
- * A journey that lives and dies with the dialog that shows it.
- *
- * @param {string | null} occurrence
- */
+/** @param {string | null} occurrence */
 export function useIncidentJourney(occurrence) {
     const journey = new IncidentJourney(occurrence, useService("bus_service"));
     onWillDestroy(() => journey.destroy());

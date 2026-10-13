@@ -533,10 +533,7 @@ test("closing side panel rolls back to parent action", async function () {
     expect.verifySteps(["editAction-spreadsheet.test"]);
 });
 
-/**
- * The editor of spreadsheet 1, then its history on top of it.
- * @param {Function} [mockRPC]
- */
+/** @param {Function} [mockRPC] */
 async function openHistoryOverEditor(mockRPC) {
     const { action: editor } = await createSpreadsheetTestAction(
         "spreadsheet_test_action",

@@ -26,12 +26,11 @@ export class IotWebRtc {
     }
 
     /**
-     * Send a message to the IoT Box
-     * @param {string} iotIdentifier Identifier (serial no.) of the IoT Box
-     * @param {Record<string, unknown>} message Data to send to the device
-     * @param {string?} actionId Unique identifier for the message (optional)
-     * @param {string} messageType Type of message to send (optional)
-     * @returns {Promise<string>} The action ID
+     * @param {string} iotIdentifier
+     * @param {Record<string, unknown>} message
+     * @param {string?} actionId
+     * @param {string} messageType
+     * @returns {Promise<string>}
      */
     async sendMessage(
         iotIdentifier,
@@ -85,13 +84,11 @@ export class IotWebRtc {
     }
 
     /**
-     * Add a listener for events/messages coming from the IoT Box.
-     * This method allows defining callbacks for success and failure cases.
-     * @param {string} iotIdentifier Identifier (serial no.) of the IoT Box
-     * @param {string} deviceIdentifier Identifier of the device connected to the IoT Box
-     * @param {string?} actionId Identifier to match the specific response we are listening for
-     * @param {(message: Record<string, unknown>, deviceId: string) => void} onSuccess Callback to run when a message is received
-     * @param {(message: Record<string, unknown>, deviceId: string) => void} onFailure Callback to run when the request fails
+     * @param {string} iotIdentifier
+     * @param {string} deviceIdentifier
+     * @param {string?} actionId
+     * @param {(message: Record<string, unknown>, deviceId: string) => void} onSuccess
+     * @param {(message: Record<string, unknown>, deviceId: string) => void} onFailure
      */
     async onMessage(
         iotIdentifier,

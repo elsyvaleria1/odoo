@@ -9,12 +9,10 @@ import { redirect } from "@web/core/utils/urls";
 
 patch(ExpressCheckout.prototype, {
     /**
-     * Get the order details to display on the payment form.
-     *
      * @private
-     * @param {number} deliveryAmount - The delivery costs.
-     * @param {number} amountFreeShipping - The free shipping discount amount, <= 0.
-     * @returns {Object} The information to be displayed on the payment form.
+     * @param {number} deliveryAmount
+     * @param {number} amountFreeShipping
+     * @returns {Object}
      */
     _getOrderDetails(deliveryAmount, amountFreeShipping) {
         const pending =
@@ -52,11 +50,9 @@ patch(ExpressCheckout.prototype, {
     },
 
     /**
-     * Prepare the express checkout form of Stripe for direct payment.
-     *
-     * @override method from payment.express_form
+     * @override
      * @private
-     * @param {Object} providerData - The provider-specific data.
+     * @param {Object} providerData
      * @return {void}
      */
     async _prepareExpressCheckoutForm(providerData) {
@@ -214,12 +210,10 @@ patch(ExpressCheckout.prototype, {
     },
 
     /**
-     * Update the amount of the express checkout form.
-     *
-     * @override method from payment.express_form
+     * @override
      * @private
-     * @param {number} newAmount - The new amount.
-     * @param {number} newMinorAmount - The new minor amount.
+     * @param {number} newAmount
+     * @param {number} newMinorAmount
      * @return {void}
      */
     _updateAmount() {

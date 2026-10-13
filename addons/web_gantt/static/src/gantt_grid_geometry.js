@@ -23,9 +23,7 @@ export class GridGeometry {
     }
 
     /**
-     * How many columns separate `globalStart` from a column boundary.
-     *
-     * @param {DateTime} column -- a `startOf(interval)` boundary
+     * @param {DateTime} column
      * @returns {number}
      */
     columnIndexFromDate(column) {
@@ -40,7 +38,7 @@ export class GridGeometry {
     /**
      * @param {DateTime} startDate
      * @param {DateTime} stopDate
-     * @returns {[number, number]} the grid-column lines, 1-based
+     * @returns {[number, number]}
      */
     gridColumnFromDates(startDate, stopDate) {
         const { cellPart } = this.scale;
@@ -57,9 +55,7 @@ export class GridGeometry {
     }
 
     /**
-     * The `cellPart` boundaries inside a column.
-     *
-     * @param {DateTime} column -- a `startOf(interval)` boundary
+     * @param {DateTime} column
      * @returns {DateTime[]}
      */
     subCellStarts(column) {
@@ -77,7 +73,7 @@ export class GridGeometry {
 
     /**
      * @param {DateTime} date
-     * @param {boolean} [onLeft=true] -- a start (left edge) or a stop (right edge)
+     * @param {boolean} [onLeft=true]
      * @returns {{ column: DateTime, delta: number }}
      */
     subColumnFromDate(date, onLeft = true) {
@@ -108,7 +104,7 @@ export class GridGeometry {
     }
 
     /**
-     * @param {number} col -- a grid-column line, 1-based
+     * @param {number} col
      * @returns {{ start: DateTime, stop: DateTime }}
      */
     subColumnFromColNumber(col) {
@@ -132,7 +128,7 @@ export class GridGeometry {
     }
 
     /**
-     * @param {number} col -- a grid-column line, 1-based
+     * @param {number} col
      * @returns {number}
      */
     columnIndexFromColNumber(col) {
@@ -142,7 +138,7 @@ export class GridGeometry {
     }
 
     /**
-     * @param {number} col -- a grid-column line, 1-based
+     * @param {number} col
      * @returns {{ start: DateTime, stop: DateTime }}
      */
     columnFromColNumber(col) {

@@ -181,12 +181,7 @@ export class MassMailingHtmlField extends HtmlField {
         return props;
     }
 
-    /**
-     * Content reinsertion as done in the super method is not properly supported
-     * by the editor (corrupted state). This override forces the creation of
-     * a new editor instead, and all plugins will be instantiated from scratch.
-     * @override
-     */
+    /** @override */
     async toggleCodeView() {
         await this.commitChanges();
         this.state.showCodeView = !this.state.showCodeView;
@@ -275,12 +270,7 @@ export class MassMailingHtmlField extends HtmlField {
         ev.target.style.height = ev.target.scrollHeight + "px";
     }
 
-    /**
-     * Ensure that the inlineField has its first value set (in case a template
-     * was just applied or if the field value was set manually without using
-     * this widget.
-     * @override
-     */
+    /** @override */
     async _commitChanges({ urgent }) {
         if (
             this.editor &&
@@ -305,12 +295,7 @@ export class MassMailingHtmlField extends HtmlField {
         return super._commitChanges({ urgent });
     }
 
-    /**
-     * Complete rewrite of `updateValue` to ensure that both the field and the
-     * inlineField are saved at the same time. Depends on the iframe to compute
-     * the style of the inlineField.
-     * @override
-     */
+    /** @override */
     async updateValue(value) {
         const iframeInfo = await this.ensureIframeLoaded();
         if (!iframeInfo) {
@@ -349,12 +334,7 @@ export class MassMailingHtmlField extends HtmlField {
             .catch(() => (this.isDirty = true));
         this.setFieldDirty(this.isDirty);
     }
-    /**
-     * Processes the data-filter-domain to be converted to a t-if that will be interpreted on send
-     * by QWeb.
-     * TODO EGGMAIL: move in a convert_inline plugin when they are implemented.
-     * @param {HTMLElement} htmlEl
-     */
+    /** @param {HTMLElement} htmlEl */
     preprocessFilterDomains(htmlEl) {
         htmlEl.querySelectorAll("[data-filter-domain]").forEach((el) => {
             let domain;

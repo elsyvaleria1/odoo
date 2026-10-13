@@ -10,19 +10,7 @@ import { RestaurantFloor } from "./restaurant_floor.data.js";
 import { RestaurantOrderCourse } from "./restaurant_order_course.data.js";
 import { RestaurantTable } from "./restaurant_table.data.js";
 
-/**
- * Registers the base POS mock models plus the pos_restaurant-specific ones and
- * augments the config records. Every pos_restaurant HOOT unit test must call
- * this instead of the base definePosModels — otherwise the restaurant
- * models/config fields the active pos_restaurant production patches read are
- * absent and pos_data crashes at setup.
- *
- * Modules depending on pos_restaurant (pos_self_order, …) compose on top of
- * this by passing their own model classes as `extraModels`, mirroring the base
- * `definePosModels(extraModels)` signature.
- *
- * @param {Function[]} [extraModels=[]] additional mock-server model classes.
- */
+/** @param {Function[]} [extraModels=[]] */
 export const definePosRestaurantModels = (extraModels = []) => {
     definePosModels([
         RestaurantFloor,

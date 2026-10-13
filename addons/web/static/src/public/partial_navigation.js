@@ -17,9 +17,6 @@ const PRELOAD_DELAY = 65;
 const PRELOAD_TTL = 10000;
 
 /**
- * Navigates to `url` in place when `el` sits in a partial navigation scope,
- * and through `fallback` otherwise (a plain navigation by default).
- *
  * @param {Element} el
  * @param {string} url
  * @param {() => void} [fallback]
@@ -181,8 +178,6 @@ export class PartialNavigation extends Interaction {
     }
 
     /**
-     * The page at `url`, asked without its header and footer.
-     *
      * @param {string} url
      * @returns {Promise<FetchedPage>}
      */
@@ -299,10 +294,6 @@ export class PartialNavigation extends Interaction {
     }
 
     /**
-     * The URL a link in scope navigates to in place; null for a link the
-     * browser keeps: out of scope, another window, a download, another
-     * origin, an anchor in this page.
-     *
      * @param {HTMLAnchorElement} link
      * @returns {string | null}
      */

@@ -26,16 +26,14 @@ import { DocumentsDocument, SpreadsheetTemplate } from "./data.js";
 
 /**
  * @typedef {object} SpreadsheetTestParams
- * @property {object} [webClient] Webclient already configured
- * @property {number} [spreadsheetId] Id of the spreadsheet
- * @property {ServerData} [serverData] Data to be injected in the mock server
- * @property {Function} [mockRPC] Mock rpc function
+ * @property {object} [webClient]
+ * @property {number} [spreadsheetId]
+ * @property {ServerData} [serverData]
+ * @property {Function} [mockRPC]
  */
 
 /**
- * Open a spreadsheet action
- *
- * @param {string} actionTag Action tag ("action_view_spreadsheet" or "action_view_template")
+ * @param {string} actionTag
  * @param {SpreadsheetTestParams} params
  */
 async function createSpreadsheetAction(actionTag, params) {
@@ -77,11 +75,7 @@ async function createSpreadsheetAction(actionTag, params) {
     };
 }
 
-/**
- * Create an empty spreadsheet
- *
- * @param {SpreadsheetTestParams} params
- */
+/** @param {SpreadsheetTestParams} params */
 export async function createSpreadsheet(params = {}) {
     allowTranslations();
     if (!params.serverData) {
@@ -101,11 +95,7 @@ export async function createSpreadsheet(params = {}) {
     return createSpreadsheetAction("action_view_spreadsheet", params);
 }
 
-/**
- * Create a spreadsheet template
- *
- * @param {SpreadsheetTestParams} params
- */
+/** @param {SpreadsheetTestParams} params */
 export async function createSpreadsheetTemplate(params = {}) {
     if (!params.serverData) {
         params.serverData = getBasicServerData();

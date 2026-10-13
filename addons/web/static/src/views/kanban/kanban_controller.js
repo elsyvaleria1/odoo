@@ -185,7 +185,7 @@ export class KanbanController extends MultiRecordController {
         return !root.isGrouped;
     }
 
-    /** @returns {number} how far down the cards are scrolled back to once they are mounted */
+    /** @returns {number} */
     get restoredScrollTop() {
         const state = this.props.state;
         const scroll = state?.[scrollSymbol];

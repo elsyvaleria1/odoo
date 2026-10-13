@@ -73,9 +73,7 @@ export class SnippetModel extends SignalStore {
     }
 
     /**
-     * Checks if the given element is an inner content snippet.
-     *
-     * @param {HTMLElement} el the element
+     * @param {HTMLElement} el
      * @returns {Boolean}
      */
     isInnerContent(el) {
@@ -118,15 +116,10 @@ export class SnippetModel extends SignalStore {
     }
 
     /**
-     * Opens the snippet dialog on the group of the given snippet object and
-     * allows to specify its behaviour when selecting a snippet and when closing
-     * it.
-     *
-     * @param {Object} snippet the snippet object
+     * @param {Object} snippet
      * @param {Object} handlers
-     * @param {Function} handlers.onSelect called when a snippet is selected;
-     *     must return an HTMLElement
-     * @param {Function} handlers.onClose called when the dialog is closed
+     * @param {Function} handlers.onSelect
+     * @param {Function} handlers.onClose
      * @param {Object} editor
      */
     openSnippetDialog(snippet, { onSelect, onClose }, editor) {
@@ -178,12 +171,8 @@ export class SnippetModel extends SignalStore {
     }
 
     /**
-     * Reloads the snippet data, optionally updating the context.
-     *
-     * @param {Object} context - Optional context to override or extend the
-     *                           current context.
-     * @returns {Promise<void>} A promise that resolves once the snippets are
-     *                          reloaded.
+     * @param {Object} context
+     * @returns {Promise<void>}
      */
     reload(context = {}) {
         this.loadProm = null;
@@ -345,10 +334,7 @@ export class SnippetModel extends SignalStore {
     }
 
     /**
-     * Returns the original snippet object based on the given `data-snippet`
-     * attribute.
-     *
-     * @param {String} snippetKey the `data-snippet` attribute of the snippet.
+     * @param {String} snippetKey
      * @returns {Object}
      */
     getOriginalSnippet(snippetKey) {
@@ -359,9 +345,7 @@ export class SnippetModel extends SignalStore {
     }
 
     /**
-     * Returns the snippet thumbnail URL.
-     *
-     * @param {String} snippetKey the `data-snippet` attribute of the snippet.
+     * @param {String} snippetKey
      * @returns {String}
      */
     getSnippetThumbnailURL(snippetKey) {
@@ -369,25 +353,15 @@ export class SnippetModel extends SignalStore {
         return originalSnippet.thumbnailSrc;
     }
 
-    /**
-     * Removes the previews from the given snippet.
-     *
-     * @param {HTMLElement} snippetEl
-     */
+    /** @param {HTMLElement} snippetEl */
     updateSnippetContent(snippetEl) {
         snippetEl.querySelectorAll(".s_dialog_preview").forEach((el) => el.remove());
     }
 
     /**
-     * Saves the given snippet as a custom one and reloads all the snippets
-     * to have access to it directly.
-     *
-     * @param {HTMLElement} snippetEl the snippet we want to save
-     * @param {Array<Function>} cleanForSaveHandlers all the handlers of the
-     *     `clean_for_save_handlers` resources
-     * @param {Function} wrapWithSaveSnippetHandlers a function that processes the snippet
-     * before and/or after the cloning. E.g. stopping the interactions before
-     * cloning and restarting them after cloning.
+     * @param {HTMLElement} snippetEl
+     * @param {Array<Function>} cleanForSaveHandlers
+     * @param {Function} wrapWithSaveSnippetHandlers
      * @returns {Promise}
      */
     saveSnippet(
@@ -468,8 +442,6 @@ export class SnippetModel extends SignalStore {
     }
 
     /**
-     * Gets the label of the snippet.
-     *
      * @param {HTMLElement} snippetEl
      * @param {boolean} [isCustom = false]
      * @returns {String}

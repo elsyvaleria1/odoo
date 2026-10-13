@@ -19,11 +19,7 @@ patch(AttendeeCalendarModel.prototype, {
         this.slotId = 1;
     },
 
-    /**
-     * @override
-     * Properly take into account the duration from the context.
-     * Only when the user makes a click on the calendar (when there's no end) or when the end is invalid.
-     */
+    /** @override */
     buildRawRecord(partialRecord) {
         if ("default_duration" in this.meta.context) {
             const defaultDuration = this.meta.context.default_duration;

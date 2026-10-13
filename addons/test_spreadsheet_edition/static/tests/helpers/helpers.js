@@ -22,18 +22,17 @@ import { getDummyBasicServerData, SpreadsheetTest } from "./data.js";
 
 /**
  * @typedef {import("@spreadsheet/../tests/helpers/data").ServerData} ServerData
-
  * @typedef {object} SpreadsheetTestParams
  * @property {number} [spreadsheetId]
- * @property {ServerData} [serverData] Data to be injected in the mock server
- * @property {Function} [mockRPC] Mock rpc function
+ * @property {ServerData} [serverData]
+ * @property {Function} [mockRPC]
  * @property {boolean} [fromSnapshot]
  * @property {number | string} [threadId]
  * @property {WebClient} [webClient]
  */
 
 /**
- * @param {string} actionTag Action tag ("spreadsheet_test_action" or "action_open_spreadsheet_history")
+ * @param {string} actionTag
  * @param {SpreadsheetTestParams} params
  */
 export async function createSpreadsheetTestAction(actionTag, params = {}) {
@@ -85,9 +84,8 @@ export async function createSpreadsheetTestAction(actionTag, params = {}) {
 }
 
 /**
- *
  * @param {ServerData} serverData
- * @param {object} [data] spreadsheet data
+ * @param {object} [data]
  * @returns {number}
  */
 export function createNewDummySpreadsheet(serverData, data) {

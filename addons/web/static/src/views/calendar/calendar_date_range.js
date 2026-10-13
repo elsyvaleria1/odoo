@@ -33,8 +33,7 @@ export function computeCalendarRange(scale, date, monthOverflow) {
  * @param {{ date_start: string, date_stop?: string, date_delay?: string }} fieldMapping
  * @param {"date" | "datetime"} dateStartType
  * @param {{ start: any, end: any }} range
- * @param {any} [dateDelayFloor] earliest start a record lasting `date_delay` hours
- *   can have and still reach `range.start`; without it, the domain has no lower bound
+ * @param {any} [dateDelayFloor]
  * @returns {any[][]}
  */
 export function computeRangeDomain(fieldMapping, dateStartType, range, dateDelayFloor) {
@@ -56,11 +55,6 @@ export function computeRangeDomain(fieldMapping, dateStartType, range, dateDelay
 export const DEFAULT_DELAY_HOURS = 1;
 
 /**
- * The hours a record lasts, read from its `date_delay` value: a number as it
- * is (a negative one as zero), anything else, a view without `date_delay`
- * included, the default hour. `normalizeCalendarRecord` ends a record there and
- * the date delay floor looks back as far, so both read the value through here.
- *
  * @param {any} delay
  * @returns {number}
  */

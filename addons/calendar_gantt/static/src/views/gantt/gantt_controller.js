@@ -26,11 +26,7 @@ export class AppointmentBookingGanttController extends GanttController {
         super.create({ ...context, booking_gantt_create_record: true });
     }
 
-    /**
-     * @override
-     * In the Gantt view, if accessed via the appointment.type custom helper should appear when no booking is found.
-     * If Gantt view accessed through the schedule views, the helper should appear when no Gantt rows are available.
-     */
+    /** @override */
     get showNoContentHelp() {
         if (
             !this.props.context.hide_no_content_helper &&
@@ -45,13 +41,7 @@ export class AppointmentBookingGanttController extends GanttController {
         }
     }
 
-    /**
-     * @override
-     * When creating a new booking using the "New" button, round the start datetime to the next
-     * half-hour (e.g. 10:12 => 10:30, 11:34 => 12:00).
-     * The stop datetime is set by default to start + 1 hour to override the calendar.event's default_stop, which is currently setting the stop based on now instead of start.
-     * The stop datetime will be updated in the default_get method on python side to match the appointment type duration.
-     */
+    /** @override */
     createAtFocusDate() {
         const focusDate = this.getCurrentFocusDate();
         const now = getNow();
@@ -66,12 +56,7 @@ export class AppointmentBookingGanttController extends GanttController {
         this.create(context);
     }
 
-    /**
-     * @override
-     * Add props required by the quick create form view
-     * and open the calendar-specific form dialog
-     * unless otherwise specified.
-     */
+    /** @override */
     openDialog(props, options = {}, dialogComponent = null) {
         if (dialogComponent !== null) {
             return super.openDialog(...arguments);

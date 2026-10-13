@@ -89,7 +89,7 @@ export class SessionRecorder {
     /**
      * @param {string|URL|Request} url
      * @param {File} file
-     * @param {Object} [param2.fields] extra form fields sent with the file
+     * @param {Object} [param2.fields]
      * @param {Function} [param2.onFailure]
      * @param {Function} [param2.onSuccess]
      * @returns {Promise}

@@ -27,7 +27,6 @@ export function getRandomColorIndex() {
 }
 
 /**
- * Keep the property editor's signed remainder and zero-to-one fallback.
  * @param {number} [previousColor]
  * @returns {number}
  */
@@ -195,12 +194,6 @@ export function getCustomColor(brightModeColor, darkModeColor) {
 }
 
 /**
- * The palette slot a record's colour value selects: a number wraps into the
- * palette (negatives included), a string hashes by code points, a relational
- * value -- `{ id }` or `[id, name]` -- colours by its id, anything else takes
- * slot 0. Kanban and gantt each carried a copy that agreed on none of the
- * four branches.
- *
  * @param {any} value
  * @param {number} [paletteSize]
  * @returns {number}
@@ -403,7 +396,6 @@ const RESTAURANT_FLOOR_COLORS_DARK = {
 };
 
 /**
- * Return independent palette arrays so screen callers cannot mutate the defaults.
  * @param {boolean} isDark
  * @returns {Record<string, number[]>}
  */
@@ -463,7 +455,7 @@ export function getCalendarColor(key) {
     return calendarColorMap.get(key);
 }
 
-/** @param {number} index @returns {number} */
+/** @param {number} index */
 export function getNonzeroColorIndex(index) {
     return (index % (RECORD_COLOR_NAMES.length - 1)) + 1;
 }
@@ -479,7 +471,7 @@ export function getNextColorIndex(usedColors, palette = RECORD_COLOR_INDICES) {
     return palette.find((color) => !usedColors.includes(color)) ?? 0;
 }
 
-/** @param {number|string} index @returns {string} */
+/** @param {number|string} index */
 export function getPreparationDisplayColor(index) {
     return "o_pdis_card_color_" + (Number(index) % 9);
 }
@@ -492,10 +484,10 @@ export function getRandomSelectionColor() {
 export const PLC_CHART_COLORS = ["#017E84", "#5B899E", "#F4A261", "#E76F51", "#8E7CC3"];
 
 /**
- * @param {number} r [0, 255]
- * @param {number} g [0, 255]
- * @param {number} b [0, 255]
- * @return {{ color: string, highlightedColor: string }} the base and highlighted css colors.
+ * @param {number} r
+ * @param {number} g
+ * @param {number} b
+ * @return {{ color: string, highlightedColor: string }}
  */
 export function getStrokeAndHoveredStrokeColor(r, g, b) {
     return {

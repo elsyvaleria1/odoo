@@ -8,20 +8,17 @@ const { toXC, toCartesian, expandZoneOnInsertion, reduceZoneOnDeletion } = helpe
 
 /**
  * @typedef {import("@odoo/o-spreadsheet").UID} UID
- *
  * @typedef ThreadInfo
  * @property {number} col
  * @property {number} row
  * @property {string} sheetId
  * @property {number} threadId
  * @property {boolean} isResolved
- *
  * @typedef ThreadEntry
  * @property {number} threadId
  * @property {boolean} isResolved
  * @property {number} col
  * @property {number} row
- *
  */
 
 export class CellThreadsPlugin extends OdooCorePlugin {

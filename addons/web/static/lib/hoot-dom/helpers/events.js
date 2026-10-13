@@ -28,9 +28,7 @@ import { microTick } from "./time.js";
 
 /**
  * @typedef {Target | Promise<Target>} AsyncTarget
- *
  * @typedef {"auto" | "blur" | "enter" | "tab" | false} ConfirmAction
- *
  * @typedef {{
  *  dataTransfer?: DataTransfer;
  *  dropEffect?: "none" | "copy" | "link" | "move";
@@ -38,25 +36,18 @@ import { microTick } from "./time.js";
  *  files?: File[];
  *  items?: [string, string][];
  * }} DataTransferOptions
- *
  * @typedef {{
  *  cancel: (options?: EventOptions) => Promise<EventList>;
  *  drop: (to?: AsyncTarget | DragOptions, options?: DragOptions) => Promise<EventList>;
  *  moveTo: (to?: AsyncTarget | DragOptions, options?: DragOptions) => Promise<DragHelpers>;
  * }} DragHelpers
- *
  * @typedef {PointerOptions & DataTransferOptions} DragOptions
- *
  * @typedef {import("./dom").Position} Position
- *
  * @typedef {import("./dom").Dimensions} Dimensions
- *
  * @typedef {((ev: Event) => boolean) | EventType} EventListPredicate
- *
  * @typedef {{
  *  eventInit?: EventInit;
- * }} EventOptions generic event options
- *
+ * }} EventOptions
  * @typedef {{
  *  clientX: number;
  *  clientY: number;
@@ -65,39 +56,29 @@ import { microTick } from "./time.js";
  *  screenX: number;
  *  screenY: number;
  * }} EventPosition
- *
  * @typedef {keyof HTMLElementEventMap | keyof WindowEventMap} EventType
- *
  * @typedef {EventOptions & {
  *  confirm?: ConfirmAction;
  *  composition?: boolean;
  *  instantly?: boolean;
  * }} FillOptions
- *
  * @typedef {string | number | MaybeIterable<File>} InputValue
- *
  * @typedef {EventOptions & KeyboardEventInit} KeyboardOptions
- *
  * @typedef {string | string[]} KeyStrokes
- *
  * @typedef {EventOptions & QueryOptions & {
  *  button?: number,
  *  position?: Side | `${Side}-${Side}` | Position;
  *  relative?: boolean;
  * }} PointerOptions
- *
  * @typedef {import("./dom").QueryOptions} QueryOptions
- *
  * @typedef {EventOptions & QueryOptions & {
  *  force?: boolean;
  *  initiator?: "keyboard" | "scrollbar" | "wheel" | null;
  *  relative?: boolean;
  * }} ScrollOptions
- *
  * @typedef {EventOptions & {
  *  target: AsyncTarget;
  * }} SelectOptions
- *
  * @typedef {"bottom" | "left" | "right" | "top"} Side
  */
 
@@ -365,11 +346,7 @@ function getDefaultRunTimeValue() {
 
         modifierKeys: {},
 
-        /**
-         * Ignored events ("select" by default since it is sometimes dispatched by
-         * focusing an input).
-         * @type {EventType[]}
-         */
+        /** @type {EventType[]} */
         eventsToIgnore: [],
     };
 }
@@ -1722,10 +1699,7 @@ const DEPRECATED_EVENTS = {
 };
 const DOUBLE_CLICK_DELAY = 500;
 
-/**
- * Ignore certain trusted events (dispatched by `focus()`, `scroll()`, etc.)
- * @type {[EventType, (event: Event) => any, AddEventListenerOptions][]}
- */
+/** @type {[EventType, (event: Event) => any, AddEventListenerOptions][]} */
 const GLOBAL_TRUSTED_EVENTS_CANCELERS = [
     ["blur", cancelTrustedEvent, CAPTURE],
     ["focus", cancelTrustedEvent, CAPTURE],
@@ -1735,18 +1709,12 @@ const GLOBAL_TRUSTED_EVENTS_CANCELERS = [
     ["scrollend", cancelTrustedEvent, CAPTURE],
     ["select", cancelTrustedEvent, CAPTURE],
 ];
-/**
- * Register file input on click & focus events
- * @type {[EventType, (event: Event) => any, AddEventListenerOptions][]}
- */
+/** @type {[EventType, (event: Event) => any, AddEventListenerOptions][]} */
 const GLOBAL_FILE_INPUT_REGISTERERS = [
     ["click", registerFileInput, CAPTURE],
     ["focus", registerFileInput, CAPTURE],
 ];
-/**
- * Redirect events to other features
- * @type {[EventType, (event: Event) => any, AddEventListenerOptions][]}
- */
+/** @type {[EventType, (event: Event) => any, AddEventListenerOptions][]} */
 const GLOBAL_SUBMIT_FORWARDERS = [["submit", redirectSubmit]];
 
 const KEY_ALIASES = {
@@ -1798,11 +1766,7 @@ const BUBBLES = 0b1;
 const CANCELABLE = 0b10;
 const VIEW = 0b100;
 
-/**
- * - does not bubble
- * - cannot be canceled
- * @param {FullEventInit} eventInit
- */
+/** @param {FullEventInit} eventInit */
 function mapEvent(eventInit) {
     return eventInit;
 }
@@ -1884,17 +1848,9 @@ function mapKeyboardEvent(eventInit) {
 }
 
 /**
- * Ensures that the given {@link AsyncTarget} is checked.
- *
- * If it is not checked, a click is simulated on the input.
- * If the input is still not checked after the click, an error is thrown.
- *
- * @see {@link click}
  * @param {AsyncTarget} target
  * @param {PointerOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  check("input[type=checkbox]"); // Checks the first <input> checkbox element
  */
 export async function check(target, options) {
     const finalizeEvents = setupEvents("check", options);
@@ -1931,17 +1887,8 @@ export function cleanupEvents() {
 }
 
 /**
- * Clears the **value** of the current **active element**.
- *
- * This is done using the following sequence:
- * - pressing "Control" + "A" to select the whole value;
- * - pressing "Backspace" to delete the value;
- * - (optional) triggering a "change" event by pressing "Enter".
- *
  * @param {FillOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  clear(); // Clears the value of the current active element
  */
 export async function clear(options) {
     const finalizeEvents = setupEvents("clear", options);
@@ -1963,25 +1910,9 @@ export async function clear(options) {
 }
 
 /**
- * Performs a click sequence on the given {@link AsyncTarget}.
- *
- * The event sequence is as follows:
- *  - `pointerdown`
- *  - [desktop] `mousedown`
- *  - [touch] `touchstart`
- *  - [target is not active element] `blur`
- *  - [target is focusable] `focus`
- *  - `pointerup`
- *  - [desktop] `mouseup`
- *  - [touch] `touchend`
- *  - `click`
- *  - `dblclick` if click is not prevented & current click count is even
- *
  * @param {AsyncTarget} target
  * @param {PointerOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  click("button"); // Clicks on the first <button> element
  */
 export async function click(target, options) {
     const finalizeEvents = setupEvents("click", options);
@@ -1994,14 +1925,9 @@ export async function click(target, options) {
 }
 
 /**
- * Performs two click sequences on the given {@link AsyncTarget}.
- *
- * @see {@link click}
  * @param {AsyncTarget} target
  * @param {PointerOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  dblclick("button"); // Double-clicks on the first <button> element
  */
 export async function dblclick(target, options) {
     const finalizeEvents = setupEvents("dblclick", options);
@@ -2016,24 +1942,11 @@ export async function dblclick(target, options) {
 }
 
 /**
- * Disclaimer: avoid using this method; it is meant to support niche event sequences,
- * or as a temporary fix for unsupported use cases. Prefer using other 'hoot-dom'
- * helpers such as {@link click}, {@link press} or {@link edit}.
- *
- * Creates a new DOM {@link Event} of the given type and dispatches it on the given
- * {@link Target}.
- *
- * Note that this function is free of side-effects and does not trigger any other
- * event or special action. It also only supports standard DOM events, and will
- * crash when trying to dispatch a non-standard or deprecated event.
- *
  * @template {EventType} T
  * @template {HTMLBodyElementEventMap[T]} I
  * @param {EventTarget} target
  * @param {T} type
  * @param {Partial<I> | { eventInit: Record<T, Partial<I>> }} [eventInit]
- * @example
- *  await manuallyDispatchProgrammaticEvent("input", "paste"); // Dispatches a "paste" event on the given <input>
  * @returns {Promise<EventList>}
  */
 export async function dispatch(target, type, eventInit) {
@@ -2061,24 +1974,9 @@ export async function dispatch(target, type, eventInit) {
 }
 
 /**
- * Starts a drag sequence on the given {@link AsyncTarget}.
- *
- * Returns a set of helper functions to direct the sequence:
- * - `moveTo`: moves the pointer to the given target;
- * - `drop`: drops the dragged element on the given target (if any);
- * - `cancel`: cancels the drag sequence.
- *
  * @param {AsyncTarget} target
  * @param {DragOptions} [options]
  * @returns {Promise<DragHelpers>}
- * @example
- *  drag(".card:first").drop(".card:last"); // Drags the first card onto the last one
- * @example
- *  drag(".card:first").moveTo(".card:last").drop(); // Same as above
- * @example
- *  const { cancel, moveTo } = await drag(".card:first"); // Starts the drag sequence
- *  moveTo(".card:eq(3)"); // Moves the dragged card to the 4th card
- *  cancel(); // Cancels the drag sequence
  */
 export async function drag(target, options) {
     /**
@@ -2175,18 +2073,9 @@ export async function drag(target, options) {
 }
 
 /**
- * Combination of {@link clear} and {@link fill}:
- * - first, clears the input value (if any)
- * - then fills the input with the given value
- *
- * @see {@link clear}
- * @see {@link fill}
  * @param {InputValue} value
  * @param {FillOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  fill("foo"); // Types "foo" in the active element
- *  edit("Hello World"); // Replaces "foo" by "Hello World"
  */
 export async function edit(value, options) {
     const finalizeEvents = setupEvents("edit", options);
@@ -2211,29 +2100,9 @@ export function enableEventLogs(toggle) {
 }
 
 /**
- * Fills the current **active element** with the given `value`. This helper is intended
- * for `<input>` and `<textarea>` elements, with the exception of `"checkbox"` and
- * `"radio"` types, which should be selected using the {@link check} helper.
- *
- * If the target is an editable input, its string `value` will be input one character
- * at a time, each generating its corresponding keyboard event sequence. This behavior
- * can be overriden by passing the `instantly` option, which will instead simulate
- * a `control` + `v` keyboard sequence, resulting in the whole text being pasted.
- *
- * Note that the given value is **appended** to the current value of the element.
- *
- * If the active element is a `<input type="file"/>`, the `value` should be a
- * `File`/list of `File` object(s).
- *
  * @param {InputValue} value
  * @param {FillOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  fill("Hello World"); // Types "Hello World" in the active element
- * @example
- *  fill("Hello World", { instantly: true }); // Pastes "Hello World" in the active element
- * @example
- *  fill(new File(["Hello World"], "hello.txt")); // Uploads a file named "hello.txt" with "Hello World" as content
  */
 export async function fill(value, options) {
     const finalizeEvents = setupEvents("fill", options);
@@ -2249,22 +2118,9 @@ export async function fill(value, options) {
 }
 
 /**
- * Performs a hover sequence on the given {@link AsyncTarget}.
- *
- * The event sequence is as follows:
- *  - `pointerover`
- *  - [desktop] `mouseover`
- *  - `pointerenter`
- *  - [desktop] `mouseenter`
- *  - `pointermove`
- *  - [desktop] `mousemove`
- *  - [touch] `touchmove`
- *
  * @param {AsyncTarget} target
  * @param {PointerOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  hover("button"); // Hovers the first <button> element
  */
 export async function hover(target, options) {
     const finalizeEvents = setupEvents("hover", options);
@@ -2276,26 +2132,9 @@ export async function hover(target, options) {
 }
 
 /**
- * Performs a key down sequence on the current **active element**.
- *
- * The event sequence is as follows:
- *  - `keydown`
- *
- * Additional actions will be performed depending on the key pressed:
- * - `Tab`: focus next (or previous with `shift`) focusable element;
- * - `c`: copy current selection to clipboard;
- * - `v`: paste current clipboard content to current element;
- * - `Enter`: submit the form if the target is a `<button type="button">` or
- *  a `<form>` element, or trigger a `change` event on the target if it is
- *  an `<input>` element;
- * - `Space`: trigger a `click` event on the target if it is an `<input type="checkbox">`
- *  element.
- *
  * @param {KeyStrokes} keyStrokes
  * @param {KeyboardOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  keyDown(" "); // Space key
  */
 export async function keyDown(keyStrokes, options) {
     const finalizeEvents = setupEvents("keyDown", options);
@@ -2308,16 +2147,9 @@ export async function keyDown(keyStrokes, options) {
 }
 
 /**
- * Performs a key up sequence on the current **active element**.
- *
- * The event sequence is as follows:
- *  - `keyup`
- *
  * @param {KeyStrokes} keyStrokes
  * @param {KeyboardOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  keyUp("Enter");
  */
 export async function keyUp(keyStrokes, options) {
     const finalizeEvents = setupEvents("keyUp", options);
@@ -2330,21 +2162,8 @@ export async function keyUp(keyStrokes, options) {
 }
 
 /**
- * Performs a leave sequence on the current **window**.
- *
- * The event sequence is as follows:
- *  - `pointermove`
- *  - [desktop] `mousemove`
- *  - [touch] `touchmove`
- *  - `pointerout`
- *  - [desktop] `mouseout`
- *  - `pointerleave`
- *  - [desktop] `mouseleave`
- *
  * @param {PointerOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  leave("button"); // Moves out of <button>
  */
 export async function leave(options) {
     const finalizeEvents = setupEvents("leave", options);
@@ -2355,14 +2174,9 @@ export async function leave(options) {
 }
 
 /**
- * Performs a middle-click sequence on the given {@link AsyncTarget}.
- *
- * @see {@link click}
  * @param {AsyncTarget} target
  * @param {PointerOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  middleClick("button"); // Middle-clicks on the first <button> element
  */
 export async function middleClick(target, options) {
     const finalizeEvents = setupEvents("middleClick", options);
@@ -2403,18 +2217,12 @@ export async function middleClick(target, options) {
  * @returns {() => void}
  */
 /**
- * Shorthand helper to attach an event listener to the given {@link Target}, and
- * returning a function to remove the listener.
- *
  * @template {EventType} T
  * @param {Target<EventTarget>} target
  * @param {T} type
  * @param {(event: GlobalEventHandlersEventMap[T]) => any} listener
  * @param {boolean | AddEventListenerOptions} [options]
  * @returns {() => void}
- * @example
- *  const off = on("button", "click", onClick);
- *  after(off);
  */
 export function on(target, type, listener, options) {
     const targets = isEventTarget(target) ? [target] : queryAll(target);
@@ -2433,20 +2241,9 @@ export function on(target, type, listener, options) {
 }
 
 /**
- * Performs a pointer down on the given {@link AsyncTarget}.
- *
- * The event sequence is as follows:
- *  - `pointerdown`
- *  - [desktop] `mousedown`
- *  - [touch] `touchstart`
- *  - [target is not active element] `blur`
- *  - [target is focusable] `focus`
- *
  * @param {AsyncTarget} target
  * @param {PointerOptions | DragOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  pointerDown("button"); // Focuses to the first <button> element
  */
 export async function pointerDown(target, options) {
     const finalizeEvents = setupEvents("pointerDown", options);
@@ -2459,18 +2256,9 @@ export async function pointerDown(target, options) {
 }
 
 /**
- * Performs a pointer up on the given {@link AsyncTarget}.
- *
- * The event sequence is as follows:
- * - `pointerup`
- * - [desktop] `mouseup`
- * - [touch] `touchend`
- *
  * @param {AsyncTarget} target
  * @param {PointerOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  pointerUp("body"); // Triggers a pointer up on the <body> element
  */
 export async function pointerUp(target, options) {
     const finalizeEvents = setupEvents("pointerUp", options);
@@ -2483,22 +2271,9 @@ export async function pointerUp(target, options) {
 }
 
 /**
- * Performs a keyboard event sequence on the current **active element**.
- *
- * The event sequence is as follows:
- *  - `keydown`
- *  - `keyup`
- *
  * @param {KeyStrokes} keyStrokes
  * @param {KeyboardOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  pointerDown("button[type=submit]"); // Moves focus to <button>
- *  keyDown("Enter"); // Submits the form
- * @example
- *  keyDown("Shift+Tab"); // Focuses previous focusable element
- * @example
- *  keyDown(["ctrl", "v"]); // Pastes current clipboard content
  */
 export async function press(keyStrokes, options) {
     const finalizeEvents = setupEvents("press", options);
@@ -2515,21 +2290,9 @@ export async function press(keyStrokes, options) {
 }
 
 /**
- * Performs a resize event sequence on the current **window**.
- *
- * The event sequence is as follows:
- *  - `resize`
- *
- * The target will be resized to the given dimensions, enforced by `!important` style
- * attributes.
- *
- * @param {Dimensions} [dimensions] omitted leaves the current dimensions in
- *  place: {@link parseDimensions} yields `[undefined, undefined]` and
- *  {@link setDimensions} skips both branches.
+ * @param {Dimensions} [dimensions]
  * @param {EventOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  resize("body", { width: 1000, height: 500 }); // Resizes <body> to 1000x500
  */
 export async function resize(dimensions, options) {
     const finalizeEvents = setupEvents("resize", options);
@@ -2543,14 +2306,9 @@ export async function resize(dimensions, options) {
 }
 
 /**
- * Performs a right-click sequence on the given {@link AsyncTarget}.
- *
- * @see {@link click}
  * @param {AsyncTarget} target
  * @param {PointerOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  rightClick("button"); // Middle-clicks on the first <button> element
  */
 export async function rightClick(target, options) {
     const finalizeEvents = setupEvents("rightClick", options);
@@ -2564,18 +2322,10 @@ export async function rightClick(target, options) {
 }
 
 /**
- * Performs a scroll event sequence on the given {@link AsyncTarget}.
- *
- * The event sequence is as follows:
- *  - [desktop] `wheel`
- *  - `scroll`
- *
  * @param {AsyncTarget} target
  * @param {Position} [position]
  * @param {ScrollOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  scroll("body", { y: 0 }); // Scrolls to the top of <body>
  */
 export async function scroll(target, position, options) {
     const finalizeEvents = setupEvents("scroll", options);
@@ -2646,18 +2396,9 @@ export async function scroll(target, position, options) {
 }
 
 /**
- * Performs a selection event sequence on the current **active element**. This helper
- * is intended for `<select>` elements only.
- *
- * The event sequence is as follows:
- *  - `change`
- *
  * @param {string | number | (string | number)[]} value
  * @param {SelectOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  click("select[name=country]"); // Focuses <select> element
- *  select("belgium"); // Selects the <option value="belgium"> element
  */
 export async function select(value, options) {
     const finalizeEvents = setupEvents("select", options);
@@ -2683,9 +2424,6 @@ export async function select(value, options) {
 }
 
 /**
- * Gives the given {@link File} list to the current file input. This helper only
- * works if a file input has been previously interacted with (by clicking on it).
- *
  * @param {MaybeIterable<File>} files
  * @param {EventOptions} [options]
  * @returns {Promise<EventList>}
@@ -2707,14 +2445,6 @@ export async function setInputFiles(files, options) {
 }
 
 /**
- * Sets the given value to the given "input[type=range]" {@link AsyncTarget}.
- *
- * The event sequence is as follows:
- *  - `pointerdown`
- *  - `input`
- *  - `change`
- *  - `pointerup`
- *
  * @param {AsyncTarget} target
  * @param {number} value
  * @param {PointerOptions} [options]
@@ -2775,17 +2505,9 @@ export function setupEventActions(target, options) {
 }
 
 /**
- * Ensures that the given {@link AsyncTarget} is unchecked.
- *
- * If it is checked, a click is triggered on the input.
- * If the input is still checked after the click, an error is thrown.
- *
- * @see {@link click}
  * @param {AsyncTarget} target
  * @param {PointerOptions} [options]
  * @returns {Promise<EventList>}
- * @example
- *  uncheck("input[type=checkbox]"); // Unchecks the first <input> checkbox element
  */
 export async function uncheck(target, options) {
     const finalizeEvents = setupEvents("uncheck", options);
@@ -2812,8 +2534,6 @@ export async function uncheck(target, options) {
 }
 
 /**
- * Triggers a "beforeunload" event on the current **window**.
- *
  * @param {EventOptions} [options]
  * @returns {Promise<EventList>}
  */

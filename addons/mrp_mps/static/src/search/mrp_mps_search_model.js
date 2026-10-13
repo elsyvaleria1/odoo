@@ -3,11 +3,7 @@ import { Domain } from "@web/core/domain";
 import { SearchModel } from "@web/search/search_model";
 
 export class MrpMpsSearchModel extends SearchModel {
-    /**
-     * When search with field bom_id, also show components of that bom
-     *
-     * @override
-     */
+    /** @override */
     _getFieldDomain(field, autocompleteValues) {
         if (field.fieldName === "bom_id") {
             const domains = autocompleteValues.map(({ value, operator }) => {

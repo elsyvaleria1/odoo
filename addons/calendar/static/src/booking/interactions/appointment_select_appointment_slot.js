@@ -84,12 +84,7 @@ export class appointmentSlotSelect extends Interaction {
         this.firstEl.click();
     }
 
-    /**
-     * Hides the tables of a calendar month and appends the "no availability this
-     * month" helper to it instead.
-     *
-     * @param {HTMLElement} monthEl the month div to which the helper is appended
-     */
+    /** @param {HTMLElement} monthEl */
     renderNoAvailabilityForMonth(monthEl) {
         const firstAvailabilityDate = this.firstEl.getAttribute("id");
         const staffUserEl = this.el.querySelector(

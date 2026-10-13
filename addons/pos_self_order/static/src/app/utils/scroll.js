@@ -1,15 +1,13 @@
 /** @odoo-module native */
 /**
- * Scrolls a horizontally scrollable container to ensure a specific item is visible
- *
- * @param {HTMLElement} scrollEl - The scrollable container element
- * @param {string} querySelector - A CSS selector to find the target item inside the container
- * @param {Object} [options] - Optional configuration.
- * @param {'start' | 'auto'} [options.align='start'] - If 'start', aligns the item to the left edge.
- * @param {number} [options.edgePadding=50] - Extra space to keep between the item and the container's edge
- * @param {'auto' | 'smooth'} [options.scrollBehavior='smooth'] - Defines the scroll animation behavior
- * @param {number} [options.minRightGap] - In 'start' mode, skips scrolling if item’s right edge is within this distance from container’s right edge.
- **/
+ * @param {HTMLElement} scrollEl
+ * @param {string} querySelector
+ * @param {Object} [options]
+ * @param {'start' | 'auto'} [options.align='start']
+ * @param {number} [options.edgePadding=50]
+ * @param {'auto' | 'smooth'} [options.scrollBehavior='smooth']
+ * @param {number} [options.minRightGap]
+ */
 export function scrollItemIntoViewX(
     scrollEl,
     querySelector,

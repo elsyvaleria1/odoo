@@ -499,11 +499,7 @@ class MainComponent extends Component {
         }
     }
 
-    /**
-     * Stops event propagation and delegates validation to the model.
-     *
-     * @param {OdooEvent} ev
-     */
+    /** @param {OdooEvent} ev */
     async validate(ev) {
         ev.stopPropagation();
         await this.model.validate();

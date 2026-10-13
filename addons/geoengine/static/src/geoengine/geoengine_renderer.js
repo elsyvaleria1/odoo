@@ -375,13 +375,7 @@ export class GeoengineRenderer extends Component {
         debugLog("Raster layers updated");
     }
 
-    /**
-     * A base-map switch only flips visibility on layers already on the map;
-     * rebuilding every tile source to answer a radio button threw away their
-     * tile caches. A raster whose configuration changed is rebuilt.
-     *
-     * @param {boolean} [rebuild=false]
-     */
+    /** @param {boolean} [rebuild=false] */
     onRasterLayerChanged(rebuild = false) {
         const baseMaps = this.map
             ?.getLayers()

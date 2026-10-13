@@ -231,7 +231,7 @@ export class DaterangePicker extends Interaction {
     }
 
     /**
-     * @param {Temporal.PlainDate | Temporal.ZonedDateTime} date a picker day
+     * @param {Temporal.PlainDate | Temporal.ZonedDateTime} date
      * @param {Temporal.ZonedDateTime} startDate
      * @private
      */

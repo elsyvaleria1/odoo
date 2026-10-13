@@ -23,17 +23,8 @@ export function provideChildSpreadsheetEnv(context) {
     return compatibility.useChildSubEnv(context);
 }
 /**
- * Hook that will capture the 'Ctrl+p' press that corresponds to the user intent to print a spreadsheet.
- * It will prepare the spreadsheet for printing by:
- * - displaying it in dashboard mode.
- * - altering the spreadsheet dimensions to ensure we render the whole sheet.
- * The hook will also restore the spreadsheet dimensions to their original state after the print.
- *
- * The hook will return the print preparation function to be called manually in other contexts than pressing
- * the common keybind (through a menu for instance).
- *
  * @param {() => Model | undefined} model
- * @returns {() => Promise<void>} preparePrint
+ * @returns {() => Promise<void>}
  */
 export function useSpreadsheetPrint(model) {
     let frozenPrintState = undefined;
@@ -67,10 +58,7 @@ export function useSpreadsheetPrint(model) {
         () => [printState.active],
     );
 
-    /**
-     * Returns the DOM position & dimensions such that the whole spreadsheet content is visible.
-     * @returns {Rect}
-     */
+    /** @returns {Rect} */
     function getPrintRect() {
         const sheetId = model().getters.getActiveSheetId();
         const { bottom, right } = model().getters.getSheetZone(sheetId);
@@ -136,10 +124,8 @@ export function useSpreadsheetPrint(model) {
 
 export function useSpreadsheetNotificationStore() {
     /**
-     * Open a dialog to ask a confirmation to the user.
-     *
-     * @param {string} body body content to display
-     * @param {Function} confirm Callback if the user press 'Confirm'
+     * @param {string} body
+     * @param {Function} confirm
      */
     function askConfirmation(body, confirm) {
         dialog.add(ConfirmationDialog, {
@@ -151,10 +137,7 @@ export function useSpreadsheetNotificationStore() {
         });
     }
 
-    /**
-     * Adds a notification to display to the user
-     * @param {{text: string, type: string, sticky: boolean }} notification
-     */
+    /** @param {{text: string, type: string, sticky: boolean }} notification */
     function notifyUser(notification) {
         notifications.add(notification.text, {
             type: notification.type,
@@ -163,10 +146,8 @@ export function useSpreadsheetNotificationStore() {
     }
 
     /**
-     * Open a dialog to display an error message to the user.
-     *
-     * @param {string} body Content to display
-     * @param {function} callBack Callback function to be executed when the dialog is closed
+     * @param {string} body
+     * @param {function} callBack
      */
     function raiseError(body, callBack) {
         dialog.add(

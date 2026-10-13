@@ -137,9 +137,6 @@ export function formatFieldFloat(value, options = {}) {
 }
 
 /**
- * Studio writes every `digits`-typed option as a `[precision, scale]` pair, so
- * a `min_display_digits` it authored arrives as one; the scale is the count.
- *
  * @param {{ min_display_digits?: number | [number, number] }} options
  * @returns {number | undefined}
  */

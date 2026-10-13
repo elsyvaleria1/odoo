@@ -13,10 +13,8 @@ const { markdownLink } = spreadsheet.links;
 const { linkMenuRegistry } = spreadsheet.registries;
 
 /**
- * Helper to get the function to be called when the spreadsheet is opened
- * in order to insert the link.
  * @param {import("@spreadsheet/ir_ui_menu/odoo_menu_link_cell").ViewLinkDescription} actionToLink
- * @returns Function to call
+ * @returns
  */
 function insertLink(actionToLink) {
     return (model) => {

@@ -15,15 +15,13 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Prepare the inline form of Mercado Pago for direct payment.
-     *
-     * @override method from payment.payment_form
+     * @override
      * @private
-     * @param {number} providerId - The id of the selected payment option's provider.
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The online payment flow of the selected payment option
+     * @param {number} providerId
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _prepareInlineForm(
@@ -97,14 +95,12 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Validate the form inputs before initiating the payment flow.
-     *
-     * @override method from @payment/js/payment_form
+     * @override
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The payment flow of the selected payment option.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
@@ -125,14 +121,12 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Process Mercado Pago's implementation of the direct payment flow.
-     *
-     * @override method from payment.payment_form
+     * @override
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {object} processingValues - The processing values of the transaction.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {object} processingValues
      * @return {void}
      */
     async _processDirectFlow(

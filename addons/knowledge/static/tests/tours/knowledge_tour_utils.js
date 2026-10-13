@@ -78,9 +78,8 @@ function getOffset(element) {
 }
 
 /**
- * Drag&drop an article in the sidebar
- * @param {MaybeIterable<Node> | string | null | undefined | false} from Hoot Dom target
- * @param {MaybeIterable<Node> | string | null | undefined | false} to Hoot Dom target
+ * @param {MaybeIterable<Node> | string | null | undefined | false} from
+ * @param {MaybeIterable<Node> | string | null | undefined | false} to
  */
 export const dragAndDropArticle = (source, target) => {
     const elementOffset = getOffset(source);
@@ -132,17 +131,10 @@ export const dragAndDropArticle = (source, target) => {
 };
 
 /**
- * WARNING: This method uses the new editor powerBox.
- *
- * Steps to insert an articleLink for the given article, in the first editable
- * html_field found in the given container selector (should have a paragraph
- * as its last element, and the link will be inserted at the position at index
- * offset in the paragraph).
- *
- * @param {string} htmlFieldContainerSelector jquery selector for the container
- * @param {string} articleName name of the article to insert a link for
- * @param {integer} previousSiblingSelector jquery selector for the previous sibling of the article link
- * @returns {Array} tour steps
+ * @param {string} htmlFieldContainerSelector
+ * @param {string} articleName
+ * @param {integer} previousSiblingSelector
+ * @returns {Array}
  */
 export function appendArticleLink(
     htmlFieldContainerSelector,
@@ -185,11 +177,8 @@ export function endKnowledgeTour() {
 }
 
 /**
- * WARNING: uses the legacy editor powerbox.
- *
- * Opens the power box of the editor
  * @param {HTMLElement} paragraph
- * @param {integer} offset position of the command call in the paragraph
+ * @param {integer} offset
  */
 export function openCommandBar(paragraph, offset = 0) {
     const sel = document.getSelection();
@@ -224,11 +213,8 @@ export function openCommandBar(paragraph, offset = 0) {
 }
 
 /**
- * WARNING: uses the new editor powerbox.
- *
- * Opens the power box of the editor
  * @param {HTMLElement} paragraph
- * @param {Node} previousSibling previous sibling of the inserted element
+ * @param {Node} previousSibling
  */
 export function openPowerbox(paragraph, previousSibling) {
     let offset = 0;

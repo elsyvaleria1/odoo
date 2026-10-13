@@ -6,10 +6,6 @@ import { compareDatetime } from "@mail/utils/common/misc";
 import { compareDates, now as currentDateTime } from "@web/core/l10n/dates";
 
 /**
- * Meetings read as an agenda: the one going on or coming next on top, the
- * later ones below, those already over at the bottom with the latest ended
- * first. A meeting whose call is running is going on however late it runs.
- *
  * @param {import("models").DiscussChannel} channel1
  * @param {import("models").DiscussChannel} channel2
  * @returns {number}

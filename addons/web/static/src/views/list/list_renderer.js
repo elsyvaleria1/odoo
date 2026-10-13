@@ -512,10 +512,6 @@ export class ListRenderer extends Component {
     }
 
     /**
-     * The records a list (or a group's list) renders as rows, in order. The
-     * template loop, the grid state and virtualization all read this, so a
-     * renderer that hides records overrides it once.
-     *
      * @param {any} list
      * @returns {any[]}
      */
@@ -525,7 +521,7 @@ export class ListRenderer extends Component {
 
     /**
      * @param {any} list
-     * @returns {any[]} the leading rows this render builds
+     * @returns {any[]}
      */
     getBuiltRowRecords(list) {
         const records = this.getRowRecords(list);
@@ -540,7 +536,7 @@ export class ListRenderer extends Component {
 
     /**
      * @param {boolean} mounted
-     * @returns {number} the rows that cover what is scrolled to and one screen
+     * @returns {number}
      */
     getRowsPerScreen(mounted) {
         const scrolledBy = mounted
@@ -895,13 +891,7 @@ export class ListRenderer extends Component {
         return Object.values(propertyGroups);
     }
 
-    /**
-     * True when the edited record is invalid *because of* a column the
-     * optional-columns gear is currently hiding. The generic "Missing required
-     * fields" notification cannot point at those: they are not on screen.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get hasInvalidOptionalFields() {
         return this.visibleOptionalColumns.some((col) =>
             this.isOptionalFieldInvalid(col.name),
@@ -909,10 +899,6 @@ export class ListRenderer extends Component {
     }
 
     /**
-     * Read live rather than off a per-render cache: the dropdown menu is a
-     * popover, so its content renders outside this component's render pass and
-     * a cached set would answer with the previous pass's value.
-     *
      * @param {string} fieldName
      * @returns {boolean}
      */

@@ -55,9 +55,7 @@ export class MediaWebsitePlugin extends Plugin {
     }
 
     /**
-     * Checks if the given media can be replaced.
-     *
-     * @param {HTMLElement} targetEl the media element
+     * @param {HTMLElement} targetEl
      * @returns {Boolean}
      */
     isReplaceableMedia(targetEl) {
@@ -75,11 +73,7 @@ export class MediaWebsitePlugin extends Plugin {
         return false;
     }
 
-    /**
-     * Replaces the double-clicked media element.
-     *
-     * @param {HTMLElement} mediaEl the media element to replace
-     */
+    /** @param {HTMLElement} mediaEl */
     async onDblClickEditableMedia(mediaEl) {
         this.dependencies.operation.next(async () => {
             this.removeCurrentTooltip();
@@ -87,11 +81,7 @@ export class MediaWebsitePlugin extends Plugin {
         });
     }
 
-    /**
-     * Opens the media dialog to replace the selected media.
-     *
-     * @param {HTMLElement} mediaEl the media element to replace
-     */
+    /** @param {HTMLElement} mediaEl */
     async replaceMedia(mediaEl) {
         const sel = this.dependencies.selection.getEditableSelection();
         const editableEl =
@@ -100,11 +90,7 @@ export class MediaWebsitePlugin extends Plugin {
         await this.dependencies.media.openMediaDialog({ node: mediaEl }, editableEl);
     }
 
-    /**
-     * Displays the "double-click" tooltip under the given media element.
-     *
-     * @param {HTMLElement} mediaEl the media element
-     */
+    /** @param {HTMLElement} mediaEl */
     openImageTooltip(mediaEl) {
         this.removeCurrentTooltip();
         this.removeCurrentTooltip = this.popover.add(mediaEl, Tooltip, {

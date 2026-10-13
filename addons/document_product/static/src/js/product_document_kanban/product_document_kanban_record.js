@@ -14,11 +14,7 @@ export class ProductDocumentKanbanRecord extends KanbanRecord {
         return this.props.record.data.attachment_id;
     }
 
-    /**
-     * @override
-     *
-     * Override to open the preview upon clicking the image, if compatible.
-     */
+    /** @override */
     onGlobalClick(ev) {
         if (ev.target.closest(CANCEL_GLOBAL_CLICK)) {
             return;

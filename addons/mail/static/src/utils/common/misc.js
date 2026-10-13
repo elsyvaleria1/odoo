@@ -129,8 +129,6 @@ export function closeStream(stream) {
 }
 
 /**
- * Both dates or both datetimes; an empty value sorts first.
- *
  * @param {import("@web/core/l10n/dates").NullableDateValue | undefined} date1
  * @param {import("@web/core/l10n/dates").NullableDateValue | undefined} date2
  * @returns {number}
@@ -146,7 +144,7 @@ export function compareDatetime(date1, date2) {
  * @param {string} key1
  * @param {string} key2
  * @param {string} prefix
- * @returns {number} 0 for equal keys
+ * @returns {number}
  */
 export function comparePrefixThenAlpha(key1, key2, prefix) {
     const starts1 = key1.startsWith(prefix);
@@ -163,7 +161,7 @@ export function comparePrefixThenAlpha(key1, key2, prefix) {
 /**
  * @template T, V
  * @param {(item: T) => V} fn
- * @returns {(item: T) => V} `fn`, computed once per item
+ * @returns {(item: T) => V}
  */
 export function memoizeByItem(fn) {
     const values = new Map();
@@ -471,13 +469,9 @@ export const SCROLL_END_TIMEOUT = 3000;
 export const SCROLL_END_FALLBACK_DELAY = 250;
 
 /**
- * Settles once a smooth scroll ends: on the target's `scrollend` where the browser
- * fires it (with a timeout in case it never does), after a fixed delay elsewhere.
- * `settle()` ends the wait early and releases the listener and the timer.
- *
  * @param {Object} options
- * @param {EventTarget} options.target only a `scrollend` from this element counts
- * @param {() => void} [options.onSettle] runs synchronously when the wait ends, once
+ * @param {EventTarget} options.target
+ * @param {() => void} [options.onSettle]
  * @returns {Deferred<void> & { settle: () => void }}
  */
 export function awaitScrollEnd({ target, onSettle }) {
@@ -517,7 +511,7 @@ export function awaitScrollEnd({ target, onSettle }) {
  * @param {"first"|"last"|"previous"|"next"} direction
  * @param {number|null} activeIndex
  * @param {number} length
- * @returns {number|undefined} the index to activate, wrapping at both ends
+ * @returns {number|undefined}
  */
 export function navigateIndex(direction, activeIndex, length) {
     if (length === 0) {

@@ -7,7 +7,6 @@ import { isInstanceOf } from "../hoot_dom_utils.js";
  *  animationFrame?: boolean;
  *  blockTimers?: boolean;
  * }} AdvanceTimeOptions
- *
  * @typedef {{
  *  message?: string | (() => string);
  *  timeout?: number;
@@ -81,11 +80,7 @@ function intervalToId(id) {
     return ID_PREFIX.interval + String(id);
 }
 
-/**
- * Converts a given value to a **natural number** (or 0 if failing to do so).
- *
- * @param {unknown} value
- */
+/** @param {unknown} value */
 function parseNat(value) {
     return $max($floor(Number(value)), 0) || 0;
 }
@@ -129,14 +124,9 @@ export function advanceFrame(frameCount, options) {
 }
 
 /**
- * Advances the current time by the given amount of milliseconds. This will
- * affect all timeouts, intervals, animations and date objects.
- *
- * It returns a promise resolved after all related callbacks have been executed.
- *
  * @param {number} ms
  * @param {AdvanceTimeOptions} [options]
- * @returns {Promise<number>} time consumed by timers (in ms).
+ * @returns {Promise<number>}
  */
 export async function advanceTime(ms, options) {
     ms = parseNat(ms);
@@ -174,12 +164,7 @@ export async function advanceTime(ms, options) {
     return ms;
 }
 
-/**
- * Returns a promise resolved after the next animation frame, typically allowing
- * Owl components to render.
- *
- * @returns {Promise<void>}
- */
+/** @returns {Promise<void>} */
 export function animationFrame() {
     return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
 }
@@ -206,12 +191,8 @@ export function cleanupTime() {
 }
 
 /**
- * Returns a promise resolved after a given amount of milliseconds (default to 0).
- *
  * @param {number} [duration]
  * @returns {Promise<void>}
- * @example
- *  await delay(1000); // waits for 1 second
  */
 export function delay(duration) {
     return new Promise((resolve) => setTimeout(resolve, duration));
@@ -233,11 +214,7 @@ export function isTimeFrozen() {
     return frozen;
 }
 
-/**
- * Returns a promise resolved after the next microtask tick.
- *
- * @returns {Promise<void>}
- */
+/** @returns {Promise<void>} */
 export function microTick() {
     return new Promise(queueMicrotask);
 }
@@ -341,12 +318,8 @@ export function resetTimeOffset() {
 }
 
 /**
- * Calculates the amount of time needed to run all current timeouts, intervals and
- * animations, and then advances the current time by that amount.
- *
- * @see {@link advanceTime}
  * @param {AdvanceTimeOptions} [options]
- * @returns {Promise<number>} time consumed by timers (in ms).
+ * @returns {Promise<number>}
  */
 export function runAllTimers(options) {
     if (!timers.size) {
@@ -357,11 +330,7 @@ export function runAllTimers(options) {
     return advanceTime($ceil(endts - now()), options);
 }
 
-/**
- * Sets the current frame rate (in fps) used by animation frames (default to 60fps).
- *
- * @param {number} frameRate
- */
+/** @param {number} frameRate */
 export function setFrameRate(frameRate) {
     frameRate = parseNat(frameRate);
     if (frameRate < 1 || frameRate > 1000) {
@@ -374,35 +343,16 @@ export function setupTime() {
     allowTimers = true;
 }
 
-/**
- * Returns a promise resolved after the next task tick.
- *
- * @returns {Promise<void>}
- */
+/** @returns {Promise<void>} */
 export function tick() {
     return delay();
 }
 
 /**
- * Returns a promise fulfilled when the given `predicate` returns a truthy value,
- * with the value of the promise being the return value of the `predicate`.
- *
- * The `predicate` is run once initially, and then on each animation frame until
- * it succeeds or fail.
- *
- * The promise automatically rejects after a given `timeout` (defaults to 200
- * milliseconds — see the `?? 200` below; pass `timeout` explicitly for slower
- * conditions).
- *
  * @template T
  * @param {(last: boolean) => T} predicate
  * @param {WaitOptions} [options]
  * @returns {Promise<T>}
- * @example
- *  await waitUntil(() => []); // -> []
- * @example
- *  const button = await waitUntil(() => queryOne("button:visible"));
- *  button.click();
  */
 export async function waitUntil(predicate, options) {
     await Promise.resolve();
@@ -445,10 +395,6 @@ export async function waitUntil(predicate, options) {
 }
 
 /**
- * Manually resolvable and rejectable promise. It introduces 2 new methods:
- *  - {@link reject} rejects the deferred with the given reason;
- *  - {@link resolve} resolves the deferred with the given value.
- *
  * @template [T=any]
  * @extends {Promise<T>}
  */

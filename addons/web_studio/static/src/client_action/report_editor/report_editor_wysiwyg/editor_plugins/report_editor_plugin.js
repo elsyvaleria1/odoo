@@ -15,9 +15,9 @@ import { StudioDynamicPlaceholderPopover } from "./studio_dynamic_placeholder_po
 
 /**
  * @typedef {Object} QwebVariableInfo
- * @property {string} model - The technical model name (e.g. "res.partner").
- * @property {string} name - The human-readable model name.
- * @property {boolean} in_foreach - Whether the variable appears inside a `t-foreach`.
+ * @property {string} model
+ * @property {string} name
+ * @property {boolean} in_foreach
  */
 
 /**

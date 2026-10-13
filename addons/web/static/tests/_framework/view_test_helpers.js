@@ -288,14 +288,8 @@ export async function hideTab() {
 }
 
 /**
- * A meta refresh makes the browser itself navigate the frame, so `beforeunload`
- * is dispatched from an empty stack with a microtask checkpoint after each
- * listener -- unlike a navigation started by script. The second listener reads
- * `defaultPrevented` where the browser reads it to decide on the prompt.
- *
  * @param {(ev: BeforeUnloadEvent) => unknown} handler
- * @param {() => void} [onDecided] runs where the browser decides, after the
- *  microtask checkpoint that follows the handler
+ * @param {() => void} [onDecided]
  * @returns {Promise<boolean>}
  */
 export async function isPromptRequested(handler, onDecided) {

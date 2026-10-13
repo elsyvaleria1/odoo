@@ -7,8 +7,6 @@ import { waitForDataLoaded } from "@spreadsheet/helpers/model";
  */
 
 /**
- * Insert a list in a spreadsheet model.
- *
  * @param {Model} model
  * @param {Object} params
  * @param {string} params.model
@@ -39,7 +37,6 @@ export function insertListInSpreadsheet(model, params) {
 }
 
 /**
- *
  * @param {Object} params
  * @param {string} [params.model]
  * @param {Array<string>} [params.columns]
@@ -50,7 +47,6 @@ export function insertListInSpreadsheet(model, params) {
  * @param {string} [params.sheetId]
  * @param {object} [params.modelConfig]
  * @param {{name: string, asc: boolean}[]} [params.orderBy]
- *
  * @returns { Promise<{ model: OdooSpreadsheetModel, env: Object }>}
  */
 export async function createSpreadsheetWithList(params = {}) {

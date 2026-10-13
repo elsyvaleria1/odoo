@@ -11,13 +11,7 @@ import { ConfirmationDialog } from "@web/ui/dialog";
 
 const FRAGMENTS_HEADER = "X-Odoo-Fragments";
 
-/**
- * The morph leaves the field being typed in as typed; a field that was just
- * submitted shows the server's answer instead (a quantity clamped to the
- * stock, a corrected value).
- *
- * @param {FormData} submitted
- */
+/** @param {FormData} submitted */
 function showServerValue(submitted) {
     const field = /** @type {HTMLInputElement | null} */ (document.activeElement);
     if (field && "defaultValue" in field && field.name && submitted.has(field.name)) {
@@ -100,7 +94,7 @@ export class FragmentForm extends Interaction {
 
     /**
      * @param {FormData} body
-     * @param {string} action the submitter's formaction or the form's action
+     * @param {string} action
      */
     async post(body, action) {
         const regions = this.regions();

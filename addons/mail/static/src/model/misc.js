@@ -22,7 +22,6 @@ export const STORE_SYM = Symbol("store");
 
 /** @typedef {import("models").MailIdExpression} IdExpression */
 /**
- * Raw metadata consumed by ModelInternal before the store replaces a field with its value.
  * @typedef {Object<string | symbol, any>} FieldDefinition
  * @property {boolean} [html]
  * @property {string} [targetModel]
@@ -37,8 +36,6 @@ export const STORE_SYM = Symbol("store");
  */
 
 /**
- * Runtime model fields are registered dynamically; keep their dictionary access
- * inside the model infrastructure rather than widening every public record.
  * @param {Record} record
  * @returns {import("./record").RecordFields}
  */
@@ -107,10 +104,6 @@ export function isMany(Model, fieldName) {
     return Model._.fields.get(fieldName) === MANY_SYM;
 }
 /**
- * The record of `localId`, as every reader of the store's map holds it, read
- * without subscribing. Not `toRaw(map).get()`: the raw map holds what OWL
- * stores, which need not be the proxy a read through the map hands out.
- *
  * @param {{ recordByLocalId: Map<string, Record> }} store
  * @param {string} localId
  * @returns {Record | undefined}

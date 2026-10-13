@@ -26,8 +26,6 @@ export const isFalseEmpty = (record, fieldName) =>
 const PIXEL_DIMENSION = /^\s*(\d+(?:\.\d+)?)\s*(?:px)?\s*$/i;
 
 /**
- * Pixels only: every consumer sizes a fixed box in px, so a relative unit
- * ("10%", "2em") yields no constraint rather than the same number of pixels.
  * @param {unknown} value
  * @returns {number | undefined}
  */

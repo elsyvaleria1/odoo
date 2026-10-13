@@ -96,10 +96,7 @@ export class CommentsStore extends SpreadsheetStore {
         this.drawResolvedBackground = true;
     }
 
-    /**
-     *
-     * @param {*} ctx Grid rendering context
-     */
+    /** @param {*} ctx */
     drawLayer({ ctx }, layer) {
         if (
             !this.areCommentsActive ||

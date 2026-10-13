@@ -6,11 +6,7 @@ import { patch } from "@web/core/utils/patch";
 import { WebClient } from "@web/webclient/webclient";
 
 patch(WebClient.prototype, {
-    /**
-     * @override a document's own URL opens the Documents app on it, not its
-     * form. Restored here, not in loadRouterState: the app is made the current
-     * menu as for any route, and a failure falls back to the default app.
-     */
+    /** @override */
     async _restoreRoute(menuId, storedMenuId) {
         const { resId, model } = router.current.actionStack?.at(-1) || {};
         if (!resId || model !== "document.document") {

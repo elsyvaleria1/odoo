@@ -4,11 +4,11 @@
 import { makeLazyFacade } from "@web/core/module_bridge";
 
 /**
- * @param {() => Promise<any>} load resolves to the imported module
+ * @param {() => Promise<any>} load
  * @param {Object} [options]
- * @param {(module: any) => any} [options.pick] the module member to face, if not the module
- * @param {(module: any) => any} [options.extra] a second member to face
- * @param {boolean} [options.constructable] the primary facade is called with `new`
+ * @param {(module: any) => any} [options.pick]
+ * @param {(module: any) => any} [options.extra]
+ * @param {boolean} [options.constructable]
  * @returns {{ facade: any, extraFacade: any, load: () => Promise<any> }}
  */
 export function makeLazyLib(load, { pick, extra, constructable = false } = {}) {

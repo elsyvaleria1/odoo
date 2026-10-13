@@ -2,15 +2,7 @@
 
 const moduleScope = new URLSearchParams(location.search).get("module_scope");
 
-/**
- * Mirror of `ir.http.session_info()["groups"]`: `web` seeds
- * `base.group_allow_export`; an addon whose `ir.http` override adds a group
- * registers it here from its test helpers, so a mock session seeds
- * `user.hasGroup` exactly as a real one does and a service that reads those
- * groups at boot makes no RPC in a test either.
- *
- * @type {Map<string, boolean>}
- */
+/** @type {Map<string, boolean>} */
 const sessionGroups = new Map([["base.group_allow_export", true]]);
 
 /** @param {Record<string, boolean>} groups */
@@ -20,14 +12,7 @@ export function registerSessionGroups(groups) {
     }
 }
 
-/**
- * Mirror of an addon's `ir.http.session_info()` override for the keys it
- * owns: registered from the addon's test helpers at load, merged last into
- * every mock session, so the session a suite boots with says what the
- * server says on a database where that addon is installed.
- *
- * @type {Record<string, unknown>}
- */
+/** @type {Record<string, unknown>} */
 const sessionExtensions = {};
 
 /** @param {Record<string, unknown>} extension */

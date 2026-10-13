@@ -85,12 +85,7 @@ function summary({ proposals, candidates, blocked }) {
     return proposals.map((p) => `${p.kind}: ${p.description}`).join(" + ");
 }
 
-/**
- * The command a summary stands for: a relation's name is searched without
- * regard to case, and a note's words are dictation, scored by speech_measure.
- *
- * @param {string | null} described
- */
+/** @param {string | null} described */
 function command(described) {
     if (described === null) {
         return null;

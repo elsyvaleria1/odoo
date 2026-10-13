@@ -12,7 +12,6 @@ function preventDrag(event) {
 
 export class PDFIframe {
     /**
-     * Renders custom elements inside the PDF.js iframe
      * @param {Document} root
      * @param {Object} env
      * @param {Object} owlServices
@@ -203,7 +202,6 @@ export class PDFIframe {
     }
 
     /**
-     * Renders a sign item using its data and attaches it to a target html element
      * @param { Object } signItemData
      * @property
      */
@@ -221,7 +219,6 @@ export class PDFIframe {
     }
 
     /**
-     * Extends the rendering context of the sign item based on its data
      * @param {SignItem.data} signItem
      * @returns {Object}
      */
@@ -302,10 +299,7 @@ export class PDFIframe {
         }
     }
 
-    /**
-     * Updates the font size of a determined sign item
-     * @param {SignItem}
-     */
+    /** @param {SignItem} */
     updateSignItemFontSize({ el, data }) {
         const largerTypes = ["signature", "initial", "textarea", "selection", "stamp"];
         const size = largerTypes.includes(data.type)
@@ -328,9 +322,8 @@ export class PDFIframe {
     postRender() {}
 
     /**
-     * Creates rendering context for the sign item based on the sign item type
-     * @param {number, number} {itemTypeId, roleId}
-     * @returns {Object} context
+     * @param {number, number} {itemTypeId,
+     * @returns {Object}
      */
     createSignItemDataFromType({ itemTypeId, roleId, roleName }) {
         const type = this.signItemTypesById[itemTypeId];
@@ -365,9 +358,8 @@ export class PDFIframe {
     }
 
     /**
-     * Returns specific alignment according to the sign item type.
-     * @param {String} type: sign item type.
-     * @returns {String}: alignment for the sign item.
+     * @param {String} type:
+     * @returns {String}
      */
     getAlignmentByItemType(type) {
         if (type === "radio") {
@@ -378,14 +370,11 @@ export class PDFIframe {
 
     /**
      * @typedef {Object} SignItem
-     * @property {Object} data // sign item data returned from the search_read
-     * @property {HTMLElement} el // html element of the sign item
+     * @property {Object} data
+     * @property {HTMLElement} el
      */
 
-    /**
-     * Converts a list of sign items to an object indexed by page and id
-     * @returns { Object.<page:number, Object.<id:number, SignItem >>}
-     */
+    /** @returns { Object.<page:number, Object.<id:number, SignItem >>} */
     getSignItems() {
         const signItems = {};
         for (let currentPage = 1; currentPage <= this.pageCount; currentPage++) {
@@ -403,25 +392,19 @@ export class PDFIframe {
     }
 
     /**
-     * Gets page container from the page number
      * @param {Number} page
-     * @returns {HTMLElement} pageContainer
+     * @returns {HTMLElement}
      */
     getPageContainer(page) {
         return this.root.querySelector(`.page[data-page-number="${page}"]`);
     }
 
-    /**
-     * @returns canvas layer used for drawing radio item connecting lines.
-     */
+    /** @returns */
     getCanvas() {
         return this.root.querySelector("#canvas_layer_0");
     }
 
-    /**
-     *
-     * @returns scale of the canvas if its height exceeds the maximum size, else 1.
-     */
+    /** @returns */
     getCanvasScale() {
         const MAX_CANVAS_HEIGHT = 16384;
         const viewer_height = this.root.querySelector("#viewer").offsetHeight;
@@ -429,8 +412,7 @@ export class PDFIframe {
     }
 
     /**
-     * Adjusts signature/initial size to fill the dimensions of the sign item box
-     * @param { String } data base64 image
+     * @param { String } data
      * @param { HTMLElement } signatureItem
      * @returns { Promise }
      */

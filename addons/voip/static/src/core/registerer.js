@@ -33,13 +33,7 @@ export class Registerer {
         });
     }
 
-    /**
-     * Triggered when receiving a response with status code 4xx, 5xx, or 6xx to
-     * the REGISTER request.
-     *
-     * @param {SIP.IncomingResponse} response The server final response to the
-     * REGISTER request.
-     */
+    /** @param {SIP.IncomingResponse} response */
     _onRegistrationRejected(response) {
         const errorMessage = _t(
             "Registration rejected: %(statusCode)s %(reasonPhrase)s.",

@@ -6,9 +6,6 @@ import { useActiveElementScope } from "@web/core/utils/active_element_scope";
 import { useService } from "@web/core/utils/hooks";
 
 /**
- * A screen that is not a view -- a client action such as the barcode app --
- * teaches the interpreter its own sentences while it is mounted.
- *
  * @typedef {import("./interpreter/interpreter.js").Proposal} Proposal
  * @typedef {{
  *   name: string,

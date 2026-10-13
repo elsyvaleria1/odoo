@@ -10,11 +10,7 @@ export const patchListRendererStudio = () => ({
         super.setup(...arguments);
         this.studioService = useService("studio");
     },
-    /**
-     * This function opens the studio mode with current view
-     *
-     * @override
-     */
+    /** @override */
     onSelectedAddCustomField() {
         this.studioService.open();
     },

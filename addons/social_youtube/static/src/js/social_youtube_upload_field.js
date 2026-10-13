@@ -27,19 +27,7 @@ export class YoutubeUploadField extends CharField {
         this.maxUploadSize = 128 * 1024 * 1024 * 1024;
     }
 
-    /**
-     * When the file upload is complete, Youtube triggers its own video "processing"
-     * that can take up to a few minutes and during which we can't alter the video
-     * in any way nor embed it in the YouTube preview.
-     *
-     * It's necessary to wait for the process to be complete before letting the user
-     * proceed with posting, since we can't alter video properties during this process.
-     *
-     * So we just periodically ping the API to check the status of this "video processing".
-     * When it's done, we resolve the Promise returned by this method.
-     *
-     * @private
-     */
+    /** @private */
     _awaitPostProcessing(uploadedVideoId) {
         return new Promise((resolve, reject) => {
             this.uploadedVideoId = uploadedVideoId;
@@ -52,12 +40,7 @@ export class YoutubeUploadField extends CharField {
         });
     }
 
-    /**
-     * Small method that listens to the file upload progress and updates the UI accordingly to give
-     * user feedback.
-     *
-     * @private
-     */
+    /** @private */
     _listenUploadProgress() {
         const xhr = new window.XMLHttpRequest();
         xhr.upload.addEventListener(
@@ -79,18 +62,6 @@ export class YoutubeUploadField extends CharField {
     }
 
     /**
-     * We use the resumable upload protocol of YouTube to upload our videos, because it allows
-     * setting the video as 'private' before uploading it, meaning it will not publicly appear for
-     * followers of the channel before the video is actually "posted" on the social application.
-     *
-     * However, to simplify the implementation, we do not split the video in "chucks" and still
-     * upload all at once.
-     * Depending on the feedback we get, it would maybe be nice to actually split the file in chunks
-     * and implement a "retry" behavior whenever an upload sequence fails.
-     *
-     * This method will open the upload session and return a 'location' that will be used to upload
-     * the file chunks.
-     *
      * @param {number} fileSize
      * @param {string} fileType
      * @private
@@ -128,11 +99,7 @@ export class YoutubeUploadField extends CharField {
         }
     }
 
-    /**
-     * See #_awaitPostProcessing for more information.
-     *
-     * @private
-     */
+    /** @private */
     async _updateProcessingInfo() {
         const params = new URLSearchParams({
             part: "processingDetails",
@@ -181,11 +148,7 @@ export class YoutubeUploadField extends CharField {
         }
     }
 
-    /**
-     * Notify that the upload failed and clear the value of the file input.
-     *
-     * @private
-     */
+    /** @private */
     _uploadFailed() {
         this.notification.add(_t("Upload failed. Please try again."), {
             type: "warning",
@@ -194,8 +157,6 @@ export class YoutubeUploadField extends CharField {
     }
 
     /**
-     * See #_openUploadSession for more information about the upload process.
-     *
      * @param {string} location
      * @param {File} file
      * @private
@@ -238,12 +199,7 @@ export class YoutubeUploadField extends CharField {
         });
     }
 
-    /**
-     * Clear the value and ask the user if they also want to delete the actual
-     * video from their YouTube channel.
-     *
-     * @private
-     */
+    /** @private */
     _onClearClick() {
         this.dialogService.add(ConfirmationDialog, {
             confirmLabel: _t("Yes, delete it"),
@@ -294,13 +250,6 @@ export class YoutubeUploadField extends CharField {
     }
 
     /**
-     * When the user selects a file:
-     * - We start the upload process
-     * - Periodically update the UI to show how many % are uploaded
-     * - Wait for YouTube post-processing to finish
-     * - Change the values of the 'youtube_video_id' and 'youtube_video_category_id' fields when the
-     *   upload is complete.
-     *
      * @param {Event} e
      * @private
      */
@@ -341,16 +290,7 @@ export class YoutubeUploadField extends CharField {
         });
     }
 
-    /**
-     * Pre-validates the title and description of the video before initiating
-     * the upload, So that we can avoid upload failures from YouTube.
-     *
-     * Some special characters may not have consistent lengths across different encodings.
-     * YouTube checks for length using UTF-8 encoding, while JavaScript uses UTF-16.
-     * To obtain the correct UTF-8 length, we are destructuring the title and description.
-     *
-     * @private
-     */
+    /** @private */
     _onUploadClick() {
         const title = this.props.record.data.youtube_title;
         const description = this.props.record.data.youtube_description;

@@ -66,14 +66,7 @@ export const SEE_RECORDS_PIVOT_VISIBLE = (position, getters) => {
     );
 };
 
-/**
- * Check if the cell is a pivot formula and if there is a filter matching the
- * pivot domain args.
- * e.g. =PIVOT.VALUE("1", "measure", "country_id", 1) matches a filter on
- * country_id.
- *
- * @returns {boolean}
- */
+/** @returns {boolean} */
 export function SET_FILTER_MATCHING_CONDITION(position, getters) {
     if (!SEE_RECORDS_PIVOT_VISIBLE(position, getters)) {
         return false;

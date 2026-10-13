@@ -10,7 +10,6 @@ export { getStrokeAndHoveredStrokeColor };
  * @typedef {"error" | "warning"} ConnectorAlert
  * @typedef {`__connector__${number | "new"}`} ConnectorId
  * @typedef {import("./gantt_renderer_core").Point} Point
- *
  * @typedef ConnectorProps
  * @property {ConnectorId} id
  * @property {ConnectorAlert | null} alert
@@ -18,12 +17,10 @@ export { getStrokeAndHoveredStrokeColor };
  * @property {boolean} displayButtons
  * @property {Point | () => Point | null} sourcePoint
  * @property {Point | () => Point | null} targetPoint
- *
  * @typedef {Object} PathInfo
  * @property {Point} sourceControlPoint
  * @property {Point} targetControlPoint
  * @property {Point} removeButtonPosition
- *
  * @typedef Point
  * @property {number} [left]
  * @property {number} [top]
@@ -188,7 +185,7 @@ export class GanttConnector extends Component {
     /**
      * @param {Point} sourcePoint
      * @param {Point} targetPoint
-     * @param {number} slackness [0, 1]
+     * @param {number} slackness
      * @returns {PathInfo}
      */
     getPathInfo(sourcePoint, targetPoint, slackness) {

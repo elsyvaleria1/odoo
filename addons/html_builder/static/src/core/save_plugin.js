@@ -17,21 +17,11 @@ import { uniqueId } from "@web/core/utils/functions";
 /**
  * @typedef {(() => void)[]} after_save_handlers
  * @typedef {((el?: HTMLElement) => Promise<void>)[]} before_save_handlers
- * Called at the very beginning of the save process.
- *
  * @typedef {((groupedEls: Object.<string, HTMLElement[]>) => Promise<void>)[]} pre_save_handlers
- * Called before the save process with the grouped dirty elements.
- *
  * @typedef {((el: HTMLElement) => Promise<void>)[]} save_element_handlers
- * Called when saving an element (in parallel to saving the view).
- *
  * @typedef {(() => Promise<boolean>)[]} save_handlers
- * Called at the very end of the save process.
- *
  * @typedef {((cleanedEls: HTMLElement[]) => Promise<boolean>)[]} save_elements_overrides
- *
  * @typedef {(() => HTMLElement[] | NodeList)[]} get_dirty_els
- *
  * @typedef {CSSSelector[]} savable_selectors
  */
 
@@ -134,11 +124,7 @@ export class SavePlugin extends Plugin {
         this.dependencies.history.reset();
     }
 
-    /**
-     * Saves one (dirty) element of the page.
-     *
-     * @param {HTMLElement} el - the element to save.
-     */
+    /** @param {HTMLElement} el */
     saveView(el, delayTranslations = true) {
         const viewID = Number(el.dataset["oeId"]);
         if (!viewID) {
@@ -172,10 +158,8 @@ export class SavePlugin extends Plugin {
         this.canObserve = true;
     }
     /**
-     * Handles the flag of the closest savable element to the mutation as dirty
-     *
-     * @param {Object} records - The observed mutations
-     * @param {String} currentOperation - The name of the current operation
+     * @param {Object} records
+     * @param {String} currentOperation
      */
     handleMutations(records, currentOperation) {
         if (!this.canObserve) {
@@ -210,12 +194,7 @@ export class SavePlugin extends Plugin {
         }
     }
 
-    /**
-     * Prevents elements to be marked as dirty until it is reactivated with the
-     * returned callback.
-     *
-     * @returns {Function}
-     */
+    /** @returns {Function} */
     ignoreDirty() {
         this.canObserve = false;
         return () => {

@@ -267,16 +267,9 @@ export class SalaryPackage extends Interaction {
     }
 
     /**
-     * Run an rpc and keep the form usable if it fails.
-     *
-     * Every call here used to be bare: a 500 or a dropped connection left the
-     * configurator mid-update - "Recompute" showing, NET marked outdated, the
-     * net panel hidden - with nothing told to the applicant, who is a
-     * candidate on a public page and has no console to look at.
-     *
-     * @param {Promise} promise the rpc to guard
-     * @param {Function} [restore] undo whatever the caller changed before it
-     * @returns {Promise} resolving to undefined when the call failed
+     * @param {Promise} promise
+     * @param {Function} [restore]
+     * @returns {Promise}
      */
     async guardRpc(promise, restore) {
         try {

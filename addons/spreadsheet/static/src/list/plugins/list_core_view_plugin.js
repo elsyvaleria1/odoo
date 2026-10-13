@@ -49,10 +49,7 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
         }
     }
 
-    /**
-     * Handle a spreadsheet command
-     * @param {Object} cmd Command
-     */
+    /** @param {Object} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "INSERT_ODOO_LIST": {
@@ -143,12 +140,8 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Add an additional domain to a list
-     *
      * @private
-     *
-     * @param {string} listId list id
-     *
+     * @param {string} listId
      */
     _addDomain(listId) {
         const domainList = [];
@@ -161,22 +154,14 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
         this.getters.getListDataSource(listId).addDomain(domain);
     }
 
-    /**
-     * Add an additional domain to all lists
-     *
-     * @private
-     *
-     */
+    /** @private */
     _addDomains() {
         for (const listId of this.getters.getListIds()) {
             this._addDomain(listId);
         }
     }
 
-    /**
-     * Refresh the cache of a list
-     * @param {string} listId Id of the list
-     */
+    /** @param {string} listId */
     _refreshOdooList(listId) {
         this.getters.getListDataSource(listId).load({ reload: true });
     }
@@ -245,9 +230,7 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the computed domain of a list
-     *
-     * @param {string} listId Id of the list
+     * @param {string} listId
      * @returns {Array}
      */
     getListComputedDomain(listId) {
@@ -255,11 +238,7 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the id of the list at the given position. Returns undefined if there
-     * is no list at this position
-     *
      * @param {{ sheetId: string; col: number; row: number}} position
-     *
      * @returns {string|undefined}
      */
     getListIdFromPosition(position) {
@@ -330,9 +309,7 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the value of a list header
-     *
-     * @param {string} listId Id of a list
+     * @param {string} listId
      * @param {string} path
      */
     getListHeaderValue(listId, path) {
@@ -340,11 +317,9 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
     }
 
     /**
-     * Get the value for a field of a record in the list
-     * @param {string} listId Id of the list
-     * @param {number} position Position of the record in the list
-     * @param {string} path Path of the field
-     *
+     * @param {string} listId
+     * @param {number} position
+     * @param {string} path
      * @returns {string|undefined}
      */
     getListCellValueAndFormat(listId, position, path) {

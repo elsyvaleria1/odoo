@@ -468,15 +468,6 @@ export function useMountedListener(target, eventName, handler, eventParams) {
 const bodyClassHolders = new Map();
 
 /**
- * Marks `<body>` with `className` while the calling component is mounted.
- *
- * This is how a screen tells the rest of the page that it is on. A stylesheet
- * must not ask the page instead: `body:has(.my_screen) .btn` makes a DOM change
- * anywhere, on any screen, restyle every `.btn` of the document, whereas a class
- * on `<body>` costs one invalidation when the screen opens and one when it
- * closes. Holders are counted, so two components marking the same class do not
- * undo each other.
- *
  * @param {string} className
  * @returns {void}
  */

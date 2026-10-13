@@ -391,9 +391,6 @@ function migrate4to5(data) {
 }
 
 /**
- * Convert pivot formulas days parameters from day/month/year
- * format to the standard spreadsheet month/day/year format.
- * e.g. =PIVOT.HEADER(1,"create_date:day","30/07/2022") becomes =PIVOT.HEADER(1,"create_date:day","07/30/2022")
  * @param {string} formulaString
  * @returns {string}
  */

@@ -204,11 +204,9 @@ export function preprocessPropertiesChanges(record, changes) {
 }
 
 /**
- * Compose the aggregate from the current dotted values. This also runs after
- * asynchronous relation completion, which can replace those values.
  * @param {RelationalRecord} record
  * @param {Record<string, any>} changes
- * @param {string[]} fieldNames Explicit dotted edits, not fields derived from an aggregate.
+ * @param {string[]} fieldNames
  */
 export function preprocessRelatedPropertyChanges(record, changes, fieldNames) {
     for (const fieldName of fieldNames) {
@@ -259,7 +257,6 @@ export function preprocessRelatedPropertyChanges(record, changes, fieldNames) {
 }
 
 /**
- * Properties serialize complete membership, not the visible page of a list.
  * @param {import("./static_list").StaticList} list
  * @param {[number, string][] | false | undefined} previousValue
  */

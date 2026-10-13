@@ -64,9 +64,6 @@ export const makeGloryHeader = (sequenceNumber, sessionId) => {
 };
 
 /**
- * Takes an XML response and returns a status
- * string e.g. "SUCCESS" or "CHANGE_SHORTAGE"
- *
  * @param {Element} xmlResponse
  * @returns {string}
  */
@@ -81,21 +78,6 @@ export function parseGloryResult(xmlResponse) {
 }
 
 /**
- * Takes an XML response containing the verification status
- * of the Glory machine, and returns a number from 0-3
- * corresponding to the required verification action:
- *
- *   `0`: No verification needed
- *
- *   `1`: Notes and coins need verification
- *
- *   `2`: Notes need verification
- *
- *   `3`: Coins need verification
- *
- * This result can be passed directly into a `CollectRequest`
- * to trigger the verification process.
- *
  * @param {Element} xmlResponse
  * @returns {0 | 1 | 2 | 3}
  */

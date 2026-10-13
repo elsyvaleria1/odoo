@@ -29,17 +29,10 @@ export class FormArchParser extends ViewArchParser {
     /** @type {"element" | "ir"} */
     static consumes = "ir";
 
-    /**
-     * The parent of every node of the tree the last `parse()` walked — what
-     * a subclass that locates a node in the arch (web studio's xpath) reads.
-     * @type {Map<ViewIRNode, ViewIRNode | null>}
-     */
+    /** @type {Map<ViewIRNode, ViewIRNode | null>} */
     parents = new Map();
 
     /**
-     * The tree the parser annotates (`field_id`, `widget_id`) is its own
-     * copy; `xmlDoc` is that copy materialised for the compiler.
-     *
      * @param {ViewIRNode | Element | string} arch
      * @param {Object} models
      * @param {string} modelName

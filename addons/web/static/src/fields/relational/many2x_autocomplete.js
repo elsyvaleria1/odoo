@@ -31,8 +31,7 @@ const EMPTY_SEARCH_MEMO_LIMIT = 64;
 
 /**
  * @param {Object} params
- * @param {string | (() => string)} params.resModel the model, or what reads
- *  it when the dialog opens, for a field whose model changes with the record
+ * @param {string | (() => string)} params.resModel
  * @param {Object} params.activeActions
  * @param {Function} params.onSelected
  * @param {Function} [params.onCreateEdit]
@@ -622,8 +621,7 @@ export class Many2XAutocomplete extends Component {
 
 /**
  * @param {Object} params
- * @param {string | (() => string)} params.resModel the model, or what reads it
- *  when the dialog opens
+ * @param {string | (() => string)} params.resModel
  * @param {Function} params.onRecordSaved
  * @param {Function} params.onRecordDiscarded
  * @param {string} params.fieldString

@@ -10,11 +10,9 @@ import {
 } from "./client_action/delete_local_storage.js";
 
 /**
- * Method to print the report with the selected devices
- *
- * @param env Environment
- * @param args Arguments to render the report (report_id, active_record_ids, report_data)
- * @param selected_device_ids Selected device ids (those stored in local storage)
+ * @param env
+ * @param args
+ * @param selected_device_ids
  * @returns {Promise<void>}
  */
 export async function printReport(env, args, selected_device_ids) {

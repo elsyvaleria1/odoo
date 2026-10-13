@@ -51,7 +51,7 @@ export class AddressBook extends Component {
         return Map.groupBy(contacts, getInitial);
     }
 
-    /** @returns {ResPartner[]} Contacts filtered by search terms. */
+    /** @returns {ResPartner[]} */
     get filteredContacts() {
         const contacts = this.voip.softphone.contacts.filter(this.props.contactsFilter);
         const searchTerms = this.state.searchInputValue;

@@ -7,7 +7,7 @@ import { session } from "@web/session";
 patch(loader, {
     loadEmoji: () =>
         import(
-            /* @vite-ignore */
+
             url("/im_livechat/emoji_bundle", undefined, {
                 origin: session.livechatData.serverUrl,
             })

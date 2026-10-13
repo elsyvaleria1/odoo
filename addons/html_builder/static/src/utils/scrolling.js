@@ -3,9 +3,7 @@
 import { getScrollingElement } from "@web/core/utils/dom/scrolling";
 
 /**
- * Determines if an element is scrollable.
- *
- * @param {Element} element - the element to check
+ * @param {Element} element
  * @returns {Boolean}
  */
 function isScrollable(element) {
@@ -21,10 +19,8 @@ function isScrollable(element) {
 }
 
 /**
- * Finds the closest scrollable element for the given element.
- *
- * @param {Element} element - The element to find the closest scrollable element for.
- * @returns {Element} The closest scrollable element.
+ * @param {Element} element
+ * @returns {Element}
  */
 export function closestScrollable(element) {
     const document = element.ownerDocument || window.document;
@@ -42,9 +38,6 @@ export function closestScrollable(element) {
 }
 
 /**
- * Computes the size by which a scrolling point should be decreased so that
- * the top fixed elements of the page appear above that scrolling point.
- *
  * @param {Document} [doc=document]
  * @returns {number}
  */
@@ -60,24 +53,12 @@ function scrollFixedOffset(doc = document) {
 }
 
 /**
- * @param {HTMLElement|string} el - the element to scroll to. If "el" is a
- *      string, it must be a valid selector of an element in the DOM or
- *      '#top' or '#bottom'. If it is an HTML element, it must be present
- *      in the DOM.
- *      Limitation: if the element is using a fixed position, this
- *      function cannot work except if is the header (el is then either a
- *      string set to '#top' or an HTML element with the "top" id) or the
- *      footer (el is then a string set to '#bottom' or an HTML element
- *      with the "bottom" id) for which exceptions have been made.
- * @param {Object} [options={}] - options for the scroll behavior
+ * @param {HTMLElement|string} el
+ * @param {Object} [options={}]
  * @param {number} [options.extraOffset=0]
- *      extra offset to add on top of the automatic one (the automatic one
- *      being computed based on fixed header sizes)
  * @param {number} [options.forcedOffset]
- *      offset used instead of the automatic one (extraOffset will be
- *      ignored too)
- * @param {HTMLElement} [options.scrollable] the element to scroll
- * @param {number} [options.duration] the scroll duration in ms
+ * @param {HTMLElement} [options.scrollable]
+ * @param {number} [options.duration]
  * @return {Promise}
  */
 export function scrollTo(el, options = {}) {

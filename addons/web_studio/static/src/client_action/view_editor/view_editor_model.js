@@ -67,8 +67,6 @@ function getSubarchPosition(mainArch, xpathToField, archTag) {
 }
 
 /**
- * Returns the arch of the subview
- *
  * @param {String} mainArch
  * @param {String} xpathToField
  * @param {String} archTag

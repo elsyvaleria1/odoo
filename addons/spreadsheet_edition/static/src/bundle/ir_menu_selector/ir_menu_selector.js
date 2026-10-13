@@ -69,10 +69,7 @@ export class IrMenuSelector extends Component {
             .filter((menuId) => menuId !== "root");
     }
 
-    /**
-     * Get the path of the given menu as a string of the form "App/Menu/Submenu".
-     * @private
-     */
+    /** @private */
     _getMenuPath(menuId) {
         if (menuId === undefined) {
             return "";

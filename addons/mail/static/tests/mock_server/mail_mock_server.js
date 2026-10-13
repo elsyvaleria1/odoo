@@ -25,10 +25,7 @@ export const DISCUSS_ACTION_ID = 104;
 /**
  * @typedef {import("@web/../tests/web_test_helpers").RouteCallback} WebRouteCallback
  */
-/**
- * Mail route fixtures are asynchronous; retain web's receiver and request arguments.
- * @typedef {(this: ThisParameterType<WebRouteCallback>, ...args: Parameters<WebRouteCallback>) => Promise<Awaited<ReturnType<WebRouteCallback>>>} RouteCallback
- */
+/** @typedef {(this: ThisParameterType<WebRouteCallback>, ...args: Parameters<WebRouteCallback>) => Promise<Awaited<ReturnType<WebRouteCallback>>>} RouteCallback */
 
 /** @param {{id: number}} guest */
 export const authenticateGuest = (guest) => {

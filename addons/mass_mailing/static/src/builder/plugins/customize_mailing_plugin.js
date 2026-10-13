@@ -23,10 +23,6 @@ const FA_EXCLUDE = `:not(${ICON_CLASS_SELECTOR})`;
 const RE_TRAILING_CLASS_EXCLUSION = /:not\((\.[\w-]+(?:\s*,\s*\.[\w-]+)*)\)$/;
 
 /**
- * The selector without a trailing `:not()` of icon classes alone, the form a
- * saved mailing carries from any version of the exclusion (`:not(.fa)` before
- * Font Awesome 7, FA7 styles only after it); null when it has none.
- *
  * @param {string} selector
  * @returns {string | null}
  */

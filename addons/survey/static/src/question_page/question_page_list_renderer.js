@@ -86,15 +86,7 @@ export class QuestionPageListRenderer extends ListRenderer {
         return record.data[this.discriminant];
     }
 
-    /**
-     *
-     * Overriding the method in order to identify the requested column based on its `name`
-     * instead of the exact object passed. This is necessary for section rows because the
-     * column object could have been replaced in `getSectionColumns` to add a `colspan`
-     * attribute.
-     *
-     * @override
-     */
+    /** @override */
     focusCell(column, forward = true) {
         const actualColumn = column.name
             ? this.columns.find((col) => col.name === column.name)
@@ -115,10 +107,6 @@ export class QuestionPageListRenderer extends ListRenderer {
     }
 
     /**
-     * Save the survey after a question used as trigger is deleted. This allows
-     * immediate feedback on the form view as the triggers will be removed
-     * anyway on the records by the ORM.
-     *
      * @override
      * @param record
      * @return {Promise<void>}

@@ -174,9 +174,6 @@ const subscriptions = new Map([
 ]);
 
 /**
- * With `pristine`, every test starts from the target as it was before any
- * test ran, plus the callback's keys: a key code assigned at runtime is gone.
- *
  * @template T
  * @param {T} target
  * @param {(state: ServerState) => T} callback
@@ -221,15 +218,15 @@ export function onServerStateChange(target, callback, { pristine = false } = {})
 
 export const serverState = new Proxy(SERVER_STATE_VALUES, {
     deleteProperty(_target, p) {
-        // @ts-ignore — createJobScopedGetter return type inference
+
         return Reflect.deleteProperty(getServerStateValues(), p);
     },
     get(_target, p) {
-        // @ts-ignore — createJobScopedGetter return type inference
+
         return Reflect.get(getServerStateValues(), p);
     },
     has(_target, p) {
-        // @ts-ignore — createJobScopedGetter return type inference
+
         return Reflect.has(getServerStateValues(), p);
     },
     set(_target, p, newValue) {
@@ -244,7 +241,7 @@ export const serverState = new Proxy(SERVER_STATE_VALUES, {
                 `invalid server state "${String(p)}"`,
             );
         }
-        // @ts-ignore — createJobScopedGetter return type inference
+
         const result = Reflect.set(getServerStateValues(), p, newValue);
         if (result) {
             notifySubscribers();

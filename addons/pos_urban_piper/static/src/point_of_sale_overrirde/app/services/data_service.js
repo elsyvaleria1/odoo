@@ -3,12 +3,7 @@ import { PosData } from "@point_of_sale/app/services/data_service";
 import { patch } from "@web/core/utils/patch";
 
 patch(PosData.prototype, {
-    /**
-     * Delivery orders are UrbanPiper's to restore, not the local cache's; every
-     * other cached order (drafts, unsynced paid ones) is restored as usual.
-     *
-     * @override
-     */
+    /** @override */
     async preLoadData(data) {
         const loadData = await super.preLoadData(data);
         const config = this.models["pos.config"].getFirst();

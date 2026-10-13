@@ -95,13 +95,7 @@ function replay(registrations, registerTemplate, registerTemplateExtension) {
     );
 }
 
-/**
- * The registry a page holds once this bundle registered its templates, after
- * what the page registered first, and the names the bundle registered or
- * extended; with no page, every name counts.
- *
- * @param {string | null} pageRegistrations
- */
+/** @param {string | null} pageRegistrations */
 function registryAfter(pageRegistrations) {
     const registry = new TemplateRegistry();
     if (pageRegistrations !== null) {
@@ -127,9 +121,6 @@ function registryAfter(pageRegistrations) {
 }
 
 /**
- * The inline templates of a module, as `xml` receives them: a tagged
- * template without substitutions hands it the raw text.
- *
  * @param {string} url
  * @param {string} content
  * @returns {string[]}

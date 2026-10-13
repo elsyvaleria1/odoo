@@ -76,12 +76,7 @@ export class HierarchyKanbanRecord extends KanbanRecord {
         );
     }
 
-    /**
-     * Helper method that opens the marketing.activity Form dialog with pre-configured trigger_type
-     * and parent_id. Used for the various create buttons on the kanban card footers.
-     *
-     * @param {MouseEvent} ev
-     */
+    /** @param {MouseEvent} ev */
     async onAddChildActivityClick(ev) {
         await this.props.record.model.root.save();
 
@@ -92,11 +87,7 @@ export class HierarchyKanbanRecord extends KanbanRecord {
         this.marketingAutomationContext.onAddMarketingActivity({ context });
     }
 
-    /**
-     * Allows to switch between the 'graph' and 'filter' tabs of the activity kanban card.
-     *
-     * @param {MouseEvent} ev
-     */
+    /** @param {MouseEvent} ev */
     onMarketingActivityTabClick(ev) {
         ev.stopPropagation();
 

@@ -86,15 +86,10 @@ export function createEmbeddedRoot(app, C, { props, context, pluginManager }) {
 }
 
 /**
- * Mounts `root` in `host`, whose content stays in place until the component
- * is rendered and replaces it.
- *
  * @param {ReturnType<typeof createEmbeddedRoot>} root
  * @param {HTMLElement} host
- * @param {{ beforeReplace?: () => void }} [options] beforeReplace runs right
- * before the host's content is removed, in the task that inserts the component
- * @returns {Promise<import("@odoo/owl").Component | null>} the hosted component,
- * or null when the root was destroyed first
+ * @param {{ beforeReplace?: () => void }} [options]
+ * @returns {Promise<import("@odoo/owl").Component | null>}
  */
 export async function mountReplacingHost(root, host, { beforeReplace } = {}) {
     await root.prepare();
@@ -111,10 +106,6 @@ export async function mountReplacingHost(root, host, { beforeReplace } = {}) {
 const mountSelections = new WeakMap();
 
 /**
- * The selection to restore once the component mounted in `host` has put its
- * editable descendants back: it is taken right before the host is emptied,
- * while the render is prepared ahead of that.
- *
  * @param {HTMLElement} host
  * @param {() => void} restore
  */

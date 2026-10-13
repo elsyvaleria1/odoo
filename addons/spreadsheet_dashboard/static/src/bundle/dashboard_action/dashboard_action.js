@@ -156,7 +156,7 @@ export class SpreadsheetDashboardAction extends Component {
     }
 
     /**
-     * @param {number} id - The ID of the dashboard to be edited.
+     * @param {number} id
      * @returns {Promise<void>}
      */
     async editDashboard(id) {

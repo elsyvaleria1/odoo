@@ -39,13 +39,7 @@ import { MediaDialog, TABS } from "./media_dialog/media_dialog.js";
  * }[]} media_dialog_extra_tabs
  */
 
-/**
- * Unlike the link tools, media stays available inside a `button`: a button may
- * legitimately hold an image. Only `label` is withdrawn, where the media dialog
- * would offer to wrap the insert in a link.
- *
- * @param {EditorSelection} selection
- */
+/** @param {EditorSelection} selection */
 function isMediaSupported(selection) {
     return (
         isHtmlContentSupported(selection) &&

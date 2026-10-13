@@ -6,18 +6,13 @@ import { normalize } from "@web/core/l10n/utils";
 import { pronunciations } from "./pronunciation.js";
 
 /**
- * The company's own words: an English word, an acronym or a local word, read
- * as the Spanish words the screens use ("checa" -> "muestra", "PO" -> "pedido
- * de compra"), and as a Mexican speaker says it ("pe o", "estatus"). A term
- * only offers a second reading; the grammar still decides.
- *
  * @typedef {{ phrases: string[], means: string, kind: string }} SpokenTerm
  * @typedef {{ words: string[], means: string }} TermPhrase
  */
 
 /**
  * @param {SpokenTerm[]} terms
- * @returns {TermPhrase[]} longest first, so "dale clic en" wins over "dale clic"
+ * @returns {TermPhrase[]}
  */
 export function termPhrases(terms) {
     return terms
@@ -39,12 +34,9 @@ export function termPhrases(terms) {
 }
 
 /**
- * The sentence with each term said in it replaced by what it means; the rest
- * is kept byte for byte.
- *
  * @param {string} text
  * @param {TermPhrase[]} phrases
- * @returns {string | null} null when no term was said
+ * @returns {string | null}
  */
 export function rewriteTerms(text, phrases) {
     const spans = [...text.matchAll(/[\p{L}\p{N}]+/gu)];

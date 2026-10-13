@@ -63,8 +63,7 @@ export class DataMergeListController extends DataCleaningCommonListController {
     }
 
     /**
-     * Get the list of selected records for the specified group
-     * @returns list of record IDs
+     * @returns
      * @param {int} groupId
      */
     getGroupRecords(groupId) {
@@ -75,19 +74,15 @@ export class DataMergeListController extends DataCleaningCommonListController {
         return records.filter((record) => record.data.group_id.id === groupId);
     }
 
-    /**
-     * Get the original record IDs
-     * @param {int[]} records
-     */
+    /** @param {int[]} records */
     getRecordIDS(records) {
         return records.map((record) => parseInt(record.resId));
     }
 
     /**
-     * Call the specified action
-     * @param {string} action Action to perform (merge/discard)
-     * @param {int} groupId ID of the data_merge.group
-     * @param {int[]} recordIds Selected records to merge/discard
+     * @param {string} action
+     * @param {int} groupId
+     * @param {int[]} recordIds
      */
     async _callAction(action, groupId, recordIds) {
         return this.orm.call("data_merge.group", action, [groupId, recordIds]);
@@ -153,10 +148,7 @@ export class DataMergeListController extends DataCleaningCommonListController {
         }
     }
 
-    /**
-     * Show a notification with the number of records merged
-     * @param {int} records_merged
-     */
+    /** @param {int} records_merged */
     showMergeNotification(recordsMerged) {
         let message;
         if (recordsMerged) {

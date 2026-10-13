@@ -66,11 +66,7 @@ export class Frontdesk extends Component {
         this.intervalId = setInterval(() => this._getPlannedVisitors(), 600000);
     }
 
-    /**
-     * Get the plannedVisitors from the backend through rpc call
-     *
-     * @private
-     */
+    /** @private */
     async _getPlannedVisitors() {
         this.state.plannedVisitors = await rpc(
             `${this.frontdeskUrl}/get_planned_visitors`,
@@ -106,11 +102,7 @@ export class Frontdesk extends Component {
             `?lang=${encodeURIComponent(ev.currentTarget.value)}`;
     }
 
-    /**
-     * This method change the current screen
-     *
-     * @param {string} name
-     */
+    /** @param {string} name */
     showScreen(name) {
         const component = registry.category("frontdesk_screens").get(name);
         this.state.currentComponent = component;

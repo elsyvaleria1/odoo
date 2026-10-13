@@ -97,7 +97,7 @@ export class PdfManager extends Component {
         this._selectionPointer = null;
         this._hasSplitPages = false;
         this._splittingOnBlankPages = false;
-        /** @type {Map<String, Promise<void>>} thumbnails being drawn, by page id */
+        /** @type {Map<String, Promise<void>>} */
         this._thumbnailRenders = new Map();
         this._placementQueue = Promise.resolve();
         this._previewRequest = 0;
@@ -275,12 +275,7 @@ export class PdfManager extends Component {
     get selectedPageIds() {
         return this.store.selectedPageIds;
     }
-    /**
-     * A split in flight, or files whose pages are not placed yet: nothing
-     * changes the pages meanwhile, by button or by shortcut.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get isBusy() {
         return this.state.applying || this.state.loadingFiles > 0;
     }
@@ -495,7 +490,7 @@ export class PdfManager extends Component {
     }
     /**
      * @param {number} [actionId]
-     * @returns {Promise<boolean>} whether the split was committed
+     * @returns {Promise<boolean>}
      */
     async _applyChanges(actionId) {
         if (this.isBusy) {
@@ -598,8 +593,6 @@ export class PdfManager extends Component {
         }
     }
     /**
-     * pdf.js documents have no destroy() of their own: their loading task
-     * owns the worker transport
      * @private
      * @param {PdfJsObject} pdf
      */
@@ -609,8 +602,7 @@ export class PdfManager extends Component {
     /**
      * @private
      * @param {String} url
-     * @returns {{ promise: Promise<PdfJsObject>, destroy: () => void }} the
-     *      pdf.js loading task: destroying it rejects a pending load
+     * @returns {{ promise: Promise<PdfJsObject>, destroy: () => void }}
      */
     _openPdf(url) {
         return pdfjsLib.getDocument(url);
@@ -624,8 +616,7 @@ export class PdfManager extends Component {
     /**
      * @private
      * @param {String} pageId
-     * @returns {Promise<Object|undefined>} the pdf.js page, while the page
-     *      and its file are still here
+     * @returns {Promise<Object|undefined>}
      */
     async _getPdfPage(pageId) {
         const storePage = this.store.getPage(pageId);
@@ -636,10 +627,6 @@ export class PdfManager extends Component {
         return file.pdf.getPage(storePage.localPageNumber);
     }
     /**
-     * Draws a page's thumbnail once, whoever asks first: the page coming near
-     * the screen, or a blank-page split that cannot wait for it. A page that
-     * fails to draw is marked so, and stays: its file splits all the same.
-     *
      * @private
      * @param {String} pageId
      * @returns {Promise<void>}
@@ -677,12 +664,7 @@ export class PdfManager extends Component {
         }
         return this._thumbnailRenders.get(pageId);
     }
-    /**
-     * Blankness costs a text extraction and a pixel scan per page, and only
-     * the split on blank pages asks: it is measured then, once per page.
-     *
-     * @private
-     */
+    /** @private */
     async _detectBlankPages() {
         const end = log.perf("detectBlankPages");
         let measured = 0;
@@ -798,8 +780,6 @@ export class PdfManager extends Component {
         return response.json();
     }
     /**
-     * Deletes a page, and its file with the file's last page.
-     *
      * @private
      * @param {String} pageId
      */
@@ -869,7 +849,7 @@ export class PdfManager extends Component {
             },
         });
     }
-    /** @returns {Promise<boolean>} whether the remaining pages were saved */
+    /** @returns {Promise<boolean>} */
     async _exitByGatheringRemainingPages() {
         if (this.isBusy) {
             this._displayErrorNotification(
@@ -1051,12 +1031,7 @@ export class PdfManager extends Component {
         this._selectionPointer = ev;
         this._updateAreaSelection();
     }
-    /**
-     * The viewer scrolled under a held selection: the pointer now points
-     * elsewhere in the pages.
-     *
-     * @private
-     */
+    /** @private */
     _onViewerScroll() {
         if (this.state.isSelecting && this._selectionPointer) {
             this._updateAreaSelection();
@@ -1075,12 +1050,7 @@ export class PdfManager extends Component {
             y: clamp(clientY - bounds.top + viewer.scrollTop, 0, viewer.scrollHeight),
         };
     }
-    /**
-     * Selects the pages the rectangle from the anchor to the pointer covers,
-     * computed rather than read back from the box, which renders later.
-     *
-     * @private
-     */
+    /** @private */
     _updateAreaSelection() {
         const pointer = this._selectionPointer;
         const rect = rectFromCorners(
@@ -1374,8 +1344,8 @@ export class PdfManager extends Component {
     }
     /**
      * @public
-     * @param {String} targetPageId the page dropped on
-     * @param {String} pageId the page dragged
+     * @param {String} targetPageId
+     * @param {String} pageId
      */
     onPageDrop(targetPageId, pageId) {
         if (!this.isBusy) {

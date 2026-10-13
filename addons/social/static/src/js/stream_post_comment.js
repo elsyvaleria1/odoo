@@ -130,9 +130,7 @@ export class StreamPostComment extends SocialPostFormatterMixin(Component) {
         return StreamPostCommentsReply;
     }
 
-    /**
-     * @returns {Temporal.ZonedDateTime | null} the created time, null when it is not ISO
-     */
+    /** @returns {Temporal.ZonedDateTime | null} */
     get commentCreatedTime() {
         return parseISO(this.comment.created_time);
     }

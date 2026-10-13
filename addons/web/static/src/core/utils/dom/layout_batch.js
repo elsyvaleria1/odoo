@@ -53,25 +53,13 @@ function schedule() {
     }
 }
 
-/**
- * Runs `fn` with every other queued layout read, before any queued write, in
- * a microtask — after the mount/patch hooks of the current render, before
- * the browser paints — so the reads of one flush share one style
- * recalculation.
- *
- * @param {() => void} fn
- */
+/** @param {() => void} fn */
 export function measure(fn) {
     reads.push(fn);
     schedule();
 }
 
-/**
- * Runs `fn` after every queued layout read of the flush; a write that queues
- * a read starts a second round.
- *
- * @param {() => void} fn
- */
+/** @param {() => void} fn */
 export function mutate(fn) {
     writes.push(fn);
     schedule();

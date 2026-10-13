@@ -18,11 +18,7 @@ const DATE_FIELD = { name: "date_deadline", type: "date" };
 const DATETIME_FIELD = { name: "create_date", type: "datetime" };
 const FIELDS = { date_deadline: DATE_FIELD, create_date: DATETIME_FIELD };
 
-/**
- * A date has no hours: an hourly period groups a datetime field
- *
- * @param {string} granularity
- */
+/** @param {string} granularity */
 const fieldFor = (granularity) =>
     granularity === "hour" ? "create_date" : "date_deadline";
 

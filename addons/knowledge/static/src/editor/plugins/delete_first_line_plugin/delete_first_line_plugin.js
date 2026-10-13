@@ -15,7 +15,6 @@ export class KnowledgeDeleteFirstLinePlugin extends Plugin {
     };
 
     /**
-     * Handles the deletion of the 1st line.
      * @param {Range} range
      * @returns
      */

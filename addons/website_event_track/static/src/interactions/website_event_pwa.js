@@ -74,12 +74,7 @@ export class WebsiteEventPWA extends Interaction {
         this.prefetchPages(document);
     }
 
-    /**
-     * Asks the service worker to keep the current page and the event pages
-     * `root` links to for offline use.
-     *
-     * @param {ParentNode} root
-     */
+    /** @param {ParentNode} root */
     prefetchPages(root) {
         if (!("serviceWorker" in navigator)) {
             return;

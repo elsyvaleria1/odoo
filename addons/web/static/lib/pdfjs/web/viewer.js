@@ -7850,7 +7850,7 @@ class GenericScripting {
   constructor(sandboxBundleSrc, wasmUrl) {
     this._ready = new Promise((resolve, reject) => {
       const sandbox = import(
-      /*@vite-ignore*/
+
       sandboxBundleSrc);
       sandbox.then(pdfjsSandbox => {
         resolve(pdfjsSandbox.QuickJSSandbox(new URL(wasmUrl, location.href).href));
@@ -23308,7 +23308,7 @@ const PDFViewerApplication = {
       const {
         PDFBug
       } = await import(
-      /*@vite-ignore*/
+
       AppOptions.get("debuggerSrc"));
       this._PDFBug = PDFBug;
     };
@@ -23316,7 +23316,7 @@ const PDFViewerApplication = {
       try {
         GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
         await import(
-        /*@vite-ignore*/
+
         PDFWorker.workerSrc);
         AppOptions.set("workerPort", null);
       } catch (ex) {
@@ -25640,4 +25640,3 @@ if (document.readyState === "interactive" || document.readyState === "complete")
 }
 
 export { PDFViewerApplication, AppConstants as PDFViewerApplicationConstants, AppOptions as PDFViewerApplicationOptions };
-

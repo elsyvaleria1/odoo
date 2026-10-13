@@ -12,13 +12,7 @@ const NEW_APP_BUTTON = {
     webIconData: "/web_studio/static/src/img/default_icon_app.png",
 };
 
-/**
- * Studio home menu
- *
- * Studio version of the standard enterprise home menu. It has roughly the same
- * implementation, with the exception of the app icon edition and the app creator.
- * @extends HomeMenu
- */
+/** @extends HomeMenu */
 export class StudioHomeMenu extends HomeMenu {
     static props = { apps: HomeMenu.props.apps };
     static template = "web_studio.StudioHomeMenu";
@@ -26,15 +20,12 @@ export class StudioHomeMenu extends HomeMenu {
 
     /**
      * @param {Object} props
-     * @param {Object[]} props.apps application icons
+     * @param {Object[]} props.apps
      * @param {string} props.apps[].action
      * @param {number} props.apps[].id
      * @param {string} props.apps[].label
      * @param {string} props.apps[].parents
-     * @param {(boolean|string|Object)} props.apps[].webIcon either:
-     *      - boolean: false (no webIcon)
-     *      - string: path to Odoo icon file
-     *      - Object: customized icon (background, class and color)
+     * @param {(boolean|string|Object)} props.apps[].webIcon
      * @param {string} [props.apps[].webIconData]
      * @param {string} props.apps[].xmlid
      */

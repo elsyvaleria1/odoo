@@ -3,10 +3,7 @@ import { AppointmentBookingGanttController } from "@calendar_gantt/views/gantt/g
 import { FormViewDialog } from "@web/views/view_dialogs";
 
 export class POSAppointmentBookingGanttController extends AppointmentBookingGanttController {
-    /**
-     * @override
-     * Undo changes from appointment since we open a different form view here
-     */
+    /** @override */
     openDialog(props, options = {}) {
         return super.openDialog(props, options, FormViewDialog);
     }

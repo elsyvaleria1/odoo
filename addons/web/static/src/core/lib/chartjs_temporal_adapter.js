@@ -39,12 +39,7 @@ const FORMATS = {
 
 const MS_PER_DAY = 24 * 3600 * 1000;
 
-/**
- * Milliseconds per unit as time scales have always measured a difference: a
- * fixed length, where a month is 30 days, a quarter 91 and a year 365.
- *
- * @type {Record<TimeUnit, number>}
- */
+/** @type {Record<TimeUnit, number>} */
 const CASUAL_UNIT_MS = {
     millisecond: 1,
     second: 1000,
@@ -96,12 +91,7 @@ function fromFields(fields, zone) {
     }
 }
 
-/**
- * Installs the Temporal date adapter onto a Chart.js module's `_adapters`, so
- * that time-scale axes read, step and label dates as the rest of the web client.
- *
- * @param {any} adapters the `_adapters` export of chart.js
- */
+/** @param {any} adapters */
 export function installChartDateAdapter(adapters) {
     adapters._date.override({
         _id: "temporal",

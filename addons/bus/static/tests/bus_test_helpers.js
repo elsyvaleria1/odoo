@@ -24,13 +24,10 @@ import { getWebSocketWorker, onWebsocketEvent } from "./mock_websocket.js";
 
 /**
  * @typedef {[env: OdooEnv, type: string, payload?: NotificationPayload, options?: ExpectedNotificationOptions] | [type: string, payload?: NotificationPayload, options?: ExpectedNotificationOptions]} ExpectedNotification
- *
  * @typedef {{
  *  received?: boolean;
  * }} ExpectedNotificationOptions
- *
  * @typedef {Record<string, any>} NotificationPayload
- *
  * @typedef {import("@web/env").OdooEnv} OdooEnv
  * @typedef {import("@bus/workers/websocket_worker").WorkerAction} WorkerAction
  */
@@ -51,12 +48,7 @@ patch(busService, {
     },
 });
 
-/**
- * Normalize the `[env?, type, payload, options]` tuple (the leading `env` is
- * optional and defaults to the current mock env).
- *
- * @param {ExpectedNotification} notification
- */
+/** @param {ExpectedNotification} notification */
 const normalizeExpected = ([env, type, payload, options]) => {
     if (typeof env === "string") {
         [env, type, payload, options] = [getMockEnv(), env, type, payload];
@@ -69,12 +61,7 @@ const normalizeExpected = ([env, type, payload, options]) => {
     };
 };
 
-/**
- * The first delivered notification matching `type` (and `payload`, when one is
- * expected). Does NOT consume it.
- *
- * @param {ReturnType<typeof normalizeExpected>} expected
- */
+/** @param {ReturnType<typeof normalizeExpected>} expected */
 const findNotification = ({ env, type, payload }) => {
     const envNotifications = busNotifications.get(env) || [];
     const hasPayload = payload !== null && payload !== undefined;
@@ -83,11 +70,7 @@ const findNotification = ({ env, type, payload }) => {
     );
 };
 
-/**
- * Human-readable description of an expected notification.
- *
- * @param {ReturnType<typeof normalizeExpected>} expected
- */
+/** @param {ReturnType<typeof normalizeExpected>} expected */
 const describeExpected = ({ type, payload }) =>
     `Notification of type ${type}${
         payload !== null && payload !== undefined
@@ -96,11 +79,8 @@ const describeExpected = ({ type, payload }) =>
     }`;
 
 /**
- * Assert that a positive expectation was received; compares the ACTUAL payload
- * to the expected one (a real, non-vacuous check).
- *
  * @param {ReturnType<typeof normalizeExpected>} expected
- * @param {object} [found] the notification consumed while waiting, if any.
+ * @param {object} [found]
  */
 const assertReceived = (expected, found) => {
     const message = `${describeExpected(expected)} not received.`;
@@ -117,12 +97,7 @@ const assertReceived = (expected, found) => {
     }
 };
 
-/**
- * Assert that a negative expectation was NOT received. Called only after the
- * delivery window has settled (see `waitNotifications`).
- *
- * @param {ReturnType<typeof normalizeExpected>} expected
- */
+/** @param {ReturnType<typeof normalizeExpected>} expected */
 const assertNotReceived = (expected) => {
     const found = findNotification(expected);
     expect(found).toBe(undefined, {
@@ -181,8 +156,6 @@ viewsRegistry.category("form").add(
 const TIMEOUT = 10_000;
 
 /**
- * Useful to display debug information about bus events in tests.
- *
  * @param {string} type
  * @param {(env: OdooEnv, id: string, payload: any) => any} handler
  */
@@ -190,11 +163,7 @@ export function addBusMessageHandler(type, handler) {
     busMessageHandlers[type] = handler;
 }
 
-/**
- * Patches the bus service to add given event listeners immediatly when it starts.
- *
- * @param  {...[string, (event: CustomEvent) => any]} listeners
- */
+/** @param {...[string, (event: CustomEvent) => any]} listeners */
 export function addBusServiceListeners(...listeners) {
     mockService("bus_service", (env, dependencies) => {
         const busServiceInstance = busService.start(env, dependencies);
@@ -212,12 +181,7 @@ export function defineBusModels() {
     return defineModels({ ...webModels, ...busModels });
 }
 
-/**
- * Returns a deferred that resolves when a websocket subscription is
- * done.
- *
- * @returns {Deferred<void>}
- */
+/** @returns {Deferred<void>} */
 export function waitUntilSubscribe() {
     const def = new Deferred();
     const timeout = setTimeout(() => handleResult(false), TIMEOUT);
@@ -240,9 +204,6 @@ export function waitUntilSubscribe() {
 }
 
 /**
- * Returns a deferred that resolves when the given channel addition/deletion
- * occurs. Resolve immediately if the operation was already done.
- *
  * @param {string[]} channels
  * @param {object} [options={}]
  * @param {"add" | "delete"} [options.operation="add"]
@@ -297,9 +258,6 @@ export async function waitForChannels(channels, { operation = "add" } = {}) {
 }
 
 /**
- * Wait for the expected notifications to be received/not received. Returns
- * a deferred that resolves when the assertion is done.
- *
  * @param {ExpectedNotification[]} expectedNotifications
  * @returns {Promise<void>}
  */
@@ -337,12 +295,7 @@ export async function waitNotifications(...expectedNotifications) {
     busNotifications.clear();
 }
 
-/**
- * Registers an asynchronous step on actions received by the websocket worker that
- * match the given list of target actions.
- *
- * @param {WorkerAction[]} targetActions
- */
+/** @param {WorkerAction[]} targetActions */
 export function stepWorkerActions(targetActions) {
     patchWithCleanup(getWebSocketWorker(), {
         _onClientMessage(_, { action }) {

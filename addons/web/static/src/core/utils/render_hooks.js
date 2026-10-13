@@ -8,13 +8,7 @@ function currentNode() {
     return useScope();
 }
 
-/**
- * Runs `callback` before each render of the calling component, as OWL 2's
- * onWillRender did. What it reads subscribes the render, as reads through a
- * component's useState proxy did.
- *
- * @param {() => void} callback
- */
+/** @param {() => void} callback */
 export function onWillRender(callback) {
     const node = currentNode();
     const render = node.renderFn;
@@ -24,14 +18,7 @@ export function onWillRender(callback) {
     };
 }
 
-/**
- * Runs `callback` after each render of the calling component, before it is
- * patched, as OWL 2's onRendered did. What it reads does not subscribe the
- * render: those callbacks write what they read (a refresh token), which would
- * re-render forever.
- *
- * @param {() => void} callback
- */
+/** @param {() => void} callback */
 export function onRendered(callback) {
     const node = currentNode();
     const render = node.renderFn;
@@ -42,10 +29,7 @@ export function onRendered(callback) {
     };
 }
 
-/**
- * @returns {(deep?: boolean) => Promise<void>} forces a render of the calling
- * component, as OWL 2's Component#render did
- */
+/** @returns {(deep?: boolean) => Promise<void>} */
 export function useRender() {
     const node = currentNode();
     return (deep = false) => node.render(deep === true);

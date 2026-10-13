@@ -30,8 +30,7 @@ export class RoomBookingViewTest extends RoomBookingView {
 }
 
 /**
- * Helper to mount the Room Booking View
- * @param {boolean} useBus: whether to set up the bus service or not
+ * @param {boolean} useBus:
  * @returns {Promise<{
  *     env: import("@web/env").OdooEnv,
  *     notifyView: (notificationType: string, bookings: Array<any>) => Promise<void> | null

@@ -6,9 +6,6 @@ import { getClassNameFromDecoration, getDecoration } from "@web/core/utils/decor
 describe.current.tags("headless");
 
 /**
- * getDecoration reads a node's attribute record (`nodeAttrs()` of the view
- * IR builds one from an IR node or an element), so the record is the input.
- *
  * @param {Record<string, string>} attrs
  * @returns {Record<string, string>}
  */

@@ -11,7 +11,6 @@ import { uniqueId } from "@web/core/utils/functions";
 const log = makeLogger("website.service.map");
 
 /**
- * Keep each runtime's API cache local while sharing retry and readiness rules.
  * @param {{ add: Function }} notification
  * @param {() => void} [onReady]
  */

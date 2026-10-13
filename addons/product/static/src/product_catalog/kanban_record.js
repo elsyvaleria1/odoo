@@ -87,11 +87,7 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
         this.productCatalogData.price = parseFloat(price);
     }
 
-    /**
-     * Run any debounced quantity write now and resolve once it has landed.
-     *
-     * @returns {Promise<any>}
-     */
+    /** @returns {Promise<any>} */
     flushPendingUpdate() {
         this.debouncedUpdateQuantity.cancel(true);
         return this._pendingUpdate;
@@ -164,11 +160,7 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
         this.updateQuantity(this.productCatalogData.quantity + qty);
     }
 
-    /**
-     * Set the quantity of the product on the order line.
-     *
-     * @param {Event} event
-     */
+    /** @param {Event} event */
     setQuantity(event) {
         const quantity = parseFloat(event.target.value);
         this.updateQuantity(Number.isNaN(quantity) ? 0 : quantity);

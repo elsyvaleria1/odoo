@@ -183,10 +183,6 @@ function isValidDate(date) {
 }
 
 /**
- * `now` with its day, month or year set to `number`, the day kept within the
- * resulting month as the server's relativedelta keeps it: "=31d" in February is
- * its last day, not early March.
- *
  * @param {Temporal.ZonedDateTime} current
  * @param {"days" | "months" | "years"} unit
  * @param {number} number
@@ -212,7 +208,7 @@ const SINGULAR_TIME_UNITS = { hours: "hour", minutes: "minute", seconds: "second
 
 /**
  * @param {string} value
- * @param {string} zone the zone "today" and "now" are read in
+ * @param {string} zone
  * @returns {NullableDateTime}
  */
 function parseSmartDateInput(value, zone) {
@@ -294,12 +290,7 @@ const stripAlphaDupes = memoize(function stripAlphaDupes(str) {
     );
 });
 
-/**
- * A server strftime format ("%d/%m/%Y") in the token grammar the date layer
- * formats and parses with ("dd/MM/yyyy").
- *
- * @type {(format: string) => string}
- */
+/** @type {(format: string) => string} */
 export const strftimeToDateFormat = memoize(function strftimeToDateFormat(format) {
     const output = [];
     let inToken = false;
@@ -367,9 +358,6 @@ function formatOptions() {
 }
 
 /**
- * `value` through a token `format` ("dd/MM/yyyy") in the user's locale and
- * numbering system: what luxon's toFormat did.
- *
  * @param {Temporal.ZonedDateTime | Temporal.PlainDate | Temporal.PlainDateTime} value
  * @param {string} format
  * @returns {string}
@@ -379,9 +367,6 @@ export function formatValue(value, format) {
 }
 
 /**
- * `value` for Intl `options` (a preset such as DATE_MED) in the user's locale
- * and numbering system: what luxon's toLocaleString did.
- *
  * @param {Temporal.ZonedDateTime | Temporal.PlainDate | Temporal.PlainDateTime} value
  * @param {Intl.DateTimeFormatOptions} options
  * @returns {string}
@@ -405,11 +390,6 @@ function relativeTimeFormatter(numeric) {
 const RELATIVE_UNITS = ["years", "months", "days", "hours", "minutes", "seconds"];
 
 /**
- * `value` relative to now in the largest unit it is at least one of ("in 2
- * hours", "3 days ago"), truncated toward zero: luxon's toRelative.
- *
- * A date is read as the start of its day in the user's zone.
- *
  * @param {Temporal.ZonedDateTime | Temporal.PlainDate} value
  * @returns {string}
  */
@@ -436,10 +416,6 @@ const RELATIVE_CALENDAR_UNITS = [
 ];
 
 /**
- * `value` against the current day in calendar units counted between the
- * starts of the units holding each ("tomorrow", "last month"): luxon's
- * toRelativeCalendar.
- *
  * @param {Temporal.ZonedDateTime | Temporal.PlainDate} value
  * @param {"years" | "months" | "days"} [unit]
  * @returns {string}
@@ -475,7 +451,7 @@ export function formatDate(value, options = {}) {
 }
 
 /**
- * @param {NullableDateValue | undefined} value a date is the start of its day in `options.tz`
+ * @param {NullableDateValue | undefined} value
  * @param {ConversionOptions} [options={}]
  */
 export function formatDateTime(value, options = {}) {
@@ -498,7 +474,7 @@ export function toLocaleDateString(value) {
 }
 
 /**
- * @param {NullableDateValue | undefined} value a date is the start of its day in `options.tz`
+ * @param {NullableDateValue | undefined} value
  * @param {ConversionLocalOptions} [options]
  */
 export function toLocaleDateTimeString(
@@ -622,10 +598,6 @@ const UNIT_ORDER = /** @type {const} */ ([
 ]);
 
 /**
- * `text` read through a token `format` in `zone`, as luxon's fromFormat: units
- * above the largest one the format carries come from now, units below it are at
- * their minimum. Null when it does not match or spells an impossible date.
- *
  * @param {string} text
  * @param {string} format
  * @param {string} [tz]

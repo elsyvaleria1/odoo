@@ -14,10 +14,6 @@ import { normalizeCSSColor, parseCSSColor } from "@web/core/utils/format/colors"
 const log = makeLogger("website.builder.plugin.image_hover");
 
 /**
- * The color the server renders the hover effect with: what the browser
- * computes (a `color()` from a `color-mix()`) in a spelling the server reads,
- * so the preview shows what the save stores.
- *
  * @param {string} [color]
  * @returns {string | undefined}
  */

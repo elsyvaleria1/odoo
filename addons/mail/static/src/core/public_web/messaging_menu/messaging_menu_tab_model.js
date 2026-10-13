@@ -51,14 +51,14 @@ export class MessagingMenuTab extends Record {
     emptyState = { title: _t("Nothing here yet.") };
     /** @type {(message: import("models").Message) => boolean} */
     includesMessage = () => false;
-    /** @type {string[]|undefined} the message actions its items offer */
+    /** @type {string[]|undefined} */
     messageActionIds;
     /** @type {number[]} */
     init_counter_ids = [];
     /** @type {Object<string, MessagingMenuTabLoadStatus>} */
     loadStatusByFilterId = {};
     messages = fields.Many("mail.message", { inverse: "messagingMenuTabsAsMessages" });
-    /** @type {"needaction_counter"|"starred_counter"|undefined} the store counter this tab presents */
+    /** @type {"needaction_counter"|"starred_counter"|undefined} */
     storeCounter;
     counter = fields.Attr(0, {
         /** @this {import("models").MessagingMenuTab} */
@@ -147,9 +147,6 @@ export class MessagingMenuTab extends Record {
     }
 
     /**
-     * A search loads its own pages: its status must neither wait on nor end
-     * the browsing of the same filters.
-     *
      * @param {MessagingMenuTabFilter} [filter]
      * @param {MessagingMenuTabFilter[]} [pluginFilters]
      * @param {string} [searchTerm]

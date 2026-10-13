@@ -40,12 +40,8 @@ const strftimeFormatTable = {
 const HUMAN_FORMAT_TOKENS = /(dddd|ddd|dd|d|mmmm|mmm|mm|ww|yyyy|yy|ii|hh|ss|a|p)/gi;
 
 /**
- * Convert a human readable format to Python strftime format. In case
- * no corresponding format is supported, a similar fallback is given
- * from the list of other supported formatting value.
- *
- * @param {string} value original Luxon format
- * @returns {string} valid strftime format
+ * @param {string} value
+ * @returns {string}
  */
 const humanToStrftimeFormat = memoize(function humanToStrftimeFormat(value) {
     return value.replace(HUMAN_FORMAT_TOKENS, (token) => {
@@ -569,11 +565,7 @@ export class BaseImportModel {
         );
     }
 
-    /**
-     * On the preview data succesfuly loaded, update the
-     * import options, columns and messages.
-     * @param {*} res
-     */
+    /** @param {*} res */
     _onLoadSuccess(res) {
         for (const key in res.options) {
             if (this.importOptionsValues[key]) {
@@ -658,14 +650,7 @@ export class BaseImportModel {
             .find((field) => field.fieldPath === id);
     }
 
-    /**
-     * Sort fields into their respective categories, namely:
-     * - Basic => Only the ID field
-     * - Suggested => Non-relational fields from the header"s types
-     * - Additional => Non-relational fields of any other type
-     * - Relational => Relational fields
-     * @param {*} res
-     */
+    /** @param {*} res */
     _getFields(res, index) {
         const advanced = this.importOptionsValues.advanced.value;
         const fields = {
@@ -862,9 +847,7 @@ export class BaseImportModel {
     }
 }
 
-/**
- * @returns {BaseImportModel}columns
- */
+/** @returns {BaseImportModel} */
 export function useImportModel({ env, context }) {
     const orm = useService("orm");
     return proxy(new BaseImportModel({ env, context, orm }));

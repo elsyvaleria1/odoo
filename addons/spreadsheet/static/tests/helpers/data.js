@@ -58,11 +58,9 @@ export function getBasicServerData() {
 }
 
 /**
- *
  * @param {string} model
  * @param {Array<string>} columns
  * @param {{name: string, asc: boolean}[]} orderBy
- *
  * @returns { {definition: Object, columns: Array<Object>}}
  */
 export function generateListDefinition(model, columns, actionXmlId, orderBy = []) {
@@ -609,11 +607,7 @@ export const SpreadsheetModels = {
     Tag,
 };
 
-/**
- * Add the records inside serverData in the MockServer
- *
- * @param {ServerData} serverData
- */
+/** @param {ServerData} serverData */
 export function addRecordsFromServerData(serverData) {
     for (const modelName of Object.keys(serverData.models)) {
         const records = serverData.models[modelName].records;
@@ -629,15 +623,7 @@ export function addRecordsFromServerData(serverData) {
     }
 }
 
-/**
- * Add the views inside serverData in the MockServer
- *
- * @param {ServerData} serverData
- *
- * @example
- * addViewsFromServerData({ "partner,false,search": "<search/>" });
- * Will set the default search view for the partner model
- */
+/** @param {ServerData} serverData */
 export function addViewsFromServerData(serverData) {
     for (const fullViewKey of Object.keys(serverData.views)) {
         const viewArch = serverData.views[fullViewKey];

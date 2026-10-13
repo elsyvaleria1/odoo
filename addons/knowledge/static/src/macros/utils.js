@@ -1,8 +1,8 @@
 /** @odoo-module native */
 /**
- * @param {String} type - Name of the drag event
- * @param {DataTransfer} dataTransfer - Object used to store data
- * @param {HTMLElement} target - Target element
+ * @param {String} type
+ * @param {DataTransfer} dataTransfer
+ * @param {HTMLElement} target
  */
 export function dragAndDrop(type, dataTransfer, target) {
     const fakeDragAndDrop = new Event(type, {
@@ -15,8 +15,8 @@ export function dragAndDrop(type, dataTransfer, target) {
 }
 
 /**
- * @param {DataTransfer} dataTransfer - Object used to store data
- * @param {HTMLElement} target - Target element
+ * @param {DataTransfer} dataTransfer
+ * @param {HTMLElement} target
  */
 export function pasteElements(dataTransfer, target) {
     const fakePaste = new Event("paste", {

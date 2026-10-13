@@ -5,7 +5,7 @@ import { PivotModel } from "@web/views/pivot";
 import { usePlanningModelActions } from "../planning_hooks.js";
 
 export class PlanningPivotModel extends PivotModel {
-    /** @override **/
+    /** @override */
     setup() {
         super.setup(...arguments);
         this.getHighlightIds = usePlanningModelActions({
@@ -15,7 +15,7 @@ export class PlanningPivotModel extends PivotModel {
         }).getHighlightIds;
     }
 
-    /** @override **/
+    /** @override */
     async load(searchParams) {
         const highlightIds = await this.getHighlightIds();
         if (highlightIds) {

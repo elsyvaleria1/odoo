@@ -3,7 +3,7 @@
  *
  */
 
-/** @type FixedPeriodDateGlobalFilter */
+/** @type */
 export const THIS_YEAR_GLOBAL_FILTER = {
     id: "43",
     type: "date",

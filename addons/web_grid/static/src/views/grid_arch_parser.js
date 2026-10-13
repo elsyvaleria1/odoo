@@ -154,18 +154,9 @@ export class GridArchParser extends ViewArchParser {
     }
 
     /**
-     * The aggregate function a measure or readonly field is read_group'd with.
-     * Both are asked for as `field:aggregator`, and a field type that declares
-     * no default -- a boolean, say -- leaves nothing to put after the colon.
-     * Neither of the two ways that used to end is legible from where it
-     * surfaced: `field:undefined` comes back from the server as
-     * `Invalid aggregation function "undefined"`, and a bare `field` is
-     * accepted and then read off the group as a value that is not there,
-     * crashing the client on `object null is not iterable`.
-     *
      * @private
-     * @param {ViewIRNode} node the <field> node.
-     * @param {Object} fieldInfo the field's description.
+     * @param {ViewIRNode} node
+     * @param {Object} fieldInfo
      * @returns {string}
      */
     _extractAggregator(node, fieldInfo) {
@@ -184,15 +175,9 @@ export class GridArchParser extends ViewArchParser {
     }
 
     /**
-     * The granularity a row or section field groups by. read_group refuses a
-     * date or datetime groupby that does not state one, and the arch is the
-     * only place a row field can say it -- unlike a search groupby, which
-     * carries its own. Saying nothing on a date field is therefore not a
-     * default, it is an error the server would report far from its cause.
-     *
      * @private
-     * @param {ViewIRNode} node the <field> node.
-     * @param {Object} fieldInfo the field's description.
+     * @param {ViewIRNode} node
+     * @param {Object} fieldInfo
      * @returns {string|undefined}
      */
     _extractGranularity(node, fieldInfo) {
@@ -213,13 +198,8 @@ export class GridArchParser extends ViewArchParser {
     }
 
     /**
-     * The <range>s a col field declares, and the one the view opens on: the
-     * first declared `default="1"`, else the first declared at all. Several
-     * defaults used to elect the last, the one way round nobody reading the
-     * arch top to bottom would expect.
-     *
      * @private
-     * @param {ViewIRNode} colNode the col <field> node.
+     * @param {ViewIRNode} colNode
      * @returns {{ranges: Object<string, Object>, activeRangeName: string}}
      */
     _extractRanges(colNode) {

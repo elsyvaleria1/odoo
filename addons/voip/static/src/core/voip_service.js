@@ -16,29 +16,15 @@ export class Voip {
     callActivityTypeId;
     error;
     isUnloading = false;
-    /**
-     * Either “demo” or “prod”. In demo mode, phone calls are simulated in the
-     * interface but no RTC sessions are actually established.
-     *
-     * @type {"demo"|"prod"}
-     */
+    /** @type {"demo"|"prod"} */
     mode;
-    /**
-     * The address of the PBX server. Used as the hostname in SIP URIs.
-     *
-     * @type {string}
-     */
+    /** @type {string} */
     pbxAddress;
     /** @type {"always"|"user"|"disabled"} */
     recordingPolicy;
     /** @type {Softphone} */
     softphone;
-    /**
-     * The WebSocket URL of the signaling server that will be used to
-     * communicate SIP messages between Odoo and the PBX server.
-     *
-     * @type {string}
-     */
+    /** @type {string} */
     webSocketUrl;
 
     constructor(env, services) {
@@ -70,25 +56,14 @@ export class Voip {
         return proxy(this);
     }
 
-    /**
-     * Determines if `voip_secret` and `voip_username` settings are defined for
-     * the current user.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get areCredentialsSet() {
         return Boolean(
             this.store.settings.voip_username && this.store.settings.voip_secret,
         );
     }
 
-    /**
-     * With some providers, the authorization username (the one used to register
-     * with the PBX server) differs from the username. This getter is intended
-     * to provide a way to override the authorization username.
-     *
-     * @returns {string}
-     */
+    /** @returns {string} */
     get authorizationUsername() {
         return this.store.settings.voip_username || "";
     }
@@ -125,11 +100,7 @@ export class Voip {
         return cleanPhoneNumber(this.store.settings.external_device_number) !== "";
     }
 
-    /**
-     * Determines if `pbxAddress` and `webSocketUrl` have been provided.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get isServerConfigured() {
         return Boolean(this.pbxAddress && this.webSocketUrl);
     }
@@ -139,12 +110,7 @@ export class Voip {
         return this.callService.missedCalls;
     }
 
-    /**
-     * Determines if the `should_call_from_another_device` setting is set and if
-     * an `external_device_number` has been provided.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get willCallFromAnotherDevice() {
         return (
             this.store.settings.should_call_from_another_device &&
@@ -235,13 +201,9 @@ export class Voip {
     }
 
     /**
-     * Triggers an error that will be displayed in the softphone, and blocks the
-     * UI by default.
-     *
-     * @param {string} message The error message to be displayed.
+     * @param {string} message
      * @param {Object} [options={}]
-     * @param {boolean} [options.isNonBlocking=false] If true, the error will
-     * not block the UI.
+     * @param {boolean} [options.isNonBlocking=false]
      */
     triggerError(message, { isNonBlocking = false, title, button } = {}) {
         this.error = { title, text: message, isNonBlocking, button };

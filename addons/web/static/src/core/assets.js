@@ -181,11 +181,7 @@ function addFreshImportMapEntries(targetDoc, importMap, injected) {
 }
 
 /**
- * Whether the browser dropped an import map added after the first one.
- * Chrome 133+ and Safari 18.4+ merge them; Firefox stable does not, and then
- * every bare specifier the map carries fails to resolve.
- *
- * @param {string} specifier a specifier only the added map declares
+ * @param {string} specifier
  * @param {(specifier: string) => string} [resolve]
  * @returns {boolean}
  */

@@ -77,7 +77,6 @@ import { DragAndDropMoveHandle } from "./drag_and_drop_move_handle.js";
  *      dragState: DragState,
  * }) => void)[]} on_element_over_dropzone_handlers
  * @typedef {(() => (() => void))[]} on_prepare_drag_handlers
- *
  * @typedef {((el: HTMLElement) => boolean)[]} is_draggable_handlers
  */
 
@@ -169,14 +168,10 @@ export class DragAndDropPlugin extends Plugin {
     }
 
     /**
-     * Initializes the drag and drop handles.
-     *
-     * @param {String} handleSelector a selector targeting the handle to drag
-     * @param {String} elementsSelector a selector targeting the element that
-     *   will be dragged
-     * @param {HTMLElement} element the element to listen for drag events
-     * @param {Boolean} [fromIframe=false] true if the dragged element is in the
-     *   iframe
+     * @param {String} handleSelector
+     * @param {String} elementsSelector
+     * @param {HTMLElement} element
+     * @param {Boolean} [fromIframe=false]
      * @returns {Object}
      */
     initDragAndDrop(handleSelector, elementsSelector, element, fromIframe = false) {

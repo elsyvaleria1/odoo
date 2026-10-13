@@ -27,11 +27,7 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
         this.globalFilters = [];
     }
 
-    /**
-     * Check if the given command can be dispatched
-     *
-     * @param {import("@spreadsheet").AllCoreCommand} cmd Command
-     */
+    /** @param {import("@spreadsheet").AllCoreCommand} cmd */
     allowDispatch(cmd) {
         switch (cmd.type) {
             case "EDIT_GLOBAL_FILTER":
@@ -82,11 +78,7 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
         return CommandResult.Success;
     }
 
-    /**
-     * Handle a spreadsheet command
-     *
-     * @param {Object} cmd Command
-     */
+    /** @param {Object} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "ADD_GLOBAL_FILTER": {
@@ -143,41 +135,27 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
     }
 
     /**
-     * Retrieve the global filter with the given id
-     *
      * @param {string} id
-     * @returns {GlobalFilter|undefined} Global filter
+     * @returns {GlobalFilter|undefined}
      */
     getGlobalFilter(id) {
         return this.globalFilters.find((filter) => filter.id === id);
     }
 
-    /**
-     * Retrieve all the global filters
-     *
-     * @returns {Array<GlobalFilter>} Array of Global filters
-     */
+    /** @returns {Array<GlobalFilter>} */
     getGlobalFilters() {
         return [...this.globalFilters];
     }
 
     /**
-     * Get the default value of a global filter
-     *
-     * @param {string} id Id of the filter
-     *
+     * @param {string} id
      * @returns {string|Array<string>|Object}
      */
     getGlobalFilterDefaultValue(id) {
         return this.getGlobalFilter(id).defaultValue;
     }
 
-    /**
-     * Returns the field matching for a given model by copying the matchings of another DataSource that
-     * share the same model, including only the chain and type.
-     *
-     * @returns {Record<string, FieldMatching> | {}}
-     */
+    /** @returns {Record<string, FieldMatching> | {}} */
     getFieldMatchingForModel(newModel) {
         const globalFilters = this.getGlobalFilters();
         if (globalFilters.length === 0) {
@@ -209,11 +187,7 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
         return {};
     }
 
-    /**
-     * Edit a global filter
-     *
-     * @param {CmdGlobalFilter} cmdFilter
-     */
+    /** @param {CmdGlobalFilter} cmdFilter */
     _editGlobalFilter(cmdFilter) {
         const rangesOfAllowedValues =
             cmdFilter.type === "text" && cmdFilter.rangesOfAllowedValues?.length
@@ -239,11 +213,7 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
         }
     }
 
-    /**
-     * Import the filters
-     *
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     import(data) {
         for (const globalFilter of data.globalFilters || []) {
             if (
@@ -258,11 +228,7 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
             this.globalFilters.push(globalFilter);
         }
     }
-    /**
-     * Export the filters
-     *
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     export(data) {
         data.globalFilters = this.globalFilters.map((filter) => {
             /** @type {Object} */
@@ -277,9 +243,6 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
     }
 
     /**
-     * Update all ODOO.FILTER.VALUE formulas to reference a filter
-     * by its new label.
-     *
      * @param {string} currentLabel
      * @param {string} newLabel
      */
@@ -311,8 +274,6 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
     }
 
     /**
-     * Return true if the label is duplicated
-     *
      * @param {string | undefined} filterId
      * @param {string} label
      * @returns {boolean}

@@ -33,12 +33,7 @@ class RecruitmentCopyClipboardCharField extends CopyClipboardCharField {
         );
     }
 
-    /**
-     * `CopyButton` awaits a function-valued `content`, so the value is
-     * generated on click without a component of our own.
-     *
-     * @returns {(() => Promise<string>) | null}
-     */
+    /** @returns {(() => Promise<string>) | null} */
     get contentGenerationFunction() {
         if (this.props.contentGenerationFunctionName) {
             return () =>

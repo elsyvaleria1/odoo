@@ -58,11 +58,7 @@ export class PivotDetailsSidePanel extends Component {
         return this.pivotSidePanelRef.el;
     }
 
-    /**
-     * Get the last update date, formatted
-     *
-     * @returns {string} date formatted
-     */
+    /** @returns {string} */
     getLastUpdate() {
         const lastUpdate = this.pivot.lastUpdate;
         if (lastUpdate) {

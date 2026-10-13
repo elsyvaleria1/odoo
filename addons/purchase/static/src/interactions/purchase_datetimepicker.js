@@ -27,9 +27,6 @@ export class PurchaseDatetimePicker extends Interaction {
     }
 
     /**
-     * The day a line's commitment datetime, given as a naive UTC ISO text,
-     * falls on for the user.
-     *
      * @param {string | undefined} value
      * @returns {Temporal.PlainDate | undefined}
      */

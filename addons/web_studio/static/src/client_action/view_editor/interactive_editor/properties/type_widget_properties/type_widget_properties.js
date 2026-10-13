@@ -119,9 +119,7 @@ export class TypeWidgetProperties extends Component {
         ];
     }
 
-    /**
-     * @returns {{choices: Object[]}} the available widgets for the current node
-     */
+    /** @returns {{choices: Object[]}} */
     get widgetChoices() {
         const widgets = getWowlFieldWidgets(
             this.props.node.field.type,
@@ -140,12 +138,7 @@ export class TypeWidgetProperties extends Component {
         };
     }
 
-    /**
-     * @returns the list of attributes available depending the type of field,
-     * as well the current widget selected. For a widget node, there is no
-     * concept of type, we simply read what supported options and attributes
-     * are on the node
-     */
+    /** @returns */
     _getAttributesForCurrentTypeAndWidget(props) {
         if (!props.node.field) {
             return JSON.parse(
@@ -214,8 +207,8 @@ export class TypeWidgetProperties extends Component {
     }
 
     /**
-     * @param {string} type of the attribute (eg. "string", "boolean" )
-     * @returns only the given type of attributes for the current field node
+     * @param {string} type
+     * @returns
      */
     getWidgetAttributes(type, props) {
         return this.attributesForCurrentTypeAndWidget

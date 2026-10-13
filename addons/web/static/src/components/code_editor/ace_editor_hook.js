@@ -10,14 +10,12 @@ import { useLayoutEffect } from "@web/core/utils/layout_effect";
 
 const log = makeLogger("web.components.code_editor");
 
-/** @type {Record<string, any>} one instance per mode, as ace kept by id */
+/** @type {Record<string, any>} */
 const modeInstances = Object.create(null);
 
 /**
- * The mode object for a name; ace no longer resolves "ace/mode/<name>" itself.
- *
  * @param {string | undefined} name
- * @returns {any} a mode, or "" for plain text when the name is unknown
+ * @returns {any}
  */
 function getMode(name) {
     const ModeClass = name && ace.modes[name];

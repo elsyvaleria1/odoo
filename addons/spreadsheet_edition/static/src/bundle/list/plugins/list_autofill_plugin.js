@@ -8,13 +8,10 @@ import { _t } from "@web/core/translation";
 
 export class ListAutofillPlugin extends UIPlugin {
     /**
-     * Get the next value to autofill of a list function
-     *
-     * @param {string} formula List formula
-     * @param {boolean} isColumn True if autofill is LEFT/RIGHT, false otherwise
-     * @param {number} increment number of steps
-     *
-     * @returns Autofilled value
+     * @param {string} formula
+     * @param {boolean} isColumn
+     * @param {number} increment
+     * @returns
      */
     getNextListValue(formula, isColumn, increment) {
         const tokens = tokenize(formula);
@@ -71,11 +68,8 @@ export class ListAutofillPlugin extends UIPlugin {
     }
 
     /**
-     * Compute the tooltip to display from a list formula
-     *
-     * @param {string} formula List formula
-     * @param {boolean} isColumn True if the direction is left/right, false
-     *                           otherwise
+     * @param {string} formula
+     * @param {boolean} isColumn
      */
     getTooltipListFormula(formula, isColumn) {
         if (!formula) {

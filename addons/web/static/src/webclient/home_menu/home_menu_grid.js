@@ -90,7 +90,7 @@ export class HomeMenuGrid {
         return this._derived.moveBounds();
     }
 
-    /** @returns {number[]} tiles in the pinned block, then in each section */
+    /** @returns {number[]} */
     get keyboardRows() {
         return this._derived.keyboardRows();
     }
@@ -285,7 +285,7 @@ export class HomeMenuGrid {
             .menuItems;
     }
 
-    /** @returns {MenuEntry[]} every match, best first */
+    /** @returns {MenuEntry[]} */
     _menuMatches() {
         if (!this.query()) {
             return [];

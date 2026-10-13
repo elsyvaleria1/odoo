@@ -206,12 +206,6 @@ const BUTTON_ATTRIBUTES = [
 ];
 
 /**
- * Buttons are read from the arch, not the page: a statusbar or button box
- * folds what does not fit into a dropdown, where the page has no button. A
- * button's `spoken` attribute names phrases, besides its label, that press it:
- * a label a recogniser mishears ("Validar" -> "Balita") gets a phrase it does
- * not ("termina la entrega"), declared beside the label and translated with it.
- *
  * @param {any} archInfo
  * @param {any} record
  * @returns {ButtonTerm[]}
@@ -320,9 +314,6 @@ function compileView(activeView, alternates = null) {
 }
 
 /**
- * The reports of the record's print menu. One bound with a domain is valid for
- * some records only, which the print menu asks the server; it is left out.
- *
  * @param {any} controller
  * @returns {ReportTerm[]}
  */
@@ -334,9 +325,6 @@ function compileReports(controller) {
 }
 
 /**
- * What the user can name right now: every menu, the view in front of them
- * unless the home menu covers it, and the commands in scope.
- *
  * @param {{ menu: any, activeView: any, homeMenu?: any, commands?: CommandTerm[], today: any, alternates?: import("../alternates.js").Alternates | null, terms?: import("./terms.js").TermPhrase[] }} sources
  * @returns {Vocabulary}
  */

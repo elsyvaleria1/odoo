@@ -1,5 +1,5 @@
 /*!
- * 
+ *
  *  SIP version 0.21.2
  *  Copyright (c) 2014-2022 Junction Networks, Inc <http://www.onsip.com>
  *  Homepage: https://sipjs.com
@@ -209,10 +209,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
 
-/**
- * An exception indicating an unsupported content type prevented execution.
- * @public
- */
+/** @public */
 class ContentTypeUnsupportedError extends _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__.Exception {
     constructor(message) {
         super(message ? message : "Unsupported content type.");
@@ -227,11 +224,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "Exception": () => ( Exception)
  });
-/**
- * An Exception is considered a condition that a reasonable application may wish to catch.
- * An Error indicates serious problems that a reasonable application should not try to catch.
- * @public
- */
+/** @public */
 class Exception extends Error {
     constructor(message) {
         super(message);
@@ -249,10 +242,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
 
-/**
- * An exception indicating an outstanding prior request prevented execution.
- * @public
- */
+/** @public */
 class RequestPendingError extends _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__.Exception {
     /** @internal */
     constructor(message) {
@@ -270,10 +260,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
 
-/**
- * An exception indicating a session description handler error occured.
- * @public
- */
+/** @public */
 class SessionDescriptionHandlerError extends _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__.Exception {
     constructor(message) {
         super(message ? message : "Unspecified session description handler error.");
@@ -290,10 +277,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
 
-/**
- * An exception indicating the session terminated before the action completed.
- * @public
- */
+/** @public */
 class SessionTerminatedError extends _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__.Exception {
     constructor() {
         super("The session has terminated.");
@@ -310,10 +294,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
 
-/**
- * An exception indicating an invalid state transition error occured.
- * @public
- */
+/** @public */
 class StateTransitionError extends _core_exceptions_exception_js__WEBPACK_IMPORTED_MODULE_0__.Exception {
     constructor(message) {
         super(message ? message : "An error occurred during state transition.");
@@ -328,10 +309,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "Ack": () => ( Ack)
  });
-/**
- * A request to confirm a {@link Session} (incoming ACK).
- * @public
- */
+/** @public */
 class Ack {
     /** @internal */
     constructor(incomingAckRequest) {
@@ -350,10 +328,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "Bye": () => ( Bye)
  });
-/**
- * A request to end a {@link Session} (incoming BYE).
- * @public
- */
+/** @public */
 class Bye {
     /** @internal */
     constructor(incomingByeRequest) {
@@ -380,10 +355,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "Cancel": () => ( Cancel)
  });
-/**
- * A request to reject an {@link Invitation} (incoming CANCEL).
- * @public
- */
+/** @public */
 class Cancel {
     /** @internal */
     constructor(incomingCancelRequest) {
@@ -402,20 +374,14 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "EmitterImpl": () => ( EmitterImpl)
  });
-/**
- * An {@link Emitter} implementation.
- * @internal
- */
+/** @internal */
 class EmitterImpl {
     constructor() {
         this.listeners = new Array();
     }
     /**
-     * Sets up a function that will be called whenever the target changes.
-     * @param listener - Callback function.
-     * @param options - An options object that specifies characteristics about the listener.
-     *                  If once true, indicates that the listener should be invoked at most once after being added.
-     *                  If once true, the listener would be automatically removed when invoked.
+     * @param listener
+     * @param options
      */
     addListener(listener, options) {
         const onceWrapper = (data) => {
@@ -424,43 +390,34 @@ class EmitterImpl {
         };
         (options === null || options === void 0 ? void 0 : options.once) === true ? this.listeners.push(onceWrapper) : this.listeners.push(listener);
     }
-    /**
-     * Emit change.
-     * @param data - Data to emit.
-     */
+    /** @param data */
     emit(data) {
         this.listeners.slice().forEach((listener) => listener(data));
     }
     removeAllListeners() {
         this.listeners = [];
     }
-    /**
-     * Removes a listener previously registered with addListener.
-     * @param listener - Callback function.
-     */
+    /** @param listener */
     removeListener(listener) {
         this.listeners = this.listeners.filter((l) => l !== listener);
     }
     /**
-     * Registers a listener.
-     * @param listener - Callback function.
-     * @deprecated Use addListener.
+     * @param listener
+     * @deprecated
      */
     on(listener) {
         return this.addListener(listener);
     }
     /**
-     * Unregisters a listener.
-     * @param listener - Callback function.
-     * @deprecated Use removeListener.
+     * @param listener
+     * @deprecated
      */
     off(listener) {
         return this.removeListener(listener);
     }
     /**
-     * Registers a listener then unregisters the listener after one event emission.
-     * @param listener - Callback function.
-     * @deprecated Use addListener.
+     * @param listener
+     * @deprecated
      */
     once(listener) {
         return this.addListener(listener, { once: true });
@@ -475,10 +432,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "Info": () => ( Info)
  });
-/**
- * An exchange of information (incoming INFO).
- * @public
- */
+/** @public */
 class Info {
     /** @internal */
     constructor(incomingInfoRequest) {
@@ -531,10 +485,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * An invitation is an offer to establish a {@link Session} (incoming INVITE).
- * @public
- */
+/** @public */
 class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
     /** @internal */
     constructor(userAgent, incomingInviteRequest) {
@@ -633,17 +584,8 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
         return this.incomingInviteRequest.message;
     }
     /**
-     * Accept the invitation.
-     *
      * @remarks
-     * Accept the incoming INVITE request to start a Session.
-     * Replies to the INVITE request with a 200 Ok response.
-     * Resolves once the response sent, otherwise rejects.
-     *
-     * This method may reject for a variety of reasons including
-     * the receipt of a CANCEL request before `accept` is able
-     * to construct a response.
-     * @param options - Options bucket.
+     * @param options
      */
     accept(options = {}) {
         this.logger.log("Invitation.accept");
@@ -682,13 +624,8 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
             .catch((error) => this.handleResponseError(error)));
     }
     /**
-     * Indicate progress processing the invitation.
-     *
      * @remarks
-     * Report progress to the the caller.
-     * Replies to the INVITE request with a 1xx provisional response.
-     * Resolves once the response sent, otherwise rejects.
-     * @param options - Options bucket.
+     * @param options
      */
     progress(options = {}) {
         this.logger.log("Invitation.progress");
@@ -734,18 +671,8 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
             .catch((error) => this.handleResponseError(error));
     }
     /**
-     * Reject the invitation.
-     *
      * @remarks
-     * Replies to the INVITE request with a 4xx, 5xx, or 6xx final response.
-     * Resolves once the response sent, otherwise rejects.
-     *
-     * The expectation is that this method is used to reject an INVITE request.
-     * That is indeed the case - a call to `progress` followed by `reject` is
-     * a typical way to "decline" an incoming INVITE request. However it may
-     * also be called after calling `accept` (but only before it completes)
-     * which will reject the call and cause `accept` to reject.
-     * @param options - Options bucket.
+     * @param options
      */
     reject(options = {}) {
         this.logger.log("Invitation.reject");
@@ -768,9 +695,7 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
         return Promise.resolve();
     }
     /**
-     * Handle CANCEL request.
-     *
-     * @param message - CANCEL message.
+     * @param message
      * @internal
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -815,13 +740,7 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
                 throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
         }
     }
-    /**
-     * A handler for errors which occur while attempting to send 1xx and 2xx responses.
-     * In all cases, an attempt is made to reject the request if it is still outstanding.
-     * And while there are a variety of things which can go wrong and we log something here
-     * for all errors, there are a handful of common exceptions we pay some extra attention to.
-     * @param error - The error which occurred.
-     */
+    /** @param error */
     handleResponseError(error) {
         let statusCode = 480;
         if (error instanceof Error) {
@@ -861,10 +780,7 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
         }
         throw error;
     }
-    /**
-     * Callback for when ACK for a 2xx response is never received.
-     * @param session - Session the ACK never arrived for.
-     */
+    /** @param session */
     onAckTimeout() {
         this.logger.log("Invitation.onAckTimeout");
         if (!this.dialog) {
@@ -874,10 +790,7 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
         this.dialog.bye();
         this.stateTransition(_session_state_js__WEBPACK_IMPORTED_MODULE_1__.SessionState.Terminated);
     }
-    /**
-     * A version of `accept` which resolves a session when the 200 Ok response is sent.
-     * @param options - Options bucket.
-     */
+    /** @param options */
     sendAccept(options = {}) {
         const responseOptions = {
             sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
@@ -893,10 +806,7 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
         clearTimeout(this.userNoAnswerTimer);
         return this.generateResponseOfferAnswer(this.incomingInviteRequest, responseOptions).then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body, extraHeaders }));
     }
-    /**
-     * A version of `progress` which resolves when the provisional response is sent.
-     * @param options - Options bucket.
-     */
+    /** @param options */
     sendProgress(options = {}) {
         const statusCode = options.statusCode || 180;
         const reasonPhrase = options.reasonPhrase;
@@ -914,10 +824,7 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
             return Promise.reject(error);
         }
     }
-    /**
-     * A version of `progress` which resolves when the provisional response with sdp is sent.
-     * @param options - Options bucket.
-     */
+    /** @param options */
     sendProgressWithSDP(options = {}) {
         const responseOptions = {
             sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
@@ -933,20 +840,14 @@ class Invitation extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
             return progressResponse;
         });
     }
-    /**
-     * A version of `progress` which resolves when the reliable provisional response is sent.
-     * @param options - Options bucket.
-     */
+    /** @param options */
     sendProgressReliable(options = {}) {
         options.extraHeaders = (options.extraHeaders || []).slice();
         options.extraHeaders.push("Require: 100rel");
         options.extraHeaders.push("RSeq: " + Math.floor(Math.random() * 10000));
         return this.sendProgressWithSDP(options);
     }
-    /**
-     * A version of `progress` which resolves when the reliable provisional response is acknowledged.
-     * @param options - Options bucket.
-     */
+    /** @param options */
     sendProgressReliableWaitForPrack(options = {}) {
         const responseOptions = {
             sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
@@ -1106,17 +1007,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * A session provides real time communication between one or more participants.
- *
  * @remarks
- * The transport behaves in a deterministic manner according to the
- * the state defined in {@link SessionState}.
  * @public
  */
 class Session {
     /**
-     * Constructor.
-     * @param userAgent - User agent. See {@link UserAgent} for details.
+     * @param userAgent
      * @internal
      */
     constructor(userAgent, options = {}) {
@@ -1206,10 +1102,7 @@ class Session {
     get userAgent() {
         return this._userAgent;
     }
-    /**
-     * End the {@link Session}. Sends a BYE.
-     * @param options - Options bucket. See {@link SessionByeOptions} for details.
-     */
+    /** @param options */
     bye(options = {}) {
         let message = "Session.bye() may only be called if established session.";
         switch (this.state) {
@@ -1262,10 +1155,7 @@ class Session {
         this.logger.error(message);
         return Promise.reject(new Error(`Invalid session state ${this.state}`));
     }
-    /**
-     * Share {@link Info} with peer. Sends an INFO.
-     * @param options - Options bucket. See {@link SessionInfoOptions} for details.
-     */
+    /** @param options */
     info(options = {}) {
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
             const message = "Session.info() may only be called if established session.";
@@ -1276,10 +1166,7 @@ class Session {
         const requestOptions = this.copyRequestOptions(options.requestOptions);
         return this._info(requestDelegate, requestOptions);
     }
-    /**
-     * Renegotiate the session. Sends a re-INVITE.
-     * @param options - Options bucket. See {@link SessionInviteOptions} for details.
-     */
+    /** @param options */
     invite(options = {}) {
         this.logger.log("Session.invite");
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
@@ -1434,10 +1321,7 @@ class Session {
             throw error;
         });
     }
-    /**
-     * Deliver a {@link Message}. Sends a MESSAGE.
-     * @param options - Options bucket. See {@link SessionMessageOptions} for details.
-     */
+    /** @param options */
     message(options = {}) {
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
             const message = "Session.message() may only be called if established session.";
@@ -1449,9 +1333,8 @@ class Session {
         return this._message(requestDelegate, requestOptions);
     }
     /**
-     * Proffer a {@link Referral}. Send a REFER.
-     * @param referTo - The referral target. If a `Session`, a REFER w/Replaces is sent.
-     * @param options - Options bucket. See {@link SessionReferOptions} for details.
+     * @param referTo
+     * @param options
      */
     refer(referTo, options = {}) {
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
@@ -1478,9 +1361,8 @@ class Session {
         return this._refer(options.onNotify, requestDelegate, requestOptions);
     }
     /**
-     * Send BYE.
-     * @param delegate - Request delegate.
-     * @param options - Request options bucket.
+     * @param delegate
+     * @param options
      * @internal
      */
     _bye(delegate, options) {
@@ -1523,9 +1405,8 @@ class Session {
         }
     }
     /**
-     * Send INFO.
-     * @param delegate - Request delegate.
-     * @param options - Request options bucket.
+     * @param delegate
+     * @param options
      * @internal
      */
     _info(delegate, options) {
@@ -1535,9 +1416,8 @@ class Session {
         return Promise.resolve(this.dialog.info(delegate, options));
     }
     /**
-     * Send MESSAGE.
-     * @param delegate - Request delegate.
-     * @param options - Request options bucket.
+     * @param delegate
+     * @param options
      * @internal
      */
     _message(delegate, options) {
@@ -1547,10 +1427,9 @@ class Session {
         return Promise.resolve(this.dialog.message(delegate, options));
     }
     /**
-     * Send REFER.
-     * @param onNotify - Notification callback.
-     * @param delegate - Request delegate.
-     * @param options - Request options bucket.
+     * @param onNotify
+     * @param delegate
+     * @param options
      * @internal
      */
     _refer(onNotify, delegate, options) {
@@ -1561,15 +1440,9 @@ class Session {
         return Promise.resolve(this.dialog.refer(delegate, options));
     }
     /**
-     * Send ACK and then BYE. There are unrecoverable errors which can occur
-     * while handling dialog forming and in-dialog INVITE responses and when
-     * they occur we ACK the response and send a BYE.
-     * Note that the BYE is sent in the dialog associated with the response
-     * which is not necessarily `this.dialog`. And, accordingly, the
-     * session state is not transitioned to terminated and session is not closed.
-     * @param inviteResponse - The response causing the error.
-     * @param statusCode - Status code for he reason phrase.
-     * @param reasonPhrase - Reason phrase for the BYE.
+     * @param inviteResponse
+     * @param statusCode
+     * @param reasonPhrase
      * @internal
      */
     ackAndBye(response, statusCode, reasonPhrase) {
@@ -1580,10 +1453,7 @@ class Session {
         }
         response.session.bye(undefined, { extraHeaders });
     }
-    /**
-     * Handle in dialog ACK request.
-     * @internal
-     */
+    /** @internal */
     onAckRequest(request) {
         this.logger.log("Session.onAckRequest");
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established && this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Terminating) {
@@ -1655,10 +1525,7 @@ class Session {
                 throw new Error(`Invalid signaling state ${dialog.signalingState}.`);
         }
     }
-    /**
-     * Handle in dialog BYE request.
-     * @internal
-     */
+    /** @internal */
     onByeRequest(request) {
         this.logger.log("Session.onByeRequest");
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
@@ -1674,10 +1541,7 @@ class Session {
         }
         this.stateTransition(_session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Terminated);
     }
-    /**
-     * Handle in dialog INFO request.
-     * @internal
-     */
+    /** @internal */
     onInfoRequest(request) {
         this.logger.log("Session.onInfoRequest");
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
@@ -1692,10 +1556,7 @@ class Session {
             request.accept();
         }
     }
-    /**
-     * Handle in dialog INVITE request.
-     * @internal
-     */
+    /** @internal */
     onInviteRequest(request) {
         this.logger.log("Session.onInviteRequest");
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
@@ -1762,10 +1623,7 @@ class Session {
             });
         });
     }
-    /**
-     * Handle in dialog MESSAGE request.
-     * @internal
-     */
+    /** @internal */
     onMessageRequest(request) {
         this.logger.log("Session.onMessageRequest");
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
@@ -1780,10 +1638,7 @@ class Session {
             request.accept();
         }
     }
-    /**
-     * Handle in dialog NOTIFY request.
-     * @internal
-     */
+    /** @internal */
     onNotifyRequest(request) {
         this.logger.log("Session.onNotifyRequest");
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
@@ -1803,10 +1658,7 @@ class Session {
             request.accept();
         }
     }
-    /**
-     * Handle in dialog PRACK request.
-     * @internal
-     */
+    /** @internal */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onPrackRequest(request) {
         this.logger.log("Session.onPrackRequest");
@@ -1816,10 +1668,7 @@ class Session {
         }
         throw new Error("Unimplemented.");
     }
-    /**
-     * Handle in dialog REFER request.
-     * @internal
-     */
+    /** @internal */
     onReferRequest(request) {
         this.logger.log("Session.onReferRequest");
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_0__.SessionState.Established) {
@@ -1845,13 +1694,7 @@ class Session {
             });
         }
     }
-    /**
-     * Generate an offer or answer for a response to an INVITE request.
-     * If a remote offer was provided in the request, set the remote
-     * description and get a local answer. If a remote offer was not
-     * provided, generates a local offer.
-     * @internal
-     */
+    /** @internal */
     generateResponseOfferAnswer(request, options) {
         if (this.dialog) {
             return this.generateResponseOfferAnswerInDialog(options);
@@ -1864,12 +1707,7 @@ class Session {
             return this.setOfferAndGetAnswer(body, options);
         }
     }
-    /**
-     * Generate an offer or answer for a response to an INVITE request
-     * when a dialog (early or otherwise) has already been established.
-     * This method may NOT be called if a dialog has yet to be established.
-     * @internal
-     */
+    /** @internal */
     generateResponseOfferAnswerInDialog(options) {
         if (!this.dialog) {
             throw new Error("Dialog undefined.");
@@ -1895,10 +1733,7 @@ class Session {
                 throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
         }
     }
-    /**
-     * Get local offer.
-     * @internal
-     */
+    /** @internal */
     getOffer(options) {
         const sdh = this.setupSessionDescriptionHandler();
         const sdhOptions = options.sessionDescriptionHandlerOptions;
@@ -1921,10 +1756,7 @@ class Session {
             return Promise.reject(e);
         }
     }
-    /**
-     * Rollback local/remote offer.
-     * @internal
-     */
+    /** @internal */
     rollbackOffer() {
         const sdh = this.setupSessionDescriptionHandler();
         if (sdh.rollbackDescription === undefined) {
@@ -1945,10 +1777,7 @@ class Session {
             return Promise.reject(e);
         }
     }
-    /**
-     * Set remote answer.
-     * @internal
-     */
+    /** @internal */
     setAnswer(answer, options) {
         const sdh = this.setupSessionDescriptionHandler();
         const sdhOptions = options.sessionDescriptionHandlerOptions;
@@ -1979,10 +1808,7 @@ class Session {
             return Promise.reject(e);
         }
     }
-    /**
-     * Set remote offer and get local answer.
-     * @internal
-     */
+    /** @internal */
     setOfferAndGetAnswer(offer, options) {
         const sdh = this.setupSessionDescriptionHandler();
         const sdhOptions = options.sessionDescriptionHandlerOptions;
@@ -2017,20 +1843,14 @@ class Session {
             return Promise.reject(e);
         }
     }
-    /**
-     * SDH for confirmed dialog.
-     * @internal
-     */
+    /** @internal */
     setSessionDescriptionHandler(sdh) {
         if (this._sessionDescriptionHandler) {
             throw new Error("Session description handler defined.");
         }
         this._sessionDescriptionHandler = sdh;
     }
-    /**
-     * SDH for confirmed dialog.
-     * @internal
-     */
+    /** @internal */
     setupSessionDescriptionHandler() {
         var _a;
         if (this._sessionDescriptionHandler) {
@@ -2042,10 +1862,7 @@ class Session {
         }
         return this._sessionDescriptionHandler;
     }
-    /**
-     * Transition session state.
-     * @internal
-     */
+    /** @internal */
     stateTransition(newState) {
         const invalidTransition = () => {
             throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
@@ -2149,20 +1966,7 @@ __webpack_require__.r(__webpack_exports__);
    "SessionState": () => ( SessionState)
  });
 /**
- * {@link Session} state.
- *
  * @remarks
- * The {@link Session} behaves in a deterministic manner according to the following
- * Finite State Machine (FSM).
- * ```txt
- *                   ___________________________________________________________
- *                  |  ____________________________________________             |
- *                  | |            ____________________________    |            |
- * Session          | |           |                            v   v            v
- * Constructed -> Initial -> Establishing -> Established -> Terminating -> Terminated
- *                                |               |___________________________^   ^
- *                                |_______________________________________________|
- * ```
  * @public
  */
 var SessionState;
@@ -2199,8 +2003,7 @@ function contentTypeToContentDisposition(contentType) {
     }
 }
 /**
- * Create a Body given a legacy body type.
- * @param bodyLegacy - Body Object
+ * @param bodyLegacy
  * @internal
  */
 function fromBodyLegacy(bodyLegacy) {
@@ -2211,8 +2014,7 @@ function fromBodyLegacy(bodyLegacy) {
     return body;
 }
 /**
- * User-Defined Type Guard for Body.
- * @param body - Body to check.
+ * @param body
  * @internal
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2225,9 +2027,7 @@ function isBody(body) {
         : typeof body.contentDisposition === "string";
 }
 /**
- * Given a message, get a normalized body.
- * The content disposition is inferred if not set.
- * @param message - The message.
+ * @param message
  * @internal
  */
 function getBody(message) {
@@ -2303,10 +2103,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _incoming_message_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
 
-/**
- * Incoming request message.
- * @public
- */
+/** @public */
 class IncomingRequestMessage extends _incoming_message_js__WEBPACK_IMPORTED_MODULE_0__.IncomingMessage {
     constructor() {
         super();
@@ -2325,20 +2122,15 @@ __webpack_require__.r(__webpack_exports__);
  var _utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(21);
 
 
-/**
- * Incoming message.
- * @public
- */
+/** @public */
 class IncomingMessage {
     constructor() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.headers = {};
     }
     /**
-     * Insert a header of the given name and value into the last position of the
-     * header array.
-     * @param name - header name
-     * @param value - header value
+     * @param name
+     * @param value
      */
     addHeader(name, value) {
         const header = { raw: value };
@@ -2351,9 +2143,8 @@ class IncomingMessage {
         }
     }
     /**
-     * Get the value of the given header name at the given position.
-     * @param name - header name
-     * @returns Returns the specified header, undefined if header doesn't exist.
+     * @param name
+     * @returns
      */
     getHeader(name) {
         const header = this.headers[(0,_utils_js__WEBPACK_IMPORTED_MODULE_0__.headerize)(name)];
@@ -2367,9 +2158,8 @@ class IncomingMessage {
         }
     }
     /**
-     * Get the header/s of the given name.
-     * @param name - header name
-     * @returns Array - with all the headers of the specified name.
+     * @param name
+     * @returns
      */
     getHeaders(name) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2384,19 +2174,16 @@ class IncomingMessage {
         return result;
     }
     /**
-     * Verify the existence of the given header.
-     * @param name - header name
-     * @returns true if header with given name exists, false otherwise
+     * @param name
+     * @returns
      */
     hasHeader(name) {
         return !!this.headers[(0,_utils_js__WEBPACK_IMPORTED_MODULE_0__.headerize)(name)];
     }
     /**
-     * Parse the given header on the given index.
-     * @param name - header name
-     * @param idx - header index
-     * @returns Parsed header object, undefined if the
-     *   header is not present or in case of a parsing error.
+     * @param name
+     * @param idx
+     * @returns
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     parseHeader(name, idx = 0) {
@@ -2423,23 +2210,17 @@ class IncomingMessage {
         }
     }
     /**
-     * Message Header attribute selector. Alias of parseHeader.
-     * @param name - header name
-     * @param idx - header index
-     * @returns Parsed header object, undefined if the
-     *   header is not present or in case of a parsing error.
-     *
-     * @example
-     * message.s('via',3).port
+     * @param name
+     * @param idx
+     * @returns
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     s(name, idx = 0) {
         return this.parseHeader(name, idx);
     }
     /**
-     * Replace the value of the given header by the value.
-     * @param name - header name
-     * @param value - header value
+     * @param name
+     * @param value
      */
     setHeader(name, value) {
         this.headers[(0,_utils_js__WEBPACK_IMPORTED_MODULE_0__.headerize)(name)] = [{ raw: value }];
@@ -2461,11 +2242,7 @@ __webpack_require__.r(__webpack_exports__);
    "newTag": () => ( newTag),
    "utf8Length": () => ( utf8Length)
  });
-/**
- * SIP Response Reasons
- * DOC: http://www.iana.org/assignments/sip-parameters
- * @internal
- */
+/** @internal */
 const REASON_PHRASE = {
     100: "Trying",
     180: "Ringing",
@@ -2540,8 +2317,8 @@ const REASON_PHRASE = {
     606: "Not Acceptable"
 };
 /**
- * @param size -
- * @param base -
+ * @param size
+ * @param base
  * @internal
  */
 function createRandomToken(size, base = 32) {
@@ -2565,7 +2342,7 @@ function newTag() {
     return createRandomToken(10);
 }
 /**
- * @param str -
+ * @param str
  * @internal
  */
 function headerize(str) {
@@ -2593,7 +2370,7 @@ function headerize(str) {
     return hname;
 }
 /**
- * @param str -
+ * @param str
  * @internal
  */
 function utf8Length(str) {
@@ -2612,16 +2389,12 @@ __webpack_require__.r(__webpack_exports__);
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable no-inner-declarations */
 
-/**
- * Grammar.
- * @internal
- */
+/** @internal */
 var Grammar;
 (function (Grammar) {
     /**
-     * Parse.
-     * @param input -
-     * @param startRule -
+     * @param input
+     * @param startRule
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function parse(input, startRule) {
@@ -2636,22 +2409,14 @@ var Grammar;
         return options.data;
     }
     Grammar.parse = parse;
-    /**
-     * Parse the given string and returns a SIP.NameAddrHeader instance or undefined if
-     * it is an invalid NameAddrHeader.
-     * @param name_addr_header -
-     */
+    /** @param name_addr_header */
     function nameAddrHeaderParse(nameAddrHeader) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const parsedNameAddrHeader = Grammar.parse(nameAddrHeader, "Name_Addr_Header");
         return parsedNameAddrHeader !== -1 ? parsedNameAddrHeader : undefined;
     }
     Grammar.nameAddrHeaderParse = nameAddrHeaderParse;
-    /**
-     * Parse the given string and returns a SIP.URI instance or undefined if
-     * it is an invalid URI.
-     * @param uri -
-     */
+    /** @param uri */
     function URIParse(uri) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const parsedUri = Grammar.parse(uri, "SIP_URI");
@@ -4203,19 +3968,15 @@ __webpack_require__.r(__webpack_exports__);
  var _parameters_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(25);
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * URI.
- * @public
- */
+/** @public */
 class URI extends _parameters_js__WEBPACK_IMPORTED_MODULE_0__.Parameters {
     /**
-     * Constructor
-     * @param scheme -
-     * @param user -
-     * @param host -
-     * @param port -
-     * @param parameters -
-     * @param headers -
+     * @param scheme
+     * @param user
+     * @param host
+     * @param port
+     * @param parameters
+     * @param headers
      */
     constructor(scheme = "sip", user, host, port, parameters, headers) {
         super(parameters || {});
@@ -4335,11 +4096,11 @@ class URI extends _parameters_js__WEBPACK_IMPORTED_MODULE_0__.Parameters {
         }
         return uriString;
     }
-    /*
-     * Hex-escape a SIP URI user.
-     * @private
-     * @param {String} user
-     */
+
+
+
+
+
     escapeUser(user) {
         let decodedUser;
         // eslint-disable-next-line no-useless-catch
@@ -4380,16 +4141,9 @@ class URI extends _parameters_js__WEBPACK_IMPORTED_MODULE_0__.Parameters {
     }
 }
 /**
- * Returns true if URIs are equivalent per RFC 3261 Section 19.1.4.
- * @param a - URI to compare
- * @param b - URI to compare
- *
+ * @param a
+ * @param b
  * @remarks
- * 19.1.4 URI Comparison
- * Some operations in this specification require determining whether two
- * SIP or SIPS URIs are equivalent.
- *
- * https://tools.ietf.org/html/rfc3261#section-19.1.4
  * @internal
  */
 function equivalentURI(a, b) {
@@ -4491,16 +4245,12 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _parameters_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(25);
 
-/**
- * Name Address SIP header.
- * @public
- */
+/** @public */
 class NameAddrHeader extends _parameters_js__WEBPACK_IMPORTED_MODULE_0__.Parameters {
     /**
-     * Constructor
-     * @param uri -
-     * @param displayName -
-     * @param parameters -
+     * @param uri
+     * @param displayName
+     * @param parameters
      */
     constructor(uri, displayName, parameters) {
         super(parameters);
@@ -4543,10 +4293,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _incoming_message_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
 
-/**
- * Incoming response message.
- * @public
- */
+/** @public */
 class IncomingResponseMessage extends _incoming_message_js__WEBPACK_IMPORTED_MODULE_0__.IncomingMessage {
     constructor() {
         super();
@@ -4565,10 +4312,7 @@ __webpack_require__.r(__webpack_exports__);
  var _utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(21);
 
 
-/**
- * Outgoing SIP request message.
- * @public
- */
+/** @public */
 class OutgoingRequestMessage {
     constructor(method, ruri, fromURI, toURI, options, extraHeaders, body) {
         this.headers = {};
@@ -4635,9 +4379,8 @@ class OutgoingRequestMessage {
         return new _grammar_name_addr_header_js__WEBPACK_IMPORTED_MODULE_1__.NameAddrHeader(uri, displayName, parameters);
     }
     /**
-     * Get the value of the given header name at the given position.
-     * @param name - header name
-     * @returns Returns the specified header, undefined if header doesn't exist.
+     * @param name
+     * @returns
      */
     getHeader(name) {
         const header = this.headers[(0,_utils_js__WEBPACK_IMPORTED_MODULE_0__.headerize)(name)];
@@ -4657,9 +4400,8 @@ class OutgoingRequestMessage {
         return;
     }
     /**
-     * Get the header/s of the given name.
-     * @param name - header name
-     * @returns Array with all the headers of the specified name.
+     * @param name
+     * @returns
      */
     getHeaders(name) {
         const result = [];
@@ -4680,9 +4422,8 @@ class OutgoingRequestMessage {
         return result;
     }
     /**
-     * Verify the existence of the given header.
-     * @param name - header name
-     * @returns true if header with given name exists, false otherwise
+     * @param name
+     * @returns
      */
     hasHeader(name) {
         if (this.headers[(0,_utils_js__WEBPACK_IMPORTED_MODULE_0__.headerize)(name)]) {
@@ -4699,29 +4440,15 @@ class OutgoingRequestMessage {
         return false;
     }
     /**
-     * Replace the the given header by the given value.
-     * @param name - header name
-     * @param value - header value
+     * @param name
+     * @param value
      */
     setHeader(name, value) {
         this.headers[(0,_utils_js__WEBPACK_IMPORTED_MODULE_0__.headerize)(name)] = value instanceof Array ? value : [value];
     }
     /**
-     * The Via header field indicates the transport used for the transaction
-     * and identifies the location where the response is to be sent.  A Via
-     * header field value is added only after the transport that will be
-     * used to reach the next hop has been selected (which may involve the
-     * usage of the procedures in [4]).
-     *
-     * When the UAC creates a request, it MUST insert a Via into that
-     * request.  The protocol name and protocol version in the header field
-     * MUST be SIP and 2.0, respectively.  The Via header field value MUST
-     * contain a branch parameter.  This parameter is used to identify the
-     * transaction created by that request.  This parameter is used by both
-     * the client and the server.
-     * https://tools.ietf.org/html/rfc3261#section-8.1.1.7
-     * @param branchParameter - The branch parameter.
-     * @param transport - The sent protocol transport.
+     * @param branchParameter
+     * @param transport
      */
     setViaHeader(branch, transport) {
         if (this.options.hackViaTcp) {
@@ -4807,10 +4534,7 @@ __webpack_require__.r(__webpack_exports__);
    "C": () => ( C)
  });
 /* eslint-disable @typescript-eslint/no-namespace */
-/**
- * SIP Methods
- * @internal
- */
+/** @internal */
 var C;
 (function (C) {
     C.ACK = "ACK";
@@ -4839,9 +4563,7 @@ __webpack_require__.r(__webpack_exports__);
    "SignalingState": () => ( SignalingState)
  });
 /**
- * Session state.
  * @remarks
- * https://tools.ietf.org/html/rfc3261#section-13
  * @public
  */
 var SessionState;
@@ -4853,21 +4575,7 @@ var SessionState;
     SessionState["Terminated"] = "Terminated";
 })(SessionState = SessionState || (SessionState = {}));
 /**
- * Offer/Answer state.
  * @remarks
- * ```txt
- *         Offer                Answer             RFC    Ini Est Early
- *  -------------------------------------------------------------------
- *  1. INVITE Req.          2xx INVITE Resp.     RFC 3261  Y   Y    N
- *  2. 2xx INVITE Resp.     ACK Req.             RFC 3261  Y   Y    N
- *  3. INVITE Req.          1xx-rel INVITE Resp. RFC 3262  Y   Y    N
- *  4. 1xx-rel INVITE Resp. PRACK Req.           RFC 3262  Y   Y    N
- *  5. PRACK Req.           200 PRACK Resp.      RFC 3262  N   Y    Y
- *  6. UPDATE Req.          2xx UPDATE Resp.     RFC 3311  N   Y    Y
- *
- *       Table 1: Summary of SIP Usage of the Offer/Answer Model
- * ```
- * https://tools.ietf.org/html/rfc6337#section-2.2
  * @public
  */
 var SignalingState;
@@ -4887,10 +4595,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "Message": () => ( Message)
  });
-/**
- * A received message (incoming MESSAGE).
- * @public
- */
+/** @public */
 class Message {
     /** @internal */
     constructor(incomingMessageRequest) {
@@ -4917,10 +4622,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "Notification": () => ( Notification)
  });
-/**
- * A notification of an event (incoming NOTIFY).
- * @public
- */
+/** @public */
 class Notification {
     /** @internal */
     constructor(incomingNotifyRequest) {
@@ -4949,10 +4651,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _grammar_name_addr_header_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(26);
 
-/**
- * A request to establish a {@link Session} elsewhere (incoming REFER).
- * @public
- */
+/** @public */
 class Referral {
     /** @internal */
     constructor(incomingReferRequest, session) {
@@ -4988,17 +4687,9 @@ class Referral {
         return Promise.resolve();
     }
     /**
-     * Creates an inviter which may be used to send an out of dialog INVITE request.
-     *
      * @remarks
-     * This a helper method to create an Inviter which will execute the referral
-     * of the `Session` which was referred. The appropriate headers are set and
-     * the referred `Session` is linked to the new `Session`. Note that only a
-     * single instance of the `Inviter` will be created and returned (if called
-     * more than once a reference to the same `Inviter` will be returned every time).
-     *
-     * @param options - Options bucket.
-     * @param modifiers - Session description handler modifiers.
+     * @param options
+     * @param modifiers
      */
     makeInviter(options) {
         if (this.inviter) {
@@ -5033,10 +4724,7 @@ __webpack_require__.r(__webpack_exports__);
    "SIPExtension": () => ( SIPExtension),
    "UserAgentRegisteredOptionTags": () => ( UserAgentRegisteredOptionTags)
  });
-/**
- * SIP extension support level.
- * @public
- */
+/** @public */
 var SIPExtension;
 (function (SIPExtension) {
     SIPExtension["Required"] = "Required";
@@ -5044,9 +4732,7 @@ var SIPExtension;
     SIPExtension["Unsupported"] = "Unsupported";
 })(SIPExtension = SIPExtension || (SIPExtension = {}));
 /**
- * SIP Option Tags
  * @remarks
- * http://www.iana.org/assignments/sip-parameters/sip-parameters.xhtml#sip-parameters-4
  * @public
  */
 const UserAgentRegisteredOptionTags = {
@@ -5095,10 +4781,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _exception_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
 
-/**
- * Indicates that the operation could not be completed given the current transaction state.
- * @public
- */
+/** @public */
 class TransactionStateError extends _exception_js__WEBPACK_IMPORTED_MODULE_0__.Exception {
     constructor(message) {
         super(message ? message : "Transaction state error.");
@@ -5116,10 +4799,7 @@ __webpack_require__.r(__webpack_exports__);
 const T1 = 500;
 const T2 = 4000;
 const T4 = 5000;
-/**
- * Timers.
- * @public
- */
+/** @public */
 const Timers = {
     T1,
     T2,
@@ -5159,16 +4839,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * An inviter offers to establish a {@link Session} (outgoing INVITE).
- * @public
- */
+/** @public */
 class Inviter extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
     /**
-     * Constructs a new instance of the `Inviter` class.
-     * @param userAgent - User agent. See {@link UserAgent} for details.
-     * @param targetURI - Request URI identifying the target of the message.
-     * @param options - Options bucket. See {@link InviterOptions} for details.
+     * @param userAgent
+     * @param targetURI
+     * @param options
      */
     constructor(userAgent, targetURI, options = {}) {
         super(userAgent, options);
@@ -5283,18 +4959,8 @@ class Inviter extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
         return this.outgoingRequestMessage;
     }
     /**
-     * Cancels the INVITE request.
-     *
      * @remarks
-     * Sends a CANCEL request.
-     * Resolves once the response sent, otherwise rejects.
-     *
-     * After sending a CANCEL request the expectation is that a 487 final response
-     * will be received for the INVITE. However a 200 final response to the INVITE
-     * may nonetheless arrive (it's a race between the CANCEL reaching the UAS before
-     * the UAS sends a 200) in which case an ACK & BYE will be sent. The net effect
-     * is that this method will terminate the session regardless of the race.
-     * @param options - Options bucket.
+     * @param options
      */
     cancel(options = {}) {
         this.logger.log("Inviter.cancel");
@@ -5470,10 +5136,7 @@ class Inviter extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
             }
         };
     }
-    /**
-     * Handle final response to initial INVITE.
-     * @param inviteResponse - 2xx response.
-     */
+    /** @param inviteResponse */
     onAccept(inviteResponse) {
         this.logger.log("Inviter.onAccept");
         if (this.state !== _session_state_js__WEBPACK_IMPORTED_MODULE_5__.SessionState.Establishing) {
@@ -5594,10 +5257,7 @@ class Inviter extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
                 throw new Error("Unknown session signaling state.");
         }
     }
-    /**
-     * Handle provisional response to initial INVITE.
-     * @param inviteResponse - 1xx response.
-     */
+    /** @param inviteResponse */
     onProgress(inviteResponse) {
         var _a;
         this.logger.log("Inviter.onProgress");
@@ -5686,10 +5346,7 @@ class Inviter extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
                 throw new Error("Unknown session signaling state.");
         }
     }
-    /**
-     * Handle final response to initial INVITE.
-     * @param inviteResponse - 3xx response.
-     */
+    /** @param inviteResponse */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onRedirect(inviteResponse) {
         this.logger.log("Inviter.onRedirect");
@@ -5699,10 +5356,7 @@ class Inviter extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
         }
         this.stateTransition(_session_state_js__WEBPACK_IMPORTED_MODULE_5__.SessionState.Terminated);
     }
-    /**
-     * Handle final response to initial INVITE.
-     * @param inviteResponse - 4xx, 5xx, or 6xx response.
-     */
+    /** @param inviteResponse */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onReject(inviteResponse) {
         this.logger.log("Inviter.onReject");
@@ -5712,10 +5366,7 @@ class Inviter extends _session_js__WEBPACK_IMPORTED_MODULE_0__.Session {
         }
         this.stateTransition(_session_state_js__WEBPACK_IMPORTED_MODULE_5__.SessionState.Terminated);
     }
-    /**
-     * Handle final response to initial INVITE.
-     * @param inviteResponse - 100 response.
-     */
+    /** @param inviteResponse */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onTrying(inviteResponse) {
         this.logger.log("Inviter.onTrying");
@@ -5738,18 +5389,14 @@ __webpack_require__.r(__webpack_exports__);
  var _core_messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(30);
 
 
-/**
- * A messager sends a {@link Message} (outgoing MESSAGE).
- * @public
- */
+/** @public */
 class Messager {
     /**
-     * Constructs a new instance of the `Messager` class.
-     * @param userAgent - User agent. See {@link UserAgent} for details.
-     * @param targetURI - Request URI identifying the target of the message.
-     * @param content - Content for the body of the message.
-     * @param contentType - Content type of the body of the message.
-     * @param options - Options bucket. See {@link MessagerOptions} for details.
+     * @param userAgent
+     * @param targetURI
+     * @param content
+     * @param contentType
+     * @param options
      */
     constructor(userAgent, targetURI, content, contentType = "text/plain", options = {}) {
         this.logger = userAgent.getLogger("sip.Messager");
@@ -5795,18 +5442,7 @@ __webpack_require__.r(__webpack_exports__);
    "PublisherState": () => ( PublisherState)
  });
 /**
- * {@link Publisher} state.
  * @remarks
- * The {@link Publisher} behaves in a deterministic manner according to the following
- * Finite State Machine (FSM).
- * ```txt
- *                  __________________________________________
- *                 |  __________________________              |
- * Publisher       | |                          v             v
- * Constructed -> Initial -> Published -> Unpublished -> Terminated
- *                              |   ^____________|             ^
- *                              |______________________________|
- * ```
  * @public
  */
 var PublisherState;
@@ -5833,18 +5469,13 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * A publisher publishes a publication (outgoing PUBLISH).
- * @public
- */
+/** @public */
 class Publisher {
     /**
-     * Constructs a new instance of the `Publisher` class.
-     *
-     * @param userAgent - User agent. See {@link UserAgent} for details.
-     * @param targetURI - Request URI identifying the target of the message.
-     * @param eventType - The event type identifying the published document.
-     * @param options - Options bucket. See {@link PublisherOptions} for details.
+     * @param userAgent
+     * @param targetURI
+     * @param eventType
+     * @param options
      */
     constructor(userAgent, targetURI, eventType, options = {}) {
         this.disposed = false;
@@ -5911,10 +5542,7 @@ class Publisher {
     get stateChange() {
         return this._stateEventEmitter;
     }
-    /**
-     * Publish.
-     * @param content - Body to publish
-     */
+    /** @param content */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     publish(content, options = {}) {
         if (this.publishRefreshTimer) {
@@ -6134,18 +5762,7 @@ __webpack_require__.r(__webpack_exports__);
    "RegistererState": () => ( RegistererState)
  });
 /**
- * {@link Registerer} state.
  * @remarks
- * The {@link Registerer} behaves in a deterministic manner according to the following
- * Finite State Machine (FSM).
- * ```txt
- *                   __________________________________________
- *                  |  __________________________              |
- * Registerer       | |                          v             v
- * Constructed -> Initial -> Registered -> Unregistered -> Terminated
- *                              |   ^____________|             ^
- *                              |______________________________|
- * ```
  * @public
  */
 var RegistererState;
@@ -6176,15 +5793,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * A registerer registers a contact for an address of record (outgoing REGISTER).
- * @public
- */
+/** @public */
 class Registerer {
     /**
-     * Constructs a new instance of the `Registerer` class.
-     * @param userAgent - User agent. See {@link UserAgent} for details.
-     * @param options - Options bucket. See {@link RegistererOptions} for details.
+     * @param userAgent
+     * @param options
      */
     constructor(userAgent, options = {}) {
         this.disposed = false;
@@ -6261,12 +5874,7 @@ class Registerer {
             refreshFrequency: Registerer.defaultRefreshFrequency
         };
     }
-    /**
-     * Strip properties with undefined values from options.
-     * This is a work around while waiting for missing vs undefined to be addressed (or not)...
-     * https://github.com/Microsoft/TypeScript/issues/13195
-     * @param options - Options to reduce
-     */
+    /** @param options */
     static stripUndefinedProperties(options) {
         return Object.keys(options).reduce((object, key) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -6675,52 +6283,15 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * A subscriber establishes a {@link Subscription} (outgoing SUBSCRIBE).
- *
  * @remarks
- * This is (more or less) an implementation of a "subscriber" as
- * defined in RFC 6665 "SIP-Specific Event Notifications".
- * https://tools.ietf.org/html/rfc6665
- *
- * @example
- * ```ts
- * // Create a new subscriber.
- * const targetURI = new URI("sip", "alice", "example.com");
- * const eventType = "example-name"; // https://www.iana.org/assignments/sip-events/sip-events.xhtml
- * const subscriber = new Subscriber(userAgent, targetURI, eventType);
- *
- * // Add delegate to handle event notifications.
- * subscriber.delegate = {
- *   onNotify: (notification: Notification) => {
- *     // send a response
- *     notification.accept();
- *     // handle notification here
- *   }
- * };
- *
- * // Monitor subscription state changes.
- * subscriber.stateChange.addListener((newState: SubscriptionState) => {
- *   if (newState === SubscriptionState.Terminated) {
- *     // handle state change here
- *   }
- * });
- *
- * // Attempt to establish the subscription
- * subscriber.subscribe();
- *
- * // Sometime later when done with subscription
- * subscriber.unsubscribe();
- * ```
- *
  * @public
  */
 class Subscriber extends _subscription_js__WEBPACK_IMPORTED_MODULE_0__.Subscription {
     /**
-     * Constructor.
-     * @param userAgent - User agent. See {@link UserAgent} for details.
-     * @param targetURI - The request URI identifying the subscribed event.
-     * @param eventType - The event type identifying the subscribed event.
-     * @param options - Options bucket. See {@link SubscriberOptions} for details.
+     * @param userAgent
+     * @param targetURI
+     * @param eventType
+     * @param options
      */
     constructor(userAgent, targetURI, eventType, options = {}) {
         super(userAgent, options);
@@ -6750,10 +6321,7 @@ class Subscriber extends _subscription_js__WEBPACK_IMPORTED_MODULE_0__.Subscript
         this.id = this.outgoingRequestMessage.callId + this.outgoingRequestMessage.from.parameters.tag + this.event;
         this._userAgent._subscriptions[this.id] = this;
     }
-    /**
-     * Destructor.
-     * @internal
-     */
+    /** @internal */
     dispose() {
         if (this.disposed) {
             return Promise.resolve();
@@ -6865,8 +6433,7 @@ class Subscriber extends _subscription_js__WEBPACK_IMPORTED_MODULE_0__.Subscript
         return Promise.resolve();
     }
     /**
-     * Sends a re-SUBSCRIBE request if the subscription is "active".
-     * @deprecated Use `subscribe` instead.
+     * @deprecated
      * @internal
      */
     _refresh() {
@@ -6987,10 +6554,7 @@ class SubscriberRequest {
             return _core_subscription_subscription_js__WEBPACK_IMPORTED_MODULE_2__.SubscriptionState.Initial;
         }
     }
-    /**
-     * Establish subscription.
-     * @param options Options bucket.
-     */
+    /** @param options */
     subscribe() {
         if (this.subscribed) {
             return Promise.reject(new Error("Not in initial state. Did you call subscribe more than once?"));
@@ -7040,17 +6604,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * A subscription provides {@link Notification} of events.
- *
  * @remarks
- * See {@link Subscriber} for details on establishing a subscription.
- *
  * @public
  */
 class Subscription {
     /**
-     * Constructor.
-     * @param userAgent - User agent. See {@link UserAgent} for details.
+     * @param userAgent
      * @internal
      */
     constructor(userAgent, options = {}) {
@@ -7072,10 +6631,7 @@ class Subscription {
     get dialog() {
         return this._dialog;
     }
-    /**
-     * True if disposed.
-     * @internal
-     */
+    /** @internal */
     get disposed() {
         return this._disposed;
     }
@@ -7133,16 +6689,7 @@ __webpack_require__.r(__webpack_exports__);
    "SubscriptionState": () => ( SubscriptionState)
  });
 /**
- * {@link Subscription} state.
  * @remarks
- * The {@link Subscription} behaves in a deterministic manner according to the following
- * Finite State Machine (FSM).
- * ```txt
- *                    _______________________________________
- * Subscription      |                                       v
- * Constructed -> Initial -> NotifyWait -> Subscribed -> Terminated
- *                              |____________________________^
- * ```
  * @public
  */
 var SubscriptionState;
@@ -7162,9 +6709,7 @@ __webpack_require__.r(__webpack_exports__);
    "SubscriptionState": () => ( SubscriptionState)
  });
 /**
- * Subscription state.
  * @remarks
- * https://tools.ietf.org/html/rfc6665#section-4.1.2
  * @public
  */
 var SubscriptionState;
@@ -7185,20 +6730,7 @@ __webpack_require__.r(__webpack_exports__);
    "TransportState": () => ( TransportState)
  });
 /**
- * {@link Transport} state.
- *
  * @remarks
- * The {@link Transport} behaves in a deterministic manner according to the following
- * Finite State Machine (FSM).
- * ```txt
- *                    ______________________________
- *                   |    ____________              |
- * Transport         v   v            |             |
- * Constructed -> Disconnected -> Connecting -> Connected -> Disconnecting
- *                     ^            ^    |_____________________^  |  |
- *                     |            |_____________________________|  |
- *                     |_____________________________________________|
- * ```
  * @public
  */
 var TransportState;
@@ -7218,13 +6750,7 @@ __webpack_require__.r(__webpack_exports__);
    "UserAgentState": () => ( UserAgentState)
  });
 /**
- * {@link UserAgent} state.
  * @remarks
- * Valid state transitions:
- * ```
- * 1. "Started" --> "Stopped"
- * 2. "Stopped" --> "Started"
- * ```
  * @public
  */
 var UserAgentState;
@@ -7282,21 +6808,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * A user agent sends and receives requests using a `Transport`.
- *
  * @remarks
- * A user agent (UA) is associated with a user via the user's SIP address of record (AOR)
- * and acts on behalf of that user to send and receive SIP requests. The user agent can
- * register to receive incoming requests, as well as create and send outbound messages.
- * The user agent also maintains the Transport over which its signaling travels.
- *
  * @public
  */
 class UserAgent {
-    /**
-     * Constructs a new instance of the `UserAgent` class.
-     * @param options - Options bucket. See {@link UserAgentOptions} for details.
-     */
+    /** @param options */
     constructor(options = {}) {
         /** @internal */
         this._publishers = {};
@@ -7404,19 +6920,8 @@ class UserAgent {
         this._userAgentCore = this.initCore();
     }
     /**
-     * Create a URI instance from a string.
-     * @param uri - The string to parse.
-     *
+     * @param uri
      * @remarks
-     * Returns undefined if the syntax of the URI is invalid.
-     * The syntax must conform to a SIP URI as defined in the RFC.
-     * 25 Augmented BNF for the SIP Protocol
-     * https://tools.ietf.org/html/rfc3261#section-25
-     *
-     * @example
-     * ```ts
-     * const uri = UserAgent.makeURI("sip:edgar@example.com");
-     * ```
      */
     static makeURI(uri) {
         return _grammar_grammar_js__WEBPACK_IMPORTED_MODULE_6__.Grammar.URIParse(uri);
@@ -7469,12 +6974,7 @@ class UserAgent {
         });
         return UUID;
     }
-    /**
-     * Strip properties with undefined values from options.
-     * This is a work around while waiting for missing vs undefined to be addressed (or not)...
-     * https://github.com/Microsoft/TypeScript/issues/13195
-     * @param options - Options to reduce
-     */
+    /** @param options */
     static stripUndefinedProperties(options) {
         return Object.keys(options).reduce((object, key) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -7606,17 +7106,11 @@ class UserAgent {
         userAgentCore.dispose();
         this.transitionState(_user_agent_state_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentState.Stopped);
     }
-    /**
-     * Used to avoid circular references.
-     * @internal
-     */
+    /** @internal */
     _makeInviter(targetURI, options) {
         return new _inviter_js__WEBPACK_IMPORTED_MODULE_11__.Inviter(this, targetURI, options);
     }
-    /**
-     * Attempt reconnection up to `maxReconnectionAttempts` times.
-     * @param reconnectionAttempt - Current attempt number.
-     */
+    /** @param reconnectionAttempt */
     attemptReconnection(reconnectionAttempt = 1) {
         const reconnectionAttempts = this.options.reconnectionAttempts;
         const reconnectionDelay = this.options.reconnectionDelay;
@@ -7958,10 +7452,7 @@ __webpack_require__.r(__webpack_exports__);
  var _logger_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(53);
 
 
-/**
- * Logger.
- * @public
- */
+/** @public */
 class LoggerFactory {
     constructor() {
         this.builtinEnabled = true;
@@ -8068,10 +7559,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "Levels": () => ( Levels)
  });
-/**
- * Log levels.
- * @public
- */
+/** @public */
 var Levels;
 (function (Levels) {
     Levels[Levels["error"] = 0] = "error";
@@ -8090,10 +7578,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _levels_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(52);
 
-/**
- * Logger.
- * @public
- */
+/** @public */
 class Logger {
     constructor(logger, category, label) {
         this.logger = logger;
@@ -8138,11 +7623,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * Function which returns a SessionDescriptionHandlerFactory.
  * @remarks
- * See {@link defaultPeerConnectionConfiguration} for the default peer connection configuration.
- * The ICE gathering timeout defaults to 5000ms.
- * @param mediaStreamFactory - MediaStream factory.
+ * @param mediaStreamFactory
  * @public
  */
 function defaultSessionDescriptionHandlerFactory(mediaStreamFactory) {
@@ -8168,10 +7650,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "defaultMediaStreamFactory": () => ( defaultMediaStreamFactory)
  });
-/**
- * Function which returns a MediaStreamFactory.
- * @public
- */
+/** @public */
 function defaultMediaStreamFactory() {
     return (constraints) => {
         if (!constraints.audio && !constraints.video) {
@@ -8192,10 +7671,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "defaultPeerConnectionConfiguration": () => ( defaultPeerConnectionConfiguration)
  });
-/**
- * Function which returns an RTCConfiguration.
- * @public
- */
+/** @public */
 function defaultPeerConnectionConfiguration() {
     const configuration = {
         bundlePolicy: "balanced",
@@ -8217,19 +7693,15 @@ __webpack_require__.r(__webpack_exports__);
    "SessionDescriptionHandler": () => ( SessionDescriptionHandler)
  });
 /**
- * A base class implementing a WebRTC session description handler for sip.js.
  * @remarks
- * It is expected/intended to be extended by specific WebRTC based applications.
  * @privateRemarks
- * So do not put application specific implementation in here.
  * @public
  */
 class SessionDescriptionHandler {
     /**
-     * Constructor
-     * @param logger - A logger
-     * @param mediaStreamFactory - A factory to provide a MediaStream
-     * @param options - Options passed from the SessionDescriptionHandleFactory
+     * @param logger
+     * @param mediaStreamFactory
+     * @param options
      */
     constructor(logger, mediaStreamFactory, sessionDescriptionHandlerConfiguration) {
         logger.debug("SessionDescriptionHandler.constructor");
@@ -8282,10 +7754,7 @@ class SessionDescriptionHandler {
         this._peerConnection.close();
         this._peerConnection = undefined;
     }
-    /**
-     * Helper function to enable/disable media tracks.
-     * @param enable - If true enable tracks, otherwise disable tracks.
-     */
+    /** @param enable */
     enableReceiverTracks(enable) {
         const peerConnection = this.peerConnection;
         if (!peerConnection) {
@@ -8297,10 +7766,7 @@ class SessionDescriptionHandler {
             }
         });
     }
-    /**
-     * Helper function to enable/disable media tracks.
-     * @param enable - If true enable tracks, otherwise disable tracks.
-     */
+    /** @param enable */
     enableSenderTracks(enable) {
         const peerConnection = this.peerConnection;
         if (!peerConnection) {
@@ -8313,9 +7779,8 @@ class SessionDescriptionHandler {
         });
     }
     /**
-     * Creates an offer or answer.
-     * @param options - Options bucket.
-     * @param modifiers - Modifiers.
+     * @param options
+     * @param modifiers
      */
     getDescription(options, modifiers) {
         var _a, _b;
@@ -8347,10 +7812,7 @@ class SessionDescriptionHandler {
             throw error;
         });
     }
-    /**
-     * Returns true if the SessionDescriptionHandler can handle the Content-Type described by a SIP message.
-     * @param contentType - The content type that is in the SIP Message.
-     */
+    /** @param contentType */
     hasDescription(contentType) {
         this.logger.debug("SessionDescriptionHandler.hasDescription");
         return contentType === "application/sdp";
@@ -8371,10 +7833,8 @@ class SessionDescriptionHandler {
         }
     }
     /**
-     * Send DTMF via RTP (RFC 4733).
-     * Returns true if DTMF send is successful, false otherwise.
-     * @param tones - A string containing DTMF digits.
-     * @param options - Options object to be used by sendDtmf.
+     * @param tones
+     * @param options
      */
     sendDtmf(tones, options) {
         this.logger.debug("SessionDescriptionHandler.sendDtmf");
@@ -8405,10 +7865,9 @@ class SessionDescriptionHandler {
         return true;
     }
     /**
-     * Sets an offer or answer.
-     * @param sdp - The session description.
-     * @param options - Options bucket.
-     * @param modifiers - Modifiers.
+     * @param sdp
+     * @param options
+     * @param modifiers
      */
     setDescription(sdp, options, modifiers) {
         this.logger.debug("SessionDescriptionHandler.setDescription");
@@ -8426,9 +7885,8 @@ class SessionDescriptionHandler {
         });
     }
     /**
-     * Applies modifiers to SDP prior to setting the local or remote description.
-     * @param sdp - SDP to modify.
-     * @param modifiers - Modifiers to apply.
+     * @param sdp
+     * @param modifiers
      */
     applyModifiers(sdp, modifiers) {
         this.logger.debug("SessionDescriptionHandler.applyModifiers");
@@ -8446,12 +7904,8 @@ class SessionDescriptionHandler {
         });
     }
     /**
-     * Create a data channel.
      * @remarks
-     * Only creates a data channel if SessionDescriptionHandlerOptions.dataChannel is true.
-     * Only creates a data channel if creating a local offer.
-     * Only if one does not already exist.
-     * @param options - Session description handler options.
+     * @param options
      */
     createDataChannel(options) {
         if (this._peerConnection === undefined) {
@@ -8486,10 +7940,7 @@ class SessionDescriptionHandler {
                 return Promise.reject(new Error("Invalid signaling state " + this._peerConnection.signalingState));
         }
     }
-    /**
-     * Depending on current signaling state, create a local offer or answer.
-     * @param options - Session description handler options.
-     */
+    /** @param options */
     createLocalOfferOrAnswer(options) {
         if (this._peerConnection === undefined) {
             return Promise.reject(new Error("Peer connection closed."));
@@ -8509,10 +7960,7 @@ class SessionDescriptionHandler {
                 return Promise.reject(new Error("Invalid signaling state " + this._peerConnection.signalingState));
         }
     }
-    /**
-     * Get a media stream from the media stream factory and set the local media stream.
-     * @param options - Session description handler options.
-     */
+    /** @param options */
     getLocalMediaStream(options) {
         this.logger.debug("SessionDescriptionHandler.getLocalMediaStream");
         if (this._peerConnection === undefined) {
@@ -8536,13 +7984,8 @@ class SessionDescriptionHandler {
         return this.mediaStreamFactory(constraints, this, options).then((mediaStream) => this.setLocalMediaStream(mediaStream));
     }
     /**
-     * Sets the peer connection's sender tracks and local media stream tracks.
-     *
      * @remarks
-     * Only the first audio and video tracks of the provided MediaStream are utilized.
-     * Adds tracks if audio and/or video tracks are not already present, otherwise replaces tracks.
-     *
-     * @param stream - Media stream containing tracks to be utilized.
+     * @param stream
      */
     setLocalMediaStream(stream) {
         this.logger.debug("SessionDescriptionHandler.setLocalMediaStream");
@@ -8617,10 +8060,7 @@ class SessionDescriptionHandler {
         }
         return Promise.resolve(sdp);
     }
-    /**
-     * Sets the peer connection's local session description.
-     * @param sessionDescription - sessionDescription The session description.
-     */
+    /** @param sessionDescription */
     setLocalSessionDescription(sessionDescription) {
         this.logger.debug("SessionDescriptionHandler.setLocalSessionDescription");
         if (this._peerConnection === undefined) {
@@ -8628,10 +8068,7 @@ class SessionDescriptionHandler {
         }
         return this._peerConnection.setLocalDescription(sessionDescription);
     }
-    /**
-     * Sets the peer connection's remote session description.
-     * @param sessionDescription - The session description.
-     */
+    /** @param sessionDescription */
     setRemoteSessionDescription(sessionDescription) {
         this.logger.debug("SessionDescriptionHandler.setRemoteSessionDescription");
         if (this._peerConnection === undefined) {
@@ -8660,12 +8097,8 @@ class SessionDescriptionHandler {
         return this._peerConnection.setRemoteDescription({ sdp, type });
     }
     /**
-     * Sets a remote media stream track.
-     *
      * @remarks
-     * Adds tracks if audio and/or video tracks are not already present, otherwise replaces tracks.
-     *
-     * @param track - Media stream track to be utilized.
+     * @param track
      */
     setRemoteTrack(track) {
         this.logger.debug("SessionDescriptionHandler.setRemoteTrack");
@@ -8694,10 +8127,7 @@ class SessionDescriptionHandler {
             SessionDescriptionHandler.dispatchAddTrackEvent(remoteStream, track);
         }
     }
-    /**
-     * Depending on the current signaling state and the session hold state, update transceiver direction.
-     * @param options - Session description handler options.
-     */
+    /** @param options */
     updateDirection(options) {
         if (this._peerConnection === undefined) {
             return Promise.reject(new Error("Peer connection closed."));
@@ -8790,9 +8220,8 @@ class SessionDescriptionHandler {
         return Promise.resolve();
     }
     /**
-     * Wait for ICE gathering to complete.
-     * @param restart - If true, waits if current state is "complete" (waits for transition to "complete").
-     * @param timeout - Milliseconds after which waiting times out. No timeout if 0.
+     * @param restart
+     * @param timeout
      */
     waitForIceGatheringComplete(restart = false, timeout = 0) {
         this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete");
@@ -8924,10 +8353,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * Transport for SIP over secure WebSocket (WSS).
- * @public
- */
+/** @public */
 class Transport {
     constructor(logger, options) {
         this._state = _api_transport_state_js__WEBPACK_IMPORTED_MODULE_0__.TransportState.Disconnected;
@@ -8998,11 +8424,7 @@ class Transport {
     isConnected() {
         return this.state === _api_transport_state_js__WEBPACK_IMPORTED_MODULE_0__.TransportState.Connected;
     }
-    /**
-     * Sends a message.
-     * Resolves once message is sent. Otherwise rejects with an Error.
-     * @param message - Message to send.
-     */
+    /** @param message */
     send(message) {
         return this._send(message);
     }
@@ -9178,10 +8600,7 @@ class Transport {
         }
         return Promise.resolve();
     }
-    /**
-     * WebSocket "onclose" event handler.
-     * @param ev - Event.
-     */
+    /** @param ev */
     onWebSocketClose(ev, ws) {
         if (ws !== this._ws) {
             return;
@@ -9195,20 +8614,14 @@ class Transport {
         this._ws = undefined;
         this.transitionState(_api_transport_state_js__WEBPACK_IMPORTED_MODULE_0__.TransportState.Disconnected, error);
     }
-    /**
-     * WebSocket "onerror" event handler.
-     * @param ev - Event.
-     */
+    /** @param ev */
     onWebSocketError(ev, ws) {
         if (ws !== this._ws) {
             return;
         }
         this.logger.error("WebSocket error occurred.");
     }
-    /**
-     * WebSocket "onmessage" event handler.
-     * @param ev - Event.
-     */
+    /** @param ev */
     onWebSocketMessage(ev, ws) {
         if (ws !== this._ws) {
             return;
@@ -9260,10 +8673,7 @@ class Transport {
             }
         }
     }
-    /**
-     * WebSocket "onopen" event handler.
-     * @param ev - Event.
-     */
+    /** @param ev */
     onWebSocketOpen(ev, ws) {
         if (ws !== this._ws) {
             return;
@@ -9273,10 +8683,7 @@ class Transport {
             this.transitionState(_api_transport_state_js__WEBPACK_IMPORTED_MODULE_0__.TransportState.Connected);
         }
     }
-    /**
-     * Helper function to generate an Error.
-     * @param state - State transitioning to.
-     */
+    /** @param state */
     transitionLoopDetectedError(state) {
         let message = `A state transition loop has been detected.`;
         message += ` An attempt to transition from ${this._state} to ${state} before the prior transition completed.`;
@@ -9284,10 +8691,7 @@ class Transport {
         this.logger.error(message);
         return new _api_exceptions_state_transition_js__WEBPACK_IMPORTED_MODULE_3__.StateTransitionError("Loop detected.");
     }
-    /**
-     * Transition transport state.
-     * @internal
-     */
+    /** @internal */
     transitionState(newState, error) {
         const invalidTransition = () => {
             throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
@@ -9458,16 +8862,12 @@ __webpack_require__.r(__webpack_exports__);
 function MD5(s) {
     return _md5_js__WEBPACK_IMPORTED_MODULE_0__.Md5.hashStr(s);
 }
-/**
- * Digest Authentication.
- * @internal
- */
+/** @internal */
 class DigestAuthentication {
     /**
-     * Constructor.
-     * @param loggerFactory - LoggerFactory.
-     * @param username - Username.
-     * @param password - Password.
+     * @param loggerFactory
+     * @param username
+     * @param password
      */
     constructor(loggerFactory, ha1, username, password) {
         this.logger = loggerFactory.getLogger("sipjs.digestauthentication");
@@ -9478,11 +8878,9 @@ class DigestAuthentication {
         this.ncHex = "00000000";
     }
     /**
-     * Performs Digest authentication given a SIP request and the challenge
-     * received in a response to that request.
-     * @param request -
-     * @param challenge -
-     * @returns true if credentials were successfully generated, false otherwise.
+     * @param request
+     * @param challenge
+     * @returns
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     authenticate(request, challenge, body) {
@@ -10023,28 +9421,13 @@ __webpack_require__.r(__webpack_exports__);
 
 const acceptedBodyTypes = ["application/sdp", "application/dtmf-relay"];
 /**
- * User Agent Core.
  * @remarks
- * Core designates the functions specific to a particular type
- * of SIP entity, i.e., specific to either a stateful or stateless
- * proxy, a user agent or registrar.  All cores, except those for
- * the stateless proxy, are transaction users.
- * https://tools.ietf.org/html/rfc3261#section-6
- *
- * UAC Core: The set of processing functions required of a UAC that
- * reside above the transaction and transport layers.
- * https://tools.ietf.org/html/rfc3261#section-6
- *
- * UAS Core: The set of processing functions required at a UAS that
- * resides above the transaction and transport layers.
- * https://tools.ietf.org/html/rfc3261#section-6
  * @public
  */
 class UserAgentCore {
     /**
-     * Constructor.
-     * @param configuration - Configuration.
-     * @param delegate - Delegate.
+     * @param configuration
+     * @param delegate
      */
     constructor(configuration, delegate = {}) {
         this.userAgentClients = new Map();
@@ -10079,62 +9462,55 @@ class UserAgentCore {
         return transport;
     }
     /**
-     * Send INVITE.
-     * @param request - Outgoing request.
-     * @param delegate - Request delegate.
+     * @param request
+     * @param delegate
      */
     invite(request, delegate) {
         return new _user_agents_invite_user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.InviteUserAgentClient(this, request, delegate);
     }
     /**
-     * Send MESSAGE.
-     * @param request - Outgoing request.
-     * @param delegate - Request delegate.
+     * @param request
+     * @param delegate
      */
     message(request, delegate) {
         return new _user_agents_message_user_agent_client_js__WEBPACK_IMPORTED_MODULE_1__.MessageUserAgentClient(this, request, delegate);
     }
     /**
-     * Send PUBLISH.
-     * @param request - Outgoing request.
-     * @param delegate - Request delegate.
+     * @param request
+     * @param delegate
      */
     publish(request, delegate) {
         return new _user_agents_publish_user_agent_client_js__WEBPACK_IMPORTED_MODULE_2__.PublishUserAgentClient(this, request, delegate);
     }
     /**
-     * Send REGISTER.
-     * @param request - Outgoing request.
-     * @param delegate - Request delegate.
+     * @param request
+     * @param delegate
      */
     register(request, delegate) {
         return new _user_agents_register_user_agent_client_js__WEBPACK_IMPORTED_MODULE_3__.RegisterUserAgentClient(this, request, delegate);
     }
     /**
-     * Send SUBSCRIBE.
-     * @param request - Outgoing request.
-     * @param delegate - Request delegate.
+     * @param request
+     * @param delegate
      */
     subscribe(request, delegate) {
         return new _user_agents_subscribe_user_agent_client_js__WEBPACK_IMPORTED_MODULE_4__.SubscribeUserAgentClient(this, request, delegate);
     }
     /**
-     * Send a request.
-     * @param request - Outgoing request.
-     * @param delegate - Request delegate.
+     * @param request
+     * @param delegate
      */
     request(request, delegate) {
         return new _user_agents_user_agent_client_js__WEBPACK_IMPORTED_MODULE_5__.UserAgentClient(_transactions_non_invite_client_transaction_js__WEBPACK_IMPORTED_MODULE_6__.NonInviteClientTransaction, this, request, delegate);
     }
     /**
-     * Outgoing request message factory function.
-     * @param method - Method.
-     * @param requestURI - Request-URI.
-     * @param fromURI - From URI.
-     * @param toURI - To URI.
-     * @param options - Request options.
-     * @param extraHeaders - Extra headers to add.
-     * @param body - Message body.
+     * @param method
+     * @param requestURI
+     * @param fromURI
+     * @param toURI
+     * @param options
+     * @param extraHeaders
+     * @param body
      */
     makeOutgoingRequestMessage(method, requestURI, fromURI, toURI, options, extraHeaders, body) {
         const callIdPrefix = this.configuration.sipjsId;
@@ -10164,35 +9540,17 @@ class UserAgentCore {
         const requestOptions = Object.assign(Object.assign({}, defaultOptions), options);
         return new _messages_outgoing_request_message_js__WEBPACK_IMPORTED_MODULE_8__.OutgoingRequestMessage(method, requestURI, fromURI, toURI, requestOptions, extraHeaders, body);
     }
-    /**
-     * Handle an incoming request message from the transport.
-     * @param message - Incoming request message from transport layer.
-     */
+    /** @param message */
     receiveIncomingRequestFromTransport(message) {
         this.receiveRequestFromTransport(message);
     }
-    /**
-     * Handle an incoming response message from the transport.
-     * @param message - Incoming response message from transport layer.
-     */
+    /** @param message */
     receiveIncomingResponseFromTransport(message) {
         this.receiveResponseFromTransport(message);
     }
     /**
-     * A stateless UAS is a UAS that does not maintain transaction state.
-     * It replies to requests normally, but discards any state that would
-     * ordinarily be retained by a UAS after a response has been sent.  If a
-     * stateless UAS receives a retransmission of a request, it regenerates
-     * the response and re-sends it, just as if it were replying to the first
-     * instance of the request. A UAS cannot be stateless unless the request
-     * processing for that method would always result in the same response
-     * if the requests are identical. This rules out stateless registrars,
-     * for example.  Stateless UASs do not use a transaction layer; they
-     * receive requests directly from the transport layer and send responses
-     * directly to the transport layer.
-     * https://tools.ietf.org/html/rfc3261#section-8.2.7
-     * @param message - Incoming request message to reply to.
-     * @param statusCode - Status code to reply with.
+     * @param message
+     * @param statusCode
      */
     replyStateless(message, options) {
         const userAgent = this.configuration.userAgentHeaderFieldValue;
@@ -10207,18 +9565,7 @@ class UserAgentCore {
         });
         return response;
     }
-    /**
-     * In Section 18.2.1, replace the last paragraph with:
-     *
-     * Next, the server transport attempts to match the request to a
-     * server transaction.  It does so using the matching rules described
-     * in Section 17.2.3.  If a matching server transaction is found, the
-     * request is passed to that transaction for processing.  If no match
-     * is found, the request is passed to the core, which may decide to
-     * construct a new server transaction for that request.
-     * https://tools.ietf.org/html/rfc6026#section-8.10
-     * @param message - Incoming request message from transport layer.
-     */
+    /** @param message */
     receiveRequestFromTransport(message) {
         const transactionId = message.viaBranch;
         const uas = this.userAgentServers.get(transactionId);
@@ -10252,15 +9599,7 @@ class UserAgentCore {
         this.receiveRequest(message);
         return;
     }
-    /**
-     * UAC and UAS procedures depend strongly on two factors.  First, based
-     * on whether the request or response is inside or outside of a dialog,
-     * and second, based on the method of a request.  Dialogs are discussed
-     * thoroughly in Section 12; they represent a peer-to-peer relationship
-     * between user agents and are established by specific SIP methods, such
-     * as INVITE.
-     * @param message - Incoming request message.
-     */
+    /** @param message */
     receiveRequest(message) {
         if (!_allowed_methods_js__WEBPACK_IMPORTED_MODULE_13__.AllowedMethods.includes(message.method)) {
             const allowHeader = "Allow: " + _allowed_methods_js__WEBPACK_IMPORTED_MODULE_13__.AllowedMethods.toString();
@@ -10320,16 +9659,7 @@ class UserAgentCore {
         }
         return;
     }
-    /**
-     * Once a dialog has been established between two UAs, either of them
-     * MAY initiate new transactions as needed within the dialog.  The UA
-     * sending the request will take the UAC role for the transaction.  The
-     * UA receiving the request will take the UAS role.  Note that these may
-     * be different roles than the UAs held during the transaction that
-     * established the dialog.
-     * https://tools.ietf.org/html/rfc3261#section-12.2
-     * @param message - Incoming request message.
-     */
+    /** @param message */
     receiveInsideDialogRequest(message) {
         if (message.method === _messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_7__.C.NOTIFY) {
             const event = message.parseHeader("Event");
@@ -10366,12 +9696,7 @@ class UserAgentCore {
         this.replyStateless(message, { statusCode: 481 });
         return;
     }
-    /**
-     * Assuming all of the checks in the previous subsections are passed,
-     * the UAS processing becomes method-specific.
-     *  https://tools.ietf.org/html/rfc3261#section-8.2.5
-     * @param message - Incoming request message.
-     */
+    /** @param message */
     receiveOutsideDialogRequest(message) {
         switch (message.method) {
             case _messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_7__.C.ACK:
@@ -10436,15 +9761,7 @@ class UserAgentCore {
         }
         return;
     }
-    /**
-     * Responses are first processed by the transport layer and then passed
-     * up to the transaction layer.  The transaction layer performs its
-     * processing and then passes the response up to the TU.  The majority
-     * of response processing in the TU is method specific.  However, there
-     * are some general behaviors independent of the method.
-     * https://tools.ietf.org/html/rfc3261#section-8.1.3
-     * @param message - Incoming response message from transport layer.
-     */
+    /** @param message */
     receiveResponseFromTransport(message) {
         if (message.getHeaders("via").length > 1) {
             this.logger.warn("More than one Via header field present in the response, dropping");
@@ -10482,14 +9799,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * INVITE UAC.
  * @remarks
- * 13 Initiating a Session
- * https://tools.ietf.org/html/rfc3261#section-13
- * 13.1 Overview
- * https://tools.ietf.org/html/rfc3261#section-13.1
- * 13.2 UAC Processing
- * https://tools.ietf.org/html/rfc3261#section-13.2
  * @public
  */
 class InviteUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
@@ -10505,10 +9815,7 @@ class InviteUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODU
         this.earlyDialogs.clear();
         super.dispose();
     }
-    /**
-     * Special case for transport error while sending ACK.
-     * @param error - Transport error
-     */
+    /** @param error */
     onTransportError(error) {
         if (this.transaction.state === _transactions_transaction_state_js__WEBPACK_IMPORTED_MODULE_2__.TransactionState.Calling) {
             return super.onTransportError(error);
@@ -10516,12 +9823,7 @@ class InviteUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODU
         this.logger.error(error.message);
         this.logger.error("User agent client request transport error while sending ACK.");
     }
-    /**
-     * Once the INVITE has been passed to the INVITE client transaction, the
-     * UAC waits for responses for the INVITE.
-     * https://tools.ietf.org/html/rfc3261#section-13.2.2
-     * @param incomingResponse - Incoming response to INVITE request.
-     */
+    /** @param incomingResponse */
     receiveResponse(message) {
         if (!this.authenticationGuard(message)) {
             return;
@@ -10679,17 +9981,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * User Agent Client (UAC).
  * @remarks
- * A user agent client is a logical entity
- * that creates a new request, and then uses the client
- * transaction state machinery to send it.  The role of UAC lasts
- * only for the duration of that transaction.  In other words, if
- * a piece of software initiates a request, it acts as a UAC for
- * the duration of that transaction.  If it receives a request
- * later, it assumes the role of a user agent server for the
- * processing of that transaction.
- * https://tools.ietf.org/html/rfc3261#section-6
  * @public
  */
 class UserAgentClient {
@@ -10715,13 +10007,7 @@ class UserAgentClient {
         }
         return this._transaction;
     }
-    /**
-     * Since requests other than INVITE are responded to immediately, sending a
-     * CANCEL for a non-INVITE request would always create a race condition.
-     * A CANCEL request SHOULD NOT be sent to cancel a request other than INVITE.
-     * https://tools.ietf.org/html/rfc3261#section-9.1
-     * @param options - Cancel options bucket.
-     */
+    /** @param options */
     cancel(reason, options = {}) {
         if (!this.transaction) {
             throw new Error("Transaction undefined.");
@@ -10758,26 +10044,9 @@ class UserAgentClient {
         return message;
     }
     /**
-     * If a 401 (Unauthorized) or 407 (Proxy Authentication Required)
-     * response is received, the UAC SHOULD follow the authorization
-     * procedures of Section 22.2 and Section 22.3 to retry the request with
-     * credentials.
-     * https://tools.ietf.org/html/rfc3261#section-8.1.3.5
-     * 22 Usage of HTTP Authentication
-     * https://tools.ietf.org/html/rfc3261#section-22
-     * 22.1 Framework
-     * https://tools.ietf.org/html/rfc3261#section-22.1
-     * 22.2 User-to-User Authentication
-     * https://tools.ietf.org/html/rfc3261#section-22.2
-     * 22.3 Proxy-to-User Authentication
-     * https://tools.ietf.org/html/rfc3261#section-22.3
-     *
-     * FIXME: This "guard for and retry the request with credentials"
-     * implementation is not complete and at best minimally passable.
-     * @param response - The incoming response to guard.
-     * @param dialog - If defined, the dialog within which the response was received.
-     * @returns True if the program execution is to continue in the branch in question.
-     *          Otherwise the request is retried with credentials and current request processing must stop.
+     * @param response
+     * @param dialog
+     * @returns
      */
     authenticationGuard(message, dialog) {
         const statusCode = message.statusCode;
@@ -10838,19 +10107,7 @@ class UserAgentClient {
         this.receiveResponse(message);
         return;
     }
-    /**
-     * 8.1.3.1 Transaction Layer Errors
-     * In some cases, the response returned by the transaction layer will
-     * not be a SIP message, but rather a transaction layer error.  When a
-     * timeout error is received from the transaction layer, it MUST be
-     * treated as if a 408 (Request Timeout) status code has been received.
-     * If a fatal transport error is reported by the transport layer
-     * (generally, due to fatal ICMP errors in UDP or connection failures in
-     * TCP), the condition MUST be treated as a 503 (Service Unavailable)
-     * status code.
-     * https://tools.ietf.org/html/rfc3261#section-8.1.3.1
-     * @param error - Transport error
-     */
+    /** @param error */
     onTransportError(error) {
         this.logger.error(error.message);
         this.logger.error("User agent client request transport error. Generating internal 503 Service Unavailable.");
@@ -10859,10 +10116,7 @@ class UserAgentClient {
         message.reasonPhrase = "Service Unavailable";
         this.receiveResponse(message);
     }
-    /**
-     * Receive a response from the transaction layer.
-     * @param message - Incoming response message.
-     */
+    /** @param message */
     receiveResponse(message) {
         if (!this.authenticationGuard(message)) {
             return;
@@ -10933,10 +10187,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "TransactionState": () => ( TransactionState)
  });
-/**
- * Transaction state.
- * @public
- */
+/** @public */
 var TransactionState;
 (function (TransactionState) {
     TransactionState["Accepted"] = "Accepted";
@@ -10963,24 +10214,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * Non-INVITE Client Transaction.
  * @remarks
- * Non-INVITE transactions do not make use of ACK.
- * They are simple request-response interactions.
- * https://tools.ietf.org/html/rfc3261#section-17.1.2
  * @public
  */
 class NonInviteClientTransaction extends _client_transaction_js__WEBPACK_IMPORTED_MODULE_0__.ClientTransaction {
     /**
-     * Constructor
-     * Upon construction, the outgoing request's Via header is updated by calling `setViaHeader`.
-     * Then `toString` is called on the outgoing request and the message is sent via the transport.
-     * After construction the transaction will be in the "calling" state and the transaction id
-     * will equal the branch parameter set in the Via header of the outgoing request.
-     * https://tools.ietf.org/html/rfc3261#section-17.1.2
-     * @param request - The outgoing Non-INVITE request.
-     * @param transport - The transport.
-     * @param user - The transaction user.
+     * @param request
+     * @param transport
+     * @param user
      */
     constructor(request, transport, user) {
         super(request, transport, user, _transaction_state_js__WEBPACK_IMPORTED_MODULE_1__.TransactionState.Trying, "sip.transaction.nict");
@@ -11003,10 +10244,7 @@ class NonInviteClientTransaction extends _client_transaction_js__WEBPACK_IMPORTE
     get kind() {
         return "nict";
     }
-    /**
-     * Handler for incoming responses from the transport which match this transaction.
-     * @param response - The incoming response.
-     */
+    /** @param response */
     receiveResponse(response) {
         const statusCode = response.statusCode;
         if (!statusCode || statusCode < 100 || statusCode > 699) {
@@ -11062,13 +10300,7 @@ class NonInviteClientTransaction extends _client_transaction_js__WEBPACK_IMPORTE
         this.logger.warn(message);
         return;
     }
-    /**
-     * The client transaction SHOULD inform the TU that a transport failure has occurred,
-     * and the client transaction SHOULD transition directly to the "Terminated" state.
-     * The TU will handle the fail over mechanisms described in [4].
-     * https://tools.ietf.org/html/rfc3261#section-17.1.4
-     * @param error - Transport error
-     */
+    /** @param error */
     onTransportError(error) {
         if (this.user.onTransportError) {
             this.user.onTransportError(error);
@@ -11078,10 +10310,7 @@ class NonInviteClientTransaction extends _client_transaction_js__WEBPACK_IMPORTE
     typeToString() {
         return "non-INVITE client transaction";
     }
-    /**
-     * Execute a state transition.
-     * @param newState - New state.
-     */
+    /** @param newState */
     stateTransition(newState, dueToTransportError = false) {
         const invalidStateTransition = () => {
             throw new Error(`Invalid state transition from ${this.state} to ${newState}`);
@@ -11149,18 +10378,7 @@ __webpack_require__.r(__webpack_exports__);
  var _transaction_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(67);
 
 /**
- * Client Transaction.
  * @remarks
- * The client transaction provides its functionality through the
- * maintenance of a state machine.
- *
- * The TU communicates with the client transaction through a simple
- * interface.  When the TU wishes to initiate a new transaction, it
- * creates a client transaction and passes it the SIP request to send
- * and an IP address, port, and transport to which to send it.  The
- * client transaction begins execution of its state machine.  Valid
- * responses are passed up to the TU from the client transaction.
- * https://tools.ietf.org/html/rfc3261#section-17.1
  * @public
  */
 class ClientTransaction extends _transaction_js__WEBPACK_IMPORTED_MODULE_0__.Transaction {
@@ -11202,18 +10420,7 @@ __webpack_require__.r(__webpack_exports__);
  var _exceptions_transport_error_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(68);
 
 /**
- * Transaction.
  * @remarks
- * SIP is a transactional protocol: interactions between components take
- * place in a series of independent message exchanges.  Specifically, a
- * SIP transaction consists of a single request and any responses to
- * that request, which include zero or more provisional responses and
- * one or more final responses.  In the case of a transaction where the
- * request was an INVITE (known as an INVITE transaction), the
- * transaction also includes the ACK only if the final response was not
- * a 2xx response.  If the response was a 2xx, the ACK is not considered
- * part of the transaction.
- * https://tools.ietf.org/html/rfc3261#section-17
  * @public
  */
 class Transaction {
@@ -11242,11 +10449,8 @@ class Transaction {
         return this._transport;
     }
     /**
-     * Sets up a function that will be called whenever the transaction state changes.
-     * @param listener - Callback function.
-     * @param options - An options object that specifies characteristics about the listener.
-     *                  If once true, indicates that the listener should be invoked at most once after being added.
-     *                  If once true, the listener would be automatically removed when invoked.
+     * @param listener
+     * @param options
      */
     addStateChangeListener(listener, options) {
         const onceWrapper = () => {
@@ -11255,17 +10459,11 @@ class Transaction {
         };
         (options === null || options === void 0 ? void 0 : options.once) === true ? this.listeners.push(onceWrapper) : this.listeners.push(listener);
     }
-    /**
-     * This is currently public so tests may spy on it.
-     * @internal
-     */
+    /** @internal */
     notifyStateChangeListeners() {
         this.listeners.slice().forEach((listener) => listener());
     }
-    /**
-     * Removes a listener previously registered with addStateListener.
-     * @param listener - Callback function.
-     */
+    /** @param listener */
     removeStateChangeListener(listener) {
         this.listeners = this.listeners.filter((l) => l !== listener);
     }
@@ -11274,12 +10472,7 @@ class Transaction {
         this.logger.error(`Transport error occurred in ${this.typeToString()} with id ${this.id}.`);
         this.logger.error(message);
     }
-    /**
-     * Pass message to transport for transmission. If transport fails,
-     * the transaction user is notified by callback to onTransportError().
-     * @returns
-     * Rejects with `TransportError` if transport fails.
-     */
+    /** @returns */
     send(message) {
         return this.transport.send(message).catch((error) => {
             if (error instanceof _exceptions_transport_error_js__WEBPACK_IMPORTED_MODULE_0__.TransportError) {
@@ -11320,10 +10513,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _exception_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
 
-/**
- * Transport error.
- * @public
- */
+/** @public */
 class TransportError extends _exception_js__WEBPACK_IMPORTED_MODULE_0__.Exception {
     constructor(message) {
         super(message ? message : "Unspecified transport error.");
@@ -11345,25 +10535,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * INVITE Client Transaction.
  * @remarks
- * The INVITE transaction consists of a three-way handshake.  The client
- * transaction sends an INVITE, the server transaction sends responses,
- * and the client transaction sends an ACK.
- * https://tools.ietf.org/html/rfc3261#section-17.1.1
  * @public
  */
 class InviteClientTransaction extends _client_transaction_js__WEBPACK_IMPORTED_MODULE_0__.ClientTransaction {
     /**
-     * Constructor.
-     * Upon construction, the outgoing request's Via header is updated by calling `setViaHeader`.
-     * Then `toString` is called on the outgoing request and the message is sent via the transport.
-     * After construction the transaction will be in the "calling" state and the transaction id
-     * will equal the branch parameter set in the Via header of the outgoing request.
-     * https://tools.ietf.org/html/rfc3261#section-17.1.1
-     * @param request - The outgoing INVITE request.
-     * @param transport - The transport.
-     * @param user - The transaction user.
+     * @param request
+     * @param transport
+     * @param user
      */
     constructor(request, transport, user) {
         super(request, transport, user, _transaction_state_js__WEBPACK_IMPORTED_MODULE_1__.TransactionState.Calling, "sip.transaction.ict");
@@ -11391,23 +10570,7 @@ class InviteClientTransaction extends _client_transaction_js__WEBPACK_IMPORTED_M
     get kind() {
         return "ict";
     }
-    /**
-     * ACK a 2xx final response.
-     *
-     * The transaction includes the ACK only if the final response was not a 2xx response (the
-     * transaction will generate and send the ACK to the transport automagically). If the
-     * final response was a 2xx, the ACK is not considered part of the transaction (the
-     * transaction user needs to generate and send the ACK).
-     *
-     * This library is not strictly RFC compliant with regard to ACK handling for 2xx final
-     * responses. Specifically, retransmissions of ACKs to a 2xx final responses is handled
-     * by the transaction layer (instead of the UAC core). The "standard" approach is for
-     * the UAC core to receive all 2xx responses and manage sending ACK retransmissions to
-     * the transport directly. Herein the transaction layer manages sending ACKs to 2xx responses
-     * and any retransmissions of those ACKs as needed.
-     *
-     * @param ack - The outgoing ACK request.
-     */
+    /** @param ack */
     ackResponse(ack) {
         const toTag = ack.toTag;
         if (!toTag) {
@@ -11420,10 +10583,7 @@ class InviteClientTransaction extends _client_transaction_js__WEBPACK_IMPORTED_M
             this.logTransportError(error, "Failed to send ACK to 2xx response.");
         });
     }
-    /**
-     * Handler for incoming responses from the transport which match this transaction.
-     * @param response - The incoming response.
-     */
+    /** @param response */
     receiveResponse(response) {
         const statusCode = response.statusCode;
         if (!statusCode || statusCode < 100 || statusCode > 699) {
@@ -11513,14 +10673,7 @@ class InviteClientTransaction extends _client_transaction_js__WEBPACK_IMPORTED_M
         this.logger.warn(message);
         return;
     }
-    /**
-     * The client transaction SHOULD inform the TU that a transport failure
-     * has occurred, and the client transaction SHOULD transition directly
-     * to the "Terminated" state.  The TU will handle the failover
-     * mechanisms described in [4].
-     * https://tools.ietf.org/html/rfc3261#section-17.1.4
-     * @param error - The error.
-     */
+    /** @param error */
     onTransportError(error) {
         if (this.user.onTransportError) {
             this.user.onTransportError(error);
@@ -11563,10 +10716,7 @@ class InviteClientTransaction extends _client_transaction_js__WEBPACK_IMPORTED_M
         });
         return;
     }
-    /**
-     * Execute a state transition.
-     * @param newState - New state.
-     */
+    /** @param newState */
     stateTransition(newState, dueToTransportError = false) {
         const invalidStateTransition = () => {
             throw new Error(`Invalid state transition from ${this.state} to ${newState}`);
@@ -11651,22 +10801,13 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * Dialog.
  * @remarks
- * A key concept for a user agent is that of a dialog.  A dialog
- * represents a peer-to-peer SIP relationship between two user agents
- * that persists for some time.  The dialog facilitates sequencing of
- * messages between the user agents and proper routing of requests
- * between both of them.  The dialog represents a context in which to
- * interpret SIP messages.
- * https://tools.ietf.org/html/rfc3261#section-12
  * @public
  */
 class Dialog {
     /**
-     * Dialog constructor.
-     * @param core - User agent core.
-     * @param dialogState - Initial dialog state.
+     * @param core
+     * @param dialogState
      */
     constructor(core, dialogState) {
         this.core = core;
@@ -11674,12 +10815,8 @@ class Dialog {
         this.core.dialogs.set(this.id, this);
     }
     /**
-     * When a UAC receives a response that establishes a dialog, it
-     * constructs the state of the dialog.  This state MUST be maintained
-     * for the duration of the dialog.
-     * https://tools.ietf.org/html/rfc3261#section-12.1.2
-     * @param outgoingRequestMessage - Outgoing request message for dialog.
-     * @param incomingResponseMessage - Incoming response message creating dialog.
+     * @param outgoingRequestMessage
+     * @param incomingResponseMessage
      */
     static initialDialogStateForUserAgentClient(outgoingRequestMessage, incomingResponseMessage) {
         const secure = false;
@@ -11735,11 +10872,8 @@ class Dialog {
         return dialogState;
     }
     /**
-     * The UAS then constructs the state of the dialog.  This state MUST be
-     * maintained for the duration of the dialog.
-     * https://tools.ietf.org/html/rfc3261#section-12.1.1
-     * @param incomingRequestMessage - Incoming request message creating dialog.
-     * @param toTag - Tag in the To field in the response to the incoming request.
+     * @param incomingRequestMessage
+     * @param toTag
      */
     static initialDialogStateForUserAgentServer(incomingRequestMessage, toTag, early = false) {
         const secure = false;
@@ -11820,18 +10954,7 @@ class Dialog {
     confirm() {
         this.dialogState.early = false;
     }
-    /**
-     * Requests sent within a dialog, as any other requests, are atomic.  If
-     * a particular request is accepted by the UAS, all the state changes
-     * associated with it are performed.  If the request is rejected, none
-     * of the state changes are performed.
-     *
-     *    Note that some requests, such as INVITEs, affect several pieces of
-     *    state.
-     *
-     * https://tools.ietf.org/html/rfc3261#section-12.2.2
-     * @param message - Incoming request message within this dialog.
-     */
+    /** @param message */
     receiveRequest(message) {
         if (message.method === _messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_1__.C.ACK) {
             return;
@@ -11849,12 +10972,7 @@ class Dialog {
     recomputeRouteSet(message) {
         this.dialogState.routeSet = message.getHeaders("record-route").reverse();
     }
-    /**
-     * A request within a dialog is constructed by using many of the
-     * components of the state stored as part of the dialog.
-     * https://tools.ietf.org/html/rfc3261#section-12.2.1.1
-     * @param method - Outgoing request method.
-     */
+    /** @param method */
     createOutgoingRequestMessage(method, options) {
         const toUri = this.remoteURI;
         const toTag = this.remoteTag;
@@ -11884,12 +11002,7 @@ class Dialog {
         }, extraHeaders, body);
         return message;
     }
-    /**
-     * Increment the local sequence number by one.
-     * It feels like this should be protected, but the current authentication handling currently
-     * needs this to keep the dialog in sync when "auto re-sends" request messages.
-     * @internal
-     */
+    /** @internal */
     incrementLocalSequenceNumber() {
         if (!this.dialogState.localSequenceNumber) {
             throw new Error("Local sequence number undefined.");
@@ -11897,14 +11010,8 @@ class Dialog {
         this.dialogState.localSequenceNumber += 1;
     }
     /**
-     * If the remote sequence number was not empty, but the sequence number
-     * of the request is lower than the remote sequence number, the request
-     * is out of order and MUST be rejected with a 500 (Server Internal
-     * Error) response.
-     * https://tools.ietf.org/html/rfc3261#section-12.2.2
-     * @param request - Incoming request to guard.
-     * @returns True if the program execution is to continue in the branch in question.
-     *          Otherwise a 500 Server Internal Error was stateless sent and request processing must stop.
+     * @param request
+     * @returns
      */
     sequenceGuard(message) {
         if (message.method === _messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_1__.C.ACK) {
@@ -11979,10 +11086,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * Session Dialog.
- * @public
- */
+/** @public */
 class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
     constructor(initialTransaction, core, state, delegate) {
         super(core, state);
@@ -12046,21 +11150,7 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
             this.startReInvite2xxRetransmissionTimer();
         }
     }
-    /**
-     * The UAC core MUST generate an ACK request for each 2xx received from
-     * the transaction layer.  The header fields of the ACK are constructed
-     * in the same way as for any request sent within a dialog (see Section
-     * 12) with the exception of the CSeq and the header fields related to
-     * authentication.  The sequence number of the CSeq header field MUST be
-     * the same as the INVITE being acknowledged, but the CSeq method MUST
-     * be ACK.  The ACK MUST contain the same credentials as the INVITE.  If
-     * the 2xx contains an offer (based on the rules above), the ACK MUST
-     * carry an answer in its body.  If the offer in the 2xx response is not
-     * acceptable, the UAC core MUST generate a valid answer in the ACK and
-     * then send a BYE immediately.
-     * https://tools.ietf.org/html/rfc3261#section-13.2.2.4
-     * @param options - ACK options bucket.
-     */
+    /** @param options */
     ack(options = {}) {
         this.logger.log(`INVITE dialog ${this.id} sending ACK request`);
         let transaction;
@@ -12087,41 +11177,8 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
         return { message };
     }
     /**
-     * Terminating a Session
-     *
-     * This section describes the procedures for terminating a session
-     * established by SIP.  The state of the session and the state of the
-     * dialog are very closely related.  When a session is initiated with an
-     * INVITE, each 1xx or 2xx response from a distinct UAS creates a
-     * dialog, and if that response completes the offer/answer exchange, it
-     * also creates a session.  As a result, each session is "associated"
-     * with a single dialog - the one which resulted in its creation.  If an
-     * initial INVITE generates a non-2xx final response, that terminates
-     * all sessions (if any) and all dialogs (if any) that were created
-     * through responses to the request.  By virtue of completing the
-     * transaction, a non-2xx final response also prevents further sessions
-     * from being created as a result of the INVITE.  The BYE request is
-     * used to terminate a specific session or attempted session.  In this
-     * case, the specific session is the one with the peer UA on the other
-     * side of the dialog.  When a BYE is received on a dialog, any session
-     * associated with that dialog SHOULD terminate.  A UA MUST NOT send a
-     * BYE outside of a dialog.  The caller's UA MAY send a BYE for either
-     * confirmed or early dialogs, and the callee's UA MAY send a BYE on
-     * confirmed dialogs, but MUST NOT send a BYE on early dialogs.
-     *
-     * However, the callee's UA MUST NOT send a BYE on a confirmed dialog
-     * until it has received an ACK for its 2xx response or until the server
-     * transaction times out.  If no SIP extensions have defined other
-     * application layer states associated with the dialog, the BYE also
-     * terminates the dialog.
-     *
-     * https://tools.ietf.org/html/rfc3261#section-15
-     * FIXME: Make these proper Exceptions...
-     * @param options - BYE options bucket.
+     * @param options
      * @returns
-     * Throws `Error` if callee's UA attempts a BYE on an early dialog.
-     * Throws `Error` if callee's UA attempts a BYE on a confirmed dialog
-     *                while it's waiting on the ACK for its 2xx response.
      */
     bye(delegate, options) {
         this.logger.log(`INVITE dialog ${this.id} sending BYE request`);
@@ -12137,16 +11194,7 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
         }
         return new _user_agents_bye_user_agent_client_js__WEBPACK_IMPORTED_MODULE_6__.ByeUserAgentClient(this, delegate, options);
     }
-    /**
-     * An INFO request can be associated with an Info Package (see
-     * Section 5), or associated with a legacy INFO usage (see Section 2).
-     *
-     * The construction of the INFO request is the same as any other
-     * non-target refresh request within an existing invite dialog usage as
-     * described in Section 12.2 of RFC 3261.
-     * https://tools.ietf.org/html/rfc6086#section-4.2.1
-     * @param options - Options bucket.
-     */
+    /** @param options */
     info(delegate, options) {
         this.logger.log(`INVITE dialog ${this.id} sending INFO request`);
         if (this.early) {
@@ -12154,27 +11202,7 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
         }
         return new _user_agents_info_user_agent_client_js__WEBPACK_IMPORTED_MODULE_7__.InfoUserAgentClient(this, delegate, options);
     }
-    /**
-     * Modifying an Existing Session
-     *
-     * A successful INVITE request (see Section 13) establishes both a
-     * dialog between two user agents and a session using the offer-answer
-     * model.  Section 12 explains how to modify an existing dialog using a
-     * target refresh request (for example, changing the remote target URI
-     * of the dialog).  This section describes how to modify the actual
-     * session.  This modification can involve changing addresses or ports,
-     * adding a media stream, deleting a media stream, and so on.  This is
-     * accomplished by sending a new INVITE request within the same dialog
-     * that established the session.  An INVITE request sent within an
-     * existing dialog is known as a re-INVITE.
-     *
-     *    Note that a single re-INVITE can modify the dialog and the
-     *    parameters of the session at the same time.
-     *
-     * Either the caller or callee can modify an existing session.
-     * https://tools.ietf.org/html/rfc3261#section-14
-     * @param options - Options bucket
-     */
+    /** @param options */
     invite(delegate, options) {
         this.logger.log(`INVITE dialog ${this.id} sending INVITE request`);
         if (this.early) {
@@ -12188,13 +11216,7 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
         }
         return new _user_agents_re_invite_user_agent_client_js__WEBPACK_IMPORTED_MODULE_8__.ReInviteUserAgentClient(this, delegate, options);
     }
-    /**
-     * A UAC MAY associate a MESSAGE request with an existing dialog.  If a
-     * MESSAGE request is sent within a dialog, it is "associated" with any
-     * media session or sessions associated with that dialog.
-     * https://tools.ietf.org/html/rfc3428#section-4
-     * @param options - Options bucket.
-     */
+    /** @param options */
     message(delegate, options) {
         this.logger.log(`INVITE dialog ${this.id} sending MESSAGE request`);
         if (this.early) {
@@ -12203,12 +11225,7 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
         const message = this.createOutgoingRequestMessage(_messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_4__.C.MESSAGE, options);
         return new _user_agents_message_user_agent_client_js__WEBPACK_IMPORTED_MODULE_9__.MessageUserAgentClient(this.core, message, delegate);
     }
-    /**
-     * The NOTIFY mechanism defined in [2] MUST be used to inform the agent
-     * sending the REFER of the status of the reference.
-     * https://tools.ietf.org/html/rfc3515#section-2.4.4
-     * @param options - Options bucket.
-     */
+    /** @param options */
     notify(delegate, options) {
         this.logger.log(`INVITE dialog ${this.id} sending NOTIFY request`);
         if (this.early) {
@@ -12216,26 +11233,12 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
         }
         return new _user_agents_notify_user_agent_client_js__WEBPACK_IMPORTED_MODULE_10__.NotifyUserAgentClient(this, delegate, options);
     }
-    /**
-     * Assuming the response is to be transmitted reliably, the UAC MUST
-     * create a new request with method PRACK.  This request is sent within
-     * the dialog associated with the provisional response (indeed, the
-     * provisional response may have created the dialog).  PRACK requests
-     * MAY contain bodies, which are interpreted according to their type and
-     * disposition.
-     * https://tools.ietf.org/html/rfc3262#section-4
-     * @param options - Options bucket.
-     */
+    /** @param options */
     prack(delegate, options) {
         this.logger.log(`INVITE dialog ${this.id} sending PRACK request`);
         return new _user_agents_prack_user_agent_client_js__WEBPACK_IMPORTED_MODULE_11__.PrackUserAgentClient(this, delegate, options);
     }
-    /**
-     * REFER is a SIP request and is constructed as defined in [1].  A REFER
-     * request MUST contain exactly one Refer-To header field value.
-     * https://tools.ietf.org/html/rfc3515#section-2.4.1
-     * @param options - Options bucket.
-     */
+    /** @param options */
     refer(delegate, options) {
         this.logger.log(`INVITE dialog ${this.id} sending REFER request`);
         if (this.early) {
@@ -12243,14 +11246,7 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
         }
         return new _user_agents_refer_user_agent_client_js__WEBPACK_IMPORTED_MODULE_12__.ReferUserAgentClient(this, delegate, options);
     }
-    /**
-     * Requests sent within a dialog, as any other requests, are atomic.  If
-     * a particular request is accepted by the UAS, all the state changes
-     * associated with it are performed.  If the request is rejected, none
-     * of the state changes are performed.
-     * https://tools.ietf.org/html/rfc3261#section-12.2.2
-     * @param message - Incoming request message within this dialog.
-     */
+    /** @param message */
     receiveRequest(message) {
         this.logger.log(`INVITE dialog ${this.id} received ${message.method} request`);
         if (message.method === _messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_4__.C.ACK) {
@@ -12403,11 +11399,7 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
                 break;
         }
     }
-    /**
-     * Guard against out of order reliable provisional responses and retransmissions.
-     * Returns false if the response should be discarded, otherwise true.
-     * @param message - Incoming response message within this dialog.
-     */
+    /** @param message */
     reliableSequenceGuard(message) {
         const statusCode = message.statusCode;
         if (!statusCode) {
@@ -12436,10 +11428,7 @@ class SessionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
             }
         }
     }
-    /**
-     * Update the signaling state of the dialog.
-     * @param message - The message to base the update off of.
-     */
+    /** @param message */
     signalingStateTransition(message) {
         const body = (0,_messages_body_js__WEBPACK_IMPORTED_MODULE_21__.getBody)(message);
         if (!body || body.contentDisposition !== "session") {
@@ -12613,21 +11602,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * INVITE Server Transaction.
  * @remarks
- * https://tools.ietf.org/html/rfc3261#section-17.2.1
  * @public
  */
 class InviteServerTransaction extends _server_transaction_js__WEBPACK_IMPORTED_MODULE_0__.ServerTransaction {
     /**
-     * Constructor.
-     * Upon construction, a "100 Trying" reply will be immediately sent.
-     * After construction the transaction will be in the "proceeding" state and the transaction
-     * `id` will equal the branch parameter set in the Via header of the incoming request.
-     * https://tools.ietf.org/html/rfc3261#section-17.2.1
-     * @param request - Incoming INVITE request from the transport.
-     * @param transport - The transport.
-     * @param user - The transaction user.
+     * @param request
+     * @param transport
+     * @param user
      */
     constructor(request, transport, user) {
         super(request, transport, user, _transaction_state_js__WEBPACK_IMPORTED_MODULE_1__.TransactionState.Proceeding, "sip.transaction.ist");
@@ -12651,10 +11633,7 @@ class InviteServerTransaction extends _server_transaction_js__WEBPACK_IMPORTED_M
     get kind() {
         return "ist";
     }
-    /**
-     * Receive requests from transport matching this transaction.
-     * @param request - Request matching this transaction.
-     */
+    /** @param request */
     receiveRequest(request) {
         switch (this.state) {
             case _transaction_state_js__WEBPACK_IMPORTED_MODULE_1__.TransactionState.Proceeding:
@@ -12705,9 +11684,8 @@ class InviteServerTransaction extends _server_transaction_js__WEBPACK_IMPORTED_M
         return;
     }
     /**
-     * Receive responses from TU for this transaction.
-     * @param statusCode - Status code of response.
-     * @param response - Response.
+     * @param statusCode
+     * @param response
      */
     receiveResponse(statusCode, response) {
         if (statusCode < 100 || statusCode > 699) {
@@ -12778,10 +11756,7 @@ class InviteServerTransaction extends _server_transaction_js__WEBPACK_IMPORTED_M
     typeToString() {
         return "INVITE server transaction";
     }
-    /**
-     * Execute a state transition.
-     * @param newState - New state.
-     */
+    /** @param newState */
     stateTransition(newState) {
         const invalidStateTransition = () => {
             throw new Error(`Invalid state transition from ${this.state} to ${newState}`);
@@ -12877,14 +11852,7 @@ __webpack_require__.r(__webpack_exports__);
  var _transaction_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(67);
 
 /**
- * Server Transaction.
  * @remarks
- * The server transaction is responsible for the delivery of requests to
- * the TU and the reliable transmission of responses.  It accomplishes
- * this through a state machine.  Server transactions are created by the
- * core when a request is received, and transaction handling is desired
- * for that request (this is not always the case).
- * https://tools.ietf.org/html/rfc3261#section-17.2
  * @public
  */
 class ServerTransaction extends _transaction_js__WEBPACK_IMPORTED_MODULE_0__.Transaction {
@@ -12912,10 +11880,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * BYE UAC.
- * @public
- */
+/** @public */
 class ByeUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(dialog, delegate, options) {
         const message = dialog.createOutgoingRequestMessage(_messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_1__.C.BYE, options);
@@ -12938,10 +11903,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * INFO UAC.
- * @public
- */
+/** @public */
 class InfoUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(dialog, delegate, options) {
         const message = dialog.createOutgoingRequestMessage(_messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_1__.C.INFO, options);
@@ -12964,12 +11926,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * Re-INVITE UAC.
  * @remarks
- * 14 Modifying an Existing Session
- * https://tools.ietf.org/html/rfc3261#section-14
- * 14.1 UAC Behavior
- * https://tools.ietf.org/html/rfc3261#section-14.1
  * @public
  */
 class ReInviteUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
@@ -13054,10 +12011,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(63);
 
 
-/**
- * MESSAGE UAC.
- * @public
- */
+/** @public */
 class MessageUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(core, message, delegate) {
         super(_transactions_non_invite_client_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteClientTransaction, core, message, delegate);
@@ -13078,10 +12032,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * NOTIFY UAS.
- * @public
- */
+/** @public */
 class NotifyUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(dialog, delegate, options) {
         const message = dialog.createOutgoingRequestMessage(_messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_1__.C.NOTIFY, options);
@@ -13103,10 +12054,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * PRACK UAC.
- * @public
- */
+/** @public */
 class PrackUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(dialog, delegate, options) {
         const message = dialog.createOutgoingRequestMessage(_messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_1__.C.PRACK, options);
@@ -13129,10 +12077,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * REFER UAC.
- * @public
- */
+/** @public */
 class ReferUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(dialog, delegate, options) {
         const message = dialog.createOutgoingRequestMessage(_messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_1__.C.REFER, options);
@@ -13152,10 +12097,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(82);
 
 
-/**
- * BYE UAS.
- * @public
- */
+/** @public */
 class ByeUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
     constructor(dialog, message, delegate) {
         super(_transactions_non_invite_server_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteServerTransaction, dialog.userAgentCore, message, delegate);
@@ -13183,17 +12125,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * User Agent Server (UAS).
  * @remarks
- * A user agent server is a logical entity
- * that generates a response to a SIP request.  The response
- * accepts, rejects, or redirects the request.  This role lasts
- * only for the duration of that transaction.  In other words, if
- * a piece of software responds to a request, it acts as a UAS for
- * the duration of that transaction.  If it generates a request
- * later, it assumes the role of a user agent client for the
- * processing of that transaction.
- * https://tools.ietf.org/html/rfc3261#section-6
  * @public
  */
 class UserAgentServer {
@@ -13273,24 +12205,7 @@ class UserAgentServer {
         const response = this.reply({ statusCode: 100 });
         return response;
     }
-    /**
-     * If the UAS did not find a matching transaction for the CANCEL
-     * according to the procedure above, it SHOULD respond to the CANCEL
-     * with a 481 (Call Leg/Transaction Does Not Exist).  If the transaction
-     * for the original request still exists, the behavior of the UAS on
-     * receiving a CANCEL request depends on whether it has already sent a
-     * final response for the original request.  If it has, the CANCEL
-     * request has no effect on the processing of the original request, no
-     * effect on any session state, and no effect on the responses generated
-     * for the original request.  If the UAS has not issued a final response
-     * for the original request, its behavior depends on the method of the
-     * original request.  If the original request was an INVITE, the UAS
-     * SHOULD immediately respond to the INVITE with a 487 (Request
-     * Terminated).  A CANCEL request has no impact on the processing of
-     * transactions with any other method defined in this specification.
-     * https://tools.ietf.org/html/rfc3261#section-9.2
-     * @param request - Incoming CANCEL request.
-     */
+    /** @param request */
     receiveCancel(message) {
         if (this.delegate && this.delegate.onCancel) {
             this.delegate.onCancel(message);
@@ -13342,17 +12257,8 @@ class UserAgentServer {
         throw new Error("Unknown transaction type.");
     }
     /**
-     * When a UAS wishes to construct a response to a request, it follows
-     * the general procedures detailed in the following subsections.
-     * Additional behaviors specific to the response code in question, which
-     * are not detailed in this section, may also be required.
-     *
-     * Once all procedures associated with the creation of a response have
-     * been completed, the UAS hands the response back to the server
-     * transaction from which it received the request.
-     * https://tools.ietf.org/html/rfc3261#section-8.2.6
-     * @param statusCode - Status code to reply with.
-     * @param options - Reply options bucket.
+     * @param statusCode
+     * @param options
      */
     reply(options) {
         if (!options.toTag && options.statusCode !== 100) {
@@ -13406,20 +12312,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * Non-INVITE Server Transaction.
  * @remarks
- * https://tools.ietf.org/html/rfc3261#section-17.2.2
  * @public
  */
 class NonInviteServerTransaction extends _server_transaction_js__WEBPACK_IMPORTED_MODULE_0__.ServerTransaction {
     /**
-     * Constructor.
-     * After construction the transaction will be in the "trying": state and the transaction
-     * `id` will equal the branch parameter set in the Via header of the incoming request.
-     * https://tools.ietf.org/html/rfc3261#section-17.2.2
-     * @param request - Incoming Non-INVITE request from the transport.
-     * @param transport - The transport.
-     * @param user - The transaction user.
+     * @param request
+     * @param transport
+     * @param user
      */
     constructor(request, transport, user) {
         super(request, transport, user, _transaction_state_js__WEBPACK_IMPORTED_MODULE_1__.TransactionState.Trying, "sip.transaction.nist");
@@ -13434,10 +12334,7 @@ class NonInviteServerTransaction extends _server_transaction_js__WEBPACK_IMPORTE
     get kind() {
         return "nist";
     }
-    /**
-     * Receive requests from transport matching this transaction.
-     * @param request - Request matching this transaction.
-     */
+    /** @param request */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     receiveRequest(request) {
         switch (this.state) {
@@ -13466,9 +12363,8 @@ class NonInviteServerTransaction extends _server_transaction_js__WEBPACK_IMPORTE
         }
     }
     /**
-     * Receive responses from TU for this transaction.
-     * @param statusCode - Status code of response. 101-199 not allowed per RFC 4320.
-     * @param response - Response to send.
+     * @param statusCode
+     * @param response
      */
     receiveResponse(statusCode, response) {
         if (statusCode < 100 || statusCode > 699) {
@@ -13579,14 +12475,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(21);
 
-/**
- * When a UAS wishes to construct a response to a request, it follows
- * the general procedures detailed in the following subsections.
- * Additional behaviors specific to the response code in question, which
- * are not detailed in this section, may also be required.
- * https://tools.ietf.org/html/rfc3261#section-8.2.6
- * @internal
- */
+/** @internal */
 function constructOutgoingResponse(message, options) {
     const CRLF = "\r\n";
     if (options.statusCode < 100 || options.statusCode > 699) {
@@ -13658,10 +12547,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(82);
 
 
-/**
- * INFO UAS.
- * @public
- */
+/** @public */
 class InfoUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
     constructor(dialog, message, delegate) {
         super(_transactions_non_invite_server_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteServerTransaction, dialog.userAgentCore, message, delegate);
@@ -13681,12 +12567,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * Re-INVITE UAS.
  * @remarks
- * 14 Modifying an Existing Session
- * https://tools.ietf.org/html/rfc3261#section-14
- * 14.2 UAS Behavior
- * https://tools.ietf.org/html/rfc3261#section-14.2
  * @public
  */
 class ReInviteUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
@@ -13695,10 +12576,7 @@ class ReInviteUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MO
         dialog.reinviteUserAgentServer = this;
         this.dialog = dialog;
     }
-    /**
-     * Update the dialog signaling state on a 2xx response.
-     * @param options - Options bucket.
-     */
+    /** @param options */
     accept(options = { statusCode: 200 }) {
         options.extraHeaders = options.extraHeaders || [];
         options.extraHeaders = options.extraHeaders.concat(this.dialog.routeSet.map((route) => `Record-Route: ${route}`));
@@ -13711,10 +12589,7 @@ class ReInviteUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MO
         this.dialog.reConfirm();
         return result;
     }
-    /**
-     * Update the dialog signaling state on a 1xx response.
-     * @param options - Progress options bucket.
-     */
+    /** @param options */
     progress(options = { statusCode: 180 }) {
         const response = super.progress(options);
         const session = this.dialog;
@@ -13725,9 +12600,8 @@ class ReInviteUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MO
         return result;
     }
     /**
-     * TODO: Not Yet Supported
-     * @param contacts - Contacts to redirect to.
-     * @param options - Redirect options bucket.
+     * @param contacts
+     * @param options
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     redirect(contacts, options = { statusCode: 302 }) {
@@ -13735,14 +12609,7 @@ class ReInviteUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MO
         this.dialog.reinviteUserAgentServer = undefined;
         throw new Error("Unimplemented.");
     }
-    /**
-     * 3.1 Background on Re-INVITE Handling by UASs
-     * An error response to a re-INVITE has the following semantics.  As
-     * specified in Section 12.2.2 of RFC 3261 [RFC3261], if a re-INVITE is
-     * rejected, no state changes are performed.
-     * https://tools.ietf.org/html/rfc6141#section-3.1
-     * @param options - Reject options bucket.
-     */
+    /** @param options */
     reject(options = { statusCode: 488 }) {
         this.dialog.signalingStateRollback();
         this.dialog.reinviteUserAgentServer = undefined;
@@ -13762,10 +12629,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(82);
 
 
-/**
- * MESSAGE UAS.
- * @public
- */
+/** @public */
 class MessageUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
     constructor(core, message, delegate) {
         super(_transactions_non_invite_server_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteServerTransaction, core, message, delegate);
@@ -13788,15 +12652,11 @@ __webpack_require__.r(__webpack_exports__);
 function instanceOfDialog(object) {
     return object.userAgentCore !== undefined;
 }
-/**
- * NOTIFY UAS.
- * @public
- */
+/** @public */
 class NotifyUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
     /**
-     * NOTIFY UAS constructor.
-     * @param dialogOrCore - Dialog for in dialog NOTIFY, UserAgentCore for out of dialog NOTIFY (deprecated).
-     * @param message - Incoming NOTIFY request message.
+     * @param dialogOrCore
+     * @param message
      */
     constructor(dialogOrCore, message, delegate) {
         const userAgentCore = instanceOfDialog(dialogOrCore) ? dialogOrCore.userAgentCore : dialogOrCore;
@@ -13816,20 +12676,14 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(82);
 
 
-/**
- * PRACK UAS.
- * @public
- */
+/** @public */
 class PrackUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
     constructor(dialog, message, delegate) {
         super(_transactions_non_invite_server_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteServerTransaction, dialog.userAgentCore, message, delegate);
         dialog.signalingStateTransition(message);
         this.dialog = dialog;
     }
-    /**
-     * Update the dialog signaling state on a 2xx response.
-     * @param options - Options bucket.
-     */
+    /** @param options */
     accept(options = { statusCode: 200 }) {
         if (options.body) {
             this.dialog.signalingStateTransition(options.body);
@@ -13854,15 +12708,11 @@ __webpack_require__.r(__webpack_exports__);
 function instanceOfSessionDialog(object) {
     return object.userAgentCore !== undefined;
 }
-/**
- * REFER UAS.
- * @public
- */
+/** @public */
 class ReferUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
     /**
-     * REFER UAS constructor.
-     * @param dialogOrCore - Dialog for in dialog REFER, UserAgentCore for out of dialog REFER.
-     * @param message - Incoming REFER request message.
+     * @param dialogOrCore
+     * @param message
      */
     constructor(dialogOrCore, message, delegate) {
         const userAgentCore = instanceOfSessionDialog(dialogOrCore) ? dialogOrCore.userAgentCore : dialogOrCore;
@@ -13882,10 +12732,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(63);
 
 
-/**
- * PUBLISH UAC.
- * @public
- */
+/** @public */
 class PublishUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(core, message, delegate) {
         super(_transactions_non_invite_client_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteClientTransaction, core, message, delegate);
@@ -13904,10 +12751,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(63);
 
 
-/**
- * REGISTER UAC.
- * @public
- */
+/** @public */
 class RegisterUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(core, message, delegate) {
         super(_transactions_non_invite_client_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteClientTransaction, core, message, delegate);
@@ -13933,13 +12777,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * SUBSCRIBE UAC.
  * @remarks
- * 4.1.  Subscriber Behavior
- * https://tools.ietf.org/html/rfc6665#section-4.1
- *
- * User agent client for installation of a single subscription per SUBSCRIBE request.
- * TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE requests.
  * @public
  */
 class SubscribeUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
@@ -13963,11 +12801,7 @@ class SubscribeUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_M
     dispose() {
         super.dispose();
     }
-    /**
-     * Handle out of dialog NOTIFY associated with SUBSCRIBE request.
-     * This is the first NOTIFY received after the SUBSCRIBE request.
-     * @param uas - User agent server handling the subscription creating NOTIFY.
-     */
+    /** @param uas */
     onNotify(uas) {
         const event = uas.message.parseHeader("Event").event;
         if (!event || event !== this.subscriptionEvent) {
@@ -14048,10 +12882,7 @@ class SubscribeUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_M
             this.N = undefined;
         }
     }
-    /**
-     * Receive a response from the transaction layer.
-     * @param message - Incoming response message.
-     */
+    /** @param message */
     receiveResponse(message) {
         if (!this.authenticationGuard(message)) {
             return;
@@ -14115,30 +12946,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * Subscription Dialog.
  * @remarks
- * SIP-Specific Event Notification
- *
- * Abstract
- *
- *    This document describes an extension to the Session Initiation
- *    Protocol (SIP) defined by RFC 3261.  The purpose of this extension is
- *    to provide an extensible framework by which SIP nodes can request
- *    notification from remote nodes indicating that certain events have
- *    occurred.
- *
- *    Note that the event notification mechanisms defined herein are NOT
- *    intended to be a general-purpose infrastructure for all classes of
- *    event subscription and notification.
- *
- *    This document represents a backwards-compatible improvement on the
- *    original mechanism described by RFC 3265, taking into account several
- *    years of implementation experience.  Accordingly, this document
- *    obsoletes RFC 3265.  This document also updates RFC 4660 slightly to
- *    accommodate some small changes to the mechanism that were discussed
- *    in that document.
- *
- *  https://tools.ietf.org/html/rfc6665
  * @public
  */
 class SubscriptionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog {
@@ -14157,12 +12965,8 @@ class SubscriptionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog 
         this.logger.log(`SUBSCRIBE dialog ${this.id} constructed`);
     }
     /**
-     * When a UAC receives a response that establishes a dialog, it
-     * constructs the state of the dialog.  This state MUST be maintained
-     * for the duration of the dialog.
-     * https://tools.ietf.org/html/rfc3261#section-12.1.2
-     * @param outgoingRequestMessage - Outgoing request message for dialog.
-     * @param incomingResponseMessage - Incoming response message creating dialog.
+     * @param outgoingRequestMessage
+     * @param incomingResponseMessage
      */
     static initialDialogStateForSubscription(outgoingSubscribeRequestMessage, incomingNotifyRequestMessage) {
         const secure = false;
@@ -14265,10 +13069,7 @@ class SubscriptionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog 
     get subscriptionState() {
         return this._subscriptionState;
     }
-    /**
-     * Receive in dialog request message from transport.
-     * @param message -  The incoming request message.
-     */
+    /** @param message */
     receiveRequest(message) {
         this.logger.log(`SUBSCRIBE dialog ${this.id} received ${message.method} request`);
         if (!this.sequenceGuard(message)) {
@@ -14297,10 +13098,8 @@ class SubscriptionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog 
         return this.subscribe(undefined, options);
     }
     /**
-     * 4.1.2.2.  Refreshing of Subscriptions
-     * https://tools.ietf.org/html/rfc6665#section-4.1.2.2
-     * @param delegate - Delegate to handle responses.
-     * @param options - Options bucket.
+     * @param delegate
+     * @param options
      */
     subscribe(delegate, options = {}) {
         var _a;
@@ -14332,11 +13131,7 @@ class SubscriptionDialog extends _dialog_js__WEBPACK_IMPORTED_MODULE_0__.Dialog 
         options.extraHeaders.push("Contact: " + this.core.configuration.contact.toString());
         return this.subscribe(undefined, options);
     }
-    /**
-     * Handle in dialog NOTIFY requests.
-     * This does not include the first NOTIFY which created the dialog.
-     * @param message - The incoming NOTIFY request message.
-     */
+    /** @param message */
     onNotify(message) {
         const event = message.parseHeader("Event").event;
         if (!event || event !== this.subscriptionEvent) {
@@ -14482,10 +13277,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * Re-SUBSCRIBE UAC.
- * @public
- */
+/** @public */
 class ReSubscribeUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(dialog, delegate, options) {
         const message = dialog.createOutgoingRequestMessage(_messages_methods_constants_js__WEBPACK_IMPORTED_MODULE_1__.C.SUBSCRIBE, options);
@@ -14495,10 +13287,7 @@ class ReSubscribeUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED
     waitNotifyStop() {
         return;
     }
-    /**
-     * Receive a response from the transaction layer.
-     * @param message - Incoming response message.
-     */
+    /** @param message */
     receiveResponse(message) {
         if (message.statusCode && message.statusCode >= 200 && message.statusCode < 300) {
             const expires = message.getHeader("Expires");
@@ -14545,14 +13334,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * INVITE UAS.
  * @remarks
- * 13 Initiating a Session
- * https://tools.ietf.org/html/rfc3261#section-13
- * 13.1 Overview
- * https://tools.ietf.org/html/rfc3261#section-13.1
- * 13.3 UAS Processing
- * https://tools.ietf.org/html/rfc3261#section-13.3
  * @public
  */
 class InviteUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
@@ -14566,14 +13348,7 @@ class InviteUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODU
         }
         super.dispose();
     }
-    /**
-     * 13.3.1.4 The INVITE is Accepted
-     * The UAS core generates a 2xx response.  This response establishes a
-     * dialog, and therefore follows the procedures of Section 12.1.1 in
-     * addition to those of Section 8.2.6.
-     * https://tools.ietf.org/html/rfc3261#section-13.3.1.4
-     * @param options - Accept options bucket.
-     */
+    /** @param options */
     accept(options = { statusCode: 200 }) {
         if (!this.acceptable) {
             throw new _exceptions_transaction_state_error_js__WEBPACK_IMPORTED_MODULE_2__.TransactionStateError(`${this.message.method} not acceptable in state ${this.transaction.state}.`);
@@ -14620,28 +13395,7 @@ class InviteUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODU
         }
         return result;
     }
-    /**
-     * 13.3.1.1 Progress
-     * If the UAS is not able to answer the invitation immediately, it can
-     * choose to indicate some kind of progress to the UAC (for example, an
-     * indication that a phone is ringing).  This is accomplished with a
-     * provisional response between 101 and 199.  These provisional
-     * responses establish early dialogs and therefore follow the procedures
-     * of Section 12.1.1 in addition to those of Section 8.2.6.  A UAS MAY
-     * send as many provisional responses as it likes.  Each of these MUST
-     * indicate the same dialog ID.  However, these will not be delivered
-     * reliably.
-     *
-     * If the UAS desires an extended period of time to answer the INVITE,
-     * it will need to ask for an "extension" in order to prevent proxies
-     * from canceling the transaction.  A proxy has the option of canceling
-     * a transaction when there is a gap of 3 minutes between responses in a
-     * transaction.  To prevent cancellation, the UAS MUST send a non-100
-     * provisional response at every minute, to handle the possibility of
-     * lost provisional responses.
-     * https://tools.ietf.org/html/rfc3261#section-13.3.1.1
-     * @param options - Progress options bucket.
-     */
+    /** @param options */
     progress(options = { statusCode: 180 }) {
         if (!this.progressable) {
             throw new _exceptions_transaction_state_error_js__WEBPACK_IMPORTED_MODULE_2__.TransactionStateError(`${this.message.method} not progressable in state ${this.transaction.state}.`);
@@ -14670,28 +13424,13 @@ class InviteUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODU
         return result;
     }
     /**
-     * 13.3.1.2 The INVITE is Redirected
-     * If the UAS decides to redirect the call, a 3xx response is sent.  A
-     * 300 (Multiple Choices), 301 (Moved Permanently) or 302 (Moved
-     * Temporarily) response SHOULD contain a Contact header field
-     * containing one or more URIs of new addresses to be tried.  The
-     * response is passed to the INVITE server transaction, which will deal
-     * with its retransmissions.
-     * https://tools.ietf.org/html/rfc3261#section-13.3.1.2
-     * @param contacts - Contacts to redirect to.
-     * @param options - Redirect options bucket.
+     * @param contacts
+     * @param options
      */
     redirect(contacts, options = { statusCode: 302 }) {
         return super.redirect(contacts, options);
     }
-    /**
-     * 13.3.1.3 The INVITE is Rejected
-     * A common scenario occurs when the callee is currently not willing or
-     * able to take additional calls at this end system.  A 486 (Busy Here)
-     * SHOULD be returned in such a scenario.
-     * https://tools.ietf.org/html/rfc3261#section-13.3.1.3
-     * @param options - Reject options bucket.
-     */
+    /** @param options */
     reject(options = { statusCode: 486 }) {
         return super.reject(options);
     }
@@ -14709,10 +13448,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(82);
 
 
-/**
- * REGISTER UAS.
- * @public
- */
+/** @public */
 class RegisterUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
     constructor(core, message, delegate) {
         super(_transactions_non_invite_server_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteServerTransaction, core, message, delegate);
@@ -14732,10 +13468,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(82);
 
 
-/**
- * SUBSCRIBE UAS.
- * @public
- */
+/** @public */
 class SubscribeUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
     constructor(core, message, delegate) {
         super(_transactions_non_invite_server_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteServerTransaction, core, message, delegate);
@@ -14759,10 +13492,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * Extract and parse every header of a SIP message.
- * @internal
- */
+/** @internal */
 var Parser;
 (function (Parser) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15380,10 +14110,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(63);
 
 
-/**
- * CANCEL UAC.
- * @public
- */
+/** @public */
 class CancelUserAgentClient extends _user_agent_client_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentClient {
     constructor(core, message, delegate) {
         super(_transactions_non_invite_client_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteClientTransaction, core, message, delegate);
@@ -15402,10 +14129,7 @@ __webpack_require__.r(__webpack_exports__);
  var _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(82);
 
 
-/**
- * Re-SUBSCRIBE UAS.
- * @public
- */
+/** @public */
 class ReSubscribeUserAgentServer extends _user_agent_server_js__WEBPACK_IMPORTED_MODULE_0__.UserAgentServer {
     constructor(dialog, message, delegate) {
         super(_transactions_non_invite_server_transaction_js__WEBPACK_IMPORTED_MODULE_1__.NonInviteServerTransaction, dialog.userAgentCore, message, delegate);
@@ -15548,60 +14272,39 @@ const stripMediaDescription = (sdp, description) => {
     }
     return sdp;
 };
-/**
- * Modifier.
- * @public
- */
+/** @public */
 function stripTcpCandidates(description) {
     description.sdp = (description.sdp || "").replace(/^a=candidate:\d+ \d+ tcp .*?\r\n/img, "");
     return Promise.resolve(description);
 }
-/**
- * Modifier.
- * @public
- */
+/** @public */
 function stripTelephoneEvent(description) {
     description.sdp = stripPayload(description.sdp || "", "telephone-event");
     return Promise.resolve(description);
 }
-/**
- * Modifier.
- * @public
- */
+/** @public */
 function cleanJitsiSdpImageattr(description) {
     description.sdp = (description.sdp || "").replace(/^(a=imageattr:.*?)(x|y)=\[0-/gm, "$1$2=[1:");
     return Promise.resolve(description);
 }
-/**
- * Modifier.
- * @public
- */
+/** @public */
 function stripG722(description) {
     description.sdp = stripPayload(description.sdp || "", "G722");
     return Promise.resolve(description);
 }
-/**
- * Modifier.
- * @public
- */
+/** @public */
 function stripRtpPayload(payload) {
     return (description) => {
         description.sdp = stripPayload(description.sdp || "", payload);
         return Promise.resolve(description);
     };
 }
-/**
- * Modifier.
- * @public
- */
+/** @public */
 function stripVideo(description) {
     description.sdp = stripMediaDescription(description.sdp || "", "video");
     return Promise.resolve(description);
 }
-/**
- * Modifier.
- * @public
- */
+/** @public */
 function addMidLines(description) {
     let sdp = description.sdp || "";
     if (sdp.search(/^a=mid.*$/gm) === -1) {
@@ -15622,10 +14325,7 @@ function addMidLines(description) {
     }
     return Promise.resolve(description);
 }
-/**
- * The modifier that should be used when the session would like to place the call on hold.
- * @param description - The description that will be modified.
- */
+/** @param description */
 function holdModifier(description) {
     if (!description.sdp || !description.type) {
         throw new Error("Invalid SDP");
@@ -15686,9 +14386,7 @@ __webpack_require__.r(__webpack_exports__);
  var _session_description_handler_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(57);
 
 /**
- * Start a conference.
- * @param conferenceSessions - The sessions to conference.
- *
+ * @param conferenceSessions
  * @beta
  */
 function startLocalConference(conferenceSessions) {
@@ -15710,10 +14408,7 @@ class WebAudioSessionDescriptionHandler extends _session_description_handler_js_
             WebAudioSessionDescriptionHandler.audioContext = new AudioContext();
         }
     }
-    /**
-     * Helper function to enable/disable media tracks.
-     * @param enable - If true enable tracks.
-     */
+    /** @param enable */
     enableSenderTracks(enable) {
         const stream = this.localMediaStreamReal;
         if (stream === undefined) {
@@ -15723,13 +14418,7 @@ class WebAudioSessionDescriptionHandler extends _session_description_handler_js_
             track.enabled = enable;
         });
     }
-    /**
-     * Returns a WebRTC MediaStream proxying the provided audio media stream.
-     * This allows additional Web Audio media stream source nodes to be connected
-     * to the destination node assoicated with the returned stream so we can mix
-     * aditional audio sorces into the local media stream (ie for 3-way conferencing).
-     * @param stream - The MediaStream to proxy.
-     */
+    /** @param stream */
     initLocalMediaStream(stream) {
         if (!WebAudioSessionDescriptionHandler.audioContext) {
             throw new Error("SessionManagerSessionDescriptionHandler.audioContext undefined.");
@@ -15741,10 +14430,7 @@ class WebAudioSessionDescriptionHandler extends _session_description_handler_js_
         this.localMediaStreamSourceNode.connect(this.localMediaStreamDestinationNode);
         return this.localMediaStreamDestinationNode.stream;
     }
-    /**
-     * Join (conference) media streams with another party.
-     * @param peer - The session description handler of the peer to join with.
-     */
+    /** @param peer */
     joinWith(peer) {
         if (!WebAudioSessionDescriptionHandler.audioContext) {
             throw new Error("SessionManagerSessionDescriptionHandler.audioContext undefined.");
@@ -15763,11 +14449,8 @@ class WebAudioSessionDescriptionHandler extends _session_description_handler_js_
         peerNewInboundStreamSource.connect(ourOutboundStreamDestination);
     }
     /**
-     * Sets the original local media stream.
-     * @param stream - Media stream containing tracks to be utilized.
+     * @param stream
      * @remarks
-     * Only the first audio and video tracks of the provided MediaStream are utilized.
-     * Adds tracks if audio and/or video tracks are not already present, otherwise replaces tracks.
      */
     setRealLocalMediaStream(stream) {
         if (!WebAudioSessionDescriptionHandler.audioContext) {
@@ -15813,10 +14496,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "defaultManagedSessionFactory": () => ( defaultManagedSessionFactory)
  });
-/**
- * Function which returns a ManagedSessionFactory.
- * @public
- */
+/** @public */
 function defaultManagedSessionFactory() {
     return (sessionManager, session) => {
         return { session, held: false, muted: false };
@@ -15857,15 +14537,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * A session manager for SIP.js sessions.
- * @public
- */
+/** @public */
 class SessionManager {
     /**
-     * Constructs a new instance of the `SessionManager` class.
-     * @param server - SIP WebSocket Server URL.
-     * @param options - Options bucket. See {@link SessionManagerOptions} for details.
+     * @param server
+     * @param options
      */
     constructor(server, options = {}) {
         this.managedSessions = [];
@@ -16040,12 +14716,7 @@ class SessionManager {
             });
         }
     }
-    /**
-     * Strip properties with undefined values from options.
-     * This is a work around while waiting for missing vs undefined to be addressed (or not)...
-     * https://github.com/Microsoft/TypeScript/issues/13195
-     * @param options - Options to reduce
-     */
+    /** @param options */
     static stripUndefinedProperties(options) {
         return Object.keys(options).reduce((object, key) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16056,10 +14727,7 @@ class SessionManager {
             return object;
         }, {});
     }
-    /**
-     * The local media stream. Undefined if call not answered.
-     * @param session - Session to get the media stream from.
-     */
+    /** @param session */
     getLocalMediaStream(session) {
         const sdh = session.sessionDescriptionHandler;
         if (!sdh) {
@@ -16070,10 +14738,7 @@ class SessionManager {
         }
         return sdh.localMediaStream;
     }
-    /**
-     * The remote media stream. Undefined if call not answered.
-     * @param session - Session to get the media stream from.
-     */
+    /** @param session */
     getRemoteMediaStream(session) {
         const sdh = session.sessionDescriptionHandler;
         if (!sdh) {
@@ -16085,36 +14750,32 @@ class SessionManager {
         return sdh.remoteMediaStream;
     }
     /**
-     * The local audio track, if available.
-     * @param session - Session to get track from.
-     * @deprecated Use localMediaStream and get track from the stream.
+     * @param session
+     * @deprecated
      */
     getLocalAudioTrack(session) {
         var _a;
         return (_a = this.getLocalMediaStream(session)) === null || _a === void 0 ? void 0 : _a.getTracks().find((track) => track.kind === "audio");
     }
     /**
-     * The local video track, if available.
-     * @param session - Session to get track from.
-     * @deprecated Use localMediaStream and get track from the stream.
+     * @param session
+     * @deprecated
      */
     getLocalVideoTrack(session) {
         var _a;
         return (_a = this.getLocalMediaStream(session)) === null || _a === void 0 ? void 0 : _a.getTracks().find((track) => track.kind === "video");
     }
     /**
-     * The remote audio track, if available.
-     * @param session - Session to get track from.
-     * @deprecated Use remoteMediaStream and get track from the stream.
+     * @param session
+     * @deprecated
      */
     getRemoteAudioTrack(session) {
         var _a;
         return (_a = this.getRemoteMediaStream(session)) === null || _a === void 0 ? void 0 : _a.getTracks().find((track) => track.kind === "audio");
     }
     /**
-     * The remote video track, if available.
-     * @param session - Session to get track from.
-     * @deprecated Use remoteMediaStream and get track from the stream.
+     * @param session
+     * @deprecated
      */
     getRemoteVideoTrack(session) {
         var _a;
@@ -16187,14 +14848,10 @@ class SessionManager {
         });
     }
     /**
-     * Make an outgoing call.
      * @remarks
-     * Send an INVITE request to create a new Session.
-     * Resolves when the INVITE request is sent, otherwise rejects.
-     * Use `onCallAnswered` delegate method to determine if Session is established.
-     * @param destination - The target destination to call. A SIP address to send the INVITE to.
-     * @param inviterOptions - Optional options for Inviter constructor.
-     * @param inviterInviteOptions - Optional options for Inviter.invite().
+     * @param destination
+     * @param inviterOptions
+     * @param inviterInviteOptions
      */
     async call(destination, inviterOptions, inviterInviteOptions) {
         this.logger.log(`Beginning Session...`);
@@ -16250,12 +14907,8 @@ class SessionManager {
         });
     }
     /**
-     * Hangup a call.
-     * @param session - Session to hangup.
+     * @param session
      * @remarks
-     * Send a BYE request, CANCEL request or reject response to end the current Session.
-     * Resolves when the request/response is sent, otherwise rejects.
-     * Use `onCallHangup` delegate method to determine if and when call is ended.
      */
     async hangup(session) {
         this.logger.log(`[${session.id}] Hangup...`);
@@ -16265,13 +14918,9 @@ class SessionManager {
         return this.terminate(session);
     }
     /**
-     * Answer an incoming call.
-     * @param session - Session to answer.
+     * @param session
      * @remarks
-     * Accept an incoming INVITE request creating a new Session.
-     * Resolves with the response is sent, otherwise rejects.
-     * Use `onCallAnswered` delegate method to determine if and when call is established.
-     * @param invitationAcceptOptions - Optional options for Inviter.accept().
+     * @param invitationAcceptOptions
      */
     async answer(session, invitationAcceptOptions) {
         this.logger.log(`[${session.id}] Accepting Invitation...`);
@@ -16293,12 +14942,8 @@ class SessionManager {
         return session.accept(invitationAcceptOptions);
     }
     /**
-     * Decline an incoming call.
-     * @param session - Session to decline.
+     * @param session
      * @remarks
-     * Reject an incoming INVITE request.
-     * Resolves with the response is sent, otherwise rejects.
-     * Use `onCallHangup` delegate method to determine if and when call is ended.
      */
     async decline(session) {
         this.logger.log(`[${session.id}] Rejecting Invitation...`);
@@ -16311,77 +14956,57 @@ class SessionManager {
         return session.reject();
     }
     /**
-     * Hold call
-     * @param session - Session to hold.
+     * @param session
      * @remarks
-     * Send a re-INVITE with new offer indicating "hold".
-     * Resolves when the re-INVITE request is sent, otherwise rejects.
-     * Use `onCallHold` delegate method to determine if request is accepted or rejected.
-     * See: https://tools.ietf.org/html/rfc6337
      */
     async hold(session) {
         this.logger.log(`[${session.id}] Holding session...`);
         return this.setHold(session, true);
     }
     /**
-     * Unhold call.
-     * @param session - Session to unhold.
+     * @param session
      * @remarks
-     * Send a re-INVITE with new offer indicating "unhold".
-     * Resolves when the re-INVITE request is sent, otherwise rejects.
-     * Use `onCallHold` delegate method to determine if request is accepted or rejected.
-     * See: https://tools.ietf.org/html/rfc6337
      */
     async unhold(session) {
         this.logger.log(`[${session.id}] Unholding session...`);
         return this.setHold(session, false);
     }
     /**
-     * Hold state.
-     * @param session - Session to check.
+     * @param session
      * @remarks
-     * True if session is on hold.
      */
     isHeld(session) {
         const managedSession = this.sessionManaged(session);
         return managedSession ? managedSession.held : false;
     }
     /**
-     * Mute call.
-     * @param session - Session to mute.
+     * @param session
      * @remarks
-     * Disable sender's media tracks.
      */
     mute(session) {
         this.logger.log(`[${session.id}] Disabling media tracks...`);
         this.setMute(session, true);
     }
     /**
-     * Unmute call.
-     * @param session - Session to unmute.
+     * @param session
      * @remarks
-     * Enable sender's media tracks.
      */
     unmute(session) {
         this.logger.log(`[${session.id}] Enabling media tracks...`);
         this.setMute(session, false);
     }
     /**
-     * Mute state.
-     * @param session - Session to check.
+     * @param session
      * @remarks
-     * True if sender's media track is disabled.
      */
     isMuted(session) {
         const managedSession = this.sessionManaged(session);
         return managedSession ? managedSession.muted : false;
     }
     /**
-     * Send DTMF.
-     * @param session - Session to send on.
+     * @param session
      * @remarks
-     * Send an INFO request with content type application/dtmf-relay.
-     * @param tone - Tone to send.
+     * @param tone
      */
     async sendDTMF(session, tone) {
         this.logger.log(`[${session.id}] Sending DTMF...`);
@@ -16416,15 +15041,9 @@ class SessionManager {
         }
     }
     /**
-     * Transfer.
-     * @param session - Session with the transferee to transfer.
-     * @param target - The referral target.
+     * @param session
+     * @param target
      * @remarks
-     * If target is a Session this is an attended transfer completion (REFER with Replaces),
-     * otherwise this is a blind transfer (REFER). Attempting an attended transfer
-     * completion on a call that has not been answered will be rejected. To implement
-     * an attended transfer with early completion, hangup the call with the target
-     * and execute a blind transfer to the target.
      */
     async transfer(session, target, options) {
         this.logger.log(`[${session.id}] Referring session...`);
@@ -16442,10 +15061,8 @@ class SessionManager {
         });
     }
     /**
-     * Send a message.
      * @remarks
-     * Send a MESSAGE request.
-     * @param destination - The target destination for the message. A SIP address to send the MESSAGE to.
+     * @param destination
      */
     async message(destination, message) {
         this.logger.log(`Sending message...`);
@@ -16462,10 +15079,7 @@ class SessionManager {
         }
         return constraints;
     }
-    /**
-     * Attempt reconnection up to `reconnectionAttempts` times.
-     * @param reconnectionAttempt - Current attempt number.
-     */
+    /** @param reconnectionAttempt */
     attemptReconnection(reconnectionAttempt = 1) {
         const reconnectionAttempts = this.options.reconnectionAttempts;
         const reconnectionDelay = this.options.reconnectionDelay;
@@ -16507,10 +15121,7 @@ class SessionManager {
             });
         }, reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000);
     }
-    /**
-     * Register to receive calls.
-     * @param withoutDelay - If true attempt immediately, otherwise wait `registrationRetryInterval`.
-     */
+    /** @param withoutDelay */
     attemptRegistration(withoutDelay = false) {
         this.logger.log(`Registration attempt ${withoutDelay ? "without delay" : ""}`);
         if (!this.shouldBeRegistered) {
@@ -16620,9 +15231,8 @@ class SessionManager {
         sessionDescriptionHandler.enableSenderTracks(enable);
     }
     /**
-     * Setup session delegate and state change handler.
-     * @param session - Session to setup.
-     * @param referralInviterOptions - Options for any Inviter created as result of a REFER.
+     * @param session
+     * @param referralInviterOptions
      */
     initSession(session, referralInviterOptions) {
         this.sessionAdd(session);
@@ -16644,7 +15254,7 @@ class SessionManager {
                     }
                     break;
                 case _api_session_state_js__WEBPACK_IMPORTED_MODULE_12__.SessionState.Terminating:
-                // fall through
+
                 case _api_session_state_js__WEBPACK_IMPORTED_MODULE_12__.SessionState.Terminated:
                     if (this.sessionExists(session)) {
                         this.cleanupMedia(session);
@@ -16717,10 +15327,9 @@ class SessionManager {
         };
     }
     /**
-     * Periodically send OPTIONS pings and disconnect when a ping fails.
-     * @param requestURI - Request URI to target
-     * @param fromURI - From URI
-     * @param toURI - To URI
+     * @param requestURI
+     * @param fromURI
+     * @param toURI
      */
     optionsPingRun(requestURI, fromURI, toURI) {
         if (this.options.optionsPingInterval < 1) {
@@ -16825,9 +15434,8 @@ class SessionManager {
         this.managedSessions = this.managedSessions.filter((el) => el.session.id !== session.id);
     }
     /**
-     * Puts Session on hold.
-     * @param session - The session to set.
-     * @param hold - Hold on if true, off if false.
+     * @param session
+     * @param hold
      */
     async setHold(session, hold) {
         if (!this.sessionExists(session)) {
@@ -16893,9 +15501,8 @@ class SessionManager {
         });
     }
     /**
-     * Puts Session on mute.
-     * @param session - The session to mute.
-     * @param mute - Mute on if true, off if false.
+     * @param session
+     * @param mute
      */
     setMute(session, mute) {
         if (!this.sessionExists(session)) {
@@ -16963,12 +15570,8 @@ class SessionManager {
         }
     }
     /**
-     * End a session.
-     * @param session - The session to terminate.
+     * @param session
      * @remarks
-     * Send a BYE request, CANCEL request or reject response to end the current Session.
-     * Resolves when the request/response is sent, otherwise rejects.
-     * Use `onCallHangup` delegate method to determine if and when Session is terminated.
      */
     async terminate(session) {
         this.logger.log(`[${session.id}] Terminating...`);
@@ -17041,19 +15644,13 @@ __webpack_require__.r(__webpack_exports__);
  var _session_manager_session_manager_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(121);
 
 /**
- * A simple SIP user class.
  * @remarks
- * While this class is completely functional for simple use cases, it is not intended
- * to provide an interface which is suitable for most (must less all) applications.
- * While this class has many limitations (for example, it only handles a single concurrent session),
- * it is, however, intended to serve as a simple example of using the SIP.js API.
  * @public
  */
 class SimpleUser {
     /**
-     * Constructs a new instance of the `SimpleUser` class.
-     * @param server - SIP WebSocket Server URL.
-     * @param options - Options bucket. See {@link SimpleUserOptions} for details.
+     * @param server
+     * @param options
      */
     constructor(server, options = {}) {
         this.session = undefined;
@@ -17093,10 +15690,7 @@ class SimpleUser {
         this.sessionManager = new _session_manager_session_manager_js__WEBPACK_IMPORTED_MODULE_0__.SessionManager(server, sessionManagerOptions);
         this.logger = this.sessionManager.userAgent.getLogger("sip.SimpleUser");
     }
-    /**
-     * Instance identifier.
-     * @internal
-     */
+    /** @internal */
     get id() {
         return (this.options.userAgentOptions && this.options.userAgentOptions.displayName) || "Anonymous";
     }
@@ -17106,31 +15700,19 @@ class SimpleUser {
     get remoteMediaStream() {
         return this.session && this.sessionManager.getRemoteMediaStream(this.session);
     }
-    /**
-     * The local audio track, if available.
-     * @deprecated Use localMediaStream and get track from the stream.
-     */
+    /** @deprecated */
     get localAudioTrack() {
         return this.session && this.sessionManager.getLocalAudioTrack(this.session);
     }
-    /**
-     * The local video track, if available.
-     * @deprecated Use localMediaStream and get track from the stream.
-     */
+    /** @deprecated */
     get localVideoTrack() {
         return this.session && this.sessionManager.getLocalVideoTrack(this.session);
     }
-    /**
-     * The remote audio track, if available.
-     * @deprecated Use remoteMediaStream and get track from the stream.
-     */
+    /** @deprecated */
     get remoteAudioTrack() {
         return this.session && this.sessionManager.getRemoteAudioTrack(this.session);
     }
-    /**
-     * The remote video track, if available.
-     * @deprecated Use remoteMediaStream and get track from the stream.
-     */
+    /** @deprecated */
     get remoteVideoTrack() {
         return this.session && this.sessionManager.getRemoteVideoTrack(this.session);
     }
@@ -17154,14 +15736,10 @@ class SimpleUser {
         return this.sessionManager.unregister(registererUnregisterOptions);
     }
     /**
-     * Make an outgoing call.
      * @remarks
-     * Send an INVITE request to create a new Session.
-     * Resolves when the INVITE request is sent, otherwise rejects.
-     * Use `onCallAnswered` delegate method to determine if Session is established.
-     * @param destination - The target destination to call. A SIP address to send the INVITE to.
-     * @param inviterOptions - Optional options for Inviter constructor.
-     * @param inviterInviteOptions - Optional options for Inviter.invite().
+     * @param destination
+     * @param inviterOptions
+     * @param inviterInviteOptions
      */
     call(destination, inviterOptions, inviterInviteOptions) {
         this.logger.log(`[${this.id}] Beginning Session...`);
@@ -17182,12 +15760,8 @@ class SimpleUser {
         });
     }
     /**
-     * Answer an incoming call.
      * @remarks
-     * Accept an incoming INVITE request creating a new Session.
-     * Resolves with the response is sent, otherwise rejects.
-     * Use `onCallAnswered` delegate method to determine if and when call is established.
-     * @param invitationAcceptOptions - Optional options for Inviter.accept().
+     * @param invitationAcceptOptions
      */
     answer(invitationAcceptOptions) {
         this.logger.log(`[${this.id}] Accepting Invitation...`);
@@ -17232,10 +15806,8 @@ class SimpleUser {
         return this.session ? this.sessionManager.isMuted(this.session) : false;
     }
     /**
-     * Send DTMF.
      * @remarks
-     * Send an INFO request with content type application/dtmf-relay.
-     * @param tone - Tone to send.
+     * @param tone
      */
     sendDTMF(tone) {
         this.logger.log(`[${this.id}] sending DTMF...`);
@@ -17245,10 +15817,8 @@ class SimpleUser {
         return this.sessionManager.sendDTMF(this.session, tone);
     }
     /**
-     * Send a message.
      * @remarks
-     * Send a MESSAGE request.
-     * @param destination - The target destination for the message. A SIP address to send the MESSAGE to.
+     * @param destination
      */
     message(destination, message) {
         this.logger.log(`[${this.id}] sending message...`);

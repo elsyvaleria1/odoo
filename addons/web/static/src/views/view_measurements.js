@@ -68,11 +68,10 @@ export const computeReportMeasures = (
 };
 
 /**
- * @param {Array<string | { fieldName: string }>} specs arch group-bys, as strings or
- *  as the objects a state restore hands back
+ * @param {Array<string | { fieldName: string }>} specs
  * @param {Record<string, { invisible?: string }> | undefined} fieldAttrs
  * @param {Record<string, any>} context
- * @returns {Array<string | { fieldName: string }>} the specs whose field is not invisible
+ * @returns {Array<string | { fieldName: string }>}
  */
 export function visibleArchGroupBys(specs, fieldAttrs, context) {
     return specs.filter((spec) => {
@@ -167,9 +166,6 @@ export function getMeasureAggregator(measure, field) {
 }
 
 /**
- * The converted `sum_currency` spec only exists for a summed measure: converting
- * each row then averaging (or taking min/max) is not what the server computes.
- *
  * @param {{ name: string, type: string, currency_field?: string }} field
  * @param {string} aggregator
  * @returns {{ currencySpec: string, convertedSpec: string | undefined } | undefined}

@@ -59,17 +59,7 @@ patch(OrderSummary.prototype, {
         }
         return super.updateSelectedOrderline({ buffer, key });
     },
-    /**
-     * 1/ Perform the usual set value operation (super._setValue(val)) if the line being modified
-     * is not a reward line or if it is a reward line, the `val` being set is '' or 'remove' only.
-     *
-     * 2/ Update activated programs and coupons when removing a reward line.
-     *
-     * 3/ Trigger 'update-rewards' if the line being modified is a regular line or
-     * if removing a reward line.
-     *
-     * @override
-     */
+    /** @override */
     _setValue(val) {
         const selectedLine = this.currentOrder.getSelectedOrderline();
         if (!selectedLine) {

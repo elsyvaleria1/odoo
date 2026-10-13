@@ -139,10 +139,10 @@ actionHandlersRegistry.addValidation((entry) => typeof entry === "function");
  */
 /**
  * @typedef {Object} ActionPlaceholderInfo
- * @property {number} showAt a `performance.now()` instant
+ * @property {number} showAt
  * @property {ViewType} [viewType]
  * @property {boolean} withControlPanel
- * @property {() => boolean} isClaimed the controller shows its own feedback
+ * @property {() => boolean} isClaimed
  */
 /**
  * @typedef {Object} BaseView
@@ -646,8 +646,6 @@ export class ActionManager {
     }
 
     /**
-     * What stands in for a controller that is still not on screen once
-     * loading feedback is due. Until then the outgoing one stays where it is.
      * @param {ActionDispatch} dispatch
      * @returns {ActionPlaceholderInfo}
      */

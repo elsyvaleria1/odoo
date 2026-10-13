@@ -92,11 +92,8 @@ export function provideHostedStudioEnv(env) {
 }
 
 /**
- * Sorts a list topologically, each element's dependencies should be defined
- * with the getDependencies callback.
- * This is a copy of what is done in python: odoo.tools.misc.py:def topological_sort
- * @params [Array] elems
- * @params [Function] getDependencies
+ * @params
+ * @params
  */
 function topologicalSort(elems, getDependencies) {
     const result = [];
@@ -122,13 +119,7 @@ function topologicalSort(elems, getDependencies) {
     return result;
 }
 
-/**
- * Allows to override the services defined in the env with a new instance
- * of each one defined in "overrides".
- * This function assumes all services in overrides start synchronously
- * @params [Object] overrides: new instances of services to create
- *     the key is the service's name, the value is the service definition
- */
+/** @params */
 export function useServicesOverrides(overrides) {
     const services = Object.create(useAppContext().services);
 

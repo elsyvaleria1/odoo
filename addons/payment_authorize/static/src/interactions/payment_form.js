@@ -13,14 +13,12 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Prepare the inline form of Authorize.net for direct payment.
-     *
      * @private
-     * @param {number} providerId - The id of the selected payment option's provider.
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The online payment flow of the selected payment option.
+     * @param {number} providerId
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _prepareInlineForm(
@@ -62,14 +60,12 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Trigger the payment processing by submitting the data.
-     *
-     * @override method from payment.payment_form
+     * @override
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The payment flow of the selected payment option.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
@@ -90,14 +86,12 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Process the direct payment flow.
-     *
-     * @override method from payment.payment_form
+     * @override
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {object} processingValues - The processing values of the transaction.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {object} processingValues
      * @return {void}
      */
     async _processDirectFlow(
@@ -125,11 +119,9 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Handle the response from Authorize.Net and initiate the payment.
-     *
      * @private
-     * @param {object} response - The payment nonce returned by Authorized.Net
-     * @param {object} processingValues - The processing values of the transaction.
+     * @param {object} response
+     * @param {object} processingValues
      * @return {void}
      */
     async _authorizeHandleResponse(response, processingValues) {
@@ -167,12 +159,10 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Return all relevant inline form inputs based on the payment method type of the provider.
-     *
      * @private
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @return {Object} - An object mapping the name of inline form inputs to their DOM element
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @return {Object}
      */
     _authorizeGetInlineFormInputs(paymentOptionId, paymentMethodCode) {
         const form = this.authorizeData[paymentOptionId]["form"];
@@ -194,12 +184,10 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Return the credit card or bank data to pass to the Accept.dispatch request.
-     *
      * @private
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @return {Object} - Data to pass to the Accept.dispatch request
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @return {Object}
      */
     _authorizeGetPaymentDetails(paymentOptionId, paymentMethodCode) {
         const inputs = this._authorizeGetInlineFormInputs(

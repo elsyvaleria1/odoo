@@ -86,13 +86,8 @@ export class MasterProductionScheduleModel extends EventBus {
     }
 
     /**
-     * Make an rpc to replenish the different schedules passed as arguments.
-     * If the procurementIds list is empty, it replenish all the schedules under
-     * the current domain. Reload the content after the replenish in order to
-     * display the new forecast cells to run.
      * @private
-     * @param {Integer[]} productionScheduleIds mrp.production.schedule ids to
-     * replenish.
+     * @param {Integer[]} productionScheduleIds
      * @return {Promise}
      */
     _actionReplenish(productionScheduleIds, basedOnLeadTime = false) {
@@ -123,14 +118,10 @@ export class MasterProductionScheduleModel extends EventBus {
     }
 
     /**
-     * Save the forecasted quantity and reload the current schedule in order
-     * to update its To Replenish quantity and its safety stock (current and
-     * future period). Also update the other schedules linked by BoM in order
-     * to update them depending the indirect demand.
      * @private
-     * @param {Integer} productionScheduleId mrp.production.schedule Id.
-     * @param {Integer} dateIndex period to save (column number)
-     * @param {Float} forecastQty The new forecasted quantity
+     * @param {Integer} productionScheduleId
+     * @param {Integer} dateIndex
+     * @param {Float} forecastQty
      * @return {Promise}
      */
     _saveForecast(productionScheduleId, dateIndex, forecastQty) {
@@ -147,8 +138,6 @@ export class MasterProductionScheduleModel extends EventBus {
     }
 
     /**
-     * Open the mrp.production.schedule form view in order to create the record.
-     * Once the record is created get its state and render it.
      * @private
      * @return {Promise}
      */
@@ -161,10 +150,8 @@ export class MasterProductionScheduleModel extends EventBus {
     }
 
     /**
-     * Open the mrp.production.schedule form view in order to edit the record.
-     * Once the record is edited get its state and render it.
      * @private
-     * @param {Integer} productionScheduleId mrp.production.schedule Id.
+     * @param {Integer} productionScheduleId
      */
     _editProduct(productionScheduleId) {
         this.mutex.exec(() => {
@@ -187,10 +174,8 @@ export class MasterProductionScheduleModel extends EventBus {
     }
 
     /**
-     * Unlink the production schedule and remove it from the DOM. Use a
-     * confirmation dialog in order to avoid a mistake from the user.
      * @private
-     * @param {Integer[]} productionScheduleIds mrp.production.schedule Ids.
+     * @param {Integer[]} productionScheduleIds
      * @return {Promise}
      */
     _unlinkProduct(productionScheduleIds) {
@@ -227,12 +212,11 @@ export class MasterProductionScheduleModel extends EventBus {
     }
 
     /**
-     *
-     * @param {Integer} productionScheduleId mrp.production.schedule Id
-     * @param {String} action name of the action to be undertaken
-     * @param {String} dateStr name of the period
-     * @param {String} dateStart start date of the period
-     * @param {String} dateStop end date of the period
+     * @param {Integer} productionScheduleId
+     * @param {String} action
+     * @param {String} dateStr
+     * @param {String} dateStart
+     * @param {String} dateStop
      * @return {Promise}
      */
     _actionOpenDetails(productionScheduleId, action, dateStr, dateStart, dateStop) {
@@ -249,14 +233,10 @@ export class MasterProductionScheduleModel extends EventBus {
     }
 
     /**
-     * Save the quantity To Replenish and reload the current schedule in order
-     * to update it's safety stock and quantity in future period. Also mark
-     * the cell with a blue background in order to show that it was manually
-     * updated.
      * @private
-     * @param {Integer} productionScheduleId mrp.production.schedule Id.
-     * @param {Integer} dateIndex period to save (column number)
-     * @param {Float} replenishQty The new quantity To Replenish
+     * @param {Integer} productionScheduleId
+     * @param {Integer} dateIndex
+     * @param {Float} replenishQty
      * @return {Promise}
      */
     _saveToReplenish(productionScheduleId, dateIndex, replenishQty) {
@@ -273,10 +253,9 @@ export class MasterProductionScheduleModel extends EventBus {
     }
 
     /**
-     * Remove the manual change of replenishQty and load the suggested value.
      * @private
-     * @param {Integer} productionScheduleId mrp.production.schedule Id.
-     * @param {Integer} dateIndex period to save (column number)
+     * @param {Integer} productionScheduleId
+     * @param {Integer} dateIndex
      * @return {Promise}
      */
     _removeQtyToReplenish(productionScheduleId, dateIndex) {
@@ -298,9 +277,8 @@ export class MasterProductionScheduleModel extends EventBus {
     }
 
     /**
-     * Save the company settings and hide or display the rows.
      * @private
-     * @param {Object} values {field_name: field_value}
+     * @param {Object} values
      */
     _saveCompanySettings(values) {
         this.mutex.exec(() => {

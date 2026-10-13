@@ -257,12 +257,7 @@ export class SelfOrder extends SignalStore {
         this.orderChannels.set(channel, claim);
     }
 
-    /**
-     * An order gone from the kiosk is heard from no more: a kiosk that
-     * listened to every order of its day would pass the server's channel
-     * limit, and the whole browser's subscription with it.
-     * @param {number} orderId
-     */
+    /** @param {number} orderId */
     stopListeningToOrder(orderId) {
         for (const [channel, claim] of this.orderChannels) {
             if (claim.orderId === orderId) {

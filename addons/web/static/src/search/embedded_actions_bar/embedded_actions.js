@@ -18,8 +18,6 @@ const log = makeLogger("web.search.embedded");
 const layoutWrites = new WeakMap();
 
 /**
- * The config handler serializes writes. Keep their last acknowledged snapshot
- * separately from optimistic UI state, including when several writes fail.
  * @param {any} owner
  * @param {string} field
  * @param {any[]} previous

@@ -72,10 +72,6 @@ patch(ViewButton.prototype, {
     },
 
     /**
-     * A list header's window action runs on the selection, with nothing on the
-     * server to refuse it: it is checked on every selected record first, and runs
-     * once all are approved. An object button is gated where it runs.
-     *
      * @param {string} name
      * @param {string} kind
      */

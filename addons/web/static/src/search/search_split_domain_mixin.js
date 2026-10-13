@@ -36,7 +36,7 @@ export const SearchSplitDomainMixin = (Base) =>
     class extends Base {
         /**
          * @param {Record<string, any>} group
-         * @param {any[]} conjuncts the edited domain replacing the group
+         * @param {any[]} conjuncts
          * @returns {Record<string, any>}
          */
         _mergedContextOfGroup(group, conjuncts) {

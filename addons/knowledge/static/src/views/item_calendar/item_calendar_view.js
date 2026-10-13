@@ -74,12 +74,7 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
         return !this.knowledgeContext.isEmbeddedView && super.showSideBar;
     }
 
-    /**
-     * Create a new article item and open it. If no record is given, creates it
-     * without any start/stop date properties.
-     * @param {Object} record: calendar record used to create the item with
-     * properties.
-     */
+    /** @param {Object} record: */
     async createRecord(record) {
         if (this.model.canCreate) {
             const createValues = {
@@ -115,11 +110,7 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
         });
     }
 
-    /**
-     * @override
-     * Open an item to allow editing it. This override allows to load the article from the
-     * KnowledgeController if the view is embedded, allowing to preserve the navigation history
-     */
+    /** @override */
     editRecord(record) {
         this.selectRecord(record.id);
     }

@@ -100,10 +100,7 @@ export const DocumentsModelMixin = (component) =>
             return res;
         }
 
-        /**
-         * @override the document to restore is fetched with the page, under
-         * the same abort signal
-         */
+        /** @override */
         async _loadData(config, cache, signal) {
             const data = await super._loadData(config, cache, signal);
             if (config.resModel === "document.document" && !config.isMonoRecord) {
@@ -115,11 +112,7 @@ export const DocumentsModelMixin = (component) =>
             return data;
         }
 
-        /**
-         * @override the selection is reapplied before the root is published:
-         * its views render as soon as it is, and would see a root with no
-         * selection
-         */
+        /** @override */
         _createRoot(config, data) {
             const focusedId = this._settleFocus(data?.focus);
             const root = super._createRoot(...arguments);
@@ -160,11 +153,7 @@ export const DocumentsModelMixin = (component) =>
             this.fileSize = items.reduce((total, size) => total + (size || 0), 0);
         }
 
-        /**
-         * The documents the page's shortcuts point to, read like the page.
-         *
-         * @returns {Promise<Object[]>} their raw data
-         */
+        /** @returns {Promise<Object[]>} */
         async _loadShortcutTargets(config, data, cache, signal) {
             const rawRecords = (node) => [
                 ...(node.records ?? []),
@@ -316,14 +305,7 @@ export const DocumentsModelMixin = (component) =>
             this.notification.add(message, { type: "success" });
         }
 
-        /**
-         * Stars or unstars each document for the current user, then refreshes
-         * what shows a star: this view's records among them, and the folder
-         * tree when it lists one of them (the open folder, starred from the cog,
-         * is only there).
-         *
-         * @param {number[]} documentIds
-         */
+        /** @param {number[]} documentIds */
         async toggleFavorite(documentIds) {
             if (!documentIds.length) {
                 return;
@@ -380,9 +362,6 @@ export const DocumentsModelMixin = (component) =>
         }
 
         /**
-         * What an operation wizard acts on: every matching document when the
-         * domain is selected (unnamed: the wizard titles them by count).
-         *
          * @param {Object[]} records
          * @returns {Promise<{id: number, name?: string}[]>}
          */
@@ -551,11 +530,8 @@ export const DocumentsModelMixin = (component) =>
          * @param {number[]} documentIds
          * @param {number} actionId
          * @param {Object} [options]
-         * @param {boolean} [options.reload] reload the view afterwards; the
-         *      PDF splitter reloads once it closes instead
-         * @param {boolean} [options.navigate] run a returned action that can
-         *      leave the view; false while a dialog over it must stay open,
-         *      which lets only notifications through
+         * @param {boolean} [options.reload]
+         * @param {boolean} [options.navigate]
          */
         async executeEmbeddedAction(
             documentIds,
@@ -655,7 +631,7 @@ export const DocumentsModelMixin = (component) =>
 
         /**
          * @param {{request: Object, found: boolean}} [focus]
-         * @returns {number|undefined} the document to select
+         * @returns {number|undefined}
          */
         _settleFocus(focus) {
             if (!focus) {

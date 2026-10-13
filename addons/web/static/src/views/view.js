@@ -142,11 +142,6 @@ viewRegistry.addValidation(
 );
 
 /**
- * The controller's props from the descriptor's declaration: a `props` factory
- * when it still has one, `modelParams` {fromState, fromArch} for a report-shaped
- * view, the parsed arch for everything with an ArchParser, and the generic
- * props alone for a descriptor declaring none of the three.
- *
  * @param {any} descr
  * @param {Record<string, any>} controllerProps
  * @param {any} config
@@ -320,10 +315,6 @@ function resolveViewSelection(props, configViews) {
 }
 
 /**
- * The element every parser and compiler walks. The server's IR is the
- * contract; the arch string is kept for a caller that hands one in through
- * props (embedded views, tests) and for a payload that predates the IR.
- *
  * @param {Pick<LoadedView, "arch" | "ir">} loaded
  * @param {Record<string, any>} context
  * @returns {{ archXmlDoc: Element, archIR: import("@web/views/ir/view_ir_schema").ViewIRNode }}

@@ -6,9 +6,6 @@ import { _t } from "@web/core/translation";
 import { useService } from "@web/core/utils/hooks";
 
 /**
- * `days` may be fractional (float lead times): whole calendar days, then the
- * fraction as 24-hour milliseconds, since Temporal refuses fractional days.
- *
  * @param {Temporal.ZonedDateTime} value
  * @param {number} days
  */

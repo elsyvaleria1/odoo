@@ -116,7 +116,7 @@ export class ListTextField extends TextField {
         rowCount: TextField.props.rowCount.optional(1),
     };
 
-    // @ts-ignore — narrower return type is intentional for list view
+
     /** @returns {number} */
     get minimumHeight() {
         return 0;

@@ -55,27 +55,7 @@ export class SurveyQuestionTriggerWidget extends Component {
         return this.lastTrigger;
     }
 
-    /**
-     * `surveyQuestionTriggerError` is computed here and does not rely on
-     * record data (is_placed_before_trigger) for two linked reasons:
-     * 1. Performance: we avoid saving the survey each time a line is moved.
-     * 2. Robustness, as sequences values do not always match between server
-     * provided values when the records are not saved.
-     *
-     * @returns {{ triggerError: String, misplacedTriggerQuestionRecords: Record[] }}
-     *   * `""`: No trigger error (also if `triggering_question_id`
-     *     field is not set).
-     *   * `"MISSING_TRIGGER_ERROR"`: `triggering_questions_ids` field is set
-     *     but trigger record is not found. This can happen if all questions
-     *     used as triggers are deleted on the client but not yet saved to DB.
-     *   * `"MISPLACED_TRIGGER_WARNING"`: a `triggering_question_id` is set
-     *     but is positioned after the current record in the list. This can
-     *     happen if the triggering or the triggered question is moved.
-     *   * `"WRONG_QUESTIONS_SELECTION_WARNING"`: a `triggering_question_id`
-     *     is set but the survey is configured to randomize questions asked
-     *     mode which ignores the triggers. This can happen if the survey mode
-     *     is changed after triggers are set.
-     */
+    /** @returns {{ triggerError: String, misplacedTriggerQuestionRecords: Record[] }} */
     get surveyQuestionTriggerError() {
         const record = this.props.record;
         if (!record.data.triggering_question_ids.records.length) {

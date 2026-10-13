@@ -23,13 +23,7 @@ export function emptySectionCell(column) {
 }
 
 /**
- * Lays a section row out on the header's column grid. A kept column stays under
- * its own header cell; the title spans the run of dropped columns around it; a
- * dropped column outside that run becomes an empty cell. A title the header
- * does not show is taken from `allColumns` and placed on the first dropped
- * column, so the row keeps its label.
- *
- * @param {Column[]} columns the columns the header shows, in order
+ * @param {Column[]} columns
  * @param {{
  *   isKept: SectionColumnPolicy,
  *   titleField: string,

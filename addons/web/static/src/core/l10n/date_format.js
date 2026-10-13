@@ -152,10 +152,6 @@ function hasTime(value) {
 }
 
 /**
- * The time zone Intl renders `value` in, and the instant it renders: a
- * ZonedDateTime keeps its own zone; a plain value is rendered as the wall time
- * it spells, which UTC reproduces exactly.
- *
  * @param {DateValue} value
  * @returns {{ date: Date, timeZone: string }}
  */
@@ -187,8 +183,6 @@ function formatParts(value, options, formatOptions = {}) {
 }
 
 /**
- * The localized form of `value` for Intl `options`, in the value's own zone.
- *
  * @param {DateValue} value
  * @param {Intl.DateTimeFormatOptions} options
  * @param {FormatOptions} [formatOptions]
@@ -230,9 +224,6 @@ function formatNumber(number, width, numberingSystem) {
 }
 
 /**
- * The format string as its tokens: runs of one letter, quoted literals and
- * other characters, as luxon splits it.
- *
  * @param {string} format
  * @returns {{ literal: boolean, value: string }[]}
  */
@@ -417,10 +408,6 @@ function formatToken(value, token, options) {
 }
 
 /**
- * `value` rendered through a luxon-style token format ("dd/MM/yyyy HH:mm",
- * "cccc d MMMM", "DDD"): the grammar localization.dateFormat and the call
- * sites already speak.
- *
  * @param {DateValue} value
  * @param {string} format
  * @param {FormatOptions} [options]
@@ -458,12 +445,7 @@ function escapeLiteral(text) {
         .join("\\s+");
 }
 
-/**
- * A month, weekday or day period name as luxon compared them: without its
- * dots, a no-break space as a space, lower case.
- *
- * @param {string} name
- */
+/** @param {string} name */
 function normalizeName(name) {
     return name
         .replace(/\./g, "")
@@ -471,12 +453,7 @@ function normalizeName(name) {
         .toLowerCase();
 }
 
-/**
- * An alternation matching any of `names`, as luxon's did: a
- * dot the name had is optional and a space is a space or a no-break space.
- *
- * @param {string[]} names
- */
+/** @param {string[]} names */
 function namesPattern(names) {
     return `(${names
         .map((name) =>
@@ -564,8 +541,6 @@ function localNames(kind, style, standalone, locale) {
 }
 
 /**
- * The localized month names, January first.
- *
  * @param {"long" | "short" | "narrow"} [style]
  * @param {{ locale?: string, standalone?: boolean }} [options]
  * @returns {string[]}
@@ -582,8 +557,6 @@ export function monthNames(style = "long", options = {}) {
 }
 
 /**
- * The localized weekday names, Monday first (ISO order, as Temporal's dayOfWeek).
- *
  * @param {"long" | "short" | "narrow"} [style]
  * @param {{ locale?: string, standalone?: boolean }} [options]
  * @returns {string[]}
@@ -600,8 +573,6 @@ export function weekdayNames(style = "long", options = {}) {
 }
 
 /**
- * The localized AM and PM markers.
- *
  * @param {{ locale?: string }} [options]
  * @returns {string[]}
  */
@@ -652,11 +623,6 @@ const NUMERIC_PATTERNS = {
 };
 
 /**
- * The calendar fields `text` spells in a luxon-style token `format`, or null
- * when it does not match: the whole text, each literal as written (runs of
- * white space match any white space), month and weekday names in `locale`
- * without regard to case.
- *
  * @param {string} text
  * @param {string} format
  * @param {{ locale?: string, twoDigitCutoffYear?: number }} [options]

@@ -21,7 +21,7 @@ export class PurchaseStockProductCatalogSearchModel extends ProductCatalogSearch
         });
     }
 
-    /** @override to add suggest context and filters if suggest is ON on first load. */
+    /** @override */
     async load(config) {
         Object.assign(this.suggest, {
             numberOfDays:
@@ -43,13 +43,13 @@ export class PurchaseStockProductCatalogSearchModel extends ProductCatalogSearch
         }
     }
 
-    /** @override inside of _notify (but only when searchpanel exists) to add ctx for */
+    /** @override */
     async _fetchSections() {
         this._editSuggestContext();
         await super._fetchSections(...arguments);
     }
 
-    /** @override to recompute total price and add category_id to domain when selecting a category */
+    /** @override */
     toggleCategoryValue() {
         super.toggleCategoryValue(...arguments);
         if (this.suggest.suggestToggle.isOn) {

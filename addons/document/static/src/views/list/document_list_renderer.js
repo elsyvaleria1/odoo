@@ -115,9 +115,7 @@ export class DocumentsListRenderer extends DocumentsRendererMixin(
         this.props.list.selection.forEach((el) => el.toggleSelection(false));
     }
 
-    /**
-     * @override to
-     */
+    /** @override */
     findFocusFutureCell(cell, cellIsInGroupRow, direction) {
         const futureCell = super.findFocusFutureCell(cell, cellIsInGroupRow, direction);
         if (futureCell) {

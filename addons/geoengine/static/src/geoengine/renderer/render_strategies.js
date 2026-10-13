@@ -313,10 +313,6 @@ export class TileStrategy extends RenderStrategy {
     }
 
     /**
-     * Records stacked on the fine grid sit a few pixels apart: a labelled
-     * bubble each would smear into one blot, so they are small marks that
-     * grow with their count, which their click lists.
-     *
      * @param {number} count
      * @returns {ol.style.Style}
      */
@@ -430,7 +426,7 @@ export class ViewportHeatStrategy extends RenderStrategy {
      * @param {Object} config
      * @param {Array} domain
      * @param {ol.source.Vector} source
-     * @returns {Promise<(() => void)|null>} what applies the cells, or null
+     * @returns {Promise<(() => void)|null>}
      */
     async loadCells(config, domain, source) {
         const map = this.renderer.map;

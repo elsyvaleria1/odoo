@@ -18,12 +18,6 @@ export const proofService = {
     start(env, { dialog }) {
         return {
             /**
-             * Ask the user for a proof of identity answering the challenge in
-             * ``params``, then hand it to ``submit``. A refusal the server raises
-             * as a UserError is shown in the dialog and the user tries again;
-             * resolves with what ``submit`` returned, or null when the user
-             * cancels.
-             *
              * @param {{ params: Object, submit: (proof: Proof) => Promise<any> }} request
              * @returns {Promise<any>}
              */

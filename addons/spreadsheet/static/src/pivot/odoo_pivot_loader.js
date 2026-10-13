@@ -11,7 +11,7 @@ import { getFields, LoadableDataSource } from "@spreadsheet/data_sources/data_so
 export class OdooPivotLoader extends LoadableDataSource {
     /**
      * @param {OdooDataProvider} odooDataProvider
-     * @param {Function} load Function to fetch data
+     * @param {Function} load
      */
     constructor(odooDataProvider, load) {
         super({ odooDataProvider });
@@ -27,15 +27,15 @@ export class OdooPivotLoader extends LoadableDataSource {
     }
 
     /**
-     * @param {string} model Technical name of the model
-     * @returns {Promise<OdooFields>} Fields of the model
+     * @param {string} model
+     * @returns {Promise<OdooFields>}
      */
     async getFields(model) {
         return getFields(this.odooDataProvider.fieldService, model);
     }
     /**
-     * @param {string} model Technical name of the model
-     * @returns {Promise<string>} Display name of the model
+     * @param {string} model
+     * @returns {Promise<string>}
      */
     async getModelLabel(model) {
         const result = await this.odooDataProvider.orm

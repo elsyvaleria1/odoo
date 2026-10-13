@@ -96,23 +96,16 @@ export function useAppointmentRendererHook(component, getFcElements) {
 }
 
 /**
- * The slots are an event source of their own: the calendar hook refetches only
- * when a source changes identity, and the model replaces `data.slots` on every
- * slot change. Shared by the common and year calendar renderers.
- *
- * @param {Component} component the patched renderer instance
- * @param {unknown[]} superSources the result of the un-patched eventSources
+ * @param {Component} component
+ * @param {unknown[]} superSources
  */
 export function eventSourcesWithSlots(component, superSources) {
     return [...superSources, component.props.model.data.slots];
 }
 
 /**
- * Converts an appointment.slot record into an editable fullcalendar event.
- * Shared by the common and year calendar renderers.
- *
- * @param {Component} component the patched renderer instance
- * @param {Object} record the slot record to convert
+ * @param {Component} component
+ * @param {Object} record
  */
 export function convertSlotToEvent(component, record) {
     const result = {
@@ -125,13 +118,8 @@ export function convertSlotToEvent(component, record) {
 }
 
 /**
- * Appends the slot events to the records-derived fullcalendar events, and
- * (re)computes maxResId used to build their ids. Shared by the common and
- * year calendar renderers, each of which must still call its own
- * `super.mapRecordsToEvents(...)` (the `super` binding cannot cross files).
- *
- * @param {Component} component the patched renderer instance
- * @param {Array} superEvents the result of the un-patched mapRecordsToEvents
+ * @param {Component} component
+ * @param {Array} superEvents
  */
 export function mapRecordsAndSlotsToEvents(component, superEvents) {
     component.maxResId = Math.max(
@@ -149,12 +137,8 @@ export function mapRecordsAndSlotsToEvents(component, superEvents) {
 }
 
 /**
- * Carries the slot id over to the record built from a fullcalendar event.
- * Shared by the common and year calendar renderers, each of which must
- * still call its own `super.fcEventToRecord(...)`.
- *
- * @param {Object} event the fullcalendar event
- * @param {Object} superRecord the result of the un-patched fcEventToRecord
+ * @param {Object} event
+ * @param {Object} superRecord
  */
 export function fcEventToRecordWithSlot(event, superRecord) {
     return {

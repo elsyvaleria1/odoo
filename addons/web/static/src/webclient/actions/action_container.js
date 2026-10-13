@@ -19,14 +19,8 @@ function elementUnderPointer() {
 }
 
 /**
- * Shows the progress cursor on one element: the one the pointer rests on,
- * which at the start of a navigation is what was just clicked.
- *
- * It is not set on the busy region. A cursor there is inherited by every
- * element in it, which is a restyle of the whole view, and it still loses to
- * the cursor a row or a button sets for itself.
  * @param {Element | undefined} target
- * @returns {() => void} gives the element its own cursor back
+ * @returns {() => void}
  */
 export function showProgressCursor(target) {
     if (
@@ -112,12 +106,7 @@ export class ActionContainer extends Component {
         this.givePointerBack = () => {};
     }
 
-    /**
-     * The answer to a click that waits for nothing to load: from the moment a
-     * navigation starts until it is over, the region says it is busy and the
-     * pointer shows progress. Neither restyles the view.
-     * @returns {() => void} ends this hold; the cue ends with the last one
-     */
+    /** @returns {() => void} */
     holdBusy() {
         if (this.busyHolds++ === 0) {
             this.rootRef.el?.setAttribute("aria-busy", "true");

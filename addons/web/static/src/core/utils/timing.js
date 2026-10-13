@@ -96,7 +96,6 @@ function debounceEdges(options) {
 }
 
 /**
- * Pending calls resolve to undefined when cancelled or when trailing execution is disabled.
  * @template {(...args: any[]) => any} T
  * @param {T} func
  * @param {number | "animationFrame" | (() => number)} [delay]
@@ -201,7 +200,6 @@ export function setRecurringAnimationFrame(callback) {
 }
 
 /**
- * Calls resolve to the callback result, or undefined when superseded or cancelled.
  * @template {(...args: any[]) => any} T
  * @param {T} func
  * @returns {((this: ThisParameterType<T>, ...args: Parameters<T>) => Promise<Awaited<ReturnType<T>> | undefined>) & { cancel: () => void }}

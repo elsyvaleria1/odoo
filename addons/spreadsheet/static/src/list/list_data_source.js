@@ -16,12 +16,10 @@ const { DEFAULT_LOCALE } = spreadsheet.constants;
 
 /**
  * @typedef {import("@spreadsheet").OdooFields} OdooFields
- *
  * @typedef {Object} ListMetaData
  * @property {Array<string>} columns
  * @property {string} resModel
  * @property {OdooFields} fields
- *
  * @typedef {Object} ListSearchParams
  * @property {Array<string>} orderBy
  * @property {Object} domain
@@ -30,7 +28,7 @@ const { DEFAULT_LOCALE } = spreadsheet.constants;
 
 export class ListDataSource extends OdooViewsDataSource {
     /**
-     * @param {Object} services Services (see DataSource)
+     * @param {Object} services
      * @param {Object} params
      * @param {ListMetaData} params.metaData
      * @param {ListSearchParams} params.searchParams
@@ -47,10 +45,7 @@ export class ListDataSource extends OdooViewsDataSource {
         this.fieldPathsToFieldMap = {};
     }
 
-    /**
-     * Increase the max position of the list
-     * @param {number} position
-     */
+    /** @param {number} position */
     increaseMaxPosition(position) {
         this.maxPosition = Math.max(this.maxPosition, position);
     }
@@ -333,11 +328,8 @@ export class ListDataSource extends OdooViewsDataSource {
     }
 
     /**
-     * A property is not typed by the `properties` field carrying it but by its
-     * own definition, so it is parsed against that instead.
-     *
-     * @param {object} property the property definition, from `loadPath`
-     * @param {object} serverValue `{ type, value }` as read from the server
+     * @param {object} property
+     * @param {object} serverValue
      */
     _parsePropertyFieldServerValue(property, { type, value }) {
         if (!value) {

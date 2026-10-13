@@ -17,12 +17,7 @@ export class ActionButton extends Component {
     static template = "voip.ActionButton";
     props = useProps(this.constructor.props);
 
-    /**
-     * Displays the right icon library class depending on the icon defined in
-     * the prop.
-     *
-     * @returns {"fa"|"oi"}
-     */
+    /** @returns {"fa"|"oi"} */
     get iconLib() {
         if (this.props.icon.startsWith("oi-")) {
             return "oi";

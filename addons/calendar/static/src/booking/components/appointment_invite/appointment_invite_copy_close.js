@@ -16,10 +16,7 @@ export class AppointmentInviteCopyClose extends Component {
         this.notification = useService("notification");
         this.action = useService("action");
     }
-    /**
-     * Save the invitation and copy the url in the clipboard
-     * @param ev
-     */
+    /** @param ev */
     async onSaveAndCopy() {
         if (this.props.readonly) {
             return;

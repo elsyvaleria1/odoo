@@ -22,20 +22,7 @@ export class PayslipListRenderer extends ListRenderer {
         this.keyPayrunOptionalFields = `payrun_${this.keyOptionalFields}`;
     }
 
-    /**
-     * @override
-     * Benefits are defined per salary structure, so a benefit column only means
-     * the same thing in every row while the list holds a single structure. With
-     * more than one, drop them rather than line up unrelated figures; with one,
-     * surface the first few instead of leaving every benefit behind the
-     * optional-columns dropdown.
-     *
-     * This overrides processAllColumns and NOT getPropertyFieldColumns, which is
-     * where upstream puts it: that method on ListRenderer
-     * (web/static/src/views/list/list_renderer.js) is a wrapper nobody calls --
-     * list_column_utils.processAllColumns invokes the module function directly,
-     * so an override of it loads and never runs. Odoo task 28332.
-     */
+    /** @override */
     processAllColumns(allColumns, list) {
         const columns = super.processAllColumns(allColumns, list);
         if (list.resModel !== "hr.payslip") {

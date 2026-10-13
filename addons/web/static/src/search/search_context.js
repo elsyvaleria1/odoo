@@ -20,9 +20,6 @@ function isContextDict(value) {
 }
 
 /**
- * A search_default many2one seeds default_<field> only while its default value
- * is still among the values searched on that field.
- *
  * @param {FieldItem} searchItem
  * @param {{ value: any }[]} searchedValues
  * @returns {Record<string, any>|null}
@@ -45,8 +42,7 @@ export function computeDefaultSeed(searchItem, searchedValues) {
 /**
  * @param {ActiveItem} activeItem
  * @param {SearchItems} searchItems
- * @param {{ value: any }[]} [searchedValues] the values deciding the default seed,
- *   when they are no longer the item's own (a facet replaced by an edited domain)
+ * @param {{ value: any }[]} [searchedValues]
  * @returns {Record<string, any>|null}
  */
 export function computeSearchItemContext(

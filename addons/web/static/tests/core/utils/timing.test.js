@@ -794,12 +794,7 @@ describe("useDebounced", () => {
     });
 });
 
-/**
- * Mounts a parent whose child runs `setupChild` and then waits in onWillStart,
- * and returns the parent once the child exists but has not mounted.
- *
- * @param {() => void} setupChild
- */
+/** @param {() => void} setupChild */
 async function mountWithPendingChild(setupChild) {
     class Child extends Component {
         static template = xml`<div class="child"/>`;

@@ -17,17 +17,10 @@ export class HierarchyArchParser extends ViewArchParser {
     /** @type {"element" | "ir"} */
     static consumes = "ir";
 
-    /**
-     * The parent of every node of the tree the last `parse()` walked.
-     * @type {Map<ViewIRNode, ViewIRNode | null>}
-     */
+    /** @type {Map<ViewIRNode, ViewIRNode | null>} */
     parents = new Map();
 
     /**
-     * The `field_id` annotations go on the parser's own copy of the tree;
-     * `xmlDoc` and the `templateDocs` the renderer compiles are that copy
-     * materialised.
-     *
      * @param {ViewIRNode | Element | string} arch
      * @param {Record<string, any>} models
      * @param {string} modelName

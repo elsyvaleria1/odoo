@@ -120,24 +120,22 @@ export class BuilderDateTimePicker extends Component {
         });
     }
 
-    /**
-     * @returns {Temporal.ZonedDateTime | false} the current value of the datetime picker
-     */
+    /** @returns {Temporal.ZonedDateTime | false} */
     getCurrentValueDateTime() {
         return this.domState.value ? fromUnixSeconds(this.domState.value) : false;
     }
 
     /**
-     * @param {String} rawValue - the raw value in seconds
-     * @returns {String} a formatted date string
+     * @param {String} rawValue
+     * @returns {String}
      */
     formatRawValue(rawValue) {
         return rawValue ? this.formatDateTime(fromUnixSeconds(rawValue)) : "";
     }
 
     /**
-     * @param {String} displayValue - representing a date
-     * @returns {String} number of seconds
+     * @param {String} displayValue
+     * @returns {String}
      */
     parseDisplayValue(displayValue) {
         if (displayValue === "" && this.props.acceptEmptyDate) {
@@ -159,9 +157,7 @@ export class BuilderDateTimePicker extends Component {
         return this.defaultValue;
     }
 
-    /**
-     * @returns {String} a formatted date string
-     */
+    /** @returns {String} */
     get displayValue() {
         return this.state.value !== undefined
             ? this.formatRawValue(this.state.value)

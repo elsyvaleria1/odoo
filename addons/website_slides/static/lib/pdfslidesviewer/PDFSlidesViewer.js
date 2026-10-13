@@ -11,10 +11,7 @@ globalThis.PDFSlidesViewer = (function(){
         this.canvas_context = $canvas.getContext('2d');
     }
 
-    /**
-     * Load the PDF document
-     * @param pdfjsLib : the namespace of the "pdfjs-dist" ES module, as import() returned it
-     */
+    /** @param pdfjsLib */
     PDFSlidesViewer.prototype.loadDocument = async function(pdfjsLib) {
         const file_content = await pdfjsLib.getDocument({ url: this.pdf_url }).promise;
         this.pdf = file_content;
@@ -22,10 +19,7 @@ globalThis.PDFSlidesViewer = (function(){
         return file_content;
     };
 
-    /**
-     * Get page info from document, resize canvas accordingly, and render page.
-     * @param page_number : Page number.
-     */
+    /** @param page_number */
     PDFSlidesViewer.prototype.renderPage = function(page_number) {
         var self = this;
         this.pageRendering = true;

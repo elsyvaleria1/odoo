@@ -253,11 +253,6 @@ export function toGeneratorId(unit, offset) {
 }
 
 /**
- * When the current year is in the year window, the month options are real
- * months around today, so the window stretches to the years they reach: in
- * December, "month+1" is January of next year, not of this one. A window that
- * excludes the current year keeps its months inside it.
- *
  * @param {any} referenceMoment
  * @param {{ startYear: number, endYear: number, startMonth: number, endMonth: number }} optionsParams
  * @returns {[number, number]}
@@ -378,11 +373,6 @@ function getCustomPeriodOptions(optionsParams) {
 }
 
 /**
- * The year window follows the months around today, so a stored year id can
- * fall out of it (a December "year+1" in January). A month or quarter then
- * takes its default year, as selecting it today would; a year alone keeps its
- * offset. Neither silently turns the filter into "every record".
- *
  * @param {any} referenceMoment
  * @param {Record<string, any>} searchItem
  * @param {string[]} selectedOptionIds

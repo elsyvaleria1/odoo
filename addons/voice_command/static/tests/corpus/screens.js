@@ -7,16 +7,13 @@ import { parseISO } from "@web/core/l10n/dates";
 
 /**
  * @param {any} term
- * @param {string[]} english its en_US label, as Odoo stores it beside es_MX
+ * @param {string[]} english
  */
 function inEnglish(term, ...english) {
     return { ...term, phrases: [...term.phrases, ...saidInLanguage("en_US", english)] };
 }
 
 /**
- * A menu under a parent section, told apart from a namesake elsewhere
- * ("Facturas" under Clientes and under Proveedores).
- *
  * @param {any} term
  * @param {string} parent
  */
@@ -375,12 +372,7 @@ const TARGETS = [
     "Cantidad",
 ].map((label) => ({ label, risk: 0 }));
 
-/**
- * The English labels as the loader hands them over: with how a Mexican speaker
- * says them.
- *
- * @param {any} view
- */
+/** @param {any} view */
 function asLoaded(view) {
     const said = (/** @type {any} */ term) =>
         term.alternates

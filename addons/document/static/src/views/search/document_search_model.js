@@ -254,9 +254,7 @@ export class DocumentsSearchModel extends SearchModel {
         return result;
     }
 
-    /**
-     * @override Force
-     */
+    /** @override */
     get orderBy() {
         const activeFolderId = this.folderCategory?.activeValueId;
         if (activeFolderId === UserFolder.TRASH) {
@@ -372,14 +370,7 @@ export class DocumentsSearchModel extends SearchModel {
         }
     }
 
-    /**
-     * The first load waits: the folder it opens decides the records' domain.
-     * A later search does not: the folder tree is expanded and never refetched,
-     * and a filter section's values follow the records a moment later, while
-     * the values already checked are in the domain the records are read with.
-     *
-     * @override
-     */
+    /** @override */
     _shouldWaitForData() {
         return !this.searchPanelInfo.loaded;
     }

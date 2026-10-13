@@ -298,9 +298,6 @@ rpc.setCache = function (cache) {
 };
 
 /**
- * Whether the cache holds an answer to this call, keyed as a cached `rpc`
- * without headers keys it. A hint, as `RPCCache.holds` is.
- *
  * @param {string} url
  * @param {any} params
  * @returns {boolean}
@@ -482,7 +479,7 @@ function dedupSettingsFingerprint(settings) {
     return parts.join("&");
 }
 
-/** @param {HeadersInit} [headers] @returns {Headers} */
+/** @param {HeadersInit} [headers] */
 function makeRequestHeaders(headers) {
     const result = new Headers(headers || {});
     result.set("Content-Type", "application/json");
@@ -490,8 +487,6 @@ function makeRequestHeaders(headers) {
 }
 
 /**
- * Copy the mutable option containers, preserving callback and signal identity.
- * Header values are normalized now so later coercion cannot change identity.
  * @param {{[key: string]: any}} settings
  * @returns {{[key: string]: any}}
  */
@@ -515,7 +510,7 @@ function copyRPCSettings(settings) {
     return copy;
 }
 
-/** @param {HeadersInit} [headers] @returns {number | undefined} */
+/** @param {HeadersInit} [headers] */
 function headerCacheScope(headers) {
     if (!headers) {
         return;
@@ -757,7 +752,7 @@ function makeFetchRequest(body, settings) {
     };
 }
 
-/** @param {any} parsed @returns {boolean} */
+/** @param {any} parsed */
 function isValidRpcResponse(parsed) {
     if (!isObject(parsed)) {
         return false;

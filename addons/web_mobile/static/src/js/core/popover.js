@@ -12,10 +12,7 @@ patch(Popover.prototype, {
         );
     },
 
-    /**
-     * Close popover on back-button
-     * @private
-     */
+    /** @private */
     onBackButton() {
         this.props.close();
     },

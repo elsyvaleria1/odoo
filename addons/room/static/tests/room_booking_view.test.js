@@ -22,19 +22,10 @@ function assertDisplayedTime(expectedTime) {
 }
 
 /**
- * Assert that the room status is the expected one (right background color, right "busy" or "free"
- * status (icon), expected remaining time if there is an ongoing booking, and correct number of
- * bookings in the sidebar)
- *
- * @param {Object | false} remainingTime: remaining time of the current booking or false if no booking
- * @param {number} nbBookings: number of bookings in the sidebar
+ * @param {Object | false} remainingTime:
+ * @param {number} nbBookings:
  */
-/**
- * The inline gradient as the browser serializes it: Chrome writes a
- * `#rrggbbaa` colour back as `rgba(...)`.
- *
- * @param {string} color
- */
+/** @param {string} color */
 function gradientOf(color) {
     const probe = document.createElement("div");
     probe.style.backgroundImage = `linear-gradient(${color}, ${color})`;

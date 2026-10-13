@@ -1209,12 +1209,7 @@ function consumerNode(id, position = { x: 0, y: 0 }) {
     };
 }
 
-/**
- * Mounts a FlowEditor the way a consumer does: its graph lives in the
- * consumer's reactive state and is handed down as props.
- *
- * @param {Record<string, any>} [editorProps]
- */
+/** @param {Record<string, any>} [editorProps] */
 async function mountConsumer(editorProps = {}) {
     /** @type {any} */
     let editor = null;

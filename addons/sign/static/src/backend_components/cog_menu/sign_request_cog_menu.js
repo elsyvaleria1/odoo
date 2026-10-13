@@ -7,12 +7,7 @@ import { CogMenuItem } from "@web/search/cog_menu/cog_menu_item";
 
 const cogMenuRegistry = registry.category("cogMenu");
 
-/**
- * 'Request signature' menu
- *
- * This component is used to request a signature and link it to a document.
- * @extends Component
- */
+/** @extends Component */
 export class SignRequestCogMenu extends Component {
     static template = "sign.SignRequestCogMenu";
     static components = { CogMenuItem };

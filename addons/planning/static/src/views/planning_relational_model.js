@@ -5,7 +5,7 @@ import { RelationalModel } from "@web/model/relational_model";
 import { usePlanningModelActions } from "./planning_hooks.js";
 
 export class PlanningRelationalModel extends RelationalModel {
-    /** @override **/
+    /** @override */
     setup() {
         super.setup(...arguments);
         this.getHighlightIds = usePlanningModelActions({
@@ -15,7 +15,7 @@ export class PlanningRelationalModel extends RelationalModel {
         }).getHighlightIds;
     }
 
-    /** @override **/
+    /** @override */
     async load(params = {}) {
         const highlightIds = await this.getHighlightIds();
         if (highlightIds) {

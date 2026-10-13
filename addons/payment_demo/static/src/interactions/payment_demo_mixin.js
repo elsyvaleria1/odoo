@@ -4,10 +4,8 @@ import { _t } from "@web/core/translation";
 
 export default {
     /**
-     * Simulate a feedback from a payment provider and redirect the customer to the status page.
-     *
      * @private
-     * @param {object} processingValues - The processing values of the transaction.
+     * @param {object} processingValues
      * @return {void}
      */
     async processDemoPayment(processingValues) {

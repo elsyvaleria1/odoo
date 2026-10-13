@@ -10,10 +10,6 @@ const HASHED_FIELDS = [
 ];
 
 /**
- * Compare two strings by Unicode code point, as Python sorts dict keys.
- * JavaScript's default sort compares UTF-16 code units, which differs for
- * characters outside the Basic Multilingual Plane.
- *
  * @param {string} a
  * @param {string} b
  * @returns {number}
@@ -32,11 +28,6 @@ function compareCodePoints(a, b) {
 }
 
 /**
- * A number as Python's json.dumps writes the value it parsed from the number
- * JSON.stringify sent: integral values arrive as int ("5", never "5.0"), the
- * rest as float, written with repr (shortest round-trip digits, exponent below
- * 1e-4 as "1e-05").
- *
  * @param {number} value
  * @returns {string}
  */
@@ -55,11 +46,6 @@ function pythonNumber(value) {
 }
 
 /**
- * Serialize ``value`` as the server's canonical JSON: sorted keys, compact
- * separators, non-ASCII written as is. String escaping is JSON.stringify's,
- * which matches Python's ensure_ascii=False (quote, backslash, \b \f \n \r \t,
- * other control characters as lowercase \u00xx).
- *
  * @param {*} value
  * @returns {string}
  */
@@ -86,8 +72,6 @@ export function canonicalJson(value) {
 }
 
 /**
- * The fields of an event that the hash covers, with the server's defaults.
- *
  * @param {Object} event
  * @returns {Object}
  */
@@ -103,8 +87,6 @@ export function hashedFields(event) {
 }
 
 /**
- * Hex SHA-256 of a string encoded as UTF-8.
- *
  * @param {string} text
  * @returns {Promise<string>}
  */
@@ -119,8 +101,6 @@ export async function sha256Hex(text) {
 }
 
 /**
- * The event_hash the server expects for ``event``.
- *
  * @param {Object} event
  * @returns {Promise<string>}
  */

@@ -40,12 +40,6 @@ export class SaveSnippetPlugin extends Plugin {
     }
 
     /**
-     * Execute the `before_save_handlers` on {@link snippetEl},
-     * then execute {@link callback}, and finally execute the
-     * `after_save_handlers` on {@link snippetEl}.
-     * This is used, for example, to stop the interactions before cloning a
-     * snippet, and restarting them after cloning it.
-     *
      * @param {HTMLElement} snippetEl
      * @param {Function} callback
      */

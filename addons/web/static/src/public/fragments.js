@@ -7,8 +7,6 @@ import { morph } from "@web/core/utils/dom/morph";
 /** @typedef {import("@web/public/interaction_service").InteractionService} InteractionService */
 
 /**
- * The payload of web/controllers/utils.py render_fragments.
- *
  * @typedef {Object} FragmentResponse
  * @property {{ key: string, html: string, swap: "morph" | "inner" | "outer" }[]} fragments
  * @property {{ name: string, detail: Record<string, any> }[]} events
@@ -17,17 +15,9 @@ import { morph } from "@web/core/utils/dom/morph";
  */
 
 /**
- * Swaps each fragment into every element of the page carrying its
- * `data-fragment` key, restarting the interactions inside it and refreshing
- * those around it, then dispatching a bubbling `o-fragment-swapped` on it
- * (htmx's `htmx:afterSwap`) for the interactions around it whose own work
- * covers the elements it holds; then dispatches the events on `document` and
- * follows the redirect. A key with no element on this page is skipped: the page does not
- * show that region.
- *
  * @param {FragmentResponse} response
  * @param {{ interactions: InteractionService, root?: ParentNode }} options
- * @returns {Record<string, any>} the response's `data`
+ * @returns {Record<string, any>}
  */
 export function applyFragments(response, { interactions, root = document }) {
     for (const { key, html, swap } of response.fragments) {
@@ -50,15 +40,11 @@ export function applyFragments(response, { interactions, root = document }) {
 }
 
 /**
- * Swaps `html` into `target`: stops the interactions inside it, swaps,
- * starts those of the result, refreshes those around it and dispatches
- * `o-fragment-swapped` on it.
- *
  * @param {HTMLElement} target
- * @param {string} html trusted server markup
+ * @param {string} html
  * @param {"morph" | "inner" | "outer"} swap
  * @param {InteractionService} interactions
- * @returns {HTMLElement} the element now standing where `target` stood
+ * @returns {HTMLElement}
  */
 export function swapFragment(target, html, swap, interactions) {
     interactions.stopInteractions(target);
@@ -71,9 +57,9 @@ export function swapFragment(target, html, swap, interactions) {
 
 /**
  * @param {HTMLElement} target
- * @param {string} html trusted server markup
+ * @param {string} html
  * @param {"morph" | "inner" | "outer"} swap
- * @returns {HTMLElement} the element now standing where `target` stood
+ * @returns {HTMLElement}
  */
 function swapInto(target, html, swap) {
     const template = document.createElement("template");

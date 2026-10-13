@@ -41,8 +41,8 @@ test("a file box inserted from Documents carries its attachment id", async () =>
 });
 
 /**
- * @param {Object} config what the editor's host gives it
- * @returns {Promise<Object>} the props the plugin opens the picker with
+ * @param {Object} config
+ * @returns {Promise<Object>}
  */
 async function pickerPropsUnder(config) {
     const { editor } = await setupEditor("<p>[]</p>", {
@@ -81,11 +81,8 @@ test("an unsaved record has nothing to attach copies to yet", async () => {
 });
 
 /**
- * Opens the picker on three files: one shared by link, one the user may share,
- * one they may not, and pastes all three.
- *
- * @param {Object} props what the picker is opened with
- * @param {"confirm"|"cancel"|null} answer to the sharing question, if asked
+ * @param {Object} props
+ * @param {"confirm"|"cancel"|null} answer
  */
 async function pasteThreeLinks(props, answer) {
     const serverData = getDocumentsTestServerModelsData([

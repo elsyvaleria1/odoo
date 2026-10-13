@@ -13,11 +13,7 @@ const { parseDimension, isDateOrDatetimeField, sanitizeSheetName, pivotTimeAdapt
 
 const { SidePanelStore } = stores;
 
-/**
- * Asserts that the given result is successful, otherwise throws an error.
- *
- * @param {import("@odoo/o-spreadsheet").DispatchResult} result
- */
+/** @param {import("@odoo/o-spreadsheet").DispatchResult} result */
 function ensureSuccess(result) {
     if (!result.isSuccessful) {
         throw new Error(

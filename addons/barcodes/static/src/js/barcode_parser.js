@@ -19,12 +19,6 @@ const MAX_BARCODE_LENGTH = 256;
 const compiledPatterns = new Map();
 
 /**
- * The regex a rule pattern runs as, mirroring `barcode.rule.rule_regex`: the
- * numeric group becomes a named group capturing that many ASCII digits, so the
- * regex itself locates the number. `String.match` is unanchored where
- * Python's `re.match` is not, so the whole pattern is wrapped once -- splitting
- * on `|` would cut through alternation nested inside a group.
- *
  * @param {string} pattern
  * @returns {{ regex: RegExp, wholeSize: number | null }}
  */
@@ -80,13 +74,8 @@ export class BarcodeParser {
     }
 
     /**
-     * This algorithm is identical for all fixed length numeric GS1 data structures.
-     *
-     * It is also valid for EAN-8, EAN-12 (UPC-A), EAN-13 check digit after sanitizing.
-     * https://www.gs1.org/sites/default/files/docs/barcodes/GS1_General_Specifications.pdf
-     *
      * @param {String} numericBarcode
-     * @returns {number} Check Digit
+     * @returns {number}
      */
     getBarcodeCheckDigit(numericBarcode) {
         let oddsum = 0,
@@ -106,15 +95,8 @@ export class BarcodeParser {
     }
 
     /**
-     * Checks if the barcode string is encoded with the provided encoding.
-     *
-     * Mirrors `odoo.libs.barcode.is_barcode_encoding_valid`, including its reading
-     * of a leading zero on a 13-digit code as "this is really a UPC-A" -- the
-     * server and the client have to agree on what an EAN-13 is, or the same
-     * scan resolves to different products on either side.
-     *
      * @param {String} barcode
-     * @param {String} encoding could be 'any' (no encoding rules), 'ean8', 'upca' or 'ean13'
+     * @param {String} encoding
      * @returns {boolean}
      */
     isBarcodeEncodingValid(barcode, encoding) {
@@ -135,8 +117,6 @@ export class BarcodeParser {
     }
 
     /**
-     * Sanitizes a EAN-13 prefix by padding it with chars zero.
-     *
      * @param {String} ean
      * @returns {String}
      */
@@ -147,8 +127,6 @@ export class BarcodeParser {
     }
 
     /**
-     * Sanitizes a UPC-A prefix by padding it with chars zero.
-     *
      * @param {String} upc
      * @returns {String}
      */
@@ -157,14 +135,9 @@ export class BarcodeParser {
     }
 
     /**
-     * Checks if barcode matches the pattern, and retrieves the optional
-     * numerical content encoded in it.
-     *
      * @param {String} barcode
      * @param {String} pattern
-     * @returns {Object} - value: the numerical value encoded in the barcode (0 if none)
-     *                   - base_code: the barcode with the numerical content zeroed out
-     *                   - match: boolean
+     * @returns {Object}
      */
     matchPattern(barcode, pattern) {
         const match = {
@@ -195,15 +168,8 @@ export class BarcodeParser {
     }
 
     /**
-     * Attempts to interpret a barcode (string encoding a barcode Code-128)
-     *
      * @param {string} barcode
-     * @returns {Object|Object[]} for an EPC URI, the list of data objects it
-     *      decodes to; otherwise a single object containing:
-     *      - code: the barcode
-     *      - type: the type of the barcode (e.g. alias, unit product, weighted product...)
-     *      - value: if the barcode encodes a numerical value, it will be put there
-     *      - base_code: the barcode with all the encoding parts set to zero; the one put on the product in the backend
+     * @returns {Object|Object[]}
      */
     parseBarcode(barcode) {
         if (barcode.startsWith("urn:")) {
@@ -298,13 +264,6 @@ export class BarcodeParser {
     }
 
     /**
-     * Parse an URI into a list of objects with either the product and its
-     * lot/serial number, either the package.
-     *
-     * Every branch returns a list -- callers rely on that shape. A URI this
-     * method cannot decode is a failed parse, reported as an empty list: the
-     * argument is scanned input, so a malformed one is expected traffic.
-     *
      * @param {String} barcode
      * @returns {Object[]}
      */

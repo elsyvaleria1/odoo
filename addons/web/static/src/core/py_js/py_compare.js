@@ -140,13 +140,6 @@ function coversSet(subset, superset) {
 }
 
 /**
- * CPython's ordering: numbers (bool included) against numbers, str against str,
- * a list or a tuple against its own kind, a set against a set, a temporal value
- * against its own kind; any other pair raises TypeError. One pair stays lax:
- * a bool against a str, because the client hands an unset date, char or
- * selection field to an expression as False, and views compare such fields
- * against date strings (`date_deadline < current_date`); False orders first.
- *
  * @param {any} left
  * @param {any} right
  * @returns {boolean}
@@ -284,8 +277,6 @@ export function assertHashable(key, role) {
 }
 
 /**
- * The property a hashable key reads on a dict: bool is int, so True reads 1.
- *
  * @param {any} key
  * @returns {any}
  */
@@ -295,13 +286,6 @@ export function dictLookupKey(key) {
 }
 
 /**
- * CPython's `in`: a str right operand wants a str left one, a container
- * compares or hashes, anything else raises TypeError. False (and a field the
- * record did not load, undefined) stays lax on either side of a str and on the
- * right of any value: the client hands an unset char or selection field to an
- * expression as False, and views test such fields against a literal
- * (`state in 'draft'`, `'UZ' in fiscal_country_codes`).
- *
  * @param {any} left
  * @param {any} right
  * @returns {boolean}

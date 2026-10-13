@@ -4,9 +4,7 @@ import { _t } from "@web/core/translation";
 import { user } from "@web/core/user";
 import { useService } from "@web/core/utils/hooks";
 
-/**
- * @returns {Function} async click handler
- */
+/** @returns {Function} */
 export function onEmployeeSubRedirect() {
     const actionService = useService("action");
     const orm = useService("orm");

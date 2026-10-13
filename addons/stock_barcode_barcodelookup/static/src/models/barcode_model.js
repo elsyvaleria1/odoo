@@ -5,12 +5,7 @@ import { _t } from "@web/core/translation";
 import { patch } from "@web/core/utils/patch";
 
 patch(BarcodeModel.prototype, {
-    /**
-     * The purpose of this extension is to allow the user to create the product for the barcode data
-     * if no product found based on barcode lookup!
-     *
-     * @override
-     */
+    /** @override */
     async noProductToast(barcodeData) {
         const canManageBarcodelookup = await this.groups.group_user_admin;
         if (

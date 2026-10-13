@@ -12,9 +12,6 @@ const log = makeLogger("mail.full_composer");
 
 /** @returns {{ bus: EventBus, isOpen: boolean, open: () => Promise<void>, saveContent: () => void, }} */
 /**
- * Gives every recipient without a partner one, created or found by the server
- * from its email, so the full composer can address them by id.
- *
  * @param {import("models").Store} store
  * @param {import("models").Thread} thread
  * @param {import("@mail/core/common/thread_model").SuggestedRecipient[]} recipients

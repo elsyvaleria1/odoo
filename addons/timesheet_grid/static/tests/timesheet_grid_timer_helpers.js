@@ -8,12 +8,7 @@ export const timerHeaderSelectors = {
     discard: ".o_discard_timer_button",
 };
 
-/**
- * Click on Start/stop/discard button
- *
- * @param {"start" | "stop" | "discard"} action
- *
- **/
+/** @param {"start" | "stop" | "discard"} action */
 export async function clickTimerButton(action) {
     const selector = `${timerHeaderSelectors.header} ${timerHeaderSelectors[action]}`;
     await click(selector);

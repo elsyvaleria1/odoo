@@ -6,7 +6,6 @@ import { SELECTORS } from "./web_gantt_test_helpers.js";
 
 /**
  * @typedef {import("@odoo/hoot-dom").Target} Target
- *
  * @typedef {import("@web_gantt/gantt_renderer_core").ConnectorId} ConnectorId
  * @typedef {import("@web_gantt/gantt_renderer").GanttRenderer} GanttRenderer
  * @typedef {import("@web_gantt/gantt_renderer_core").PillId} PillId

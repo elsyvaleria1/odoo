@@ -35,9 +35,8 @@ export class SmsWidget extends EmojisTextField {
     }
 
     /**
-     * Count the number of SMS of the content
      * @private
-     * @returns {integer} Number of SMS
+     * @returns {integer}
      */
     _countSMS(nbrChar, encoding) {
         if (nbrChar === 0) {
@@ -56,10 +55,9 @@ export class SmsWidget extends EmojisTextField {
     }
 
     /**
-     * Extract the encoding depending on the characters in the content
      * @private
-     * @param {String} content Content of the SMS
-     * @returns {String} Encoding of the content (GSM7 or UNICODE)
+     * @param {String} content
+     * @returns {String}
      */
     _extractEncoding(content) {
         if (
@@ -75,15 +73,8 @@ export class SmsWidget extends EmojisTextField {
     }
 
     /**
-     * Implement if more characters are going to be sent then those appearing in
-     * value, if that value is processed before being sent.
-     * E.g., links are converted to trackers in mass_mailing_sms.
-     *
-     * Note: goes with an explanation in nbrCharExplanation
-     *
-     * @param {String} value content to be parsed for counting extra characters
-     * @return string length-corrected value placeholder for the post-processed
-     * state
+     * @param {String} value
+     * @return
      */
     _getValueForSmsCounts(value) {
         return value;

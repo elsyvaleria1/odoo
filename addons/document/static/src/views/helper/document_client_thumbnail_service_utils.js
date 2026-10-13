@@ -12,10 +12,7 @@ export async function getPdfThumbnail(record, width, height) {
     );
 }
 
-/**
- * @return {Promise<{thumbnail: string|false}>} false when the image has no
- *      intrinsic size (an SVG without one): there is nothing to scale
- */
+/** @return {Promise<{thumbnail: string|false}>} */
 export async function getImageThumbnail(img, width, height) {
     if (!img.width || !img.height) {
         return { thumbnail: false };

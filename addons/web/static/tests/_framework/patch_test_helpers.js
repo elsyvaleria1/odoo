@@ -16,8 +16,6 @@ export function patchWithCleanup(obj, patchValue) {
 }
 
 /**
- * Changes the defaults a component's props schema declares, for the test.
- *
  * @param {{ props: Record<string, any> }} ComponentClass
  * @param {Record<string, any>} defaults
  */

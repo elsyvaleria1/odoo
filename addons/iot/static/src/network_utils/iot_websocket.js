@@ -26,12 +26,11 @@ export class IotWebsocket {
     }
 
     /**
-     * Send a message to the IoT Box
-     * @param iotBoxIdentifier Identifier of the IoT Box
-     * @param message Data to send to the device
-     * @param messageId Unique identifier for the message (optional)
-     * @param messageType Type of message to send (optional)
-     * @returns {Promise<*>} The message ID
+     * @param iotBoxIdentifier
+     * @param message
+     * @param messageId
+     * @param messageType
+     * @returns {Promise<*>}
      */
     async sendMessage(
         iotBoxIdentifier,
@@ -55,14 +54,12 @@ export class IotWebsocket {
     }
 
     /**
-     * Add a listener for events/messages coming from the IoT Box.
-     * This method allows defining callbacks for success and failure cases.
-     * @param iotBoxIdentifier Identifier of the IoT Box
-     * @param deviceIdentifier Identifier of the device connected to the IoT Box
-     * @param onSuccess Callback to run when a message is received (can return ``message``, ``deviceIdentifier``, and ``messageId``)
-     * @param onFailure Callback to run when the request fails (can return ``deviceIdentifier`` and ``messageId``)
-     * @param messageType The type of message to listen for (optional)
-     * @param sessionId The session ID to listen for (optional)
+     * @param iotBoxIdentifier
+     * @param deviceIdentifier
+     * @param onSuccess
+     * @param onFailure
+     * @param messageType
+     * @param sessionId
      */
     onMessage(
         iotBoxIdentifier,

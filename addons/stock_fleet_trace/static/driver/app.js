@@ -186,11 +186,9 @@ function round7(value) {
 let chainLock = Promise.resolve();
 
 /**
- * Capture an immutable event, chained to the trip's previous one, and queue it.
- *
- * @param {string} eventType deliver, partial, not_delivered, scan or incident
- * @param {number|false} pickingId the stop it concerns
- * @param {Object} payload what the server applier reads
+ * @param {string} eventType
+ * @param {number|false} pickingId
+ * @param {Object} payload
  */
 function captureEvent(eventType, pickingId, payload) {
     const tripId = state.pkg.trip.id;

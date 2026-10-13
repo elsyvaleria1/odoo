@@ -13,8 +13,7 @@ import {
 import { registry } from "@web/core/registry";
 
 /**
- * @typedef {Temporal.ZonedDateTime | Temporal.PlainDate} DateTime a date for a
- *  date field, a datetime for a datetime field
+ * @typedef {Temporal.ZonedDateTime | Temporal.PlainDate} DateTime
  * @typedef {{ name: string, type: "date" | "datetime" }} TemporalField
  * @typedef {{
  *     startOf: (dt: DateTime) => DateTime,

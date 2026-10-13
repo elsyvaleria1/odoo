@@ -63,11 +63,7 @@ export class OdooPivotModel extends PivotModel {
         this.getters = services.getters;
     }
 
-    /**
-     * Update the parts of the pivot measures that do not impact data fetching
-     * (do not update fieldName or aggregate).
-     * @param {PivotMeasure[]} measures
-     */
+    /** @param {PivotMeasure[]} measures */
     updateMeasures(measures) {
         for (const measure of this.definition.measures) {
             const updatedMeasure = measures.find((m) => m.id === measure.id);
@@ -127,7 +123,6 @@ export class OdooPivotModel extends PivotModel {
     }
 
     /**
-     * Get the value of the given domain for the given measure
      * @param {PivotMeasure} measure
      * @param {PivotDomain} domain
      */
@@ -147,13 +142,8 @@ export class OdooPivotModel extends PivotModel {
     }
 
     /**
-     * Get the value of a field
-     *
-     * @example
-     * getGroupByCellValue("stage_id", 42) // "Won"
-     *
-     * @param {string} groupFieldString Name of the field
-     * @param {string | number | boolean} groupValueString Value of the group by
+     * @param {string} groupFieldString
+     * @param {string | number | boolean} groupValueString
      * @returns {string | number | boolean}
      */
     getGroupByCellValue(groupFieldString, groupValueString) {
@@ -183,15 +173,7 @@ export class OdooPivotModel extends PivotModel {
     }
 
     /**
-     * Get the value of the last group by of the function arguments
-     * e.g. in `PIVOT.HEADER(1, "stage_id", "42", "status", "won")`
-     *      the last group value is "won".
-     *
-     * It can also handle positional arguments.
-     * e.g. in `PIVOT.HEADER(1, "#stage_id", 1, "#user_id", 1)`
-     *      the last group value is the id of the first user of the first stage.
-     *
-     * @param {PivotDomain} domain PIVOT.HEADER arguments
+     * @param {PivotDomain} domain
      * @returns {string | boolean | number}
      */
     getLastPivotGroupValue(domain) {
@@ -213,10 +195,7 @@ export class OdooPivotModel extends PivotModel {
         return lastNode.value;
     }
 
-    /**
-     * Get the Odoo domain corresponding to the given domain
-     * @param {PivotDomain} domain
-     */
+    /** @param {PivotDomain} domain */
     getPivotCellDomain(domain) {
         if (domain.some((node) => node.value === NO_RECORD_AT_THIS_POSITION)) {
             return undefined;
@@ -277,7 +256,6 @@ export class OdooPivotModel extends PivotModel {
     }
 
     /**
-     * Build the table structure
      * @param {"collapsed" | "expanded"} mode
      * @returns {SpreadsheetPivotTable}
      */
@@ -435,13 +413,10 @@ export class OdooPivotModel extends PivotModel {
     }
 
     /**
-     * Get the value of a field-value for a positional group by
-     *
-     * @param {string} dimensionWithGranularity e.g. create_date:month
-     * @param {unknown} groupValueString Value of the group by
-     * @param {(number | boolean | string)[]} rows Values for the previous row group bys
-     * @param {(number | boolean | string)[]} cols Values for the previous col group bys
-     *
+     * @param {string} dimensionWithGranularity
+     * @param {unknown} groupValueString
+     * @param {(number | boolean | string)[]} rows
+     * @param {(number | boolean | string)[]} cols
      * @private
      * @returns {number | boolean | string}
      */
@@ -473,10 +448,7 @@ export class OdooPivotModel extends PivotModel {
     }
 
     /**
-     * Transform the given domain in the structure used in this class
-     *
-     * @param {PivotDomain} domain Domain
-     *
+     * @param {PivotDomain} domain
      * @private
      */
     _getColsRowsValuesFromDomain(domain) {
@@ -513,10 +485,7 @@ export class OdooPivotModel extends PivotModel {
         return { rows, cols };
     }
 
-    /**
-     * Get the row structure
-     * @returns {PivotTableRow[]}
-     */
+    /** @returns {PivotTableRow[]} */
     _getSpreadsheetRows(tree) {
         /**@type {PivotTableRow[]}*/
         const rows = [];
@@ -538,10 +507,7 @@ export class OdooPivotModel extends PivotModel {
         return rows;
     }
 
-    /**
-     * Get the col structure
-     * @returns {PivotTableColumn[][]}
-     */
+    /** @returns {PivotTableColumn[][]} */
     _getSpreadsheetCols() {
         const colGroupBys = this.metaData.fullColGroupBys;
         const height = colGroupBys.length;
@@ -640,9 +606,7 @@ export class OdooPivotModel extends PivotModel {
             .map(this._getAggregateSpec, this);
     }
 
-    /**
-     * @override to add the order by clause to the read_group kwargs
-     */
+    /** @override */
     async _getGroupsSubdivision(params, groupInfo) {
         const customFields = this.definition.customFields || {};
 
@@ -908,11 +872,7 @@ export class OdooPivotModel extends PivotModel {
         return { ...groupInfo, subGroups: sortedSubGroups };
     }
 
-    /**
-     * Override to support multiple aggregators for a same field
-     *
-     * @override
-     */
+    /** @override */
     _getMeasurements(group) {
         return this.getDefinition()
             .measures.filter((measure) => !measure.computedBy)
@@ -930,11 +890,7 @@ export class OdooPivotModel extends PivotModel {
             }, {});
     }
 
-    /**
-     * Override to support multiple aggregators for a same field
-     *
-     * @override
-     */
+    /** @override */
     _getCellValue(groupId, measureName, config) {
         const measure = this.getDefinition().measures.find(
             (m) => m.fieldName === measureName,

@@ -30,10 +30,8 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Hides paypal button container if the expanded inline form is another provider.
-     *
      * @private
-     * @param {HTMLInputElement} radio - The radio button linked to the payment option.
+     * @param {HTMLInputElement} radio
      * @return {void}
      */
     async _expandInlineForm(radio) {
@@ -49,25 +47,13 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Prepare the inline form of Paypal for direct payment.
-     *
-     * The PayPal SDK creates payment buttons based on the client_id and the currency of the order.
-     *
-     * Two payment buttons are created for each button container: one enabled and one disabled. The
-     * enabled button is shown when the user is allowed to click on it, and the disabled button is
-     * shown otherwise. This trick is necessary as the PayPal SDK does not provide a way to disable
-     * the button after it has been created.
-     *
-     * The created buttons are saved and reused when switching between different payment methods to
-     * avoid recreating the buttons.
-     *
-     * @override method from @payment/js/payment_form
+     * @override
      * @private
-     * @param {number} providerId - The id of the selected payment option's provider.
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The online payment flow of the selected payment option.
+     * @param {number} providerId
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _prepareInlineForm(providerId, providerCode, paymentOptionId) {
@@ -174,11 +160,8 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Load the JS from the PayPal SDK URL and set an identifier dedicated to Odoo, for PayPal to be
-     * able to recognize which transactions are originating from Odoo.
-     *
      * @private
-     * @param {string} paypalSDKURL - The SDK URL that needs to be loaded on the page.
+     * @param {string} paypalSDKURL
      * @return {void}
      */
     async _paypalLoadSDK(paypalSDKURL) {
@@ -190,8 +173,6 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Handle the click event of the component and initiate the payment.
-     *
      * @private
      * @return {void}
      */
@@ -215,10 +196,8 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Handle the approval event of the component and complete the payment.
-     *
      * @private
-     * @param {object} data - The data returned by PayPal on approving the order.
+     * @param {object} data
      * @return {void}
      */
     async _paypalOnApprove(data) {
@@ -249,7 +228,6 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Handle the cancel event of the component.
      * @private
      * @return {void}
      */
@@ -258,9 +236,8 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Handle the error event of the component.
      * @private
-     * @param {object} error - The error in the component.
+     * @param {object} error
      * @return {void}
      */
     _paypalOnError(error) {

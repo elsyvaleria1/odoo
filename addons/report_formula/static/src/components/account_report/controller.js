@@ -663,13 +663,9 @@ export class AccountReportController {
     }
 
     /**
-     * Insert the new lines of an unfolded line into the linesOrder array of a sorted report, shifting
-     * the indexes of the lines that come after it.
-     *
-     * @param {Integer} lineIndex Index of the line being unfolded
-     * @param {Array} newLines Lines to be added
-     * @param {Boolean} replaceLine Whether the unfolded line is replaced by the new lines; also used as
-     *                              the splice deleteCount
+     * @param {Integer} lineIndex
+     * @param {Array} newLines
+     * @param {Boolean} replaceLine
      */
     updateLinesOrderIndexes(lineIndex, newLines, replaceLine) {
         let unfoldedLineIndex;
@@ -805,11 +801,7 @@ export class AccountReportController {
         );
     }
 
-    /**
-     * Define which of the provided lines should be visible, depending on what is folded.
-     *
-     * @param {Array} linesToAssign The lines to assign visibility to.
-     */
+    /** @param {Array} linesToAssign */
     setLineVisibility(linesToAssign) {
         const needHidingChildren = new Set();
 
@@ -826,15 +818,7 @@ export class AccountReportController {
         }
     }
 
-    /**
-     * Hide the lines whose columns are all zero and that have no visible child.
-     *
-     * A leaf line stays visible when at least one of its columns is non-zero; a parent line stays
-     * visible when at least one of its children is visible. Traversing in reverse lets each line be
-     * decided after its children, using a set of the parents known to have a visible child.
-     *
-     * @param {Array} lines - The lines for which we want to determine visibility.
-     */
+    /** @param {Array} lines */
     hideZeroLines(lines) {
         const hasVisibleChildren = new Set();
         const reversed_lines = [...lines].reverse();

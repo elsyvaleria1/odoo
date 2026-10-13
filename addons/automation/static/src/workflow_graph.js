@@ -157,19 +157,8 @@ export function outputPortsFor(nodeId, edges, runtimeBacked, editable = true) {
 }
 
 /**
- * Rank every step by its longest path from a step with no predecessor, then
- * lay the ranks out left to right.
- *
- * Sizes come from the payload, so a rank is as wide as its widest step and a
- * column is as tall as the steps stacked in it: a step somebody widened does
- * not end up overlapping its neighbour.
- *
- * `workflow.edge._check_no_cycle` makes the graph acyclic, so the ranking is
- * well defined; a payload that contradicts that still terminates, with the
- * remaining steps placed in one column rather than looping forever.
- *
- * @param {Object[]} nodes payload steps, each optionally carrying width/height
- * @param {Object[]} edges payload edges
+ * @param {Object[]} nodes
+ * @param {Object[]} edges
  * @param {{ width: number, height: number }} defaultSize
  * @returns {Map<number, { x: number, y: number }>}
  */

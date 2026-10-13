@@ -4,9 +4,7 @@ import { patch } from "@web/core/utils/patch";
 
 patch(PaymentForm.prototype, {
     /**
-     * Set the amount to pay from the active tab (installment or full amount) before submitting.
-     *
-     * @override method from payment.payment_form
+     * @override
      * @param {Event} ev
      * @returns {void}
      */
@@ -33,11 +31,9 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Prepare the params for the RPC to the transaction route.
-     *
-     * @override method from payment.payment_form
+     * @override
      * @private
-     * @return {object} The transaction route params.
+     * @return {object}
      */
     _prepareTransactionRouteParams() {
         const transactionRouteParams = super._prepareTransactionRouteParams(

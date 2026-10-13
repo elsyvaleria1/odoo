@@ -123,19 +123,12 @@ export class Model extends SignalStore {
         this.sampleData.set(value);
     }
 
-    /**
-     * True while an already-shown view waits for its root data: a search,
-     * a pager move, a sort or a record switch.
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get isReloading() {
         return this.isReady && this.pendingRootLoads > 0;
     }
 
-    /**
-     * True while a view that painted before its first data waits for it.
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get isLoadingFirstData() {
         return !this.isReady && this.pendingRootLoads > 0;
     }
@@ -314,9 +307,9 @@ export function useModel(ModelClass, params, options = {}) {
 
 /**
  * @param {Promise<unknown>} load
- * @param {number | undefined} deadline a `performance.now()` instant
- * @param {() => void} onDeadline called if the deadline comes before the load settles
- * @returns {Promise<void>} settled as the load is, or resolved at the deadline
+ * @param {number | undefined} deadline
+ * @param {() => void} onDeadline
+ * @returns {Promise<void>}
  */
 function loadOrDeadline(load, deadline, onDeadline) {
     const remaining = (deadline ?? 0) - browser.performance.now();
@@ -347,10 +340,8 @@ function loadOrDeadline(load, deadline, onDeadline) {
  * @param {ModelConstructor<M>} ModelClass
  * @param {Object} params
  * @param {Object} [options]
- * @param {boolean} [options.lazy=false] paint without the data once
- *  `paintDeadline` has passed, instead of waiting for it
- * @param {number} [options.paintDeadline] a `performance.now()` instant; a
- *  lazy model that has its data by then paints once, with it
+ * @param {boolean} [options.lazy=false]
+ * @param {number} [options.paintDeadline]
  * @returns {M}
  */
 export function useModelWithSampleData(ModelClass, params, options = {}) {

@@ -41,11 +41,7 @@ export class StockBarcodeKanbanController extends KanbanController {
         return super.createRecord(...arguments);
     }
 
-    /**
-     * Called when the user scans a barcode.
-     *
-     * @param {String} barcode
-     */
+    /** @param {String} barcode */
     async _onBarcodeScannedHandler(barcode) {
         const kwargs = { barcode, context: this.props.context };
         const res = await this.model.orm.call(

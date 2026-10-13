@@ -40,9 +40,8 @@ export class CurrencyPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Get the currency rate between the two given currencies
-     * @param {string} from Currency from
-     * @param {string} to Currency to
+     * @param {string} from
+     * @param {string} to
      * @param {string | undefined} date
      * @param {number | undefined} companyId
      * @returns {number|string}
@@ -81,7 +80,6 @@ export class CurrencyPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Returns the default display format of a the company currency
      * @param {number} [companyId]
      * @returns {string | undefined}
      */

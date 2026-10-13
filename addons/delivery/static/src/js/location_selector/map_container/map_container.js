@@ -35,21 +35,14 @@ export class MapContainer extends Component {
     }
 
     /**
-     * Get the city and the zip code.
-     *
-     * @param {Number} selectedLocation - The location form which the city and the zip code
-     *                                    should be taken.
-     * @return {Object} The city and the zip code.
+     * @param {Number} selectedLocation
+     * @return {Object}
      */
     getCityAndZipCode(selectedLocation) {
         return `${selectedLocation.zip_code} ${selectedLocation.city}`;
     }
 
-    /**
-     * Find the selected location based on its id.
-     *
-     * @return {Object} The selected location.
-     */
+    /** @return {Object} */
     get selectedLocation() {
         return this.props.locations.find(
             (l) => String(l.id) === this.props.selectedLocationId,

@@ -22,17 +22,12 @@ export const BACK_ONLINE_RECONNECT_DELAY = 5000;
 export function lastNotificationIdKey() {
     return `${session.db}.last_notification_id`;
 }
-/**
- * Claims `channel` for as long as the component lives.
- * @param {string} channel
- */
+/** @param {string} channel */
 export function useBusChannel(channel) {
     onWillDestroy(useService("bus_service").addChannel(channel));
 }
 
 /**
- * Subscribes `callback` to `notificationType` for as long as the component
- * lives.
  * @param {string} notificationType
  * @param {function} callback
  */
@@ -96,11 +91,8 @@ export const busService = {
         }
 
         /**
-         * Handle messages received from the shared worker and fires an
-         * event according to the message type.
-         *
          * @param {MessageEvent} messageEv
-         * @param {{type: WorkerEvent, data: any}[]}  messageEv.data
+         * @param {{type: WorkerEvent, data: any}[]} messageEv.data
          */
         function handleMessage(messageEv) {
             const { type, data } = messageEv.data;
@@ -274,9 +266,6 @@ export const busService = {
         const state = proxy({
             addEventListener: bus.addEventListener.bind(bus),
             /**
-             * Claims `channel` for this tab until the returned function is
-             * called; calling it again does nothing, so one claim can never
-             * release another's.
              * @param {string} channel
              * @returns {() => void}
              */
@@ -314,15 +303,9 @@ export const busService = {
             },
             isActive: false,
             /**
-             * Subscribe to a single notification type. Idempotent: subscribing
-             * the same (type, callback) pair again is a no-op — it must NOT
-             * add a second live listener while overwriting the only wrapper
-             * handle in the map, which would leave the first listener firing
-             * forever with no way to unsubscribe it.
-             *
              * @param {string} notificationType
              * @param {function} callback
-             * @returns {() => void} unsubscribes
+             * @returns {() => void}
              */
             subscribe(notificationType, callback) {
                 const unsubscribe = () => state.unsubscribe(notificationType, callback);
@@ -342,8 +325,6 @@ export const busService = {
                 return unsubscribe;
             },
             /**
-             * Unsubscribe from a single notification type.
-             *
              * @param {string} notificationType
              * @param {function} callback
              */

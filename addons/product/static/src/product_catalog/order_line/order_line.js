@@ -27,10 +27,7 @@ export class ProductCatalogOrderLine extends Component {
         this.catalogContext = useProductCatalogContext();
     }
 
-    /**
-     * Focus input text when clicked
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     _onFocus(ev) {
         ev.target.select();
     }

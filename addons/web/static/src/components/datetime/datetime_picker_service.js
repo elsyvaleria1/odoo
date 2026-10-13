@@ -561,7 +561,7 @@ export class DateTimePickerController {
      * @param {DateTimePickerProps["value"]} value
      * @param {import("@web/components/datetime/datetime_picker").SelectionUnit} unit
      * @param {"input" | "picker"} source
-     * @param {number} [focusedDateIndex] the bound the picker hands focus to
+     * @param {number} [focusedDateIndex]
      */
     updateValue = (value, unit, source, focusedDateIndex) => {
         if (source === "input" && areDatesEqual(this.pickerProps.value, value)) {

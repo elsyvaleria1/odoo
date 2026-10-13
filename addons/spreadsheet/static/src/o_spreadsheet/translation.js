@@ -18,10 +18,7 @@ class TranslationNamespace extends OdooUIPlugin {
         this.translationNamespace = config.custom.translationNamespace;
     }
 
-    /**
-     * @see dynamicSpreadsheetTranslate
-     * @param {string} term
-     */
+    /** @param {string} term */
     dynamicTranslate(term) {
         if (this.translationNamespace) {
             return dynamicSpreadsheetTranslate(this.translationNamespace, term);

@@ -117,8 +117,6 @@ export class ORM {
     }
 
     /**
-     * Whether `orm.cache()` would find this call's answer in the cache.
-     *
      * @param {string} model
      * @param {string} method
      * @param {any[]} [args=[]]

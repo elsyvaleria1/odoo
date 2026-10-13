@@ -3,10 +3,6 @@
 export const ACTIVE_IDS_PLACEHOLDER = "{ACTIVE_IDS}";
 
 /**
- * A layer domain names the drawn records with the {ACTIVE_IDS} placeholder,
- * quoted or not; this turns it into the ACTIVE_IDS variable an evaluation
- * context can bind.
- *
  * @param {string} domainText
  * @returns {string}
  */
@@ -17,9 +13,6 @@ export function nameActiveIds(domainText) {
 }
 
 /**
- * The drawn records' ids in place of every {ACTIVE_IDS} placeholder of a
- * domain the server evaluated.
- *
  * @param {*} node
  * @param {number[]} ids
  * @returns {*}

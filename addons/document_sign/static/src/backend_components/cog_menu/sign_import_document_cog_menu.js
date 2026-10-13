@@ -8,12 +8,7 @@ import { COG_GROUP, isActWindowView } from "@web/search/cog_menu/cog_menu_group"
 import { CogMenuItem } from "@web/search/cog_menu/cog_menu_item";
 
 const cogMenuRegistry = registry.category("cogMenu");
-/**
- * 'Import records' menu
- *
- * This component is used to import the records for particular model.
- * @extends Component
- */
+/** @extends Component */
 export class DocumentImportCogMenu extends Component {
     static template = "sign.import.documents.DocumentImportCogMenu";
     static components = { CogMenuItem };

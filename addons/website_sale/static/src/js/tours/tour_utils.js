@@ -295,8 +295,6 @@ export function payWithTransfer({
 /**
  * @param {string} productName
  * @param {{ select?: boolean, expectUnloadPage?: boolean }} [options]
- *   `expectUnloadPage` when searching from a page other than the shop, whose
- *   search reloads instead of swapping the grid in place
  */
 export function searchProduct(
     productName,

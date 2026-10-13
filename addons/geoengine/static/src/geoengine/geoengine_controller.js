@@ -284,7 +284,7 @@ export class GeoengineController extends Component {
 
     /**
      * @param {string} value
-     * @param {string} [geoField] the field of the layer the geometry was edited on
+     * @param {string} [geoField]
      */
     async updateRecord(value, geoField = this.geoFieldKey) {
         log.logic("updateRecord", () => ({

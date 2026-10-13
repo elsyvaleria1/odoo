@@ -55,9 +55,8 @@ export class PaymentPineLabs extends PaymentInterface {
     }
 
     /**
-     * Handles the response from Pine Labs for a make payment request.
-     * @param {Object} response - The response received from Pine Labs.
-     * @returns {Promise<Object|boolean>} - Resolves when the payment confirmation process completes.
+     * @param {Object} response
+     * @returns {Promise<Object|boolean>}
      */
     async _makePaymentRequestHandler(response) {
         const line = this.pendingPineLabsPaymentLine();
@@ -76,12 +75,11 @@ export class PaymentPineLabs extends PaymentInterface {
         return await this._waitForPaymentToConfirm();
     }
     /**
-     * Handles the response from Pine Labs for a payment status request.
-     * @param {Object} response - The response received from Pine Labs.
-     * @param {Function} callBack - The function to call for retrying the status request.
-     * @param {Function} resolve - The function to resolve the promise.
-     * @param {Function} reject - The function to reject the promise.
-     * @returns {Promise<Object|boolean>} - Resolves with the response object on success, otherwise `false`.
+     * @param {Object} response
+     * @param {Function} callBack
+     * @param {Function} resolve
+     * @param {Function} reject
+     * @returns {Promise<Object|boolean>}
      */
     _paymentStatusRequestHandler(response, callBack, resolve, reject) {
         const line = this.pos.getOrder().getSelectedPaymentline();
@@ -131,9 +129,8 @@ export class PaymentPineLabs extends PaymentInterface {
         }
     }
     /**
-     * Handles the response from Pine Labs for a payment cancellation request.
-     * @param {Object} response - The response received from Pine Labs.
-     * @returns {boolean} - Returns `true` if a notification is processed, otherwise `false`.
+     * @param {Object} response
+     * @returns {boolean}
      */
     _paymentCancelRequestHandler(response) {
         const line = this.pendingPineLabsPaymentLine();

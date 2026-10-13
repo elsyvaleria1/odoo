@@ -40,11 +40,7 @@ export class AttendeeCalendarModel extends CalendarModel {
         return this.data.attendees;
     }
 
-    /**
-     * @override
-     *
-     * Upon updating a record with recurrence, we need to ask how it will affect recurrent events.
-     */
+    /** @override */
     async updateRecord(record) {
         const rec = this.records[record.id];
         if (rec.rawRecord.recurrency) {
@@ -71,10 +67,7 @@ export class AttendeeCalendarModel extends CalendarModel {
         return result;
     }
 
-    /**
-     * Load the filter section and add both 'user' and 'everybody' filters to the context.
-     * @override
-     */
+    /** @override */
     async loadFilterSection(fieldName, filterInfo, previousSection) {
         const result = await super.loadFilterSection(
             fieldName,

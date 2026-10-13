@@ -14,7 +14,6 @@ import { _t } from "@web/core/translation";
  *     dropNear: CSSSelector;
  *     excludeNearParent: CSSSelector;
  * }} DropzoneSelector
- *
  * @typedef { Object } DropZoneShared
  * @property { DropZonePlugin['activateDropzones'] } activateDropzones
  * @property { DropZonePlugin['removeDropzones'] } removeDropzones
@@ -69,13 +68,7 @@ export class DropZonePlugin extends Plugin {
         this.iframe = this.document.defaultView.frameElement;
     }
 
-    /**
-     * Returns the root element in which the elements can be dropped.
-     * (e.g. if a modal or a dropdown is open, the snippets must be dropped only
-     * in this element)
-     *
-     * @returns {HTMLElement|undefined}
-     */
+    /** @returns {HTMLElement|undefined} */
     getDropRootElement() {
         const openModalEl = this.editable.querySelector(".modal.show");
         if (openModalEl && isVisible(openModalEl)) {
@@ -94,15 +87,9 @@ export class DropZonePlugin extends Plugin {
     }
 
     /**
-     * Gets the selectors that determine where the given element can be placed.
-     *
-     * @param {HTMLElement} snippetEl the element
-     * @param {Boolean} [checkLockedWithin=false] true if the selectors should
-     *   be filtered based on the `dropLockWithin` selectors
+     * @param {HTMLElement} snippetEl
+     * @param {Boolean} [checkLockedWithin=false]
      * @param {Boolean|String} [withGrids=false]
-     *   - `true` if the elements in grid mode are considered,
-     *   - `"filterOnly"` if the grids should only be filtered out,
-     *   - `false`
      * @returns {Selectors}
      */
     getSelectors(snippetEl, checkLockedWithin = false, withGrids = false) {
@@ -237,10 +224,8 @@ export class DropZonePlugin extends Plugin {
     }
 
     /**
-     * Checks the condition for a sibling/children to be valid.
-     *
-     * @param {HTMLElement} el A selectorSibling or selectorChildren element
-     * @param {HTMLElement} rootEl the root element in which we can drop
+     * @param {HTMLElement} el
+     * @param {HTMLElement} rootEl
      * @returns {Boolean}
      */
     checkSelectors(el, rootEl) {
@@ -260,15 +245,10 @@ export class DropZonePlugin extends Plugin {
     }
 
     /**
-     * Returns all the elements matching the `dropNear` selector, that are
-     * contained in editable elements. They correspond to elements next to which
-     * an element can be dropped (= siblings).
-     *
-     * @param {Array<HTMLElement>} editableAreaEls the editable elements
-     * @param {HTMLElement} rootEl the root element in which we can drop
-     * @param {String} selector `dropNear` selector
-     * @param {String} excludeParent selector allowing to exclude the siblings
-     * with a parent matching it.
+     * @param {Array<HTMLElement>} editableAreaEls
+     * @param {HTMLElement} rootEl
+     * @param {String} selector
+     * @param {String} excludeParent
      * @returns {Array<HTMLElement>}
      */
     getSelectorSiblings(editableAreaEls, rootEl, { selector, excludeParent = false }) {
@@ -289,13 +269,9 @@ export class DropZonePlugin extends Plugin {
     }
 
     /**
-     * Returns all the elements matching the `dropIn` selector, that are
-     * contained in editable elements. They correspond to the elements in which
-     * elements can be dropped as children.
-     *
-     * @param {Array<HTMLElement>} editableAreaEls the editable elements
-     * @param {HTMLElement} rootEl the root element in which we can drop
-     * @param {String} selector `dropIn` selector
+     * @param {Array<HTMLElement>} editableAreaEls
+     * @param {HTMLElement} rootEl
+     * @param {String} selector
      * @returns {Array<HTMLElement>}
      */
     getSelectorChildren(editableAreaEls, rootEl, { selector }) {
@@ -316,11 +292,9 @@ export class DropZonePlugin extends Plugin {
     }
 
     /**
-     * Creates a dropzone and adapts it depending on the hook environment.
-     *
-     * @param {HTMLElement} parentEl the dropzone parent
-     * @param {Boolean} isVertical true if the dropzone should be vertical
-     * @param {Object} style the style to assign to the dropzone
+     * @param {HTMLElement} parentEl
+     * @param {Boolean} isVertical
+     * @param {Object} style
      * @returns {HTMLElement}
      */
     createDropzone(parentEl, isVertical, style) {
@@ -346,12 +320,7 @@ export class DropZonePlugin extends Plugin {
         return dropzoneEl;
     }
 
-    /**
-     * Creates a dropzone covering the whole sanitized element in which we
-     * cannot drop.
-     *
-     * @returns {HTMLElement}
-     */
+    /** @returns {HTMLElement} */
     createSanitizedDropzone() {
         const dropzoneEl = this.document.createElement("div");
         dropzoneEl.classList.add(
@@ -370,10 +339,6 @@ export class DropZonePlugin extends Plugin {
     }
 
     /**
-     * Creates a dropzone taking the entire area of the given row in grid mode.
-     * It will allow to place the elements dragged over it inside the grid it
-     * belongs to.
-     *
      * @param {Element} rowEl
      * @returns {HTMLElement}
      */
@@ -391,14 +356,10 @@ export class DropZonePlugin extends Plugin {
     }
 
     /**
-     * Checks whether the dropzone to insert should be horizontal or vertical.
-     *
-     * @param {HTMLElement} hookEl the element before/after which the dropzone
-     *   will be inserted
-     * @param {HTMLElement} parentEl the parent element of `hookEl`
-     * @param {Boolean} toInsertInline true if the dragged element is inline
-     * @returns {Object} - `vertical[Boolean]`: true if the dropzone is vertical
-     *                   - `style[Object]`: the style to add to the dropzone
+     * @param {HTMLElement} hookEl
+     * @param {HTMLElement} parentEl
+     * @param {Boolean} toInsertInline
+     * @returns {Object}
      */
     setDropzoneDirection(hookEl, parentEl, toInsertInline) {
         let vertical = false;
@@ -448,25 +409,17 @@ export class DropZonePlugin extends Plugin {
 
     /**
      * @typedef Selectors
-     * @property {Set<HTMLElement>} selectorSiblings elements which must have
-     *   siblings dropzones
-     * @property {Set<HTMLElement>} selectorChildren elements which must have
-     *   child dropzones between each existing child
-     * @property {Set<HTMLElement>} selectorSanitized sanitized elements in
-     *   which an indicative dropzone preventing the drop must be inserted
-     * @property {Set<HTMLElement>} selectorGrids elements which are in grid
-     *   mode and for which a grid dropzone must be inserted
+     * @property {Set<HTMLElement>} selectorSiblings
+     * @property {Set<HTMLElement>} selectorChildren
+     * @property {Set<HTMLElement>} selectorSanitized
+     * @property {Set<HTMLElement>} selectorGrids
      */
     /**
      * @typedef Options
-     * @property {Boolean} toInsertInline true if the dragged element is inline
-     * @property {Boolean} isContentInIframe true if the content is inside an
-     * iframe
+     * @property {Boolean} toInsertInline
+     * @property {Boolean} isContentInIframe
      */
     /**
-     * Creates dropzones in the DOM (= locations where dragged elements may be
-     * dropped).
-     *
      * @param {Selectors} selectors
      * @param {Options} options
      * @returns {HTMLElement[]}

@@ -6,10 +6,8 @@ export const additionalRowLimit = 10;
 const defaultGridPadding = 10;
 
 /**
- * Returns the grid properties: rowGap, rowSize, columnGap and columnSize.
- *
  * @private
- * @param {HTMLElement} rowEl the grid element
+ * @param {HTMLElement} rowEl
  * @returns {Object}
  */
 export function getGridProperties(rowEl) {
@@ -20,11 +18,8 @@ export function getGridProperties(rowEl) {
     return { rowGap, rowSize, columnGap, columnSize };
 }
 /**
- * Returns the grid item properties: row|column-start|end, grid-area and z-index
- * style properties.
- *
  * @private
- * @param {HTMLElement} gridItemEl the grid item
+ * @param {HTMLElement} gridItemEl
  * @returns {Object}
  */
 export function getGridItemProperties(gridItemEl) {
@@ -39,12 +34,9 @@ export function getGridItemProperties(gridItemEl) {
     return { rowStart, rowEnd, columnStart, columnEnd, gridArea, zIndex };
 }
 /**
- * Sets the z-index property of the element to the maximum z-index present in
- * the grid increased by one (so it is in front of all the other elements).
- *
  * @private
- * @param {Element} element the element of which we want to set the z-index
- * @param {Element} rowEl the parent grid element of the element
+ * @param {Element} element
+ * @param {Element} rowEl
  */
 export function setElementToMaxZindex(element, rowEl) {
     const childrenEls = [...rowEl.children].filter(
@@ -53,8 +45,6 @@ export function setElementToMaxZindex(element, rowEl) {
     element.style.zIndex = Math.max(0, ...childrenEls.map((el) => el.style.zIndex)) + 1;
 }
 /**
- * Creates the background grid appearing everytime a change occurs in a grid.
- *
  * @private
  * @param {Element} rowEl
  * @param {Number} gridHeight
@@ -74,9 +64,6 @@ export function addBackgroundGrid(rowEl, gridHeight) {
     return rowEl.firstElementChild;
 }
 /**
- * Updates the number of rows in the grid to the end of the lowest column
- * present in it.
- *
  * @private
  * @param {Element} rowEl
  */
@@ -88,8 +75,6 @@ export function resizeGrid(rowEl) {
         Math.max(1, ...columnEls.map((el) => el.style.gridRowEnd)) - 1;
 }
 /**
- * Removes the properties and elements added to make the drag over a grid work.
- *
  * @private
  * @param {HTMLElement} rowEl
  * @param {HTMLElement} columnEl
@@ -104,13 +89,10 @@ export function cleanUpGrid(rowEl, columnEl, dragHelperEl, backgroundGridEl) {
     backgroundGridEl.remove();
 }
 /**
- * Toggles the row (= child element of containerEl) in grid mode.
- *
  * @private
- * @param {Element} containerEl element with the class "container"
- * @param {Function} preserveSelection called to preserve the text selection
- *   when needed
- * @param {String} mobileBreakpoint - bootstrap breakpoint (sm - md - lg)
+ * @param {Element} containerEl
+ * @param {Function} preserveSelection
+ * @param {String} mobileBreakpoint
  */
 export function toggleGridMode(containerEl, preserveSelection, mobileBreakpoint) {
     let rowEl = containerEl.querySelector(":scope > .row");
@@ -162,17 +144,13 @@ export function toggleGridMode(containerEl, preserveSelection, mobileBreakpoint)
     rowEl.classList.add("o_grid_mode");
 }
 /**
- * Places each column in the grid based on their position and returns the
- * lowest row end.
- *
  * @private
  * @param {HTMLCollection} columnEls
- *      The children of the row element we are toggling in grid mode.
  * @param {Number} rowSize
  * @param {Number} rowGap
  * @param {Number} columnSize
  * @param {Number} columnGap
- * @param {String} mobileBreakpoint - bootstrap breakpoint (sm - md - lg)
+ * @param {String} mobileBreakpoint
  * @returns {Number}
  */
 function placeColumns(
@@ -279,9 +257,6 @@ function placeColumns(
     return maxRowEnd;
 }
 /**
- * Removes and sets back the 'src' attribute of the images inside a column.
- * (To avoid the disappearing image problem in Chrome).
- *
  * @private
  * @param {Element} columnEl
  */
@@ -294,15 +269,12 @@ export function reloadLazyImages(columnEl) {
     }
 }
 /**
- * Computes the column and row spans of the column thanks to its width and
- * height and returns them. Also adds the grid classes to the column.
- *
  * @private
  * @param {HTMLElement} rowEl
  * @param {HTMLElement} columnEl
- * @param {Number} columnWidth the width in pixels of the column
- * @param {Number} columnHeight the height in pixels of the column
- * @param {String} mobileBreakpoint - bootstrap breakpoint (sm - md - lg)
+ * @param {Number} columnWidth
+ * @param {Number} columnHeight
+ * @param {String} mobileBreakpoint
  * @returns {Object}
  */
 export function convertColumnToGrid(
@@ -343,11 +315,8 @@ export function convertColumnToGrid(
     return { columnSpan, rowSpan };
 }
 /**
- * Removes the grid properties from the grid column when it becomes a normal
- * column.
- *
  * @param {Element} columnEl
- * @param {String} mobileBreakpoint - bootstrap breakpoint (sm - md - lg)
+ * @param {String} mobileBreakpoint
  */
 export function convertToNormalColumn(columnEl, mobileBreakpoint) {
     const gridSizeClasses = columnEl.className.match(
@@ -366,11 +335,6 @@ export function convertToNormalColumn(columnEl, mobileBreakpoint) {
     columnEl.removeAttribute("contenteditable");
 }
 /**
- * Checks whether the column only contains an image or not. An image is
- * considered alone if the column only contains empty textnodes and line breaks
- * in addition to the image. Note that "image" also refers to an image link
- * (i.e. `a > img`).
- *
  * @private
  * @param {Element} columnEl
  * @returns {Boolean}
@@ -393,11 +357,8 @@ export function checkIfImageColumn(columnEl) {
     return isImageColumn;
 }
 /**
- * Removes the line breaks and textnodes of the column, adds the grid class and
- * sets the image width to default so it can be displayed as expected.
- *
  * @private
- * @param {Element} columnEl a column containing only an image.
+ * @param {Element} columnEl
  */
 function convertImageColumn(columnEl) {
     columnEl.querySelectorAll("br").forEach((el) => el.remove());

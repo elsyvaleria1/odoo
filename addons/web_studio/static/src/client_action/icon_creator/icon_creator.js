@@ -16,15 +16,7 @@ export const DEFAULT_ICON = {
     type: "custom_icon",
 };
 
-/**
- * Icon creator
- *
- * Component which purpose is to design an app icon. It can be an uploaded image
- * which will be displayed as is, or an icon customized with the help of presets
- * of colors and icon symbols (@see web_studio/static/src/utils for the full list of colors
- * and icon classes).
- * @extends Component
- */
+/** @extends Component */
 export class IconCreator extends Component {
     static components = {
         Dropdown,
@@ -49,16 +41,13 @@ export class IconCreator extends Component {
 
     /**
      * @param {Object} [props]
-     * @param {string} [props.backgroundColor] Background color of the custom
-     *      icon.
-     * @param {string} [props.color] Color of the custom icon.
+     * @param {string} [props.backgroundColor]
+     * @param {string} [props.color]
      * @param {boolean} props.editable
-     * @param {string} [props.iconClass] Font Awesome class of the custom icon.
-     * @param {string} props.type 'base64' (if an actual image) or 'custom_icon'.
-     * @param {number} [props.uploaded_attachment_id] Databse ID of an uploaded
-     *      attachment
-     * @param {string} [props.webIconData] Base64-encoded string representing
-     *      the icon image.
+     * @param {string} [props.iconClass]
+     * @param {string} props.type
+     * @param {number} [props.uploaded_attachment_id]
+     * @param {string} [props.webIconData]
      */
     setup() {
         this.orm = useService("orm");

@@ -103,9 +103,8 @@ export function effectiveValences(element, charge) {
 /**
  * @param {string} element
  * @param {number} charge
- * @param {number} used sum of the orders of the atom's explicit bonds
- * @returns {{count: number, exceeded: boolean, max: number}} `exceeded` means no
- *      valence fits, and then the count carries no meaning
+ * @param {number} used
+ * @returns {{count: number, exceeded: boolean, max: number}}
  */
 export function implicitHydrogens(element, charge, used) {
     const options = effectiveValences(element, charge).sort((a, b) => a - b);
@@ -266,12 +265,7 @@ function piElectrons(molecule, index, links, inRing) {
     return 2;
 }
 
-/**
- * Hückel 4n+2 perception on rings of up to eight atoms, and on fused pairs that
- * are not aromatic alone. Mirrors valence.aromaticity.
- *
- * @returns {{atoms: Set<number>, bonds: Set<number>, rings: number}}
- */
+/** @returns {{atoms: Set<number>, bonds: Set<number>, rings: number}} */
 export function aromaticity(molecule) {
     const links = adjacency(molecule);
     const inRing = ringBonds(molecule);
@@ -426,11 +420,8 @@ export function hillFormula(counts) {
 }
 
 /**
- * Every published figure of a drawn molecule.
- *
  * @param {{atoms: Array, bonds: Array}} molecule
- * @returns {object} masses are null when a valence is exceeded, so the panel
- *      shows a dash rather than a number the table cannot support
+ * @returns {object}
  */
 export function analyse(molecule) {
     const links = adjacency(molecule);
@@ -542,10 +533,8 @@ export function writeMolblock(atoms, bonds, title, dimension) {
 }
 
 /**
- * Read a V2000 molblock back into the sketch model.
- *
  * @param {string} molblock
- * @param {{width: number, height: number}} viewport used to lay 3D input flat
+ * @param {{width: number, height: number}} viewport
  * @returns {{atoms: Array, bonds: Array}}
  */
 export function fromMolblock(molblock, viewport = { width: 600, height: 440 }) {
@@ -699,13 +688,7 @@ const cross = (u, v) => [
     u[0] * v[1] - u[1] * v[0],
 ];
 
-/**
- * Relax a model: bond springs, angle terms by hybridisation, repulsion between
- * atoms three bonds apart or more, and a planarity term at sp2 centres.
- *
- * @returns {{steps: number, force: number}} what it took to settle, so the
- *      result is reported rather than presented as converged by assertion
- */
+/** @returns {{steps: number, force: number}} */
 export function relax(model, steps = 900) {
     const n = model.atoms.length;
     if (!n) {

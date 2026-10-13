@@ -7,18 +7,9 @@
  *  mainParam: any,
  *  [param: string]: any,
  * }} ActionParams
- * In the XML template, the `actionParam` prop can take 2 kinds of values: an
- * Object or something else (string, array, function...).
- * If `actionParam` takes something that is not a object, it is passed as
- * `mainParam`.
- * If `actionParam` takes an object, each key is forwarded to the parameter.
- *
  * @typedef { Object } NextBuilderAction
  * @property { ActionValue } actionValue
  * @property { ActionParams } actionParam
- *
- * SelectableContext is available on BuilderComponents that make the user choose
- * among a list of items (i.e. BuilderSelect and BuilderButtonGroup).
  * @typedef { Object } SelectableContext
  * @property { Object[] } items
  */
@@ -31,24 +22,24 @@ export class BuilderAction {
      * @param { EditorContext } context
      */
     constructor(context) {
-        /** @type { EditorContext['document'] } **/
+        /** @type { EditorContext['document'] } */
         this.document = context.document;
         this.window = context.document.defaultView;
-        /** @type { EditorContext['editable'] } **/
+        /** @type { EditorContext['editable'] } */
         this.editable = context.editable;
-        /** @type { EditorContext['config'] } **/
+        /** @type { EditorContext['config'] } */
         this.config = context.config;
-        /** @type { EditorContext['services'] } **/
+        /** @type { EditorContext['services'] } */
         this.services = context.services;
-        /** @type { EditorContext['dependencies'] } **/
+        /** @type { EditorContext['dependencies'] } */
         this.dependencies = context.dependencies;
-        /** @type { EditorContext['getResource'] } **/
+        /** @type { EditorContext['getResource'] } */
         this.getResource = context.getResource;
-        /** @type { EditorContext['dispatchTo'] } **/
+        /** @type { EditorContext['dispatchTo'] } */
         this.dispatchTo = context.dispatchTo;
-        /** @type { EditorContext['delegateTo'] } **/
+        /** @type { EditorContext['delegateTo'] } */
         this.delegateTo = context.delegateTo;
-        /** @type { EditorContext['checkPredicates'] } **/
+        /** @type { EditorContext['checkPredicates'] } */
         this.checkPredicates = context.checkPredicates;
 
         this.setup();
@@ -62,10 +53,6 @@ export class BuilderAction {
     setup() {}
 
     /**
-     * Prepare some asynchronous call `onWillStart` and `onWillUpdateProps` of
-     * the BuilderComponent.
-     * A good practice is to use a caching strategy for the data fetched here.
-     *
      * @param { Object } context
      * @param { ActionParams } context.actionParam
      * @param { ActionValue } context.actionValue
@@ -73,25 +60,14 @@ export class BuilderAction {
     async prepare(context) {}
 
     /**
-     * Set a priority to the action in comparison with its sibling components.
-     * Used in combination with selectable builder components (i.e.
-     * `BuilderButtonGroup` or `BuilderSelect`) to determine which button/select
-     * item should be active when several items could qualify. The item with the
-     * highest priority is ultimately validated as active.
-     *
      * @param { Object } context
      * @param { ActionParams } context.params
      * @param { ActionValue } context.value
-     * @returns { number } default=0
+     * @returns { number }
      */
     getPriority(context) {}
 
     /**
-     * Apply the action on the editing element. Can be async.
-     * `apply` is called on preview (if preview=true), on apply, and on clean if
-     * `clean` is not defined on the action.
-     * In cases with an async `apply` and `preview=true`, @see load.
-     *
      * @param { Object } context
      * @param { import("./dependency_manager").DependencyManager } context.dependencyManager
      * @param { boolean } context.isPreviewing
@@ -104,11 +80,6 @@ export class BuilderAction {
     async apply(context) {}
 
     /**
-     * Return the current value of the action on the element.
-     * Used in combination with inputs (BuilderTextInput, BuilderNumberInput,
-     * BuilderCheckbox, BuilderRange, BuilderDateTimePicker...). For other
-     * components, @see isApplied.
-     *
      * @param { Object } context
      * @param { HTMLElement } context.editingElement
      * @param { ActionParams } [context.params]
@@ -117,10 +88,6 @@ export class BuilderAction {
     getValue(context) {}
 
     /**
-     * Whether the action is already applied.
-     * Used in combination with builder components that can only be active or
-     * not (i.e. not inputs). For inputs, @see getValue.
-     *
      * @param { Object } context
      * @param { HTMLElement } context.editingElement
      * @param { ActionValue } context.value
@@ -130,9 +97,6 @@ export class BuilderAction {
     isApplied(context) {}
 
     /**
-     * Clean/reset the value if needed. Can be async.
-     * If not defined, `apply` will be called instead.
-     *
      * @param { Object } context
      * @param { import("./dependency_manager").DependencyManager } context.dependencyManager
      * @param { NextBuilderAction } context.nextAction
@@ -146,21 +110,6 @@ export class BuilderAction {
     async clean(context) {}
 
     /**
-     * Load and return some data before calling `apply` if needed. The return
-     * value is passed as `loadResult` in the `apply` context.
-     * /!\ By itself, `load` SHOULD NOT have any effect.
-     *
-     * Should be used in 2 cases:
-     * 1. when the action's reload is set and you want to open a dialog: open
-     * the dialog in `load`, otherwise the interface will be blocked.
-     * 2. when there is a preview: when triggering an action after
-     * another one, the previous call to `apply` is cancelled. But if `apply` is
-     * async, the builder has to wait for the end of the call (and clean) before
-     * applying the next action. In order to avoid stalling the builder, you can
-     * use `load`: the asynchronous code will always run before `apply`, but if
-     * the user then triggers another action, we do not wait for `load` to
-     * finish and we process the new preview directly.
-     *
      * @param { Object } context
      * @param { HTMLElement } context.editingElement
      * @returns { Promise<LoadResult> }
@@ -168,9 +117,6 @@ export class BuilderAction {
     async load(context) {}
 
     /**
-     * Check if a BuilderAction method has been overridden and should therefore
-     * be taken into account.
-     *
      * @param { "prepare"|"getPriority"|"load"|"apply"|"clean"|"isApplied"|"getValue" } method
      * @returns { boolean }
      */

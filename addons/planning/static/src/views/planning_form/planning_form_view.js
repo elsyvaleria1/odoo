@@ -157,12 +157,9 @@ export class PlanningFormController extends FormController {
     }
 
     /**
-     * Display a dialog form view of employee model for each employee who has no work email.
-     *
-     * @param {Array<number>} resIds the employee ids without work email.
-     * @param {string} resModel the model name to display the form view.
-     * @param {Object} context context.
-     *
+     * @param {Array<number>} resIds
+     * @param {string} resModel
+     * @param {Object} context
      * @returns {Promise}
      */
     async displayDialogWhenNoEmail(resIds, resModel, context) {

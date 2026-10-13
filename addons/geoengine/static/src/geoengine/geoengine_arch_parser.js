@@ -73,9 +73,6 @@ export class GeoengineArchParser extends ViewArchParser {
     }
 
     /**
-     * The `field_id` annotations go on the parser's own copy of the tree;
-     * the `templateDocs` the compiler reads are that copy materialised.
-     *
      * @param {ViewIRNode | Element | string} arch
      * @param {Record<string, any>} models
      * @param {string} modelName

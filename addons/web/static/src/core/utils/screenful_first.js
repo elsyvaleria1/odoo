@@ -16,22 +16,14 @@ import { browser } from "@web/core/browser/browser";
 /**
  * @template T
  * @typedef ScreenfulFirst
- * @property {(owner: object, items: T[], whole?: boolean) => T[]} leading the
- * items of `owner` to build in this render: all of them when `whole`
+ * @property {(owner: object, items: T[], whole?: boolean) => T[]} leading
  */
 
 /**
- * Builds the items a screen can show in the commit that puts a collection on
- * screen, and the rest in the frames after it: the cost of the first frame
- * follows the screen, not the page size, and the DOM still ends up holding
- * every item.
- *
  * @template T
  * @param {object} params
- * @param {(mounted: boolean) => number} params.screenful how many items fill
- * what the user can see, and so how many each commit builds
- * @param {(item: T) => unknown} [params.keyOf] what identifies an item across
- * two sets of them: an item already built is never dropped to be built again
+ * @param {(mounted: boolean) => number} params.screenful
+ * @param {(item: T) => unknown} [params.keyOf]
  * @returns {ScreenfulFirst<T>}
  */
 export function useScreenfulFirst({ screenful, keyOf = (item) => item }) {

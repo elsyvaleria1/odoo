@@ -33,12 +33,7 @@ const LETTER_NAMES = {
     z: "zeta",
 };
 
-/**
- * In order: a rule sees what the ones before it wrote. Each is how es-MX
- * speakers say an English spelling, not a phonetic transcription.
- *
- * @type {[RegExp, string][]}
- */
+/** @type {[RegExp, string][]} */
 const RULES = [
     [/^s(?=[bcdfgklmnpqtvw])/, "es"],
     [/^wh?/, "gu"],
@@ -76,7 +71,7 @@ function wordsOf(phrase) {
 }
 
 /**
- * @param {string} word normalized
+ * @param {string} word
  * @returns {string}
  */
 function renderWord(word) {
@@ -91,9 +86,6 @@ function renderWord(word) {
 }
 
 /**
- * How a Mexican speaker says an English phrase, or null when it sounds as
- * written.
- *
  * @param {string} phrase
  * @returns {string | null}
  */
@@ -104,8 +96,6 @@ export function mexicanRendering(phrase) {
 }
 
 /**
- * An acronym by its Spanish letter names: "SKU" -> "ese ka u".
- *
  * @param {string} acronym
  * @returns {string | null}
  */
@@ -122,10 +112,8 @@ export function spelledOut(acronym) {
 }
 
 /**
- * The other ways a term of this kind is said.
- *
  * @param {string} phrase
- * @param {string} kind "word", "acronym" or "local"
+ * @param {string} kind
  * @returns {string[]}
  */
 export function pronunciations(phrase, kind) {
@@ -139,9 +127,6 @@ export function pronunciations(phrase, kind) {
 }
 
 /**
- * An English label in its other number, last word only: "Draft" -> "Drafts",
- * "Customer Invoices" -> "Customer Invoice", "Tax" -> "Taxes".
- *
  * @param {string} label
  * @returns {string | null}
  */
@@ -174,10 +159,7 @@ export function otherNumber(label) {
 }
 
 /**
- * A label and, when it is English, the same label in its other number and how
- * a Mexican speaker says it.
- *
- * @param {string} lang the label's language, as Odoo names it
+ * @param {string} lang
  * @param {string[]} labels
  * @returns {string[]}
  */

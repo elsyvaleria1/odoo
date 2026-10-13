@@ -59,11 +59,7 @@ export class Record {
     static id;
     /** @type {string|undefined} */
     static _name;
-    /**
-     * Id field whose value names the registered subtype a record is created as. A subtype is a
-     * registered model extending this one; its name is the discriminator value it answers to.
-     * @type {string|undefined}
-     */
+    /** @type {string|undefined} */
     static _discriminator;
     /** @type {import("@web/env").OdooEnv} */
     static env;
@@ -124,7 +120,7 @@ export class Record {
     }
     /**
      * @param {string} modelName
-     * @returns {boolean} whether this model is `modelName` or one of its subtypes
+     * @returns {boolean}
      */
     static inherits(modelName) {
         for (let Model = toRaw(this); Model; Model = Model._.parent) {
@@ -134,10 +130,7 @@ export class Record {
         }
         return false;
     }
-    /**
-     * The topmost model of a subtype chain: every record of the chain shares its localIds.
-     * @returns {typeof Record}
-     */
+    /** @returns {typeof Record} */
     static _identityModel() {
         let Model = toRaw(this);
         while (Model._.parent) {

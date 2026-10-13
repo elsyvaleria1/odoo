@@ -10,15 +10,7 @@ export class DeviceListField extends X2ManyField {
         this.action = useService("action");
     }
 
-    /**
-     * By default the `X2ManyField` opens records in a dialog,
-     * however this dialog doesn't run the `js_class` Controller
-     * which is responsible for saving fields to the IoT box.
-     *
-     * We override the behaviour to open the regular form view
-     * for the device, working around the issue.
-     * @override
-     */
+    /** @override */
     async openRecord(record) {
         const action = await this.orm.call(
             record.resModel,

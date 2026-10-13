@@ -61,13 +61,7 @@ export class GraphModel extends Model {
         this.forceAllDataPoints = false;
     }
 
-    /**
-     * Whether the chart stacks its series: the user's choice, unless a series
-     * level is multi-valued, where a stack would count a record once per
-     * series it is in and rise above the real total.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get isStacked() {
         return Boolean(this.metaData.stacked) && !this.seriesOverlap;
     }
@@ -177,10 +171,6 @@ export class GraphModel extends Model {
     }
 
     /**
-     * Collects the context's new graph_* keys in pendingContextSettings: the
-     * load that commits its data points publishes them, and a superseded load
-     * leaves them for the next one, since they are marked seen already.
-     *
      * @protected
      * @param {Object} context
      */
@@ -222,7 +212,7 @@ export class GraphModel extends Model {
     /**
      * @protected
      * @param {Object} [params={}]
-     * @param {Object} [base] the metaData to build on, the published one by default
+     * @param {Object} [base]
      * @returns {Object}
      */
     _buildMetaData(params, base = this.metaData) {

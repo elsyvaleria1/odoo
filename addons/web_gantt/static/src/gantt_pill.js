@@ -25,7 +25,7 @@ const YEARLESS_DATE_FORMAT = omit(DATE_SHORT, "year");
  * @param {Object} params
  * @param {string} params.dateStartField
  * @param {string} params.dateStopField
- * @param {boolean} params.stopIsDate -- a date-typed stop covers its whole day
+ * @param {boolean} params.stopIsDate
  * @param {DateTime} params.globalStart
  * @param {DateTime} params.globalStop
  * @param {boolean} params.canEdit
@@ -64,7 +64,7 @@ export function pillBounds(
 /**
  * @param {Record<string, any>} record
  * @param {Record<string, { type: string }>} fields
- * @param {Record<string, string>} pillDecorations -- class -> expression
+ * @param {Record<string, string>} pillDecorations
  * @param {Record<string, any>} baseContext
  * @returns {string[]}
  */

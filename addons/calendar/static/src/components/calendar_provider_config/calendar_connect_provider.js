@@ -16,12 +16,7 @@ export class CalendarConnectProvider extends Component {
         this.orm = useService("orm");
     }
 
-    /**
-     * Activate the external sync for the first time, after installing the
-     * relevant submodule if necessary.
-     *
-     * @private
-     */
+    /** @private */
     async onConnect(ev) {
         ev.preventDefault();
         ev.stopImmediatePropagation();
@@ -52,11 +47,7 @@ export class CalendarConnectProvider extends Component {
             window.location.reload();
         }
     }
-    /**
-     * Hook to perform additional work before redirecting to external url or reloading.
-     *
-     * @private
-     */
+    /** @private */
     async _beforeLeaveContext() {
         return Promise.resolve();
     }

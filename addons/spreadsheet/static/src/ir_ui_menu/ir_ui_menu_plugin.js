@@ -9,7 +9,6 @@ export class IrMenuPlugin extends OdooCorePlugin {
     }
 
     /**
-     * Get an ir menu from an id or an xml id
      * @param {number | string} menuId
      * @returns {object | undefined}
      */

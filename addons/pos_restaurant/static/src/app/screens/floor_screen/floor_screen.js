@@ -41,14 +41,9 @@ function constrain(num, min, max) {
     return Math.min(Math.max(num, min), max);
 }
 /**
- * Gives the minimum and maximum x and y value for an element to prevent it from
- * overflowing outside of another element.
- *
- * @param {HTMLElement} el the element for which we want to get the position
- *  limits
- * @param {HTMLElement} limitEl the element outside of which the main element
- *  shouldn't overflow
- * @returns {{ minX: number, maxX: number, minY: number, maxY: number }} limits
+ * @param {HTMLElement} el
+ * @param {HTMLElement} limitEl
+ * @returns {{ minX: number, maxX: number, minY: number, maxY: number }}
  */
 function getLimits(el, limitEl) {
     const limitRect = limitEl.getBoundingClientRect();

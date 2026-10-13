@@ -2,10 +2,6 @@
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
 
 /**
- * Show/hide the static readonly display of a grid cell, shared by every
- * place that toggles it depending on whether the cell is being interacted
- * with (hovered, edited, clicked).
- *
  * @param {HTMLElement | null | undefined} cellEl
  * @param {boolean} hidden
  */

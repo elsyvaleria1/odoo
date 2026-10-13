@@ -14,9 +14,6 @@ const slotSel = (slot) => `#slot${slot}`;
 defineRoomModels();
 
 /**
- * Assert that the given slots are correctly displayed in the view.
- * The only distinction between slots is their (text-)background color.
- * Slots are expected to be strings formatted as "hhmm".
  * @param {Object} slots
  * @param {Array<string>} [slots.bookedSlots]
  * @param {Array<string>} [slots.freeSlots]

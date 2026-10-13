@@ -20,15 +20,8 @@ deviceMessages.add("printer", {
 });
 
 /**
- * Read one device event through whatever its type registered.
- *
- * `normalize` runs first and may rewrite the event, so a device that reports
- * failure somewhere other than `status` is read the same way as one that does
- * not. A type nobody registered still reads, which is what keeps an unknown
- * device from throwing in the form.
- *
- * @param {string} type an `iot.device.type` value
- * @param {{status?: string, message?: string}} event mutated by `normalize`
+ * @param {string} type
+ * @param {{status?: string, message?: string}} event
  * @returns {{message: string, defaultMessage: string}}
  */
 export function readDeviceEvent(type, event) {

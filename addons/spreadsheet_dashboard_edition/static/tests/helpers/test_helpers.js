@@ -19,11 +19,10 @@ import { getDashboardBasicServerData } from "./test_data.js";
 
 /**
  * @typedef {import("@spreadsheet/../tests/helpers/data").ServerData} ServerData
-
  * @typedef {object} SpreadsheetTestParams
  * @property {number} [spreadsheetId]
- * @property {ServerData} [serverData] Data to be injected in the mock server
- * @property {Function} [mockRPC] Mock rpc function
+ * @property {ServerData} [serverData]
+ * @property {Function} [mockRPC]
  */
 
 /**
@@ -67,9 +66,8 @@ export async function createDashboardEditAction(params) {
 }
 
 /**
- *
  * @param {ServerData} serverData
- * @param {object} [data] spreadsheet data
+ * @param {object} [data]
  * @returns {number}
  */
 export function createNewDashboard(serverData, data) {

@@ -109,12 +109,7 @@ export class DocumentsSearchPanel extends SearchPanel {
         });
     }
 
-    /**
-     * A folder dropped in the tree: moved under its new parent, before `next`.
-     * Into My Drive from elsewhere it is linked, not moved: a shortcut.
-     *
-     * @param {{element: HTMLElement, parent?: HTMLElement, next?: HTMLElement}} params
-     */
+    /** @param {{element: HTMLElement, parent?: HTMLElement, next?: HTMLElement}} params */
     async onFolderDrop({ element, parent, next }) {
         const draggingFolderId = toFolderValueId(element.dataset.valueId);
         const parentFolderId = parent ? toFolderValueId(parent.dataset.valueId) : false;
@@ -241,7 +236,7 @@ export class DocumentsSearchPanel extends SearchPanel {
 
     /**
      * @param {number|String} folderId
-     * @returns {boolean} whether the destination was refused (and said so)
+     * @returns {boolean}
      */
     _notifyWrongDropDestination(folderId) {
         if (typeof folderId !== "number" && !WRITABLE_ROOTS.includes(folderId)) {

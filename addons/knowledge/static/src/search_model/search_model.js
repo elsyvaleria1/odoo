@@ -10,10 +10,7 @@ export const KnowledgeSearchModelMixin = (T) =>
             super.setup(services, args);
         }
 
-        /**
-         * Favorites for embedded views
-         * @override
-         */
+        /** @override */
         async load(config) {
             await super.load(config);
             if (config.state && !this.isStateCompleteForEmbeddedView) {
@@ -30,21 +27,13 @@ export const KnowledgeSearchModelMixin = (T) =>
             }
         }
 
-        /**
-         * Save in embedded view arch instead of creating a record
-         * @override
-         */
+        /** @override */
         async _createIrFilters(irFilter) {
             this.saveEmbeddedViewFavoriteFilter(irFilter);
             return null;
         }
 
-        /**
-         * The super method handles real ir.filters records from the database. In an
-         * Embedded View, favorites are only stored as html metadata, they do not
-         * relate to a database record, so there is nothing to reconciliate.
-         * @override
-         */
+        /** @override */
         _reconciliateFavorites() {}
 
         deleteFavorite(favoriteId) {

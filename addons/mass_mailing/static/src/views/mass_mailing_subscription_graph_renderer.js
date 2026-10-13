@@ -3,10 +3,7 @@ import { registry } from "@web/core/registry";
 import { GraphRenderer, graphView } from "@web/views/graph";
 
 export class SubscriptionGraphRenderer extends GraphRenderer {
-    /**
-     * Open the pivot view instead of the list view on graph click.
-     * @override
-     */
+    /** @override */
     openView(domain, views, context) {
         this.actionService.doAction(
             {

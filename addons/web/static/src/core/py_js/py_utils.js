@@ -306,9 +306,6 @@ export function keyOrderIfReordered(dict, order) {
 }
 
 /**
- * JS enumerates integer-like keys ("9", "10") before the others, so a dict
- * holding one keeps its insertion order here for repr and iteration.
- *
  * @template {object} T
  * @param {T} dict
  * @param {string[]} order

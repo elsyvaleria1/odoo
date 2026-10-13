@@ -119,16 +119,14 @@ export const fonts = {
             this.computedFonts = true;
         }
     },
-    /**
-     * @returns {string[]} every icon class of every face
-     */
+    /** @returns {string[]} */
     iconNames: function () {
         this.computeFonts();
         return this.fontIcons.flatMap((data) => data.alias);
     },
     /**
      * @param {string} iconClass
-     * @returns {string|undefined} the face class rendering that icon
+     * @returns {string|undefined}
      */
     faceOf: function (iconClass) {
         this.computeFonts();

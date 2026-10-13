@@ -14669,13 +14669,13 @@ var FullCalendar = (function (exports) {
           switch (edge.name) {
               case 'left':
                   sign = -1;
-              // falls through
+
               case 'right':
                   scrollCache.setScrollLeft(scrollCache.getScrollLeft() + velocity * sign);
                   break;
               case 'top':
                   sign = -1;
-              // falls through
+
               case 'bottom':
                   scrollCache.setScrollTop(scrollCache.getScrollTop() + velocity * sign);
                   break;

@@ -25,19 +25,17 @@ export function setupDataSourceEvaluation(model) {
 }
 
 /**
- * Create a spreadsheet model with a mocked server environnement
- *
  * @param {object} params
- * @param {object} [params.spreadsheetData] Spreadsheet data to import
+ * @param {object} [params.spreadsheetData]
  * @param {object} [params.modelConfig]
- * @param {ServerData} [params.serverData] Data to be injected in the mock server
- * @param {function} [params.mockRPC] Mock rpc function
+ * @param {ServerData} [params.serverData]
+ * @param {function} [params.mockRPC]
  * @returns {Promise<{ model: OdooSpreadsheetModel, env: Object }>}
  */
 export async function createModelWithDataSource(params = {}) {
     const env = await makeSpreadsheetMockEnv(params);
     const config = params.modelConfig;
-    /** @type any*/
+    /** @type */
     const model = new Model(params.spreadsheetData, {
         ...config,
         custom: {
@@ -53,12 +51,10 @@ export async function createModelWithDataSource(params = {}) {
 }
 
 /**
- * Create a mocked server environnement
- *
  * @param {object} params
- * @param {object} [params.spreadsheetData] Spreadsheet data to import
- * @param {ServerData} [params.serverData] Data to be injected in the mock server
- * @param {function} [params.mockRPC] Mock rpc function
+ * @param {object} [params.spreadsheetData]
+ * @param {ServerData} [params.serverData]
+ * @param {function} [params.mockRPC]
  * @returns {Promise<Object>}
  */
 export async function makeSpreadsheetMockEnv(params = {}) {

@@ -63,7 +63,7 @@ export class HomeTiles extends Component {
         });
         /** @type {Promise<void> | null} */
         this.typesLoad = null;
-        /** @type {Map<string, number>} the load whose answer a tile is waiting for */
+        /** @type {Map<string, number>} */
         this.loads = new Map();
         this.loadRequest = 0;
         this.rootRef = elementRef();

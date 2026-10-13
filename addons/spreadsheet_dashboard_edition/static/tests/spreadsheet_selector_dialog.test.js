@@ -25,7 +25,7 @@ async function mountSpreadsheetSelectorDialog(config = {}) {
     const env = await makeSpreadsheetMockEnv({
         mockRPC: config.mockRPC,
     });
-    // @ts-ignore
+
     env.dialogData = { isActive: true, close: () => {} };
     const props = { ...getDefaultProps(), ...config.props };
     await mountWithCleanup(SpreadsheetSelectorDialog, { env, props });

@@ -412,10 +412,8 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
     }
 
     /**
-     * Get schedule parameters
-     *
      * @param {Element} pill
-     * @returns {Object} - An object containing parameters needed for scheduling the pill.
+     * @returns {Object}
      */
     getScheduleParams(pill) {
         return {};
@@ -488,9 +486,7 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         this.stickyPillId = pillEl ? pillEl.dataset.pillId : null;
     }
 
-    /**
-     * @param {boolean} addReadonly: whether to add or remove the readonly class
-     */
+    /** @param {boolean} addReadonly: */
     toggleRowsReadonly(addReadonly) {
         if (!this.stickyPillId || !this.containsReadonlyGroup()) {
             return;
@@ -573,12 +569,7 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         this.computeDerivedParamsFromHover();
     }
 
-    /**
-     * Updates all hovered elements, then calls "computeDerivedParamsFromHover".
-     *
-     * @see computeDerivedParamsFromHover
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     computeHoverParams(ev) {
         let els = null;
         let position = {};

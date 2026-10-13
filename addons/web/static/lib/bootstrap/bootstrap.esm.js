@@ -59,7 +59,6 @@ const MILLISECONDS_MULTIPLIER = 1000;
 const TRANSITION_END = 'transitionend';
 
 /**
- * Properly escape IDs selectors to handle weird IDs
  * @param {string} selector
  * @returns {string}
  */
@@ -178,12 +177,8 @@ const findShadowRoot = element => {
 const noop = () => {};
 
 /**
- * Trick to restart an element's animation
- *
  * @param {HTMLElement} element
- * @return void
- *
- * @see https://www.harrytheo.com/blog/2021/02/restart-a-css-animation-with-javascript/#restarting-a-css-animation
+ * @return
  */
 const reflow = element => {
   element.offsetHeight; // eslint-disable-line no-unused-expressions
@@ -256,13 +251,11 @@ const executeAfterTransition = (callback, transitionElement, waitForTransition =
 };
 
 /**
- * Return the previous/next element of a list.
- *
- * @param {array} list    The list of elements
- * @param activeElement   The active element
- * @param shouldGetNext   Choose to get next or previous element
+ * @param {array} list
+ * @param activeElement
+ * @param shouldGetNext
  * @param isCycleAllowed
- * @return {Element|elem} The proper element
+ * @return {Element|elem}
  */
 const getNextActiveElement = (list, activeElement, shouldGetNext, isCycleAllowed) => {
   const listLength = list.length;

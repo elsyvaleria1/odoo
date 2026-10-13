@@ -33,10 +33,7 @@ export class SurveyImageZoomer extends Interaction {
         fadeIn(this.el, this.fadeInOutDelay);
     }
 
-    /**
-     * Zoom in/out image on scrolling
-     * @param {WheelEvent} ev
-     */
+    /** @param {WheelEvent} ev */
     onImageScroll(ev) {
         ev.preventDefault();
         if (ev.wheelDelta > 0 || ev.detail < 0) {
@@ -51,11 +48,7 @@ export class SurveyImageZoomer extends Interaction {
         this.el.remove();
     }
 
-    /**
-     * Zoom in / out the image by changing the scale by the given number of steps.
-     * @param {integer} zoomStepNumber - Number of zoom steps applied to the scale of
-     * the image. It can be negative, in order to zoom out. Step is set to 0.1.
-     */
+    /** @param {integer} zoomStepNumber */
     addZoomSteps(zoomStepNumber) {
         const image = this.el.querySelector(".o_survey_img_zoom_image");
         const body = this.el.querySelector(".o_survey_img_zoom_body");

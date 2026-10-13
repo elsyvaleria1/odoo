@@ -88,12 +88,8 @@ export class GridRenderer extends Component {
     }
 
     /**
-     * The props of the one measure cell component mounted over the hovered
-     * cell, and of the one mounted over the edited cell. The two differ only
-     * in edit mode and in the edited one taking the keyboard.
-     *
      * @private
-     * @param {string} widgetName the grid_components entry rendering it.
+     * @param {string} widgetName
      * @param {boolean} editMode
      * @return {Object}
      */
@@ -142,16 +138,7 @@ export class GridRenderer extends Component {
         return baseHeight + extraHeight;
     }
 
-    /**
-     * The slice of rows the virtual grid currently wants rendered.
-     *
-     * Reading this measures the rows as a side effect, because the hook needs
-     * their heights before it can answer which of them are in view, and the
-     * template is the only place that knows a render is happening. Kept in one
-     * getter, called once per render from the one `t-foreach` that needs it.
-     *
-     * @return {Array} the rows to render.
-     */
+    /** @return {Array} */
     get virtualRows() {
         this.virtualGrid.setRowsHeights(
             this.props.rows.map((row) => this.getItemHeight(row)),
@@ -160,27 +147,12 @@ export class GridRenderer extends Component {
         return this.props.rows.slice(start, end + 1);
     }
 
-    /**
-     * The sum every column contributes to the footer, and to the bar chart
-     * beneath it. Both templates accumulated it with a `t-set` inside their
-     * own `t-foreach`, which reads as an assignment but survives the loop only
-     * because Owl compiles both into one scope -- and which stated the same
-     * sum twice.
-     *
-     * @return {number}
-     */
+    /** @return {number} */
     get columnsGrandTotal() {
         return this.props.columns.reduce((total, c) => total + c.grandTotal, 0);
     }
 
-    /**
-     * Row ids to their index in `props.rows`, rebuilt when that array is
-     * replaced. `getRowPosition` runs once per rendered row, so scanning
-     * `props.rows` for each of them made laying the grid out quadratic in
-     * the number of rows.
-     *
-     * @return {Map<number, number>}
-     */
+    /** @return {Map<number, number>} */
     get rowIndexes() {
         if (this._rowIndexesOf !== this.props.rows) {
             this._rowIndexesOf = this.props.rows;
@@ -189,17 +161,7 @@ export class GridRenderer extends Component {
         return this._rowIndexes;
     }
 
-    /**
-     * Section ids to their position among the displayed sections, which is how
-     * many section header rows precede a row of theirs.
-     *
-     * Read off the sections rather than taken from the id, which used to double
-     * as this offset: an id is allocated when a section is built, and a grid
-     * that reloads while another load is still building sections allocates
-     * both from one counter.
-     *
-     * @return {Map<number, number>}
-     */
+    /** @return {Map<number, number>} */
     get sectionIndexes() {
         if (this._sectionIndexesOf !== this.props.sections) {
             this._sectionIndexesOf = this.props.sections;
@@ -211,11 +173,6 @@ export class GridRenderer extends Component {
     }
 
     /**
-     * Whether a section gets a header row of its own. The fake section a
-     * sectionless grid hangs its rows under never does, and neither does a
-     * lone "None" section: a heading that names nothing, above every row
-     * there is, says nothing.
-     *
      * @param {import("./grid_model").GridSection} section
      * @return {boolean}
      */
@@ -227,9 +184,7 @@ export class GridRenderer extends Component {
         );
     }
 
-    /**
-     * @return {number} how many section header rows the grid renders.
-     */
+    /** @return {number} */
     get displayedSectionsCount() {
         return this.props.sections.filter((s) => this.isSectionDisplayed(s)).length;
     }
@@ -264,11 +219,6 @@ export class GridRenderer extends Component {
     onWillUpdateProps(nextProps) {}
 
     /**
-     * Format a measure for the static cell text. It goes through the widget's
-     * own formatter with the measure field's digits, so a cell does not change
-     * precision between its readonly display and the component that takes over
-     * when it is hovered or edited.
-     *
      * @param {number} value
      * @return {string}
      */
@@ -278,12 +228,7 @@ export class GridRenderer extends Component {
         });
     }
 
-    /**
-     * The grid rows below the header: one per data row, one per displayed
-     * section, and an "Add a line" row per section when creating inline.
-     *
-     * @return {number}
-     */
+    /** @return {number} */
     get rowsCount() {
         const addLineRows = this.props.createInline
             ? this.props.sections.length || 1
@@ -334,9 +279,6 @@ export class GridRenderer extends Component {
     }
 
     /**
-     * Whether an "Add a line" row follows this row: one per section, under
-     * its last row.
-     *
      * @param {import("./grid_model").GridRow} row
      * @return {boolean}
      */
@@ -420,14 +362,8 @@ export class GridRenderer extends Component {
     }
 
     /**
-     * The class marking a cell as falling on an unavailable period, if the
-     * grid renders unavailability at all.
-     *
      * @param {import("./grid_model").GridColumn} column
-     * @param {{row?: Object, section?: Object}} cellData the row or section
-     *      the cell belongs to; empty for a header or footer cell, which
-     *      belongs to neither. An override resolving unavailability per
-     *      record (per employee, say) reads the record from here.
+     * @param {{row?: Object, section?: Object}} cellData
      * @return {string}
      */
     getUnavailableClass(column, cellData = {}) {
@@ -528,11 +464,7 @@ export class GridRenderer extends Component {
         }
     }
 
-    /**
-     * Mouse out handler
-     *
-     * @param {MouseEvent} ev
-     */
+    /** @param {MouseEvent} ev */
     _onMouseOut(ev) {
         if (!this.hoveredElement) {
             return;
@@ -591,23 +523,12 @@ export class GridRenderer extends Component {
         }
     }
 
-    /**
-     * The window keydown handler. Separate from `_onKeyDown`, which carries
-     * the grid's own key handling and is also reached from `onCellKeydown`:
-     * a subclass overrides this one to add window-level keys without
-     * intercepting the keys a cell already handles.
-     *
-     * @param {KeyboardEvent} ev
-     */
+    /** @param {KeyboardEvent} ev */
     onKeyDown(ev) {
         this._onKeyDown(ev);
     }
 
-    /**
-     * Handle click on any element in the grid
-     *
-     * @param {MouseEvent} ev
-     */
+    /** @param {MouseEvent} ev */
     onClick(ev) {
         if (
             !this.editCellProps.reactive.cell ||
@@ -619,11 +540,7 @@ export class GridRenderer extends Component {
         this.onEditCell(false);
     }
 
-    /**
-     * Handle the click on a cell in mobile
-     *
-     * @param {MouseEvent} ev
-     */
+    /** @param {MouseEvent} ev */
     onCellClick(ev) {
         ev.stopPropagation();
         const cell = ev.target.closest(".o_grid_highlightable");
@@ -637,8 +554,6 @@ export class GridRenderer extends Component {
     }
 
     /**
-     * Handle keydown when cell is edited in the grid view.
-     *
      * @param {KeyboardEvent} ev
      * @param {import("./grid_model").GridCell | null} cell
      */
@@ -705,10 +620,6 @@ export class GridRenderer extends Component {
     }
 
     /**
-     * Focus the cell at (rowId, columnId), scrolling it into view first if the
-     * grid is virtualized and the cell's row is currently outside the
-     * rendered window (e.g. after a Tab/Enter wrap-around).
-     *
      * @param {number|string} rowId
      * @param {number|string} columnId
      */

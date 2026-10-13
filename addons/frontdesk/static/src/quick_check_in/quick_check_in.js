@@ -15,8 +15,6 @@ export class QuickCheckIn extends Component {
     props = useProps(this.constructor.props);
 
     /**
-     * Updates the planned visitor record in the backend
-     *
      * @private
      * @param {Object} visitor
      */

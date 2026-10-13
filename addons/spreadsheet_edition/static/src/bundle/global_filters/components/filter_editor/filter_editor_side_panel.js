@@ -18,10 +18,9 @@ const { useLocalStore } = stores;
  * @typedef {import("@spreadsheet").OdooField} OdooField
  * @typedef {import("@spreadsheet").FieldMatching} FieldMatching
  * @typedef {import("@spreadsheet").GlobalFilter} GlobalFilter
- *
  * @typedef State
  * @property {boolean} saved
- * @property {string} label label of the filter
+ * @property {string} label
  */
 
 export class AbstractFilterEditorSidePanel extends Component {

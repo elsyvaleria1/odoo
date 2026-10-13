@@ -200,10 +200,6 @@ export class RelationalRecord extends DataPoint {
     }
 
     /**
-     * The fields a refresh may write alone: those that read differently from
-     * the last read, when none of them is an x2many or a property and the
-     * record holds nothing of its own. `null` when it takes the row whole.
-     *
      * @param {Record<string, any>} previous
      * @param {Record<string, any>} row
      * @returns {string[] | null}
@@ -241,10 +237,6 @@ export class RelationalRecord extends DataPoint {
     }
 
     /**
-     * Writes `fieldNames` of a refreshed row, and only what reads them: their
-     * entries of the evaluation context, and the context of an x2many whose
-     * expression names one of them.
-     *
      * @param {Record<string, any>} row
      * @param {string[]} fieldNames
      */
@@ -487,11 +479,7 @@ export class RelationalRecord extends DataPoint {
         });
     }
 
-    /**
-     * @returns {Promise<boolean>} false when something the user did may not be
-     *  in what was sent: a late change, an invalid field, urgent work still
-     *  waiting on a task, or a job the model mutex has not run yet
-     */
+    /** @returns {Promise<boolean>} */
     async urgentSave() {
         const raw = toRaw(this);
         const urgent = this.model.urgentSave;
@@ -610,12 +598,7 @@ export class RelationalRecord extends DataPoint {
         this._editState.clearChanges();
     }
 
-    /**
-     * A reload writes only the fields that read differently, so the
-     * components subscribed to the others are left alone.
-     *
-     * @param {Record<string, any>} next
-     */
+    /** @param {Record<string, any>} next */
     _reconcileData(next) {
         const written = [];
         for (const fieldName of Object.keys(this.data)) {
@@ -642,10 +625,6 @@ export class RelationalRecord extends DataPoint {
     }
 
     /**
-     * The x2many lists a reload may keep: nothing local is staged on them,
-     * and the server sent the rows it sent last time, or the same rows
-     * reading differently, which the list gives to its records in place.
-     *
      * @param {Record<string, any>} data
      * @returns {Record<string, any>}
      */

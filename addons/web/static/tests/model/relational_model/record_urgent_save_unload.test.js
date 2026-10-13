@@ -109,7 +109,7 @@ async function mountBeaconForm({ arch = `<form><field name="name"/></form>` } = 
 
 /**
  * @param {Blob[]} blobs
- * @returns {Promise<Record<string, any>[]>} the values each beacon wrote
+ * @returns {Promise<Record<string, any>[]>}
  */
 async function beaconValues(blobs) {
     const texts = await Promise.all(blobs.map((blob) => blob.text()));
@@ -118,7 +118,7 @@ async function beaconValues(blobs) {
 
 /**
  * @param {{ controller: any, blobs: Blob[] }} form
- * @param {() => void} [lastAction] done in the unload dispatch, right before it
+ * @param {() => void} [lastAction]
  * @returns {Promise<{ requested: boolean, beaconsSent: number }>}
  */
 async function unloadForm({ controller, blobs }, lastAction) {

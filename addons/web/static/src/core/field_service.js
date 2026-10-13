@@ -25,8 +25,6 @@ import { registry } from "@web/core/registry";
  */
 
 /**
- * Field paths identify properties by name, whereas search filters also need the
- * definition record. Preserve the historical last-name-wins path index here.
  * @param {PropertyDefinitionRecord[]} records
  * @returns {Record<string, any>}
  */
@@ -130,7 +128,7 @@ class FieldService {
                     name,
                 ]);
         } else {
-            // @ts-ignore
+
             domain = Domain.and([
                 [[definitionRecordField, "!=", false]],
                 domain,

@@ -9,7 +9,6 @@ import { CommandResult } from "../../o_spreadsheet/cancelled_reason.js";
 /**
  * @typedef {Object} Chart
  * @property {Object} fieldMatching
- *
  * @typedef {import("@spreadsheet").FieldMatching} FieldMatching
  */
 
@@ -47,11 +46,7 @@ export class OdooChartCorePlugin extends OdooCorePlugin {
         return CommandResult.Success;
     }
 
-    /**
-     * Handle a spreadsheet command
-     *
-     * @param {Object} cmd Command
-     */
+    /** @param {Object} cmd */
     handle(cmd) {
         switch (cmd.type) {
             case "CREATE_CHART": {
@@ -78,10 +73,7 @@ export class OdooChartCorePlugin extends OdooCorePlugin {
         }
     }
 
-    /**
-     * Get all the odoo chart ids
-     * @returns {Array<string>}
-     */
+    /** @returns {Array<string>} */
     getOdooChartIds() {
         return Object.keys(this.charts);
     }
@@ -115,11 +107,7 @@ export class OdooChartCorePlugin extends OdooCorePlugin {
         return null;
     }
 
-    /**
-     * Import the charts
-     *
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     import(data) {
         for (const sheet of data.sheets) {
             if (sheet.figures) {
@@ -148,11 +136,7 @@ export class OdooChartCorePlugin extends OdooCorePlugin {
             }
         }
     }
-    /**
-     * Export the chart
-     *
-     * @param {Object} data
-     */
+    /** @param {Object} data */
     export(data) {
         for (const sheet of data.sheets) {
             if (sheet.figures) {
@@ -187,8 +171,6 @@ export class OdooChartCorePlugin extends OdooCorePlugin {
     }
 
     /**
-     * Get the current odooChartFieldMatching of a chart
-     *
      * @param {string} chartId
      * @param {string} filterId
      */
@@ -197,8 +179,6 @@ export class OdooChartCorePlugin extends OdooCorePlugin {
     }
 
     /**
-     * Sets the current odooChartFieldMatching of a chart
-     *
      * @param {string} filterId
      * @param {Record<string,FieldMatching>} chartFieldMatches
      */

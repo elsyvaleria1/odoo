@@ -4,13 +4,7 @@ import { ol } from "../../lib/geo_libs.js";
 
 const PROBLEM_COLOR = "rgba(220, 53, 69, 0.95)";
 
-/**
- * The reshapes of one editing session, undone and redone in order. An entry
- * names the record and field it changed, not the map feature: a save redraws
- * the layers, and an undo then reaches the record through the view's list.
- *
- * @typedef {{resId: number, geoField: string, before: ol.geom.Geometry, after: ol.geom.Geometry}} EditStep
- */
+/** @typedef {{resId: number, geoField: string, before: ol.geom.Geometry, after: ol.geom.Geometry}} EditStep */
 export class EditHistory {
     constructor() {
         this._done = [];
@@ -62,8 +56,6 @@ export class EditHistory {
 }
 
 /**
- * The key a keydown means for the active tool, or null.
- *
  * @param {KeyboardEvent} event
  * @param {"draw"|"modify"|"select"} tool
  * @returns {"undo"|"redo"|"remove-last-point"|"abort"|null}
@@ -91,8 +83,6 @@ export function editCommandOf(event, tool) {
 }
 
 /**
- * How many parts a geometry has: a Multi* geometry's members, else one.
- *
  * @param {ol.geom.Geometry|undefined} geometry
  * @returns {number}
  */
@@ -139,7 +129,7 @@ export class ProblemMarker {
 
     /**
      * @param {Array<number>|null} location
-     * @param {ol.geom.Geometry} [shape] the shape as drawn, kept in view
+     * @param {ol.geom.Geometry} [shape]
      */
     show(location, shape) {
         this._source.clear();

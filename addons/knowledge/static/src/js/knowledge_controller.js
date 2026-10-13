@@ -126,14 +126,7 @@ export class KnowledgeArticleFormController extends FormController {
         });
     }
 
-    /**
-     * Ensure that the title is set @see beforeUnload
-     * Dirty check is sometimes necessary in cases where the user leaves
-     * the article from inside an article (i.e. embedded views/links) very
-     * shortly after a mutation (i.e. in tours). At that point, the
-     * html_field may not have notified the model from the change.
-     * @override
-     */
+    /** @override */
     async beforeLeave() {
         if (this.model.root.resId) {
             await this.ensureArticleName();
@@ -142,14 +135,7 @@ export class KnowledgeArticleFormController extends FormController {
         return super.beforeLeave();
     }
 
-    /**
-     * Urgent-save the article, if it exists (it does not when there are no
-     * articles to show and the no content helper is displayed). The browser
-     * decides on the prompt by the microtask checkpoint after this listener,
-     * so nothing may be awaited before the urgent save: the name comes from
-     * the title through the urgent flush (see setup).
-     * @override
-     */
+    /** @override */
     beforeUnload(ev) {
         if (this.model.root.resId) {
             return super.beforeUnload(ev);
@@ -171,9 +157,8 @@ export class KnowledgeArticleFormController extends FormController {
     }
 
     /**
-     * Create a new article and open it.
-     * @param {String} category - Category of the new article
-     * @param {integer} targetParentId - Id of the parent of the new article (optional)
+     * @param {String} category
+     * @param {integer} targetParentId
      */
     async createArticle(category, targetParentId) {
         const articleIds = await this.orm.call(
@@ -204,12 +189,7 @@ export class KnowledgeArticleFormController extends FormController {
         return this.model.root.data.name || _t("New");
     }
 
-    /**
-     * Callback executed before the record save (if the record is valid).
-     * When an article has no name set, use the title (first h1 in the
-     * body) to try to save the article with a name.
-     * @override
-     */
+    /** @override */
     async onWillSaveRecord(record, changes) {
         if (!record.data.name) {
             const title = this.getHtmlTitle();
@@ -219,9 +199,7 @@ export class KnowledgeArticleFormController extends FormController {
         }
     }
 
-    /**
-     * @param {integer} resId - id of the article to open
-     */
+    /** @param {integer} resId */
     async openArticle(resId) {
         if (!resId || resId === this.resId) {
             return;
@@ -265,12 +243,7 @@ export class KnowledgeArticleFormController extends FormController {
         });
     }
 
-    /**
-     * Rename the article using the given name, or using the article title if
-     * no name is given (first h1 in the body). If no title is found, the
-     * article is kept untitled.
-     * @param {string} name - new name of the article
-     */
+    /** @param {string} name */
     renameArticle(name) {
         if (!name) {
             const title = this.getHtmlTitle();
@@ -292,10 +265,7 @@ export class KnowledgeArticleFormController extends FormController {
         );
     }
 
-    /**
-     * Toggle the aside menu on mobile devices (< 576px).
-     * @param {boolean} force
-     */
+    /** @param {boolean} force */
     toggleAsideMobile(force) {
         const container = this.root.el.querySelector(".o_knowledge_form_view");
         container.classList.toggle("o_toggle_aside", force);
@@ -324,10 +294,7 @@ export class KnowledgeArticleFormController extends FormController {
         await this.model.root.load();
     }
 
-    /**
-     * Toggle the properties panel
-     * @param {boolean} [force] - Flag determining the desired visibility of the properties panel.
-     */
+    /** @param {boolean} [force] */
     toggleProperties(force) {
         this.knowledgeContext.propertiesPanelState.isDisplayed =
             typeof force === "boolean"

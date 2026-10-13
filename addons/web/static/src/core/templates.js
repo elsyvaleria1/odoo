@@ -34,16 +34,10 @@ function getKey([name, url, templateString]) {
 
 /** @typedef {(app: any, bdom: any, helpers: any) => Function} TemplateFn */
 /** @typedef {{ signature: string, chain: string[], fn: TemplateFn }} CompiledTemplate */
-/**
- * What the server compiled for apps of one `dev` flag: the registry's
- * templates by name, and the inline `xml` templates of the bundles' code by
- * content, since `xml` names them in the order modules happen to evaluate.
- *
- * @typedef {{ named: Record<string, CompiledTemplate>, candidates: Record<string, CompiledTemplate[]>, inline: Record<string, TemplateFn> }} CompiledSet
- */
+/** @typedef {{ named: Record<string, CompiledTemplate>, candidates: Record<string, CompiledTemplate[]>, inline: Record<string, TemplateFn> }} CompiledSet */
 
 /**
- * @param {string} source an inline `xml` template, as `xml` received it
+ * @param {string} source
  * @returns {string}
  */
 export function inlineTemplateKey(source) {
@@ -361,9 +355,6 @@ export class TemplateRegistry {
     }
 
     /**
-     * The names `getTemplate(name)` resolves through, from `name` up its
-     * `t-inherit` parents; only meaningful once `name` was resolved.
-     *
      * @param {string} name
      * @returns {string[]}
      */
@@ -380,11 +371,6 @@ export class TemplateRegistry {
     }
 
     /**
-     * A digest of every registration `_getTemplate(chain[0])` reads, visited
-     * in the order it reads them, or null when one of them is missing. Equal
-     * digests mean equal resolved templates, so a template compiled ahead of
-     * time stands for the one this registry would resolve.
-     *
      * @param {string[]} chain
      * @returns {string | null}
      */
@@ -436,8 +422,8 @@ export class TemplateRegistry {
     /**
      * @param {string} bundle
      * @param {string} checksum
-     * @param {Record<string, any>} [params] what the server built the bundle with
-     * @param {() => void} [register] the bundle's registrations
+     * @param {Record<string, any>} [params]
+     * @param {() => void} [register]
      */
     registerTemplateBundle(bundle, checksum, params = {}, register) {
         this.bundles.set(bundle, { checksum, params });
@@ -461,13 +447,7 @@ export class TemplateRegistry {
         }
     }
 
-    /**
-     * Settles once every compiled artifact a listener is loading for a
-     * bundle registered so far has arrived or failed, and the registrations
-     * it held are made; rejects when one of those throws.
-     *
-     * @returns {Promise<void>}
-     */
+    /** @returns {Promise<void>} */
     async compiledTemplatesLoaded() {
         while (this.compiledLoads.size) {
             await Promise.all(this.compiledLoads);
@@ -496,13 +476,8 @@ export class TemplateRegistry {
     }
 
     /**
-     * The template function compiled ahead of time for `name` when this
-     * registry still resolves `name` to what it was compiled from, or when
-     * `name` is an inline `xml` template the server compiled; else the
-     * resolved template for OWL to compile.
-     *
      * @param {string} name
-     * @param {boolean} [dev] whether the app compiles in dev mode
+     * @param {boolean} [dev]
      * @returns {TemplateFn | Element | null | undefined}
      */
     getCompiledTemplate(name, dev = false) {

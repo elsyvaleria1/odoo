@@ -43,11 +43,7 @@ export class StreamPostKanbanRenderer extends KanbanRenderer {
         );
     }
 
-    /**
-     * Shows a bootstrap carousel starting at the clicked image's index
-     *
-     * @param {PointerEvent} ev - event of the clicked image
-     */
+    /** @param {PointerEvent} ev */
     onClickMoreImages(ev) {
         ev.stopPropagation();
         this.dialog.add(ImagesCarouselDialog, {

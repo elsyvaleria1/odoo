@@ -301,12 +301,7 @@ export class MessagingMenu extends Component {
         };
     }
 
-    /**
-     * Keys of the items listed before the tab's own items, in display order: an
-     * item's keyboard index is its position here.
-     *
-     * @returns {string[]}
-     */
+    /** @returns {string[]} */
     get prefixItems() {
         return this.showPushPermissionRequest ? ["notificationRequest"] : [];
     }
@@ -316,7 +311,7 @@ export class MessagingMenu extends Component {
         return this.local.activeIndex === this.prefixItems.indexOf(key);
     }
 
-    /** @param {number} index position among the tab's own items */
+    /** @param {number} index */
     isItemActive(index) {
         return this.local.activeIndex === this.prefixItems.length + index;
     }
@@ -326,11 +321,7 @@ export class MessagingMenu extends Component {
         return tab.counter + this.getTabExtraCounter(tab);
     }
 
-    /**
-     * Requests shown in a tab that are not records, so its model cannot count them.
-     *
-     * @param {import("models").MessagingMenuTab} tab
-     */
+    /** @param {import("models").MessagingMenuTab} tab */
     getTabExtraCounter(tab) {
         if (!tab.eq(this.store.messagingMenu.odooBotNotificationsTab)) {
             return 0;
@@ -356,12 +347,7 @@ export class MessagingMenu extends Component {
         this.state.selectFilter(filter);
     }
 
-    /**
-     * Filter groups an addon offers for the active tab, besides the tab's own filters:
-     * each group selects at most one of its filters, combined with the tab's filter.
-     *
-     * @returns {MessagingMenuPluginFilterGroup[]}
-     */
+    /** @returns {MessagingMenuPluginFilterGroup[]} */
     get pluginFilterGroups() {
         return [];
     }

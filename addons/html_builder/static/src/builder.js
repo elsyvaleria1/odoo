@@ -292,11 +292,8 @@ export class Builder extends Component {
     }
 
     /**
-     * Called when clicking on a tab. Sets the active tab to the given tab.
-     *
-     * @param {String} tab the tab to set
-     * @param {Number | null} presetId the color preset expanding on "theme" tab
-     * open.
+     * @param {String} tab
+     * @param {Number | null} presetId
      */
     onTabClick(tab, presetId = null) {
         if (this.state.activeTab === tab) {

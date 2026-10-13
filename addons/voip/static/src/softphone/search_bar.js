@@ -37,11 +37,7 @@ export class SearchBar extends Component {
         );
     }
 
-    /**
-     * When an RPC is pending, the search icon is replaced with a spinner.
-     *
-     * @returns {string}
-     */
+    /** @returns {string} */
     get searchBarIcon() {
         if (this.voip.hasPendingRequest) {
             return "fa-solid fa-circle-notch fa-spin";

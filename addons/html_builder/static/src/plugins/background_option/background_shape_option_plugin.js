@@ -81,13 +81,8 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         }
     }
     /**
-     * Applies the computed shape data to the editing element: refreshes the
-     * shape container and its background image, flip, animation and mobile
-     * visibility.
-     *
-     * @param {HTMLElement} editingElement - The element being edited
-     * @param {Function} computeShapeData - Function to compute the new shape
-     * data.
+     * @param {HTMLElement} editingElement
+     * @param {Function} computeShapeData
      */
     applyShape(editingElement, computeShapeData) {
         const newShapeData = computeShapeData();
@@ -147,11 +142,9 @@ export class BackgroundShapeOptionPlugin extends Plugin {
     }
 
     /**
-     * Creates and inserts a container for the shape with the right classes.
-     *
-     * @param {HTMLElement} editingElement - The element to which the shape is attached.
-     * @param {string} shape - The shape name used to generate a class.
-     * @returns {HTMLElement} The created shape container element.
+     * @param {HTMLElement} editingElement
+     * @param {string} shape
+     * @returns {HTMLElement}
      */
     createShapeContainer(editingElement, shape) {
         const shapeContainer = this.insertShapeContainer(
@@ -163,18 +156,9 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         return shapeContainer;
     }
     /**
-     * Returns the implicit colors for the currently selected shape.
-     *
-     * The implicit colors are use upon shape selection. They are computed as:
-     * - the default colors
-     * - patched with each set of colors of previous siblings shape
-     * - patched with the colors of the previously selected shape
-     * - filtered to only keep the colors involved in the current shape
-     *
      * @param {HTMLElement} editingElement
-     * @param {String} shapeName identifier of the selected shape.
-     * @param {Object} previousColors colors of the shape before its
-     * replacement.
+     * @param {String} shapeName
+     * @param {Object} previousColors
      */
     getImplicitColors(editingElement, shapeName, previousColors = {}) {
         const selectedBackgroundUrl = this.getShapeStyleUrl(shapeName);
@@ -189,23 +173,14 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         colors = Object.assign(defaultColors, colors);
         return pick(colors, ...defaultKeys);
     }
-    /**
-     * Returns the default colors for the a shape in the selector.
-     *
-     * @param {String} selectedBackgroundUrl
-     */
+    /** @param {String} selectedBackgroundUrl */
     getShapeDefaultColors(selectedBackgroundUrl) {
         const shapeSrc =
             selectedBackgroundUrl && getBgImageURLFromURL(selectedBackgroundUrl);
         const url = new URL(shapeSrc, window.location.origin);
         return Object.fromEntries(url.searchParams.entries());
     }
-    /**
-     * Retrieves current shape data from the target's dataset.
-     *
-     * @param {HTMLElement} editingElement the target on which to read the shape
-     * data.
-     */
+    /** @param {HTMLElement} editingElement */
     getShapeData(editingElement) {
         const defaultData = {
             shape: "",
@@ -221,11 +196,7 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         }
         return defaultData;
     }
-    /**
-     * Returns the src of the shape corresponding to the current parameters.
-     *
-     * @param {HTMLElement} editingElement
-     */
+    /** @param {HTMLElement} editingElement */
     getShapeSrc(editingElement) {
         const { shape, colors, flip, shapeAnimationSpeed } =
             this.getShapeData(editingElement);
@@ -255,11 +226,8 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         return this.shapeBackgroundImagePerClass[`.o_we_shape.${shapeClassName}`];
     }
     /**
-     * Inserts or removes the given container at the right position in the
-     * document.
-     *
      * @param {HTMLElement} editingElement
-     * @param {HTMLElement} newContainer container to insert, null to remove
+     * @param {HTMLElement} newContainer
      */
     insertShapeContainer(editingElement, newContainer) {
         const shapeContainerEl = editingElement.querySelector(":scope > .o_we_shape");
@@ -283,10 +251,8 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         return newContainer;
     }
     /**
-     * Overwrites shape properties with the specified data.
-     *
      * @param {HTMLElement} editingElement
-     * @param {Object} newData an object with the new data
+     * @param {Object} newData
      */
     markShape(editingElement, newData) {
         const defaultColors = getDefaultColors(editingElement);

@@ -48,7 +48,7 @@ export function getFontAwesomeIcons() {
 
 /**
  * @param {Integer} string_length
- * @returns {String} A random string with numbers and lower/upper case chars
+ * @returns {String}
  */
 export function randomString(string_length) {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

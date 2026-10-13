@@ -10,11 +10,7 @@ const { formatValue } = helpers;
  */
 
 patch(OdooPivot.prototype, {
-    /**
-     * High level method computing the formatted result of PIVOT.HEADER functions.
-     *
-     * @param {PivotDomain} domain
-     */
+    /** @param {PivotDomain} domain */
     getPivotHeaderFormattedValue(domain) {
         const { value, format } = this.getPivotHeaderValueAndFormat(domain);
         if (typeof value === "string") {

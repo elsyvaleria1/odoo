@@ -61,8 +61,6 @@ export class HrReferralWelcome extends Component {
     }
 
     /**
-     * Save that user has seen the onboarding screen then restart the view
-     *
      * @private
      * @param {MouseEvent} e
      */
@@ -79,11 +77,7 @@ export class HrReferralWelcome extends Component {
         );
     }
 
-    /**
-     * User upgrade his level then restart the view
-     *
-     * @private
-     */
+    /** @private */
     async _upgradeLevel() {
         await this.orm.call("hr.applicant", "upgrade_level", []);
         this.actionService.doAction(
@@ -98,8 +92,6 @@ export class HrReferralWelcome extends Component {
     }
 
     /**
-     * Save the new user's friend then restart the view
-     *
      * @private
      * @param {MouseEvent} e
      */

@@ -275,11 +275,7 @@ export const RELATIVE_DAYS = {
     yesterday: -1,
 };
 
-/**
- * Whole-sentence commands, each a list of phrasings.
- *
- * @type {Record<string, string[][]>}
- */
+/** @type {Record<string, string[][]>} */
 export const COMMAND_PHRASES = {
     help: phraseList([
         "ayuda",

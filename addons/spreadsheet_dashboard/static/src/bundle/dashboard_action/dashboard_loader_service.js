@@ -31,19 +31,15 @@ export const Status = {
  * @property {string} status
  * @property {Model} [model]
  * @property {Error} [error]
- *
  * @typedef DashboardGroupData
  * @property {number} id
  * @property {string} name
  * @property {Array<{id: number, name: string}>} dashboards
- *
  * @typedef DashboardGroup
  * @property {number} id
  * @property {string} name
  * @property {Array<Dashboard>} dashboards
- *
  * @typedef {import("@web/env").OdooEnv} OdooEnv
- *
  * @typedef {import("@web/core/network/orm_service").ORM} ORM
  */
 
@@ -57,15 +53,14 @@ export class DashboardLoader {
         this.env = env;
         /** @private */
         this.orm = orm;
-        /** @private @type {Array<DashboardGroupData>} */
+        /** @private */
         this.groups = [];
-        /** @private @type {Object<number, Dashboard>} */
+        /** @private */
         this.dashboards = {};
         this.geoJsonService = geoJsonService;
     }
 
     /**
-     * Restore the state of the dashboard loader
      * @param {Object} state
      * @param {Array<DashboardGroupData>} state.groups
      * @param {Record<number, Dashboard>} state.dashboards
@@ -196,10 +191,7 @@ export class DashboardLoader {
         };
     }
 
-    /**
-     * Filters and returns an array of favorite dashboards.
-     * @returns {Array<Dashboard>}
-     */
+    /** @returns {Array<Dashboard>} */
     _getFavoriteDashboards() {
         const favoriteDashboards = [];
         this.groups
@@ -270,11 +262,7 @@ export class DashboardLoader {
         }
     }
 
-    /**
-     * Activate the first sheet of a model
-     *
-     * @param {Model} model
-     */
+    /** @param {Model} model */
     _activateFirstSheet(model) {
         const sheetId = model.getters.getActiveSheetId();
         const firstSheetId = model.getters.getSheetIds()[0];

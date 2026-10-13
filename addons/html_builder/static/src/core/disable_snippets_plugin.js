@@ -144,10 +144,6 @@ export class DisableSnippetsPlugin extends Plugin {
     }
 
     /**
-     * Stores the selector/exclude that will make dropzones appear inside the
-     * editable elements, as well as the droppable zones (to compute them only
-     * once).
-     *
      * @param {Array<HTMLElement>} editableAreaEls
      * @param {HTMLElement} rootEl
      * @returns {Array<Object>}

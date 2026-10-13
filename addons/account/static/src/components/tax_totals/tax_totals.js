@@ -155,8 +155,7 @@ export class TaxTotalsComponent extends Component {
 
     /**
      * @param {any} props
-     * @returns {any} the totals the component shows and edits: a copy of the
-     *     record's value, made again only when that value changes
+     * @returns {any}
      */
     formatData(props) {
         const raw = toRaw(props.record.data[this.props.name]);

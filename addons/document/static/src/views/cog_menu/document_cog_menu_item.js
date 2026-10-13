@@ -80,10 +80,7 @@ export class DocumentsCogMenuItem extends Component {
 }
 
 /**
- * A cog menu entry acting on the current folder through one of
- * `documentActions`.
- *
- * @param {string} actionId a key of `documentActions`
+ * @param {string} actionId
  * @param {number} groupNumber
  */
 export function makeDocumentsCogMenuItem(actionId, groupNumber) {

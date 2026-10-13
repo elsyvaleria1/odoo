@@ -55,13 +55,10 @@ function getDefaultProps() {
 }
 
 /**
- * Create a spreadsheet model from a List controller
- *
  * @param {object} config
- * @param {object} [config.serverData] Data to be injected in the mock server
- * @param {object} [config.props] Props to be given to the component
- * @param {function} [config.mockRPC] Mock rpc function
- *
+ * @param {object} [config.serverData]
+ * @param {object} [config.props]
+ * @param {function} [config.mockRPC]
  * @returns {Promise<{target: HTMLElement, env: import("@web/env").OdooEnv}>}
  */
 async function mountSpreadsheetSelectorDialog(config = {}) {
@@ -70,7 +67,7 @@ async function mountSpreadsheetSelectorDialog(config = {}) {
         serverData: config.serverData || serverData,
         mockRPC: config.mockRPC,
     });
-    //@ts-ignore
+
     env.dialogData = {
         isActive: true,
         close: () => {},

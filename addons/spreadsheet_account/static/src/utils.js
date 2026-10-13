@@ -7,7 +7,7 @@ const { getFunctionsFromTokens } = helpers;
 
 /**
  * @typedef {import("@odoo/o-spreadsheet").Token} Token
- * @typedef  {import("@spreadsheet/helpers/odoo_functions_helpers").OdooFunctionDescription} OdooFunctionDescription
+ * @typedef {import("@spreadsheet/helpers/odoo_functions_helpers").OdooFunctionDescription} OdooFunctionDescription
  */
 
 /**
@@ -26,8 +26,6 @@ export function getNumberOfAccountFormulas(tokens) {
 }
 
 /**
- * Get the first Account function description of the given formula.
- *
  * @param {Token[]} tokens
  * @returns {OdooFunctionDescription | undefined}
  */

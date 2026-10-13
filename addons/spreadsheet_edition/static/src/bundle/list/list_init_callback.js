@@ -9,18 +9,12 @@ const uuidGenerator = new helpers.UuidGenerator();
 const { sanitizeSheetName } = helpers;
 
 /**
- * Get the function that have to be executed to insert the given list in the
- * given spreadsheet. The returned function has to be called with the model
- * of the spreadsheet and the stores
- *
  * @private
- *
  * @param {object} param
  * @param {import("@spreadsheet/list/plugins/list_core_plugin").SpreadsheetList} param.list
  * @param {number} param.threshold
- * @param {object} param.fields fields coming from list_model
- * @param {string} param.name Name of the list
- *
+ * @param {object} param.fields
+ * @param {string} param.name
  * @returns {function}
  */
 export function insertList({ list, threshold, fields, name }) {

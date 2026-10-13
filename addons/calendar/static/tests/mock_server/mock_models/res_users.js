@@ -3,11 +3,7 @@ import { serverState } from "@web/../tests/web_test_helpers";
 import { dateTime, serializeDateTime } from "@web/core/l10n/dates";
 
 export class ResUsers extends mailModels.ResUsers {
-    /**
-     * Simulates `_systray_get_calendar_event_domain` on `res.users`.
-     *
-     * @private
-     */
+    /** @private */
     _systray_get_calendar_event_domain() {
         const startDate = dateTime({ hour: 0, minute: 0, second: 0, millisecond: 0 });
         const endDate = dateTime({

@@ -36,10 +36,6 @@ export class LayerClassifier {
     }
 
     /**
-     * The layer's whole population, from the server: its class values or its
-     * bounds, as the classification needs. Null when the server cannot answer,
-     * and classes are then computed over the drawn rows.
-     *
      * @param {Object} layerConfig
      * @param {Array} domain
      * @returns {Promise<{values?: Array, bounds?: Object}|null>}

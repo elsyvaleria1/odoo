@@ -164,7 +164,7 @@ export class Thread extends Record {
     get isChannelKind() {
         return false;
     }
-    /** @returns {import("models").DiscussChannel|undefined} this thread, when it is a channel */
+    /** @returns {import("models").DiscussChannel|undefined} */
     get channel() {
         return undefined;
     }

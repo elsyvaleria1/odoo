@@ -193,7 +193,7 @@ function makeCompanies(userCompanies, context) {
  * @param {number | false} userId
  * @param {Record<string, any>} groups
  * @param {{ isInternalUser?: boolean, isSystem?: boolean, isAdmin?: boolean, isPublic?: boolean }} flags
- * @param {string[]} [groupRefs] every group the user is in, when the session lists them
+ * @param {string[]} [groupRefs]
  */
 function makeGroupCache(userId, groups, flags, groupRefs) {
     const memberOf = groupRefs && new Set(groupRefs);

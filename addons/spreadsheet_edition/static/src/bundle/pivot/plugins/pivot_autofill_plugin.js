@@ -22,11 +22,9 @@ const {
  * @typedef CurrentElement
  * @property {Array<string>} cols
  * @property {Array<string>} rows
- *
  * @typedef TooltipFormula
  * @property {string} value
  * @property {string} [title]
- *
  * @typedef GroupByDate
  * @property {boolean} isDate
  * @property {string|undefined} group
@@ -34,12 +32,9 @@ const {
 
 export class PivotAutofillPlugin extends UIPlugin {
     /**
-     * Get the next value to autofill of a pivot function
-     *
-     * @param {string} formula Pivot formula
-     * @param {boolean} isColumn True if autofill is LEFT/RIGHT, false otherwise
-     * @param {number} increment number of steps
-     *
+     * @param {string} formula
+     * @param {boolean} isColumn
+     * @param {number} increment
      * @returns {string}
      */
     getPivotNextAutofillValue(formula, isColumn, increment) {
@@ -118,12 +113,8 @@ export class PivotAutofillPlugin extends UIPlugin {
     }
 
     /**
-     * Compute the tooltip to display from a Pivot formula
-     *
-     * @param {string} formula Pivot formula
-     * @param {boolean} isColumn True if the direction is left/right, false
-     *                           otherwise
-     *
+     * @param {string} formula
+     * @param {boolean} isColumn
      * @returns {Array<TooltipFormula>}
      */
     getTooltipFormula(formula, isColumn) {
@@ -153,40 +144,13 @@ export class PivotAutofillPlugin extends UIPlugin {
     }
 
     /**
-     * Get the next value to autofill from a pivot value ("=PIVOT.VALUE()")
-     *
-     * Here are the possibilities:
-     * 1) LEFT-RIGHT
-     *  - Working on a date value, with one level of group by in the header
-     *      => Autofill the date, without taking care of headers
-     *  - Targeting a row-header
-     *      => Creation of a PIVOT.HEADER with the value of the current rows
-     *  - Targeting outside the pivot (before the row header and after the
-     *    last col)
-     *      => Return empty string
-     *  - Targeting a value cell
-     *      => Autofill by changing the cols
-     * 2) UP-DOWN
-     *  - Working on a date value, with one level of group by in the header
-     *      => Autofill the date, without taking care of headers
-     *  - Targeting a col-header
-     *      => Creation of a PIVOT.HEADER with the value of the current cols,
-     *         with the given increment
-     *  - Targeting outside the pivot (after the last row)
-     *      => Return empty string
-     *  - Targeting a value cell
-     *      => Autofill by changing the rows
-     *
-     * @param {string} pivotId Id of the pivot
-     * @param {Array<string>} args args of the pivot formula
-     * @param {boolean} isColumn True if the direction is left/right, false
-     *                           otherwise
-     * @param {number} increment Increment of the autofill
+     * @param {string} pivotId
+     * @param {Array<string>} args
+     * @param {boolean} isColumn
+     * @param {number} increment
      * @param {OdooPivot} dataSource
      * @param {OdooPivotDefinition} definition
-     *
      * @private
-     *
      * @returns {string}
      */
     _autofillPivotValue(pivotId, args, isColumn, increment, dataSource, definition) {
@@ -277,39 +241,13 @@ export class PivotAutofillPlugin extends UIPlugin {
         return this._createPivotFormula(pivotId, rows, cols, definition, measure);
     }
     /**
-     * Get the next value to autofill from a pivot header ("=PIVOT.HEADER()")
-     * which is a col.
-     *
-     * Here are the possibilities:
-     * 1) LEFT-RIGHT
-     *  - Working on a date value, with one level of group by in the header
-     *      => Autofill the date, without taking care of headers
-     *  - Targeting outside (before the first col after the last col)
-     *      => Return empty string
-     *  - Targeting a col-header
-     *      => Creation of a PIVOT.HEADER with the value of the new cols
-     * 2) UP-DOWN
-     *  - Working on a date value, with one level of group by in the header
-     *      => Replace the date in the headers and autocomplete as usual
-     *  - Targeting a cell (after the last col and before the last row)
-     *      => Autofill by adding the corresponding rows
-     *  - Targeting a col-header (after the first col and before the last
-     *    col)
-     *      => Creation of a PIVOT.HEADER with the value of the new cols
-     *  - Targeting outside the pivot (before the first col of after the
-     *    last row)
-     *      => Return empty string
-     *
-     * @param {string} pivotId Id of the pivot
-     * @param {Array<string>} args args of the pivot.header formula
-     * @param {boolean} isColumn True if the direction is left/right, false
-     *                           otherwise
-     * @param {number} increment Increment of the autofill
+     * @param {string} pivotId
+     * @param {Array<string>} args
+     * @param {boolean} isColumn
+     * @param {number} increment
      * @param {OdooPivot} dataSource
      * @param {OdooPivotDefinition} definition
-     *
      * @private
-     *
      * @returns {string}
      */
     _autofillPivotColHeader(
@@ -415,34 +353,13 @@ export class PivotAutofillPlugin extends UIPlugin {
         }
     }
     /**
-     * Get the next value to autofill from a pivot header ("=PIVOT.HEADER()")
-     * which is a row.
-     *
-     * Here are the possibilities:
-     * 1) LEFT-RIGHT
-     *  - Targeting outside (LEFT or after the last col)
-     *      => Return empty string
-     *  - Targeting a cell
-     *      => Autofill by adding the corresponding cols
-     * 2) UP-DOWN
-     *  - Working on a date value, with one level of group by in the header
-     *      => Autofill the date, without taking care of headers
-     *  - Targeting a row-header
-     *      => Creation of a PIVOT.HEADER with the value of the new rows
-     *  - Targeting outside the pivot (before the first row of after the
-     *    last row)
-     *      => Return empty string
-     *
-     * @param {string} pivotId Id of the pivot
-     * @param {Array<string>} args args of the pivot.header formula
-     * @param {boolean} isColumn True if the direction is left/right, false
-     *                           otherwise
-     * @param {number} increment Increment of the autofill
+     * @param {string} pivotId
+     * @param {Array<string>} args
+     * @param {boolean} isColumn
+     * @param {number} increment
      * @param {OdooPivot} dataSource
      * @param {OdooPivotDefinition} definition
-     *
      * @private
-     *
      * @returns {string}
      */
     _autofillPivotRowHeader(
@@ -497,16 +414,12 @@ export class PivotAutofillPlugin extends UIPlugin {
         }
     }
     /**
-     * Create a col header from a non-header value
-     *
-     * @param {string} pivotId Id of the pivot
-     * @param {number} nextIndex Index of the target column
-     * @param {CurrentElement} currentElement Current element (rows and cols)
+     * @param {string} pivotId
+     * @param {number} nextIndex
+     * @param {CurrentElement} currentElement
      * @param {OdooPivot} dataSource
      * @param {OdooPivotDefinition} definition
-     *
      * @private
-     *
      * @returns {string}
      */
     _autofillColFromValue(pivotId, nextIndex, currentElement, dataSource, definition) {
@@ -532,14 +445,10 @@ export class PivotAutofillPlugin extends UIPlugin {
         return this._createPivotFormula(pivotId, [], cols, definition);
     }
     /**
-     * Create a row header from a value
-     *
-     * @param {string} pivotId Id of the pivot
-     * @param {CurrentElement} currentElement Current element (rows and cols)
+     * @param {string} pivotId
+     * @param {CurrentElement} currentElement
      * @param {OdooPivotDefinition} definition
-     *
      * @private
-     *
      * @returns {string}
      */
     _autofillRowFromValue(pivotId, currentElement, definition) {
@@ -550,14 +459,9 @@ export class PivotAutofillPlugin extends UIPlugin {
         return this._createPivotFormula(pivotId, rows, [], definition);
     }
     /**
-     * Parse the arguments of a pivot function to find the col values and
-     * the row values of a PIVOT.HEADER function
-     *
-     * @param {Array<string>} args Args of the pivot.header formula
+     * @param {Array<string>} args
      * @param {OdooPivotDefinition} definition
-     *
      * @private
-     *
      * @returns {CurrentElement}
      */
     _getCurrentHeaderElement(args, definition) {
@@ -570,14 +474,9 @@ export class PivotAutofillPlugin extends UIPlugin {
         return { cols, rows };
     }
     /**
-     * Parse the arguments of a pivot function to find the col values and
-     * the row values of a PIVOT function
-     *
-     * @param {Array<string>} args Args of the pivot formula
+     * @param {Array<string>} args
      * @param {OdooPivotDefinition} definition
-     *
      * @private
-     *
      * @returns {CurrentElement}
      */
     _getCurrentValueElement(args, definition) {
@@ -588,16 +487,8 @@ export class PivotAutofillPlugin extends UIPlugin {
         return { cols, rows };
     }
     /**
-     * Return the values for the fields which are present in the list of
-     * fields
-     *
-     * ex: dimensions: [{ nameWithGranularity: "create_date:month" }]
-     *     values: { "create_date:month": "01/01", stage_id: 1 }
-     *      => ["01/01"]
-     *
-     * @param {import("@odoo/o-spreadsheet").PivotDimension[]} dimensions List of fields
-     * @param {Object} values Association field-values
-     *
+     * @param {import("@odoo/o-spreadsheet").PivotDimension[]} dimensions
+     * @param {Object} values
      * @private
      * @returns {Array<string>}
      */
@@ -616,12 +507,9 @@ export class PivotAutofillPlugin extends UIPlugin {
             });
     }
     /**
-     * Increment a date with a given increment and interval (group)
-     *
      * @param {string} date
-     * @param {string} group (day, week, month, ...)
+     * @param {string} group
      * @param {number} increment
-     *
      * @private
      * @returns {string}
      */
@@ -631,11 +519,7 @@ export class PivotAutofillPlugin extends UIPlugin {
         return adapter.increment(value, increment);
     }
     /**
-     * Create a structure { field: value } from the arguments of a pivot
-     * function
-     *
      * @param {Array<string>} args
-     *
      * @private
      * @returns {Object}
      */
@@ -648,16 +532,11 @@ export class PivotAutofillPlugin extends UIPlugin {
     }
 
     /**
-     * Get the tooltip for a pivot formula
-     *
      * @param {Array<string>} args
-     * @param {boolean} isColumn True if the direction is left/right, false
-     *                           otherwise
+     * @param {boolean} isColumn
      * @param {OdooPivot} dataSource
      * @param {OdooPivotDefinition} definition
-     *
      * @private
-     *
      * @returns {Array<TooltipFormula>}
      */
     _tooltipFormatPivot(args, isColumn, dataSource, definition) {
@@ -686,13 +565,9 @@ export class PivotAutofillPlugin extends UIPlugin {
         return tooltips;
     }
     /**
-     * Get the tooltip for a pivot header formula
-     *
      * @param {Array<string>} args
      * @param {OdooPivot} dataSource
-     *
      * @private
-     *
      * @returns {Array<TooltipFormula>}
      */
     _tooltipFormatPivotHeader(args, dataSource) {
@@ -733,14 +608,11 @@ export class PivotAutofillPlugin extends UIPlugin {
     }
 
     /**
-     * Create a pivot formula
-     *
      * @param {string} pivotId
      * @param {Object} rows
      * @param {Object} cols
      * @param {OdooPivotDefinition} definition
      * @param {string} [measure]
-     *
      * @returns {string}
      */
     _createPivotFormula(pivotId, rows, cols, definition, measure) {
@@ -787,7 +659,7 @@ export class PivotAutofillPlugin extends UIPlugin {
 
     /**
      * @param {OdooPivotDefinition} definition
-     * @param {string} dimension COLUMN | ROW
+     * @param {string} dimension
      */
     _isGroupedOnlyByOneDate(definition, dimension) {
         const groupBys = dimension === "COLUMN" ? definition.columns : definition.rows;
@@ -795,7 +667,7 @@ export class PivotAutofillPlugin extends UIPlugin {
     }
     /**
      * @param {OdooPivotDefinition} definition
-     * @param {string} dimension COLUMN | ROW
+     * @param {string} dimension
      */
     _getGroupOfFirstDate(definition, dimension) {
         if (!this._isGroupedOnlyByOneDate(definition, dimension)) {

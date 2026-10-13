@@ -69,25 +69,21 @@ import {
  * @typedef {"drag" | "locked" | "resize"} InteractionMode
  * @typedef {`__pill__${number}`} PillId
  * @typedef {import("./gantt_model").RowId} RowId
- *
  * @typedef Column
  * @property {number} index
  * @property {GridPosition} grid
  * @property {boolean} [isToday]
  * @property {DateTime} start
  * @property {DateTime} stop
- *
  * @typedef GridPosition
  * @property {number | number[]} [row]
  * @property {number | number[]} [column]
- *
  * @typedef Group
  * @property {boolean} break
  * @property {number} col
  * @property {Pill[]} pills
  * @property {number} aggregateValue
  * @property {GridPosition} grid
- *
  * @typedef GanttRendererProps
  * @property {import("./gantt_model").GanttModel} model
  * @property {Document} arch
@@ -95,16 +91,13 @@ import {
  * @property {(context: Record<string, any>)} create
  * @property {{ content?: Point }} [scrollPosition]
  * @property {{ el: HTMLDivElement | null }} [contentRef]
- *
  * @typedef HoveredInfo
  * @property {Element | null} connector
  * @property {HTMLElement | null} hoverable
  * @property {HTMLElement | null} pill
- *
  * @typedef Interaction
  * @property {InteractionMode | null} mode
  * @property {DragActionMode} dragAction
- *
  * @typedef Pill
  * @property {PillId} id
  * @property {boolean} disableStartResize
@@ -118,19 +111,15 @@ import {
  * @property {RelationalRecord} record
  * @property {number} _color
  * @property {number} _progress
- *
  * @typedef Point
  * @property {number} [x]
  * @property {number} [y]
- *
  * @typedef {Record<string, any>} RelationalRecord
  * @property {number | false} id
- *
  * @typedef ResizeBadge
  * @property {Point & { right?: number }} position
  * @property {number} diff
  * @property {string} scale
- *
  * @typedef {import("./gantt_model").Row & {
  *  grid: GridPosition,
  *  pills: Pill[],
@@ -138,7 +127,6 @@ import {
  *  thumbnailUrl?: string,
  *  avatar?: Record<string, unknown> | null
  * }} Row
- *
  * @typedef SubColumn
  * @property {number} columnIndex
  * @property {boolean} [isToday]
@@ -194,7 +182,7 @@ export class GanttRendererCore extends Component {
         /** @type {Record<RowId, Pill[]>} */
         this.rowPills = {};
 
-        /** @type {GridGeometry | null} rebuilt whenever the range or scale changes */
+        /** @type {GridGeometry | null} */
         this.geometry = null;
         this.controlsCallbacks = {
             focusToday: () => this.focusToday(),
@@ -377,8 +365,8 @@ export class GanttRendererCore extends Component {
     }
 
     /**
-     * @param {Pill[]} pills -- sorted by first column; each gets its `level`
-     * @returns {number} how many levels the row needs
+     * @param {Pill[]} pills
+     * @returns {number}
      */
     calculatePillsLevel(pills) {
         return assignPillLevels(pills);
@@ -808,10 +796,6 @@ export class GanttRendererCore extends Component {
     }
 
     /**
-     * How long the pill's record lasts, in the unit `getDurationStr` formats.
-     * `0` when the view declares no `duration_field`: the gantt view itself has
-     * no notion of a duration, it only relays the one the arch names.
-     *
      * @param {RelationalRecord} record
      * @returns {number}
      */
@@ -978,17 +962,7 @@ export class GanttRendererCore extends Component {
         return newPill;
     }
 
-    /**
-     * There are two forms of pills: pills comming from fetched records
-     * and pills that are some kind of aggregation of the previous.
-     *
-     * Here we create the pills of the firs type.
-     *
-     * The basic properties (independent of rows,...) of the pills of
-     * the first type should be computed here.
-     *
-     * @returns {Partial<Pill>[]}
-     */
+    /** @returns {Partial<Pill>[]} */
     getPills() {
         const { records } = this.model.data;
         const { dateStartField } = this.model.metaData;
@@ -1062,11 +1036,6 @@ export class GanttRendererCore extends Component {
      * @returns {Object}
      */
     /**
-     * The props of the `Avatar` component drawn in the row header instead of
-     * the row name, or null for the name. The base registers no such
-     * component: a subclass returning props here adds one to its
-     * `components`.
-     *
      * @param {Row} row
      * @returns {Record<string, unknown> | null}
      */
@@ -1142,12 +1111,6 @@ export class GanttRendererCore extends Component {
     }
 
     /**
-     * Folds each group into its predecessor while the predecessor is mergeable,
-     * left to right. Written as a divide-and-conquer recursion before, which
-     * allocated two arrays per level for a result a single pass produces --
-     * both live `getAggregateValue` implementations (this one, and planning's
-     * sum) fold in either order to the same value.
-     *
      * @param {Group[]} groups
      * @returns {Group[]}
      */
@@ -1394,9 +1357,7 @@ export class GanttRendererCore extends Component {
         return result;
     }
 
-    /**
-     * @returns {boolean}: whether one of the "groupedBy" fields of the model is readonly
-     */
+    /** @returns {boolean} */
     containsReadonlyGroup() {
         return this.model.metaData.groupedBy.some(
             (groupedByField) => this.model.metaData.fields[groupedByField].readonly,

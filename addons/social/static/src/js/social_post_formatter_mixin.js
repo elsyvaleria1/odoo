@@ -11,12 +11,8 @@ export const SocialPostFormatterRegex = {
 
 export const SocialPostFormatterMixinBase = {
     /**
-     * Add emojis support
-     * Wraps links, #hashtag and @tag around anchors
-     * Regex from: https://stackoverflow.com/questions/19484370/how-do-i-automatically-wrap-text-urls-in-anchor-tags
-     *
      * @param {string|import("@odoo/owl").Markup} value
-     * @returns {string|import("@odoo/owl").Markup} value
+     * @returns {string|import("@odoo/owl").Markup}
      * @private
      */
     _formatPost(value) {

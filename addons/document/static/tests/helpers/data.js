@@ -211,9 +211,7 @@ export class DocumentsDocument extends models.Model {
         record.folder_id = target;
     }
 
-    /**
-     * @override to
-     */
+    /** @override */
     async search_panel_select_range() {
         const result = { parent_field: "user_folder_id" };
         result.values = await this._get_search_panel_specials();
@@ -328,11 +326,6 @@ export class DocumentsDocument extends models.Model {
     }
 
     /**
-     * The server's refusal of a checked move changing access (tools.py
-     * MoveChangesAccess), on a rule without grants: a document takes the
-     * folder's link and, unless restricted, its internal access, and what a
-     * moved folder contains follows it; shortcuts keep theirs.
-     *
      * @param {number[]} ids
      * @param {number} folderId
      * @param {Object} [context]
@@ -502,9 +495,6 @@ export class MailAliasDomain extends models.Model {
 export const documentsMockUser = { isManager: false };
 
 /**
- * What the server computes for the current user: a lock held by anyone else
- * stops them, unless a manager, and the trash wants an editor.
- *
  * @param {Object} data
  * @returns {{is_locked_by_other: boolean, user_can_trash: boolean}}
  */

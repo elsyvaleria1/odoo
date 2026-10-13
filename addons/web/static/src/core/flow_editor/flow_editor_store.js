@@ -32,12 +32,6 @@ function copyConnection(connection) {
 }
 
 /**
- * Applies the consumer's own change between two graphs it handed over to the
- * items the store holds: an item the consumer passes back as the very object it
- * passed last time keeps what the user did to it here (moved, resized, removed),
- * any other item it passes is taken as given, an item it dropped is dropped,
- * and an item only the store knows (a connection made here) is kept.
- *
  * @template {{ id: string | number }} T
  * @param {T[]} current
  * @param {T[]} next
@@ -114,11 +108,10 @@ export class FlowEditorStore {
      * @param {Object} graph
      * @param {import("./flow_types").FlowNode[]} graph.nodes
      * @param {import("./flow_types").FlowConnection[]} graph.connections
-     * @param {Object} [previous] the graph the consumer handed over before this
-     * one; without it, the new graph replaces everything
+     * @param {Object} [previous]
      * @param {import("./flow_types").FlowNode[]} previous.nodes
      * @param {import("./flow_types").FlowConnection[]} previous.connections
-     * @returns {import("./flow_types").FlowInteraction | null} the interaction the new graph ended
+     * @returns {import("./flow_types").FlowInteraction | null}
      */
     setGraph(
         { nodes, connections },

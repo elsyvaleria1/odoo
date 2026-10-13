@@ -150,12 +150,7 @@ export class MainComponent extends Component {
         this.model.toggleSelection();
     }
 
-    /**
-     * Handles the click on replenish button. It will call action_replenish with
-     * all the Ids present in the view.
-     *
-     * @private
-     */
+    /** @private */
     _onClickReplenish() {
         this.model.replenishAll();
     }
@@ -237,11 +232,7 @@ export class MainComponent extends Component {
         });
     }
 
-    /**
-     * Opens the Export Dialog
-     *
-     * @private
-     */
+    /** @private */
     onExportData() {
         const dialogProps = {
             context: this.props.context,

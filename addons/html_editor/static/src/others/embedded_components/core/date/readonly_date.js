@@ -13,10 +13,6 @@ import {
 } from "@web/core/l10n/dates";
 
 /**
- * A "date" chip stores its day ("2026-04-05"); a "datetime" or "time" chip its
- * instant in UTC. A date chip stored as an instant, as they were before, is the
- * day that instant falls on for the reader.
- *
  * @param {string} text
  * @param {string} type
  * @returns {Temporal.PlainDate | Temporal.ZonedDateTime | null}

@@ -11,32 +11,17 @@ import {
 import { _t } from "@web/core/translation";
 import { inRangeProviderRegistry } from "@web/core/tree";
 
-/**
- * The ranges the domain editor may offer, filled by `date_range_service`
- * before the editor renders and read synchronously from here afterwards.
- *
- * A module-level cache rather than a service lookup because the registry's
- * contract is synchronous: `getOptions` is called while the value editor is
- * being built, with no `env` in hand and no room to await anything.
- *
- * @type {Array<Object>}
- */
+/** @type {Array<Object>} */
 let ranges = [];
 
-/**
- * @param {Array<Object>} loadedRanges - date.range records
- */
+/** @param {Array<Object>} loadedRanges */
 export function setDateRanges(loadedRanges) {
     ranges = loadedRanges || [];
 }
 
 /**
- * A range covers whole days, so on a datetime field it runs from the first
- * instant of its start day to the last of its end day. Getting these the wrong
- * way round silently narrows the filter by almost two days.
- *
- * @param {string} date - YYYY-MM-DD
- * @param {string} fieldType - 'date' or 'datetime'
+ * @param {string} date
+ * @param {string} fieldType
  * @param {boolean} endOfDay
  * @returns {string}
  */
@@ -49,9 +34,9 @@ function bound(date, fieldType, endOfDay) {
 }
 
 /**
- * @param {string} value - a stored bound
+ * @param {string} value
  * @param {string} fieldType
- * @returns {string} the plain date it falls on
+ * @returns {string}
  */
 function toDate(value, fieldType) {
     if (fieldType === "date") {

@@ -22,8 +22,6 @@ function propertyDescription(definition, definitionRecordName) {
 }
 
 /**
- * A changed type or relation invalidates saved operators, values and intervals.
- * Labels and choice metadata can be refreshed without changing query identity.
  * @param {Record<string, any>} previous
  * @param {Record<string, any>} next
  */
@@ -31,7 +29,7 @@ function compatiblePropertyDefinition(previous, next) {
     return previous.type === next.type && previous.comodel === next.comodel;
 }
 
-/** @param {Record<string, any>} previous @param {Record<string, any>} next */
+/** @param {Record<string, any>} previous */
 function compatibleGroupingDefinition(previous, next) {
     if (!compatiblePropertyDefinition(previous, next)) {
         return false;
@@ -53,7 +51,6 @@ function compatibleGroupingDefinition(previous, next) {
 }
 
 /**
- * Refresh display labels without changing saved criteria, including removed choices.
  * @param {any[]} query
  * @param {number} searchItemId
  * @param {Record<string, any>} definition
@@ -82,13 +79,7 @@ function refreshChoiceLabels(query, searchItemId, definition) {
     return changed;
 }
 
-/**
- * Group-by paths cannot distinguish definition records. Keep one entry for
- * compatible names, and exclude paths whose types, relations or choices disagree.
- * The ORM resolves one definition for the entire path, so unioning choices would
- * still put values exclusive to another definition into the unset group.
- * @param {import("@web/core/field_service").PropertyDefinitionRecord[]} records
- */
+/** @param {import("@web/core/field_service").PropertyDefinitionRecord[]} records */
 function groupablePropertyRecords(records) {
     const byName = new Map();
     const ambiguous = new Set();

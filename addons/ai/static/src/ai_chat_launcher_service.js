@@ -122,11 +122,9 @@ export const aiChatLauncherService = {
                 thread.openChatWindow();
             },
             /**
-             * Converts record data to a JSON-serialisable plain object, so we can
-             * pass it to the AI record's context.
-             * @param {Object} recordData the record values, keyed by field name
-             * @param {Object} fieldsInfo the field descriptions, keyed by field name
-             * @returns {Object} the formatted record values
+             * @param {Object} recordData
+             * @param {Object} fieldsInfo
+             * @returns {Object}
              */
             recordDataToContextJSON(recordData, fieldsInfo) {
                 const result = {};

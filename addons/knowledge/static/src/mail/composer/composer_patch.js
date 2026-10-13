@@ -13,10 +13,7 @@ const composerPatch = {
     get hasGifPicker() {
         return super.hasGifPicker && !this.knowledgeContext.inKnowledge;
     },
-    /**
-     * Change the label on the button that posts comments on an article.
-     * @override
-     **/
+    /** @override */
     get SEND_TEXT() {
         return this.props.composer?.thread?.model === "knowledge.article.thread"
             ? _t("Post")

@@ -43,7 +43,7 @@ export class SelectionLikeField extends FieldComponent {
         }
     }
 
-    /** @returns {Array<[any, string]>} the choices a selection-like widget offers, an empty label excluded */
+    /** @returns {Array<[any, string]>} */
     get options() {
         switch (this.type) {
             case "many2one":

@@ -35,7 +35,7 @@ export function orderlineGroupKey(line) {
 }
 
 /**
- * @param {PosOrderline[]} lines display-ordered lines, combo children behind their parent
+ * @param {PosOrderline[]} lines
  * @returns {{ lines: PosOrderline[], groupOf: Map<string, OrderlineGroup> }}
  */
 export function groupOrderlines(lines) {

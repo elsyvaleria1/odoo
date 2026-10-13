@@ -97,13 +97,7 @@ export function useSignViewButtons(component, fileInput) {
             });
         },
 
-        /**
-         * Initiates the file upload process by opening a file input dialog
-         * and configuring the 'save as template' button based on the provided model
-         * and other properties.
-         *
-         * @param {Object}
-         */
+        /** @param {Object} */
         requestFile(context) {
             latestRequestContext = context;
             resModel = this.props.resModel;

@@ -598,12 +598,8 @@ test("a moderate suspend (under the liveness timeout) does not evict live client
 });
 
 /**
- * Feed a raw notification batch to the worker as if the server sent it, and
- * return the ids that got broadcast to the clients (deduped/filtered ones are
- * absent).
- *
  * @param {ReturnType<getWebSocketWorker>} worker
- * @param {number[]} broadcastIds sink the broadcast collector pushes into
+ * @param {number[]} broadcastIds
  * @param {{ id: number }[]} batch
  */
 function feedNotifications(worker, batch) {

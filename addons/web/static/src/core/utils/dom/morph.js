@@ -5,9 +5,9 @@ const SCAN_LIMIT = 10;
 
 /**
  * @typedef {Object} MorphOptions
- * @property {boolean} [inner] morph the target's children instead of the target
- * @property {(node: Node) => void} [onNodeAdded] a node from the new content entered the document
- * @property {(node: Node) => void} [onNodeRemoved] a node is about to leave the document
+ * @property {boolean} [inner]
+ * @property {(node: Node) => void} [onNodeAdded]
+ * @property {(node: Node) => void} [onNodeRemoved]
  */
 
 /**
@@ -23,12 +23,6 @@ const SCAN_LIMIT = 10;
  */
 
 /**
- * Makes `target` (or its children, with `inner`) match `content` while keeping
- * every node that can be matched: elements by persistent id first, then by
- * identical or same-tag siblings. Kept nodes keep their listeners, their
- * interactions, the focus and the caret. A kept element marked
- * `data-morph-preserve` is left exactly as it is, attributes and children.
- *
  * @param {Element} target
  * @param {Element | DocumentFragment} content
  * @param {MorphOptions} [options]
@@ -172,8 +166,6 @@ function morphChildren(
 }
 
 /**
- * Reports the root of each new subtree once, not every node built inside it.
- *
  * @param {MorphContext} ctx
  * @param {Node} node
  */
@@ -369,9 +361,6 @@ function morphNode(ctx, oldNode, newNode) {
 }
 
 /**
- * Attribute changes reach the live state of a form control only when the
- * user is not on it: a server render must not overwrite what is being typed.
- *
  * @param {Element} destination
  * @param {Element} source
  */
@@ -433,8 +422,6 @@ function createIdMaps(oldTarget, newContent) {
 }
 
 /**
- * Ids present once on each side, on the same tag: the nodes a morph may move.
- *
  * @param {Element[]} oldIdElements
  * @param {Element[]} newIdElements
  */

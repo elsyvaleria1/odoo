@@ -81,11 +81,8 @@ class Partner extends models.Model {
 defineModels([Task, Partner]);
 
 /**
- * Answer the geocoding/routing calls with real `Response` objects; anything
- * that is not an outbound provider call keeps going to the test server.
- *
  * @param {(url: string) => Response|Promise<Response>} handler
- * @returns {string[]} the provider urls requested, in order
+ * @returns {string[]}
  */
 function mockProvider(handler) {
     const requested = [];

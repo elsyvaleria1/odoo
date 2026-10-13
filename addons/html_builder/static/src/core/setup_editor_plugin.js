@@ -11,7 +11,6 @@ import { _t } from "@web/core/translation";
 /**
  * @typedef {(() => void | true)[]} after_setup_editor_handlers
  * @typedef {(() => void)[]} before_setup_editor_handlers
- *
  * @typedef {CSSSelector[]} o_editable_selectors
  */
 
@@ -91,9 +90,6 @@ export class SetupEditorPlugin extends Plugin {
     }
 
     /**
-     * Gets all the editable elements contained in the given root element (or
-     * the editable if none is specified), including this element.
-     *
      * @param {HTMLElement|undefined} rootEl
      * @returns {Array<HTMLElement>}
      */

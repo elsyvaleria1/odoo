@@ -3,7 +3,7 @@ import { waitForPartialNavigation } from "@web_tour/js/utils/tour_utils";
 
 /**
  * @param {string} name
- * @param {string} list the selector of the list of results
+ * @param {string} list
  */
 function searchInPlace(name, list) {
     return {

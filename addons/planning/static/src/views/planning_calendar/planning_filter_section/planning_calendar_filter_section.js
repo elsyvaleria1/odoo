@@ -12,11 +12,11 @@ export class PlanningCalendarFilterSection extends CalendarFilterSection {
         return this.section.fieldName === "resource_id" ? "no_filter_color" : "";
     }
 
-    /*
-     * @override
-     * By default, this function puts filter with empty value at the end of the list. In planning, we want it to be
-     * the first filter displayed.
-     */
+
+
+
+
+
     getSortedFilters() {
         const sortedFilters = super.getSortedFilters();
         let nullValueItem = false;
@@ -33,9 +33,9 @@ export class PlanningCalendarFilterSection extends CalendarFilterSection {
         return sortedFilters;
     }
 
-    /*
-     * @override
-     */
+
+
+
     async loadSource(request) {
         const options = await super.loadSource(request);
         if (this.section.fieldName !== "resource_id") {

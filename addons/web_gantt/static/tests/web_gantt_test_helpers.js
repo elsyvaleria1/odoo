@@ -20,13 +20,13 @@ import { GanttRenderer } from "@web_gantt/gantt_renderer";
 
 /**
  * @typedef CellHelperOptions
- * @property {number} [part=1] -- starts at 1
+ * @property {number} [part=1]
  * @property {boolean} [ignoreHoverableClass=false]
  */
 
 /**
  * @typedef PillHelperOptions
- * @property {number} [nth=1] -- starts at 1
+ * @property {number} [nth=1]
  */
 
 /**
@@ -135,13 +135,7 @@ export async function mountGanttView(params) {
     return gantt;
 }
 
-/**
- * Patches GanttRenderer so every render is recorded as a "patched" step
- * (via expect.step). `onModel`, if given, is called with the renderer's
- * model as soon as it is set up.
- *
- * @param {(model: import("@web_gantt/gantt_model").GanttModel) => void} [onModel]
- */
+/** @param {(model: import("@web_gantt/gantt_model").GanttModel) => void} [onModel] */
 export function trackPatches(onModel) {
     patchWithCleanup(GanttRenderer.prototype, {
         setup() {
@@ -290,17 +284,8 @@ export async function unfoldAllColumns() {
 }
 
 /**
- * Computed value a CSS declaration resolves to inside the gantt renderer.
- *
- * Lets an assertion name the design token an element is meant to use instead of
- * the literal colour it currently produces: the renderer deliberately exposes
- * its palette as custom properties ("Allows to use color variables in js" in
- * gantt_view.scss), and hardcoded ``rgb()`` expectations went stale the moment
- * the palette moved. Resolving through a probe also normalises the value into
- * the same form ``getComputedStyle`` reports for the element under test.
- *
- * @param {string} property CSS property name, kebab-case
- * @param {string} value declaration value, e.g. ``var(--Gantt__Group-background)``
+ * @param {string} property
+ * @param {string} value
  * @returns {string}
  */
 export function resolveStyle(property, value) {
@@ -574,10 +559,7 @@ export async function hoverCell(cell, options) {
     await advanceTime(1000);
 }
 
-/**
- * Hovers a cell found from given grid coordinates.
- * @type {CellHelper<Promise<HTMLElement>>}
- */
+/** @type {CellHelper<Promise<HTMLElement>>} */
 export async function hoverGridCell(
     columnHeader,
     groupHeader,
@@ -589,19 +571,13 @@ export async function hoverGridCell(
     return cell;
 }
 
-/**
- * Click on a cell found from given grid coordinates.
- * @type {CellHelper<Promise<HTMLElement>>}
- */
+/** @type {CellHelper<Promise<HTMLElement>>} */
 export async function clickCell(columnHeader, groupHeader, rowHeader = null, options) {
     const cell = getCell(columnHeader, groupHeader, rowHeader, options);
     await contains(cell).click();
 }
 
-/**
- * Hovers a cell found from a pill element.
- * @param {HTMLElement} pill
- */
+/** @param {HTMLElement} pill */
 async function hoverPillCell(pill) {
     const cell = getCellFromPill(pill);
     const pStart = getGridStyle(pill).column[0];
@@ -684,9 +660,6 @@ export function getPillWrapper(text, options) {
 }
 
 /**
- * For each cell of a specific column, checks whether the cell has the class in
- * its' classList and returns as a list of booleans.
- *
  * @param {string} cssClass
  * @param {string[]} columnHeaders
  * @returns {boolean[]}

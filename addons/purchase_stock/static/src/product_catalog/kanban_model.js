@@ -4,7 +4,7 @@ import { ProductCatalogKanbanModel } from "@product/product_catalog/kanban_model
 import { getSuggestToggleState } from "./utils.js";
 
 export class PurchaseSuggestCatalogKanbanModel extends ProductCatalogKanbanModel {
-    /** @override to reorder records with suggested_qty > 0 to the top, keeping original order. */
+    /** @override */
     async _loadData(params, ...rest) {
         const sortBySuggested = (list) => {
             const suggested = list.filter((record) => record.suggested_qty > 0);

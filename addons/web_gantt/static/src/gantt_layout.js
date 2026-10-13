@@ -9,11 +9,6 @@ export const FOLDED_COLUMN_WIDTH = 36;
  */
 
 /**
- * Stacks pills into levels: each pill takes the first level whose last pill
- * ends before it starts, else opens a new one. Pills must arrive sorted by
- * first column. Every pill gets its `level`; the count is the row's height
- * in pill rows.
- *
  * @param {Placed[]} pills
  * @returns {number}
  */
@@ -43,8 +38,6 @@ export function assignPillLevels(pills) {
 }
 
 /**
- * A selected cell's key, `startRow_endRow_startCol_endCol`, as numbers.
- *
  * @param {string} cellKey
  * @returns {Block}
  */
@@ -54,9 +47,6 @@ export function parseCellKey(cellKey) {
 }
 
 /**
- * The first selected block, extended rightwards over the blocks that abut it
- * on the same row: the range a single create from the selection covers.
- *
  * @param {Block[]} blocks
  * @returns {Block}
  */
@@ -75,11 +65,8 @@ export function firstSelectedRun(blocks) {
 }
 
 /**
- * The `grid-template-rows` of the coarse grid: one named line per rendered
- * row boundary, each track as tall as the fine rows it spans.
- *
- * @param {(number | string)[]} coarseRowKeys -- ascending fine-row numbers
- * @param {number[]} gridRows -- the height of each fine row
+ * @param {(number | string)[]} coarseRowKeys
+ * @param {number[]} gridRows
  * @returns {string}
  */
 export function rowsTemplate(coarseRowKeys, gridRows) {
@@ -100,8 +87,8 @@ export function rowsTemplate(coarseRowKeys, gridRows) {
  * @param {number} params.rowHeaderWidth
  * @param {number} params.cellPart
  * @param {number} params.minimalColumnWidth
- * @param {number} params.columnCount -- total grid
- * @param {number} params.foldedGridColumnCount -- folded grid
+ * @param {number} params.columnCount
+ * @param {number} params.foldedGridColumnCount
  * @param {(0 | 1)[]} [params.foldedColumns]
  * @returns {{ visibleCellContainerWidth: number, cellPartWidth: number, columnWidth: number, columnWidths: number[], totalWidth: number | null }}
  */
@@ -154,7 +141,7 @@ export function columnWidths({
 }
 
 /**
- * @param {(number | string)[]} coarseColKeys -- ascending sub-column numbers
+ * @param {(number | string)[]} coarseColKeys
  * @param {(from: number, to: number) => { distance: number, flexible: boolean }} distanceBetween
  * @returns {string}
  */
@@ -171,13 +158,13 @@ export function colsTemplate(coarseColKeys, distanceBetween) {
 }
 
 /**
- * @param {number} x -- from the left edge of the cell container
+ * @param {number} x
  * @param {Object} params
  * @param {number} params.cellContainerWidth
- * @param {number[]} params.columnWidths -- one per folded-grid column
- * @param {number} params.columnCount -- total grid
+ * @param {number[]} params.columnWidths
+ * @param {number} params.columnCount
  * @param {(index: number) => number} params.indexInTotalGrid
- * @returns {number} in [0, 1] for a position inside the grid
+ * @returns {number}
  */
 export function focusFactorAt(
     x,
@@ -197,7 +184,7 @@ export function focusFactorAt(
 }
 
 /**
- * @param {number} start -- sub-column line
+ * @param {number} start
  * @param {number} stop
  * @param {Object} params
  * @param {number} params.cellPart

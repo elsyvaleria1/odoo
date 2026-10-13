@@ -3,7 +3,7 @@
 
 /**
  * @param {number[]} sectionSizes
- * @param {number | number[]} perRow one width for every section, or one per section
+ * @param {number | number[]} perRow
  * @param {number} [singleRows]
  * @returns {number[][]}
  */

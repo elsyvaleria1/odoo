@@ -106,10 +106,6 @@ export function getCommonEmbeddedActions(documents) {
 }
 
 /**
- * A server action refused some documents: `action_execute_embedded_action`
- * answers `{warning: {title, documents}}`. One notification shape for the
- * two client paths that run embedded actions.
- *
  * @param {import("@web/ui/notification/notification_service").NotificationService} notification
  * @param {{title: string, documents: string[]}} warning
  */

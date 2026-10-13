@@ -101,7 +101,7 @@ export class MultiSelectionButtons extends Component {
                 if (!el) {
                     return;
                 }
-                // @ts-ignore
+
                 const { width: parentWidth } = el.parentElement.getBoundingClientRect();
                 const { width } = el.getBoundingClientRect();
                 const left = Math.floor((parentWidth - width) / 2);

@@ -216,7 +216,7 @@ export class PivotRenderer extends Component {
         }));
     }
 
-    /** @returns {any} the table of the model's current data */
+    /** @returns {any} */
     get table() {
         return this.currentTable();
     }

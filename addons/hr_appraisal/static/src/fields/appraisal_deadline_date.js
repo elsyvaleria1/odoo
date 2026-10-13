@@ -4,7 +4,7 @@ import { _t } from "@web/core/translation";
 import { RemainingDaysField } from "@web/fields/temporal/remaining_days/remaining_days_field";
 
 export class AppraisalDeadlineDate extends RemainingDaysField {
-    /** @override - a done appraisal is never urgent, whatever its date. */
+    /** @override */
     get diffDays() {
         const result = super.diffDays;
         const state = this.props.record.data.state;
@@ -14,7 +14,7 @@ export class AppraisalDeadlineDate extends RemainingDaysField {
         return result;
     }
 
-    /** @override - show the date itself, not a relative span. */
+    /** @override */
     get diffString() {
         return this.formattedValue;
     }

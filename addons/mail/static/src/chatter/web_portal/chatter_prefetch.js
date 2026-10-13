@@ -20,8 +20,7 @@ export function prefetchThreadData(thread, requestList) {
 /**
  * @param {import("models").Thread} thread
  * @param {string[]} requestList
- * @returns {Promise<string[] | null>} what is left to fetch, all of it when the
- *     prefetch failed; null when there was none
+ * @returns {Promise<string[] | null>}
  */
 export async function takeThreadPrefetch(thread, requestList) {
     const prefetch = prefetches.get(toRaw(thread));

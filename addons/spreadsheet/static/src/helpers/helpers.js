@@ -2,22 +2,16 @@
 // @ts-check
 
 /**
- * Get the intersection of two arrays
- *
  * @param {Array} a
  * @param {Array} b
- *
  * @private
- * @returns {Array} intersection between a and b
+ * @returns {Array}
  */
 export function intersect(a, b) {
     return a.filter((x) => b.includes(x));
 }
 
 /**
- * Convert a spreadsheet date representation to an odoo
- * server formatted date
- *
  * @param {Date} value
  * @returns {string}
  */
@@ -42,7 +36,6 @@ function camelToSnakeKey(word) {
 }
 
 /**
- * Recursively convert camel case object keys to snake case keys
  * @param {object} obj
  * @returns {object}
  */

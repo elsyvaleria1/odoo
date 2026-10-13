@@ -87,9 +87,6 @@ export class MessagingMenu extends Record {
     }
 
     /**
-     * Actions other bundles add to a tab. A hook of this model rather than of
-     * the patch declaring the tab: a bundle may be patched in before it.
-     *
      * @param {string} tabId
      * @returns {import("@mail/core/public_web/messaging_menu/messaging_menu_tab_model").MessagingMenuTabAction[]}
      */

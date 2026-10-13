@@ -15,10 +15,7 @@ export class Captcha {
         return this.provider?.legalTemplate || null;
     }
 
-    /**
-     * @returns {Promise|false} the loading of the provider's script, or false
-     * when no provider is configured
-     */
+    /** @returns {Promise|false} */
     load() {
         if (!this.provider) {
             return false;
@@ -30,8 +27,6 @@ export class Captcha {
     /**
      * @param {string} action
      * @returns {Promise<{token?: string, message?: string, error?: string}>}
-     * the token; a message when no provider is configured; an error when the
-     * provider refused
      */
     async getToken(action) {
         if (!this.provider) {

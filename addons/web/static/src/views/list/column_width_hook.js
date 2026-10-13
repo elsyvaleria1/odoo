@@ -123,7 +123,7 @@ function computeWidths(table, state, allowedWidth, startingWidths, contentWidths
  * @param {{ minWidth: number, maxWidth?: number, canShrink: boolean, contentSized?: boolean }[]} specs
  * @param {number} columnOffset
  * @param {number} diff
- * @returns {number} Unallocated overflow after shrinking eligible columns.
+ * @returns {number}
  */
 function shrinkColumns(widths, columns, specs, columnOffset, diff) {
     const shrinkableColumns = [];
@@ -284,7 +284,7 @@ function getWidthSpecs(columns, allowedWidth) {
 
 /**
  * @param {Element | undefined} cell
- * @returns {boolean} whether the cell shows less than its text
+ * @returns {boolean}
  */
 function isClipped(cell) {
     const text = cell?.querySelector(".text-truncate") || cell;

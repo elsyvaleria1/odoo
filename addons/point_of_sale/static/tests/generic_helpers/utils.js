@@ -1,6 +1,4 @@
-/**
- * @param {string[]} chars keys to emit, e.g. [..."0100100", "Enter"]
- */
+/** @param {string[]} chars */
 function simulateBarCode(chars) {
     for (const char of chars) {
         document.body.dispatchEvent(

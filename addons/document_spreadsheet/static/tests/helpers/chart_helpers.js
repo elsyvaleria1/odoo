@@ -21,17 +21,14 @@ import { WebClient } from "@web/webclient/webclient";
 /** @typedef {import("@spreadsheet/o_spreadsheet/o_spreadsheet").Model} Model */
 
 /**
- * Get a webclient with a graph view.
- * The webclient is already configured to work with spreadsheet (env, registries, ...)
- *
  * @param {object} params
- * @param {string} [params.model] Model name of the graph
- * @param {object} [params.serverData] Data to be injected in the mock server
- * @param {function} [params.mockRPC] Mock rpc function
- * @param {any[]} [params.domain] Domain of the graph
- * @param {object} [params.additionalContext] additional context for the action
- * @param {string} [params.actionXmlId] If set, the graph view is loaded from this action - will ignore model and domain
- * @returns {Promise<object>} Webclient
+ * @param {string} [params.model]
+ * @param {object} [params.serverData]
+ * @param {function} [params.mockRPC]
+ * @param {any[]} [params.domain]
+ * @param {object} [params.additionalContext]
+ * @param {string} [params.actionXmlId]
+ * @returns {Promise<object>}
  */
 export async function spawnGraphViewForSpreadsheet(params = {}) {
     await prepareWebClientForSpreadsheet();
@@ -56,21 +53,18 @@ export async function spawnGraphViewForSpreadsheet(params = {}) {
 
 /**
  * @typedef {object} CreateGraphTestParams
- * @property {Array} [domain] Domain of the graph
- * @property {string} [model] graph resModel
- * @property {number} [documentId] ID of an existing document
- * @property {function} [actions] Actions to execute on the graph view
- *                                before inserting in spreadsheet
- * @property {function} [mockRPC] Mock rpc function
- * @property {object} [serverData] Data to be injected in the mock server
- * @property {object} [additionalContext] additional context for the action
+ * @property {Array} [domain]
+ * @property {string} [model]
+ * @property {number} [documentId]
+ * @property {function} [actions]
+ * @property {function} [mockRPC]
+ * @property {object} [serverData]
+ * @property {object} [additionalContext]
  */
 
 /**
- * Create a spreadsheet model from a graph controller
- *
  * @param {CreateGraphTestParams & import("@document_spreadsheet/../tests/helpers/spreadsheet_test_utils").SpreadsheetTestParams} params
- * @returns {Promise<object>} Webclient
+ * @returns {Promise<object>}
  */
 export async function createSpreadsheetFromGraphView(params = {}) {
     let spreadsheetAction = {};

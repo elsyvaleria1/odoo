@@ -879,10 +879,7 @@ function isPlainObject(obj) {
         obj !== null &&
         (obj?.constructor === Object || obj?.constructor === undefined));
 }
-/**
- * Sanitize the name of a sheet, by eventually removing quotes
- * @param sheetName name of the sheet, potentially quoted with single quotes
- */
+/** @param sheetName */
 function getUnquotedSheetName(sheetName) {
     return unquote(sheetName, "'");
 }
@@ -895,11 +892,7 @@ function unquote(string, quoteChar = '"') {
     }
     return string;
 }
-/**
- * Add quotes around the sheet name or any symbol name if it contains at least one non alphanumeric character
- * '\w' captures [0-9][a-z][A-Z] and _.
- * @param symbolName Name of the sheet or symbol
- */
+/** @param symbolName */
 function getCanonicalSymbolName(symbolName) {
     if (symbolName.match(/\w/g)?.length !== symbolName.length) {
         symbolName = `'${symbolName}'`;
@@ -926,11 +919,7 @@ function range(start, end, step = 1) {
     }
     return array;
 }
-/**
- * Groups consecutive numbers.
- * The input array is assumed to be sorted
- * @param numbers
- */
+/** @param numbers */
 function groupConsecutive(numbers) {
     return numbers.reduce((groups, currentRow, index, rows) => {
         if (Math.abs(currentRow - rows[index - 1]) === 1) {
@@ -944,13 +933,6 @@ function groupConsecutive(numbers) {
     }, []);
 }
 /**
- * Create one generator from two generators by linking
- * each item of the first generator to the next item of
- * the second generator.
- *
- * Let's say generator G1 yields A, B, C and generator G2 yields X, Y, Z.
- * The resulting generator of `linkNext(G1, G2)` will yield A', B', C'
- * where `A' = A & {next: Y}`, `B' = B & {next: Z}` and `C' = C & {next: undefined}`
  * @param generator
  * @param nextGenerator
  */
@@ -1037,13 +1019,8 @@ function debounce(func, wait, immediate) {
     return debounced;
 }
 /**
- * Creates a batched version of a callback so that all calls to it in the same
- * microtick will only call the original callback once.
- *
- * @param callback the callback to batch
- * @returns a batched version of the original callback
- *
- * Copied from odoo/owl repo.
+ * @param callback
+ * @returns
  */
 function batched(callback) {
     let scheduled = false;
@@ -1288,10 +1265,8 @@ class TokenizingChars {
     }
 }
 /**
- * Remove duplicates from an array.
- *
- * @param array The array to remove duplicates from.
- * @param cb A callback to get an element value.
+ * @param array
+ * @param cb
  */
 function removeDuplicates$1(array, cb = (a) => a) {
     const set = new Set();
@@ -1350,9 +1325,8 @@ const LAYERS = {
 };
 const OrderedLayers = memoize(() => Object.keys(LAYERS).sort((a, b) => LAYERS[a] - LAYERS[b]));
 /**
- *
- * @param layer New layer name
- * @param priority The lower priorities are rendered first
+ * @param layer
+ * @param priority
  */
 function addRenderingLayer(layer, priority) {
     if (LAYERS[layer]) {
@@ -1699,22 +1673,7 @@ function binarySuccessorSearch(arr, val, start = 0, matchEqual = true) {
     return result;
 }
 
-/**
- * Convert from a cartesian reference to a Zone
- * The range boundaries will be kept in the same order as the
- * ones in the text.
- * Examples:
- *    "A1" ==> Top 0, Bottom 0, Left: 0, Right: 0
- *    "B1:B3" ==> Top 0, Bottom 3, Left: 1, Right: 1
- *    "Sheet1!A1" ==> Top 0, Bottom 0, Left: 0, Right: 0
- *    "Sheet1!B1:B3" ==> Top 0, Bottom 3, Left: 1, Right: 1
- *    "C3:A1" ==> Top 2, Bottom 0, Left 2, Right 0
- *    "A:A" ==> Top 0, Bottom undefined, Left 0, Right 0
- *    "A:B3" or "B3:A" ==> Top 2, Bottom undefined, Left 0, Right 1
- *
- * @param xc the string reference to convert
- *
- */
+/** @param xc */
 function toZoneWithoutBoundaryChanges(xc) {
     const chars = new TokenizingChars(xc);
     consumeSpaces(chars);
@@ -1777,20 +1736,7 @@ function toZoneWithoutBoundaryChanges(xc) {
     }
     return zone;
 }
-/**
- * Convert from a cartesian reference to a (possibly unbounded) Zone
- *
- * Examples:
- *    "A1" ==> Top 0, Bottom 0, Left: 0, Right: 0
- *    "B1:B3" ==> Top 0, Bottom 3, Left: 1, Right: 1
- *    "B:B" ==> Top 0, Bottom undefined, Left: 1, Right: 1
- *    "B2:B" ==> Top 1, Bottom undefined, Left: 1, Right: 1, hasHeader: 1
- *    "Sheet1!A1" ==> Top 0, Bottom 0, Left: 0, Right: 0
- *    "Sheet1!B1:B3" ==> Top 0, Bottom 3, Left: 1, Right: 1
- *
- * @param xc the string reference to convert
- *
- */
+/** @param xc */
 function toUnboundedZone(xc) {
     const zone = toZoneWithoutBoundaryChanges(xc);
     const orderedZone = reorderZone(zone);
@@ -1804,19 +1750,7 @@ function toUnboundedZone(xc) {
     }
     return orderedZone;
 }
-/**
- * Convert from a cartesian reference to a Zone.
- * Will return throw an error if given a unbounded zone (eg : A:A).
- *
- * Examples:
- *    "A1" ==> Top 0, Bottom 0, Left: 0, Right: 0
- *    "B1:B3" ==> Top 0, Bottom 2, Left: 1, Right: 1
- *    "Sheet1!A1" ==> Top 0, Bottom 0, Left: 0, Right: 0
- *    "Sheet1!B1:B3" ==> Top 0, Bottom 2, Left: 1, Right: 1
- *
- * @param xc the string reference to convert
- *
- */
+/** @param xc */
 function toZone(xc) {
     const zone = toUnboundedZone(xc);
     if (zone.bottom === undefined || zone.right === undefined) {
@@ -2100,17 +2034,10 @@ function reorderZone(zone) {
     return zone;
 }
 /**
- * This function returns a zone with coordinates modified according to the change
- * applied to the zone. It may be possible to change the zone by resizing or moving
- * it according to different dimensions.
- *
- * @param zone the zone to modify
- * @param dimension the direction to change the zone among "columns", "rows" and
- * "both"
- * @param operation how to change the zone, modify its size "RESIZE" or modify
- * its location "MOVE"
- * @param by a number of how many units the change should be made. This parameter
- * takes the form of a two-number array when the dimension is "both"
+ * @param zone
+ * @param dimension
+ * @param operation
+ * @param by
  */
 function createAdaptedZone(zone, dimension, operation, by) {
     const offsetX = dimension === "both" ? by[0] : dimension === "columns" ? by : 0;
@@ -3027,11 +2954,9 @@ function sprintf(s, ...values) {
     }
     return s;
 }
-/***
- * Allow to inject a translation function from outside o-spreadsheet. This should be called before instantiating
- * a model.
- * @param tfn the function that will do the translation
- * @param loaded a function that returns true when the translation is loaded
+/**
+ * @param tfn
+ * @param loaded
  */
 function setTranslationMethod(tfn, loaded = () => true) {
     _translate = tfn;
@@ -3473,15 +3398,7 @@ function getDaysInMonth(date) {
 function isLastDayOfMonth(date) {
     return getDaysInMonth(date) === date.getDate();
 }
-/**
- * Add a certain number of months to a date. This will adapt the month number, and possibly adapt
- * the day of the month to keep it in the month.
- *
- * For example "31/12/2020" minus one month will be "30/11/2020", and not "31/11/2020"
- *
- * @param keepEndOfMonth if true, if the given date was the last day of a month, the returned date will
- *          also always be the last day of a month.
- */
+/** @param keepEndOfMonth */
 function addMonthsToDate(date, months, keepEndOfMonth) {
     const yStart = date.getFullYear();
     const mStart = date.getMonth();
@@ -3590,10 +3507,6 @@ function getYearFrac(startDate, endDate, _dayCountConvention) {
     return yearsEnd - yearsStart;
 }
 /**
- * Get the number of whole months between two dates.
- * e.g.
- *  2002/01/01 -> 2002/02/01 = 1 month,
- *  2002/01/01 -> 2003/02/01 = 13 months
  * @param startDate
  * @param endDate
  * @returns
@@ -4292,19 +4205,12 @@ function visitMatchingRanges(args, cb, locale, isQuery = false) {
     }
 }
 /**
- * Perform a dichotomic search on an array and return the index of the nearest match.
- *
- * The array should be sorted, if not an incorrect value might be returned. In the case where multiple
- * element of the array match the target, the method will return the first match if the array is sorted
- * in descending order, and the last match if the array is in ascending order.
- *
- *
- * @param data the array in which to search.
- * @param target the value to search.
- * @param mode "nextGreater/nextSmaller" : return next greater/smaller value if no exact match is found.
- * @param sortOrder whether the array is sorted in ascending or descending order.
- * @param rangeLength the number of elements to consider in the search array.
- * @param getValueInData function returning the element at index i in the search array.
+ * @param data
+ * @param target
+ * @param mode
+ * @param sortOrder
+ * @param rangeLength
+ * @param getValueInData
  */
 function dichotomicSearch(data, target, mode, sortOrder, rangeLength, getValueInData) {
     if (target === undefined || target.value === null) {
@@ -4374,23 +4280,12 @@ function dichotomicSearch(data, target, mode, sortOrder, rangeLength, getValueIn
     return sortOrder === "desc" ? rangeLength - matchValIndex - 1 : matchValIndex;
 }
 /**
- * Perform a linear search and return the index of the match.
- * -1 is returned if no value is found.
- *
- * Example:
- * - [3, 6, 10], 3 => 0
- * - [3, 6, 10], 6 => 1
- * - [3, 6, 10], 9 => -1
- * - [3, 6, 10], 2 => -1
- *
- * @param data the array to search in.
- * @param target the value to search in the array.
- * @param mode if "strict" return exact match index. "nextGreater" returns the next greater
- * element from the target and "nextSmaller" the next smaller
- * @param numberOfValues the number of elements to consider in the search array.
- * @param getValueInData function returning the element at index i in the search array.
- * @param reverseSearch if true, search in the array starting from the end.
-
+ * @param data
+ * @param target
+ * @param mode
+ * @param numberOfValues
+ * @param getValueInData
+ * @param reverseSearch
  */
 function linearSearch(data, target, mode, numberOfValues, getValueInData, lookupCaches, reverseSearch = false) {
     if (target === undefined || target.value === null) {
@@ -5124,10 +5019,8 @@ function splitNumber(value, maxDecimals = MAX_DECIMAL_PLACES) {
     return { integerDigits, decimalDigits: removeTrailingZeroes(decimalDigits || "") };
 }
 /**
- *  Return the given string minus the trailing "0" characters.
- *
- * @param numberString : a string of integers
- * @returns the numberString, minus the eventual zeroes at the end
+ * @param numberString
+ * @returns
  */
 function removeTrailingZeroes(numberString) {
     let i = numberString.length - 1;
@@ -6477,12 +6370,7 @@ function splitTextToWidth(ctx, text, style, width) {
     }
     return brokenText;
 }
-/**
- * Return the font size that makes the width of a text match the given line width.
- * Minimum font size is 1.
- *
- * @param getTextWidth function that takes a fontSize as argument, and return the width of the text with this font size.
- */
+/** @param getTextWidth */
 function getFontSizeMatchingWidth(lineWidth, maxFontSize, getTextWidth, precision = 0.25) {
     let minFontSize = 1;
     if (getTextWidth(minFontSize) > lineWidth)
@@ -6509,9 +6397,8 @@ function toLowerCase(str) {
     return str ? str.toLowerCase() : "";
 }
 /**
- * Extract the fontSize from a context font string
- * @param font The (context) font string to parse
- * @returns The fontSize in pixels
+ * @param font
+ * @returns
  */
 const pxRegex = /([0-9\.]*)px/;
 function getContextFontSize(font) {
@@ -9181,9 +9068,9 @@ class Component extends owl.Component {
     static template = "";
     static props = {};
     static defaultProps = {};
-    // @ts-ignore
+
     props;
-    // @ts-ignore
+
     env;
     constructor(node) {
         super(node);
@@ -9291,11 +9178,7 @@ function useChildSubEnv(extension) {
     return extendEnv(extension);
 }
 let rootEnv = () => ({});
-/**
- * The env of a component that no EnvPlugin encloses, for a host app that
- * mounts spreadsheet components without this module's App.
- * @param {() => object} getter
- */
+/** @param {() => object} getter */
 function setRootEnv(getter) {
     rootEnv = getter;
 }
@@ -14522,16 +14405,12 @@ const COUPON_FUNCTION_ARGS = [
     arg(`day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} )`, _t("An indicator of what day count method to use."), DAY_COUNT_CONVENTION_OPTIONS),
 ];
 /**
- * Use the Newton–Raphson method to find a root of the given function in an iterative manner.
- *
- * @param func the function to find a root of
- * @param derivFunc the derivative of the function
- * @param startValue the initial value for the first iteration of the algorithm
- * @param maxIterations the maximum number of iterations
- * @param epsMax the epsilon for the root
- * @param nanFallback a function giving a fallback value to use if func(x) returns NaN. Useful if the
- *                       function is not defined for some range, but we know approximately where the root is when the Newton
- *                       algorithm ends up in this range.
+ * @param func
+ * @param derivFunc
+ * @param startValue
+ * @param maxIterations
+ * @param epsMax
+ * @param nanFallback
  */
 function newtonMethod(func, derivFunc, startValue, maxIterations, epsMax = 1e-10, nanFallback) {
     let x = startValue;
@@ -16471,12 +16350,7 @@ function matchReference(tokens) {
     }
     return null;
 }
-/**
- * Take the result of the tokenizer and transform it to be usable in the
- * manipulations of range
- *
- * @param formula
- */
+/** @param formula */
 function rangeTokenize(formula, locale = DEFAULT_LOCALE) {
     const tokens = tokenize(formula, locale);
     const result = [];
@@ -16885,11 +16759,7 @@ function addArgsAST(tokens) {
     }
     return tokens;
 }
-/**
- * Take the result of the tokenizer and transform it to be usable in the composer.
- *
- * @param formula
- */
+/** @param formula */
 function composerTokenize(formula, locale) {
     const tokens = rangeTokenize(formula, locale);
     return addArgsAST(mapParentFunction(mapParenthesisCode(enrichTokens(tokens))));
@@ -19772,7 +19642,7 @@ function compileTokensOrThrow(tokens) {
         "ref",
         "range",
         "getSymbolValue", "ctx", code.toString());
-        // @ts-ignore
+
         functionCache[cacheKey] = baseFunction;
         function compileFunctionArgs(ast) {
             const { args } = ast;
@@ -21314,7 +21184,7 @@ chartJsExtensionRegistry.add("funnelElement", {
 });
 chartJsExtensionRegistry.add("funnelTooltipPositioner", {
     register: (Chart) => (Chart.Tooltip.positioners.funnelTooltipPositioner = funnelTooltipPositioner),
-    // @ts-expect-error
+
     unregister: (Chart) => (Chart.Tooltip.positioners.funnelTooltipPositioner = undefined),
 });
 chartJsExtensionRegistry.add("sunburstLabelsPlugin", {
@@ -22223,14 +22093,8 @@ function findSelectionIndex(el, nodeToFind, nodeOffset) {
 }
 const letterRegex = /^[a-zA-Z]$/;
 /**
- * Transform a keyboard event into a shortcut string that represent this event. The letters keys will be uppercased.
- *
- * @argument ev - The keyboard event to transform
- * @argument mode - Use either ev.key of ev.code to get the string shortcut
- *
- * @example
- * event : { ctrlKey: true, key: "a" } => "Ctrl+A"
- * event : { shift: true, alt: true, key: "Home" } => "Alt+Shift+Home"
+ * @argument ev
+ * @argument mode
  */
 function keyboardEventToShortcutString(ev, mode = "key") {
     let keyDownString = "";
@@ -22251,16 +22115,14 @@ function isMacOS() {
 }
 /**
  * @param {KeyboardEvent | MouseEvent} ev
- * @returns Returns true if the event was triggered with the "ctrl" modifier pressed.
- * On Mac, this is the "meta" or "command" key.
+ * @returns
  */
 function isCtrlKey(ev) {
     return isMacOS() || isIOS() ? ev.metaKey : ev.ctrlKey;
 }
 /**
- * @param {MouseEvent} ev - The mouse event.
- * @returns {boolean} Returns true if the event was triggered by a middle-click
- * or a Ctrl + Click (Cmd + Click on Mac).
+ * @param {MouseEvent} ev
+ * @returns {boolean}
  */
 function isMiddleClickOrCtrlClick(ev) {
     return ev.button === 1 || (isCtrlKey(ev) && ev.button === 0);
@@ -22598,11 +22460,7 @@ function doRectanglesIntersect(rect1, rect2) {
     }
     return false;
 }
-/**
- *  Get the rectangle that is tangent to a circle at a given angle.
- *
- * @param angle angle between X axis and the point where the rectangle is tangent to the circle
- */
+/** @param angle */
 function getRectangleTangentToCircle(angle, radius, circleCenterX, circleCenterY, rectWidth, rectHeight) {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
@@ -23220,7 +23078,7 @@ function isLuxonTimeAdapterInstalled() {
         return false;
     }
     const adapter = new window.Chart._adapters._date({});
-    // @ts-ignore
+
     const isInstalled = adapter._id === "luxon" || adapter._id === "temporal";
     if (!isInstalled && !missingTimeAdapterAlreadyWarned) {
         missingTimeAdapterAlreadyWarned = true;
@@ -23655,7 +23513,7 @@ const INTERACTIVE_LEGEND_CONFIG = {
         if (!target) {
             return;
         }
-        //@ts-ignore
+
         target.style.cursor = "pointer";
     },
     onLeave: (event) => {
@@ -23663,7 +23521,7 @@ const INTERACTIVE_LEGEND_CONFIG = {
         if (!target) {
             return;
         }
-        //@ts-ignore
+
         target.style.cursor = "default";
     },
     onClick: (event, legendItem, legend) => {
@@ -28172,9 +28030,7 @@ function getMaxFigureSize(getters, figureSize) {
 
 class XMLString {
     xmlString;
-    /**
-     * @param xmlString should be a well formed, properly escaped XML string
-     */
+    /** @param xmlString */
     constructor(xmlString) {
         this.xmlString = xmlString;
     }
@@ -32177,8 +32033,7 @@ class AbstractComposerStore extends SpreadsheetStore {
         this.editionMode = "selecting";
     }
     /**
-     * start the edition of a cell
-     * @param str the key that is used to start the edition if it is a "content" key like a letter or number
+     * @param str
      * @param selection
      * @private
      */
@@ -32916,11 +32771,7 @@ class SingleInputCriterionForm extends CriterionForm {
     }
 }
 
-/**
- * Start listening to pointer events and apply the given callbacks.
- *
- * @returns A function to remove the listeners.
- */
+/** @returns */
 function startDnd(onPointerMove, onPointerUp) {
     const removeListeners = () => {
         window.removeEventListener("pointerup", _onPointerUp, { capture: true });
@@ -35146,9 +34997,8 @@ class MenuItemRegistry extends Registry {
         return this;
     }
     /**
-     * Add a subitem to an existing item
-     * @param path Path of items to add this subitem
-     * @param value Subitem to add
+     * @param path
+     * @param value
      */
     addChild(key, path, value) {
         return this._replaceChild(key, path, value, { force: false });
@@ -36327,11 +36177,9 @@ class XLSXImportWarningManager {
         return [...this._parsingWarnings, ...this._conversionWarnings];
     }
     /**
-     * Add a warning "... is not supported" to the manager.
-     *
-     * @param type the type of the warning to add
-     * @param name optional, name of the element that was not supported
-     * @param supported optional, list of the supported elements
+     * @param type
+     * @param name
+     * @param supported
      */
     generateNotSupportedWarning(type, name, supported) {
         let warning = `${type} ${name ? '"' + name + '" is' : "are"} not yet supported. `;
@@ -39488,14 +39336,7 @@ class XlsxReader {
     }
 }
 
-/**
- * parses a formula (as a string) into the same formula,
- * but with the references to other cells extracted
- *
- * =sum(a3:b1) + c3 --> =sum(|0|) + |1|
- *
- * @param formula
- */
+/** @param formula */
 function normalizeV9(formula) {
     const tokens = rangeTokenize(formula);
     const dependencies = [];
@@ -42377,12 +42218,9 @@ function checkIfDomainInInTree(domain, tree) {
     return walkDomainTree(domain, tree) !== undefined;
 }
 /**
- * Given a tree of the col/rows of a pivot, and a domain related to those col/rows, return the node of the tree
- * corresponding to the domain.
- *
- * @param domain The domain to find in the tree
- * @param tree The tree to search in7
- * @param stopAtField If provided, the search will stop at the field with this name
+ * @param domain
+ * @param tree
+ * @param stopAtField
  */
 function walkDomainTree(domain, tree, stopAtField) {
     let currentTreeNode = tree;
@@ -45984,10 +45822,8 @@ function snapForResize(getters, resizeDirX, resizeDirY, figureToSnap, otherFigur
     return { snappedFigure: figureToSnap, verticalSnapLine, horizontalSnapLine };
 }
 /**
- * Get the position of snap axes for the given figure
- *
- * @param figure the figure
- * @param axesTypes the list of axis types to return the positions of
+ * @param figure
+ * @param axesTypes
  */
 function getVisibleAxes(getters, figure, axesTypes) {
     const axes = axesTypes.map((axisType) => getAxis(getters, figure, false, axisType));
@@ -46017,12 +45853,10 @@ function isAxisVisible(getters, figureUI, axis) {
     return axisStartEndPositions.some(getters.isPixelPositionVisible);
 }
 /**
- * Get a snap line for the given figure, if the figure can snap to any other figure
- *
- * @param figureToSnap figure to get the snap line for
- * @param figAxesTypes figure axes of the given figure to be considered to find a snap line
- * @param otherFigures figures to match against the snapped figure to find a snap line
- * @param otherAxesTypes figure axes of the other figures to be considered to find a snap line
+ * @param figureToSnap
+ * @param figAxesTypes
+ * @param otherFigures
+ * @param otherAxesTypes
  */
 function getSnapLine(getters, figureToSnap, figAxesTypes, otherFigures, otherAxesTypes) {
     const axesOfFigure = figAxesTypes.map((axisType) => getAxis(getters, figureToSnap, true, axisType));
@@ -46313,13 +46147,9 @@ class FiguresContainer extends Component {
         this.dnd.cancelDnd = startDnd(onMouseMove, onMouseUp);
     }
     /**
-     * Initialize the resize of a figure with mouse movements
-     *
-     * @param dirX X direction of the resize. -1 : resize from the left border of the figure, 0 : no resize in X, 1 :
-     * resize from the right border of the figure
-     * @param dirY Y direction of the resize. -1 : resize from the top border of the figure, 0 : no resize in Y, 1 :
-     * resize from the bottom border of the figure
-     * @param ev Mouse Event
+     * @param dirX
+     * @param dirY
+     * @param ev
      */
     startResize(figureUI, dirX, dirY, ev) {
         ev.stopPropagation();
@@ -54756,9 +54586,6 @@ function insertTokenAfterArgSeparator(tokenAtCursor, value) {
     this.composer.replaceComposerCursorSelection(value);
 }
 /**
- * Perform the autocomplete of the composer by inserting the value
- * at the cursor position, replacing the current token if necessary.
- * Must be bound to the autocomplete provider.
  * @param {EnrichedToken} tokenAtCursor
  * @param {string} value
  */
@@ -54973,10 +54800,7 @@ class PivotSidePanelStore extends SpreadsheetStore {
             this.applyUpdate();
         }
     }
-    /**
-     * @returns true if the updated pivot is visible in the viewport only as a
-     * static pivot and not as a dynamic pivot
-     */
+    /** @returns */
     isUpdatedPivotVisibleInViewportOnlyAsStaticPivot() {
         let staticPivotCount = 0;
         const updatedPivotFormulaId = this.getters.getPivotFormulaId(this.pivotId);
@@ -57453,15 +57277,9 @@ class CorePlugin extends BasePlugin {
     import(data) { }
     export(data) { }
     /**
-     * This method can be implemented in any plugin, to loop over the plugin's data structure and adapt the plugin's ranges.
-     * To adapt them, the implementation of the function must have a perfect knowledge of the data structure, thus
-     * implementing the loops over it makes sense in the plugin itself.
-     * When calling the method applyChange, the range will be adapted if necessary, then a copy will be returned along with
-     * the type of change that occurred.
-     *
-     * @param applyChange a function that, when called, will adapt the range according to the change on the grid
-     * @param sheetId an sheetId to adapt either range of that sheet specifically, or ranges pointing to that sheet
-     * @param sheetName couple of old and new sheet names to adapt ranges pointing to that sheet
+     * @param applyChange
+     * @param sheetId
+     * @param sheetName
      */
     adaptRanges(rangeAdapterFunctions, sheetId, sheetName) { }
     garbageCollectExternalResources() { }
@@ -58662,14 +58480,14 @@ class ConditionalFormatPlugin extends CorePlugin {
                     switch (change.changeType) {
                         case "REMOVE":
                             this.history.update("cfRules", sheetId, this.cfRules[sheetId].indexOf(rule), "rule",
-                            //@ts-expect-error
+
                             "rangeValues", undefined);
                             break;
                         case "RESIZE":
                         case "MOVE":
                         case "CHANGE":
                             this.history.update("cfRules", sheetId, this.cfRules[sheetId].indexOf(rule), "rule",
-                            //@ts-expect-error
+
                             "rangeValues", change.range);
                             break;
                     }
@@ -58677,7 +58495,7 @@ class ConditionalFormatPlugin extends CorePlugin {
                 else if (rule.rule.type === "CellIsRule") {
                     for (let i = 0; i < rule.rule.values.length; i++) {
                         this.history.update("cfRules", sheetId, this.cfRules[sheetId].indexOf(rule), "rule",
-                        //@ts-expect-error
+
                         "values", i, adaptFormulaString(sheetId, rule.rule.values[i]));
                     }
                 }
@@ -58685,7 +58503,7 @@ class ConditionalFormatPlugin extends CorePlugin {
                     for (const inflectionPoint of ["lowerInflectionPoint", "upperInflectionPoint"]) {
                         if (rule.rule[inflectionPoint].type === "formula") {
                             this.history.update("cfRules", sheetId, this.cfRules[sheetId].indexOf(rule), "rule",
-                            //@ts-expect-error
+
                             inflectionPoint, "value", adaptFormulaString(sheetId, rule.rule[inflectionPoint].value));
                         }
                     }
@@ -58695,7 +58513,7 @@ class ConditionalFormatPlugin extends CorePlugin {
                         const ruleValue = rule.rule[value];
                         if (ruleValue?.type === "formula" && ruleValue?.value) {
                             this.history.update("cfRules", sheetId, this.cfRules[sheetId].indexOf(rule), "rule",
-                            //@ts-expect-error
+
                             value, "value", adaptFormulaString(sheetId, ruleValue.value));
                         }
                     }
@@ -59750,11 +59568,7 @@ class HeaderSizePlugin extends CorePlugin {
     export(data) {
         this.exportData(data);
     }
-    /**
-     * Export the header sizes
-     *
-     * @param exportDefaults : if true, export column/row sizes even if they have the default size
-     */
+    /** @param exportDefaults */
     exportData(data, exportDefaults = false) {
         for (const sheet of data.sheets) {
             if (sheet.rows === undefined) {
@@ -60567,14 +60381,7 @@ class RangeAdapterPlugin {
         }
         this.isAdaptingRanges = false;
     }
-    /**
-     * Stores the functions bound to each plugin to be able to iterate over all ranges of the application,
-     * without knowing any details of the internal data structure of the plugins and without storing ranges
-     * in the range adapter.
-     *
-     * @param provider a function bound to a plugin that will loop over its internal data structure to find
-     * all ranges
-     */
+    /** @param provider */
     addRangeProvider(provider) {
         this.providers.push(provider);
     }
@@ -60626,9 +60433,8 @@ class RangeAdapterPlugin {
         return createRange({ ...range, zone: unboundedZone }, this.getters.getSheetSize);
     }
     /**
-     * Creates a range from a XC reference that can contain a sheet reference
-     * @param defaultSheetId the sheet to default to if the sheetXC parameter does not contain a sheet reference (usually the active sheet Id)
-     * @param sheetXC the string description of a range, in the form SheetName!XC:XC
+     * @param defaultSheetId
+     * @param sheetXC
      */
     getRangeFromSheetXC(defaultSheetId, sheetXC) {
         if (!rangeReference.test(sheetXC) || !this.getters.tryGetSheet(defaultSheetId)) {
@@ -60640,15 +60446,11 @@ class RangeAdapterPlugin {
         return createRangeFromXc({ xc: sheetXC, sheetId, invalidSheetName }, this.getters.getSheetSize);
     }
     /**
-     * Gets the string that represents the range as it is at the moment of the call.
-     * The string will be prefixed with the sheet name if the call specified a sheet id in `forSheetId`
-     * different than the sheet on which the range has been created.
-     *
-     * @param range the range (received from getRangeFromXC or getRangeFromZone)
-     * @param forSheetId the id of the sheet where the range string is supposed to be used.
+     * @param range
+     * @param forSheetId
      * @param options
-     * @param options.useBoundedReference if true, the range will be returned with bounded row and column
-     * @param options.useFixedReference if true, the range will be returned with fixed row and column
+     * @param options.useBoundedReference
+     * @param options.useFixedReference
      */
     getRangeString(range, forSheetId, options = { useBoundedReference: false, useFixedReference: false }) {
         if (!range) {
@@ -60718,13 +60520,7 @@ class RangeAdapterPlugin {
         const unionOfZones = unionUnboundedZones(...zones);
         return this.getRangeFromZone(ranges[0].sheetId, unionOfZones);
     }
-    /**
-     * Copy a formula string to another sheet.
-     *
-     * @param mode
-     * `keepSameReference` will make the formula reference the exact same ranges,
-     * `moveReference` will change all the references to `sheetIdFrom` into references to `sheetIdTo`.
-     */
+    /** @param mode */
     copyFormulaStringForSheet(sheetIdFrom, sheetIdTo, formula, mode) {
         if (!formula.startsWith("=")) {
             return formula;
@@ -61338,14 +61134,8 @@ class SheetPlugin extends CorePlugin {
         this.history.update("sheetIdsMapName", sheetIdsMapName);
     }
     /**
-     * Delete column. This requires a lot of handling:
-     * - Update all the formulas in all sheets
-     * - Move the cells
-     * - Update the cols/rows (size, number, (cells), ...)
-     * - Reevaluate the cells
-     *
-     * @param sheet ID of the sheet on which deletion should be applied
-     * @param columns Columns to delete
+     * @param sheet
+     * @param columns
      */
     removeColumns(sheet, columns) {
         columns.sort((a, b) => b - a);
@@ -61360,15 +61150,8 @@ class SheetPlugin extends CorePlugin {
         }
     }
     /**
-     * Delete row. This requires a lot of handling:
-     * - Update the merges
-     * - Update all the formulas in all sheets
-     * - Move the cells
-     * - Update the cols/rows (size, number, (cells), ...)
-     * - Reevaluate the cells
-     *
-     * @param sheet ID of the sheet on which deletion should be applied
-     * @param rows Rows to delete
+     * @param sheet
+     * @param rows
      */
     removeRows(sheet, rows) {
         rows.sort((a, b) => b - a);
@@ -61492,10 +61275,8 @@ class SheetPlugin extends CorePlugin {
         this.history.update("sheets", sheet.id, "rows", rows);
     }
     /**
-     * Add empty rows at the end of the rows
-     *
-     * @param sheet Sheet
-     * @param quantity Number of rows to add
+     * @param sheet
+     * @param quantity
      */
     addEmptyRows(sheet, quantity) {
         const rows = sheet.rows.slice();
@@ -62278,28 +62059,10 @@ class HeaderGroupingPlugin extends CorePlugin {
         return `${group.start}-${group.end}}`;
     }
     /**
-     * To get layers of groups, and to add/remove headers from groups, we can see each header of a group as a brick. Each
-     * brick falls down in the pile corresponding to its header, until it hits another brick, or the ground.
-     *
-     * With this abstraction, we can very simply group/ungroup headers from groups, and get the layers of groups.
-     * - grouping headers is done by adding a brick to each header pile
-     * - un-grouping headers is done by removing a brick from each header pile
-     * - getting the layers of groups is done by simply letting the brick fall and checking the result
-     *
-     * Example:
-     * We have 2 groups ([A=>E] and [C=>D]), and we want to group headers [C=>F]
-     *
-     * Headers :                 A B C D E F G          A B C D E F G            A B C D E F G
-     * Headers to group: [C=>D]:     _ _         [C=>F]:    _ _ _ _
-     *                               | |           ==>      | | | |       ==>                    ==> Result: 3 groups
-     *                               | |                    ˅ ˅ | |                  _ _                - [C=>D]
-     * Groups:                       ˅ ˅                    _ _ ˅ |                  _ _ _              - [C=>E]
-     * Groups:                   _ _ _ _ _              _ _ _ _ _ ˅              _ _ _ _ _ _            - [A=>F]
-  
      * @param groups
-     * @param start start of the range where to add/remove headers
-     * @param end end of the range where to add/remove headers
-     * @param delta -1: remove headers, 1: add headers, 0: get layers (don't add/remove anything)
+     * @param start
+     * @param end
+     * @param delta
      */
     bricksFallingAlgorithm(groups, start, end, delta = 0) {
         const isGroupFolded = {};
@@ -63010,12 +62773,8 @@ class CompilationParametersBuilder {
         };
     }
     /**
-     * Returns the value of the cell(s) used in reference
-     *
-     * @param range the references used
-     * @param isMeta if a reference is supposed to be used in a `meta` parameter as described in the
-     *        function for which this parameter is used, we just return the string of the parameter.
-     *        The `compute` of the formula's function must process it completely
+     * @param range
+     * @param isMeta
      */
     refFn(range, isMeta) {
         const rangeError = this.getRangeError(range);
@@ -64682,10 +64441,9 @@ class EvaluationPlugin extends CoreViewPlugin {
             .every((cell) => cell.type === CellValueType.empty);
     }
     /**
-     * Maps the visible positions of a range  according to a provided callback
-     * @param range - the range we filter out
-     * @param evaluationCallback - the callback applied to the filtered positions
-     * @returns the values filtered (ie we keep only the not hidden values)
+     * @param range
+     * @param evaluationCallback
+     * @returns
      */
     mapVisiblePositions(range, evaluationCallback) {
         const { sheetId, zone } = range;
@@ -66562,11 +66320,8 @@ function withPivotPresentationLayer (PivotClass) {
                 this.definition.rows.some((r) => r.nameWithGranularity === nameWithGranularity));
         }
         /**
-         * With the given measure, fetch the value of the cell in the pivot that has the given domain with
-         * the value of the field `fieldNameWithGranularity` replaced by `valueToCompare`.
-         *
-         * @param valueToCompare either a value to replace the field value with, or "(previous)" or "(next)"
-         * @returns the value of the cell in the pivot with the new domain, or "sameValue" if the domain is the same
+         * @param valueToCompare
+         * @returns
          */
         getComparisonValue(measure, domain, fieldNameWithGranularity, valueToCompare) {
             const comparedDomain = valueToCompare === PREVIOUS_VALUE || valueToCompare === NEXT_VALUE
@@ -67198,15 +66953,7 @@ autofillRulesRegistry
     },
     sequence: 40,
 });
-/**
- * Returns the date intervals between consecutive dates of an array
- * in the format of { years: number, months: number, days: number }
- *
- * The split is necessary to make abstraction of leap years and
- * months with different number of days.
- *
- * @param dates
- */
+/** @param dates */
 function getDateIntervals(dates) {
     if (dates.length < 2) {
         return [{ years: 0, months: 0, days: 0 }];
@@ -67299,11 +67046,7 @@ class AutofillPlugin extends UIPlugin {
     getAutofillTooltip() {
         return this.tooltip;
     }
-    /**
-     * Autofill the autofillZone from the current selection
-     * @param apply Flag set to true to apply the autofill in the model. It's
-     *              useful to set it to false when we need to fill the tooltip
-     */
+    /** @param apply */
     autofill(apply) {
         if (!this.autofillZone || !this.steps || this.direction === undefined) {
             this.tooltip = undefined;
@@ -67744,13 +67487,10 @@ class AutomaticSumPlugin extends UIPlugin {
         return { ...zone, left };
     }
     /**
-     * Reduces a column or row zone to a valid zone for the automatic sum.
-     * @see getAutomaticSumZone
      * @param sheet
-     * @param zone one dimensional zone (a single row or a single column). The zone is
-     *             assumed to start at the beginning of the column (top=0) or the row (left=0)
-     * @param end end index of the zone (`bottom` or `right` depending on the dimension)
-     * @returns the starting position of the valid zone or Infinity if the zone is not valid.
+     * @param zone
+     * @param end
+     * @returns
      */
     reduceZoneStart(sheet, zone, end) {
         const cells = this.getters.getEvaluatedCellsInZone(sheet.id, zone);
@@ -68391,16 +68131,9 @@ class Session extends EventBus {
     uuidGenerator = new UuidGenerator();
     lastLocalOperation;
     /**
-     * Manages the collaboration between multiple users on the same spreadsheet.
-     * It can forward local state changes to other users to ensure they all eventually
-     * reach the same state.
-     * It also manages the positions of each clients in the spreadsheet to provide
-     * a visual indication of what other users are doing in the spreadsheet.
-     *
      * @param revisions
-     * @param transportService communication channel used to send and receive messages
-     * between all connected clients
-     * @param client the client connected locally
+     * @param transportService
+     * @param client
      * @param serverRevisionId
      */
     constructor(revisions, transportService, serverRevisionId = DEFAULT_REVISION_ID) {
@@ -72334,11 +72067,7 @@ class InternalViewport {
         }
         return undefined;
     }
-    /**
-     *
-     * @returns Computes the absolute coordinates & dimensions of a given zone inside the viewport
-     *
-     */
+    /** @returns */
     getFullRect(zone) {
         const targetZone = intersection(zone, this.boundaries);
         const scrollDeltaX = this.snapCorrection.x;
@@ -77448,7 +77177,7 @@ class WebClipboardWrapper {
     async read() {
         let permissionResult = undefined;
         try {
-            //@ts-ignore - clipboard-read is not implemented in all browsers
+
             permissionResult = await navigator.permissions.query({ name: "clipboard-read" });
         }
         catch (e) { }
@@ -77955,12 +77684,8 @@ function inverseCommand(cmd) {
 }
 
 /**
- * A branch holds a sequence of operations.
- * It can be represented as "A - B - C - D" if A, B, C and D are executed one
- * after the other.
- *
- * @param buildTransformation Factory to build transformations
- * @param operations initial operations
+ * @param buildTransformation
+ * @param operations
  */
 class Branch {
     buildTransformation;
@@ -78078,10 +77803,7 @@ class OperationSequence {
     [Symbol.iterator]() {
         return this.operations[Symbol.iterator]();
     }
-    /**
-     * Stop the operation sequence at a given operation
-     * @param operationId included
-     */
+    /** @param operationId */
     stopWith(operationId) {
         function* filter(execution, operationId) {
             for (const step of execution) {
@@ -78093,10 +77815,7 @@ class OperationSequence {
         }
         return new OperationSequence(filter(this.operations, operationId));
     }
-    /**
-     * Stop the operation sequence before a given operation
-     * @param operationId excluded
-     */
+    /** @param operationId */
     stopBefore(operationId) {
         function* filter(execution, operationId) {
             for (const step of execution) {
@@ -78108,10 +77827,7 @@ class OperationSequence {
         }
         return new OperationSequence(filter(this.operations, operationId));
     }
-    /**
-     * Start the operation sequence at a given operation
-     * @param operationId excluded
-     */
+    /** @param operationId */
     startAfter(operationId) {
         function* filter(execution, operationId) {
             let skip = true;
@@ -78355,24 +78071,11 @@ class SelectiveHistory {
     buildEmpty;
     buildTransformation;
     /**
-     * The selective history is a data structure used to register changes/updates of a state.
-     * Each change/update is called an "operation".
-     * The data structure allows to easily cancel (and redo) any operation individually.
-     * An operation can be represented by any data structure. It can be a "command", a "diff", etc.
-     * However it must have the following properties:
-     * - it can be applied to modify the state
-     * - it can be reverted on the state such that it was never executed.
-     * - it can be transformed given other operation (Operational Transformation)
-     *
-     * Since this data structure doesn't know anything about the state nor the structure of
-     * operations, the actual work must be performed by external functions given as parameters.
      * @param initialOperationId
-     * @param applyOperation a function which can apply an operation to the state
-     * @param revertOperation  a function which can revert an operation from the state
-     * @param buildEmpty  a function returning an "empty" operation.
-     *                    i.e an operation that leaves the state unmodified once applied or reverted
-     *                    (used for internal implementation)
-     * @param buildTransformation Factory used to build transformations
+     * @param applyOperation
+     * @param revertOperation
+     * @param buildEmpty
+     * @param buildTransformation
      */
     constructor(args) {
         this.applyOperation = args.applyOperation;
@@ -78403,9 +78106,9 @@ class SelectiveHistory {
         this.fastForward();
     }
     /**
-     * @param operationId operation to undo
-     * @param undoId the id of the "undo operation"
-     * @param insertAfter the id of the operation after which to insert the undo
+     * @param operationId
+     * @param undoId
+     * @param insertAfter
      */
     undo(operationId, undoId, insertAfter) {
         const { branch, operation } = this.tree.findOperation(this.HEAD_BRANCH, operationId);
@@ -78415,9 +78118,9 @@ class SelectiveHistory {
         this.insert(undoId, this.buildEmpty(undoId), insertAfter);
     }
     /**
-     * @param operationId operation to redo
-     * @param redoId the if of the "redo operation"
-     * @param insertAfter the id of the operation after which to insert the redo
+     * @param operationId
+     * @param redoId
+     * @param insertAfter
      */
     redo(operationId, redoId, insertAfter) {
         const { branch } = this.tree.findOperation(this.HEAD_BRANCH, operationId);
@@ -79998,7 +79701,7 @@ function addConditionalFormatting(dxfs, conditionalFormats) {
                 cfNodes.push(addDataBarRule(cf, cf.rule));
                 break;
             default:
-                // @ts-ignore Typescript knows it will never happen at compile time
+
                 console.warn(`Conditional formatting ${cf.rule.type} not implemented`);
                 break;
         }
@@ -81720,7 +81423,7 @@ class Model extends EventBus {
         return data;
     }
     updateMode(mode) {
-        // @ts-ignore For testing purposes only
+
         this.config.mode = mode;
         this.trigger("update");
     }

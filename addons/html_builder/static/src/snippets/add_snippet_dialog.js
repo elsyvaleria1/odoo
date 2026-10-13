@@ -152,11 +152,7 @@ export class AddSnippetDialog extends Component {
         );
     }
 
-    /**
-     * Handles the tablist navigation.
-     *
-     * @param {KeyboardEvent} ev
-     */
+    /** @param {KeyboardEvent} ev */
     onTabKeydown(ev) {
         const hotkey = getActiveHotkey(ev);
         if (!["arrowleft", "arrowright", "arrowdown", "arrowup"].includes(hotkey)) {
@@ -168,13 +164,7 @@ export class AddSnippetDialog extends Component {
             ev.currentTarget.nextElementSibling?.focus();
         }
     }
-    /**
-     * The mix of focused elements within the dialog and within the iframe does
-     * not work well with the `useActiveElement` standard focus trap. This
-     * listener ensures the cycle is well supported.
-     *
-     * @param {KeyboardEvent} ev
-     */
+    /** @param {KeyboardEvent} ev */
     onIframeDocumentKeydown(ev) {
         const hotkey = getActiveHotkey(ev);
         if (!["tab", "shift+tab"].includes(hotkey)) {

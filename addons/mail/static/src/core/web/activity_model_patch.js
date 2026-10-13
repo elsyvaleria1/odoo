@@ -81,7 +81,7 @@ patch(Activity.prototype, {
     },
     /**
      * @this {import("models").Activity}
-     * @returns {Promise<boolean>} whether the upload was accepted and the activity marked as done
+     * @returns {Promise<boolean>}
      */
     async markAsDoneWithFile(
         /** @type {{data: string, name: string, type: string}} */ { data, name, type },

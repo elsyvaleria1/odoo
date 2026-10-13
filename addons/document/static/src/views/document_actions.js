@@ -3,11 +3,7 @@ import { DocumentsViewEvent } from "@document/views/utils";
 import { _t } from "@web/core/translation";
 
 /**
- * Mirrors `document.document._is_download_allowed`: a blocked document is still
- * downloaded by whoever may edit it. A shortcut answers for its target, which
- * is not loaded here, so the server decides.
- *
- * @param {Object} data a `document.document` read
+ * @param {Object} data
  * @returns {boolean}
  */
 export function isDownloadAllowed(data) {
@@ -22,10 +18,10 @@ export function isDownloadAllowed(data) {
 /**
  * @typedef {Object} DocumentActionContext
  * @property {import("@document/core/document_service").DocumentService} documentService
- * @property {Object} model the documents view's model
- * @property {() => Promise<void>} reload reloads what the action changed
- * @property {import("@odoo/owl").EventBus} bus the documents view's bus
- * @property {Object} [record] the row's record, on a list row only
+ * @property {Object} model
+ * @property {() => Promise<void>} reload
+ * @property {import("@odoo/owl").EventBus} bus
+ * @property {Object} [record]
  */
 
 /**
@@ -38,13 +34,7 @@ export function isDownloadAllowed(data) {
 
 const isRealDocument = (data) => typeof data?.id === "number";
 
-/**
- * What can be done on one document or folder, answered once for every surface
- * showing it: the cog menu (on the current folder, a search-panel value) and a
- * list row (on its record's data). Each surface picks the entries it offers.
- *
- * @type {Record<string, DocumentAction>}
- */
+/** @type {Record<string, DocumentAction>} */
 export const documentActions = {
     share: {
         icon: "fa-solid fa-share-nodes",

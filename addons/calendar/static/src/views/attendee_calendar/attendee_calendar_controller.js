@@ -70,11 +70,7 @@ export class AttendeeCalendarController extends CalendarController {
         }
     }
 
-    /**
-     * @override
-     *
-     * If the event is deleted by the organizer, the event is deleted, otherwise it is declined.
-     */
+    /** @override */
     deleteRecord(record) {
         if (
             user.partnerId === record.attendeeId &&

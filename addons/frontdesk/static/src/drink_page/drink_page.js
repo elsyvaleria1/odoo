@@ -21,11 +21,7 @@ export class DrinkPage extends Component {
         useInactivity(() => this.props.showScreen("EndPage"), 15000);
     }
 
-    /**
-     * Updates the visitor or planned visitor record in the backend
-     *
-     * @private
-     */
+    /** @private */
     async _onDrinkSelect(drinkId) {
         await rpc(
             `/frontdesk/${this.props.stationId}/${this.props.token}/prepare_visitor_data`,

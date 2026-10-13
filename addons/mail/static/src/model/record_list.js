@@ -225,12 +225,7 @@ class RecordListInternal {
     name;
     /** @type {Record} */
     owner;
-    /**
-     * The localIds of `data`, for the mutators' membership tests (the reactive
-     * readers keep scanning `data` so they subscribe to it); rebuilt when it
-     * disagrees with `data` in size.
-     * @type {Set<string>|undefined}
-     */
+    /** @type {Set<string>|undefined} */
     localIdSet;
 
     /**
@@ -1043,7 +1038,6 @@ export class RecordList extends Array {
      * @returns {U}
      */
     /**
-     * The overloads distinguish a record seed from an explicitly supplied accumulator.
      * @param {(acc: any, record: R, index: number, recordList: R[]) => any} fn
      * @param {...any} init
      * @returns {any}
@@ -1087,7 +1081,6 @@ export class RecordList extends Array {
      * @returns {U}
      */
     /**
-     * The overloads distinguish a record seed from an explicitly supplied accumulator.
      * @param {(acc: any, record: R, index: number, recordList: R[]) => any} fn
      * @param {...any} init
      * @returns {any}

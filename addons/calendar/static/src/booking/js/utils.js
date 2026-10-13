@@ -2,8 +2,6 @@
 import { parseEmail } from "@mail/utils/common/format";
 
 /**
- * splits the string and find all the invalid emails from it.
- *
  * @param {string}
  * @return {object}
  */

@@ -59,11 +59,7 @@ export async function swipeRight(target, dragOptions, moveToOptions) {
     await swipe(target, +1, dragOptions, moveToOptions);
 }
 
-/**
- * Puts the interface in the given input modality for the rest of the test,
- * as if the user's last input had been of that kind.
- * @param {import("@web/core/input_modality").InputModality} modality
- */
+/** @param {import("@web/core/input_modality").InputModality} modality */
 export function setInputModality(modality) {
     const previous = inputModality.current;
     inputModality.set(modality);

@@ -84,8 +84,6 @@ export class TemplateDialog extends Component {
     }
 
     /**
-     * Fetch templates according to the search domain and the pager
-     * offset given as parameter.
      * @private
      * @param {number} offset
      * @returns {Promise<void>}
@@ -107,9 +105,6 @@ export class TemplateDialog extends Component {
     }
 
     /**
-     * Will create a spreadsheet based on the currently selected template
-     * and the current folder we are in. The user will be notified and
-     * the newly created spreadsheet will be opened.
      * @private
      * @returns {Promise<void>}
      */
@@ -152,7 +147,6 @@ export class TemplateDialog extends Component {
     }
 
     /**
-     * Changes the currently selected template in the state.
      * @private
      * @param {number | null} templateId
      */
@@ -161,7 +155,6 @@ export class TemplateDialog extends Component {
     }
 
     /**
-     * Returns whether templateId is currently selected or not.
      * @private
      * @param {number | null} templateId
      * @returns {boolean}
@@ -171,7 +164,6 @@ export class TemplateDialog extends Component {
     }
 
     /**
-     * Check if any template or the Blank template is selected.
      * @private
      * @returns {boolean}
      */
@@ -184,8 +176,6 @@ export class TemplateDialog extends Component {
     }
 
     /**
-     * This function will be called when the user uses the pager. Based on the
-     * pager state, new templates will be fetched.
      * @private
      * @param {CustomEvent} ev
      * @returns {Promise<void>}
@@ -196,7 +186,6 @@ export class TemplateDialog extends Component {
     }
 
     /**
-     * Check if the create button should be disabled.
      * @private
      * @returns {boolean}
      */
@@ -205,9 +194,8 @@ export class TemplateDialog extends Component {
     }
 
     /**
-     * Get the URL of the template's thumbnail.
      * @param {Object} template
-     * @returns {string} - URL for the template thumbnail
+     * @returns {string}
      */
     getThumbnailURL(template) {
         return `/web/image?model=spreadsheet.template&id=${template.id}&field=display_thumbnail`;

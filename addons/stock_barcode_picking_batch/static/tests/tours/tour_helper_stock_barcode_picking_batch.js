@@ -6,8 +6,6 @@ import {
 export * from "@stock_barcode/../tests/tours/tour_helper_stock_barcode";
 
 /**
- * Checks the line is linked to the given picking.
- *
  * @param {HTMLElement|Integer} lineOrIndex
  * @param {string} pickingName
  */
@@ -18,8 +16,6 @@ export function assertLineBelongTo(lineOrIndex, pickingName) {
 }
 
 /**
- * Checks all lines are linked to the given picking.
- *
  * @param {HTMLElement[]} lines
  * @param {string} pickingName
  */

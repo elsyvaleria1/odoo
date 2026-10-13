@@ -277,15 +277,7 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * Handle visibility of comment area and conditional questions
-     * The form (page) is then automatically submitted if:
-     * - Survey is configured with one page per question and participants are allowed to go back,
-     * - It is not the last question of the survey,
-     * - The question is not waiting for a comment (with "Other" answer),
-     *
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     async onChoiceItemChange(ev) {
         const targetEl = ev.currentTarget;
         let questionEl = targetEl.closest(".o_survey_form_choice");
@@ -352,12 +344,7 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * Handle dropdown select change — propagates conditional question visibility
-     * and auto-advances in page_per_question layout.
-     *
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     async onDropdownChange(ev) {
         const selectEl = ev.currentTarget;
         const questionEl = selectEl.closest(".o_survey_form_choice");
@@ -401,10 +388,7 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * Called when an image on an answer in multi-answers question is clicked.
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     onChoiceImageClick(ev) {
         if (!inputModality.isTouch) {
             ev.preventDefault();
@@ -520,26 +504,7 @@ export class SurveyForm extends Interaction {
         this.submitForm({ previousPageId });
     }
 
-    /**
-     * Handle some extra computation to find a suitable "fadeInOutDelay" based
-     * on the delay between the time of the question change by the host and the
-     * time of reception of the event. This will allow us to account for a
-     * little bit of server lag (up to 1 second) while giving everyone a fair
-     * experience on the quiz.
-     *
-     * e.g 1:
-     * - The host switches the question
-     * - We receive the event 200 ms later due to server lag
-     * - -> The fadeInOutDelay will be 400 ms (200ms delay + 400ms * 2 fade in fade out)
-     *
-     * e.g 2:
-     * - The host switches the question
-     * - We receive the event 600 ms later due to bigger server lag
-     * - -> The fadeInOutDelay will be 200ms (600ms delay + 200ms * 2 fade in fade out)
-     *
-     * @param {object} notification notification of type `next_question` as
-     * specified by the bus.
-     */
+    /** @param {object} notification */
     onNextQuestionNotification(notification) {
         let serverDelayMS =
             (now().epochMilliseconds / 1000 - notification.question_start) * 1000;
@@ -574,11 +539,7 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * Go to the next page of the survey.
-     *
-     * @param {boolean} isFinish Whether the survey is done or not
-     */
+    /** @param {boolean} isFinish */
     goToNextPage(isFinish = false) {
         fadeOut(
             this.el.querySelectorAll(".o_survey_main_title, .o_lang_selector"),
@@ -598,19 +559,12 @@ export class SurveyForm extends Interaction {
     }
 
     /**
-     * This function will send a json rpc call to the server to
-     * - start the survey (if we are on start screen)
-     * - submit the answers of the current page
-     * Before submitting the answers, they are first validated to avoid latency from the server
-     * and allow a fade out/fade in transition of the next question.
-     *
      * @param {Array} [options]
-     * @param {Integer} [options.previousPageId] navigates to page id
-     * @param {Boolean} [options.nextSkipped] navigates to next skipped page or question
-     * @param {Boolean} [options.skipValidation] skips JS validation
-     * @param {Boolean} [options.initTime] will force the re-init of the timer after next
-     *   screen transition
-     * @param {Boolean} [options.isFinish] fades out breadcrumb and timer
+     * @param {Integer} [options.previousPageId]
+     * @param {Boolean} [options.nextSkipped]
+     * @param {Boolean} [options.skipValidation]
+     * @param {Boolean} [options.initTime]
+     * @param {Boolean} [options.isFinish]
      */
     async submitForm(options = {}) {
         if (this.submitting) {
@@ -679,10 +633,8 @@ export class SurveyForm extends Interaction {
     }
 
     /**
-     * Will fade out / fade in the next screen based on passed promise and options.
-     *
      * @param {Promise} nextScreenPromise
-     * @param {Object} options see 'submitForm' for details
+     * @param {Object} options
      */
     async nextScreen(nextScreenPromise, options) {
         const selectorsToFadeout = [".o_survey_form_content"];
@@ -720,11 +672,7 @@ export class SurveyForm extends Interaction {
         return this.onNextScreenDone(options);
     }
 
-    /**
-     * Handle server side validation and display eventual error messages.
-     *
-     * @param {Object} options see 'submitForm' for details
-     */
+    /** @param {Object} options */
     onNextScreenDone(options) {
         const result = this.nextScreenResult;
         const data = result?.data || {};
@@ -955,7 +903,6 @@ export class SurveyForm extends Interaction {
     }
 
     /**
-     * For each type of question, extract the answer from inputs or textarea (comment or answer)
      * @param {FormData} formData
      * @param {Object} params
      */
@@ -1208,13 +1155,7 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * Checks, if the 'other' choice is checked. Applies only if the comment count as answer.
-     *   If not checked : Clear the comment textarea, hide and disable it
-     *   If checked : enable the comment textarea, show and focus on it
-     *
-     * @param {HTMLElement} choiceItemGroupEl
-     */
+    /** @param {HTMLElement} choiceItemGroupEl */
     applyCommentAreaVisibility(choiceItemGroupEl) {
         if (!choiceItemGroupEl) {
             return;
@@ -1292,12 +1233,9 @@ export class SurveyForm extends Interaction {
     }
 
     /**
-     * For single and multiple choice questions, propagate questions visibility
-     * based on conditional questions and (de)selected triggers
-     *
      * @param {HTMLInputElement} targetEl
      * @param {HTMLElement} choiceItemGroupEl
-     * @returns {boolean} Whether the question is considered completed
+     * @returns {boolean}
      */
     checkConditionalQuestionsConfiguration(targetEl, choiceItemGroupEl) {
         let isQuestionComplete = false;
@@ -1400,13 +1338,7 @@ export class SurveyForm extends Interaction {
         return isQuestionComplete;
     }
 
-    /**
-     * Apply visibility rules of conditional questions.
-     * When layout is "one_page", hide the empty sections (the ones without description and
-     * which don't have any question to be displayed because of conditional questions).
-     *
-     * @param {Number[] | String[] | Set | undefined} questionIds Conditional questions ids
-     */
+    /** @param {Number[] | String[] | Set | undefined} questionIds */
     applyConditionalQuestionsVisibility(questionIds) {
         if (!questionIds || (!questionIds.length && !questionIds.size)) {
             return;

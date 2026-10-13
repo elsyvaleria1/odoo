@@ -7,10 +7,7 @@ import { ListController, listView } from "@web/views/list";
 export class KnowledgeArticleItemsListController extends EmbeddedControllersPatch(
     ListController,
 ) {
-    /**
-     * @override
-     * Item creation is not allowed if the user can not edit the parent article.
-     */
+    /** @override */
     setup() {
         super.setup();
         this.knowledgeContext = useKnowledgeContext();

@@ -37,9 +37,6 @@ const HOTKEYS = {
 };
 
 /**
- * The same path the keyboard takes, so a spoken "save" goes through the
- * controller's save coordinator exactly as Alt+S does.
- *
  * @param {Record<string, any>} services
  * @param {string} hotkey
  */

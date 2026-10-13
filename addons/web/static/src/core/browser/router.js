@@ -389,16 +389,7 @@ function onPageShow(/** @type {any} */ ev) {
     }
 }
 
-/**
- * A link the user follows to another app URL is routed in place: its
- * navigation is cancelled and the app loads the route, pushing the URL itself
- * once it knows the route makes one (an action opened in a dialog does not).
- * Keyboard activation, links in shadow roots and area elements come with the
- * navigate event; a new tab, a download, a modified click or a plain in-page
- * anchor never reaches it or is left to the browser.
- *
- * @param {NavigateEvent} ev
- */
+/** @param {NavigateEvent} ev */
 function onNavigate(ev) {
     if (
         ev.navigationType !== "push" ||
@@ -512,9 +503,6 @@ export const router = {
     stateToUrl,
     urlToState,
     /**
-     * An app URL the server must resolve itself (a token route): a click on
-     * it is left to the browser instead of being routed in place.
-     *
      * @param {URL} url
      * @returns {boolean}
      */

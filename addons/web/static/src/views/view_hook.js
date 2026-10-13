@@ -271,12 +271,7 @@ export function useFieldDirtyOwners(model, onChange) {
     });
 }
 
-/**
- * Calls `onClick` for every click in the window, with the element the press
- * started on: a drag that starts inside and ends outside counts as inside.
- *
- * @param {(target: HTMLElement, ev: MouseEvent) => void} onClick
- */
+/** @param {(target: HTMLElement, ev: MouseEvent) => void} onClick */
 export function useWindowClickFromPress(onClick) {
     /** @type {EventTarget | null} */
     let mousedownTarget = null;

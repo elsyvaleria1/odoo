@@ -60,18 +60,13 @@ export const sharedStorageService = {
             bus,
             generateLocalStorageKey,
             /**
-             * Get value shared between all the tabs.
-             *
              * @param {string} key
-             * @param {any} defaultValue Value to be returned if this
-             * key does not exist.
+             * @param {any} defaultValue
              */
             getSharedValue(key, defaultValue) {
                 return getItemFromStorage(key, defaultValue);
             },
             /**
-             * Set value shared between all the tabs.
-             *
              * @param {string} key
              * @param {any} value
              */
@@ -81,11 +76,7 @@ export const sharedStorageService = {
                 }
                 setItemInStorage(key, value);
             },
-            /**
-             * Remove value shared between all the tabs.
-             *
-             * @param {string} key
-             */
+            /** @param {string} key */
             removeSharedValue(key) {
                 browser.localStorage.removeItem(generateLocalStorageKey(key));
             },

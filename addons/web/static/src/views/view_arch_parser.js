@@ -51,9 +51,6 @@ export function requiredIRAttribute(node, attribute) {
 }
 
 /**
- * Depth-first over an IR tree. A handler returning `false` keeps the walk out
- * of that node's children, as `visitXML` does for the element form.
- *
  * @param {ViewIRNode} ir
  * @param {(node: ViewIRNode, parent: ViewIRNode | null) => any} callback
  */
@@ -94,10 +91,6 @@ function childNodes(node) {
 }
 
 /**
- * The parent of every node in an IR tree — what a subclass that must locate
- * a node in the arch (web studio's xpath) reads, header and control children
- * included, which the parsing walk itself never descends into.
- *
  * @param {ViewIRNode} ir
  * @returns {Map<ViewIRNode, ViewIRNode | null>}
  */
@@ -111,18 +104,10 @@ export function irParents(ir) {
 }
 
 export class ViewArchParser {
-    /**
-     * What `parse()` takes: the arch `Element` (default) or the view IR node
-     * (`"ir"`). `defaultViewProps` reads this to hand over the right input.
-     * @type {"element" | "ir"}
-     */
+    /** @type {"element" | "ir"} */
     static consumes = "element";
 
     /**
-     * Any of the three shapes an arch reaches a parser in, as the IR node.
-     * The `View` hands a parser that `consumes` "ir" the node itself; a test
-     * or an older caller may still pass the element or the string.
-     *
      * @param {ViewIRNode | Element | string} arch
      * @returns {ViewIRNode}
      */

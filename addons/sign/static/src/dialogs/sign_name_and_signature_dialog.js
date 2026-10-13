@@ -98,10 +98,7 @@ export class SignNameAndSignature extends NameAndSignature {
         return this.state.activeFrame && this.state.signMode !== "draw" ? "active" : "";
     }
 
-    /**
-     * Override to enable/disable SignNameAndSignatureDialog's footer buttons
-     * @param { Event } e
-     */
+    /** @param { Event } e */
     onInputSignName(e) {
         super.onInputSignName(e);
         this.props.onNameChange(this.props.signature.name);

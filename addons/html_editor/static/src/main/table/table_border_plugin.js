@@ -150,12 +150,10 @@ export class TableBorderPlugin extends Plugin {
     }
 
     /**
-     * Returns the current value of a border property for a cell.
-     *
      * @param {HTMLTableCellElement} cell
-     * @param {string} subProperty color, width or style
-     * @param {string} [defaultReplacement] value to return instead of default value
-     * @returns {string} property value
+     * @param {string} subProperty
+     * @param {string} [defaultReplacement]
+     * @returns {string}
      */
     getCellBorder(cell, subProperty, defaultReplacement) {
         const property = `border-${subProperty}`;
@@ -179,11 +177,9 @@ export class TableBorderPlugin extends Plugin {
         return result;
     }
     /**
-     * Returns the current value of a border property for selected cells inside the selected table.
-     *
-     * @param {string} subProperty color, width or style
-     * @param {string} [defaultReplacement] value to return instead of default value
-     * @returns {string} property value
+     * @param {string} subProperty
+     * @param {string} [defaultReplacement]
+     * @returns {string}
      */
     getTableSelectedBorder(subProperty, defaultReplacement) {
         const table = this.dependencies.selection
@@ -205,9 +201,7 @@ export class TableBorderPlugin extends Plugin {
     }
 
     /**
-     * Applies a border property value on tables of the current selection.
-     *
-     * @param {string} subProperty color, width or style
+     * @param {string} subProperty
      * @param {string} value
      */
     applyBorder(subProperty, value) {
@@ -252,9 +246,7 @@ export class TableBorderPlugin extends Plugin {
     }
 
     /**
-     * Apply border on the current selected tables.
-     *
-     * @param {string} subProperty color, width or style
+     * @param {string} subProperty
      * @param {string} value
      */
     applyBorderCommit(subProperty, value) {
@@ -268,9 +260,7 @@ export class TableBorderPlugin extends Plugin {
         }
     }
     /**
-     * Apply border on the current selected tables in preview mode so that it can be reset.
-     *
-     * @param {string} subProperty color, width or style
+     * @param {string} subProperty
      * @param {string} value
      */
     applyBorderPreview(subProperty, value) {

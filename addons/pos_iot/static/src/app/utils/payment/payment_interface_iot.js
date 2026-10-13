@@ -9,54 +9,27 @@ export class PaymentInterfaceIot extends PaymentInterface {
     }
 
     /**
-     * Returns the data that will be sent to the payment terminal
-     * upon initiating a payment.
-     *
      * @param {string} uuid
-     * The uuid of the payment line
      * @returns {object}
-     * The data to send to the payment terminal
      */
     getPaymentData(uuid) {}
 
     /**
-     * Returns the data that will be sent to the payment terminal
-     * upon cancelling a payment.
-     *
      * @param {string} uuid
-     * The uuid of the payment line
      * @returns {object}
-     * The data to send to the payment terminal
      */
     getCancelData(uuid) {}
 
     /**
-     * Given a message received from the terminal, returns
-     * the payment line to be processed.
-     *
      * @param {PosOrder} order
-     * The current order.
      * @param {object} data
-     * The message received from the terminal.
      * @returns {PosPayment | null}
-     * Returns the payment line if it is found and should
-     * be processed, otherwise returns `null`, ignoring the
-     * terminal message.
      */
     getPaymentLineForMessage(order, data) {}
 
     /**
-     * Called whenever we receive a message from the terminal
-     * after initiating a payment.
-     * The method should call:
-     * - `this._resolvePayment(true)` for a successful payment
-     * - `this._resolvePayment(false)` for a failed payment
-     * - `this._resolveCancellation(true)` for cancellation
-     * - `this._resolveCancellation(false)` for failed cancellation
      * @param {object} data
-     * The message data received from the terminal.
      * @param {PosPayment} line
-     * The payment line for the terminal payment.
      */
     onTerminalMessageReceived(data, line) {}
 

@@ -21,12 +21,7 @@ import { provideViewConfig, useViewConfig } from "@web/core/view_config_hooks";
  * @property {boolean} [withAccessKey]
  */
 
-/**
- * The control panel's pager props: a live view of what `getProps` answers,
- * recomputed when what it reads changes, not written during a render.
- *
- * @param {() => (PagerProps | undefined)} getProps
- */
+/** @param {() => (PagerProps | undefined)} getProps */
 export function usePager(getProps) {
     const current = computed(() => getProps() || { total: 0 });
     const pagerProps = new Proxy(

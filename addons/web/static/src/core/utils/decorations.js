@@ -15,9 +15,6 @@ export function getClassNameFromDecoration(decoration) {
 }
 
 /**
- * The `decoration-*` attributes of a node, given as its attribute record —
- * `nodeAttrs()` from the view IR reads one off an IR node or an element.
- *
  * @param {Record<string, string>} attrs
  * @returns {{ class: string, condition: string }[]}
  */

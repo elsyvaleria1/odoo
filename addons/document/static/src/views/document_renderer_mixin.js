@@ -22,13 +22,7 @@ const log = makeLogger("document.renderer");
 
 const containerRecordClasses = new WeakMap();
 
-/**
- * The current folder as a record, for the details panel: a search panel value,
- * not a row of the view. An edit is written at once, alone, and its reload is
- * the folder tree's (`reloadFolder`, set by the renderer making it).
- *
- * @param {typeof import("@web/model/relational_model").RelationalModel.Record} Record
- */
+/** @param {typeof import("@web/model/relational_model").RelationalModel.Record} Record */
 function containerRecordClass(Record) {
     if (!containerRecordClasses.has(Record)) {
         containerRecordClasses.set(
@@ -254,12 +248,7 @@ export const DocumentsRendererMixin = (component) =>
             return record;
         }
 
-        /**
-         * Whether a drag is refused for the whole domain being selected,
-         * which the user is told: only the page's documents are on screen.
-         *
-         * @returns {boolean}
-         */
+        /** @returns {boolean} */
         refusesDomainDrag() {
             if (this.model.isDomainSelected) {
                 this.notificationService.add(

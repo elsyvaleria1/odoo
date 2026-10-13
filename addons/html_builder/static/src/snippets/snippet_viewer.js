@@ -30,17 +30,13 @@ export class SnippetViewer extends Component {
 
     /**
      * @typedef {Object} PrefixIconInfo
-     * @property {string} keyClass class to add on the span containing the icon
-     * @property {string} title the tooltip content
-     * @property {Component?} Component the component to show the icon
-     * @property {Object?} props props for the component
-     * @property {import("@web/core/utils/dom/html").Markup?} content the markup to
-     * show the icon, if no `Component`
+     * @property {string} keyClass
+     * @property {string} title
+     * @property {Component?} Component
+     * @property {Object?} props
+     * @property {import("@web/core/utils/dom/html").Markup?} content
      */
     /**
-     * Gets the info for icons that are shown before the name of the given
-     * custom snippet
-     *
      * @param {HTMLElement} snippetContentEl
      * @returns {PrefixIconInfo[]}
      */

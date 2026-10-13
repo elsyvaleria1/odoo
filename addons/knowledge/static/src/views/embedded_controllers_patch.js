@@ -10,15 +10,7 @@ export const EmbeddedControllersPatch = (T) =>
             super.setup(...arguments);
             this.orm = useService("orm");
         }
-        /**
-         * Action when clicking on the Create button for list and kanban embedded
-         * views (for knowledge.article).
-         * Create an article item and redirect to its form view
-         * Note: If Quick Create is enabled on the view, should use quick create
-         * instead of custom create.
-         *
-         * @override
-         */
+        /** @override */
         async createRecord() {
             const { onCreate } = this.props.archInfo;
             if (this.canQuickCreate && onCreate === "quick_create") {

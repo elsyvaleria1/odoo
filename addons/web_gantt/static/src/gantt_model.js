@@ -36,22 +36,18 @@ import {
  * @typedef {`[{${string}}]`} RowId
  * @typedef {import("./gantt_arch_parser").Scale} Scale
  * @typedef {import("./gantt_arch_parser").ScaleId} ScaleId
- *
  * @typedef ConsolidationParams
  * @property {string} excludeField
  * @property {string} field
  * @property {string} [maxField]
  * @property {string} [maxValue]
- *
  * @typedef Data
  * @property {Record<string, any>[]} records
  * @property {Row[]} rows
- *
  * @typedef Field
  * @property {string} name
  * @property {string} type
  * @property {[any, string][]} [selection]
- *
  * @typedef MetaData
  * @property {ConsolidationParams} consolidationParams
  * @property {string} dateStartField
@@ -60,22 +56,18 @@ import {
  * @property {ScaleId} defaultRange
  * @property {string} dependencyField
  * @property {boolean} dependencyEnabled
- *
  * @property {Scale} scale
  * @property {Record<string, import("./gantt_arch_parser").Range>} ranges
  * @property {DateTime} startDate
  * @property {DateTime} stopDate
- *
  * @property {string} defaultRescheduleMethod
  * @property {string} rescheduleMethod
  * @property {Object[]} rescheduleMethods
- *
  * @typedef ProgressBar
  * @property {number} value_formatted
  * @property {number} max_value_formatted
  * @property {number} ratio
  * @property {string} warning
- *
  * @typedef Row
  * @property {RowId} id
  * @property {boolean} consolidate
@@ -238,8 +230,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Create a copy of a task with defaults determined by schedule.
-     *
      * @param {number} id
      * @param {Record<string, any>} schedule
      * @param {(result: any) => any} [callback]
@@ -262,9 +252,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Adds a dependency between masterId and slaveId (slaveId depends
-     * on masterId).
-     *
      * @param {number} masterId
      * @param {number} slaveId
      */
@@ -445,9 +432,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Removes the dependency between masterId and slaveId (slaveId is no
-     * more dependent on masterId).
-     *
      * @param {number} masterId
      * @param {number} slaveId
      */
@@ -461,9 +445,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Removes from 'data' the fields holding the same value as the records targetted
-     * by 'ids'.
-     *
      * @template {Record<string, any>} T
      * @param {T} data
      * @param {number[]} ids
@@ -526,8 +507,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Reschedule a task to the given schedule.
-     *
      * @param {number | number[]} ids
      * @param {Record<string, any>} schedule
      * @param {(result: any) => any} [callback]
@@ -622,11 +601,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Return a copy of this.metaData or of the last copy, extended with optional
-     * params. This is useful for async methods that need to modify this.metaData,
-     * but it can't be done in place directly for the model to be concurrency
-     * proof (so they work on a copy and commit it at the end).
-     *
      * @protected
      * @param {Object} params
      * @param {DateTime} [params.focusDate]
@@ -695,8 +669,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Fetches records to display (and groups if necessary).
-     *
      * @protected
      * @param {MetaData} metaData
      * @param {Object} [additionalContext]
@@ -810,9 +782,6 @@ export class GanttModel extends Model {
     _processGanttData(metaData, data, ganttData) {}
 
     /**
-     * What a view fetches beside its gantt data (deadlines, highlighted ids),
-     * asked together with it and superseded with it.
-     *
      * @protected
      * @param {MetaData} _metaData
      * @param {Object} _context
@@ -821,9 +790,6 @@ export class GanttModel extends Model {
     async _fetchCompanionData(_metaData, _context) {}
 
     /**
-     * Applies what _fetchCompanionData answered, before the fetch publishes:
-     * a view never renders a gantt whose companion data is still missing.
-     *
      * @protected
      * @param {MetaData} _metaData
      * @param {Data} _data
@@ -832,8 +798,6 @@ export class GanttModel extends Model {
     _applyCompanionData(_metaData, _data, _companion) {}
 
     /**
-     * Remove date in groupedBy field
-     *
      * @protected
      * @param {MetaData} metaData
      * @param {string[]} groupedBy
@@ -861,10 +825,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Process groups to generate a recursive structure according
-     * to groupedBy fields. Empty groups (filled by read_group with
-     * group_expand) must also be processed.
-     *
      * @protected
      * @param {MetaData} metaData
      * @param {Object} params
@@ -959,8 +919,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Get domain of records to display in the gantt view.
-     *
      * @protected
      * @param {MetaData} metaData
      * @returns {any[]}
@@ -985,12 +943,10 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Format field value to display purpose.
-     *
      * @protected
      * @param {any} value
      * @param {Object} field
-     * @returns {string} formatted field value
+     * @returns {string}
      */
     _getFieldFormattedValue(value, field) {
         if (field.type === "boolean") {
@@ -1005,8 +961,6 @@ export class GanttModel extends Model {
     }
 
     /**
-     * Get all the fields needed.
-     *
      * @protected
      * @param {MetaData} metaData
      * @returns {string[]}
@@ -1184,7 +1138,7 @@ export class GanttModel extends Model {
     /**
      * @protected
      * @param {MetaData} metaData
-     * @param {Record<string, any>[]} records the server records to parse
+     * @param {Record<string, any>[]} records
      * @returns {Record<string, any>[]}
      */
     _parseServerData(metaData, records) {

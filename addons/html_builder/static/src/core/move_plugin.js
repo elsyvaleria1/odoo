@@ -108,9 +108,6 @@ export class MovePlugin extends Plugin {
     }
 
     /**
-     * Returns true if the element is a column visually spanning the full row
-     * (including offsets).
-     *
      * @param {HTMLElement} el
      * @returns {boolean}
      */
@@ -240,11 +237,7 @@ export class MovePlugin extends Plugin {
         return !visibleSiblingEl || (isGridItem && !isMobile);
     }
 
-    /**
-     * Moves the element in the given direction
-     *
-     * @param {String} direction "prev" or "next"
-     */
+    /** @param {String} direction */
     onMoveClick(direction) {
         const isMobile = this.config.isMobileView(this.overlayTarget);
         let hasMobileOrder = !!this.overlayTarget.style.order;

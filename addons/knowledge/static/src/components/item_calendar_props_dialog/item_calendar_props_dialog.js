@@ -168,14 +168,9 @@ export class ItemCalendarPropsDialog extends Component {
     }
 
     /**
-     * Create a new date or datetime property and use it as start or stop
-     * choice.
-     * Note: only the new properties that are selected when saving will be
-     * stored.
-     * @param {string} label: label of the property
-     * @param {string} type: type of the property (date or datetime)
-     * @param {string} calendarProp: for which calendar prop the property has
-     * been created
+     * @param {string} label:
+     * @param {string} type:
+     * @param {string} calendarProp:
      */
     createProperty(label, type, calendarProp) {
         const newPropertyId = uuid();

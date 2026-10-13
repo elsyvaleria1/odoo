@@ -14,12 +14,7 @@ function serialize(element) {
     return serializer.serializeToString(element);
 }
 
-/**
- * What the IR keeps of a parsed arch: comments and processing instructions
- * in place, CDATA read as text, adjacent text merged — the same on both sides.
- *
- * @param {Element} element
- */
+/** @param {Element} element */
 function normalized(element) {
     const doc = element.ownerDocument;
     const walker = doc.createTreeWalker(element, NodeFilter.SHOW_CDATA_SECTION);

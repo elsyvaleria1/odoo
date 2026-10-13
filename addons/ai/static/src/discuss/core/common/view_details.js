@@ -2,8 +2,7 @@
 
 /**
  * @param {import("@web/env").OdooEnv} env
- * @returns {Record<string, any> | null} the view the user is looking at, or
- *   null on a form view, where the agent has nothing to adjust
+ * @returns {Record<string, any> | null}
  */
 export function getCurrentViewInfo(env) {
     const view = env.services.active_view?.current;

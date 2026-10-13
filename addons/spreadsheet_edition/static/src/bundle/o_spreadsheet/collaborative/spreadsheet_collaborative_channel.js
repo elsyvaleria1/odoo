@@ -10,10 +10,10 @@ export class SpreadsheetCollaborativeChannel {
 
     /**
      * @param {Env} env
-     * @param {string} resModel model linked to the spreadsheet
-     * @param {number} resId Id of the spreadsheet
-     * @param {string} [accessToken] sharing token
-     * @param {number} [revisionSequence] the last revision the loaded data holds
+     * @param {string} resModel
+     * @param {number} resId
+     * @param {string} [accessToken]
+     * @param {number} [revisionSequence]
      */
     constructor(env, resModel, resId, accessToken, revisionSequence = 0) {
         this.env = env;
@@ -52,9 +52,6 @@ export class SpreadsheetCollaborativeChannel {
     }
 
     /**
-     * Register a function that is called whenever a new spreadsheet revision
-     * message notification is received by server.
-     *
      * @param {any} id
      * @param {Function} callback
      */
@@ -70,11 +67,7 @@ export class SpreadsheetCollaborativeChannel {
         this._queue = [];
     }
 
-    /**
-     * Send a message to the server
-     *
-     * @param {Object} message
-     */
+    /** @param {Object} message */
     async sendMessage(message) {
         let isAccepted = false;
         const endSend = log.perf(`send ${message.type}`);
@@ -129,9 +122,6 @@ export class SpreadsheetCollaborativeChannel {
     }
 
     /**
-     * Either forward the message to the listener if it's already registered,
-     * or put it in a queue.
-     *
      * @private
      * @param {Object} payload
      */

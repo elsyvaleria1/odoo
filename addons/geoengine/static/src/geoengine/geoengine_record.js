@@ -40,25 +40,7 @@ const formatters = registry.category("formatters");
  * @extends ViewCompiler
  * @property {string[]} OWL_DIRECTIVE_WHITELIST
  */
-/**
- * The three directives held back from `RECORD_TEMPLATE_DIRECTIVES`.
- *
- * This whitelist gates what a `<geoengine>` arch's `<templates>` may CONTAIN,
- * so it is view input rather than implementation, and widening it is a
- * behaviour change. No geoengine arch in the workspace uses any of the three
- * -- checked across `geoengine_demo` and `device_gps_geoengine` -- so keeping
- * them out costs nothing today.
- *
- * Whether the narrowing was ever deliberate is NOT known: it arrived inside a
- * bulk `[REF] several improvements` and carries no note. It is preserved rather
- * than widened because widening what an arch may contain, on no demand, is the
- * change that would need the argument. Subtracting from the shared list is what
- * makes the divergence visible -- as four separate copies it was
- * indistinguishable from an independent choice, which is the whole reason
- * `RECORD_TEMPLATE_DIRECTIVES` exists.
- *
- * @type {string[]}
- */
+/** @type {string[]} */
 export const WITHHELD_DIRECTIVES = ["t-set", "t-value", "t-call"];
 
 class GeoengineViewCompiler extends ViewCompiler {}

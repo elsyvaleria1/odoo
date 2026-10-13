@@ -9,7 +9,7 @@
  *
  * @license LGPL-3 (this is first-party Odoo code, not a vendored library)
  */
-// addons/web/static/src/core/l10n/localization.js
+
 var ALLOWED_PROTOCOL_KEYS = /* @__PURE__ */ new Set([
   "then",
   "toJSON",
@@ -32,7 +32,7 @@ var localization = new Proxy(
   }
 );
 
-// addons/web/static/src/core/utils/dom/ui.js
+
 function viewOf(node) {
   return node.ownerDocument?.defaultView ?? window;
 }
@@ -58,7 +58,7 @@ var FOCUSABLE_SELECTOR = FOCUSABLE_SELECTORS.join(",");
 var TABABLE_SELECTOR = TABABLE_SELECTORS.join(",");
 var TABABLE_OR_HOST_SELECTOR = `${TABABLE_SELECTOR},${SHADOW_HOST_SELECTOR}`;
 
-// addons/web/static/src/core/position/utils.js
+
 var DEFAULTS = {
   flip: true,
   margin: 0,
@@ -296,7 +296,7 @@ function reposition(popper, target, options) {
 }
 var popperMaxHeightState = /* @__PURE__ */ new WeakMap();
 
-// addons/web/static/src/libs/popper_compat.js
+
 var AUTO_PLACEMENTS = /* @__PURE__ */ new Set(["auto", "auto-start", "auto-end"]);
 function ensureDirection() {
   if (!("direction" in /** @type {Partial<typeof localization>} */

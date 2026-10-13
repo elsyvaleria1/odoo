@@ -13,15 +13,13 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Prepare the inline form of Xendit for direct payment.
-     *
-     * @override method from @payment/js/payment_form
+     * @override
      * @private
-     * @param {number} providerId - The id of the selected payment option's provider.
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The online payment flow of the selected payment option.
+     * @param {number} providerId
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _prepareInlineForm(
@@ -58,14 +56,12 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Validate the form inputs before initiating the payment flow.
-     *
-     * @override method from @payment/js/payment_form
+     * @override
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The payment flow of the selected payment option.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
@@ -103,14 +99,12 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Process the direct payment flow by creating a token and proceeding with a token payment flow.
-     *
-     * @override method from @payment/js/payment_form
+     * @override
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {object} processingValues - The processing values of the transaction.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {object} processingValues
      * @return {void}
      */
     async _processDirectFlow(
@@ -162,13 +156,11 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Handle the token creation response and initiate the token payment.
-     *
      * @private
-     * @param {object} err - The error with the cause.
-     * @param {object} token - The created token's data.
-     * @param {object} processingValues - The processing values of the transaction.
-     * @param {string} mode - The mode of the charge: 'auth' or 'token'.
+     * @param {object} err
+     * @param {object} token
+     * @param {object} processingValues
+     * @param {string} mode
      * @return {void}
      */
     async _xenditHandleResponse(err, token, processingValues, mode) {
@@ -223,11 +215,9 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Return all relevant inline form inputs of the provided payment option.
-     *
      * @private
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @return {Object} - An object mapping the name of inline form inputs to their DOM element.
+     * @param {number} paymentOptionId
+     * @return {Object}
      */
     _xenditGetInlineFormInputs(paymentOptionId) {
         const form = this.xenditData[paymentOptionId]["inlineForm"];
@@ -244,11 +234,9 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Return the credit card data to prepare the payload for the create token request.
-     *
      * @private
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @return {Object} - Data to pass to the Xendit createToken request.
+     * @param {number} paymentOptionId
+     * @return {Object}
      */
     _xenditGetPaymentDetails(paymentOptionId) {
         const inputs = this._xenditGetInlineFormInputs(paymentOptionId);

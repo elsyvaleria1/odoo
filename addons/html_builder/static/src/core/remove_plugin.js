@@ -18,9 +18,7 @@ import { _t } from "@web/core/translation";
 /**
  * @typedef {((arg: { removedEl: HTMLElement, nextTargetEl: HTMLElement }) => void)[]} on_removed_handlers
  * @typedef {((toRemoveEl: HTMLElement) => void)[]} on_will_remove_handlers
- *
  * @typedef {((el: HTMLElement) => boolean)[]} empty_node_predicates
- *
  * @typedef {CSSSelector[]} is_unremovable_selector
  */
 
@@ -105,11 +103,8 @@ export class RemovePlugin extends Plugin {
     }
 
     /**
-     * Removes the given element and updates the containers if needed.
-     *
-     * @param {HTMLElement} toRemoveEl the element to remove
-     * @param {Boolean} [updateContainers=true] true if the option containers
-     *   of the remaining element should be activated.
+     * @param {HTMLElement} toRemoveEl
+     * @param {Boolean} [updateContainers=true]
      */
     removeElement(toRemoveEl, updateContainers = true) {
         if (!toRemoveEl.isConnected) {
@@ -126,13 +121,8 @@ export class RemovePlugin extends Plugin {
     }
 
     /**
-     * Removes the given element from the DOM, as well as its parents when
-     * possible, and returns the element of which the options containers should
-     * be activated afterwards.
-     *
-     * @param {HTMLElement} toRemoveEl the element to remove
-     * @param {Array<HTMLElement>} optionsTargetEls the current option
-     *   containers target elements.
+     * @param {HTMLElement} toRemoveEl
+     * @param {Array<HTMLElement>} optionsTargetEls
      * @returns {HTMLElement}
      */
     removeCurrentTarget(toRemoveEl, optionsTargetEls) {

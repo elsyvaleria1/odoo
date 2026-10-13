@@ -4,9 +4,7 @@ import { patch } from "@web/core/utils/patch";
 
 patch(PaymentButton.prototype, {
     /**
-     * Hide the disabled PayPal buttons and show the enabled ones.
-     *
-     * @override method from @payment/interactions/payment_button
+     * @override
      * @private
      * @return {void}
      */
@@ -28,9 +26,7 @@ patch(PaymentButton.prototype, {
     },
 
     /**
-     * Hide the enabled PayPal buttons and show the disabled ones.
-     *
-     * @override method from @payment/interactions/payment_button
+     * @override
      * @private
      * @return {void}
      */
@@ -52,9 +48,7 @@ patch(PaymentButton.prototype, {
     },
 
     /**
-     * Disable the generic behavior that would hide the PayPal button container.
-     *
-     * @override method from @payment/interactions/payment_button
+     * @override
      * @private
      * @return {void}
      */
@@ -65,9 +59,7 @@ patch(PaymentButton.prototype, {
     },
 
     /**
-     * Disable the generic behavior that would show the PayPal button container.
-     *
-     * @override method from @payment/interactions/payment_button
+     * @override
      * @private
      * @return {void}
      */

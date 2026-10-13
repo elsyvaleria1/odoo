@@ -32,9 +32,7 @@ export class PivotUIGlobalFilterPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Get the filter impacted by a pivot formula's argument
-     * @param {Token[]} tokens Formula of the pivot cell
-     *
+     * @param {Token[]} tokens
      * @returns {Array<Object>}
      */
     _getFiltersMatchingPivot(sheetId, tokens) {

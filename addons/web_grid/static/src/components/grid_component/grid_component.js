@@ -33,12 +33,6 @@ export class GridComponent extends Component {
     }
 
     /**
-     * Whether a component expects to be bound to a grid cell. Asked of the
-     * props it declares rather than of its ancestry: the row components are
-     * not all `GridRow` subclasses (timesheet_grid's employee avatar row
-     * extends `Component` directly), while every cell widget declares
-     * `standardGridCellProps`, of which `getCell` is the part no row has.
-     *
      * @param {typeof import("@odoo/owl").Component} component
      * @return {boolean}
      */

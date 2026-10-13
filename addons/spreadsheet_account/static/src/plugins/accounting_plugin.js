@@ -38,12 +38,11 @@ export class AccountingPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Gets the total balance for given account code prefix
-     * @param {string[]} codes prefixes of the accounts' codes
-     * @param {DateRange} dateRange start date of the period to look
-     * @param {number} offset end  date of the period to look
-     * @param {number | null} companyId specific company to target
-     * @param {boolean} includeUnposted wether or not select unposted entries
+     * @param {string[]} codes
+     * @param {DateRange} dateRange
+     * @param {number} offset
+     * @param {number | null} companyId
+     * @param {boolean} includeUnposted
      * @returns {number}
      */
     getAccountPrefixCredit(codes, dateRange, offset, companyId, includeUnposted) {
@@ -58,12 +57,11 @@ export class AccountingPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Gets the total balance for a given account code prefix
-     * @param {string[]} codes prefixes of the accounts codes
-     * @param {DateRange} dateRange start date of the period to look
-     * @param {number} offset end  date of the period to look
-     * @param {number | null} companyId specific company to target
-     * @param {boolean} includeUnposted wether or not select unposted entries
+     * @param {string[]} codes
+     * @param {DateRange} dateRange
+     * @param {number} offset
+     * @param {number | null} companyId
+     * @param {boolean} includeUnposted
      * @returns {number}
      */
     getAccountPrefixDebit(codes, dateRange, offset, companyId, includeUnposted) {
@@ -78,8 +76,8 @@ export class AccountingPlugin extends OdooUIPlugin {
     }
 
     /**
-     * @param {Date} date Date included in the fiscal year
-     * @param {number | null} companyId specific company to target
+     * @param {Date} date
+     * @param {number | null} companyId
      * @returns {string | undefined}
      */
     getFiscalStartDate(date, companyId) {
@@ -87,8 +85,8 @@ export class AccountingPlugin extends OdooUIPlugin {
     }
 
     /**
-     * @param {Date} date Date included in the fiscal year
-     * @param {number | undefined} companyId specific company to target
+     * @param {Date} date
+     * @param {number | undefined} companyId
      * @returns {string | undefined}
      */
     getFiscalEndDate(date, companyId) {
@@ -108,13 +106,12 @@ export class AccountingPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Fetch the account information (credit/debit) for a given account code
      * @private
-     * @param {string[]} codes prefix of the accounts' codes
-     * @param {DateRange} dateRange start date of the period to look
-     * @param {number} offset end  date of the period to look
-     * @param {number | null} companyId specific companyId to target
-     * @param {boolean} includeUnposted wether or not select unposted entries
+     * @param {string[]} codes
+     * @param {DateRange} dateRange
+     * @param {number} offset
+     * @param {number | null} companyId
+     * @param {boolean} includeUnposted
      * @returns {{ debit: number, credit: number }}
      */
     _fetchAccountData(codes, dateRange, offset, companyId, includeUnposted) {
@@ -131,8 +128,6 @@ export class AccountingPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Fetch the start and end date of the fiscal year enclosing a given date
-     * Defaults on the current user company if not provided
      * @private
      * @param {Date} date
      * @param {number | null} companyId
@@ -152,12 +147,11 @@ export class AccountingPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Gets the residual amount for given account code prefixes over a given period
-     * @param {string[]} codes prefixes of the accounts codes
-     * @param {DateRange} dateRange start date of the period to look
-     * @param {number} offset year offset of the period to search
-     * @param {number} companyId specific company to target
-     * @param {boolean} includeUnposted whether or not select unposted entries
+     * @param {string[]} codes
+     * @param {DateRange} dateRange
+     * @param {number} offset
+     * @param {number} companyId
+     * @param {boolean} includeUnposted
      * @returns {number | undefined}
      */
     getAccountResidual(codes, dateRange, offset, companyId, includeUnposted) {
@@ -180,14 +174,13 @@ export class AccountingPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Fetch the account information for a given account code and partner
      * @private
-     * @param {string[]} codes prefix of the accounts' codes
-     * @param {DateRange} dateRange start date of the period to look
-     * @param {number} offset year offset of the period to look
-     * @param {number | null} companyId specific companyId to target
-     * @param {boolean} includeUnposted wether or not select unposted entries
-     * @param {number[]} partnerIds ids of the partners
+     * @param {string[]} codes
+     * @param {DateRange} dateRange
+     * @param {number} offset
+     * @param {number | null} companyId
+     * @param {boolean} includeUnposted
+     * @param {number[]} partnerIds
      * @returns {number | undefined}
      */
     getAccountPartnerData(
@@ -223,13 +216,12 @@ export class AccountingPlugin extends OdooUIPlugin {
     }
 
     /**
-     * Fetch the balance for a given account tag
      * @private
-     * @param {number[]} accountTagIds ids of the account tags
-     * @param {DateRange} dateRange start date of the period to look
-     * @param {number} offset year offset of the period to look
-     * @param {number | null} companyId specific companyId to target
-     * @param {boolean} includeUnposted wether or not select unposted entries
+     * @param {number[]} accountTagIds
+     * @param {DateRange} dateRange
+     * @param {number} offset
+     * @param {number | null} companyId
+     * @param {boolean} includeUnposted
      * @returns {number | undefined}
      */
     getAccountTagData(accountTagIds, dateRange, offset, companyId, includeUnposted) {

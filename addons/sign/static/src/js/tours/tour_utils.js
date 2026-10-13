@@ -1,11 +1,9 @@
 /** @odoo-module native */
 
 /**
- * Helper function that triggers a custom drag event with specified data properties.
- *
- * @param {HTMLElement} element - The element to trigger the event on
- * @param {string} type - The drag event type ('dragstart', 'drop', 'dragend')
- * @param {Object} data - Additional data to attach to the event (e.g., dataTransfer)
+ * @param {HTMLElement} element
+ * @param {string} type
+ * @param {Object} data
  */
 function triggerDragEvent(element, type, data = {}) {
     const event = new DragEvent(type, { bubbles: true });
@@ -18,18 +16,10 @@ function triggerDragEvent(element, type, data = {}) {
 }
 
 /**
- * Performs a drag and drop operation from a source element to a specific position
- * within an iframe containing PDF.js content. This function addresses the limitations
- * of Odoo's default tour drag_and_drop action which doesn't work properly with
- * iframe content controlled by PDF.js.
- *
- * The function creates a mock dataTransfer object to simulate real drag events
- * and calculates precise drop coordinates considering iframe scroll and page dimensions.
- *
- * @param {HTMLElement} from - The source element to drag from (e.g., signature button)
- * @param {HTMLElement} to - The target page element within the iframe
- * @param {number} height - Vertical position as fraction of page height (0.0-1.0, default: 0.5)
- * @param {number} width - Horizontal position as fraction of page width (0.0-1.0, default: 0.5)
+ * @param {HTMLElement} from
+ * @param {HTMLElement} to
+ * @param {number} height
+ * @param {number} width
  */
 function dragAndDropSignItemAtHeight(from, to, height = 0.5, width = 0.5) {
     const rect = to.getBoundingClientRect();

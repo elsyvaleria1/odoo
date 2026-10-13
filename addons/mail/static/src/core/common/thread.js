@@ -361,7 +361,7 @@ export class Thread extends Component {
         toRaw(this.props.thread).fetchNewMessages();
     }
 
-    /** @returns {boolean} whether the messages of the thread should be fetched now */
+    /** @returns {boolean} */
     consumeChatterFetchRequest() {
         const chatter = this.mailContext.chatter;
         if (!chatter) {

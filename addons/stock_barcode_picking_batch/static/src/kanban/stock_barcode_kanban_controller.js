@@ -8,8 +8,6 @@ patch(StockBarcodeKanbanController.prototype, {
     },
 
     /**
-     * Add a new batch picking from barcode
-     *
      * @private
      * @override
      */

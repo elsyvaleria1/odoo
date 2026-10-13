@@ -1,13 +1,10 @@
 /** @odoo-module native */
 /**
- * Calculates the number of columns for the mobile or desktop version.
- * If all elements don't have the same size, returns "custom".
- *
  * @private
- * @param {HTMLCollection} columnEls - elements in the .row container
+ * @param {HTMLCollection} columnEls
  * @param {boolean} isMobile
- * @param {String} mobileBreakpoint - bootstrap breakpoint (sm - md - lg)
- * @returns {integer|string} number of columns or "custom"
+ * @param {String} mobileBreakpoint
+ * @returns {integer|string}
  */
 export function getNbColumns(columnEls, isMobile, mobileBreakpoint) {
     if (!columnEls?.length) {
@@ -30,12 +27,10 @@ export function getNbColumns(columnEls, isMobile, mobileBreakpoint) {
 }
 export const getRow = (el) => el.querySelector(":scope > .row");
 /**
- * Gets the first item, whether it has a mobile order or not.
- *
  * @private
- * @param {HTMLCollection} columnEls - elements in the .row container
+ * @param {HTMLCollection} columnEls
  * @param {boolean} isMobile
- * @returns {HTMLElement} first HTMLElement in order
+ * @returns {HTMLElement}
  */
 export function getFirstItem(columnEls, isMobile) {
     return (
@@ -44,11 +39,9 @@ export function getFirstItem(columnEls, isMobile) {
     );
 }
 /**
- * Adds mobile order and the reset class for large screens.
- *
  * @private
- * @param {HTMLCollection} columnEls - elements in the .row container
- * @param {String} mobileBreakpoint - bootstrap breakpoint (sm - md - lg)
+ * @param {HTMLCollection} columnEls
+ * @param {String} mobileBreakpoint
  */
 export function addMobileOrders(columnEls, mobileBreakpoint) {
     for (let i = 0; i < columnEls.length; i++) {
@@ -57,11 +50,9 @@ export function addMobileOrders(columnEls, mobileBreakpoint) {
     }
 }
 /**
- * Removes mobile orders and the reset class for large screens.
- *
  * @private
- * @param {HTMLCollection} columnEls - elements in the .row container
- * @param {String} mobileBreakpoint - bootstrap breakpoint (sm - md - lg)
+ * @param {HTMLCollection} columnEls
+ * @param {String} mobileBreakpoint
  */
 export function removeMobileOrders(columnEls, mobileBreakpoint) {
     for (const el of columnEls) {
@@ -70,12 +61,10 @@ export function removeMobileOrders(columnEls, mobileBreakpoint) {
     }
 }
 /**
- * Checks whether some columns were resized or were added offsets manually.
- *
  * @private
  * @param {HTMLCollection} columnEls
  * @param {boolean} isMobile
- * @param {String} mobileBreakpoint - bootstrap breakpoint (sm - md - lg)
+ * @param {String} mobileBreakpoint
  * @returns {boolean}
  */
 export function areColsCustomized(columnEls, isMobile, mobileBreakpoint) {
@@ -114,10 +103,8 @@ export function areColsCustomized(columnEls, isMobile, mobileBreakpoint) {
     return true;
 }
 /**
- * Fill in the gap left by a removed item having a mobile order class.
- *
- * @param {HTMLElement} parentEl the removed item parent
- * @param {Number} itemOrder the removed item mobile order
+ * @param {HTMLElement} parentEl
+ * @param {Number} itemOrder
  */
 export function fillRemovedItemGap(parentEl, itemOrder) {
     [...parentEl.children].forEach((el) => {

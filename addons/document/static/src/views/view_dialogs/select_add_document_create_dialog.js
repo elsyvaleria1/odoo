@@ -36,9 +36,6 @@ export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
     }
 
     /**
-     * Runs once whatever the clicks (a double click, the hotkey twice would
-     * copy the attachments twice), then closes; a failure is told, not thrown.
-     *
      * @param {string} failurePrefix
      * @param {() => Promise<void>} callback
      */
@@ -98,12 +95,8 @@ export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
     }
 
     /**
-     * A visitor opens only a document shared by link: the ones that are not
-     * are shared once the user agrees, where they may share them, and are
-     * left out otherwise.
-     *
      * @param {Object[]} links
-     * @returns {Promise<Object[]>} the links a visitor can open
+     * @returns {Promise<Object[]>}
      */
     async _shareForVisitors(links) {
         const isShared = (link) => link.access_via_link !== "none";
@@ -177,12 +170,8 @@ export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
 }
 
 /**
- * The documents a composer or an editor can attach or link: files only, and
- * never the trash.
- *
- * @param {{ add: Function }} dialog the dialog service, or an editor's
- *      adapter over its own dialogs
- * @param {Object} props onAddAttachments, onPasteLinks, attachTo
+ * @param {{ add: Function }} dialog
+ * @param {Object} props
  */
 export function openDocumentsPicker(dialog, props) {
     return dialog.add(SelectAddDocumentCreateDialog, {

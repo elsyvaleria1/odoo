@@ -331,9 +331,9 @@ export class RPCCache {
         /** @type {Record<string, number>} */
         this.diskGenerations = Object.create(null);
         this.globalDiskGeneration = 0;
-        /** @type {Record<string, Set<string>>} the keys known to be on disk */
+        /** @type {Record<string, Set<string>>} */
         this.diskKeys = Object.create(null);
-        /** @type {Record<string, Set<string>>} written while those are read */
+        /** @type {Record<string, Set<string>>} */
         this.diskKeysWritten = Object.create(null);
         if (this.diskEnabled) {
             this.checkSize().catch((error) => {
@@ -351,11 +351,6 @@ export class RPCCache {
     }
 
     /**
-     * Whether a value is cached for this key, answered at once: true when RAM
-     * holds one or the disk is known to, false when the disk is known not to,
-     * undefined while the disk's keys are still being read. A hint, never a
-     * guarantee: another tab writes and evicts the same store.
-     *
      * @param {string} table
      * @param {string} key
      * @returns {boolean | undefined}

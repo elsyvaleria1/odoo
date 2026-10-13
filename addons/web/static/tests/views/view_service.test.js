@@ -184,7 +184,7 @@ const OFFERED_REQUEST = {
     },
 };
 
-/** @returns {Promise<any>} a get_views answer, as the server sends it */
+/** @returns {Promise<any>} */
 async function getViewsAnswer() {
     const { model, views, context, options } = OFFERED_REQUEST;
     return getService("orm").call(model, "get_views", [], { context, views, options });

@@ -222,13 +222,7 @@ export class Keypad extends Component {
         return "fs-3";
     }
 
-    /**
-     * Determines whether the cached country code (if any) still matches the
-     * contents of the keypad input. Useful for hiding the flag and redoing the
-     * request if the content of the input changes.
-     *
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get phoneNumberStartsWithCountryCode() {
         if (!this.props.state.input.country) {
             return false;

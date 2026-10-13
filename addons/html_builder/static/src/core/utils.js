@@ -750,14 +750,10 @@ function getValueWithDefault(userInputValue, defaultValue, formatRawValue) {
 }
 
 /**
- * Handles errors during builder actions.
- * Currently it only checks if the error was triggered on an outdated snippet,
- * and in that case it suppresses the error and shows a notification instead.
- *
- * @param {Error} error - The caught error
- * @param {Element} editingElement - The element being edited
- * @param {Component} comp -  The component
- * @throws {Error} If editingElement is not an outdated snippet
+ * @param {Error} error
+ * @param {Element} editingElement
+ * @param {Component} comp
+ * @throws {Error}
  */
 function handleBuilderActionError(error, editingElement, comp) {
     const isOutdated =
@@ -1188,22 +1184,22 @@ export class BaseOptionComponent extends Component {
             this.builderContext.editor.shared.builderOptions.getBuilderOptionContext(
                 this.constructor,
             );
-        /** @type { EditorContext['document'] } **/
+        /** @type { EditorContext['document'] } */
         this.document = context.document;
         this.window = context.document.defaultView;
-        /** @type { EditorContext['editable'] } **/
+        /** @type { EditorContext['editable'] } */
         this.editable = context.editable;
-        /** @type { EditorContext['config'] } **/
+        /** @type { EditorContext['config'] } */
         this.config = context.config;
-        /** @type { EditorContext['services'] } **/
+        /** @type { EditorContext['services'] } */
         this.services = context.services;
-        /** @type { EditorContext['dependencies'] } **/
+        /** @type { EditorContext['dependencies'] } */
         this.dependencies = context.dependencies;
-        /** @type { EditorContext['getResource'] } **/
+        /** @type { EditorContext['getResource'] } */
         this.getResource = context.getResource;
-        /** @type { EditorContext['dispatchTo'] } **/
+        /** @type { EditorContext['dispatchTo'] } */
         this.dispatchTo = context.dispatchTo;
-        /** @type { EditorContext['delegateTo'] } **/
+        /** @type { EditorContext['delegateTo'] } */
         this.delegateTo = context.delegateTo;
 
         this.isActiveItem = useIsActiveItem();
@@ -1217,12 +1213,8 @@ export class BaseOptionComponent extends Component {
         Object.assign(comp.constructor.components, Components);
     }
     /**
-     * Check if the given items are active.
-     *
-     * Map over all items to listen for any reactive value changes.
-     *
-     * @param {string[]} itemIds - The IDs of the items to check.
-     * @returns {boolean} - True if the item is active, false otherwise.
+     * @param {string[]} itemIds
+     * @returns {boolean}
      */
     isActiveItems(itemIds) {
         return itemIds.map((i) => this.isActiveItem(i)).find(Boolean) || false;

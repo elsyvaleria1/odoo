@@ -85,22 +85,9 @@ export class SelectMenu extends Component {
      * }}
      */
     state;
-    /**
-     * What the user has typed, or null while the input shows the selection.
-     * Not reactive: the input owns its text between renders, and a render per
-     * keystroke re-rendered every option of the open menu before the debounced
-     * search had run. Held on an object for the same reason as `filtered`.
-     * @type {{ value: string | null }}
-     */
+    /** @type {{ value: string | null }} */
     search = { value: null };
-    /**
-     * The lists the open menu renders. A plain object with one identity for
-     * the component's life: the content slot captures instance fields by
-     * value when it is created, so a list reassigned on `this` would stay
-     * stale inside the popover, while a list reassigned on this holder is
-     * read live through it.
-     * @type {{ choices: any[], displayed: any[] }}
-     */
+    /** @type {{ choices: any[], displayed: any[] }} */
     filtered = { choices: [], displayed: [] };
     displayedCount = 0;
 

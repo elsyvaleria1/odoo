@@ -10,11 +10,10 @@ const IR_MENU_XML_ID_PREFIX = "odoo://ir_menu_xml_id/";
  * @property {string} modelName
  * @property {string} orderBy
  * @property {Array<[boolean, string]>} views
- *
  * @typedef ViewLinkDescription
- * @property {string} name Action name
+ * @property {string} name
  * @property {Action} action
- * @property {string} viewType Type of view (list, pivot, ...)
+ * @property {string} viewType
  */
 
 /**
@@ -43,7 +42,7 @@ export function parseViewLink(viewLink) {
 }
 
 /**
- * @param {ViewLinkDescription} viewDescription Id of the ir.filter
+ * @param {ViewLinkDescription} viewDescription
  * @returns {string}
  */
 export function buildViewLink(viewDescription) {
@@ -60,9 +59,8 @@ export function isMarkdownIrMenuIdUrl(url) {
 }
 
 /**
- *
  * @param {string} irMenuLink
- * @returns ir.ui.menu record id
+ * @returns
  */
 export function parseIrMenuIdLink(irMenuLink) {
     if (irMenuLink.startsWith(IR_MENU_ID_PREFIX)) {
@@ -89,9 +87,8 @@ export function isIrMenuXmlUrl(url) {
 }
 
 /**
- *
  * @param {string} irMenuUrl
- * @returns {string} ir.ui.menu record id
+ * @returns {string}
  */
 export function parseIrMenuXmlUrl(irMenuUrl) {
     if (irMenuUrl.startsWith(IR_MENU_XML_ID_PREFIX)) {

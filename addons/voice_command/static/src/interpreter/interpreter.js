@@ -61,9 +61,6 @@ const MAX_SPAN = 6;
  */
 
 /**
- * A term answers to its label and to the same label in the user's other
- * languages, read from Odoo's translations.
- *
  * @param {{ label: string, alternates?: string[] }} term
  * @returns {string[]}
  */
@@ -72,9 +69,6 @@ export function labelsOf(term) {
 }
 
 /**
- * What a recogniser writes around a value -- a closing period, quotes, "¿…?" --
- * is not part of it.
- *
  * @param {string} text
  * @returns {string}
  */
@@ -156,7 +150,7 @@ function termScore(heard, term, phrases) {
  * @param {string[]} heard
  * @param {T[]} terms
  * @param {(term: T) => string[]} phrasesOf
- * @returns {{ term: T, score: number }[]} best first
+ * @returns {{ term: T, score: number }[]}
  */
 function rank(heard, terms, phrasesOf) {
     return terms
@@ -169,8 +163,6 @@ function rank(heard, terms, phrasesOf) {
 }
 
 /**
- * The best term named by a span of words starting at `start`, any length.
- *
  * @template T
  * @param {string[]} words
  * @param {number} start
@@ -218,7 +210,7 @@ function saysOneOf(words, phrases) {
  * @param {string[]} words
  * @param {number} start
  * @param {string[][]} phrases
- * @returns {number} how many words the phrase took, 0 if none starts here
+ * @returns {number}
  */
 function phraseAt(words, start, phrases) {
     for (const phrase of [...phrases].sort((a, b) => b.length - a.length)) {
@@ -359,10 +351,7 @@ function findMenu(words, vocabulary, threshold) {
 }
 
 /**
- * "abre facturas sin pagar": the longest start that names a menu opens it,
- * and what follows is said again to the view it opens.
- *
- * @param {Token[]} tokens after the verb
+ * @param {Token[]} tokens
  * @param {string} text
  * @param {Vocabulary} vocabulary
  * @returns {Interpretation | null}
@@ -461,10 +450,6 @@ function intervalAt(words, index) {
 }
 
 /**
- * Clauses in any order: filters by their label, periods ("del mes pasado"),
- * group-bys ("agrupado por vendedor por mes"), field searches ("cliente
- * Acme"). A sentence counts as a search only when little of it is left over.
- *
  * @param {Token[]} tokens
  * @param {string} text
  * @param {ViewTerms} view
@@ -712,8 +697,6 @@ function fieldValue(field, valueText, valueTokens, today) {
 }
 
 /**
- * "cantidad cinco", "pon el cliente a Acme", "notas: llamar mañana".
- *
  * @param {Token[]} tokens
  * @param {string} text
  * @param {ViewTerms} view
@@ -760,7 +743,7 @@ function parseSetField(tokens, text, view, today) {
  * @param {string} valueText
  * @param {any} today
  * @param {Token[]} [valueTokens]
- * @returns {Proposal | null} null when the field cannot hold what was said
+ * @returns {Proposal | null}
  */
 export function setFieldProposal(
     field,
@@ -850,9 +833,6 @@ export function buttonProposal(button, recordName) {
 }
 
 /**
- * The one term among several that the rest of a sentence names, or null when
- * it names none of them, or two equally.
- *
  * @template {object} T
  * @param {string[]} rest
  * @param {T[]} terms
@@ -871,9 +851,6 @@ function namedAmong(rest, terms, phrasesOf) {
 }
 
 /**
- * "imprime la factura": a report of the record's print menu, the one named,
- * or a choice among them.
- *
  * @param {string[]} words
  * @param {string} text
  * @param {ViewTerms} view
@@ -913,9 +890,6 @@ export function printProposal(report, recordName) {
 }
 
 /**
- * "manda la cotización al cliente": the record's send button, the one named,
- * or a choice among them.
- *
  * @param {string[]} words
  * @param {string} text
  * @param {ViewTerms} view
@@ -948,9 +922,6 @@ function parseSend(words, text, view) {
 }
 
 /**
- * "exporta las facturas": the export dialog of the records in view, where the
- * user chooses the columns and downloads.
- *
  * @param {string[]} words
  * @param {ViewTerms} view
  * @returns {Proposal | null}
@@ -969,8 +940,6 @@ function parseExport(words, view) {
 const DICTATED_TYPES = ["char", "text", "html"];
 
 /**
- * "dicta notas": what follows is spoken into that field until stopped.
- *
  * @param {string[]} words
  * @param {Vocabulary} vocabulary
  * @returns {Proposal | null}
@@ -1005,9 +974,6 @@ function parseDictate(words, vocabulary) {
 }
 
 /**
- * "nota: llamó el cliente": the words go into the chatter's composer, where
- * the user reads them and posts them; nothing is posted by voice.
- *
  * @param {Token[]} tokens
  * @param {string} text
  * @param {Vocabulary} vocabulary
@@ -1057,8 +1023,6 @@ function clickTarget(target, index) {
 }
 
 /**
- * "siete", "número siete", "clic en 7" while the numbers are shown.
- *
  * @param {string[]} words
  * @param {Vocabulary} vocabulary
  * @returns {Proposal | null}
@@ -1085,8 +1049,6 @@ function parseNumber(words, vocabulary) {
 }
 
 /**
- * "haz clic en Filtros": whatever is on screen, by the label it shows.
- *
  * @param {string[]} words
  * @param {Vocabulary} vocabulary
  * @returns {Proposal | null}
@@ -1165,9 +1127,6 @@ export function isNegated(text) {
 }
 
 /**
- * What a sentence asks of the view in front of the user, as proposals: the
- * interpreter decides nothing is run, the caller does, by risk.
- *
  * @param {string} text
  * @param {Vocabulary} vocabulary
  * @returns {Interpretation}

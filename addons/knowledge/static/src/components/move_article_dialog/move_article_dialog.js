@@ -34,13 +34,7 @@ class MoveArticleDialog extends Component {
         );
     }
 
-    /**
-     * For this dialog we needed to get valid articles and the sections since the user can move an
-     * article either under a specific article, that becomes its parent, or inside a section, to become a
-     * root article in either the workspace or the private section.
-     *
-     * @param {String} searchValue Term inputted by the user in the SelectMenu's input
-     */
+    /** @param {String} searchValue */
     async fetchValues(searchValue) {
         const knowledgeArticles = await this.orm.call(
             "knowledge.article",

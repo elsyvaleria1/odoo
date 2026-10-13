@@ -251,10 +251,9 @@ export default class BarcodePickingModel extends BarcodeModel {
     }
 
     /**
-     * Check if the given line can be packed into the given package.
      * @param {Object} line
      * @param {Object} recPackage
-     * @returns boolean
+     * @returns
      */
     lineCanBePackedIntoPackage(line, recPackage) {
         if (line && recPackage) {
@@ -651,11 +650,7 @@ export default class BarcodePickingModel extends BarcodeModel {
         );
     }
 
-    /**
-     * Depending of the config, a transfer can be fully validate even if nothing was scanned (like
-     * with an immediate transfer) or if at least one product was scanned.
-     * @returns {boolean}
-     */
+    /** @returns {boolean} */
     get canBeValidated() {
         if (!this._useReservation) {
             return super.canBeValidated;
@@ -729,14 +724,7 @@ export default class BarcodePickingModel extends BarcodeModel {
         );
     }
 
-    /**
-     * Splits a line if its qty done is less than reserved.
-     * In case of a grouped line, if there's is a lot id or product tracking is serial,
-     * the new line doesn't need to be splitted since there is an existing line
-     * that will be grouped seperately after location is changed.
-     *
-     * @returns {Boolean|Object} Returns the new splitted line or false if line can't be split.
-     */
+    /** @returns {Boolean|Object} */
     async splitLine(line) {
         if (!this.shouldSplitLine(line)) {
             return false;
@@ -760,12 +748,7 @@ export default class BarcodePickingModel extends BarcodeModel {
         return newLine;
     }
 
-    /**
-     * The line's destination is changed to the given location, and if the line's reservation isn't
-     * fulfilled, the remaining qties are moved to a new line with the original destination location.
-     *
-     * @param {int} id location's id
-     */
+    /** @param {int} id */
     async changeDestinationLocation(id, selectedLine) {
         if (selectedLine.lines && !selectedLine.isPackageLine) {
             this._clearScanData();
@@ -937,10 +920,7 @@ export default class BarcodePickingModel extends BarcodeModel {
         return Boolean([...this.groupedLines, ...this.packageLines].length);
     }
 
-    /**
-     * Returns only the lines.
-     * @returns {Array<Object>}
-     */
+    /** @returns {Array<Object>} */
     get pageLines() {
         let lines = super.pageLines;
         if (this._moveEntirePackage()) {
@@ -1812,7 +1792,6 @@ export default class BarcodePickingModel extends BarcodeModel {
     }
 
     /**
-     * Returns true if the first given location is a sublocation of the second given location.
      * @param {Object} childLocation
      * @param {Object} parentLocation
      * @returns {boolean}
@@ -2234,17 +2213,8 @@ export default class BarcodePickingModel extends BarcodeModel {
     }
 
     /**
-     * This method is useful to know if some lines can be packed when there is no scan history.
-     * Usually, we do operation on last scanned products, but in case of put
-     * in pack, it can be done once some lines have quantity done even if no
-     * scan was made (eg.: operation is re-opened after interruption.)
-     *
-     * @param {number} [packageTypeId] - A packed line can not be packed into a
-     * package of the same type. In case the package has a type or a package
-     * type was scanned, it's important to give the package type ID to exclude
-     * already packed line sharing the same package type.
-     * @returns {Object} Two keys: `linesToPack` (lines without result package)
-     * and `packedLinesToPack` (lines already packed.)
+     * @param {number} [packageTypeId]
+     * @returns {Object}
      */
     _getCandidateLinesToPack(packageTypeId = false) {
         let [linesToPack, packedLinesToPack] = [[], []];
@@ -2309,13 +2279,7 @@ export default class BarcodePickingModel extends BarcodeModel {
         this.trigger("refresh");
     }
 
-    /**
-     * Define which line must be packed, depending of the selected line.
-     * If the selected line is already packed, pack other already packed lines.
-     * If selected line is not packed, pack other no packed lines.
-     * If selected line has some quantity, pack only lines with quantity.
-     * @returns {Array<number>} list of packages' id
-     */
+    /** @returns {Array<number>} */
     getPackageToPackIds() {
         const packageIds = [];
         const mustPackAlreadyPacked = Boolean(

@@ -4,7 +4,7 @@ import { registry } from "@web/core/registry";
 
 const VIEW_TYPE_KEY = "documentsDefaultViewType";
 
-/** @returns {string|null} the view the Documents app last showed on a large screen */
+/** @returns {string|null} */
 export function preferredDocumentsViewType() {
     try {
         return browser.localStorage.getItem(VIEW_TYPE_KEY);

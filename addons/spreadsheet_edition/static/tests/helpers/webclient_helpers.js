@@ -38,7 +38,6 @@ function getChildFromComponent(component, cls) {
 }
 
 /**
- * Return the odoo spreadsheet component
  * @param {*} actionManager
  * @returns {SpreadsheetComponent}
  */
@@ -47,7 +46,6 @@ export function getSpreadsheetComponent(actionManager) {
 }
 
 /**
- * Return the o-spreadsheet component
  * @param {*} actionManager
  * @returns {Component}
  */
@@ -55,10 +53,7 @@ export function getOSpreadsheetComponent(actionManager) {
     return getChildFromComponent(getSpreadsheetComponent(actionManager), Spreadsheet);
 }
 
-/**
- * Return the o-spreadsheet Model
- * @return {import("@spreadsheet").OdooSpreadsheetModel} model
- */
+/** @return {import("@spreadsheet").OdooSpreadsheetModel} */
 export function getSpreadsheetActionModel(actionManager) {
     return getOSpreadsheetComponent(actionManager).model;
 }

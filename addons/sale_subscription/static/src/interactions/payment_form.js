@@ -16,13 +16,10 @@ patch(PaymentForm.prototype, {
         });
     },
     /**
-     * Replace the base token deletion confirmation dialog to prevent token deletion if a linked
-     * subscription is active.
-     *
-     * @override method from @payment/interactions/payment_form
+     * @override
      * @private
-     * @param {number} tokenId - The id of the token whose deletion was requested.
-     * @param {object} linkedRecordsInfo - The data relative to the documents linked to the token.
+     * @param {number} tokenId
+     * @param {object} linkedRecordsInfo
      * @return {void}
      */
     _challengeTokenDeletion(tokenId, linkedRecordsInfo) {
@@ -45,14 +42,7 @@ patch(PaymentForm.prototype, {
         });
     },
 
-    /**
-     * Override of payment method to update the paymentContext.transactionRoute depending
-     * on the order we are paying.
-     * For subscription invoices, when the customer wants to save the token on the order,
-     * we update the transaction route on the fly.
-     *
-     * @return {void}
-     */
+    /** @return {void} */
     async submitForm() {
         const checkedRadio = this.el.querySelector(
             'input[name="o_payment_radio"]:checked',
@@ -77,11 +67,7 @@ patch(PaymentForm.prototype, {
         return await super.submitForm(...arguments);
     },
 
-    /**
-     * Automatically check `Save my payment details` checkbox after clicking in the `Automate payments` option.
-     *
-     * @return {void}
-     */
+    /** @return {void} */
     onChangeAutomatePaymentsCheckbox: function (ev) {
         const tokenizeContainer = ev.currentTarget.closest(
             'div[name="o_payment_tokenize_container"]',
@@ -95,10 +81,8 @@ patch(PaymentForm.prototype, {
     },
 
     /**
-     * Prepare the params for the RPC to the transaction route.
-     *
      * @private
-     * @returns {object} - The transaction route params.
+     * @returns {object}
      */
     _prepareTransactionRouteParams() {
         const transactionRouteParams = super._prepareTransactionRouteParams(

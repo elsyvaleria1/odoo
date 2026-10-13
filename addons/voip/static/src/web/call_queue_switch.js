@@ -85,7 +85,7 @@ export class CallQueueSwitch extends Component {
 
     /**
      * @param {Object} param0
-     * @param {integer} param0.detail The resId of the deleted record.
+     * @param {integer} param0.detail
      */
     _onCallActivityRemoved({ detail: resId }) {
         if (this.props.record.resId !== resId) {

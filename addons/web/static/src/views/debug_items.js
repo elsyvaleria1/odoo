@@ -69,10 +69,7 @@ class ViewProvenanceDialog extends Component {
         });
     }
 
-    /**
-     * The nodes each view put in the combined arch, the primary first.
-     * @param {Record<string, { view_id: number, xml_id: string | null, kind: string }>} provenance
-     */
+    /** @param {Record<string, { view_id: number, xml_id: string | null, kind: string }>} provenance */
     groupByView(provenance) {
         const byView = new Map();
         for (const [nodeId, node] of Object.entries(provenance)) {
@@ -101,7 +98,6 @@ class ViewProvenanceDialog extends Component {
 }
 
 /**
- * Which view put each node of the combined arch where it is.
  * @param {{ component: Object, env: Object }} params
  * @returns {Object | null}
  */

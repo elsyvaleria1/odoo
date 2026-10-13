@@ -39,8 +39,7 @@ function _isAllowedCompany(suggestedCompany) {
 
 /**
  * @param {any} error
- * @returns {any | null} the company the error names when switching to it can
- *  help: an access error naming a company not yet active that the user may use
+ * @returns {any | null}
  */
 function _recoverableCompany(error) {
     const suggestedCompany = _suggestedCompany(error);

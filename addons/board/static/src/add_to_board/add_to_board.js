@@ -12,19 +12,7 @@ import { useSearchModel } from "@web/search/search_model";
 
 const cogMenuRegistry = registry.category("cogMenu");
 
-/**
- * 'Add to board' menu
- *
- * Component consisiting of a toggle button, a text input and an 'Add' button.
- * The first button is simply used to toggle the component and will determine
- * whether the other elements should be rendered.
- * The input will be given the name (or title) of the view that will be added.
- * Finally, the last button will send the name as well as some of the action
- * properties to the server to add the current view (and its context) to the
- * user's dashboard.
- * This component is only available in actions of type 'ir.actions.act_window'.
- * @extends Component
- */
+/** @extends Component */
 export class AddToBoard extends Component {
     static template = "board.AddToBoard";
     static components = { Dropdown };

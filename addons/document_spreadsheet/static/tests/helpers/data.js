@@ -224,18 +224,14 @@ export function defineDocumentSpreadsheetTestAction() {
     ]);
 }
 
-/**
- * @override to add necessary users
- */
+/** @override */
 export const getBasicData = () => {
     const res = getBasicSpreadsheetData();
     res["res.users"] = getDocumentBasicData().models["res.users"];
     return res;
 };
 
-/**
- * @override to add necessary users
- */
+/** @override */
 export const getBasicServerData = () => {
     const res = getBasicSpreadsheetServerData();
     res.models["res.users"] = getDocumentBasicData().models["res.users"];

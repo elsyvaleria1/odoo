@@ -14,12 +14,8 @@ import { renderToString } from "@web/core/utils/render";
 import { ConfirmationDialog } from "@web/ui/dialog";
 
 /**
- * Mixin that adds edit features into PDF_iframe classes like drag/drop, resize, helper lines
- * Currently, it should be used only for SignTemplateIframe
- * Parent class should implement allowEdit and saveChanges
- *
  * @param { class } pdfClass
- * @returns class
+ * @returns
  */
 export const EditablePDFIframeMixin = (pdfClass) =>
     class extends pdfClass {
@@ -71,13 +67,10 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         }
 
         /**
-         * Gets an SVG matching the given parameters, output compatible with the
-         * src attribute of <img/>.
-         *
-         * @param {string} text: the name to draw
-         * @param {number} width: the width of the resulting image in px
-         * @param {number} height: the height of the resulting image in px
-         * @returns {string} image = mimetype + image data
+         * @param {string} text:
+         * @param {number} width:
+         * @param {number} height:
+         * @returns {string}
          */
         getSVGText(text = "", width, height) {
             const svg = renderToString("web.sign_svg_text", {
@@ -123,9 +116,8 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         }
 
         /**
-         * Return the initials string format for a given text.
-         * @param {string} text: the name that will be turned into initials
-         * @returns {string} text in initials format, such as "G.F."
+         * @param {string} text:
+         * @returns {string}
          */
         getInitialsText(text) {
             const parts = text.split(" ");
@@ -167,10 +159,9 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         }
 
         /**
-         * Callback executed when a sign item is resized
          * @param {SignItem} signItem
-         * @param {Object} change object with new width and height of sign item
-         * @param {Boolean} end boolean indicating if the resize is done or still in progress
+         * @param {Object} change
+         * @param {Boolean} end
          */
         onResizeItem(signItem, change, end = false) {
             this.setCanvasVisibility("hidden");
@@ -226,10 +217,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             return undefined;
         }
 
-        /**
-         * Changes visibility of the canvas_layer_0 that is used for drawing connecting lines between sign items of type radio.
-         * @param {string} visibility
-         */
+        /** @param {string} visibility */
         setCanvasVisibility(visibility) {
             const canvas_layer =
                 this.getPageContainer(1).parentElement.parentElement.querySelector(
@@ -268,11 +256,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             );
         }
 
-        /**
-         * Handles the mouse down event
-         * It handles the selection rectangle drawing start
-         * @param {MouseEvent} e
-         */
+        /** @param {MouseEvent} e */
         onMouseDown(e) {
             const isInSelectedElement = this.selectedElements?.some((element) =>
                 element.el.contains(e.target),
@@ -296,12 +280,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             this.updateSelectionRect();
         }
 
-        /**
-         * Handles the mouse move event
-         * It updates the mouse position and keeps track of the selection rectangle
-         * It also handles the auto scroll if selection occurs in multiple pages
-         * @param {MouseEvent} e
-         */
+        /** @param {MouseEvent} e */
         onMouseMove(e) {
             const rect = this.viewerContainer.getBoundingClientRect();
             const { scrollTop, scrollLeft } = this.viewerContainer;
@@ -407,10 +386,9 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         }
 
         /**
-         * Checks if two rectangles intersect
-         * @param {Object} rect1 - First rectangle with left, right, top, bottom properties
-         * @param {Object} rect2 - Second rectangle with x, y, width, height properties
-         * @returns {boolean} - True if the rectangles intersect, false otherwise
+         * @param {Object} rect1
+         * @param {Object} rect2
+         * @returns {boolean}
          */
         doRectanglesIntersect(rect1, rect2) {
             return !(
@@ -422,10 +400,9 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         }
 
         /**
-         * Checks if an element intersects with the selection rectangle
-         * @param {Element} element - The sign element to check
-         * @param {Object} selectionRect - The selection rectangle with x, y, width, height properties
-         * @returns {boolean} - True if the element intersects the selection rectangle, false otherwise
+         * @param {Element} element
+         * @param {Object} selectionRect
+         * @returns {boolean}
          */
         getElementIntersectsSelection(element, selectionRect) {
             const elemRect = element.getBoundingClientRect();
@@ -461,11 +438,9 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         }
 
         /**
-         * Given the (x, y) position with respect to the viewer container
-         * @param {Number} x - x position relative to the viewer container (including scroll)
-         * @param {Number} y - y position relative to the viewer container (including scroll)
-         * @returns the document page which contain the (x, y) position
-         * and the ratio of the (x, y) position inside the page.
+         * @param {Number} x
+         * @param {Number} y
+         * @returns
          */
         getPositionData(x, y, itemWidth = 0, itemHeight = 0) {
             const viewerContainer =
@@ -602,11 +577,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             this.mousePosition.y += 10;
         }
 
-        /**
-         * Handles the key down event
-         * It handles the copy, paste and delete events
-         * @param {KeyboardEvent} event
-         */
+        /** @param {KeyboardEvent} event */
         handleKeyDown(event) {
             if (
                 (event.ctrlKey || event.metaKey) &&
@@ -637,14 +608,13 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         }
 
         /**
-         * Updates the position and page of a sign item in the PDF frame
-         * @param {Object} signItem - The sign item object to update
-         * @param {Object} positionContext - The position and page data
-         * @param {number} positionContext.posX - The new horizontal position
-         * @param {number} positionContext.posY - The new vertical position
-         * @param {number} positionContext.targetPage - The page number where the item should be placed
-         * @param {number} positionContext.initialPage - The original page number of the item
-         * @param {HTMLElement} positionContext.page - The DOM element of the target page
+         * @param {Object} signItem
+         * @param {Object} positionContext
+         * @param {number} positionContext.posX
+         * @param {number} positionContext.posY
+         * @param {number} positionContext.targetPage
+         * @param {number} positionContext.initialPage
+         * @param {HTMLElement} positionContext.page
          */
         updateSignItemPosition(signItem, positionContext) {
             const { posX, posY, targetPage, initialPage, page } = positionContext;
@@ -712,10 +682,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             }
         }
 
-        /**
-         * Starts multi-drag for selected elements
-         * @param {MouseEvent} e - The mouse drag event
-         */
+        /** @param {MouseEvent} e */
         startMultiDrag(e) {
             this.multiDragState = {
                 items: this.selectedElements.map((signItem) => {
@@ -791,9 +758,8 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         }
 
         /**
-         * Starts single-drag for a sign element
-         * @param {MouseEvent} e - The mouse event
-         * @param {HTMLElement} signElement - The sign element to drag
+         * @param {MouseEvent} e
+         * @param {HTMLElement} signElement
          */
         startSingleDrag(e, signElement) {
             const page = signElement.parentElement;
@@ -823,10 +789,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             );
         }
 
-        /**
-         * Ends the drag operation
-         * @param {MouseEvent} e - The mouse drag end event
-         */
+        /** @param {MouseEvent} e */
         onDragEnd(e) {
             this.scrollCleanup();
             if (this.selectedElements) {
@@ -983,10 +946,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             this.refreshSignItems();
         }
 
-        /**
-         * Handles the multi-item drop event
-         * @param {MouseEvent} event - The mouse event
-         */
+        /** @param {MouseEvent} event */
         handleMultiItemDrop(event) {
             if (!this.multiDragState) {
                 return;
@@ -1040,10 +1000,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             this.helperLines?.hide();
         }
 
-        /**
-         * Enables resizing and drag/drop for sign items
-         * @param {SignItem} signItem
-         */
+        /** @param {SignItem} signItem */
         enableCustom(signItem) {
             super.enableCustom(signItem);
             if (signItem.data.isSignItemEditable) {
@@ -1064,9 +1021,8 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         }
 
         /**
-         * Inserts initial sign items in the page
-         * @param {Object} data data of the sign item to be added
-         * @param {Boolean} targetAllPages if the item should be added in all pages or only at the current one
+         * @param {Object} data
+         * @param {Boolean} targetAllPages
          */
         addInitialSignItem(data, targetAllPages = false) {
             if (targetAllPages) {
@@ -1091,10 +1047,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             this.setTemplateChanged();
         }
 
-        /**
-         * Creates and renders the inital two sign items of the radio set.
-         * @param: {Object} data: the first radio item data
-         */
+        /** @param : */
         async addRadioSet(data) {
             const [rs_id] = await this.orm.create("sign.item.radio.set", [{}]);
             data["radio_set_id"] = rs_id;
@@ -1134,10 +1087,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             handle.addEventListener("dragend", (e) => this.onDragEnd(e));
         }
 
-        /**
-         * Deletes a sign item from the template
-         * @param {SignItem} signItem
-         */
+        /** @param {SignItem} signItem */
         deleteSignItem(signItem) {
             const { id, page } = signItem.data;
             signItem.el.parentElement.removeChild(signItem.el);
@@ -1145,10 +1095,7 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             this.setTemplateChanged();
         }
 
-        /**
-         * Bulk delete of multiple sign items, saves the template only once.
-         * @param {SignItem []} deletedItems
-         */
+        /** @param {SignItem []} deletedItems */
         async deleteSignItems(deletedItems) {
             deletedItems.forEach((signItem) => {
                 this.deletedSignItemIds.push(signItem.data.id);

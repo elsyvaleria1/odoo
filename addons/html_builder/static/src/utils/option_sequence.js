@@ -7,10 +7,8 @@ const ALL = [BEGIN, END];
 export const DEFAULT = track(10);
 
 /**
- * Keeps track of a position in the ordered list positions ALL.
- *
  * @param {Number} position
- * @return {Number} position parameter itself
+ * @return {Number}
  */
 function track(position) {
     if (!(position in ALL)) {
@@ -24,13 +22,10 @@ function track(position) {
     return position;
 }
 /**
- * Generates 'count' positions evenly-spread between a beginPosition and an
- * endPosition.
- *
- * @param {Number} beginPosition position after which to generate positions
- * @param {Number} endPosition position before which to generate positions
- * @param {int} count amount of generated positions
- * @return {Number[]} containing {@link count} positions generated within range
+ * @param {Number} beginPosition
+ * @param {Number} endPosition
+ * @param {int} count
+ * @return {Number[]}
  */
 export function splitBetween(beginPosition, endPosition, count) {
     const result = [];
@@ -41,21 +36,16 @@ export function splitBetween(beginPosition, endPosition, count) {
     return result;
 }
 /**
- * Generates a position halfway between two positions.
- *
- * @param {Number} previousPosition position after which to generate position
- * @param {Number} nextPosition position before which to generate position
- * @return {Number} position halfway between begin and end
+ * @param {Number} previousPosition
+ * @param {Number} nextPosition
+ * @return {Number}
  */
 export function between(previousPosition, nextPosition) {
     return splitBetween(previousPosition, nextPosition, 1)[0];
 }
 /**
- * Generates a position after the specified position, but before the next
- * already known position.
- *
- * @param {Number} position position after which to generate position
- * @return {Number} generated position
+ * @param {Number} position
+ * @return {Number}
  */
 export function after(position) {
     const index = ALL.findIndex((value) => value === position);
@@ -71,11 +61,8 @@ export function after(position) {
     return between(position, nextPosition);
 }
 /**
- * Generates a position before the specified position, but after the previous
- * already known position.
- *
- * @param {Number} position position before which to generate position
- * @return {Number} generated position
+ * @param {Number} position
+ * @return {Number}
  */
 export function before(position) {
     const index = ALL.findIndex((value) => value === position);

@@ -375,7 +375,7 @@ test("Domain of date filter with year offset on pivot field", async function () 
 test("Domain of date filter with quarter offset on list field", async function () {
     mockDate("2022-07-14 00:00:00");
     const { model } = await createSpreadsheetWithList();
-    /** @type GlobalFilter */
+    /** @type */
     const filter = {
         ...THIS_YEAR_GLOBAL_FILTER,
         defaultValue: "this_quarter",
@@ -393,7 +393,7 @@ test("Domain of date filter with month offset on graph field", async function ()
     mockDate("2022-07-14 00:00:00");
     const { model } = await createSpreadsheetWithChart();
     const chartId = model.getters.getOdooChartIds()[0];
-    /** @type GlobalFilter */
+    /** @type */
     const filter = {
         ...THIS_YEAR_GLOBAL_FILTER,
         defaultValue: "this_month",
@@ -1909,7 +1909,7 @@ test("Relative date filter domain value", async function () {
     mockDate("2022-05-16 00:00:00");
     const label = "Last Month";
     const { model } = await createSpreadsheetWithPivot();
-    /**@type GlobalFilter */
+    /** @type */
     const filter = {
         id: "42",
         type: "date",
@@ -1991,7 +1991,7 @@ test("Relative date filter with offset domain value", async function () {
     mockDate("2022-05-16 00:00:00");
     const label = "Last Month";
     const { model } = await createSpreadsheetWithPivot();
-    /**@type GlobalFilter */
+    /** @type */
     const filter = {
         id: "42",
         type: "date",
@@ -2085,7 +2085,7 @@ test("from_to date filter at model loading", async function () {
 
 test("from_to date filter domain value on a date field", async function () {
     const { model } = await createSpreadsheetWithPivot();
-    /**@type GlobalFilter */
+    /** @type */
     const filter = {
         id: "42",
         type: "date",
@@ -2107,7 +2107,7 @@ test("from_to date filter domain value on a date field", async function () {
 test("from_to date filter domain value on a datetime field UTC+2", async function () {
     mockTimeZone(+2);
     const { model } = await createSpreadsheetWithPivot();
-    /**@type GlobalFilter */
+    /** @type */
     const filter = {
         id: "42",
         type: "date",
@@ -2134,7 +2134,7 @@ test("from_to date filter domain value on a datetime field UTC+2", async functio
 test("from_to date filter domain value on a datetime field UTC-2", async function () {
     mockTimeZone(-2);
     const { model } = await createSpreadsheetWithPivot();
-    /**@type GlobalFilter */
+    /** @type */
     const filter = {
         id: "42",
         type: "date",
@@ -2160,7 +2160,7 @@ test("from_to date filter domain value on a datetime field UTC-2", async functio
 
 test("set 'from_to' date filter domain value from specific date --> to specific date", async function () {
     const { model } = await createSpreadsheetWithPivot();
-    /**@type GlobalFilter */
+    /** @type */
     const filter = {
         id: "42",
         type: "date",
@@ -2181,7 +2181,7 @@ test("set 'from_to' date filter domain value from specific date --> to specific 
 
 test("set 'from_to' date filter domain value from specific date", async function () {
     const { model } = await createSpreadsheetWithPivot();
-    /**@type GlobalFilter */
+    /** @type */
     const filter = {
         id: "42",
         type: "date",
@@ -2202,7 +2202,7 @@ test("set 'from_to' date filter domain value from specific date", async function
 
 test("set 'from_to' date filter domain value to specific date", async function () {
     const { model } = await createSpreadsheetWithPivot();
-    /**@type GlobalFilter */
+    /** @type */
     const filter = {
         id: "42",
         type: "date",

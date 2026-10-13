@@ -72,10 +72,6 @@ function _deepEqual(a, b, seen) {
 }
 
 /**
- * The Temporal type of `value` ("Temporal.PlainDate", ...), or "" for any
- * other value: Temporal objects keep their state in internal slots, with no
- * own keys to compare.
- *
  * @param {any} value
  * @returns {string}
  */
@@ -224,10 +220,6 @@ export function toRawDeep(value, seen = new WeakMap()) {
 }
 
 /**
- * `value` with its plain objects, arrays, maps and sets copied: Temporal
- * values are immutable and shared, other leaves are structured-cloned, and a
- * leaf that cannot be cloned (a function) is shared.
- *
  * @param {any} value
  * @param {WeakMap<object, any>} seen
  * @returns {any}
@@ -310,8 +302,6 @@ export function isObject(value) {
 }
 
 /**
- * Numeric keys and their canonical string spellings address the same property.
- * Noncanonical strings such as "01" remain distinct from numeric keys.
  * @template {PropertyKey} K
  * @typedef {K extends number ? K | `${K}`
  *  : K extends `${infer N extends number}` ? `${N}` extends K ? K | N : K

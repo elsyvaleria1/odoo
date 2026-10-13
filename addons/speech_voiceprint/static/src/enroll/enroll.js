@@ -186,7 +186,7 @@ export class VoiceprintEnroll extends Component {
         });
     }
 
-    /** @param {Blob} blob @returns {Promise<string>} */
+    /** @param {Blob} blob */
     toBase64(blob) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();

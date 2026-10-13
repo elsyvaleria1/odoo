@@ -26,9 +26,7 @@ export class OperationPlugin extends Plugin {
     }
 
     /**
-     * Executes a function (async or not) in the mutex.
-     *
-     * @param {Function} fn the function
+     * @param {Function} fn
      * @param {OperationParams} params
      * @returns {Promise<void>}
      */

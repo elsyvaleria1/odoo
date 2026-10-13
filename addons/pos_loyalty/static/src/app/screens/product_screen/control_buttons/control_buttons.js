@@ -141,8 +141,6 @@ patch(ControlButtons.prototype, {
     },
 
     /**
-     * Applies the reward on the current order, if multiple products can be claimed opens a popup asking for which one.
-     *
      * @param {Object} reward
      * @param {Integer} coupon_id
      */

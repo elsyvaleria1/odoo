@@ -21,16 +21,11 @@ import { Dialog } from "@web/ui/dialog";
 const log = makeLogger("auth_timeout.check_identity");
 
 /**
- * CheckIdentityForm component
- *
- * Displays a re-authentication form based on the user's available authentication methods.
- * Handles form submission, errors, switching methods, and passkey (WebAuthn) flows.
- *
  * @class
  * @extends Component
  * @param {Object} props
- * @param {string} [props.redirect] Optional redirect URL after successful re-authentication
- * @param {Function} [props.close] Callback when the dialog is closed
+ * @param {string} [props.redirect]
+ * @param {Function} [props.close]
  */
 export class CheckIdentityForm extends Component {
     static template = "auth_timeout.CheckIdentityForm";
@@ -147,14 +142,10 @@ export class CheckIdentityForm extends Component {
 }
 
 /**
- * CheckIdentityDialog component
- *
- * Wraps CheckIdentityForm in a modal dialog, used by the check_identity service.
- *
  * @class
  * @extends Component
  * @param {Object} props
- * @param {Function} props.close Callback passed by the Dialog service to close the modal
+ * @param {Function} props.close
  */
 export class CheckIdentityDialog extends Component {
     static template = "auth_timeout.CheckIdentityDialog";
@@ -174,31 +165,17 @@ export class CheckIdentityDialog extends Component {
 }
 
 /**
- * Check Identity Service
- *
- * Manages global identity check logic:
- * - Listens for inactivity via presence service
- * - Listens for `CheckIdentityException` errors from RPC
- * - Displays dialog and synchronizes re-auth state across tabs
- *
  * @type {Object}
- * @property {string[]} dependencies Services this one relies on: ["bus_service", "dialog", "presence"]
- * @method start
- * @param {Object} env OWL environment
- * @param {Object} deps Injected services: bus_service, dialog, presence
- * @returns {Object} Service interface with {channel, bus, run}
+ * @property {string[]} dependencies
+ * @method
+ * @param {Object} env
+ * @param {Object} deps
+ * @returns {Object}
  */
 export const checkIdentityService = {
     dependencies: ["bus_service", "dialog", "presence"],
     eventBus: new EventBus(),
-    /**
-     * Runs the identity check dialog if not already shown.
-     *
-     * Used by patched RPC calls and inactivity timers to ensure
-     * identity confirmation is enforced only once at a time.
-     *
-     * @returns {Promise<void>} Resolves when the user completes the check.
-     */
+    /** @returns {Promise<void>} */
     start(env, { bus_service, dialog, presence }) {
         const channel = new BroadcastChannel("check_identity");
         const bus = this.eventBus;

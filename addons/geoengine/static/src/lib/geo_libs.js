@@ -4,11 +4,6 @@
 const loaded = { ol: null, chroma: null, geostats: null };
 
 /**
- * A stable stand-in for a library that loads later. Its binding never
- * changes, so a bridge or stub that copies this module's exports once at
- * registration still reaches the library: every read, call and `new` is
- * forwarded to the module loadGeoLibs() stored.
- *
  * @param {"ol" | "chroma" | "geostats"} name
  * @returns {any}
  */
@@ -80,12 +75,6 @@ export function areGeoLibsLoaded() {
 }
 
 /**
- * Teaches OpenLayers the projections it does not resolve by itself, from the
- * PostGIS definitions get_layers sends: proj4 is imported only when there are
- * some, so a map on EPSG:3857 or EPSG:4326 never loads it. A definition's
- * extent is its area of use, which a view in that projection needs for its
- * resolutions.
- *
  * @param {{code: string, proj4: string, extent: number[]|null}[]} definitions
  * @returns {Promise<void>}
  */

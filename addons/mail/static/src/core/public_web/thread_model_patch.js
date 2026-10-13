@@ -89,11 +89,7 @@ const modelPatch = {
     setActiveURL() {
         this.store.discuss.setActiveURL(`${this.model}_${this.id}`);
     },
-    /**
-     * Shows the tab listing this thread in `state`.
-     *
-     * @param {import("models").MessagingMenuUIState} state
-     */
+    /** @param {import("models").MessagingMenuUIState} state */
     revealInMessagingMenu(state) {},
     async unpin() {
         log.logic("unpin", () => ({
@@ -116,7 +112,7 @@ const modelPatch = {
     },
     /**
      * @param {string} body
-     * @returns {Promise<boolean>} whether the user confirmed
+     * @returns {Promise<boolean>}
      */
     askLeaveConfirmation(body) {
         return new Promise((resolve) => {

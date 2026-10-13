@@ -125,7 +125,7 @@ export function fuzzyLevenshteinLookup(pattern, list, errorRatio = 3) {
 
 /**
  * @param {string} text
- * @param {Set<string>} [ignore] normalized words that carry no meaning
+ * @param {Set<string>} [ignore]
  * @returns {string[]}
  */
 export function spokenWords(text, ignore) {
@@ -137,7 +137,7 @@ export function spokenWords(text, ignore) {
 /**
  * @param {string} a
  * @param {string} b
- * @returns {number} 1 for the same word, down to 0
+ * @returns {number}
  */
 function wordSimilarity(a, b) {
     if (a === b) {
@@ -147,14 +147,9 @@ function wordSimilarity(a, b) {
 }
 
 /**
- * How well what was heard names a phrase, word by word, forgiving the
- * misspellings a speech recogniser makes. Every heard word must be in the
- * phrase (precision weighs double); a phrase word left unsaid costs less, so
- * "facturas" still names "Facturas de cliente", below "Facturas".
- *
  * @param {string[]} heard
  * @param {string[]} phrase
- * @returns {number} between 0 and 1
+ * @returns {number}
  */
 export function spokenSimilarity(heard, phrase) {
     if (!heard.length || !phrase.length) {

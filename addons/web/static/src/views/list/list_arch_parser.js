@@ -23,9 +23,6 @@ import { getActiveActions } from "@web/views/view_utils";
  */
 
 /**
- * The parser annotates the tree it walks (`field_id`, `widget_id`) for the
- * compiler; the annotation goes on the node's own attrs.
- *
  * @param {ViewIRNode} node
  * @param {string} name
  * @param {string} value
@@ -79,11 +76,7 @@ export class ListArchParser extends ViewArchParser {
     /** @type {"element" | "ir"} */
     static consumes = "ir";
 
-    /**
-     * The parent of every node of the tree the last `parse()` walked — what
-     * a subclass that locates a node in the arch (web studio's xpath) reads.
-     * @type {Map<ViewIRNode, ViewIRNode | null>}
-     */
+    /** @type {Map<ViewIRNode, ViewIRNode | null>} */
     parents = new Map();
 
     /**
@@ -392,11 +385,6 @@ export class ListArchParser extends ViewArchParser {
     }
 
     /**
-     * The tree the parser annotates is its own copy: the node handed in may
-     * be the view cache's IR, or a child of the parent view's tree when this
-     * is an x2many sub-view. `xmlDoc` is that annotated copy materialised
-     * for the compiler, the way `View` materialises a top-level arch.
-     *
      * @param {ViewIRNode | Element | string} arch
      * @param {Record<string, any>} models
      * @param {string} modelName

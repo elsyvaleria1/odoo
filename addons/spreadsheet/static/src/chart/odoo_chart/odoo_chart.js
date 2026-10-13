@@ -8,7 +8,6 @@ import {
 
 /**
  * @typedef {import("@web/search/search_model").SearchParams} SearchParams
- *
  * @typedef MetaData
  * @property {Object} domain
  * @property {Array<string>} groupBy
@@ -17,7 +16,6 @@ import {
  * @property {string} [order]
  * @property {string} resModel
  * @property {boolean} stacked
- *
  * @typedef OdooChartDefinition
  * @property {string} type
  * @property {MetaData} metaData
@@ -26,11 +24,9 @@ import {
  * @property {string} background
  * @property {string} legendPosition
  * @property {boolean} cumulative
- *
  * @typedef OdooChartDefinitionDataSource
  * @property {MetaData} metaData
  * @property {SearchParams} searchParams
- *
  */
 
 export class OdooChart extends AbstractChart {
@@ -85,7 +81,7 @@ export class OdooChart extends AbstractChart {
      */
     getDefinition() {
         return {
-            //@ts-ignore Defined in the parent class
+
             title: this.title,
             background: this.background,
             legendPosition: this.legendPosition,

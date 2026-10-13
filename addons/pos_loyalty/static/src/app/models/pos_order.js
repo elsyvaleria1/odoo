@@ -14,32 +14,10 @@ function _newRandomRewardCode() {
 let pointsForProgramsCountedRules = {};
 
 /**
- * Calculate the number of free items based on the given number
- * of items `number_items` and the rule: buy `n` take `m`.
- *
- * e.g.
- *```
- *      rule: buy 2 take 1                    rule: buy 2 take 3
- *     +------------+--------+--------+      +------------+--------+--------+
- *     |number_items| charged|    free|      |number_items| charged|    free|
- *     +------------+--------+--------+      +------------+--------+--------+
- *     |           1|       1|       0|      |           1|       1|       0|
- *     |           2|       2|       0|      |           2|       2|       0|
- *     |           3|       2|       1|      |           3|       2|       1|
- *     |           4|       3|       1|      |           4|       2|       2|
- *     |           5|       4|       1|      |           5|       2|       3|
- *     |           6|       4|       2|      |           6|       3|       3|
- *     |           7|       5|       2|      |           7|       4|       3|
- *     |           8|       6|       2|      |           8|       4|       4|
- *     |           9|       6|       3|      |           9|       4|       5|
- *     |          10|       7|       3|      |          10|       4|       6|
- *     +------------+--------+--------+      +------------+--------+--------+
- * ```
- *
- * @param {number} numberItems number of items
- * @param {number} n items to buy
- * @param {number} m item for free
- * @returns {number} number of free items
+ * @param {number} numberItems
+ * @param {number} n
+ * @param {number} m
+ * @returns {number}
  */
 function computeFreeQuantity(numberItems, n, m) {
     const factor = Math.trunc(numberItems / (n + m));
@@ -111,12 +89,7 @@ patch(PosOrder.prototype, {
         return state;
     },
 
-    /**
-     * We need to update the rewards upon changing the partner as it may impact the points available
-     *  for rewards.
-     *
-     * @override
-     */
+    /** @override */
     setPartner(partner) {
         const oldPartner = this.getPartner();
         super.setPartner(partner);
@@ -382,9 +355,6 @@ patch(PosOrder.prototype, {
         }));
     },
     /**
-     * The points in the couponPointChanges for free product reward is not correct.
-     * It doesn't take into account the points from the `free` product. Use this method
-     * to compute the necessary correction.
      * @param {*} program
      * @returns {number}
      */
@@ -434,9 +404,7 @@ patch(PosOrder.prototype, {
         }
         return true;
     },
-    /**
-     * @returns {number} The points that are left for the given coupon for this order.
-     */
+    /** @returns {number} */
     _getRealCouponPoints(coupon_id) {
         let points = 0;
         const dbCoupon = this.models["loyalty.card"].get(coupon_id);
@@ -506,10 +474,8 @@ patch(PosOrder.prototype, {
         return true;
     },
     /**
-     * Computes how much points each program gives.
-     *
-     * @param {Array} programs list of loyalty.program
-     * @returns {Object} Containing the points gained per program
+     * @param {Array} programs
+     * @returns {Object}
      */
     pointsForPrograms(programs) {
         const ProductPrice = this.models["decimal.precision"].getBy(
@@ -697,18 +663,13 @@ patch(PosOrder.prototype, {
         }
         return result;
     },
-    /**
-     * @returns {Array} List of lines composing the global discount
-     */
+    /** @returns {Array} */
     _getGlobalDiscountLines() {
         return this.getOrderlines().filter(
             (line) => line.reward_id && line.reward_id.is_global_discount,
         );
     },
-    /**
-     * Returns the number of product items in the order based on the given rule.
-     * @param {*} rule
-     */
+    /** @param {*} rule */
     _computeNItems(rule) {
         return this._get_regular_order_lines().reduce((nItems, line) => {
             let increment = 0;
@@ -718,11 +679,7 @@ patch(PosOrder.prototype, {
             return nItems + increment;
         }, 0);
     },
-    /**
-     * Checks whether this order is allowed to generate rewards
-     * from the given coupon program.
-     * @param {*} couponProgram
-     */
+    /** @param {*} couponProgram */
     _canGenerateRewards(couponProgram, orderTotalWithTax, orderTotalWithoutTax) {
         for (const rule of couponProgram.rule_ids) {
             const amountToCompare =
@@ -740,9 +697,9 @@ patch(PosOrder.prototype, {
         return true;
     },
     /**
-     * @param {Integer} coupon_id (optional) Coupon id
-     * @param {Integer} program_id (optional) Program id
-     * @returns {Array} List of {Object} containing the coupon_id and reward keys
+     * @param {Integer} coupon_id
+     * @param {Integer} program_id
+     * @returns {Array}
      */
     getClaimableRewards(coupon_id = false, program_id = false, auto = false) {
         const couponPointChanges = this.uiState.couponPointChanges;
@@ -849,13 +806,10 @@ patch(PosOrder.prototype, {
         return result;
     },
     /**
-     * TODO JCB: make the second parameter not id, but the loyalty.card object itself.
-     * Applies a reward to the order, `pos.updateRewards` is expected to be called right after.
-     *
      * @param {loyalty.reward} reward
      * @param {Integer} coupon_id
-     * @param {Object} args Reward options
-     * @returns True if everything went right or an error message
+     * @param {Object} args
+     * @returns
      */
     _applyReward(reward, coupon_id, args) {
         if (this._getRealCouponPoints(coupon_id) < reward.required_points) {
@@ -919,10 +873,8 @@ patch(PosOrder.prototype, {
         });
     },
     /**
-     * Processes a gift card by creating a new gift card.
-     *
-     * @param {String} newGiftCardCode gift card code as a string if new gift card to be created.
-     * @param {number} points number of points to assign to the gift card.
+     * @param {String} newGiftCardCode
+     * @param {number} points
      */
     processGiftCard(newGiftCardCode, points, expirationDate) {
         const partner_id = this.partner_id?.id || false;
@@ -968,7 +920,7 @@ patch(PosOrder.prototype, {
     },
     /**
      * @param {loyalty.reward} reward
-     * @returns the discountable and discountable per tax for this discount on order reward.
+     * @returns
      */
     _getDiscountableOnOrder(reward) {
         let discountable = 0;
@@ -991,7 +943,7 @@ patch(PosOrder.prototype, {
     },
     /**
      * @param {loyalty.reward} reward
-     * @returns the cheapest line from all the lines where the program is applicable
+     * @returns
      */
     _getCheapestLine(reward) {
         const applicableProductIds = new Set(
@@ -1009,9 +961,7 @@ patch(PosOrder.prototype, {
                 lineA.comboTotalPrice / lineA.qty - lineB.comboTotalPrice / lineB.qty,
         )[0];
     },
-    /**
-     * @returns the discountable and discountable per tax for this discount on cheapest reward.
-     */
+    /** @returns */
     _getDiscountableOnCheapest(reward) {
         const cheapestLine = this._getCheapestLine(reward);
         if (!cheapestLine) {
@@ -1029,7 +979,7 @@ patch(PosOrder.prototype, {
     },
     /**
      * @param {loyalty.reward} reward
-     * @returns all lines to which the reward applies.
+     * @returns
      */
     _getSpecificDiscountableLines(reward) {
         const discountableLines = [];
@@ -1050,10 +1000,8 @@ patch(PosOrder.prototype, {
         return discountableLines;
     },
     /**
-     * For a 'specific' type of discount it is more complicated as we have to make sure that we never
-     *  discount more than what is available on a per line basis.
      * @param {loyalty.reward} reward
-     * @returns the discountable and discountable per tax for this discount on specific reward.
+     * @returns
      */
     _getDiscountableOnSpecific(reward) {
         const applicableProductIds = new Set(
@@ -1148,8 +1096,8 @@ patch(PosOrder.prototype, {
         return { discountable, discountablePerTax };
     },
     /**
-     * @param {Object} args See `_applyReward`
-     * @returns {Array} List of values to create the reward lines
+     * @param {Object} args
+     * @returns {Array}
      */
     _getRewardLineValues(args) {
         const reward = args["reward"];
@@ -1161,8 +1109,8 @@ patch(PosOrder.prototype, {
         return [];
     },
     /**
-     * @param {Object} args See `_applyReward`
-     * @returns {Array} List of values to create the discount lines
+     * @param {Object} args
+     * @returns {Array}
      */
     _getRewardLineValuesDiscount(args) {
         const reward = args["reward"];
@@ -1273,16 +1221,10 @@ patch(PosOrder.prototype, {
         );
     },
     /**
-     * Tries to compute how many free product can be given out for the given product.
-     * Contrary to sale_loyalty, the product must be in the order lines in order to give it out
-     *  (resulting in discount lines for the product's value).
-     * As such we need to approximate the effect of removing 1 quantity on the counting of points in order
-     *  to avoid feedback loops between giving a product and it removing the required points for it.
-     *
      * @param {loyalty.reward} reward
      * @param {Integer} coupon_id
      * @param {Product} product
-     * @returns {Integer} Available quantity to be given as reward for the given product
+     * @returns {Integer}
      */
     _computeUnclaimedFreeProductQty(reward, coupon_id, product, remainingPoints) {
         const ProductPrice = this.models["decimal.precision"].getBy(
@@ -1407,8 +1349,8 @@ patch(PosOrder.prototype, {
         }
     },
     /**
-     * @param {Object} args See `_applyReward`
-     * @returns {Array} List of values to create the reward lines
+     * @param {Object} args
+     * @returns {Array}
      */
     _getRewardLineValuesProduct(args) {
         const reward = args["reward"];

@@ -9,14 +9,7 @@ export class EventConfiguratorController extends formView.Controller {
         this.action = useService("action");
     }
 
-    /**
-     * We let the regular process take place to allow the validation of the required fields
-     * to happen.
-     *
-     * Then we can manually close the window, providing event information to the caller.
-     *
-     * @override
-     */
+    /** @override */
     async onRecordSaved(record) {
         await super.onRecordSaved(...arguments);
         const { event_id, event_slot_id, event_ticket_id } = record.data;

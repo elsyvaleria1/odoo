@@ -4,13 +4,7 @@ import { proxy } from "@odoo/owl";
 import { formatValue, now } from "@web/core/l10n/dates";
 import { registry } from "@web/core/registry";
 
-/**
- * Turn a BUS:PROVIDE_LOGS worker answer into a JSON file download. Lives
- * here — not in bus_service — because log collection is this service's
- * feature: the transport layer has no business doing DOM/Blob work.
- *
- * @param {MessageEvent} messageEv
- */
+/** @param {MessageEvent} messageEv */
 function handleProvideLogs(messageEv) {
     const { type, data } = messageEv.data;
     if (type !== "BUS:PROVIDE_LOGS") {

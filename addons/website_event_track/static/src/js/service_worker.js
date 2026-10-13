@@ -138,10 +138,7 @@ const buildCacheKey = ({ url, body: { method, params } }) =>
     });
 
 /**
- * What a fragment form hears for a reminder toggle queued while offline: no
- * fragment to swap, and an event saying what was asked.
- *
- * @param {Request} request the toggle's form submission
+ * @param {Request} request
  * @returns {Promise<Response>}
  */
 const buildQueuedReminderResponse = async (request) => {

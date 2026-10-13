@@ -8,9 +8,6 @@ import { Interaction } from "@web/public/interaction";
 let pendingFollowState = null;
 
 /**
- * Asks who follows the record, in one request for every widget starting in
- * the same tick: a forum question renders one per tag.
- *
  * @param {string} model
  * @param {number} id
  * @returns {Promise<[{ is_user: boolean, email: string }, Record<string, number[]>]>}

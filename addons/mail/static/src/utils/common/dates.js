@@ -45,9 +45,6 @@ export function isToday(value) {
 }
 
 /**
- * `value` for Intl `options` in the user's language (`user.lang`), in the
- * user's numbering system.
- *
  * @param {Temporal.ZonedDateTime} value
  * @param {Intl.DateTimeFormatOptions} options
  * @returns {string}

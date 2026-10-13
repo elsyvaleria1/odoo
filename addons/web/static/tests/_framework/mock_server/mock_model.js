@@ -1518,8 +1518,6 @@ const AGGREGATOR_FUNCTIONS = {
     sum_currency,
 };
 /**
- * The first day of the ISO week a "W05 2024" group names
- *
  * @param {string} value
  * @returns {Temporal.ZonedDateTime}
  */
@@ -1531,8 +1529,6 @@ function parseWeekGroup(value) {
 }
 
 /**
- * The first day of the quarter a "Q1 2024" group names
- *
  * @param {string} value
  * @returns {Temporal.ZonedDateTime}
  */

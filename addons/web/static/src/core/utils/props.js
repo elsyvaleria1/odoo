@@ -4,10 +4,6 @@
 import { getDefault } from "@odoo/owl";
 
 /**
- * The props of a component that takes any prop (`static props = null`), read
- * through `defaults` where the parent leaves one undefined: such a component
- * has no schema to declare `.optional(value)` defaults in.
- *
  * @template {Record<string, any>} P
  * @param {P} props
  * @param {Record<string, any> | undefined} defaults
@@ -54,8 +50,8 @@ export function withDefaults(props, defaults) {
 }
 
 /**
- * @param {Record<string, any>} schema a component's props schema
- * @returns {Record<string, any>} the value of each default it declares
+ * @param {Record<string, any>} schema
+ * @returns {Record<string, any>}
  */
 export function propDefaults(schema) {
     /** @type {Record<string, any>} */

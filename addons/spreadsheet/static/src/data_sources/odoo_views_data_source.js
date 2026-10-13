@@ -16,7 +16,6 @@ import { getFields, LoadableDataSource, LOADING_ERROR } from "./data_source.js";
  * @typedef {Object} OdooModelMetaData
  * @property {string} resModel
  * @property {OdooFields} [fields]
- *
  * @typedef {Object} OdooModelSearchParams
  * @property {Object} context
  * @property {Array<string>} domain
@@ -75,17 +74,15 @@ export class OdooViewsDataSource extends LoadableDataSource {
         }
     }
 
-    /**
-     * @returns {OdooFields} List of fields
-     */
+    /** @returns {OdooFields} */
     getFields() {
         this._assertMetaDataLoaded();
         return this._metaData.fields;
     }
 
     /**
-     * @param {string} field Field name
-     * @returns {OdooField | undefined} Field
+     * @param {string} field
+     * @returns {OdooField | undefined}
      */
     getField(field) {
         this._assertMetaDataLoaded();
@@ -103,10 +100,7 @@ export class OdooViewsDataSource extends LoadableDataSource {
         return this._metaData.fields !== undefined;
     }
 
-    /**
-     * Get the computed domain of this source
-     * @returns {Array}
-     */
+    /** @returns {Array} */
     getComputedDomain() {
         const userContext = user.context;
         return new Domain(this._customDomain).toList({
@@ -115,10 +109,7 @@ export class OdooViewsDataSource extends LoadableDataSource {
         });
     }
 
-    /**
-     * Get the current domain as a string
-     * @returns { string }
-     */
+    /** @returns { string } */
     getInitialDomainString() {
         return new Domain(this._initialSearchParams.domain).toString();
     }
@@ -142,9 +133,7 @@ export class OdooViewsDataSource extends LoadableDataSource {
         this.load({ reload: true });
     }
 
-    /**
-     * @returns {Promise<string>} Display name of the model
-     */
+    /** @returns {Promise<string>} */
     async getModelLabel() {
         const result = await this._orm
             .cache({ type: "disk" })

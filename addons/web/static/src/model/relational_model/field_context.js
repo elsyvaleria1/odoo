@@ -33,8 +33,6 @@ function computeFieldContext(record, fieldName, rawContext) {
 }
 
 /**
- * Keep the last evaluated context per field and consumer. Weak consumer keys
- * bound retention to live widgets rather than their expression history.
  * @param {Object} record
  * @param {string} fieldName
  * @param {string} [rawContext]

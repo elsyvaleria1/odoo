@@ -145,14 +145,7 @@ export class PlanningGanttRenderer extends GanttRenderer {
         return pill.grid.column.includes(col) ? null : col;
     }
 
-    /**
-     * A planning slot's duration is its allocated hours. This is a fact about
-     * the model, not a per-view choice, so it holds whether or not a given arch
-     * names a `duration_field` -- the arch attribute stays available to any
-     * gantt that wants to override it.
-     *
-     * @override
-     */
+    /** @override */
     getPillDuration(record) {
         return super.getPillDuration(record) || record.allocated_hours || 0;
     }
@@ -392,15 +385,7 @@ export class PlanningGanttRenderer extends GanttRenderer {
         return !record.resource_id;
     }
 
-    /**
-     * By default in the gantt view we show aggregation info in the columns that have pills inside.
-     * In the planning gantt view we colour the group rows based on whether the resource is under/over planned for a day.
-     * This requires the aggregation info to remain visible even in the absence of pills.
-     *
-     * The checks below are done in this order because of their priority importance:
-     * (no working intervals > flex-hours / pill present > non-working days > time-off)
-     * @override
-     */
+    /** @override */
     shouldAggregate(row, g) {
         const wouldAggregate = super.shouldAggregate(...arguments);
         if (!wouldAggregate) {
@@ -586,12 +571,9 @@ export class PlanningGanttRenderer extends GanttRenderer {
     }
 
     /**
-     * Given a {start, end} datetime for a resource (row), return whether the resource is on day off.
-     * This is determined by checking if the resource has any unavailabilities that intersect with the given column
-     *
-     * @param {Object} column - a {start, stop} datetime object for the resource's day
-     * @param {Row} row - Row Object
-     * @returns {boolean} - Whether the resource is on day off
+     * @param {Object} column
+     * @param {Row} row
+     * @returns {boolean}
      */
     _resourceOnDayoff(column, row) {
         const { unavailabilities } = row;
@@ -608,14 +590,8 @@ export class PlanningGanttRenderer extends GanttRenderer {
     }
 
     /**
-     * Split a shift (pill) into two shifts.
-     * For shifts with flexible hours or open slots, the split is done without taking into account availabbilities.
-     * For shifts with regular working hours, the split is done taking into account the resource's availabilities.
-     * As an exception, if the shift spans on weekends (where the resource had no availabilities unavailable)
-     * for a regular working schedule, we split the shift but set a 8-17 schedule for the shift in weekends.
-     *
      * @param {Pill} pill
-     * @param {number} startColumnId - column where to split the pill
+     * @param {number} startColumnId
      */
     splitBounds(pill, startColumnId) {
         const resourceId = pill.record.resource_id.id || false;
@@ -726,14 +702,10 @@ export class PlanningGanttRenderer extends GanttRenderer {
     }
 
     /**
-     * Determines the earliest (in start) and latest (in stop) availability in a column for the row of a given pill.
-     * If a fixed start/stop is set, the latest/earliest availability as to be after/before it. If the row shows no
-     * availability respecting the given constraint, the returned start/stop allows to create a shift of 1 second.
-     *
      * @param {Pill} pill
-     * @param {number} column - Column index
-     * @param {{ Datetime, Datetime }} { fixed_start, fixed_stop } - If set, indicates a fixed value for the start/stop result
-     * @returns {{ Datetime, Datetime }} { start, stop }
+     * @param {number} column
+     * @param {{ Datetime, Datetime }} {
+     * @returns {{ Datetime, Datetime }}
      */
     getColumnAvailabilitiesLimit(pill, column, { fixed_start, fixed_stop } = {}) {
         const defaultColumnTiming = super.getColumnStartStop(column, column);

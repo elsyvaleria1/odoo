@@ -43,8 +43,6 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Open the inline form of the selected payment option, if any.
-     *
      * @param {Event} ev
      * @return {void}
      */
@@ -60,9 +58,6 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Fetch data relative to the documents linked to the token and delegate them to the token
-     * deletion confirmation dialog.
-     *
      * @param {Event} ev
      * @return {void}
      */
@@ -93,8 +88,6 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Hide the button to expand the payment methods section once it has been clicked.
-     *
      * @param {Event} ev
      * @return {void}
      */
@@ -103,8 +96,6 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Update the payment context with the selected payment option and initiate its payment flow.
-     *
      * @param {Event} ev
      * @return {void}
      */
@@ -148,10 +139,8 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Enable the submit button.
-     *
      * @private
-     * @param {boolean} unblockUI - Whether the UI should also be unblocked.
+     * @param {boolean} unblockUI
      * @return {void}
      */
     _enableButton(unblockUI = true) {
@@ -162,10 +151,8 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Disable the submit button.
-     *
      * @private
-     * @param {boolean} blockUI - Whether the UI should also be blocked.
+     * @param {boolean} blockUI
      * @return {void}
      */
     _disableButton(blockUI = false) {
@@ -176,8 +163,6 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Show the tokenization checkbox, its label, and the submit button.
-     *
      * @private
      * @return {void}
      */
@@ -191,12 +176,6 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Hide the tokenization checkbox, its label, and the submit button.
-     *
-     * The inputs should typically be hidden when the customer has to perform additional actions in
-     * the inline form. All inputs are automatically shown again when the customer selects another
-     * payment option.
-     *
      * @private
      * @return {void}
      */
@@ -210,10 +189,8 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Open the inline form of the selected payment option and collapse the others.
-     *
      * @private
-     * @param {HTMLInputElement} radio - The radio button linked to the payment option.
+     * @param {HTMLInputElement} radio
      * @return {void}
      */
     async _expandInlineForm(radio) {
@@ -256,8 +233,6 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Collapse all inline forms of the current interaction.
-     *
      * @private
      * @return {void}
      */
@@ -270,26 +245,19 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Prepare the provider-specific inline form of the selected payment option.
-     *
-     * For a provider to manage an inline form, it must override this method and render the content
-     * of the form.
-     *
      * @private
-     * @param {number} providerId - The id of the selected payment option's provider.
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The online payment flow of the selected payment option.
+     * @param {number} providerId
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _prepareInlineForm() {}
 
     /**
-     * Update the payment button's label for "pay later" payment methods.
-     *
      * @private
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
+     * @param {string} paymentMethodCode
      * @return {void}
      */
     _adaptSubmitButtonLabel(paymentMethodCode) {
@@ -306,12 +274,8 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Check whether the given payment method defers payment (pay later).
-     *
-     * Override this method to change the submit button label from the default label to "Confirm".
-     *
      * @private
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
+     * @param {string} paymentMethodCode
      * @return {boolean}
      */
     _isPayLaterPaymentMethod() {
@@ -319,11 +283,9 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Display an error dialog.
-     *
      * @private
-     * @param {string} title - The title of the dialog.
-     * @param {string} errorMessage - The error message.
+     * @param {string} title
+     * @param {string} errorMessage
      * @return {void}
      */
     _displayErrorDialog(title, errorMessage = "") {
@@ -334,11 +296,9 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Display the token deletion confirmation dialog.
-     *
      * @private
-     * @param {number} tokenId - The id of the token whose deletion was requested.
-     * @param {object} linkedRecordsInfo - The data relative to the documents linked to the token.
+     * @param {number} tokenId
+     * @param {object} linkedRecordsInfo
      * @return {void}
      */
     _challengeTokenDeletion(tokenId, linkedRecordsInfo) {
@@ -353,14 +313,8 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Set the payment flow for the selected payment option.
-     *
-     * For a provider to manage direct payments, it must call this method and set the payment flow
-     * when its payment option is selected.
-     *
      * @private
-     * @param {string} flow - The flow for the selected payment option. Either 'redirect', 'direct',
-     *                        or 'token'
+     * @param {string} flow
      * @return {void}
      */
     _setPaymentFlow(flow = "redirect") {
@@ -375,10 +329,8 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Assign the selected token to a document through the `assignTokenRoute`.
-     *
      * @private
-     * @param {number} tokenId - The id of the token to assign.
+     * @param {number} tokenId
      * @return {void}
      */
     async _assignToken(tokenId) {
@@ -404,20 +356,11 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Make an RPC to initiate the payment flow by creating a new transaction.
-     *
-     * For a provider to do pre-processing work (e.g., perform checks on the form inputs), or to
-     * process the payment flow in its own terms (e.g., re-schedule the RPC to the transaction
-     * route), it must override this method.
-     *
-     * To alter the flow-specific processing, it is advised to override `_processRedirectFlow`,
-     * `_processDirectFlow`, or `_processTokenFlow` instead.
-     *
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {string} flow - The payment flow of the selected payment option.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {string} flow
      * @return {void}
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
@@ -471,10 +414,8 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Prepare the params for the RPC to the transaction route.
-     *
      * @private
-     * @return {object} The transaction route params.
+     * @return {object}
      */
     _prepareTransactionRouteParams() {
         const transactionRouteParams = {
@@ -505,13 +446,11 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Redirect the customer by submitting the redirect form included in the processing values.
-     *
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {object} processingValues - The processing values of the transaction.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {object} processingValues
      * @return {void}
      */
     _processRedirectFlow(
@@ -531,25 +470,21 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Process the provider-specific implementation of the direct payment flow.
-     *
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {object} processingValues - The processing values of the transaction.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {object} processingValues
      * @return {void}
      */
     _processDirectFlow() {}
 
     /**
-     * Redirect the customer to the status route.
-     *
      * @private
-     * @param {string} providerCode - The code of the selected payment option's provider.
-     * @param {number} paymentOptionId - The id of the selected payment option.
-     * @param {string} paymentMethodCode - The code of the selected payment method, if any.
-     * @param {object} processingValues - The processing values of the transaction.
+     * @param {string} providerCode
+     * @param {number} paymentOptionId
+     * @param {string} paymentMethodCode
+     * @param {object} processingValues
      * @return {void}
      */
     _processTokenFlow() {
@@ -557,10 +492,8 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Archive the provided token.
-     *
      * @private
-     * @param {number} tokenId - The id of the token whose deletion was requested.
+     * @param {number} tokenId
      * @return {void}
      */
     _archiveToken(tokenId) {
@@ -570,11 +503,9 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Determine and return the inline form of the selected payment option.
-     *
      * @private
-     * @param {HTMLInputElement} radio - The radio button linked to the payment option.
-     * @return {Element | null} The inline form of the selected payment option, if any.
+     * @param {HTMLInputElement} radio
+     * @return {Element | null}
      */
     _getInlineForm(radio) {
         const inlineFormContainer = radio.closest('[name="o_payment_option"]');
@@ -582,16 +513,9 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Determine and return the payment flow of the selected payment option.
-     *
-     * As some providers implement both direct payments and the payment with redirection flow, we
-     * cannot infer it from the radio button only. The radio button indicates only whether the
-     * payment option is a token. If not, the payment context is looked up to determine whether the
-     * flow is 'direct' or 'redirect'.
-     *
      * @private
-     * @param {HTMLInputElement} radio - The radio button linked to the payment option.
-     * @return {string} The flow of the selected payment option: 'redirect', 'direct' or 'token'.
+     * @param {HTMLInputElement} radio
+     * @return {string}
      */
     _getPaymentFlow(radio) {
         if (
@@ -607,66 +531,54 @@ export class PaymentForm extends Interaction {
     }
 
     /**
-     * Determine and return the code of the selected payment method.
-     *
      * @private
-     * @param {HTMLElement} radio - The radio button linked to the payment method.
-     * @return {string} The code of the selected payment method.
+     * @param {HTMLElement} radio
+     * @return {string}
      */
     _getPaymentMethodCode(radio) {
         return radio.dataset["paymentMethodCode"];
     }
 
     /**
-     * Determine and return the id of the selected payment option.
-     *
      * @private
-     * @param {HTMLElement} radio - The radio button linked to the payment option.
-     * @return {number} The id of the selected payment option.
+     * @param {HTMLElement} radio
+     * @return {number}
      */
     _getPaymentOptionId(radio) {
         return Number(radio.dataset["paymentOptionId"]);
     }
 
     /**
-     * Determine and return the type of the selected payment option.
-     *
      * @private
-     * @param {HTMLElement} radio - The radio button linked to the payment option.
-     * @return {string} The type of the selected payment option: 'token' or 'payment_method'.
+     * @param {HTMLElement} radio
+     * @return {string}
      */
     _getPaymentOptionType(radio) {
         return radio.dataset["paymentOptionType"];
     }
 
     /**
-     * Determine and return the id of the provider of the selected payment option.
-     *
      * @private
-     * @param {HTMLElement} radio - The radio button linked to the payment option.
-     * @return {number} The id of the provider of the selected payment option.
+     * @param {HTMLElement} radio
+     * @return {number}
      */
     _getProviderId(radio) {
         return Number(radio.dataset["providerId"]);
     }
 
     /**
-     * Determine and return the code of the provider of the selected payment option.
-     *
      * @private
-     * @param {HTMLElement} radio - The radio button linked to the payment option.
-     * @return {string} The code of the provider of the selected payment option.
+     * @param {HTMLElement} radio
+     * @return {string}
      */
     _getProviderCode(radio) {
         return radio.dataset["providerCode"];
     }
 
     /**
-     * Determine and return the state of the provider of the selected payment option.
-     *
      * @private
-     * @param {HTMLElement} radio - The radio button linked to the payment option.
-     * @return {string} The state of the provider of the selected payment option.
+     * @param {HTMLElement} radio
+     * @return {string}
      */
     _getProviderState(radio) {
         return radio.dataset["providerState"];

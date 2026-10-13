@@ -152,11 +152,7 @@ export class ReadonlyEmbeddedViewComponent extends Component {
         );
     }
 
-    /**
-     * Extract the SearchModel state of the embedded view
-     *
-     * @returns {Object} globalState
-     */
+    /** @returns {Object} */
     getEmbeddedViewGlobalState() {
         const callbacks = this.__getGlobalState__.callbacks;
         let globalState;

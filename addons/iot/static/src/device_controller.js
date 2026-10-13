@@ -4,7 +4,7 @@ import { uniqueId } from "@web/core/utils/functions";
 export class DeviceController {
     /**
      * @param {import("@iot/network_utils/longpolling").IoTLongpolling} iotLongpolling
-     * @param {{ iot_ip: string, identifier: string, iot_id: Object, manual_measurement: boolean }} deviceInfo - Representation of an iot device
+     * @param {{ iot_ip: string, identifier: string, iot_id: Object, manual_measurement: boolean }} deviceInfo
      */
     constructor(iotLongpolling, deviceInfo) {
         this.id = uniqueId("listener-");
@@ -16,18 +16,16 @@ export class DeviceController {
     }
 
     /**
-     * Send an action to the device.
-     * @param data - action to send to the device
-     * @param fallback - if true, no notification will be displayed on fail
+     * @param data
+     * @param fallback
      */
     action(data, fallback = false) {
         return this.iotLongpolling.action(this.iotIp, this.identifier, data, fallback);
     }
 
     /**
-     * Add a listener to the device.
-     * @param callback - function to call when the listener is triggered
-     * @param fallback - if true, no notification will be displayed on fail
+     * @param callback
+     * @param fallback
      */
     addListener(callback, fallback = true) {
         return this.iotLongpolling.addListener(

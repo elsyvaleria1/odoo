@@ -2,9 +2,7 @@ import { assert, fail } from "@stock/../tests/tours/tour_helper";
 export { assert, fail };
 
 /**
- * Returns the line for the given index and ensure the line is an HTMLElement (fails otherwise).
- *
- * @param {(HTMLElement|integer)} lineOrIndex either the line itself, either the index to find it
+ * @param {(HTMLElement|integer)} lineOrIndex
  * @param {string} errorClue
  * @returns {HTMLElement}
  */
@@ -25,9 +23,9 @@ export function _getLineOrFail(lineOrIndex, errorClue = "No line found") {
 /**
  * @param {string} selector
  * @param {Object} description
- * @param {string} [description.barcode] the line's product's barcode
- * @param {Boolean} [description.completed] get only completed line if true
- * @param {Boolean} [description.selected] get only selected line if true
+ * @param {string} [description.barcode]
+ * @param {Boolean} [description.completed]
+ * @param {Boolean} [description.selected]
  * @param {string} [description.selector]
  * @returns {string}
  */
@@ -45,8 +43,7 @@ export function _prepareSelector(selector, description) {
 }
 
 /**
- * Get and returns exactly one line, fails if multiple lines are found).
- * @param {Object} description @see getLines
+ * @param {Object} description
  * @returns {HTMLElement}
  */
 export function getLine(description = {}) {
@@ -62,9 +59,7 @@ export function getLine(description = {}) {
 }
 
 /**
- * Get and returns all lines matching the given description, fails if no line is found.
- * @param {Object} [description] if no description, will return all the barcode's line
- * @see _prepareSelector for more information about description's keys.
+ * @param {Object} [description]
  * @returns {Element[]}
  */
 export function getLines(description = {}) {
@@ -105,10 +100,8 @@ export function getSublines(description = {}) {
 }
 
 /**
- * Checks if a button on the given line is visible or not.
- *
- * @param {HTMLElement|Integer} lineOrIndex the line (or its index) to test its the button visibility
- * @param {string} buttonName could be 'add_quantity', 'remove_unit' or 'set'.
+ * @param {HTMLElement|Integer} lineOrIndex
+ * @param {string} buttonName
  * @param {boolean} [shouldBeVisible=true]
  */
 export function assertButtonIsVisible(lineOrIndex, buttonName, shouldBeVisible = true) {
@@ -175,7 +168,6 @@ export function assertLineDestinationIsNotVisible(lineOrIndex) {
 }
 
 /**
- * Checks if the given line is going in the given location. Implies the destination is visible.
  * @param {Element} lineOrIndex
  * @param {string} location
  */
@@ -222,12 +214,8 @@ export function assertLineProduct(lineOrIndex, productName) {
 }
 
 /**
- * Checks the quantity. It will get the done/counted quantity and will also
- * checks the on the reserved/on hand quantity if there is one.
- * Also, if the unit of measure is displayed, it will check that too.
- *
- * @param {(HTMLElement|integer)} lineOrIndex @see _getLineOrFail
- * @param {string} expectedQuantityWithUOM quantity on the line, formatted as "n (/ N) ( UOM)"
+ * @param {(HTMLElement|integer)} lineOrIndex
+ * @param {string} expectedQuantityWithUOM
  */
 export function assertLineQty(lineOrIndex, expectedQuantityWithUOM) {
     const line = _getLineOrFail(lineOrIndex, "Can't check the line's quantity");
@@ -243,9 +231,7 @@ export function assertLineQty(lineOrIndex, expectedQuantityWithUOM) {
 }
 
 /**
- * Checks the package assigned to a line. The expected package can be let
- * empty to check there is no package assigned on the line.
- * @param {(HTMLElement|integer)} lineOrIndex @see _getLineOrFail
+ * @param {(HTMLElement|integer)} lineOrIndex
  * @param {string} [expectedPackageName]
  */
 export function assertLinePackage(lineOrIndex, expectedPackageName = false) {
@@ -262,9 +248,7 @@ export function assertLinePackage(lineOrIndex, expectedPackageName = false) {
 }
 
 /**
- * Checks the result package assigned to a line. The expected package can be let
- * empty to check there is no result package assigned on the line.
- * @param {(HTMLElement|integer)} lineOrIndex @see _getLineOrFail
+ * @param {(HTMLElement|integer)} lineOrIndex
  * @param {string} [expectedPackageName]
  */
 export function assertLineResultPackage(lineOrIndex, expectedPackageName = false) {
@@ -301,13 +285,8 @@ export function assertLineSourceIsNotVisible(lineOrIndex) {
 }
 
 /**
- * Checks the given lot or serial number is written on the given line.
- * Can also check none is written too.
- *
- * @param {(HTMLElement|integer)} lineOrIndex @see _getLineOrFail
- * @param {string|Boolean} expectedTrackingNumber either the expected lot/serial
- * number (or an empty string if the lot is displayed but empty), either false
- * if the element shouldn't be visible at all.
+ * @param {(HTMLElement|integer)} lineOrIndex
+ * @param {string|Boolean} expectedTrackingNumber
  */
 export function assertLineTrackingNumber(lineOrIndex, expectedTrackingNumber) {
     const line = _getLineOrFail(lineOrIndex);
@@ -334,8 +313,6 @@ export function assertLineTrackingNumber(lineOrIndex, expectedTrackingNumber) {
 }
 
 /**
- * Checks each given lines match the corresponding tracking numbers.
- * The number of lines and tracking numbers has to be equals.
  * @param {HTMLElement[]} lines
  * @param {string[]} trackingNumbers
  */
@@ -351,7 +328,6 @@ export function assertLinesTrackingNumbers(lines, trackingNumbers) {
 }
 
 /**
- * Checks if the given line is in the given location. Implies the location is visible.
  * @param {Element} lineOrIndex
  * @param {string} location
  */

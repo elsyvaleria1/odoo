@@ -24,12 +24,7 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
         this.notification = useService("notification");
     },
 
-    /**
-     * Prevents spreadsheets from being in the viewable attachments list
-     * when previewing a file in the FileViewer.
-     *
-     * @override
-     */
+    /** @override */
     isRecordPreviewable(record) {
         return (
             super.isRecordPreviewable(...arguments) &&

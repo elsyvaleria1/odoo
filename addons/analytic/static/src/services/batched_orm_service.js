@@ -49,11 +49,6 @@ class RequestBatcherORM extends ORM {
     }
 
     /**
-     * Entry point to batch "read" calls. Calls sharing the same `resModel`,
-     * `fields` and `kwargs` and issued before the batch is flushed (next
-     * microtask) are merged into a single read; each caller then gets back only
-     * the records matching the ids it asked for.
-     *
      * @param {string} resModel
      * @param {number[]} resIds
      * @param {string[]} fields

@@ -8,16 +8,12 @@ import { GraphModel as ChartModel } from "@web/views/graph";
 const log = makeLogger("spreadsheet.chart");
 
 export class ChartDataSource extends OdooViewsDataSource {
-    /**
-     * @param {Object} services Services (see DataSource)
-     */
+    /** @param {Object} services */
     constructor(services, params) {
         super(services, params);
     }
 
-    /**
-     * @returns {Array<string>} groupBy of the chart definition
-     */
+    /** @returns {Array<string>} */
     get groupBy() {
         return this._metaData.groupBy;
     }

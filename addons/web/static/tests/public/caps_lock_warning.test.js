@@ -70,7 +70,7 @@ test("an event with no modifier state leaves the warning as it was", async () =>
     expect(warning()).toBe("Caps Lock is on!");
 
     const ev = new KeyboardEvent("keyup", { key: "a", bubbles: true });
-    // @ts-ignore -- deliberately removing the capability
+
     ev.getModifierState = undefined;
     input.dispatchEvent(ev);
     await animationFrame();

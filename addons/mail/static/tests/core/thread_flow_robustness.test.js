@@ -134,7 +134,7 @@ test("merging into a queued data fetch keeps the stricter readonly and silent fl
             return Promise.resolve({});
         },
     });
-    /** @param {number[]} queued @param {number[]} incoming */
+    /** @param {number[]} queued */
     const merge = (queued, incoming) => [...queued, ...incoming];
     const first = store.fetchStoreData("probe", [1], { merge });
     const second = store.fetchStoreData("probe", [2], {

@@ -89,10 +89,9 @@ export class TranscriptionPlugin extends Plugin {
     }
 
     /**
-     * Retrieves the editable content element of a tab of the transcription component
-     * @param {string} id - the id of the transcription component
-     * @param {string} tabName - the name of the tab
-     * @returns {HTMLElement|null} the content of the tab
+     * @param {string} id
+     * @param {string} tabName
+     * @returns {HTMLElement|null}
      */
     getTabContent(id, tabName) {
         return this.editable.querySelector(
@@ -115,9 +114,8 @@ export class TranscriptionPlugin extends Plugin {
     }
 
     /**
-     * Retrieves the date of the first recording from the dom
-     * @param {string} id - the id of the transcription component
-     * @returns {string|undefined} the date of the first recording, if any
+     * @param {string} id
+     * @returns {string|undefined}
      */
     getFirstRecordingDate(id) {
         const firstDateElement = this.editable.querySelector(

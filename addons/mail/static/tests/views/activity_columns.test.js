@@ -90,7 +90,7 @@ beforeEach(async () => {
 
 /**
  * @param {string} typeName
- * @returns {number} the activity type id
+ * @returns {number}
  */
 function createActivity(typeName) {
     const [typeId] = pyEnv["mail.activity.type"].create([{ name: typeName }]);

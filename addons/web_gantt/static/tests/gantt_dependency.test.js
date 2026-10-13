@@ -39,10 +39,7 @@ import {
 /** @typedef {import("@web_gantt/gantt_renderer_core").ConnectorProps} ConnectorProps */
 /** @typedef {import("@web_gantt/gantt_renderer_core").PillId} PillId */
 
-/**
- * @typedef {`[${ResId},${ResId},${ResId},${ResId}]`} ConnectorTaskIds
- * In the following order: [masterTaskId, masterTaskUserId, taskId, taskUserId]
- */
+/** @typedef {`[${ResId},${ResId},${ResId},${ResId}]`} ConnectorTaskIds */
 
 /** @typedef {number | false} ResId */
 
@@ -196,10 +193,7 @@ describe.current.tags("desktop");
 beforeEach(() => mockDate("2021-10-10T08:00:00", +1));
 
 test("Connectors are correctly computed and rendered.", async () => {
-    /**
-     * @type {Map<ConnectorTaskIds, keyof typeof COLORS>}
-     * =>  Check that there is a connector between masterTaskId from group masterTaskUserId and taskId from group taskUserId with normal|error color.
-     */
+    /** @type {Map<ConnectorTaskIds, keyof typeof COLORS>} */
     const testMap = new Map([
         ["[1,1,2,1]", "default"],
         ["[1,1,2,3]", "default"],

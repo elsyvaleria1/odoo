@@ -34,12 +34,7 @@ export class BackgroundShapeOption extends BaseOptionComponent {
     }
 }
 
-/**
- * Returns the default colors for the currently selected shape.
- *
- * @param {HTMLElement} editingElement the element on which to read the
- * shape data.
- */
+/** @param {HTMLElement} editingElement */
 export function getDefaultColors(editingElement) {
     const shapeContainerEl = editingElement.querySelector(":scope > .o_we_shape");
     if (!shapeContainerEl) {

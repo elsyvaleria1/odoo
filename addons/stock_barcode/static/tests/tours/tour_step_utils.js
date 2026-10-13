@@ -56,10 +56,7 @@ export const stepUtils = {
         ];
     },
     /**
-     * Check a notification with this exact message is shown and, by default, close that
-     * notification (see `close` parameter). Matched by its text, not its position: one scan
-     * can raise several notifications, and the container lists them oldest first.
-     * @param {string} message The exact notification's message
+     * @param {string} message
      * @param {boolean} [close=true]
      * @returns {Array}
      */

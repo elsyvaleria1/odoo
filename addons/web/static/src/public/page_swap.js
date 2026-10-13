@@ -19,9 +19,6 @@ const HEAD_SELECTORS = [
 const OUT_OF_BAND = "[data-fragment][data-partial-navigation-oob]";
 
 /**
- * The out-of-band elements of `root` outside every region, by key, in
- * document order.
- *
  * @param {ParentNode} root
  * @param {Element[]} regions
  * @returns {Map<string, HTMLElement[]>}
@@ -56,8 +53,6 @@ function syncAttributes(current, next, names) {
 }
 
 /**
- * The page metadata <html> carries (main object, view, website, lang).
- *
  * @param {Element} current
  * @param {Element} next
  */
@@ -77,21 +72,9 @@ function syncPageAttributes(current, next) {
 }
 
 /**
- * Elements outside the regions that the server renders for the URL follow
- * the page (htmx's hx-swap-oob), found in the next page by their
- * `data-fragment` key:
- * - `data-partial-navigation-oob=""` (the breadcrumbs): each is morphed from
- *   its counterpart, paired by document order, and hidden when the next page
- *   has none. It must live in the page's content, which a page asked for in
- *   place still renders.
- * - `data-partial-navigation-oob="href"` (the language links, in the header
- *   and footer a page asked for in place leaves out): every element of the
- *   key takes the listed attributes from the first counterpart, which the
- *   server also renders, hidden, in that case.
- *
  * @param {Document} page
- * @param {Element[]} regions the regions on this page
- * @param {Element[]} nextRegions their counterparts in `page`
+ * @param {Element[]} regions
+ * @param {Element[]} nextRegions
  * @param {InteractionService} interactions
  */
 function swapOutOfBand(page, regions, nextRegions, interactions) {
@@ -118,14 +101,7 @@ function swapOutOfBand(page, regions, nextRegions, interactions) {
     }
 }
 
-/**
- * The title, and what <head> and <html> say about the page, taken from `page`.
- * A caller that changes the URL does it after this and before the regions:
- * analytics read the title as the URL changes, and the regions' interactions
- * read the URL as they start.
- *
- * @param {Document} page
- */
+/** @param {Document} page */
 export function swapHead(page) {
     const title = page.querySelector("title")?.textContent;
     if (title) {
@@ -145,7 +121,7 @@ export function swapHead(page) {
 /**
  * @param {Document} page
  * @param {HTMLElement[]} regions
- * @returns {HTMLElement[] | null} null when `page` lacks one of them
+ * @returns {HTMLElement[] | null}
  */
 function nextRegionsOf(page, regions) {
     const nextRegions = regions.map((region) =>
@@ -157,12 +133,8 @@ function nextRegionsOf(page, regions) {
 }
 
 /**
- * Morphs each of `regions` from its same-keyed counterpart in `page`, and the
- * out-of-band elements. Changes nothing and answers false when `page` lacks
- * one of the regions.
- *
  * @param {Document} page
- * @param {HTMLElement[]} regions elements of this page carrying `data-fragment`
+ * @param {HTMLElement[]} regions
  * @param {InteractionService} interactions
  * @returns {boolean}
  */
@@ -179,13 +151,8 @@ export function swapRegions(page, regions, interactions) {
 }
 
 /**
- * Brings this page in step with `page`, a fetched page for the URL shown: its
- * head (swapHead), then its regions (swapRegions). Changes nothing and
- * answers false when `page` lacks one of the regions: the caller then loads it
- * in full.
- *
  * @param {Document} page
- * @param {HTMLElement[]} regions elements of this page carrying `data-fragment`
+ * @param {HTMLElement[]} regions
  * @param {InteractionService} interactions
  * @returns {boolean}
  */

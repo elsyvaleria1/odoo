@@ -43,10 +43,9 @@ export class CommissionGraphField extends Component {
     }
 
     /**
-     * Find the greatest common divisor of two number (Euclidean algorithm)
-     * @param {*} a integer, first number
-     * @param {*} b integer, second one
-     * @returns the greatest common divisor
+     * @param {*} a
+     * @param {*} b
+     * @returns
      */
     GCD(a, b) {
         a = Math.abs(a);

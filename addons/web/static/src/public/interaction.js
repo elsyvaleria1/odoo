@@ -374,7 +374,7 @@ export class Interaction {
 
     /**
      * @param {import("@web/public/fragments").FragmentResponse} response
-     * @returns {Record<string, any>} the response's `data`
+     * @returns {Record<string, any>}
      */
     swapFragments(response) {
         return applyFragments(response, {

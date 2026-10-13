@@ -61,12 +61,7 @@ export class QuickReorder extends Interaction {
         ].indexOf(/** @type {HTMLFormElement} */ (ev.currentTarget));
     }
 
-    /**
-     * The added line leaves the history, so the line now at its place is the
-     * next one.
-     *
-     * @param {CustomEvent<{ quick_reorder?: boolean }>} ev
-     */
+    /** @param {CustomEvent<{ quick_reorder?: boolean }>} ev */
     focusNextQuantityInput(ev) {
         if (!ev.detail?.quick_reorder || this.submittedLineIndex === null) {
             return;

@@ -18,8 +18,8 @@ patch(PlanningGanttRenderer.prototype, {
     },
 
     /**
-     * @param {number} column - Column index
-     * @param {Row} row - Row Object
+     * @param {number} column
+     * @param {Row} row
      */
     _resourceHasWorkingPeriods(column, row) {
         const { workingPeriods } = this.model.data;

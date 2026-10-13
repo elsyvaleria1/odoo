@@ -33,7 +33,7 @@ function questionForm() {
     });
 }
 
-/** @param {Object} [data] @param {string[]} [keys] */
+/** @param {Object} [data] */
 const answer = (data = {}, keys = []) => ({
     fragments: keys.map((key) => ({ key, html: "<div/>", swap: "morph" })),
     events: [],

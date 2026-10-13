@@ -61,13 +61,7 @@ export class TabEntry extends Component {
         );
     }
 
-    /**
-     * Updates the active section and the active record. These two variables
-     * determine which record to unfold and which record to return to after the
-     * call summary is hidden.
-     *
-     * @param {MouseEvent} ev
-     */
+    /** @param {MouseEvent} ev */
     onClickSummary(ev) {
         if (this.isActiveRecord) {
             this.softphone.activeRecord = null;

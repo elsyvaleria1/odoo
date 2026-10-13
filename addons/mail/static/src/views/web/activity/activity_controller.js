@@ -161,7 +161,7 @@ export class ActivityController extends Component {
     /**
      * @param {number} templateID
      * @param {number} activityTypeID
-     * @param {number[]} [resIds] the records the column shows, when it is filtered
+     * @param {number[]} [resIds]
      * @returns {Promise<boolean>}
      */
     async sendMailTemplate(

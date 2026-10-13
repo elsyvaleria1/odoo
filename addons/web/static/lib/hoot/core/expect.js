@@ -678,13 +678,7 @@ export function makeExpect(params) {
         return !currentResultInErrorState;
     }
 
-    /**
-     * A test that outlives its timeout fails on its own result, so the run's
-     * verdict counts it; the runner's global error is the log line, not the
-     * failure.
-     *
-     * @param {number} timeout
-     */
+    /** @param {number} timeout */
     function onTimeout(timeout) {
         if (!currentResult) {
             return false;
@@ -697,13 +691,7 @@ export function makeExpect(params) {
         return true;
     }
 
-    /**
-     * A framework error a test raised -- an unmocked API, a misused `expect`
-     * -- ends the test early, so it fails on the test's own result rather
-     * than as a log line beside a test reported passed.
-     *
-     * @param {Error} error
-     */
+    /** @param {Error} error */
     function onHootError(error) {
         if (!currentResult) {
             return false;

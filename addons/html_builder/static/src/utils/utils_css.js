@@ -18,14 +18,7 @@ import {
     normalizeCSSColor,
 } from "@web/core/utils/format/colors";
 
-/**
- * window.getComputedStyle cannot work properly with CSS shortcuts (like
- * 'border-width' which is a shortcut for the top + right + bottom + left border
- * widths. If an option wants to customize such a shortcut, it should be listed
- * here with the non-shortcuts property it stands for, in order.
- *
- * @type {Object<string[]>}
- */
+/** @type {Object<string[]>} */
 export const CSS_SHORTHANDS = {
     "border-width": [
         "border-top-width",
@@ -77,11 +70,6 @@ const BACKGROUND_IMAGE_ATTRIBUTES = new Set([
 ]);
 
 /**
- * Converts the given (value + unit) string to a numeric value expressed in
- * the other given css unit.
- *
- * e.g. fct('400ms', 's') -> 0.4
- *
  * @param {string} value
  * @param {string} unitTo
  * @param {CSSStyleDeclaration} htmlStyle
@@ -97,10 +85,6 @@ export function convertValueToUnit(value, unitTo, htmlStyle) {
     return convertNumericToUnit(numValue, valueUnit, unitTo, htmlStyle);
 }
 /**
- * Returns the numeric value and unit of a css value.
- *
- * e.g. fct('400ms') -> [400, 'ms']
- *
  * @param {string} value
  * @returns {Array|null}
  */
@@ -112,11 +96,9 @@ export function getNumericAndUnit(value) {
     return [m[1].trim(), m[2].trim()];
 }
 /**
- * Checks if two css values are equal.
- *
  * @param {string} value1
  * @param {string} value2
- * @param {string} cssProp - the css property on which the unit applies
+ * @param {string} cssProp
  * @param {CSSStyleDeclaration} htmlStyle
  * @returns {boolean}
  */
@@ -237,11 +219,8 @@ export function computeColorClasses(colorNames, prefix = "bg-") {
     return classes;
 }
 /**
- * Normalize a color in case it is a variable name so it can be used outside of
- * css.
- *
- * @param {string} color the color to normalize into a css value
- * @returns {string} the normalized color
+ * @param {string} color
+ * @returns {string}
  */
 export function normalizeColor(color, htmlStyle) {
     if (isCSSColor(color)) {
@@ -250,10 +229,8 @@ export function normalizeColor(color, htmlStyle) {
     return getCSSVariableValue(color, htmlStyle);
 }
 /**
- * Parse an element's background-image's url.
- *
  * @param {HTMLElement} el
- * @returns {string|false} the src of the image or false if not parsable
+ * @returns {string|false}
  */
 export function getBgImageURLFromEl(el) {
     const style = el.ownerDocument.defaultView.getComputedStyle(el);
@@ -262,8 +239,6 @@ export function getBgImageURLFromEl(el) {
     return getBgImageURLFromURL(string);
 }
 /**
- * Generates a string ID.
- *
  * @private
  * @returns {string}
  */
@@ -271,13 +246,11 @@ export function generateHTMLId() {
     return `o${Math.random().toString(36).substring(2, 15)}`;
 }
 /**
- * Returns the class of the element that matches the specified prefix.
- *
  * @private
- * @param {Element} el element from which to recover the color class
+ * @param {Element} el
  * @param {string[]} colorNames
- * @param {string} prefix prefix of the color class to recover
- * @returns {string} color class matching the prefix or an empty string
+ * @param {string} prefix
+ * @returns {string}
  */
 export function getColorClass(el, colorNames, prefix) {
     const prefixedColorNames = computeColorClasses(colorNames, prefix);
@@ -286,54 +259,28 @@ export function getColorClass(el, colorNames, prefix) {
         .filter((cl) => prefixedColorNames.includes(cl))
         .join(" ");
 }
-/**
- * Add one or more new attributes related to background images in the
- * BACKGROUND_IMAGE_ATTRIBUTES set.
- *
- * @param {...string} newAttributes The new attributes to add in the
- * BACKGROUND_IMAGE_ATTRIBUTES set.
- */
+/** @param {...string} newAttributes */
 export function addBackgroundImageAttributes(...newAttributes) {
     for (const attribute of newAttributes) {
         BACKGROUND_IMAGE_ATTRIBUTES.add(attribute);
     }
 }
-/**
- * Check if an attribute is in the BACKGROUND_IMAGE_ATTRIBUTES set.
- *
- * @param {string} attribute The attribute that has to be checked.
- */
+/** @param {string} attribute */
 export function isBackgroundImageAttribute(attribute) {
     return BACKGROUND_IMAGE_ATTRIBUTES.has(attribute);
 }
-/**
- * Checks if an element supposedly marked with the o_editable_media class should
- * in fact be editable (checks if its environment looks like a non editable
- * environment whose media should be editable).
- *
- * TODO: the name of this function is voluntarily bad to reflect the fact that
- * this system should be improved. The combination of o_not_editable,
- * o_editable, getContentEditableAreas, getReadOnlyAreas and other concepts
- * related to what should be editable or not should be reviewed.
- *
- * @returns {boolean}
- */
+/** @returns {boolean} */
 export function shouldEditableMediaBeEditable(mediaEl) {
     return mediaEl.parentElement && mediaEl.parentElement.closest(".o_editable");
 }
 /**
- * Returns the label of a link element.
- *
  * @param {HTMLElement} linkEl
  * @returns {string}
  */
 export function getLinkLabel(linkEl) {
     return linkEl.textContent.replaceAll("\u200B", "").replaceAll("\uFEFF", "");
 }
-/**
- * Forwards an image source to its carousel thumbnail.
- * @param {HTMLElement} imgEl
- */
+/** @param {HTMLElement} imgEl */
 export function forwardToThumbnail(imgEl) {
     const carouselEl = imgEl.closest(".carousel");
     if (carouselEl) {
@@ -370,18 +317,13 @@ export async function isImageCorsProtected(img) {
 }
 
 /**
- * Applies only the needed CSS in the style attribute:
- * - no attribute if value is already the wanted one (possibly from a class)
- * - plain attribute if that change is sufficient to make it applied
- * - important attribute if the plain one did not work
- *
  * @param {HTMLElement} el
  * @param {string} cssProp
  * @param {string} cssValue
- * @param {CSSStyleDeclaration} computedStyle of el
- * @param {boolean} force to always apply as important
- * @param {boolean} allowImportant to avoid applying the style as important
- * @returns {boolean} if a value was applied
+ * @param {CSSStyleDeclaration} computedStyle
+ * @param {boolean} force
+ * @param {boolean} allowImportant
+ * @returns {boolean}
  */
 export function applyNeededCss(
     el,
@@ -443,9 +385,6 @@ export function setBuilderCSSVariables(htmlStyle) {
 const CSS_LENGTH_RE = /^-?\d+\.?\d*px$/;
 
 /**
- * Split a CSS value on whitespace, keeping the whitespace inside parentheses:
- * `color-mix(in srgb, var(--o-black) 15%, transparent)` is one token.
- *
  * @param {string} value
  * @returns {string[]}
  */
@@ -475,7 +414,7 @@ function splitCssTokens(value) {
 }
 
 /**
- * @param {string} value a single box-shadow, computed or authored
+ * @param {string} value
  * @returns {{color?: string, offsetX?: string, offsetY?: string, blur?: string, spread?: string, mode?: string}}
  */
 export function parseBoxShadow(value) {

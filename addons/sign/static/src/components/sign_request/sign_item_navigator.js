@@ -4,7 +4,6 @@ import { _t } from "@web/core/translation";
 import { offset } from "./utils.js";
 
 /**
- * Starts the sign item navigator
  * @param { SignablePDFIframe } parent
  * @param { HTMLElement } target
  * @param { Object } types
@@ -57,10 +56,7 @@ export function startSignItemNavigator(parent, target, types, env) {
         }
     }
 
-    /**
-     * Sets the entire radio set on focus.
-     * @param {Number} radio_set_id
-     */
+    /** @param {Number} radio_set_id */
     function highligtRadioSet(radio_set_id) {
         parent
             .checkSignItemsCompletion()

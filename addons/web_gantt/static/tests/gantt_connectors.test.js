@@ -3,12 +3,7 @@ import { connectablePillPairs, shouldConnectPills } from "@web_gantt/gantt_conne
 
 describe.current.tags("headless");
 
-/**
- * Builds the two indexes the renderer derives from its rows: which rows each
- * record has a pill on, and which records each row holds.
- *
- * @param {Record<number, { masterIds: number[], rows: string[] }>} records
- */
+/** @param {Record<number, { masterIds: number[], rows: string[] }>} records */
 function indexes(records) {
     const recordToPillsByRow = {};
     const rowToPillsByRecord = {};

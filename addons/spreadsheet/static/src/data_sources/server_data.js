@@ -65,8 +65,6 @@ class ListRequestBatch {
     }
 
     /**
-     * Split the batched RPC response into single request results
-     *
      * @param {T[]} results
      * @returns {Map<Request, T>}
      * @template T
@@ -109,7 +107,7 @@ export class ServerData {
      * @private
      * @param {string} resModel
      * @param {string} method
-     * @param  {unknown} args
+     * @param {unknown} args
      * @returns {any}
      */
     _getBatchItem(resModel, method, args) {
@@ -127,8 +125,8 @@ export class ServerData {
     /**
      * @param {string} resModel
      * @param {string} method
-     * @param  {unknown[]} args
-     * @returns {any}}
+     * @param {unknown[]} args
+     * @returns {any}
      */
     get(resModel, method, args) {
         const request = new Request(resModel, method, args);

@@ -429,9 +429,6 @@ export class InteractionService {
     }
 
     /**
-     * Re-reads the dynamic content of every started interaction around `el`,
-     * after `el`'s subtree was replaced under them.
-     *
      * @param {HTMLElement} el
      * @returns {void}
      */

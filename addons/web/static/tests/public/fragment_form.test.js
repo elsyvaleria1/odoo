@@ -20,10 +20,7 @@ const line = (quantity) => `
         <button class="o_remove" type="submit" name="remove" value="1">Remove</button>
     </form>`;
 
-/**
- * @param {(body: FormData) => string | null} answer the line rendered for a
- * post, null for a failing route
- */
+/** @param {(body: FormData) => string | null} answer */
 function serve(answer) {
     patchWithCleanup(browser, {
         fetch: async (url, init) => {
@@ -196,8 +193,7 @@ const question = (comments) => `
     </div>`;
 
 /**
- * @param {string | null} html the page the route redirects to, null for a
- * refusal
+ * @param {string | null} html
  * @param {string} [url]
  */
 function redirectTo(html, url = browser.location.href) {

@@ -430,8 +430,7 @@ test("click-away containment spans sub-overlays without allocating per sibling",
 
 /**
  * @param {Record<string, string>} values
- * @returns {Promise<any>} the plugin manager of a mounted component providing
- * `values` in the hosting scope
+ * @returns {Promise<any>}
  */
 async function mountScopeHost(values) {
     let pluginManager;

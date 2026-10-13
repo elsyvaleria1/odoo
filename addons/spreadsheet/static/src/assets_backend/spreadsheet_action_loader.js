@@ -10,10 +10,6 @@ const actionRegistry = registry.category("actions");
 const log = makeLogger("spreadsheet.action_loader");
 
 /**
- * Add a new function client action which loads the spreadsheet bundle, then
- * launch the actual action.
- * The action should be redefine in the bundle with `{ force: true }`
- * and the actual action component or function
  * @param {string} actionName
  * @param {string} [path]
  * @param {string} [displayName]

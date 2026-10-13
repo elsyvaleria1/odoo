@@ -154,19 +154,13 @@ before(() => {
 });
 after(() => registry.category("view_widgets").remove("knowledge_navigation"));
 
-/**
- * Assert that the current article in the hierarchy is the given one
- * @param {number} articleId
- */
+/** @param {number} articleId */
 const assertCurrentArticle = (articleId) => {
     const [article] = MockServer.env["article"].browse(articleId);
     expect(`.o_article_active:contains(${article.name})`).toHaveCount(1);
 };
 
-/**
- * Assert that the hierarchy shows the articles in the same order as in the given array.
- * @param {array} articleIds - array of article ids (or false for the dropdown toggle)
- */
+/** @param {array} articleIds */
 const assertHierarchyArticles = async (articleIds) => {
     expect(".o_hierarchy_item").toHaveCount(articleIds.length);
     if (articleIds.length > 3) {
@@ -198,10 +192,7 @@ const assertHierarchyArticles = async (articleIds) => {
     });
 };
 
-/**
- * Click on the given article in the hierarchy
- * @param {number} id of the article to open
- */
+/** @param {number} id */
 const clickHierarchyArticle = async (articleId) => {
     const [article] = MockServer.env["article"].browse(articleId);
     const articleName = article.name;

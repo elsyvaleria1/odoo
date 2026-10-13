@@ -69,11 +69,7 @@ export class AIFieldSelectorPlugin extends Plugin {
         this.dependencies.selection.focusEditable();
     }
 
-    /**
-     * Insert the given fields as <span data-ai-field="path">name</span>
-     *
-     * @param {Array} fieldsInfo: list of field to insert
-     */
+    /** @param {Array} fieldsInfo: */
     insert(fieldsInfo) {
         if (!fieldsInfo) {
             return;

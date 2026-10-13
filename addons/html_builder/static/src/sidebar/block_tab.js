@@ -66,12 +66,7 @@ export class BlockTab extends Component {
         return this.builderContext.editor.shared;
     }
 
-    /**
-     * Opens and manages the snippet dialog after clicking on a snippet group,
-     * and inserts the selected snippet in the page.
-     *
-     * @param {Object} snippet the clicked snippet group
-     */
+    /** @param {Object} snippet */
     onSnippetGroupClick(snippet) {
         this.shared.operation.next(
             async () => {
@@ -149,12 +144,8 @@ export class BlockTab extends Component {
     }
 
     /**
-     * Opens and manages the snippet dialog after dropping a snippet group.
-     * If a snippet is selected in the dialog, it will replace the given
-     * placeholder snippet.
-     *
-     * @param {Object} snippet the dropped snippet group
-     * @param {HTMLElement} hookEl the placeholder snippet
+     * @param {Object} snippet
+     * @param {HTMLElement} hookEl
      */
     async onSnippetGroupDrop(snippet, hookEl) {
         this.state.ongoingInsertion = true;
@@ -206,11 +197,7 @@ export class BlockTab extends Component {
         delete this.cancelDragAndDrop;
     }
 
-    /**
-     * Shows a tooltip telling to drag the snippet when clicking on it.
-     *
-     * @param {Event} ev
-     */
+    /** @param {Event} ev */
     showSnippetTooltip(ev) {
         const snippetEl = ev.currentTarget.closest(".o_snippet.o_draggable");
         if (snippetEl) {
@@ -525,11 +512,7 @@ export class BlockTab extends Component {
         this.shared.history.addStep();
     }
 
-    /**
-     * Updates the dropped snippet right after adding it to the DOM.
-     *
-     * @param {HTMLElement} snippetEl
-     */
+    /** @param {HTMLElement} snippetEl */
     updateDroppedSnippet(snippetEl) {
         if (snippetEl.classList.contains("o_snippet_drop_in_only")) {
             snippetEl.classList.remove("o_snippet_drop_in_only");

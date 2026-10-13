@@ -39,7 +39,7 @@ export class MultiRecordController extends ViewController {
         return this.archInfo.headerButtons;
     }
 
-    /** @returns {any[]} the header buttons shown whether or not records are selected */
+    /** @returns {any[]} */
     get alwaysHeaderButtons() {
         return this.headerButtons.filter(
             (button) =>
@@ -47,7 +47,7 @@ export class MultiRecordController extends ViewController {
         );
     }
 
-    /** @returns {any[]} the header buttons shown on the current selection */
+    /** @returns {any[]} */
     get selectionHeaderButtons() {
         return this.headerButtons.filter(
             (button) =>
@@ -58,9 +58,6 @@ export class MultiRecordController extends ViewController {
     }
 
     /**
-     * Whether a selection header button applies to the current selection; a
-     * controller narrows it to the records a button can act on.
-     *
      * @param {any} button
      * @returns {boolean}
      */
@@ -170,7 +167,7 @@ export class MultiRecordController extends ViewController {
     }
 
     /**
-     * @param {Record<string, any>} button a parsed `<header>` button
+     * @param {Record<string, any>} button
      * @returns {Record<string, any>}
      */
     headerButtonProps(button) {
@@ -329,7 +326,7 @@ export class MultiRecordController extends ViewController {
         return true;
     }
 
-    /** @returns {Promise<boolean>} false keeps the current page */
+    /** @returns {Promise<boolean>} */
     async beforePagerUpdate() {
         return true;
     }

@@ -199,9 +199,7 @@ export class PosOrderAccounting extends Base {
         return this._constructPriceData(opts);
     }
 
-    /**
-     * @private Compute
-     */
+    /** @private */
     _constructPriceData(opts = {}) {
         const endConstruct = log.perf("constructPriceData");
         const data = this._computeAllPrices(opts);
@@ -260,9 +258,7 @@ export class PosOrderAccounting extends Base {
         return data;
     }
 
-    /**
-     * @private Compute
-     */
+    /** @private */
     _computeAllPrices(opts = {}) {
         const endCompute = log.perf("computeAllPrices");
         const currency = this.currency;

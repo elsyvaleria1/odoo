@@ -33,11 +33,7 @@ export default class LazyBarcodeCache {
         this.waitingFetch = [];
     }
 
-    /**
-     * Adds records to the barcode application's cache.
-     *
-     * @param {Object} cacheData each key is a model's name and contains an array of records.
-     */
+    /** @param {Object} cacheData */
     setCache(cacheData) {
         for (const model in cacheData) {
             const records = cacheData[model];
@@ -88,13 +84,10 @@ export default class LazyBarcodeCache {
     }
 
     /**
-     * Get record from the cache, throw a error if we don't find in the cache
-     * (the server should have return this information).
-     *
-     * @param {string} model model_name of the record
-     * @param {int} id id of the record
-     * @param {boolean} [raiseErrorIfMissing=true] throw if the record isn't cached instead of returning null
-     * @returns copy of the record send by the server (fields limited to _get_fields_stock_barcode)
+     * @param {string} model
+     * @param {int} id
+     * @param {boolean} [raiseErrorIfMissing=true]
+     * @returns
      */
     getRecord(model, id, raiseErrorIfMissing = true) {
         if (this.dbIdCache[model] === undefined) {
@@ -177,13 +170,13 @@ export default class LazyBarcodeCache {
     }
 
     /**
-     * @param {string} barcode barcode to match with a record
-     * @param {string} [model] model name of the record to match (if empty search on all models)
+     * @param {string} barcode
+     * @param {string} [model]
      * @param {Object} [options]
-     * @param {boolean} [options.onlyInCache] search only in the cache
+     * @param {boolean} [options.onlyInCache]
      * @param {Object} [options.filters]
      * @param {boolean} [options.fetchLater]
-     * @returns copy of the record send by the server (fields limited to _get_fields_stock_barcode)
+     * @returns
      */
     async getRecordByBarcode(barcode, model = false, options = {}) {
         const onlyInCache = Boolean(options.onlyInCache);
@@ -413,13 +406,6 @@ export default class LazyBarcodeCache {
     }
 
     /**
-     * Sets in the cache an entry for the given record with its formatted barcode as key.
-     * The barcode will be formatted (if needed) at the length corresponding to its data part in a
-     * GS1 barcode (e.g.: 14 digits for a product's barcode) by padding with 0 the original barcode.
-     * That makes it easier to find when a GS1 barcode is scanned.
-     * If the formatted barcode is similar to an another barcode for the same model, it will show a
-     * warning in the console (as a clue to find where issue could come from, not to alert the user)
-     *
      * @param {string} barcode
      * @param {string} model
      * @param {Object} record

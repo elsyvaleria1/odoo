@@ -58,11 +58,6 @@ function nanosecondsBetween(a, b) {
 }
 
 /**
- * `a - b` in `unit`, as luxon's `a.diff(b, unit)[unit]`: calendar units are
- * counted whole by calendar (a day across a DST change, or one missing its
- * midnight, is still one day) and the rest is a fraction of the next such
- * unit; time units are exact durations. `b` is read in `a`'s zone.
- *
  * @param {Temporal.ZonedDateTime} a
  * @param {Temporal.ZonedDateTime} b
  * @param {DiffUnit} unit

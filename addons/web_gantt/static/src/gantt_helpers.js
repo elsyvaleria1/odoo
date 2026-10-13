@@ -36,10 +36,6 @@ function closest(target, values) {
 }
 
 /**
- * Adds a time diff to a date keeping the same value even if the offset changed
- * during the manipulation. This is typically needed with timezones using DayLight
- * Saving offset changes.
- *
  * @param {Temporal.ZonedDateTime} date
  * @param {Record<string, number>} plusParams
  */
@@ -69,11 +65,6 @@ const MILLISECONDS_PER_UNIT = {
 };
 
 /**
- * `date` plus `params`: singular or plural keys, signs mixed freely, the
- * whole calendar units first and the time units, with any fraction of a
- * calendar unit, as elapsed time after them -- where Temporal's own `add`
- * refuses singular keys, mixed signs and fractions.
- *
  * @param {Temporal.ZonedDateTime} date
  * @param {Record<string, number>} params
  * @returns {Temporal.ZonedDateTime}
@@ -105,10 +96,6 @@ export function addDuration(date, params) {
 }
 
 /**
- * How many `unit`s separate `col1` from `col2`, fractional, counted as luxon
- * did (core `diff`): across a DST change that removes midnight, a day boundary
- * landing at 01:00 is still a whole number of days away.
- *
  * @param {Temporal.ZonedDateTime} col1
  * @param {Temporal.ZonedDateTime} col2
  * @param {string} unit
@@ -165,8 +152,6 @@ export function getCellPartColor(availability, isToday) {
 }
 
 /**
- * Intervals are supposed to intersect (intersection duration >= 1 milliseconds)
- *
  * @param {[Temporal.ZonedDateTime, Temporal.ZonedDateTime]} interval
  * @param {[Temporal.ZonedDateTime, Temporal.ZonedDateTime]} otherInterval
  * @returns {[Temporal.ZonedDateTime, Temporal.ZonedDateTime]}
@@ -181,9 +166,6 @@ export function getIntersection(interval, otherInterval) {
 }
 
 /**
- * Computes intersection of a closed interval with a union of closed intervals ordered and disjoint
- * = a union of intersections
- *
  * @param {[Temporal.ZonedDateTime, Temporal.ZonedDateTime]} interval
  * @param {[Temporal.ZonedDateTime, Temporal.ZonedDateTime][]} intervals
  * @returns {[Temporal.ZonedDateTime, Temporal.ZonedDateTime][]}
@@ -873,10 +855,10 @@ function getResult(current) {
 }
 
 /**
- * @param {HTMLElement} refEl: gantt grid
+ * @param {HTMLElement} refEl:
  * @param {string} rowId
  * @param {string} additionalSelector
- * @returns {NodeListOf<HTMLElement>} cells found on the row that matched the selector
+ * @returns {NodeListOf<HTMLElement>}
  */
 export function getCellsOnRow(refEl, rowId, additionalSelector = "") {
     return refEl.querySelectorAll(
@@ -938,8 +920,6 @@ export const useGanttSelectable = makeDraggableHook({
 });
 
 /**
- * Same as usePopover, but replaces the popover by a dialog when display size is small.
- *
  * @param {string} dialogTitle
  * @param {typeof import("@odoo/owl").Component} component
  * @param {import("@web/ui/popover").PopoverServiceAddOptions} [options]

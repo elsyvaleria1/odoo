@@ -45,8 +45,6 @@ const TEXT_SEARCH_FIELD_TYPES = [
 const RELATIONAL_TYPES = ["many2many", "many2one", "one2many"];
 
 /**
- * A text type matches by name, unless a relational field is given record ids.
- *
  * @param {string} fieldType
  * @param {unknown} value
  * @returns {"ilike" | "=" | "in"}
@@ -69,8 +67,7 @@ const groupableFieldsByMap = new WeakMap();
 /**
  * @param {Record<string, any>} searchViewFields
  * @param {(fieldName: string, field: any) => boolean} [accepts]
- * @returns {Object[]} the fields a group-by menu may offer, sorted by label,
- *  computed once per field map when the default predicate is used
+ * @returns {Object[]}
  */
 export function groupableFields(searchViewFields, accepts = isGroupableField) {
     if (accepts === isGroupableField && groupableFieldsByMap.has(searchViewFields)) {
@@ -92,7 +89,7 @@ export function groupableFields(searchViewFields, accepts = isGroupableField) {
 /**
  * @param {string} fieldName
  * @param {{ groupable?: boolean, type: string }} field
- * @returns {boolean} whether a group-by menu may offer the field
+ * @returns {boolean}
  */
 export function isGroupableField(fieldName, field) {
     const { groupable, type } = field;

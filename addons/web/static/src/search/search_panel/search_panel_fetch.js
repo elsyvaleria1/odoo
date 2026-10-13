@@ -5,11 +5,7 @@ import { makeLogger } from "@web/core/debug/debug_logger";
 
 const log = makeLogger("web.search.panel.tree");
 
-/**
- * Break one parent edge per cycle before building children. Every row then has
- * a finite path to a root, even for custom server payloads with cyclic parents.
- * @param {Map<any, any>} values
- */
+/** @param {Map<any, any>} values */
 function normalizeCategoryParents(values) {
     const resolved = new Set([false]);
     for (const id of values.keys()) {

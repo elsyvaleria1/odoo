@@ -23,9 +23,6 @@ import { prepareStaticActionMenuItems } from "@web/views/view_utils";
 const log = makeLogger("document.controller");
 
 /**
- * Whether the selection's actions show: not over a preview, and not while the
- * details panel shows a document outside the selection.
- *
  * @param {{ previewedDocument: Object|null, focusedRecord: Object|null }} rightPanelState
  * @param {Object[]} selection
  * @returns {boolean}
@@ -107,12 +104,7 @@ export const DocumentsControllerMixin = (component) =>
             return this.model.targetRecords;
         }
 
-        /**
-         * Opens the preview (or the PDF splitter) the bus asks for. A method,
-         * so that a bridge can preview some documents its own way.
-         *
-         * @param {Object} detail what `documents-open-preview` carries
-         */
+        /** @param {Object} detail */
         onOpenDocumentsPreview(detail) {
             return this.documentsPreview.open(detail);
         }

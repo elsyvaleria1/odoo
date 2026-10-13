@@ -159,7 +159,7 @@ export function someSubtreeRow(record, predicate) {
  * @param {Record<string, any>} [values]
  * @param {CommitOptions} [options]
  * @param {Set<unknown>} [seen]
- * @returns {Set<string>} the x2many fields of `record` still holding late rows
+ * @returns {Set<string>}
  */
 export function commitSubtree(record, values, options = {}, seen = new Set()) {
     /** @type {Set<string>} */
@@ -214,7 +214,7 @@ export function commitSubtree(record, values, options = {}, seen = new Set()) {
  * @param {Record<string, any> | undefined} values
  * @param {CommitOptions} options
  * @param {Set<unknown>} seen
- * @returns {boolean} whether the row, or a row below it, changed after it was sent
+ * @returns {boolean}
  */
 function commitRow(child, values, options, seen) {
     if (seen.has(child)) {

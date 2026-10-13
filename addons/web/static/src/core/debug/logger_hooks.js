@@ -14,13 +14,6 @@ import {
 /** @typedef {import("./debug_logger").DebugLogger} DebugLogger */
 
 /**
- * Owl awaits `Promise.all(willStart)` and `Promise.all(willUpdateProps)`
- * whether or not a handler is registered, and `Promise.all([undefined])`
- * settles later than `Promise.all([])`: registering either hook delays every
- * mount and props update by a few microtasks. A lifecycle logger must not
- * move timing, so those two hooks are deliberately absent -- the time to
- * mount is reported from setup at `mounted` instead.
- *
  * @param {DebugLogger} log
  * @param {string} [name]
  */

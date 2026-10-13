@@ -82,13 +82,7 @@ export class GridController extends Component {
         onWillUnmount(() => this.closeDialog?.());
     }
 
-    /**
-     * The chassis' props with the grid's own root classes: the one every
-     * grid style hangs off, and the one that hands the action container's
-     * scroll to the grid on a small screen.
-     *
-     * @return {Object}
-     */
+    /** @return {Object} */
     get chassisProps() {
         const classes = ["o_grid_view", this.props.className];
         if (this.isMobile) {
@@ -98,12 +92,6 @@ export class GridController extends Component {
     }
 
     /**
-     * Whether weekend columns start out shown. The stored preference is
-     * global to every grid, so it is only consulted by a grid that has
-     * weekends to hide: a grid whose columns are not days has none, and
-     * would otherwise inherit a `false` written by an unrelated view and
-     * filter every one of its columns away.
-     *
      * @private
      * @return {boolean}
      */
@@ -115,14 +103,7 @@ export class GridController extends Component {
         return stored === null || stored === undefined ? true : JSON.parse(stored);
     }
 
-    /**
-     * Hiding weekends is only meaningful where a column *is* a day: a range
-     * stepping by month has no weekend column to drop, and a range spanning a
-     * single day would hide the only column it has. Both are asked of the
-     * range's shape rather than of its name, which the arch is free to choose.
-     *
-     * @return {boolean}
-     */
+    /** @return {boolean} */
     get canHideWeekend() {
         const { range } = this.model.navigationInfo;
         return Boolean(
@@ -132,14 +113,7 @@ export class GridController extends Component {
         );
     }
 
-    /**
-     * The visibility weekend columns are actually rendered with: the user's
-     * stored preference only bites on a grid that can hide weekends at all,
-     * so every consumer (column list, row and section grand totals, the
-     * scale selector) reads one answer instead of re-deriving it.
-     *
-     * @return {boolean}
-     */
+    /** @return {boolean} */
     get isWeekendVisible() {
         return this.state.isWeekendVisible || !this.canHideWeekend;
     }

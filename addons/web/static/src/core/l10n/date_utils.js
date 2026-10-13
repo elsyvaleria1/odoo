@@ -10,7 +10,7 @@ import { dateSettings, isValidTimeZone, userTimeZone } from "./date_settings.js"
 
 /**
  * @typedef {Temporal.ZonedDateTime} DateTimeValue
- * @typedef {Temporal.PlainDate} DateValue a `date` field's value: a day, with no time or zone
+ * @typedef {Temporal.PlainDate} DateValue
  * @typedef {DateValue | DateTimeValue} AnyDateValue
  * @typedef {"year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second"} DateUnit
  * @typedef {"years" | "quarters" | "months" | "weeks" | "days" | "hours" | "minutes" | "seconds" | "milliseconds"} DiffUnit
@@ -42,9 +42,6 @@ export function isDateOrDateTimeValue(value) {
 }
 
 /**
- * A date at UTC midnight, where no DST gap or overlap exists: calendar
- * arithmetic on a date runs on it and reads the day back.
- *
  * @param {DateValue} value
  * @returns {DateTimeValue}
  */
@@ -94,10 +91,6 @@ export function areDatesEqual(d1, d2) {
 }
 
 /**
- * Negative, zero or positive as `a` is before, at or after `b`: the order
- * `a < b` gave luxon values, which Temporal refuses to compare implicitly.
- * Both are dates or both datetimes.
- *
  * @param {AnyDateValue} a
  * @param {AnyDateValue} b
  * @returns {number}
@@ -145,7 +138,7 @@ export function maxDate(...values) {
 }
 
 /**
- * @param {any} value a date or two
+ * @param {any} value
  * @param {[AnyDateValue, AnyDateValue]} range
  * @returns {boolean}
  */
@@ -174,9 +167,6 @@ const log = makeLogger("web.l10n");
 const unknownZones = new Set();
 
 /**
- * The zone a date is read and shown in: `tz` when it is a known IANA zone, the
- * user's zone otherwise, warning once per unknown name.
- *
  * @param {any} [tz]
  * @returns {string}
  */
@@ -211,8 +201,6 @@ export function now(tz) {
 }
 
 /**
- * The current day in `tz` (the user's zone by default).
- *
  * @param {string} [tz]
  * @returns {DateValue}
  */
@@ -221,9 +209,6 @@ export function today(tz) {
 }
 
 /**
- * The start of `value`'s day in `tz` (the user's zone by default) for a date; a
- * datetime shown in `tz`.
- *
  * @param {AnyDateValue} value
  * @param {string} [tz]
  * @returns {DateTimeValue}
@@ -235,8 +220,6 @@ export function toDateTime(value, tz) {
 }
 
 /**
- * The day `value` falls on, in its own zone for a datetime.
- *
  * @param {AnyDateValue} value
  * @returns {DateValue}
  */
@@ -255,12 +238,6 @@ const DATE_FIELD_ORDER = /** @type {const} */ ([
 ]);
 
 /**
- * The wall time `fields` spell, in `tz` (the user's zone by default), as
- * luxon's DateTime.fromObject read it: fields above the largest one given are
- * the current ones, fields below it are at their minimum (month and day 1,
- * time 0); no field at all is now. Values outside their range are an error,
- * not a rollover.
- *
  * @param {DateFields} fields
  * @param {string} [tz]
  * @returns {DateTimeValue}
@@ -311,7 +288,7 @@ export function fromJSDate(date, tz) {
 }
 
 /**
- * @param {AnyDateValue} value a date is the start of its day in the user's zone
+ * @param {AnyDateValue} value
  * @returns {Date}
  */
 export function toJSDate(value) {
@@ -327,11 +304,11 @@ const SQL_TIME = `${ISO_TIME} ?(?:${ISO_OFFSET}|(${IANA_ZONE}))?`;
 
 /**
  * @typedef {"ymd" | "week" | "ordinal" | "time"} DateGrammar
- * @type {Record<DateGrammar, number>} how many groups the date part captures
+ * @type {Record<DateGrammar, number>}
  */
 const DATE_GROUPS = { ymd: 3, week: 3, ordinal: 2, time: 0 };
 
-/** @type {[DateGrammar, RegExp][]} luxon's fromISO grammars, in its order */
+/** @type {[DateGrammar, RegExp][]} */
 const ISO_GRAMMARS = [
     [
         "ymd",
@@ -347,7 +324,7 @@ const ISO_GRAMMARS = [
     ["time", new RegExp(`^${ISO_TIME}${ISO_ZONE}$`)],
 ];
 
-/** @type {[DateGrammar, RegExp][]} luxon's fromSQL grammars */
+/** @type {[DateGrammar, RegExp][]} */
 const SQL_GRAMMARS = [
     ["ymd", new RegExp(String.raw`^(\d{4})-(\d\d)-(\d\d)(?: ${SQL_TIME})?$`)],
     ["time", new RegExp(`^${SQL_TIME}$`)],
@@ -360,12 +337,9 @@ const SQL_GRAMMARS = [
 const toInt = (text, fallback) => (text === undefined ? fallback : Number(text));
 
 /**
- * The calendar date the date groups of a match spell, or null when it names
- * no real day.
- *
  * @param {DateGrammar} grammar
  * @param {(string | undefined)[]} groups
- * @param {string} zone where a time alone falls today
+ * @param {string} zone
  * @returns {Temporal.PlainDate | null}
  */
 function matchedDate(grammar, groups, zone) {
@@ -474,13 +448,6 @@ function parseByGrammars(text, grammars, zone) {
 }
 
 /**
- * An ISO 8601 text as a value in `tz`, read by luxon's fromISO grammar (dates,
- * week dates, ordinal dates, times; "T" before the time) and, failing that, by
- * its fromSQL one ("2024-02-29 13:45:07"): a date alone is the start of that
- * day in `tz`, a date-time without an offset is that wall time in `tz`, one
- * with an offset or a bracketed zone is that instant shown in `tz`. Null when
- * `text` is neither.
- *
  * @param {string} text
  * @param {string} [tz]
  * @returns {DateTimeValue | null}
@@ -494,9 +461,6 @@ export function parseISO(text, tz) {
 }
 
 /**
- * luxon's fromSQL: "2024-02-29", "2024-02-29 13:45:07(.089)", optionally
- * followed by an offset or a zone name, as a value in `tz`. Null otherwise.
- *
  * @param {string} text
  * @param {string} [tz]
  * @returns {DateTimeValue | null}
@@ -508,10 +472,6 @@ export function parseSQL(text, tz) {
 const R_UNIVERSAL_ZONE = /^(?:(?:Etc\/)?(?:UTC|GMT)|[+-]\d{2}(?::?\d{2})?)$/i;
 
 /**
- * luxon's toISO: "2024-02-29T13:45:07.089-06:00", and "Z" for a fixed zone at
- * offset zero (UTC, GMT, "+00:00"), not for a named zone that merely sits at
- * +00:00 (Europe/London in winter). A date is "2024-02-29".
- *
  * @param {AnyDateValue} value
  * @returns {string}
  */
@@ -599,9 +559,6 @@ export function startOf(value, unit) {
 }
 
 /**
- * The last millisecond of the `unit` holding a datetime, as luxon's endOf; the
- * last day of the `unit` holding a date.
- *
  * @template {AnyDateValue} T
  * @param {T} value
  * @param {DateUnit} unit
@@ -620,9 +577,6 @@ export function endOf(value, unit) {
 }
 
 /**
- * Whether `a` and `b` fall in the same `unit`, reading a datetime `b` in `a`'s
- * zone. Both are dates or both datetimes.
- *
  * @param {AnyDateValue} a
  * @param {AnyDateValue} b
  * @param {DateUnit} unit
@@ -642,9 +596,6 @@ export function hasSame(a, b, unit) {
 }
 
 /**
- * `a - b` in `unit`, as luxon's diff (see date_diff.js). Both are dates or both
- * datetimes; between dates, days are whole calendar days.
- *
  * @param {AnyDateValue} a
  * @param {AnyDateValue} b
  * @param {DiffUnit} unit
@@ -658,9 +609,6 @@ function diffValues(a, b, unit) {
 }
 
 /**
- * `value` moved to ISO `weekday` (1 Monday .. 7 Sunday) of its own week, as
- * luxon's `set({ weekday })`.
- *
  * @template {AnyDateValue} T
  * @param {T} value
  * @param {number} weekday
@@ -672,7 +620,7 @@ export function withWeekday(value, weekday) {
 
 /**
  * @template {AnyDateValue} T
- * @param {T | Date} value a JS Date is read in the user's zone
+ * @param {T | Date} value
  * @returns {{ year: number, week: number, startDate: T }}
  */
 export function getLocalYearAndWeek(value) {

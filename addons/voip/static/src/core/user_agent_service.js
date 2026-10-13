@@ -14,22 +14,12 @@ export class UserAgent extends SignalStore {
     /** @type {Session} */
     activeSession;
     attemptingToReconnect = false;
-    /**
-     * The id of the setTimeout used in demo mode to simulate the waiting time
-     * before the call is picked up.
-     *
-     * @type {number}
-     */
+    /** @type {number} */
     demoTimeout;
     /** @type {Session} */
     mainSession;
     registerer;
-    /**
-     * The Audio element used to play the audio stream received from the remote
-     * call party.
-     *
-     * @type {HTMLAudioElement}
-     */
+    /** @type {HTMLAudioElement} */
     remoteAudio = new window.Audio();
     /** @type {Session} */
     transferSession;
@@ -56,13 +46,7 @@ export class UserAgent extends SignalStore {
         return call.state === "calling" && call.direction === "incoming";
     }
 
-    /**
-     * Provides the function that will be used by the SIP.js library to create
-     * the media source that will serve as the local media stream (i.e. the
-     * recording of the user's microphone).
-     *
-     * @returns {SIP.MediaStreamFactory}
-     */
+    /** @returns {SIP.MediaStreamFactory} */
     get mediaStreamFactory() {
         return (constraints, sessionDescriptionHandler) => {
             const mediaRequest = navigator.mediaDevices.getUserMedia(constraints);
@@ -320,7 +304,7 @@ export class UserAgent extends SignalStore {
     /**
      * @param {Object} data
      * @param {Object} options
-     * @param {string} options.type - The type of session to create --> "default" for the main session, "transfer" for the transfer session.
+     * @param {string} options.type
      */
     async makeCall(data, { type = "default" } = {}) {
         if (!(await this.voip.willCallUsingVoip())) {
@@ -387,11 +371,7 @@ export class UserAgent extends SignalStore {
         }
     }
 
-    /**
-     * Determines if the SDP contains the attributes required by DTLS.
-     *
-     * @param {string} sdp
-     */
+    /** @param {string} sdp */
     _hasDtlsAttributes(sdp) {
         const fields = sdp.split(/\r?\n/);
         let hasFingerprint = false;
@@ -404,14 +384,6 @@ export class UserAgent extends SignalStore {
     }
 
     /**
-     * Determines if the media type for the audio is SRTP-DTLS.
-     *
-     * WebRTC mandates the use of "SRTP-DTLS", which means that RTP datagrams
-     * must be encrypted using TLS (DTLS).
-     *
-     * Note that communication could still work with a "plain RTC" media type,
-     * as long as the DTLS fingerprint is included.
-     *
      * @param {string} sdp
      * @returns {boolean}
      */
@@ -494,11 +466,7 @@ export class UserAgent extends SignalStore {
         }
     }
 
-    /**
-     * Triggered when the transport transitions from connected state.
-     *
-     * @param {Error} error
-     */
+    /** @param {Error} error */
     _onTransportDisconnected(error) {
         if (!error) {
             return;

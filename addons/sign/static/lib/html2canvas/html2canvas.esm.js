@@ -293,10 +293,8 @@ var Trie$1 = /** @class */ (function () {
         this.data = data;
     }
     /**
-     * Get the value for a code point as stored in the Trie.
-     *
-     * @param codePoint the code point
-     * @return the value
+     * @param codePoint
+     * @return
      */
     Trie.prototype.get = function (codePoint) {
         var ix;
@@ -3792,10 +3790,8 @@ var Trie = /** @class */ (function () {
         this.data = data;
     }
     /**
-     * Get the value for a code point as stored in the Trie.
-     *
-     * @param codePoint the code point
-     * @return the value
+     * @param codePoint
+     * @return
      */
     Trie.prototype.get = function (codePoint) {
         var ix;

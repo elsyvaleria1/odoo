@@ -82,9 +82,6 @@ export class CohortModel extends Model {
     }
 
     /**
-     * Publishes metaData together with the data fetched for it, so a view
-     * never shows a measure or an interval over the previous one's rows.
-     *
      * @protected
      * @param {Object} metaData
      */

@@ -12,10 +12,8 @@ export class LocationSchedule extends Component {
     props = useProps(this.constructor.props);
 
     /**
-     * Return the localized day's name given his index in the week.
-     *
-     * @param {Number} weekday - The number of the day of the week. 0 for Monday, 6 for Sunday.
-     * @return {Object} the localized name of the day (long version).
+     * @param {Number} weekday
+     * @return {Object}
      */
     getWeekDay(weekday) {
         const dayName = weekdayNames()[weekday];

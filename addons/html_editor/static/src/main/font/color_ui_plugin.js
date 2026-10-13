@@ -167,12 +167,7 @@ export class ColorUIPlugin extends Plugin {
         this.selectedColors.color = this.dependencies.color.getElementColors(el).color;
     }
 
-    /**
-     * The active tab's button carries a `${tab.id}-tab` class (see
-     * `web.ColorPicker`'s template), which is stable across locales — unlike
-     * its rendered label, which is translated.
-     * @returns {HTMLElement|null}
-     */
+    /** @returns {HTMLElement|null} */
     getActiveColorTabButton() {
         return document.querySelector(".o_font_color_selector button.active");
     }

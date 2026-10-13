@@ -63,10 +63,8 @@ export class CalendarFormController extends FormController {
     }
 
     /**
-     * Archives a calendar event record.
-     *
-     * @param {number} id - The ID of the record to archive.
-     * @param {boolean} recurrenceUpdate - Indicates how the archive of a recurring event will be updated.
+     * @param {number} id
+     * @param {boolean} recurrenceUpdate
      */
     async _archiveRecord(id, recurrenceUpdate) {
         await this.orm.call(this.model.root.resModel, "action_mass_archive", [

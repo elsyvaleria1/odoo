@@ -5,7 +5,7 @@ import { GraphModel } from "@web/views/graph";
 import { usePlanningModelActions } from "../planning_hooks.js";
 
 export class PlanningGraphModel extends GraphModel {
-    /** @override **/
+    /** @override */
     setup() {
         super.setup(...arguments);
         this.getHighlightIds = usePlanningModelActions({
@@ -15,7 +15,7 @@ export class PlanningGraphModel extends GraphModel {
         }).getHighlightIds;
     }
 
-    /** @override **/
+    /** @override */
     async load(searchParams) {
         const highlightIds = await this.getHighlightIds();
         if (highlightIds) {

@@ -3,12 +3,10 @@ import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
 const MIN_ID = -(2 ** 30);
 
 /**
- * Adds helper lines to the document
- *
  * @param {HTMLElement} target
- * @returns {Object} helpers
- * @returns {Function} helpers.show shows the helper lines at a certain sign item
- * @returns {Function} helpers.hide hides the helper lines
+ * @returns {Object}
+ * @returns {Function}
+ * @returns {Function}
  */
 export function startHelperLines(target) {
     function showHelperLinesAt(signItem, coords) {
@@ -83,9 +81,8 @@ export function offset(el) {
 }
 
 /**
- * Normalizes the normalize position of a sign item to prevent dropping outside the page
- * @param {Number} position x/y position
- * @param {Number} itemDimension size of item at x/y direction
+ * @param {Number} position
+ * @param {Number} itemDimension
  * @returns {Number}
  */
 export function normalizePosition(position, itemDimension) {
@@ -98,10 +95,9 @@ export function normalizePosition(position, itemDimension) {
 }
 
 /**
- * Normalizes the new dimension of a sign item to prevent it from resizing outside the page
  * @param {Number} dimension
  * @param {Number} position
- * @returns {Number} normalized dimension
+ * @returns {Number}
  */
 export function normalizeDimension(dimension, position) {
     if (position + dimension > 1) {
@@ -110,21 +106,17 @@ export function normalizeDimension(dimension, position) {
     return dimension;
 }
 
-/**
- * Generates a random negative ID to be added to sign items that were just created and are not in the DB yet
- * @returns {Number}
- */
+/** @returns {Number} */
 export function generateRandomId() {
     return Math.floor(Math.random() * MIN_ID) - 1;
 }
 
 /**
- * Adds smooth scrolling while dragging elements
- * @param {HTMLElement} container the container that sets the reference for scrolling
- * @param {HTMLElement} element the element being dragged
- * @param {HTMLElement || null} dragImageElement in some cases the element being dragged is not the same size as the dragImageElement
- * @param {HelperLines} helperLines instance of helper lines for guiding the user while dragging
- * @returns {Function} cleanup function to be executed when dragging is over
+ * @param {HTMLElement} container
+ * @param {HTMLElement} element
+ * @param {HTMLElement || null} dragImageElement
+ * @param {HelperLines} helperLines
+ * @returns {Function}
  */
 export function startSmoothScroll(
     container,
@@ -177,7 +169,6 @@ export function startSmoothScroll(
 }
 
 /**
- * Adds resizing functionality to a sign item
  * @param {SignItem} signItem
  * @param {Function} onResize
  */
@@ -268,7 +259,6 @@ export function startResize(signItem, onResize) {
 }
 
 /**
- * Generates the PDF.JS URL from the attachment location
  * @param { String } attachmentLocation
  * @param { Boolean } isSmall
  * @returns
@@ -291,12 +281,11 @@ export function injectPDFCustomStyles(iframeDoc) {
 }
 
 /**
- * Adds auto-scrolling functionality when mouse is near container top/bottom edges
- * @param {HTMLElement} container the container that sets the reference for scrolling
- * @param {Object} mousePosition relative x,y coordinates within container
- * @param {Number} boundary percentage of container edge that triggers scrolling (default 0.2 = 20%)
- * @param {Number} maxDragAmount maximum pixels to scroll per frame (default 80)
- * @returns {Number} scrollY amount to scroll
+ * @param {HTMLElement} container
+ * @param {Object} mousePosition
+ * @param {Number} boundary
+ * @param {Number} maxDragAmount
+ * @returns {Number}
  */
 export function getAutoScrollOffset(
     container,
@@ -308,10 +297,9 @@ export function getAutoScrollOffset(
     let scrollCleanup = null;
 
     /**
-     * Calculates the scroll amount based on the mouse position
-     * @param {Object} pos - The mouse position
-     * @param {number} pos.y - The y coordinate of the mouse position
-     * @returns {number} The scroll amount
+     * @param {Object} pos
+     * @param {number} pos.y
+     * @returns {number}
      */
     function calculateScrollAmount(pos) {
         let scrollY = 0;
@@ -329,9 +317,8 @@ export function getAutoScrollOffset(
     }
 
     /**
-     * Starts the auto-scrolling animation
-     * @param {Object} pos - The mouse position
-     * @param {number} pos.y - The y coordinate of the mouse position
+     * @param {Object} pos
+     * @param {number} pos.y
      */
     function startScrolling(pos) {
         if (isScrolling) {
@@ -357,9 +344,8 @@ export function getAutoScrollOffset(
     }
 
     /**
-     * Updates the position of the mouse and starts the auto-scrolling animation if necessary
-     * @param {Object} pos - The mouse position
-     * @param {number} pos.y - The y coordinate of the mouse position
+     * @param {Object} pos
+     * @param {number} pos.y
      */
     function updatePosition(pos) {
         const scrollAmount = calculateScrollAmount(pos);

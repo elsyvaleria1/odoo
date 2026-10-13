@@ -35,25 +35,19 @@ function onStorageEvent(store, ev) {
     }
 }
 
-/**
- * From the store's `setup()`, before any compute reads a key.
- * @param {{localStorageValues: Object<string, string|null>, _localStorageSubscribers: Map<string, Set<(newValue: string|null) => void>>}} store
- */
+/** @param {{localStorageValues: Object<string, string|null>, _localStorageSubscribers: Map<string, Set<(newValue: string|null) => void>>}} store */
 export function initLocalStorageMirror(store) {
     store.localStorageValues = {};
     store._localStorageSubscribers = new Map();
 }
 
-/**
- * Once per store, when its service starts; the listener lives as long as the page.
- * @param {Store} store
- */
+/** @param {Store} store */
 export function startLocalStorageMirror(store) {
     browser.addEventListener("storage", (ev) => onStorageEvent(store, ev));
 }
 
 /**
- * @param {Store} store the caller's reactive `this.store`, so the read subscribes it
+ * @param {Store} store
  * @param {string} key
  * @returns {string|null}
  */
@@ -87,8 +81,7 @@ export function removeLocalStorageItem(store, key) {
 /**
  * @param {Store} store
  * @param {string} key
- * @param {(newValue: string|null) => void} cb called on a `storage` event for `key`,
- *  or with `null` when another tab clears the storage
+ * @param {(newValue: string|null) => void} cb
  * @returns {() => void}
  */
 export function onLocalStorageChange(store, key, cb) {

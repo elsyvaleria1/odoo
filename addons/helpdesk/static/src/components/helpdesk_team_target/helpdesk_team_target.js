@@ -55,8 +55,6 @@ export class HelpdeskTeamTarget extends Component {
     }
 
     /**
-     * Handle the keydown event on the value input
-     *
      * @private
      * @param {KeyboardEvent} ev
      */

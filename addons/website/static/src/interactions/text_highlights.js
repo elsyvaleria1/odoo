@@ -40,12 +40,7 @@ export class TextHighlight extends Interaction {
         this.handleHighlightsIn(this.el);
     }
 
-    /**
-     * The swap of a fragment brings new highlights and strips the drawings
-     * of those it kept.
-     *
-     * @param {HTMLElement} el
-     */
+    /** @param {HTMLElement} el */
     handleHighlightsIn(el) {
         for (const textEl of el.querySelectorAll(".o_text_highlight")) {
             this.handleEl(textEl);

@@ -42,10 +42,8 @@ patch(BarcodeParser.prototype, {
     },
 
     /**
-     * Convert YYMMDD GS1 date into a Date object
-     *
-     * @param {string} gs1Date YYMMDD string date, length must be 6
-     * @returns {Date|null} null when the digits name no calendar day
+     * @param {string} gs1Date
+     * @returns {Date|null}
      */
     gs1DateToDate(gs1Date) {
         const now = new Date();
@@ -68,12 +66,8 @@ patch(BarcodeParser.prototype, {
     },
 
     /**
-     * Read a matched GS1 element as its rule's content type. Mirrors
-     * `barcode.nomenclature.parse_gs1_rule_pattern`: content the type cannot
-     * hold is not this rule.
-     *
-     * @param {Array} match Result of a regex match with at most 2 groups (ai and value)
-     * @param {Object} rule Matched Barcode Rule
+     * @param {Array} match
+     * @param {Object} rule
      * @returns {Object|null}
      */
     parseGs1RulePattern(match, rule) {
@@ -129,12 +123,8 @@ patch(BarcodeParser.prototype, {
     },
 
     /**
-     * Decompose a GS1 element string into its elements, in order. Mirrors
-     * `barcode.nomenclature.gs1_decompose_extended`: each element is matched
-     * from the first rule again, by sequence.
-     *
      * @param {string} barcode
-     * @returns {Array} Array of object
+     * @returns {Array}
      */
     gs1DecomposeExtended(barcode) {
         const rules = this.nomenclature.rules.filter(
@@ -177,7 +167,7 @@ patch(BarcodeParser.prototype, {
 
     /**
      * @override
-     * @returns {Object|Array|null} If nomenclature is GS1, returns an array or null
+     * @returns {Object|Array|null}
      */
     parseNomenclatureBarcode(barcode) {
         if (this.nomenclature && this.nomenclature.is_gs1_nomenclature) {
@@ -187,7 +177,6 @@ patch(BarcodeParser.prototype, {
     },
 
     /**
-     * Makes all needed operations to clean and prepare the barcode.
      * @param {string} barcode
      * @returns {string}
      */
@@ -200,10 +189,6 @@ patch(BarcodeParser.prototype, {
     },
 
     /**
-     * The FNC1 is the default GS1 separator character, but through the field `gs1_separator_fnc1`,
-     * the user has the possibility to define one or multiple characters to use as separator as
-     * a regex. This method replaces all of the matches in the given barcode by the FNC1.
-     *
      * @param {string} barcode
      * @returns {string}
      */

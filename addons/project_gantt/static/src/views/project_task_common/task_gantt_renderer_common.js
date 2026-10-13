@@ -8,7 +8,7 @@ import { GanttRenderer } from "@web_gantt/gantt_renderer";
 import { MilestonesPopover } from "./milestones_popover.js";
 
 /**
- * @param {Temporal.ZonedDateTime} boundary a column boundary on the time axis
+ * @param {Temporal.ZonedDateTime} boundary
  * @param {Temporal.PlainDate | false} [day]
  */
 function isAfter(boundary, day) {
@@ -16,7 +16,7 @@ function isAfter(boundary, day) {
 }
 
 /**
- * @param {Temporal.ZonedDateTime} boundary a column boundary on the time axis
+ * @param {Temporal.ZonedDateTime} boundary
  * @param {Temporal.PlainDate | false} [day]
  */
 function isBefore(boundary, day) {
