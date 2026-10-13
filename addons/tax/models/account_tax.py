@@ -4017,6 +4017,11 @@ class AccountTax(models.Model):
             rounding_method=rounding_method,
         )
         tax_details = base_line["tax_details"]
+        round_amount = (
+            base_line["currency_id"].round
+            if self.env.context.get("round_base", True)
+            else lambda amount: amount
+        )
         taxes = []
         for tax_data in tax_details["taxes_data"]:
             tax = tax_data["tax"]
@@ -4025,8 +4030,8 @@ class AccountTax(models.Model):
                     "id": tax.id,
                     "name": (partner and tax.with_context(lang=partner.lang).name)
                     or tax.name,
-                    "amount": tax_data["raw_tax_amount_currency"],
-                    "base": tax_data["raw_base_amount_currency"],
+                    "amount": round_amount(tax_data["raw_tax_amount_currency"]),
+                    "base": round_amount(tax_data["raw_base_amount_currency"]),
                     "sequence": tax.sequence,
                     "price_include": tax.price_include,
                     "is_reverse_charge": tax_data["is_reverse_charge"],

@@ -272,7 +272,7 @@ class PurchaseOrderLine(models.Model):
 
         if self.tax_ids:
             qty = self.product_qty or 1
-            price_unit = self.tax_ids.compute_all(
+            price_unit = self.tax_ids.with_context(round_base=False).compute_all(
                 price_unit,
                 currency=self.order_id.currency_id,
                 quantity=qty,
@@ -366,10 +366,7 @@ class PurchaseOrderLine(models.Model):
         res = super()._prepare_aml_vals(**optional_values)
 
         if "balance" not in res:
-            total_wo_tax = self.tax_ids.with_context(
-                round=False,
-                round_base=False,
-            ).compute_all(
+            total_wo_tax = self.tax_ids.with_context(round_base=False).compute_all(
                 self.price_unit_discounted_taxexc,
                 currency=self.order_id.currency_id,
                 quantity=self.qty_to_invoice,

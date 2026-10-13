@@ -523,19 +523,87 @@ class TestAccountTax(AccountTestInvoicingCommon):
                 "company_ids": [Command.set(company.ids)],
             }
         )
-        res = tax.with_context(round_globally=True).compute_all(
-            100.0, currency=currency, quantity=1.0
-        )
+        res = tax.compute_all(100.0, currency=currency, quantity=1.0)
         base = res["taxes"][0]["base"]
         self.assertEqual(
             base,
             currency.round(base),
             "per-tax base must be currency-rounded (round_base default True)",
         )
-        raw = tax.with_context(round_globally=True, round_base=False).compute_all(
+        raw = tax.with_context(round_base=False).compute_all(
             100.0, currency=currency, quantity=1.0
         )["taxes"][0]["base"]
         self.assertNotEqual(raw, currency.round(raw), "round_base=False keeps raw base")
+
+    def _tax_with_void_half(self):
+        def reps(document_type):
+            return [
+                Command.create(
+                    {
+                        "document_type": document_type,
+                        "repartition_type": "base",
+                        "factor_percent": 100.0,
+                    }
+                ),
+                Command.create(
+                    {
+                        "document_type": document_type,
+                        "repartition_type": "tax",
+                        "factor_percent": 50.0,
+                        "account_id": self.company_data["default_account_tax_sale"].id,
+                    }
+                ),
+                Command.create(
+                    {
+                        "document_type": document_type,
+                        "repartition_type": "tax",
+                        "factor_percent": 50.0,
+                    }
+                ),
+            ]
+
+        return self.env["account.tax"].create(
+            {
+                "name": "21 half void",
+                "amount_type": "percent",
+                "amount": 21.0,
+                "type_tax_use": "purchase",
+                "company_ids": [Command.set(self.env.company.ids)],
+                "invoice_repartition_line_ids": reps("invoice"),
+                "refund_repartition_line_ids": reps("refund"),
+            }
+        )
+
+    def test_compute_all_round_base_rounds_amounts_base_totals_and_void(self):
+        self.env.company.tax_config_id.tax_calculation_rounding_method = (
+            "round_globally"
+        )
+        currency = self.env.company.currency_id
+        res = self._tax_with_void_half().compute_all(10.555, currency=currency)
+        self.assertEqual([tax["amount"] for tax in res["taxes"]], [1.11, 1.11])
+        self.assertEqual([tax["base"] for tax in res["taxes"]], [10.56, 10.56])
+        self.assertEqual(res["total_excluded"], 10.56)
+        self.assertEqual(res["total_included"], 12.77)
+        self.assertEqual(res["total_void"], 11.67)
+
+    def test_compute_all_without_round_base_gives_each_repartition_its_exact_share(
+        self,
+    ):
+        self.env.company.tax_config_id.tax_calculation_rounding_method = (
+            "round_globally"
+        )
+        currency = self.env.company.currency_id
+        res = (
+            self._tax_with_void_half()
+            .with_context(round_base=False)
+            .compute_all(10.555, currency=currency)
+        )
+        for tax in res["taxes"]:
+            self.assertAlmostEqual(tax["amount"], 1.108275, places=9)
+            self.assertAlmostEqual(tax["base"], 10.555, places=9)
+        self.assertAlmostEqual(res["total_excluded"], 10.555, places=9)
+        self.assertAlmostEqual(res["total_included"], 12.77155, places=9)
+        self.assertAlmostEqual(res["total_void"], 11.663275, places=9)
 
     def test_division_tax_batch_over_100_percent_is_rejected(self):
         company = self.env.company

@@ -62,6 +62,20 @@ class TestBaseTaxComputation(BaseTaxCommon):
         self.assertEqual(len(res["taxes"]), 2)
         self.assertEqual(res["total_included"], 132.11)
 
+    def test_compute_all_round_base_rounds_amounts_and_bases(self):
+        self.company.tax_config_id.tax_calculation_rounding_method = "round_globally"
+        tax = self._tax(21.0)
+        res = tax.compute_all(10.555)
+        self.assertEqual(res["taxes"][0]["amount"], 2.22)
+        self.assertEqual(res["taxes"][0]["base"], 10.56)
+        self.assertEqual(res["total_excluded"], 10.56)
+        self.assertEqual(res["total_included"], 12.77)
+        raw = tax.with_context(round_base=False).compute_all(10.555)
+        self.assertAlmostEqual(raw["taxes"][0]["amount"], 2.21655, places=9)
+        self.assertAlmostEqual(raw["taxes"][0]["base"], 10.555, places=9)
+        self.assertAlmostEqual(raw["total_excluded"], 10.555, places=9)
+        self.assertAlmostEqual(raw["total_included"], 12.77155, places=9)
+
     def test_compute_all_refund_matches_invoice(self):
         tax = self._tax(21.0)
         self.assertEqual(

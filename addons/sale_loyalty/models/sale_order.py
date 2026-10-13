@@ -683,7 +683,6 @@ class SaleOrder(models.Model):
                     price_incl_taxes = mapped_taxes.filtered("price_include")
                     tax_res = mapped_taxes.with_context(
                         force_price_include=True,
-                        round=False,
                         round_base=False,
                     ).compute_all(
                         reward_line_values["price_unit"],

@@ -44,7 +44,7 @@ class TestTaxesRepartitionAmounts(AccountTestInvoicingCommon):
             }
         )
 
-    def _tax_data(self, tax, price_unit, rate, rounded):
+    def _tax_data(self, tax, price_unit, rate, rounded, round_shares=True):
         AccountTax = self.env["account.tax"]
         base_line = AccountTax._prepare_base_line_for_taxes_computation(
             None,
@@ -58,7 +58,7 @@ class TestTaxesRepartitionAmounts(AccountTestInvoicingCommon):
         if rounded:
             AccountTax._round_base_lines_tax_details([base_line], self.env.company)
         AccountTax._add_accounting_data_to_base_line_tax_details(
-            base_line, self.env.company, rounded=rounded
+            base_line, self.env.company, rounded=rounded, round_shares=round_shares
         )
         return base_line["tax_details"]["taxes_data"][0]
 
@@ -115,6 +115,37 @@ class TestTaxesRepartitionAmounts(AccountTestInvoicingCommon):
                             company_currency.round(tax_data["raw_tax_amount"]),
                         )
 
+    def test_repartition_lines_get_their_exact_share_when_shares_are_not_rounded(
+        self,
+    ):
+        for factors in self.FACTORS:
+            tax = self._make_tax(factors)
+            for price_unit in self.PRICES:
+                for rate in self.RATES:
+                    with self.subTest(
+                        factors=factors, price_unit=price_unit, rate=rate
+                    ):
+                        tax_data = self._tax_data(
+                            tax, price_unit, rate, rounded=False, round_shares=False
+                        )
+                        reps = tax_data["tax_reps_data"]
+                        for rep, factor in zip(reps, factors, strict=True):
+                            self.assertAlmostEqual(
+                                rep["tax_amount_currency"],
+                                tax_data["raw_tax_amount_currency"] * factor / 100.0,
+                                places=9,
+                            )
+                            self.assertAlmostEqual(
+                                rep["tax_amount"],
+                                tax_data["raw_tax_amount"] * factor / 100.0,
+                                places=9,
+                            )
+                        self.assertAlmostEqual(
+                            sum(rep["tax_amount_currency"] for rep in reps),
+                            tax_data["raw_tax_amount_currency"],
+                            places=9,
+                        )
+
     def test_single_full_repartition_line_carries_the_whole_tax(self):
         tax = self._make_tax([100.0])
         company_currency = self.env.company.currency_id
@@ -137,3 +168,18 @@ class TestTaxesRepartitionAmounts(AccountTestInvoicingCommon):
                                 tax_data[f"{prefix}tax_amount_currency"]
                             ),
                         )
+
+    def test_single_full_repartition_line_carries_the_exact_tax_unrounded(self):
+        tax = self._make_tax([100.0])
+        for price_unit in self.PRICES:
+            for rate in self.RATES:
+                with self.subTest(price_unit=price_unit, rate=rate):
+                    tax_data = self._tax_data(
+                        tax, price_unit, rate, rounded=False, round_shares=False
+                    )
+                    rep = tax_data["tax_reps_data"][0]
+                    self.assertEqual(rep["tax_amount"], tax_data["raw_tax_amount"])
+                    self.assertEqual(
+                        rep["tax_amount_currency"],
+                        tax_data["raw_tax_amount_currency"],
+                    )

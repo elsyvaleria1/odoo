@@ -441,7 +441,7 @@ class MixinOrderLineInvoice(models.AbstractModel):
             price_unit *= 1 - self.discount / 100
         if self.tax_ids:
             qty = self.product_qty or 1
-            price_unit = self.tax_ids.compute_all(
+            price_unit = self.tax_ids.with_context(round_base=False).compute_all(
                 price_unit,
                 currency=self.order_id.currency_id,
                 quantity=qty,

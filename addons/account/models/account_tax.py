@@ -730,6 +730,7 @@ class AccountTax(models.Model):
         include_caba_tags=False,
         repartition_cache=None,
         rounded=True,
+        round_shares=True,
     ) -> None:
         is_refund = base_line["is_refund"]
         product = base_line["product_id"]
@@ -767,6 +768,7 @@ class AccountTax(models.Model):
                 company,
                 include_caba_tags=include_caba_tags,
                 rounded=rounded,
+                round_shares=round_shares,
             )
 
         self._add_tax_repartition_tags_and_grouping_keys(
@@ -786,6 +788,7 @@ class AccountTax(models.Model):
         company,
         include_caba_tags=False,
         rounded=True,
+        round_shares=True,
     ) -> None:
         currency = base_line["currency_id"]
         company_currency = company.currency_id
@@ -795,13 +798,20 @@ class AccountTax(models.Model):
 
         total_tax_rep_amounts = {"tax_amount_currency": 0.0, "tax_amount": 0.0}
         tax_reps_data = tax_data["tax_reps_data"] = []
+        if round_shares:
+            round_currency, round_company_currency = (
+                currency.round,
+                company_currency.round,
+            )
+        else:
+            round_currency = round_company_currency = lambda amount: amount
         for tax_rep in tax_reps:
             tax_rep_data = {
                 "tax_rep": tax_rep,
-                "tax_amount_currency": currency.round(
+                "tax_amount_currency": round_currency(
                     tax_amount_currency * tax_rep.factor * tax_rep_sign
                 ),
-                "tax_amount": company_currency.round(
+                "tax_amount": round_company_currency(
                     tax_amount * tax_rep.factor * tax_rep_sign
                 ),
                 "account": tax_rep._get_aml_target_tax_account(
@@ -814,6 +824,8 @@ class AccountTax(models.Model):
             ]
             total_tax_rep_amounts["tax_amount"] += tax_rep_data["tax_amount"]
             tax_reps_data.append(tax_rep_data)
+        if not round_shares:
+            return
 
         sorted_tax_reps_data = sorted(
             tax_reps_data,
@@ -1086,18 +1098,23 @@ class AccountTax(models.Model):
             handle_price_include=handle_price_include,
             rounding_method=rounding_method,
         )
+        round_base = self.env.context.get("round_base", True)
         self._add_accounting_data_to_base_line_tax_details(
-            base_line, company, include_caba_tags=include_caba_tags, rounded=False
+            base_line,
+            company,
+            include_caba_tags=include_caba_tags,
+            rounded=False,
+            round_shares=round_base,
         )
 
         tax_details = base_line["tax_details"]
         taxes, void_amount = self._get_all_tax_values(
-            tax_details,
-            base_line["currency_id"],
-            partner,
-            self.env.context.get("round_base", True),
+            tax_details, base_line["currency_id"], partner, round_base
         )
         totals = self._get_compute_all_totals(base_line)
+        total_void = tax_details["raw_total_excluded_currency"] + void_amount
+        if round_base:
+            total_void = base_line["currency_id"].round(total_void)
         _debug.logic(
             "compute_all",
             compute_all=self,
@@ -1112,5 +1129,5 @@ class AccountTax(models.Model):
             "base_tags": base_line["tax_tag_ids"].ids,
             "taxes": taxes,
             **totals,
-            "total_void": tax_details["raw_total_excluded_currency"] + void_amount,
+            "total_void": total_void,
         }
