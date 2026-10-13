@@ -1,3 +1,4 @@
+from odoo import Command
 from odoo.tests.common import TransactionCase, new_test_user
 
 
@@ -178,3 +179,21 @@ class TestX2manyWriteOfAFieldTheUserCannotRead(TransactionCase):
         user = new_test_user(self.env, "scope_creator", groups="base.group_user")
         box = self.env["test_orm.scope_box"].with_user(user).create({"name": "box"})
         self.assertFalse(box.sudo().system_tag_ids)
+
+
+class TestStoredRelatedThroughAnX2many(TransactionCase):
+    def test_a_stored_scalar_related_through_an_x2many_reads_its_computed_value(self):
+        user = new_test_user(self.env, "related_reader", groups="base.group_system")
+        right = self.env["test_orm.trigger.right"].create({})
+        left = (
+            self.env["test_orm.trigger.left"]
+            .with_user(user)
+            .create({"middle_ids": [Command.create({"right_id": right.id})]})
+        )
+        self.assertEqual(left.right_id, right)
+        self.assertEqual(left.sudo().right_id, right)
+        self.env.flush_all()
+        self.assertEqual(
+            self.env["test_orm.trigger.left"].search([("right_id", "=", right.id)]),
+            left,
+        )

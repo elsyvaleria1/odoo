@@ -213,6 +213,8 @@ def get_depends(
                 step = step_model._fields[step_name]
                 depends_context.extend(step.get_depends(step_model)[1])
                 step_model_name = step.comodel_name
+            if field.store and not field.is_x2many:
+                depends_context = [key for key in depends_context if key != "access"]
             depends_context = tuple(unique(depends_context))
             if _debug.logic.enabled and depends_context:
                 _debug.logic(

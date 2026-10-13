@@ -489,7 +489,11 @@ names (`lang`, `active_test`, `company`, `uid`); every x2many adds `access`
 company ids sorted), because `One2many.read` / `Many2many.read` cache what the
 *reading* environment's search returned — with the record rules applied — and one
 shared slot let a sudo read hand a user every company's rules, and a user read
-starve sudo of the rows the rules had hidden.
+starve sudo of the rows the rules had hidden. A related field inherits the
+`depends_context` of every step of its path, except that a stored scalar related
+through an x2many (`related_invoice_ids.company_id`) drops `access`: its value is
+its column, one for every reader, and a scoped slot let the superuser's compute
+fill one slot while the creating user's still held the empty value of the insert.
 
 *The invariant.* For a stored x2many `F`, a record `r` with a real id and a scope
 `S`: **if `S`'s slot holds a value for `(F, r)`, that value is the set of ids
