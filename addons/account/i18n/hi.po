@@ -3625,7 +3625,7 @@ msgstr ""
 msgid ""
 "Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
 msgstr ""
-"समायोजन एंट्री {link}: {amount} का {percent}% हिस्सा {date} से जोड़ा गया"
+"समायोजन एंट्री {link}: {amount} का {percent}% हिस्सा {new_date} को जोड़ा गया"
 
 #. module: account
 #: model:report.formula.column,name:account.multicurrency_revaluation_report_adjustment
@@ -8317,13 +8317,13 @@ msgstr "कट-ऑफ़"
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid "Cut-off {label}"
-msgstr "कट-ऑफ़ {लेबल}"
+msgstr "कट-ऑफ़ {label}"
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid "Cut-off {label} {percent}%"
-msgstr "कट-ऑफ़ {लेबल} {प्रतिशत}%"
+msgstr "कट-ऑफ़ {label} {percent}%"
 
 #. module: account
 #: model:ir.actions.act_window,name:account.action_view_account_audit_checks
@@ -23921,13 +23921,13 @@ msgstr "यह एंट्री %s से कॉपी करके बना�
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
 msgid "This entry has been reversed from %s"
-msgstr "यह एंट्री असल में %(destination)s वाली एंट्री का उल्टा है"
+msgstr "यह एंट्री असल में %s वाली एंट्री का उल्टा है"
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid "This entry transfers the following amounts to %(destination)s"
-msgstr "यह एंट्री असल में %(destination)s वाली एंट्री का उल्टा है"
+msgstr "यह एंट्री असल में %s वाली एंट्री का उल्टा है"
 
 #. module: account
 #: model:ir.model.fields,help:account.field_account_move_line__date_maturity
@@ -24340,7 +24340,7 @@ msgid ""
 "be manually validated. You should go on the partner bank account in order to"
 " validate it."
 msgstr ""
-"%(method_name)s का इस्तेमाल करके पेमेंट रिकॉर्ड करने के लिए, जिस बैंक अकाउंट"
+"%(payment_method)s का इस्तेमाल करके पेमेंट रिकॉर्ड करने के लिए, जिस बैंक अकाउंट"
 " में पैसा जा रहा है, उसे मैन्युअल तौर पर वेरिफ़ाई करना होगा. इसे वेरिफ़ाई "
 "करने के लिए आपको पार्टनर बैंक अकाउंट में जाना होगा।"
 

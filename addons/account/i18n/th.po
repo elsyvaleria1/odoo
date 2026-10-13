@@ -24112,7 +24112,7 @@ msgid ""
 "be manually validated. You should go on the partner bank account in order to"
 " validate it."
 msgstr ""
-"หากต้องการบันทึกการชำระเงินด้วย %(Payment_method)s "
+"หากต้องการบันทึกการชำระเงินด้วย %(payment_method)s "
 "บัญชีธนาคารของผู้รับจะต้องได้รับการตรวจสอบด้วยตนเอง "
 "คุณควรไปที่บัญชีธนาคารของพาร์ทเนอร์เพื่อตรวจสอบความถูกต้อง"
 

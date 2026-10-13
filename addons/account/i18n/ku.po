@@ -26353,7 +26353,7 @@ msgstr "لە ڕێگەی ئیمەیڵەوە"
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid "cancelling {percent}% of {amount}"
-msgstr "هەڵوەشاندنەوەی {لەسەدا}%ی {بڕی}"
+msgstr "هەڵوەشاندنەوەی {percent}%ی {amount}"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_default_terms_and_conditions
