@@ -224,16 +224,16 @@ class ResCurrency(models.Model):
             """(
                 SELECT rate.id, rate.currency_id, rate.name, rate.rate
                 FROM res_currency_rate rate
+                LEFT JOIN (
+                    SELECT currency_id, MIN(name) AS first_own_date
+                    FROM res_currency_rate
+                    WHERE company_id = %(main_company_id)s
+                    GROUP BY currency_id
+                ) own ON own.currency_id = rate.currency_id
                 WHERE rate.company_id = %(main_company_id)s
                    OR (
                        rate.company_id IS NULL
-                       AND NOT EXISTS (
-                           SELECT 1
-                           FROM res_currency_rate own_rate
-                           WHERE own_rate.currency_id = rate.currency_id
-                             AND own_rate.company_id = %(main_company_id)s
-                             AND own_rate.name <= rate.name
-                       )
+                       AND (own.first_own_date IS NULL OR rate.name < own.first_own_date)
                    )
             )""",
             main_company_id=scope.main_company_id,
