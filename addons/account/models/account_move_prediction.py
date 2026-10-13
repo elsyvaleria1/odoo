@@ -27,7 +27,11 @@ class AccountMoveLine(models.Model):
             [
                 ("move_type", "=", move_id.move_type),
                 ("state", "=", "posted"),
-                ("partner_id", "=", (partner or move_id.partner_id).id),
+                (
+                    "partner_id.commercial_partner_id",
+                    "=",
+                    (partner or move_id.partner_id).commercial_partner_id.id,
+                ),
                 (
                     "company_id",
                     "=",
@@ -145,43 +149,9 @@ class AccountMoveLine(models.Model):
             _logger.exception("Error while predicting invoice line fields")
         return False
 
-    def _predict_taxes(self):
-        field = SQL(
-            "array_agg(account_move_line__tax_rel__tax_ids.id ORDER BY account_move_line__tax_rel__tax_ids.id)"
-        )
-        query = self._prepare_predictive_query(self.move_id)
-        query.left_join(
-            "account_move_line",
-            "id",
-            "account_move_line_account_tax_rel",
-            "account_move_line_id",
-            "tax_rel",
-        )
-        query.left_join(
-            "account_move_line__tax_rel",
-            "account_tax_id",
-            "account_tax",
-            "id",
-            "tax_ids",
-        )
-        query.add_where(SQL("account_move_line__tax_rel__tax_ids.active IS NOT FALSE"))
-        predicted_tax_ids = self._predicted_field(
-            self.move_id, self.name, self.partner_id, field, query
-        )
-        _debug.logic("taxes_predicted", line=self, tax_ids=predicted_tax_ids)
-        if predicted_tax_ids == [None]:
-            return False
-        if predicted_tax_ids is not False and set(predicted_tax_ids) != set(
-            self.tax_ids.ids
-        ):
-            return predicted_tax_ids
-        return False
-
     @api.model
     @_debug.perf.timed
-    def _predict_specific_tax(
-        self, move, name, partner, amount_type, amount, type_tax_use
-    ):
+    def _predicted_tax_ids(self, move, name, partner, tax_condition=None):
         field = SQL(
             "array_agg(account_move_line__tax_rel__tax_ids.id ORDER BY account_move_line__tax_rel__tax_ids.id)"
         )
@@ -200,19 +170,28 @@ class AccountMoveLine(models.Model):
             "id",
             "tax_ids",
         )
-        query.add_where(
-            SQL(
-                """
-                account_move_line__tax_rel__tax_ids.active IS NOT FALSE
-                AND account_move_line__tax_rel__tax_ids.amount_type = %s
-                AND account_move_line__tax_rel__tax_ids.type_tax_use = %s
-                AND account_move_line__tax_rel__tax_ids.amount = %s
-                """,
-                amount_type,
-                type_tax_use,
-                amount,
-            ),
+        query.add_where(SQL("account_move_line__tax_rel__tax_ids.active IS NOT FALSE"))
+        if tax_condition is not None:
+            query.add_where(tax_condition)
+        return self._predicted_field(move, name, partner, field, query)
+
+    def _predict_taxes(self):
+        predicted_tax_ids = self._predicted_tax_ids(
+            self.move_id, self.name, self.partner_id
         )
+        _debug.logic("taxes_predicted", line=self, tax_ids=predicted_tax_ids)
+        if predicted_tax_ids == [None]:
+            return False
+        if predicted_tax_ids is not False and set(predicted_tax_ids) != set(
+            self.tax_ids.ids
+        ):
+            return predicted_tax_ids
+        return False
+
+    @api.model
+    def _predict_specific_tax(
+        self, move, name, partner, amount_type, amount, type_tax_use
+    ):
         _debug.pipeline(
             "tax_prediction_query",
             move=move,
@@ -221,7 +200,21 @@ class AccountMoveLine(models.Model):
             type_tax_use=type_tax_use,
             amount=amount,
         )
-        return self._predicted_field(move, name, partner, field, query)
+        return self._predicted_tax_ids(
+            move,
+            name,
+            partner,
+            SQL(
+                """
+                account_move_line__tax_rel__tax_ids.amount_type = %s
+                AND account_move_line__tax_rel__tax_ids.type_tax_use = %s
+                AND account_move_line__tax_rel__tax_ids.amount = %s
+                """,
+                amount_type,
+                type_tax_use,
+                amount,
+            ),
+        )
 
     @api.model
     def _predict_specific_product(self, move, name, partner):
@@ -338,7 +331,9 @@ class AccountMoveLine(models.Model):
         ):
             field = SQL("account_move_line.deductible_amount")
             query = self._prepare_predictive_query(
-                self.move_id, [("account_id", "=", self.account_id.id)]
+                self.move_id,
+                [("account_id", "=", self.account_id.id)],
+                partner=self.partner_id,
             )
             predicted_deductible_amount = self._predicted_field(
                 self.move_id, self.name, self.partner_id, field, query

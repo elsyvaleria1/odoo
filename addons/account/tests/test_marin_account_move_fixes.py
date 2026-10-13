@@ -8,7 +8,10 @@ from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tools.safe_eval import safe_eval
 
-from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.account.tests.common import (
+    AccountTestInvoicingCommon,
+    AccountTestInvoicingHttpCommon,
+)
 from odoo.addons.account.tests.common_reconcile import TestBankRecWidgetCommon
 from odoo.addons.account.tests.test_sequence_mixin import TestSequenceMixinCommon
 
@@ -900,3 +903,292 @@ class TestMarinDueDateDefault(AccountTestInvoicingCommon):
         invoice = self._invoice(invoice_payment_term_id=term.id)
 
         self.assertEqual(str(invoice.invoice_date_due), "2020-01-31")
+
+
+@tagged("post_install", "-at_install")
+class TestMarinPredictionCommercialPartner(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company.account_config_id.predict_bill_product = True
+        cls.acme = cls.env["res.partner"].create(
+            {"name": "Acme", "is_company": True, "company_id": False}
+        )
+        cls.john, cls.jane = cls.env["res.partner"].create(
+            [
+                {"name": "John", "parent_id": cls.acme.id, "type": "contact"},
+                {"name": "Jane", "parent_id": cls.acme.id, "type": "contact"},
+            ]
+        )
+        cls.chairs_account = cls.env["account.account"].create(
+            {"code": "B1CHAIR", "name": "Seating", "account_type": "expense"}
+        )
+
+    def _posted_bill(self, partner, **line_vals):
+        bill = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": partner.id,
+                "invoice_date": "2026-01-10",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "Ergonomic office chairs",
+                            "price_unit": 100.0,
+                            "account_id": self.chairs_account.id,
+                            "tax_ids": [Command.set(self.tax_purchase_b.ids)],
+                            **line_vals,
+                        }
+                    )
+                ],
+            }
+        )
+        bill.action_post()
+        return bill
+
+    def _draft_line(self, partner):
+        bill = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": partner.id,
+                "invoice_date": "2026-02-10",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "Ergonomic office chairs",
+                            "price_unit": 100.0,
+                            "tax_ids": [Command.clear()],
+                        }
+                    )
+                ],
+            }
+        )
+        return bill.invoice_line_ids
+
+    def test_taxes_are_predicted_on_a_bill_addressed_to_a_contact(self):
+        self._posted_bill(self.acme)
+        self._posted_bill(self.john)
+        line = self._draft_line(self.john)
+
+        self.assertEqual(line.partner_id, self.acme)
+        self.assertEqual(line._predict_taxes(), self.tax_purchase_b.ids)
+
+    def test_specific_tax_is_predicted_for_a_contact(self):
+        self._posted_bill(self.john)
+        draft = self._draft_line(self.jane).move_id
+
+        predicted = self.env["account.move.line"]._predict_specific_tax(
+            draft,
+            "Ergonomic office chairs",
+            self.jane,
+            self.tax_purchase_b.amount_type,
+            self.tax_purchase_b.amount,
+            "purchase",
+        )
+
+        self.assertEqual(predicted, self.tax_purchase_b.ids)
+
+    def test_account_is_learned_from_another_contact_of_the_vendor(self):
+        self._posted_bill(self.john)
+        line = self._draft_line(self.jane)
+
+        predicted = self.env["account.move.line"]._predict_specific_account(
+            line.move_id, line.name, line.partner_id
+        )
+
+        self.assertEqual(predicted, self.chairs_account.id)
+
+    def test_product_is_learned_from_another_contact_of_the_vendor(self):
+        self._posted_bill(self.john, product_id=self.product_a.id)
+        line = self._draft_line(self.acme)
+
+        self.assertEqual(line._predict_product(), self.product_a.id)
+
+    def test_deductible_amount_is_predicted_on_a_bill_addressed_to_a_contact(self):
+        self.env.user.group_ids += self.env.ref(
+            "account.group_partial_purchase_deductibility"
+        )
+        self._posted_bill(self.john, deductible_amount=40.0)
+        line = self._draft_line(self.john)
+        line.account_id = self.chairs_account
+
+        self.assertEqual(line._predict_deductible_amount(), 40.0)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinMoveBatchBFixes(AccountTestInvoicingCommon):
+    def _receivable_entry(self, balance, partner=None, post=True):
+        entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2026-01-15",
+                "journal_id": self.company_data["default_journal_misc"].id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "receivable",
+                            "account_id": self.company_data[
+                                "default_account_receivable"
+                            ].id,
+                            "partner_id": partner.id if partner else False,
+                            "balance": balance,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "counterpart",
+                            "account_id": self.company_data[
+                                "default_account_revenue"
+                            ].id,
+                            "balance": -balance,
+                        }
+                    ),
+                ],
+            }
+        )
+        if post:
+            entry.action_post()
+        return entry
+
+    def _reconcile_receivables(self, moves):
+        moves.line_ids.filtered(
+            lambda line: (
+                line.account_id == self.company_data["default_account_receivable"]
+            )
+        ).reconcile()
+
+    def test_partially_paid_invoice_has_reconciled_entries(self):
+        invoice = self.init_invoice(
+            "out_invoice", amounts=[1000.0], invoice_date="2026-01-10", post=True
+        )
+        payment = self._receivable_entry(-400.0, partner=self.partner_a)
+        self._reconcile_receivables(invoice + payment)
+
+        self.assertEqual(invoice.payment_state, "partial")
+        self.assertTrue(invoice.has_reconciled_entries)
+        self.assertTrue(payment.has_reconciled_entries)
+
+    def test_partially_used_entry_has_reconciled_entries(self):
+        invoice = self.init_invoice(
+            "out_invoice", amounts=[300.0], invoice_date="2026-01-10", post=True
+        )
+        payment = self._receivable_entry(-400.0, partner=self.partner_a)
+        self._reconcile_receivables(invoice + payment)
+
+        payment_line = payment.line_ids.filtered("matched_debit_ids")
+        self.assertFalse(payment_line.reconciled)
+        self.assertTrue(payment.has_reconciled_entries)
+        receivable = invoice.line_ids.filtered("matched_credit_ids")
+        self.assertCountEqual(
+            payment.line_ids._reconciled_lines(), (payment_line + receivable).ids
+        )
+
+    def test_unreconciled_entry_has_no_reconciled_entries(self):
+        invoice = self.init_invoice(
+            "out_invoice", amounts=[1000.0], invoice_date="2026-01-10", post=True
+        )
+
+        self.assertFalse(invoice.has_reconciled_entries)
+        self.assertEqual(invoice.line_ids._reconciled_lines(), [])
+
+    def test_zip_export_of_an_invoice_without_pdf_is_empty(self):
+        invoice = self.init_invoice(
+            "out_invoice", amounts=[100.0], invoice_date="2026-01-10", post=True
+        )
+        entry = self._receivable_entry(100.0, partner=self.partner_a)
+
+        self.assertFalse(invoice.invoice_pdf_report_id)
+        self.assertEqual(invoice._get_invoice_legal_documents_all(), [])
+        self.assertEqual(invoice._get_move_zip_export_docs(), [])
+        self.assertEqual(entry._get_move_zip_export_docs(), [])
+
+    def test_self_billing_placeholder_follows_the_partner(self):
+        journal = self.env["account.journal"].create(
+            {
+                "name": "Self billing",
+                "code": "SBIL",
+                "type": "purchase",
+                "is_self_billing": True,
+            }
+        )
+        bill = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "journal_id": journal.id,
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-01-10",
+            }
+        )
+        self.assertIn(str(self.partner_a.id).zfill(5), bill.name_placeholder)
+
+        bill.partner_id = self.partner_b
+
+        self.assertIn(str(self.partner_b.id).zfill(5), bill.name_placeholder)
+
+    def test_self_billing_highest_name_follows_the_partner(self):
+        journal = self.env["account.journal"].create(
+            {
+                "name": "Self billing",
+                "code": "SBIL",
+                "type": "purchase",
+                "is_self_billing": True,
+            }
+        )
+        vals = {
+            "move_type": "in_invoice",
+            "journal_id": journal.id,
+            "partner_id": self.partner_a.id,
+            "invoice_date": "2026-01-10",
+            "invoice_line_ids": [Command.create({"name": "x", "price_unit": 10.0})],
+        }
+        posted = self.env["account.move"].create(vals)
+        posted.action_post()
+        draft = self.env["account.move"].create(vals)
+        self.assertEqual(draft.highest_name, posted.name)
+
+        draft.partner_id = self.partner_b
+
+        self.assertFalse(draft.highest_name)
+
+    def test_partnerless_draft_invoice_lists_no_outstanding_credits(self):
+        self._receivable_entry(-100.0)
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "invoice_date": "2026-01-10",
+                "invoice_line_ids": [
+                    Command.create({"name": "line", "price_unit": 100.0})
+                ],
+            }
+        )
+
+        self.assertTrue(invoice._get_receivable_payable_lines())
+        self.assertFalse(invoice.invoice_outstanding_credits_debits_widget)
+        self.assertFalse(invoice.invoice_has_outstanding)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinMoveAttachmentsDownload(AccountTestInvoicingHttpCommon):
+    def test_a_move_without_documents_does_not_break_the_zip(self):
+        with_pdf, without_pdf = self.env["account.move"].create(
+            [
+                {
+                    "move_type": "out_invoice",
+                    "partner_id": self.partner_a.id,
+                    "invoice_line_ids": [Command.create({"price_unit": price})],
+                }
+                for price in (100.0, 200.0)
+            ]
+        )
+        (with_pdf + without_pdf).action_post()
+        with_pdf._generate_and_send()
+        self.assertTrue(with_pdf.invoice_pdf_report_id)
+        self.assertFalse(without_pdf.invoice_pdf_report_id)
+        self.authenticate(self.env.user.login, self.env.user.login)
+
+        res = self.url_open(
+            f"/account/download_move_attachments/{with_pdf.id},{without_pdf.id}"
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.headers["Content-Type"], "application/zip")

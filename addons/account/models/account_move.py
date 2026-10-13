@@ -746,7 +746,7 @@ class AccountMove(models.Model):
         comodel_name="account.payment.term",
         string="Payment Terms",
         compute="_compute_invoice_payment_term_id",
-        inverse="_inverse_invoice_payment_term_id",
+        inverse="_inverse_payment_term_line_name",
         precompute=True,
         store=True,
         readonly=False,
@@ -831,7 +831,7 @@ class AccountMove(models.Model):
 
     payment_reference = fields.Char(
         compute="_compute_payment_reference",
-        inverse="_inverse_payment_reference",
+        inverse="_inverse_payment_term_line_name",
         store=True,
         index="trigram",
         copy=False,
@@ -1305,7 +1305,7 @@ class AccountMove(models.Model):
             )
         ):
             move.payment_reference = move._get_invoice_computed_reference()
-        self._inverse_payment_reference()
+        self._update_payment_term_line_names()
 
     def _get_accounting_date_source(self):
         self.check_singleton()
@@ -1499,6 +1499,8 @@ class AccountMove(models.Model):
         "journal_id",
         "move_type",
         "name",
+        "origin_payment_id",
+        "partner_id",
         "posted_before",
         "sequence_number",
         "sequence_prefix",
@@ -1522,7 +1524,7 @@ class AccountMove(models.Model):
             else:
                 move.name_placeholder = False
 
-    @api.depends("journal_id", "date")
+    @api.depends("journal_id", "date", "move_type", "origin_payment_id", "partner_id")
     def _compute_highest_name(self) -> None:
         for record in self:
             record.highest_name = record._get_last_sequence()
@@ -2343,17 +2345,20 @@ class AccountMove(models.Model):
     @_debug.perf.timed
     def _compute_invoice_outstanding_credits_debits_widget(self) -> None:
         self.invoice_outstanding_credits_debits_widget = False
+        eligible = self.filtered(
+            lambda move: (
+                move.state in {"draft", "posted"}
+                and move.payment_state in ("not_paid", "partial")
+                and move.is_invoice(include_receipts=True)
+                and move.commercial_partner_id
+            )
+        )
+        if not eligible:
+            return
 
         candidates = {}
         groups = defaultdict(set)
-        for move in self:
-            if (
-                move.state not in {"draft", "posted"}
-                or move.payment_state not in ("not_paid", "partial")
-                or not move.is_invoice(include_receipts=True)
-            ):
-                continue
-
+        for move in eligible:
             pay_term_account_ids = move._get_receivable_payable_lines().account_id.ids
             if not pay_term_account_ids:
                 continue
@@ -2362,22 +2367,32 @@ class AccountMove(models.Model):
             key = (move.company_id.id, move.commercial_partner_id.id, move.is_inbound())
             groups[key].update(pay_term_account_ids)
 
-        if not candidates:
-            return
-
         lines_per_group = self._get_outstanding_lines_per_group(groups)
+        statement_lines_by_move = eligible._get_outstanding_bank_statement_lines()
         if _debug.logic.enabled:
             _debug.logic(
                 "outstanding_widget_lines",
                 candidates_count=len(candidates),
                 groups_count=len(groups),
                 group={k: len(v) for k, v in lines_per_group.items()},
+                statement_lines_per_move={
+                    m: len(lines) for m, lines in statement_lines_by_move.items()
+                },
             )
 
-        for move, account_id_set in candidates.items():
-            key = (move.company_id.id, move.commercial_partner_id.id, move.is_inbound())
-            content = self._get_outstanding_widget_content(
-                move, lines_per_group[key], account_id_set
+        for move in eligible:
+            content = []
+            if move in candidates:
+                key = (
+                    move.company_id.id,
+                    move.commercial_partner_id.id,
+                    move.is_inbound(),
+                )
+                content = self._get_outstanding_widget_content(
+                    move, lines_per_group[key], candidates[move]
+                )
+            content += move._get_outstanding_statement_line_widget_content(
+                statement_lines_by_move[move.id]
             )
             _debug.logic("outstanding_widget", move=move, content_count=len(content))
             if content:
@@ -2975,11 +2990,7 @@ class AccountMove(models.Model):
         for record in self:
             record.tax_country_code = record.tax_country_id.code
 
-    @api.depends(
-        "line_ids.reconciled",
-        "line_ids.matched_debit_ids",
-        "line_ids.matched_credit_ids",
-    )
+    @api.depends("line_ids.matched_debit_ids", "line_ids.matched_credit_ids")
     def _compute_has_reconciled_entries(self) -> None:
         for move in self:
             move.has_reconciled_entries = len(move.line_ids._reconciled_lines()) > 1
@@ -3038,7 +3049,12 @@ class AccountMove(models.Model):
 
     def _get_partner_credit_warning_exclude_amount(self):
         self.check_singleton()
-        return 0
+        return sum(
+            line._get_statement_line_residual_in(
+                self.company_id.currency_id, self.company_id
+            )
+            for line in self._get_outstanding_bank_statement_lines()[self.id]
+        )
 
     def _get_partner_credit_exposure(self) -> tuple[float, float]:
         self.check_singleton()
@@ -3919,17 +3935,14 @@ class AccountMove(models.Model):
             ),
         )
 
-    @api.onchange("payment_reference")
-    def _inverse_payment_reference(self) -> None:
+    def _update_payment_term_line_names(self) -> None:
         self.line_ids._conditional_add_to_compute(
             "name", lambda line: line.display_type == "payment_term"
         )
 
-    @api.onchange("invoice_payment_term_id")
-    def _inverse_invoice_payment_term_id(self) -> None:
-        self.line_ids._conditional_add_to_compute(
-            "name", lambda l: l.display_type == "payment_term"
-        )
+    @api.onchange("payment_reference", "invoice_payment_term_id")
+    def _inverse_payment_term_line_name(self) -> None:
+        self._update_payment_term_line_names()
 
     def _inverse_name(self) -> None:
         self._conditional_add_to_compute(
@@ -6960,14 +6973,17 @@ class AccountMove(models.Model):
     def action_view_business_doc(self):
         _debug.lifecycle("action_view_business_doc", records=self)
         self.check_singleton()
+        if self.statement_line_id:
+            _debug.logic(
+                "business_doc_resolved",
+                move=self,
+                res_model="account.bank.statement.line",
+            )
+            return self.action_view_bank_reconciliation_widget()
         if self.origin_payment_id:
             name = self.env._("Payment")
             res_model = "account.payment"
             res_id = self.origin_payment_id.id
-        elif self.statement_line_id:
-            name = self.env._("Bank Transaction")
-            res_model = "account.bank.statement.line"
-            res_id = self.statement_line_id.id
         else:
             name = self.env._("Journal Entry")
             res_model = "account.move"
@@ -6982,6 +6998,10 @@ class AccountMove(models.Model):
             "res_model": res_model,
             "res_id": res_id,
             "target": "current",
+            "context": {
+                "preferred_aml_value": None,
+                "preferred_aml_currency_id": None,
+            },
         }
 
     @_debug.perf.timed
@@ -7321,9 +7341,28 @@ class AccountMove(models.Model):
         return counterpart_line
 
     @_debug.perf.timed
-    def js_add_outstanding_line(self, line_id):
+    def js_add_outstanding_line(self, line_id) -> None:
         _debug.lifecycle("js_add_outstanding_line", records=self)
         counterpart_line = self._get_addable_outstanding_line(line_id)
+        if (
+            counterpart_line.account_id.account_type == "asset_cash"
+            and counterpart_line.statement_line_id
+        ):
+            _debug.logic(
+                "outstanding_statement_line_matched", move=self, line=counterpart_line
+            )
+            counterpart_line.statement_line_id.with_context(
+                skip_payment_tolerance=True,
+                stop_reco_at_first_partial=True,
+            ).set_line_bank_statement_line(
+                self.line_ids.filtered(
+                    lambda line: (
+                        line.account_id.account_type
+                        in {"asset_receivable", "liability_payable"}
+                    )
+                ).ids
+            )
+            return
         lines = counterpart_line
         lines += self.line_ids.filtered(
             lambda line: (
@@ -7336,20 +7375,30 @@ class AccountMove(models.Model):
             counterpart_line=counterpart_line,
             lines=lines - counterpart_line,
         )
-        return lines._reconcile_or_pend("outstanding")
+        lines._reconcile_or_pend("outstanding")
 
     @_debug.perf.timed
-    def js_remove_outstanding_partial(self, partial_id):
+    def js_remove_outstanding_partial(self, partial_id) -> None:
         _debug.lifecycle("js_remove_outstanding_partial", records=self)
         self.check_singleton()
         partial = self.env["account.partial.reconcile"].browse(partial_id).exists()
-        if not (partial.debit_move_id + partial.credit_move_id) & self.line_ids:
+        own_lines = (partial.debit_move_id + partial.credit_move_id) & self.line_ids
+        if not own_lines:
             raise UserError(
                 self.env._(
                     "This partial reconciliation does not concern this document."
                 )
             )
-        return partial.unlink()
+        if st_line := self.statement_line_id:
+            _debug.logic(
+                "statement_partial_removal",
+                move=self,
+                partial=partial,
+                own_lines=own_lines,
+            )
+            st_line.remove_reconciled_line(own_lines.ids)
+            return
+        partial.unlink()
 
     @_debug.perf.timed
     def button_set_checked(self) -> None:
@@ -8303,7 +8352,7 @@ class AccountMove(models.Model):
                 return self._get_invoice_pdf_proforma()
         return None
 
-    def _get_invoice_legal_documents_all(self, allow_fallback=False) -> list | None:
+    def _get_invoice_legal_documents_all(self, allow_fallback=False) -> list:
         self.check_singleton()
         if self.invoice_pdf_report_id:
             attachments = self.env[
@@ -8323,7 +8372,8 @@ class AccountMove(models.Model):
         elif allow_fallback:
             _debug.logic("legal_documents_proforma_fallback", move=self)
             return [self._get_invoice_pdf_proforma()]
-        return None
+        _debug.logic("legal_documents_none", move=self)
+        return []
 
     @_debug.perf.timed
     def _get_report_filename(self, file_name, extension) -> str:
@@ -8426,14 +8476,6 @@ class AccountMove(models.Model):
             return record_value != to_write_value
         return record[field_name] != vals[field_name]
 
-    @api.model
-    def _cleanup_write_orm_values(self, record, vals):
-        cleaned_vals = dict(vals)
-        for field_name in vals:
-            if not self._field_will_change(record, vals, field_name):
-                del cleaned_vals[field_name]
-        return cleaned_vals
-
     @contextmanager
     def _disable_recursion(self, key, default=None, target=True):
         stack = self.env.cr.cache.setdefault(
@@ -8531,7 +8573,7 @@ class AccountMove(models.Model):
             return bool(self.message_main_attachment_id)
         return bool(self.invoice_pdf_report_id)
 
-    def _get_move_zip_export_docs(self):
+    def _get_move_zip_export_docs(self) -> list:
         self.check_singleton()
 
         if self.state != "posted":

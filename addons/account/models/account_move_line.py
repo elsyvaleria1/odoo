@@ -4405,11 +4405,13 @@ class AccountMoveLine(models.Model):
 
     @_debug.perf.timed
     def _reconciled_lines(self):
-        reconciled = self.filtered("reconciled")
+        matched = self.filtered(
+            lambda line: line.matched_debit_ids or line.matched_credit_ids
+        )
         return (
-            reconciled
-            | reconciled.matched_debit_ids.debit_move_id
-            | reconciled.matched_credit_ids.credit_move_id
+            matched
+            | matched.matched_debit_ids.debit_move_id
+            | matched.matched_credit_ids.credit_move_id
         ).ids
 
     @_debug.perf.timed

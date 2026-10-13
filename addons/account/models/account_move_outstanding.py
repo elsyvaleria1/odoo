@@ -4,7 +4,6 @@ from contextlib import contextmanager
 import markupsafe
 
 from odoo import Command, api, fields, models
-from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
@@ -38,19 +37,6 @@ class AccountMove(models.Model):
         return self.statement_line_id._action_view_bank_reconciliation_widget(
             extra_domain=[("statement_id", "in", self.statement_id.ids)],
         )
-
-    @_debug.perf.timed
-    def action_view_business_doc(self):
-        _debug.lifecycle("action_view_business_doc", records=self)
-        if self.statement_line_id:
-            return self.action_view_bank_reconciliation_widget()
-        else:
-            action = super().action_view_business_doc()
-            action["context"] = action.get("context", {}) | {
-                "preferred_aml_value": None,
-                "preferred_aml_currency_id": None,
-            }
-            return action
 
     def _get_mail_thread_data_attachments(self):
         res = super()._get_mail_thread_data_attachments()
@@ -131,120 +117,30 @@ class AccountMove(models.Model):
                 lines_by_move[move.id] = lines
         return lines_by_move
 
-    @_debug.perf.timed
-    def _compute_invoice_outstanding_credits_debits_widget(self) -> None:
-        super()._compute_invoice_outstanding_credits_debits_widget()
-        candidates = self.filtered(
-            lambda move: (
-                move.state in {"draft", "posted"}
-                and move.payment_state in ("not_paid", "partial")
-                and move.is_invoice(include_receipts=True)
-                and move.partner_id
+    def _get_outstanding_statement_line_widget_content(self, lines) -> list:
+        self.check_singleton()
+        content = []
+        for line in lines:
+            amount = line._get_statement_line_residual_in(
+                self.currency_id, self.company_id
             )
-        )
-        if not candidates:
-            return
-
-        lines_by_move = candidates._get_outstanding_bank_statement_lines()
-        if _debug.logic.enabled:
-            _debug.logic(
-                "outstanding_statement_lines",
-                lines_per_move={m: len(l) for m, l in lines_by_move.items()},
+            if self.currency_id.is_zero(amount):
+                continue
+            content.append(
+                {
+                    "bank_label": line.name
+                    if line.journal_id.type == "bank"
+                    else False,
+                    "journal_name": line.ref or line.move_id.name,
+                    "amount": amount,
+                    "currency_id": self.currency_id.id,
+                    "id": line.id,
+                    "move_id": line.move_id.id,
+                    "date": fields.Date.to_string(line.date),
+                    "account_payment_id": line.payment_id.id,
+                }
             )
-
-        for move in candidates:
-            payments_widget_vals = {
-                "outstanding": True,
-                "content": [],
-                "move_id": move.id,
-                "title": self.env._("Outstanding credits")
-                if move.is_inbound()
-                else self.env._("Outstanding debits"),
-            }
-
-            for line in lines_by_move[move.id]:
-                amount = line._get_statement_line_residual_in(
-                    move.currency_id, move.company_id
-                )
-                if move.currency_id.is_zero(amount):
-                    continue
-
-                payments_widget_vals["content"].append(
-                    {
-                        "bank_label": line.name
-                        if line.journal_id.type == "bank"
-                        else False,
-                        "journal_name": line.ref or line.move_id.name,
-                        "amount": amount,
-                        "currency_id": move.currency_id.id,
-                        "id": line.id,
-                        "move_id": line.move_id.id,
-                        "date": fields.Date.to_string(line.date),
-                        "account_payment_id": line.payment_id.id,
-                    }
-                )
-
-            if payments_widget_vals["content"]:
-                if move.invoice_outstanding_credits_debits_widget:
-                    move.invoice_outstanding_credits_debits_widget["content"].extend(
-                        payments_widget_vals["content"]
-                    )
-                else:
-                    move.invoice_outstanding_credits_debits_widget = (
-                        payments_widget_vals
-                    )
-
-    def _get_partner_credit_warning_exclude_amount(self):
-        exclude_amount = super()._get_partner_credit_warning_exclude_amount()
-        for line in self._get_outstanding_bank_statement_lines()[self.id]:
-            exclude_amount += line._get_statement_line_residual_in(
-                self.company_id.currency_id, self.company_id
-            )
-
-        return exclude_amount
-
-    @_debug.perf.timed
-    def js_add_outstanding_line(self, line_id):
-        _debug.lifecycle("js_add_outstanding_line", records=self)
-        line = self._get_addable_outstanding_line(line_id)
-        if line.account_id.account_type == "asset_cash" and line.statement_line_id:
-            _debug.logic("outstanding_statement_line_matched", move=self, line=line)
-            return line.statement_line_id.with_context(
-                skip_payment_tolerance=True,
-                stop_reco_at_first_partial=True,
-            ).set_line_bank_statement_line(
-                self.line_ids.filtered(
-                    lambda line: (
-                        line.account_id.account_type
-                        in {"asset_receivable", "liability_payable"}
-                    )
-                ).ids
-            )
-        super().js_add_outstanding_line(line_id)
-        return None
-
-    @_debug.perf.timed
-    def js_remove_outstanding_partial(self, partial_id):
-        _debug.lifecycle("js_remove_outstanding_partial", records=self)
-        if st_line := self.statement_line_id:
-            self.check_singleton()
-            partial = self.env["account.partial.reconcile"].browse(partial_id).exists()
-            own_lines = (partial.credit_move_id + partial.debit_move_id) & self.line_ids
-            _debug.logic(
-                "statement_partial_removal",
-                move=self,
-                partial=partial,
-                own_lines=own_lines,
-            )
-            if not own_lines:
-                raise UserError(
-                    self.env._(
-                        "This partial reconciliation does not concern this document."
-                    )
-                )
-            st_line.remove_reconciled_line(own_lines.ids)
-        else:
-            super().js_remove_outstanding_partial(partial_id)
+        return content
 
 
 class AccountMoveLine(models.Model):
