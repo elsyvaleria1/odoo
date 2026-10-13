@@ -1519,8 +1519,10 @@ class AccountMoveLine(models.Model):
             result_per_invoice_line.update(move._prepare_epd_needed_per_line())
 
         for invoice_line in candidate_invoice_lines:
-            epd_needed = result_per_invoice_line[invoice_line]
-            invoice_line.epd_needed = {k: frozendict(v) for k, v in epd_needed.items()}
+            if epd_needed := result_per_invoice_line.get(invoice_line):
+                invoice_line.epd_needed = {
+                    k: frozendict(v) for k, v in epd_needed.items()
+                }
 
     @api.model
     def _get_epd_grouping_function(self):

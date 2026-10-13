@@ -99,12 +99,38 @@ class TestMarinFoldMoveHooks(AccountTestInvoicingCommon):
             first.action_draft()
 
     def test_edi_creation_runs_the_name_prediction_on_new_lines_after(self):
+        predicted_account = self.env["account.account"].create(
+            {"code": "EDIPRED", "name": "EDI predicted", "account_type": "expense"}
+        )
+        predicted_tax = self.env["account.tax"].create(
+            {"name": "EDI predicted tax", "amount": 7, "type_tax_use": "purchase"}
+        )
+        trained = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2019-01-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "Recycled printer paper",
+                            "price_unit": 100.0,
+                            "account_id": predicted_account.id,
+                            "tax_ids": [Command.set(predicted_tax.ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        trained.action_post()
         line_class = self.registry["account.move.line"]
+        predict = line_class._onchange_name_predictive
         predicted = []
         seen_flags = []
 
         def record_prediction(lines):
             predicted.extend(lines.ids)
+            return predict(lines)
 
         with patch.object(line_class, "_onchange_name_predictive", record_prediction):
             with (
@@ -119,7 +145,9 @@ class TestMarinFoldMoveHooks(AccountTestInvoicingCommon):
                     {
                         "partner_id": self.partner_a.id,
                         "invoice_line_ids": [
-                            Command.create({"name": "predict me", "price_unit": 10.0})
+                            Command.create(
+                                {"name": "Recycled printer paper", "price_unit": 250.0}
+                            )
                         ],
                     }
                 )
@@ -127,6 +155,18 @@ class TestMarinFoldMoveHooks(AccountTestInvoicingCommon):
 
         self.assertEqual(seen_flags, [True])
         self.assertEqual(predicted, move.invoice_line_ids.ids)
+        self.assertRecordValues(
+            move.invoice_line_ids,
+            [{"account_id": predicted_account.id, "tax_ids": predicted_tax.ids}],
+        )
+        self.assertRecordValues(
+            move.line_ids.filtered(lambda line: line.display_type == "tax"),
+            [{"tax_line_id": predicted_tax.id, "balance": 17.5}],
+        )
+        self.assertRecordValues(
+            move,
+            [{"amount_untaxed": 250.0, "amount_tax": 17.5, "amount_total": 267.5}],
+        )
 
     def _record_ids(self, events, name, method):
         def recorder(records, *args, **kwargs):

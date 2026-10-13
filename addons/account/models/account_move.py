@@ -2656,6 +2656,44 @@ class AccountMove(models.Model):
         )
         return epd_lines
 
+    def _balance_epd_base_lines_in_company_currency(self, base_lines) -> None:
+        company_currency = self.company_id.currency_id
+        epd_base_lines_per_account = defaultdict(list)
+        for base_line in base_lines:
+            if base_line["special_type"] == "early_payment":
+                epd_base_lines_per_account[base_line["account_id"]].append(base_line)
+        for account, epd_base_lines in epd_base_lines_per_account.items():
+            counterparts = [
+                base_line for base_line in epd_base_lines if not base_line["tax_ids"]
+            ]
+            if not counterparts or any(
+                base_line["manual_total_excluded"] is not None
+                for base_line in epd_base_lines
+            ):
+                continue
+            rounded_amounts = [
+                company_currency.round(base_line["tax_details"]["raw_total_excluded"])
+                for base_line in epd_base_lines
+            ]
+            residue = company_currency.round(sum(rounded_amounts))
+            if company_currency.is_zero(residue):
+                continue
+            for base_line, amount in zip(epd_base_lines, rounded_amounts, strict=True):
+                base_line["manual_total_excluded"] = amount
+            counterpart = max(
+                counterparts,
+                key=lambda base_line: abs(
+                    base_line["tax_details"]["raw_total_excluded"]
+                ),
+            )
+            counterpart["manual_total_excluded"] -= residue
+            _debug.logic(
+                "epd_company_residue_moved_to_counterpart",
+                move=self,
+                account=account,
+                residue=residue,
+            )
+
     @_debug.perf.timed
     def _prepare_cash_rounding_base_line_for_taxes_computation(
         self, cash_rounding_line
@@ -2813,6 +2851,7 @@ class AccountMove(models.Model):
                 else self.env["account.move.line"]
             )
         AccountTax._add_tax_details_in_base_lines(base_lines, self.company_id)
+        self._balance_epd_base_lines_in_company_currency(base_lines)
         tax_lines = [
             self._prepare_tax_line_for_taxes_computation(tax_line)
             for tax_line in tax_amls
@@ -4372,8 +4411,14 @@ class AccountMove(models.Model):
         )
 
         result_per_invoice_line = {}
+        undiscountable_groups = 0
         for grouping_key, values in values_per_grouping_key.items():
             if not grouping_key:
+                continue
+            if not grouping_key["tax_ids"]:
+                # Without a discountable tax the pair would be +X/-X on the same
+                # untaxed account, and its line key would be the counterpart's.
+                undiscountable_groups += 1
                 continue
             key_line = AccountMoveLine._get_epd_key(
                 self.id,
@@ -4432,6 +4477,7 @@ class AccountMove(models.Model):
             move=self,
             discount_percentage=discount_percentage,
             groups=len(values_per_grouping_key),
+            undiscountable_groups=undiscountable_groups,
             invoice_lines=len(result_per_invoice_line),
         )
         return result_per_invoice_line

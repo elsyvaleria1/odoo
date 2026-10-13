@@ -1558,6 +1558,178 @@ class TestMarinEarlyPaymentDiscountSync(AccountTestInvoicingCommon):
         self.assertEqual({line.id: line.tax_ids for line in epd_lines}, roles)
         self.assertEqual(sorted(epd_lines.mapped("balance")), [-200.0, 200.0])
 
+    def _invoice_with_an_undiscountable_line(self):
+        fixed_tax = self.env["account.tax"].create(
+            {"name": "EPD fixed", "amount_type": "fixed", "amount": 1.0}
+        )
+        return self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-01-01",
+                "invoice_payment_term_id": self.epd_term.id,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "discountable",
+                            "price_unit": 1000.0,
+                            "tax_ids": [Command.set(self.taxes.ids)],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "fixed tax only",
+                            "price_unit": 500.0,
+                            "tax_ids": [Command.set(fixed_tax.ids)],
+                        }
+                    ),
+                ],
+            }
+        )
+
+    def test_a_line_with_only_undiscountable_taxes_keeps_the_epd_roles(self):
+        invoice = self._invoice_with_an_undiscountable_line()
+        discountable, undiscountable = invoice.invoice_line_ids
+        epd_lines = self._epd_lines(invoice)
+        needed = {
+            key for line in invoice.invoice_line_ids for key in (line.epd_needed or {})
+        }
+        self.assertEqual(set(epd_lines.mapped("epd_key")), needed)
+        self.assertEqual(len(set(epd_lines.mapped("epd_key"))), len(epd_lines))
+        roles = {line.id: (line.tax_ids, line.balance) for line in epd_lines}
+        self.assertEqual(
+            sorted((len(taxes), balance) for taxes, balance in roles.values()),
+            [(0, -100.0), (2, 100.0)],
+        )
+
+        undiscountable.price_unit = 600.0
+
+        self.assertEqual(
+            {line.id: (line.tax_ids, line.balance) for line in epd_lines}, roles
+        )
+        self.assertRecordValues(
+            invoice,
+            [{"amount_untaxed": 1600.0, "amount_tax": 181.0, "amount_total": 1781.0}],
+        )
+
+        discountable.price_unit = 2000.0
+
+        self.assertEqual(
+            {line.id: (line.tax_ids, line.balance) for line in epd_lines},
+            {
+                line_id: (taxes, balance * 2)
+                for line_id, (taxes, balance) in roles.items()
+            },
+        )
+
+    def test_a_line_with_only_undiscountable_taxes_is_paid_with_its_discount(self):
+        invoice = self._invoice_with_an_undiscountable_line()
+        self.assertRecordValues(
+            invoice,
+            [{"amount_untaxed": 1500.0, "amount_tax": 181.0, "amount_total": 1681.0}],
+        )
+        self.assertEqual(
+            invoice.line_ids.filtered(lambda l: l.display_type == "tax")
+            .sorted("balance")
+            .mapped("balance"),
+            [-135.0, -45.0, -1.0],
+        )
+        invoice.action_post()
+        term_line = invoice.line_ids.filtered(
+            lambda l: l.display_type == "payment_term"
+        )
+        self.assertRecordValues(
+            term_line, [{"balance": 1681.0, "discount_amount_currency": 1531.0}]
+        )
+
+        payment = (
+            self.env["wizard.account.move.line.pay"]
+            .with_context(active_model="account.move", active_ids=invoice.ids)
+            .create({"payment_date": "2026-01-05"})
+            ._create_payments()
+        )
+
+        self.assertTrue(payment.is_invoice_reconciled)
+        self.assertEqual(payment.amount, 1531.0)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinEarlyPaymentDiscountForeignCurrency(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.eur = cls.setup_other_currency("EUR")
+        cls.epd_term = cls.env["account.payment.term"].create(
+            {
+                "name": "2% within 10 days",
+                "early_discount": True,
+                "discount_percentage": 2,
+                "discount_days": 10,
+                "early_pay_discount_computation": "mixed",
+                "line_ids": [
+                    Command.create(
+                        {"value": "percent", "nb_days": 0, "value_amount": 100}
+                    )
+                ],
+            }
+        )
+        cls.taxes = cls.env["account.tax"].create(
+            [
+                {"name": "FX 15", "amount": 15},
+                {"name": "FX 5", "amount": 5},
+                {
+                    "name": "FX 21 incl",
+                    "amount": 21,
+                    "price_include_override": "tax_included",
+                },
+            ]
+        )
+
+    def _invoice(self, currency, payment_term):
+        return self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2017-01-01",
+                "currency_id": currency.id,
+                "invoice_payment_term_id": payment_term.id,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "two taxes",
+                            "price_unit": 1234.56,
+                            "tax_ids": [Command.set(self.taxes[:2].ids)],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "tax included",
+                            "price_unit": 99.99,
+                            "tax_ids": [Command.set(self.taxes[2].ids)],
+                        }
+                    ),
+                ],
+            }
+        )
+
+    def test_epd_lines_balance_in_company_currency(self):
+        self.assertNotEqual(self.company_data["currency"], self.eur)
+        invoice = self._invoice(self.eur, self.epd_term)
+
+        epd_lines = invoice.line_ids.filtered(lambda l: l.display_type == "epd")
+        self.assertRecordValues(
+            epd_lines.sorted("balance"),
+            [
+                {"amount_currency": -26.34, "balance": -13.18},
+                {"amount_currency": 1.65, "balance": 0.83},
+                {"amount_currency": 24.69, "balance": 12.35},
+            ],
+        )
+        self.assertEqual(invoice.invoice_line_ids.mapped("balance"), [-617.28, -41.32])
+        self.assertAlmostEqual(sum(invoice.line_ids.mapped("balance")), 0.0)
+        invoice.action_post()
+        self.assertEqual(invoice.state, "posted")
+
 
 @tagged("post_install", "-at_install")
 class TestMarinSequenceFollowsTheJournal(AccountTestInvoicingCommon):
