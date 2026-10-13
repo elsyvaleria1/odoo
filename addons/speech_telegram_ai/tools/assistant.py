@@ -1,5 +1,5 @@
-from .voice import Heard
 from odoo.addons.integration_machine_learning.tools import get_router
+from odoo.addons.speech_telegram.tools.voice import Heard
 
 
 class BotAssistant:

@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.92
+:Version: 7.93
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -273,7 +273,8 @@ Registry and tree gates carry no code and are named by test. The full set is
    * - ``test_override_signatures``
      - Override whose signature diverges from its parent (§2.4.15)
    * - ``test_manifests``
-     - ``lint_manifest_shape`` and ``lint_manifest_value`` (§1.2)
+     - ``lint_manifest_shape``, ``lint_manifest_value`` and
+       ``manifest_import_undeclared`` (§1.2)
    * - ``test_test_holes``
      - Test file not imported exactly once in ``tests/__init__.py`` (§6.1)
    * - ``test_docstring``
@@ -555,6 +556,13 @@ from the workspace root::
 * **Version**: ``{odoo_version}.x.y.z`` -- *x* breaking, *y* feature, *z* fix.
 * **Omit empty keys.**
 * **``depends`` lists direct dependencies only**, never transitive ones.
+* **Code imports only from its dependency closure**
+  ``[test_lint manifest_import_undeclared]``. Why: an ``odoo.addons.<x>``
+  import resolves wherever ``x`` is on the addons path, so it passes every
+  test of a database that also installs ``x``, and breaks the one that
+  installs the importer without it. Move the code to a module that depends on
+  what it imports (a bridge, §1.5), or declare the dependency. ``iot_handlers/``
+  is exempt: the IoT box runs it, next to ``iot_drivers``.
 * **``auto_install`` only for a genuine bridge** between two independent
   modules, as ``sale_crm`` bridges ``sale`` and ``crm``.
 * **A mixin is not a module by default** (§2.2.2).
@@ -6376,6 +6384,12 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.93
+     - 2026-10-13
+     - §1.2: code imports only from its dependency closure;
+       ``manifest_import_undeclared`` holds each repository's
+       ``odoo.addons.<x>`` imports of an addon outside the importer's
+       closure at its floor.
    * - 7.92
      - 2026-10-13
      - §1.5: the fourteen names with ``l10n_<cc>`` inside lead with it

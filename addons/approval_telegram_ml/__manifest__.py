@@ -1,6 +1,6 @@
 {
     "name": "Telegram Approval Request Assistant",
-    "version": "19.0.1.5.0",
+    "version": "19.0.1.5.1",
     "oldest_upgradable_version": "19.0.1.5.0",
     "category": "Human Resources/Approvals",
     "summary": "Collect approval requests from text or voice with optional AI classification",
@@ -9,7 +9,7 @@
     "license": "Other OSI approved licence",
     "depends": [
         "integration_machine_learning",
-        "speech_telegram",
+        "speech_telegram_ai",
         "telegram",
         "approval_telegram",
         "approval",

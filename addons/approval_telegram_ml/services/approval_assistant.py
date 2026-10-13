@@ -6,7 +6,7 @@ from odoo import fields
 from odoo.libs.json import loads as json_loads
 
 from odoo.addons.integration_machine_learning.tools import MlRequest, get_router
-from odoo.addons.speech_telegram.tools.assistant import BotAssistant
+from odoo.addons.speech_telegram_ai.tools.assistant import BotAssistant
 
 if TYPE_CHECKING:
     from odoo.addons.approval.models.approval_category import ApprovalCategory

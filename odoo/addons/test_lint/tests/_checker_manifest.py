@@ -1,7 +1,7 @@
 import ast
 import re
 import sys
-from collections.abc import Iterator, Mapping
+from collections.abc import Collection, Iterator, Mapping
 from pathlib import Path
 
 from lxml import etree
@@ -127,6 +127,48 @@ def _bound_names(init: Path) -> set[str] | None:
                     return None
                 names.update(a.asname or a.name for a in aliases)
     return names
+
+
+RUN_OUTSIDE_THE_SERVER = frozenset({"iot_handlers", "_vendor", "node_modules"})
+
+
+def imported_addons(tree: ast.AST) -> Iterator[tuple[int, str]]:
+    for node in ast.walk(tree):
+        match node:
+            case ast.ImportFrom(module="odoo.addons", level=0, names=aliases):
+                for alias in aliases:
+                    if not alias.name.startswith("__"):
+                        yield node.lineno, alias.name
+            case ast.ImportFrom(module=str(module), level=0) if module.startswith(
+                "odoo.addons."
+            ):
+                yield node.lineno, module.split(".")[2]
+            case ast.Import(names=aliases):
+                for alias in aliases:
+                    if alias.name.startswith("odoo.addons."):
+                        yield node.lineno, alias.name.split(".")[2]
+
+
+def undeclared_imports(
+    module: str, module_dir: Path, closure: Collection[str]
+) -> Iterator[str]:
+    for path in sorted(module_dir.rglob("*.py")):
+        relative = path.relative_to(module_dir)
+        if RUN_OUTSIDE_THE_SERVER.intersection(relative.parts):
+            continue
+        source = path.read_bytes()
+        if b"odoo.addons" not in source:
+            continue
+        try:
+            tree = ast.parse(source, str(path))
+        except SyntaxError:
+            continue
+        for lineno, addon in sorted(imported_addons(tree)):
+            if addon not in closure:
+                yield (
+                    f"{module}: {relative}:{lineno} imports odoo.addons.{addon}, "
+                    "outside its dependency closure"
+                )
 
 
 class ManifestChecker:

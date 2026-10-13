@@ -103,6 +103,20 @@ def get_odoo_module_name(python_module_name: str) -> str:
     return python_module_name
 
 
+@functools.cache
+def depends_closure(addon: str) -> frozenset[str]:
+    seen = set()
+    todo = [addon]
+    while todo:
+        name = todo.pop()
+        if name in seen:
+            continue
+        seen.add(name)
+        manifest = Manifest.for_addon(name, display_warning=False)
+        todo.extend(manifest.get("depends", ()) if manifest else ())
+    return frozenset(seen)
+
+
 def _module_roots(modules: tuple[str, ...] | None = None) -> list[str]:
     if modules is None:
         return [m.path for m in Manifest.get_all_addon_manifests()]

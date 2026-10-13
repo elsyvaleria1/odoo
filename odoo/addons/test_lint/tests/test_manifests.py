@@ -10,7 +10,7 @@ from odoo.tests.common import BaseCase, no_retry
 from odoo.tools import mute_logger
 
 from . import _checker_manifest, _sort_manifests
-from .lint_case import LintCase, is_core_path, repo_of
+from .lint_case import LintCase, depends_closure, is_core_path, repo_of
 
 _logger = logging.getLogger(__name__)
 
@@ -72,6 +72,26 @@ class ManifestLinter(LintCase):
             "Declare `description` in the manifest, or ship a README.rst: "
             "a README.md is not read as the description, since it renders "
             "as reStructuredText (coding guidelines, §1.2.1).",
+        )
+
+    def test_every_addon_import_is_a_dependency(self):
+        undeclared: defaultdict[str, list[str]] = defaultdict(list)
+        for manifest in Manifest.get_all_addon_manifests():
+            undeclared[repo_of(str(manifest.path))].extend(
+                _checker_manifest.undeclared_imports(
+                    manifest.name,
+                    Path(manifest.path),
+                    depends_closure(manifest.name),
+                )
+            )
+        self.assert_ratchet_per_repository(
+            undeclared,
+            "manifest_import_undeclared",
+            "import(s) in <repo> of an addon outside the importer's dependency closure",
+            "Move the code to a module that depends on what it imports (a "
+            "bridge, auto_install when it joins two independent modules), or "
+            "declare the dependency: the imported addon may be absent from a "
+            "database that installs the importer.",
         )
 
     def test_known_licenses_are_the_selection_ir_module_module_offers(self):
@@ -238,6 +258,39 @@ class TestManifestChecker(BaseCase):
         for expected, data in cases.items():
             with self.subTest(expected=expected):
                 self.assertIn(f"thing: {expected}", self._findings(**data))
+
+    def test_an_import_outside_the_dependency_closure_is_named(self):
+        (self.module / "tools").mkdir()
+        (self.module / "tools" / "assistant.py").write_text(
+            textwrap.dedent("""
+                import odoo.addons.sale.models
+                from odoo.addons import __path__, crm
+                from odoo.addons.base.models import res_partner
+                from odoo.addons.integration_machine_learning.tools import get_router
+                from odoo.addons.speech_telegram.tools.voice import Heard
+                from .voice import Heard
+            """)
+        )
+        (self.module / "iot_handlers" / "drivers").mkdir(parents=True)
+        (self.module / "iot_handlers" / "drivers" / "driver.py").write_text(
+            "from odoo.addons.iot_drivers.driver import Driver\n"
+        )
+        self.assertEqual(
+            list(
+                _checker_manifest.undeclared_imports(
+                    "thing", self.module, {"thing", "base", "speech_telegram"}
+                )
+            ),
+            [
+                f"thing: tools/assistant.py:{lineno} imports odoo.addons.{addon}, "
+                "outside its dependency closure"
+                for lineno, addon in (
+                    (2, "sale"),
+                    (3, "crm"),
+                    (5, "integration_machine_learning"),
+                )
+            ],
+        )
 
     def test_a_single_country_module_is_expected_to_say_l10n(self):
         self.assertIn(

@@ -1,6 +1,6 @@
 {
     "name": "Telegram Questions About Odoo",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.2.1",
     "oldest_upgradable_version": "19.0.1.0.0",
     "category": "Hidden",
     "summary": "Ask Odoo from Telegram: answers, PDFs and authorized changes",
@@ -11,7 +11,7 @@
         "account",
         "attachment_indexation",
         "integration_machine_learning",
-        "speech_telegram",
+        "speech_telegram_ai",
         "telegram",
     ],
     "data": [

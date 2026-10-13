@@ -53,21 +53,7 @@ def _tree_scan() -> dict:
     return scan_patches(_source_files())
 
 
-@functools.cache
-def depends_closure(addon: str) -> frozenset[str]:
-    seen = set()
-    todo = [addon]
-    while todo:
-        name = todo.pop()
-        if name in seen:
-            continue
-        seen.add(name)
-        manifest = Manifest.for_addon(name, display_warning=False)
-        todo.extend(manifest.get("depends", ()) if manifest else ())
-    return frozenset(seen)
-
-
-def unordered_pairs(patches: list[dict], closure=depends_closure) -> set[str]:
+def unordered_pairs(patches: list[dict], closure=lint_case.depends_closure) -> set[str]:
     addons_by_key = defaultdict(set)
     for patch in patches:
         if patch["target"] and patch["keys"] is not None:
