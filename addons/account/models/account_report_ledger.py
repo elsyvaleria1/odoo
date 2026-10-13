@@ -1168,45 +1168,43 @@ class AccountReport(models.Model):
         )
 
         if self.allow_foreign_vat:
-            if (
-                self.country_id
-                == self.env.company.tax_config_id.account_fiscal_country_id
-            ):
-                _debug.logic("foreign_vat_scope", report=self, scope="domestic")
+            country = self._get_tax_filing_country(options)
+            if country == self.env.company.tax_config_id.account_fiscal_country_id:
+                _debug.logic(
+                    "foreign_vat_scope", report=self, scope="domestic", country=country
+                )
                 domains.append(
                     [
                         "|",
                         "|",
                         ("move_id.fiscal_position_id", "=", False),
                         ("move_id.fiscal_position_id.foreign_vat", "=", False),
-                        (
-                            "tax_tag_ids.country_id",
-                            "=",
-                            self.country_id.id,
-                        ),
+                        ("tax_tag_ids.country_id", "=", country.id),
                     ]
                 )
-            elif self.country_id:
-                _debug.logic("foreign_vat_scope", report=self, scope="foreign")
+            elif country:
+                _debug.logic(
+                    "foreign_vat_scope", report=self, scope="foreign", country=country
+                )
                 domains.append(
                     [
                         "|",
-                        (
-                            "tax_tag_ids.country_id",
-                            "=",
-                            self.country_id.id,
-                        ),
+                        ("tax_tag_ids.country_id", "=", country.id),
                         "&",
-                        (
-                            "move_id.fiscal_position_id.country_id",
-                            "=",
-                            self.country_id.id,
-                        ),
+                        ("move_id.fiscal_position_id.country_id", "=", country.id),
                         ("move_id.fiscal_position_id.foreign_vat", "!=", False),
                     ]
                 )
 
         return domains
+
+    def _get_tax_filing_country(self, options):
+        return (
+            self.country_id
+            or self.env["account.return.type"]
+            .browse((options.get("return_periodicity") or {}).get("return_type_id"))
+            .country_id
+        )
 
     def _get_filter_journals(self, options, additional_domain=None):
         return (

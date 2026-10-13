@@ -622,3 +622,94 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
         self.assertEqual(
             self.root_company.account_config_id.tax_lock_date, date(2024, 1, 31)
         )
+
+    def test_a_foreign_type_over_a_countryless_report_closes_its_country_only(self):
+        belgium = self.env.ref("base.be")
+        self.root_company.account_config_id.account_opening_date = "2023-01-01"
+        foreign_vat = self.env["account.fiscal.position"].create(
+            {
+                "name": "Belgian VAT",
+                "company_id": self.root_company.id,
+                "country_id": belgium.id,
+                "foreign_vat": "BE0477472701",
+            }
+        )
+        payable, receivable = (
+            self.company_data["default_account_tax_sale"].copy({"code": code})
+            for code in ("252002", "152002")
+        )
+        domestic_tax = self.company_data["default_tax_sale"]
+        belgian_tax = domestic_tax.copy(
+            {
+                "name": "BE 21%",
+                "amount": 21,
+                "country_id": belgium.id,
+                "tax_group_id": self.env["account.tax.group"]
+                .create(
+                    {
+                        "name": "BE VAT",
+                        "country_id": belgium.id,
+                        "company_ids": [Command.set(self.root_company.ids)],
+                        "tax_payable_account_id": payable.id,
+                        "tax_receivable_account_id": receivable.id,
+                    }
+                )
+                .id,
+            }
+        )
+        self.env["account.move"].create(
+            [
+                {
+                    "move_type": "out_invoice",
+                    "partner_id": self.partner_a.id,
+                    "invoice_date": invoice_date,
+                    "fiscal_position_id": fiscal_position.id,
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "name": "line",
+                                "price_unit": amount,
+                                "tax_ids": [Command.set(tax.ids)],
+                            }
+                        )
+                    ],
+                }
+                for invoice_date, fiscal_position, tax, amount in (
+                    (
+                        "2024-01-10",
+                        self.env["account.fiscal.position"],
+                        domestic_tax,
+                        100.0,
+                    ),
+                    ("2024-01-12", foreign_vat, belgian_tax, 1000.0),
+                )
+            ]
+        ).action_post()
+        return_type = self.env["account.return.type"].create(
+            {
+                "name": "VAT Return (Marin, BE)",
+                "report_id": self.tax_report.id,
+                "country_id": belgium.id,
+                "auto_generate": False,
+            }
+        )
+        tax_return = self.env["account.return"].create(
+            {
+                "name": "BE VAT January",
+                "type_id": return_type.id,
+                "company_id": self.root_company.id,
+                "date_from": "2024-01-01",
+                "date_to": "2024-01-31",
+            }
+        )
+
+        tax_return.action_validate(bypass_failing_tests=True)
+
+        closed_taxes = tax_return.closing_move_ids.line_ids.filtered(
+            lambda line: line.account_id not in (payable | receivable)
+        )
+        self.assertRecordValues(
+            closed_taxes,
+            [{"name": "BE 21%", "debit": 210.0, "credit": 0.0}],
+        )
+        self.assertEqual(tax_return.period_amount_to_pay, 210.0)
