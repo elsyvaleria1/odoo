@@ -1,15 +1,11 @@
 import logging
 
-from odoo import fields, models, modules, tools
+from odoo import fields, models
 from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
 _logger = logging.getLogger("odoo.addons.product.merge")
-
-
-def _can_commit() -> bool:
-    return not (tools.config["test_enable"] or modules.module.current_test)
 
 
 class WizardProductTemplateMergeLine(models.TransientModel):

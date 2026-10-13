@@ -350,3 +350,65 @@ class TestMarinZipDuplicateNames(AccountTestInvoicingCommon):
                 {archive.read(name) for name in archive.namelist()},
                 {b"content 0", b"content 1"},
             )
+
+
+@tagged("post_install", "-at_install")
+class TestMarinZipCaseInsensitiveNames(AccountTestInvoicingCommon):
+    def test_names_differing_only_by_case_do_not_collide(self):
+        self.assertEqual(
+            unique_filenames(["INV_1.pdf", "inv_1.pdf", "Inv_1.PDF", "inv_1 (1).pdf"]),
+            ["INV_1.pdf", "inv_1 (1).pdf", "Inv_1 (2).PDF", "inv_1 (1) (1).pdf"],
+        )
+
+    def test_a_name_that_is_only_an_extension_keeps_it(self):
+        self.assertEqual(
+            unique_filenames([".pdf", ".pdf", ".PDF"]),
+            [".pdf", "(1).pdf", "(2).PDF"],
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestMarinAnalyticButtonsCountWhatTheyOpen(AccountTestInvoicingCommon):
+    def _move(self, move_type, analytic_account, post):
+        move = self.env["account.move"].create(
+            {
+                "move_type": move_type,
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-06-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "line",
+                            "price_unit": 100.0,
+                            "tax_ids": [Command.clear()],
+                            "analytic_distribution": {analytic_account.id: 100},
+                        }
+                    )
+                ],
+            }
+        )
+        if post:
+            move.action_post()
+        return move
+
+    def test_invoice_and_bill_buttons_open_what_they_count(self):
+        plan = self.env["account.analytic.plan"].create({"name": "Buttons plan"})
+        analytic_account = self.env["account.analytic.account"].create(
+            {"name": "Buttons analytic", "plan_id": plan.id}
+        )
+        posted_invoice = self._move("out_invoice", analytic_account, post=True)
+        self._move("out_invoice", analytic_account, post=False)
+        posted_bill = self._move("in_invoice", analytic_account, post=True)
+        self._move("in_invoice", analytic_account, post=False)
+
+        for count_field, action, posted in (
+            ("invoice_count", analytic_account.action_view_invoice, posted_invoice),
+            (
+                "vendor_bill_count",
+                analytic_account.action_view_vendor_bill,
+                posted_bill,
+            ),
+        ):
+            opened = self.env["account.move"].search(action()["domain"])
+            self.assertEqual(opened, posted, count_field)
+            self.assertEqual(analytic_account[count_field], len(opened), count_field)

@@ -25,6 +25,7 @@ from odoo.exceptions import (
 )
 from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
+from odoo.modules.module import can_commit
 from odoo.tools import (
     SQL,
     LazyTranslate,
@@ -46,7 +47,6 @@ from odoo.tools.mail import is_html_empty
 from odoo.tools.misc import StackMap
 from odoo.tools.safe_eval import safe_eval
 
-from odoo.addons.account.tools.commit import can_commit
 from odoo.addons.account.tools.display_types import NON_ACCOUNTABLE_DISPLAY_TYPES
 
 declare_authority_keys(
@@ -287,6 +287,7 @@ _SQL_RECONCILED_PARTIALS = """
                 part.id,
                 part.exchange_move_id,
                 part.debit_amount_currency AS amount,
+                part.credit_amount_currency AS counterpart_amount,
                 part.credit_move_id AS counterpart_line_id
             FROM account_partial_reconcile part
             WHERE part.debit_move_id IN %(line_ids)s
@@ -297,9 +298,12 @@ _SQL_RECONCILED_PARTIALS = """
                 part.id,
                 part.exchange_move_id,
                 part.credit_amount_currency AS amount,
+                part.debit_amount_currency AS counterpart_amount,
                 part.debit_move_id AS counterpart_line_id
             FROM account_partial_reconcile part
             WHERE part.credit_move_id IN %(line_ids)s
+
+            ORDER BY id
 """
 
 _SQL_EXCHANGE_MOVE_PARTIALS = """
@@ -1502,6 +1506,7 @@ class AccountMove(models.Model):
         "name",
         "origin_payment_id",
         "partner_id",
+        "partner_id.commercial_partner_id",
         "posted_before",
         "sequence_number",
         "sequence_prefix",
@@ -1525,7 +1530,14 @@ class AccountMove(models.Model):
             else:
                 move.name_placeholder = False
 
-    @api.depends("journal_id", "date", "move_type", "origin_payment_id", "partner_id")
+    @api.depends(
+        "journal_id",
+        "date",
+        "move_type",
+        "origin_payment_id",
+        "partner_id",
+        "partner_id.commercial_partner_id",
+    )
     def _compute_highest_name(self) -> None:
         for record in self:
             record.highest_name = record._get_last_sequence()
@@ -5920,6 +5932,7 @@ class AccountMove(models.Model):
                     "aml_id": values["counterpart_line_id"],
                     "partial_id": values["id"],
                     "amount": values["amount"],
+                    "counterpart_amount": values["counterpart_amount"],
                     "currency": self.currency_id,
                 }
             )
@@ -5951,23 +5964,6 @@ class AccountMove(models.Model):
                 partial_values["amount"] = abs(partial_values["aml"].balance)
 
         return partial_values_list
-
-    def _get_reconciled_invoices_partials(self):
-        self.check_singleton()
-        pay_term_lines = self._get_receivable_payable_lines()
-        invoice_partials = [
-            (partial, partial.credit_amount_currency, partial.debit_move_id)
-            for partial in pay_term_lines.matched_debit_ids
-        ] + [
-            (partial, partial.debit_amount_currency, partial.credit_move_id)
-            for partial in pay_term_lines.matched_credit_ids
-        ]
-        _debug.pipeline(
-            "invoice_partials_collected",
-            move=self,
-            partials=len(invoice_partials),
-        )
-        return invoice_partials
 
     @_debug.perf.timed
     def _reconcile_reversed_moves(self, reverse_moves, move_reverse_cancel):
@@ -8385,9 +8381,8 @@ class AccountMove(models.Model):
     def _get_invoice_report_filename(self, extension="pdf", report=None):
         self.check_singleton()
         if not report:
-            report = (
-                self.commercial_partner_id.invoice_template_pdf_report_id
-                or self.env.ref("account.account_invoices")
+            report = self.env["mixin.account.move.send"]._get_default_pdf_report_id(
+                self
             )
         if report.print_report_name and isinstance(report.print_report_name, str):
             file_name = safe_eval(report.print_report_name, {"object": self})

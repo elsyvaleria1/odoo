@@ -5,9 +5,8 @@ from odoo import api, fields, models, service
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
+from odoo.modules.module import can_commit as transaction_can_commit
 from odoo.tools import SQL
-
-from odoo.addons.account.tools.commit import can_commit as transaction_can_commit
 
 _logger = logging.getLogger(__name__)
 

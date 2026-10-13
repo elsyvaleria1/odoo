@@ -12,13 +12,14 @@ class AccountAnalyticAccount(models.Model):
 
     def _get_move_line_domain(self, move_types) -> list:
         return [
+            ("parent_state", "=", "posted"),
             ("move_id.move_type", "in", move_types),
             ("analytic_distribution", "in", self.ids),
         ]
 
     def _get_move_count_by_account(self, move_types) -> dict:
         data = self.env["account.move.line"]._read_group(
-            [("parent_state", "=", "posted"), *self._get_move_line_domain(move_types)],
+            self._get_move_line_domain(move_types),
             ["analytic_distribution"],
             ["__count"],
         )

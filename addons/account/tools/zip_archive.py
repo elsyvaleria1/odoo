@@ -12,10 +12,12 @@ def unique_filenames(filenames: Iterable[str]) -> list[str]:
         if not dot:
             base, ext = filename, ""
         counter = 0
-        while candidate in used:
+        while candidate.casefold() in used:
             counter += 1
-            candidate = f"{base} ({counter}){dot}{ext}"
-        used.add(candidate)
+            candidate = (
+                f"{base} ({counter}){dot}{ext}" if base else f"({counter}){dot}{ext}"
+            )
+        used.add(candidate.casefold())
         result.append(candidate)
     return result
 

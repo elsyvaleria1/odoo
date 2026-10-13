@@ -8,9 +8,10 @@ from odoo.db.errors import PG_USER_FAULT_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.libs.debug_log import DebugLog
+from odoo.modules.module import can_commit
 from odoo.tools import SQL, format_list
 
-from .wizard_product_template_merge_line import _can_commit, _logger
+from .wizard_product_template_merge_line import _logger
 
 if TYPE_CHECKING:
     from odoo.addons.product.models.product_product import ProductProduct
@@ -597,7 +598,7 @@ class WizardProductTemplateMerge(models.TransientModel):
                 )
                 continue
             line.unlink()
-            if _can_commit():
+            if can_commit():
                 self.env["ir.cron"]._commit_progress()
 
         return self._action_next_screen()

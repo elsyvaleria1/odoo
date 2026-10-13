@@ -241,6 +241,26 @@ class TestMarinJournalAccountFixes(AccountTestInvoicingCommon):
 
         self.assertEqual(limits[journal.id], date(2026, 3, 31))
 
+    def test_dashboard_sums_conversions_before_rounding_the_total(self):
+        company = self.env.company
+        target = self.setup_other_currency("EUR", rates=[("2016-01-01", 1.4)])
+        rows = [
+            {
+                "currency": company.currency_id.id,
+                "company_id": company.id,
+                "invoice_date": date(2026, 8, 1),
+                "amount_total": 0.01,
+                "amount_total_company": 0.01,
+            }
+        ] * 5
+
+        count, total = self.env["account.journal"]._count_results_and_sum_amounts(
+            rows, target
+        )
+
+        self.assertEqual(count, 5)
+        self.assertAlmostEqual(total, 0.07)
+
     def test_post_all_entries_leaves_posted_moves_out_of_the_selection(self):
         journal = self.company_data["default_journal_misc"]
         posted, draft = self.env["account.move"].create(
@@ -416,9 +436,7 @@ class TestMarinJournalAccountFixes(AccountTestInvoicingCommon):
 
         self.assertEqual(analytic.invoice_count, 1)
         action = analytic.action_view_invoice()
-        self.assertEqual(
-            self.env["account.move"].search(action["domain"]), receipt | draft
-        )
+        self.assertEqual(self.env["account.move"].search(action["domain"]), receipt)
 
     def test_tax_merge_sees_hashed_entries_that_only_use_the_tax_as_base(self):
         exempt = self.env["account.tax"].create(

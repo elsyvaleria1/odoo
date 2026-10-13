@@ -1227,3 +1227,253 @@ class TestMarinMoveAttachmentsDownload(AccountTestInvoicingHttpCommon):
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.headers["Content-Type"], "application/zip")
+
+
+@tagged("post_install", "-at_install")
+class TestMarinPaymentReceiptPartials(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.eur = cls.setup_other_currency("EUR")
+
+    def _invoice_paid_twice(
+        self, payment_currency, invoice_date="2016-01-01", payment_date="2017-01-01"
+    ):
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": invoice_date,
+                "date": invoice_date,
+                "currency_id": self.eur.id,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "line",
+                            "price_unit": 1200.0,
+                            "tax_ids": [Command.clear()],
+                        }
+                    )
+                ],
+            }
+        )
+        invoice.action_post()
+        amount = 600.0 if payment_currency == self.eur else 300.0
+        payments = self.env["account.payment"]
+        for _i in range(2):
+            payments |= (
+                self.env["wizard.account.move.line.pay"]
+                .with_context(active_model="account.move", active_ids=invoice.ids)
+                .create(
+                    {
+                        "amount": amount,
+                        "currency_id": payment_currency.id,
+                        "payment_date": payment_date,
+                    }
+                )
+                ._create_payments()
+            )
+        return invoice, payments
+
+    def _render(self, payment):
+        return (
+            self.env["ir.actions.report"]
+            ._render_qweb_html("account.report_payment_receipt", payment.ids)[0]
+            .decode()
+        )
+
+    def test_receipt_lists_payments_but_not_exchange_differences(self):
+        invoice, payments = self._invoice_paid_twice(
+            self.eur, invoice_date="2017-01-01", payment_date="2016-06-01"
+        )
+        exchange_moves = invoice.line_ids.matched_credit_ids.credit_move_id.move_id - (
+            payments.move_id
+        )
+        self.assertEqual(len(exchange_moves), 2)
+        html = self._render(payments[1])
+        for payment in payments:
+            self.assertIn(payment.move_id.name, html)
+        for exchange_move in exchange_moves:
+            self.assertNotIn(exchange_move.name, html)
+        self.assertEqual(html.count("-\ufeff600.00"), 2)
+
+    def test_a_billing_user_of_one_company_renders_the_receipt(self):
+        _invoice, payments = self._invoice_paid_twice(
+            self.eur, invoice_date="2017-01-01", payment_date="2016-06-01"
+        )
+        company = self.company_data["company"]
+        user = self._create_new_internal_user(
+            login="receipt_billing",
+            groups="account.group_account_invoice",
+            company_id=company.id,
+            company_ids=[Command.set(company.ids)],
+        )
+        html = (
+            self.env["ir.actions.report"]
+            .with_user(user)
+            ._render_qweb_html("account.report_payment_receipt", payments[1].ids)[0]
+            .decode()
+        )
+        for payment in payments:
+            self.assertIn(payment.move_id.name, html)
+
+    def test_receipt_shows_the_matched_amount_in_the_payment_currency(self):
+        invoice, payments = self._invoice_paid_twice(self.company_data["currency"])
+        html = self._render(payments[0])
+        self.assertIn("Amount In Currency", html)
+        self.assertEqual(html.count("-\ufeff200.00"), 2)
+        self.assertEqual(html.count("-\ufeff600.00"), 2)
+        self.assertEqual(invoice.amount_residual, 0.0)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinTermAccountFallback(AccountTestInvoicingCommon):
+    def _invoice_vals(self):
+        return {
+            "move_type": "out_invoice",
+            "partner_id": self.partner_a.id,
+            "invoice_date": "2026-06-01",
+            "invoice_line_ids": [
+                Command.create(
+                    {"name": "line", "price_unit": 100.0, "tax_ids": [Command.clear()]}
+                )
+            ],
+        }
+
+    def _recompute_term_accounts(self, moves):
+        term_lines = moves.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        )
+        self.env.invalidate_all()
+        with self.capturedQueries() as queries:
+            term_lines._update_account_id_on_term_lines()
+        return term_lines, [
+            query
+            for query in queries
+            if '"account_account"' in query and "account_type" in query
+        ]
+
+    def test_partner_accounts_need_no_fallback_search(self):
+        moves = self.env["account.move"].create(
+            [self._invoice_vals() for _i in range(20)]
+        )
+        term_lines, fallback_queries = self._recompute_term_accounts(moves)
+        self.assertEqual(fallback_queries, [])
+        self.assertEqual(
+            term_lines.account_id, self.partner_a.property_account_receivable_id
+        )
+
+    def test_fallback_is_searched_once_per_company_and_type(self):
+        moves = self.env["account.move"].create(
+            [self._invoice_vals() for _i in range(20)]
+        )
+        company = self.company_data["company"]
+        for partner in (self.partner_a, company.partner_id):
+            partner.with_company(company).property_account_receivable_id = False
+        self.assertFalse(
+            company.partner_id.with_company(company).property_account_receivable_id
+        )
+        expected = self.env["account.account"].search(
+            [
+                ("company_ids", "in", company.ids),
+                ("account_type", "=", "asset_receivable"),
+            ],
+            order="id",
+            limit=1,
+        )
+        term_lines, fallback_queries = self._recompute_term_accounts(moves)
+        self.assertEqual(len(fallback_queries), 1)
+        self.assertEqual(term_lines.account_id, expected)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinJournalInvoiceTemplate(AccountTestInvoicingHttpCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.journal_report = cls.env.ref("account.account_invoices_without_payment")
+        cls.journal_report.write(
+            {
+                "is_invoice_report": True,
+                "print_report_name": "'Journal_%s' % object._get_report_base_filename()",
+            }
+        )
+        cls.company_data[
+            "default_journal_sale"
+        ].invoice_template_pdf_report_id = cls.journal_report
+        cls.user_portal = cls._create_new_portal_user()
+        cls.invoice = cls.init_invoice(
+            "out_invoice", amounts=[100], partner=cls.user_portal.partner_id, post=True
+        )
+
+    def test_filename_follows_the_journal_template(self):
+        self.assertEqual(
+            self.env["mixin.account.move.send"]._get_default_pdf_report_id(
+                self.invoice
+            ),
+            self.journal_report,
+        )
+        self.assertEqual(
+            self.invoice._get_invoice_report_filename(),
+            f"Journal_{self.invoice._get_report_base_filename().replace('/', '_')}.pdf",
+        )
+
+    def test_portal_renders_the_journal_template(self):
+        rendered = []
+        Report = type(self.env["ir.actions.report"])
+        original = Report._render_qweb_html
+
+        def recording(report_self, report_ref, *args, **kwargs):
+            rendered.append(report_ref)
+            return original(report_self, report_ref, *args, **kwargs)
+
+        self.authenticate(self.user_portal.login, self.user_portal.login)
+        with patch.object(Report, "_render_qweb_html", recording):
+            res = self.url_open(f"/my/invoices/{self.invoice.id}?report_type=html")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(rendered[0], self.journal_report.report_name)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinSelfBillingCommercialPartner(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.journal = cls.env["account.journal"].create(
+            {
+                "name": "Self billing",
+                "code": "SBIL",
+                "type": "purchase",
+                "is_self_billing": True,
+            }
+        )
+        cls.contact = cls.env["res.partner"].create(
+            {"name": "Contact", "parent_id": cls.partner_a.id}
+        )
+
+    def _vals(self, partner):
+        return {
+            "move_type": "in_invoice",
+            "journal_id": self.journal.id,
+            "partner_id": partner.id,
+            "invoice_date": "2026-01-10",
+            "invoice_line_ids": [Command.create({"name": "x", "price_unit": 10.0})],
+        }
+
+    def test_placeholder_follows_a_reparented_contact(self):
+        bill = self.env["account.move"].create(self._vals(self.contact))
+        self.assertIn(str(self.partner_a.id).zfill(5), bill.name_placeholder)
+
+        self.contact.parent_id = self.partner_b
+
+        self.assertIn(str(self.partner_b.id).zfill(5), bill.name_placeholder)
+
+    def test_highest_name_follows_a_reparented_contact(self):
+        posted = self.env["account.move"].create(self._vals(self.partner_a))
+        posted.action_post()
+        draft = self.env["account.move"].create(self._vals(self.contact))
+        self.assertEqual(draft.highest_name, posted.name)
+
+        self.contact.parent_id = self.partner_b
+
+        self.assertFalse(draft.highest_name)

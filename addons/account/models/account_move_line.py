@@ -768,7 +768,8 @@ class AccountMoveLine(models.Model):
         if not term_lines:
             _debug.logic("term_accounts_skipped", lines=self, reason="no_term_lines")
             return
-        default_account_ids = term_lines._get_term_default_accounts()
+        previous_account_ids = term_lines._get_previous_term_account_ids()
+        fallback_account_ids = {}
         for line in term_lines:
             move = line.move_id
             is_receivable = move.is_sale_document(include_receipts=True)
@@ -780,13 +781,23 @@ class AccountMoveLine(models.Model):
             )
             scoped_move = move.with_company(move.company_id)
             account_id = (
-                default_account_ids.get(("account.move", move.id, None))
+                previous_account_ids.get(move.id)
                 or scoped_move.commercial_partner_id[property_fname].id
                 or scoped_move.company_id.partner_id[property_fname].id
-                or default_account_ids.get(
-                    ("res.company", move.company_id.id, account_type)
-                )
             )
+            if not account_id:
+                key = (move.company_id.id, account_type)
+                if key not in fallback_account_ids:
+                    fallback_account_ids[key] = self._get_term_fallback_account_id(
+                        move.company_id, account_type
+                    )
+                    _debug.logic(
+                        "term_account_fallback",
+                        move=move,
+                        account_type=account_type,
+                        account=fallback_account_ids[key],
+                    )
+                account_id = fallback_account_ids[key]
             if move.fiscal_position_id:
                 account_id = move.fiscal_position_id.map_account(
                     self.env["account.account"].browse(account_id)
@@ -795,11 +806,12 @@ class AccountMoveLine(models.Model):
         _debug.pipeline(
             "term_accounts_assigned",
             lines=term_lines,
-            defaults=len(default_account_ids),
+            previous=len(previous_account_ids),
+            fallbacks=len(fallback_account_ids),
         )
 
     @_debug.perf.timed
-    def _get_term_default_accounts(self):
+    def _get_previous_term_account_ids(self) -> dict:
         moves = self.move_id
         result = {}
         previous_lines = self.env["account.move.line"].search(
@@ -811,32 +823,27 @@ class AccountMoveLine(models.Model):
             order="move_id, id desc",
         )
         for line in previous_lines:
-            result.setdefault(
-                ("account.move", line.move_id.id, None), line.account_id.id
-            )
-        accounts = (
+            result.setdefault(line.move_id.id, line.account_id.id)
+        _debug.perf.count(
+            "previous_term_accounts_fetched", moves=moves, rows=len(result)
+        )
+        return result
+
+    def _get_term_fallback_account_id(self, company, account_type) -> int:
+        return (
             self.env["account.account"]
             .sudo()
             .search(
                 [
-                    ("company_ids", "in", moves.company_id.ids),
-                    ("account_type", "in", ("asset_receivable", "liability_payable")),
+                    ("company_ids", "in", company.ids),
+                    ("account_type", "=", account_type),
                     ("active", "=", True),
                 ],
                 order="id",
+                limit=1,
             )
+            .id
         )
-        wanted = set(moves.company_id.ids)
-        for account in accounts:
-            for company in account.company_ids:
-                if company.id in wanted:
-                    result.setdefault(
-                        ("res.company", company.id, account.account_type), account.id
-                    )
-        _debug.perf.count(
-            "term_default_accounts_fetched", moves=moves, rows=len(result)
-        )
-        return result
 
     @_debug.perf.timed
     def _update_account_id_on_product_lines(self) -> None:

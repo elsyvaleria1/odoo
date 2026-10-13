@@ -12,9 +12,9 @@ from odoo.exceptions import RedirectWarning
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.documents import Document, canonical_mimetypes
 from odoo.libs.filesystem import guess_mimetype
+from odoo.modules.module import can_commit
 from odoo.tools import groupby
 
-from odoo.addons.account.tools.commit import can_commit
 from odoo.addons.account.tools.import_file_type import is_pdf
 
 _logger = logging.getLogger(__name__)

@@ -279,14 +279,13 @@ class PortalAccount(CustomerPortal):
                 == "rtl"
             ):
                 request.update_context(lang=partner_lang)
-            pdf_report_name = (
-                invoice_sudo.commercial_partner_id.invoice_template_pdf_report_id.report_name
-                or "account.account_invoices"
-            )
+            pdf_report = invoice_sudo.env[
+                "mixin.account.move.send"
+            ]._get_default_pdf_report_id(invoice_sudo)
             return self._show_report(
                 model=invoice_sudo,
                 report_type=report_type,
-                report_ref=pdf_report_name,
+                report_ref=pdf_report.report_name,
                 download=download,
             )
 

@@ -45,6 +45,7 @@ __all__ = [
     "Manifest",
     "ResourceLocation",
     "adapt_version",
+    "can_commit",
     "get_manifest",
     "get_module_content_checksum",
     "get_module_names",
@@ -130,6 +131,10 @@ if typing.TYPE_CHECKING:
     from odoo.tests.case import TestCase
 
 current_test: TestCase | bool = False
+
+
+def can_commit() -> bool:
+    return not (tools.config["test_enable"] or current_test)
 
 
 class UpgradeHook(importlib.abc.MetaPathFinder, importlib.abc.Loader):

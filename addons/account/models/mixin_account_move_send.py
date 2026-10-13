@@ -6,8 +6,8 @@ from markupsafe import Markup
 from odoo import Command, api, models, tools
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
+from odoo.modules.module import can_commit
 
-from odoo.addons.account.tools.commit import can_commit
 from odoo.addons.web.models.ir_actions_report import PDF_OPTIONS_DATA_KEY
 
 _logger = logging.getLogger(__name__)
