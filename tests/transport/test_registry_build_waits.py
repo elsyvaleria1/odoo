@@ -155,6 +155,17 @@ class TestGetWithoutWaiting:
             pytest.raises(RuntimeError),
         ):
             Registry.get_without_waiting(PROBE_DB)
-        probe, _outcome = _run_aside(Registry._lock.acquire)
+        def acquire_and_release() -> None:
+            with Registry._lock:
+                pass
+
+        probe, outcome = _run_aside(acquire_and_release)
         assert not probe.is_alive()
         probe.join(5)
+        assert "error" not in outcome
+        acquired = Registry._lock.acquire(blocking=False)
+        try:
+            assert acquired, "the probe left the registry lock held"
+        finally:
+            if acquired:
+                Registry._lock.release()
