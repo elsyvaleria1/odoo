@@ -11,7 +11,7 @@
         "account",
         "attachment_indexation",
         "integration_machine_learning",
-        "speech_telegram_ai",
+        "speech_telegram_ml",
         "telegram",
     ],
     "data": [

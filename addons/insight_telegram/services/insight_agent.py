@@ -1,7 +1,7 @@
 from .odoo_tools import TOOLS
 from odoo.addons.integration.tools.exceptions import CommError
 from odoo.addons.integration_machine_learning.tools import ClaudeClient, get_router
-from odoo.addons.speech_telegram_ai.tools.assistant import BotAssistant
+from odoo.addons.speech_telegram_ml.tools.assistant import BotAssistant
 
 PURPOSE = "telegram.insight.agent"
 

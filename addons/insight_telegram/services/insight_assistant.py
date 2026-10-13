@@ -2,7 +2,7 @@ from .catalog import FILTERS, GROUPS
 from .documents import KINDS
 from odoo.addons.integration.tools.exceptions import CommError
 from odoo.addons.integration_machine_learning.tools import MlRequest, get_router
-from odoo.addons.speech_telegram_ai.tools.assistant import BotAssistant
+from odoo.addons.speech_telegram_ml.tools.assistant import BotAssistant
 
 PURPOSE = "telegram.insight"
 TRANSCRIPTION_PURPOSE = "speech.transcription.insight"

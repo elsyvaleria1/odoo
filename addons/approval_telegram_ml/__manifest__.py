@@ -9,7 +9,7 @@
     "license": "Other OSI approved licence",
     "depends": [
         "integration_machine_learning",
-        "speech_telegram_ai",
+        "speech_telegram_ml",
         "telegram",
         "approval_telegram",
         "approval",
