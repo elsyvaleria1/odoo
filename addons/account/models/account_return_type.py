@@ -293,27 +293,48 @@ class AccountReturnType(models.Model):
         fiscal_country = company.tax_config_id.account_fiscal_country_id
         if filing_country == fiscal_country:
             # Domestic returns are whatever is not filed for a current foreign-VAT
-            # country, so those stamped with a former fiscal country are found.
+            # or foreign tax unit country, so those stamped with a former fiscal
+            # country are found.
             foreign_countries = (
-                company.tax_config_id.multi_vat_foreign_country_ids - fiscal_country
-            )
+                company.tax_config_id.multi_vat_foreign_country_ids
+                | company.account_config_id.account_tax_unit_ids.country_id
+            ) - fiscal_country
             return Domain("country_id", "=", False) | Domain(
                 "country_id", "not in", foreign_countries.ids
             )
         return Domain("country_id", "=", filing_country.id)
 
-    def _is_replaced_by_a_country_type(self, country) -> bool:
+    def _get_replacing_country_types(self, country):
         if (
             not country
             or self.country_id
             or not self.auto_generate
             or not self.is_tax_return_type
         ):
-            return False
-        country_types = self.search(
+            return self.browse()
+        return self.search(
             [("country_id", "=", country.id), ("report_id", "!=", False)]
+        ).filtered("is_tax_return_type")
+
+    def _is_replaced_by_a_country_type(self, country) -> bool:
+        return bool(self._get_replacing_country_types(country))
+
+    def _get_message_not_filed(self, company, country) -> str:
+        country = self._get_filing_country(company, country)
+        if replacing_types := self._get_replacing_country_types(country):
+            return self.env._(
+                "%(type)s is not filed for %(country)s: %(country_types)s, the tax "
+                "return type of that country, files it.",
+                type=self.display_name,
+                country=country.name,
+                country_types=", ".join(replacing_types.mapped("display_name")),
+            )
+        return self.env._(
+            "%(company)s does not file %(type)s for %(country)s.",
+            company=company.display_name,
+            type=self.display_name,
+            country=country.name,
         )
-        return any(country_types.mapped("is_tax_return_type"))
 
     def _is_filed_by_an_ancestor(self, company, country) -> bool:
         ancestors = company.with_privilege(
@@ -327,13 +348,18 @@ class AccountReturnType(models.Model):
         if not covering_ancestors:
             return False
         FiscalPosition = self.env["account.fiscal.position"]
+        foreign_vat_domain = Domain("foreign_vat", "!=", False) & Domain(
+            "country_id", "=", country.id
+        )
+        if own_foreign_vats := FiscalPosition.search_fetch(
+            foreign_vat_domain & Domain("company_id", "=", company.id),
+            ["foreign_vat"],
+        ).mapped("foreign_vat"):
+            foreign_vat_domain &= Domain("foreign_vat", "in", own_foreign_vats)
         return bool(
             FiscalPosition.search_count(
-                [
-                    *FiscalPosition._get_domain_company_compatible(covering_ancestors),
-                    ("foreign_vat", "!=", False),
-                    ("country_id", "=", country.id),
-                ],
+                FiscalPosition._get_domain_company_compatible(covering_ancestors)
+                & foreign_vat_domain,
                 limit=1,
             )
         )
@@ -488,13 +514,22 @@ class AccountReturnType(models.Model):
             ]
         )
         returns_to_unlink = self.env["account.return"]
+        can_exist_by_key = {}
         for return_to_check in all_return_that_might_be_deleted:
-            if (
-                not return_to_check.type_id._can_return_exist(
+            key = (
+                return_to_check.type_id,
+                return_to_check.company_id,
+                return_to_check.tax_unit_id,
+                return_to_check.country_id,
+            )
+            if key not in can_exist_by_key:
+                can_exist_by_key[key] = return_to_check.type_id._can_return_exist(
                     return_to_check.company_id,
                     return_to_check.tax_unit_id,
                     country=return_to_check.country_id,
                 )
+            if (
+                not can_exist_by_key[key]
                 or return_to_check.date_deadline
                 < return_to_check.company_id.account_config_id.account_opening_date
             ):
@@ -506,7 +541,7 @@ class AccountReturnType(models.Model):
             ),
             returns_to_unlink=returns_to_unlink,
         )
-        returns_to_unlink.unlink()
+        returns_to_unlink._remove_generated_returns()
 
     @api.model
     @_debug.perf.timed
@@ -620,7 +655,7 @@ class AccountReturnType(models.Model):
                 company=main_company,
                 unlinked=returns_to_unlink,
             )
-            returns_to_unlink.sudo().unlink()
+            returns_to_unlink._remove_generated_returns()
             return None
 
         if not tax_unit and not main_company.parent_id and main_company.child_ids:
@@ -750,7 +785,8 @@ class AccountReturnType(models.Model):
             returns_to_unlink = unmatched_existing_periods_unposted_returns.filtered(
                 lambda r: not r.manually_created
             )
-            returns_to_unlink.sudo().unlink()
+            returns_to_unlink._remove_generated_returns()
+            returns_to_unlink -= returns_to_unlink.exists()
             if transition_period and any(
                 account_return.date_from <= transition_period[1]
                 and account_return.date_to >= transition_period[0]
@@ -853,8 +889,8 @@ class AccountReturnType(models.Model):
             carried=carried_returns,
             dropped=dropped_returns,
         )
-        dropped_returns.unlink()
-        return existing_returns - dropped_returns
+        dropped_returns._remove_generated_returns()
+        return existing_returns.exists()
 
     def _get_transition_period(self, grid_periods, posted_returns) -> tuple | None:
         if not posted_returns:

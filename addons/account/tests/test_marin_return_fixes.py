@@ -997,3 +997,247 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
                 [("company_id", "=", branch.id), ("country_id", "=", belgium.id)]
             )
         )
+
+    def test_a_same_vat_branch_with_another_foreign_vat_files_its_own_return(self):
+        belgium = self.env.ref("base.be")
+        branch = self._setup_branch("Branch with its own BE VAT", self.root_company)
+        self.env["account.fiscal.position"].create(
+            {
+                "name": "Branch Belgian VAT",
+                "company_id": branch.id,
+                "country_id": belgium.id,
+                "foreign_vat": "BE0897223670",
+            }
+        )
+        self._post_a_domestic_and_a_belgian_sale()
+        branch.account_config_id.account_opening_date = "2023-01-01"
+
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        self.assertEqual(
+            len(
+                self._january_returns(self.return_type, branch).filtered(
+                    lambda account_return: account_return.country_id == belgium
+                )
+            ),
+            1,
+        )
+
+    def test_the_creation_wizard_offers_no_country_a_country_type_replaces(self):
+        belgium = self.env.ref("base.be")
+        fiscal_country = self.root_company.tax_config_id.account_fiscal_country_id
+        self._post_a_domestic_and_a_belgian_sale()
+        self._create_belgian_tax_type(auto_generate=True)
+        wizard_vals = {
+            "return_type_id": self.return_type.id,
+            "date_from": "2026-03-01",
+            "date_to": "2026-03-31",
+        }
+
+        wizard = self.env["wizard.account.return.create"].create(wizard_vals)
+        self.assertIn(self.return_type, wizard.available_return_type_ids)
+        self.assertEqual(wizard.available_country_ids, fiscal_country)
+        self.assertEqual(wizard.country_id, fiscal_country)
+
+        wizard.country_id = belgium
+        with self.assertRaisesRegex(UserError, "VAT Return \\(Marin, BE\\)"):
+            wizard.action_create_manual_account_returns()
+
+        self.env["account.return.type"].create(
+            {
+                "name": "VAT Return (Marin, domestic)",
+                "report_id": self.tax_report.id,
+                "country_id": fiscal_country.id,
+                "auto_generate": False,
+            }
+        )
+        wizard = self.env["wizard.account.return.create"].create(wizard_vals)
+        self.assertNotIn(self.return_type, wizard.available_return_type_ids)
+        wizard.return_type_id = self.return_type
+        wizard.country_id = fiscal_country
+        with self.assertRaisesRegex(UserError, "VAT Return \\(Marin, domestic\\)"):
+            wizard.action_create_manual_account_returns()
+
+    def _create_foreign_tax_unit(self):
+        self.tax_report.filter_multi_company = "tax_units"
+        self.root_company.account_config_id.account_return_periodicity = "monthly"
+        self.root_company.account_config_id.account_opening_date = "2023-01-01"
+        member = self.setup_other_company(name="French unit member", vat="US98765432")[
+            "company"
+        ]
+        return self.env["account.tax.unit"].create(
+            {
+                "name": "French tax unit",
+                "country_id": self.env.ref("base.fr").id,
+                "vat": "FR23334175221",
+                "company_ids": [Command.set((self.root_company + member).ids)],
+                "main_company_id": self.root_company.id,
+            }
+        )
+
+    def _returns_of_the_countryless_type(self, **domain):
+        return self.env["account.return"].search(
+            [
+                ("type_id", "=", self.return_type.id),
+                *((field, "=", value) for field, value in domain.items()),
+            ]
+        )
+
+    def test_a_foreign_tax_unit_keeps_its_returns_across_syncs(self):
+        tax_unit = self._create_foreign_tax_unit()
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+        unit_returns = self._returns_of_the_countryless_type(tax_unit_id=tax_unit.id)
+        self.assertTrue(unit_returns)
+        self.assertEqual(unit_returns.country_id, tax_unit.country_id)
+
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        self.assertEqual(
+            self._returns_of_the_countryless_type(tax_unit_id=tax_unit.id),
+            unit_returns,
+        )
+
+    def test_a_posted_foreign_tax_unit_return_does_not_cover_a_domestic_period(self):
+        tax_unit = self._create_foreign_tax_unit()
+        fiscal_country = self.root_company.tax_config_id.account_fiscal_country_id
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+        self._returns_of_the_countryless_type(
+            tax_unit_id=tax_unit.id
+        )._as_workflow_step().write({"is_completed": True})
+        removed_returns = self._returns_of_the_countryless_type(
+            country_id=fiscal_country.id
+        ).filtered(
+            lambda account_return: (
+                date(2023, 6, 1) <= account_return.date_from <= date(2023, 7, 31)
+            )
+        )
+        removed_periods = {
+            (account_return.date_from, account_return.date_to)
+            for account_return in removed_returns
+        }
+        self.assertEqual(len(removed_periods), 2)
+        removed_returns.sudo().unlink()
+
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        domestic_periods = {
+            (account_return.date_from, account_return.date_to)
+            for account_return in self._returns_of_the_countryless_type(
+                country_id=fiscal_country.id
+            )
+        }
+        self.assertEqual(removed_periods - domestic_periods, set())
+
+    def _belgian_returns_holding_work(self):
+        belgium = self.env.ref("base.be")
+        self._post_a_domestic_and_a_belgian_sale()
+        self._january_returns_of_the_countryless_type()
+        belgian_returns = self._returns_of_the_countryless_type(
+            country_id=belgium.id
+        ).sorted("date_from")
+        idle, attached, discussed, planned, reviewed = belgian_returns[-5:]
+        self.env["ir.attachment"].create(
+            {
+                "name": "statement.pdf",
+                "raw": b"%PDF-1.4",
+                "res_model": attached._name,
+                "res_id": attached.id,
+            }
+        )
+        discussed.message_post(body="Waiting for the bank", message_type="comment")
+        planned.activity_schedule(
+            act_type_xmlid="mail.mail_activity_data_todo",
+            summary="Ask for the Belgian statement",
+        )
+        check = self.env["account.return.check"].create(
+            {
+                "code": "marin_manual_check",
+                "name": "Belgian ledger agreed",
+                "return_id": reviewed.id,
+            }
+        )
+        check.result = "reviewed"
+        return idle, attached + discussed + planned + reviewed
+
+    def test_a_replaced_return_holding_work_is_kept_and_handed_to_the_user(self):
+        idle, holding_work = self._belgian_returns_holding_work()
+        belgian_type = self._create_belgian_tax_type(auto_generate=False)
+
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        self.assertFalse(idle.exists())
+        self.assertEqual(holding_work.exists(), holding_work)
+        self.assertEqual(holding_work.mapped("manually_created"), [True] * 4)
+        for account_return in holding_work:
+            with self.subTest(account_return=account_return.name):
+                self.assertIn(belgian_type.name, account_return.message_ids[:1].body)
+
+        with self.subTest("a later sync notes nothing more"):
+            messages = holding_work.message_ids
+            self.env["account.return.type"]._sync_all_returns(self.root_company)
+            self.assertEqual(holding_work.message_ids, messages)
+
+    def test_the_returns_holding_user_work_are_told_apart(self):
+        idle, holding_work = self._belgian_returns_holding_work()
+        self.assertEqual(
+            (idle + holding_work)._get_returns_holding_user_work(), holding_work
+        )
+
+    def test_a_second_sync_reads_each_type_country_once(self):
+        self._post_a_domestic_and_a_belgian_sale()
+        self._january_returns_of_the_countryless_type()
+        self.assertGreater(
+            self.env["account.return"].search_count(
+                [("type_id", "=", self.return_type.id), ("is_completed", "=", False)]
+            ),
+            20,
+        )
+        self.env.invalidate_all()
+        with self.assertQueryCount(78):
+            self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+    def test_a_return_holding_work_outlives_a_later_opening_date(self):
+        self.root_company.account_config_id.account_return_periodicity = "monthly"
+        self.root_company.account_config_id.account_opening_date = "2023-01-01"
+        early_idle, early_discussed = self._returns_of_the_countryless_type().sorted(
+            "date_from"
+        )[:2]
+        early_discussed.message_post(body="Asked the bank", message_type="comment")
+
+        self.root_company.account_config_id.account_opening_date = "2023-09-01"
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        self.assertFalse(early_idle.exists())
+        self.assertTrue(early_discussed.exists())
+        self.assertTrue(early_discussed.manually_created)
+        self.assertIn(
+            "no longer generated for its company", early_discussed.message_ids[:1].body
+        )
+
+    def test_the_vacuum_keeps_a_return_holding_work(self):
+        self.root_company.account_config_id.account_opening_date = "2023-01-01"
+        idle, discussed = self.env["account.return"].create(
+            [
+                {
+                    "name": f"VAT {date_from}",
+                    "type_id": self.return_type.id,
+                    "company_id": self.root_company.id,
+                    "date_from": date_from,
+                    "date_to": date_to,
+                }
+                for date_from, date_to in (
+                    ("2022-05-01", "2022-05-31"),
+                    ("2022-06-01", "2022-06-30"),
+                )
+            ]
+        )
+        discussed.message_post(body="Asked the bank", message_type="comment")
+
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        self.assertFalse(idle.exists())
+        self.assertTrue(discussed.exists())
+        self.assertTrue(discussed.manually_created)
+        self.assertIn(
+            "no longer generated for its company", discussed.message_ids[:1].body
+        )

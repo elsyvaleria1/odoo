@@ -1,5 +1,6 @@
 import ast
 import base64
+import logging
 from collections import defaultdict
 from typing import Any
 
@@ -16,6 +17,7 @@ from odoo.tools.translate import LazyTranslate
 from odoo.addons.account.models.account_return_submission import OPEN_STATES
 
 _debug = DebugLog(__name__)
+_logger = logging.getLogger(__name__)
 
 _lt = LazyTranslate(__name__)
 
@@ -471,6 +473,88 @@ class AccountReturn(models.Model):
                     "Only manually created returns in 'new' state can be deleted."
                 )
             )
+
+    def _get_returns_holding_user_work(self):
+        if not self:
+            return self
+        holder_ids = set(
+            self.env["mail.message"]
+            .search_fetch(
+                [
+                    ("model", "=", self._name),
+                    ("res_id", "in", self.ids),
+                    ("message_type", "in", ("comment", "email")),
+                ],
+                ["res_id"],
+            )
+            .mapped("res_id")
+        )
+        holder_ids.update(
+            self.env["ir.attachment"]
+            .search_fetch(
+                [("res_model", "=", self._name), ("res_id", "in", self.ids)],
+                ["res_id"],
+            )
+            .mapped("res_id")
+        )
+
+        def holds_user_work(account_return):
+            if account_return.id in holder_ids or account_return.state != "new":
+                return True
+            checks = account_return.check_ids
+            if any(
+                not check.refresh_result or check.attachment_ids for check in checks
+            ):
+                return True
+            # The check sync schedules one activity per template, under its name.
+            scheduled_summaries = set(
+                checks.template_id.filtered("activity_type").mapped("name")
+            )
+            return any(
+                activity.summary not in scheduled_summaries
+                for activity in account_return.activity_ids
+            )
+
+        return self.filtered(holds_user_work)
+
+    def _remove_generated_returns(self) -> None:
+        # The sync removes the returns it generated, whoever triggers it.
+        self = self.sudo()
+        holding_work = self._get_returns_holding_user_work()
+        for account_return in holding_work:
+            return_type = account_return.type_id
+            filing_country = return_type._get_filing_country(
+                account_return.company_id, account_return.country_id
+            )
+            if return_type._is_replaced_by_a_country_type(filing_country):
+                body = self.env._(
+                    "%(reason)s This return was kept because it holds work "
+                    "(attachments, messages, activities or reviewed checks); delete "
+                    "it once that work is no longer needed.",
+                    reason=return_type._get_message_not_filed(
+                        account_return.company_id, filing_country
+                    ),
+                )
+            else:
+                body = self.env._(
+                    "This return is no longer generated for its company, country and "
+                    "period. It was kept because it holds work (attachments, "
+                    "messages, activities or reviewed checks); delete it once that "
+                    "work is no longer needed."
+                )
+            account_return.message_post(body=body)
+            _logger.info(
+                "[account.return:%s] kept although no longer generated: it holds "
+                "user work",
+                account_return.id,
+            )
+        holding_work.manually_created = True
+        _debug.logic(
+            "generated_returns_removed",
+            kept=holding_work,
+            removed=self - holding_work,
+        )
+        (self - holding_work).unlink()
 
     @api.model
     @_debug.perf.timed
@@ -936,6 +1020,7 @@ class AccountReturn(models.Model):
             **self.with_context(active_id=self.id, active_model=self._name)
             .env["ir.actions.act_window"]
             ._get_action_dict_by_xml_id("account.action_view_account_balances"),
+            "domain": [("account_status.audit_id", "=", self.id)],
             "context": {
                 "account_return_view_id": self.env.ref(
                     "account.account_return_kanban_view"

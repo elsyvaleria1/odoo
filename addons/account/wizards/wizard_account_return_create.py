@@ -101,19 +101,21 @@ class WizardAccountReturnCreate(models.TransientModel):
     @api.depends("company_id", "return_type_id")
     def _compute_available_country_ids(self) -> None:
         for wizard in self:
-            company = wizard.company_id
-            if wizard.return_type_id.country_id:
-                wizard.available_country_ids = wizard.return_type_id.country_id
-            elif wizard.return_type_id.is_tax_return_type:
-                wizard.available_country_ids = (
-                    company.tax_config_id.account_fiscal_country_id
-                    | wizard._get_foreign_vat_countries()
-                )
-            else:
-                wizard.available_country_ids = (
-                    company.tax_config_id.account_fiscal_country_id
-                )
+            wizard.available_country_ids = wizard._get_filing_countries(
+                wizard.return_type_id
+            )
             wizard.show_country_id = len(wizard.available_country_ids) > 1
+
+    def _get_filing_countries(self, return_type):
+        self.check_singleton()
+        fiscal_country = self.company_id.tax_config_id.account_fiscal_country_id
+        if return_type.country_id:
+            return return_type.country_id
+        if not return_type.is_tax_return_type:
+            return fiscal_country
+        return (fiscal_country | self._get_foreign_vat_countries()).filtered(
+            lambda country: not return_type._is_replaced_by_a_country_type(country)
+        )
 
     @api.depends("available_country_ids")
     def _compute_country_id(self) -> None:
@@ -210,6 +212,21 @@ class WizardAccountReturnCreate(models.TransientModel):
             if has_current_country_tax_return_type:
                 return_types_without_country = return_types_without_country.filtered(
                     lambda rt: rt.report_id != generic_tax_report
+                )
+            filing_countries = (
+                wizard.company_id.tax_config_id.account_fiscal_country_id
+                | foreign_vat_fpos_countries
+            )
+            if filing_countries:
+                return_types_without_country -= return_types_without_country.browse(
+                    [
+                        return_type.id
+                        for return_type in return_types_without_country
+                        if all(
+                            return_type._is_replaced_by_a_country_type(country)
+                            for country in filing_countries
+                        )
+                    ]
                 )
 
             _debug.pipeline(
@@ -372,6 +389,10 @@ class WizardAccountReturnCreate(models.TransientModel):
             bypass_period_check=True,
             country=self.country_id,
         )
+        if returns_created is None:
+            raise UserError(
+                self.return_type_id._get_message_not_filed(company, self.country_id)
+            )
         returns_created.skipped_check_cycles = ",".join(
             v
             for k, v in {
