@@ -939,7 +939,10 @@ class Websocket:
         try:
             registry = Registry(self._db)
             sequence = registry.registry_sequence
-            return sequence != registry.refresh_signaling_and_get_registry().registry_sequence
+            return (
+                sequence
+                != registry.refresh_signaling_and_get_registry().registry_sequence
+            )
         except Exception:
             _logger.debug(
                 "Registry signaling check failed for %s", self._db, exc_info=True

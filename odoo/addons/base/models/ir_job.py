@@ -1190,7 +1190,9 @@ class IrJob(models.Model):
                         method=job["method_name"],
                         retry=job["retry"],
                     )
-                    if (reloaded := registry.refresh_signaling_and_get_registry()) is not registry:
+                    if (
+                        reloaded := registry.refresh_signaling_and_get_registry()
+                    ) is not registry:
                         _debug.lifecycle("drain.registry_reloaded", db=db_name)
                         registry = reloaded
                         cr.transaction.reset()

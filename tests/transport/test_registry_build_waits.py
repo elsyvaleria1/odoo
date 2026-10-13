@@ -155,6 +155,7 @@ class TestGetWithoutWaiting:
             pytest.raises(RuntimeError),
         ):
             Registry.get_without_waiting(PROBE_DB)
+
         def acquire_and_release() -> None:
             with Registry._lock:
                 pass

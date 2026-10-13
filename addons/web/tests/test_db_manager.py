@@ -390,7 +390,9 @@ class TestDatabaseOperations(BaseCase):
                 res = self.session.get(self.url(PROBE_URL))
             _assert_degrades_gracefully(session, capture, evicts_stored_session=True)
 
-        with self.subTest(msg="Registry.refresh_signaling_and_get_registry() fails, database listed"):
+        with self.subTest(
+            msg="Registry.refresh_signaling_and_get_registry() fails, database listed"
+        ):
             session = _stored_session()
             registries[test_db_name] = registry
             with (

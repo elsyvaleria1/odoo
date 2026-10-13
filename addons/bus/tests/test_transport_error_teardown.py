@@ -40,7 +40,9 @@ class TestTransportErrorTeardown(BaseCase):
         ws = self._make_ws()
         ws.sock.send = MagicMock(side_effect=len)
         registry_before = MagicMock(registry_sequence=1)
-        registry_before.refresh_signaling_and_get_registry.return_value = MagicMock(registry_sequence=2)
+        registry_before.refresh_signaling_and_get_registry.return_value = MagicMock(
+            registry_sequence=2
+        )
         with (
             patch("odoo.addons.bus.websocket.Registry", return_value=registry_before),
             self.assertLogs("odoo.addons.bus.websocket", level="WARNING") as capture,

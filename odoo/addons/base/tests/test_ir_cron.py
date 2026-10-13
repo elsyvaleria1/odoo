@@ -2158,7 +2158,9 @@ class TestIrCronRunLoopContract(TransactionCase, CronMixinCase):
             "and the one that survives must still carry channel and database",
         )
 
-    def test_the_run_loop_does_not_open_a_connection_just_to_refresh_signaling_and_get_registry(self):
+    def test_the_run_loop_does_not_open_a_connection_just_to_refresh_signaling_and_get_registry(
+        self,
+    ):
         def mocked_run(self):
             self.env["ir.cron"]._commit_progress(processed=1, remaining=0)
 

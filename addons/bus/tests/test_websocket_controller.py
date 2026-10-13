@@ -213,7 +213,9 @@ class TestInvalidDatabase(WebsocketCase):
             ws.send(json_dumps({"event_name": "noop", "data": {}}))
             self.assert_close_with_code(ws, CloseCode.TRY_LATER)
 
-    def test_the_registry_kept_is_the_one_refresh_signaling_and_get_registry_returned(self):
+    def test_the_registry_kept_is_the_one_refresh_signaling_and_get_registry_returned(
+        self,
+    ):
         req = WebsocketRequest.__new__(WebsocketRequest)
         req.db = self.env.registry.db_name
         req.ws = MagicMock()
@@ -227,7 +229,9 @@ class TestInvalidDatabase(WebsocketCase):
             patch.object(
                 WebsocketRequest, "_acquire_session", return_value=MagicMock()
             ),
-            patch.object(registry, "refresh_signaling_and_get_registry", return_value=reloaded),
+            patch.object(
+                registry, "refresh_signaling_and_get_registry", return_value=reloaded
+            ),
             patch.object(WebsocketRequest, "_serve_ir_websocket", return_value=None),
             contextlib.suppress(Exception),
         ):
@@ -251,7 +255,9 @@ class TestInvalidDatabase(WebsocketCase):
                 WebsocketRequest, "_acquire_session", return_value=MagicMock()
             ),
             patch.object(
-                registry, "refresh_signaling_and_get_registry", side_effect=psycopg.ProgrammingError
+                registry,
+                "refresh_signaling_and_get_registry",
+                side_effect=psycopg.ProgrammingError,
             ),
             self.assertRaises(InvalidDatabaseError),
         ):

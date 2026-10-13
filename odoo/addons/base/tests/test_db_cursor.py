@@ -2384,7 +2384,9 @@ class TestDroppedDBRecovery(BaseCase):
 
         self.assertIn(self.DB_NAME, Registry.registries)
 
-    def test_refresh_signaling_and_get_registry_keeps_registry_when_caller_provides_cursor(self):
+    def test_refresh_signaling_and_get_registry_keeps_registry_when_caller_provides_cursor(
+        self,
+    ):
         reg = object.__new__(Registry)
         reg.db_name = self.DB_NAME
         reg.registry_sequence = -1

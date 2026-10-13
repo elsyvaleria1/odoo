@@ -235,7 +235,9 @@ class _RegistrySchemaMixin(_RegistryStubs):
         except psycopg.DatabaseError:
             _schema.error("Unable to add index %r for %s", indexname, self)
 
-    def update_declared_field_indexes(self, cr: Cursor, model_names: Iterable[str]) -> None:
+    def update_declared_field_indexes(
+        self, cr: Cursor, model_names: Iterable[str]
+    ) -> None:
         model_names = list(model_names)
         expected = [
             (get_index_name(Model._table, field.name), Model._table, field)
@@ -365,9 +367,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
         elif not index and tablename == (
             None if existing is None else existing.table_name
         ):
-            _schema.info(
-                "Keep unexpected index %s on table %s", indexname, tablename
-            )
+            _schema.info("Keep unexpected index %s on table %s", indexname, tablename)
 
     def add_foreign_key(
         self,
@@ -600,7 +600,9 @@ class _RegistrySchemaMixin(_RegistryStubs):
         )
         return undeclared
 
-    def warn_undeclared_view_dependencies(self, cr: Cursor, model_names: Iterable[str]) -> None:
+    def warn_undeclared_view_dependencies(
+        self, cr: Cursor, model_names: Iterable[str]
+    ) -> None:
         for name, missing in self.get_undeclared_view_reads(cr, model_names).items():
             _schema.warning(
                 "SQL view model %s reads %s without naming them in _depends, "

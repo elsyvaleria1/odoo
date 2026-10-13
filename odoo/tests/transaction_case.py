@@ -1607,7 +1607,9 @@ class BaseCase(TestCase):
             patch.object(registry, "cursor", _patched_cursor),
             patch.object(Registry, "_lock", DummyRLock()),
             patch.object(registry, "setup_signaling", return_value=None),
-            patch.object(registry, "refresh_signaling_and_get_registry", return_value=registry),
+            patch.object(
+                registry, "refresh_signaling_and_get_registry", return_value=registry
+            ),
         ]
 
         try:
