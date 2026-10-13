@@ -253,43 +253,29 @@ patch(AccountReportFilters.prototype, {
         return formatDate(start) + " - " + formatDate(end);
     },
 
-    _computeReturnPeriodDates(periodicitySettings, dateInsideTargettesPeriod) {
+    _computeReturnPeriodDates(periodicitySettings, dateInsideTargetPeriod) {
         const startMonth = periodicitySettings.start_month;
         const startDay = periodicitySettings.start_day;
         const monthsPerPeriod = periodicitySettings.months_per_period;
-        const aligned_date = dateInsideTargettesPeriod.subtract({ days: startDay - 1 });
-        let year = aligned_date.year;
-        const monthOffset = aligned_date.month - startMonth;
-
-        let periodNumber = Math.floor(monthOffset / monthsPerPeriod) + 1;
-
-        if (
-            compareDates(
-                dateInsideTargettesPeriod,
-                today().with(
-                    { year: year, month: startMonth, day: startDay },
-                    { overflow: "constrain" },
-                ),
-            ) < 0
-        ) {
-            year -= 1;
-            periodNumber = Math.floor((12 + monthOffset) / monthsPerPeriod) + 1;
-        }
-
-        const deltaMonth = periodNumber * monthsPerPeriod;
-
-        const periodYearStart = Temporal.PlainDate.from({
-            year,
+        const anchor = Temporal.PlainDate.from({
+            year: dateInsideTargetPeriod.year,
             month: startMonth,
             day: 1,
         });
-        const endDate = periodYearStart
-            .add({ months: deltaMonth })
-            .add({ days: startDay - 2 });
-        const startDate = periodYearStart
-            .add({ months: deltaMonth - monthsPerPeriod })
-            .with({ day: startDay }, { overflow: "constrain" });
-        return [startDate, endDate];
+        const periodStart = (periodNumber) =>
+            anchor
+                .add({ months: periodNumber * monthsPerPeriod })
+                .with({ day: startDay }, { overflow: "constrain" });
+        let periodNumber = Math.floor(
+            (dateInsideTargetPeriod.month - startMonth) / monthsPerPeriod,
+        );
+        if (compareDates(dateInsideTargetPeriod, periodStart(periodNumber)) < 0) {
+            periodNumber -= 1;
+        }
+        return [
+            periodStart(periodNumber),
+            periodStart(periodNumber + 1).subtract({ days: 1 }),
+        ];
     },
 
     selectJournal(journal) {
