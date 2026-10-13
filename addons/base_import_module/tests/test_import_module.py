@@ -1,4 +1,5 @@
 import base64
+import threading
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -9,6 +10,7 @@ from odoo import release
 from odoo.exceptions import UserError
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.libs.json import loads as json_loads
+from odoo.libs.worker_thread import is_running_module_operation
 from odoo.tests import new_test_user
 from odoo.tools import file_open, file_open_temporary_directory, mute_logger
 from odoo.tools.files import file_open_temporary_paths
@@ -19,6 +21,12 @@ from odoo.addons import __path__ as __addons_path__
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestImportModule(odoo.tests.TransactionCase):
+    def setUp(self):
+        super().setUp()
+        # An import commits when it releases the module-operations lock, as
+        # every module operation does; the test's own rollback still undoes it.
+        self.startPatcher(patch.object(self.env.cr, "commit", self.env.cr.flush))
+
     def manifest_content(self, manifest=None, /, **values):
         return json_dumps_bytes(
             {
@@ -38,6 +46,61 @@ class TestImportModule(odoo.tests.TransactionCase):
 
     def import_zipfile(self, files):
         return self.env["ir.module.module"]._import_zipfile(self.archive(files))
+
+    def _spy_module_operation(self, method_name, marks):
+        IrModule = type(self.env["ir.module.module"])
+        origin = getattr(IrModule, method_name)
+
+        def spy(self, *args, **kwargs):
+            marks.append(
+                (method_name, is_running_module_operation(threading.current_thread()))
+            )
+            return origin(self, *args, **kwargs)
+
+        return patch.object(IrModule, method_name, spy)
+
+    def test_the_whole_import_runs_as_a_module_operation(self):
+        marks = []
+        with (
+            self._spy_module_operation("_load_imported_data_files", marks),
+            self._spy_module_operation("_render_welcome_article", marks),
+        ):
+            self.import_zipfile([("foo/__manifest__.py", self.manifest_content())])
+        self.assertEqual(
+            marks,
+            [("_load_imported_data_files", True), ("_render_welcome_article", True)],
+            "the data files of an import loaded on limit_time_real, so a cancel "
+            "left the dependencies installed and the module not",
+        )
+
+    def test_a_dependency_install_reenters_the_import_operation(self):
+        dependency = self.env["ir.module.module"].search(
+            [("state", "=", "uninstalled")], limit=1
+        )
+        IrModule = type(self.env["ir.module.module"])
+        installed = []
+
+        def button_immediate_install(self):
+            with self._lock_against_concurrent_module_operations():
+                installed.append(
+                    (
+                        self.name,
+                        is_running_module_operation(threading.current_thread()),
+                    )
+                )
+
+        with patch.object(
+            IrModule, "button_immediate_install", button_immediate_install
+        ):
+            self.import_zipfile(
+                [
+                    (
+                        "foo/__manifest__.py",
+                        self.manifest_content(depends=["base", dependency.name]),
+                    )
+                ]
+            )
+        self.assertEqual(installed, [(dependency.name, True)])
 
     def test_an_uploaded_sql_data_file_is_not_executed(self):
         self.import_zipfile(

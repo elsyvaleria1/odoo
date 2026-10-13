@@ -1,4 +1,5 @@
 from io import BytesIO
+from unittest.mock import patch
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from odoo.libs.json import dumps as json_dumps
@@ -34,6 +35,10 @@ VALID_XML_2 = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 class TestClocFields(test_cloc.TestClocCustomization):
+    def setUp(self):
+        super().setUp()
+        self.startPatcher(patch.object(self.env.cr, "commit", self.env.cr.flush))
+
     def create_studio_module(self):
         if not self.env["ir.module.module"].search(
             [("name", "=", "studio_customization")]

@@ -607,9 +607,10 @@ class IrModuleModule(models.Model):
                 )
                 sorted_dirs = self._sort_zip_modules(module_dir, dependencies)
                 self._extract_zip_module_files(z, _extract, module_data_files)
-                module_names = self._import_zip_modules(
-                    sorted_dirs, module_dir, force, with_demo
-                )
+                with self._hold_module_operations():
+                    module_names = self._import_zip_modules(
+                        sorted_dirs, module_dir, force, with_demo
+                    )
         return "", module_names
 
     def module_uninstall(self):
