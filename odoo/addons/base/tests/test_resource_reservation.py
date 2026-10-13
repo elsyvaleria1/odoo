@@ -839,13 +839,13 @@ class TestResourceFreeWindow(TransactionCase):
         booking = self._book(self.press, start, datetime(2026, 5, 4, 12))
         booking.allocated_percentage = 10
         self.assertEqual(
-            self.press._find_free_window(start, 2),
+            self.press._get_window_free(start, 2),
             (start, datetime(2026, 5, 4, 10)),
             "a full booking still fits on top of 10% under a 150% ceiling",
         )
         booking.allocated_percentage = 60
         self.assertEqual(
-            self.press._find_free_window(start, 2)[0], datetime(2026, 5, 4, 12)
+            self.press._get_window_free(start, 2)[0], datetime(2026, 5, 4, 12)
         )
 
     def test_a_crowded_horizon_is_read_once(self):
@@ -863,7 +863,7 @@ class TestResourceFreeWindow(TransactionCase):
         )
         self.env.invalidate_all()
         with self.assertQueryCount(2):
-            window = self.press._find_free_window(start, 2)
+            window = self.press._get_window_free(start, 2)
         self.assertEqual(window[0], start + timedelta(hours=200))
 
     def test_no_window_within_the_horizon_is_none(self):

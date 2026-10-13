@@ -9,7 +9,7 @@ from odoo.tools import SQL
 
 
 def _load_method_name_migration():
-    path = Path(__file__).parents[1] / "migrations/1.153/pre-method-names.py"
+    path = Path(__file__).parents[1] / "migrations/1.157/pre-method-names.py"
     spec = importlib.util.spec_from_file_location("method_name_migration", path)
     migration = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(migration)

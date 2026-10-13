@@ -49,7 +49,7 @@ class TestBaseModuleWizards(TransactionCase):
         self.assertIn("wizard_upg_missing_dep", str(ctx.exception))
 
     def test_upgrade_module_refuses_while_another_operation_runs(self):
-        self._make_module("wizard_upg_busy", "to upgrade")
+        self._create_module_record("wizard_upg_busy", "to upgrade")
         wizard = self.env["wizard.ir.module.module.apply.scheduled"].create({})
         busy = ModuleOperationInProgress("another process holds the lock")
         with (

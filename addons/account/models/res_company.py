@@ -981,7 +981,9 @@ class ResCompany(models.Model):
                     .sudo()
                     .search(
                         [
-                            *self.env["account.journal"]._check_company_domain(self),
+                            *self.env["account.journal"]._get_domain_company_compatible(
+                                self
+                            ),
                             (
                                 "code",
                                 "in",

@@ -1046,7 +1046,9 @@ class TestIrModelFields(TransactionCase):
     def test_field_deletion_sets_up_the_registry_once(self):
         for ttype, extra in (("char", {}), ("many2one", {"relation": "res.partner"})):
             with self.subTest(ttype=ttype):
-                Model, field = self._make_manual_field(f"del{ttype}", **extra)
+                Model, field = self._create_model_and_manual_field(
+                    f"del{ttype}", **extra
+                )
                 table, name = Model._table, field.name
                 self.env.flush_all()
                 with _spy_setup_models(self.env.registry) as calls:
@@ -1061,7 +1063,7 @@ class TestIrModelFields(TransactionCase):
                 self.assertFalse(self.env.cr.fetchall())
 
     def test_deleting_a_field_awaiting_recomputation_drops_its_pending_compute(self):
-        Model, _field = self._make_manual_field("pending", ttype="integer")
+        Model, _field = self._create_model_and_manual_field("pending", ttype="integer")
         double = self.env["ir.model.fields"].create(
             {
                 "name": "x_pending_double",

@@ -2088,7 +2088,7 @@ class IrUiView(models.Model):
             except MissingError:
                 _debug.logic("template_info.missing", ref=id_or_xmlid)
                 view = None
-                error = self._missing_template_error(id_or_xmlid)
+                error = self._prepare_missing_template_error(id_or_xmlid)
         else:
             preload = self.sudo()._preload_views([id_or_xmlid])
             if id_or_xmlid in preload:

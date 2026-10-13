@@ -8,7 +8,7 @@ class AccountJournalGroup(models.Model):
     _description = "Account Journal Group"
     _order = "sequence"
     _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     name = fields.Char(
         string="Ledger group",

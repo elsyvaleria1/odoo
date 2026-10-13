@@ -14,7 +14,7 @@ def split_account_prefixes(
 def get_account_prefix_placeholder(env, account_type: str, fallback: str) -> str:
     account = env["account.account"].search(
         [
-            *env["account.account"]._check_company_domain(env.company),
+            *env["account.account"]._get_domain_company_compatible(env.company),
             ("account_type", "=", account_type),
         ],
         limit=1,

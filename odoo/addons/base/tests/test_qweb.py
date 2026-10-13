@@ -2280,7 +2280,7 @@ class TestQWebBasic(TransactionCase):
         error = self.env["ir.ui.view"]._get_cached_template_info(-999)["error"]
         self.assertEqual(
             str(error),
-            str(self.env["ir.ui.view"]._missing_template_error(-999)),
+            str(self.env["ir.ui.view"]._prepare_missing_template_error(-999)),
             "a missing id reads the same whichever path finds it missing",
         )
 

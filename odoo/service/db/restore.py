@@ -8,7 +8,7 @@ import tempfile
 import threading
 import zipfile
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Literal, NoReturn
+from typing import IO, Literal
 
 import odoo.api
 import odoo.db

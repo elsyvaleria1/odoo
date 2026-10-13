@@ -308,7 +308,7 @@ class TestIrSequenceDateRangeOverlap(TransactionCase):
         )
 
     def test_preview_shows_the_range_a_draw_creates_beside_a_neighbour(self):
-        self._make_range(date(2046, 1, 1), date(2046, 3, 31))
+        self._create_date_range(date(2046, 1, 1), date(2046, 3, 31))
 
         def days_long(seq, date_from, date_to):
             return (date_to - date_from).days + 1

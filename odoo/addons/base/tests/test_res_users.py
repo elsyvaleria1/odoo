@@ -1155,7 +1155,10 @@ class TestLoginCooldown(TransactionCase):
         self.assertEqual(
             self._failures(source), 1, "failures older than a day are forgotten"
         )
-        with self._attempt(source), users._assert_can_auth(user=self.env.uid):
+        with (
+            self._attempt(source),
+            users._admit_authentication_attempt(user=self.env.uid),
+        ):
             pass
 
     def test_a_failure_racing_the_first_row_is_counted(self):
@@ -1363,12 +1366,12 @@ class TestCheckUidPasswdCacheContract(TransactionCase):
         Users = self.env["res.users"]
         user = new_test_user(self.env, login="rut3_service", password="old-password")
 
-        Users._check_uid_passwd(user.id, "old-password")
+        Users._authenticate_rpc_credentials(user.id, "old-password")
 
         user.principal_type = "service"
 
         with self.assertRaises(AccessDenied):
-            Users._check_uid_passwd(user.id, "old-password")
+            Users._authenticate_rpc_credentials(user.id, "old-password")
 
     def test_raw_sql_change_without_clear_keeps_cache_stale(self):
         Users = self.env["res.users"]
