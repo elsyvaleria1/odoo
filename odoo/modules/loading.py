@@ -37,6 +37,7 @@ from .migration import (
     read_pending_end_migrations,
 )
 from .module import (
+    Manifest,
     adapt_version,
     get_module_content_checksum,
     initialize_sys_path,
@@ -1364,6 +1365,30 @@ def load_module_graph(
     )
 
 
+def _get_unloaded_reason(graph: ModuleGraph, name: str) -> str:
+    manifest = Manifest.for_addon(name, display_warning=False)
+    if manifest is None:
+        return "not on the addons path; add it there or uninstall it"
+    if not manifest.get("installable"):
+        return "its manifest is not installable; uninstall it"
+    unloaded = [dep for dep in manifest["depends"] if dep not in graph]
+    if absent := [
+        dep
+        for dep in unloaded
+        if Manifest.for_addon(dep, display_warning=False) is None
+    ]:
+        return (
+            f"depends on {', '.join(absent)}, not on the addons path; add "
+            f"{'it' if len(absent) == 1 else 'them'} there or uninstall {name}"
+        )
+    if unloaded:
+        return (
+            f"depends on {', '.join(unloaded)}, not loaded; update with "
+            f"-u {name} to install what it depends on"
+        )
+    return "in a dependency loop (see the module_graph warnings above)"
+
+
 def _warn_invalid_module_names(cr: BaseCursor, module_names: Iterable[str]) -> None:
     mod_names = set(module_names)
     mod_names.discard("all")
@@ -1965,8 +1990,11 @@ class _ModuleLoader:
         )
         if missing:
             _logger.error(
-                "Some modules are not loaded, some dependencies or manifest may be missing: %s",
-                missing,
+                "Some modules are not loaded: %s",
+                "; ".join(
+                    f"{name} is installed but {_get_unloaded_reason(graph, name)}"
+                    for name in missing
+                ),
             )
 
     def run_end_migrations(self) -> None:

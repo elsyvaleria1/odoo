@@ -781,6 +781,48 @@ class IrModuleUpdateListStateCase(TransactionCase):
         Module.update_list()
         self.assertEqual(module.state, "uninstalled")
 
+    def _make_consumer_of(self, dependency):
+        consumer = self.env["ir.module.module"].create(
+            {"name": f"{dependency.name}_consumer", "state": "installed"}
+        )
+        self.env["ir.module.module.dependency"].create(
+            {"module_id": consumer.id, "name": dependency.name}
+        )
+        return consumer
+
+    @mute_logger("odoo.addons.base.models.ir_module")
+    def test_an_installed_modules_uninstalled_dependency_is_scheduled(self):
+        Module = self.env["ir.module.module"]
+        dependency = Module.create({"name": "airm_new_dep", "state": "uninstalled"})
+        self._make_consumer_of(dependency)
+
+        Module.update_list()
+
+        self.assertEqual(
+            dependency.state,
+            "to install",
+            "an installed module whose manifest names an uninstalled module is "
+            "dropped from every load graph until that module is installed",
+        )
+
+    def test_an_unsatisfiable_dependency_is_reported_not_raised(self):
+        Module = self.env["ir.module.module"]
+        dependency = Module.create({"name": "airm_bad_dep", "state": "uninstalled"})
+        self.env["ir.module.module.dependency"].create(
+            {"module_id": dependency.id, "name": "airm_nowhere"}
+        )
+        self._make_consumer_of(dependency)
+
+        with self.assertLogs("odoo.addons.base.models.ir_module", "ERROR") as logs:
+            Module.update_list()
+
+        self.assertEqual(dependency.state, "uninstalled")
+        self.assertIn(
+            "airm_bad_dep_consumer is installed but its manifest depends on "
+            "airm_bad_dep, which cannot be installed",
+            "\n".join(logs.output),
+        )
+
 
 class IrModuleUpdateListCountCase(TransactionCase):
     def test_a_module_that_was_never_installed_is_not_counted(self):

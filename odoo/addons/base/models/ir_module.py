@@ -1465,11 +1465,50 @@ class IrModuleModule(models.Model):
             auto_install_requirements[mod.id] = manifest.get("auto_install") or ()
 
         self._sync_auto_install_required(auto_install_requirements)
+        self._install_dependencies_of_installed_modules()
 
         _debug.pipeline(
             "update_list", known=len(known_mods), updated=updated, added=added
         )
         return UpdateListResult(updated=updated, added=added)
+
+    @api.model
+    def _install_dependencies_of_installed_modules(self) -> None:
+        dependents = self.search(
+            [("state", "in", ("installed", "to upgrade"))], order="name"
+        ).filtered(lambda module: self._is_installable(module.name))
+        for module in dependents:
+            missing = module.dependencies_id.linked_id.filtered(
+                lambda dependency: dependency.state == "uninstalled"
+            )
+            if not missing:
+                continue
+            names = ", ".join(missing.mapped("name"))
+            _debug.logic(
+                "update_list.dependencies_scheduled",
+                module=module.name,
+                dependencies=missing.mapped("name"),
+            )
+            try:
+                with self.env.cr.savepoint():
+                    missing.button_install()
+            except UserError as e:
+                _logger.error(
+                    "module %s is installed but its manifest depends on %s, which "
+                    "cannot be installed: %s; %s stays unloaded until that is "
+                    "resolved or it is uninstalled",
+                    module.name,
+                    names,
+                    e,
+                    module.name,
+                )
+                continue
+            _logger.info(
+                "module %s: its manifest depends on %s, which is not installed; "
+                "scheduled for installation",
+                module.name,
+                names,
+            )
 
     def _update_from_terp(
         self,

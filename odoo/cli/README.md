@@ -73,7 +73,7 @@ with `get_cli_command`, and calls `Command().run(args)`.
   already-installed ones out (`_split_installed`, logged as "Already installed, nothing to
   do") so `button_immediate_install` — a registry reload, ~0.8 s on a base-only database —
   runs only when something is left to install. Every `module` subcommand but `force-demo`
-  pays `ir.module.module.update_list()` first (~0.6–0.8 s, 121 statements on base alone).
+  pays `ir.module.module.update_list()` first (~0.6–0.8 s, 100 statements on base alone).
 - `obfuscate` keeps a password marker in `ir_config_parameter` (`odoo_cyph_pwd`) and a
   `pg_temp` function per connection; `--allfields` is unobfuscate-only and reads
   `information_schema.columns` restricted to `BASE TABLE`s (a view broke it before

@@ -319,6 +319,18 @@ class Module(DatabaseCommand):
                 outdated_only=parsed_args.outdated,
             )
             if not upgradable_modules:
+                if parsed_args.outdated and (
+                    scheduled := env["ir.module.module"].search(
+                        [("state", "=", "to install")]
+                    )
+                ):
+                    _logger.info(
+                        "Nothing to upgrade; installing the modules scheduled for "
+                        "installation: %s",
+                        ", ".join(scheduled.mapped("name")),
+                    )
+                    scheduled.button_immediate_install()
+                    return
                 if parsed_args.outdated:
                     _debug.logic(
                         "cli.module.nothing_done", verb="upgrade", reason="up_to_date"
