@@ -818,6 +818,16 @@ msgstr ""
 "inventario."
 
 #. module: sale_stock
+#. odoo-python
+#: code:addons/sale_stock/models/sale_order_line.py:0
+msgid ""
+"The route of %(products)s cannot change: goods already moved along the "
+"current one."
+msgstr ""
+"La ruta de %(products)s no puede cambiar: ya salió mercancía por la ruta "
+"actual."
+
+#. module: sale_stock
 #. odoo-javascript
 #: code:addons/sale_stock/static/src/widgets/qty_at_date_widget.xml:0
 msgid "This product is replenished on demand."

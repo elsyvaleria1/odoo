@@ -90,7 +90,21 @@ class SaleOrderLine(models.Model):
             lines = self.filtered(lambda r: r.state == "done" and not r.is_expense)
 
         previous_product_qty = {line.id: line.product_qty for line in lines}
+        previous_routes = {}
+        if "route_ids" in vals:
+            previous_routes = {
+                line.id: line.route_ids for line in self if line.state == "done"
+            }
         res = super().write(vals)
+
+        rerouted = self.filtered(
+            lambda line: (
+                line.id in previous_routes
+                and line.route_ids != previous_routes[line.id]
+            ),
+        )
+        if rerouted:
+            rerouted._reroute_pending_moves()
 
         if lines:
             _debug.pipeline("relaunch_stock_rules", lines=lines)
@@ -452,6 +466,28 @@ class SaleOrderLine(models.Model):
             pickings_to_confirm.action_confirm()
         return True
 
+    def _reroute_pending_moves(self) -> None:
+        moved = self.filtered(
+            lambda line: any(move.state == "done" for move in line.move_ids),
+        )
+        if moved:
+            raise UserError(
+                self.env._(
+                    "The route of %(products)s cannot change: goods already moved "
+                    "along the current one.",
+                    products=", ".join(moved.product_id.mapped("display_name")),
+                ),
+            )
+
+        pending = self.move_ids.filtered(
+            lambda move: move.state not in ("done", "cancel"),
+        )
+        if not pending:
+            return
+        _debug.pipeline("lines_rerouted", lines=pending.sale_line_id, moves=pending)
+        pending._action_cancel()
+        pending.sale_line_id._action_launch_stock_rule()
+
     def _get_product_catalog_lines_data(self, **kwargs):
         res = super()._get_product_catalog_lines_data(**kwargs)
         res["deliveredQty"] = sum(
@@ -485,6 +521,11 @@ class SaleOrderLine(models.Model):
 
     def _get_procurement_moves(self):
         return self._get_stock_moves_outgoing_incoming()
+
+    def _get_fields_protected(self):
+        # A locked order is never procured again, so a new route would cancel
+        # its transfers without replacing them.
+        return [*super()._get_fields_protected(), "route_ids"]
 
     def _get_procurement_qty(self, previous_product_qty=False):
         self.check_singleton()
