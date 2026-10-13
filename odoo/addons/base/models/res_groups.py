@@ -214,8 +214,40 @@ class ResGroups(models.Model):
                 )
 
     @api.model
-    @tools.ormcache("names", cache="stable")
     def _privilege_ids(self, names: tuple[str, ...]) -> frozenset[int]:
+        pending = self._privileges_awaiting_data(names)
+        if pending:
+            names = tuple(name for name in names if name not in pending)
+        return self._declared_privilege_ids(names)
+
+    @api.model
+    def _privileges_awaiting_data(self, names: tuple[str, ...]) -> frozenset[str]:
+        loaded = self.env.registry.loaded_modules
+        missing = [
+            name
+            for name in names
+            if name.partition(".")[0] not in loaded
+            and self.env.ref(name, raise_if_not_found=False) is None
+        ]
+        if not missing:
+            return frozenset()
+        modules = self.env["ir.module.module"]
+        pending = frozenset(
+            name
+            for name in missing
+            if modules._get(name.partition(".")[0]).state
+            in ("to install", "to upgrade")
+        )
+        _debug.logic(
+            "privileges_awaiting_data",
+            names=names,
+            pending=sorted(pending),
+        )
+        return pending
+
+    @api.model
+    @tools.ormcache("names", cache="stable")
+    def _declared_privilege_ids(self, names: tuple[str, ...]) -> frozenset[int]:
         ids = set()
         for name in names:
             group = self.sudo().env.ref(name, raise_if_not_found=False)
