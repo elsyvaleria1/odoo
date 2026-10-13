@@ -7,6 +7,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import SUPERUSER_ID, Command, api, fields, models
 from odoo.exceptions import RedirectWarning, UserError
+from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools import SQL, frozendict
@@ -293,91 +294,109 @@ class AccountReturn(models.Model):
                 fields=sorted({key for vals in vals_list for key in vals}),
             )
         records = super().create(vals_list)
+        records._create_missing_audit_account_statuses()
+        return records
+
+    @api.model
+    def _open_audit_domain(self) -> Domain:
+        return Domain("type_id.category", "=", "audit") & Domain(
+            "audit_status", "!=", "done"
+        )
+
+    @_debug.perf.timed
+    def _create_missing_audit_account_statuses(self, accounts=None) -> None:
+        Account = self.env["account.account"]
+        AccountStatus = self.env["account.audit.account.status"]
         account_status_create_vals = []
-        for record in records:
-            if record.return_type_category == "audit":
-                accounts = self.env["account.account"].search_fetch(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
-                    domain=self.env["account.account"]._get_domain_company_compatible(
+        for record in self.filtered(lambda r: r.return_type_category == "audit"):
+            account_domain = Account._get_domain_company_compatible(record.company_ids)
+            if accounts is not None:
+                account_domain &= Domain("id", "in", accounts.ids)
+            accounts_to_seed = Account.search_fetch(  # noqa: E8507 -- one probe per open audit of the accounts' companies, a handful per audited company; every probe is keyed by the audit and its accounts
+                domain=account_domain,
+                field_names=["id"],
+            )
+            accounts_to_seed -= AccountStatus.search_fetch(  # noqa: E8507 -- one probe per open audit of the accounts' companies, a handful per audited company; every probe is keyed by the audit and its accounts
+                domain=[
+                    ("audit_id", "=", record.id),
+                    ("account_id", "in", accounts_to_seed.ids),
+                ],
+                field_names=["account_id"],
+            ).account_id
+            if not accounts_to_seed:
+                continue
+            eve_of_date_from = record.date_from - relativedelta(days=1)
+            date_from, date_to = record.type_id._get_period_boundaries(
+                record.company_id, eve_of_date_from
+            )
+            previous_return = self.env["account.return"].search(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
+                domain=[
+                    *self.env["account.return"]._get_domain_company_compatible(
+                        record.company_id
+                    ),
+                    ("tax_unit_id", "=", record.tax_unit_id.id),
+                    ("date_from", "=", date_from),
+                    ("date_to", "=", date_to),
+                    ("type_id", "=", record.type_id.id),
+                ],
+                limit=1,
+            )
+            previous_accounts_with_status = self.env["account.account"]
+            if previous_return:
+                previous_accounts_with_status = (
+                    self.env["account.audit.account.status"]
+                    .search(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
+                        domain=[
+                            ("audit_id", "=", previous_return.id),
+                            ("account_id", "in", accounts_to_seed.ids),
+                            ("status", "!=", False),
+                        ],
+                    )
+                    .account_id
+                )
+            period_lines_query = self.env["account.move.line"]._search(
+                [
+                    *self.env["account.move.line"]._get_domain_company_compatible(
                         record.company_ids
                     ),
-                    field_names=["id"],
-                )
-                eve_of_date_from = record.date_from - relativedelta(days=1)
-                date_from, date_to = record.type_id._get_period_boundaries(
-                    record.company_id, eve_of_date_from
-                )
-                previous_return = self.env["account.return"].search(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
-                    domain=[
-                        *self.env["account.return"]._get_domain_company_compatible(
-                            record.company_id
-                        ),
-                        ("tax_unit_id", "=", record.tax_unit_id.id),
-                        ("date_from", "=", date_from),
-                        ("date_to", "=", date_to),
-                        ("type_id", "=", record.type_id.id),
-                    ],
-                    limit=1,
-                )
-                previous_accounts_with_status = self.env["account.account"]
-                if previous_return:
-                    previous_accounts_with_status = (
-                        self.env["account.audit.account.status"]
-                        .search(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
-                            domain=[
-                                ("audit_id", "=", previous_return.id),
-                                ("status", "!=", False),
-                            ],
-                        )
-                        .account_id
-                    )
-                period_lines_query = self.env["account.move.line"]._search(
-                    [
-                        *self.env["account.move.line"]._get_domain_company_compatible(
-                            record.company_ids
-                        ),
-                        ("date", ">=", record.date_from),
-                        ("date", "<=", record.date_to),
-                        ("parent_state", "=", "posted"),
-                    ],
-                    limit=1,
-                )
-                period_lines_query.add_where(
-                    SQL("account_account.id = account_move_line.account_id")
-                )
-                accounts_query = self.env["account.account"]._search(
-                    self.env["account.account"]._get_domain_company_compatible(
-                        record.company_ids
-                    )
-                )
-                accounts_query.add_where(SQL("EXISTS(%s)", period_lines_query.select()))
-                accounts_used_during_period = set(accounts_query)
-                _debug.logic(
-                    "audit_account_statuses_seeded",
-                    tax_return=record,
-                    previous_return=previous_return,
-                    accounts=len(accounts),
-                    accounts_with_entries=len(accounts_used_during_period),
-                    previously_reviewed=previous_accounts_with_status,
-                )
+                    ("date", ">=", record.date_from),
+                    ("date", "<=", record.date_to),
+                    ("parent_state", "=", "posted"),
+                ],
+                limit=1,
+            )
+            period_lines_query.add_where(
+                SQL("account_account.id = account_move_line.account_id")
+            )
+            accounts_query = Account._search(Domain("id", "in", accounts_to_seed.ids))
+            accounts_query.add_where(SQL("EXISTS(%s)", period_lines_query.select()))
+            accounts_used_during_period = set(accounts_query)
+            _debug.logic(
+                "audit_account_statuses_seeded",
+                tax_return=record,
+                previous_return=previous_return,
+                accounts=len(accounts_to_seed),
+                accounts_with_entries=len(accounts_used_during_period),
+                previously_reviewed=previous_accounts_with_status,
+            )
 
-                account_status_create_vals += [
-                    {
-                        "audit_id": record.id,
-                        "account_id": account["id"],
-                        "status": "todo"
-                        if (account in previous_accounts_with_status)
-                        or (account.id in accounts_used_during_period)
-                        else False,
-                    }
-                    for account in accounts
-                ]
+            account_status_create_vals += [
+                {
+                    "audit_id": record.id,
+                    "account_id": account["id"],
+                    "status": "todo"
+                    if (account in previous_accounts_with_status)
+                    or (account.id in accounts_used_during_period)
+                    else False,
+                }
+                for account in accounts_to_seed
+            ]
         _debug.pipeline(
             "audit_account_status_vals_prepared",
-            tax_return=records,
+            tax_return=self,
             status_vals=len(account_status_create_vals),
         )
-        self.env["account.audit.account.status"].create(account_status_create_vals)
-        return records
+        AccountStatus.create(account_status_create_vals)
 
     @_debug.perf.timed
     def write(self, vals):
@@ -393,6 +412,10 @@ class AccountReturn(models.Model):
             if "audit_status" in vals:
                 if record.audit_status in ("ongoing", "paused"):
                     record._as_workflow_step().state = "new"
+        if {"audit_status", "active"} & vals.keys():
+            self.filtered("active").filtered_domain(
+                self._open_audit_domain()
+            )._create_missing_audit_account_statuses()
         return result
 
     @api.ondelete(at_uninstall=False)

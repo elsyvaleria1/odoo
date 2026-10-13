@@ -653,7 +653,8 @@ class TestMarinAccountAuditWithWorkingFile(AccountTestInvoicingCommon):
         ordered = Account.search([], order="audit_status, id")
 
         computed = self._computed("audit_status")
-        self.assertEqual(computed[unseeded], "todo")
+        self.assertIs(computed[unseeded], False)
+        self.assertEqual(self._computed("audit_status"), computed)
         self.assertEqual(set(computed.values()), {"todo", False})
         self._assert_searches_as_computed(conditions, found, computed)
         self.assertEqual(
@@ -709,6 +710,238 @@ class TestMarinAccountAuditWithWorkingFile(AccountTestInvoicingCommon):
                     ),
                 )
         self.assertEqual(groups, {0.5: 1, 0.0: len(computed) - 1})
+
+    def _new_account(self, code):
+        return self._accounts().create(
+            {
+                "name": f"Opened after the audit {code}",
+                "code": code,
+                "account_type": "expense",
+            }
+        )
+
+    def _post_in_audit_period(self, account):
+        self.env["account.move"].create(
+            {
+                "date": "2024-05-01",
+                "journal_id": self.company_data["default_journal_misc"].id,
+                "line_ids": [
+                    Command.create({"account_id": account.id, "debit": 10.0}),
+                    Command.create(
+                        {
+                            "account_id": self.company_data[
+                                "default_account_revenue"
+                            ].id,
+                            "credit": 10.0,
+                        }
+                    ),
+                ],
+            }
+        ).action_post()
+
+    def _status_reads(self, account):
+        reads = []
+        for _attempt in range(2):
+            self.env.invalidate_all()
+            reads.append(self._accounts().browse(account.id).audit_status)
+        return reads
+
+    def _found_by_status(self, account):
+        return {
+            value: bool(
+                self._accounts().search(
+                    [("id", "=", account.id), ("audit_status", "=", value)]
+                )
+            )
+            for value in ("todo", "reviewed", "anomaly", False)
+        }
+
+    def test_new_account_posted_after_a_read_joins_the_audit(self):
+        account = self._new_account("190514")
+        self.assertEqual(self._status_reads(account), [False, False])
+        balances = self.audit_2024.audit_balances_count
+
+        self._post_in_audit_period(account)
+
+        self.assertEqual(self._status_reads(account), ["todo", "todo"])
+        self.assertEqual(
+            self._found_by_status(account),
+            {"todo": True, "reviewed": False, "anomaly": False, False: False},
+        )
+        self.audit_2024.invalidate_recordset()
+        self.assertEqual(self.audit_2024.audit_balances_count, balances + 1)
+
+    def test_new_account_posted_before_any_read_joins_the_audit(self):
+        account = self._new_account("190515")
+        balances = self.audit_2024.audit_balances_count
+
+        self._post_in_audit_period(account)
+
+        self.assertEqual(self._status_reads(account), ["todo", "todo"])
+        self.assertEqual(
+            self._found_by_status(account),
+            {"todo": True, "reviewed": False, "anomaly": False, False: False},
+        )
+        self.audit_2024.invalidate_recordset()
+        self.assertEqual(self.audit_2024.audit_balances_count, balances + 1)
+
+    def test_audit_status_written_on_a_new_account_persists(self):
+        account = self._new_account("190516")
+        self._accounts().browse(account.id).audit_status = "reviewed"
+        self.assertEqual(self._status_reads(account), ["reviewed", "reviewed"])
+
+        self.env["account.audit.account.status"].sudo().search(
+            [("audit_id", "=", self.audit_2024.id), ("account_id", "=", account.id)]
+        ).unlink()
+        self.assertEqual(self._status_reads(account), [False, False])
+        self.assertEqual(
+            self._found_by_status(account),
+            {"todo": False, "reviewed": False, "anomaly": False, False: True},
+        )
+
+        self._accounts().browse(account.id).audit_status = "anomaly"
+        self.assertEqual(self._status_reads(account), ["anomaly", "anomaly"])
+        self.assertEqual(
+            self._found_by_status(account),
+            {"todo": False, "reviewed": False, "anomaly": True, False: False},
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestMarinAccountAuditCompanies(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company_data_2 = cls.setup_other_company()
+        cls.company_1 = cls.company_data["company"]
+        cls.company_2 = cls.company_data_2["company"]
+        cls.both_companies = cls.company_1 | cls.company_2
+        cls.audit_1, cls.audit_2 = (
+            cls.env.ref("account.default_audit_return_type")
+            .with_context(
+                forced_date_from=date(2024, 1, 1), forced_date_to=date(2024, 12, 31)
+            )
+            ._try_create_returns_for_fiscal_year(company, False)
+            for company in cls.both_companies
+        )
+
+    def _accounts(self):
+        return self.env["account.account"].with_context(
+            allowed_company_ids=self.both_companies.ids
+        )
+
+    def _statuses(self, account):
+        return {
+            row.audit_id: row.status
+            for row in self.env["account.audit.account.status"].search(
+                [
+                    ("account_id", "=", account.id),
+                    ("audit_id", "in", (self.audit_1 | self.audit_2).ids),
+                ]
+            )
+        }
+
+    def test_account_gaining_an_audited_company_gets_a_row(self):
+        account = self._accounts().create(
+            {
+                "name": "Gains company 1",
+                "code": "190517",
+                "account_type": "expense",
+                "company_ids": [Command.set(self.company_2.ids)],
+            }
+        )
+        self.assertEqual(self._statuses(account), {self.audit_2: False})
+
+        account.write(
+            {
+                "company_ids": [Command.link(self.company_1.id)],
+                "code_mapping_ids": [
+                    Command.create({"company_id": self.company_1.id, "code": "190517"})
+                ],
+            }
+        )
+
+        self.assertEqual(
+            self._statuses(account), {self.audit_1: False, self.audit_2: False}
+        )
+
+    def test_account_created_outside_the_current_companies_gets_a_row(self):
+        manager = new_test_user(
+            self.env,
+            login="marin_audit_seeder",
+            groups="account.group_account_manager",
+            company_id=self.company_1.id,
+            company_ids=[Command.set(self.both_companies.ids)],
+        )
+        account = (
+            self.env["account.account"]
+            .with_user(manager)
+            .with_context(allowed_company_ids=self.company_1.ids)
+            .create(
+                {
+                    "name": "Created from company 1",
+                    "code": "190521",
+                    "account_type": "expense",
+                    "company_ids": [Command.set(self.company_2.ids)],
+                }
+            )
+        )
+        self.assertEqual(self._statuses(account), {self.audit_2: False})
+
+    def test_reactivated_account_and_reopened_audit_get_rows(self):
+        account = self._accounts().create(
+            {
+                "name": "Archived at creation",
+                "code": "190518",
+                "account_type": "expense",
+                "active": False,
+            }
+        )
+        self.assertEqual(self._statuses(account), {})
+        account.active = True
+        self.assertEqual(self._statuses(account), {self.audit_1: False})
+
+        self.audit_1.audit_status = "done"
+        late = self._accounts().create(
+            {
+                "name": "Opened during closure",
+                "code": "190519",
+                "account_type": "expense",
+            }
+        )
+        self.assertEqual(self._statuses(late), {})
+        self.audit_1.audit_status = "ongoing"
+        self.assertEqual(self._statuses(late), {self.audit_1: False})
+
+    def test_unmerged_account_keeps_its_review_in_the_split_company_audit(self):
+        account = self._accounts().create(
+            {
+                "name": "Shared reviewed",
+                "account_type": "expense",
+                "company_ids": [Command.set(self.both_companies.ids)],
+                "code_mapping_ids": [
+                    Command.create({"company_id": company.id, "code": "190520"})
+                    for company in self.both_companies
+                ],
+            }
+        )
+        account.with_context(working_file_id=self.audit_2.id).audit_status = "reviewed"
+        self.assertEqual(
+            self._statuses(account), {self.audit_1: False, self.audit_2: "reviewed"}
+        )
+
+        account.with_company(self.company_1).with_context(
+            allowed_company_ids=self.both_companies.ids,
+            account_unmerge_confirm=True,
+        ).action_unmerge()
+        self.env.invalidate_all()
+
+        split = self._accounts().search(
+            [("name", "=", "Shared reviewed"), ("id", "!=", account.id)]
+        )
+        self.assertEqual(split.company_ids, self.company_2)
+        self.assertEqual(self._statuses(account), {self.audit_1: False})
+        self.assertEqual(self._statuses(split), {self.audit_2: "reviewed"})
 
 
 @tagged("post_install", "-at_install")

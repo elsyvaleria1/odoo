@@ -99,6 +99,11 @@
                 name="name">Privilege: move a return along its workflow, lock, submit, pay, complete or reset it</field>
             <field name="is_privilege" eval="True" />
         </record>
+        <record id="privilege_seed_audit_account_statuses" model="res.groups">
+            <field
+                name="name">Privilege: give an account its review row in every open audit of its companies, when it is created, joins a company or is split off</field>
+            <field name="is_privilege" eval="True" />
+        </record>
         <record id="res_group_privilege_accounting_bank" model="res.groups.privilege">
             <field name="name">Bank</field>
             <field name="sequence">50</field>

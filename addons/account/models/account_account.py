@@ -908,7 +908,27 @@ class AccountAccount(models.Model):
         records.flush_recordset()
         records.invalidate_recordset(fnames=["code", "code_store"])
         records._check_code_is_unique()
+        records._create_missing_audit_account_statuses()
         return records
+
+    def _as_audit_status_seeder(self):
+        return self.with_context(
+            allowed_company_ids=(self.env.company | self.env.user.company_ids).ids
+        ).with_privilege(
+            "account.privilege_seed_audit_account_statuses",
+            reason="an account given its review row in the open audits of its companies",
+        )
+
+    def _create_missing_audit_account_statuses(self) -> None:
+        if not self:
+            return
+        seeder = self._as_audit_status_seeder()
+        audits = seeder.env["account.return"].search(
+            seeder.env["account.return"]._open_audit_domain()
+            & Domain("company_ids", "child_of", seeder.company_ids.ids)
+        )
+        _debug.logic("open_audits_found", accounts=self, audits=audits)
+        audits._create_missing_audit_account_statuses(seeder)
 
     def _check_code_is_unique(self) -> None:
         for account in self.sudo():
@@ -1086,6 +1106,8 @@ class AccountAccount(models.Model):
             if "company_ids" in vals:
                 self.invalidate_recordset(fnames=["company_ids"])
             self._check_code_is_unique()
+        if "company_ids" in vals or vals.get("active"):
+            self._create_missing_audit_account_statuses()
 
         return res
 
@@ -1982,6 +2004,56 @@ class AccountAccount(models.Model):
                     )
                 )
 
+    def _unmerge_finalize(self, new_record_by_company) -> None:
+        super()._unmerge_finalize(new_record_by_company)
+        seeder = self._as_audit_status_seeder()
+        AccountStatus = seeder.env["account.audit.account.status"]
+        source_statuses = AccountStatus.search([("account_id", "=", self.id)])
+        if not source_statuses:
+            return
+        split_accounts = seeder.browse(
+            [record.id for record in new_record_by_company.values()]
+        )
+        split_status_by_key = {
+            (status.audit_id, status.account_id): status
+            for status in AccountStatus.search(
+                [
+                    ("audit_id", "in", source_statuses.audit_id.ids),
+                    ("account_id", "in", split_accounts.ids),
+                ]
+            )
+        }
+        create_vals = []
+        stale_statuses = AccountStatus
+        for source_status in source_statuses:
+            audit_domain = self._get_domain_company_compatible(
+                source_status.audit_id.company_ids
+            )
+            for account in split_accounts.filtered_domain(audit_domain):
+                if split_status := split_status_by_key.get(
+                    (source_status.audit_id, account)
+                ):
+                    split_status.status = source_status.status
+                else:
+                    create_vals.append(
+                        {
+                            "audit_id": source_status.audit_id.id,
+                            "account_id": account.id,
+                            "status": source_status.status,
+                        }
+                    )
+            if not seeder.filtered_domain(audit_domain):
+                stale_statuses |= source_status
+        _debug.pipeline(
+            "unmerge_audit_statuses_moved",
+            account=self,
+            split_accounts=split_accounts,
+            created=len(create_vals),
+            removed=stale_statuses,
+        )
+        AccountStatus.create(create_vals)
+        stale_statuses.unlink()
+
     def _unmerge_migrate_company_dependent_fields(
         self, new_records, new_id_by_company_id
     ) -> None:
@@ -2104,32 +2176,18 @@ class AccountAccount(models.Model):
         working_file = self.env["account.return"].browse(
             self.env.context.get("working_file_id")
         )
-
-        self.audit_status = "todo"
-
+        status_by_account = {
+            status.account_id: status.status
+            for status in working_file.audit_account_status_ids
+        }
+        for account in self:
+            account.audit_status = status_by_account.get(account, False)
         if working_file:
-            create_vals = []
-            account_status_by_account = {
-                status.account_id: status
-                for status in working_file.audit_account_status_ids
-            }
-            for account in self:
-                if account in account_status_by_account:
-                    account.audit_status = account_status_by_account[account].status
-                else:
-                    create_vals.append(
-                        {
-                            "account_id": account.id,
-                            "audit_id": working_file.id,
-                        }
-                    )
-            if create_vals:
-                self.env["account.audit.account.status"].create(create_vals)
             _debug.pipeline(
                 "audit_statuses_missing",
                 working_file=working_file,
                 accounts=self,
-                created=len(create_vals),
+                missing=sum(account not in status_by_account for account in self),
             )
 
     def _inverse_audit_status(self) -> None:
@@ -2142,9 +2200,19 @@ class AccountAccount(models.Model):
                 status.account_id: status
                 for status in working_file.audit_account_status_ids
             }
+            create_vals = []
             for account in self:
                 if account in account_status_by_account:
                     account_status_by_account[account].status = account.audit_status
+                else:
+                    create_vals.append(
+                        {
+                            "audit_id": working_file.id,
+                            "account_id": account.id,
+                            "status": account.audit_status,
+                        }
+                    )
+            self.env["account.audit.account.status"].create(create_vals)
 
     @_debug.perf.timed
     def _compute_balance_warning(self, balance_field_name, warning_field_name) -> None:
@@ -2272,10 +2340,7 @@ class AccountAccount(models.Model):
                     self._field_to_sql(alias, "id", query),
                 ),
             )
-            return SQL(
-                "CASE WHEN account_audit_account_status.id IS NULL THEN 'todo' "
-                "ELSE account_audit_account_status.status END"
-            )
+            return SQL("account_audit_account_status.status")
 
         working_file = self.env["account.return"].browse(
             self.env.context.get("working_file_id")
