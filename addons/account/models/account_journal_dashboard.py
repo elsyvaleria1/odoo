@@ -296,6 +296,9 @@ class AccountJournal(models.Model):
             ["date", "state", "journal_id", "company_id", "currency_id"]
         )
         self.env["account.payment"].flush_model()
+        self.env["account.move.line"].flush_model(
+            ["move_id", "payment_role", "amount_currency"]
+        )
         self.env.cr.execute(
             SQL(
                 """
@@ -485,7 +488,8 @@ class AccountJournal(models.Model):
                         ],
                         currency,
                     )
-                    data[index]["value"] = sign * amount
+                    # -0.0 + 0.0 is 0.0: an empty purchase bucket would serialize as -0.0
+                    data[index]["value"] = sign * amount + 0.0
             else:
                 graph_key = self.env._("Sample data")
                 sample = random.Random(journal.id)
@@ -1142,6 +1146,9 @@ class AccountJournal(models.Model):
         self.env["account.bank.statement.line"].flush_model()
         self.env["account.bank.statement"].flush_model()
         self.env["account.payment"].flush_model()
+        self.env["account.move.line"].flush_model(
+            ["move_id", "payment_role", "amount_currency"]
+        )
         self.env["account.move"].flush_model(
             ["state", "date", "journal_id", "company_id", "currency_id"]
         )
@@ -1255,14 +1262,12 @@ class AccountJournal(models.Model):
                    move.company_id AS company_id,
                    move.currency_id AS currency,
                    COUNT(*) AS count,
-                   SUM(CASE
-                       WHEN payment.payment_type = 'outbound' THEN -payment.amount
-                       ELSE payment.amount
-                   END) AS amount_total,
+                   SUM(liquidity.amount_currency) AS amount_total,
                    SUM(amount_company_currency_signed) AS amount_total_company
               FROM account_payment payment
               JOIN account_move move ON move.id = payment.move_id
               JOIN account_journal journal ON move.journal_id = journal.id
+              %(liquidity)s
              WHERE payment.is_bank_matched IS TRUE
                AND move.state = 'posted'
                AND payment.journal_id = ANY(%(journal_ids)s)
@@ -1273,8 +1278,23 @@ class AccountJournal(models.Model):
             """,
             period=period,
             condition=condition,
+            liquidity=self._payment_liquidity_join(),
             journal_ids=self.ids,
             company_ids=self.env.companies.ids,
+        )
+
+    def _payment_liquidity_join(self) -> SQL:
+        # payment.amount is gross of withholding; the liquidity lines carry what
+        # reaches the bank, as amount_company_currency_signed already does.
+        return SQL(
+            """
+         LEFT JOIN LATERAL (
+                           SELECT SUM(line.amount_currency) AS amount_currency
+                             FROM account_move_line line
+                            WHERE line.move_id = payment.move_id
+                              AND line.payment_role = 'liquidity'
+                   ) liquidity ON TRUE
+            """
         )
 
     def _summarize_payment_balances(self, query_result) -> dict:
@@ -1287,25 +1307,27 @@ class AccountJournal(models.Model):
 
     def _get_journal_dashboard_outstanding_payments(self):
         self.env.cr.execute(
-            """
+            SQL(
+                """
             SELECT payment.journal_id AS journal_id,
                    payment.company_id AS company_id,
                    payment.currency_id AS currency,
                    COUNT(*) AS count,
-                   SUM(CASE
-                       WHEN payment.payment_type = 'outbound' THEN -payment.amount
-                       ELSE payment.amount
-                   END) AS amount_total,
+                   SUM(liquidity.amount_currency) AS amount_total,
                    SUM(amount_company_currency_signed) AS amount_total_company
               FROM account_payment payment
               JOIN account_move move ON move.id = payment.move_id
+              %s
              WHERE payment.is_bank_matched IS NOT TRUE
                AND move.state = 'posted'
                AND payment.journal_id = ANY(%s)
                AND payment.company_id = ANY(%s)
           GROUP BY payment.company_id, payment.journal_id, payment.currency_id
-            """,
-            [self.ids, self.env.companies.ids],
+                """,
+                self._payment_liquidity_join(),
+                self.ids,
+                self.env.companies.ids,
+            )
         )
         return self._summarize_payment_balances(
             group_by_journal(self.env.cr.dictfetchall())

@@ -401,6 +401,19 @@ class TestMarinPaymentFixes(AccountTestInvoicingCommon):
 
         self.assertEqual(payment.state, "rejected")
 
+    def test_a_detached_channel_is_named_without_a_journal(self):
+        channel = self.bank_journal.inbound_payment_channel_ids[:1]
+        self.assertEqual(
+            channel.display_name, f"{channel.name} ({self.bank_journal.name})"
+        )
+        payment = self._payment(payment_channel_id=channel.id)
+
+        channel.unlink()
+
+        self.assertTrue(channel.exists())
+        self.assertFalse(channel.journal_id)
+        self.assertEqual(payment.payment_channel_id.display_name, channel.name)
+
     def test_unknown_payment_method_code_yields_a_domain(self):
         self.assertTrue(
             self.env["account.payment.method"]._get_domain_payment_method(
@@ -544,6 +557,134 @@ class TestMarinPayWizardBatches(AccountTestInvoicingCommon):
             self.assertEqual(wizard.total_payments_amount, 2)
             self.assertEqual(wizard.untrusted_payments_count, 2)
 
+    def test_several_payments_go_to_the_account_the_trust_check_read(self):
+        archived = self._bank_account("444444", trusted=False)
+        trusted = self._bank_account("555555", trusted=True)
+        bills = self.env["account.move"]
+        for amount in (100, 200):
+            bill = self.init_invoice(
+                "in_invoice",
+                partner=self.partner_a,
+                invoice_date="2017-01-01",
+                amounts=[amount],
+            )
+            bill.bank_account_id = archived
+            bill.action_post()
+            bills += bill
+        archived.action_archive()
+
+        with self._needing_bank_account():
+            wizard = self._register(bills, payment_date="2026-01-01")
+            self.assertFalse(wizard.group_payment)
+            self.assertEqual(wizard.untrusted_payments_count, 0)
+            payments = wizard._create_payments()
+
+        self.assertEqual(len(payments), 2)
+        self.assertEqual(payments.bank_account_id, trusted)
+
+    def _outbound_method_needing_a_bank_account(self):
+        Method = type(self.env["account.payment.method"])
+        information = Method._get_payment_method_information
+
+        def _get_payment_method_information(records):
+            return {
+                **information(records),
+                "marin_wire": {"mode": "multi", "type": ("bank",)},
+            }
+
+        method_patch = patch.object(
+            Method, "_get_payment_method_information", _get_payment_method_information
+        )
+        method_patch.start()
+        self.addCleanup(method_patch.stop)
+        self.env["account.payment.method"].sudo().create(
+            {"name": "Marin Wire", "code": "marin_wire", "payment_type": "outbound"}
+        )
+        journal = self.company_data["default_journal_bank"]
+        journal.outbound_payment_channel_ids.filtered(
+            lambda channel: channel.code == "marin_wire"
+        ).sequence = 0
+        self.assertEqual(
+            journal._get_available_payment_channels("outbound")[:1].code, "marin_wire"
+        )
+        return patch.object(
+            type(self.env["account.payment"]),
+            "_get_method_codes_needing_bank_account",
+            lambda records: ["marin_wire"],
+        )
+
+    def _mixed_direction_moves(self, refund_bank_account):
+        invoice = self.init_invoice(
+            "out_invoice",
+            partner=self.partner_a,
+            invoice_date="2017-01-01",
+            amounts=[100],
+            post=True,
+        )
+        refund = self.init_invoice(
+            "out_refund",
+            partner=self.partner_b,
+            invoice_date="2017-01-01",
+            amounts=[200],
+        )
+        refund.bank_account_id = refund_bank_account
+        refund.action_post()
+        return invoice, refund
+
+    def test_a_swapped_method_is_held_to_its_own_bank_account_requirement(self):
+        untrusted = self.env["res.partner.bank.account"].create(
+            {
+                "acc_number": "666666",
+                "partner_id": self.partner_b.id,
+                "acc_type": "bank",
+                "allow_out_payment": False,
+            }
+        )
+        invoice, refund = self._mixed_direction_moves(untrusted)
+
+        with self._outbound_method_needing_a_bank_account():
+            wizard = self._register(invoice + refund, payment_date="2026-01-01")
+            self.assertFalse(wizard.can_edit_wizard)
+            self.assertEqual(wizard.payment_type, "inbound")
+            self.assertFalse(wizard.require_partner_bank_account)
+            self.assertEqual(wizard.untrusted_payments_count, 1)
+            self.assertEqual(wizard.untrusted_bank_account_ids, untrusted)
+            payments = wizard._create_payments()
+
+        self.assertEqual(payments.payment_type, "inbound")
+        self.assertEqual(payments.partner_id, self.partner_a)
+        self.assertEqual(refund.payment_state, "not_paid")
+
+    def test_a_swapped_method_needing_a_bank_account_reports_a_missing_one(self):
+        invoice, refund = self._mixed_direction_moves(
+            self.env["res.partner.bank.account"]
+        )
+
+        with self._outbound_method_needing_a_bank_account():
+            wizard = self._register(invoice + refund, payment_date="2026-01-01")
+            self.assertEqual(wizard.missing_account_partners, self.partner_b)
+
+    def test_a_swapped_method_pays_a_trusted_account(self):
+        trusted = self.env["res.partner.bank.account"].create(
+            {
+                "acc_number": "777777",
+                "partner_id": self.partner_b.id,
+                "acc_type": "bank",
+                "allow_out_payment": True,
+            }
+        )
+        invoice, refund = self._mixed_direction_moves(trusted)
+
+        with self._outbound_method_needing_a_bank_account():
+            wizard = self._register(invoice + refund, payment_date="2026-01-01")
+            self.assertEqual(wizard.untrusted_payments_count, 0)
+            payments = wizard._create_payments()
+
+        outbound = payments.filtered(lambda p: p.payment_type == "outbound")
+        self.assertEqual(outbound.payment_method_code, "marin_wire")
+        self.assertEqual(outbound.bank_account_id, trusted)
+        self.assertEqual(len(payments), 2)
+
 
 @tagged("post_install", "-at_install")
 class TestMarinPaymentReclassification(AccountTestInvoicingCommon):
@@ -668,3 +809,212 @@ class TestMarinPaymentReclassification(AccountTestInvoicingCommon):
                 lambda l: l.account_id == self.other_receivable and not l.reconciled
             )
         )
+
+
+@tagged("post_install", "-at_install")
+class TestMarinPaymentReclassificationChain(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.account_a = cls.copy_account(
+            cls.company_data["default_account_receivable"], {"name": "AR A"}
+        )
+        cls.account_b = cls.copy_account(cls.account_a, {"name": "AR B"})
+        cls.account_c = cls.copy_account(cls.account_a, {"name": "AR C"})
+
+    def _payment(self):
+        payment = self.env["account.payment"].create(
+            {
+                "amount": 100.0,
+                "date": "2026-08-01",
+                "partner_id": self.partner_a.id,
+                "partner_type": "customer",
+                "payment_type": "inbound",
+                "journal_id": self.company_data["default_journal_bank"].id,
+                "counterpart_account_id": self.account_a.id,
+            }
+        )
+        payment.action_post()
+        self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
+        return payment
+
+    def _wizard(self, payment):
+        return (
+            self.env["wizard.account.payment.correct.accounts"]
+            .with_context(default_payment_id=payment.id)
+            .create({"date": "2026-09-05"})
+        )
+
+    def _reclassify(self, payment, **accounts):
+        wizard = self._wizard(payment)
+        before = self._entries(payment)
+        for fname, account in accounts.items():
+            wizard[fname] = account
+        wizard.action_correct()
+        return self._entries(payment) - before
+
+    def _entries(self, payment):
+        return self.env["account.move"].search(
+            [("reclassified_payment_id", "=", payment.id)]
+        )
+
+    def _lines(self, account):
+        return self.env["account.move.line"].search(
+            [("account_id", "=", account.id), ("parent_state", "=", "posted")]
+        )
+
+    def _net(self, account):
+        return sum(self._lines(account).mapped("balance"))
+
+    def _open(self, account):
+        return sum(self._lines(account).mapped("amount_residual"))
+
+    def _invoice_on(self, account, amount):
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-09-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "goods",
+                            "price_unit": amount,
+                            "tax_ids": [Command.clear()],
+                        }
+                    )
+                ],
+            }
+        )
+        term_line = invoice.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        )
+        term_line.account_id = account
+        invoice.action_post()
+        return term_line
+
+    def test_a_reclassified_account_can_be_reclassified_again(self):
+        payment = self._payment()
+        first = self._reclassify(payment, counterpart_account_id=self.account_b)
+        wizard = self._wizard(payment)
+        self.assertEqual(wizard.counterpart_account_id, self.account_b)
+
+        second = self._reclassify(payment, counterpart_account_id=self.account_c)
+
+        self.assertEqual(len(second), 1)
+        self.assertEqual(
+            sorted(second.line_ids.mapped(lambda l: (l.account_id.id, l.balance))),
+            sorted([(self.account_b.id, 100.0), (self.account_c.id, -100.0)]),
+        )
+        self.assertTrue(payment._seek_for_lines()[1].reconciled)
+        self.assertTrue(
+            first.line_ids.filtered(lambda l: l.account_id == self.account_b).reconciled
+        )
+        self.assertEqual(self._net(self.account_a), 0.0)
+        self.assertEqual(self._net(self.account_b), 0.0)
+        self.assertEqual(self._net(self.account_c), -100.0)
+        self.assertEqual(self._open(self.account_c), -100.0)
+        self.assertEqual(self._wizard(payment).counterpart_account_id, self.account_c)
+        self.assertEqual(payment.counterpart_account_id, self.account_a)
+
+    def test_a_partly_matched_reclassification_moves_only_its_open_part(self):
+        payment = self._payment()
+        first = self._reclassify(payment, counterpart_account_id=self.account_b)
+        first_b_line = first.line_ids.filtered(lambda l: l.account_id == self.account_b)
+        (first_b_line + self._invoice_on(self.account_b, 60.0)).reconcile()
+        self.assertAlmostEqual(first_b_line.amount_residual, -40.0)
+
+        second = self._reclassify(payment, counterpart_account_id=self.account_c)
+
+        self.assertEqual(
+            sorted(second.line_ids.mapped(lambda l: (l.account_id.id, l.balance))),
+            sorted([(self.account_b.id, 40.0), (self.account_c.id, -40.0)]),
+        )
+        self.assertTrue(first_b_line.reconciled)
+        self.assertEqual(self._net(self.account_a), 0.0)
+        self.assertEqual(self._net(self.account_b), 0.0)
+        self.assertEqual(self._open(self.account_b), 0.0)
+        self.assertEqual(self._net(self.account_c), -40.0)
+        self.assertEqual(self._open(self.account_c), -40.0)
+
+    def test_a_fully_matched_reclassification_has_nothing_to_move(self):
+        payment = self._payment()
+        first = self._reclassify(payment, counterpart_account_id=self.account_b)
+        (
+            first.line_ids.filtered(lambda l: l.account_id == self.account_b)
+            + self._invoice_on(self.account_b, 100.0)
+        ).reconcile()
+
+        with self.assertRaisesRegex(UserError, "Nothing is left open"):
+            self._reclassify(payment, counterpart_account_id=self.account_c)
+
+    def test_a_reversed_link_of_the_chain_is_redone_from_its_source(self):
+        payment = self._payment()
+        self._reclassify(payment, counterpart_account_id=self.account_b)
+        second = self._reclassify(payment, counterpart_account_id=self.account_c)
+        second._reverse_moves([{"date": "2026-09-06"}], cancel=True)
+        self.assertEqual(self._wizard(payment).counterpart_account_id, self.account_b)
+        self.assertEqual(self._open(self.account_c), 0.0)
+
+        third = self._reclassify(payment, counterpart_account_id=self.account_c)
+
+        self.assertEqual(
+            sorted(third.line_ids.mapped(lambda l: (l.account_id.id, l.balance))),
+            sorted([(self.account_b.id, 100.0), (self.account_c.id, -100.0)]),
+        )
+        self.assertEqual(self._net(self.account_a), 0.0)
+        self.assertEqual(self._net(self.account_b), 0.0)
+        self.assertEqual(self._net(self.account_c), -100.0)
+        self.assertEqual(self._open(self.account_c), -100.0)
+
+    def test_a_chain_broken_by_reversing_its_first_link_is_refused(self):
+        payment = self._payment()
+        first = self._reclassify(payment, counterpart_account_id=self.account_b)
+        self._reclassify(payment, counterpart_account_id=self.account_c)
+        first._reverse_moves([{"date": "2026-09-06"}], cancel=True)
+
+        with self.assertRaisesRegex(UserError, "reverse"):
+            self._reclassify(
+                payment,
+                counterpart_account_id=self.company_data["default_account_receivable"],
+            )
+
+    def test_the_liquidity_account_is_reclassified_twice(self):
+        payment = self._payment()
+        liquidity = payment.liquidity_account_id
+        second_liquidity = self.copy_account(liquidity, {"name": "Liquidity 2"})
+        third_liquidity = self.copy_account(liquidity, {"name": "Liquidity 3"})
+        self._reclassify(
+            payment,
+            counterpart_account_id=self.account_b,
+            liquidity_account_id=second_liquidity,
+        )
+        wizard = self._wizard(payment)
+        self.assertEqual(wizard.liquidity_account_id, second_liquidity)
+        self.assertEqual(wizard.counterpart_account_id, self.account_b)
+
+        second = self._reclassify(payment, liquidity_account_id=third_liquidity)
+
+        self.assertEqual(
+            sorted(second.line_ids.mapped(lambda l: (l.account_id.id, l.balance))),
+            sorted([(second_liquidity.id, -100.0), (third_liquidity.id, 100.0)]),
+        )
+        self.assertEqual(self._net(liquidity), 0.0)
+        self.assertEqual(self._net(second_liquidity), 0.0)
+        self.assertEqual(self._net(third_liquidity), 100.0)
+        self.assertEqual(self._net(self.account_b), -100.0)
+
+    def test_a_reclassified_payment_in_an_open_period_is_reclassified_again(self):
+        payment = self._payment()
+        self._reclassify(payment, counterpart_account_id=self.account_b)
+        self.env.company.account_config_id.fiscalyear_lock_date = False
+        wizard = self._wizard(payment)
+        self.assertFalse(wizard.is_locked)
+        self.assertTrue(wizard.is_reclassified)
+
+        second = self._reclassify(payment, counterpart_account_id=self.account_c)
+
+        self.assertEqual(len(second), 1)
+        self.assertEqual(payment.counterpart_account_id, self.account_a)
+        self.assertEqual(self._net(self.account_b), 0.0)
+        self.assertEqual(self._net(self.account_c), -100.0)

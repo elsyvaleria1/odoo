@@ -1560,17 +1560,16 @@ class WizardAccountMoveLinePay(models.TransientModel):
     def _create_payment_vals_from_batch(self, batch_result):
         batch_values = self._get_wizard_values_from_batch(batch_result)
 
-        if batch_values["payment_type"] == "inbound":
-            bank_account_id = self.journal_id.bank_account_id.id
-        else:
-            bank_account_id = batch_result["payment_values"]["bank_account_id"]
-
-        payment_channel = self.payment_channel_id
-
-        if batch_values["payment_type"] != payment_channel.payment_type:
-            payment_channel = self.journal_id._get_available_payment_channels(
-                batch_values["payment_type"]
-            )[:1]
+        # An outbound batch without an account of its own leaves the key unset: the
+        # payment then picks the first available account, as the trust check does,
+        # and overrides (l10n_au_hr_payroll_account) may still supply their own.
+        bank_account_id = (
+            self._get_batch_account(batch_result).id
+            if batch_values["payment_type"] == "inbound"
+            or batch_result["payment_values"]["bank_account_id"]
+            else False
+        )
+        payment_channel = self._get_batch_payment_channel(batch_result)
 
         payment_vals = {
             "date": self.payment_date,
@@ -1790,10 +1789,20 @@ class WizardAccountMoveLinePay(models.TransientModel):
             if (lines := batch_result["lines"] & lines_to_pay)
         ]
 
+    def _get_batch_payment_channel(self, batch_result):
+        payment_type = batch_result["payment_values"]["payment_type"]
+        if payment_type == self.payment_channel_id.payment_type:
+            return self.payment_channel_id
+        return self.journal_id._get_available_payment_channels(payment_type)[:1]
+
     def _requires_trusted_recipient(self, batch_result) -> bool:
+        if batch_result["payment_values"]["payment_type"] != "outbound":
+            return False
+        if self._is_single_payment_mode():
+            return self.require_partner_bank_account
         return (
-            self.require_partner_bank_account
-            and batch_result["payment_values"]["payment_type"] == "outbound"
+            self._get_batch_payment_channel(batch_result).code
+            in self.env["account.payment"]._get_method_codes_needing_bank_account()
         )
 
     def _get_batch_recipient_account(self, batch_result):
@@ -1822,7 +1831,12 @@ class WizardAccountMoveLinePay(models.TransientModel):
             raise UserError(
                 self.env._(
                     "To record payments with %(payment_method)s, the recipient bank account must be manually validated. You should go on the partner bank account in order to validate it.",
-                    payment_method=self.payment_channel_id.name,
+                    payment_method=", ".join(
+                        OrderedSet(
+                            self._get_batch_payment_channel(batch).name
+                            for batch in payment_batches
+                        )
+                    ),
                 )
             )
         return batches

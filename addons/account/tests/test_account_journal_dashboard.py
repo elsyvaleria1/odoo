@@ -1,9 +1,11 @@
+import math
 from unittest.mock import patch
 
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
 
 from odoo import Command
+from odoo.libs.json import loads as json_loads
 from odoo.tests import tagged
 from odoo.tools.misc import format_amount
 
@@ -805,6 +807,19 @@ class TestAccountJournalDashboardSigns(TestAccountJournalDashboardCommon):
                     self._sums(journal)[1], format_amount(self.env, 1000, quarter)
                 )
 
+    @freeze_time("2019-06-01")
+    def test_empty_buckets_of_the_purchase_graph_are_a_positive_zero(self):
+        journal = self._journal_in("purchase", "FXZ1", None)
+        self._post(journal, "in_invoice", 1000, self.company_data["currency"])
+
+        graph = json_loads(journal.kanban_dashboard_graph)[0]
+
+        self.assertFalse(graph["is_sample_data"])
+        self.assertEqual(graph["values"][0]["value"], 1000)
+        empty = [point["value"] for point in graph["values"][1:]]
+        self.assertEqual(empty, [0.0] * 5)
+        self.assertEqual([math.copysign(1, value) for value in empty], [1.0] * 5)
+
     def test_the_negative_residual_set_is_the_outbound_set(self):
         self.assertEqual(
             sorted(self.env["account.move"].get_outbound_types()),
@@ -1249,6 +1264,75 @@ class TestAccountJournalBankCard(TestAccountJournalDashboardCommon):
         self.assertEqual(card["account_balance"], self.other_currency.format(100.0))
         self.assertEqual(card["upcoming_balance"], self.other_currency.format(30.0))
         self.assertEqual(card["nb_upcoming"], 1)
+
+    def _withholding(self, amount):
+        def _prepare_move_withholding_lines(payment, default_values):
+            amount_currency = amount if payment.payment_type == "inbound" else -amount
+            return [
+                {
+                    "name": "withholding",
+                    "account_id": self.company_data["default_account_assets"].id,
+                    "partner_id": payment.partner_id.id,
+                    "currency_id": payment.currency_id.id,
+                    "amount_currency": amount_currency,
+                    "balance": payment.currency_id._convert(
+                        amount_currency,
+                        payment.company_currency_id,
+                        payment.company_id,
+                        payment.date,
+                    ),
+                }
+            ]
+
+        return patch.object(
+            type(self.env["account.payment"]),
+            "_prepare_move_withholding_lines",
+            _prepare_move_withholding_lines,
+        )
+
+    @freeze_time("2019-01-22")
+    def test_a_foreign_direct_payment_counts_what_reached_the_bank(self):
+        journal = self._direct_payment_journal(self.other_currency)
+        with self._withholding(10.0):
+            payments = self._create_direct_payments(
+                journal,
+                ("2019-01-15", 100.0),
+                ("2019-01-16", -50.0),
+                ("2019-01-17", 30.0),
+            )
+        self.assertEqual(
+            payments.move_id.line_ids.filtered(
+                lambda line: line.payment_role == "liquidity"
+            )
+            .sorted("amount_currency")
+            .mapped("amount_currency"),
+            [-40.0, 20.0, 90.0],
+        )
+
+        card, graph = self._card_and_graph(journal)
+
+        self.assertEqual(card["account_balance"], self.other_currency.format(70.0))
+        self.assertEqual(graph[-1]["y"], 70.0)
+
+    @freeze_time("2019-01-22")
+    def test_a_foreign_outstanding_payment_counts_what_reaches_the_bank(self):
+        journal = self.company_data["default_journal_bank"].copy(
+            {"currency_id": self.other_currency.id}
+        )
+        with self._withholding(10.0):
+            self._create_direct_payments(
+                journal,
+                ("2019-01-15", 100.0),
+                ("2019-01-16", -50.0),
+                ("2019-01-17", 30.0),
+            )
+
+        card = journal._get_journal_dashboard_data_batched()[journal.id]
+
+        self.assertEqual(card["nb_lines_outstanding_pay_account_balance"], 3)
+        self.assertEqual(
+            card["outstanding_pay_account_balance"], self.other_currency.format(70.0)
+        )
 
     @freeze_time("2019-01-22")
     def test_direct_bank_payments_are_dated_in_card_and_graph(self):
