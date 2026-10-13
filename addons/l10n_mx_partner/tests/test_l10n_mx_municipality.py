@@ -1,5 +1,6 @@
 from psycopg import IntegrityError
 
+from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
 
@@ -18,6 +19,7 @@ class MunicipalityTestBase(TransactionCase):
         )
 
 
+@tagged("post_install_l10n", "post_install", "-at_install")
 class TestMunicipalityBasic(MunicipalityTestBase):
     def test_create_municipality(self) -> None:
         municipality = self.Municipality.create(
@@ -44,6 +46,7 @@ class TestMunicipalityBasic(MunicipalityTestBase):
         self.assertEqual(municipality.partner_count, 0)
 
 
+@tagged("post_install_l10n", "post_install", "-at_install")
 class TestMunicipalityDisplayName(MunicipalityTestBase):
     def test_display_name_format(self) -> None:
         municipality = self.Municipality.create(
@@ -59,6 +62,7 @@ class TestMunicipalityDisplayName(MunicipalityTestBase):
         self.assertIn(",", municipality.display_name)
 
 
+@tagged("post_install_l10n", "post_install", "-at_install")
 class TestMunicipalityConstraints(MunicipalityTestBase):
     def test_unique_code_per_state(self) -> None:
         self.Municipality.create(
@@ -79,6 +83,7 @@ class TestMunicipalityConstraints(MunicipalityTestBase):
             )
 
 
+@tagged("post_install_l10n", "post_install", "-at_install")
 class TestMunicipalityActions(MunicipalityTestBase):
     def test_action_view_partners(self) -> None:
         municipality = self.Municipality.create(

@@ -6535,7 +6535,7 @@ class TestInvisibleField(TransactionCaseWithUserDemo):
             "document",
             "document_account",
             "document_fleet",
-            "document_l10n_be_hr_payroll",
+            "l10n_be_hr_payroll_document",
             "document_project",
             "document_project_sale",
             "document_spreadsheet",

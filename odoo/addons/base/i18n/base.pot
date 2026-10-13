@@ -55,7 +55,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_approval_account_l10n_mx_edi
+#: model:ir.module.module,description:base.module_l10n_mx_edi_approval_account
 msgid ""
 "\n"
 "Account Approvals - Mexican EDI\n"
@@ -3309,7 +3309,7 @@ msgid "Accessible only for the super user"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_approval_account_l10n_mx_edi
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_edi_approval_account
 msgid "Account Approvals - Mexican EDI"
 msgstr ""
 
@@ -3955,7 +3955,7 @@ msgid "Add Manufacturing spreadsheet dashboards"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_partner_l10n_mx
+#: model:ir.module.module,summary:base.module_l10n_mx_partner
 msgid ""
 "Add Mexico's municipality and SEPOMEX postal code catalogues to contact "
 "addresses"
@@ -4072,7 +4072,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_agro_surface_l10n_mx_map_threed
+#: model:ir.module.module,summary:base.module_l10n_mx_agro_surface_map_threed
 msgid "Add a 3D view to the SIAP market map, one column per municipality"
 msgstr ""
 
@@ -4085,7 +4085,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_agro_surface_l10n_mx_map
+#: model:ir.module.module,summary:base.module_l10n_mx_agro_surface_map
 msgid ""
 "Add a Market Map dashboard of the SIAP agrochemical market by municipality "
 "and crop"
@@ -4222,7 +4222,7 @@ msgid "Add an optional cash-basis calculation mode to accounting reports"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_geoengine_l10n_mx
+#: model:ir.module.module,summary:base.module_l10n_mx_geoengine
 msgid ""
 "Add boundaries to Mexican states and municipalities and serve them as "
 "simplified GeoJSON"
@@ -5110,7 +5110,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_agro_surface_l10n_mx_map_threed
+#: model:ir.module.module,description:base.module_l10n_mx_agro_surface_map_threed
 msgid ""
 "Adds a 3D switch to the SIAP market map: each municipality is an extruded "
 "column whose height is its share of the highest value shown, coloured, "
@@ -5232,13 +5232,13 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_agro_surface_l10n_mx_map_account
+#: model:ir.module.module,description:base.module_l10n_mx_agro_surface_map_account
 msgid ""
 "Adds a SIAP segment to product categories, inherited by subcategories, and a"
 " read-only report of posted customer invoice lines by municipality and "
 "segment. A line is placed at the delivery or customer address: its city, "
 "else the municipality set on the contact, else the municipality of its "
-"postal code (partner_l10n_mx), else only its state; each line says which. "
+"postal code (l10n_mx_partner), else only its state; each line says which. "
 "The market map gains Sales, Penetration and Opportunity metrics per segment "
 "and opens these lines as records. Amounts compare with a market priced in "
 "USD: a USD company keeps its amount, pesos convert at the map's rate, other "
@@ -5454,7 +5454,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_ke_hr_payroll
+#: model:ir.module.module,description:base.module_l10n_ke_hr_payroll_document
 msgid ""
 "Adds a document count button and hides the save warning on the tax deduction"
 " card form. This addon contains a view adaptation; payroll form generation "
@@ -6765,7 +6765,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_hk_hr_payroll
+#: model:ir.module.module,description:base.module_l10n_hk_hr_payroll_document
 msgid ""
 "Adds document count buttons and hides save warnings on IR56B, IR56E, IR56F "
 "and IR56G forms. This addon contains view adaptations; declaration "
@@ -7013,14 +7013,14 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_geoengine_l10n_mx
+#: model:ir.module.module,description:base.module_l10n_mx_geoengine
 msgid ""
 "Adds geometry and area to Mexican states, municipalities and postal codes, "
 "supplies the state boundaries, loads municipality and postal-code geometry "
 "prepared with the bundled tools, shows them on geoengine maps, and serves "
 "state and municipality boundaries as coverage-simplified GeoJSON (gzip-"
 "compressed, cached per version) for web maps. The municipality and postal "
-"code catalogues come from partner_l10n_mx. Requires PostGIS."
+"code catalogues come from l10n_mx_partner. Requires PostGIS."
 msgstr ""
 
 #. module: base
@@ -8439,19 +8439,19 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_agro_surface_l10n_mx_map
+#: model:ir.module.module,description:base.module_l10n_mx_agro_surface_map
 msgid ""
 "Adds the Market Map to Agronomy reporting: Mexico drawn by municipality or "
 "by state and coloured by the SIAP market value, planted hectares, USD per "
 "hectare or pesos, per agrochemical segment, with a ranking, a crop treemap "
 "and a detail panel that filter one another; states, municipalities and crops"
 " can be picked one at a time or several at once. The market comes from "
-"agro_surface_l10n_mx's value-by-zone report, the boundaries from "
-"geoengine_l10n_mx. Pesos use a fixed rate per year when the system parameter"
-" agro_surface_l10n_mx_map.usd_mxn_rate.<year> holds one, else the day's "
+"l10n_mx_agro_surface's value-by-zone report, the boundaries from "
+"l10n_mx_geoengine. Pesos use a fixed rate per year when the system parameter"
+" l10n_mx_agro_surface_map.usd_mxn_rate.<year> holds one, else the day's "
 "rate, and are unavailable without one. Other modules add metrics by patching"
 " the dashboard, and views next to the 2D map through the "
-"agro_surface_l10n_mx_map.renderers registry."
+"l10n_mx_agro_surface_map.renderers registry."
 msgstr ""
 
 #. module: base
@@ -8494,7 +8494,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_partner_l10n_mx
+#: model:ir.module.module,description:base.module_l10n_mx_partner
 msgid ""
 "Adds the catalogue of Mexican municipalities (INEGI keys per state) and of "
 "postal codes with their settlements, an import of the national SEPOMEX file "
@@ -8503,7 +8503,7 @@ msgid ""
 "municipality and postal code fields on contacts. Other modules read a "
 "contact's municipality through one SQL expression: the municipality set on "
 "it, else the one of its postal code. Municipalities are not preloaded; they "
-"come from a module that supplies them, such as geoengine_l10n_mx with its "
+"come from a module that supplies them, such as l10n_mx_geoengine with its "
 "boundaries."
 msgstr ""
 
@@ -13477,7 +13477,7 @@ msgid "Belarus"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_be_hr_payroll
+#: model:ir.module.module,shortdesc:base.module_l10n_be_hr_payroll_document
 msgid "Belgian Payroll Document Integration"
 msgstr ""
 
@@ -16667,7 +16667,7 @@ msgid "Compare applicant skills with job requirements"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_agro_surface_l10n_mx_map_account
+#: model:ir.module.module,summary:base.module_l10n_mx_agro_surface_map_account
 msgid ""
 "Compare invoiced sales with the SIAP market on the market map: sales, "
 "penetration and opportunity"
@@ -18913,7 +18913,7 @@ msgid "Count and open CRM leads linked to a mailing source"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_agro_surface_l10n_mx_map_account_marin
+#: model:ir.module.module,summary:base.module_l10n_mx_agro_surface_map_account_marin
 msgid ""
 "Count only real-treatment journals as sales and map AgroMarin categories to "
 "SIAP segments"
@@ -22696,7 +22696,7 @@ msgid "Download"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_mx_edi
+#: model:ir.module.module,summary:base.module_l10n_mx_edi_sat_import
 msgid ""
 "Download and file CFDI XML documents and create or match accounting records"
 msgstr ""
@@ -25072,12 +25072,12 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_hk_hr_payroll
+#: model:ir.module.module,summary:base.module_l10n_hk_hr_payroll_document
 msgid "Expose document links on Hong Kong IR56 declaration forms"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_ke_hr_payroll
+#: model:ir.module.module,summary:base.module_l10n_ke_hr_payroll_document
 msgid "Expose document links on Kenyan tax deduction card forms"
 msgstr ""
 
@@ -27098,7 +27098,7 @@ msgid "File Arch"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_be_hr_payroll
+#: model:ir.module.module,summary:base.module_l10n_be_hr_payroll_document
 msgid ""
 "File Belgian payroll export outputs and adapt declaration views for "
 "Documents"
@@ -27193,7 +27193,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_be_hr_payroll
+#: model:ir.module.module,description:base.module_l10n_be_hr_payroll_document
 msgid ""
 "Files generated social balance sheets and social security certificates when "
 "a company employee folder and HR document settings are enabled. Also hides "
@@ -27450,12 +27450,12 @@ msgid "Fiscal Category Report"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_approval_account_l10n_mx_edi
+#: model:ir.module.module,summary:base.module_l10n_mx_edi_approval_account
 msgid "Fiscal filters and CFDI XML linking on approval requests"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_approval_account_l10n_mx_edi_telegram
+#: model:ir.module.module,summary:base.module_l10n_mx_edi_approval_account_telegram
 msgid ""
 "Fiscal review of the supplier RFC and linked SAT CFDI in Telegram approval "
 "requests"
@@ -29424,7 +29424,7 @@ msgid "Hong Kong - eMPF Contributions"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_hk_hr_payroll
+#: model:ir.module.module,shortdesc:base.module_l10n_hk_hr_payroll_document
 msgid "Hong Kong Payroll Document Navigation"
 msgstr ""
 
@@ -32190,7 +32190,7 @@ msgid "Kenya - eTIMS OSCU Stock Exchange"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_ke_hr_payroll
+#: model:ir.module.module,shortdesc:base.module_l10n_ke_hr_payroll_document
 msgid "Kenyan Payroll Document Navigation"
 msgstr ""
 
@@ -33311,7 +33311,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_agro_surface_l10n_mx
+#: model:ir.module.module,description:base.module_l10n_mx_agro_surface
 msgid ""
 "Links SIAP reference rows to Mexican municipalities and agronomic crops. "
 "Provides crop-group value and percentage settings and a SQL report "
@@ -33677,7 +33677,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_agro_surface_l10n_mx
+#: model:ir.module.module,summary:base.module_l10n_mx_agro_surface
 msgid ""
 "Load SIAP crop-area data and estimate market values by municipality and crop"
 msgstr ""
@@ -34673,7 +34673,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_mx_edi
+#: model:ir.module.module,description:base.module_l10n_mx_edi_sat_import
 msgid ""
 "Manages SAT download sessions through SOAP or a configured portal service, "
 "extracts downloaded XML packages and files CFDI documents by company and "
@@ -35240,7 +35240,7 @@ msgid "Mexican Localization - Account Move Templates"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_partner_l10n_mx
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_partner
 msgid "Mexican Municipalities and Postal Codes"
 msgstr ""
 
@@ -35265,7 +35265,7 @@ msgid "Mexico - CFDI Customs Numbers"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_mx_edi
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_edi_sat_import
 msgid "Mexico - CFDI Document Imports"
 msgstr ""
 
@@ -35295,7 +35295,7 @@ msgid "Mexico - Field Collections"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_geoengine_l10n_mx
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_geoengine
 msgid "Mexico - Geographic Boundaries"
 msgstr ""
 
@@ -35340,27 +35340,27 @@ msgid "Mexico - SAT Partner Blocklist"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_agro_surface_l10n_mx
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_agro_surface
 msgid "Mexico - SIAP Crop Area Reports"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_agro_surface_l10n_mx_map
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_agro_surface_map
 msgid "Mexico - SIAP Market Map"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_agro_surface_l10n_mx_map_threed
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_agro_surface_map_threed
 msgid "Mexico - SIAP Market Map: 3D"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_agro_surface_l10n_mx_map_account_marin
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_agro_surface_map_account_marin
 msgid "Mexico - SIAP Market Map: AgroMarin Sales"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_agro_surface_l10n_mx_map_account
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_agro_surface_map_account
 msgid "Mexico - SIAP Market Map: Sales"
 msgstr ""
 
@@ -45519,7 +45519,7 @@ msgid "Restricted to Groups"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_agro_surface_l10n_mx_map_account_marin
+#: model:ir.module.module,description:base.module_l10n_mx_agro_surface_map_account_marin
 msgid ""
 "Restricts the market map's sales to journals whose treatment is fiscal_real "
 "or not_fiscal_real, as the sales master report does, and assigns the SIAP "
@@ -47635,7 +47635,7 @@ msgid "Select asset custodians by employee and review their assigned assets"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_ch_hr_payroll
+#: model:ir.module.module,summary:base.module_l10n_ch_hr_payroll_document
 msgid ""
 "Select document-aware Swiss payslip emails and adapt the individual account "
 "view"
@@ -47767,7 +47767,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_ch_hr_payroll
+#: model:ir.module.module,description:base.module_l10n_ch_hr_payroll_document
 msgid ""
 "Selects the Swiss payslip email template according to whether the employee "
 "or employee contact has a user account. Hides the individual account save "
@@ -50839,7 +50839,7 @@ msgid "Sweden - SIE 5 Accounting Import"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_ch_hr_payroll
+#: model:ir.module.module,shortdesc:base.module_l10n_ch_hr_payroll_document
 msgid "Swiss Payroll Document Notifications"
 msgstr ""
 
@@ -51260,7 +51260,7 @@ msgid "Telegram Approvals"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_approval_account_l10n_mx_edi_telegram
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_edi_approval_account_telegram
 msgid "Telegram Approvals - Mexican EDI Review"
 msgstr ""
 
@@ -52027,7 +52027,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_approval_account_l10n_mx_edi_telegram
+#: model:ir.module.module,description:base.module_l10n_mx_edi_approval_account_telegram
 msgid ""
 "The Telegram message that asks an approver to decide an accounting request "
 "carries a fiscal review read from the request itself: fiscal (FF) or non-"

@@ -1,7 +1,9 @@
+from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 from odoo.tools import SQL
 
 
+@tagged("post_install_l10n", "post_install", "-at_install")
 class TestPartnerMunicipality(TransactionCase):
     @classmethod
     def setUpClass(cls) -> None:

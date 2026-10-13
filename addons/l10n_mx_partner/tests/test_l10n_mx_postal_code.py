@@ -1,6 +1,8 @@
+from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
 
+@tagged("post_install_l10n", "post_install", "-at_install")
 class TestPostalCodeNameSearch(TransactionCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -34,6 +36,7 @@ class TestPostalCodeNameSearch(TransactionCase):
         self.assertFalse(found)
 
 
+@tagged("post_install_l10n", "post_install", "-at_install")
 class TestSepomexImport(TransactionCase):
     @classmethod
     def setUpClass(cls) -> None:

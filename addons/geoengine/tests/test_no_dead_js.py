@@ -6,7 +6,7 @@ from odoo.tests import TransactionCase, tagged
 MODULE_ROOT = pathlib.Path(__file__).resolve().parent.parent
 REPO_ROOT = MODULE_ROOT.parent
 
-CONSUMERS = ("device_gps_geoengine", "geoengine_demo", "geoengine_l10n_mx")
+CONSUMERS = ("device_gps_geoengine", "geoengine_demo", "l10n_mx_geoengine")
 
 ENTRY_POINTS = frozenset(
     {

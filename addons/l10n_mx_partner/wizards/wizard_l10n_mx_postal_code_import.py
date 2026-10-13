@@ -30,7 +30,7 @@ class WizardL10nMxPostalCodeImport(models.TransientModel):
         counts = (
             self.env["l10n_mx.postal_code"]
             .with_privilege(
-                "partner_l10n_mx.privilege_maintain_l10n_mx_catalogue",
+                "l10n_mx_partner.privilege_maintain_l10n_mx_catalogue",
                 reason="import the SEPOMEX catalogue",
             )
             ._import_sepomex(content)

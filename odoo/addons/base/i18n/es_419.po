@@ -1399,7 +1399,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_approval_account_l10n_mx_edi
+#: model:ir.module.module,description:base.module_l10n_mx_edi_approval_account
 msgid ""
 "\n"
 "Account Approvals - Mexican EDI\n"
@@ -7442,7 +7442,7 @@ msgstr ""
 "    - PLE 13.1: Registro permanente de inventario valorado\n"
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_be_hr_payroll
+#: model:ir.module.module,description:base.module_l10n_be_hr_payroll_document
 msgid ""
 "\n"
 "Employee 281.10 and 281.45 forms will be automatically integrated to the Document app.\n"
@@ -7451,7 +7451,7 @@ msgstr ""
 "Los formularios de empleado 281.10 y 281.45 se integrarán de forma automática a la aplicación Documentos.\n"
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_ke_hr_payroll
+#: model:ir.module.module,description:base.module_l10n_ke_hr_payroll_document
 msgid ""
 "\n"
 "Employee Tax Deduction Card forms will be automatically integrated to the Document app.\n"
@@ -7460,7 +7460,7 @@ msgstr ""
 "Los formularios de la tarjeta de deducción de impuestos del empleado se integrarán de forma automática a la aplicación Documentos.\n"
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_hk_hr_payroll
+#: model:ir.module.module,description:base.module_l10n_hk_hr_payroll_document
 msgid ""
 "\n"
 "Employee ir56 forms will be automatically integrated to the Document app.\n"
@@ -7478,7 +7478,7 @@ msgstr ""
 "Los recibos de nómina de los empleados se agregan a la aplicación Documentos en automático.\n"
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_ch_hr_payroll
+#: model:ir.module.module,description:base.module_l10n_ch_hr_payroll_document
 msgid ""
 "\n"
 "Employees' individual account forms are automatically integrated to the Document app.\n"
@@ -10303,7 +10303,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_geoengine_l10n_mx
+#: model:ir.module.module,description:base.module_l10n_mx_geoengine
 msgid ""
 "\n"
 "Mexico - Geospatial Localization\n"
@@ -20202,8 +20202,8 @@ msgid ""
 "``customer_merge_general_partner_id``                         0         Merge target partner\n"
 "``customer_merge_min_orders``                                 2         Min orders to avoid merge\n"
 "``customer_merge_interval_number`` / ``_interval_type``       3/months  Evaluation period\n"
-"``document_l10n_mx_edi.sat_batch_size``                       100       SAT status check batch size\n"
-"``document_l10n_mx_edi.sat_status_max_days``                  60        Max age for SAT status checks\n"
+"``l10n_mx_edi_sat_import.sat_batch_size``                       100       SAT status check batch size\n"
+"``l10n_mx_edi_sat_import.sat_status_max_days``                  60        Max age for SAT status checks\n"
 "============================================================= ========= ========================================\n"
 "\n"
 "\n"
@@ -20287,7 +20287,7 @@ msgid ""
 "  (commercial caliber), ``agro.crop.family`` (botanical family with a\n"
 "  monocot/dicot class, for rotation planning) and ``agro.crop.group`` (BI\n"
 "  grouping; the Mexican agrochemical value master is added by\n"
-"  ``agro_surface_l10n_mx``). Crops carry their botanical identity\n"
+"  ``l10n_mx_agro_surface``). Crops carry their botanical identity\n"
 "  (``scientific_name``, ``family_id``) and growing cycle (``lifecycle``,\n"
 "  ``cycle_days``); varieties may override ``cycle_days`` and declare the\n"
 "  diseases/pests they resist through rated ``resists`` interactions\n"
@@ -21220,7 +21220,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_l10n_mx_edi
+#: model:ir.module.module,description:base.module_l10n_mx_edi_sat_import
 msgid ""
 "====================\n"
 "CFDI file management\n"
@@ -21406,12 +21406,12 @@ msgid ""
 "=========================  ====================================================  =========\n"
 "Setting                    Key                                                   Default\n"
 "=========================  ====================================================  =========\n"
-"SAT validation batch size  ``document_l10n_mx_edi.sat_batch_size``               50\n"
-"Review period, days        ``document_l10n_mx_edi.sat_status_max_days``          60\n"
-"Max verification attempts  ``document_l10n_mx_edi.default_max_verify_cfdi``      200\n"
-"Verification deadline, h   ``document_l10n_mx_edi.sat_verify_deadline_hours``    72\n"
-"SOAP request timeout, s    ``document_l10n_mx_edi.sat_soap_request_timeout``     180\n"
-"SOAP download timeout, s   ``document_l10n_mx_edi.sat_soap_download_timeout``    420\n"
+"SAT validation batch size  ``l10n_mx_edi_sat_import.sat_batch_size``               50\n"
+"Review period, days        ``l10n_mx_edi_sat_import.sat_status_max_days``          60\n"
+"Max verification attempts  ``l10n_mx_edi_sat_import.default_max_verify_cfdi``      200\n"
+"Verification deadline, h   ``l10n_mx_edi_sat_import.sat_verify_deadline_hours``    72\n"
+"SOAP request timeout, s    ``l10n_mx_edi_sat_import.sat_soap_request_timeout``     180\n"
+"SOAP download timeout, s   ``l10n_mx_edi_sat_import.sat_soap_download_timeout``    420\n"
 "=========================  ====================================================  =========\n"
 "\n"
 "The review period is counted in **calendar** days, not working days.\n"
@@ -21465,7 +21465,7 @@ msgid ""
 "::\n"
 "\n"
 "    odoo-bin -c <conf> -d <db> -u documents_l10n_mx_edi \\\n"
-"        --test-tags /document_l10n_mx_edi --stop-after-init\n"
+"        --test-tags /l10n_mx_edi_sat_import --stop-after-init\n"
 "\n"
 "Two suites carry most of the weight:\n"
 "\n"
@@ -22148,7 +22148,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_agro_surface_l10n_mx
+#: model:ir.module.module,description:base.module_l10n_mx_agro_surface
 msgid ""
 "==========================\n"
 "Mexico - Agro Surface (SIAP)\n"
@@ -24275,7 +24275,7 @@ msgid "Account Approvals"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_approval_account_l10n_mx_edi
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_edi_approval_account
 msgid "Account Approvals - Mexican EDI"
 msgstr ""
 
@@ -30245,7 +30245,7 @@ msgid "CFDI 4.0 fields for sale orders"
 msgstr "Campos CFDI 4.0 para órdenes de venta"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_mx_edi
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_edi_sat_import
 msgid "CFDI file management"
 msgstr ""
 
@@ -34569,7 +34569,7 @@ msgid "Documents - Asset Link"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_be_hr_payroll
+#: model:ir.module.module,shortdesc:base.module_l10n_be_hr_payroll_document
 msgid "Documents - Belgian Payroll"
 msgstr "Documentos - Nómina de Bélgica"
 
@@ -34589,7 +34589,7 @@ msgid "Documents - HR"
 msgstr "Documentos - RR. HH."
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_hk_hr_payroll
+#: model:ir.module.module,shortdesc:base.module_l10n_hk_hr_payroll_document
 msgid "Documents - Hong Kong Payroll"
 msgstr "Documentos - Nómina de Hong Kong"
 
@@ -34599,7 +34599,7 @@ msgid "Documents - Import from Peppol"
 msgstr "Documentos - Importar desde Peppol"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_ke_hr_payroll
+#: model:ir.module.module,shortdesc:base.module_l10n_ke_hr_payroll_document
 msgid "Documents - Kenyan Payroll"
 msgstr "Documentos - Nómina de Kenia"
 
@@ -34634,7 +34634,7 @@ msgid "Documents - Speech"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_document_l10n_ch_hr_payroll
+#: model:ir.module.module,shortdesc:base.module_l10n_ch_hr_payroll_document
 msgid "Documents - Swiss Payroll"
 msgstr "Documentos - Nómina de Suiza"
 
@@ -34816,7 +34816,7 @@ msgid "Download"
 msgstr "Descargar"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_mx_edi
+#: model:ir.module.module,summary:base.module_l10n_mx_edi_sat_import
 msgid "Download CFDI files from the SAT portal and manage them in Documents"
 msgstr ""
 
@@ -37737,7 +37737,7 @@ msgstr ""
 "vista disponibles, se usará el mismo modo que para pantallas más grandes."
 
 #. module: base
-#: model:ir.module.module,summary:base.module_approval_account_l10n_mx_edi
+#: model:ir.module.module,summary:base.module_l10n_mx_edi_approval_account
 msgid "Fiscal / non-fiscal filters on approval requests"
 msgstr ""
 
@@ -38501,7 +38501,7 @@ msgid "Geocoding"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_geoengine_l10n_mx
+#: model:ir.module.module,summary:base.module_l10n_mx_geoengine
 msgid "Geographic data for Mexican states and municipalities"
 msgstr ""
 
@@ -44836,7 +44836,7 @@ msgid "Mexico - Accounting"
 msgstr "México - Contabilidad"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_agro_surface_l10n_mx
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_agro_surface
 msgid "Mexico - Agro Surface (SIAP)"
 msgstr ""
 
@@ -44851,7 +44851,7 @@ msgid "Mexico - Electronic Delivery Guide"
 msgstr "México - Guía de entrega electrónica"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_geoengine_l10n_mx
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_geoengine
 msgid "Mexico - Geospatial Localization"
 msgstr ""
 
@@ -53504,7 +53504,7 @@ msgid "SEPA Payments for Payroll"
 msgstr "Pagos SEPA para nómina"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_agro_surface_l10n_mx
+#: model:ir.module.module,summary:base.module_l10n_mx_agro_surface
 msgid ""
 "SIAP planted-surface report by zone and crop, mapped to the Mexican "
 "state/municipality padrón"
@@ -56139,7 +56139,7 @@ msgid "Store chatter attachments in the cloud"
 msgstr "Guardar archivos adjuntos del chatter en la nube"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_be_hr_payroll
+#: model:ir.module.module,summary:base.module_l10n_be_hr_payroll_document
 msgid "Store employee 281.10 and 281.45 forms in the Document app"
 msgstr ""
 "Almacene los formularios 281.10 y 281.45 de los empleados en la aplicación "
@@ -56152,7 +56152,7 @@ msgstr ""
 "Almacene los recibos de nómina de los empleados en la aplicación Documentos"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_ke_hr_payroll
+#: model:ir.module.module,summary:base.module_l10n_ke_hr_payroll_document
 msgid "Store employee tax deduction card forms in the Document app"
 msgstr ""
 "Almacene los formularios de la tarjeta de deducción de impuestos de los "
@@ -56171,12 +56171,12 @@ msgid "Store expense documents in the Document app"
 msgstr "Almacene los documentos de gastos en la aplicación Documentos"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_ch_hr_payroll
+#: model:ir.module.module,summary:base.module_l10n_ch_hr_payroll_document
 msgid "Store individual accounts in Documents application"
 msgstr "Almacene las cuentas en la aplicación Documentos"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_document_l10n_hk_hr_payroll
+#: model:ir.module.module,summary:base.module_l10n_hk_hr_payroll_document
 msgid "Store ir56 forms in the Document app"
 msgstr "Almacene los formularios ir56 en la aplicación Documentos"
 

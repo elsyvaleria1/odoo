@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.91
+:Version: 7.92
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -850,22 +850,6 @@ and about its dependencies, and nothing checks either claim.
   connects the two. Why: ``ai`` brings agents, sources and pgvector, and a name
   that suggests it reads as installing it. ``ai_auto_install`` installs ``ai``
   without depending on it, and is the one name left open.
-* **Renames pending**
-  (``agromarin-knowledge/plans/2026-10-13-speech-voice-module-naming-plan.md``):
-  ``document_l10n_<cc>_hr_payroll`` (``be``, ``ch``, ``hk``, ``ke``) →
-  ``l10n_<cc>_hr_payroll_document``;
-  ``document_l10n_mx_edi``, ``approval_account_l10n_mx_edi``,
-  ``approval_account_l10n_mx_edi_telegram`` → ``l10n_mx_edi_document``,
-  ``l10n_mx_edi_approval_account``, ``l10n_mx_edi_approval_account_telegram``;
-  ``partner_l10n_mx``, ``geoengine_l10n_mx`` → ``l10n_mx_partner``,
-  ``l10n_mx_geoengine``; ``agro_surface_l10n_mx``,
-  ``agro_surface_l10n_mx_map``, ``agro_surface_l10n_mx_map_account``,
-  ``agro_surface_l10n_mx_map_account_marin``,
-  ``agro_surface_l10n_mx_map_threed`` → ``l10n_mx_agro_surface``,
-  ``l10n_mx_agro_surface_map``, ``l10n_mx_agro_surface_map_account``,
-  ``l10n_mx_agro_surface_map_account_marin``,
-  ``l10n_mx_agro_surface_map_threed``. Each rename removes its names from this
-  list.
 * **A vendor's adapter is ``{domain}_{vendor}``**, domain first: the domain
   module holds what every provider shares and the setting that chooses one,
   the adapter one vendor's protocol (``captcha_recaptcha``,
@@ -6392,6 +6376,17 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.92
+     - 2026-10-13
+     - §1.5: the fourteen names with ``l10n_<cc>`` inside lead with it
+       (base 1.157): ``partner_l10n_mx``, ``geoengine_l10n_mx`` and the
+       ``agro_surface_l10n_mx*`` five become ``l10n_mx_*``;
+       ``document_l10n_<cc>_hr_payroll`` becomes
+       ``l10n_<cc>_hr_payroll_document``; ``approval_account_l10n_mx_edi``
+       and its ``_telegram`` bridge become ``l10n_mx_edi_approval_account*``;
+       ``document_l10n_mx_edi`` becomes ``l10n_mx_edi_sat_import``, since
+       ``l10n_mx_edi_document`` would read as the model
+       ``l10n_mx_edi.document``. The pending-renames list is empty and goes.
    * - 7.91
      - 2026-10-13
      - §1.5: ``sign_ai``, ``hr_recruitment_ai``, ``esg_csrd_ai``,

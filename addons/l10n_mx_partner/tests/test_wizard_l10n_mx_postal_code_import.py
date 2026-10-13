@@ -1,8 +1,10 @@
 import base64
 
+from odoo.tests import tagged
 from odoo.tests.common import TransactionCase, new_test_user
 
 
+@tagged("post_install_l10n", "post_install", "-at_install")
 class TestSepomexImportWizard(TransactionCase):
     def test_an_administrator_imports_the_catalogue_through_the_privilege(self) -> None:
         admin = new_test_user(
