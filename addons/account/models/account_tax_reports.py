@@ -59,7 +59,7 @@ class AccountTaxUnit(models.Model):
                         Command.create(
                             {
                                 "field_name": "company_id",
-                                "domain": f"[('account_config_id.account_tax_unit_ids', 'in', {tax_unit.id})]",
+                                "domain": tax_unit._horizontal_group_rule_domain(),
                             }
                         ),
                     ],
@@ -90,9 +90,9 @@ class AccountTaxUnit(models.Model):
         generic_ec_sales_report.horizontal_group_ids |= horizontal_groups
 
         for tax_unit, horizontal_group in zip(res, horizontal_groups, strict=True):
-            generic_tax_report.variant_report_ids.filtered_domain(
-                [("country_id", "=", tax_unit.country_id.id)]
-            ).write({"horizontal_group_ids": [Command.link(horizontal_group.id)]})
+            tax_unit._get_country_tax_report_variants().write(
+                {"horizontal_group_ids": [Command.link(horizontal_group.id)]}
+            )
 
         _debug.pipeline(
             "tax_unit_returns_sync",
@@ -102,11 +102,54 @@ class AccountTaxUnit(models.Model):
         self.env["account.return.type"]._sync_all_returns(res.company_ids.root_id)
         return res
 
+    def _horizontal_group_rule_domain(self) -> str:
+        self.check_singleton()
+        return f"[('account_config_id.account_tax_unit_ids', 'in', {self.id})]"
+
+    def _get_horizontal_group_by_unit(self) -> dict:
+        unit_by_domain = {unit._horizontal_group_rule_domain(): unit for unit in self}
+        rules = self.env["account.report.horizontal.group.rule"].search(
+            [
+                ("field_name", "=", "company_id"),
+                ("domain", "in", list(unit_by_domain)),
+            ]
+        )
+        return {unit_by_domain[rule.domain]: rule.horizontal_group_id for rule in rules}
+
+    def _get_country_tax_report_variants(self):
+        self.check_singleton()
+        return self.env.ref("account.generic_tax_report").variant_report_ids.filtered(
+            lambda report: report.country_id == self.country_id
+        )
+
     @_debug.perf.timed
     def write(self, vals):
         _debug.lifecycle("write", records=self, fields=sorted(vals))
         root_companies_before = self.company_ids.root_id
+        variants_before = (
+            {unit: unit._get_country_tax_report_variants() for unit in self}
+            if "country_id" in vals
+            else {}
+        )
         result = super().write(vals)
+        if "name" in vals or variants_before:
+            for unit, group in self._get_horizontal_group_by_unit().items():
+                _debug.logic(
+                    "tax_unit_horizontal_group_synced",
+                    unit=unit,
+                    horizontal_group=group,
+                    renamed="name" in vals,
+                    country_changed=bool(variants_before),
+                )
+                if "name" in vals:
+                    group.name = unit.name
+                if variants_before:
+                    variants_before[unit].write(
+                        {"horizontal_group_ids": [Command.unlink(group.id)]}
+                    )
+                    unit._get_country_tax_report_variants().write(
+                        {"horizontal_group_ids": [Command.link(group.id)]}
+                    )
         if any(
             return_field in vals
             for return_field in ("main_company_id", "company_ids", "country_id")
@@ -196,7 +239,16 @@ class AccountTaxUnit(models.Model):
         self._get_tax_unit_fiscal_positions(
             companies=self.env["res.company"].search([])
         ).unlink()
-        return super().unlink()
+        horizontal_groups = self.env["account.report.horizontal.group"].union(
+            *self._get_horizontal_group_by_unit().values()
+        )
+        result = super().unlink()
+        _debug.pipeline(
+            "tax_unit_horizontal_groups_removed", horizontal_groups=horizontal_groups
+        )
+        horizontal_groups.rule_ids.unlink()
+        horizontal_groups.unlink()
+        return result
 
     @api.constrains("country_id", "company_ids")
     @_debug.perf.timed

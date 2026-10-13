@@ -900,7 +900,7 @@
                                         name="tax_ids"
                                         widget="many2many_tax_tags"
                                         optional="show"
-                                        context="{'active_test': True, 'search_view_ref': 'account.account_tax_view_search'}"
+                                        context="{'active_test': True, 'search_view_ref': 'account.account_tax_view_search', 'dynamic_fiscal_position_id': parent.fiscal_position_id}"
                                         options="{'no_create': True}"
                                         readonly="qty_invoiced &gt; 0 or qty_invoiced_draft &gt; 0 or is_downpayment" />
                                     <field
@@ -1004,7 +1004,7 @@
                                             <field
                                                 name="tax_ids"
                                                 widget="many2many_tax_tags"
-                                                context="{'active_test': True, 'search_view_ref': 'account.account_tax_view_search'}"
+                                                context="{'active_test': True, 'search_view_ref': 'account.account_tax_view_search', 'dynamic_fiscal_position_id': parent.fiscal_position_id}"
                                                 options="{'no_create': True}"
                                                 readonly="qty_invoiced &gt; 0 or qty_invoiced_draft &gt; 0" />
                                             <t groups="sale.group_discount_per_so_line">

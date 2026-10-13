@@ -309,6 +309,7 @@ class AccountMoveLine(models.Model):
     tax_repartition_line_id = fields.Many2one(
         comodel_name="account.tax.repartition.line",
         string="Originator Tax Distribution Line",
+        index="btree_not_null",
         readonly=True,
         ondelete="restrict",
         check_company=True,

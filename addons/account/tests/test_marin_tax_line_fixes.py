@@ -1,5 +1,9 @@
+from psycopg import IntegrityError
+
 from odoo import Command, fields
+from odoo.exceptions import ValidationError
 from odoo.tests import tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
@@ -355,3 +359,258 @@ class TestMarinTaxLineFixes(AccountTestInvoicingCommon):
         self.assertEqual(tax_totals["total_amount_currency"], 11.73)
         self.assertEqual(tax_totals["total_amount"], 11.73)
         self.assertEqual(tax_totals["subtotals"][0]["base_amount_currency"], 10.2)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinTaxLineGroupingKeyOrder(AccountTestInvoicingCommon):
+    def _tag(self, name):
+        return self.env["account.account.tag"].create(
+            {
+                "name": name,
+                "applicability": "taxes",
+                "country_id": self.env.company.tax_config_id.account_fiscal_country_id.id,
+            }
+        )
+
+    def _repartition(self, base_tags=None, tax_tags=None):
+        tax_account = self.company_data["default_account_tax_sale"]
+        return [
+            Command.create(
+                {
+                    "repartition_type": "base",
+                    "tag_ids": [Command.set((base_tags or self._tag_model()).ids)],
+                }
+            ),
+            Command.create(
+                {
+                    "repartition_type": "tax",
+                    "account_id": tax_account.id,
+                    "tag_ids": [Command.set((tax_tags or self._tag_model()).ids)],
+                }
+            ),
+        ]
+
+    def _tag_model(self):
+        return self.env["account.account.tag"]
+
+    def _tax(self, name, sequence, amount, base_tags=None, tax_tags=None, **vals):
+        return self.env["account.tax"].create(
+            {
+                "name": name,
+                "sequence": sequence,
+                "amount_type": "percent",
+                "amount": amount,
+                "type_tax_use": "sale",
+                "invoice_repartition_line_ids": self._repartition(base_tags, tax_tags),
+                "refund_repartition_line_ids": self._repartition(base_tags, tax_tags),
+                **vals,
+            }
+        )
+
+    def _assert_tax_lines_survive_resync(self, taxes):
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-01-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "line",
+                            "quantity": 1,
+                            "price_unit": 100.0,
+                            "tax_ids": [Command.set(taxes.ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        tax_lines = invoice.line_ids.filtered("tax_repartition_line_id")
+        self.assertEqual(len(tax_lines), len(taxes))
+        invoice.invoice_line_ids.price_unit = 200.0
+        self.assertEqual(
+            invoice.line_ids.filtered("tax_repartition_line_id"), tax_lines
+        )
+        self.assertTrue(tax_lines.exists() == tax_lines)
+
+    def test_tax_line_kept_when_own_tag_sorts_after_subsequent_base_tag(self):
+        later_base_tag = self._tag("later base")
+        own_tax_tag = self._tag("own tax")
+        self.assertGreater(own_tax_tag.id, later_base_tag.id)
+        affecting = self._tax(
+            "affecting", 1, 10.0, tax_tags=own_tax_tag, include_base_amount=True
+        )
+        affected = self._tax("affected", 2, 15.0, base_tags=later_base_tag)
+        self._assert_tax_lines_survive_resync(affecting + affected)
+
+    def test_tax_line_kept_when_several_taxes_are_affected(self):
+        affecting = self._tax("affecting", 1, 10.0, include_base_amount=True)
+        first = self._tax("first", 2, 15.0)
+        second = self._tax("second", 3, 5.0)
+        self._assert_tax_lines_survive_resync(affecting + first + second)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinTaxIsUsed(AccountTestInvoicingCommon):
+    def test_tax_referenced_only_by_a_tax_line_is_used(self):
+        tax = self.company_data["default_tax_sale"].copy({"name": "tax line only"})
+        tax_rep = tax.invoice_repartition_line_ids.filtered(
+            lambda line: line.repartition_type == "tax"
+        )
+        entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "journal_id": self.company_data["default_journal_misc"].id,
+                "date": "2026-01-01",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "tax",
+                            "account_id": tax_rep.account_id.id,
+                            "balance": -15.0,
+                            "tax_repartition_line_id": tax_rep.id,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "counterpart",
+                            "account_id": self.company_data[
+                                "default_account_receivable"
+                            ].id,
+                            "balance": 15.0,
+                        }
+                    ),
+                ],
+            }
+        )
+        self.assertEqual(entry.line_ids.tax_line_id, tax)
+        self.assertFalse(entry.line_ids.tax_ids)
+        self.assertTrue(tax.is_used)
+        with self.assertRaisesRegex(ValidationError, "currently in use"):
+            tax.unlink()
+
+
+@tagged("post_install", "-at_install")
+class TestMarinTaxUnitHorizontalGroup(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.members = cls.env["res.company"].create(
+            [{"name": "Unit member B"}, {"name": "Unit member C"}]
+        )
+        cls.env.user.company_ids = [Command.link(company.id) for company in cls.members]
+
+    def _unit(self, name):
+        return self.env["account.tax.unit"].create(
+            {
+                "name": name,
+                "country_id": self.env.ref("base.be").id,
+                "vat": "BE0999999922",
+                "company_ids": [Command.set(self.members.ids)],
+                "main_company_id": self.members[0].id,
+            }
+        )
+
+    def _group(self, unit):
+        return self.env["account.report.horizontal.group"].search(
+            [
+                (
+                    "rule_ids.domain",
+                    "=",
+                    f"[('account_config_id.account_tax_unit_ids', 'in', {unit.id})]",
+                ),
+            ]
+        )
+
+    def test_renaming_a_unit_renames_its_horizontal_group(self):
+        unit = self._unit("Unit before")
+        group = self._group(unit)
+        self.assertEqual(group.name, "Unit before")
+        unit.name = "Unit after"
+        self.assertEqual(group.name, "Unit after")
+        self.assertFalse(
+            self.env["account.report.horizontal.group"].search(
+                [("name", "=", "Unit before")]
+            )
+        )
+
+    def test_deleting_a_unit_deletes_its_horizontal_group(self):
+        unit = self._unit("Unit deleted")
+        group = self._group(unit)
+        tax_report = self.env.ref("account.generic_tax_report")
+        self.assertIn(group, tax_report.horizontal_group_ids)
+        unit.unlink()
+        self.assertFalse(group.exists())
+        self.assertTrue(self._unit("Unit deleted"))
+
+    def test_moving_a_unit_moves_its_group_between_country_variants(self):
+        be_variant, nl_variant = self.env["report.formula"].create(
+            [
+                {
+                    "name": f"tax report {country.code}",
+                    "root_report_id": self.env.ref("account.generic_tax_report").id,
+                    "country_id": country.id,
+                }
+                for country in (self.env.ref("base.be"), self.env.ref("base.nl"))
+            ]
+        )
+        unit = self._unit("Unit moved")
+        group = self._group(unit)
+        self.assertIn(group, be_variant.horizontal_group_ids)
+        self.assertNotIn(group, nl_variant.horizontal_group_ids)
+        unit.write({"country_id": self.env.ref("base.nl").id, "vat": "NL000099998B57"})
+        self.assertNotIn(group, be_variant.horizontal_group_ids)
+        self.assertIn(group, nl_variant.horizontal_group_ids)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinFiscalPositionAccountMapping(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.src = cls.company_data["default_account_revenue"]
+        cls.dest_1 = cls.src.copy()
+        cls.dest_2 = cls.src.copy()
+        cls.fiscal_position = cls.env["account.fiscal.position"].create(
+            {
+                "name": "mapping",
+                "account_ids": [
+                    Command.create(
+                        {"account_src_id": cls.src.id, "account_dest_id": cls.dest_1.id}
+                    )
+                ],
+            }
+        )
+
+    def test_one_source_account_maps_to_one_destination(self):
+        with self.assertRaises(IntegrityError), mute_logger("odoo.db.cursor"):
+            self.fiscal_position.account_ids = [
+                Command.create(
+                    {"account_src_id": self.src.id, "account_dest_id": self.dest_2.id}
+                )
+            ]
+            self.env.flush_all()
+
+    def test_chart_reload_redirects_an_existing_mapping(self):
+        self.env["ir.model.data"]._update_xmlids(
+            [
+                {"xml_id": "account.marin_fp_src", "record": self.src},
+                {"xml_id": "account.marin_fp_dest", "record": self.dest_2},
+            ]
+        )
+        command = self.env["account.chart.template"]._reload_account_mapping_command(
+            self.fiscal_position,
+            Command.create(
+                {
+                    "account_src_id": "account.marin_fp_src",
+                    "account_dest_id": "account.marin_fp_dest",
+                }
+            ),
+        )
+        self.assertEqual(
+            command,
+            Command.update(
+                self.fiscal_position.account_ids.id,
+                {"account_dest_id": "account.marin_fp_dest"},
+            ),
+        )

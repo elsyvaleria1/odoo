@@ -33,7 +33,7 @@ class AccountFiscalPositionAccount(models.Model):
         check_company=True,
     )
 
-    _account_src_dest_uniq = models.Constraint(
-        "unique (position_id,account_src_id,account_dest_id)",
+    _account_src_uniq = models.Constraint(
+        "unique (position_id,account_src_id)",
         "An account fiscal position could be defined only one time on same accounts.",
     )

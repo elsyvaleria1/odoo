@@ -610,14 +610,32 @@ class AccountChartTemplate(models.AbstractModel):
         old_ids = values.pop("account_ids", [])
         if not force_create:
             old_ids = []
+        fiscal_position = xmlid2records["account.fiscal.position"][xmlid]
         new_ids = [
-            element
+            self._reload_account_mapping_command(fiscal_position, element)
             for element in old_ids
             if self._reload_account_mapping_is_new(element)
         ]
         if new_ids:
             values["account_ids"] = new_ids
         return False
+
+    def _reload_account_mapping_command(self, fiscal_position, element):
+        _command, _id, mapping = element
+        src_account = self.ref(mapping["account_src_id"], raise_if_not_found=False)
+        existing = fiscal_position.account_ids.filtered(
+            lambda line: src_account and line.account_src_id == src_account
+        )
+        _debug.logic(
+            "fiscal_position_mapping_reloaded",
+            fiscal_position=fiscal_position,
+            action="update" if existing else "create",
+        )
+        if existing:
+            return Command.update(
+                existing.id, {"account_dest_id": mapping["account_dest_id"]}
+            )
+        return element
 
     def _reload_account_mapping_is_new(self, element):
         match element:

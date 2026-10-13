@@ -1095,7 +1095,7 @@ class LazadaShop(models.Model):
         return pricelist
 
     def _get_price_from_tax_included_total(self, total, taxes, currency):
-        return price_from_tax_included_total(self.env, total, taxes, currency)
+        return price_from_tax_included_total(total, taxes, currency)
 
     def _acquire_item(
         self,

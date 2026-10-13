@@ -878,7 +878,7 @@ class ShopeeShop(models.Model):
         )
 
     def _get_price_from_tax_included_total(self, total, taxes, currency):
-        return price_from_tax_included_total(self.env, total, taxes, currency)
+        return price_from_tax_included_total(total, taxes, currency)
 
     def _convert_to_order_line_values(self, **kwargs) -> dict:
         subtotal = kwargs.get("subtotal", 0)

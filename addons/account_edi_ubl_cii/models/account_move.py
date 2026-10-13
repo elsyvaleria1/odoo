@@ -265,15 +265,12 @@ class AccountMove(models.Model):
         ]
 
     def _get_specific_tax(self, name, amount_type, amount, tax_type):
-        AccountMoveLine = self.env["account.move.line"]
-        if hasattr(AccountMoveLine, "_predict_specific_tax"):
-            predicted_tax_id = AccountMoveLine._predict_specific_tax(
-                self,
-                name,
-                self.partner_id,
-                amount_type,
-                amount,
-                tax_type,
-            )
-            return self.env["account.tax"].browse(predicted_tax_id)
-        return self.env["account.tax"]
+        predicted_tax_id = self.env["account.move.line"]._predict_specific_tax(
+            self,
+            name,
+            self.partner_id,
+            amount_type,
+            amount,
+            tax_type,
+        )
+        return self.env["account.tax"].browse(predicted_tax_id)

@@ -134,7 +134,10 @@ class AccountTax(models.Model):
         used_taxes = set()
 
         if self.ids:
-            self.env["account.move.line"].flush_model(["tax_ids"])
+            self.env["account.move.line"].flush_model(
+                ["tax_ids", "tax_repartition_line_id"]
+            )
+            self.env["account.tax.repartition.line"].flush_model(["tax_id"])
             used_taxes.update(
                 id_
                 for [id_] in self.env.execute_query(
@@ -142,10 +145,19 @@ class AccountTax(models.Model):
                         """
                         SELECT id
                         FROM account_tax
-                        WHERE EXISTS(
-                            SELECT 1
-                            FROM account_move_line_account_tax_rel AS line
-                            WHERE account_tax.id = line.account_tax_id
+                        WHERE (
+                            EXISTS(
+                                SELECT 1
+                                FROM account_move_line_account_tax_rel AS line
+                                WHERE account_tax.id = line.account_tax_id
+                            )
+                            OR EXISTS(
+                                SELECT 1
+                                FROM account_tax_repartition_line AS rep
+                                JOIN account_move_line AS aml
+                                  ON aml.tax_repartition_line_id = rep.id
+                                WHERE rep.tax_id = account_tax.id
+                            )
                         )
                         AND id = ANY(%s)
                         """,
@@ -207,165 +219,6 @@ class AccountTax(models.Model):
                 self.env._(
                     "You cannot delete taxes that are currently in use. Consider archiving them instead."
                 )
-            )
-
-    @api.model
-    @_debug.perf.timed
-    def _get_import_criteria_from_invoice_predictive(self, tax_values) -> dict | None:
-        if "payment_state_before_switch" not in self.env["account.move"]._fields:
-            _debug.logic("predictive_skipped", reason="predictive_module_absent")
-            return None
-
-        invoice_predictive = tax_values.get("invoice_predictive")
-        if not invoice_predictive:
-            _debug.logic("predictive_skipped", reason="no_invoice_predictive")
-            return None
-        _debug.logic(
-            "predictive_criterion_built",
-            type_tax_use=tax_values.get("type_tax_use"),
-            amount_type=tax_values.get("amount_type"),
-            amount=tax_values.get("amount"),
-        )
-
-        def search_predictive(values):
-            domain = values["static_domain"]
-            predicted_tax_ids = self.env["account.move.line"]._predict_specific_tax(
-                move=invoice_predictive["invoice"],
-                name=invoice_predictive["name"],
-                partner=invoice_predictive["partner"],
-                amount_type=tax_values["amount_type"],
-                amount=tax_values["amount"],
-                type_tax_use=tax_values["type_tax_use"],
-            )
-            return (
-                self.env["account.tax"]
-                .browse(predicted_tax_ids)
-                .filtered_domain(domain)[:1]
-            )
-
-        return {
-            "criteria": [
-                {
-                    "search_method": search_predictive,
-                    "cache_key": frozendict(invoice_predictive),
-                }
-            ],
-        }
-
-    @api.model
-    def _get_import_criteria_from_price_include_exclude(self, tax_values) -> dict:
-        price_include = tax_values.get("price_include")
-        fiscal_position = tax_values.get("fiscal_position")
-
-        fpos_domain = Domain.TRUE
-        if fiscal_position:
-            fpos_domain = Domain("fiscal_position_ids", "=", fiscal_position.id)
-            if fiscal_position.is_domestic:
-                fpos_domain |= Domain("fiscal_position_ids", "=", False)
-
-        criteria = []
-        for wanted in (False, True):
-            if (wanted and price_include is False) or (not wanted and price_include):
-                continue
-            include_domain = Domain("price_include", "=", wanted)
-            if fiscal_position:
-                criteria.append({"domain": include_domain & fpos_domain})
-            criteria.append({"domain": include_domain})
-
-        _debug.pipeline(
-            "price_include_criteria_built",
-            fiscal_position=fiscal_position,
-            price_include=price_include,
-            criteria=len(criteria),
-        )
-        return {"criteria": criteria}
-
-    @api.model
-    @_debug.perf.timed
-    def _update_tax_values_from_search_plan(
-        self, search_plan, company, tax_values_list
-    ) -> None:
-        cache = self.env.cr.cache.setdefault("retrieved_tax_map", {}).setdefault(
-            company.id, {}
-        )
-
-        static_domain = Domain(self._check_company_domain(company))
-        for tax_values in tax_values_list:
-            tax_domain = (
-                Domain("amount_type", "=", tax_values["amount_type"])
-                & Domain("type_tax_use", "=", tax_values["type_tax_use"])
-                & Domain("amount", "=", tax_values["amount"])
-            )
-            if "invoice_predictive" in tax_values:
-                tax_domain &= Domain(
-                    "country_id",
-                    "=",
-                    tax_values["invoice_predictive"]["invoice"].tax_country_id.id,
-                )
-            orders = ["sequence", "id"]
-            if name := tax_values.get("name"):
-                tax_domain &= Domain("name", "=", name)
-            if tax_exigibility := tax_values.get("tax_exigibility"):
-                tax_domain &= Domain("tax_exigibility", "=", tax_exigibility)
-            if (
-                ubl_cii_tax_category_code := tax_values.get("ubl_cii_tax_category_code")
-            ) and "ubl_cii_tax_category_code" in self._fields:
-                tax_domain &= Domain(
-                    "ubl_cii_tax_category_code",
-                    "in",
-                    (ubl_cii_tax_category_code, False),
-                )
-                orders.insert(0, "ubl_cii_tax_category_code")
-
-            for plan in search_plan:
-                tax = None
-                plan_values = plan(tax_values)
-                if not plan_values:
-                    continue
-
-                for criteria in plan_values["criteria"]:
-                    domain = criteria.get("domain")
-                    search_method = criteria.get("search_method")
-                    if domain:
-                        domain = tax_domain & Domain(domain)
-                        cache_key = repr(domain.optimize(self.env["account.tax"]))
-                    else:
-                        cache_key = criteria.get("cache_key")
-                        if cache_key:
-                            cache_key = (cache_key, str(tax_domain))
-
-                    if cache_key and cache_key in cache:
-                        if tax := cache[cache_key]:
-                            tax_values["tax"] = tax
-                            break
-                        continue
-
-                    if domain:
-                        tax = self._get_first_tax(
-                            static_domain & Domain(domain), orders
-                        )
-                    elif search_method:
-                        tax = search_method(
-                            {
-                                **criteria,
-                                "static_domain": tax_domain & static_domain,
-                            }
-                        )
-
-                    if cache_key:
-                        cache[cache_key] = tax
-                    if tax:
-                        tax_values["tax"] = tax
-                        break
-
-                if tax:
-                    break
-            _debug.logic(
-                "import_tax",
-                type_tax_use=tax_values.get("type_tax_use"),
-                amount=tax_values.get("amount"),
-                amount_type=tax_values.get("amount_type"),
-                tax=tax_values.get("tax") and tax_values["tax"].id,
             )
 
     @api.depends(
@@ -632,9 +485,6 @@ class AccountTax(models.Model):
             )
             _debug.perf.count("move_lines_remapped", company=company, rows=rows)
 
-    def _get_first_tax(self, domain, orders) -> Self:
-        return self.search(domain, order=",".join(orders), limit=1)
-
     def _merge_method(self, destination, source):
         raise UserError(self.env._("You cannot merge taxes."))
 
@@ -763,8 +613,8 @@ class AccountTax(models.Model):
             ),
             "account_id": tax_rep_data["account"].id
             or base_line_grouping_key["account_id"],
-            "tax_ids": [Command.set(tax_rep_data["taxes"].ids)],
-            "tax_tag_ids": [Command.set(tax_rep_data["tax_tags"].ids)],
+            "tax_ids": [Command.set(sorted(tax_rep_data["taxes"].ids))],
+            "tax_tag_ids": [Command.set(sorted(tax_rep_data["tax_tags"].ids))],
             "__keep_zero_line": False,
         }
 
@@ -777,8 +627,8 @@ class AccountTax(models.Model):
             "group_tax_id": tax_line["group_tax_id"].id,
             "analytic_distribution": tax_line["analytic_distribution"],
             "account_id": tax_line["account_id"].id,
-            "tax_ids": [Command.set(tax_line["tax_ids"].ids)],
-            "tax_tag_ids": [Command.set(tax_line["tax_tag_ids"].ids)],
+            "tax_ids": [Command.set(sorted(tax_line["tax_ids"].ids))],
+            "tax_tag_ids": [Command.set(sorted(tax_line["tax_tag_ids"].ids))],
         }
 
     def _get_repartition_lines_by_kind(self, is_refund, cache=None):
@@ -1033,7 +883,9 @@ class AccountTax(models.Model):
                 (
                     base_line,
                     {
-                        "tax_tag_ids": [Command.set(base_line["tax_tag_ids"].ids)],
+                        "tax_tag_ids": [
+                            Command.set(sorted(base_line["tax_tag_ids"].ids))
+                        ],
                         "amount_currency": sign
                         * (
                             tax_details["total_excluded_currency"]

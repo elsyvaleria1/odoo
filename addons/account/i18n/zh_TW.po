@@ -4219,7 +4219,7 @@ msgid "An Off-Balance account can not have taxes"
 msgstr "非平衡科目無法加稅"
 
 #. module: account
-#: model:ir.model.constraint,message:account.constraint_account_fiscal_position_account_account_src_dest_uniq
+#: model:ir.model.constraint,message:account.constraint_account_fiscal_position_account_account_src_uniq
 msgid ""
 "An account fiscal position could be defined only one time on same accounts."
 msgstr "財務狀況只能在一個會計科目上定義一次."

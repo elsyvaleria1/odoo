@@ -1314,7 +1314,7 @@ class AmazonAccount(models.Model):
         self, subtotal, tax_amount, taxes, currency, _fiscal_pos=None
     ):
         total = subtotal + tax_amount
-        return price_from_tax_included_total(self.env, total, taxes, currency)
+        return price_from_tax_included_total(total, taxes, currency)
 
     def _create_stock_moves(self, order):
         customers_location = self.env.ref("stock.stock_location_customers")

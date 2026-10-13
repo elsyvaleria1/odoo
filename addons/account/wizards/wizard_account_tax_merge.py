@@ -41,6 +41,9 @@ class WizardAccountTaxMerge(models.TransientModel):
             tax.include_base_amount,
             tax.is_base_affected,
             tax.active,
+            tax.tax_exigibility,
+            tax.cash_basis_transition_account_id.id,
+            tuple(sorted(tax.children_tax_ids.ids)),
         )
 
     @api.model

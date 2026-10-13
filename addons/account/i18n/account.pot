@@ -4113,7 +4113,7 @@ msgid "An Off-Balance account can not have taxes"
 msgstr ""
 
 #. module: account
-#: model:ir.model.constraint,message:account.constraint_account_fiscal_position_account_account_src_dest_uniq
+#: model:ir.model.constraint,message:account.constraint_account_fiscal_position_account_account_src_uniq
 msgid ""
 "An account fiscal position could be defined only one time on same accounts."
 msgstr ""

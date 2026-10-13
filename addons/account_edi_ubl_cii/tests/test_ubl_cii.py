@@ -238,10 +238,6 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
 
     def test_import_tax_prediction(self):
         self.env.ref("base.EUR").active = True
-        if not hasattr(self.env["account.move.line"], "_predict_specific_tax"):
-            self.skipTest(
-                "The predictive bill module isn't install and thus prediction with edi can't be tested."
-            )
         new_tax_1 = self.env["account.tax"].create(
             {
                 "name": "tax with lower id could be retrieved first",

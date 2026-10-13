@@ -4298,7 +4298,7 @@ msgid "An Off-Balance account can not have taxes"
 msgstr "资产负债表外科目无法加税"
 
 #. module: account
-#: model:ir.model.constraint,message:account.constraint_account_fiscal_position_account_account_src_dest_uniq
+#: model:ir.model.constraint,message:account.constraint_account_fiscal_position_account_account_src_uniq
 msgid ""
 "An account fiscal position could be defined only one time on same accounts."
 msgstr "同一科目一次只能定义一个科目的应税设定。"

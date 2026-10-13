@@ -260,3 +260,77 @@ class TestAccountTaxMergeWizard(AccountTestInvoicingCommon):
         tax_b = self._tax(self.company_b)
         with self.assertRaises(UserError):
             tax_a._merge_method(tax_a, tax_b)
+
+    def _child_tax(self, company, name):
+        return (
+            self.env["account.tax"]
+            .with_company(company)
+            .create(
+                {
+                    "name": name,
+                    "type_tax_use": "none",
+                    "amount_type": "percent",
+                    "amount": 16.0,
+                    "country_id": self.country.id,
+                }
+            )
+        )
+
+    def _group_tax(self, company, child):
+        return (
+            self.env["account.tax"]
+            .with_company(company)
+            .create(
+                {
+                    "name": "VAT group",
+                    "type_tax_use": "sale",
+                    "amount_type": "group",
+                    "country_id": self.country.id,
+                    "children_tax_ids": [Command.set(child.ids)],
+                }
+            )
+        )
+
+    def test_group_taxes_with_different_children_are_refused(self):
+        group_a = self._group_tax(
+            self.company_a, self._child_tax(self.company_a, "child a")
+        )
+        group_b = self._group_tax(
+            self.company_b, self._child_tax(self.company_b, "child b")
+        )
+        wizard = self._wizard(group_a + group_b)
+        self.assertTrue(
+            wizard.disable_merge_button,
+            "merging would hand the survivor both sets of children",
+        )
+
+    def test_group_taxes_sharing_their_children_are_merged(self):
+        child = self._child_tax(self.company_a, "child")
+        child.company_ids = self.company_a + self.company_b
+        group_a = self._group_tax(self.company_a, child)
+        group_b = self._group_tax(self.company_b, child)
+        self.assertEqual(group_a.children_tax_ids, group_b.children_tax_ids)
+        self.assertFalse(self._wizard(group_a + group_b).disable_merge_button)
+
+    def test_cash_basis_tax_is_not_merged_into_an_on_invoice_tax(self):
+        tax_a = self._tax(self.company_a)
+        tax_b = self._tax(self.company_b)
+        transition = (
+            self.env["account.account"]
+            .with_company(self.company_b)
+            .create(
+                {
+                    "code": "TRANS1",
+                    "name": "Cash basis transition",
+                    "account_type": "asset_current",
+                    "reconcile": True,
+                }
+            )
+        )
+        tax_b.write(
+            {
+                "tax_exigibility": "on_payment",
+                "cash_basis_transition_account_id": transition.id,
+            }
+        )
+        self.assertTrue(self._wizard(tax_a + tax_b).disable_merge_button)
