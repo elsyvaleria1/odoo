@@ -36,6 +36,7 @@ from . import account_move_sequence
 from . import account_move_sync
 from . import account_move_tax_override
 from . import account_move_line
+from . import account_move_line_pending
 from . import account_move_pending
 from . import account_move_line_tax_details
 from . import mixin_account_move_send
@@ -92,7 +93,9 @@ from . import account_bank_statement_line_widget
 from . import account_bank_statement_line_pending
 from . import account_fiscal_year
 from . import account_move_deferred
+from . import account_move_line_deferred
 from . import account_move_outstanding
+from . import account_move_line_outstanding
 from . import account_move_prediction
 from . import account_move_signature
 from . import account_payment_reconcile
