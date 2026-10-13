@@ -1,3 +1,4 @@
+import random
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -1797,6 +1798,147 @@ class TestMarinEarlyPaymentDiscountForeignCurrency(AccountTestInvoicingCommon):
                     base_21,
                 )
                 self.assertAlmostEqual(sum(invoice.line_ids.mapped("balance")), 0.0)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinTaxBaseMatchesItsBaseLines(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.eur = cls.setup_other_currency("EUR")
+        cls.epd_term = cls.env["account.payment.term"].create(
+            {
+                "name": "2% within 10 days",
+                "early_discount": True,
+                "discount_percentage": 2,
+                "discount_days": 10,
+                "early_pay_discount_computation": "mixed",
+                "line_ids": [
+                    Command.create(
+                        {"value": "percent", "nb_days": 0, "value_amount": 100}
+                    )
+                ],
+            }
+        )
+        tax_15, tax_5, tax_21_incl, tax_10_incl, tax_8_affecting, tax_16 = cls.env[
+            "account.tax"
+        ].create(
+            [
+                {"name": "INV 15", "amount": 15},
+                {"name": "INV 5", "amount": 5},
+                {
+                    "name": "INV 21 incl",
+                    "amount": 21,
+                    "price_include_override": "tax_included",
+                },
+                {
+                    "name": "INV 10 incl",
+                    "amount": 10,
+                    "price_include_override": "tax_included",
+                },
+                {
+                    "name": "INV 8 affecting",
+                    "amount": 8,
+                    "sequence": 1,
+                    "include_base_amount": True,
+                },
+                {"name": "INV 16 affected", "amount": 16, "sequence": 2},
+            ]
+        )
+        cls.tax_combinations = (
+            tax_15,
+            tax_5,
+            tax_15 | tax_5,
+            tax_21_incl,
+            tax_10_incl,
+            tax_8_affecting | tax_16,
+        )
+
+    def _random_invoice(self, rng, currency, payment_term):
+        return self.env["account.move"].create(
+            {
+                "move_type": rng.choice(("out_invoice", "in_invoice")),
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2017-01-01",
+                "currency_id": currency.id,
+                "invoice_payment_term_id": payment_term.id,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": f"line {index}",
+                            "price_unit": round(rng.uniform(0.01, 2000.0), 4),
+                            "quantity": rng.choice((1, 1, 2, 3, 7, 0.5, 1.333)),
+                            "discount": rng.choice((0, 0, 0, 5, 12.5)),
+                            "tax_ids": [
+                                Command.set(rng.choice(self.tax_combinations).ids)
+                            ],
+                        }
+                    )
+                    for index in range(rng.randint(1, 8))
+                ],
+            }
+        )
+
+    def _tax_base_mismatches(self, invoice):
+        base_lines, _tax_lines = invoice._get_rounded_base_and_tax_lines()
+        tax_base_currency = {}
+        for base_line in base_lines:
+            for tax_data in base_line["tax_details"]["taxes_data"]:
+                if tax_data["is_reverse_charge"]:
+                    continue
+                tax = tax_data["tax"]
+                tax_base_currency[tax] = tax_base_currency.get(tax, 0.0) + (
+                    base_line["sign"] * tax_data["base_amount_currency"]
+                )
+        mismatches = []
+        for tax_line in invoice.line_ids.filtered("tax_line_id"):
+            tax = tax_line.tax_line_id
+            base_amls = invoice.line_ids.filtered(
+                lambda line, tax=tax: tax in line.tax_ids
+            )
+            balance = invoice.company_currency_id.round(
+                sum(base_amls.mapped("balance"))
+            )
+            amount_currency = invoice.currency_id.round(
+                sum(base_amls.mapped("amount_currency"))
+            )
+            if invoice.company_currency_id.compare_amounts(
+                tax_line.tax_base_amount, balance
+            ):
+                mismatches.append(
+                    (tax.name, "balance", tax_line.tax_base_amount, balance)
+                )
+            if invoice.currency_id.compare_amounts(
+                tax_base_currency[tax], amount_currency
+            ):
+                mismatches.append(
+                    (
+                        tax.name,
+                        "amount_currency",
+                        tax_base_currency[tax],
+                        amount_currency,
+                    )
+                )
+        return mismatches
+
+    def test_every_tax_line_base_is_the_sum_of_its_base_lines(self):
+        rng = random.Random(4242)
+        company = self.company_data["company"]
+        no_epd_term = self.pay_terms_a
+        for rounding_method in ("round_globally", "round_per_line"):
+            company.tax_config_id.tax_calculation_rounding_method = rounding_method
+            for currency in (company.currency_id, self.eur):
+                for payment_term in (no_epd_term, self.epd_term):
+                    for iteration in range(25):
+                        invoice = self._random_invoice(rng, currency, payment_term)
+                        invoice.action_post()
+                        with self.subTest(
+                            rounding_method=rounding_method,
+                            currency=currency.name,
+                            epd=payment_term == self.epd_term,
+                            iteration=iteration,
+                        ):
+                            self.assertEqual(self._tax_base_mismatches(invoice), [])
 
 
 @tagged("post_install", "-at_install")

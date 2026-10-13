@@ -82,8 +82,8 @@ class TestTaxesBaseLinesTaxDetails(TestTaxCommon):
                             "tax_id": tax_21.id,
                             "tax_amount": 0.19,
                             "tax_amount_currency": 0.19,
-                            "base_amount": 0.9299999999999999,
-                            "base_amount_currency": 0.9299999999999999,
+                            "base_amount": 0.93,
+                            "base_amount_currency": 0.93,
                         }
                     ],
                 },
