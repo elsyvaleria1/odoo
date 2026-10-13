@@ -134,8 +134,9 @@ class TestSEPACreditTransferUpdate(TestSEPACreditTransferUpdateCommon):
         self.assertEqual(end_to_end_id.text, self.payment.end_to_end_uuid)
 
 
-@tagged("external_l10n", "post_install", "-at_install", "-standard")
+@tagged("post_install", "-at_install")
 class TestSEPACreditTransferUpdateXmlValidity(TestSEPACreditTransferUpdateCommon):
-    @test_xsd(path="account_sepa/schemas/pain.001.001.09.xsd")
+    @test_xsd(path="account_iso20022/schemas/pain.001.001.09.xsd")
     def test_xml_validity(self):
+        self.batch.confirm_batch()
         return etree.fromstring(b64decode(self.batch.export_file))

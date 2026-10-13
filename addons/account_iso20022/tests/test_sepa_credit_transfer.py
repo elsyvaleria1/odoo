@@ -324,10 +324,26 @@ class TestSEPACreditTransfer(TestSEPACreditTransferCommon):
             self.assertEqual(wizard_form.untrusted_payments_count, 1)
 
 
-@tagged("external_l10n", "post_install", "-at_install", "-standard")
+@tagged("post_install", "-at_install")
 class TestSEPACreditTransferXmlValidity(TestSEPACreditTransferCommon):
     @test_xsd(path="account_iso20022/schemas/pain.001.001.03.xsd")
-    def test_standard_sepa(self):
+    def test_standard_sepa_pain_001_001_03(self):
+        return self._export_standard_sepa("pain.001.001.03")
+
+    @test_xsd(path="account_iso20022/schemas/pain.001.001.03.xsd")
+    def test_standard_sepa_pain_001_001_03_de(self):
+        return self._export_standard_sepa("pain.001.001.03.de")
+
+    @test_xsd(path="account_iso20022/schemas/pain.001.001.03.xsd")
+    def test_standard_sepa_pain_001_001_03_austrian_004(self):
+        return self._export_standard_sepa("pain.001.001.03.austrian.004")
+
+    @test_xsd(path="account_iso20022/schemas/pain.001.001.09.xsd")
+    def test_standard_sepa_pain_001_001_09(self):
+        return self._export_standard_sepa("pain.001.001.09")
+
+    def _export_standard_sepa(self, pain_version):
+        self.bank_journal.sepa_pain_version = pain_version
         sct_docs = []
         for bic in ["BBRUBEBB", False]:
             payment_1 = self.createPayment(self.partner_a, 500)

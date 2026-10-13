@@ -428,7 +428,7 @@ class TestPayrollSEPACreditTransfer(TestPayrollSEPACreditTransferCommon):
         saved_form.action_create_payments()
 
 
-@tagged("external_l10n", "post_install", "-at_install", "-standard")
+@tagged("post_install", "-at_install")
 class TestPayrollSEPACreditTransferXmlValidity(TestPayrollSEPACreditTransferCommon):
     @classmethod
     def setUpClass(cls):

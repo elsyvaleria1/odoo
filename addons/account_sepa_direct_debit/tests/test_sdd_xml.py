@@ -6,7 +6,7 @@ from odoo.tests import tagged, test_xsd
 from odoo.addons.account_sepa_direct_debit.tests.common import SDDTestCommon
 
 
-@tagged("external_l10n", "post_install", "-at_install", "-standard")
+@tagged("post_install", "-at_install")
 class SDDTestXML(SDDTestCommon):
     @test_xsd(path="account_sepa_direct_debit/schemas/pain.008.001.02.xsd")
     def test_xml_pain_008_001_02_generation(self):

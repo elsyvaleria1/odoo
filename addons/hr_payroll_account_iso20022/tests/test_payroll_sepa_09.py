@@ -10,7 +10,7 @@ from odoo.addons.hr_payroll_account_iso20022.tests.test_payroll_sepa import (
 )
 
 
-@tagged("external_l10n", "post_install", "-at_install", "-standard")
+@tagged("post_install", "-at_install")
 class TestPayrollSEPANewCreditTransferXmlValidity(TestPayrollSEPACreditTransferCommon):
     @test_xsd(path="account_iso20022/schemas/pain.001.001.09.xsd")
     def test_hr_payroll_account_iso20022_09(self):
