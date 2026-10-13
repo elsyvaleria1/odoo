@@ -8,10 +8,10 @@ from werkzeug.exceptions import Forbidden
 from odoo import Command, http, tools
 from odoo.exceptions import AccessError, UserError
 from odoo.http import request
+from odoo.libs.email import MAIL_DOMAIN_BLACKLIST, MAIL_PROVIDERS
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
-
-from odoo.addons.iap.tools import iap_tools
+from odoo.tools import iap
 
 _logger = logging.getLogger(__name__)
 
@@ -337,13 +337,13 @@ class MailPluginController(http.Controller):
         return self._prepare_translations()
 
     def _iap_enrich(self, domain):
-        if domain in iap_tools._MAIL_PROVIDERS:
+        if domain in MAIL_PROVIDERS:
             return {"enrichment_info": {"type": "missing_data"}}
 
         enriched_data = {}
         try:
             response = request.env["iap.enrich.api"]._request_enrich({domain: domain})
-        except iap_tools.InsufficientCreditError:
+        except iap.InsufficientCreditError:
             enriched_data["enrichment_info"] = {
                 "type": "insufficient_credit",
                 "info": request.env["iap.account"].get_credits_url("reveal"),
@@ -528,9 +528,7 @@ class MailPluginController(http.Controller):
 
     def _get_iap_search_term(self, email):
         domain = tools.email_domain_extract(email)
-        return (
-            ("@" + domain) if domain not in iap_tools._MAIL_DOMAIN_BLACKLIST else email
-        )
+        return ("@" + domain) if domain not in MAIL_DOMAIN_BLACKLIST else email
 
     def _translation_modules_whitelist(self):
         return ["mail_plugin"]

@@ -9,11 +9,10 @@ from odoo.tests import Form, tagged, users
 from odoo.tests.common import Like
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
-from odoo.addons.payment.tests.common import PaymentCommon
 
 
 @tagged("post_install", "-at_install")
-class TestAccountPaymentRegister(AccountTestInvoicingCommon, PaymentCommon):
+class TestAccountPaymentRegister(AccountTestInvoicingCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1155,29 +1154,6 @@ class TestAccountPaymentRegister(AccountTestInvoicingCommon, PaymentCommon):
             self.env["wizard.account.move.line.pay"].with_context(
                 active_model="account.move", active_ids=self.out_invoice_2.ids
             ).create({})
-
-    def test_register_payment_doesnt_send_email(self):
-        self.env["ir.config_parameter"].set_param("sale.automatic_invoice", True)
-        if self.env["ir.module.module"]._get("payment_demo").state == "installed":
-            payment_token = self._create_token(
-                provider_id=self._prepare_provider(code="demo").id,
-                demo_simulated_state="done",
-            )
-        else:
-            payment_token = self._create_token()
-        payment_register = (
-            self.env["wizard.account.move.line.pay"]
-            .with_context(
-                active_model="account.move", active_ids=self.out_invoice_4.ids
-            )
-            .create({"payment_token_id": payment_token.id})
-        )
-        with patch(
-            "odoo.addons.sale.models.payment_transaction.PaymentTransaction"
-            "._send_invoice"
-        ) as patched:
-            payment_register._create_payments()
-            patched.assert_not_called()
 
     def test_register_payment_multi_currency_rounding_issue_positive_delta(self):
         payment = (

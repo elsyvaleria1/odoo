@@ -17,6 +17,7 @@ from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.filesystem import guess_mimetype
 from odoo.libs.guarded_http import RefusedDestination
+from odoo.tools import iap
 from odoo.tools.image import (
     binary_to_image,
     get_webp_size,
@@ -33,10 +34,9 @@ from ..models.ir_attachment import (
 from odoo.addons.html_editor.tools import (
     collaboration_channel,
     get_video_url_data,
+    link_preview,
     replace_animation_duration,
 )
-from odoo.addons.iap.tools import iap_tools
-from odoo.addons.mail.tools import link_preview
 
 _debug = DebugLog(__name__)
 
@@ -702,7 +702,7 @@ class HTML_Editor(http.Controller):
                 "html_editor.olg_api_endpoint", DEFAULT_OLG_ENDPOINT
             )
             database_id = IrConfigParameter.get_param("database.uuid")
-            response = iap_tools.iap_jsonrpc(
+            response = iap.jsonrpc(
                 olg_api_endpoint + "/api/olg/1/chat",
                 params={
                     "prompt": prompt,

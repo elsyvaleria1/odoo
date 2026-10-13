@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (5768 methods, 1088 classes, 209 files)
+# All base tests (5779 methods, 1090 classes, 209 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -142,7 +142,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_ir_access_simulate.py` | `post_install`, `-at_install` | 1 | 6 | TransactionCase |
 | `test_ir_access_stored_domains.py` | `post_install`, `-at_install` | 1 | 7 | TransactionCase |
 | `test_ir_actions.py` | `post_install`, `-at_install` | 7 | 106 | TestServerActionsBase, TransactionCase, TestCommonCustomFields |
-| `test_ir_actions_audit.py` | `post_install`, `-at_install` | 52 | 161 | TransactionCase |
+| `test_ir_actions_audit.py` | `post_install`, `-at_install` | 52 | 159 | TransactionCase |
 | `test_ir_actions_reach.py` | `post_install`, `-at_install` | 1 | 2 | TransactionCase |
 | `test_ir_actions_report_audit.py` | `post_install`, `-at_install` | 7 | 17 | TransactionCase |
 | `test_ir_actions_server_audit.py` | `post_install`, `-at_install` | 3 | 8 | TransactionCase |
@@ -165,7 +165,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_ir_model.py` | `-at_install`, `post_install`, `test_eval_context` | 17 | 164 | TransactionCase, HttpCase, BaseCase |
 | `test_ir_model_data.py` | `post_install`, `-at_install` | 4 | 15 | TransactionCase |
 | `test_ir_model_fields_inherited_translation.py` | `post_install`, `-at_install` | 1 | 8 | TransactionCase |
-| `test_ir_module.py` | `post_install`, `-at_install` | 16 | 79 | TransactionCase, BaseCase |
+| `test_ir_module.py` | `post_install`, `-at_install` | 16 | 81 | TransactionCase, BaseCase |
 | `test_ir_sequence.py` | `post_install`, `-at_install` | 15 | 71 | BaseCase, TransactionCase |
 | `test_ir_ui_view_authoring.py` | `post_install`, `-at_install` | 2 | 37 | TransactionCase |
 | `test_legacy_field_names.py` | `post_install`, `-at_install` | 1 | 6 | TransactionCase |
@@ -326,8 +326,8 @@ These run in **both** at_install and post_install phases by default.
 | Metric | Value |
 |--------|-------|
 | Total test files | 209 |
-| Total test classes | 1088 |
-| Total test methods | 5768 |
+| Total test classes | 1090 |
+| Total test methods | 5779 |
 | Files with @tagged | 138 (66%) |
 | Files without @tagged | 71 (34%) |
 | Classes using post_install | 438 |

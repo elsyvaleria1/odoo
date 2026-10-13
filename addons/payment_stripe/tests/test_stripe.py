@@ -11,6 +11,7 @@ from odoo.tests import tagged
 from odoo.tools import mute_logger
 from odoo.tools.urls import urljoin as url_join
 
+from odoo.addons.payment import const as payment_const
 from odoo.addons.payment.tests.http_common import PaymentHttpCommon
 from odoo.addons.payment_stripe import const
 from odoo.addons.payment_stripe import utils as stripe_utils
@@ -321,7 +322,7 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
 
     def test_onboarding_action_redirect_to_url(self):
         if country := self.env["res.country"].search(
-            [("code", "in", list(const.SUPPORTED_COUNTRIES))], limit=1
+            [("code", "in", list(payment_const.STRIPE_SUPPORTED_COUNTRIES))], limit=1
         ):
             self.env.company.country_id = country
         else:
@@ -362,7 +363,7 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
                 return_value={"id": "dummy"},
             ),
         ):
-            for country_code in const.COUNTRY_MAPPING:
+            for country_code in payment_const.STRIPE_COUNTRY_MAPPING:
                 country = self.env["res.country"].search(
                     [("code", "=", country_code)], limit=1
                 )
@@ -370,7 +371,7 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
                 self.stripe.with_company(
                     mapped_country_company
                 ).action_start_onboarding("dummy")
-            self.assertEqual(mock.call_count, len(const.COUNTRY_MAPPING))
+            self.assertEqual(mock.call_count, len(payment_const.STRIPE_COUNTRY_MAPPING))
 
     def test_the_secrets_live_in_the_providers_credential(self):
         self.stripe.write(

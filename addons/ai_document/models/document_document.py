@@ -13,7 +13,7 @@ from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import is_html_empty
 
-from odoo.addons.ai_fields.tools import ai_field_insert, parse_ai_prompt_values
+from odoo.addons.ai.utils.ai_prompt import ai_field_insert, parse_ai_prompt_values
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

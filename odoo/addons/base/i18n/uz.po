@@ -75145,3 +75145,25 @@ msgstr "boshqa hafta"
 #, fuzzy
 msgid "this week"
 msgstr "shu hafta"
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+#, fuzzy
+msgid ""
+"An error occurred while reaching %s. Please contact Odoo support if this "
+"error persists."
+msgstr ""
+"%s ga ulanishda xatolik yuz berdi. Agar bu xatolik takrorlansa, Odoo yordam "
+"xizmatiga murojaat qiling."
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+#, fuzzy
+msgid ""
+"The request to the service timed out. Please contact the author of the app. "
+"The URL it tried to contact was %s"
+msgstr ""
+"Xizmatga so‘rov vaqti tugadi. Iltimos, ilova muallifi bilan bog‘laning. U "
+"bog‘lanishga uringan URL manzil: %s"

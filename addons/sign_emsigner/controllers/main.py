@@ -16,11 +16,10 @@ from odoo import http
 from odoo.exceptions import ValidationError
 from odoo.http import request
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
-from odoo.tools import file_open
+from odoo.tools import file_open, iap
 from odoo.tools.pdf import PdfReader, PdfReadError, PdfWriter
 from odoo.tools.pdf.signature import PdfSignatureError, get_verified_pdf_signature
 
-from odoo.addons.iap import jsonrpc
 from odoo.addons.sign.controllers.main import Sign as SignController
 from odoo.addons.sign_emsigner.const import IAP_DEFAULT_DOMAIN
 from odoo.addons.sign_emsigner.utils import compress_pdf_base64
@@ -228,9 +227,10 @@ class SignEmsigner(SignController):
                 ),
                 "url": account.get_base_url(),
             }
-            return jsonrpc(
+            return iap.jsonrpc(
                 url_join(endpoint, "/api/emsigner/1/sign_identity_request"),
                 params=params,
+                env=self.env,
             )
         return super()._acquire_auth_method_result(request_item_sudo, **kwargs)
 

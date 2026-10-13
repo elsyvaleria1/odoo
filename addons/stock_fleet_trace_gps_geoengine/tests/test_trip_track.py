@@ -8,11 +8,11 @@ from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import TransactionCase, tagged
 
-from odoo.addons.geoengine.models.static_map import TileFetcher
-from odoo.addons.stock_fleet_trace_gps.tests.gps_simulator import (
+from odoo.addons.device_gps.tests.route_simulator import (
     RouteSimulator,
     make_gps_device,
 )
+from odoo.addons.geoengine.models.static_map import TileFetcher
 
 WAREHOUSE = (19.2826000, -99.6557000)
 CUSTOMER = (19.2900000, -99.6700000)

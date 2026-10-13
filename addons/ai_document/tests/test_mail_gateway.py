@@ -3,7 +3,7 @@ from unittest.mock import patch
 from odoo.addons.ai.utils.llm_api_service import LLMApiService
 from odoo.addons.ai_document.tests.test_common import TestAiDocumentsCommon
 from odoo.addons.mail.tests.common import MailCommon
-from odoo.addons.test_mail.data.test_mail_data import MAIL_EML_ATTACHMENT
+from odoo.addons.mail.tests.mail_data import MAIL_EML_ATTACHMENT
 
 
 class TestMailGateway(TestAiDocumentsCommon, MailCommon):

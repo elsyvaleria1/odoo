@@ -7,8 +7,8 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.tests import tagged
 
 from odoo.addons.mail.tests.common import mail_new_test_user
+from odoo.addons.mail.tests.mail_data import MAIL_TEMPLATE
 from odoo.addons.sms.tests.common import SMSCommon
-from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE
 
 
 @tagged("mail_push")
@@ -101,7 +101,7 @@ class TestPushNotification(SMSCommon):
         )
         cls.group_channel._add_members(users=cls.user_email | cls.user_inbox)
 
-    @patch("odoo.addons.mail_mobile.models.mixin_mail_thread.iap_jsonrpc")
+    @patch("odoo.tools.iap.jsonrpc")
     def test_push_notifications(self, jsonrpc):
         self.record_simple.with_user(self.user_inbox).message_notify(
             partner_ids=self.user_email.partner_id.ids,
@@ -180,7 +180,7 @@ class TestPushNotification(SMSCommon):
             "No Tracking Message found",
         )
 
-    @patch("odoo.addons.mail_mobile.models.mixin_mail_thread.iap_jsonrpc")
+    @patch("odoo.tools.iap.jsonrpc")
     def test_push_notifications_android_channel(self, jsonrpc):
         self.direct_message_channel.with_user(self.user_email).message_post(
             body="Test", message_type="comment", subtype_xmlid="mail.mt_comment"
@@ -237,7 +237,7 @@ class TestPushNotification(SMSCommon):
             "The type of Android channel must be AtMention",
         )
 
-    @patch("odoo.addons.mail_mobile.models.mixin_mail_thread.iap_jsonrpc")
+    @patch("odoo.tools.iap.jsonrpc")
     def test_push_notifications_mail_replay(self, jsonrpc):
         with self.mock_mail_gateway():
             test_record = self.format_and_process(
@@ -279,7 +279,7 @@ class TestPushNotification(SMSCommon):
                 jsonrpc.assert_not_called()
             jsonrpc.reset_mock()
 
-    @patch("odoo.addons.mail_mobile.models.mixin_mail_thread.iap_jsonrpc")
+    @patch("odoo.tools.iap.jsonrpc")
     @patch.object(odoo.addons.mail.models.mixin_mail_thread, "push_to_end_point")
     def test_push_notifications_whatsapp(self, push_to_end_point, iap_jsonrpc):
 

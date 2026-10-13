@@ -1,8 +1,8 @@
 from odoo import Command
+from odoo.libs.email import mail_prepare_for_domain_search
 from odoo.tests.common import tagged, users
 
 from odoo.addons.crm.tests.common import TestCrmCommon
-from odoo.addons.iap.tools import iap_tools
 
 
 @tagged("lead_internals")
@@ -248,7 +248,7 @@ class TestCRMLead(TestCrmCommon):
         for test_email, provider in self.emails_provider_generic:
             with self.subTest(test_email=test_email, provider=provider):
                 self.assertEqual(
-                    iap_tools.mail_prepare_for_domain_search(test_email),
+                    mail_prepare_for_domain_search(test_email),
                     test_email,
                     "As provider is a generic one, complete email should be returned for a company-based mail search",
                 )
@@ -256,7 +256,7 @@ class TestCRMLead(TestCrmCommon):
         for test_email, provider in self.emails_provider_company:
             with self.subTest(test_email=test_email, provider=provider):
                 self.assertEqual(
-                    iap_tools.mail_prepare_for_domain_search(test_email),
+                    mail_prepare_for_domain_search(test_email),
                     f"@{provider}",
                     "As provider is a company one, only the domain part should be returned for a company-based mail search",
                 )

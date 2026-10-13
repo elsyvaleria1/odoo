@@ -50,16 +50,6 @@ msgstr ""
 "Sie ihn nicht weiter."
 
 #. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"An error occurred while reaching %s. Please contact Odoo support if this "
-"error persists."
-msgstr ""
-"Ein Fehler ist beim Aufrufen von %s aufgetreten. Bitte kontaktieren Sie den "
-"Odoo-Support, wenn der Fehler weiterhin besteht."
-
-#. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_account__balance
 msgid "Balance"
 msgstr "Saldo"
@@ -254,16 +244,6 @@ msgstr "Technische Bezeichnung"
 #: code:addons/iap/models/iap_account.py:0
 msgid "The IAP token provided is invalid or empty."
 msgstr "Der angegebene IAP-Token ist ungültig oder leer."
-
-#. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"The request to the service timed out. Please contact the author of the app. "
-"The URL it tried to contact was %s"
-msgstr ""
-"Die Anfrage dieses Dienstes ist abgelaufen. Bitte kontaktieren Sie den Autor "
-"der App. Die Url, die er zu kontaktieren versuchte, war %s."
 
 #. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_service__unit_name

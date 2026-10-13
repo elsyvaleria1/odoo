@@ -5,7 +5,7 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError
 
 from ..utils.html_extractor import HTMLExtractor
-from odoo.addons.mail.tools import link_preview
+from odoo.addons.html_editor.tools import link_preview
 
 
 class AIAgentSource(models.Model):

@@ -66528,6 +66528,26 @@ msgstr "diğer hafta"
 msgid "this week"
 msgstr "bu hafta"
 
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"An error occurred while reaching %s. Please contact Odoo support if this "
+"error persists."
+msgstr ""
+"%s adresine ulaşırken bir hata oluştu. Bu hata devam ederse lütfen Odoo "
+"destek ile iletişime geçin."
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"The request to the service timed out. Please contact the author of the app. "
+"The URL it tried to contact was %s"
+msgstr ""
+"Hizmete yapılan istek zaman aşımına uğradı. Lütfen uygulamanın yazarıyla "
+"iletişime geçin. İletişim kurmaya çalıştığı URL şöyleydi %s"
+
 #~ msgid "Device Log"
 #~ msgstr "Cihaz Günlüğü"
 

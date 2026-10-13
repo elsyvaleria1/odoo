@@ -4,7 +4,7 @@ from odoo.tools import formataddr
 
 from odoo.addons.helpdesk.tests.common import HelpdeskCommon
 from odoo.addons.mail.tests.common import MailCommon
-from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE
+from odoo.addons.mail.tests.mail_data import MAIL_TEMPLATE
 
 
 @tagged("post_install", "-at_install", "mail_flow", "mail_tools")

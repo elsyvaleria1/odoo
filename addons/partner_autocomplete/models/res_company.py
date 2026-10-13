@@ -1,10 +1,10 @@
 import logging
 
 from odoo import api, fields, models, modules
+from odoo.libs.email import MAIL_PROVIDERS
 from odoo.tools.mail import email_domain_extract, url_domain_extract
 
 from ..tools import set_partner_autocomplete_widgets
-from odoo.addons.iap.tools import iap_tools
 
 _logger = logging.getLogger(__name__)
 COMPANY_AC_TIMEOUT = 5
@@ -114,7 +114,7 @@ class ResCompany(models.Model):
         self.check_singleton()
 
         company_domain = email_domain_extract(self.email) if self.email else False
-        if company_domain and company_domain not in iap_tools._MAIL_PROVIDERS:
+        if company_domain and company_domain not in MAIL_PROVIDERS:
             return company_domain
 
         company_domain = url_domain_extract(self.website) if self.website else False

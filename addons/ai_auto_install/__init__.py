@@ -1,14 +1,12 @@
 import psycopg
 
-from odoo.exceptions import UserError
-
-from odoo.addons.ai import pgvector_is_available
+from odoo.db.schema import ensure_extension
 
 
 def _auto_install_ai(env) -> None:
     try:
-        pgvector_is_available(env)
-    except UserError, psycopg.Error:
+        ensure_extension(env.cr, "vector")
+    except psycopg.Error:
         return
 
     env["ir.module.module"].sudo().search(

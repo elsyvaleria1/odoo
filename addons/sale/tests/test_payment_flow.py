@@ -26,6 +26,28 @@ class TestSalePayment(AccountPaymentCommon, MailCase, PaymentHttpCommon, SaleCom
 
         cls.sale_order.require_payment = True
 
+    def test_register_payment_doesnt_send_email(self):
+        self.env["ir.config_parameter"].set_param("sale.automatic_invoice", True)
+        invoice = self.init_invoice("out_invoice", amounts=[23.98], post=True)
+        if self.env["ir.module.module"]._get("payment_demo").state == "installed":
+            payment_token = self._create_token(
+                provider_id=self._prepare_provider(code="demo").id,
+                demo_simulated_state="done",
+            )
+        else:
+            payment_token = self._create_token()
+        payment_register = (
+            self.env["wizard.account.move.line.pay"]
+            .with_context(active_model="account.move", active_ids=invoice.ids)
+            .create({"payment_token_id": payment_token.id})
+        )
+        with patch(
+            "odoo.addons.sale.models.payment_transaction.PaymentTransaction"
+            "._send_invoice"
+        ) as patched:
+            payment_register._create_payments()
+            patched.assert_not_called()
+
     @mute_logger("odoo.http", "odoo.service.http.access")
     def test_payment_amount_must_not_be_less_than_prepayment_amount(self):
         res = self._make_http_get_request(

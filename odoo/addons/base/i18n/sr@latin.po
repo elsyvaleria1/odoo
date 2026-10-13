@@ -59056,6 +59056,22 @@ msgstr ""
 msgid "this week"
 msgstr ""
 
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"An error occurred while reaching %s. Please contact Odoo support if this "
+"error persists."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"The request to the service timed out. Please contact the author of the app. "
+"The URL it tried to contact was %s"
+msgstr ""
+
 #~ msgid "<strong>Name</strong>"
 #~ msgstr "<strong>Naziv</strong>"
 

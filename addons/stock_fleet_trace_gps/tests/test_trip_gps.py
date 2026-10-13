@@ -5,7 +5,7 @@ from freezegun import freeze_time
 from odoo import Command, fields
 from odoo.tests import TransactionCase, tagged
 
-from .gps_simulator import RouteSimulator, make_gps_device
+from odoo.addons.device_gps.tests.route_simulator import RouteSimulator, make_gps_device
 
 WAREHOUSE = (19.2826000, -99.6557000)
 CUSTOMER_1 = (19.2900000, -99.6700000)

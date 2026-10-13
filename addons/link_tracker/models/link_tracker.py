@@ -11,7 +11,7 @@ from odoo.fields import Domain
 from odoo.http import request
 from odoo.tools.mail import normalize_url
 
-from odoo.addons.mail.tools import link_preview
+from odoo.addons.html_editor.tools import link_preview
 
 _logger = logging.getLogger(__name__)
 

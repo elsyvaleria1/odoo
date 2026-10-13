@@ -2,8 +2,8 @@ from odoo import api, models
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.web import urljoin as url_join
+from odoo.tools import iap
 
-from odoo.addons.iap.tools.iap_tools import iap_jsonrpc
 from odoo.addons.website_generator.models.generator import DEFAULT_WSS_ENDPOINT
 
 _debug = DebugLog(__name__)
@@ -57,4 +57,4 @@ class Website(models.Model):
             "url": target_url,
         }
 
-        return iap_jsonrpc(url, params=params, env=self.env)
+        return iap.jsonrpc(url, params=params, env=self.env)

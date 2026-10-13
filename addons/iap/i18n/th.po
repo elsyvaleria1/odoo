@@ -48,14 +48,6 @@ msgid ""
 msgstr "โทเค็นบัญชีคือคีย์การตรวจสอบสิทธิ์ของคุณสำหรับบริการนี้ โปรดอย่าแชร์ให้กับผู้อื่น"
 
 #. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"An error occurred while reaching %s. Please contact Odoo support if this "
-"error persists."
-msgstr "เกิดข้อผิดพลาดขณะเข้าถึง %s โปรดติดต่อฝ่ายสนับสนุน Odoo หากข้อผิดพลาดนี้ยังคงมีอยู่"
-
-#. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_account__balance
 msgid "Balance"
 msgstr "ยอดคงเหลือ"
@@ -246,14 +238,6 @@ msgstr "ชื่อทางเทคนิค"
 #: code:addons/iap/models/iap_account.py:0
 msgid "The IAP token provided is invalid or empty."
 msgstr ""
-
-#. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"The request to the service timed out. Please contact the author of the app. "
-"The URL it tried to contact was %s"
-msgstr "การร้องขอไปยังบริการหมดเวลา โปรดติดต่อผู้สร้างแอป URL ที่พยายามติดต่อคือ %s"
 
 #. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_service__unit_name

@@ -48,16 +48,6 @@ msgid ""
 msgstr "계정 토큰은 해당 서비스용 인증 키입니다. 공유하면 안됩니다."
 
 #. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"An error occurred while reaching %s. Please contact Odoo support if this "
-"error persists."
-msgstr ""
-"%s에 연결하는 동안 오류가 발생했습니다. 문제가 지속되면 Odoo 지원팀에 문의하"
-"세요."
-
-#. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_account__balance
 msgid "Balance"
 msgstr "잔액"
@@ -249,16 +239,6 @@ msgstr "기술 이름"
 #: code:addons/iap/models/iap_account.py:0
 msgid "The IAP token provided is invalid or empty."
 msgstr "선택한 IAP 토큰이 유효하지 않거나 내용이 없습니다."
-
-#. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"The request to the service timed out. Please contact the author of the app. "
-"The URL it tried to contact was %s"
-msgstr ""
-"서비스 요청이 시간 초과되었습니다. 앱 개발자에게 문의하십시오. 연결을 시도한 "
-"URL은 %s입니다."
 
 #. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_service__unit_name

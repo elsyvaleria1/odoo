@@ -7,6 +7,7 @@ from odoo.fields import Command
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools.urls import urljoin
 
+from odoo.addons.payment import const as payment_const
 from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment.const import REPORT_REASONS_MAPPING
 from odoo.addons.payment.logging import get_payment_logger
@@ -30,7 +31,7 @@ class PaymentProvider(models.Model):
         comodel_name="res.country",
         inverse="_inverse_mercado_pago_account_country_id",
         copy=False,
-        domain=[("code", "in", list(const.SUPPORTED_COUNTRIES))],
+        domain=[("code", "in", list(payment_const.MERCADO_PAGO_SUPPORTED_COUNTRIES))],
         required_if_provider="mercado_pago",
         help="The country of the Mercado Pago account. The currency will be updated to match the"
         " country of the Mercado Pago account.",
@@ -126,7 +127,10 @@ class PaymentProvider(models.Model):
         if self.code != "mercado_pago":
             return super().action_start_onboarding(menu_id=menu_id)
 
-        if self.company_id.country_id.code not in const.SUPPORTED_COUNTRIES:
+        if (
+            self.company_id.country_id.code
+            not in payment_const.MERCADO_PAGO_SUPPORTED_COUNTRIES
+        ):
             raise RedirectWarning(
                 self.env._(
                     "Mercado Pago is not available in your country; please use another payment"

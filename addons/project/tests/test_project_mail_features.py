@@ -3,8 +3,8 @@ from odoo.tests import new_test_user, tagged, users
 from odoo.tools import formataddr, mute_logger
 
 from odoo.addons.mail.tests.common import MailCommon
+from odoo.addons.mail.tests.mail_data import MAIL_TEMPLATE
 from odoo.addons.project.tests.test_project_base import TestProjectCommon
-from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE
 
 
 @tagged("post_install", "-at_install", "mail_flow", "mail_tools")

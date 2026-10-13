@@ -2,13 +2,13 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 from odoo import exceptions
+from odoo.tools import iap
 
 from odoo.addons.crm.models.crm_lead import CrmLead
 from odoo.addons.crm_iap_mine.models.crm_iap_lead_mining_request import (
     CrmIapLeadMiningRequest,
 )
 from odoo.addons.iap.tests.common import MockIAPEnrich
-from odoo.addons.iap.tools import iap_tools
 
 
 class MockIAPReveal(MockIAPEnrich):
@@ -33,7 +33,7 @@ class MockIAPReveal(MockIAPEnrich):
             self.assertMineCallParams(params)
 
             if sim_error and sim_error == "credit":
-                raise iap_tools.InsufficientCreditError("InsufficientCreditError")
+                raise iap.InsufficientCreditError("InsufficientCreditError")
             if sim_error and sim_error == "jsonrpc_exception":
                 raise exceptions.AccessError(
                     "The url that this service requested returned an error. Please contact the author of the app. The url it tried to contact was [STRIPPED]"

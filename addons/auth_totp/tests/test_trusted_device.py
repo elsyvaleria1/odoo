@@ -9,9 +9,7 @@ import time
 from lxml import html
 
 from odoo.exceptions import AccessError
-from odoo.tests import HttpCase, tagged
-
-from odoo.addons.mail.tests.common import mail_new_test_user
+from odoo.tests import HttpCase, new_test_user, tagged
 
 UNRECOGNIZED_UA = "Odoo/19.0 CFNetwork/1494.0.7 Darwin/23.4.0"
 CHROME_UA = (
@@ -32,9 +30,7 @@ def _totp_token(secret_b32):
 class TestTrustedDevice(HttpCase):
     def _new_2fa_user(self, login, groups):
         secret = base64.b32encode(os.urandom(20)).decode()
-        user = mail_new_test_user(
-            self.env, login, password=login, groups=groups, tz="UTC"
-        )
+        user = new_test_user(self.env, login, password=login, groups=groups, tz="UTC")
         user.sudo().with_context(mail_notify_force_send=False).write(
             {"totp_secret": secret}
         )

@@ -5,9 +5,8 @@ from markupsafe import Markup
 
 from odoo.tests import tagged
 from odoo.tests.common import users, warmup
-from odoo.tools import mute_logger
+from odoo.tools import iap, mute_logger
 
-from odoo.addons.mail_mobile.models import mixin_mail_thread
 from odoo.addons.test_mail_full.tests.test_mail_performance import (
     FullBaseMailPerformance,
 )
@@ -47,7 +46,7 @@ class EnterpriseBaseMailPerformance(FullBaseMailPerformance):
 
     @contextmanager
     def mock_ocn_iap_jsonrpc(self):
-        with patch.object(mixin_mail_thread, "iap_jsonrpc") as patched_iap_jsonrpc:
+        with patch.object(iap, "jsonrpc") as patched_iap_jsonrpc:
             self.ocn_iap_jsonrpc_mocked = patched_iap_jsonrpc
             yield
 

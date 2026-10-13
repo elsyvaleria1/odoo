@@ -1,16 +1,11 @@
 from odoo import Command
+from odoo.tests import tagged
+from odoo.tools.misc import file_open
 
 from odoo.addons.account_edi_ubl_cii.tests.common import (
     TestUblBis3Common,
     TestUblCiiBECommon,
 )
-
-try:
-    from odoo.addons.test_mimetypes.tests.test_guess_mimetypes import contents
-except ImportError:
-    contents = None
-
-from odoo.tests import tagged
 
 
 @tagged(
@@ -562,9 +557,12 @@ class TestUblExportBis3BE(TestUblBis3Common, TestUblCiiBECommon):
         self._generate_invoice_ubl_file(invoice)
         self._assert_invoice_ubl_file(invoice, "test_invoice_sent_to_partner_with_gln")
 
-    def test_invoice_send_and_print_additional_documents(self):
-        self.ensure_installed("test_mimetypes")
+    @staticmethod
+    def _sample_file(extension):
+        with file_open(f"base/tests/mimetypes/case.{extension}", "rb") as f:
+            return f.read()
 
+    def test_invoice_send_and_print_additional_documents(self):
         tax_21 = self.percent_tax(21.0)
         product = self._create_product(lst_price=1039.99, taxes_id=tax_21)
         invoice = self._create_invoice_one_line(
@@ -576,14 +574,14 @@ class TestUblExportBis3BE(TestUblBis3Common, TestUblCiiBECommon):
         xlsx_attachment = self.env["ir.attachment"].create(
             {
                 "name": "xlsx attachment",
-                "raw": contents("xlsx"),
+                "raw": self._sample_file("xlsx"),
                 "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             }
         )
         docx_attachment = self.env["ir.attachment"].create(
             {
                 "name": "docx attachment",
-                "raw": contents("docx"),
+                "raw": self._sample_file("docx"),
                 "mimetype": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             }
         )

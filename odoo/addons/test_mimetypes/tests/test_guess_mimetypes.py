@@ -1,6 +1,5 @@
 import unittest
 from collections.abc import Callable
-from pathlib import Path
 
 from odoo.libs.filesystem import guess_mimetype
 from odoo.libs.filesystem.mimetypes import _guess_mimetype_by_signature
@@ -10,10 +9,7 @@ from odoo.tools.misc import file_open
 
 
 def contents(extension):
-    with file_open(
-        str(Path(Path(__file__).parent, "testfiles", f"case.{extension}")),
-        "rb",
-    ) as f:
+    with file_open(f"base/tests/mimetypes/case.{extension}", "rb") as f:
         return f.read()
 
 

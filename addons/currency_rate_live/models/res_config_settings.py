@@ -13,10 +13,9 @@ from zeep.helpers import serialize_object
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.datetime import timezone
-from odoo.tools import DEFAULT_SERVER_DATE_FORMAT
+from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, iap
 
 from odoo.addons.account.tools import LegacyHTTPAdapter
-from odoo.addons.iap.tools.iap_tools import iap_jsonrpc
 
 BANXICO_DATE_FORMAT = "%d/%m/%Y"
 PROXY_URL = "https://iap-services.odoo.com"
@@ -699,7 +698,7 @@ class ResCompany(models.Model):
         iap_proxy_url = self.env.registry.settings.get(
             self.env, "currency_rate_live.iap_proxy_url", PROXY_URL
         )
-        currency_data = iap_jsonrpc(
+        currency_data = iap.jsonrpc(
             f"{iap_proxy_url}/api/currency_rate/1/get_currency_rates",
             params={"provider": "xe_com"},
             env=self.env,

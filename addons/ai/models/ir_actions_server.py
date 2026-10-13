@@ -12,12 +12,12 @@ from odoo.libs.json import loads as json_loads
 from odoo.tools import replace_exceptions
 
 from odoo.addons.ai.utils.ai_logging import get_ai_logging_session
+from odoo.addons.ai.utils.ai_prompt import parse_ai_prompt_values
 from odoo.addons.ai.utils.llm_api_service import LLMApiService
 from odoo.addons.ai.utils.tools_schema.validators import (
     check_params_llm_values_with_schema,
     check_schema,
 )
-from odoo.addons.ai_fields.tools import parse_ai_prompt_values
 
 _logger = logging.getLogger(__name__)
 

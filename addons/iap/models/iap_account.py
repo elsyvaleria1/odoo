@@ -9,7 +9,7 @@ from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.web import urljoin as url_join
 from odoo.modules import module
-from odoo.tools import consteq, get_lang
+from odoo.tools import consteq, get_lang, iap
 
 from odoo.addons.iap.tools import iap_tools
 
@@ -163,7 +163,7 @@ class IapAccount(models.Model):
                     ],
                 }
                 try:
-                    iap_tools.iap_jsonrpc(url=url, params=data, env=self.env)
+                    iap.jsonrpc(url=url, params=data, env=self.env)
                 except AccessError as e:
                     _logger.warning(
                         "Update of the warning email configuration has failed: %s", e
@@ -188,9 +188,7 @@ class IapAccount(models.Model):
             "dbuuid": self.env.registry.settings.get(self.env, "database.uuid", False),
         }
         try:
-            accounts_information = iap_tools.iap_jsonrpc(
-                url=url, params=params, env=self.env
-            )
+            accounts_information = iap.jsonrpc(url=url, params=params, env=self.env)
         except AccessError as e:
             _logger.warning("Fetch of the IAP accounts information has failed: %s", e)
             return
@@ -376,7 +374,7 @@ class IapAccount(models.Model):
                 "service_name": service_name,
             }
             try:
-                credit = iap_tools.iap_jsonrpc(url=url, params=params, env=self.env)
+                credit = iap.jsonrpc(url=url, params=params, env=self.env)
             except AccessError as e:
                 _logger.info("Get credit error : %s", e)
                 credit = -1

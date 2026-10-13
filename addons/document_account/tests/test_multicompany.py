@@ -4,7 +4,7 @@ from odoo.tools import mute_logger
 
 from odoo.addons.document_account.tests.common import DocumentsAccountHelpersCommon
 from odoo.addons.mail.tests.common import MailCommon
-from odoo.addons.test_mail.data.test_mail_data import MAIL_EML_ATTACHMENT
+from odoo.addons.mail.tests.mail_data import MAIL_EML_ATTACHMENT
 
 VENDOR_BILL_MAIL = """Subject: {subject}
 From: {email_from}

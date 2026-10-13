@@ -7,8 +7,8 @@ import requests
 from odoo import fields
 from odoo.exceptions import AccessError
 from odoo.libs.json import dumps as json_dumps
-
-from odoo.addons.iap.tools.iap_tools import IAPServerError, iap_jsonrpc
+from odoo.tools import iap
+from odoo.tools.iap import IAPServerError
 
 _logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class GoogleReserveIAP:
 
         merchant = appointment_type.google_reserve_merchant_id
 
-        iap_jsonrpc(
+        iap.jsonrpc(
             url_join(
                 merchant._get_google_reserve_iap_endpoint(),
                 "/api/google_reserve/1/appointment/register",
@@ -47,7 +47,7 @@ class GoogleReserveIAP:
     def unregister_appointment(self, appointment_type) -> None:
 
         merchant = appointment_type.google_reserve_merchant_id
-        iap_jsonrpc(
+        iap.jsonrpc(
             url_join(
                 merchant._get_google_reserve_iap_endpoint(),
                 f"/api/google_reserve/1/appointment/{appointment_type.google_reserve_access_token}/unregister",
@@ -62,7 +62,7 @@ class GoogleReserveIAP:
 
     def update_merchant(self, merchant) -> None:
 
-        iap_jsonrpc(
+        iap.jsonrpc(
             url_join(
                 merchant._get_google_reserve_iap_endpoint(),
                 "/api/google_reserve/1/merchant/update",
@@ -95,7 +95,7 @@ class GoogleReserveIAP:
             }
 
             try:
-                iap_jsonrpc(
+                iap.jsonrpc(
                     url_join(
                         appointment_types.env[
                             "google.reserve.merchant"
@@ -148,7 +148,7 @@ class GoogleReserveIAP:
             return
 
         try:
-            iap_jsonrpc(
+            iap.jsonrpc(
                 url_join(
                     appointment_type.env[
                         "google.reserve.merchant"

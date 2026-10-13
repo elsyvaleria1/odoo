@@ -123,7 +123,7 @@ class TestEmsignerResultIsVerified(SignEmsignerCommon):
         item = sign_request.request_item_ids[0]
         sent = {}
 
-        def proxy(url, params):
+        def proxy(url, params, *, env):
             sent["pdf"] = base64.b64decode(params["signature_data"]["File"])
             return {"success": True, "authorization_url": "https://esign.test/"}
 
@@ -132,7 +132,7 @@ class TestEmsignerResultIsVerified(SignEmsignerCommon):
                 "odoo.addons.iap.models.iap_account.IapAccount.get_credits",
                 lambda self, service: 10,
             ),
-            patch(f"{CONTROLLER}.jsonrpc", proxy),
+            patch("odoo.tools.iap.jsonrpc", proxy),
         ):
             response = self._json_url_open(
                 f"/sign/sign/{sign_request.id}/{item.access_token}",

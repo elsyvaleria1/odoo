@@ -8,6 +8,7 @@
     "depends": [
         "website_helpdesk",
         "website_slides_forum",
+        "website_helpdesk_forum",
     ],
     "data": [
         "views/helpdesk_templates.xml",

@@ -1,8 +1,8 @@
 from odoo.tests import new_test_user
 
 from odoo.addons.mail.tests.common import MailCommon
+from odoo.addons.mail.tests.mail_data import MAIL_TEMPLATE
 from odoo.addons.project.tests.test_project_base import TestProjectCommon
-from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE
 
 
 class TestTodoMailFeatures(TestProjectCommon, MailCommon):

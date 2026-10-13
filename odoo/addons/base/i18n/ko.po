@@ -65716,6 +65716,26 @@ msgstr "다른 주"
 msgid "this week"
 msgstr "이번 주"
 
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"An error occurred while reaching %s. Please contact Odoo support if this "
+"error persists."
+msgstr ""
+"%s에 연결하는 동안 오류가 발생했습니다. 문제가 지속되면 Odoo 지원팀에 문의하"
+"세요."
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"The request to the service timed out. Please contact the author of the app. "
+"The URL it tried to contact was %s"
+msgstr ""
+"서비스 요청이 시간 초과되었습니다. 앱 개발자에게 문의하십시오. 연결을 시도한 "
+"URL은 %s입니다."
+
 #~ msgid "Device Log"
 #~ msgstr "장치 로그"
 

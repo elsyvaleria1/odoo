@@ -4,11 +4,11 @@ import time
 from unittest.mock import Mock, patch
 
 from odoo.exceptions import AccessError
+from odoo.libs.email import MAIL_PROVIDERS
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests.common import HttpCase, new_unbound_test_api_key
 from odoo.tools import hmac, mute_logger
 
-from odoo.addons.iap.tools import iap_tools
 from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.addons.mail_plugin.controllers.authenticate import AUTH_CODE_SCOPE
 from odoo.addons.mail_plugin.tests.common import (
@@ -70,7 +70,7 @@ class TestMailPluginController(TestMailPluginControllerCommon):
 
     @as_outlook_user("employee")
     def test_get_partner_blacklisted_domain(self):
-        domain = min(iap_tools._MAIL_PROVIDERS)
+        domain = min(MAIL_PROVIDERS)
 
         data = {
             "id": 0,

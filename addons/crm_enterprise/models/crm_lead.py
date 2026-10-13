@@ -4,12 +4,12 @@ import logging
 from odoo import api, fields, models
 from odoo.libs.json import loads as json_loads
 from odoo.libs.web import urljoin as url_join
+from odoo.tools import iap
 
 from odoo.addons.crm_enterprise.tools.business_card_scanner import (
     PROMPT,
     BusinessCardScanner,
 )
-from odoo.addons.iap.tools import iap_tools
 
 _logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class CrmLead(models.Model):
         olg_api_endpoint = IrConfigParameter.get_param(
             "html_editor.olg_api_endpoint", "https://olg.api.odoo.com"
         )
-        response = iap_tools.iap_jsonrpc(
+        response = iap.jsonrpc(
             url_join(olg_api_endpoint, "/api/olg/1/chat"),
             params={
                 "prompt": PROMPT,

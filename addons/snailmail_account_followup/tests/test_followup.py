@@ -4,10 +4,9 @@ from freezegun import freeze_time
 
 from odoo import Command
 from odoo.tests import tagged
-from odoo.tools import file_open
+from odoo.tools import file_open, iap
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
-from odoo.addons.iap.tools import iap_tools
 
 
 @tagged("post_install", "-at_install")
@@ -77,7 +76,7 @@ class TestSnailmailAccountFollowup(AccountTestInvoicingCommon):
             }
 
         return mock.patch.object(
-            iap_tools, "iap_jsonrpc", side_effect=mock_credit_error_iap_jsonrpc
+            iap, "jsonrpc", side_effect=mock_credit_error_iap_jsonrpc
         )
 
     def test_cron_generate_report_pdf(self):

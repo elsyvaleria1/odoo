@@ -1,8 +1,7 @@
 from odoo import exceptions
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import iap
 from odoo.tools.translate import LazyTranslate
-
-from odoo.addons.iap.tools import iap_tools
 
 _lt = LazyTranslate(__name__)
 _debug = DebugLog(__name__)
@@ -90,7 +89,7 @@ class SmsApi(SmsApiBase):
         endpoint = self.env.registry.settings.get(
             self.env, "sms.endpoint", self.DEFAULT_ENDPOINT
         )
-        return iap_tools.iap_jsonrpc(
+        return iap.jsonrpc(
             endpoint + local_endpoint, params=params, timeout=timeout, env=self.env
         )
 

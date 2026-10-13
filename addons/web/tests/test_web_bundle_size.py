@@ -7,7 +7,7 @@ from pathlib import Path
 
 import psycopg
 
-from odoo.exceptions import UserError
+from odoo.db.schema import ensure_extension
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tests.common import TransactionCase, tagged
@@ -94,11 +94,9 @@ class TestWebBundleSize(TransactionCase):
 
     @classmethod
     def _pgvector_offered(cls):
-        from odoo.addons.ai import pgvector_is_available
-
         try:
-            pgvector_is_available(cls.env)
-        except UserError, psycopg.Error:
+            ensure_extension(cls.env.cr, "vector")
+        except psycopg.Error:
             return False
         return True
 

@@ -12,6 +12,7 @@ import psycopg
 
 from odoo.db import BaseCursor
 from odoo.libs.debug_log import DebugLog
+from odoo.libs.logging import mute_logger
 from odoo.libs.sql import SQL, get_index_name
 
 _schema = logging.getLogger("odoo.schema")
@@ -135,6 +136,13 @@ def has_trigram(cr: BaseCursor) -> bool:
     available = bool(cr.fetchone())
     _debug.logic("schema.trigram_status", available=available)
     return available
+
+
+def ensure_extension(cr: BaseCursor, name: str) -> None:
+    with mute_logger("odoo.db.cursor"), cr.savepoint():
+        cr.execute(SQL("SELECT 1 FROM pg_extension WHERE extname = %s", name))
+        if not cr.fetchone():
+            cr.execute(SQL("CREATE EXTENSION IF NOT EXISTS %s", SQL.identifier(name)))
 
 
 def table_exists(cr: BaseCursor, tablename: str) -> bool:

@@ -10,12 +10,11 @@ from PIL import Image
 from psycopg import IntegrityError
 
 from odoo.db import Cursor
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import Form, HttpCase, tagged, users
 from odoo.tools import mute_logger
 
 from odoo.addons.base.tests.test_ir_cron import CronMixinCase
-from odoo.addons.base_import.models.base_import import ImportValidationError
 from odoo.addons.mass_mailing.tests.common import MassMailCommon
 
 BASE_64_STRING = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
@@ -199,7 +198,7 @@ class TestMassMailValues(MassMailCommon):
         photo = self._private_photo()
         with patch(
             "odoo.addons.mass_mailing.models.mailing.MailingMailing._get_image_by_url",
-            side_effect=ImportValidationError("not reachable"),
+            side_effect=UserError("not reachable"),
         ):
             mailing = self._vml_mailing(f"/web/image/{photo.id}").sudo().copy()
         self.assertEqual(self._stored_sizes(mailing), [])

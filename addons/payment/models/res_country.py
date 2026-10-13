@@ -1,5 +1,11 @@
 from odoo import api, fields, models
 
+from odoo.addons.payment.const import (
+    MERCADO_PAGO_SUPPORTED_COUNTRIES,
+    STRIPE_COUNTRY_MAPPING,
+    STRIPE_SUPPORTED_COUNTRIES,
+)
+
 
 class ResCountry(models.Model):
     _inherit = "res.country"
@@ -11,21 +17,11 @@ class ResCountry(models.Model):
 
     @api.depends("code")
     def _compute_provider_support(self) -> None:
-        init_modules = self.env.registry.loaded_modules
-        mp_countries = set()
-        stripe_countries = set()
-        stripe_mapping = {}
-        if "payment_mercado_pago" in init_modules:
-            from odoo.addons.payment_mercado_pago import const as mp_const
-
-            mp_countries = mp_const.SUPPORTED_COUNTRIES
-        if "payment_stripe" in init_modules:
-            from odoo.addons.payment_stripe import const as stripe_const
-
-            stripe_countries = stripe_const.SUPPORTED_COUNTRIES
-            stripe_mapping = stripe_const.COUNTRY_MAPPING
         for country in self:
             country.is_stripe_supported_country = (
-                stripe_mapping.get(country.code, country.code) in stripe_countries
+                STRIPE_COUNTRY_MAPPING.get(country.code, country.code)
+                in STRIPE_SUPPORTED_COUNTRIES
             )
-            country.is_mercado_pago_supported_country = country.code in mp_countries
+            country.is_mercado_pago_supported_country = (
+                country.code in MERCADO_PAGO_SUPPORTED_COUNTRIES
+            )

@@ -3,9 +3,8 @@ import logging
 
 from odoo import Command, api, fields, models, modules, tools
 from odoo.exceptions import UserError
-from odoo.tools import OrderedSet
-
-from odoo.addons.iap.tools import iap_tools
+from odoo.libs.email import MAIL_PROVIDERS
+from odoo.tools import OrderedSet, iap
 
 _logger = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ class CrmLead(models.Model):
                     continue
 
                 email_domain = normalized_email.split("@")[1]
-                if email_domain in iap_tools._MAIL_PROVIDERS:
+                if email_domain in MAIL_PROVIDERS:
                     lead.write({"iap_enrich_done": True})
                     lead.message_post_with_source(
                         "crm_iap_enrich.mail_message_lead_enrich_notfound",
@@ -99,7 +98,7 @@ class CrmLead(models.Model):
 
             try:
                 iap_response = self.env["iap.enrich.api"]._request_enrich(lead_emails)
-            except iap_tools.InsufficientCreditError:
+            except iap.InsufficientCreditError:
                 _logger.info("Lead enrichment failed because of insufficient credit")
                 if send_notification:
                     self.env["iap.account"]._send_no_credit_notification(
@@ -149,7 +148,7 @@ class CrmLead(models.Model):
                 try:
                     process_leads(leads)
                     time_left = self.env["ir.cron"]._commit_progress(len(leads))
-                except iap_tools.InsufficientCreditError:
+                except iap.InsufficientCreditError:
                     self.env["ir.cron"]._commit_progress(remaining=0)
                     break
                 except Exception:
@@ -168,7 +167,7 @@ class CrmLead(models.Model):
                     else:
                         process_leads(leads)
                         self.env["ir.cron"]._commit_progress()
-                except iap_tools.InsufficientCreditError:
+                except iap.InsufficientCreditError:
                     break
                 except Exception:
                     if not modules.module.current_test:

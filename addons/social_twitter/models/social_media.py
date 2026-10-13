@@ -13,8 +13,7 @@ from lxml import etree
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.web import urljoin as url_join
-
-from odoo.addons.iap.tools import iap_tools
+from odoo.tools import iap
 
 
 def _oauth_quote(value):
@@ -235,7 +234,7 @@ class SocialMedia(models.Model):
             self.env["social.media"]._DEFAULT_SOCIAL_IAP_ENDPOINT,
         )
         try:
-            return iap_tools.iap_jsonrpc(
+            return iap.jsonrpc(
                 url_join(social_iap_endpoint, "api/social/twitter/1/get_signature"),
                 params=json_params,
                 env=self.env,

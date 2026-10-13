@@ -14,13 +14,13 @@ from odoo.libs.debug_log import DebugLog
 from odoo.models import GC_UNLINK_LIMIT
 from odoo.tools.misc import OrderedSet
 
-from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput
-from odoo.addons.mail.tools.link_preview import (
+from odoo.addons.html_editor.tools.link_preview import (
     count_failed_fetches,
     get_link_preview_from_url,
     get_link_preview_session,
     record_failed_fetch,
 )
+from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput
 
 if typing.TYPE_CHECKING:
     import requests

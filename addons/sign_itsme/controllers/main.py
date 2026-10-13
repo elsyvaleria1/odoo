@@ -4,8 +4,8 @@ from urllib.parse import urlsplit
 from odoo import http
 from odoo.http import request
 from odoo.libs.web import urljoin as url_join
+from odoo.tools import iap
 
-from odoo.addons.iap import jsonrpc
 from odoo.addons.sign.controllers.main import Sign as SignController
 
 if TYPE_CHECKING:
@@ -50,7 +50,7 @@ class SignItsme(SignController):
             if itsme_credits < 1:
                 request_item_sudo.signed_without_extra_auth = True
                 return {"success": True}
-            return jsonrpc(
+            return iap.jsonrpc(
                 url_join(endpoint, "/itsme/v1/sign_identity_request"),
                 params={
                     "account_token": account.sudo().account_token,
@@ -63,6 +63,7 @@ class SignItsme(SignController):
                         path="", query="", fragment=""
                     ).geturl(),
                 },
+                env=request.env,
             )
         else:
             return super()._acquire_auth_method_result(request_item_sudo, **kwargs)

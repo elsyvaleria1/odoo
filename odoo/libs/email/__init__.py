@@ -20,8 +20,15 @@ from .parsing import (
     email_anonymize,
     unfold_references,
 )
+from .domains import (
+    MAIL_DOMAIN_BLACKLIST,
+    MAIL_PROVIDERS,
+    mail_prepare_for_domain_search,
+)
 
 __all__ = [
+    "MAIL_DOMAIN_BLACKLIST",
+    "MAIL_PROVIDERS",
     "email_anonymize",
     "email_domain_extract",
     "email_domain_normalize",
@@ -38,6 +45,7 @@ __all__ = [
     "formataddr",
     "getaddresses",
     "mail_header_msgid_re",
+    "mail_prepare_for_domain_search",
     "parse_contact_from_email",
     "single_email_re",
     "unfold_references",

@@ -12,7 +12,7 @@ from odoo.tests.common import TransactionCase, new_test_user, tagged, users
 from odoo.tools import mute_logger
 
 from .test_document_common import GIF, TEXT, WEBP, TransactionCaseDocuments
-from odoo.addons.mail.tools import link_preview
+from odoo.addons.html_editor.tools import link_preview
 
 DATA = "data:application/zip;base64,R0lGODdhAQABAIAAAP///////ywAAAAAAQABAAACAkQBADs="
 file_a = {

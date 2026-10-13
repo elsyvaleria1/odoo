@@ -1,6 +1,10 @@
 from odoo.tests.common import TransactionCase, tagged
 
-from odoo.addons.web.controllers.utils import get_action, get_action_triples
+from odoo.addons.web.controllers.utils import (
+    clean_action,
+    get_action,
+    get_action_triples,
+)
 
 
 @tagged("web_unit", "web_router")
@@ -17,6 +21,27 @@ class TestWebRouter(TransactionCase):
         for action in valid_actions:
             with self.subTest(action=action):
                 self.assertEqual(get_action(self.env, action), ir_cron_act)
+
+    def test_router_agrees_with_the_path_resolver(self):
+        action = self.env["ir.actions.act_window"].create(
+            {
+                "name": "audit-resolve-w",
+                "res_model": "res.partner",
+                "path": "audit-resolve-w",
+            }
+        )
+        self.env.flush_all()
+        Actions = self.env["ir.actions.actions"]
+        self.assertEqual(Actions._get_action_by_path("audit-resolve-w"), action)
+        self.assertEqual(get_action(self.env, "audit-resolve-w"), action)
+
+    def test_clean_action_keeps_client_only_keys(self):
+        with self.assertNoLogs("odoo.addons.web.controllers.utils", "WARNING"):
+            cleaned = clean_action(
+                {"type": "ir.actions.act_window_close", "effect": {"type": "rainbow"}},
+                env=self.env,
+            )
+        self.assertEqual(cleaned["effect"], {"type": "rainbow"})
 
     def test_router_get_action_missing(self):
         Actions = self.env["ir.actions.actions"]

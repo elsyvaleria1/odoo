@@ -25,7 +25,6 @@ from odoo.libs.numbers import float_round
 from odoo.tools import consteq
 from odoo.tools.image import ImageProcess
 
-from odoo.addons.base_import.models.base_import import ImportValidationError
 from odoo.addons.integration.tools.admission import Resolution
 from odoo.addons.mail.wizards.wizard_mail_message_send import MassMailProgress
 
@@ -1841,7 +1840,6 @@ class MailingMailing(models.Model):
                                 .image_quality()
                             )
                         except (
-                            ImportValidationError,
                             UnidentifiedImageError,
                             UserError,
                             ValueError,
@@ -2006,7 +2004,7 @@ class MailingMailing(models.Model):
                 response.headers.get("Content-Length")
                 and int(response.headers["Content-Length"]) > maxsize
             ):
-                raise ImportValidationError(
+                raise UserError(
                     self.env._(
                         "File size exceeds configured maximum (%s bytes)", maxsize
                     )
@@ -2016,7 +2014,7 @@ class MailingMailing(models.Model):
             for chunk in response.iter_content(DEFAULT_IMAGE_CHUNK_SIZE):
                 content += chunk
                 if len(content) > maxsize:
-                    raise ImportValidationError(
+                    raise UserError(
                         self.env._(
                             "File size exceeds configured maximum (%s bytes)", maxsize
                         )
@@ -2025,7 +2023,7 @@ class MailingMailing(models.Model):
             image = Image.open(io.BytesIO(content))
             w, h = image.size
             if w * h > 42e6:
-                raise ImportValidationError(
+                raise UserError(
                     self.env._(
                         "Image size excessive, imported images must be smaller than 42 million pixel"
                     )
@@ -2039,9 +2037,7 @@ class MailingMailing(models.Model):
             raise
         except Exception as e:
             _logger.exception("Could not retrieve URL: %s", url)
-            raise ImportValidationError(
-                self.env._("Could not retrieve URL: %s", url)
-            ) from e
+            raise UserError(self.env._("Could not retrieve URL: %s", url)) from e
 
     def _parse_mailing_domain(self):
         self.check_singleton()

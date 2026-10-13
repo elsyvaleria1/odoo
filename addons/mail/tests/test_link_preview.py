@@ -12,8 +12,8 @@ from odoo.exceptions import ConcurrencyError
 from odoo.tests.common import tagged
 from odoo.tests.transaction_case import _super_send
 
+from odoo.addons.html_editor.tools import link_preview
 from odoo.addons.mail.tests.common import MailCommon
-from odoo.addons.mail.tools import link_preview
 
 
 @tagged("mail_link_preview", "mail_message", "post_install", "-at_install")

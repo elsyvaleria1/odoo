@@ -56628,3 +56628,11 @@ msgstr ""
 #: code:addons/base/models/mixin_lifecycle.py:0
 msgid "• Cancelled: %s"
 msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"The url that this service requested returned an error. Please contact the "
+"author of the app. The url it tried to contact was %s"
+msgstr ""

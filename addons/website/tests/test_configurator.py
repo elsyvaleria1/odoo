@@ -102,7 +102,7 @@ class TestConfiguratorCommon(odoo.tests.HttpCase):
             return None
 
         iap_patch = patch(
-            "odoo.addons.iap.tools.iap_tools.iap_jsonrpc",
+            "odoo.tools.iap.jsonrpc",
             iap_jsonrpc_mocked_configurator,
         )
         self.startPatcher(iap_patch)
@@ -173,7 +173,7 @@ class TestConfiguratorOffline(TestConfiguratorCommon):
         def unreachable(*args, **kwargs):
             raise AccessError("The url that this service requested returned an error.")
 
-        return patch("odoo.addons.iap.tools.iap_tools.iap_jsonrpc", unreachable)
+        return patch("odoo.tools.iap.jsonrpc", unreachable)
 
     def test_an_unreachable_service_recommends_no_theme(self):
         website = self.env["website"].browse(1)

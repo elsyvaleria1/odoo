@@ -27,3 +27,18 @@ class TestResCompany(PaymentCommon):
     def test_creating_company_without_custom_mode_in_registry(self):
         company = self.env["res.company"].create({"name": "No Custom Mode Company"})
         self.assertTrue(company.exists())
+
+
+@tagged("-at_install", "post_install")
+class TestResCountry(PaymentCommon):
+    def test_provider_support_is_known_before_the_provider_is_installed(self):
+        us, ar, gp = (
+            self.env.ref("base.us"),
+            self.env.ref("base.ar"),
+            self.env.ref("base.gp"),
+        )
+        self.assertTrue(us.is_stripe_supported_country)
+        self.assertFalse(us.is_mercado_pago_supported_country)
+        self.assertFalse(ar.is_stripe_supported_country)
+        self.assertTrue(ar.is_mercado_pago_supported_country)
+        self.assertTrue(gp.is_stripe_supported_country)

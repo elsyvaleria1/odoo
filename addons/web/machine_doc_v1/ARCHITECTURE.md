@@ -498,7 +498,7 @@ includes it.
 |----------|-------|
 | Python (controllers) | 24 (22 Controller classes across 20 route-bearing files + `__init__.py`, `export_writers.py`, `json_helpers.py`, `utils.py`) |
 | Python (models) | 28 (27 model files + `__init__.py`) |
-| Python (tests) | 82 (`test_*.py`; 84 files incl. `__init__.py` and the `tests/bundle_services.py` helper) |
+| Python (tests) | 82 (`test_*.py`; 85 files incl. `__init__.py`, the `tests/bundle_services.py` helper and the `tests/common.py` request mock) |
 | JavaScript (src) | 910 (908 carry `@ts-check`; `module_loader.js` + `service_worker.js` are the two exclusions) |
 | JavaScript (tests) | 850 (incl. 778 `*.test.js` Hoot suites) |
 | JavaScript (vendored libs) | 93 |

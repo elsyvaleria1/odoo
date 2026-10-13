@@ -22,14 +22,13 @@ from odoo.addons.mail.models.mail_push import (
     PUSH_ENDPOINT_RETRY_DAYS,
     PUSH_ENDPOINT_RETRY_DELAY,
 )
-from odoo.addons.mail.tests.common import mail_new_test_user
+from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
+from odoo.addons.mail.tests.mail_data import MAIL_TEMPLATE
 from odoo.addons.mail.tools.jwt import InvalidVapidError
 from odoo.addons.mail.tools.web_push import (
     ENCRYPTION_BLOCK_OVERHEAD,
     ENCRYPTION_HEADER_SIZE,
 )
-from odoo.addons.sms.tests.common import SMSCommon
-from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE
 
 
 @tagged("mail_push")
@@ -308,7 +307,7 @@ class TestWebPushMessageTypes(TransactionCase):
 
 
 @tagged("-at_install", "post_install", "mail_push")
-class TestWebPushNotification(SMSCommon):
+class TestWebPushNotification(MailCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

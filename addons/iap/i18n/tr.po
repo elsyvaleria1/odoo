@@ -58,16 +58,6 @@ msgstr ""
 "paylaşmayın."
 
 #. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"An error occurred while reaching %s. Please contact Odoo support if this "
-"error persists."
-msgstr ""
-"%s adresine ulaşırken bir hata oluştu. Bu hata devam ederse lütfen Odoo "
-"destek ile iletişime geçin."
-
-#. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_account__balance
 msgid "Balance"
 msgstr "Bakiye"
@@ -261,16 +251,6 @@ msgstr "Teknik Adı"
 #: code:addons/iap/models/iap_account.py:0
 msgid "The IAP token provided is invalid or empty."
 msgstr "Sağlanan IAP belirteci geçersiz veya boş."
-
-#. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"The request to the service timed out. Please contact the author of the app. "
-"The URL it tried to contact was %s"
-msgstr ""
-"Hizmete yapılan istek zaman aşımına uğradı. Lütfen uygulamanın yazarıyla "
-"iletişime geçin. İletişim kurmaya çalıştığı URL şöyleydi %s"
 
 #. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_service__unit_name

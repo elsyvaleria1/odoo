@@ -2,7 +2,6 @@ from . import alias_error
 from . import discuss
 from . import inbound_delivery
 from . import incoming_mail
-from . import link_preview
 from . import mail_validation
 from . import paging
 from . import parser

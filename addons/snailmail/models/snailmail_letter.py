@@ -11,10 +11,9 @@ from reportlab.platypus import Frame, KeepInFrame, Paragraph
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
+from odoo.tools import iap
 from odoo.tools.pdf import BrandedFileWriter, PdfReader
 from odoo.tools.safe_eval import safe_eval
-
-from odoo.addons.iap.tools import iap_tools
 
 if TYPE_CHECKING:
     from odoo.addons.base.models.ir_attachment import IrAttachment
@@ -455,7 +454,7 @@ class SnailmailLetter(models.Model):
         )
         params = self._snailmail_create("print")
         try:
-            response = iap_tools.iap_jsonrpc(
+            response = iap.jsonrpc(
                 endpoint + PRINT_ENDPOINT, params=params, timeout=timeout, env=self.env
             )
         except AccessError:

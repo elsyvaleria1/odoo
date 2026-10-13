@@ -204,14 +204,6 @@ msgid "Start a Trial at Odoo"
 msgstr ""
 
 #. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"The url that this service requested returned an error. Please contact the "
-"author of the app. The url it tried to contact was %s"
-msgstr ""
-
-#. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_account__warning_threshold
 #: model:ir.model.fields,field_description:iap.field_iap_account_info__warning_threshold
 msgid "Threshold"

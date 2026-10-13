@@ -108,8 +108,8 @@ class SignItsmeCommon(TestSignControllerCommon):
                 lambda self, x: 10,
             ),
             patch(
-                "odoo.addons.sign_itsme.controllers.main.jsonrpc",
-                lambda url, params: {"success": True, "url": url},
+                "odoo.tools.iap.jsonrpc",
+                lambda url, params, *, env: {"success": True, "url": url},
             ),
         ):
             response = self._json_url_open(
@@ -158,8 +158,8 @@ class SignItsmeCommon(TestSignControllerCommon):
             sign_request.template_id.sign_item_ids, sign_request_item.role_id.id
         )
         with patch(
-            "odoo.addons.sign_itsme.controllers.main.jsonrpc",
-            lambda url, params: {"success": True, "url": url},
+            "odoo.tools.iap.jsonrpc",
+            lambda url, params, *, env: {"success": True, "url": url},
         ):
             with patch(
                 "odoo.addons.iap.models.iap_account.IapAccount.get_credits",

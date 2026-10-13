@@ -2,7 +2,7 @@ import logging
 
 from odoo import api, fields, models, release
 from odoo.exceptions import UserError
-from odoo.tools import is_html_empty
+from odoo.tools import iap, is_html_empty
 
 from odoo.addons.iap.tools import iap_tools
 
@@ -348,7 +348,7 @@ class CrmIapLeadMiningRequest(models.Model):
                 return False
 
             return response["data"]
-        except iap_tools.InsufficientCreditError:
+        except iap.InsufficientCreditError:
             self.error_type = "credits"
             self.state = "error"
             return False
@@ -364,9 +364,7 @@ class CrmIapLeadMiningRequest(models.Model):
             )
             + "/api/dnb/1/search_by_criteria"
         )
-        return iap_tools.iap_jsonrpc(
-            endpoint, params=params, timeout=timeout, env=self.env
-        )
+        return iap.jsonrpc(endpoint, params=params, timeout=timeout, env=self.env)
 
     def _create_leads_from_response(self, result) -> None:
         self.check_singleton()

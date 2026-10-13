@@ -5,7 +5,7 @@ from odoo.tests.common import TransactionCase
 
 class TestAISources(TransactionCase):
     def _create_attachment(self, name, mimetype, content):
-        def _get_index_content(self, data, _type, checksum=None):
+        def _get_index_content(self, data, _type, *, charset=None):
             return data
 
         with patch.object(

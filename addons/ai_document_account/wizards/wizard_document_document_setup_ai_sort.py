@@ -2,7 +2,7 @@ from markupsafe import Markup
 
 from odoo import Command, api, models
 
-from odoo.addons.ai_fields.tools import ai_field_insert
+from odoo.addons.ai.utils.ai_prompt import ai_field_insert
 
 
 class WizardDocumentDocumentSetupAiSort(models.TransientModel):

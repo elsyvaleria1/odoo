@@ -3,9 +3,7 @@ import re
 from odoo import models
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import html2plaintext
-
-from odoo.addons.iap.tools import iap_tools
+from odoo.tools import html2plaintext, iap
 
 DEFAULT_OLG_ENDPOINT = "https://olg.api.odoo.com"
 
@@ -62,7 +60,7 @@ Here is the data to generate the job description:
                 "html_editor.olg_api_endpoint", DEFAULT_OLG_ENDPOINT
             )
             database_id = IrConfigParameter.get_param("database.uuid")
-            response = iap_tools.iap_jsonrpc(
+            response = iap.jsonrpc(
                 olg_api_endpoint + "/api/olg/1/chat",
                 params={
                     "prompt": prompt,

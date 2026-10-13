@@ -64790,6 +64790,22 @@ msgstr "其他星期"
 msgid "this week"
 msgstr "本星期"
 
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"An error occurred while reaching %s. Please contact Odoo support if this "
+"error persists."
+msgstr "聯絡 %s 時，發生錯誤。如果此錯誤繼續發生，請聯絡 Odoo 技術支援人員。"
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"The request to the service timed out. Please contact the author of the app. "
+"The URL it tried to contact was %s"
+msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡的網址是 %s"
+
 #~ msgid "Device Log"
 #~ msgstr "裝置記錄"
 

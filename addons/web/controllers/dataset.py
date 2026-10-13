@@ -4,7 +4,7 @@ from odoo import api, http
 from odoo.http import NotFound, ParameterError, request
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.worker_thread import current_worker_thread
-from odoo.service.model import call_kw
+from odoo.service import model as service_model
 
 from .utils import clean_action
 
@@ -79,7 +79,7 @@ class DataSet(http.Controller):
             )
         _tag_thread_with_rpc_target(model, method, path)
         with _debug.perf("call_kw", cr=request.env.cr, model=model, method=method):
-            return call_kw(_get_called_model(model), method, args, kwargs)
+            return service_model.call_kw(_get_called_model(model), method, args, kwargs)
 
     @http.route(
         ["/web/dataset/call_button", "/web/dataset/call_button/<path:path>"],
@@ -105,7 +105,9 @@ class DataSet(http.Controller):
             )
         _tag_thread_with_rpc_target(model, method, path)
         with _debug.perf("call_button", cr=request.env.cr, model=model, method=method):
-            action = call_kw(_get_called_model(model), method, args, kwargs)
+            action = service_model.call_kw(
+                _get_called_model(model), method, args, kwargs
+            )
         if isinstance(action, dict) and action.get("type") != "":
             _debug.pipeline(
                 "call_button_action",

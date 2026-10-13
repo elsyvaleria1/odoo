@@ -6389,7 +6389,7 @@ them by the scope in each row's first clause, not by date or position.
      - §1.2: code imports only from its dependency closure;
        ``manifest_import_undeclared`` holds each repository's
        ``odoo.addons.<x>`` imports of an addon outside the importer's
-       closure at its floor.
+       closure at zero.
    * - 7.92
      - 2026-10-13
      - §1.5: the fourteen names with ``l10n_<cc>`` inside lead with it

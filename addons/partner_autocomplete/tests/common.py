@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 from odoo import exceptions
 from odoo.tests import common
+from odoo.tools import iap
 
-from odoo.addons.iap.tools import iap_tools
 from odoo.addons.partner_autocomplete.models.iap_autocomplete_api import (
     IapAutocompleteApi,
     MissingIAPAccountTokenError,
@@ -40,7 +40,7 @@ class MockIAPPartnerAutocomplete(common.BaseCase):
                 sim_result.update(default_data)
             if action == "enrich_by_domain":
                 if sim_error and sim_error == "credit":
-                    raise iap_tools.InsufficientCreditError("InsufficientCreditError")
+                    raise iap.InsufficientCreditError("InsufficientCreditError")
                 if sim_error and sim_error == "jsonrpc_exception":
                     raise exceptions.AccessError(
                         "The url that this service requested returned an error. Please contact the author of the app. The url it tried to contact was "

@@ -3,8 +3,7 @@ import logging as logger
 import re
 
 from odoo import api, models, tools
-
-from odoo.addons.iap.tools.iap_tools import iap_jsonrpc
+from odoo.tools import iap
 
 _logger = logger.getLogger(__name__)
 
@@ -88,7 +87,7 @@ class MixinMailThread(models.AbstractModel):
 
             for chunk in chunks:
                 try:
-                    iap_jsonrpc(endpoint + "/iap/ocn/send", params=chunk, env=self.env)
+                    iap.jsonrpc(endpoint + "/iap/ocn/send", params=chunk, env=self.env)
                 except Exception:
                     _logger.exception(
                         "An error occurred while contacting the ocn server"

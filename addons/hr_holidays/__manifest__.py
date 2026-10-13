@@ -13,6 +13,7 @@
         "hr",
         "calendar",
         "approval",
+        "hr_calendar",
     ],
     "data": [
         "data/report_paperformat.xml",

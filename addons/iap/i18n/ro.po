@@ -53,16 +53,6 @@ msgstr ""
 "o partajați."
 
 #. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"An error occurred while reaching %s. Please contact Odoo support if this "
-"error persists."
-msgstr ""
-"Au apărut erori în timpul accesării %s. Vă rugăm să contactați asistența "
-"Odoo dacă această eroare persistă."
-
-#. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_account__balance
 msgid "Balance"
 msgstr "Sold"
@@ -255,16 +245,6 @@ msgstr "Nume tehnic"
 #: code:addons/iap/models/iap_account.py:0
 msgid "The IAP token provided is invalid or empty."
 msgstr "Tokenul IAP furnizat este invalid sau gol."
-
-#. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"The request to the service timed out. Please contact the author of the app. "
-"The URL it tried to contact was %s"
-msgstr ""
-"Cererea către serviciu a expirat. Vă rugăm să contactați autorul aplicației. "
-"Adresa URL pe care a încercat să o contacteze a fost %s"
 
 #. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_service__unit_name

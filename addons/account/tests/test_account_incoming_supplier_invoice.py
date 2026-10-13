@@ -8,13 +8,12 @@ from unittest.mock import patch
 from odoo import Command
 from odoo.exceptions import ValidationError
 from odoo.tests import RecordCapturer, tagged
-from odoo.tools.misc import mute_logger
+from odoo.tools.misc import file_open, mute_logger
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 from odoo.addons.mail.models.mixin_mail_gateway import RouteVerdict
 from odoo.addons.mail.tests.common import MailCommon
 from odoo.addons.mail.tools.inbound_delivery import MailRouteMisconfigured
-from odoo.addons.test_mimetypes.tests.test_guess_mimetypes import contents
 
 
 class TestAccountInvoiceImportMixin:
@@ -62,17 +61,22 @@ class TestAccountInvoiceImportMixin:
             "mimetype": "image/gif",
         }
 
+    @staticmethod
+    def _sample_file(extension):
+        with file_open(f"base/tests/mimetypes/case.{extension}", "rb") as f:
+            return f.read()
+
     @classmethod
     def _get_dummy_xlsx_vals(cls):
         return {
-            "raw": contents("xlsx"),
+            "raw": cls._sample_file("xlsx"),
             "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }
 
     @classmethod
     def _get_dummy_docx_vals(cls):
         return {
-            "raw": contents("docx"),
+            "raw": cls._sample_file("docx"),
             "mimetype": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         }
 

@@ -4,7 +4,7 @@ from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.crm_enterprise.tools.business_card_scanner import BusinessCardScanner
 
-JSONRPC = "odoo.addons.iap.tools.iap_tools.iap_jsonrpc"
+JSONRPC = "odoo.tools.iap.jsonrpc"
 
 
 @tagged("post_install", "-at_install")

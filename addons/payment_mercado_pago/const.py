@@ -9,27 +9,6 @@ OAUTH_RETURN_ROUTE = "/payment/mercado_pago/oauth/return"
 WEBHOOK_ROUTE = "/payment/mercado_pago/webhook"
 
 
-SUPPORTED_COUNTRIES = {
-    "AR",
-    "BO",
-    "BR",
-    "CL",
-    "CO",
-    "CR",
-    "DO",
-    "EC",
-    "GT",
-    "HN",
-    "MX",
-    "NI",
-    "PA",
-    "PY",
-    "PE",
-    "SV",
-    "UY",
-    "VE",
-}
-
 CURRENCY_MAPPING = {
     "AR": "ARS",
     "BO": "BOB",

@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from odoo import fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.mail.tools import link_preview
+from odoo.addons.html_editor.tools import link_preview
 
 _logger = logging.getLogger(__name__)
 

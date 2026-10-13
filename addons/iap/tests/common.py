@@ -3,9 +3,9 @@ from unittest.mock import patch
 
 from odoo import exceptions
 from odoo.tests import common
+from odoo.tools import iap
 
 from odoo.addons.iap.models.iap_enrich_api import IapEnrichApi
-from odoo.addons.iap.tools import iap_tools
 
 
 class MockIAPEnrich(common.TransactionCase):
@@ -37,9 +37,7 @@ class MockIAPEnrich(common.TransactionCase):
                 result = {}
                 for lead_id, email in params["domains"].items():
                     if sim_error and sim_error == "credit":
-                        raise iap_tools.InsufficientCreditError(
-                            "InsufficientCreditError"
-                        )
+                        raise iap.InsufficientCreditError("InsufficientCreditError")
                     if sim_error and sim_error == "jsonrpc_exception":
                         raise exceptions.AccessError(
                             "The url that this service requested returned an error. Please contact the author of the app. The url it tried to contact was "

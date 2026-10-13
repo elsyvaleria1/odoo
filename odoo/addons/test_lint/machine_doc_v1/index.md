@@ -620,7 +620,7 @@ literal is kept.
 |---|---|---|
 | `lint_manifest_shape` | `sort_manifest(path, dry_run=True)` is `True` (would rewrite) or `None` (declines) | hard zero |
 | `lint_manifest_value` | `_checker_manifest.ManifestChecker.findings` | hard zero |
-| `manifest_import_undeclared_odoo`, `manifest_import_undeclared_l10n`, `manifest_import_undeclared_agromarin`, `manifest_import_undeclared_odoo_rust_orm` | `_checker_manifest.undeclared_imports`: an `odoo.addons.<x>` import outside the importer's `depends` closure, `iot_handlers/` exempt | ratchet |
+| `manifest_import_undeclared` (per repository) | `_checker_manifest.undeclared_imports`: an `odoo.addons.<x>` import outside the importer's `depends` closure, `iot_handlers/` exempt | hard zero |
 
 The value rules are what no fixer can decide: unknown or deprecated key; a
 value of the wrong type; `version` the loader would mark uninstallable

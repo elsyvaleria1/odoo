@@ -4,9 +4,9 @@ from psycopg import IntegrityError
 
 from odoo import Command
 from odoo.exceptions import ValidationError
+from odoo.tests import new_test_user
 from odoo.tools import mute_logger
 
-from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.addons.onboarding.tests.common import TestOnboardingCommon
 
 
@@ -303,7 +303,7 @@ class TestOnboarding(TestOnboardingCommon):
         "Company deletion can fail because of other foreign key constraints."
     )
     def test_remove_company_with_progress(self):
-        user = mail_new_test_user(
+        user = new_test_user(
             self.env,
             login="erp_manager",
             groups="base.group_erp_manager",

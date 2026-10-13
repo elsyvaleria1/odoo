@@ -4,8 +4,7 @@ from typing import Literal
 from requests.exceptions import HTTPError
 
 from odoo import api, exceptions, models, release
-
-from odoo.addons.iap.tools import iap_tools
+from odoo.tools import iap
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ class IapAutocompleteApi(models.AbstractModel):
         base_url = self.env.registry.settings.get(
             self.env, "iap.partner_autocomplete.endpoint", self._DEFAULT_ENDPOINT
         )
-        return iap_tools.iap_jsonrpc(
+        return iap.jsonrpc(
             base_url + local_endpoint + "/" + action,
             params=params,
             timeout=timeout,
@@ -61,7 +60,7 @@ class IapAutocompleteApi(models.AbstractModel):
         ) as exception:
             _logger.warning("Autocomplete API error: %s", exception)
             return False, str(exception)
-        except iap_tools.InsufficientCreditError as exception:
+        except iap.InsufficientCreditError as exception:
             _logger.warning(
                 "Insufficient Credits for Autocomplete Service: %s", exception
             )

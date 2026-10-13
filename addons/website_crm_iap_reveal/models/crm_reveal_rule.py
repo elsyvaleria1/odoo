@@ -9,10 +9,9 @@ from dateutil.relativedelta import relativedelta
 from odoo import api, fields, models, tools
 from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import frozendict
+from odoo.tools import frozendict, iap
 
 from odoo.addons.crm.models import crm_stage
-from odoo.addons.iap.tools import iap_tools
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -410,9 +409,7 @@ class CrmRevealRule(models.Model):
             )
             + "/iap/clearbit/1/reveal"
         )
-        return iap_tools.iap_jsonrpc(
-            endpoint, params=params, timeout=timeout, env=self.env
-        )
+        return iap.jsonrpc(endpoint, params=params, timeout=timeout, env=self.env)
 
     def _create_lead_from_response(self, result):
         if result["rule_id"]:

@@ -7,9 +7,9 @@ from odoo.exceptions import AccessError
 from odoo.fields import Domain
 from odoo.tools import html_sanitize
 
+from odoo.addons.ai.utils.ai_prompt import parse_ai_prompt_values
 from odoo.addons.ai_fields.tools import (
     get_ai_value,
-    parse_ai_prompt_values,
     prepare_field_prompt_context,
     prepare_property_prompt_context,
 )

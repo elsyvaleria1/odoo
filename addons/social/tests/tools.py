@@ -1,182 +1,66 @@
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from unittest.mock import patch
 
-try:
-    from odoo.addons.social_facebook.models.social_account import (
-        SocialAccount as SocialAccountFacebook,
-    )
-    from odoo.addons.social_facebook.models.social_live_post import (
-        SocialLivePost as SocialLivePostFacebook,
-    )
-    from odoo.addons.social_facebook.models.social_stream import (
-        SocialStream as SocialStreamFacebook,
-    )
+from odoo.modules.registry import Registry
+from odoo.tests.common import get_db_name
 
-    is_facebook_module_installed = True
-except ImportError:
-    is_facebook_module_installed = False
 
-try:
-    from odoo.addons.social_instagram.models.social_account import (
-        SocialAccount as SocialAccountInstagram,
-    )
-    from odoo.addons.social_instagram.models.social_live_post import (
-        SocialLivePost as SocialLivePostInstagram,
-    )
-    from odoo.addons.social_instagram.models.social_post import (
-        SocialPost as SocialPostInstagram,
-    )
-    from odoo.addons.social_instagram.models.social_stream import (
-        SocialStream as SocialStreamInstagram,
-    )
+def _void(*args, **kwargs):
+    return None
 
-    is_instagram_module_installed = True
-except ImportError:
-    is_instagram_module_installed = False
 
-try:
-    from odoo.addons.social_linkedin.models.social_account import (
-        SocialAccount as SocialAccountLinkedin,
-    )
-    from odoo.addons.social_linkedin.models.social_live_post import (
-        SocialLivePost as SocialLivePostLinkedin,
-    )
-    from odoo.addons.social_linkedin.models.social_stream import (
-        SocialStream as SocialStreamLinkedIn,
-    )
+def _no_post_access(record):
+    return False
 
-    is_linkedin_module_installed = True
-except ImportError:
-    is_linkedin_module_installed = False
 
-try:
-    from odoo.addons.social_twitter.models.social_account import (
-        SocialAccount as SocialAccountTwitter,
-    )
-    from odoo.addons.social_twitter.models.social_live_post import (
-        SocialLivePost as SocialLivePostTwitter,
-    )
-    from odoo.addons.social_twitter.models.social_stream import (
-        SocialStream as SocialStreamTwitter,
-    )
+EXTERNAL_CALLS = {
+    "social_facebook": (
+        ("social.account", "_update_statistics", _void),
+        ("social.account", "_create_default_stream_facebook", _void),
+        ("social.live.post", "_post_facebook", _void),
+        ("social.stream", "_sync_stream_data", _void),
+    ),
+    "social_instagram": (
+        ("social.account", "_update_statistics", _void),
+        ("social.account", "_create_default_stream_instagram", _void),
+        ("social.live.post", "_post_instagram", _void),
+        ("social.post", "_check_post_access", _no_post_access),
+        ("social.stream", "_sync_stream_data", _void),
+    ),
+    "social_linkedin": (
+        ("social.account", "_update_statistics", _void),
+        ("social.account", "_create_default_stream_linkedin", _void),
+        ("social.live.post", "_post_linkedin", _void),
+        ("social.stream", "_sync_stream_data", _void),
+    ),
+    "social_twitter": (
+        ("social.account", "_update_statistics", _void),
+        ("social.account", "_create_default_stream_twitter", _void),
+        ("social.live.post", "_post_twitter", _void),
+        ("social.stream", "_sync_stream_data", _void),
+    ),
+    "social_youtube": (
+        ("social.account", "_create_default_stream_youtube", _void),
+        ("social.live.post", "_post_youtube", _void),
+        ("social.stream", "_sync_stream_data", _void),
+    ),
+}
 
-    is_twitter_module_installed = True
-except ImportError:
-    is_twitter_module_installed = False
 
-try:
-    from odoo.addons.social_youtube.models.social_account import (
-        SocialAccount as SocialAccountYoutube,
-    )
-    from odoo.addons.social_youtube.models.social_live_post import (
-        SocialLivePost as SocialLivePostYoutube,
-    )
-    from odoo.addons.social_youtube.models.social_stream import (
-        SocialStream as SocialStreamYoutube,
-    )
-
-    is_youtube_module_installed = True
-except ImportError:
-    is_youtube_module_installed = False
+def _definitions(registry, module, model, method):
+    if model not in registry:
+        return
+    for cls in type.mro(registry[model]):
+        if getattr(cls, "_module", None) == module and method in vars(cls):
+            yield cls
 
 
 @contextmanager
 def mock_void_external_calls():
-    with (
-        mock_void_external_calls_facebook(),
-        mock_void_external_calls_instagram(),
-        mock_void_external_calls_twitter(),
-        mock_void_external_calls_linkedin(),
-        mock_void_external_calls_youtube(),
-    ):
-        yield
-
-
-@contextmanager
-def mock_void_external_calls_facebook():
-    if is_facebook_module_installed:
-        with (
-            patch.object(SocialAccountFacebook, "_update_statistics", lambda x: None),
-            patch.object(
-                SocialAccountFacebook,
-                "_create_default_stream_facebook",
-                lambda *args, **kwargs: None,
-            ),
-            patch.object(SocialLivePostFacebook, "_post_facebook", lambda x: None),
-            patch.object(SocialStreamFacebook, "_sync_stream_data", lambda x: None),
-        ):
-            yield
-    else:
-        yield
-
-
-@contextmanager
-def mock_void_external_calls_instagram():
-    if is_instagram_module_installed:
-        with (
-            patch.object(SocialAccountInstagram, "_update_statistics", lambda x: None),
-            patch.object(
-                SocialAccountInstagram,
-                "_create_default_stream_instagram",
-                lambda *args, **kwargs: None,
-            ),
-            patch.object(SocialLivePostInstagram, "_post_instagram", lambda x: None),
-            patch.object(SocialPostInstagram, "_check_post_access", lambda x: False),
-            patch.object(SocialStreamInstagram, "_sync_stream_data", lambda x: None),
-        ):
-            yield
-    else:
-        yield
-
-
-@contextmanager
-def mock_void_external_calls_linkedin():
-    if is_linkedin_module_installed:
-        with (
-            patch.object(SocialAccountLinkedin, "_update_statistics", lambda x: None),
-            patch.object(
-                SocialAccountLinkedin,
-                "_create_default_stream_linkedin",
-                lambda *args, **kwargs: None,
-            ),
-            patch.object(SocialLivePostLinkedin, "_post_linkedin", lambda x: None),
-            patch.object(SocialStreamLinkedIn, "_sync_stream_data", lambda x: None),
-        ):
-            yield
-    else:
-        yield
-
-
-@contextmanager
-def mock_void_external_calls_twitter():
-    if is_twitter_module_installed:
-        with (
-            patch.object(SocialAccountTwitter, "_update_statistics", lambda x: None),
-            patch.object(
-                SocialAccountTwitter,
-                "_create_default_stream_twitter",
-                lambda *args, **kwargs: None,
-            ),
-            patch.object(SocialLivePostTwitter, "_post_twitter", lambda x: None),
-            patch.object(SocialStreamTwitter, "_sync_stream_data", lambda x: None),
-        ):
-            yield
-    else:
-        yield
-
-
-@contextmanager
-def mock_void_external_calls_youtube():
-    if is_youtube_module_installed:
-        with (
-            patch.object(
-                SocialAccountYoutube,
-                "_create_default_stream_youtube",
-                lambda *args, **kwargs: None,
-            ),
-            patch.object(SocialLivePostYoutube, "_post_youtube", lambda x: None),
-            patch.object(SocialStreamYoutube, "_sync_stream_data", lambda x: None),
-        ):
-            yield
-    else:
+    registry = Registry(get_db_name())
+    with ExitStack() as stack:
+        for module, calls in EXTERNAL_CALLS.items():
+            for model, method, replacement in calls:
+                for cls in _definitions(registry, module, model, method):
+                    stack.enter_context(patch.object(cls, method, replacement))
         yield

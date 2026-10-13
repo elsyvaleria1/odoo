@@ -854,7 +854,7 @@ assert_eq "ARCHITECTURE.md cites 98 SCSS" \
 
 # tools/ file list, stated in DIRECTORY_MAP and two files short.
 assert_eq "tools/ .py count (excl __init__)" \
-    "$(find "$MAIL/tools" -maxdepth 1 -name '*.py' ! -name '__init__.py' | wc -l)" "18"
+    "$(find "$MAIL/tools" -maxdepth 1 -name '*.py' ! -name '__init__.py' | wc -l)" "17"
 for t in channel_avatar inbound_delivery; do
     assert_eq "DIRECTORY_MAP.md lists tools/$t.py" \
         "$(grep -c "\`$t.py\`" "$DOC/DIRECTORY_MAP.md")" "1"

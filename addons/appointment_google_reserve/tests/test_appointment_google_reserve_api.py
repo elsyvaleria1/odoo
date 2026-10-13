@@ -36,9 +36,7 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         self.assertTrue(self.apt_type_resource_google.google_reserve_pending_sync)
 
     @freeze_time("2022-02-14 07-00-00")
-    @patch(
-        "odoo.addons.appointment_google_reserve.tools.google_reserve_iap.iap_jsonrpc"
-    )
+    @patch("odoo.tools.iap.jsonrpc")
     def test_appointment_type_sync(self, iap_jsonrpc):
 
         db_uuid = self.env["ir.config_parameter"].sudo().get_param("database.uuid")
@@ -192,9 +190,7 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         )
 
     @freeze_time("2022-02-14 07-00-00")
-    @patch(
-        "odoo.addons.appointment_google_reserve.tools.google_reserve_iap.iap_jsonrpc"
-    )
+    @patch("odoo.tools.iap.jsonrpc")
     def test_booking_update(self, iap_jsonrpc):
 
         update_availabilities_url = f"https://google-reserve.api.odoo.com/api/google_reserve/1/appointment/{self.apt_type_resource_google.google_reserve_access_token}/update_availabilities"

@@ -49,16 +49,6 @@ msgid ""
 msgstr "アカウントトークンは、このサービスの認証キーです。共有しないで下さい。"
 
 #. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"An error occurred while reaching %s. Please contact Odoo support if this "
-"error persists."
-msgstr ""
-"%s到達中にエラーが発生しました。エラーが続く場合はOdooサポートにご連絡下さ"
-"い。"
-
-#. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_account__balance
 msgid "Balance"
 msgstr "残高"
@@ -249,16 +239,6 @@ msgstr "技術名称"
 #: code:addons/iap/models/iap_account.py:0
 msgid "The IAP token provided is invalid or empty."
 msgstr "提供されたIAPトークンが無効か空です。"
-
-#. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-msgid ""
-"The request to the service timed out. Please contact the author of the app. "
-"The URL it tried to contact was %s"
-msgstr ""
-"サービスへのリクエストはタイムアウトしました。アプリの作者にお問い合わせくだ"
-"さい。連絡を施行したURL:  %s"
 
 #. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_service__unit_name

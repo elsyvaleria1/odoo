@@ -5,9 +5,9 @@ from unittest.mock import patch
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
+from odoo.tools import iap
 
 from odoo.addons.iap.models import iap_account as iap_account_module
-from odoo.addons.iap.tools import iap_tools
 from odoo.addons.mixin_encryption.models import mixin_encryption as encryption_module
 
 
@@ -127,7 +127,7 @@ class TestIapAccount(TransactionCase):
                 "email": "alert_iap@example.com",
             }
         )
-        with patch.object(iap_tools, "iap_jsonrpc", return_value=True) as rpc:
+        with patch.object(iap, "jsonrpc", return_value=True) as rpc:
             account.write(
                 {
                     "warning_threshold": 25,
@@ -206,14 +206,14 @@ class TestIapAccount(TransactionCase):
 
     def test_get_credits_returns_balance(self):
         self.env["iap.account"].acquire_account("reveal")
-        with patch.object(iap_tools, "iap_jsonrpc", return_value=42):
+        with patch.object(iap, "jsonrpc", return_value=42):
             self.assertEqual(self.env["iap.account"].get_credits("reveal"), 42)
 
     def test_get_credits_access_error_returns_minus_one(self):
         self.env["iap.account"].acquire_account("reveal")
         with patch.object(
-            iap_tools,
-            "iap_jsonrpc",
+            iap,
+            "jsonrpc",
             side_effect=AccessError("down"),
         ):
             self.assertEqual(self.env["iap.account"].get_credits("reveal"), -1)
@@ -230,7 +230,7 @@ class TestIapAccount(TransactionCase):
         }
         with (
             patch.object(iap_account_module.module, "current_test", False),
-            patch.object(iap_tools, "iap_jsonrpc", return_value=fake_payload),
+            patch.object(iap, "jsonrpc", return_value=fake_payload),
         ):
             account._update_account_information_from_iap()
         self.assertEqual(account.state, "registered")
@@ -250,7 +250,7 @@ class TestIapAccount(TransactionCase):
         }
         with (
             patch.object(iap_account_module.module, "current_test", False),
-            patch.object(iap_tools, "iap_jsonrpc", return_value=fake_payload),
+            patch.object(iap, "jsonrpc", return_value=fake_payload),
         ):
             account._update_account_information_from_iap()
         self.assertEqual(account.warning_threshold, 10)
@@ -269,7 +269,7 @@ class TestIapAccount(TransactionCase):
         }
         with (
             patch.object(iap_account_module.module, "current_test", False),
-            patch.object(iap_tools, "iap_jsonrpc", return_value=fake_payload),
+            patch.object(iap, "jsonrpc", return_value=fake_payload),
         ):
             (tokenless | account)._update_account_information_from_iap()
         self.assertEqual(account.state, "registered")

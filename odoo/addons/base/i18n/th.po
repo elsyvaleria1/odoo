@@ -64430,6 +64430,22 @@ msgstr "สัปดาห์อื่น"
 msgid "this week"
 msgstr "สัปดาห์นี้"
 
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"An error occurred while reaching %s. Please contact Odoo support if this "
+"error persists."
+msgstr "เกิดข้อผิดพลาดขณะเข้าถึง %s โปรดติดต่อฝ่ายสนับสนุน Odoo หากข้อผิดพลาดนี้ยังคงมีอยู่"
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"The request to the service timed out. Please contact the author of the app. "
+"The URL it tried to contact was %s"
+msgstr "การร้องขอไปยังบริการหมดเวลา โปรดติดต่อผู้สร้างแอป URL ที่พยายามติดต่อคือ %s"
+
 #~ msgid "Device Log"
 #~ msgstr "บันทึกอุปกรณ์"
 

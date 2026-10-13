@@ -6,7 +6,7 @@ import psycopg.errors
 from odoo import fields, models
 from odoo.libs.debug_log import DebugLog
 
-from odoo.addons.ai_fields.tools import parse_ai_prompt_values
+from odoo.addons.ai.utils.ai_prompt import parse_ai_prompt_values
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

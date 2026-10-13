@@ -10,7 +10,7 @@ from odoo.tests.common import RecordCapturer
 from odoo.tools import mute_logger
 
 from odoo.addons.mail.tests.common import MailCommon
-from odoo.addons.test_mail.data.test_mail_data import (
+from odoo.addons.mail.tests.mail_data import (
     MAIL_EML_ATTACHMENT,
     MAIL_NO_BODY,
     MAIL_TEMPLATE,

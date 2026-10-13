@@ -1,6 +1,5 @@
 from odoo import api, models
-
-from odoo.addons.iap.tools import iap_tools
+from odoo.tools import iap
 
 
 class IapEnrichApi(models.AbstractModel):
@@ -17,7 +16,7 @@ class IapEnrichApi(models.AbstractModel):
         base_url = self.env.registry.settings.get(
             self.env, "enrich.endpoint", self._DEFAULT_ENDPOINT
         )
-        return iap_tools.iap_jsonrpc(
+        return iap.jsonrpc(
             base_url + local_endpoint, params=params, timeout=300, env=self.env
         )
 

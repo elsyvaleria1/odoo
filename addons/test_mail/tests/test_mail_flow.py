@@ -3,7 +3,7 @@ from odoo.tests import tagged
 from odoo.tools.mail import formataddr
 
 from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
-from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE, MAIL_TEMPLATE_SHORT
+from odoo.addons.mail.tests.mail_data import MAIL_TEMPLATE, MAIL_TEMPLATE_SHORT
 from odoo.addons.test_mail.tests.common import TestRecipients
 
 

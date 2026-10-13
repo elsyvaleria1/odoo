@@ -2,8 +2,7 @@ from unittest.mock import patch
 
 from odoo import modules
 from odoo.tests import TransactionCase, tagged
-
-from odoo.addons.iap.tools.iap_tools import InsufficientCreditError
+from odoo.tools.iap import InsufficientCreditError
 
 
 @tagged("post_install", "-at_install")

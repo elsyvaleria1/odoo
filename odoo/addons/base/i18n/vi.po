@@ -66530,6 +66530,26 @@ msgstr "tuần khác"
 msgid "this week"
 msgstr "tuần này"
 
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"An error occurred while reaching %s. Please contact Odoo support if this "
+"error persists."
+msgstr ""
+"Đã xảy ra lỗi trong khi liên hệ %s. Vui lòng liên hệ với bộ phận hỗ trợ của "
+"Odoo nếu lỗi này vẫn tiếp diễn."
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"The request to the service timed out. Please contact the author of the app. "
+"The URL it tried to contact was %s"
+msgstr ""
+"Yêu cầu dịch vụ đã hết thời gian. Vui lòng liên hệ với người tạo ứng dụng. "
+"URL mà ứng dụng đã cố gắng liên hệ là %s"
+
 #~ msgid "Device Log"
 #~ msgstr "Nhật ký thiết bị"
 

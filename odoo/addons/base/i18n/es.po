@@ -64790,6 +64790,26 @@ msgstr "En mantenimiento"
 msgid "Whole Assets"
 msgstr "Activos completos"
 
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"An error occurred while reaching %s. Please contact Odoo support if this "
+"error persists."
+msgstr ""
+"Ocurrió un error al comunicarse con %s, póngase en contacto con el soporte "
+"de Odoo si este error persiste."
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"The request to the service timed out. Please contact the author of the app. "
+"The URL it tried to contact was %s"
+msgstr ""
+"Se agotó el tiempo de espera de la solicitud al servicio, contacte al autor "
+"de la aplicación. La URL a la que intentó conectarse fue %s"
+
 #~ msgid "Device Log"
 #~ msgstr "Registro del dispositivo"
 

@@ -16,7 +16,7 @@ from odoo.tools import formataddr, mute_logger
 
 from odoo.addons.base.tests.test_ir_cron import CronMixinCase
 from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
-from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE_PLAINTEXT
+from odoo.addons.mail.tests.mail_data import MAIL_TEMPLATE_PLAINTEXT
 from odoo.addons.test_mail.models.test_mail_models import MailTestSimple
 from odoo.addons.test_mail.tests.common import TestRecipients
 

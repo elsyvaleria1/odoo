@@ -6,6 +6,7 @@ from odoo.exceptions import RedirectWarning, UserError, ValidationError
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools.urls import urljoin as url_join
 
+from odoo.addons.payment import const as payment_const
 from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment.logging import get_payment_logger
 from odoo.addons.payment_stripe import const
@@ -106,7 +107,7 @@ class PaymentProvider(models.Model):
 
         if (
             self._stripe_get_country(self.env.company.country_id.code)
-            not in const.SUPPORTED_COUNTRIES
+            not in payment_const.STRIPE_SUPPORTED_COUNTRIES
         ):
             raise RedirectWarning(
                 self.env._(
@@ -268,7 +269,7 @@ class PaymentProvider(models.Model):
         return json_dumps(inline_form_values)
 
     def _stripe_get_country(self, country_code):
-        return const.COUNTRY_MAPPING.get(country_code, country_code)
+        return payment_const.STRIPE_COUNTRY_MAPPING.get(country_code, country_code)
 
     def _stripe_get_or_create_connected_account(self):
         proxy_payload = self._prepare_json_rpc_payload(

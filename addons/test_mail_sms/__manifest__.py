@@ -12,6 +12,8 @@
         "sms",
         "integration_twilio",
         "test_orm",
+        "test_mail",
+        "link_tracker",
     ],
     "data": [
         "security/ir.access.csv",

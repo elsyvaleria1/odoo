@@ -61984,6 +61984,26 @@ msgstr ""
 msgid "this week"
 msgstr "ta teden"
 
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"An error occurred while reaching %s. Please contact Odoo support if this "
+"error persists."
+msgstr ""
+"Pri doseganju %s. je prišlo do napake. Če se napaka ponovi, se obrnite na "
+"podporo Odoo."
+
+#. module: base
+#. odoo-python
+#: code:odoo/tools/iap.py:0
+msgid ""
+"The request to the service timed out. Please contact the author of the app. "
+"The URL it tried to contact was %s"
+msgstr ""
+"Zahteva za storitev je potekla. Obrnite se na avtorja aplikacije. URL, s "
+"katerim se je poskušala povezati, je bil %s"
+
 #~ msgid "Device Log"
 #~ msgstr "Dnevnik naprave"
 

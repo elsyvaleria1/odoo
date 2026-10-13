@@ -9,6 +9,7 @@
     "depends": [
         "website_helpdesk",
         "knowledge",
+        "website_knowledge",
     ],
     "data": [
         "views/helpdesk_templates.xml",

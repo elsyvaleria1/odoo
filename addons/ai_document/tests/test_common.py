@@ -1,7 +1,7 @@
 from odoo import Command
 from odoo.tests import Form, TransactionCase
 
-from odoo.addons.ai_fields.tools import ai_field_insert
+from odoo.addons.ai.utils.ai_prompt import ai_field_insert
 
 
 class TestAiDocumentsCommon(TransactionCase):

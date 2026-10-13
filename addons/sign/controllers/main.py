@@ -8,10 +8,9 @@ from typing import TYPE_CHECKING, Any
 from odoo import Command, fields, http, tools
 from odoo.exceptions import UserError
 from odoo.http import prepare_content_disposition_header, request
-from odoo.tools import email_normalize, format_date, posix_to_ldml
+from odoo.tools import email_normalize, format_date, iap, posix_to_ldml
 from odoo.tools.misc import babel_locale_parse
 
-from odoo.addons.iap.tools import iap_tools
 from odoo.addons.sign.models.sign_request_item import (
     RESEND_LINK_BURST,
     RESEND_LINK_REFILL_SECONDS,
@@ -666,7 +665,7 @@ class Sign(http.Controller):
                 request_item.sms_number = phone_number
             try:
                 return request_item._send_sms_code()
-            except iap_tools.InsufficientCreditError:
+            except iap.InsufficientCreditError:
                 _logger.warning("Unable to send SMS: no more credits")
                 request_item._notify_missing_sms_credits()
                 return False

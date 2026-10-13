@@ -27,7 +27,7 @@ from odoo.addons.document.tools import (
     MoveChangesAccess,
     UserFolder,
 )
-from odoo.addons.mail.tools import link_preview
+from odoo.addons.html_editor.tools import link_preview
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)

@@ -14,9 +14,7 @@ from odoo.exceptions import AccessError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import loads as json_loads
 from odoo.libs.web import urljoin as url_join
-from odoo.tools import LazyTranslate
-
-from odoo.addons.iap.tools.iap_tools import iap_jsonrpc
+from odoo.tools import LazyTranslate, iap
 
 _lt = LazyTranslate(__name__)
 
@@ -113,7 +111,7 @@ class Website_GeneratorRequest(models.Model):
                     self.env, "website_scraper_endpoint", DEFAULT_WSS_ENDPOINT
                 )
                 url = url_join(ws_endpoint, f"/website_scraper/{req.version}/scrape")
-                response = iap_jsonrpc(
+                response = iap.jsonrpc(
                     url, params=req._prepare_generator_request_params(), env=self.env
                 )
                 if response.get("status") == "accepted":
@@ -266,7 +264,7 @@ class Website_GeneratorRequest(models.Model):
 
     def _report_to_iap(self, url, data) -> None:
         try:
-            resp = iap_jsonrpc(url, params=data, env=self.env)
+            resp = iap.jsonrpc(url, params=data, env=self.env)
             if resp.get("status") != "ok":
                 logger.warning("Error reporting to WS server: %s", resp.get("status"))
         except AccessError as e:

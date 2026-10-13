@@ -9,6 +9,7 @@
     "depends": [
         "mrp_subcontracting",
         "purchase_mrp",
+        "mrp_subcontracting_account",
     ],
     "data": [
         "views/purchase_order_views.xml",

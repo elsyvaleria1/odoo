@@ -21,14 +21,14 @@ from odoo.addons.mail.models.mixin_mail_gateway import (
     Route,
     RouteVerdict,
 )
+from odoo.addons.mail.tests import mail_data
 from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
-from odoo.addons.mail.tools import mime
-from odoo.addons.test_mail.data import test_mail_data
-from odoo.addons.test_mail.data.test_mail_data import (
+from odoo.addons.mail.tests.mail_data import (
     MAIL_TEMPLATE,
     MAIL_TEMPLATE_EXTRA_HTML,
     THAI_EMAIL_WINDOWS_874,
 )
+from odoo.addons.mail.tools import mime
 from odoo.addons.test_mail.models.mail_test_ticket import MailTestTicket
 from odoo.addons.test_mail.models.test_mail_models import (
     MailTestGateway,
@@ -39,9 +39,7 @@ from odoo.addons.test_mail.models.test_mail_models import (
 @tagged("mail_gateway")
 class TestEmailParsing(MailCommon):
     def test_message_parse_and_replace_binary_octetstream(self):
-        received_mail = self.from_string(
-            test_mail_data.MAIL_MULTIPART_BINARY_OCTET_STREAM
-        )
+        received_mail = self.from_string(mail_data.MAIL_MULTIPART_BINARY_OCTET_STREAM)
         with self.assertLogs("odoo.addons.mail.tools.mime", level="WARNING") as capture:
             extracted_mail = self.env[
                 "mixin.mail.thread"
@@ -63,7 +61,7 @@ class TestEmailParsing(MailCommon):
 
     def test_message_parse_and_replace_wildcard(self):
         mail_with_wildcard_mime = self.format(
-            test_mail_data.MAIL_PDF_MIME_TEMPLATE, pdf_mime="*/*"
+            mail_data.MAIL_PDF_MIME_TEMPLATE, pdf_mime="*/*"
         )
         self.assertIn(
             "Content-Type: */*",
@@ -90,14 +88,14 @@ class TestEmailParsing(MailCommon):
 
     def test_message_parse_body(self):
         plaintext = self.format(
-            test_mail_data.MAIL_TEMPLATE_PLAINTEXT,
+            mail_data.MAIL_TEMPLATE_PLAINTEXT,
             email_from='"Sylvie Lelitre" <test.sylvie.lelitre@agrolait.com>',
         )
         res = self.env["mixin.mail.thread"].message_parse(self.from_string(plaintext))
         self.assertIn("Please call me as soon as possible this afternoon!", res["body"])
 
         html = self.format(
-            test_mail_data.MAIL_TEMPLATE_HTML,
+            mail_data.MAIL_TEMPLATE_HTML,
             email_from='"Sylvie Lelitre" <test.sylvie.lelitre@agrolait.com>',
         )
         res = self.env["mixin.mail.thread"].message_parse(self.from_string(html))
@@ -116,7 +114,7 @@ class TestEmailParsing(MailCommon):
         )
 
         res = self.env["mixin.mail.thread"].message_parse(
-            self.from_string(test_mail_data.MAIL_MULTIPART_MIXED)
+            self.from_string(mail_data.MAIL_MULTIPART_MIXED)
         )
         self.assertNotIn(
             "Should create a multipart/mixed: from gmail, *bold*, with attachment",
@@ -130,7 +128,7 @@ class TestEmailParsing(MailCommon):
         )
 
         res = self.env["mixin.mail.thread"].message_parse(
-            self.from_string(test_mail_data.MAIL_MULTIPART_MIXED_TWO)
+            self.from_string(mail_data.MAIL_MULTIPART_MIXED_TWO)
         )
         self.assertNotIn(
             "First and second part",
@@ -149,13 +147,13 @@ class TestEmailParsing(MailCommon):
         )
 
         res = self.env["mixin.mail.thread"].message_parse(
-            self.from_string(test_mail_data.MAIL_SINGLE_BINARY)
+            self.from_string(mail_data.MAIL_SINGLE_BINARY)
         )
         self.assertEqual(res["body"], "")
         self.assertEqual(res["attachments"][0][0], "thetruth.pdf")
 
         res = self.env["mixin.mail.thread"].message_parse(
-            self.from_string(test_mail_data.MAIL_FORWARDED)
+            self.from_string(mail_data.MAIL_FORWARDED)
         )
         self.assertIn(
             res["recipients"],
@@ -166,43 +164,43 @@ class TestEmailParsing(MailCommon):
         )
 
         res = self.env["mixin.mail.thread"].message_parse(
-            self.from_string(test_mail_data.MAIL_MULTIPART_WEIRD_FILENAME)
+            self.from_string(mail_data.MAIL_MULTIPART_WEIRD_FILENAME)
         )
         self.assertEqual(res["attachments"][0][0], "62_@;,][)=.(ÇÀÉ.txt")
 
     def test_message_parse_attachment_pdf_nonstandard_mime(self):
 
         mail_with_standard_mime = self.format(
-            test_mail_data.MAIL_PDF_MIME_TEMPLATE, pdf_mime="application/pdf"
+            mail_data.MAIL_PDF_MIME_TEMPLATE, pdf_mime="application/pdf"
         )
         res_std = self.env["mixin.mail.thread"].message_parse(
             self.from_string(mail_with_standard_mime)
         )
         self.assertEqual(
             res_std["attachments"][0].content,
-            test_mail_data.PDF_PARSED,
+            mail_data.PDF_PARSED,
             "Attachment with Content-Type: application/pdf must parse without error",
         )
 
         mail_with_aliased_mime = self.format(
-            test_mail_data.MAIL_PDF_MIME_TEMPLATE, pdf_mime="pdf"
+            mail_data.MAIL_PDF_MIME_TEMPLATE, pdf_mime="pdf"
         )
         res_alias = self.env["mixin.mail.thread"].message_parse(
             self.from_string(mail_with_aliased_mime)
         )
         self.assertEqual(
             res_alias["attachments"][0].content,
-            test_mail_data.PDF_PARSED,
+            mail_data.PDF_PARSED,
             "Attachment with aliased Content-Type: pdf must parse without error",
         )
 
     def test_message_parse_bugs(self):
         self.env["mixin.mail.thread"].message_parse(
-            self.from_string(test_mail_data.MAIL_NO_FINAL_RECIPIENT)
+            self.from_string(mail_data.MAIL_NO_FINAL_RECIPIENT)
         )
 
         res = self.env["mixin.mail.thread"].message_parse(
-            self.from_string(test_mail_data.MAIL_NO_BODY)
+            self.from_string(mail_data.MAIL_NO_BODY)
         )
         self.assertEqual(res["body"], "", "Gateway should not crash with void content")
 
@@ -250,7 +248,7 @@ class TestEmailParsing(MailCommon):
 
     def test_message_parse_eml(self):
         mail = self.format(
-            test_mail_data.MAIL_EML_ATTACHMENT,
+            mail_data.MAIL_EML_ATTACHMENT,
             email_from='"Sylvie Lelitre" <test.sylvie.lelitre@agrolait.com>',
             to=f"generic@{self.alias_domain}",
             msg_id="<cb7eaf62-58dc-2017-148c-305d0c78892f@odoo.com>",
@@ -262,7 +260,7 @@ class TestEmailParsing(MailCommon):
     def test_message_parse_eml_bounce_headers(self):
         msg_id = "<861878175823148.1577183525.736005783081055-odoo-19177-account.invoice@mycompany.example.com>"
         mail = self.format(
-            test_mail_data.MAIL_EML_ATTACHMENT_BOUNCE_HEADERS,
+            mail_data.MAIL_EML_ATTACHMENT_BOUNCE_HEADERS,
             email_from="MAILER-DAEMON@example.com (Mail Delivery System)",
             to="test_bounce+82240-account.invoice-19177@mycompany.example.com",
             msg_id=msg_id,
@@ -285,7 +283,7 @@ class TestEmailParsing(MailCommon):
             }
         )
         incoming_bounce = self.format(
-            test_mail_data.MAIL_BOUNCE_QP_RFC822_HEADERS,
+            mail_data.MAIL_BOUNCE_QP_RFC822_HEADERS,
             email_from="MAILER-DAEMON@mailserver.odoo.com (Mail Delivery System)",
             email_to="bounce@xxx.odoo.com",
             delivered_to="bounce@xxx.odoo.com",
@@ -314,7 +312,7 @@ class TestEmailParsing(MailCommon):
 
     def test_message_parse_plaintext(self):
         mail = self.format(
-            test_mail_data.MAIL_TEMPLATE_PLAINTEXT,
+            mail_data.MAIL_TEMPLATE_PLAINTEXT,
             email_from='"Sylvie Lelitre" <test.sylvie.lelitre@agrolait.com>',
             to=f"generic@{self.alias_domain}",
         )
@@ -326,7 +324,7 @@ class TestEmailParsing(MailCommon):
 
     def test_message_parse_xhtml(self):
         self.env["mixin.mail.thread"].message_parse(
-            self.from_string(test_mail_data.MAIL_XHTML)
+            self.from_string(mail_data.MAIL_XHTML)
         )
 
     def test_odoo_notification_markup_is_stripped_from_an_inbound_body(self):
@@ -507,7 +505,7 @@ class TestMailgateway(MailGatewayCommon):
             _message_parse_extract_payload,
         ):
             record = self.format_and_process(
-                test_mail_data.MAIL_MULTIPART_IMAGE,
+                mail_data.MAIL_MULTIPART_IMAGE,
                 self.email_from,
                 f"groups@{self.alias_domain}",
             )
@@ -1933,7 +1931,7 @@ class TestMailgateway(MailGatewayCommon):
         "odoo.addons.mail.tools.mime",
     )
     def test_message_process_bounce_missing_final_recipient(self):
-        email = test_mail_data.MAIL_BOUNCE.replace("Final-Recipient", "XX")
+        email = mail_data.MAIL_BOUNCE.replace("Final-Recipient", "XX")
         email = email.replace("Original-Recipient", "XX")
 
         self.assertEqual(self.partner_1.message_bounce, 0)
@@ -1999,7 +1997,7 @@ class TestMailgateway(MailGatewayCommon):
 
         bounce_email_to = f"{self.alias_bounce}@{self.alias_domain}"
         record = self.format_and_process(
-            test_mail_data.MAIL_BOUNCE,
+            mail_data.MAIL_BOUNCE,
             self.partner_1.email_formatted,
             bounce_email_to,
             subject="Undelivered Mail Returned to Sender",
@@ -2028,7 +2026,7 @@ class TestMailgateway(MailGatewayCommon):
         bounce_email_to = f"{self.alias_bounce}@{self.alias_domain}"
         extra = self.fake_email.message_id
         record = self.format_and_process(
-            test_mail_data.MAIL_BOUNCE,
+            mail_data.MAIL_BOUNCE,
             self.partner_1.email_formatted,
             bounce_email_to,
             subject="Undelivered Mail Returned to Sender",
@@ -2057,7 +2055,7 @@ class TestMailgateway(MailGatewayCommon):
         bounce_email_to = f"{self.alias_bounce}@{self.alias_domain}"
         extra = self.fake_email.message_id
         record = self.format_and_process(
-            test_mail_data.MAIL_BOUNCE,
+            mail_data.MAIL_BOUNCE,
             "Whatever <what@ever.com>",
             bounce_email_to,
             subject="Undelivered Mail Returned to Sender",
@@ -2078,7 +2076,7 @@ class TestMailgateway(MailGatewayCommon):
 
         extra = self.fake_email.message_id
         record = self.format_and_process(
-            test_mail_data.MAIL_BOUNCE,
+            mail_data.MAIL_BOUNCE,
             "Whatever <what@ever.com>",
             f"groups@{self.alias_domain}",
             subject="Undelivered Mail Returned to Sender",
@@ -2088,9 +2086,7 @@ class TestMailgateway(MailGatewayCommon):
         self.assertEqual(self.partner_1.message_bounce, 0)
         self.assertEqual(self.test_record.message_bounce, 1)
 
-        email = test_mail_data.MAIL_BOUNCE.replace(
-            "multipart/report;", "multipart/report:"
-        )
+        email = mail_data.MAIL_BOUNCE.replace("multipart/report;", "multipart/report:")
         email = email.replace(
             "MAILER-DAEMON@mail2.test.ironsky", "email@mail2.test.ironsky"
         )
@@ -2163,7 +2159,7 @@ class TestMailgateway(MailGatewayCommon):
         extra = self.fake_email.message_id
         for _i in range(10):
             record = self.format_and_process(
-                test_mail_data.MAIL_BOUNCE,
+                mail_data.MAIL_BOUNCE,
                 f"A third name <{self.partner_1.email}>",
                 f"groups@{self.alias_domain}",
                 subject="Undelivered Mail Returned to Sender",
@@ -2201,7 +2197,7 @@ class TestMailgateway(MailGatewayCommon):
 
         extra = self.fake_email.message_id
         record = self.format_and_process(
-            test_mail_data.MAIL_BOUNCE,
+            mail_data.MAIL_BOUNCE,
             self.partner_1.email_formatted,
             f"groups@{self.alias_domain}",
             subject="Undelivered Mail Returned to Sender",
@@ -2249,7 +2245,7 @@ class TestMailgateway(MailGatewayCommon):
 
         with self.mock_mail_gateway():
             self.format_and_process(
-                test_mail_data.MAIL_BOUNCE,
+                mail_data.MAIL_BOUNCE,
                 bounce_email,
                 f"groups@{self.alias_domain}",
                 subject="Undelivered Mail Returned to Sender",
@@ -2797,7 +2793,7 @@ class TestMailgateway(MailGatewayCommon):
             }
         )
         record = self.format_and_process(
-            test_mail_data.MAIL_TEMPLATE_EXTRA_HTML,
+            mail_data.MAIL_TEMPLATE_EXTRA_HTML,
             self.email_from,
             f"{alias.alias_name}@{self.alias_domain}",
             subject="base64 image to alias",
@@ -2826,7 +2822,7 @@ class TestMailgateway(MailGatewayCommon):
             }
         )
         record = self.format_and_process(
-            test_mail_data.MAIL_TEMPLATE_EXTRA_HTML,
+            mail_data.MAIL_TEMPLATE_EXTRA_HTML,
             self.email_from,
             f"{alias.alias_name}@{self.alias_domain}",
             subject="base64 image to alias",
@@ -2973,7 +2969,7 @@ class TestMailgateway(MailGatewayCommon):
                 file_content.encode(encoding or "utf-8")
             ).decode()
             record = self.format_and_process(
-                test_mail_data.MAIL_FILE_ENCODING,
+                mail_data.MAIL_FILE_ENCODING,
                 self.email_from,
                 f"groups@{self.alias_domain}",
                 subject=f"Test Charset {encoding or 'Unset'}",
@@ -2996,7 +2992,7 @@ class TestMailgateway(MailGatewayCommon):
         encoded_content = base64.b64encode(content.encode(charset)).decode()
 
         with RecordCapturer(self.env["mail.test.gateway"]) as capture:
-            mail = test_mail_data.MAIL_FILE_ENCODING.format(
+            mail = mail_data.MAIL_FILE_ENCODING.format(
                 msg_id="<test_message_hebrew_iso8859_8_i@iron.sky>",
                 subject=encoded_subject,
                 charset=f'; charset="{charset}"',
@@ -3029,7 +3025,7 @@ class TestMailgateway(MailGatewayCommon):
     )
     def test_message_process_file_encoding_ascii(self):
         record = self.format_and_process(
-            test_mail_data.MAIL_MULTIPART_INVALID_ENCODING,
+            mail_data.MAIL_MULTIPART_INVALID_ENCODING,
             self.email_from,
             f"groups@{self.alias_domain}",
         )
@@ -3049,7 +3045,7 @@ class TestMailgateway(MailGatewayCommon):
     )
     def test_message_process_file_omitted_charset_xml(self):
         record = self.format_and_process(
-            test_mail_data.MAIL_MULTIPART_OMITTED_CHARSET_XML,
+            mail_data.MAIL_MULTIPART_OMITTED_CHARSET_XML,
             self.email_from,
             f"groups@{self.alias_domain}",
         )
@@ -3066,7 +3062,7 @@ class TestMailgateway(MailGatewayCommon):
     )
     def test_message_process_file_omitted_charset_csv(self):
         record = self.format_and_process(
-            test_mail_data.MAIL_MULTIPART_OMITTED_CHARSET_CSV,
+            mail_data.MAIL_MULTIPART_OMITTED_CHARSET_CSV,
             self.email_from,
             f"groups@{self.alias_domain}",
         )
@@ -3089,7 +3085,7 @@ class TestMailgateway(MailGatewayCommon):
             "Können wir uns über die Pläne für das nächste Wochenende unterhalten?"
         )
         record = self.format_and_process(
-            test_mail_data.MAIL_MULTIPART_OMITTED_CHARSET_TXT,
+            mail_data.MAIL_MULTIPART_OMITTED_CHARSET_TXT,
             self.email_from,
             f"groups@{self.alias_domain}",
         )
@@ -5163,7 +5159,7 @@ class TestMailGatewayParsedMessageContract(MailGatewayCommon):
         ):
             self.env["mixin.mail.thread"].message_process(
                 "mail.test.gateway",
-                test_mail_data.MAIL_MULTIPART_MIXED,
+                mail_data.MAIL_MULTIPART_MIXED,
                 strip_attachments=True,
             )
         self.assertIn("attachments", seen)

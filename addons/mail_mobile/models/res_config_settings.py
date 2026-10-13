@@ -3,8 +3,7 @@ import uuid
 
 import odoo
 from odoo import api, fields, models
-
-from odoo.addons.iap.tools import iap_tools
+from odoo.tools import iap
 
 _logger = logger.getLogger(__name__)
 
@@ -39,7 +38,7 @@ class ResConfigSettings(models.TransientModel):
                 "url": ir_params_sudo.get_param("web.base.url"),
             }
             try:
-                project_id = iap_tools.iap_jsonrpc(
+                project_id = iap.jsonrpc(
                     self._get_endpoint() + "/iap/ocn/enable_service",
                     params=params,
                     env=self.env,
@@ -69,7 +68,7 @@ class ResConfigSettings(models.TransientModel):
         }
         result = False
         try:
-            result = iap_tools.iap_jsonrpc(
+            result = iap.jsonrpc(
                 self._get_endpoint() + "/iap/ocn/register_device",
                 params=values,
                 env=self.env,

@@ -54,17 +54,6 @@ msgstr ""
 "bermang."
 
 #. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-#, fuzzy
-msgid ""
-"An error occurred while reaching %s. Please contact Odoo support if this "
-"error persists."
-msgstr ""
-"%s ga ulanishda xatolik yuz berdi. Agar bu xatolik takrorlansa, Odoo yordam "
-"xizmatiga murojaat qiling."
-
-#. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_account__balance
 #, fuzzy
 msgid "Balance"
@@ -291,17 +280,6 @@ msgstr "Texnik nomi"
 #, fuzzy
 msgid "The IAP token provided is invalid or empty."
 msgstr "Taqdim etilgan IAP tokeni yaroqsiz yoki bo‘sh."
-
-#. module: iap
-#. odoo-python
-#: code:addons/iap/tools/iap_tools.py:0
-#, fuzzy
-msgid ""
-"The request to the service timed out. Please contact the author of the app. "
-"The URL it tried to contact was %s"
-msgstr ""
-"Xizmatga so‘rov vaqti tugadi. Iltimos, ilova muallifi bilan bog‘laning. U "
-"bog‘lanishga uringan URL manzil: %s"
 
 #. module: iap
 #: model:ir.model.fields,field_description:iap.field_iap_service__unit_name

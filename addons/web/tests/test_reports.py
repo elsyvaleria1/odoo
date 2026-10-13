@@ -7,7 +7,7 @@ from odoo.fields import Command
 from odoo.http import root
 from odoo.tools import mute_logger
 
-from odoo.addons.http_routing.tests.common import MockRequest
+from odoo.addons.web.tests.common import MockRequest
 
 
 @odoo.tests.tagged("web_http", "web_report")

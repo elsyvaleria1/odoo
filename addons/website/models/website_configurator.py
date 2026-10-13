@@ -12,8 +12,7 @@ from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.modules.module import get_manifest
-
-from odoo.addons.iap.tools import iap_tools
+from odoo.tools import iap
 
 logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -87,7 +86,7 @@ class Website(models.Model):
             endpoint_param_name, default_endpoint
         )
         with _debug.perf("configurator_api_rpc", route=route, endpoint=api_endpoint):
-            return iap_tools.iap_jsonrpc(
+            return iap.jsonrpc(
                 api_endpoint + route, params=params, **kwargs, env=self.env
             )
 
@@ -765,7 +764,7 @@ class Website(models.Model):
                         generated_content[key] = name_replace_parser.sub(
                             lambda _m: website.name, response[key]
                         )
-            except AccessError, iap_tools.InsufficientCreditError:
+            except AccessError, iap.InsufficientCreditError:
                 _debug.logic("configurator_ai_text_unavailable")
         else:
             logger.info(

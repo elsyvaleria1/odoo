@@ -2,8 +2,8 @@ import os
 from unittest.mock import patch
 
 from odoo.tests import TransactionCase, tagged
+from odoo.tools import iap
 
-from odoo.addons.iap.tools import iap_tools
 from odoo.addons.mixin_encryption.models import mixin_encryption as encryption_module
 
 
@@ -19,8 +19,8 @@ class TestSmsWithoutIapAccount(TransactionCase):
         with (
             patch.dict(os.environ, clear=False) as env,
             patch.object(
-                iap_tools,
-                "iap_jsonrpc",
+                iap,
+                "jsonrpc",
                 side_effect=AssertionError("no account, no IAP call"),
             ),
             self.assertNoLogs(encryption_module._logger, "ERROR"),

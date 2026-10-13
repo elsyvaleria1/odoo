@@ -411,16 +411,6 @@ class TestIrActionsReadableFieldsAreFields(TransactionCase):
             )
             self.assertFalse(stored, "%s lists real fields %s" % (name, stored))
 
-    def test_clean_action_keeps_client_only_keys(self):
-        from odoo.addons.web.controllers.utils import clean_action
-
-        with self.assertNoLogs("odoo.addons.web.controllers.utils", "WARNING"):
-            cleaned = clean_action(
-                {"type": "ir.actions.act_window_close", "effect": {"type": "rainbow"}},
-                env=self.env,
-            )
-        self.assertEqual(cleaned["effect"], {"type": "rainbow"})
-
     def test_action_dict_key_order_is_deterministic(self):
         action = self.env["ir.actions.act_window"].create(
             {"name": "audit-order", "res_model": "res.partner"}
@@ -2220,21 +2210,6 @@ class TestIrActionsPathHasOneResolver(TransactionCase):
     def test_an_unknown_path_resolves_to_nothing(self):
         found = self.env["ir.actions.actions"]._get_action_by_path("audit-no-such")
         self.assertFalse(found)
-
-    def test_every_caller_agrees_with_the_resolver(self):
-        from odoo.addons.web.controllers.utils import get_action
-
-        action = self.env["ir.actions.act_window"].create(
-            {
-                "name": "audit-resolve-w",
-                "res_model": "res.partner",
-                "path": "audit-resolve-w",
-            }
-        )
-        self.env.flush_all()
-        Actions = self.env["ir.actions.actions"]
-        self.assertEqual(Actions._get_action_by_path("audit-resolve-w"), action)
-        self.assertEqual(get_action(self.env, "audit-resolve-w"), action)
 
     def test_no_caller_scans_the_inheritance_tree_for_a_path(self):
         import pathlib

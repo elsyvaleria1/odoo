@@ -6,8 +6,7 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.json import loads as json_loads
 from odoo.libs.web import urljoin as url_join
-
-from odoo.addons.iap.tools import iap_tools
+from odoo.tools import iap
 
 _logger = logging.getLogger(__name__)
 
@@ -164,7 +163,7 @@ class SocialAccount(models.Model):
         ):
             batch_data = dict(data)
             batch_data["tokens"] = tokens_batch
-            iap_tools.iap_jsonrpc(
+            iap.jsonrpc(
                 url_join(
                     social_iap_endpoint,
                     "/iap/social_push_notifications/firebase_send_message",
