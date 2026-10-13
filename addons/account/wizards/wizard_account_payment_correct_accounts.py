@@ -76,7 +76,7 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
                 wizard.counterpart_account_id = False
                 wizard.liquidity_account_id = False
                 continue
-            chain, _broken = wizard._get_reclassification_chain()
+            chain, _broken, _held = wizard._get_reclassification_chain()
             wizard.counterpart_account_id = chain["counterpart_account_id"][0]
             wizard.liquidity_account_id = chain["liquidity_account_id"][0]
 
@@ -85,7 +85,7 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
         for wizard in self:
             wizard.is_locked = wizard.payment_id._is_entry_locked()
             wizard.is_reclassified = bool(
-                wizard.payment_id and wizard._get_standing_reclassifications()
+                wizard.payment_id and wizard._is_reclassified()
             )
 
     @api.depends("company_id")
@@ -113,69 +113,140 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
                 changes[fname] = (current, self[fname])
         return changes
 
-    def _get_standing_reclassifications(self):
-        reclassifications = self.env["account.move"].search(
+    def _get_reclassifications(self):
+        return self.env["account.move"].search(
             [
                 ("reclassified_payment_id", "=", self.payment_id.id),
                 ("state", "=", "posted"),
             ],
-            order="date, id",
+            order="id",
         )
-        standing = reclassifications.filtered(
-            lambda entry: (
-                not entry.reversal_move_ids.filtered(
-                    lambda reversal: reversal.state == "posted"
-                )
+
+    @api.model
+    def _is_standing(self, entry) -> bool:
+        return not entry.reversal_move_ids.filtered(
+            lambda reversal: reversal.state == "posted"
+        )
+
+    @api.model
+    def _get_family_lines(self, reclassifications):
+        return (
+            reclassifications
+            | reclassifications.reversal_move_ids.filtered(
+                lambda reversal: reversal.state == "posted"
             )
+        ).line_ids
+
+    def _is_reclassified(self) -> bool:
+        self.check_singleton()
+        reclassifications = self._get_reclassifications()
+        if any(self._is_standing(entry) for entry in reclassifications):
+            return True
+        family_lines = self._get_family_lines(reclassifications)
+        payment_lines = self.payment_id.move_id.line_ids
+        matched = (
+            payment_lines.matched_debit_ids.debit_move_id
+            | payment_lines.matched_credit_ids.credit_move_id
         )
-        _debug.logic(
-            "standing_reclassifications",
-            payment=self.payment_id,
-            reclassifications=reclassifications,
-            standing=standing,
+        return bool(matched & family_lines)
+
+    @api.model
+    def _split_reclassification(self, entry, held) -> dict:
+        lines_per_field = {
+            fname: entry.line_ids.filtered(
+                lambda line, accounts=accounts: line.account_id in accounts
+            )
+            for fname, accounts in held.items()
+        }
+        touched = [fname for fname, lines in lines_per_field.items() if lines]
+        added = entry.line_ids - self.env["account.move.line"].union(
+            *lines_per_field.values()
         )
-        return standing
+        if len(touched) == 1:
+            lines_per_field[touched[0]] |= added
+            return lines_per_field
+        if not touched:
+            return dict.fromkeys(held, entry.line_ids)
+        # Both accounts moved in one entry: each added line mirrors the line it
+        # takes the amount from (_reclassify), and a counterpart and a liquidity
+        # line of one payment never share a sign.
+        sources = dict(lines_per_field)
+        for line in added:
+            owners = [
+                fname
+                for fname in touched
+                if any(
+                    source.partner_id == line.partner_id
+                    and source.currency_id == line.currency_id
+                    and source.company_currency_id.is_zero(
+                        source.balance + line.balance
+                    )
+                    and source.currency_id.is_zero(
+                        source.amount_currency + line.amount_currency
+                    )
+                    for source in sources[fname]
+                )
+            ]
+            if len(owners) != 1:
+                return dict.fromkeys(held, entry.line_ids)
+            lines_per_field[owners[0]] |= line
+        return lines_per_field
 
     def _get_reclassification_chain(self):
-        # A field's lines are told apart by account type: a counterpart is always
-        # receivable/payable and a liquidity account never is (action_correct).
+        # Walked in creation order, not by date: each reclassification was built
+        # from the chain as it stood when it was created. A field's lines are told
+        # apart by the accounts that field has held, whatever their type.
         self.check_singleton()
         payment = self.payment_id
         liquidity, counterpart, _other = payment._seek_for_lines()
-        chain = {
-            "counterpart_account_id": (payment.counterpart_account_id, counterpart),
-            "liquidity_account_id": (payment.liquidity_account_id, liquidity),
+        own_lines = {
+            "counterpart_account_id": counterpart,
+            "liquidity_account_id": liquidity,
         }
+        current = {fname: payment[fname] for fname in own_lines}
+        held = dict(current)
         broken = {}
-        counterpart_types = payment._get_valid_payment_account_types()
-        for entry in self._get_standing_reclassifications():
-            for fname, (current, _lines) in chain.items():
-                field_lines = entry.line_ids.filtered(
-                    lambda line, fname=fname: (
-                        (line.account_type in counterpart_types)
-                        == (fname == "counterpart_account_id")
-                    )
-                )
+        reclassifications = self._get_reclassifications()
+        for entry in reclassifications:
+            lines_per_field = self._split_reclassification(entry, held)
+            for fname, field_lines in lines_per_field.items():
+                held[fname] |= field_lines.account_id
+            if not self._is_standing(entry):
+                continue
+            for fname, field_lines in lines_per_field.items():
                 if not field_lines:
                     continue
                 if fname in broken:
                     broken[fname] |= entry
                     continue
                 moved = field_lines.filtered(
-                    lambda line, current=current: line.account_id != current
+                    lambda line, fname=fname: line.account_id != current[fname]
                 )
                 if moved == field_lines or len(moved.account_id) != 1:
                     broken[fname] = entry
                     continue
-                chain[fname] = (moved.account_id, moved)
+                current[fname] = moved.account_id
+        # A reversal posted without unmatching (auto-posted, future-dated) leaves
+        # the open amount on its own line instead of the line it reverses.
+        family_lines = self._get_family_lines(reclassifications)
+        chain = {
+            fname: (
+                account,
+                (own_lines[fname] | family_lines).filtered(
+                    lambda line, account=account: line.account_id == account
+                ),
+            )
+            for fname, account in current.items()
+        }
         _debug.logic(
             "reclassification_chain",
             payment=payment,
-            counterpart=chain["counterpart_account_id"][0],
-            liquidity=chain["liquidity_account_id"][0],
+            reclassifications=reclassifications,
+            counterpart=current["counterpart_account_id"],
+            liquidity=current["liquidity_account_id"],
             broken=sorted(broken),
         )
-        return chain, broken
+        return chain, broken, held
 
     def action_correct(self):
         self.check_singleton()
@@ -186,7 +257,7 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
                     "Only a confirmed payment with a journal entry has accounts to correct."
                 )
             )
-        chain, broken = self._get_reclassification_chain()
+        chain, broken, held = self._get_reclassification_chain()
         if not (changes := self._get_changes(chain)):
             raise UserError(
                 self.env._("Choose an account different from the current one.")
@@ -220,6 +291,18 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
                 self.env._(
                     "A payment's liquidity account cannot be a receivable or payable "
                     "account."
+                )
+            )
+        if any(
+            new in held[other]
+            for fname, (_old, new) in changes.items()
+            for other in held
+            if other != fname
+        ):
+            raise UserError(
+                self.env._(
+                    "A payment's counterpart and liquidity accounts must differ, "
+                    "including the accounts either was reclassified to."
                 )
             )
         reclassify = self.is_locked or self.is_reclassified
@@ -266,6 +349,31 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
             intro = self.env._("Accounts corrected on the payment and its entry:")
         return Markup("%s<ul>%s</ul>") % (intro, items)
 
+    @api.model
+    def _get_open_amounts(self, account, lines) -> list:
+        if account.reconcile:
+            return [
+                (line, line.amount_residual, line.amount_residual_currency)
+                for line in lines
+            ]
+        # Lines on an account that is never matched add up: a chain that came back
+        # to the account leaves an amount and its earlier reversals there.
+        balance, amount_currency = (
+            ("amount_residual", "amount_residual_currency")
+            if account.is_reconcilable
+            else ("balance", "amount_currency")
+        )
+        return [
+            (
+                group[:1],
+                sum(group.mapped(balance)),
+                sum(group.mapped(amount_currency)),
+            )
+            for group in lines.grouped(
+                lambda line: (line.partner_id, line.currency_id)
+            ).values()
+        ]
+
     def _reclassify(self, changes, chain):
         self.check_singleton()
         payment = self.payment_id
@@ -276,13 +384,9 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
         line_vals = []
         to_match = []
         for fname, (old, new) in changes.items():
-            for line in chain[fname][1]:
-                if line.account_id.is_reconcilable:
-                    balance = line.amount_residual
-                    amount_currency = line.amount_residual_currency
-                else:
-                    balance = line.balance
-                    amount_currency = line.amount_currency
+            for line, balance, amount_currency in self._get_open_amounts(
+                old, chain[fname][1]
+            ):
                 if line.currency_id.is_zero(
                     amount_currency
                 ) and line.company_currency_id.is_zero(balance):
@@ -311,7 +415,8 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
                         "amount_currency": amount_currency,
                     },
                 ]
-                to_match.append((line, old))
+                if old.reconcile:
+                    to_match.append((line, old))
         if not line_vals:
             raise UserError(
                 self.env._(
@@ -334,7 +439,7 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
         )
         entry.action_post()
         for line, old in to_match:
-            if not old.reconcile or line.reconciled:
+            if line.reconciled:
                 continue
             reversal = entry.line_ids.filtered(
                 lambda reclass, old=old, line=line: (

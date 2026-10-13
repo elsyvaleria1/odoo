@@ -1,8 +1,10 @@
 from unittest.mock import patch
 
-from odoo import Command
+from dateutil.relativedelta import relativedelta
+
+from odoo import Command, fields
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import freeze_time, tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
@@ -838,15 +840,15 @@ class TestMarinPaymentReclassificationChain(AccountTestInvoicingCommon):
         self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
         return payment
 
-    def _wizard(self, payment):
+    def _wizard(self, payment, date="2026-09-05"):
         return (
             self.env["wizard.account.payment.correct.accounts"]
             .with_context(default_payment_id=payment.id)
-            .create({"date": "2026-09-05"})
+            .create({"date": date})
         )
 
-    def _reclassify(self, payment, **accounts):
-        wizard = self._wizard(payment)
+    def _reclassify(self, payment, date="2026-09-05", **accounts):
+        wizard = self._wizard(payment, date=date)
         before = self._entries(payment)
         for fname, account in accounts.items():
             wizard[fname] = account
@@ -1018,3 +1020,167 @@ class TestMarinPaymentReclassificationChain(AccountTestInvoicingCommon):
         self.assertEqual(payment.counterpart_account_id, self.account_a)
         self.assertEqual(self._net(self.account_b), 0.0)
         self.assertEqual(self._net(self.account_c), -100.0)
+
+    def test_a_link_dated_before_the_previous_one_continues_the_chain(self):
+        payment = self._payment()
+        account_d = self.copy_account(self.account_a, {"name": "AR D"})
+        self._reclassify(
+            payment, date="2026-09-10", counterpart_account_id=self.account_b
+        )
+        self._reclassify(
+            payment, date="2026-09-05", counterpart_account_id=self.account_c
+        )
+        self.assertEqual(self._wizard(payment).counterpart_account_id, self.account_c)
+
+        third = self._reclassify(payment, counterpart_account_id=account_d)
+
+        self.assertEqual(
+            sorted(third.line_ids.mapped(lambda l: (l.account_id.id, l.balance))),
+            sorted([(self.account_c.id, 100.0), (account_d.id, -100.0)]),
+        )
+        self.assertEqual(self._net(self.account_c), 0.0)
+        self.assertEqual(self._open(self.account_c), 0.0)
+        self.assertEqual(self._net(account_d), -100.0)
+
+    def test_a_current_liability_counterpart_keeps_its_role_once_reclassified(self):
+        liabilities = self.env["account.account"].create(
+            [
+                {
+                    "name": f"Salaries due {index}",
+                    "code": f"28990{index}",
+                    "account_type": "liability_current",
+                    "reconcile": True,
+                }
+                for index in (1, 2)
+            ]
+        )
+        payment_types = ["asset_receivable", "liability_payable", "liability_current"]
+        with patch.object(
+            self.registry["account.payment"],
+            "_get_valid_payment_account_types",
+            lambda _self: list(payment_types),
+        ):
+            payment = self.env["account.payment"].create(
+                {
+                    "amount": 100.0,
+                    "date": "2026-08-01",
+                    "partner_id": self.partner_a.id,
+                    "partner_type": "supplier",
+                    "payment_type": "outbound",
+                    "journal_id": self.company_data["default_journal_bank"].id,
+                    "counterpart_account_id": liabilities[0].id,
+                }
+            )
+            payment.action_post()
+            self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
+            self._reclassify(payment, counterpart_account_id=liabilities[1])
+        liquidity = payment.liquidity_account_id
+        other_liquidity = self.copy_account(liquidity, {"name": "Liquidity 2"})
+        wizard = self._wizard(payment)
+        self.assertEqual(wizard.counterpart_account_id, liabilities[1])
+        self.assertEqual(wizard.liquidity_account_id, liquidity)
+
+        second = self._reclassify(payment, liquidity_account_id=other_liquidity)
+
+        self.assertEqual(
+            sorted(second.line_ids.mapped(lambda l: (l.account_id.id, l.balance))),
+            sorted([(liquidity.id, 100.0), (other_liquidity.id, -100.0)]),
+        )
+        self.assertEqual(self._net(liabilities[0]), 0.0)
+        self.assertEqual(self._net(liabilities[1]), 100.0)
+        self.assertEqual(self._wizard(payment).liquidity_account_id, other_liquidity)
+
+    def _reverse_in_the_future(self, entry):
+        action = (
+            self.env["wizard.account.move.reverse"]
+            .with_context(active_model="account.move", active_ids=entry.ids)
+            .create(
+                {
+                    "journal_id": entry.journal_id.id,
+                    "date": fields.Date.context_today(self.env.user)
+                    + relativedelta(days=10),
+                }
+            )
+            .reverse_moves()
+        )
+        reversal = self.env["account.move"].browse(action["res_id"])
+        self.assertEqual(reversal.auto_post, "at_date")
+        with freeze_time(reversal.date):
+            reversal._post()
+        return reversal
+
+    def test_a_link_reversed_without_unmatching_is_redone_from_the_reversal(self):
+        payment = self._payment()
+        first = self._reclassify(payment, counterpart_account_id=self.account_b)
+        reversal = self._reverse_in_the_future(first)
+        self.assertTrue(payment._seek_for_lines()[1].reconciled)
+        self.assertEqual(self._open(self.account_a), -100.0)
+        self.assertEqual(self._wizard(payment).counterpart_account_id, self.account_a)
+
+        redo = self._reclassify(payment, counterpart_account_id=self.account_c)
+
+        self.assertEqual(
+            sorted(redo.line_ids.mapped(lambda l: (l.account_id.id, l.balance))),
+            sorted([(self.account_a.id, 100.0), (self.account_c.id, -100.0)]),
+        )
+        self.assertTrue(
+            reversal.line_ids.filtered(
+                lambda l: l.account_id == self.account_a
+            ).reconciled
+        )
+        self.assertEqual(self._net(self.account_a), 0.0)
+        self.assertEqual(self._open(self.account_a), 0.0)
+        self.assertEqual(self._net(self.account_b), 0.0)
+        self.assertEqual(self._net(self.account_c), -100.0)
+        self.assertEqual(self._open(self.account_c), -100.0)
+
+    def test_a_link_reversed_without_unmatching_is_redone_by_entry_when_open(self):
+        payment = self._payment()
+        first = self._reclassify(payment, counterpart_account_id=self.account_b)
+        self._reverse_in_the_future(first)
+        self.env.company.account_config_id.fiscalyear_lock_date = False
+        wizard = self._wizard(payment)
+        self.assertFalse(wizard.is_locked)
+        self.assertTrue(wizard.is_reclassified)
+
+        redo = self._reclassify(payment, counterpart_account_id=self.account_c)
+
+        self.assertEqual(len(redo), 1)
+        self.assertEqual(payment.counterpart_account_id, self.account_a)
+        self.assertEqual(self._open(self.account_a), 0.0)
+        self.assertEqual(self._net(self.account_c), -100.0)
+
+    def test_a_liquidity_account_cannot_take_an_account_the_counterpart_held(self):
+        liability = self.env["account.account"].create(
+            {
+                "name": "Salaries due",
+                "code": "289909",
+                "account_type": "liability_current",
+                "reconcile": True,
+            }
+        )
+        with patch.object(
+            self.registry["account.payment"],
+            "_get_valid_payment_account_types",
+            lambda _self: [
+                "asset_receivable",
+                "liability_payable",
+                "liability_current",
+            ],
+        ):
+            payment = self.env["account.payment"].create(
+                {
+                    "amount": 100.0,
+                    "date": "2026-08-01",
+                    "partner_id": self.partner_a.id,
+                    "partner_type": "supplier",
+                    "payment_type": "outbound",
+                    "journal_id": self.company_data["default_journal_bank"].id,
+                    "counterpart_account_id": liability.id,
+                }
+            )
+            payment.action_post()
+        self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
+
+        with self.assertRaisesRegex(UserError, "counterpart"):
+            self._reclassify(payment, liquidity_account_id=liability)
