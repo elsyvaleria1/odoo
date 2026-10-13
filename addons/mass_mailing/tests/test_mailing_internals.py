@@ -891,6 +891,42 @@ class TestMassMailFeatures(MassMailCommon, CronMixinCase):
         super().setUpClass()
         cls._create_mailing_list()
 
+    def test_a_source_send_is_no_mass_mailing_whatever_the_context(self):
+        partner_model_id = self.env["ir.model"]._get_id("res.partner")
+        mailing = self.env["mailing.mailing"].create(
+            {
+                "name": "Open Mailing",
+                "subject": "Open Mailing",
+                "mailing_model_id": partner_model_id,
+            }
+        )
+        partner = self.env["res.partner"].create(
+            {"name": "Recipient", "email": "recipient@example.com"}
+        )
+        template = self.env["mail.template"].create(
+            {
+                "model_id": partner_model_id,
+                "subject": "Hello",
+                "body_html": "<p>Hello</p>",
+                "email_to": "{{ object.email }}",
+            }
+        )
+        for leaked in (
+            {"default_mass_mailing_id": mailing.id},
+            {"default_mass_mailing_name": "Leaked Mailing"},
+        ):
+            with self.subTest(leaked=leaked):
+                mails = partner.with_context(**leaked).message_mail_with_source(
+                    template
+                )
+                self.assertTrue(mails)
+                self.assertFalse(mails.mailing_id)
+                self.assertFalse(
+                    self.env["mailing.mailing"].search(
+                        [("name", "=", "Leaked Mailing")]
+                    )
+                )
+
     @users("user_marketing")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mailing_cron_trigger(self):

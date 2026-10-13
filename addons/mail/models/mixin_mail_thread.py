@@ -78,6 +78,7 @@ if typing.TYPE_CHECKING:
     from .res_partner import ResPartner
     from odoo.addons.bus.models.ir_attachment import IrAttachment
     from odoo.addons.bus.models.res_users import ResUsers
+    from odoo.addons.mail.wizards.wizard_mail_message_send import WizardMailMessageSend
 
 
 MAX_DIRECT_PUSH = 5
@@ -2337,6 +2338,9 @@ class MixinMailThread(models.AbstractModel):
         )
         return template, bodies
 
+    def _message_source_composer(self, **context: Any) -> WizardMailMessageSend:
+        return self.env["wizard.mail.message.send"].with_context(**context)
+
     def message_mail_with_source(
         self,
         source_ref: models.BaseModel | str,
@@ -2370,10 +2374,8 @@ class MixinMailThread(models.AbstractModel):
             if not template:
                 composer_values["body"] = bodies[subset.id]
 
-            composer = (
-                self.env["wizard.mail.message.send"]
-                .with_context(**composer_ctx)
-                .create(composer_values)
+            composer = self._message_source_composer(**composer_ctx).create(
+                composer_values
             )
             mails_as_sudo, _messages = composer._action_send_mail(
                 auto_commit=auto_commit
@@ -2427,24 +2429,20 @@ class MixinMailThread(models.AbstractModel):
         subtype_id = self._message_subtype_id(subtype_xmlid, subtype_id)
 
         if template:
-            composers = (
-                self.env["wizard.mail.message.send"]
-                .with_context(
-                    default_composition_mode="comment",
-                    default_model=self._get_reference_model_name(),
-                    default_template_id=template.id,
-                )
-                .create(
-                    [
-                        {
-                            "message_type": message_type,
-                            "subtype_id": subtype_id,
-                            **kwargs,
-                            "res_ids": f"{record.ids}",
-                        }
-                        for record in self
-                    ]
-                )
+            composers = self._message_source_composer(
+                default_composition_mode="comment",
+                default_model=self._get_reference_model_name(),
+                default_template_id=template.id,
+            ).create(
+                [
+                    {
+                        "message_type": message_type,
+                        "subtype_id": subtype_id,
+                        **kwargs,
+                        "res_ids": f"{record.ids}",
+                    }
+                    for record in self
+                ]
             )
             post_values_all = {}
             for composer, record in zip(composers, self, strict=True):

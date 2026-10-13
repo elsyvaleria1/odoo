@@ -41,7 +41,7 @@ if typing.TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 _image_dataurl = re.compile(
-    r'(data:image/[a-z]+?);base64,([a-z0-9+/\n]{3,}=*)\n*([\'"])(?: data-filename="([^"]*)")?',
+    r'(<img\b[^>]*?\ssrc=)([\'"])data:image/[a-z]+?;base64,([a-z0-9+/\n]{3,}=*)\n*\2(?: data-filename="([^"]*)")?',
     re.IGNORECASE,
 )
 
@@ -721,14 +721,14 @@ class MailMessage(models.Model):
         data_to_url: dict[str, list[str | int]] = {}
 
         def base64_to_boundary(match: re.Match[str]) -> str:
-            key = match.group(2)
+            prefix, quote, key = match.group(1, 2, 3)
             if not data_to_url.get(key):
                 name = match.group(4) or "image%s" % len(data_to_url)
                 try:
                     attachment = Attachments.create(
                         {
                             "name": name,
-                            "datas": match.group(2),
+                            "datas": key,
                             "res_model": model,
                             "res_id": res_id,
                         }
@@ -738,7 +738,7 @@ class MailMessage(models.Model):
                     _logger.warning(
                         "Impossible to create an attachment out of badly formated base64 embedded image. Image has been removed."
                     )
-                    return match.group(3)
+                    return f"{prefix}{quote}{quote}"
                 else:
                     attachment.generate_access_token()
                     commands.append(Command.link(attachment.id))
@@ -748,7 +748,7 @@ class MailMessage(models.Model):
                         name,
                         attachment.id,
                     ]
-            return f'{data_to_url[key][0]}{match.group(3)} alt="{data_to_url[key][1]}" data-attachment-id="{data_to_url[key][2]}"'
+            return f'{prefix}{quote}{data_to_url[key][0]}{quote} alt="{data_to_url[key][1]}" data-attachment-id="{data_to_url[key][2]}"'
 
         body = _image_dataurl.sub(base64_to_boundary, values["body"] or "")
         if _debug.pipeline.enabled and commands:
@@ -759,6 +759,9 @@ class MailMessage(models.Model):
                 attachments=len(commands),
             )
         return body, commands
+
+    def _html_inline_image_fields(self, names: set[str]) -> list[str]:
+        return []
 
     def _check_created_attachments_access(
         self, messages: Self, vals_list: list[ValuesType]

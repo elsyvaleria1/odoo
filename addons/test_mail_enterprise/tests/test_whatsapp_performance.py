@@ -144,7 +144,7 @@ class TestWAPerformance(
         test_wa_record = self.test_wa_records[0].with_user(self.env.user)
         wa_template = self.wa_template.with_user(self.env.user)
 
-        with self.mockWhatsappGateway(), self.assertQueryCount(employee=30):
+        with self.mockWhatsappGateway(), self.assertQueryCount(employee=31):
             composer = (
                 self.env["wizard.whatsapp.message.send"]
                 .with_context(

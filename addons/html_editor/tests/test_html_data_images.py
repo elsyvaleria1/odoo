@@ -42,3 +42,26 @@ class TestHtmlDataImages(TransactionCase):
         )
         self.assertFalse(self._images_of(partner))
         self.assertIn("data:image is just text here", partner.comment)
+
+    def test_only_an_image_source_is_moved(self):
+        uri = _png_data_uri()
+        partner = self.env["res.partner"].create(
+            {
+                "name": "Styled",
+                "comment": (
+                    f"<div style=\"background-image:url('{uri}'); color: red;\">"
+                    f'see src="{uri}" here</div><p><img src="{uri}"></p>'
+                ),
+            }
+        )
+        image = self._images_of(partner)
+        self.assertEqual(len(image), 1)
+        self.assertIn(
+            f"<div style=\"background-image:url('{uri}'); color: red;\">"
+            f'see src="{uri}" here</div>',
+            partner.comment,
+        )
+        self.assertIn(
+            f'<img src="/web/image/{image.id}?access_token={image.access_token}"',
+            partner.comment,
+        )

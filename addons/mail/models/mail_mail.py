@@ -333,6 +333,9 @@ class MailMail(models.Model):
             new_mails._trigger_queue(include_due=False)
         return new_mails
 
+    def _html_inline_image_fields(self, names: set[str]) -> list[str]:
+        return []
+
     def write(self, vals: ValuesType) -> Literal[True]:
         if "scheduled_date" in vals:
             vals["scheduled_date"] = self._normalize_scheduled_date(

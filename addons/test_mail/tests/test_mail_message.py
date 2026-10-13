@@ -400,6 +400,21 @@ class TestMessageValues(MailCommon):
             f'<img src="/web/image/{msg.attachment_ids[0].id}?access_token={msg.attachment_ids[0].access_token}" alt="image0" data-attachment-id="{msg.attachment_ids[0].id}" width="2"></p>',
         )
 
+    def test_mail_message_values_body_base64_outside_an_image_source(self):
+        for body in (
+            "<p>pasted data:image/png;base64,iV/+OkI=' as text</p>",
+            "<div style=\"background-image: url('data:image/png;base64,iV/+OkI=')\">x</div>",
+        ):
+            with self.subTest(body=body):
+                msg = (
+                    self.env["mail.message"]
+                    .with_user(self.user_employee)
+                    .create({"body": body})
+                )
+                self.assertFalse(msg.attachment_ids)
+                self.assertNotIn("data-attachment-id", msg.body)
+                self.assertIn("data:image/png;base64,iV/+OkI=", msg.body)
+
     @mute_logger("odoo.models.unlink", "odoo.addons.mail.models.base")
     @users("employee")
     def test_mail_message_values_fromto_long_name(self):

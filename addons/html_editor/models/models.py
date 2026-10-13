@@ -5,11 +5,10 @@ from odoo import api, models
 from odoo.tools import clean_context
 
 _DATA_URI_IMAGE = re.compile(
-    r'(data:image/[a-z]+?);base64,([a-z0-9+/\n]{3,}=*)\n*([\'"])'
+    r'(<img\b[^>]*?\ssrc=)([\'"])data:image/[a-z]+?;base64,([a-z0-9+/\n]{3,}=*)\n*\2'
     r'(?: data-filename="([^"]*)")?',
     re.IGNORECASE,
 )
-_DATA_URI_IMAGE_EXEMPT_MODELS = frozenset({"mail.mail", "mail.message"})
 
 
 def _names_with_data_uri(vals) -> set[str]:
@@ -45,8 +44,8 @@ class Base(models.AbstractModel):
             self._html_extract_data_images(names)
         return res
 
-    def _html_inline_image_fields(self, names) -> list[str]:
-        if self._transient or self._name in _DATA_URI_IMAGE_EXEMPT_MODELS:
+    def _html_inline_image_fields(self, names: set[str]) -> list[str]:
+        if self._transient:
             return []
         return [
             name
@@ -70,7 +69,7 @@ class Base(models.AbstractModel):
                 created = {}
 
                 def to_attachment(match, record=record, created=created):
-                    payload = match.group(2)
+                    src, quote, payload = match.group(1, 2, 3)
                     if payload not in created:
                         filename = match.group(4) or f"image{len(created)}"
                         try:
@@ -83,7 +82,7 @@ class Base(models.AbstractModel):
                                 }
                             )
                         except binascii.Error:
-                            return match.group(3)
+                            return f"{src}{quote}{quote}"
                         attachment.generate_access_token()
                         token = attachment.access_token
                         created[payload] = (
@@ -93,7 +92,7 @@ class Base(models.AbstractModel):
                         )
                     url, filename, attachment_id = created[payload]
                     return (
-                        f'{url}{match.group(3)} alt="{filename}" '
+                        f'{src}{quote}{url}{quote} alt="{filename}" '
                         f'data-attachment-id="{attachment_id}"'
                     )
 

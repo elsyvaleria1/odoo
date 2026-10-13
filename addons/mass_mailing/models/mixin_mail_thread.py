@@ -26,23 +26,12 @@ class MixinMailThread(models.AbstractModel):
                 )
         return super()._message_route_process(message, message_dict, routes)
 
-    def message_mail_with_source(self, source_ref, **kwargs):
-        return super(
-            MixinMailThread,
-            self.with_context(
-                default_mass_mailing_name=False,
-                default_mass_mailing_id=False,
-            ),
-        ).message_mail_with_source(source_ref, **kwargs)
-
-    def message_post_with_source(self, source_ref, **kwargs):
-        return super(
-            MixinMailThread,
-            self.with_context(
-                default_mass_mailing_name=False,
-                default_mass_mailing_id=False,
-            ),
-        ).message_post_with_source(source_ref, **kwargs)
+    def _message_source_composer(self, **context):
+        return super()._message_source_composer(
+            **context,
+            default_mass_mailing_name=False,
+            default_mass_mailing_id=False,
+        )
 
     @api.model
     def _routing_handle_bounce(self, email_message, message_dict) -> None:

@@ -132,7 +132,7 @@ class TestWebSaveOptimisticLocking(common.TransactionCase):
                 ],
             }
         )
-        self.partner.parent_id = hidden
+        self.partner.write({"parent_id": hidden.id, "company_id": False})
         self.env.flush_all()
         partner = self.partner.with_user(user)
         read_values = partner.web_read({"parent_id": {"fields": {"display_name": {}}}})

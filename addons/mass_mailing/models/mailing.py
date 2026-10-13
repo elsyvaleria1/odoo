@@ -1762,6 +1762,13 @@ class MailingMailing(models.Model):
     def _is_mailing_report_token(self, user_id, token) -> bool:
         return tools.is_hmac_valid(self.env, REPORT_OPT_OUT_SCOPE, user_id, token)
 
+    def _html_inline_image_fields(self, names: set[str]) -> list[str]:
+        return [
+            name
+            for name in super()._html_inline_image_fields(names)
+            if name not in {"body_arch", "body_html"}
+        ]
+
     def _convert_inline_images_to_urls(self, html_content):
         root = lxml.html.fromstring(html_content)
         did_modify_body = False
