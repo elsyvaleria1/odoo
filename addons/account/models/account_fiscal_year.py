@@ -1,6 +1,7 @@
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import frozendict
 
 _debug = DebugLog(__name__)
 
@@ -8,6 +9,13 @@ _debug = DebugLog(__name__)
 class AccountFiscalYear(models.Model):
     _name = "account.fiscal.year"
     _description = "Fiscal Year"
+    _access_anchors = frozendict(
+        {
+            "company_or_parent": models.Anchor(
+                "company_id", kind="company", hierarchy="parent_of"
+            )
+        }
+    )
 
     name = fields.Char(required=True)
     date_from = fields.Date(
